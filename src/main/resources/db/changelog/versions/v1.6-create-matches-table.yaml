@@ -1,0 +1,230 @@
+databaseChangeLog:
+  - changeSet:
+      id: 13
+      author: padel-core
+      changes:
+        - createTable:
+            tableName: matches_db
+            remarks: "Таблица матчей"
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_matches_db
+                    nullable: false
+              - column:
+                  name: tournament_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: ronda
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: partido_numero
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: tipo
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: player1_id
+                  type: BIGINT
+              - column:
+                  name: player2_id
+                  type: BIGINT
+              - column:
+                  name: player3_id
+                  type: BIGINT
+              - column:
+                  name: player4_id
+                  type: BIGINT
+              - column:
+                  name: equipo1_nombre
+                  type: VARCHAR(255)
+              - column:
+                  name: equipo2_nombre
+                  type: VARCHAR(255)
+              - column:
+                  name: set1_equipo1
+                  type: INTEGER
+              - column:
+                  name: set1_equipo2
+                  type: INTEGER
+              - column:
+                  name: set2_equipo1
+                  type: INTEGER
+              - column:
+                  name: set2_equipo2
+                  type: INTEGER
+              - column:
+                  name: set3_equipo1
+                  type: INTEGER
+              - column:
+                  name: set3_equipo2
+                  type: INTEGER
+              - column:
+                  name: super_set_equipo1
+                  type: INTEGER
+              - column:
+                  name: super_set_equipo2
+                  type: INTEGER
+              - column:
+                  name: ganador_id
+                  type: BIGINT
+              - column:
+                  name: perdedor_id
+                  type: BIGINT
+              - column:
+                  name: puntos_equipo1
+                  type: INTEGER
+              - column:
+                  name: puntos_equipo2
+                  type: INTEGER
+              - column:
+                  name: estado
+                  type: VARCHAR(20)
+                  defaultValue: "PROGRAMADO"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: fecha_programada
+                  type: TIMESTAMP WITHOUT TIME ZONE
+              - column:
+                  name: fecha_inicio
+                  type: TIMESTAMP WITHOUT TIME ZONE
+              - column:
+                  name: fecha_fin
+                  type: TIMESTAMP WITHOUT TIME ZONE
+              - column:
+                  name: cancha
+                  type: VARCHAR(50)
+              - column:
+                  name: arbitro
+                  type: VARCHAR(255)
+              - column:
+                  name: observaciones
+                  type: TEXT
+              - column:
+                  name: created_by
+                  type: BIGINT
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITHOUT TIME ZONE
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITHOUT TIME ZONE
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: is_active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+
+        # Índices
+        - createIndex:
+            indexName: idx_match_tournament
+            tableName: matches_db
+            columns:
+              - column:
+                  name: tournament_id
+
+        - createIndex:
+            indexName: idx_match_ronda
+            tableName: matches_db
+            columns:
+              - column:
+                  name: ronda
+
+        - createIndex:
+            indexName: idx_match_player1
+            tableName: matches_db
+            columns:
+              - column:
+                  name: player1_id
+
+        - createIndex:
+            indexName: idx_match_player2
+            tableName: matches_db
+            columns:
+              - column:
+                  name: player2_id
+
+        - createIndex:
+            indexName: idx_match_estado
+            tableName: matches_db
+            columns:
+              - column:
+                  name: estado
+
+        - createIndex:
+            indexName: idx_match_fecha
+            tableName: matches_db
+            columns:
+              - column:
+                  name: fecha_programada
+
+        # Foreign keys
+        - addForeignKeyConstraint:
+            baseTableName: matches_db
+            baseColumnNames: tournament_id
+            referencedTableName: tournaments_db
+            referencedColumnNames: id
+            constraintName: fk_match_tournament
+            onDelete: CASCADE
+
+        - addForeignKeyConstraint:
+            baseTableName: matches_db
+            baseColumnNames: player1_id
+            referencedTableName: player_padel_db
+            referencedColumnNames: id
+            constraintName: fk_match_player1
+
+        - addForeignKeyConstraint:
+            baseTableName: matches_db
+            baseColumnNames: player2_id
+            referencedTableName: player_padel_db
+            referencedColumnNames: id
+            constraintName: fk_match_player2
+
+        - addForeignKeyConstraint:
+            baseTableName: matches_db
+            baseColumnNames: player3_id
+            referencedTableName: player_padel_db
+            referencedColumnNames: id
+            constraintName: fk_match_player3
+
+        - addForeignKeyConstraint:
+            baseTableName: matches_db
+            baseColumnNames: player4_id
+            referencedTableName: player_padel_db
+            referencedColumnNames: id
+            constraintName: fk_match_player4
+
+  - changeSet:
+      id: 14
+      author: padel-core
+      changes:
+        - sql:
+            dbms: postgresql
+            sql: |
+              COMMENT ON TABLE matches_db IS 'Матчи турниров';
+              COMMENT ON COLUMN matches_db.id IS 'ID матча';
+              COMMENT ON COLUMN matches_db.tournament_id IS 'ID турнира';
+              COMMENT ON COLUMN matches_db.ronda IS 'Раунд (1: первый, 2: четвертьфинал, 3: полуфинал, 4: финал)';
+              COMMENT ON COLUMN matches_db.partido_numero IS 'Номер матча в раунде';
+              COMMENT ON COLUMN matches_db.tipo IS 'Тип матча (INDIVIDUAL, PAREJAS)';
+              COMMENT ON COLUMN matches_db.estado IS 'Статус матча';

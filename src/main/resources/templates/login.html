@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+    <meta name="description" content="E-Padel - Inicia sesión en la plataforma de torneos de pádel más completa. Accede a tu cuenta para gestionar tus inscripciones.">
+    <meta name="keywords" content="pádel, login, iniciar sesión, torneos, e-padel">
+    <meta name="author" content="E-Padel">
+    <meta name="theme-color" content="#FF6B35">
+
+    <!-- Open Graph / Social Media -->
+    <meta property="og:title" content="E-Padel - Iniciar sesión">
+    <meta property="og:description" content="Accede a tu cuenta de E-Padel para gestionar tus torneos">
+    <meta property="og:image" content="/images/og-image.jpg">
+    <meta property="og:url" content="https://e-padel.com/login">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <title>E-Padel - Iniciar sesión</title>
+
+    <!-- Favicon с новым лого -->
+    <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
+    <link rel="alternate icon" th:href="@{/images/favicon.ico}">
+    <link rel="apple-touch-icon" th:href="@{/images/apple-touch-icon.png}">
+
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body class="auth-page-simple">
+<header class="header">
+    <div class="container">
+        <nav class="navbar">
+            <a href="/" class="navbar-brand">
+                <!-- Новый логотип из 2.svg -->
+                <img th:src="@{/images/2.svg}" alt="E-Padel Logo" class="navbar-logo" width="40" height="40">
+                <span class="navbar-brand-text">E-<span class="brand-highlight">PADEL</span></span>
+            </a>
+
+            <!-- Botón de registro rápido para no autenticados -->
+            <div class="navbar-auth">
+                <a href="/players/registro" class="btn btn-primary-sm">
+                    <i class="fas fa-user-plus"></i>
+                    Registrarse
+                </a>
+            </div>
+        </nav>
+    </div>
+</header>
+
+<main class="auth-main-simple">
+    <div class="container">
+        <div class="auth-container">
+            <div class="auth-card">
+                <div class="auth-card-header">
+                    <h2 class="auth-card-title">Iniciar sesión</h2>
+                    <p class="auth-card-subtitle">
+                        ¿No tienes cuenta?
+                        <a href="/players/registro" class="auth-link">Regístrate gratis</a>
+                    </p>
+                </div>
+
+                <form action="/login" method="post" class="auth-form">
+                    <!-- Mensajes de éxito/error -->
+                    <div th:if="${param.registered}" class="alert alert-success">
+                        <i class="fas fa-check-circle"></i>
+                        <span>¡Registro exitoso! Ya puedes iniciar sesión.</span>
+                    </div>
+
+                    <div th:if="${param.confirmed}" class="alert alert-success">
+                        <i class="fas fa-check-circle"></i>
+                        <span>¡Email confirmado! Ya puedes iniciar sesión.</span>
+                    </div>
+
+                    <div th:if="${param.error}" class="alert alert-error">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>Email o contraseña incorrectos</span>
+                    </div>
+
+                    <div th:if="${param.logout}" class="alert alert-success">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Has cerrado sesión correctamente</span>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="form-group">
+                        <label for="username" class="form-label">
+                            <i class="fas fa-envelope"></i> Email
+                        </label>
+                        <div class="input-with-icon">
+                            <input type="email" id="username" name="username"
+                                   class="form-control"
+                                   placeholder="tu@email.com"
+                                   required autofocus
+                                   th:value="${session.username}">
+                            <i class="fas fa-envelope input-icon"></i>
+                        </div>
+                    </div>
+
+                    <!-- Contraseña -->
+                    <div class="form-group">
+                        <label for="password" class="form-label">
+                            <i class="fas fa-lock"></i> Contraseña
+                        </label>
+                        <div class="input-with-icon">
+                            <input type="password" id="password" name="password"
+                                   class="form-control"
+                                   placeholder="Tu contraseña"
+                                   required>
+                            <i class="fas fa-lock input-icon"></i>
+                            <button type="button" class="toggle-password" data-target="password" aria-label="Mostrar/ocultar contraseña">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Opciones -->
+                    <div class="form-options">
+                        <div class="form-checkbox">
+                            <input type="checkbox" id="remember-me" name="remember-me">
+                            <label for="remember-me">Recordarme</label>
+                        </div>
+                        <a href="/recuperar-password" class="forgot-password">
+                            ¿Olvidaste tu contraseña?
+                        </a>
+                    </div>
+
+                    <!-- Botón de inicio -->
+                    <button type="submit" class="btn btn-primary btn-block btn-large">
+                        <i class="fas fa-sign-in-alt"></i>
+                        Iniciar sesión
+                    </button>
+
+                    <!-- Separador opcional -->
+                    <div class="auth-divider" style="text-align: center; margin: 1.5rem 0 0; color: var(--color-text-light);">
+                        <small>o continúa con</small>
+                    </div>
+
+                    <!-- Redes sociales (placeholder para futura implementación) -->
+                    <div class="auth-social" style="display: flex; gap: 1rem; justify-content: center; margin-top: 1rem;">
+                        <a href="#" class="btn btn-outline" style="flex: 1;" onclick="alert('Google login próximamente')">
+                            <i class="fab fa-google"></i> Google
+                        </a>
+                        <a href="#" class="btn btn-outline" style="flex: 1;" onclick="alert('Facebook login próximamente')">
+                            <i class="fab fa-facebook-f"></i> Facebook
+                        </a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Información adicional -->
+            <div class="auth-info" style="text-align: center; margin-top: 1.5rem; color: var(--color-text-light);">
+                <small>
+                    <i class="fas fa-shield-alt"></i> Tus datos están seguros con nosotros
+                </small>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Footer simple -->
+<footer class="footer" style="padding: 1rem 0;">
+    <div class="container">
+        <div class="footer-bottom" style="justify-content: center; text-align: center; border-top: none;">
+            <div class="footer-copyright">
+                <i class="far fa-copyright"></i> 2026 E-Padel. Todos los derechos reservados.
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- JavaScript - порядок важен! -->
+<script th:src="@{/js/notifications.js}"></script>
+<script th:src="@{/js/auth.js}"></script>
+
+<!-- Script para manejar el parámetro confirmed (opcional) -->
+<script th:if="${param.confirmed}" th:inline="javascript">
+    /*<![CDATA[*/
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof showNotification === 'function') {
+            showNotification('¡Email confirmado exitosamente!', 'success');
+        }
+    });
+    /*]]>*/
+</script>
+</body>
+</html>

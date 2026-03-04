@@ -1,0 +1,92 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.11-add-last-calculated-to-ranking
+      author: serg
+      comments: "Добавляем колонку last_calculated_at в таблицу ranking_db для отслеживания времени последнего расчета рейтинга"
+
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: ranking_db
+
+      changes:
+        # Добавляем колонку last_calculated_at
+        - addColumn:
+            tableName: ranking_db
+            columns:
+              - column:
+                  name: last_calculated_at
+                  type: TIMESTAMP WITHOUT TIME ZONE
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: true
+                  remarks: "Время последнего расчета рейтинга"
+
+        # Добавляем индекс для оптимизации запросов по времени расчета
+        - createIndex:
+            tableName: ranking_db
+            indexName: idx_ranking_last_calculated
+            columns:
+              - column:
+                  name: last_calculated_at
+
+  - changeSet:
+      id: v1.11-update-existing-ranking-records
+      author: serg
+      comments: "Устанавливаем last_calculated_at для существующих записей"
+
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 1
+            sql: |
+              SELECT COUNT(*) FROM ranking_db WHERE last_calculated_at IS NULL;
+
+      changes:
+        - sql:
+            splitStatements: false
+            sql: |
+              -- Устанавливаем текущее время для всех существующих записей
+              UPDATE ranking_db 
+              SET last_calculated_at = CURRENT_TIMESTAMP 
+              WHERE last_calculated_at IS NULL;
+
+        - sql:
+            splitStatements: false
+            sql: |
+              -- Делаем колонку NOT NULL после заполнения данных
+              ALTER TABLE ranking_db 
+              ALTER COLUMN last_calculated_at SET NOT NULL;
+
+  - changeSet:
+      id: v1.11-add-trigger-for-last-calculated
+      author: serg
+      comments: "Добавляем триггер для автоматического обновления last_calculated_at при изменении рейтинга"
+      dbms: postgresql
+
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 0
+            sql: |
+              SELECT COUNT(*) FROM pg_trigger WHERE tgname = 'update_ranking_last_calculated';
+
+      changes:
+        - sql:
+            splitStatements: false
+            sql: |
+              CREATE OR REPLACE FUNCTION update_last_calculated_column()
+              RETURNS TRIGGER AS $$
+              BEGIN
+                  NEW.last_calculated_at = CURRENT_TIMESTAMP;
+                  RETURN NEW;
+              END;
+              $$ language 'plpgsql';
+
+        - sql:
+            splitStatements: false
+            sql: |
+              CREATE TRIGGER update_ranking_last_calculated
+                  BEFORE UPDATE ON ranking_db
+                  FOR EACH ROW
+                  EXECUTE FUNCTION update_last_calculated_column();

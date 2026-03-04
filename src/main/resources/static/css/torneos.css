@@ -1,0 +1,450 @@
+/* ===== TORNEOS PAGE STYLES ===== */
+
+.torneos-main {
+    padding: 3rem 0;
+    min-height: calc(100vh - 200px);
+    background: linear-gradient(135deg, var(--color-off-white), white);
+}
+
+.page-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.page-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--color-black);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.page-title i {
+    color: var(--color-primary);
+    font-size: 2rem;
+}
+
+.page-description {
+    font-size: 1.1rem;
+    color: var(--color-dark-gray);
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* Filters (reutilizados de home) */
+.filters-card {
+    background: linear-gradient(145deg, var(--color-white), var(--color-off-white));
+    border-radius: var(--border-radius-xl);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+    box-shadow: var(--shadow-md);
+    border: 1px solid rgba(123, 44, 191, 0.1);
+}
+
+.filters-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0;
+    cursor: pointer;
+    padding: 0.5rem 0;
+}
+
+.filters-header h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.filters-header h3 i {
+    font-size: 1rem;
+    color: var(--color-primary);
+}
+
+.filters-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 1rem;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+    color: white;
+    border-radius: var(--border-radius-full);
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(255, 107, 53, 0.2);
+}
+
+.filters-toggle:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+}
+
+.filters-toggle i {
+    font-size: 0.8rem;
+    transition: transform 0.3s ease;
+}
+
+.filters-form {
+    transition: all 0.3s ease;
+    overflow: hidden;
+    max-height: 500px;
+    opacity: 1;
+    margin-top: 1rem;
+}
+
+.filters-form.collapsed {
+    max-height: 0;
+    opacity: 0;
+    margin: 0;
+    padding: 0;
+}
+
+.filters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    align-items: end;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-group-button {
+    display: flex;
+    align-items: flex-end;
+}
+
+.filter-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text-light);
+    margin-bottom: 0.5rem;
+}
+
+.filter-label i {
+    margin-right: 0.5rem;
+    color: var(--color-primary);
+}
+
+.filter-select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+    background: white;
+    font-family: inherit;
+    transition: border-color 0.3s;
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: var(--color-primary);
+}
+
+/* Results counter */
+.results-counter {
+    text-align: right;
+    font-size: 0.9rem;
+    color: var(--color-text-light);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.results-counter span {
+    font-weight: 600;
+    color: var(--color-primary);
+}
+
+/* Torneos Grid */
+.torneos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.torneo-card {
+    background: white;
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s;
+    border: 1px solid var(--color-border);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.torneo-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 30px rgba(255, 107, 53, 0.15);
+    border-color: var(--color-primary);
+}
+
+.torneo-card-header {
+    padding: 1rem 1.5rem;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.torneo-badge {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 2rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    backdrop-filter: blur(4px);
+}
+
+.torneo-badge-level {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.torneo-card-body {
+    padding: 1.5rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.torneo-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: 1rem;
+    line-height: 1.4;
+    min-height: 3.5rem;
+}
+
+.torneo-info {
+    margin-bottom: 1rem;
+    flex: 1;
+}
+
+.torneo-info-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.4rem 0;
+    color: var(--color-text-light);
+    border-bottom: 1px dashed var(--color-border-light);
+    font-size: 0.95rem;
+}
+
+.torneo-info-item:last-child {
+    border-bottom: none;
+}
+
+.torneo-info-item i {
+    width: 1.25rem;
+    color: var(--color-primary);
+    font-size: 1rem;
+}
+
+.torneo-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-border-light);
+}
+
+.torneo-footer .btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    border-radius: var(--border-radius-full);
+}
+
+.torneo-footer .btn i {
+    margin-right: 0.25rem;
+}
+
+.torneo-status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 2rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-registro_abierto {
+    background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.2));
+    color: var(--color-success);
+    border: 1px solid rgba(16,185,129,0.3);
+}
+
+.status-publicado {
+    background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(59,130,246,0.2));
+    color: #2563eb;
+    border: 1px solid rgba(59,130,246,0.3);
+}
+
+.status-borrador {
+    background: linear-gradient(135deg, rgba(107,114,128,0.1), rgba(107,114,128,0.2));
+    color: #4b5563;
+    border: 1px solid rgba(107,114,128,0.3);
+}
+
+.status-cerrado {
+    background: linear-gradient(135deg, rgba(245,158,11,0.1), rgba(245,158,11,0.2));
+    color: var(--color-warning);
+    border: 1px solid rgba(245,158,11,0.3);
+}
+
+.status-finalizado {
+    background: linear-gradient(135deg, rgba(107,114,128,0.1), rgba(107,114,128,0.2));
+    color: #6b7280;
+    border: 1px solid rgba(107,114,128,0.3);
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: white;
+    border-radius: 1rem;
+    margin-top: 2rem;
+    box-shadow: var(--shadow-md);
+}
+
+.empty-icon {
+    font-size: 4rem;
+    color: var(--color-text-light);
+    margin-bottom: 1rem;
+}
+
+.empty-state h3 {
+    font-size: 1.5rem;
+    color: var(--color-text);
+    margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+    color: var(--color-text-light);
+    margin-bottom: 2rem;
+}
+
+/* Pagination */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 3rem;
+}
+
+.pagination-prev,
+.pagination-next {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-full);
+    background: white;
+    color: var(--color-text);
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.pagination-prev:hover:not(:disabled),
+.pagination-next:hover:not(:disabled) {
+    background: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
+}
+
+.pagination-prev:disabled,
+.pagination-next:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination-pages {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.pagination-page {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-full);
+    background: white;
+    color: var(--color-text);
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.pagination-page:hover {
+    background: var(--color-primary-light);
+    color: white;
+}
+
+.pagination-page.active {
+    background: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .page-title {
+        font-size: 2rem;
+    }
+
+    .filters-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .torneos-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .pagination {
+        flex-wrap: wrap;
+    }
+
+    .pagination-prev,
+    .pagination-next {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-title {
+        font-size: 1.5rem;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .torneo-footer {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: flex-start;
+    }
+
+    .torneo-footer .btn {
+        width: 100%;
+        text-align: center;
+    }
+}

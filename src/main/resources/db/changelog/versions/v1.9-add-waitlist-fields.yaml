@@ -1,0 +1,42 @@
+databaseChangeLog:
+
+  - changeSet:
+      id: 24
+      author: padel-core
+      changes:
+        - sql:
+            dbms: postgresql
+            sql: |
+              ALTER TABLE tournament_registrations_db
+                ADD COLUMN IF NOT EXISTS notified_about_vacancy BOOLEAN DEFAULT FALSE;
+
+              ALTER TABLE tournament_registrations_db
+                ADD COLUMN IF NOT EXISTS invitation_expires_at TIMESTAMP WITHOUT TIME ZONE;
+
+
+  - changeSet:
+      id: 25
+      author: padel-core
+      changes:
+        - sql:
+            dbms: postgresql
+            sql: |
+              CREATE INDEX IF NOT EXISTS idx_reg_invitation_expires
+                ON tournament_registrations_db(invitation_expires_at);
+
+              CREATE INDEX IF NOT EXISTS idx_reg_notified_vacancy
+                ON tournament_registrations_db(notified_about_vacancy);
+
+
+  - changeSet:
+      id: 26
+      author: padel-core
+      changes:
+        - sql:
+            dbms: postgresql
+            sql: |
+              COMMENT ON COLUMN tournament_registrations_db.notified_about_vacancy
+                IS 'Было ли отправлено уведомление о свободном месте';
+
+              COMMENT ON COLUMN tournament_registrations_db.invitation_expires_at
+                IS 'Срок действия приглашения из листа ожидания';

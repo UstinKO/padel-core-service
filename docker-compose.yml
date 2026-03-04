@@ -1,0 +1,106 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: padel-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:-player_padel_db}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-root}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - padel-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres} -d ${DB_NAME:-player_padel_db}"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 30s
+    restart: unless-stopped
+    env_file:
+      - .env
+
+  padel-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: padel-core-app
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+
+      # База данных
+      DB_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-player_padel_db}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-root}
+      DB_POOL_SIZE: ${DB_POOL_SIZE:-10}
+      DB_MIN_IDLE: ${DB_MIN_IDLE:-5}
+
+      # JPA
+      JPA_DDL_AUTO: ${JPA_DDL_AUTO:-validate}
+      JPA_SHOW_SQL: ${JPA_SHOW_SQL:-false}
+      JPA_FORMAT_SQL: ${JPA_FORMAT_SQL:-false}
+
+      # Liquibase
+      SPRING_LIQUIBASE_ENABLED: ${LIQUIBASE_ENABLED:-true}
+
+      # JWT
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION:-604800000}
+
+      # Почта
+      MAIL_HOST: ${MAIL_HOST}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      MAIL_SMTP_AUTH: ${MAIL_SMTP_AUTH:-true}
+      MAIL_STARTTLS: ${MAIL_STARTTLS:-true}
+      MAIL_STARTTLS_REQUIRED: ${MAIL_STARTTLS_REQUIRED:-true}
+      MAIL_TIMEOUT: ${MAIL_TIMEOUT:-5000}
+
+      # Thymeleaf
+      THYMELEAF_CACHE: ${THYMELEAF_CACHE:-true}
+
+      # Логирование
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_PATH: ${LOG_PATH:-/app/logs}
+      LOG_FILE: ${LOG_FILE:-/app/logs/application.log}
+      LOG_MAX_SIZE: ${LOG_MAX_SIZE:-10MB}
+      LOG_MAX_HISTORY: ${LOG_MAX_HISTORY:-30}
+      LOG_TOTAL_SIZE_CAP: ${LOG_TOTAL_SIZE_CAP:-1GB}
+
+      # Приложение
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:8080}
+      AUTO_CONFIRM_EMAIL: ${AUTO_CONFIRM_EMAIL:-false}
+      EMAIL_FROM: ${EMAIL_FROM:-info@epadel.org}
+      EMAIL_SENDER_NAME: ${EMAIL_SENDER_NAME:-E-Padel}
+
+      # Сервер
+      SERVER_PORT: ${SERVER_PORT:-8080}
+    ports:
+      - "${HOST_PORT:-8080}:${SERVER_PORT:-8080}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - padel-network
+    restart: unless-stopped
+    volumes:
+      - ./logs:/app/logs
+      - ./logs/archive:/app/logs/archive
+    env_file:
+      - .env
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  padel-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

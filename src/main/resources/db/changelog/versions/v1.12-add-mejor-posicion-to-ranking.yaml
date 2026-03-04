@@ -1,0 +1,41 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.12-add-mejor-posicion-to-ranking
+      author: serg
+      comments: "Добавляем колонку mejor_posicion в таблицу ranking_db для отслеживания лучшей позиции игрока"
+
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: ranking_db
+
+      changes:
+        # Добавляем колонку mejor_posicion
+        - addColumn:
+            tableName: ranking_db
+            columns:
+              - column:
+                  name: mejor_posicion
+                  type: INTEGER
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: true
+                  remarks: "Лучшая позиция игрока в рейтинге"
+
+  - changeSet:
+      id: v1.12-update-existing-ranking-mejor-posicion
+      author: serg
+      comments: "Устанавливаем mejor_posicion равным текущей позиции для существующих записей"
+
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 1
+            sql: SELECT COUNT(*) FROM ranking_db WHERE mejor_posicion IS NULL;
+
+      changes:
+        - sql:
+            sql: UPDATE ranking_db SET mejor_posicion = posicion WHERE mejor_posicion IS NULL;
+
+        - sql:
+            sql: ALTER TABLE ranking_db ALTER COLUMN mejor_posicion SET NOT NULL;
