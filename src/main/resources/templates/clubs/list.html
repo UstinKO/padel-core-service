@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clubes - E-Padel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Favicon с новым лого -->
+    <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
+    <link rel="alternate icon" th:href="@{/images/favicon.ico}">
+    <link rel="apple-touch-icon" th:href="@{/images/apple-touch-icon.png}">
+
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<header th:replace="~{fragments/public-header :: header}"></header>
+
+<main class="main">
+    <div class="container">
+        <h1 class="page-title">Nuestros Clubes</h1>
+
+        <div th:if="${clubs.empty}" class="empty-state">
+            <i class="fas fa-building"></i>
+            <h3>No hay clubes disponibles</h3>
+        </div>
+
+        <div th:unless="${clubs.empty}" class="clubs-grid">
+            <div th:each="club : ${clubs}" class="club-card">
+                <div class="club-header">
+                    <h2 th:text="${club.nombre}">Club Padel</h2>
+                </div>
+                <div class="club-body">
+                    <p th:if="${club.direccionCompleta}" class="club-address">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span th:text="${club.direccionCompleta}">Dirección</span>
+                    </p>
+                    <p th:if="${club.telefonoContacto}" class="club-phone">
+                        <i class="fas fa-phone"></i>
+                        <span th:text="${club.telefonoContacto}">Teléfono</span>
+                    </p>
+                    <p th:if="${club.emailContacto}" class="club-email">
+                        <i class="fas fa-envelope"></i>
+                        <span th:text="${club.emailContacto}">Email</span>
+                    </p>
+                </div>
+                <div class="club-footer">
+                    <a th:href="@{'/clubs/' + ${club.id}}" class="btn btn-primary">
+                        Ver detalles
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/public-footer :: footer}"></footer>
+</body>
+</html>

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+    <title th:text="'Bracket - ' + ${tournament.nombre} + ' | E-Padel'">Bracket del Torneo | E-Padel</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
+    <link rel="alternate icon" th:href="@{/images/favicon.ico}">
+    <link rel="apple-touch-icon" th:href="@{/images/apple-touch-icon.png}">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/bracket.css}">
+</head>
+<body>
+<header class="header">
+    <div class="container">
+        <nav class="navbar">
+            <a href="/" class="navbar-brand">
+                <img th:src="@{/images/2.svg}" alt="E-Padel Logo" class="navbar-logo" width="40" height="40">
+                <span class="navbar-brand-text">E-<span class="brand-highlight">PADEL</span></span>
+            </a>
+            <div class="navbar-collapse">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a href="/" class="nav-link">Inicio</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/players/dashboard" class="nav-link">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/torneos" class="nav-link">Torneos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/mis-torneos" class="nav-link">Mis Torneos</a>
+                    </li>
+                </ul>
+                <div class="navbar-user">
+                    <span class="user-name" th:text="${player.nombreCompleto}">Juan Pérez</span>
+                    <form th:action="@{/logout}" method="post">
+                        <button type="submit" class="btn btn-outline-sm">
+                            <i class="fas fa-sign-out-alt"></i> Salir
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </nav>
+    </div>
+</header>
+
+<main class="bracket-main">
+    <div class="container">
+        <!-- Cabecera -->
+        <div class="bracket-header">
+            <div>
+                <h1 th:text="${tournament.nombre}">Torneo Open</h1>
+                <p class="tournament-info">
+                    <i class="fas fa-calendar"></i>
+                    <span th:text="${#temporals.format(tournament.fechaInicio, 'dd/MM/yyyy')}">15/03/2026</span>
+                    <i class="fas fa-map-marker-alt" style="margin-left: 1rem;"></i>
+                    <span th:text="${tournament.clubNombre}">Club Padel</span>
+                </p>
+            </div>
+
+            <!-- Próximo partido del jugador -->
+            <div th:if="${nextMatch}" class="next-match-card">
+                <h3>Tu próximo partido</h3>
+                <div class="next-match-info">
+                    <div class="next-match-time">
+                        <i class="fas fa-clock"></i>
+                        <span th:text="${#temporals.format(nextMatch.fechaProgramada, 'dd/MM HH:mm')}">15/03 10:00</span>
+                    </div>
+                    <div class="next-match-players">
+                        <span th:text="${nextMatch.player1NombreCompleto ?: '---'}">Jugador 1</span>
+                        <span class="vs">vs</span>
+                        <span th:text="${nextMatch.player2NombreCompleto ?: '---'}">Jugador 2</span>
+                    </div>
+                    <div th:if="${nextMatch.cancha}" class="next-match-court">
+                        <i class="fas fa-ticket-alt"></i>
+                        <span th:text="${nextMatch.cancha}">Cancha 1</span>
+                    </div>
+                    <a th:href="@{'/players/tournaments/' + ${tournament.id} + '/matches/' + ${nextMatch.id}}"
+                       class="btn btn-primary btn-block">
+                        Ver detalles
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bracket -->
+        <div class="bracket-container">
+            <div class="bracket-rounds" id="bracketContainer">
+                <div th:each="round, roundStat : ${bracket}" class="bracket-round">
+                    <div class="bracket-round-title">
+                        <span th:text="${roundStat.index == 0 ? 'Primera Ronda' :
+                              roundStat.index == 1 ? 'Cuartos de Final' :
+                              roundStat.index == 2 ? 'Semifinal' :
+                              roundStat.index == 3 ? 'Final' :
+                              'Ronda ' + (roundStat.index + 1)}">Ronda</span>
+                    </div>
+                    <div class="bracket-matches">
+                        <div th:each="match : ${round}" class="bracket-match">
+                            <div class="match-card"
+                                 th:classappend="${match.isJugadorParticipa} ? 'match-participante' : ''">
+
+                                <div class="match-header">
+                                    <span class="match-number" th:text="'Partido ' + ${match.partidoNumero}">#1</span>
+                                    <span class="match-status" th:text="${match.estado}">PROGRAMADO</span>
+                                </div>
+
+                                <div class="match-players">
+                                    <!-- Jugador 1 -->
+                                    <div class="player-row" th:classappend="${match.ganadorId != null && match.ganadorId == match.player1Id} ? 'winner' : ''">
+                                        <span class="player-name" th:text="${match.player1NombreCompleto ?: '---'}">Jugador 1</span>
+                                        <span class="player-score" th:text="${match.set1Equipo1 != null ? match.set1Equipo1 : ''}"></span>
+                                        <span class="player-score" th:text="${match.set2Equipo1 != null ? match.set2Equipo1 : ''}"></span>
+                                        <span class="player-score" th:text="${match.set3Equipo1 != null ? match.set3Equipo1 : ''}"></span>
+                                    </div>
+
+                                    <!-- Jugador 2 -->
+                                    <div class="player-row" th:classappend="${match.ganadorId != null && match.ganadorId == match.player2Id} ? 'winner' : ''">
+                                        <span class="player-name" th:text="${match.player2NombreCompleto ?: '---'}">Jugador 2</span>
+                                        <span class="player-score" th:text="${match.set1Equipo2 != null ? match.set1Equipo2 : ''}"></span>
+                                        <span class="player-score" th:text="${match.set2Equipo2 != null ? match.set2Equipo2 : ''}"></span>
+                                        <span class="player-score" th:text="${match.set3Equipo2 != null ? match.set3Equipo2 : ''}"></span>
+                                    </div>
+                                </div>
+
+                                <div class="match-footer">
+                                    <span class="match-cancha" th:if="${match.cancha}" th:text="${match.cancha}">Cancha 1</span>
+                                    <span class="match-time" th:if="${match.fechaProgramada}"
+                                          th:text="${#temporals.format(match.fechaProgramada, 'HH:mm')}">10:00</span>
+                                </div>
+
+                                <div class="match-actions">
+                                    <a th:href="@{'/players/tournaments/' + ${tournament.id} + '/matches/' + ${match.id}}"
+                                       class="btn-icon" title="Ver detalles">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="footer">
+    <div class="container">
+        <p>&copy; 2026 E-Padel. Todos los derechos reservados.</p>
+    </div>
+</footer>
+
+<script th:src="@{/js/bracket.js}"></script>
+</body>
+</html>

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+    <meta name="description" content="E-Padel - Confirmación de inscripción desde lista de espera">
+    <meta name="keywords" content="pádel, confirmación, lista de espera, inscripción, e-padel">
+    <meta name="author" content="E-Padel">
+    <meta name="theme-color" content="#FF6B35">
+
+    <!-- Open Graph / Social Media -->
+    <meta property="og:title" content="E-Padel - Confirmación">
+    <meta property="og:description" content="Confirmación de inscripción en torneo de pádel">
+    <meta property="og:image" content="/images/og-image.jpg">
+    <meta property="og:url" content="https://e-padel.com/waitlist/confirm">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <title>Confirmación | E-Padel</title>
+
+    <!-- Favicon con nuevo logo -->
+    <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
+    <link rel="alternate icon" th:href="@{/images/favicon.ico}">
+    <link rel="apple-touch-icon" th:href="@{/images/apple-touch-icon.png}">
+
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<header class="header">
+    <div class="container">
+        <nav class="navbar">
+            <a href="/" class="navbar-brand">
+                <!-- Nuevo logo desde 2.svg -->
+                <img th:src="@{/images/2.svg}" alt="E-Padel Logo" class="navbar-logo" width="40" height="40">
+                <span class="navbar-brand-text">E-<span class="brand-highlight">PADEL</span></span>
+            </a>
+
+            <!-- Botón de navegación rápida -->
+            <div class="navbar-user">
+                <a href="/torneos" class="btn btn-outline-sm">
+                    <i class="fas fa-trophy"></i>
+                    Ver torneos
+                </a>
+            </div>
+        </nav>
+    </div>
+</header>
+
+<main class="confirmation-page">
+    <div class="container">
+        <div class="confirmation-container">
+            <!-- Success Case -->
+            <div th:if="${type == 'success'}" class="confirmation-card">
+                <div class="confirmation-icon success">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h1 class="confirmation-title">¡Confirmado!</h1>
+                <p class="confirmation-message" th:text="${message}">Tu participación ha sido confirmada.</p>
+                <div class="confirmation-actions">
+                    <a href="/" class="btn btn-primary">
+                        <i class="fas fa-home"></i>
+                        Volver al inicio
+                    </a>
+                </div>
+            </div>
+
+            <!-- Warning Case -->
+            <div th:if="${type == 'warning'}" class="confirmation-card">
+                <div class="confirmation-icon warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h1 class="confirmation-title">Lo sentimos</h1>
+                <p class="confirmation-message" th:text="${message}">Alguien más ocupó tu lugar.</p>
+                <div class="confirmation-actions">
+                    <a href="/torneos" class="btn btn-primary">
+                        <i class="fas fa-search"></i>
+                        Ver otros torneos
+                    </a>
+                </div>
+            </div>
+
+            <!-- Error Case -->
+            <div th:if="${type == 'error'}" class="confirmation-card">
+                <div class="confirmation-icon error">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <h1 class="confirmation-title">Error</h1>
+                <p class="confirmation-message" th:text="${message}">Ha ocurrido un error.</p>
+                <div class="confirmation-actions">
+                    <a href="/" class="btn btn-primary">
+                        <i class="fas fa-home"></i>
+                        Volver al inicio
+                    </a>
+                </div>
+            </div>
+
+            <!-- Fallback si no hay tipo especificado -->
+            <div th:if="${type == null}" class="confirmation-card">
+                <div class="confirmation-icon warning">
+                    <i class="fas fa-question-circle"></i>
+                </div>
+                <h1 class="confirmation-title">Página no encontrada</h1>
+                <p class="confirmation-message">La página que buscas no existe o ha expirado.</p>
+                <div class="confirmation-actions">
+                    <a href="/" class="btn btn-primary">
+                        <i class="fas fa-home"></i>
+                        Volver al inicio
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Footer simple -->
+<footer class="footer" style="padding: 1rem 0; background: transparent;">
+    <div class="container">
+        <div class="footer-bottom" style="justify-content: center; text-align: center; border-top: none;">
+            <div class="footer-copyright">
+                <i class="far fa-copyright"></i> 2026 E-Padel. Todos los derechos reservados.
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- Datos para JavaScript -->
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    var notificationType = /*[(${type})]*/ 'success';
+    var notificationMessage = /*[(${message})]*/ '';
+
+    // Logging solo en desarrollo
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        console.log('📋 Página de confirmación:', notificationType, notificationMessage);
+    }
+    /*]]>*/
+</script>
+
+
+<script th:src="@{/js/main.js}"></script>
+
+<!-- Script adicional para mostrar notificación si es necesario -->
+<script th:if="${showNotification != null and showNotification}">
+    document.addEventListener('DOMContentLoaded', function() {
+        if (notificationType === 'success') {
+            showNotification(notificationMessage || '¡Confirmado exitosamente!', 'success');
+        } else if (notificationType === 'warning') {
+            showNotification(notificationMessage || 'Alguien más ocupó tu lugar', 'warning');
+        } else if (notificationType === 'error') {
+            showNotification(notificationMessage || 'Ha ocurrido un error', 'error');
+        }
+    });
+</script>
+</body>
+</html>

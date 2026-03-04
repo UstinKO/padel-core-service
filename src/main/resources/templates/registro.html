@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+    <meta name="description" content="E-Padel - Regístrate gratis en la plataforma de torneos de pádel. Crea tu cuenta y empieza a jugar.">
+    <meta name="keywords" content="pádel, registro, crear cuenta, torneos, e-padel">
+    <meta name="author" content="E-Padel">
+    <meta name="theme-color" content="#FF6B35">
+
+    <!-- Open Graph / Social Media -->
+    <meta property="og:title" content="E-Padel - Regístrate gratis">
+    <meta property="og:description" content="Crea tu cuenta en E-Padel y participa en los mejores torneos de pádel">
+    <meta property="og:image" content="/images/og-image.jpg">
+    <meta property="og:url" content="https://e-padel.com/players/registro">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <title>Registro | E-Padel</title>
+
+    <!-- Favicon con nuevo logo -->
+    <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
+    <link rel="alternate icon" th:href="@{/images/favicon.ico}">
+    <link rel="apple-touch-icon" th:href="@{/images/apple-touch-icon.png}">
+
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Custom Styles - orden importante! -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/registro.css}">
+</head>
+<body class="auth-page-simple">
+<!-- Header con nuevo logo y botón de login -->
+<header class="header">
+    <div class="container">
+        <nav class="navbar">
+            <a href="/" class="navbar-brand">
+                <!-- Nuevo logo desde 2.svg -->
+                <img th:src="@{/images/2.svg}" alt="E-Padel Logo" class="navbar-logo" width="40" height="40">
+                <span class="navbar-brand-text">E-<span class="brand-highlight">PADEL</span></span>
+            </a>
+
+            <!-- Botón de login rápido -->
+            <div class="navbar-auth">
+                <a href="/login" class="btn btn-outline-sm">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Iniciar sesión
+                </a>
+            </div>
+        </nav>
+    </div>
+</header>
+
+<main class="auth-main-simple">
+    <div class="container">
+        <div class="auth-container">
+            <!-- Registration Form -->
+            <div class="auth-card">
+                <div class="auth-card-header">
+                    <h2 class="auth-card-title">Crear cuenta</h2>
+                    <p class="auth-card-subtitle">
+                        ¿Ya tienes cuenta?
+                        <a href="/login" class="auth-link">Inicia sesión</a>
+                    </p>
+                </div>
+
+                <!-- Registration Form -->
+                <form action="/players/registro" method="post" class="auth-form" id="registroForm">
+                    <!-- Error Messages -->
+                    <div th:if="${errorMessage}" class="alert alert-error">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span th:text="${errorMessage}">Error</span>
+                    </div>
+
+                    <div th:if="${successMessage}" class="alert alert-success">
+                        <i class="fas fa-check-circle"></i>
+                        <span th:text="${successMessage}">Éxito</span>
+                    </div>
+
+                    <!-- Nombre -->
+                    <div class="form-group">
+                        <label for="nombre" class="form-label">
+                            <i class="fas fa-user"></i> Nombre
+                        </label>
+                        <div class="input-with-icon">
+                            <input type="text" id="nombre" name="nombre"
+                                   class="form-control"
+                                   placeholder="Tu nombre"
+                                   required
+                                   th:value="${param.nombre}">
+                            <i class="fas fa-user input-icon"></i>
+                        </div>
+                    </div>
+
+                    <!-- Apellido -->
+                    <div class="form-group">
+                        <label for="apellido" class="form-label">
+                            <i class="fas fa-user"></i> Apellido
+                        </label>
+                        <div class="input-with-icon">
+                            <input type="text" id="apellido" name="apellido"
+                                   class="form-control"
+                                   placeholder="Tu apellido"
+                                   required
+                                   th:value="${param.apellido}">
+                            <i class="fas fa-user input-icon"></i>
+                        </div>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="form-group">
+                        <label for="email" class="form-label">
+                            <i class="fas fa-envelope"></i> Email
+                        </label>
+                        <div class="input-with-icon">
+                            <input type="email" id="email" name="email"
+                                   class="form-control"
+                                   placeholder="tu@email.com"
+                                   required
+                                   th:value="${param.email}">
+                            <i class="fas fa-envelope input-icon"></i>
+                        </div>
+                    </div>
+
+                    <!-- Teléfono -->
+                    <div class="form-group">
+                        <label for="telefono" class="form-label">
+                            <i class="fas fa-phone"></i> Teléfono
+                            <span style="color: #999; font-weight: 400;">(opcional)</span>
+                        </label>
+                        <div class="input-with-icon">
+                            <input type="tel" id="telefono" name="telefono"
+                                   class="form-control"
+                                   placeholder="+34 600 000 000"
+                                   th:value="${param.telefono}">
+                            <i class="fas fa-phone input-icon"></i>
+                        </div>
+                    </div>
+
+                    <!-- Contraseña -->
+                    <div class="form-group">
+                        <label for="password" class="form-label">
+                            <i class="fas fa-lock"></i> Contraseña
+                        </label>
+                        <div class="input-with-icon">
+                            <input type="password" id="password" name="password"
+                                   class="form-control"
+                                   placeholder="Mínimo 8 caracteres"
+                                   required
+                                   minlength="8">
+                            <i class="fas fa-lock input-icon"></i>
+                            <button type="button" class="toggle-password" data-target="password" aria-label="Mostrar/ocultar contraseña">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="password-strength">
+                            <div class="strength-bar"></div>
+                        </div>
+                        <small class="form-text">
+                            Mínimo 8 caracteres, 1 mayúscula, 1 minúscula, 1 número y 1 carácter especial
+                        </small>
+                    </div>
+
+                    <!-- Confirmar Contraseña -->
+                    <div class="form-group">
+                        <label for="confirmPassword" class="form-label">
+                            <i class="fas fa-lock"></i> Confirmar contraseña
+                        </label>
+                        <div class="input-with-icon">
+                            <input type="password" id="confirmPassword" name="confirmPassword"
+                                   class="form-control"
+                                   placeholder="Repite la contraseña"
+                                   required>
+                            <i class="fas fa-lock input-icon"></i>
+                            <button type="button" class="toggle-password" data-target="confirmPassword" aria-label="Mostrar/ocultar contraseña">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Términos y condiciones -->
+                    <div class="form-checkbox">
+                        <input type="checkbox" id="terminos" name="terminos" required>
+                        <label for="terminos">
+                            Acepto los <a href="/terminos" target="_blank">Términos y Condiciones</a> y la
+                            <a href="/privacidad" target="_blank">Política de Privacidad</a>
+                        </label>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="btn btn-primary btn-block btn-large" id="submitBtn">
+                        <i class="fas fa-user-plus"></i>
+                        Registrarse
+                    </button>
+                </form>
+
+                <!-- Separador opcional -->
+                <div class="form-divider">
+                    <span>o regístrate con</span>
+                </div>
+
+                <!-- Redes sociales (placeholder) -->
+                <div class="auth-social">
+                    <a href="#" class="btn" onclick="showNotification('Google login próximamente', 'info'); return false;">
+                        <i class="fab fa-google"></i> Google
+                    </a>
+                    <a href="#" class="btn" onclick="showNotification('Facebook login próximamente', 'info'); return false;">
+                        <i class="fab fa-facebook-f"></i> Facebook
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Footer simple con nuevo branding -->
+<footer class="footer" style="padding: 1rem 0; background: transparent; color: var(--color-text-light);">
+    <div class="container">
+        <div class="footer-bottom" style="justify-content: center; text-align: center; border-top: none;">
+            <div class="footer-copyright">
+                <i class="far fa-copyright"></i> 2026 E-Padel. Todos los derechos reservados.
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script th:src="@{/js/auth.js}"></script>
+
+<!-- Script adicional para validación en cliente -->
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('registroForm');
+        const submitBtn = document.getElementById('submitBtn');
+
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                const password = document.getElementById('password').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+                const terminos = document.getElementById('terminos').checked;
+
+                // Validación de términos
+                if (!terminos) {
+                    e.preventDefault();
+                    showNotification('Debes aceptar los términos y condiciones', 'warning');
+                    return false;
+                }
+
+                // Validación de contraseñas
+                if (password !== confirmPassword) {
+                    e.preventDefault();
+                    showNotification('Las contraseñas no coinciden', 'error');
+                    return false;
+                }
+
+                // Validación de complejidad
+                const passwordRegex = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!]).{8,}$/;
+                if (!passwordRegex.test(password)) {
+                    e.preventDefault();
+                    showNotification('La contraseña debe contener al menos: 1 mayúscula, 1 minúscula, 1 número y 1 carácter especial', 'warning');
+                    return false;
+                }
+
+                // Deshabilitar botón para evitar doble envío
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+            });
+
+            // Validación en tiempo real para el checkbox
+            const terminosCheckbox = document.getElementById('terminos');
+            terminosCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    this.closest('.form-checkbox').style.color = '';
+                }
+            });
+        }
+
+        // Auto-hide alerts después de 5 segundos
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(alert => {
+            setTimeout(() => {
+                alert.style.animation = 'slideIn 0.3s reverse';
+                setTimeout(() => alert.remove(), 300);
+            }, 5000);
+        });
+    });
+    /*]]>*/
+</script>
+</body>
+</html>
