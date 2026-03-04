@@ -1,3 +1,102 @@
 spring:
   application:
     name: padel-core-service
+
+  # ------ База данных ------
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/player_padel_db}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:root}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+      minimum-idle: ${DB_MIN_IDLE:5}
+      connection-timeout: 30000
+
+  # ------ JPA ------
+  jpa:
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:update}
+    properties:
+      hibernate:
+        format_sql: ${JPA_FORMAT_SQL:false}
+        jdbc:
+          batch_size: 20
+    show-sql: ${JPA_SHOW_SQL:false}
+    open-in-view: false
+
+  # ------ LIQUIBASE ------
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/changelog-master.yaml
+
+  # ------ THYMELEAF ------
+  thymeleaf:
+    cache: ${THYMELEAF_CACHE:true}
+    prefix: classpath:/templates/
+    suffix: .html
+    mode: HTML
+    encoding: UTF-8
+    servlet:
+      content-type: text/html
+    check-template-location: false
+
+  # ------ MAIL ------
+  mail:
+    host: ${MAIL_HOST:smtp-relay.brevo.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    protocol: smtp
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:true}
+          starttls:
+            enable: ${MAIL_STARTTLS:true}
+            required: ${MAIL_STARTTLS_REQUIRED:true}
+          connectiontimeout: ${MAIL_TIMEOUT:5000}
+          timeout: ${MAIL_TIMEOUT:5000}
+          writetimeout: ${MAIL_TIMEOUT:5000}
+
+# ------ JWT Configuration ------
+jwt:
+  secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+  expiration: ${JWT_EXPIRATION:86400000}
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
+
+# ------ SERVER ------
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: ${SERVER_CONTEXT_PATH:/}
+
+# ------ LOGGING ------
+logging:
+  level:
+    com.padle.core: ${LOG_LEVEL:INFO}
+    org.hibernate.SQL: ${LOG_HIBERNATE_SQL:false}
+    org.hibernate.type.descriptor.sql.BasicBinder: ${LOG_HIBERNATE_BINDER:false}
+    org.springframework.security: ${LOG_SECURITY:WARN}
+    org.hibernate: ${LOG_HIBERNATE:WARN}
+    org.springframework: ${LOG_SPRING:WARN}
+    org.springframework.mail: ${LOG_MAIL:DEBUG}
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %highlight(%-5level) - %cyan(%logger{36}) - %msg%n"
+  file:
+    path: ${LOG_PATH:logs}
+  logback:
+    rollingpolicy:
+      max-file-size: ${LOG_MAX_SIZE:10MB}
+      total-size-cap: ${LOG_TOTAL_SIZE_CAP:1GB}
+      max-history: ${LOG_MAX_HISTORY:30}
+
+# ------ APP CUSTOM PROPERTIES ------
+app:
+  base-url: ${APP_BASE_URL:http://localhost:8080}
+  demo:
+    auto-confirm-email: ${AUTO_CONFIRM_EMAIL:false}
+  email:
+    from: ${EMAIL_FROM:info@epadel.org}
+    sender-name: ${EMAIL_SENDER_NAME:E-Padel}

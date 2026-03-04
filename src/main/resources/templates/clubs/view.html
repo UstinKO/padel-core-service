@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${club.nombre} + ' - E-Padel'">Club Padel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Favicon с новым лого -->
+    <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
+    <link rel="alternate icon" th:href="@{/images/favicon.ico}">
+    <link rel="apple-touch-icon" th:href="@{/images/apple-touch-icon.png}">
+
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<header th:replace="~{fragments/public-header :: header}"></header>
+
+<main class="main">
+    <div class="container">
+        <nav class="breadcrumb">
+            <a href="/" class="breadcrumb-link">Inicio</a>
+            <span class="breadcrumb-separator">/</span>
+            <a href="/clubs" class="breadcrumb-link">Clubes</a>
+            <span class="breadcrumb-separator">/</span>
+            <span class="breadcrumb-current" th:text="${club.nombre}">Club</span>
+        </nav>
+
+        <div class="club-detail">
+            <h1 th:text="${club.nombre}">Club Padel</h1>
+
+            <div class="club-info">
+                <div class="info-section">
+                    <h2><i class="fas fa-info-circle"></i> Información</h2>
+                    <p th:if="${club.direccionCompleta}">
+                        <strong>Dirección:</strong> <span th:text="${club.direccionCompleta}">Dirección</span>
+                    </p>
+                    <p th:if="${club.telefonoContacto}">
+                        <strong>Teléfono:</strong> <span th:text="${club.telefonoContacto}">Teléfono</span>
+                    </p>
+                    <p th:if="${club.emailContacto}">
+                        <strong>Email:</strong> <span th:text="${club.emailContacto}">Email</span>
+                    </p>
+                </div>
+
+                <div class="info-section" th:if="${club.descripcion}">
+                    <h2><i class="fas fa-align-left"></i> Descripción</h2>
+                    <p th:text="${club.descripcion}">Descripción</p>
+                </div>
+
+                <div class="info-section" th:if="${club.websiteUrl or club.mapaUrl}">
+                    <h2><i class="fas fa-link"></i> Enlaces</h2>
+                    <p th:if="${club.websiteUrl}">
+                        <a th:href="${club.websiteUrl}" target="_blank" class="btn btn-outline">
+                            <i class="fas fa-globe"></i> Sitio web
+                        </a>
+                    </p>
+                    <p th:if="${club.mapaUrl}">
+                        <a th:href="${club.mapaUrl}" target="_blank" class="btn btn-outline">
+                            <i class="fas fa-map"></i> Ver en mapa
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/public-footer :: footer}"></footer>
+</body>
+</html>

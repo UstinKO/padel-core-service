@@ -1,0 +1,19 @@
+databaseChangeLog:
+  - changeSet:
+      id: 22
+      author: padel-core
+      changes:
+        # Изменяем тип поля categoria_nivel с VARCHAR(20) на VARCHAR(50)
+        - modifyDataType:
+            tableName: tournaments_db
+            columnName: categoria_nivel
+            newDataType: VARCHAR(50)
+
+  - changeSet:
+      id: 23
+      author: padel-core
+      changes:
+        - sql:
+            dbms: postgresql
+            sql: |
+              COMMENT ON COLUMN tournaments_db.categoria_nivel IS 'Категория/уровень турнира (увеличено до 50 символов)';

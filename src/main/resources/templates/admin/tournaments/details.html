@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Detalles del Torneo - E-Padel">
+    <title th:text="${tournament.nombre} + ' - E-Padel Admin'">Detalles del Torneo - E-Padel</title>
+
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
+    <link rel="alternate icon" th:href="@{/images/favicon.ico}">
+    <link rel="apple-touch-icon" th:href="@{/images/apple-touch-icon.png}">
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <link rel="stylesheet" th:href="@{/css/tournament-details.css}">
+    <style>
+        /* Дополнительные стили для новой верстки */
+        .tournament-header-compact {
+            margin-bottom: 1.5rem;
+        }
+
+        .action-buttons-center {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 1.5rem 0;
+            flex-wrap: wrap;
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 1.5rem;
+        }
+
+        .king-card {
+            background: linear-gradient(145deg, #fff9e6, #fff);
+            border: 1px solid #fbbf24;
+            box-shadow: 0 4px 12px rgba(251, 191, 36, 0.1);
+        }
+
+        .king-card .admin-card-header h2 {
+            color: #b45309;
+        }
+
+        .king-card .admin-card-header h2 i {
+            color: #fbbf24;
+        }
+
+        @media (max-width: 768px) {
+            .details-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<!-- ✅ ИСПРАВЛЕНО: Детали турнира → Detalles del Torneo -->
+<header th:replace="~{fragments/admin-header :: header('Detalles del Torneo')}"></header>
+
+<main class="admin-main">
+    <div class="container">
+        <!-- Сообщения об успехе/ошибке -->
+        <div th:if="${successMessage}" class="alert alert-success">
+            <i class="fas fa-check-circle"></i>
+            <span th:text="${successMessage}">Operación exitosa</span>
+        </div>
+
+        <div th:if="${errorMessage}" class="alert alert-danger">
+            <i class="fas fa-exclamation-circle"></i>
+            <span th:text="${errorMessage}">Error en la operación</span>
+        </div>
+
+        <!-- Заголовок турнира (компактный) -->
+        <div class="tournament-header tournament-header-compact">
+            <div class="tournament-title-section">
+                <h1 th:text="${tournament.nombre}">Torneo Open de Padel 2026</h1>
+                <div class="tournament-badges">
+                    <span class="badge" th:text="${tournament.generoFormato}">Masculino</span>
+                    <span class="badge badge-level" th:text="${tournament.categoriaNivel}">C7 - Avanzado</span>
+                    <span class="badge badge-type" th:text="${tournament.tipo}">Parejas</span>
+                    <span class="badge badge-status"
+                          th:text="${tournament.estado}"
+                          th:classappend="'badge-' + ${tournament.estado.toString().toLowerCase()}">
+                        Abierto
+                    </span>
+                </div>
+            </div>
+            <div class="tournament-price">
+                <span class="price-value" th:text="${tournament.precio} + ' ' + ${tournament.moneda}">50 ARS</span>
+                <span class="price-label">por persona</span>
+            </div>
+        </div>
+
+        <!-- Кнопки действий по центру -->
+        <div class="action-buttons-center">
+            <a th:href="@{'/admin/tournaments/' + ${tournament.id} + '/edit'}" class="btn btn-primary">
+                <i class="fas fa-edit"></i>
+                Editar Torneo
+            </a>
+
+            <!-- Кнопки изменения статуса -->
+
+            <!-- Кнопка Publicar -->
+            <form th:action="@{'/admin/tournaments/' + ${tournament.id} + '/status'}"
+                  method="post" style="display: inline-block;">
+                <input type="hidden" name="status" value="PUBLICADO">
+                <button type="submit" class="btn btn-outline"
+                        th:classappend="${tournament.estado.name() == 'PUBLICADO'} ? 'active' : ''"
+                        th:title="${tournament.estado.name() == 'PUBLICADO'} ? 'Estado actual' : ''">
+                    <i class="fas fa-upload"></i>
+                    Publicar
+                </button>
+            </form>
+
+            <!-- Кнопка Abrir Inscripción -->
+            <form th:action="@{'/admin/tournaments/' + ${tournament.id} + '/status'}"
+                  method="post" style="display: inline-block;">
+                <input type="hidden" name="status" value="REGISTRO_ABIERTO">
+                <button type="submit" class="btn btn-outline"
+                        th:classappend="${tournament.estado.name() == 'REGISTRO_ABIERTO'} ? 'active' : ''"
+                        th:title="${tournament.estado.name() == 'REGISTRO_ABIERTO'} ? 'Estado actual' : ''">
+                    <i class="fas fa-door-open"></i>
+                    Abrir Inscripción
+                </button>
+            </form>
+
+            <!-- Кнопка Cerrar Inscripción -->
+            <form th:action="@{'/admin/tournaments/' + ${tournament.id} + '/status'}"
+                  method="post" style="display: inline-block;">
+                <input type="hidden" name="status" value="CERRADO">
+                <button type="submit" class="btn btn-outline"
+                        th:classappend="${tournament.estado.name() == 'CERRADO'} ? 'active' : ''"
+                        th:title="${tournament.estado.name() == 'CERRADO'} ? 'Estado actual' : ''">
+                    <i class="fas fa-door-closed"></i>
+                    Cerrar Inscripción
+                </button>
+            </form>
+
+            <!-- Кнопка Finalizar -->
+            <form th:action="@{'/admin/tournaments/' + ${tournament.id} + '/status'}"
+                  method="post" style="display: inline-block;">
+                <input type="hidden" name="status" value="FINALIZADO">
+                <button type="submit" class="btn btn-outline"
+                        th:classappend="${tournament.estado.name() == 'FINALIZADO'} ? 'active' : ''"
+                        onclick="return confirm('¿Estás seguro de finalizar el torneo? Esta acción no se puede deshacer.');">
+                    <i class="fas fa-flag-checkered"></i>
+                    Finalizar
+                </button>
+            </form>
+
+            <!-- Кнопка Desactivar Torneo -->
+            <form th:action="@{'/admin/tournaments/' + ${tournament.id} + '/deactivate'}"
+                  method="post" style="display: inline-block;"
+                  onsubmit="return confirm('¿Estás seguro de desactivar este torneo? Los jugadores no podrán registrarse, pero los datos se conservan.');">
+                <button type="submit" class="btn btn-warning">
+                    <i class="fas fa-ban"></i>
+                    Desactivar Torneo
+                </button>
+            </form>
+        </div>
+
+        <!-- Кнопка Eliminar Permanentemente (solo para torneos inactivos) -->
+        <div th:unless="${tournament.isActive}" class="action-buttons-center" style="margin-top: 0;">
+            <form th:action="@{'/admin/tournaments/' + ${tournament.id} + '/delete'}"
+                  method="post" style="display: inline-block;"
+                  onsubmit="return confirm('¿Estás seguro de ELIMINAR PERMANENTEMENTE este torneo? Esta acción no se puede deshacer y eliminará todos los datos relacionados.');">
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-trash-alt"></i>
+                    Eliminar Permanentemente
+                </button>
+            </form>
+        </div>
+
+        <!-- Основная сетка: информация слева, регистрации и Король Корта справа -->
+        <div class="details-grid">
+            <!-- Левая колонка: информация о турнире -->
+            <div class="tournament-main-info">
+                <!-- Карточка с информацией -->
+                <div class="info-card">
+                    <h2 class="info-card-title">
+                        <i class="fas fa-info-circle"></i>
+                        Información del Torneo
+                    </h2>
+
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <div class="info-content">
+                                <span class="info-label">Fecha de inicio</span>
+                                <span class="info-value" th:text="${#temporals.format(tournament.fechaInicio, 'dd/MM/yyyy')} + ' - ' + ${#temporals.format(tournament.horaInicio, 'HH:mm')}">
+                                    15/03/2026 - 10:00
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="info-content">
+                                <span class="info-label">Duración estimada</span>
+                                <span class="info-value" th:text="${tournament.duracion ?: 'No especificada'}">4 horas</span>
+                            </div>
+                        </div>
+
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </div>
+                            <div class="info-content">
+                                <span class="info-label">Club</span>
+                                <span class="info-value" th:text="${tournament.clubNombre}">Club Padel Center</span>
+                            </div>
+                        </div>
+
+                        <div class="info-item" th:if="${tournament.deadlineCancelacion}">
+                            <div class="info-icon">
+                                <i class="fas fa-calendar-times"></i>
+                            </div>
+                            <div class="info-content">
+                                <span class="info-label">Fecha límite de cancelación</span>
+                                <span class="info-value" th:text="${#temporals.format(tournament.deadlineCancelacion, 'dd/MM/yyyy HH:mm')}">
+                                    10/03/2026 23:59
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Descripción -->
+                <div class="info-card" th:if="${tournament.infoDetallada}">
+                    <h2 class="info-card-title">
+                        <i class="fas fa-align-left"></i>
+                        Descripción
+                    </h2>
+                    <div class="tournament-description" th:text="${tournament.infoDetallada}">
+                        Descripción detallada del torneo...
+                    </div>
+                </div>
+
+                <!-- Contacto -->
+                <div class="info-card">
+                    <h2 class="info-card-title">
+                        <i class="fas fa-phone-alt"></i>
+                        Contacto del Organizador
+                    </h2>
+                    <div class="contact-info">
+                        <p th:text="${tournament.contactoOrganizador}">Juan Pérez - 123456789</p>
+                    </div>
+                </div>
+
+                <!-- FAQ -->
+                <div class="info-card" th:if="${tournament.faqUrl}">
+                    <h2 class="info-card-title">
+                        <i class="fas fa-question-circle"></i>
+                        Preguntas Frecuentes
+                    </h2>
+                    <div class="tournament-faq">
+                        <a th:href="${tournament.faqUrl}" target="_blank" class="faq-link">
+                            <i class="fas fa-external-link-alt"></i>
+                            Ver preguntas frecuentes
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Правая колонка: регистрации и Король Корта -->
+            <div class="tournament-sidebar">
+                <!-- Боковая панель с регистрациями -->
+                <div class="registration-card">
+                    <h3 class="registration-title">
+                        <i class="fas fa-users"></i>
+                        Inscripciones
+                    </h3>
+
+                    <div class="availability-info">
+                        <div class="spots-available" th:classappend="${tournament.disponibles > 0} ? 'spots-good' : 'spots-full'">
+                            <span class="spots-number" th:text="${tournament.disponibles}">8</span>
+                            <span class="spots-text" th:text="${tournament.disponibles == 1} ? 'lugar disponible' : 'lugares disponibles'">lugares disponibles</span>
+                        </div>
+                        <div class="waitlist-info" th:if="${tournament.waitlistCount > 0}">
+                            <i class="fas fa-clock"></i>
+                            <span th:text="${tournament.waitlistCount} + ' personas en lista de espera'">5 personas en lista de espera</span>
+                        </div>
+                    </div>
+
+                    <div class="registrations-list">
+                        <h4>Inscritos Confirmados (<span th:text="${tournament.inscritosActuales}">0</span>)</h4>
+                        <div class="registrations-items" th:if="${not #lists.isEmpty(registrations)}">
+                            <div class="registration-item" th:each="reg : ${registrations}"
+                                 th:if="${reg.status.name() == 'CONFIRMED'}">
+                                <div class="registration-avatar">
+                                    <i class="fas fa-user-circle"></i>
+                                </div>
+                                <div class="registration-info">
+                                    <span class="registration-name" th:text="${reg.playerNombre} ?: 'Jugador ' + ${reg.playerId}">
+                                        Jugador
+                                    </span>
+                                    <span class="registration-position" th:text="'Posición: ' + ${reg.position}">
+                                        Posición: 1
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div th:unless="${not #lists.isEmpty(registrations)}" class="empty-registrations">
+                            <p>No hay inscritos confirmados</p>
+                        </div>
+                    </div>
+
+                    <div class="registrations-list" th:if="${tournament.waitlistCount > 0}">
+                        <h4>Lista de Espera (<span th:text="${tournament.waitlistCount}">0</span>)</h4>
+                        <div class="registrations-items">
+                            <div class="registration-item waitlist" th:each="reg : ${registrations}"
+                                 th:if="${reg.status.name() == 'WAITLIST'}">
+                                <div class="registration-avatar">
+                                    <i class="fas fa-user-circle"></i>
+                                </div>
+                                <div class="registration-info">
+                                    <span class="registration-name" th:text="${reg.playerNombre} ?: 'Jugador ' + ${reg.playerId}">
+                                        Jugador
+                                    </span>
+                                    <span class="registration-position" th:text="'Espera: ' + ${reg.waitlistPosition}">
+                                        Espera: 1
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Секция King of Court (только для типа KING_OF_COURT) -->
+                <div th:if="${tournament.tipo.name() == 'KING_OF_COURT'}" class="admin-card king-card">
+                    <div class="admin-card-header">
+                        <h2><i class="fas fa-crown"></i> King of Court</h2>
+                    </div>
+                    <div class="admin-card-body">
+                        <!-- Если турнир уже запущен -->
+                        <div th:if="${kingOfCourtActive != null and kingOfCourtActive}">
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle"></i>
+                                ¡Torneo ya iniciado!
+                            </div>
+                            <a th:href="@{'/admin/tournaments/king-of-court/' + ${kingOfCourtId}}"
+                               class="btn btn-primary btn-block">
+                                <i class="fas fa-arrow-right"></i> Ir a gestión
+                            </a>
+                        </div>
+
+                        <!-- Если турнир можно запустить -->
+                        <div th:unless="${kingOfCourtActive != null and kingOfCourtActive}">
+                            <!-- Проверка количества игроков -->
+                            <div th:if="${tournament.inscritosActuales % 4 != 0}"
+                                 class="alert alert-warning" style="margin-bottom: 15px;">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span th:text="'No se puede iniciar: ' + ${tournament.inscritosActuales} + ' jugadores (necesario múltiplo de 4)'">
+                                    No se puede iniciar
+                                </span>
+                            </div>
+
+                            <div th:if="${tournament.inscritosActuales % 4 == 0}"
+                                 class="alert alert-success" style="margin-bottom: 15px;">
+                                <i class="fas fa-check-circle"></i>
+                                <span th:text="'Listo para iniciar! ' + ${tournament.inscritosActuales} + ' jugadores'">
+                                    Listo para iniciar!
+                                </span>
+                            </div>
+
+                            <!-- Форма запуска -->
+                            <form th:action="@{'/admin/tournaments/king-of-court/start'}" method="post">
+                                <input type="hidden" name="tournamentId" th:value="${tournament.id}">
+
+                                <div class="form-group">
+                                    <label for="maxCourts">Número de canchas</label>
+                                    <input type="number" id="maxCourts" name="maxCourts"
+                                           class="form-control"
+                                           th:value="${(tournament.inscritosActuales + 3) / 4}"
+                                           min="1" max="10" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="calibrationRounds">Rondas de calibración</label>
+                                    <input type="number" id="calibrationRounds" name="calibrationRounds"
+                                           class="form-control" value="3" min="1" max="10" required>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary btn-block"
+                                        th:disabled="${tournament.inscritosActuales % 4 != 0}">
+                                    <i class="fas fa-play"></i> Iniciar King of Court
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Заглушка для других типов турниров -->
+                <div th:if="${tournament.tipo.name() != 'KING_OF_COURT'}" class="admin-card">
+                    <div class="admin-card-header">
+                        <h2><i class="fas fa-info-circle"></i> Tipo de Torneo</h2>
+                    </div>
+                    <div class="admin-card-body">
+                        <p>Este torneo es de tipo <strong th:text="${tournament.tipo.value}">Parejas</strong>.</p>
+                        <p th:if="${tournament.tipo.name() == 'AMERICANA'}">
+                            <i class="fas fa-users"></i> Para torneos tipo "Americana", la funcionalidad estará disponible próximamente.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/admin-footer :: footer}"></footer>
+
+<script th:src="@{/js/admin.js}"></script>
+</body>
+</html>

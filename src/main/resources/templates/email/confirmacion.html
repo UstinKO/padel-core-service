@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="x-apple-disable-message-reformatting">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Confirma tu email - E-Padel</title>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background: #FDF8F7;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #FF6B35, #7B2CBF);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .logo {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 15px;
+            filter: brightness(0) invert(1);
+        }
+        .header h2 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        .header p {
+            margin: 10px 0 0;
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        .content {
+            background: white;
+            padding: 40px 30px;
+        }
+        .greeting {
+            font-size: 20px;
+            font-weight: 600;
+            color: #2D2D2D;
+            margin-bottom: 20px;
+        }
+        .message-box {
+            background: #FFF4F0;
+            border-left: 4px solid #FF6B35;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 25px 0;
+        }
+        .button {
+            background: linear-gradient(135deg, #FF6B35, #E54B2B);
+            color: white;
+            padding: 16px 32px;
+            border-radius: 9999px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 16px;
+            display: inline-block;
+            margin: 24px 0;
+            box-shadow: 0 8px 16px rgba(255,107,53,0.25);
+        }
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(255,107,53,0.35);
+        }
+        .info-box {
+            background: #F0F7FF;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 24px 0;
+            text-align: center;
+            color: #2D2D2D;
+            font-size: 14px;
+        }
+        .footer {
+            background: #F8F9FA;
+            padding: 30px;
+            text-align: center;
+            color: #6C6C6E;
+            font-size: 14px;
+            border-top: 1px solid #E9EAF0;
+        }
+        .note {
+            color: #6C6C6E;
+            font-size: 12px;
+            margin-top: 16px;
+            font-style: italic;
+        }
+        .footer-links {
+            margin: 15px 0;
+        }
+        .footer-links a {
+            color: #7B2CBF;
+            text-decoration: none;
+            margin: 0 10px;
+            font-size: 13px;
+        }
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+        .unsubscribe {
+            font-size: 12px;
+            color: #999;
+            margin-top: 15px;
+        }
+        .unsubscribe a {
+            color: #999;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <!-- ⚠️ IMPORTANTE: Usamos URL absoluta para email -->
+        <img src="https://e-padel.com/images/2.svg" alt="E-Padel Logo" class="logo" width="60" height="60">
+        <h2>E-PADEL</h2>
+        <p>Tu plataforma de torneos</p>
+    </div>
+
+    <div class="content">
+        <div class="greeting">
+            ¡Hola <strong th:text="${nombre}">Jugador</strong>!
+        </div>
+
+        <div class="message-box">
+            <p style="color: #2D2D2D; line-height: 1.6; margin: 0;">
+                Gracias por registrarte en <strong>E-Padel</strong>. Para completar tu registro
+                y empezar a disfrutar de todos los torneos, confirma tu dirección de email:
+            </p>
+        </div>
+
+        <!-- Botón principal -->
+        <div style="text-align: center;">
+            <a th:href="${confirmUrl}" class="button">
+                ✅ Confirmar mi cuenta
+            </a>
+        </div>
+
+        <!-- Información adicional -->
+        <div class="info-box">
+            <p style="margin: 0 0 8px 0;">
+                <span style="font-size: 20px;">⏰</span>
+                <strong>¿Qué pasa después?</strong>
+            </p>
+            <p style="margin: 0; font-size: 14px; color: #4B5563;">
+                Una vez confirmado tu email, podrás inscribirte en torneos, ver tu ranking y conectar con otros jugadores.
+            </p>
+        </div>
+
+        <!-- Válido por 24 horas -->
+        <div class="note" style="text-align: center; margin: 16px 0;">
+            <span style="font-size: 20px;">⌛</span>
+            <span>Este enlace es válido por <strong>24 horas</strong></span>
+        </div>
+
+        <!-- Si el botón no funciona -->
+        <div class="note" style="text-align: center; background: #FFF4F0; padding: 12px; border-radius: 8px;">
+            <p style="margin: 0 0 4px 0; font-size: 13px;">¿El botón no funciona?</p>
+            <p style="margin: 0; font-size: 12px; word-break: break-all;">
+                <a th:href="${confirmUrl}" style="color: #FF6B35;" th:text="${confirmUrl}">https://e-padel.com/confirmar?token=...</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p style="margin: 0 0 8px 0;">
+            © <span th:text="${year}">2026</span> E-Padel. Todos los derechos reservados.
+        </p>
+
+        <!-- Enlaces legales -->
+        <div class="footer-links">
+            <a th:href="${terminosUrl}">Términos</a>
+            <a th:href="${privacidadUrl}">Privacidad</a>
+            <a th:href="${contactoUrl}">Contacto</a>
+        </div>
+
+        <!-- Desuscripción -->
+        <div class="unsubscribe">
+            ¿No quieres recibir más correos?
+            <a th:href="${unsubscribeUrl}">Cancela tu suscripción</a>
+        </div>
+    </div>
+</div>
+
+<!-- Fallback para clientes sin CSS -->
+<div style="display: none; max-height: 0; overflow: hidden;">
+    Confirma tu email en E-Padel: haz clic en el enlace o copia esta URL:
+    <span th:text="${confirmUrl}">https://e-padel.com/confirmar</span>
+</div>
+</body>
+</html>

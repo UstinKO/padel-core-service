@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+    <meta name="description" content="E-Padel - La plataforma de torneos de pádel más completa. Encuentra torneos, mejora tu ranking y conecta con jugadores.">
+    <meta name="keywords" content="pádel, torneos, ranking, jugadores, clubes">
+    <meta name="author" content="E-Padel">
+    <meta name="theme-color" content="#FF6B35">
+
+    <!-- Open Graph / Social Media -->
+    <meta property="og:title" content="E-Padel - Torneos de pádel">
+    <meta property="og:description" content="La plataforma de torneos de pádel más completa">
+    <meta property="og:image" content="/images/og-image.jpg">
+    <meta property="og:url" content="https://padelcore.com">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <title>E-Padel - Torneos de pádel</title>
+
+    <!-- Favicon с новым лого -->
+    <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
+    <link rel="alternate icon" th:href="@{/images/favicon.ico}">
+    <link rel="apple-touch-icon" th:href="@{/images/apple-touch-icon.png}">
+
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Custom Styles (порядок важен!) -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <!-- Для главной страницы дополнительные стили не нужны, всё есть в style.css -->
+</head>
+<body>
+<!-- Header dinámico según autenticación -->
+<header class="header">
+    <div class="container">
+        <nav class="navbar">
+            <a href="/" class="navbar-brand">
+                <img th:src="@{/images/2.svg}" alt="E-Padel Logo" class="navbar-logo" width="40" height="40">
+                <span class="navbar-brand-text">E-<span class="brand-highlight">PADEL</span></span>
+            </a>
+
+            <button class="navbar-toggler" id="navbarToggler" type="button" aria-label="Menú">
+                <span class="navbar-toggler-icon"></span>
+                <span class="navbar-toggler-icon"></span>
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a href="/" class="nav-link active" th:classappend="${currentPage == 'home' ? 'active' : ''}">Inicio</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/torneos" class="nav-link" th:classappend="${currentPage == 'torneos' ? 'active' : ''}">Torneos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/ranking" class="nav-link" th:classappend="${currentPage == 'ranking' ? 'active' : ''}">Ranking</a>
+                    </li>
+                </ul>
+
+                <!-- БЛОК ДЛЯ НЕАУТЕНТИФИЦИРОВАННЫХ -->
+                <div class="navbar-auth" th:if="${!isAuthenticated}">
+                    <a href="/login" class="btn btn-outline-sm">
+                        <i class="fas fa-sign-in-alt"></i>
+                        Iniciar sesión
+                    </a>
+                    <a href="/players/registro" class="btn btn-primary-sm">
+                        <i class="fas fa-user-plus"></i>
+                        Registrarse
+                    </a>
+                </div>
+
+                <!-- БЛОК ДЛЯ АУТЕНТИФИЦИРОВАННЫХ -->
+                <div class="navbar-user" th:if="${isAuthenticated}">
+                    <span class="user-name">
+                        <i class="fas fa-user-circle"></i>
+                        <span th:text="${userName} ?: 'Usuario'">Usuario</span>
+                    </span>
+                    <a href="/players/dashboard" class="btn btn-primary-sm">
+                        <i class="fas fa-tachometer-alt"></i>
+                        Dashboard
+                    </a>
+                    <form th:action="@{/logout}" method="post" style="display: inline;">
+                        <button type="submit" class="btn btn-outline-sm">
+                            <i class="fas fa-sign-out-alt"></i>
+                            Salir
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </nav>
+    </div>
+</header>
+
+<main class="main-content">
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content" style="max-width: 800px; margin: 0 auto; text-align: center;">
+                <h1 class="hero-title">
+                    <span class="hero-title-highlight">E-Padel</span>
+                    <br>La plataforma de torneos más completa
+                </h1>
+                <p class="hero-description">
+                    Encuentra torneos, mejora tu ranking y conecta con jugadores de tu nivel.
+                    Más de 2000 jugadores ya confían en nosotros.
+                </p>
+                <div class="hero-stats" style="justify-content: center;">
+                    <div class="stat-item">
+                        <span class="stat-number">150+</span>
+                        <span class="stat-label">Torneos</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">2000+</span>
+                        <span class="stat-label">Jugadores</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">50+</span>
+                        <span class="stat-label">Clubes</span>
+                    </div>
+                </div>
+
+                <!-- CTA для неаутентифицированных -->
+                <div th:if="${!isAuthenticated}" style="margin-top: 2rem;">
+                    <a href="/players/registro" class="btn btn-primary btn-large">
+                        <i class="fas fa-user-plus"></i>
+                        Regístrate gratis
+                    </a>
+                    <a href="/login" class="btn btn-outline btn-large" style="margin-left: 1rem;">
+                        <i class="fas fa-sign-in-alt"></i>
+                        Iniciar sesión
+                    </a>
+                </div>
+
+                <!-- CTA для аутентифицированных -->
+                <div th:if="${isAuthenticated}" style="margin-top: 2rem;">
+                    <a href="/players/dashboard" class="btn btn-primary btn-large">
+                        <i class="fas fa-tachometer-alt"></i>
+                        Ir al Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Torneos Section -->
+    <section class="torneos-section">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span class="section-title-highlight">Próximos</span> Torneos
+                </h2>
+                <p class="section-description">
+                    Encuentra el torneo perfecto para tu nivel y estilo de juego
+                </p>
+            </div>
+
+            <!-- Filters -->
+            <div class="filters-card">
+                <div class="filters-header">
+                    <h3>
+                        <i class="fas fa-sliders-h"></i>
+                        Filtros de búsqueda
+                    </h3>
+                    <button class="filters-toggle" id="filtersToggle" aria-label="Toggle filters">
+                        <i class="fas fa-chevron-up"></i>
+                        <span>Ocultar filtros</span>
+                    </button>
+                </div>
+
+                <form id="filterForm" class="filters-form" onsubmit="return false;">
+                    <div class="filters-grid">
+                        <div class="filter-group">
+                            <label for="generoFilter" class="filter-label">
+                                <i class="fas fa-venus-mars"></i> Género
+                            </label>
+                            <select id="generoFilter" class="filter-select">
+                                <option value="todos">Todos</option>
+                                <option value="MASCULINO">Masculino</option>
+                                <option value="FEMENINO">Femenino</option>
+                                <option value="MIXTO">Mixto</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label for="nivelFilter" class="filter-label">
+                                <i class="fas fa-chart-line"></i> Nivel
+                            </label>
+                            <select id="nivelFilter" class="filter-select">
+                                <option value="todos">Todos</option>
+                                <option value="C9">C9 (Principiante)</option>
+                                <option value="C8">C8 (Intermedio)</option>
+                                <option value="C7">C7 (Avanzado)</option>
+                                <option value="C6">C6 (Profesional)</option>
+                                <option value="C5">C5 (Élite)</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label for="tipoFilter" class="filter-label">
+                                <i class="fas fa-trophy"></i> Tipo
+                            </label>
+                            <select id="tipoFilter" class="filter-select">
+                                <option value="todos">Todos</option>
+                                <option value="KING_OF_COURT">King of Court</option>
+                                <option value="AMERICANA">Americana</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-group filter-group-button">
+                            <button type="button" id="applyFilters" class="btn btn-primary btn-block">
+                                <i class="fas fa-search"></i> Aplicar filtros
+                            </button>
+                        </div>
+
+                        <div class="filter-group filter-group-button">
+                            <button type="button" id="clearFilters" class="btn btn-outline btn-block">
+                                <i class="fas fa-undo"></i> Limpiar
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Carousel de Torneos -->
+            <div class="carousel-container" id="carouselContainer">
+                <button class="carousel-arrow carousel-arrow-prev" id="carouselPrev" aria-label="Anterior">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+
+                <div class="carousel-track-container" id="carouselTrackContainer">
+                    <ul class="carousel-track" id="carouselTrack">
+                        <!-- Los torneos se insertarán dinámicamente con JavaScript -->
+                    </ul>
+                </div>
+
+                <button class="carousel-arrow carousel-arrow-next" id="carouselNext" aria-label="Siguiente">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+
+            <!-- Indicadores de página -->
+            <div class="carousel-indicators" id="carouselIndicators"></div>
+
+            <!-- Mensaje cuando no hay torneos -->
+            <div class="empty-state" id="noTournamentsMessage" style="display: none;">
+                <i class="fas fa-calendar-times empty-icon"></i>
+                <h3>No hay torneos con esos filtros</h3>
+                <p>Prueba con otros criterios de búsqueda</p>
+                <button class="btn btn-primary" id="clearFiltersEmpty">
+                    <i class="fas fa-undo"></i> Limpiar filtros
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">
+                    ¿Por qué elegir <span class="section-title-highlight">E-Padel</span>?
+                </h2>
+                <p class="section-description">
+                    La plataforma líder en torneos de pádel con miles de jugadores satisfechos
+                </p>
+            </div>
+
+            <div class="features-grid">
+                <!-- Feature 1: Jugadores verificados -->
+                <div class="feature-card">
+                    <div class="feature-icon-wrapper">
+                        <div class="feature-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                    </div>
+                    <h3 class="feature-title">Jugadores verificados</h3>
+                    <p class="feature-description">
+                        Todos los jugadores pasan un riguroso proceso de verificación para garantizar la seguridad y calidad de los torneos.
+                    </p>
+                    <div class="feature-stats">
+                        <span class="feature-stat">+2000</span>
+                        <span class="feature-stat-label">Jugadores</span>
+                    </div>
+                </div>
+
+                <!-- Feature 2: Torneos organizados -->
+                <div class="feature-card">
+                    <div class="feature-icon-wrapper">
+                        <div class="feature-icon">
+                            <i class="fas fa-trophy"></i>
+                        </div>
+                    </div>
+                    <h3 class="feature-title">Torneos organizados</h3>
+                    <p class="feature-description">
+                        Organizamos torneos para todos los niveles, desde principiantes hasta profesionales, con premios garantizados.
+                    </p>
+                    <div class="feature-stats">
+                        <span class="feature-stat">+150</span>
+                        <span class="feature-stat-label">Torneos</span>
+                    </div>
+                </div>
+
+                <!-- Feature 3: Clubes asociados -->
+                <div class="feature-card">
+                    <div class="feature-icon-wrapper">
+                        <div class="feature-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                    </div>
+                    <h3 class="feature-title">Clubes asociados</h3>
+                    <p class="feature-description">
+                        Los mejores clubes de pádel están asociados con nosotros, ofreciendo instalaciones de primera calidad.
+                    </p>
+                    <div class="feature-stats">
+                        <span class="feature-stat">+50</span>
+                        <span class="feature-stat-label">Clubes</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Badges adicionales -->
+            <div class="feature-badges">
+                <div class="feature-badge">
+                    <i class="fas fa-check-circle"></i>
+                    <span>100% Seguro</span>
+                </div>
+                <div class="feature-badge">
+                    <i class="fas fa-clock"></i>
+                    <span>Soporte 24/7</span>
+                </div>
+                <div class="feature-badge">
+                    <i class="fas fa-mobile-alt"></i>
+                    <span>App Móvil</span>
+                </div>
+                <div class="feature-badge">
+                    <i class="fas fa-credit-card"></i>
+                    <span>Pagos Seguros</span>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<!-- Footer -->
+<footer class="footer">
+    <div class="container">
+        <div class="footer-grid">
+            <!-- Column 1: Brand & Description -->
+            <div class="footer-info">
+                <div class="footer-logo">
+                    <!-- Новый логотип в footer -->
+                    <img th:src="@{/images/2.svg}" alt="E-Padel Logo" class="footer-logo-img" width="36" height="36">
+                    <span>E-PADEL</span>
+                </div>
+                <p class="footer-description">
+                    La plataforma #1 de torneos de pádel. Conecta jugadores, organiza competiciones y mejora tu ranking.
+                </p>
+                <div class="footer-social">
+                    <a href="#" class="social-link" aria-label="Instagram">
+                        <i class="fab fa-instagram"></i>
+                    </a>
+                    <a href="#" class="social-link" aria-label="Facebook">
+                        <i class="fab fa-facebook-f"></i>
+                    </a>
+                    <a href="#" class="social-link" aria-label="Twitter">
+                        <i class="fab fa-twitter"></i>
+                    </a>
+                    <a href="#" class="social-link" aria-label="YouTube">
+                        <i class="fab fa-youtube"></i>
+                    </a>
+                    <a href="#" class="social-link" aria-label="TikTok">
+                        <i class="fab fa-tiktok"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Column 2: Plataforma -->
+            <div class="footer-links">
+                <h4 class="footer-title">Plataforma</h4>
+                <ul class="footer-menu">
+                    <li><a href="/torneos"><i class="fas fa-trophy"></i> Torneos</a></li>
+                    <li><a href="/ranking"><i class="fas fa-chart-line"></i> Ranking</a></li>
+                    <li><a href="/jugadores"><i class="fas fa-users"></i> Jugadores</a></li>
+                </ul>
+            </div>
+
+            <!-- Column 3: Recursos -->
+            <div class="footer-links">
+                <h4 class="footer-title">Recursos</h4>
+                <ul class="footer-menu">
+                    <li><a href="/blog"><i class="fas fa-blog"></i> Blog</a></li>
+                    <li><a href="/guia"><i class="fas fa-book"></i> Guía de pádel</a></li>
+                    <li><a href="/reglas"><i class="fas fa-gavel"></i> Reglamento</a></li>
+                    <li><a href="/faq"><i class="fas fa-question-circle"></i> FAQ</a></li>
+                </ul>
+            </div>
+
+            <!-- Column 4: Legal & Contacto -->
+            <div class="footer-links">
+                <h4 class="footer-title">Legal</h4>
+                <ul class="footer-menu">
+                    <li><a href="/terminos"><i class="fas fa-file-contract"></i> Términos</a></li>
+                    <li><a href="/privacidad"><i class="fas fa-shield-alt"></i> Privacidad</a></li>
+                    <li><a href="/cookies"><i class="fas fa-cookie-bite"></i> Cookies</a></li>
+                    <li><a href="/contacto"><i class="fas fa-envelope"></i> Contacto</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Bottom Footer -->
+        <div class="footer-bottom">
+            <div class="footer-copyright">
+                <i class="far fa-copyright"></i> 2026 E-Padel. Todos los derechos reservados.
+            </div>
+            <div class="footer-badges">
+                <span class="badge">
+                    <i class="fas fa-check-circle"></i> Verificado
+                </span>
+                <span class="badge">
+                    <i class="fas fa-shield"></i> SSL Secure
+                </span>
+                <span class="badge">
+                    <i class="fas fa-mobile-alt"></i> Responsive
+                </span>
+                <span class="badge">
+                    <i class="fas fa-padel"></i> Padel Friendly
+                </span>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- Данные турниров для JavaScript -->
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    var tournamentData = /*[(${tournamentsJson})]*/ [];
+    var isAuthenticated = /*[(${isAuthenticated})]*/ false;
+    var currentPage = 'home';
+
+    console.log('🏆 Tournament data loaded:', tournamentData.length, 'torneos');
+
+    // Логируем уникальные значения для отладки (только в development)
+    if (tournamentData.length > 0 && window.location.hostname === 'localhost') {
+        const niveles = [...new Set(tournamentData.map(t => t.categoriaNivel))];
+        const tipos = [...new Set(tournamentData.map(t => t.tipo))];
+        const generos = [...new Set(tournamentData.map(t => t.generoFormato))];
+        console.log('📊 Valores únicos - Niveles:', niveles);
+        console.log('📊 Valores únicos - Tipos:', tipos);
+        console.log('📊 Valores únicos - Géneros:', generos);
+    }
+    /*]]>*/
+</script>
+
+<!-- JavaScript - порядок важен! -->
+<script th:src="@{/js/notifications.js}"></script>
+<script th:src="@{/js/main.js}"></script>
+<script th:src="@{/js/home.js}"></script>
+
+<!-- Добавляем анимации для уведомлений если их нет в CSS -->
+<style th:if="${false}">
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+
+    @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+</style>
+</body>
+</html>

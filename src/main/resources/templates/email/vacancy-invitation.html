@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="x-apple-disable-message-reformatting">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>¡Hay un lugar disponible! - E-Padel</title>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background: #FDF8F7;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .logo {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 15px;
+            filter: brightness(0) invert(1);
+        }
+        .header h2 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        .header p {
+            margin: 10px 0 0;
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        .content {
+            background: white;
+            padding: 40px 30px;
+        }
+        .greeting {
+            font-size: 20px;
+            font-weight: 600;
+            color: #2D2D2D;
+            margin-bottom: 20px;
+        }
+        .success-box {
+            background: #E8F5E9;
+            border-left: 4px solid #10B981;
+            padding: 25px;
+            border-radius: 8px;
+            margin: 25px 0;
+            text-align: center;
+        }
+        .success-box h3 {
+            color: #10B981;
+            font-size: 24px;
+            margin: 0 0 10px 0;
+        }
+        .success-box p {
+            margin: 0;
+            color: #2D2D2D;
+        }
+        .tournament-name {
+            font-weight: 700;
+            color: #10B981;
+            font-size: 18px;
+        }
+        .deadline-box {
+            background: #FFF4F0;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 25px 0;
+            text-align: center;
+        }
+        .deadline-box p {
+            margin: 5px 0;
+            color: #2D2D2D;
+        }
+        .deadline-box i {
+            color: #FF6B35;
+            margin-right: 5px;
+        }
+        .timer {
+            font-size: 24px;
+            font-weight: 700;
+            color: #FF6B35;
+            margin: 10px 0;
+        }
+        .button {
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: white;
+            padding: 16px 32px;
+            border-radius: 9999px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 18px;
+            display: inline-block;
+            margin: 20px 0;
+            box-shadow: 0 4px 10px rgba(16,185,129,0.2);
+            transition: all 0.3s ease;
+        }
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16,185,129,0.3);
+        }
+        .button-outline {
+            background: transparent;
+            border: 2px solid #10B981;
+            color: #10B981;
+            padding: 14px 28px;
+            font-size: 16px;
+        }
+        .button-outline:hover {
+            background: #10B981;
+            color: white;
+        }
+        .info-box {
+            background: #F0F7FF;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .info-box p {
+            margin: 5px 0;
+            color: #2D2D2D;
+        }
+        .info-box i {
+            color: #7B2CBF;
+            margin-right: 5px;
+        }
+        .footer {
+            background: #F8F9FA;
+            padding: 30px;
+            text-align: center;
+            color: #6C6C6E;
+            font-size: 14px;
+            border-top: 1px solid #E9EAF0;
+        }
+        .social-links {
+            margin: 15px 0;
+        }
+        .social-link {
+            display: inline-block;
+            margin: 0 8px;
+            color: #7B2CBF;
+            text-decoration: none;
+        }
+        .footer-links {
+            margin: 15px 0;
+        }
+        .footer-links a {
+            color: #7B2CBF;
+            text-decoration: none;
+            margin: 0 10px;
+            font-size: 13px;
+        }
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+        .unsubscribe {
+            font-size: 12px;
+            color: #999;
+            margin-top: 15px;
+        }
+        .unsubscribe a {
+            color: #999;
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .container {
+                margin: 10px;
+            }
+            .content {
+                padding: 25px 20px;
+            }
+            .button {
+                display: block;
+                text-align: center;
+            }
+            .timer {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- Header con logo (verde para ocasión especial) -->
+    <div class="header">
+        <!-- ✅ ИСПРАВЛЕНО: th:src → src с URL absoluta -->
+        <img src="https://e-padel.com/images/2.svg" alt="E-Padel Logo" class="logo" width="60" height="60">
+        <h2>E-PADEL</h2>
+        <p>¡Buenas noticias!</p>
+    </div>
+
+    <!-- Contenido principal -->
+    <div class="content">
+        <div class="greeting">
+            Hola, <strong th:text="${playerName}">Jugador</strong>!
+        </div>
+
+        <!-- Mensaje de éxito -->
+        <div class="success-box">
+            <h3>🎉 ¡Hay un lugar para ti!</h3>
+            <p>
+                Se ha liberado un lugar en el torneo
+                <span class="tournament-name" th:text="${tournamentName}">Torneo Ejemplo</span>
+                y tienes la oportunidad de confirmar tu participación.
+            </p>
+        </div>
+
+        <!-- Plazo para confirmar -->
+        <div class="deadline-box">
+            <p><i class="fas fa-clock"></i> <strong>¡Tienes tiempo limitado!</strong></p>
+            <p style="font-size: 14px;">El lugar estará disponible hasta:</p>
+            <div class="timer" th:text="${deadline}">15/03/2026 20:00</div>
+            <p style="font-size: 13px; color: #6C6C6E;">
+                Después de este tiempo, el lugar se ofrecerá a la siguiente persona en lista de espera.
+            </p>
+        </div>
+
+        <!-- Botón de confirmación -->
+        <div style="text-align: center;">
+            <a th:href="${confirmationUrl}" class="button">
+                ✅ Confirmar mi participación
+            </a>
+        </div>
+
+        <!-- Información adicional -->
+        <div class="info-box">
+            <p><i class="fas fa-info-circle"></i> <strong>¿Qué pasa después?</strong></p>
+            <p style="font-size: 14px;">Una vez confirmes, recibirás un email con todos los detalles del torneo y las instrucciones para el pago (si aplica).</p>
+        </div>
+
+        <!-- Si no puede confirmar -->
+        <div style="text-align: center; margin: 20px 0;">
+            <p style="color: #6C6C6E; font-size: 14px;">
+                ¿No puedes asistir?
+                <a th:href="${declineUrl}" style="color: #FF6B35; text-decoration: underline;">
+                    Haz clic aquí para liberar el lugar
+                </a>
+            </p>
+        </div>
+
+        <!-- Mensaje final -->
+        <div style="background: #F8F9FA; padding: 15px; border-radius: 8px; text-align: center; margin-top: 25px;">
+            <p style="margin: 0; color: #2D2D2D;">
+                <span style="font-size: 20px;">🏆</span>
+                ¡Te esperamos en el torneo!
+            </p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p style="margin: 0 0 8px 0;">
+            © <span th:text="${year}">2026</span> E-Padel. Todos los derechos reservados.
+        </p>
+
+        <!-- Redes sociales -->
+        <div class="social-links">
+            <a href="https://instagram.com/epadel" class="social-link">📱 Instagram</a>
+            <a href="https://facebook.com/epadel" class="social-link">📘 Facebook</a>
+            <a href="https://twitter.com/epadel" class="social-link">🐦 Twitter</a>
+        </div>
+
+        <!-- Enlaces legales -->
+        <div class="footer-links">
+            <a th:href="${terminosUrl}">Términos</a>
+            <a th:href="${privacidadUrl}">Privacidad</a>
+            <a th:href="${contactoUrl}">Contacto</a>
+        </div>
+
+        <!-- Desuscripción -->
+        <div class="unsubscribe">
+            ¿No quieres recibir más correos?
+            <a th:href="${unsubscribeUrl}">Cancela tu suscripción</a>
+        </div>
+    </div>
+</div>
+
+<!-- Fallback para clientes sin CSS -->
+<div style="display: none; max-height: 0; overflow: hidden;">
+    ¡Hay un lugar disponible en ${tournamentName}! Confirma tu participación antes de ${deadline} en: ${confirmationUrl}
+</div>
+</body>
+</html>
