@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:if="${tournament.id == null}">Crear Torneo - E-Padel Admin</title>
+    <title th:unless="${tournament.id == null}">Editar Torneo - E-Padel Admin</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
+    <link rel="alternate icon" th:href="@{/images/favicon.ico}">
+    <link rel="apple-touch-icon" th:href="@{/images/apple-touch-icon.png}">
+
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <link rel="stylesheet" th:href="@{/css/admin-forms.css}">
+</head>
+<body>
+<!-- ✅ ИСПРАВЛЕНО: Король Корта → Crear Torneo / Editar Torneo -->
+<header th:replace="~{fragments/admin-header :: header(${tournament.id == null} ? 'Crear Torneo' : 'Editar Torneo')}"></header>
+
+<main class="admin-main">
+    <div class="container">
+        <div class="form-container">
+            <div class="form-header">
+                <h1 th:if="${tournament.id == null}">
+                    <i class="fas fa-plus-circle"></i>
+                    Crear Nuevo Torneo
+                </h1>
+                <h1 th:unless="${tournament.id == null}">
+                    <i class="fas fa-edit"></i>
+                    Editar Torneo
+                </h1>
+                <p>Complete los detalles del torneo a continuación</p>
+            </div>
+
+            <div th:if="${successMessage}" class="alert alert-success">
+                <i class="fas fa-check-circle"></i>
+                <span th:text="${successMessage}">Operación exitosa</span>
+            </div>
+
+            <div th:if="${errorMessage}" class="alert alert-danger">
+                <i class="fas fa-exclamation-circle"></i>
+                <span th:text="${errorMessage}">Error en la operación</span>
+            </div>
+
+            <form th:action="@{${tournament.id == null ? '/admin/tournaments' : '/admin/tournaments/' + tournament.id + '/edit'}}"
+                  th:object="${tournament}"
+                  method="post"
+                  class="tournament-form"
+                  id="tournamentForm">
+
+                <input type="hidden" th:if="${tournament.id != null}" name="_method" value="put" />
+
+                <!-- Información Básica -->
+                <div class="form-section">
+                    <h2 class="section-title">
+                        <i class="fas fa-info-circle"></i>
+                        Información Básica
+                    </h2>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="clubId" class="required">Club</label>
+                            <select th:field="*{clubId}"
+                                    id="clubId"
+                                    class="form-control"
+                                    th:classappend="${#fields.hasErrors('clubId')} ? 'is-invalid' : ''"
+                                    required>
+                                <option value="">Seleccione un club</option>
+                                <option th:each="club : ${clubs}"
+                                        th:value="${club.id}"
+                                        th:text="${club.nombre}"></option>
+                            </select>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('clubId')}"
+                                 th:errors="*{clubId}">Error en el campo</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="nombre" class="required">Nombre del Torneo</label>
+                            <input type="text"
+                                   th:field="*{nombre}"
+                                   id="nombre"
+                                   class="form-control"
+                                   th:classappend="${#fields.hasErrors('nombre')} ? 'is-invalid' : ''"
+                                   placeholder="Ej: Torneo Open Verano 2026"
+                                   required>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('nombre')}"
+                                 th:errors="*{nombre}">Error en el campo</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fecha y Hora -->
+                <div class="form-section">
+                    <h2 class="section-title">
+                        <i class="fas fa-calendar-alt"></i>
+                        Fecha y Hora
+                    </h2>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="fechaInicio" class="required">Fecha de Inicio</label>
+                            <input type="date"
+                                   th:field="*{fechaInicio}"
+                                   id="fechaInicio"
+                                   class="form-control"
+                                   th:classappend="${#fields.hasErrors('fechaInicio')} ? 'is-invalid' : ''"
+                                   required>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('fechaInicio')}"
+                                 th:errors="*{fechaInicio}">Error en el campo</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="horaInicio" class="required">Hora de Inicio</label>
+                            <input type="time"
+                                   th:field="*{horaInicio}"
+                                   id="horaInicio"
+                                   class="form-control"
+                                   th:classappend="${#fields.hasErrors('horaInicio')} ? 'is-invalid' : ''"
+                                   required>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('horaInicio')}"
+                                 th:errors="*{horaInicio}">Error en el campo</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="duracion">Duración Estimada</label>
+                            <input type="text"
+                                   th:field="*{duracion}"
+                                   id="duracion"
+                                   class="form-control"
+                                   placeholder="Ej: 4 horas, 2 días">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Configuración del Torneo -->
+                <div class="form-section">
+                    <h2 class="section-title">
+                        <i class="fas fa-cog"></i>
+                        Configuración del Torneo
+                    </h2>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="generoFormato" class="required">Formato de Género</label>
+                            <select th:field="*{generoFormato}"
+                                    id="generoFormato"
+                                    class="form-control"
+                                    th:classappend="${#fields.hasErrors('generoFormato')} ? 'is-invalid' : ''"
+                                    required>
+                                <option value="">Seleccione formato</option>
+                                <option th:each="formato : ${genderFormats}"
+                                        th:value="${formato}"
+                                        th:text="${formato.value}"></option>
+                            </select>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('generoFormato')}"
+                                 th:errors="*{generoFormato}">Error en el campo</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="categoriaNivel" class="required">Categoría / Nivel</label>
+                            <select th:field="*{categoriaNivel}"
+                                    id="categoriaNivel"
+                                    class="form-control"
+                                    th:classappend="${#fields.hasErrors('categoriaNivel')} ? 'is-invalid' : ''"
+                                    required>
+                                <option value="">Seleccione nivel</option>
+                                <option th:each="nivel : ${niveles}"
+                                        th:value="${nivel}"
+                                        th:text="${nivel.display}"></option>
+                            </select>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('categoriaNivel')}"
+                                 th:errors="*{categoriaNivel}">Error en el campo</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="tipo" class="required">Tipo de Torneo</label>
+                            <select th:field="*{tipo}"
+                                    id="tipo"
+                                    class="form-control"
+                                    th:classappend="${#fields.hasErrors('tipo')} ? 'is-invalid' : ''"
+                                    required>
+                                <option value="">Seleccione tipo</option>
+                                <option th:each="tipo : ${tournamentTypes}"
+                                        th:value="${tipo}"
+                                        th:text="${tipo.value}"></option>
+                            </select>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('tipo')}"
+                                 th:errors="*{tipo}">Error en el campo</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Capacidad y Precio -->
+                <div class="form-section">
+                    <h2 class="section-title">
+                        <i class="fas fa-users"></i>
+                        Capacidad y Precio
+                    </h2>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="cupoMax" class="required">Cupo Máximo</label>
+                            <input type="number"
+                                   th:field="*{cupoMax}"
+                                   id="cupoMax"
+                                   class="form-control"
+                                   th:classappend="${#fields.hasErrors('cupoMax')} ? 'is-invalid' : ''"
+                                   min="2"
+                                   max="64"
+                                   required>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('cupoMax')}"
+                                 th:errors="*{cupoMax}">Error en el campo</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="precio" class="required">Precio</label>
+                            <input type="number"
+                                   th:field="*{precio}"
+                                   id="precio"
+                                   class="form-control"
+                                   th:classappend="${#fields.hasErrors('precio')} ? 'is-invalid' : ''"
+                                   step="0.01"
+                                   min="0"
+                                   required>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('precio')}"
+                                 th:errors="*{precio}">Error en el campo</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="moneda">Moneda</label>
+                            <select th:field="*{moneda}"
+                                    id="moneda"
+                                    class="form-control">
+                                <option value="ARS">ARS (Peso Argentino)</option>
+                                <option value="USD">USD (Dólar)</option>
+                                <option value="EUR">EUR (Euro)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Estado y Fechas Límite -->
+                <div class="form-section">
+                    <h2 class="section-title">
+                        <i class="fas fa-clock"></i>
+                        Estado y Fechas Límite
+                    </h2>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="estado" class="required">Estado del Torneo</label>
+                            <select th:field="*{estado}"
+                                    id="estado"
+                                    class="form-control"
+                                    required>
+                                <option th:each="status : ${tournamentStatuses}"
+                                        th:value="${status}"
+                                        th:text="${status.value}"></option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="deadlineCancelacion">Fecha Límite de Cancelación</label>
+                            <input type="datetime-local"
+                                   th:field="*{deadlineCancelacion}"
+                                   id="deadlineCancelacion"
+                                   class="form-control">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información Adicional -->
+                <div class="form-section">
+                    <h2 class="section-title">
+                        <i class="fas fa-info-circle"></i>
+                        Información Adicional
+                    </h2>
+
+                    <div class="form-group">
+                        <label for="infoDetallada">Descripción Detallada</label>
+                        <textarea th:field="*{infoDetallada}"
+                                  id="infoDetallada"
+                                  class="form-control"
+                                  rows="5"
+                                  placeholder="Información adicional sobre el torneo..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="contactoOrganizador" class="required">Contacto del Organizador</label>
+                        <input type="text"
+                               th:field="*{contactoOrganizador}"
+                               id="contactoOrganizador"
+                               class="form-control"
+                               th:classappend="${#fields.hasErrors('contactoOrganizador')} ? 'is-invalid' : ''"
+                               placeholder="Ej: Juan Pérez - 123456789"
+                               required>
+                        <div class="invalid-feedback" th:if="${#fields.hasErrors('contactoOrganizador')}"
+                             th:errors="*{contactoOrganizador}">Error en el campo</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="faqUrl">URL de Preguntas Frecuentes</label>
+                        <input type="url"
+                               th:field="*{faqUrl}"
+                               id="faqUrl"
+                               class="form-control"
+                               placeholder="https://ejemplo.com/faq">
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i>
+                        <span th:text="${tournament.id == null} ? 'Crear Torneo' : 'Guardar Cambios'"></span>
+                    </button>
+                    <a href="/admin/tournaments" class="btn btn-outline">
+                        <i class="fas fa-times"></i>
+                        Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/admin-footer :: footer}"></footer>
+
+<!-- Admin JavaScript -->
+<script th:src="@{/js/admin.js}"></script>
+</body>
+</html>

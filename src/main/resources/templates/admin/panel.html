@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Panel de Administración - E-Padel">
+    <title>Panel de Administración - E-Padel</title>
+
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
+    <link rel="alternate icon" th:href="@{/images/favicon.ico}">
+    <link rel="apple-touch-icon" th:href="@{/images/apple-touch-icon.png}">
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+<header th:replace="~{fragments/admin-header :: header('Panel de Control')}"></header>
+
+<main class="admin-main">
+    <div class="container">
+        <div class="admin-header">
+            <h1 class="admin-title">
+                <i class="fas fa-cog"></i>
+                Panel de Control
+            </h1>
+            <p class="admin-subtitle">Gestión de jugadores y torneos E-Padel</p>
+        </div>
+
+        <!-- Estadísticas -->
+        <div class="admin-stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 class="stat-label">Total jugadores</h3>
+                    <p class="stat-value" th:text="${totalPlayers}">0</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-user-cog"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 class="stat-label">Administradores</h3>
+                    <p class="stat-value" th:text="${totalOwners}">0</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-trophy"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 class="stat-label">Torneos activos</h3>
+                    <p class="stat-value" th:text="${totalTournaments}">0</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 class="stat-label">Lista de espera</h3>
+                    <p class="stat-value" th:text="${totalWaitlist}">0</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Torneos activos (King of Court) -->
+        <div class="admin-card" th:if="${not #lists.isEmpty(activeKingTournaments)}">
+            <div class="admin-card-header">
+                <h2>
+                    <i class="fas fa-crown" style="color: #fbbf24;"></i>
+                    Torneos en curso
+                </h2>
+                <span class="badge" th:text="${#lists.size(activeKingTournaments)} + ' activos'">2 activos</span>
+            </div>
+            <div class="admin-card-body">
+                <div class="matches-grid">
+                    <div th:each="tournament : ${activeKingTournaments}" class="match-mini-card live" style="border-left-color: #fbbf24;">
+                        <div class="match-mini-header">
+                            <span class="tournament-name" th:text="${tournament.tournament.nombre}">Torneo</span>
+                            <span class="live-badge" style="background: #fbbf24;">RONDA <span th:text="${tournament.currentRound}">1</span></span>
+                        </div>
+                        <div class="match-mini-players">
+                            <div class="player-mini">
+                                <span class="name">Rondas calibración:</span>
+                                <span class="score" th:text="${tournament.calibrationRounds}">3</span>
+                            </div>
+                            <div class="player-mini">
+                                <span class="name">Canchas:</span>
+                                <span class="score" th:text="${tournament.maxCourts}">5</span>
+                            </div>
+                        </div>
+                        <div class="match-mini-footer">
+                            <span>Iniciado: <span th:text="${#temporals.format(tournament.startedAt, 'dd/MM HH:mm')}">15/03 10:00</span></span>
+                            <a th:href="@{'/admin/tournaments/king-of-court/' + ${tournament.id}}"
+                               class="btn-icon" title="Gestionar torneo">
+                                <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dos columnas: Últimos jugadores y Últimos torneos -->
+        <div class="admin-grid-two" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem;">
+            <!-- Últimos jugadores -->
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <h2>
+                        <i class="fas fa-users"></i>
+                        Últimos jugadores
+                    </h2>
+                    <a href="/admin/players" class="btn btn-outline btn-sm">
+                        Ver todos <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+                <div class="admin-card-body">
+                    <div th:if="${not #lists.isEmpty(recentPlayers)}">
+                        <ul class="admin-list">
+                            <li th:each="player : ${recentPlayers}" class="admin-list-item">
+                                <div class="admin-list-icon">
+                                    <i class="fas fa-user-circle"></i>
+                                </div>
+                                <div class="admin-list-content">
+                                    <div class="admin-list-title" th:text="${player.nombreCompleto}">Nombre</div>
+                                    <div class="admin-list-subtitle" th:text="${player.email}">email</div>
+                                </div>
+                                <a th:href="@{'/admin/players/' + ${player.id}}" class="btn-icon" title="Ver detalles">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div th:unless="${not #lists.isEmpty(recentPlayers)}" class="admin-empty small">
+                        <i class="fas fa-users"></i>
+                        <p>No hay jugadores registrados</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Últimos torneos -->
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <h2>
+                        <i class="fas fa-trophy"></i>
+                        Últimos torneos
+                    </h2>
+                    <a href="/admin/tournaments" class="btn btn-outline btn-sm">
+                        Ver todos <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+                <div class="admin-card-body">
+                    <div th:if="${not #lists.isEmpty(recentTournaments)}">
+                        <ul class="admin-list">
+                            <li th:each="tournament : ${recentTournaments}" class="admin-list-item">
+                                <div class="admin-list-icon">
+                                    <i class="fas fa-trophy"></i>
+                                </div>
+                                <div class="admin-list-content">
+                                    <div class="admin-list-title" th:text="${tournament.nombre}">Torneo</div>
+                                    <div class="admin-list-subtitle" th:text="${tournament.clubNombre} + ' - ' + ${#temporals.format(tournament.fechaInicio, 'dd/MM/yyyy')}">
+                                        Club - Fecha
+                                    </div>
+                                </div>
+                                <a th:href="@{'/admin/tournaments/' + ${tournament.id}}" class="btn-icon" title="Ver detalles">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div th:unless="${not #lists.isEmpty(recentTournaments)}" class="admin-empty small">
+                        <i class="fas fa-trophy"></i>
+                        <p>No hay torneos creados</p>
+                        <a href="/admin/tournaments/new" class="btn btn-primary btn-sm" style="margin-top: 0.5rem;">
+                            <i class="fas fa-plus-circle"></i> Crear torneo
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Acciones rápidas -->
+        <div class="admin-actions" style="justify-content: center; margin-top: 2rem;">
+            <a href="/admin/tournaments/new" class="btn btn-primary">
+                <i class="fas fa-plus-circle"></i>
+                Crear nuevo torneo
+            </a>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/admin-footer :: footer}"></footer>
+
+<!-- Admin JavaScript -->
+<script th:src="@{/js/admin.js}"></script>
+</body>
+</html>

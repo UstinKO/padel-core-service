@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="'King of Court - ' + ${tournament.nombre}">King of Court</title>
+
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
+    <link rel="alternate icon" th:href="@{/images/favicon.ico}">
+    <link rel="apple-touch-icon" th:href="@{/images/apple-touch-icon.png}">
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <link rel="stylesheet" th:href="@{/css/king-of-court.css}">
+</head>
+<body>
+<header th:replace="~{fragments/admin-header :: header('King of Court')}"></header>
+
+<main class="admin-main">
+    <div class="container">
+        <!-- Mensajes de éxito/error -->
+        <div th:if="${successMessage}" class="alert alert-success">
+            <i class="fas fa-check-circle"></i>
+            <span th:text="${successMessage}">Operación exitosa</span>
+        </div>
+
+        <div th:if="${errorMessage}" class="alert alert-danger">
+            <i class="fas fa-exclamation-circle"></i>
+            <span th:text="${errorMessage}">Error en la operación</span>
+        </div>
+
+        <!-- Cabecera con información del torneo -->
+        <div class="admin-header">
+            <h1 class="admin-title">
+                <i class="fas fa-crown" style="color: #fbbf24;"></i>
+                <span th:text="${tournament.nombre}">Torneo</span>
+            </h1>
+            <div class="admin-subtitle">
+                <span class="badge" th:text="'Ronda ' + ${kingTournament.currentRound}">Ronda 1</span>
+                <span class="badge badge-level"
+                      th:text="${kingTournament.currentRound <= kingTournament.calibrationRounds} ? 'Calibración' : 'Bonus'"
+                      th:classappend="${kingTournament.currentRound <= kingTournament.calibrationRounds} ? 'badge-warning' : 'badge-success'">
+                        Calibración
+                    </span>
+                <span class="badge" th:text="${kingTournament.isFinished} ? 'Finalizado' : 'Activo'"
+                      th:classappend="${kingTournament.isFinished} ? 'badge-danger' : 'badge-success'">
+                        Activo
+                    </span>
+            </div>
+        </div>
+
+        <!-- Enlace de YouTube (solo para admin) -->
+        <div class="admin-card" th:if="${admin}">
+            <div class="admin-card-header">
+                <h2><i class="fab fa-youtube" style="color: #ff0000;"></i> Transmisión en vivo</h2>
+            </div>
+            <div class="admin-card-body">
+                <div class="youtube-link-form" style="display: flex; gap: 1rem;">
+                    <input type="text" id="youtubeLink" class="form-control"
+                           placeholder="Ingrese el enlace de YouTube"
+                           th:value="${kingTournament.youtubeLink}">
+                    <button class="btn btn-primary" onclick="window.kingOfCourt?.saveYoutubeLink()">
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información de torneo finalizado -->
+        <div th:if="${kingTournament.isFinished}" class="admin-card" style="text-align: center; padding: 2rem;">
+            <i class="fas fa-trophy" style="font-size: 4rem; color: #fbbf24; margin-bottom: 1rem;"></i>
+            <h2>¡Torneo finalizado!</h2>
+            <p>La clasificación final está disponible a continuación</p>
+        </div>
+
+        <!-- Grid de canchas -->
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h2><i class="fas fa-map-marked-alt"></i> Canchas</h2>
+                <span class="badge" th:text="${state.allResultsIn} ? 'Todos los resultados ingresados' : 'Esperando resultados'"
+                      th:classappend="${state.allResultsIn} ? 'badge-success' : 'badge-warning'">
+                    </span>
+            </div>
+            <div class="admin-card-body">
+                <div id="courtsContainer" class="courts-grid">
+                    <!-- Carga dinámica via JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Ranking e historial en dos columnas -->
+        <div class="admin-grid-two" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem;">
+            <!-- Ranking en vivo -->
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <h2><i class="fas fa-chart-line"></i> Clasificación en vivo</h2>
+                    <a href="#" onclick="window.kingOfCourt?.loadData()" class="btn-icon" title="Actualizar">
+                        <i class="fas fa-sync-alt"></i>
+                    </a>
+                </div>
+                <div class="admin-card-body">
+                    <table class="admin-table">
+                        <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Jugador</th>
+                            <th>Puntos</th>
+                            <th>Bonos</th>
+                            <th>Juegos</th>
+                            <th>V/D</th>
+                        </tr>
+                        </thead>
+                        <tbody id="leaderboard">
+                        <!-- Carga dinámica via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Historial de partidos -->
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <h2><i class="fas fa-history"></i> Historial de partidos</h2>
+                </div>
+                <div class="admin-card-body">
+                    <ul id="matchHistory" class="history-list" style="list-style: none; padding: 0; margin: 0; max-height: 400px; overflow-y: auto;">
+                        <!-- Carga dinámica via JavaScript -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones de administrador -->
+        <div class="admin-actions" style="justify-content: center; margin-top: 2rem;" th:if="${admin and not kingTournament.isFinished}">
+            <button id="nextRoundBtn" class="btn btn-primary" style="display: none;">
+                <i class="fas fa-forward"></i> Iniciar siguiente ronda
+            </button>
+            <form th:action="@{'/admin/tournaments/king-of-court/' + ${kingTournament.id} + '/finish'}"
+                  method="post" style="display: inline-block;">
+                <button type="submit" class="btn btn-warning"
+                        th:if="${state.allResultsIn and kingTournament.currentRound > 0}"
+                        onclick="return confirm('¿Finalizar el torneo? No se podrán ingresar más resultados.');">
+                    <i class="fas fa-flag-checkered"></i> Finalizar torneo
+                </button>
+            </form>
+        </div>
+
+        <!-- Botón de volver (si está finalizado) -->
+        <div class="admin-actions" style="justify-content: center; margin-top: 2rem;" th:if="${kingTournament.isFinished}">
+            <a th:href="@{'/admin/tournaments/' + ${tournament.id}}" class="btn btn-primary">
+                <i class="fas fa-arrow-left"></i> Volver al torneo
+            </a>
+        </div>
+    </div>
+</main>
+
+<!-- Fragmentos de modales -->
+<div th:replace="~{fragments/king-of-court-modals :: resultModal}"></div>
+<div th:replace="~{fragments/king-of-court-modals :: historyModal}"></div>
+<div th:replace="~{fragments/king-of-court-modals :: finalResultsModal}"></div>
+
+<footer th:replace="~{fragments/admin-footer :: footer}"></footer>
+
+<!-- WebSocket libraries -->
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+
+<!-- Datos para JavaScript -->
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    window.tournamentData = {
+        kingId: [[${kingTournament.id}]],
+        tournamentId: [[${tournament.id}]],
+        currentRound: [[${kingTournament.currentRound}]],
+        calibrationRounds: [[${kingTournament.calibrationRounds}]],
+        maxCourts: [[${kingTournament.maxCourts}]],
+        isAdmin: [[${admin}]],
+        isFinished: [[${kingTournament.isFinished}]],
+        youtubeLink: [[${kingTournament.youtubeLink}]]
+    };
+    /*]]>*/
+</script>
+
+<script th:src="@{/js/king-of-court.js}"></script>
+</body>
+</html>

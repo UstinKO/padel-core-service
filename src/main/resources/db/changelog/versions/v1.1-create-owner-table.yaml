@@ -1,0 +1,115 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2
+      author: padel-core
+      changes:
+        - createTable:
+            tableName: owners_db
+            remarks: "Таблица владельцев сайта"
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_owners_db
+                    nullable: false
+              - column:
+                  name: email
+                  type: VARCHAR(255)
+                  constraints:
+                    unique: true
+                    nullable: false
+              - column:
+                  name: password
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: first_name
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_name
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: phone
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: is_super_admin
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITHOUT TIME ZONE
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITHOUT TIME ZONE
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_login_at
+                  type: TIMESTAMP WITHOUT TIME ZONE
+                  constraints:
+                    nullable: true
+              - column:
+                  name: is_active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+
+        - createIndex:
+            indexName: idx_owners_db_email
+            tableName: owners_db
+            columns:
+              - column:
+                  name: email
+            unique: true
+
+        - createIndex:
+            indexName: idx_owners_db_is_super_admin
+            tableName: owners_db
+            columns:
+              - column:
+                  name: is_super_admin
+
+  - changeSet:
+      id: 3
+      author: padel-core
+      changes:
+        - insert:
+            tableName: owners_db
+            columns:
+              - column:
+                  name: email
+                  value: "owner@padel-core.com"
+              - column:
+                  name: password
+                  value: "$2a$10$ci7vA9kC6qK9PD5dQHO0GO3ic.dbBihgHvhTaEk3mVRQ4dyL6mGgy"
+              - column:
+                  name: first_name
+                  value: "Admin"
+              - column:
+                  name: last_name
+                  value: "Owner"
+              - column:
+                  name: phone
+                  value: "+1234567890"
+              - column:
+                  name: is_super_admin
+                  valueBoolean: true
+              - column:
+                  name: is_active
+                  valueBoolean: true

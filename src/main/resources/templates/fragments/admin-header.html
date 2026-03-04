@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+<!-- Фрагмент заголовка для админ-панели -->
+<header th:fragment="header(pageTitle)" class="header">
+    <div class="container">
+        <nav class="navbar">
+            <a href="/admin" class="navbar-brand">
+                <img th:src="@{/images/2.svg}" alt="E-Padel Logo" class="navbar-logo" width="40" height="40">
+                <span class="navbar-brand-text">E-<span class="brand-highlight">PADEL</span> ADMIN</span>
+            </a>
+
+            <!-- Навигация по разделам (переведено на испанский) -->
+            <div class="navbar-menu" style="flex: 1; justify-content: center;">
+                <a href="/" class="btn btn-outline btn-sm">
+                    <i class="fas fa-home"></i> Inicio
+                </a>
+                <a href="/admin/clubs" class="btn btn-outline btn-sm">
+                    <i class="fas fa-building"></i> Clubes
+                </a>
+                <a href="/admin/tournaments" class="btn btn-outline btn-sm">
+                    <i class="fas fa-trophy"></i> Torneos
+                </a>
+                <a href="/admin/players" class="btn btn-outline btn-sm">
+                    <i class="fas fa-users"></i> Jugadores
+                </a>
+            </div>
+
+            <!-- Приветствие и выход (один раз) -->
+            <div class="navbar-menu">
+                <span class="user-greeting" th:text="'Hola, Admin!'"></span>
+                <form th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="btn btn-outline">
+                        <i class="fas fa-sign-out-alt"></i> Salir
+                    </button>
+                </form>
+            </div>
+        </nav>
+    </div>
+</header>
+</body>
+</html>
