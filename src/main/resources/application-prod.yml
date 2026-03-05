@@ -37,5 +37,5 @@ logging:
     name: ${LOG_FILE:/app/logs/application.log}
   logback:
     rollingpolicy:
-      max-file-size: ${LOG_MAX_SIZE}
+      max-file-size: ${LOG_MAX_SIZE:10MB}
       max-history: ${LOG_MAX_HISTORY}

@@ -18,8 +18,13 @@ jobs:
           java-version: 21
           cache: maven
 
-      - name: Build jar
-        run: mvn clean package -DskipTests
+      - name: Build JAR with version
+        run: |
+          mvn clean package -DskipTests
+          echo "${{ github.sha }}" > target/version.txt
+          echo "Build timestamp: $(date)" >> target/version.txt
+          echo "Listing target directory:"
+          ls -la target/
 
       - name: Copy jar to server
         uses: appleboy/scp-action@v0.1.7
@@ -27,15 +32,124 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          source: target/*.jar
-          target: /home/deploy/app/
+          source: "target/*.jar,target/version.txt"
+          target: "/home/deploy/app/temp/"
+          strip_components: 1
 
-      - name: Restart app
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          timeout: 120s
+          command_timeout: 60s
+          script: |
+            set -e
+
+            echo "🔧 Starting deployment process..."
+
+            # Находим основной jar файл (игнорируем .original)
+            MAIN_JAR=$(ls /home/deploy/app/temp/padel-core-service-*.jar | grep -v "original" | head -1)
+
+            if [ -z "$MAIN_JAR" ]; then
+              echo "❌ No main JAR file found in temp directory!"
+              echo "Contents of temp directory:"
+              ls -la /home/deploy/app/temp/
+              exit 1
+            fi
+
+            echo "📦 Found JAR file: $(basename $MAIN_JAR)"
+
+            # Копируем как new.jar для deploy.sh
+            echo "📦 Copying JAR to app directory..."
+            cp "$MAIN_JAR" /home/deploy/app/new.jar
+
+            # Копируем version.txt если есть
+            if [ -f "/home/deploy/app/temp/version.txt" ]; then
+              cp /home/deploy/app/temp/version.txt /home/deploy/app/version.txt
+              echo "📄 Version file copied:"
+              cat /home/deploy/app/version.txt
+            fi
+
+            # Сохраняем информацию о версии
+            echo "$(basename $MAIN_JAR)" > /home/deploy/app/current_version.txt
+            echo "Deployed at: $(date)" >> /home/deploy/app/current_version.txt
+
+            # Устанавливаем правильные права
+            sudo chown deploy:deploy /home/deploy/app/new.jar
+            sudo chmod 644 /home/deploy/app/new.jar
+
+            echo "✅ JAR file prepared for deployment:"
+            ls -la /home/deploy/app/new.jar
+
+            # Запускаем скрипт деплоя
+            echo "⚙️ Running deployment script..."
+            /home/deploy/deploy.sh
+
+            # Проверяем результат деплоя
+            if [ $? -eq 0 ]; then
+              echo "✅ Deployment script completed successfully!"
+            else
+              echo "❌ Deployment script failed!"
+              exit 1
+            fi
+
+            # Очищаем temp директорию
+            rm -rf /home/deploy/app/temp/*
+            echo "🧹 Temp directory cleaned"
+
+            echo "✅ Deployment process completed!"
+
+      - name: Health check
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
-            pkill -f 'java -jar' || true
-            nohup java -jar /home/deploy/app/*.jar --spring.profiles.active=prod > app.log 2>&1 &
+            echo "🏥 Running health check..."
+            sleep 10
+            
+            # Проверяем статус сервиса
+            if sudo systemctl is-active --quiet myapp; then
+              echo "✅ Service is running"
+              echo "📋 Current version:"
+              cat /home/deploy/app/current_version.txt 2>/dev/null || echo "Unknown"
+              echo "📋 Java processes:"
+              ps aux | grep java | grep -v grep
+              echo "📋 Last 20 lines of application log:"
+              sudo tail -n 20 /home/deploy/logs/app.log 2>/dev/null || echo "No app.log file"
+              sudo systemctl status myapp --no-pager
+            else
+              echo "❌ Service is not running!"
+              sudo systemctl status myapp --no-pager
+              echo "📋 Last 50 lines of journal:"
+              sudo journalctl -u myapp -n 50 --no-pager
+              exit 1
+            fi
+
+      - name: Notify success
+        if: success()
+        run: |
+          echo "🎉 DEPLOYMENT SUCCESSFUL! 🎉"
+          echo "=================================="
+          echo "✅ Application successfully deployed to production!"
+          echo "📦 Version: $(cat target/version.txt 2>/dev/null | head -1 || echo 'unknown')"
+          echo "🕐 Build time: $(date)"
+          echo "🔗 Commit: ${{ github.sha }}"
+          echo "🌍 Server: ${{ secrets.SERVER_HOST }}"
+          echo "=================================="
+
+      - name: Notify failure
+        if: failure()
+        run: |
+          echo "❌ DEPLOYMENT FAILED! ❌"
+          echo "=================================="
+          echo "❌ Deployment to production failed!"
+          echo "🕐 Time: $(date)"
+          echo "🔗 Commit: ${{ github.sha }}"
+          echo "🌍 Server: ${{ secrets.SERVER_HOST }}"
+          echo "=================================="
+          echo "Please check the logs above for details"
+          exit 1
