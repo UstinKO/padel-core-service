@@ -25,7 +25,7 @@ public class EmailService {
     @Value("${app.email.from:noreply@padelcore.com}")
     private String fromEmail;
 
-    @Value("${app.base-url:http://localhost:8080}")
+    @Value("${app.base-url}")
     private String baseUrl;
 
     /**
