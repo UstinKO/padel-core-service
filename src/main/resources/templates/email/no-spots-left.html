@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="x-apple-disable-message-reformatting">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Sin cupo disponible - E-Padel</title>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background: #FDF8F7;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #FF6B35, #7B2CBF);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .logo {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 15px;
+            filter: brightness(0) invert(1);
+        }
+        .header h2 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        .header p {
+            margin: 10px 0 0;
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        .content {
+            background: white;
+            padding: 40px 30px;
+        }
+        .greeting {
+            font-size: 20px;
+            font-weight: 600;
+            color: #2D2D2D;
+            margin-bottom: 20px;
+        }
+        .message-box {
+            background: #FFF4F0;
+            border-left: 4px solid #FF6B35;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 25px 0;
+        }
+        .message-box p {
+            margin: 0;
+            color: #2D2D2D;
+        }
+        .tournament-name {
+            font-weight: 700;
+            color: #FF6B35;
+        }
+        .stats-box {
+            background: #F8F9FA;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 25px 0;
+            text-align: center;
+        }
+        .stats-number {
+            font-size: 32px;
+            font-weight: 700;
+            color: #7B2CBF;
+            line-height: 1.2;
+        }
+        .stats-label {
+            color: #6C6C6E;
+            font-size: 14px;
+        }
+        .waitlist-info {
+            background: #E8F5E9;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .waitlist-info p {
+            margin: 5px 0;
+            color: #2D2D2D;
+        }
+        .waitlist-info i {
+            color: #10B981;
+            margin-right: 5px;
+        }
+        .button {
+            background: linear-gradient(135deg, #FF6B35, #E54B2B);
+            color: white;
+            padding: 14px 28px;
+            border-radius: 9999px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 16px;
+            display: inline-block;
+            margin: 10px 5px;
+            box-shadow: 0 4px 10px rgba(255,107,53,0.2);
+            transition: all 0.3s ease;
+        }
+        .button-outline {
+            background: transparent;
+            border: 2px solid #FF6B35;
+            color: #FF6B35;
+            padding: 12px 26px;
+        }
+        .button-outline:hover {
+            background: #FF6B35;
+            color: white;
+        }
+        .alternative-tournaments {
+            margin: 30px 0;
+        }
+        .tournament-card {
+            background: #F8F9FA;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .tournament-card-info h4 {
+            margin: 0 0 5px;
+            color: #2D2D2D;
+        }
+        .tournament-card-info p {
+            margin: 0;
+            color: #6C6C6E;
+            font-size: 13px;
+        }
+        .tournament-card-link {
+            color: #FF6B35;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .footer {
+            background: #F8F9FA;
+            padding: 30px;
+            text-align: center;
+            color: #6C6C6E;
+            font-size: 14px;
+            border-top: 1px solid #E9EAF0;
+        }
+        .social-links {
+            margin: 15px 0;
+        }
+        .social-link {
+            display: inline-block;
+            margin: 0 8px;
+            color: #7B2CBF;
+            text-decoration: none;
+        }
+        .footer-links {
+            margin: 15px 0;
+        }
+        .footer-links a {
+            color: #7B2CBF;
+            text-decoration: none;
+            margin: 0 10px;
+            font-size: 13px;
+        }
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+        .unsubscribe {
+            font-size: 12px;
+            color: #999;
+            margin-top: 15px;
+        }
+        .unsubscribe a {
+            color: #999;
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .container {
+                margin: 10px;
+            }
+            .content {
+                padding: 25px 20px;
+            }
+            .button {
+                display: block;
+                margin: 10px 0;
+            }
+            .tournament-card {
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- Header con logo -->
+    <div class="header">
+        <!-- ✅ ИСПРАВЛЕНО: th:src → src с URL absoluta -->
+        <img src="https://e-padel.com/images/2.svg" alt="E-Padel Logo" class="logo" width="60" height="60">
+        <h2>E-PADEL</h2>
+        <p>Tu plataforma de torneos</p>
+    </div>
+
+    <!-- Contenido principal -->
+    <div class="content">
+        <div class="greeting">
+            Hola, <strong th:text="${playerName}">Jugador</strong>!
+        </div>
+
+        <!-- Mensaje principal -->
+        <div class="message-box">
+            <p>
+                Lamentablemente, alguien más confirmó su participación antes que tú y
+                <strong>ya no quedan lugares disponibles</strong> en el torneo
+                <span class="tournament-name" th:text="'**' + ${tournamentName} + '**'">Torneo Ejemplo</span>.
+            </p>
+        </div>
+
+        <!-- Estadísticas (opcional, si hay datos) -->
+        <div class="stats-box" th:if="${totalDemand != null}">
+            <span class="stats-number" th:text="${totalDemand}">150</span>
+            <span class="stats-label"> solicitudes recibidas</span>
+        </div>
+
+        <!-- Información de lista de espera -->
+        <div class="waitlist-info">
+            <p><i class="fas fa-clock"></i> <strong>¿Quieres estar en lista de espera?</strong></p>
+            <p style="font-size: 14px;">Si alguien cancela, te notificaremos inmediatamente.</p>
+            <a th:href="${waitlistUrl}" class="button button-outline" style="margin-top: 10px;">
+                📋 Apuntarme a lista de espera
+            </a>
+        </div>
+
+        <!-- Mensaje optimista -->
+        <p style="color: #2D2D2D; margin: 25px 0;">
+            ¡Pero no te desanimes! Estamos muy contentos con la gran cantidad de solicitudes que hemos recibido para este torneo.
+            Haremos todo lo posible para aumentar el número de plazas en futuras ediciones.
+        </p>
+
+        <!-- Torneos alternativos -->
+        <div class="alternative-tournaments" th:if="${alternativeTournaments != null and !alternativeTournaments.isEmpty()}">
+            <h3 style="color: #7B2CBF; margin-bottom: 15px;">🎾 Otros torneos que te pueden interesar</h3>
+
+            <div th:each="tournament : ${alternativeTournaments}" class="tournament-card">
+                <div class="tournament-card-info">
+                    <h4 th:text="${tournament.nombre}">Torneo Alternativo</h4>
+                    <p th:text="${tournament.fecha} + ' - ' + ${tournament.nivel}">15/03/2026 - C7 Avanzado</p>
+                </div>
+                <a th:href="${tournament.url}" class="tournament-card-link">
+                    Ver detalles →
+                </a>
+            </div>
+        </div>
+
+        <!-- Botón para ver todos los torneos -->
+        <div style="text-align: center; margin: 30px 0 20px;">
+            <a href="https://e-padel.com/torneos" class="button">
+                🔍 Ver todos los torneos disponibles
+            </a>
+        </div>
+
+        <!-- Mensaje de futuro -->
+        <div style="background: #F0F7FF; padding: 15px; border-radius: 8px; text-align: center;">
+            <p style="margin: 0; color: #2D2D2D;">
+                <span style="font-size: 20px;">✨</span>
+                Te mantendremos informado sobre nuevos torneos. ¡La próxima vez será!
+            </p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p style="margin: 0 0 8px 0;">
+            © <span th:text="${year}">2026</span> E-Padel. Todos los derechos reservados.
+        </p>
+
+        <!-- Redes sociales -->
+        <div class="social-links">
+            <a href="https://instagram.com/epadel" class="social-link">📱 Instagram</a>
+            <a href="https://facebook.com/epadel" class="social-link">📘 Facebook</a>
+            <a href="https://twitter.com/epadel" class="social-link">🐦 Twitter</a>
+        </div>
+
+        <!-- Enlaces legales -->
+        <div class="footer-links">
+            <a th:href="${terminosUrl}">Términos</a>
+            <a th:href="${privacidadUrl}">Privacidad</a>
+            <a th:href="${contactoUrl}">Contacto</a>
+        </div>
+
+        <!-- Desuscripción -->
+        <div class="unsubscribe">
+            ¿No quieres recibir más correos?
+            <a th:href="${unsubscribeUrl}">Cancela tu suscripción</a>
+        </div>
+    </div>
+</div>
+
+<!-- Fallback para clientes sin CSS -->
+<div style="display: none; max-height: 0; overflow: hidden;">
+    No hay cupo disponible en ${tournamentName}. Visita https://e-padel.com/torneos para ver otros torneos.
+</div>
+</body>
+</html>

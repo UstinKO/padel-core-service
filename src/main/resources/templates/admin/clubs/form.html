@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:if="${club.id == null}">Crear Club - E-Padel Admin</title>
+    <title th:unless="${club.id == null}">Editar Club - E-Padel Admin</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
+    <link rel="alternate icon" th:href="@{/images/favicon.ico}">
+    <link rel="apple-touch-icon" th:href="@{/images/apple-touch-icon.png}">
+
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <link rel="stylesheet" th:href="@{/css/admin-forms.css}">
+</head>
+<body>
+<!-- ✅ ИСПРАВЛЕНО: Управление клубами → Crear Club / Editar Club -->
+<header th:replace="~{fragments/admin-header :: header(${club.id == null} ? 'Crear Club' : 'Editar Club')}"></header>
+
+<main class="admin-main">
+    <div class="container">
+        <div class="form-container">
+            <div class="form-header">
+                <h1 th:if="${club.id == null}">
+                    <i class="fas fa-plus-circle"></i>
+                    Crear Nuevo Club
+                </h1>
+                <h1 th:unless="${club.id == null}">
+                    <i class="fas fa-edit"></i>
+                    Editar Club
+                </h1>
+                <p>Complete los detalles del club a continuación</p>
+            </div>
+
+            <div th:if="${errorMessage}" class="alert alert-danger">
+                <i class="fas fa-exclamation-circle"></i>
+                <span th:text="${errorMessage}">Error en la operación</span>
+            </div>
+
+            <form th:action="@{${club.id == null ? '/admin/clubs' : '/admin/clubs/' + club.id + '/edit'}}"
+                  th:object="${club}"
+                  method="post"
+                  class="club-form"
+                  id="clubForm">
+
+                <input type="hidden" th:if="${club.id != null}" name="_method" value="put" />
+
+                <!-- Información Básica -->
+                <div class="form-section">
+                    <h2 class="section-title">
+                        <i class="fas fa-info-circle"></i>
+                        Información Básica
+                    </h2>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="nombre" class="required">Nombre del Club</label>
+                            <input type="text"
+                                   th:field="*{nombre}"
+                                   id="nombre"
+                                   class="form-control"
+                                   th:classappend="${#fields.hasErrors('nombre')} ? 'is-invalid' : ''"
+                                   placeholder="Ej: Padel Indoor Madrid"
+                                   required>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('nombre')}"
+                                 th:errors="*{nombre}">Error en el campo</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="zonaCiudad">Ciudad / Zona</label>
+                            <input type="text"
+                                   th:field="*{zonaCiudad}"
+                                   id="zonaCiudad"
+                                   class="form-control"
+                                   placeholder="Ej: Madrid Centro">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="direccion">Dirección</label>
+                            <input type="text"
+                                   th:field="*{direccion}"
+                                   id="direccion"
+                                   class="form-control"
+                                   placeholder="Ej: Calle de la Princesa 25">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contacto -->
+                <div class="form-section">
+                    <h2 class="section-title">
+                        <i class="fas fa-phone-alt"></i>
+                        Contacto
+                    </h2>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="telefonoContacto">Teléfono</label>
+                            <input type="text"
+                                   th:field="*{telefonoContacto}"
+                                   id="telefonoContacto"
+                                   class="form-control"
+                                   placeholder="Ej: +34 912 345 678">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="emailContacto">Email</label>
+                            <input type="email"
+                                   th:field="*{emailContacto}"
+                                   id="emailContacto"
+                                   class="form-control"
+                                   placeholder="Ej: info@club.com">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Enlaces -->
+                <div class="form-section">
+                    <h2 class="section-title">
+                        <i class="fas fa-link"></i>
+                        Enlaces
+                    </h2>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="websiteUrl">Sitio Web</label>
+                            <input type="url"
+                                   th:field="*{websiteUrl}"
+                                   id="websiteUrl"
+                                   class="form-control"
+                                   placeholder="Ej: https://www.club.com">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="mapaUrl">URL del Mapa</label>
+                            <input type="url"
+                                   th:field="*{mapaUrl}"
+                                   id="mapaUrl"
+                                   class="form-control"
+                                   placeholder="Ej: https://goo.gl/maps/...">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="logoUrl">URL del Logo</label>
+                            <input type="url"
+                                   th:field="*{logoUrl}"
+                                   id="logoUrl"
+                                   class="form-control"
+                                   placeholder="Ej: /images/clubs/logo.png">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Descripción -->
+                <div class="form-section">
+                    <h2 class="section-title">
+                        <i class="fas fa-align-left"></i>
+                        Descripción
+                    </h2>
+
+                    <div class="form-group">
+                        <textarea th:field="*{descripcion}"
+                                  id="descripcion"
+                                  class="form-control"
+                                  rows="5"
+                                  placeholder="Descripción del club..."></textarea>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary" id="submitBtn">
+                        <i class="fas fa-save"></i>
+                        <span th:text="${club.id == null} ? 'Crear Club' : 'Guardar Cambios'"></span>
+                    </button>
+                    <a href="/admin/clubs" class="btn btn-outline">
+                        <i class="fas fa-times"></i>
+                        Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/admin-footer :: footer}"></footer>
+
+<script th:src="@{/js/admin.js}"></script>
+
+<!-- Script adicional para prevenir envío doble -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('clubForm');
+        const submitBtn = document.getElementById('submitBtn');
+
+        if (form) {
+            form.addEventListener('submit', function() {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+            });
+        }
+    });
+</script>
+</body>
+</html>

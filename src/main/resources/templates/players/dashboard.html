@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+    <meta name="description" content="E-Padel - Panel de control">
+    <title>Dashboard | E-Padel</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
+    <link rel="alternate icon" th:href="@{/images/favicon.ico}">
+    <link rel="apple-touch-icon" th:href="@{/images/apple-touch-icon.png}">
+
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+</head>
+<body>
+<!-- Header con navegación para usuarios autenticados -->
+<header class="header">
+    <div class="container">
+        <nav class="navbar">
+            <a href="/" class="navbar-brand">
+                <img th:src="@{/images/2.svg}" alt="E-Padel Logo" class="navbar-logo" width="40" height="40">
+                <span class="navbar-brand-text">E-<span class="brand-highlight">PADEL</span></span>
+            </a>
+
+            <div class="navbar-collapse">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a href="/" class="nav-link">
+                            <i class="fas fa-home"></i> Inicio
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/players/dashboard" class="nav-link active">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/perfil" class="nav-link">Perfil</a>
+                    </li>
+                </ul>
+
+                <div class="navbar-user">
+                    <span class="user-name" th:text="${player.nombreCompleto}">Juan Pérez</span>
+                    <form th:action="@{/logout}" method="post" style="display: inline;">
+                        <button type="submit" class="btn btn-outline-sm">
+                            <i class="fas fa-sign-out-alt"></i>
+                            Salir
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </nav>
+    </div>
+</header>
+
+<main class="dashboard-main">
+    <div class="container">
+        <!-- Welcome Banner -->
+        <div class="welcome-card">
+            <div class="welcome-content">
+                <div class="welcome-avatar">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="welcome-text">
+                    <h1>¡Bienvenido, <span th:text="${player.nombre}">Juan</span>!</h1>
+                    <p>
+                        <i class="fas fa-check-circle" style="color: #10b981;"></i>
+                        Email confirmado · Miembro desde <span th:text="${#temporals.format(player.fechaRegistro, 'dd/MM/yyyy')}">01/01/2024</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-trophy"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value" th:text="${torneosInscritos}">3</div>
+                    <div class="stat-label">Torneos inscritos</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-medal"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value" th:text="${torneosGanados}">1</div>
+                    <div class="stat-label">Torneos ganados</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value" th:text="${rankingPosition}">42</div>
+                    <div class="stat-label">Posición ranking</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-star"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value" th:text="${puntosRanking}">1250</div>
+                    <div class="stat-label">Puntos ranking</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Próximos Torneos con filtros -->
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h2>Próximos torneos</h2>
+                <button class="btn-filter" id="toggleFilters">
+                    <i class="fas fa-sliders-h"></i> Filtrar
+                </button>
+            </div>
+
+            <!-- Панель фильтров -->
+            <div class="filters-panel" id="filtersPanel" style="display: none;">
+                <div class="filters-grid">
+                    <div class="filter-group">
+                        <label for="dashboardGenero">
+                            <i class="fas fa-venus-mars"></i> Género
+                        </label>
+                        <select id="dashboardGenero" class="filter-select">
+                            <option value="todos">Todos</option>
+                            <option value="MASCULINO">Masculino</option>
+                            <option value="FEMENINO">Femenino</option>
+                            <option value="MIXTO">Mixto</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="dashboardNivel">
+                            <i class="fas fa-chart-line"></i> Nivel
+                        </label>
+                        <select id="dashboardNivel" class="filter-select">
+                            <option value="todos">Todos</option>
+                            <option value="C9">C9 (Principiante)</option>
+                            <option value="C8">C8 (Intermedio)</option>
+                            <option value="C7">C7 (Avanzado)</option>
+                            <option value="C6">C6 (Profesional)</option>
+                            <option value="C5">C5 (Élite)</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="dashboardTipo">
+                            <i class="fas fa-trophy"></i> Tipo
+                        </label>
+                        <select id="dashboardTipo" class="filter-select">
+                            <option value="todos">Todos</option>
+                            <option value="KING_OF_COURT">King of Court</option>
+                            <option value="AMERICANA">Americana</option>
+                        </select>
+                    </div>
+
+                    <!-- ЧЕКБОКС: Мои турниры -->
+                    <div class="filter-group checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="myTournamentsOnly" class="filter-checkbox">
+                            <span class="checkbox-custom"></span>
+                            <span class="checkbox-text">
+                                <i class="fas fa-calendar-check"></i>
+                                Mis torneos
+                                <span class="my-tournaments-count" id="myTournamentsCount">(0)</span>
+                            </span>
+                        </label>
+                    </div>
+
+                    <div class="filter-actions">
+                        <button class="btn btn-primary" id="applyDashboardFilters">
+                            <i class="fas fa-check"></i> Aplicar
+                        </button>
+                        <button class="btn btn-outline" id="clearDashboardFilters">
+                            <i class="fas fa-undo"></i> Limpiar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Счетчик результатов -->
+            <div class="results-counter" id="resultsCounter">
+                Mostrando <span id="visibleCount">0</span> de <span id="totalCount">0</span> torneos
+            </div>
+
+            <!-- Grid турниров -->
+            <div class="torneos-grid" id="dashboardTorneosGrid"></div>
+
+            <!-- Сообщение когда нет турниров -->
+            <div class="empty-state" id="noTournamentsMessage" style="display: none;">
+                <i class="fas fa-calendar-times"></i>
+                <h3>No hay torneos</h3>
+                <p>No se encontraron torneos con los filtros seleccionados</p>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="footer">
+    <div class="container">
+        <!-- ✅ ИСПРАВЛЕНО: Padel Core → E-Padel -->
+        <p>&copy; 2026 E-Padel. Todos los derechos reservados.</p>
+    </div>
+</footer>
+
+<!-- Datos de torneos para JavaScript -->
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    var tournamentData = /*[(${tournamentsJson})]*/ [];
+    var myTournamentIds = /*[(${myTournamentIdsJson})]*/ [];
+    console.log('🏆 Tournament data loaded:', tournamentData.length, 'torneos');
+    console.log('📋 My tournament IDs:', myTournamentIds.length, 'IDs:', myTournamentIds);
+
+    // Логируем уникальные значения для отладки
+    if (tournamentData.length > 0) {
+        const niveles = [...new Set(tournamentData.map(t => t.categoriaNivel))];
+        const tipos = [...new Set(tournamentData.map(t => t.tipo))];
+        const generos = [...new Set(tournamentData.map(t => t.generoFormato))];
+        console.log('📊 Valores únicos - Niveles:', niveles);
+        console.log('📊 Valores únicos - Tipos:', tipos);
+        console.log('📊 Valores únicos - Géneros:', generos);
+    }
+    /*]]>*/
+</script>
+
+<script th:src="@{/js/main.js}"></script>
+<script th:src="@{/js/dashboard.js}"></script>
+</body>
+</html>

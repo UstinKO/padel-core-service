@@ -1,0 +1,154 @@
+databaseChangeLog:
+
+  # ===============================
+  # Добавление колонок (только тех, которых ещё нет)
+  # ===============================
+
+  - changeSet:
+      id: v1.13-add-rachas-actual
+      author: serg
+      comments: "Добавляем колонку rachas_actual"
+
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            columnExists:
+              tableName: ranking_db
+              columnName: rachas_actual
+
+      changes:
+        - addColumn:
+            tableName: ranking_db
+            columns:
+              - column:
+                  name: rachas_actual
+                  type: INTEGER
+                  defaultValueNumeric: 0
+                  remarks: "Текущая серия побед/поражений"
+
+  - changeSet:
+      id: v1.13-add-rachas-maxima
+      author: serg
+      comments: "Добавляем колонку rachas_maxima"
+
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            columnExists:
+              tableName: ranking_db
+              columnName: rachas_maxima
+
+      changes:
+        - addColumn:
+            tableName: ranking_db
+            columns:
+              - column:
+                  name: rachas_maxima
+                  type: INTEGER
+                  defaultValueNumeric: 0
+                  remarks: "Максимальная серия побед"
+
+  # ======================================
+  # Заполнение существующих данных
+  # ======================================
+
+  - changeSet:
+      id: v1.13-update-existing-data
+      author: serg
+      comments: "Заполняем значения по умолчанию для существующих записей"
+
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: ranking_db
+
+      changes:
+        - sql:
+            splitStatements: true
+            sql: |
+              UPDATE ranking_db 
+              SET rachas_actual = 0
+              WHERE rachas_actual IS NULL;
+
+              UPDATE ranking_db 
+              SET rachas_maxima = 0
+              WHERE rachas_maxima IS NULL;
+
+  # ======================================
+  # Установка NOT NULL (безопасно)
+  # ======================================
+
+  - changeSet:
+      id: v1.13-set-not-null-rachas-actual
+      author: serg
+
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: ranking_db
+            columnName: rachas_actual
+
+      changes:
+        - addNotNullConstraint:
+            tableName: ranking_db
+            columnName: rachas_actual
+            columnDataType: INTEGER
+
+  - changeSet:
+      id: v1.13-set-not-null-rachas-maxima
+      author: serg
+
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: ranking_db
+            columnName: rachas_maxima
+
+      changes:
+        - addNotNullConstraint:
+            tableName: ranking_db
+            columnName: rachas_maxima
+            columnDataType: INTEGER
+
+  # ======================================
+  # Триггер (PostgreSQL)
+  # ======================================
+
+  - changeSet:
+      id: v1.13-add-trigger-for-rachas
+      author: serg
+      dbms: postgresql
+      comments: "Добавляем триггер для обновления last_calculated_at и mejor_posicion"
+
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT COUNT(*) FROM pg_trigger WHERE tgname = 'update_ranking_before_update';
+
+      changes:
+        - sql:
+            splitStatements: false
+            sql: |
+              CREATE OR REPLACE FUNCTION update_ranking_before_update()
+              RETURNS TRIGGER AS $$
+              BEGIN
+                  NEW.last_calculated_at = CURRENT_TIMESTAMP;
+
+                  IF NEW.posicion_actual IS NOT NULL 
+                     AND (OLD.mejor_posicion IS NULL 
+                          OR NEW.posicion_actual < OLD.mejor_posicion) THEN
+                      NEW.mejor_posicion = NEW.posicion_actual;
+                  END IF;
+
+                  RETURN NEW;
+              END;
+              $$ LANGUAGE plpgsql;
+
+        - sql:
+            splitStatements: false
+            sql: |
+              CREATE TRIGGER update_ranking_before_update
+                  BEFORE UPDATE ON ranking_db
+                  FOR EACH ROW
+                  EXECUTE FUNCTION update_ranking_before_update();

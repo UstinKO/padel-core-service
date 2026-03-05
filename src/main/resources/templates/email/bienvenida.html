@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="x-apple-disable-message-reformatting">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>¡Bienvenido a E-Padel!</title>
+    <style>
+        /* Estilos base para email */
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #FDF8F7;
+            margin: 0;
+            padding: 20px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 24px;
+            padding: 40px 32px;
+            border: 1px solid #E9EAF0;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        }
+        .logo {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .logo-img {
+            width: 60px;
+            height: 60px;
+            display: inline-block;
+        }
+        .brand-text {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: #2D2D2D;
+        }
+        .brand-highlight {
+            color: #FF6B35;
+        }
+        h1 {
+            color: #7B2CBF;
+            font-size: 28px;
+            font-weight: 700;
+            margin: 0 0 16px 0;
+            text-align: center;
+        }
+        .greeting {
+            font-size: 18px;
+            color: #2D2D2D;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .feature-list {
+            background: #F8F9FA;
+            border-radius: 16px;
+            padding: 24px;
+            margin: 24px 0;
+        }
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 0;
+            border-bottom: 1px solid #E9EAF0;
+        }
+        .feature-item:last-child {
+            border-bottom: none;
+        }
+        .feature-icon {
+            color: #10B981;
+            font-size: 20px;
+            width: 24px;
+            text-align: center;
+        }
+        .feature-text {
+            color: #2D2D2D;
+            font-size: 16px;
+        }
+        .button {
+            background: linear-gradient(135deg, #FF6B35, #E54B2B);
+            color: white;
+            padding: 16px 32px;
+            border-radius: 9999px;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-block;
+            margin: 24px 0;
+            font-size: 16px;
+            box-shadow: 0 4px 10px rgba(255, 107, 53, 0.2);
+            transition: all 0.3s ease;
+        }
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 107, 53, 0.3);
+        }
+        .footer {
+            text-align: center;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid #E9EAF0;
+            font-size: 14px;
+            color: #6C6C6E;
+        }
+        .footer-links {
+            margin-top: 16px;
+        }
+        .footer-links a {
+            color: #7B2CBF;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+        .social-links {
+            margin: 20px 0 10px;
+        }
+        .social-link {
+            display: inline-block;
+            margin: 0 8px;
+            color: #FF6B35;
+            text-decoration: none;
+        }
+        .unsubscribe {
+            font-size: 12px;
+            color: #999;
+        }
+        .unsubscribe a {
+            color: #999;
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            .container {
+                padding: 24px 16px;
+            }
+            h1 {
+                font-size: 24px;
+            }
+            .button {
+                display: block;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- Logo -->
+    <div class="logo">
+        <img src="https://e-padel.com/images/2.svg" alt="E-Padel Logo" class="logo-img" width="60" height="60">
+        <div class="brand-text">
+            <span>E-</span><span class="brand-highlight">PADEL</span>
+        </div>
+    </div>
+
+    <!-- Título -->
+    <h1>🎾 ¡Bienvenido a E-Padel!</h1>
+
+    <!-- Saludo personalizado -->
+    <p class="greeting" th:text="'Hola ' + ${nombre} + '!'">Hola Jugador!</p>
+
+    <!-- Mensaje de confirmación -->
+    <p style="text-align: center; color: #2D2D2D;">Tu email ha sido confirmado exitosamente. Ya puedes disfrutar de todas las funcionalidades:</p>
+
+    <!-- Lista de características -->
+    <div class="feature-list">
+        <div class="feature-item">
+            <span class="feature-icon">✅</span>
+            <span class="feature-text">Inscribirte en torneos de tu nivel</span>
+        </div>
+        <div class="feature-item">
+            <span class="feature-icon">✅</span>
+            <span class="feature-text">Ver tu ranking y progreso</span>
+        </div>
+        <div class="feature-item">
+            <span class="feature-icon">✅</span>
+            <span class="feature-text">Conectar con otros jugadores</span>
+        </div>
+        <div class="feature-item">
+            <span class="feature-icon">✅</span>
+            <span class="feature-text">Participar en el King of Court</span>
+        </div>
+    </div>
+
+    <!-- Botón CTA -->
+    <div style="text-align: center;">
+        <a th:href="${dashboardUrl}" class="button">
+            🚀 Ir al Dashboard
+        </a>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>© <span th:text="${year}">2026</span> E-Padel. Todos los derechos reservados.</p>
+
+        <!-- Redes sociales -->
+        <div class="social-links">
+            <a href="https://instagram.com/epadel" class="social-link">Instagram</a>
+            <a href="https://facebook.com/epadel" class="social-link">Facebook</a>
+            <a href="https://twitter.com/epadel" class="social-link">Twitter</a>
+        </div>
+
+        <!-- Enlaces legales -->
+        <div class="footer-links">
+            <a th:href="${terminosUrl}">Términos</a>
+            <a th:href="${privacidadUrl}">Privacidad</a>
+            <a th:href="${contactoUrl}">Contacto</a>
+        </div>
+
+        <!-- Enlace para desuscribirse (requerido por ley) -->
+        <div class="unsubscribe">
+            ¿No quieres recibir más correos?
+            <a th:href="${unsubscribeUrl}">Cancela tu suscripción</a>
+        </div>
+    </div>
+</div>
+
+<!-- Fallback para clientes sin CSS -->
+<div style="display: none; max-height: 0; overflow: hidden;">
+    Bienvenido a E-Padel. Confirma tu email para comenzar.
+</div>
+</body>
+</html>

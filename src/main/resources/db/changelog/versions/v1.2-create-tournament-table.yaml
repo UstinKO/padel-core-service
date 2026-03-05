@@ -1,0 +1,184 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.2-create-tournament-table
+      author: padel-core
+      changes:
+        - createTable:
+            tableName: tournaments_db
+            remarks: "Таблица турниров"
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_tournaments_db
+                    nullable: false
+              - column:
+                  name: club_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                  remarks: "ID клуба, организующего турнир"
+              - column:
+                  name: nombre
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+                  remarks: "Название турнира"
+              - column:
+                  name: fecha_inicio
+                  type: DATE
+                  constraints:
+                    nullable: false
+                  remarks: "Дата начала турнира"
+              - column:
+                  name: hora_inicio
+                  type: TIME WITHOUT TIME ZONE
+                  constraints:
+                    nullable: false
+                  remarks: "Время начала турнира"
+              - column:
+                  name: duracion
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: true
+                  remarks: "Длительность турнира (текстовое описание или число)"
+              - column:
+                  name: genero_formato
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+                  remarks: "Гендерный формат: Masculino / Femenino / Mixto"
+              - column:
+                  name: categoria_nivel
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+                  remarks: "Категория/уровень: C9, C8, C7, D и т.д."
+              - column:
+                  name: tipo
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+                  remarks: "Тип турнира: Individual / Parejas"
+              - column:
+                  name: cupo_max
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+                  remarks: "Максимальное количество участников или пар"
+              - column:
+                  name: precio
+                  type: DECIMAL(10, 2)
+                  constraints:
+                    nullable: false
+                  remarks: "Стоимость участия"
+              - column:
+                  name: moneda
+                  type: VARCHAR(10)
+                  defaultValue: "ARS"
+                  constraints:
+                    nullable: false
+                  remarks: "Валюта (по умолчанию ARS)"
+              - column:
+                  name: estado
+                  type: VARCHAR(30)
+                  defaultValue: "borrador"
+                  constraints:
+                    nullable: false
+                  remarks: "Estado: borrador / publicado / registro_abierto / cerrado / finalizado / cancelado"
+              - column:
+                  name: deadline_cancelacion
+                  type: TIMESTAMP WITHOUT TIME ZONE
+                  constraints:
+                    nullable: true
+                  remarks: "Дедлайн для отмены регистрации"
+              - column:
+                  name: info_detallada
+                  type: TEXT
+                  constraints:
+                    nullable: true
+                  remarks: "Подробная информация: правила, формат, призы и т.д."
+              - column:
+                  name: contacto_organizador
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+                  remarks: "Контакт организатора (телефон/WhatsApp)"
+              - column:
+                  name: faq_url
+                  type: VARCHAR(500)
+                  constraints:
+                    nullable: true
+                  remarks: "Ссылка на страницу FAQ"
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITHOUT TIME ZONE
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+                  remarks: "Дата создания записи"
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITHOUT TIME ZONE
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+                  remarks: "Дата последнего обновления"
+              - column:
+                  name: created_by
+                  type: BIGINT
+                  constraints:
+                    nullable: true
+                  remarks: "ID пользователя, создавшего турнир (обычно владелец)"
+              - column:
+                  name: is_active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+                  remarks: "Флаг активности записи"
+
+        # Создаем индексы
+        - createIndex:
+            indexName: idx_tournaments_db_club_id
+            tableName: tournaments_db
+            columns:
+              - column:
+                  name: club_id
+
+        - createIndex:
+            indexName: idx_tournaments_db_fecha_inicio
+            tableName: tournaments_db
+            columns:
+              - column:
+                  name: fecha_inicio
+
+        - createIndex:
+            indexName: idx_tournaments_db_estado
+            tableName: tournaments_db
+            columns:
+              - column:
+                  name: estado
+
+        - createIndex:
+            indexName: idx_tournaments_db_categoria_nivel
+            tableName: tournaments_db
+            columns:
+              - column:
+                  name: categoria_nivel
+
+        - createIndex:
+            indexName: idx_tournaments_db_genero_formato
+            tableName: tournaments_db
+            columns:
+              - column:
+                  name: genero_formato
+
+        - createIndex:
+            indexName: idx_tournaments_db_tipo
+            tableName: tournaments_db
+            columns:
+              - column:
+                  name: tipo

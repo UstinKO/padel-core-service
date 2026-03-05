@@ -1,0 +1,10 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.8-alter-tournament-categoria-nivel
+      author: padel-core
+      changes:
+        # Изменяем тип поля categoria_nivel с VARCHAR(20) на VARCHAR(50)
+        - modifyDataType:
+            tableName: tournaments_db
+            columnName: categoria_nivel
+            newDataType: VARCHAR(50)

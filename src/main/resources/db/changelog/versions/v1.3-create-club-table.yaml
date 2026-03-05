@@ -1,0 +1,121 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.3-create-club-table
+      author: padel-core
+      changes:
+        - createTable:
+            tableName: club_db
+            remarks: "Таблица клубов"
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_club_db
+                    nullable: false
+              - column:
+                  name: nombre
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+                  remarks: "Название клуба"
+              - column:
+                  name: direccion
+                  type: VARCHAR(500)
+                  constraints:
+                    nullable: true
+                  remarks: "Адрес клуба"
+              - column:
+                  name: zona_ciudad
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: true
+                  remarks: "Зона или город расположения клуба"
+              - column:
+                  name: telefono_contacto
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: true
+                  remarks: "Телефон для связи"
+              - column:
+                  name: email_contacto
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: true
+                  remarks: "Email для связи"
+              - column:
+                  name: mapa_url
+                  type: VARCHAR(500)
+                  constraints:
+                    nullable: true
+                  remarks: "Ссылка на карту (Google Maps, etc.)"
+              - column:
+                  name: website_url
+                  type: VARCHAR(500)
+                  constraints:
+                    nullable: true
+                  remarks: "Сайт клуба"
+              - column:
+                  name: descripcion
+                  type: TEXT
+                  constraints:
+                    nullable: true
+                  remarks: "Описание клуба"
+              - column:
+                  name: logo_url
+                  type: VARCHAR(500)
+                  constraints:
+                    nullable: true
+                  remarks: "Ссылка на логотип клуба"
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITHOUT TIME ZONE
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+                  remarks: "Дата создания записи"
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITHOUT TIME ZONE
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+                  remarks: "Дата последнего обновления"
+              - column:
+                  name: created_by
+                  type: BIGINT
+                  constraints:
+                    nullable: true
+                  remarks: "ID владельца, создавшего запись"
+              - column:
+                  name: is_active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+                  remarks: "Флаг активности записи"
+
+        # Создаем индексы
+        - createIndex:
+            indexName: idx_club_db_nombre
+            tableName: club_db
+            columns:
+              - column:
+                  name: nombre
+            unique: true
+
+        - createIndex:
+            indexName: idx_club_db_zona_ciudad
+            tableName: club_db
+            columns:
+              - column:
+                  name: zona_ciudad
+
+        - createIndex:
+            indexName: idx_club_db_is_active
+            tableName: club_db
+            columns:
+              - column:
+                  name: is_active

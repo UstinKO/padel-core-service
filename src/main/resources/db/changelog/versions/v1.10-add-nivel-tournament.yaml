@@ -1,0 +1,83 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.10-migrate-and-fix-nivel-tournament
+      author: serg
+      comments: "Мигрируем categoria_nivel, приводим к единому формату и создаем новый CHECK constraint безопасно"
+
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: tournaments_db
+            columnName: categoria_nivel
+
+      changes:
+        # 1. Приводим все некорректные значения к стандартным
+        - sql:
+            splitStatements: true
+            sql: |
+              UPDATE tournaments_db 
+              SET categoria_nivel = 'C8'
+              WHERE UPPER(categoria_nivel) IN ('INTERMEDIO','INTERMEDIATE','MEDIO','8','C8');
+
+              UPDATE tournaments_db 
+              SET categoria_nivel = 'C9'
+              WHERE UPPER(categoria_nivel) IN ('PRINCIPIANTE','BEGINNER','PRINCIPIANT','9','C9');
+
+              UPDATE tournaments_db 
+              SET categoria_nivel = 'C7'
+              WHERE UPPER(categoria_nivel) IN ('AVANZADO','ADVANCED','AVANZAD','7','C7');
+
+              UPDATE tournaments_db 
+              SET categoria_nivel = 'C6'
+              WHERE UPPER(categoria_nivel) IN ('PROFESIONAL','PROFESSIONAL','PRO','6','C6');
+
+              UPDATE tournaments_db 
+              SET categoria_nivel = 'C5'
+              WHERE UPPER(categoria_nivel) IN ('ELITE','ELIT','5','C5');
+
+        # 2. Устанавливаем значение по умолчанию для NULL или оставшихся некорректных
+        - sql:
+            splitStatements: false
+            sql: |
+              UPDATE tournaments_db
+              SET categoria_nivel = 'C9'
+              WHERE categoria_nivel IS NULL
+                 OR UPPER(categoria_nivel) NOT IN ('C9','C8','C7','C6','C5');
+
+        # 3. Приводим все значения к верхнему регистру
+        - sql:
+            splitStatements: false
+            sql: |
+              UPDATE tournaments_db
+              SET categoria_nivel = UPPER(categoria_nivel)
+              WHERE categoria_nivel IS NOT NULL;
+
+        # 4. Делаем колонку NOT NULL и задаем DEFAULT
+        - sql:
+            splitStatements: false
+            sql: |
+              ALTER TABLE tournaments_db 
+              ALTER COLUMN categoria_nivel SET NOT NULL,
+              ALTER COLUMN categoria_nivel SET DEFAULT 'C9';
+
+        # 5. Удаляем старые constraints через SQL (без precondition)
+        - sql:
+            splitStatements: false
+            sql: |
+              ALTER TABLE tournaments_db DROP CONSTRAINT IF EXISTS chk_categoria_nivel;
+              ALTER TABLE tournaments_db DROP CONSTRAINT IF EXISTS chk_categoria_nivel_enum;
+
+        # 6. Создаем новый CHECK constraint
+        - sql:
+            splitStatements: false
+            sql: |
+              ALTER TABLE tournaments_db
+              ADD CONSTRAINT chk_categoria_nivel_enum
+              CHECK (categoria_nivel IN ('C9','C8','C7','C6','C5'));
+
+        # 7. Комментарий к колонке
+        - sql:
+            splitStatements: false
+            sql: |
+              COMMENT ON COLUMN tournaments_db.categoria_nivel 
+              IS 'Уровень турнира (C9-Принципианте, C8-Интермедио, C7-Аванзадо, C6-Професиональ, C5-Элита)';

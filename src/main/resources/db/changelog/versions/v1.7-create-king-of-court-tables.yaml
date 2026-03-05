@@ -1,0 +1,346 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.7-create-king-of-court-tables
+      author: padel-core
+      changes:
+        - createTable:
+            tableName: tournament_king_of_court_db
+            remarks: "Турниры типа Король Корта"
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_tournament_king
+                    nullable: false
+              - column:
+                  name: tournament_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_king_tournament
+                    references: tournaments_db(id)
+              - column:
+                  name: max_courts
+                  type: INTEGER
+                  defaultValue: 5
+                  constraints:
+                    nullable: false
+              - column:
+                  name: calibration_rounds
+                  type: INTEGER
+                  defaultValue: 3
+                  constraints:
+                    nullable: false
+              - column:
+                  name: current_round
+                  type: INTEGER
+                  defaultValue: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: is_active
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: is_finished
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: youtube_link
+                  type: VARCHAR(500)
+              - column:
+                  name: started_at
+                  type: TIMESTAMP WITHOUT TIME ZONE
+              - column:
+                  name: finished_at
+                  type: TIMESTAMP WITHOUT TIME ZONE
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITHOUT TIME ZONE
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITHOUT TIME ZONE
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+        - createTable:
+            tableName: king_of_court_round_db
+            remarks: "Раунды турнира Король Корта"
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_koc_round
+                    nullable: false
+              - column:
+                  name: tournament_king_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_round_king
+                    references: tournament_king_of_court_db(id)
+              - column:
+                  name: round_number
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: is_completed
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITHOUT TIME ZONE
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: completed_at
+                  type: TIMESTAMP WITHOUT TIME ZONE
+
+        - createTable:
+            tableName: king_of_court_court_db
+            remarks: "Корты в раунде Короля Корта"
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_koc_court
+                    nullable: false
+              - column:
+                  name: round_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_court_round
+                    references: king_of_court_round_db(id)
+              - column:
+                  name: court_number
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+
+        - createTable:
+            tableName: court_players_db
+            remarks: "Игроки на корте"
+            columns:
+              - column:
+                  name: court_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_court_players_db
+                    references: king_of_court_court_db(id)
+              - column:
+                  name: player_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_court_player_id
+                    references: player_padel_db(id)
+
+        - createTable:
+            tableName: court_teams_db
+            remarks: "Команды на корте"
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_court_team
+                    nullable: false
+              - column:
+                  name: court_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_team_court
+                    references: king_of_court_court_db(id)
+              - column:
+                  name: team_number
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: player1_id
+                  type: BIGINT
+                  constraints:
+                    foreignKeyName: fk_team_player1
+                    references: player_padel_db(id)
+              - column:
+                  name: player2_id
+                  type: BIGINT
+                  constraints:
+                    foreignKeyName: fk_team_player2
+                    references: player_padel_db(id)
+
+        - createTable:
+            tableName: king_of_court_match_result_db
+            remarks: "Результаты матчей Короля Корта"
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_koc_result
+                    nullable: false
+              - column:
+                  name: court_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    unique: true
+                    foreignKeyName: fk_result_court
+                    references: king_of_court_court_db(id)
+              - column:
+                  name: winner1_id
+                  type: BIGINT
+                  constraints:
+                    foreignKeyName: fk_result_winner1
+                    references: player_padel_db(id)
+              - column:
+                  name: winner2_id
+                  type: BIGINT
+                  constraints:
+                    foreignKeyName: fk_result_winner2
+                    references: player_padel_db(id)
+              - column:
+                  name: loser1_id
+                  type: BIGINT
+                  constraints:
+                    foreignKeyName: fk_result_loser1
+                    references: player_padel_db(id)
+              - column:
+                  name: loser2_id
+                  type: BIGINT
+                  constraints:
+                    foreignKeyName: fk_result_loser2
+                    references: player_padel_db(id)
+              - column:
+                  name: winners_score
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: losers_score
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITHOUT TIME ZONE
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+        - createTable:
+            tableName: king_of_court_player_stats_db
+            remarks: "Статистика игроков в турнире Король Корта"
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_koc_stats
+                    nullable: false
+              - column:
+                  name: tournament_king_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_stats_king
+                    references: tournament_king_of_court_db(id)
+              - column:
+                  name: player_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_stats_player
+                    references: player_padel_db(id)
+              - column:
+                  name: total_points
+                  type: INTEGER
+                  defaultValue: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: bonus_points
+                  type: INTEGER
+                  defaultValue: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: games_played
+                  type: INTEGER
+                  defaultValue: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: wins
+                  type: INTEGER
+                  defaultValue: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: losses
+                  type: INTEGER
+                  defaultValue: 0
+                  constraints:
+                    nullable: false
+
+        # Индексы
+        - createIndex:
+            indexName: idx_king_tournament
+            tableName: tournament_king_of_court_db
+            columns:
+              - column:
+                  name: tournament_id
+
+        - createIndex:
+            indexName: idx_king_active
+            tableName: tournament_king_of_court_db
+            columns:
+              - column:
+                  name: is_active
+
+        - createIndex:
+            indexName: idx_round_king
+            tableName: king_of_court_round_db
+            columns:
+              - column:
+                  name: tournament_king_id
+
+        - createIndex:
+            indexName: idx_court_round
+            tableName: king_of_court_court_db
+            columns:
+              - column:
+                  name: round_id
+
+        - createIndex:
+            indexName: idx_stats_player
+            tableName: king_of_court_player_stats_db
+            columns:
+              - column:
+                  name: player_id
+              - column:
+                  name: tournament_king_id
