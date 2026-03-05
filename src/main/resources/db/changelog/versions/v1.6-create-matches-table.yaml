@@ -1,6 +1,6 @@
 databaseChangeLog:
   - changeSet:
-      id: 13
+      id: v1.6-create-matches-table
       author: padel-core
       changes:
         - createTable:
@@ -213,18 +213,3 @@ databaseChangeLog:
             referencedTableName: player_padel_db
             referencedColumnNames: id
             constraintName: fk_match_player4
-
-  - changeSet:
-      id: 14
-      author: padel-core
-      changes:
-        - sql:
-            dbms: postgresql
-            sql: |
-              COMMENT ON TABLE matches_db IS 'Матчи турниров';
-              COMMENT ON COLUMN matches_db.id IS 'ID матча';
-              COMMENT ON COLUMN matches_db.tournament_id IS 'ID турнира';
-              COMMENT ON COLUMN matches_db.ronda IS 'Раунд (1: первый, 2: четвертьфинал, 3: полуфинал, 4: финал)';
-              COMMENT ON COLUMN matches_db.partido_numero IS 'Номер матча в раунде';
-              COMMENT ON COLUMN matches_db.tipo IS 'Тип матча (INDIVIDUAL, PAREJAS)';
-              COMMENT ON COLUMN matches_db.estado IS 'Статус матча';

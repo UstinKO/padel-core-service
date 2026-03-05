@@ -1,6 +1,6 @@
 databaseChangeLog:
   - changeSet:
-      id: 4
+      id: v1.2-create-tournament-table
       author: padel-core
       changes:
         - createTable:
@@ -182,33 +182,3 @@ databaseChangeLog:
             columns:
               - column:
                   name: tipo
-
-  - changeSet:
-      id: 5
-      author: padel-core
-      changes:
-        - sql:
-            dbms: postgresql
-            sql: |
-              COMMENT ON TABLE tournaments_db IS 'Таблица турниров';
-              COMMENT ON COLUMN tournaments_db.id IS 'Уникальный идентификатор турнира';
-              COMMENT ON COLUMN tournaments_db.club_id IS 'ID клуба-организатора';
-              COMMENT ON COLUMN tournaments_db.nombre IS 'Название турнира';
-              COMMENT ON COLUMN tournaments_db.fecha_inicio IS 'Дата начала турнира';
-              COMMENT ON COLUMN tournaments_db.hora_inicio IS 'Время начала турнира';
-              COMMENT ON COLUMN tournaments_db.duracion IS 'Длительность турнира';
-              COMMENT ON COLUMN tournaments_db.genero_formato IS 'Гендерный формат';
-              COMMENT ON COLUMN tournaments_db.categoria_nivel IS 'Категория/уровень';
-              COMMENT ON COLUMN tournaments_db.tipo IS 'Тип турнира';
-              COMMENT ON COLUMN tournaments_db.cupo_max IS 'Максимум участников/пар';
-              COMMENT ON COLUMN tournaments_db.precio IS 'Стоимость участия';
-              COMMENT ON COLUMN tournaments_db.moneda IS 'Валюта';
-              COMMENT ON COLUMN tournaments_db.estado IS 'Статус турнира';
-              COMMENT ON COLUMN tournaments_db.deadline_cancelacion IS 'Дедлайн отмены';
-              COMMENT ON COLUMN tournaments_db.info_detallada IS 'Подробная информация';
-              COMMENT ON COLUMN tournaments_db.contacto_organizador IS 'Контакт организатора';
-              COMMENT ON COLUMN tournaments_db.faq_url IS 'Ссылка на FAQ';
-              COMMENT ON COLUMN tournaments_db.created_at IS 'Дата создания';
-              COMMENT ON COLUMN tournaments_db.updated_at IS 'Дата обновления';
-              COMMENT ON COLUMN tournaments_db.created_by IS 'Кем создан';
-              COMMENT ON COLUMN tournaments_db.is_active IS 'Активность записи';

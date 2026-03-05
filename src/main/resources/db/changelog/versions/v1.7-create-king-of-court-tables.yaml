@@ -1,6 +1,6 @@
 databaseChangeLog:
   - changeSet:
-      id: 15
+      id: v1.7-create-king-of-court-tables
       author: padel-core
       changes:
         - createTable:
@@ -344,18 +344,3 @@ databaseChangeLog:
                   name: player_id
               - column:
                   name: tournament_king_id
-
-  - changeSet:
-      id: 16
-      author: padel-core
-      changes:
-        - sql:
-            dbms: postgresql
-            sql: |
-              COMMENT ON TABLE tournament_king_of_court_db IS 'Турниры типа Король Корта';
-              COMMENT ON TABLE king_of_court_round_db IS 'Раунды турнира Король Корта';
-              COMMENT ON TABLE king_of_court_court_db IS 'Корты в раунде';
-              COMMENT ON TABLE court_players_db IS 'Связь кортов с игроками';
-              COMMENT ON TABLE court_teams_db IS 'Команды на кортах';
-              COMMENT ON TABLE king_of_court_match_result_db IS 'Результаты матчей';
-              COMMENT ON TABLE king_of_court_player_stats_db IS 'Статистика игроков в турнире';
