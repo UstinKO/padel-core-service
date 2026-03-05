@@ -41,3 +41,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.13-add-missing-ranking-columns.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.14-update-owner-credential.yaml
+      relativeToChangelogFile: true

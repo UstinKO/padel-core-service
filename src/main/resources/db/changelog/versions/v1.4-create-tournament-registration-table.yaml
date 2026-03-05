@@ -1,6 +1,6 @@
 databaseChangeLog:
   - changeSet:
-      id: 8
+      id: v1.4-create-tournament-registration-table
       author: padel-core
       changes:
         - createTable:
@@ -152,23 +152,3 @@ databaseChangeLog:
             referencedColumnNames: id
             constraintName: fk_reg_player
             onDelete: CASCADE
-
-  - changeSet:
-      id: 9
-      author: padel-core
-      changes:
-        - sql:
-            dbms: postgresql
-            sql: |
-              COMMENT ON TABLE tournament_registrations_db IS 'Регистрации игроков на турниры';
-              COMMENT ON COLUMN tournament_registrations_db.id IS 'Уникальный идентификатор регистрации';
-              COMMENT ON COLUMN tournament_registrations_db.tournament_id IS 'ID турнира';
-              COMMENT ON COLUMN tournament_registrations_db.player_id IS 'ID игрока';
-              COMMENT ON COLUMN tournament_registrations_db.registration_date IS 'Дата и время регистрации';
-              COMMENT ON COLUMN tournament_registrations_db.status IS 'Статус регистрации';
-              COMMENT ON COLUMN tournament_registrations_db.position IS 'Позиция в основном списке';
-              COMMENT ON COLUMN tournament_registrations_db.partner_id IS 'ID партнера по команде';
-              COMMENT ON COLUMN tournament_registrations_db.cancellation_date IS 'Дата отмены';
-              COMMENT ON COLUMN tournament_registrations_db.cancellation_reason IS 'Причина отмены';
-              COMMENT ON COLUMN tournament_registrations_db.waitlist_position IS 'Позиция в листе ожидания';
-              COMMENT ON COLUMN tournament_registrations_db.notified_about_vacancy IS 'Уведомлен о появлении места';

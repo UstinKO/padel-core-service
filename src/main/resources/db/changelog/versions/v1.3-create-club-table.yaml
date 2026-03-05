@@ -1,6 +1,6 @@
 databaseChangeLog:
   - changeSet:
-      id: 6
+      id: v1.3-create-club-table
       author: padel-core
       changes:
         - createTable:
@@ -119,26 +119,3 @@ databaseChangeLog:
             columns:
               - column:
                   name: is_active
-
-  - changeSet:
-      id: 7
-      author: padel-core
-      changes:
-        - sql:
-            dbms: postgresql
-            sql: |
-              COMMENT ON TABLE club_db IS 'Таблица клубов';
-              COMMENT ON COLUMN club_db.id IS 'Уникальный идентификатор клуба';
-              COMMENT ON COLUMN club_db.nombre IS 'Название клуба';
-              COMMENT ON COLUMN club_db.direccion IS 'Адрес клуба';
-              COMMENT ON COLUMN club_db.zona_ciudad IS 'Зона или город расположения';
-              COMMENT ON COLUMN club_db.telefono_contacto IS 'Телефон для связи';
-              COMMENT ON COLUMN club_db.email_contacto IS 'Email для связи';
-              COMMENT ON COLUMN club_db.mapa_url IS 'Ссылка на карту';
-              COMMENT ON COLUMN club_db.website_url IS 'Сайт клуба';
-              COMMENT ON COLUMN club_db.descripcion IS 'Описание клуба';
-              COMMENT ON COLUMN club_db.logo_url IS 'Логотип клуба';
-              COMMENT ON COLUMN club_db.created_at IS 'Дата создания';
-              COMMENT ON COLUMN club_db.updated_at IS 'Дата обновления';
-              COMMENT ON COLUMN club_db.created_by IS 'Кем создан';
-              COMMENT ON COLUMN club_db.is_active IS 'Активность записи';
