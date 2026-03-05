@@ -1,6 +1,6 @@
 databaseChangeLog:
   - changeSet:
-      id: 10
+      id: v1.5-create-ranking-table
       author: padel-core
       changes:
         - createTable:
@@ -157,26 +157,3 @@ databaseChangeLog:
             constraintName: fk_ranking_player
             onDelete: CASCADE
             onUpdate: CASCADE
-
-  - changeSet:
-      id: 11
-      author: padel-core
-      changes:
-        - sql:
-            dbms: postgresql
-            sql: |
-              COMMENT ON TABLE ranking_db IS 'Рейтинг игроков';
-              COMMENT ON COLUMN ranking_db.id IS 'Уникальный идентификатор записи рейтинга';
-              COMMENT ON COLUMN ranking_db.player_id IS 'ID игрока';
-              COMMENT ON COLUMN ranking_db.puntos IS 'Общее количество очков игрока';
-              COMMENT ON COLUMN ranking_db.torneos_jugados IS 'Количество сыгранных турниров';
-              COMMENT ON COLUMN ranking_db.torneos_ganados IS 'Количество выигранных турниров';
-              COMMENT ON COLUMN ranking_db.partidos_ganados IS 'Количество выигранных матчей';
-              COMMENT ON COLUMN ranking_db.partidos_perdidos IS 'Количество проигранных матчей';
-              COMMENT ON COLUMN ranking_db.sets_ganados IS 'Количество выигранных сетов';
-              COMMENT ON COLUMN ranking_db.sets_perdidos IS 'Количество проигранных сетов';
-              COMMENT ON COLUMN ranking_db.nivel_actual IS 'Текущий уровень игрока';
-              COMMENT ON COLUMN ranking_db.posicion_anterior IS 'Предыдущая позиция в рейтинге';
-              COMMENT ON COLUMN ranking_db.posicion_actual IS 'Текущая позиция в рейтинге';
-              COMMENT ON COLUMN ranking_db.created_at IS 'Дата создания записи';
-              COMMENT ON COLUMN ranking_db.updated_at IS 'Дата последнего обновления';

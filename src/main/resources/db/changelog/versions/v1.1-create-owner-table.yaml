@@ -1,6 +1,6 @@
 databaseChangeLog:
   - changeSet:
-      id: 2
+      id: v1.1-create-owner-table
       author: padel-core
       changes:
         - createTable:
@@ -84,32 +84,3 @@ databaseChangeLog:
             columns:
               - column:
                   name: is_super_admin
-
-  - changeSet:
-      id: 3
-      author: padel-core
-      changes:
-        - insert:
-            tableName: owners_db
-            columns:
-              - column:
-                  name: email
-                  value: "owner@padel-core.com"
-              - column:
-                  name: password
-                  value: "$2a$10$ci7vA9kC6qK9PD5dQHO0GO3ic.dbBihgHvhTaEk3mVRQ4dyL6mGgy"
-              - column:
-                  name: first_name
-                  value: "Admin"
-              - column:
-                  name: last_name
-                  value: "Owner"
-              - column:
-                  name: phone
-                  value: "+1234567890"
-              - column:
-                  name: is_super_admin
-                  valueBoolean: true
-              - column:
-                  name: is_active
-                  valueBoolean: true

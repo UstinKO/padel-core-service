@@ -1,6 +1,6 @@
 databaseChangeLog:
   - changeSet:
-      id: 1
+      id: v1.0-create-player-table
       author: padle-team
       changes:
         - createTable:

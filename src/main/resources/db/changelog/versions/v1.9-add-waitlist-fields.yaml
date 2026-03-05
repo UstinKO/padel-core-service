@@ -1,7 +1,7 @@
 databaseChangeLog:
 
   - changeSet:
-      id: 24
+      id: v1.9-add-waitlist-columns
       author: padel-core
       changes:
         - sql:
@@ -13,9 +13,8 @@ databaseChangeLog:
               ALTER TABLE tournament_registrations_db
                 ADD COLUMN IF NOT EXISTS invitation_expires_at TIMESTAMP WITHOUT TIME ZONE;
 
-
   - changeSet:
-      id: 25
+      id: v1.9-create-waitlist-indexes
       author: padel-core
       changes:
         - sql:
@@ -27,9 +26,8 @@ databaseChangeLog:
               CREATE INDEX IF NOT EXISTS idx_reg_notified_vacancy
                 ON tournament_registrations_db(notified_about_vacancy);
 
-
   - changeSet:
-      id: 26
+      id: v1.9-add-waitlist-comments
       author: padel-core
       changes:
         - sql:
