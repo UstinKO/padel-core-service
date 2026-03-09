@@ -44,3 +44,15 @@ databaseChangeLog:
   - include:
       file: versions/v1.14-update-owner-credential.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.15-add-modalidad-to-tournament.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: versions/v1.16-update-categoria-nivel-constraint.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: versions/v1.17-create-payments-table.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: versions/v1.18-add-attended-to-registration.yaml
+      relativeToChangelogFile: true

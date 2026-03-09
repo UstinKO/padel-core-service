@@ -1,0 +1,22 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.18-add-attended-to-registration
+      author: padel-core
+      comment: Add attended field to tournament_registrations_db table
+
+      changes:
+        - addColumn:
+            tableName: tournament_registrations_db
+            columns:
+              - column:
+                  name: attended
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+                  remarks: "Отметка о посещении турнира (пришел/не пришел)"
+
+      rollback:
+        - dropColumn:
+            tableName: tournament_registrations_db
+            columnName: attended

@@ -1,6 +1,7 @@
 package com.padle.core.padelcoreservice.dto;
 
 import com.padle.core.padelcoreservice.model.enums.GenderFormat;
+import com.padle.core.padelcoreservice.model.enums.Modalidad;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
 import lombok.AllArgsConstructor;
@@ -28,6 +29,7 @@ public class TournamentDto {
     private GenderFormat generoFormato;
     private String categoriaNivel;
     private TournamentType tipo;
+    private Modalidad modalidad;
     private Integer cupoMax;
     private BigDecimal precio;
     private String moneda;

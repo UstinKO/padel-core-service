@@ -18,6 +18,7 @@ import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -235,48 +236,35 @@ public class TournamentService {
         int availableSlots = tournament.getCupoMax() - (int) confirmedCount;
 
         if (availableSlots > 0) {
-            // Получаем весь лист ожидания (включая приглашенных)
+            // Получаем только WAITLIST (без INVITED)
             List<TournamentRegistration> waitlist = registrationRepository
-                    .findWaitlistWithInvitedByTournamentId(tournamentId);
+                    .findByTournamentIdAndStatusOrderByWaitlistPositionAsc(
+                            tournamentId, RegistrationStatus.WAITLIST);
 
-            // Убираем просроченные приглашения
-            List<TournamentRegistration> expiredInvitations = waitlist.stream()
-                    .filter(r -> r.getStatus() == RegistrationStatus.WAITLIST_INVITED
-                            && r.getInvitationExpiresAt().isBefore(LocalDateTime.now()))
-                    .collect(Collectors.toList());
-
-            for (TournamentRegistration expired : expiredInvitations) {
-                // Возвращаем в лист ожидания на прежнюю позицию
-                expired.setStatus(RegistrationStatus.WAITLIST);
-                expired.setInvitationExpiresAt(null);
-                registrationRepository.save(expired);
-                log.info("Expired invitation for player {}", expired.getPlayer().getId());
-            }
-
-            // Обновляем список после очистки просроченных
-            waitlist = registrationRepository.findWaitlistWithInvitedByTournamentId(tournamentId);
-
-            int slotsToFill = Math.min(availableSlots, waitlist.size());
             log.info("Found {} available slots and {} players in waitlist", availableSlots, waitlist.size());
 
-            if (slotsToFill > 0) {
-                // Вместо автоматического подтверждения, отправляем приглашения
-                for (int i = 0; i < slotsToFill; i++) {
-                    TournamentRegistration waitlistEntry = waitlist.get(i);
+            if (!waitlist.isEmpty()) {
+                // Берем только первого в очереди (независимо от количества свободных мест)
+                TournamentRegistration firstInWaitlist = waitlist.get(0);
 
-                    // Устанавливаем статус "приглашен" и время истечения (24 часа)
-                    waitlistEntry.setStatus(RegistrationStatus.WAITLIST_INVITED);
-                    waitlistEntry.setInvitationExpiresAt(LocalDateTime.now().plusHours(24));
-                    registrationRepository.save(waitlistEntry);
-
-                    log.info("Invitation sent to player {} for tournament {}",
-                            waitlistEntry.getPlayer().getId(), tournamentId);
-
-                    // Отправляем email с кнопкой подтверждения
-                    sendVacancyInvitationEmail(waitlistEntry.getPlayer(), tournament, waitlistEntry.getId());
-                }
+                // Отправляем приглашение только первому
+                sendInvitationToPlayer(firstInWaitlist, tournament);
             }
         }
+    }
+
+    private void sendInvitationToPlayer(TournamentRegistration registration, Tournament tournament) {
+        // Устанавливаем статус "приглашен" и время истечения (5 минут)
+        registration.setStatus(RegistrationStatus.WAITLIST_INVITED);
+        registration.setInvitationExpiresAt(LocalDateTime.now().plusMinutes(5)); // 5 минут
+        registrationRepository.save(registration);
+
+        log.info("Invitation sent to player {} for tournament {} (expires at {})",
+                registration.getPlayer().getId(), tournament.getId(),
+                registration.getInvitationExpiresAt());
+
+        // Отправляем email с кнопкой подтверждения
+        sendVacancyInvitationEmail(registration.getPlayer(), tournament, registration.getId());
     }
 
     // ==================== Методы для получения информации о регистрациях ====================
@@ -507,6 +495,7 @@ public class TournamentService {
         existing.setGeneroFormato(dto.getGeneroFormato());
         existing.setCategoriaNivel(Nivel.valueOf(dto.getCategoriaNivel()));
         existing.setTipo(dto.getTipo());
+        existing.setModalidad(dto.getModalidad());
         existing.setCupoMax(dto.getCupoMax());
         existing.setPrecio(dto.getPrecio());
         existing.setMoneda(dto.getMoneda());
@@ -578,14 +567,22 @@ public class TournamentService {
 
         // Проверяем, не истекло ли приглашение
         if (registration.getInvitationExpiresAt().isBefore(LocalDateTime.now())) {
+            // Приглашение истекло - отправляем игрока обратно в конец очереди?
+            // Или удаляем из очереди? Лучше вернуть в конец.
             registration.setStatus(RegistrationStatus.WAITLIST);
             registration.setInvitationExpiresAt(null);
+
+            // Перемещаем в конец очереди (обновляем позицию)
+            Integer maxPosition = registrationRepository.findMaxWaitlistPosition(
+                    registration.getTournament().getId()).orElse(0);
+            registration.setWaitlistPosition(maxPosition + 1);
+
             registrationRepository.save(registration);
 
-            // Запускаем повторную обработку листа ожидания
+            // Запускаем повторную обработку для следующего в очереди
             processWaitlistForTournament(registration.getTournament().getId());
 
-            throw new InvalidStateException("Invitation has expired. Please try again later.");
+            throw new InvalidStateException("El tiempo para confirmar ha expirado. Has sido movido al final de la lista de espera.");
         }
 
         Tournament tournament = registration.getTournament();
@@ -595,20 +592,13 @@ public class TournamentService {
                 tournament.getId(), RegistrationStatus.CONFIRMED);
 
         if (confirmedCount >= tournament.getCupoMax()) {
-            // Мест больше нет - отменяем все приглашения
-            List<TournamentRegistration> invitations = registrationRepository
-                    .findByTournamentIdAndStatus(tournament.getId(), RegistrationStatus.WAITLIST_INVITED);
+            // Мест больше нет - отменяем ТОЛЬКО это приглашение, остальные пока ждут
+            registration.setStatus(RegistrationStatus.WAITLIST);
+            registration.setInvitationExpiresAt(null);
+            registrationRepository.save(registration);
 
-            for (TournamentRegistration inv : invitations) {
-                inv.setStatus(RegistrationStatus.WAITLIST);
-                inv.setInvitationExpiresAt(null);
-                registrationRepository.save(inv);
-            }
-
-            // Отправляем уведомление всем, кто не успел
-            for (TournamentRegistration inv : invitations) {
-                sendNoSpotsLeftEmail(inv.getPlayer(), tournament);
-            }
+            // Отправляем уведомление этому игроку
+            sendNoSpotsLeftEmail(registration.getPlayer(), tournament);
 
             throw new InvalidStateException("Lo sentimos, alguien más ya ocupó el último lugar. ¡Estamos muy contentos con la gran cantidad de solicitudes para este torneo!");
         }
@@ -625,6 +615,10 @@ public class TournamentService {
 
         // Отправляем подтверждение
         sendConfirmationEmail(registration.getPlayer(), tournament);
+
+        // После подтверждения одного игрока, запускаем обработку для следующего в очереди
+        // (если места еще есть)
+        processWaitlistForTournament(tournament.getId());
 
         return true;
     }
@@ -684,6 +678,32 @@ public class TournamentService {
 
         } catch (Exception e) {
             log.error("Error sending confirmation email: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Проверка истекших приглашений (запускать по расписанию, каждые 5 минут)
+     */
+    @Scheduled(cron = "0 */5 * * * *") // Каждую минуту
+    @Transactional
+    public void checkExpiredInvitations() {
+        log.debug("Checking for expired waitlist invitations");
+
+        LocalDateTime now = LocalDateTime.now();
+        List<TournamentRegistration> expiredInvitations = registrationRepository
+                .findByStatusAndInvitationExpiresAtBefore(RegistrationStatus.WAITLIST_INVITED, now);
+
+        for (TournamentRegistration registration : expiredInvitations) {
+            log.info("Invitation expired for player {} in tournament {}",
+                    registration.getPlayer().getId(), registration.getTournament().getId());
+
+            // Возвращаем в лист ожидания
+            registration.setStatus(RegistrationStatus.WAITLIST);
+            registration.setInvitationExpiresAt(null);
+            registrationRepository.save(registration);
+
+            // Обрабатываем очередь для этого турнира (отправим приглашение следующему)
+            processWaitlistForTournament(registration.getTournament().getId());
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.model;
 
+import com.padle.core.padelcoreservice.model.enums.PaymentStatus;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -7,6 +8,10 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
 
 @Entity
 @Table(name = "tournament_registrations_db")
@@ -66,6 +71,27 @@ public class TournamentRegistration {
     @Column(name = "is_active", nullable = false)
     @Builder.Default
     private Boolean isActive = true;
+
+    @Column(name = "attended", nullable = false)
+    @Builder.Default
+    private Boolean attended = false;
+
+    @OneToMany(mappedBy = "registration", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<Payment> payments = new ArrayList<>();
+
+    // Хелпер-метод для получения последнего платежа
+    public Optional<Payment> getLatestPayment() {
+        return payments.stream()
+                .filter(p -> p.getStatus() == PaymentStatus.PAID)
+                .max(Comparator.comparing(Payment::getPaymentDate));
+    }
+
+    // Проверка, оплачено ли
+    public boolean isPaid() {
+        return payments.stream()
+                .anyMatch(p -> p.getStatus() == PaymentStatus.PAID);
+    }
 
     // Вспомогательные методы
     public boolean isConfirmed() {

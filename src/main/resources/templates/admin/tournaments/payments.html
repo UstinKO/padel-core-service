@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="'Gestionar Pagos - ' + ${tournament.nombre} + ' - E-Padel Admin'">Gestionar Pagos - E-Padel Admin</title>
+
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
+    <link rel="alternate icon" th:href="@{/images/favicon.ico}">
+    <link rel="apple-touch-icon" th:href="@{/images/apple-touch-icon.png}">
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+
+    <style>
+        /* Дополнительные стили только для этой страницы */
+        .payment-management {
+            padding: 2rem 0;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .page-header h1 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0;
+        }
+
+        .page-header h1 i {
+            color: #10b981;
+            margin-right: 0.75rem;
+        }
+
+        .tournament-info {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 1rem;
+            font-weight: 500;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+            margin-bottom: 2rem;
+        }
+
+        .payments-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1200px;
+        }
+
+        .payments-table th {
+            background: #f8fafc;
+            padding: 1rem;
+            font-weight: 600;
+            color: #475569;
+            text-align: left;
+            border-bottom: 2px solid #e2e8f0;
+            white-space: nowrap;
+        }
+
+        .payments-table th i {
+            margin-right: 0.5rem;
+            color: #667eea;
+        }
+
+        .payments-table td {
+            padding: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+            vertical-align: middle;
+        }
+
+        .payments-table tr:hover {
+            background: #f8fafc;
+        }
+
+        .player-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .player-name {
+            font-weight: 600;
+            color: #0f172a;
+        }
+
+        .player-email {
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+
+        .position-badge {
+            background: #e2e8f0;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #475569;
+            display: inline-block;
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .checkbox-wrapper input[type="checkbox"] {
+            width: 1.25rem;
+            height: 1.25rem;
+            cursor: pointer;
+        }
+
+        .form-control-sm {
+            padding: 0.5rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            width: 100%;
+            transition: border-color 0.15s ease-in-out;
+        }
+
+        .form-control-sm:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        select.form-control-sm {
+            background-color: white;
+            cursor: pointer;
+        }
+
+        .amount-input {
+            width: 100px;
+        }
+
+        .summary-stats {
+            display: flex;
+            gap: 2rem;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        /* Единые стили для кнопок как в админке */
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+            justify-content: flex-end;
+        }
+    </style>
+</head>
+<body>
+<!-- Используем стандартный header из фрагментов -->
+<header th:replace="~{fragments/admin-header :: header('Gestión de Pagos')}"></header>
+
+<main class="admin-main">
+    <div class="container">
+        <div class="payment-management">
+            <!-- Заголовок страницы -->
+            <div class="page-header">
+                <h1>
+                    <i class="fas fa-credit-card"></i>
+                    Gestionar Pagos y Asistencia
+                </h1>
+                <div class="tournament-info">
+                    <i class="fas fa-trophy"></i>
+                    <span th:text="${tournament.nombre}">Torneo</span>
+                </div>
+            </div>
+
+            <!-- Сообщения об успехе/ошибке - используем стандартные классы из admin.css -->
+            <div th:if="${successMessage}" class="alert alert-success">
+                <i class="fas fa-check-circle"></i>
+                <span th:text="${successMessage}">Operación exitosa</span>
+            </div>
+            <div th:if="${errorMessage}" class="alert alert-danger">
+                <i class="fas fa-exclamation-circle"></i>
+                <span th:text="${errorMessage}">Error en la operación</span>
+            </div>
+
+            <!-- Сводная статистика -->
+            <div class="summary-stats" th:if="${players != null and not #lists.isEmpty(players)}">
+                <div class="stat-item">
+                    <span class="stat-label">Total Jugadores</span>
+                    <span class="stat-value" th:text="${#lists.size(players)}">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Pagados</span>
+                    <span class="stat-value" th:text="${#lists.size(players.?[paymentStatus != null and paymentStatus.name() == 'PAID'])}">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Asistieron</span>
+                    <span class="stat-value" th:text="${#lists.size(players.?[attended == true])}">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Total Recaudado</span>
+                    <div class="stat-value" th:text="'$ ' + ${#aggregates.sum(players.![amount != null ? amount : 0])}">0</div>
+                </div>
+            </div>
+
+            <!-- Форма для управления платежами -->
+            <form th:action="@{'/admin/tournaments/' + ${tournament.id} + '/payments/save'}"
+                  method="post"
+                  id="paymentForm">
+
+                <div class="table-container">
+                    <table class="payments-table">
+                        <thead>
+                        <tr>
+                            <th><i class="fas fa-hashtag"></i> Pos</th>
+                            <th><i class="fas fa-user"></i> Jugador</th>
+                            <th><i class="fas fa-check-circle"></i> Asistió</th>
+                            <th><i class="fas fa-money-bill-wave"></i> Monto</th>
+                            <th><i class="fas fa-coins"></i> Moneda</th>
+                            <th><i class="fas fa-tag"></i> Estado</th>
+                            <th><i class="fas fa-credit-card"></i> Método</th>
+                            <th><i class="fas fa-hashtag"></i> Transacción</th>
+                            <th><i class="fas fa-comment"></i> Notas</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="player, iterStat : ${players}">
+                            <!-- Hidden fields -->
+                            <input type="hidden"
+                                   th:name="'registrationIds[' + ${iterStat.index} + ']'"
+                                   th:value="${player.registrationId}" />
+
+                            <!-- Posición -->
+                            <td>
+                                <span class="position-badge" th:text="${player.position}">1</span>
+                            </td>
+
+                            <!-- Jugador -->
+                            <td>
+                                <div class="player-info">
+                                    <span class="player-name" th:text="${player.playerName}">Juan Pérez</span>
+                                    <span class="player-email" th:text="${player.playerEmail}">email@example.com</span>
+                                </div>
+                            </td>
+
+                            <!-- Asistió -->
+                            <td>
+                                <div class="checkbox-wrapper">
+                                    <input type="checkbox"
+                                           th:name="'attended[' + ${iterStat.index} + ']'"
+                                           th:value="${player.registrationId}"
+                                           th:checked="${player.attended}" />
+                                </div>
+                            </td>
+
+                            <!-- Monto -->
+                            <td>
+                                <input type="number"
+                                       th:name="'amounts[' + ${iterStat.index} + ']'"
+                                       th:value="${player.amount}"
+                                       class="form-control-sm amount-input"
+                                       step="0.01"
+                                       min="0"
+                                       placeholder="0.00" />
+                            </td>
+
+                            <!-- Moneda -->
+                            <td>
+                                <select th:name="'currencies[' + ${iterStat.index} + ']'"
+                                        class="form-control-sm">
+                                    <option value="ARS" th:selected="${player.currency == 'ARS'}">ARS</option>
+                                    <option value="USD" th:selected="${player.currency == 'USD'}">USD</option>
+                                    <option value="EUR" th:selected="${player.currency == 'EUR'}">EUR</option>
+                                </select>
+                            </td>
+
+                            <!-- Estado del pago -->
+                            <td>
+                                <select th:name="'paymentStatuses[' + ${iterStat.index} + ']'"
+                                        class="form-control-sm">
+                                    <option value="">Seleccionar</option>
+                                    <option th:each="status : ${paymentStatuses}"
+                                            th:value="${status.name()}"
+                                            th:text="${status.displayName}"
+                                            th:selected="${player.paymentStatus != null and player.paymentStatus.name() == status.name()}">
+                                    </option>
+                                </select>
+                            </td>
+
+                            <!-- Método de pago -->
+                            <td>
+                                <select th:name="'paymentMethods[' + ${iterStat.index} + ']'"
+                                        class="form-control-sm">
+                                    <option value="">Seleccionar</option>
+                                    <option th:each="method : ${paymentMethods}"
+                                            th:value="${method.name()}"
+                                            th:text="${method.displayName}"
+                                            th:selected="${player.paymentMethod != null and player.paymentMethod.name() == method.name()}">
+                                    </option>
+                                </select>
+                            </td>
+
+                            <!-- ID de transacción -->
+                            <td>
+                                <input type="text"
+                                       th:name="'transactionIds[' + ${iterStat.index} + ']'"
+                                       th:value="${player.transactionId}"
+                                       class="form-control-sm"
+                                       placeholder="ID transacción" />
+                            </td>
+
+                            <!-- Notas -->
+                            <td>
+                                <input type="text"
+                                       th:name="'notes[' + ${iterStat.index} + ']'"
+                                       th:value="${player.notes}"
+                                       class="form-control-sm"
+                                       placeholder="Notas..." />
+                            </td>
+                        </tr>
+
+                        <!-- Если нет игроков -->
+                        <tr th:unless="${players != null and not #lists.isEmpty(players)}">
+                            <td colspan="9" style="text-align: center; padding: 3rem;">
+                                <i class="fas fa-users" style="font-size: 3rem; color: #cbd5e1; margin-bottom: 1rem;"></i>
+                                <p style="color: #64748b;">No hay jugadores inscritos en este torneo</p>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Кнопки действий - используем стандартные классы из admin.css -->
+                <div class="action-buttons">
+                    <a th:href="@{'/admin/tournaments/' + ${tournament.id}}" class="btn btn-outline">
+                        <i class="fas fa-arrow-left"></i>
+                        Volver al Torneo
+                    </a>
+                    <button type="submit" class="btn btn-primary" th:if="${players != null and not #lists.isEmpty(players)}">
+                        <i class="fas fa-save"></i>
+                        Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+
+<!-- Используем стандартный footer из фрагментов -->
+<footer th:replace="~{fragments/admin-footer :: footer}"></footer>
+
+<!-- JavaScript -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Автоматическое обновление статуса при изменении суммы
+        const amountInputs = document.querySelectorAll('input[name^="amounts"]');
+        amountInputs.forEach(input => {
+            input.addEventListener('input', function() {
+                const row = this.closest('tr');
+                const statusSelect = row.querySelector('select[name^="paymentStatuses"]');
+                if (this.value && this.value > 0 && !statusSelect.value) {
+                    statusSelect.value = 'PAID';
+                }
+            });
+        });
+
+        // Подтверждение перед отправкой формы
+        const form = document.getElementById('paymentForm');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                if (!confirm('¿Guardar los cambios de pagos y asistencia?')) {
+                    e.preventDefault();
+                }
+            });
+        }
+    });
+</script>
+</body>
+</html>

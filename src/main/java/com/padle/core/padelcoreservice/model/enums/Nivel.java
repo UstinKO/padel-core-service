@@ -1,25 +1,23 @@
 package com.padle.core.padelcoreservice.model.enums;
 
+import lombok.Getter;
+
+@Getter
 public enum Nivel {
-    C9(9, "Principiante"),
-    C8(8, "Intermedio"),
-    C7(7, "Avanzado"),
-    C6(6, "Profesional"),
-    C5(5, "Élite");
+    C9("9"),
+    C8("8"),
+    C7("7"),
+    C6("6"),
+    C5("5"),
+    PRINCIPIANTES("Principiante");
 
-    private final int orden;
-    private final String descripcion;
+    private final String orden;
 
-    Nivel(int orden, String descripcion) {
+    Nivel(String orden) {
         this.orden = orden;
-        this.descripcion = descripcion;
-    }
-
-    public int getOrden() {
-        return orden;
     }
 
     public String getDisplay() {
-        return name() + " - " + descripcion;
+        return name();
     }
 }

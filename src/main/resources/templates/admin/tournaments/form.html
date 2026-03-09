@@ -192,6 +192,24 @@
                             <div class="invalid-feedback" th:if="${#fields.hasErrors('tipo')}"
                                  th:errors="*{tipo}">Error en el campo</div>
                         </div>
+
+                        <!-- НОВОЕ ПОЛЕ: Modalidad (Парный / Индивидуальный) -->
+                        <div class="form-group">
+                            <label for="modalidad" class="required">Modalidad de Juego</label>
+                            <select th:field="*{modalidad}"
+                                    id="modalidad"
+                                    class="form-control"
+                                    th:classappend="${#fields.hasErrors('modalidad')} ? 'is-invalid' : ''"
+                                    required>
+                                <option value="">Seleccione modalidad</option>
+                                <!-- Предполагаем, что в модель передается список modalidades -->
+                                <option th:each="modalidad : ${modalidades}"
+                                        th:value="${modalidad}"
+                                        th:text="${modalidad.nombre}"></option> <!-- Или modalidad.displayName -->
+                            </select>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('modalidad')}"
+                                 th:errors="*{modalidad}">Error en el campo</div>
+                        </div>
                     </div>
                 </div>
 
