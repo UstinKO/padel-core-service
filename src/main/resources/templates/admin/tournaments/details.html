@@ -339,6 +339,57 @@
                     </div>
                 </div>
 
+                <!-- ✅ НОВЫЙ БЛОК: Управление платежами и посещаемостью -->
+                <div class="admin-card payment-card">
+                    <div class="admin-card-header">
+                        <h2><i class="fas fa-credit-card"></i> Pagos y Asistencia</h2>
+                    </div>
+                    <div class="admin-card-body">
+                        <!-- Статистика платежей -->
+                        <div class="payment-stats-grid" th:if="${payments != null}">
+                            <div class="payment-stat-item">
+                                <span class="stat-label">Total Pagado:</span>
+                                <span class="stat-value" th:text="'$ ' + ${#numbers.formatDecimal(totalPaid, 0, 'COMMA', 2, 'POINT')}">$ 0.00</span>
+                            </div>
+                            <div class="payment-stat-item">
+                                <span class="stat-label">Pagados:</span>
+                                <span class="stat-value" th:text="${paidCount} + '/' + ${tournament.inscritosActuales}">0/0</span>
+                            </div>
+                            <div class="payment-stat-item">
+                                <span class="stat-label">Asistieron:</span>
+                                <span class="stat-value" th:text="${attendedCount} + '/' + ${tournament.inscritosActuales}">0/0</span>
+                            </div>
+                        </div>
+
+                        <!-- Кнопка управления платежами -->
+                        <div class="payment-actions">
+                            <a th:href="@{'/admin/tournaments/' + ${tournament.id} + '/payments'}"
+                               class="btn btn-primary btn-block">
+                                <i class="fas fa-money-bill-wave"></i>
+                                Gestionar Pagos
+                            </a>
+                        </div>
+
+                        <!-- Быстрый список должников (если есть) -->
+                        <div class="debtors-list" th:if="${debtorsCount > 0}">
+                            <h4>Pendientes de Pago <span class="badge" th:text="${debtorsCount}">0</span></h4>
+                            <div class="debtors-items">
+                                <div class="debtor-item" th:each="debtor : ${debtors}" th:if="${debtorStat.index < 3}">
+                                    <div class="debtor-info">
+                                        <i class="fas fa-user-circle"></i>
+                                        <span th:text="${debtor.playerName}">Jugador</span>
+                                    </div>
+                                    <span class="debtor-amount" th:text="'$ ' + ${debtor.amount}">$ 50</span>
+                                </div>
+                            </div>
+                            <a th:href="@{'/admin/tournaments/' + ${tournament.id} + '/payments'}"
+                               class="view-all-link" th:if="${debtorsCount > 3}">
+                                Ver todos (<span th:text="${debtorsCount}">5</span>)
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Секция King of Court (только для типа KING_OF_COURT) -->
                 <div th:if="${tournament.tipo.name() == 'KING_OF_COURT'}" class="admin-card king-card">
                     <div class="admin-card-header">

@@ -1,0 +1,25 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.16-update-categoria-nivel-constraint
+      author: padel-core
+      comment: Update categoria_nivel check constraint with new enum values
+
+      changes:
+        # Удаляем старый constraint (если существует)
+        - sql:
+            sql: ALTER TABLE tournaments_db DROP CONSTRAINT IF EXISTS chk_categoria_nivel_enum;
+
+        # Создаем новый constraint с актуальными значениями
+        - sql:
+            sql: |
+              ALTER TABLE tournaments_db 
+              ADD CONSTRAINT chk_categoria_nivel_enum 
+              CHECK (categoria_nivel IN ('C9', 'C8', 'C7', 'C6', 'C5', 'PRINCIPIANTES'));
+
+      rollback:
+        # На случай отката - вернуть старый constraint
+        - sql: |
+            ALTER TABLE tournaments_db DROP CONSTRAINT IF EXISTS chk_categoria_nivel_enum;
+            ALTER TABLE tournaments_db 
+            ADD CONSTRAINT chk_categoria_nivel_enum 
+            CHECK (categoria_nivel IN ('C9', 'C8', 'C7', 'C6', 'C5'));

@@ -1,6 +1,7 @@
 package com.padle.core.padelcoreservice.model;
 
 import com.padle.core.padelcoreservice.model.enums.GenderFormat;
+import com.padle.core.padelcoreservice.model.enums.Modalidad;
 import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
@@ -58,6 +59,10 @@ public class Tournament {
     @Column(name = "tipo", nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
     private TournamentType tipo;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "modalidad", nullable = false, length = 20)
+    private Modalidad modalidad;
 
     @Column(name = "cupo_max", nullable = false)
     private Integer cupoMax;

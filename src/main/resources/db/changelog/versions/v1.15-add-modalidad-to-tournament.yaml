@@ -1,0 +1,26 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.15-add-modalidad-to-tournament
+      author: padel-core
+      comment: Add modalidad column to tournament table
+
+      changes:
+        - addColumn:
+            tableName: tournaments_db
+            columns:
+              - column:
+                  name: modalidad
+                  type: VARCHAR(20)
+                  defaultValue: DOBLES
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: v1.15-add-modalidad-to-tournament-comment
+      author: padel-core
+      comment: Add comment for modalidad column
+
+      changes:
+        - sql:
+            sql: |
+              COMMENT ON COLUMN tournaments_db.modalidad IS 'Modalidad del torneo: DOBLES (парный) o INDIVIDUAL (одиночный)';

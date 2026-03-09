@@ -51,4 +51,14 @@ public interface TournamentRegistrationRepository extends JpaRepository<Tourname
 
     @Query("SELECT COUNT(tr) FROM TournamentRegistration tr WHERE tr.player.id = :playerId AND tr.status = :status")
     long countByPlayerIdAndStatus(@Param("playerId") Long playerId, @Param("status") RegistrationStatus status);
+
+    // В TournamentRegistrationRepository добавить:
+
+    List<TournamentRegistration> findByTournamentIdAndStatusOrderByWaitlistPositionAsc(
+            Long tournamentId, RegistrationStatus status);
+
+    List<TournamentRegistration> findByStatusAndInvitationExpiresAtBefore(
+            RegistrationStatus status, LocalDateTime expiryTime);
+
+    List<TournamentRegistration> findByTournamentIdOrderByPositionAscWaitlistPositionAsc(Long tournamentId);
 }

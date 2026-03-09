@@ -1,6 +1,7 @@
 package com.padle.core.padelcoreservice.dto;
 
 import com.padle.core.padelcoreservice.model.enums.GenderFormat;
+import com.padle.core.padelcoreservice.model.enums.Modalidad;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
 import jakarta.validation.constraints.*;
 import lombok.Data;
@@ -41,6 +42,9 @@ public class TournamentCreateDTO {
 
     @NotNull(message = "Тип турнира обязателен")
     private TournamentType tipo;
+
+    @NotNull(message = "Modalidad es obligatoria")
+    private Modalidad modalidad;
 
     @NotNull(message = "Максимальное количество участников обязательно")
     @Min(value = 2, message = "Минимум 2 участника")
