@@ -1,0 +1,140 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.17-create-payments_db-table
+      author: padel-core
+      comment: Create payments_db table for tracking tournament payments_db
+
+      changes:
+        - createTable:
+            tableName: payments_db
+            remarks: "Таблица платежей за участие в турнирах"
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_payments_db
+                    nullable: false
+
+              - column:
+                  name: registration_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_payments_db_registration
+                    references: tournament_registrations_db(id)
+                  remarks: "ID регистрации на турнир"
+
+              - column:
+                  name: amount
+                  type: DECIMAL(10, 2)
+                  constraints:
+                    nullable: false
+                  remarks: "Сумма платежа"
+
+              - column:
+                  name: currency
+                  type: VARCHAR(3)
+                  defaultValue: "ARS"
+                  constraints:
+                    nullable: false
+                  remarks: "Валюта"
+
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  defaultValue: "PENDING"
+                  constraints:
+                    nullable: false
+                  remarks: "Статус платежа: PENDING, PROCESSING, PAID, FAILED, REFUNDED, CANCELLED"
+
+              - column:
+                  name: payment_method
+                  type: VARCHAR(30)
+                  constraints:
+                    nullable: true
+                  remarks: "Способ оплаты: CASH, BANK_TRANSFER, MERCADO_PAGO, etc."
+
+              - column:
+                  name: payment_date
+                  type: TIMESTAMP WITHOUT TIME ZONE
+                  constraints:
+                    nullable: true
+                  remarks: "Дата и время платежа"
+
+              - column:
+                  name: transaction_id
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: true
+                  remarks: "ID транзакции (для онлайн-платежей)"
+
+              - column:
+                  name: payment_provider
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: true
+                  remarks: "Провайдер платежа (MercadoPago, Stripe, etc.)"
+
+              - column:
+                  name: notes
+                  type: TEXT
+                  constraints:
+                    nullable: true
+                  remarks: "Комментарии к платежу"
+
+              - column:
+                  name: created_by
+                  type: BIGINT
+                  constraints:
+                    nullable: true
+                  remarks: "ID пользователя, создавшего запись"
+
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITHOUT TIME ZONE
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+                  remarks: "Дата создания записи"
+
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITHOUT TIME ZONE
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+                  remarks: "Дата последнего обновления"
+
+              - column:
+                  name: is_active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+                  remarks: "Флаг активности записи"
+
+        # Индексы
+        - createIndex:
+            indexName: idx_payments_db_registration_id
+            tableName: payments_db
+            columns:
+              - column:
+                  name: registration_id
+
+        - createIndex:
+            indexName: idx_payments_db_status
+            tableName: payments_db
+            columns:
+              - column:
+                  name: status
+
+        - createIndex:
+            indexName: idx_payments_db_transaction_id
+            tableName: payments_db
+            columns:
+              - column:
+                  name: transaction_id
+            unique: true
+            where: transaction_id IS NOT NULL

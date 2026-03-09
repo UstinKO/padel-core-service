@@ -17,7 +17,8 @@ class PadelCoreHome {
                 'C8': 'C8 (Intermedio)',
                 'C7': 'C7 (Avanzado)',
                 'C6': 'C6 (Profesional)',
-                'C5': 'C5 (Élite)'
+                'C5': 'C5 (Élite)',
+                'PRINCIPIANTES': 'Principiante'
             },
             tipo: {
                 'KING_OF_COURT': 'King of Court',
@@ -164,7 +165,22 @@ class PadelCoreHome {
 
         this.filteredTournaments = this.tournaments.filter(t => {
             if (genero !== 'todos' && t.generoFormato !== genero) return false;
-            if (nivel !== 'todos' && t.categoriaNivel !== nivel) return false;
+
+            // Исправленная фильтрация для уровня
+            if (nivel !== 'todos') {
+                // Маппинг значений фильтра на значения в БД
+                const nivelMap = {
+                    'C9': 'C9',
+                    'C8': 'C8',
+                    'C7': 'C7',
+                    'C6': 'C6',
+                    'C5': 'C5',
+                    'Principiante': 'PRINCIPIANTES'
+                };
+                const dbValue = nivelMap[nivel];
+                if (t.categoriaNivel !== dbValue) return false;
+            }
+
             if (tipo !== 'todos' && t.tipo !== tipo) return false;
             return true;
         });

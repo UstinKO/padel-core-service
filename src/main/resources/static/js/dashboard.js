@@ -12,7 +12,8 @@ document.addEventListener('DOMContentLoaded', function() {
             'C8': 'C8 (Intermedio)',
             'C7': 'C7 (Avanzado)',
             'C6': 'C6 (Profesional)',
-            'C5': 'C5 (Élite)'
+            'C5': 'C5 (Élite)',
+            'PRINCIPIANTES': 'Principiante'
         },
         tipo: {
             'KING_OF_COURT': 'King of Court',
@@ -114,9 +115,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
 
-            // Фильтр по уровню - сравниваем напрямую с enum значениями (C9, C8, C7, C6, C5)
+            // ИСПРАВЛЕНО: Фильтр по уровню с маппингом значений
             if (filters.nivel !== 'todos') {
-                if (tournament.categoriaNivel !== filters.nivel) {
+                // Маппинг значений фильтра на значения в БД
+                const nivelMap = {
+                    'C9': 'C9',
+                    'C8': 'C8',
+                    'C7': 'C7',
+                    'C6': 'C6',
+                    'C5': 'C5',
+                    'Principiante': 'PRINCIPIANTES'
+                };
+                const dbValue = nivelMap[filters.nivel];
+                if (tournament.categoriaNivel !== dbValue) {
                     return false;
                 }
             }

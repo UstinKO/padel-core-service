@@ -1,8 +1,8 @@
 package com.padle.core.padelcoreservice.model.enums;
 
 public enum TournamentType {
-    KING_OF_COURT("Король Корта"),
-    AMERICANA("Американка");
+    KING_OF_COURT("Rey de Cancha"),
+    AMERICANO("Americano");
 
     private final String value;
 
