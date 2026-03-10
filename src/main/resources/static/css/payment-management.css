@@ -1,0 +1,329 @@
+/* ===== PAYMENT MANAGEMENT STYLES ===== */
+
+.payment-management {
+    padding: 2rem 0;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.page-header h1 {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+}
+
+.page-header h1 i {
+    color: #10b981;
+    margin-right: 0.75rem;
+}
+
+.tournament-info {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: 1rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* Таблица */
+.table-container {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    overflow-x: auto;
+    margin-bottom: 2rem;
+}
+
+.payments-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 1200px;
+}
+
+.payments-table th {
+    background: #f8fafc;
+    padding: 1rem;
+    font-weight: 600;
+    color: #475569;
+    text-align: left;
+    border-bottom: 2px solid #e2e8f0;
+    white-space: nowrap;
+}
+
+.payments-table th i {
+    margin-right: 0.5rem;
+    color: #667eea;
+}
+
+.payments-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: middle;
+}
+
+.payments-table tr:hover {
+    background: #f8fafc;
+}
+
+/* Информация об игроке */
+.player-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.player-name {
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.player-email {
+    font-size: 0.875rem;
+    color: #64748b;
+}
+
+.position-badge {
+    background: #e2e8f0;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #475569;
+    display: inline-block;
+}
+
+/* Чекбокс */
+.checkbox-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.checkbox-wrapper input[type="checkbox"] {
+    width: 1.25rem;
+    height: 1.25rem;
+    cursor: pointer;
+}
+
+/* Элементы формы */
+.form-control-sm {
+    padding: 0.5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    width: 100%;
+    transition: border-color 0.15s ease-in-out;
+}
+
+.form-control-sm:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+select.form-control-sm {
+    background-color: white;
+    cursor: pointer;
+}
+
+.amount-input {
+    width: 100px;
+}
+
+/* Статистика */
+.summary-stats {
+    display: flex;
+    gap: 2rem;
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+/* Кнопки действий */
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+/* Пустое состояние */
+.empty-state-cell {
+    text-align: center;
+    padding: 3rem;
+}
+
+/* ===== АДАПТИВНОСТЬ ===== */
+@media (max-width: 1024px) {
+    .payments-table {
+        min-width: 1000px;
+    }
+}
+
+@media (max-width: 768px) {
+    .payment-management {
+        padding: 1rem 0;
+    }
+
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .page-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .tournament-info {
+        width: 100%;
+        text-align: center;
+        padding: 0.75rem 1rem;
+        white-space: normal;
+        word-break: break-word;
+    }
+
+    .summary-stats {
+        gap: 1rem;
+        padding: 0.75rem;
+    }
+
+    .stat-item {
+        width: calc(50% - 0.5rem);
+    }
+
+    .stat-value {
+        font-size: 1.2rem;
+    }
+
+    .table-container {
+        margin-bottom: 1rem;
+        border-radius: 0.75rem;
+    }
+
+    .payments-table th,
+    .payments-table td {
+        padding: 0.75rem;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .action-buttons .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-header h1 {
+        font-size: 1.3rem;
+    }
+
+    .summary-stats {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .stat-item {
+        width: 100%;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .stat-label {
+        font-size: 0.7rem;
+    }
+
+    .stat-value {
+        font-size: 1rem;
+    }
+
+    .position-badge {
+        padding: 0.2rem 0.5rem;
+        font-size: 0.75rem;
+    }
+
+    .player-name {
+        font-size: 0.9rem;
+    }
+
+    .player-email {
+        font-size: 0.75rem;
+    }
+
+    .checkbox-wrapper input[type="checkbox"] {
+        width: 1rem;
+        height: 1rem;
+    }
+
+    .payments-table th,
+    .payments-table td {
+        padding: 0.5rem;
+    }
+
+    .form-control-sm {
+        padding: 0.4rem;
+        font-size: 0.8rem;
+    }
+
+    .amount-input {
+        width: 80px;
+    }
+}
+
+/* Для планшетов */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .page-header h1 {
+        font-size: 1.6rem;
+    }
+
+    .stat-value {
+        font-size: 1.3rem;
+    }
+}
+
+/* Улучшения для touch-устройств */
+@media (hover: none) and (pointer: coarse) {
+    .form-control-sm,
+    select.form-control-sm,
+    .checkbox-wrapper input[type="checkbox"] {
+        min-height: 44px;
+    }
+
+    .action-buttons .btn {
+        min-height: 44px;
+    }
+}
