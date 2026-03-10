@@ -41,9 +41,60 @@ class KingOfCourt {
         }
 
         this.init();
+        this.initBurgerMenu(); // Добавляем инициализацию бургер-меню
         this.loadData();
         this.connectWebSocket();
         this.startPolling();
+    }
+
+    // ===== НОВЫЙ МЕТОД: Инициализация бургер-меню =====
+    initBurgerMenu() {
+        const navbarToggler = document.getElementById('navbarToggler');
+        const navbarNav = document.getElementById('navbarNav');
+
+        if (navbarToggler && navbarNav) {
+            console.log('✅ King of Court: найдены элементы меню');
+
+            // Убираем старые обработчики
+            const newToggler = navbarToggler.cloneNode(true);
+            navbarToggler.parentNode.replaceChild(newToggler, navbarToggler);
+
+            // Добавляем обработчик
+            newToggler.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                navbarNav.classList.toggle('show');
+
+                // Анимация иконки
+                newToggler.classList.toggle('active');
+
+                console.log('🍔 Меню King of Court:', navbarNav.classList.contains('show') ? 'открыто' : 'закрыто');
+            });
+
+            // Закрываем меню при клике на ссылку
+            navbarNav.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', () => {
+                    navbarNav.classList.remove('show');
+                    newToggler.classList.remove('active');
+                });
+            });
+
+            // Закрываем меню при клике вне его
+            document.addEventListener('click', (e) => {
+                if (navbarNav.classList.contains('show') &&
+                    !navbarNav.contains(e.target) &&
+                    !newToggler.contains(e.target)) {
+                    navbarNav.classList.remove('show');
+                    newToggler.classList.remove('active');
+                }
+            });
+        } else {
+            console.warn('⚠️ King of Court: элементы меню не найдены', {
+                toggler: navbarToggler,
+                nav: navbarNav
+            });
+        }
     }
 
     async checkDebugEndpoint() {

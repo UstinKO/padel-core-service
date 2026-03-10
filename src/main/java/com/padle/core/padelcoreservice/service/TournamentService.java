@@ -424,8 +424,13 @@ public class TournamentService {
     private TournamentDto mapToDtoWithDetails(Tournament tournament) {
         TournamentDto dto = tournamentMapper.toDto(tournament);
 
+        // Загружаем информацию о клубе (название и адрес)
         clubService.getClubById(tournament.getClubId())
-                .ifPresent(club -> dto.setClubNombre(club.getNombre()));
+                .ifPresent(club -> {
+                    dto.setClubNombre(club.getNombre());
+                    // Получаем полный адрес через метод getDireccionCompleta()
+                    dto.setClubDireccion(club.getDireccionCompleta());
+                });
 
         long confirmedCount = registrationRepository.countByTournamentIdAndStatus(
                 tournament.getId(), RegistrationStatus.CONFIRMED);

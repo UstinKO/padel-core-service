@@ -46,24 +46,59 @@ public class KingOfCourtService {
             throw new InvalidStateException("Tournament already has an active King of Court instance");
         }
 
-        // Получаем всех зарегистрированных игроков
-        List<PlayerPadel> players = tournament.getRegistrations().stream()
+        // Получаем ТОЛЬКО ПОДТВЕРЖДЕННЫХ игроков (CONFIRMED)
+        // Игроки из листа ожидания (WAITLIST) НЕ участвуют в турнире
+        List<PlayerPadel> confirmedPlayers = tournament.getRegistrations().stream()
                 .filter(reg -> reg.getStatus() == RegistrationStatus.CONFIRMED)
                 .map(TournamentRegistration::getPlayer)
                 .collect(Collectors.toList());
 
-        // Проверка: количество игроков должно быть кратно 4
-        if (players.size() % 4 != 0) {
-            throw new InvalidStateException("Number of players must be multiple of 4. Current: " + players.size());
+        log.info("Tournament has {} confirmed players", confirmedPlayers.size());
+
+        // Подсчитываем игроков в листе ожидания для информации
+        long waitlistCount = tournament.getRegistrations().stream()
+                .filter(reg -> reg.getStatus() == RegistrationStatus.WAITLIST)
+                .count();
+
+        if (waitlistCount > 0) {
+            log.info("Tournament has {} players in waitlist - they will NOT participate", waitlistCount);
+        }
+
+        // Проверяем минимальное количество игроков (хотя бы 4 для King of Court)
+        if (confirmedPlayers.size() < 4) {
+            throw new InvalidStateException(
+                    String.format("Not enough confirmed players to start tournament. Minimum 4 players required, but only %d are confirmed.",
+                            confirmedPlayers.size())
+            );
+        }
+
+        // Определяем, сколько игроков будем использовать в турнире
+        // Отсекаем лишних, если количество не кратно 4
+        int playersToUse = confirmedPlayers.size();
+        int playersToRemove = playersToUse % 4;
+
+        if (playersToRemove > 0) {
+            playersToUse = playersToUse - playersToRemove;
+            log.warn("Number of confirmed players ({}) is not multiple of 4. Tournament will start with {} players (removing {} players from the bottom).",
+                    confirmedPlayers.size(), playersToUse, playersToRemove);
+
+            // Сортируем игроков (например, по дате регистрации или ID)
+            // и оставляем только нужное количество
+            // Здесь мы просто берем первых playersToUse игроков
+            confirmedPlayers = confirmedPlayers.stream()
+                    .limit(playersToUse)
+                    .collect(Collectors.toList());
         }
 
         // Рассчитываем необходимое количество кортов
-        int requiredCourts = players.size() / 4;
-        log.info("Required courts based on {} players: {}", players.size(), requiredCourts);
+        int requiredCourts = playersToUse / 4;
+        log.info("Required courts based on {} players: {}", playersToUse, requiredCourts);
 
         // Проверка: достаточно ли кортов
         if (requiredCourts > maxCourts) {
-            throw new InvalidStateException("Not enough courts. Required: " + requiredCourts + ", Available: " + maxCourts);
+            throw new InvalidStateException(
+                    String.format("Not enough courts. Required: %d, Available: %d", requiredCourts, maxCourts)
+            );
         }
 
         // Создаем турнир, используем ТОЛЬКО нужное количество кортов
@@ -78,8 +113,8 @@ public class KingOfCourtService {
 
         TournamentKingOfCourt savedKing = kingRepository.save(kingTournament);
 
-        // Создаем статистику для всех игроков
-        for (PlayerPadel player : players) {
+        // Создаем статистику только для используемых игроков
+        for (PlayerPadel player : confirmedPlayers) {
             KingOfCourtPlayerStats stats = new KingOfCourtPlayerStats();
             stats.setTournamentKing(savedKing);
             stats.setPlayer(player);
@@ -92,11 +127,19 @@ public class KingOfCourtService {
         }
 
         // Создаем первый раунд с правильным количеством кортов
-        createFirstRound(savedKing, players);
+        createFirstRound(savedKing, confirmedPlayers);
 
         // Отправляем WebSocket уведомление
         KingOfCourtStateDTO state = getCurrentState(savedKing.getId());
         webSocketService.notifyTournamentStateUpdated(savedKing.getId(), state);
+
+        log.info("King of Court tournament initialized successfully with ID: {}, using {} players on {} courts",
+                savedKing.getId(), playersToUse, requiredCourts);
+
+        // Логируем информацию о неиспользованных игроках
+        if (playersToRemove > 0) {
+            log.info("{} players remain in waitlist and will not participate in this tournament", playersToRemove);
+        }
 
         return savedKing;
     }

@@ -6,9 +6,10 @@ class PadelCoreHome {
     constructor() {
         this.tournaments = [];
         this.filteredTournaments = [];
-        this.currentSlide = 0;
-        this.slidesPerView = this.getSlidesPerView();
-        this.maxSlideIndex = 0;
+
+        // Для пагинации (если нужно будет добавить "Показать еще")
+        this.itemsPerPage = 9; // Показывать по 9 турниров за раз
+        this.currentPage = 1;
 
         // Маппинги для отображения значений
         this.displayMaps = {
@@ -50,32 +51,15 @@ class PadelCoreHome {
         }
 
         this.initElements();
-        this.updateContainerVisibility();
-
-        if (this.filtersForm) {
-            this.filtersForm.classList.remove('collapsed');
-        }
-        if (this.filtersToggle) {
-            const icon = this.filtersToggle.querySelector('i');
-            const span = this.filtersToggle.querySelector('span');
-            if (icon) {
-                icon.classList.remove('fa-chevron-down');
-                icon.classList.add('fa-chevron-up');
-            }
-            if (span) {
-                span.textContent = 'Ocultar filtros';
-            }
-        }
-
         this.initEventListeners();
         this.renderTournaments();
-        this.createIndicators();
+
+        // Инициализируем аккордеон для FAQ
+        this.initFaqAccordion();
     }
 
     initElements() {
-        this.carouselTrack = document.getElementById('carouselTrack');
-        this.carouselPrev = document.getElementById('carouselPrev');
-        this.carouselNext = document.getElementById('carouselNext');
+        this.tournamentsGrid = document.getElementById('tournamentsGrid');
         this.filtersToggle = document.getElementById('filtersToggle');
         this.filtersForm = document.getElementById('filterForm');
         this.applyFilters = document.getElementById('applyFilters');
@@ -85,20 +69,16 @@ class PadelCoreHome {
         this.nivelFilter = document.getElementById('nivelFilter');
         this.tipoFilter = document.getElementById('tipoFilter');
         this.noTournamentsMessage = document.getElementById('noTournamentsMessage');
-        this.carouselIndicators = document.getElementById('carouselIndicators');
-        this.navbarToggler = document.getElementById('navbarToggler');
-        this.navbarNav = document.getElementById('navbarNav');
-        this.carouselContainer = document.getElementById('carouselContainer');
+        this.navbarToggler = document.getElementById('navbarToggler'); // Должно быть!
+        this.navbarNav = document.getElementById('navbarNav'); // Должно быть!
+        this.loadMoreBtn = document.getElementById('loadMoreBtn');
+        this.tournamentsMore = document.getElementById('tournamentsMore');
     }
 
     initEventListeners() {
-        if (this.carouselPrev) {
-            this.carouselPrev.addEventListener('click', () => this.prevSlide());
-        }
-        if (this.carouselNext) {
-            this.carouselNext.addEventListener('click', () => this.nextSlide());
-        }
+        console.log('initEventListeners started');
 
+        // Обработчики для фильтров
         if (this.filtersToggle) {
             this.filtersToggle.addEventListener('click', () => this.toggleFilters());
         }
@@ -111,32 +91,41 @@ class PadelCoreHome {
         if (this.clearFiltersEmpty) {
             this.clearFiltersEmpty.addEventListener('click', () => this.clearFiltersFunction());
         }
+        if (this.loadMoreBtn) {
+            this.loadMoreBtn.addEventListener('click', () => this.loadMore());
+        }
 
-        window.addEventListener('resize', () => {
-            const oldSlidesPerView = this.slidesPerView;
-            this.slidesPerView = this.getSlidesPerView();
-            if (oldSlidesPerView !== this.slidesPerView) {
-                this.renderTournaments();
-            }
-        });
+        // ПРОСТЕЙШИЙ обработчик для бургер-меню
+        const toggler = document.getElementById('navbarToggler');
+        const nav = document.getElementById('navbarNav');
 
-        if (this.navbarToggler) {
-            this.navbarToggler.addEventListener('click', () => {
+        if (toggler && nav) {
+            console.log('✅ Нашли бургер и меню');
+
+            // Убираем ВСЕ старые обработчики через замену элемента
+            const newToggler = toggler.cloneNode(true);
+            toggler.parentNode.replaceChild(newToggler, toggler);
+
+            // Обновляем ссылки
+            this.navbarToggler = newToggler;
+            this.navbarNav = document.getElementById('navbarNav');
+
+            // Добавляем один простой обработчик
+            this.navbarToggler.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                // Переключаем класс
                 this.navbarNav.classList.toggle('show');
-            });
-        }
-    }
 
-    updateContainerVisibility() {
-        if (this.carouselContainer) {
-            this.carouselContainer.style.display = this.filteredTournaments.length > 0 ? 'block' : 'none';
-        }
-    }
+                // Логируем для отладки
+                console.log('🍔 Меню:', this.navbarNav.classList.contains('show') ? 'открыто' : 'закрыто');
+            };
 
-    getSlidesPerView() {
-        if (window.innerWidth <= 768) return 1;
-        if (window.innerWidth <= 1024) return 2;
-        return 3;
+            console.log('✅ Новый обработчик добавлен');
+        } else {
+            console.log('❌ Не найдены элементы меню');
+        }
     }
 
     toggleFilters() {
@@ -166,9 +155,8 @@ class PadelCoreHome {
         this.filteredTournaments = this.tournaments.filter(t => {
             if (genero !== 'todos' && t.generoFormato !== genero) return false;
 
-            // Исправленная фильтрация для уровня
+            // Фильтрация для уровня
             if (nivel !== 'todos') {
-                // Маппинг значений фильтра на значения в БД
                 const nivelMap = {
                     'C9': 'C9',
                     'C8': 'C8',
@@ -185,13 +173,12 @@ class PadelCoreHome {
             return true;
         });
 
-        this.currentSlide = 0;
+        // Сбрасываем пагинацию
+        this.currentPage = 1;
         this.renderTournaments();
-        this.updateContainerVisibility();
 
-        if (this.noTournamentsMessage) {
-            this.noTournamentsMessage.style.display = this.filteredTournaments.length === 0 ? 'block' : 'none';
-        }
+        // Показываем/скрываем кнопку "Показать больше"
+        this.toggleLoadMoreButton();
     }
 
     clearFiltersFunction() {
@@ -201,44 +188,56 @@ class PadelCoreHome {
 
         this.filteredTournaments = [...this.tournaments];
 
-        this.currentSlide = 0;
+        this.currentPage = 1;
         this.renderTournaments();
-        this.updateContainerVisibility();
-
-        if (this.noTournamentsMessage) {
-            this.noTournamentsMessage.style.display = 'none';
-        }
+        this.toggleLoadMoreButton();
     }
 
     renderTournaments() {
-        if (!this.carouselTrack) return;
-        this.carouselTrack.innerHTML = '';
-        if (this.filteredTournaments.length === 0) return;
+        if (!this.tournamentsGrid) return;
 
-        console.log('Рендерим турниры:', this.filteredTournaments.length);
-        console.log('Карточек на слайд:', this.slidesPerView);
+        // Очищаем сетку
+        this.tournamentsGrid.innerHTML = '';
 
-        // Группируем карточки по слайдам
-        for (let i = 0; i < this.filteredTournaments.length; i += this.slidesPerView) {
-            const slide = document.createElement('li');
-            slide.className = 'carousel-slide';
-            const group = this.filteredTournaments.slice(i, i + this.slidesPerView);
-            console.log(`Слайд ${i/this.slidesPerView + 1}: ${group.length} карточек`);
-            group.forEach(tournament => {
-                const card = this.createTournamentCard(tournament);
-                slide.appendChild(card);
-            });
-            this.carouselTrack.appendChild(slide);
+        if (this.filteredTournaments.length === 0) {
+            // Показываем сообщение "нет турниров"
+            if (this.noTournamentsMessage) {
+                this.noTournamentsMessage.style.display = 'block';
+            }
+            if (this.tournamentsMore) {
+                this.tournamentsMore.style.display = 'none';
+            }
+            return;
         }
 
-        this.calculateMaxSlide();
-        this.updateCarousel();
-        this.createIndicators();
+        // Скрываем сообщение "нет турниров"
+        if (this.noTournamentsMessage) {
+            this.noTournamentsMessage.style.display = 'none';
+        }
+
+        console.log('Рендерим турниры:', this.filteredTournaments.length);
+
+        // Определяем, сколько турниров показывать
+        const start = 0;
+        const end = this.filteredTournaments.length; // Показываем все сразу
+        // Если хотите пагинацию, раскомментируйте следующую строку и закомментируйте верхнюю
+        // const end = Math.min(this.currentPage * this.itemsPerPage, this.filteredTournaments.length);
+
+        const tournamentsToShow = this.filteredTournaments.slice(start, end);
+
+        // Создаем карточки для каждого турнира
+        tournamentsToShow.forEach(tournament => {
+            const card = this.createTournamentCard(tournament);
+            this.tournamentsGrid.appendChild(card);
+        });
+
+        // Показываем кнопку "Показать больше" если есть еще турниры
+        // this.toggleLoadMoreButton();
     }
 
     createTournamentCard(tournament) {
         const card = document.createElement('div');
-        card.className = 'carousel-card';
+        card.className = 'tournament-card';
         card.dataset.tournamentId = tournament.id;
 
         const fecha = Array.isArray(tournament.fechaInicio)
@@ -249,118 +248,101 @@ class PadelCoreHome {
             ? `${tournament.horaInicio[0]}:${tournament.horaInicio[1].toString().padStart(2, '0')}`
             : tournament.horaInicio || 'Hora por definir';
 
+        // Упрощенное отображение уровня - только C9, C8 и т.д.
         const generoDisplay = this.displayMaps.genero[tournament.generoFormato] || tournament.generoFormato || 'N/A';
-        const nivelDisplay = this.displayMaps.nivel[tournament.categoriaNivel] || tournament.categoriaNivel || 'N/A';
+        const nivelDisplay = tournament.categoriaNivel || 'N/A'; // Только значение без описания
         const tipoDisplay = this.displayMaps.tipo[tournament.tipo] || tournament.tipo || 'N/A';
         const estadoDisplay = this.displayMaps.estado[tournament.estado] || tournament.estado || '';
         const estadoClass = tournament.estado ? `status-${tournament.estado.toLowerCase()}` : '';
         const isAuthenticated = typeof window.isAuthenticated !== 'undefined' ? window.isAuthenticated : false;
 
+        // Формируем адрес клуба, если он есть в данных
+        const clubAddress = tournament.clubDireccion ?
+            `<span class="club-address">${this.escapeHtml(tournament.clubDireccion)}</span>` :
+            '';
+
         card.innerHTML = `
-            <div class="carousel-card-header">
-                <span class="carousel-badge">${generoDisplay}</span>
-                <span class="carousel-badge carousel-badge-level">${nivelDisplay}</span>
-            </div>
-            <div class="carousel-card-body">
-                <h3 class="carousel-title">${this.escapeHtml(tournament.nombre || '')}</h3>
-                <div class="carousel-info">
-                    <div class="carousel-info-item">
-                        <i class="fas fa-calendar-alt"></i>
-                        <span>${fecha} ${hora}</span>
-                    </div>
-                    <div class="carousel-info-item">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <span>${this.escapeHtml(tournament.clubNombre || 'Club por definir')}</span>
-                    </div>
-                    <div class="carousel-info-item">
-                        <i class="fas fa-trophy"></i>
-                        <span>${tipoDisplay}</span>
-                    </div>
-                    <div class="carousel-info-item">
-                        <i class="fas fa-users"></i>
-                        <span>${tournament.cupoMax || 0} ${tournament.tipo === 'KING_OF_COURT' ? 'jugadores' : 'parejas'}</span>
-                    </div>
-                    <div class="carousel-info-item">
-                        <i class="fas fa-tag"></i>
-                        <span>${tournament.precio || 0} ${tournament.moneda || ''}</span>
+        <div class="tournament-card-header">
+            <span class="tournament-badge">${generoDisplay}</span>
+            <span class="tournament-badge tournament-badge-level">${nivelDisplay}</span>
+        </div>
+        <div class="tournament-card-body">
+            <h3 class="tournament-title">${this.escapeHtml(tournament.nombre || '')}</h3>
+            <div class="tournament-info">
+                <div class="tournament-info-item">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>${fecha} ${hora}</span>
+                </div>
+                <div class="tournament-info-item">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <div class="club-info">
+                        <span class="club-name">${this.escapeHtml(tournament.clubNombre || 'Club por definir')}</span>
+                        ${clubAddress}
                     </div>
                 </div>
-                <div class="carousel-footer">
-                    ${isAuthenticated ?
+                <div class="tournament-info-item">
+                    <i class="fas fa-trophy"></i>
+                    <span>${tipoDisplay}</span>
+                </div>
+                <div class="tournament-info-item">
+                    <i class="fas fa-users"></i>
+                    <span>${tournament.cupoMax || 0} ${tournament.tipo === 'KING_OF_COURT' ? 'jugadores' : 'parejas'}</span>
+                </div>
+                <div class="tournament-info-item">
+                    <i class="fas fa-tag"></i>
+                    <span>${tournament.precio || 0} ${tournament.moneda || ''}</span>
+                </div>
+            </div>
+            <div class="tournament-footer">
+                ${isAuthenticated ?
             `<a href="/torneo/${tournament.id}" class="btn btn-outline btn-small">
-                            <i class="fas fa-info-circle"></i> Ver detalles
-                        </a>` :
+                        <i class="fas fa-info-circle"></i> Ver detalles
+                    </a>` :
             `<a href="/login" class="btn btn-outline btn-small">
-                            <i class="fas fa-sign-in-alt"></i> Inicia sesión
-                        </a>`
+                        <i class="fas fa-sign-in-alt"></i> Inicia sesión
+                    </a>`
         }
-                    <span class="carousel-status ${estadoClass}">${estadoDisplay}</span>
-                </div>
+                <span class="tournament-status ${estadoClass}">${estadoDisplay}</span>
             </div>
-        `;
+        </div>
+    `;
 
         return card;
     }
 
-    createIndicators() {
-        if (!this.carouselIndicators) return;
-        const totalSlides = this.maxSlideIndex + 1;
-        let indicators = '';
-        for (let i = 0; i < totalSlides; i++) {
-            indicators += `<button class="carousel-dot ${i === this.currentSlide ? 'active' : ''}" data-slide="${i}"></button>`;
-        }
-        this.carouselIndicators.innerHTML = indicators;
+    toggleLoadMoreButton() {
+        if (!this.tournamentsMore) return;
 
-        this.carouselIndicators.querySelectorAll('.carousel-dot').forEach(dot => {
-            dot.addEventListener('click', (e) => {
-                this.currentSlide = parseInt(e.target.dataset.slide);
-                this.updateCarousel();
-                this.createIndicators();
+        const hasMore = this.filteredTournaments.length > this.currentPage * this.itemsPerPage;
+        this.tournamentsMore.style.display = hasMore ? 'block' : 'none';
+    }
+
+    loadMore() {
+        this.currentPage++;
+        this.renderTournaments();
+    }
+
+    initFaqAccordion() {
+        const faqItems = document.querySelectorAll('.faq-item');
+
+        faqItems.forEach(item => {
+            const question = item.querySelector('.faq-question');
+
+            question.addEventListener('click', () => {
+                // Закрываем другие открытые вопросы (опционально)
+                // Если хотите, чтобы одновременно был открыт только один вопрос
+                faqItems.forEach(otherItem => {
+                    if (otherItem !== item && otherItem.classList.contains('active')) {
+                        otherItem.classList.remove('active');
+                    }
+                });
+
+                // Открываем/закрываем текущий вопрос
+                item.classList.toggle('active');
             });
         });
-    }
 
-    prevSlide() {
-        if (this.currentSlide > 0) {
-            this.currentSlide--;
-            this.updateCarousel();
-            this.createIndicators();
-        }
-    }
-
-    nextSlide() {
-        if (this.currentSlide < this.maxSlideIndex) {
-            this.currentSlide++;
-            this.updateCarousel();
-            this.createIndicators();
-        }
-    }
-
-    updateCarousel() {
-        if (!this.carouselTrack) return;
-
-        // Смещаем трек на 100% за каждый слайд
-        this.carouselTrack.style.transform = `translateX(-${this.currentSlide * 100}%)`;
-
-        if (this.carouselPrev) {
-            this.carouselPrev.disabled = this.currentSlide === 0;
-        }
-        if (this.carouselNext) {
-            this.carouselNext.disabled = this.currentSlide >= this.maxSlideIndex;
-        }
-
-        console.log(`Слайд ${this.currentSlide + 1} из ${this.maxSlideIndex + 1}`);
-    }
-
-    calculateMaxSlide() {
-        this.maxSlideIndex = Math.max(0, Math.ceil(this.filteredTournaments.length / this.slidesPerView) - 1);
-        if (this.currentSlide > this.maxSlideIndex) {
-            this.currentSlide = this.maxSlideIndex;
-        }
-        console.log('Всего турниров:', this.filteredTournaments.length);
-        console.log('Карточек на слайд:', this.slidesPerView);
-        console.log('Индекс последнего слайда:', this.maxSlideIndex);
-        console.log('Всего слайдов:', this.maxSlideIndex + 1);
+        console.log('✅ FAQ Accordion inicializado');
     }
 
     escapeHtml(text) {

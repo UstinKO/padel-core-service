@@ -1230,3 +1230,1974 @@
 .btn-icon.btn-warning:hover {
     background: #d97706;
 }
+
+/* ===== АДАПТИВНАЯ АДМИН-ПАНЕЛЬ ===== */
+
+/* Стили для бургер-меню в админке */
+@media (max-width: 768px) {
+    .navbar-toggler {
+        display: flex !important;
+        z-index: 1001;
+    }
+
+    .navbar-collapse {
+        position: fixed !important;
+        top: 70px !important;
+        left: 0 !important;
+        right: 0 !important;
+        background: white !important;
+        flex-direction: column !important;
+        padding: 20px !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1) !important;
+        display: none !important;
+        z-index: 1000 !important;
+        max-height: calc(100vh - 70px);
+        overflow-y: auto;
+    }
+
+    .navbar-collapse.show {
+        display: flex !important;
+    }
+
+    /* Адаптация меню для мобильных */
+    .navbar-menu {
+        flex-direction: column !important;
+        width: 100% !important;
+        gap: 10px !important;
+        margin: 5px 0 !important;
+    }
+
+    .navbar-menu .btn {
+        width: 100% !important;
+        justify-content: center !important;
+        padding: 12px !important;
+        font-size: 1rem !important;
+    }
+
+    .user-greeting {
+        width: 100% !important;
+        text-align: center !important;
+        margin-bottom: 10px !important;
+    }
+
+    /* Адаптация статистики */
+    .admin-stats-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+
+    .stat-card {
+        padding: 1rem !important;
+    }
+
+    /* Адаптация заголовка */
+    .admin-title {
+        font-size: 1.8rem !important;
+    }
+
+    .admin-subtitle {
+        font-size: 1rem !important;
+    }
+
+    /* Адаптация карточек */
+    .admin-card {
+        margin-bottom: 1rem !important;
+    }
+
+    .admin-card-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 10px !important;
+        padding: 1rem !important;
+    }
+
+    .admin-card-header h2 {
+        font-size: 1.1rem !important;
+    }
+
+    .admin-card-header .btn {
+        width: 100% !important;
+    }
+
+    .admin-card-body {
+        padding: 1rem !important;
+    }
+
+    /* Адаптация двухколоночной сетки */
+    .admin-grid-two {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+
+    /* Адаптация списков */
+    .admin-list-item {
+        padding: 0.5rem 0 !important;
+    }
+
+    .admin-list-icon {
+        width: 32px !important;
+        height: 32px !important;
+        font-size: 1rem !important;
+    }
+
+    .admin-list-title {
+        font-size: 0.9rem !important;
+    }
+
+    .admin-list-subtitle {
+        font-size: 0.8rem !important;
+    }
+
+    /* Адаптация кнопок действий */
+    .admin-actions {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+        margin-top: 1rem !important;
+    }
+
+    .admin-actions .btn {
+        width: 100% !important;
+    }
+
+    /* Адаптация пустого состояния */
+    .admin-empty {
+        padding: 2rem 1rem !important;
+    }
+
+    .admin-empty i {
+        font-size: 2.5rem !important;
+    }
+
+    .admin-empty h3 {
+        font-size: 1.1rem !important;
+    }
+
+    /* Адаптация таблиц - горизонтальный скролл */
+    .admin-table-container {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .admin-table {
+        min-width: 600px !important; /* Заставляем таблицу скроллиться */
+    }
+
+    .admin-table th,
+    .admin-table td {
+        padding: 0.75rem !important;
+        font-size: 0.85rem !important;
+        white-space: nowrap;
+    }
+
+    /* Адаптация карточек матчей */
+    .matches-grid {
+        gap: 0.75rem !important;
+    }
+
+    .match-mini-card {
+        padding: 0.75rem !important;
+    }
+
+    .tournament-name {
+        font-size: 0.9rem !important;
+    }
+
+    .player-mini {
+        font-size: 0.8rem !important;
+    }
+
+    /* Адаптация трехколоночной сетки */
+    .admin-grid-three {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+
+    /* Адаптация профиля игрока */
+    .profile-header {
+        flex-direction: column !important;
+        text-align: center !important;
+        gap: 1rem !important;
+        padding: 1.5rem !important;
+    }
+
+    .profile-avatar {
+        width: 60px !important;
+        height: 60px !important;
+        font-size: 2rem !important;
+    }
+
+    .profile-title h1 {
+        font-size: 1.3rem !important;
+    }
+
+    /* Адаптация кнопок в профиле */
+    .profile-actions {
+        flex-direction: column !important;
+        width: 100% !important;
+    }
+
+    .profile-actions .btn {
+        width: 100% !important;
+    }
+
+    /* Адаптация форм */
+    .form-row {
+        flex-direction: column !important;
+        gap: 1rem !important;
+    }
+
+    .form-group {
+        width: 100% !important;
+    }
+
+    /* Адаптация фильтров */
+    .filters-panel {
+        padding: 1rem !important;
+    }
+
+    .filters-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+
+    .filter-actions {
+        flex-direction: column !important;
+    }
+
+    .filter-actions .btn {
+        width: 100% !important;
+    }
+}
+
+/* Дополнительные фиксы для очень маленьких экранов */
+@media (max-width: 480px) {
+    .admin-title {
+        font-size: 1.5rem !important;
+    }
+
+    .stat-value {
+        font-size: 1.2rem !important;
+    }
+
+    .stat-label {
+        font-size: 0.8rem !important;
+    }
+
+    .badge {
+        font-size: 0.7rem !important;
+        padding: 0.2rem 0.5rem !important;
+    }
+
+    .btn-icon {
+        width: 28px !important;
+        height: 28px !important;
+    }
+
+    .admin-card-header h2 i {
+        font-size: 1rem !important;
+    }
+}
+
+/* Анимация для бургер-иконки */
+.navbar-toggler {
+    transition: all 0.3s ease;
+}
+
+.navbar-toggler.active .navbar-toggler-icon:nth-child(1) {
+    transform: rotate(45deg) translate(5px, 5px);
+}
+
+.navbar-toggler.active .navbar-toggler-icon:nth-child(2) {
+    opacity: 0;
+}
+
+.navbar-toggler.active .navbar-toggler-icon:nth-child(3) {
+    transform: rotate(-45deg) translate(7px, -7px);
+}
+
+.navbar-toggler-icon {
+    transition: all 0.3s ease;
+}
+
+/* ===== CLUBS PAGE ADAPTIVE STYLES ===== */
+
+/* Стили для карточек клубов (мобильная версия) */
+.clubs-cards {
+    display: none;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.club-card {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid var(--admin-border);
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.club-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.club-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: linear-gradient(145deg, var(--admin-light), white);
+    border-bottom: 1px solid var(--admin-border);
+}
+
+.club-card-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.club-card-title i {
+    color: var(--admin-primary);
+}
+
+.club-card-body {
+    padding: 1rem;
+}
+
+.club-info-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    color: var(--admin-dark);
+    border-bottom: 1px dashed var(--admin-border);
+}
+
+.club-info-item:last-child {
+    border-bottom: none;
+}
+
+.club-info-item i {
+    width: 20px;
+    color: var(--admin-primary);
+    font-size: 0.9rem;
+}
+
+.club-info-item span {
+    flex: 1;
+    word-break: break-word;
+    font-size: 0.9rem;
+    color: var(--admin-gray);
+}
+
+.club-card-footer {
+    display: flex;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: var(--admin-light);
+    border-top: 1px solid var(--admin-border);
+}
+
+.club-card-footer .btn {
+    flex: 1;
+    padding: 0.6rem;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.club-card-footer .btn i {
+    margin-right: 0.25rem;
+}
+
+/* Пустое состояние */
+.empty-state-cell {
+    text-align: center;
+    padding: 3rem;
+}
+
+.admin-empty {
+    text-align: center;
+    padding: 3rem;
+}
+
+.admin-empty i {
+    font-size: 3.5rem;
+    color: var(--admin-gray);
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.admin-empty h3 {
+    font-size: 1.3rem;
+    margin-bottom: 0.5rem;
+    color: var(--admin-dark);
+}
+
+.admin-empty p {
+    color: var(--admin-gray);
+    margin-bottom: 1.5rem;
+}
+
+/* Медиа-запрос для мобильных устройств */
+@media (max-width: 768px) {
+    /* Скрываем таблицу */
+    .admin-table-container {
+        display: none;
+    }
+
+    /* Показываем карточки */
+    .clubs-cards {
+        display: flex;
+    }
+
+    /* Адаптация заголовка */
+    .admin-header {
+        margin-bottom: 1.5rem;
+    }
+
+    .admin-title {
+        font-size: 1.8rem;
+    }
+
+    .admin-title i {
+        font-size: 1.8rem;
+    }
+
+    /* Адаптация кнопки "Новый клуб" */
+    .admin-actions {
+        margin-bottom: 1rem;
+    }
+
+    .admin-actions .btn {
+        width: 100%;
+        padding: 1rem;
+        font-size: 1rem;
+    }
+
+    /* Адаптация уведомлений */
+    .alert {
+        padding: 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    /* Адаптация футера */
+    .footer {
+        padding: 1rem 0;
+    }
+
+    .footer p {
+        font-size: 0.85rem;
+    }
+}
+
+/* Для очень маленьких экранов */
+@media (max-width: 480px) {
+    .club-card-footer {
+        flex-direction: column;
+    }
+
+    .club-card-footer .btn {
+        width: 100%;
+    }
+
+    .club-card-title {
+        font-size: 1rem;
+    }
+
+    .club-info-item {
+        font-size: 0.85rem;
+    }
+
+    .admin-title {
+        font-size: 1.5rem;
+    }
+
+    .admin-subtitle {
+        font-size: 0.9rem;
+    }
+}
+
+/* ===== CLUB DETAILS PAGE ADAPTIVE STYLES ===== */
+
+/* Заголовок клуба */
+.club-profile-header {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    padding: 2rem;
+    background: linear-gradient(135deg, var(--admin-primary), var(--admin-secondary));
+    border-radius: 16px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 2rem;
+}
+
+.club-profile-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 200px;
+    height: 200px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+}
+
+.club-profile-avatar {
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    color: white;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    z-index: 1;
+}
+
+.club-profile-info {
+    flex: 1;
+    z-index: 1;
+}
+
+.club-profile-info h1 {
+    font-size: 2rem;
+    margin-bottom: 0.25rem;
+}
+
+.club-location {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    opacity: 0.9;
+    font-size: 1rem;
+}
+
+.club-location i {
+    font-size: 0.9rem;
+}
+
+.club-profile-status {
+    z-index: 1;
+}
+
+.club-profile-status .status-badge {
+    padding: 0.5rem 1.5rem;
+    font-size: 1rem;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Сетка деталей клуба */
+.club-details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.club-details-grid .full-width {
+    grid-column: span 2;
+}
+
+/* Стили для информационных строк */
+.info-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--admin-border);
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    font-weight: 600;
+    color: var(--admin-dark);
+    font-size: 0.9rem;
+}
+
+.info-value {
+    color: var(--admin-gray);
+    font-size: 0.9rem;
+    text-align: right;
+    word-break: break-word;
+    max-width: 60%;
+}
+
+/* Ссылка на карту */
+.map-link {
+    justify-content: center;
+    padding-top: 0.5rem;
+}
+
+.map-link .btn {
+    width: 100%;
+}
+
+/* Сетка ссылок */
+.links-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+}
+
+.link-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.link-value {
+    color: var(--admin-primary);
+    text-decoration: none;
+    word-break: break-all;
+    font-size: 0.9rem;
+}
+
+.link-value:hover {
+    text-decoration: underline;
+}
+
+/* Описание клуба */
+.club-description {
+    line-height: 1.6;
+    color: var(--admin-dark);
+    white-space: pre-line;
+}
+
+/* Информация о регистрации */
+.registration-info {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+/* Кнопки действий */
+.club-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+}
+
+.club-actions .btn,
+.club-actions form {
+    margin: 0;
+}
+
+.club-actions .btn {
+    min-width: 180px;
+    padding: 0.75rem 1.5rem;
+}
+
+.action-form {
+    display: inline-block;
+}
+
+/* Адаптивность */
+@media (max-width: 1024px) {
+    .club-details-grid {
+        gap: 1rem;
+    }
+
+    .links-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Заголовок клуба */
+    .club-profile-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+        padding: 1.5rem;
+    }
+
+    .club-profile-avatar {
+        width: 60px;
+        height: 60px;
+        font-size: 2rem;
+    }
+
+    .club-profile-info h1 {
+        font-size: 1.5rem;
+    }
+
+    .club-location {
+        justify-content: center;
+        font-size: 0.9rem;
+    }
+
+    .club-profile-status {
+        width: 100%;
+    }
+
+    .club-profile-status .status-badge {
+        display: inline-block;
+        width: auto;
+        padding: 0.4rem 1rem;
+        font-size: 0.9rem;
+    }
+
+    /* Сетка */
+    .club-details-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .club-details-grid .full-width {
+        grid-column: span 1;
+    }
+
+    /* Информационные строки */
+    .info-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .info-label {
+        font-size: 0.85rem;
+    }
+
+    .info-value {
+        text-align: left;
+        max-width: 100%;
+        font-size: 0.9rem;
+        padding-left: 0.5rem;
+    }
+
+    /* Ссылки */
+    .link-item {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid var(--admin-border);
+    }
+
+    .link-item:last-child {
+        border-bottom: none;
+    }
+
+    /* Информация о регистрации */
+    .registration-info {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+
+    /* Кнопки действий */
+    .club-actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+
+    .club-actions .btn,
+    .club-actions form {
+        width: 100%;
+    }
+
+    .club-actions .btn {
+        min-width: auto;
+        justify-content: center;
+    }
+
+    .action-form {
+        display: block;
+    }
+}
+
+@media (max-width: 480px) {
+    .club-profile-header {
+        padding: 1rem;
+    }
+
+    .club-profile-avatar {
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
+    }
+
+    .club-profile-info h1 {
+        font-size: 1.3rem;
+    }
+
+    .admin-card-header {
+        padding: 1rem;
+    }
+
+    .admin-card-header h2 {
+        font-size: 1.1rem;
+    }
+
+    .admin-card-body {
+        padding: 1rem;
+    }
+
+    .info-row {
+        padding: 0.5rem 0;
+    }
+}
+
+/* ===== TOURNAMENTS PAGE ADAPTIVE STYLES ===== */
+
+/* Карточки турниров для мобильных */
+.tournaments-cards {
+    display: none;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.tournament-card {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid var(--admin-border);
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.tournament-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.tournament-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 1rem;
+    background: linear-gradient(145deg, var(--admin-light), white);
+    border-bottom: 1px solid var(--admin-border);
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.tournament-card-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.1rem;
+    flex: 1;
+}
+
+.tournament-card-title i {
+    color: var(--admin-primary);
+}
+
+.tournament-card-statuses {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.tournament-card-statuses .status-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.tournament-card-body {
+    padding: 1rem;
+}
+
+.tournament-info-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    color: var(--admin-dark);
+    border-bottom: 1px dashed var(--admin-border);
+}
+
+.tournament-info-row:last-child {
+    border-bottom: none;
+}
+
+.tournament-info-row i {
+    width: 20px;
+    color: var(--admin-primary);
+    font-size: 0.9rem;
+}
+
+.tournament-info-row span {
+    flex: 1;
+    word-break: break-word;
+    font-size: 0.9rem;
+    color: var(--admin-gray);
+}
+
+.tournament-info-row .waitlist-badge {
+    margin-left: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--admin-warning);
+    font-weight: 600;
+}
+
+.tournament-card-footer {
+    display: flex;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: var(--admin-light);
+    border-top: 1px solid var(--admin-border);
+    flex-wrap: wrap;
+}
+
+.tournament-card-footer .btn {
+    flex: 1;
+    min-width: 80px;
+    padding: 0.5rem;
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+.tournament-card-footer .btn i {
+    margin-right: 0.25rem;
+}
+
+.tournament-card-footer .btn-warning {
+    background: #f59e0b;
+    color: white;
+    border-color: #f59e0b;
+}
+
+.tournament-card-footer .btn-warning:hover {
+    background: #d97706;
+    border-color: #d97706;
+}
+
+.tournament-card-footer .btn-danger {
+    background: var(--admin-danger);
+    color: white;
+    border-color: var(--admin-danger);
+}
+
+.tournament-card-footer .btn-danger:hover {
+    background: #dc2626;
+    border-color: #dc2626;
+}
+
+/* Статусы для карточек */
+.status-badge.status-borrador {
+    background: #e9ecef;
+    color: #495057;
+}
+
+.status-badge.status-publicado {
+    background: #cff4fc;
+    color: #055160;
+}
+
+.status-badge.status-registro_abierto {
+    background: #d1e7dd;
+    color: #0a3622;
+}
+
+.status-badge.status-cerrado {
+    background: #fff3cd;
+    color: #664d03;
+}
+
+.status-badge.status-finalizado {
+    background: #cfe2ff;
+    color: #052c65;
+}
+
+.status-badge.status-cancelado {
+    background: #f8d7da;
+    color: #58151c;
+}
+
+.status-badge.status-deleted {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+/* Пустое состояние */
+.empty-state-cell {
+    text-align: center;
+    padding: 3rem;
+}
+
+/* Адаптивность */
+@media (max-width: 1024px) {
+    .admin-table-container {
+        overflow-x: auto;
+    }
+
+    .admin-table {
+        min-width: 900px;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Скрываем таблицу на мобильных */
+    .admin-table-container {
+        display: none;
+    }
+
+    /* Показываем карточки */
+    .tournaments-cards {
+        display: flex;
+    }
+
+    /* Адаптация заголовка */
+    .admin-header {
+        margin-bottom: 1.5rem;
+    }
+
+    .admin-title {
+        font-size: 1.8rem;
+    }
+
+    .admin-title i {
+        font-size: 1.8rem;
+    }
+
+    .admin-subtitle {
+        font-size: 0.95rem;
+    }
+
+    /* Адаптация кнопки "Новый турнир" */
+    .admin-actions {
+        margin-bottom: 1rem;
+    }
+
+    .admin-actions .btn {
+        width: 100%;
+        padding: 1rem;
+        font-size: 1rem;
+    }
+
+    /* Адаптация уведомлений */
+    .alert {
+        padding: 0.75rem;
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+    }
+
+    /* Адаптация карточек */
+    .tournament-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .tournament-card-title {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+
+    .tournament-card-statuses {
+        width: 100%;
+    }
+
+    .tournament-card-footer {
+        flex-direction: column;
+    }
+
+    .tournament-card-footer .btn {
+        width: 100%;
+        padding: 0.75rem;
+    }
+
+    /* Адаптация футера */
+    .footer {
+        padding: 1rem 0;
+    }
+
+    .footer p {
+        font-size: 0.85rem;
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .admin-title {
+        font-size: 1.5rem;
+    }
+
+    .admin-subtitle {
+        font-size: 0.85rem;
+    }
+
+    .tournament-card-title {
+        font-size: 1rem;
+    }
+
+    .tournament-info-row {
+        font-size: 0.85rem;
+    }
+
+    .tournament-info-row i {
+        font-size: 0.85rem;
+    }
+
+    .tournament-card-footer .btn {
+        font-size: 0.8rem;
+    }
+
+    .empty-state-cell {
+        padding: 2rem 1rem;
+    }
+
+    .admin-empty i {
+        font-size: 2.5rem;
+    }
+
+    .admin-empty h3 {
+        font-size: 1.1rem;
+    }
+
+    .admin-empty p {
+        font-size: 0.9rem;
+    }
+}
+
+/* Улучшенные стили для кнопок в карточках */
+.btn-warning, .btn-danger {
+    transition: all 0.2s;
+}
+
+.btn-warning:hover, .btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Стили для waitlist badge */
+.waitlist-badge {
+    display: inline-block;
+    margin-left: 0.25rem;
+    font-size: 0.7rem;
+    color: var(--admin-warning);
+    font-weight: 600;
+    background: rgba(245, 158, 11, 0.1);
+    padding: 0.1rem 0.3rem;
+    border-radius: 4px;
+}
+
+/* ===== PLAYERS PAGE ADAPTIVE STYLES ===== */
+
+/* Статистика для игроков */
+.players-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    max-width: 600px;
+    margin: 0 auto 2rem;
+}
+
+/* Карточки игроков для мобильных */
+.players-cards {
+    display: none;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.player-card {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid var(--admin-border);
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.player-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.player-card-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: linear-gradient(145deg, var(--admin-light), white);
+    border-bottom: 1px solid var(--admin-border);
+}
+
+.player-avatar {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, var(--admin-primary), var(--admin-secondary));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.player-info {
+    flex: 1;
+}
+
+.player-name {
+    font-weight: 600;
+    color: var(--admin-dark);
+    font-size: 1.1rem;
+    margin-bottom: 0.25rem;
+}
+
+.player-email {
+    font-size: 0.85rem;
+    color: var(--admin-gray);
+    word-break: break-all;
+}
+
+.player-card-body {
+    padding: 1rem;
+    border-bottom: 1px solid var(--admin-border);
+}
+
+.player-detail-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    color: var(--admin-dark);
+    border-bottom: 1px dashed var(--admin-border);
+}
+
+.player-detail-item:last-child {
+    border-bottom: none;
+}
+
+.player-detail-item i {
+    width: 20px;
+    color: var(--admin-primary);
+    font-size: 0.9rem;
+}
+
+.player-detail-item span {
+    flex: 1;
+    word-break: break-word;
+    font-size: 0.9rem;
+    color: var(--admin-gray);
+}
+
+.player-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: var(--admin-light);
+}
+
+.player-status {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.player-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    /* Скрываем таблицу на мобильных */
+    .admin-table-container {
+        display: none;
+    }
+
+    /* Показываем карточки */
+    .players-cards {
+        display: flex;
+    }
+
+    /* Адаптация статистики */
+    .players-stats-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .players-stats-grid .stat-card {
+        padding: 1rem;
+    }
+
+    /* Адаптация заголовка */
+    .admin-header {
+        margin-bottom: 1.5rem;
+    }
+
+    .admin-title {
+        font-size: 1.8rem;
+    }
+
+    .admin-title i {
+        font-size: 1.8rem;
+    }
+
+    .admin-subtitle {
+        font-size: 0.95rem;
+    }
+
+    /* Адаптация уведомлений */
+    .alert {
+        padding: 0.75rem;
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+    }
+
+    /* Адаптация карточек */
+    .player-card-header {
+        padding: 0.75rem;
+    }
+
+    .player-avatar {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+
+    .player-name {
+        font-size: 1rem;
+    }
+
+    .player-email {
+        font-size: 0.8rem;
+    }
+
+    .player-card-body {
+        padding: 0.75rem;
+    }
+
+    .player-detail-item {
+        padding: 0.4rem 0;
+        font-size: 0.85rem;
+    }
+
+    .player-card-footer {
+        padding: 0.75rem;
+    }
+
+    .player-actions .btn-icon {
+        width: 36px;
+        height: 36px;
+    }
+
+    /* Адаптация футера */
+    .footer {
+        padding: 1rem 0;
+    }
+
+    .footer p {
+        font-size: 0.85rem;
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .admin-title {
+        font-size: 1.5rem;
+    }
+
+    .admin-subtitle {
+        font-size: 0.85rem;
+    }
+
+    .player-card-footer {
+        flex-direction: column;
+        gap: 0.75rem;
+        align-items: stretch;
+    }
+
+    .player-status {
+        justify-content: center;
+    }
+
+    .player-actions {
+        justify-content: center;
+    }
+
+    .player-actions .btn-icon {
+        width: 40px;
+        height: 40px;
+    }
+
+    .empty-state-cell {
+        padding: 2rem 1rem;
+    }
+
+    .admin-empty i {
+        font-size: 2.5rem;
+    }
+
+    .admin-empty h3 {
+        font-size: 1.1rem;
+    }
+
+    .admin-empty p {
+        font-size: 0.9rem;
+    }
+}
+
+/* Для планшетов */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .admin-table-container {
+        overflow-x: auto;
+    }
+
+    .admin-table {
+        min-width: 900px;
+    }
+}
+
+/* Улучшения для touch-устройств */
+@media (hover: none) and (pointer: coarse) {
+    .btn-icon {
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    .player-avatar {
+        width: 44px;
+        height: 44px;
+    }
+}
+
+/* ===== PLAYER DETAILS PAGE ADAPTIVE STYLES ===== */
+
+/* Заголовок профиля игрока */
+.player-profile-header {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    padding: 2rem;
+    background: linear-gradient(135deg, var(--admin-primary), var(--admin-secondary));
+    border-radius: 16px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 2rem;
+}
+
+.player-profile-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 200px;
+    height: 200px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+}
+
+.player-profile-avatar {
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    color: white;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    z-index: 1;
+}
+
+.player-profile-info {
+    flex: 1;
+    z-index: 1;
+}
+
+.player-profile-info h1 {
+    font-size: 2rem;
+    margin-bottom: 0.25rem;
+}
+
+.player-email {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    opacity: 0.9;
+    font-size: 1rem;
+}
+
+.player-profile-status {
+    z-index: 1;
+}
+
+.player-profile-status .status-badge {
+    padding: 0.5rem 1.5rem;
+    font-size: 1rem;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Сетка деталей игрока */
+.player-details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.player-details-grid .full-width {
+    grid-column: span 2;
+}
+
+/* Мини-статистика */
+.stats-grid-mini {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.stat-mini-item {
+    text-align: center;
+    padding: 1rem;
+    background: var(--admin-light);
+    border-radius: 8px;
+}
+
+.stat-mini-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--admin-primary);
+    line-height: 1.2;
+}
+
+.stat-mini-label {
+    font-size: 0.8rem;
+    color: var(--admin-gray);
+}
+
+/* Информация о регистрации */
+.registration-info-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.registration-info-grid .info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--admin-border);
+}
+
+.registration-info-grid .info-row:last-child {
+    border-bottom: none;
+}
+
+/* Кнопки действий */
+.player-actions {
+    display: flex;
+    justify-content: center;
+    margin: 2rem 0;
+}
+
+.player-actions .action-form {
+    display: inline-block;
+}
+
+.player-actions .btn {
+    min-width: 200px;
+    padding: 0.75rem 1.5rem;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .player-profile-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+        padding: 1.5rem;
+    }
+
+    .player-profile-avatar {
+        width: 60px;
+        height: 60px;
+        font-size: 2rem;
+    }
+
+    .player-profile-info h1 {
+        font-size: 1.5rem;
+    }
+
+    .player-email {
+        justify-content: center;
+        font-size: 0.9rem;
+    }
+
+    .player-profile-status {
+        width: 100%;
+    }
+
+    .player-profile-status .status-badge {
+        display: inline-block;
+        padding: 0.4rem 1rem;
+        font-size: 0.9rem;
+    }
+
+    .player-details-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .player-details-grid .full-width {
+        grid-column: span 1;
+    }
+
+    .registration-info-grid .info-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .registration-info-grid .info-value {
+        padding-left: 1rem;
+    }
+
+    .player-actions .btn {
+        width: 100%;
+        min-width: auto;
+    }
+
+    .stats-grid-mini {
+        gap: 0.75rem;
+    }
+
+    .stat-mini-item {
+        padding: 0.75rem;
+    }
+
+    .stat-mini-value {
+        font-size: 1.3rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .player-profile-header {
+        padding: 1rem;
+    }
+
+    .player-profile-avatar {
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
+    }
+
+    .player-profile-info h1 {
+        font-size: 1.3rem;
+    }
+
+    .stats-grid-mini {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+
+    .stat-mini-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        text-align: left;
+    }
+
+    .stat-mini-value {
+        font-size: 1.2rem;
+    }
+
+    .stat-mini-label {
+        font-size: 0.85rem;
+    }
+
+    .admin-empty {
+        padding: 1.5rem;
+    }
+
+    .admin-empty i {
+        font-size: 2.5rem;
+    }
+
+    .admin-empty h3 {
+        font-size: 1.1rem;
+    }
+
+    .admin-empty p {
+        font-size: 0.9rem;
+    }
+}
+
+/* Для планшетов */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .player-details-grid {
+        gap: 1rem;
+    }
+
+    .stats-grid-mini {
+        gap: 0.75rem;
+    }
+}
+
+/* Стили для ссылок на игроков */
+.registration-name-link {
+    color: var(--admin-primary);
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s;
+    display: inline-block;
+    margin-bottom: 0.25rem;
+}
+
+.registration-name-link:hover {
+    color: var(--admin-secondary);
+    text-decoration: underline;
+}
+
+.registration-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    background: var(--admin-light);
+    transition: all 0.2s;
+}
+
+.registration-item:hover {
+    transform: translateX(2px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.registration-item.waitlist {
+    background: #fff9e6;
+    border-left: 3px solid var(--admin-warning);
+}
+
+.registration-info {
+    flex: 1;
+    min-width: 0; /* Для корректного обрезания длинного текста */
+}
+
+.registration-info .registration-name-link {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+}
+
+.registration-position {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--admin-gray);
+}
+
+.registration-avatar {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--admin-primary), var(--admin-secondary));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.btn-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--admin-gray);
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.btn-icon:hover {
+    background: var(--admin-primary);
+    color: white;
+}
+
+/* Стили для списка ожидания */
+.waitlist-items {
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 0.25rem;
+}
+
+.waitlist-items::-webkit-scrollbar {
+    width: 4px;
+}
+
+.waitlist-items::-webkit-scrollbar-track {
+    background: var(--admin-light);
+    border-radius: 4px;
+}
+
+.waitlist-items::-webkit-scrollbar-thumb {
+    background: var(--admin-gray);
+    border-radius: 4px;
+}
+
+.badge-warning {
+    background: var(--admin-warning);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+}
+
+/* Адаптивность для мобильных */
+@media (max-width: 768px) {
+    .registration-info .registration-name-link {
+        max-width: 150px;
+    }
+
+    .registration-item {
+        padding: 0.5rem;
+    }
+
+    .registration-avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 1rem;
+    }
+
+    .btn-icon {
+        width: 28px;
+        height: 28px;
+    }
+}
+
+/* Стили для ссылок на игроков в регистрациях */
+.registration-name-link {
+    color: var(--admin-primary);
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s;
+    display: inline-block;
+    margin-bottom: 0.25rem;
+    font-size: 0.9rem;
+}
+
+.registration-name-link:hover {
+    color: var(--admin-secondary);
+    text-decoration: underline;
+}
+
+.registration-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    background: var(--admin-light);
+    transition: all 0.2s;
+}
+
+.registration-item:hover {
+    transform: translateX(2px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.registration-item.waitlist {
+    background: #fff9e6;
+    border-left: 3px solid var(--admin-warning);
+}
+
+.registration-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.registration-info .registration-name-link {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+}
+
+.registration-position {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--admin-gray);
+}
+
+.registration-avatar {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--admin-primary), var(--admin-secondary));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+/* Стили для списка ожидания */
+.waitlist-items {
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 0.25rem;
+}
+
+.waitlist-items::-webkit-scrollbar {
+    width: 4px;
+}
+
+.waitlist-items::-webkit-scrollbar-track {
+    background: var(--admin-light);
+    border-radius: 4px;
+}
+
+.waitlist-items::-webkit-scrollbar-thumb {
+    background: var(--admin-gray);
+    border-radius: 4px;
+}
+
+/* Адаптивность для мобильных */
+@media (max-width: 768px) {
+    .registration-info .registration-name-link {
+        max-width: 150px;
+    }
+
+    .registration-item {
+        padding: 0.5rem;
+    }
+
+    .registration-avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 1rem;
+    }
+
+    .btn-icon {
+        width: 28px;
+        height: 28px;
+    }
+}

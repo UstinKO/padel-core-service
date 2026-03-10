@@ -2,7 +2,7 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
     <meta name="description" content="Administración de Jugadores - E-Padel">
     <title>Gestión de Jugadores - E-Padel Admin</title>
 
@@ -22,7 +22,6 @@
     <link rel="stylesheet" th:href="@{/css/admin.css}">
 </head>
 <body>
-<!-- ✅ ИСПРАВЛЕНО: Король Корта → Gestión de Jugadores -->
 <header th:replace="~{fragments/admin-header :: header('Gestión de Jugadores')}"></header>
 
 <main class="admin-main">
@@ -47,7 +46,7 @@
         </div>
 
         <!-- Estadísticas rápidas -->
-        <div class="admin-stats-grid" style="grid-template-columns: repeat(2, 1fr); max-width: 600px; margin: 0 auto 2rem;">
+        <div class="players-stats-grid">
             <div class="stat-card">
                 <div class="stat-icon">
                     <i class="fas fa-users"></i>
@@ -63,14 +62,67 @@
                 </div>
                 <div class="stat-content">
                     <h3 class="stat-label">Email Confirmado</h3>
-                    <!-- ✅ ИСПРАВЛЕНО: totalPlayers → confirmedPlayers -->
                     <p class="stat-value" th:text="${confirmedPlayers}">0</p>
                 </div>
             </div>
         </div>
 
-        <!-- Tabla de jugadores -->
-        <div class="admin-table-container">
+        <!-- Карточки игроков для мобильных -->
+        <div class="players-cards" id="playersMobileView">
+            <div th:each="player : ${players}" th:if="${not #lists.isEmpty(players)}" class="player-card">
+                <div class="player-card-header">
+                    <div class="player-avatar">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <div class="player-info">
+                        <div class="player-name" th:text="${player.nombreCompleto}">Juan Pérez</div>
+                        <div class="player-email" th:text="${player.email}">juan@email.com</div>
+                    </div>
+                </div>
+
+                <div class="player-card-body">
+                    <div class="player-detail-item">
+                        <i class="fas fa-phone"></i>
+                        <span th:text="${player.telefono ?: 'Teléfono no especificado'}">123456789</span>
+                    </div>
+                    <div class="player-detail-item">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span th:text="${#temporals.format(player.fechaRegistro, 'dd/MM/yyyy HH:mm')}">15/03/2026</span>
+                    </div>
+                    <div class="player-detail-item">
+                        <i class="fas fa-envelope"></i>
+                        <span class="status-badge" th:classappend="${player.emailConfirmado} ? 'badge-success' : 'badge-warning'"
+                              th:text="${player.emailConfirmado} ? 'Email Confirmado' : 'Email Pendiente'">
+                            Confirmado
+                        </span>
+                    </div>
+                </div>
+
+                <div class="player-card-footer">
+                    <div class="player-status">
+                        <span class="status-badge" th:classappend="${player.activo} ? 'badge-success' : 'badge-warning'"
+                              th:text="${player.activo} ? 'Activo' : 'Inactivo'">
+                            Activo
+                        </span>
+                    </div>
+                    <div class="player-actions">
+                        <a th:href="@{'/admin/players/' + ${player.id}}" class="btn-icon" title="Ver detalles">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <form th:action="@{'/admin/players/' + ${player.id} + '/toggle-status'}" method="post" style="display: inline;">
+                            <button type="submit" class="btn-icon"
+                                    th:title="${player.activo} ? 'Desactivar' : 'Activar'"
+                                    th:classappend="${player.activo} ? '' : 'success'">
+                                <i th:class="${player.activo} ? 'fas fa-ban' : 'fas fa-check-circle'"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Таблица игроков (для десктопа) -->
+        <div class="admin-table-container" id="playersTableView">
             <table class="admin-table">
                 <thead>
                 <tr>
@@ -123,10 +175,12 @@
                     </td>
                 </tr>
                 <tr th:unless="${not #lists.isEmpty(players)}">
-                    <td colspan="8" style="text-align: center; padding: 3rem;">
-                        <i class="fas fa-users" style="font-size: 3rem; color: var(--admin-gray); margin-bottom: 1rem;"></i>
-                        <h3>No hay jugadores</h3>
-                        <p>Los jugadores aparecerán aquí cuando se registren</p>
+                    <td colspan="8" class="empty-state-cell">
+                        <div class="admin-empty">
+                            <i class="fas fa-users"></i>
+                            <h3>No hay jugadores</h3>
+                            <p>Los jugadores aparecerán aquí cuando se registren</p>
+                        </div>
                     </td>
                 </tr>
                 </tbody>

@@ -2,9 +2,8 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
     <meta name="description" content="Detalles del Jugador - E-Padel">
-    <!-- ✅ ИСПРАВЛЕНО: Padel Core Admin → E-Padel Admin -->
     <title th:text="'Jugador: ' + ${player.nombreCompleto} + ' - E-Padel Admin'">Detalles del Jugador</title>
 
     <!-- Font Awesome 6 -->
@@ -23,7 +22,6 @@
     <link rel="stylesheet" th:href="@{/css/admin.css}">
 </head>
 <body>
-<!-- ✅ ИСПРАВЛЕНО: Король Корта → Detalles del Jugador -->
 <header th:replace="~{fragments/admin-header :: header('Detalles del Jugador')}"></header>
 
 <main class="admin-main">
@@ -40,22 +38,22 @@
         </div>
 
         <!-- Cabecera del perfil -->
-        <div class="profile-header" style="background: linear-gradient(135deg, var(--admin-primary), var(--admin-secondary));">
-            <div class="profile-avatar" style="width: 80px; height: 80px; font-size: 4rem;">
+        <div class="player-profile-header">
+            <div class="player-profile-avatar">
                 <i class="fas fa-user-circle"></i>
             </div>
-            <div class="profile-title">
+            <div class="player-profile-info">
                 <h1 th:text="${player.nombreCompleto}">Juan Pérez</h1>
-                <p th:text="${player.email}">juan@email.com</p>
+                <p class="player-email" th:text="${player.email}">juan@email.com</p>
             </div>
-            <div class="profile-status" style="margin-left: auto;">
+            <div class="player-profile-status">
                 <span class="status-badge" th:classappend="${player.activo} ? 'badge-success' : 'badge-warning'"
                       th:text="${player.activo} ? 'Activo' : 'Inactivo'">Activo</span>
             </div>
         </div>
 
         <!-- Grid de información -->
-        <div class="admin-grid" style="margin-top: 2rem;">
+        <div class="player-details-grid">
             <!-- Información personal -->
             <div class="admin-card">
                 <div class="admin-card-header">
@@ -65,18 +63,18 @@
                     </h2>
                 </div>
                 <div class="admin-card-body">
-                    <div style="display: flex; flex-direction: column; gap: 1rem;">
-                        <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--admin-border);">
-                            <strong>Nombre completo:</strong>
-                            <span th:text="${player.nombreCompleto}">Juan Pérez</span>
+                    <div class="info-rows">
+                        <div class="info-row">
+                            <span class="info-label">Nombre completo:</span>
+                            <span class="info-value" th:text="${player.nombreCompleto}">Juan Pérez</span>
                         </div>
-                        <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--admin-border);">
-                            <strong>Email:</strong>
-                            <span th:text="${player.email}">juan@email.com</span>
+                        <div class="info-row">
+                            <span class="info-label">Email:</span>
+                            <span class="info-value" th:text="${player.email}">juan@email.com</span>
                         </div>
-                        <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--admin-border);">
-                            <strong>Teléfono:</strong>
-                            <span th:text="${player.telefono ?: 'No especificado'}">123456789</span>
+                        <div class="info-row">
+                            <span class="info-label">Teléfono:</span>
+                            <span class="info-value" th:text="${player.telefono ?: 'No especificado'}">123456789</span>
                         </div>
                     </div>
                 </div>
@@ -87,25 +85,25 @@
                 <div class="admin-card-header">
                     <h2>
                         <i class="fas fa-chart-line"></i>
-                        Estadísticas de Cuenta
+                        Estadísticas
                     </h2>
                 </div>
                 <div class="admin-card-body">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                        <div style="text-align: center; padding: 1rem; background: var(--admin-light); border-radius: 8px;">
-                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--admin-primary);" th:text="0">0</div>
-                            <div style="font-size: 0.8rem; color: var(--admin-gray);">Torneos jugados</div>
+                    <div class="stats-grid-mini">
+                        <div class="stat-mini-item">
+                            <div class="stat-mini-value" th:text="0">0</div>
+                            <div class="stat-mini-label">Torneos jugados</div>
                         </div>
-                        <div style="text-align: center; padding: 1rem; background: var(--admin-light); border-radius: 8px;">
-                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--admin-primary);" th:text="0">0</div>
-                            <div style="font-size: 0.8rem; color: var(--admin-gray);">Torneos ganados</div>
+                        <div class="stat-mini-item">
+                            <div class="stat-mini-value" th:text="0">0</div>
+                            <div class="stat-mini-label">Torneos ganados</div>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Información de registro -->
-            <div class="admin-card" style="grid-column: span 2;">
+            <div class="admin-card full-width">
                 <div class="admin-card-header">
                     <h2>
                         <i class="fas fa-calendar-alt"></i>
@@ -113,23 +111,23 @@
                     </h2>
                 </div>
                 <div class="admin-card-body">
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
-                        <div>
-                            <strong>Fecha de registro:</strong>
-                            <p th:text="${#temporals.format(player.fechaRegistro, 'dd/MM/yyyy HH:mm')}">15/03/2026</p>
+                    <div class="registration-info-grid">
+                        <div class="info-row">
+                            <span class="info-label">Fecha de registro:</span>
+                            <span class="info-value" th:text="${#temporals.format(player.fechaRegistro, 'dd/MM/yyyy HH:mm')}">15/03/2026</span>
                         </div>
-                        <div>
-                            <strong>Email confirmado:</strong>
-                            <p>
+                        <div class="info-row">
+                            <span class="info-label">Email confirmado:</span>
+                            <span class="info-value">
                                 <span class="status-badge" th:classappend="${player.emailConfirmado} ? 'badge-success' : 'badge-warning'"
                                       th:text="${player.emailConfirmado} ? 'Sí' : 'No'">
                                     Sí
                                 </span>
-                            </p>
+                            </span>
                         </div>
-                        <div th:if="${player.fechaConfirmacionEmail}">
-                            <strong>Fecha confirmación:</strong>
-                            <p th:text="${#temporals.format(player.fechaConfirmacionEmail, 'dd/MM/yyyy HH:mm')}">15/03/2026</p>
+                        <div class="info-row" th:if="${player.fechaConfirmacionEmail}">
+                            <span class="info-label">Fecha confirmación:</span>
+                            <span class="info-value" th:text="${#temporals.format(player.fechaConfirmacionEmail, 'dd/MM/yyyy HH:mm')}">15/03/2026</span>
                         </div>
                     </div>
                 </div>
@@ -137,8 +135,8 @@
         </div>
 
         <!-- Botones de acción -->
-        <div class="admin-actions" style="justify-content: center; margin-top: 2rem;">
-            <form th:action="@{'/admin/players/' + ${player.id} + '/toggle-status'}" method="post">
+        <div class="player-actions">
+            <form th:action="@{'/admin/players/' + ${player.id} + '/toggle-status'}" method="post" class="action-form">
                 <button type="submit" class="btn" th:classappend="${player.activo} ? 'btn-warning' : 'btn-success'">
                     <i th:class="${player.activo} ? 'fas fa-ban' : 'fas fa-check-circle'"></i>
                     <span th:text="${player.activo} ? 'Desactivar Jugador' : 'Activar Jugador'"></span>
@@ -147,7 +145,7 @@
         </div>
 
         <!-- Torneos del jugador -->
-        <div class="admin-card" style="margin-top: 2rem;">
+        <div class="admin-card">
             <div class="admin-card-header">
                 <h2>
                     <i class="fas fa-trophy"></i>
@@ -155,7 +153,7 @@
                 </h2>
             </div>
             <div class="admin-card-body">
-                <div class="admin-empty" style="padding: 2rem;">
+                <div class="admin-empty">
                     <i class="fas fa-trophy"></i>
                     <h3>No hay torneos</h3>
                     <p>Este jugador aún no se ha inscrito en ningún torneo</p>

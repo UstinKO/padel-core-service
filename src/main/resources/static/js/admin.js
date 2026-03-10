@@ -1,6 +1,53 @@
 /**
  * Padel Core - Admin Panel JavaScript
  */
+// Добавляем обработчик бургер-меню до класса
+document.addEventListener('DOMContentLoaded', function() {
+    'use strict';
+
+    // Бургер-меню для админ-панели
+    const navbarToggler = document.getElementById('navbarToggler');
+    const navbarNav = document.getElementById('navbarNav');
+
+    if (navbarToggler && navbarNav) {
+        console.log('✅ Admin: найдены элементы меню');
+
+        // Убираем старые обработчики
+        const newToggler = navbarToggler.cloneNode(true);
+        navbarToggler.parentNode.replaceChild(newToggler, navbarToggler);
+
+        // Добавляем обработчик
+        newToggler.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            navbarNav.classList.toggle('show');
+
+            // Анимация иконки
+            this.classList.toggle('active');
+
+            console.log('🍔 Admin menu:', navbarNav.classList.contains('show') ? 'abierto' : 'cerrado');
+        });
+
+        // Закрываем меню при клике на ссылку
+        navbarNav.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                navbarNav.classList.remove('show');
+                newToggler.classList.remove('active');
+            });
+        });
+
+        // Закрываем меню при клике вне его
+        document.addEventListener('click', (e) => {
+            if (navbarNav.classList.contains('show') &&
+                !navbarNav.contains(e.target) &&
+                !newToggler.contains(e.target)) {
+                navbarNav.classList.remove('show');
+                newToggler.classList.remove('active');
+            }
+        });
+    }
+});
 
 class AdminPanel {
     constructor() {

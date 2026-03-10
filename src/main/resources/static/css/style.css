@@ -187,6 +187,9 @@ h1, h2, h3, h4, h5, h6 {
     justify-content: center;
     align-items: center;
     gap: 6px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
 }
 
 .navbar-toggler-icon {
@@ -859,12 +862,10 @@ h1, h2, h3, h4, h5, h6 {
     width: 100%;
 }
 
-/* Отступы только между карточками */
 .carousel-slide .carousel-card {
     margin-right: 20px;
 }
 
-/* У последней карточки в слайде убираем отступ */
 .carousel-slide .carousel-card:last-child {
     margin-right: 0;
 }
@@ -885,12 +886,10 @@ h1, h2, h3, h4, h5, h6 {
     flex-shrink: 0;
 }
 
-/* Для 1 карточки */
 @media (max-width: 768px) {
     .carousel-card {
         width: 280px;
     }
-
     .carousel-container {
         padding: 0 20px;
     }
@@ -900,17 +899,6 @@ h1, h2, h3, h4, h5, h6 {
     transform: translateY(-4px);
     box-shadow: 0 12px 30px rgba(255, 107, 53, 0.15);
     border-color: var(--color-primary);
-}
-
-/* Адаптивность для мобильных */
-@media (max-width: 768px) {
-    .carousel-card {
-        width: 280px; /* Чуть меньше на мобильных */
-    }
-
-    .carousel-container {
-        padding: 0 20px;
-    }
 }
 
 .carousel-card-header {
@@ -1890,7 +1878,6 @@ h1, h2, h3, h4, h5, h6 {
     font-size: 0.9rem;
 }
 
-/* My tournament badge */
 .my-tournament-badge {
     display: inline-block;
     background: linear-gradient(135deg, var(--color-success), #0d9488);
@@ -1907,7 +1894,6 @@ h1, h2, h3, h4, h5, h6 {
     margin-right: 0.25rem;
 }
 
-/* Torneo Footer с кнопками */
 .torneo-footer {
     display: flex;
     gap: 0.5rem;
@@ -1947,7 +1933,6 @@ h1, h2, h3, h4, h5, h6 {
     border-color: transparent;
 }
 
-/* Специальные стили для кнопки отмены */
 .torneo-footer .btn-outline.btn-cancel {
     border-color: var(--color-error);
     color: var(--color-error);
@@ -2019,72 +2004,388 @@ h1, h2, h3, h4, h5, h6 {
     width: 100%;
 }
 
-/* ===== MEDIA QUERIES - RESPONSIVE DESIGN ===== */
+/* ===== TOURNAMENTS GRID ===== */
+.tournaments-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
 
-/* Desktop Large */
+@media (max-width: 1024px) {
+    .tournaments-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .tournaments-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Tournament Card */
+.tournament-card {
+    background: white;
+    border-radius: 1rem;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border: 1px solid var(--color-border);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.tournament-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(255, 107, 53, 0.15);
+    border-color: var(--color-primary);
+}
+
+.tournament-card-header {
+    padding: 1rem 1.5rem;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.tournament-badge {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 2rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    backdrop-filter: blur(4px);
+    white-space: nowrap;
+}
+
+.tournament-badge-level {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.tournament-card-body {
+    padding: 1.5rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.tournament-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: 1rem;
+    line-height: 1.4;
+    min-height: 3.5rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    word-break: break-word;
+}
+
+.tournament-info {
+    flex: 1;
+    margin-bottom: 1rem;
+}
+
+.tournament-info-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.4rem 0;
+    color: var(--color-text-light);
+    border-bottom: 1px dashed var(--color-border-light);
+    font-size: 0.9rem;
+}
+
+.tournament-info-item:last-child {
+    border-bottom: none;
+}
+
+.tournament-info-item i {
+    width: 1.25rem;
+    color: var(--color-primary);
+    font-size: 1rem;
+    flex-shrink: 0;
+    margin-top: 3px;
+}
+
+.tournament-info-item span:not(.club-name):not(.club-address) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Club info styles */
+.club-info {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.3;
+    flex: 1;
+}
+
+.club-name {
+    font-weight: 500;
+    color: var(--color-text);
+    white-space: normal;
+    word-break: break-word;
+}
+
+.club-address {
+    font-size: 0.75rem;
+    color: var(--color-text-light);
+    margin-top: 2px;
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* Tournament Footer */
+.tournament-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--color-border-light);
+    gap: 0.5rem;
+    flex-shrink: 0;
+    width: 100%;
+}
+
+.tournament-footer .btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border-radius: var(--border-radius-full);
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    min-width: 0;
+}
+
+.tournament-footer .btn i {
+    font-size: 0.9rem;
+    margin-right: 0.25rem;
+    flex-shrink: 0;
+}
+
+.tournament-footer .btn-small {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+}
+
+.tournament-footer .btn-outline {
+    border-width: 1.5px;
+    background: transparent;
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.tournament-footer .btn-outline:hover {
+    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+    color: white;
+    border-color: transparent;
+}
+
+.tournament-footer .btn-outline i {
+    color: var(--color-primary);
+}
+
+.tournament-footer .btn-outline:hover i {
+    color: white;
+}
+
+.tournament-status {
+    padding: 0.35rem 0.8rem;
+    border-radius: var(--border-radius-full);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    background: var(--color-light-gray);
+    color: var(--color-dark-gray);
+    flex-shrink: 0;
+}
+
+.tournament-status.status-registro_abierto {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.2));
+    color: var(--color-success);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.tournament-status.status-publicado {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.2));
+    color: #2563eb;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.tournament-status.status-borrador {
+    background: linear-gradient(135deg, rgba(107, 114, 128, 0.1), rgba(107, 114, 128, 0.2));
+    color: #4b5563;
+    border: 1px solid rgba(107, 114, 128, 0.3);
+}
+
+/* ===== FAQ SECTION ===== */
+.faq-section {
+    padding: 5rem 0;
+    background: var(--color-bg-light);
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.faq-section .container {
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.faq-section .section-header {
+    text-align: center;
+    margin-bottom: var(--spacing-xl);
+}
+
+.faq-section .section-title {
+    font-size: var(--font-size-4xl);
+    color: var(--color-black);
+    margin-bottom: var(--spacing-sm);
+}
+
+.faq-section .section-title-highlight {
+    background: linear-gradient(135deg, var(--color-secondary), var(--color-primary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.faq-container {
+    width: 100%;
+    margin: 0 auto;
+}
+
+.faq-item {
+    background: white;
+    border-radius: var(--border-radius-lg);
+    margin-bottom: 1rem;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--color-border);
+    overflow: hidden;
+    width: 100%;
+}
+
+.faq-question {
+    width: 100%;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--color-text);
+    text-align: left;
+    transition: all var(--transition-fast);
+}
+
+.faq-question:hover {
+    background: var(--color-bg-light);
+}
+
+.faq-question-text {
+    flex: 1;
+}
+
+.faq-icon {
+    font-size: 1rem;
+    color: var(--color-primary);
+    transition: transform var(--transition-base);
+}
+
+.faq-item.active .faq-icon {
+    transform: rotate(180deg);
+}
+
+.faq-answer {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    background: var(--color-bg-light);
+    border-top: 1px solid transparent;
+}
+
+.faq-item.active .faq-answer {
+    max-height: 300px;
+    border-top-color: var(--color-border);
+}
+
+.faq-answer p {
+    padding: 1.5rem;
+    margin: 0;
+    color: var(--color-text-light);
+    line-height: 1.6;
+}
+
+/* ===== MEDIA QUERIES ===== */
 @media (max-width: 1280px) {
     .container {
         max-width: 1024px;
     }
-
     .hero-title {
         font-size: var(--font-size-4xl);
     }
-
     .torneos-grid {
         grid-template-columns: repeat(2, 1fr);
     }
 }
 
-/* Tablet Landscape */
 @media (max-width: 1024px) {
     :root {
         --font-size-5xl: 2.75rem;
         --font-size-4xl: 2rem;
         --font-size-3xl: 1.75rem;
     }
-
     .hero-grid,
     .features-grid,
     .footer-grid {
         grid-template-columns: repeat(2, 1fr);
     }
-
     .hero-content {
         grid-column: span 2;
         text-align: center;
         max-width: 100%;
     }
-
     .hero-stats {
         justify-content: center;
     }
-
     .hero-form {
         grid-column: span 2;
         max-width: 600px;
         margin: 0 auto;
     }
-
     .filters-grid {
         grid-template-columns: repeat(3, 1fr);
     }
-
     .filter-group-action {
         grid-column: span 3;
     }
-
     .stats-grid {
         grid-template-columns: repeat(2, 1fr);
     }
 }
 
-/* Tablet Portrait */
 @media (max-width: 768px) {
     .navbar-toggler {
         display: flex;
     }
-
     .navbar-collapse {
         position: absolute;
         top: 100%;
@@ -2096,149 +2397,241 @@ h1, h2, h3, h4, h5, h6 {
         border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
         box-shadow: var(--shadow-lg);
         display: none;
+        max-height: calc(100vh - 80px);
+        overflow-y: auto;
+        z-index: 1000;
     }
-
     .navbar-collapse.show {
         display: flex;
     }
-
     .navbar-nav,
     .navbar-auth {
         flex-direction: column;
         width: 100%;
+        align-items: center;
     }
-
-    .navbar-auth {
-        margin-top: var(--spacing-md);
-    }
-
-    .navbar-user {
+    .navbar-nav {
         flex-direction: column;
         width: 100%;
+        margin-bottom: var(--spacing-md);
     }
-
-    .user-name {
+    .nav-item {
         width: 100%;
-        justify-content: center;
+        text-align: center;
+        margin: 0.25rem 0;
     }
-
+    .nav-link {
+        display: block;
+        padding: 0.75rem;
+        width: 100%;
+    }
+    /* Стили для блоков авторизации - ВАЖНО! */
+    .navbar-auth,
+    .navbar-user {
+        display: flex !important; /* Принудительно показываем */
+        flex-direction: column;
+        width: 100%;
+        gap: var(--spacing-sm);
+        /*margin-top: var(--spacing-md);*/
+        /*border-top: 1px solid var(--color-border-light);*/
+        /*padding-top: var(--spacing-md);*/
+    }
+    .navbar-auth .btn,
+    .navbar-user .btn {
+        width: 100%;
+        text-align: center;
+        margin: 0.25rem 0;
+    }
+    .navbar-auth .btn-outline-sm,
+    .navbar-auth .btn-primary-sm,
+    .navbar-user .btn-outline-sm,
+    .navbar-user .btn-primary-sm {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        font-size: var(--font-size-sm);
+    }
+    .navbar-auth {
+        /*margin-top: var(--spacing-md);*/
+        gap: var(--spacing-sm);
+    }
+    .navbar-auth .btn {
+        width: 100%;
+        text-align: center;
+    }
+    .navbar-user {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+        gap: 8px !important;
+        padding: 15px 0 !important;
+        border-top: 1px solid var(--color-border) !important;
+        margin-top: 10px !important;
+    }
+    .user-name {
+        justify-content: center;
+        background: rgba(123, 44, 191, 0.1) !important;
+        padding: 12px !important;
+        border-radius: var(--border-radius-full) !important;
+        margin-bottom: 10px !important;
+        width: 100% !important;
+        text-align: center !important;
+        font-weight: 600 !important;
+        color: var(--color-secondary) !important;
+    }
+    /* Иконка пользователя */
+    .user-name i {
+        color: var(--color-primary) !important;
+        margin-right: 8px !important;
+    }
+    /* Стили для формы выхода */
+    .navbar-user form {
+        width: 100% !important;
+        display: block !important;
+    }
+    .navbar-user form button {
+        width: 100%;
+    }
     .btn-outline-sm,
     .btn-primary-sm {
         width: 100%;
     }
-
+    .navbar-user form button.btn-outline-sm,
+    .navbar-user .btn-outline-sm {
+        background: transparent !important;
+        color: var(--color-primary) !important;
+        border: 2px solid var(--color-primary) !important;
+        width: 100% !important;
+        padding: 12px !important;
+        font-size: 1rem !important;
+        font-weight: 600 !important;
+        border-radius: var(--border-radius-full) !important;
+        margin-top: 5px !important;
+    }
+    .navbar-user form button.btn-outline-sm:active,
+    .navbar-user .btn-outline-sm:active {
+        background: var(--color-primary) !important;
+        color: white !important;
+    }
+    .navbar-user a.btn-primary-sm {
+        width: 100% !important;
+        padding: 12px !important;
+        font-size: 1rem !important;
+        margin: 5px 0 !important;
+    }
+    /* Анимация для бургер-иконки */
+    .navbar-toggler.active .navbar-toggler-icon:nth-child(1) {
+        transform: rotate(45deg) translate(5px, 5px);
+    }
+    .navbar-toggler.active .navbar-toggler-icon:nth-child(2) {
+        opacity: 0;
+    }
+    .navbar-toggler.active .navbar-toggler-icon:nth-child(3) {
+        transform: rotate(-45deg) translate(7px, -7px);
+    }
+    .navbar-toggler-icon {
+        transition: all 0.3s ease;
+    }
     .hero {
         padding: var(--spacing-xl) 0;
     }
-
     .hero-stats {
         flex-direction: column;
         align-items: center;
         gap: var(--spacing-md);
     }
-
     .stat-item {
         align-items: center;
     }
-
     .form-row {
         grid-template-columns: 1fr;
     }
-
     .filters-grid {
         grid-template-columns: 1fr;
     }
-
     .filter-group-action {
         grid-column: span 1;
     }
-
     .filter-options {
         flex-wrap: wrap;
     }
-
     .torneos-grid {
         grid-template-columns: 1fr;
     }
-
     .features-grid,
     .footer-grid {
         grid-template-columns: 1fr;
     }
-
     .footer-info {
         text-align: center;
     }
-
     .footer-logo {
         justify-content: center;
     }
-
     .footer-social {
         justify-content: center;
     }
-
     .footer-title::after {
         left: 50%;
         transform: translateX(-50%);
     }
-
     .footer-menu {
         align-items: center;
     }
-
     .footer-bottom {
         flex-direction: column;
         gap: var(--spacing-md);
         text-align: center;
     }
-
     .footer-badges {
         flex-wrap: wrap;
         justify-content: center;
     }
-
     .stats-grid {
         grid-template-columns: 1fr;
     }
-
     .auth-card {
         padding: var(--spacing-lg);
     }
-
     .auth-card-title {
         font-size: 1.75rem;
     }
-
     .auth-social {
         grid-template-columns: 1fr;
     }
+    .faq-section {
+        padding: 3rem 0;
+    }
+    .faq-section .container {
+        padding: 0 1rem;
+    }
+    .faq-question {
+        padding: 1rem;
+        font-size: 1rem;
+    }
+    .faq-answer p {
+        padding: 1rem;
+    }
 }
 
-/* Mobile */
 @media (max-width: 640px) {
     .auth-container {
         max-width: 100%;
         padding: 0 var(--spacing-sm);
     }
-
     .form-options {
         flex-direction: column;
         gap: var(--spacing-sm);
         align-items: flex-start;
     }
-
     .carousel-footer {
         flex-wrap: wrap;
     }
-
     .carousel-footer .btn {
         flex: 1;
         min-width: 0;
         padding: 0.35rem 0.5rem;
         font-size: 0.7rem;
     }
-
     .carousel-status {
         font-size: 0.65rem;
         padding: 0.2rem 0.4rem;
@@ -2252,50 +2645,59 @@ h1, h2, h3, h4, h5, h6 {
         --font-size-3xl: 1.5rem;
         --container-padding: 0.75rem;
     }
-
     .hero-title {
         font-size: var(--font-size-3xl);
     }
-
     .section-title {
         font-size: var(--font-size-2xl);
     }
-
     .form-card {
         padding: var(--spacing-md);
     }
-
     .torneo-footer {
         flex-direction: column;
         gap: 0.5rem;
     }
-
     .torneo-footer .btn {
         width: 100%;
         min-width: 100%;
     }
-
     .btn-outline {
         width: 100%;
     }
-
     .footer-social {
         flex-wrap: wrap;
         justify-content: center;
     }
-
     .footer-badges .badge {
         padding: 0.4rem 0.8rem;
     }
-
     .feature-badges {
         flex-direction: column;
         align-items: center;
         gap: 0.75rem;
     }
-
     .feature-badge {
         width: 100%;
         justify-content: center;
     }
+    .faq-section .section-title {
+        font-size: var(--font-size-3xl);
+    }
+}
+
+/* Анимации */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.tournament-card {
+    animation: fadeIn 0.5s ease forwards;
 }
