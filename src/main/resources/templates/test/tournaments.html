@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тестовое управление турнирами</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .tournament-card {
+            transition: all 0.3s;
+            border-left: 4px solid #0d6efd;
+            margin-bottom: 15px;
+        }
+        .tournament-card:hover {
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        .stats-badge {
+            background: #f8f9fa;
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+        .progress {
+            height: 10px;
+            border-radius: 5px;
+        }
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 3px 8px;
+            border-radius: 12px;
+        }
+        .status-REGISTRO_ABIERTO { background: #d1e7dd; color: #0a3622; }
+        .status-PUBLICADO { background: #cfe2ff; color: #052c65; }
+        .status-CERRADO { background: #fff3cd; color: #664d03; }
+        .status-FINALIZADO { background: #e2e3e5; color: #41464b; }
+        .status-CANCELADO { background: #f8d7da; color: #842029; }
+    </style>
+</head>
+<body class="bg-light">
+<div class="container py-4">
+    <!-- Шапка -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h1 class="h3 mb-2">🧪 Тестовое управление турнирами</h1>
+                            <p class="text-muted mb-0">
+                                Массовая регистрация тестовых игроков (ID: 1-25) и очистка турниров
+                            </p>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-secondary" th:text="${#lists.size(tournaments)} + ' турниров'"></span>
+                            <div class="small text-muted mt-1">
+                                Обновлено: <span th:text="${#temporals.format(now, 'dd.MM.yyyy HH:mm')}"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Список турниров -->
+    <div class="row">
+        <div class="col">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <ul class="nav nav-tabs card-header-tabs" id="tournamentTabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" id="all-tab" data-bs-toggle="tab" href="#all" role="tab">
+                                Все турниры
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="active-tab" data-bs-toggle="tab" href="#active" role="tab">
+                                Активные
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content" id="tournamentTabsContent">
+                        <!-- Вкладка "Все турниры" -->
+                        <div class="tab-pane fade show active" id="all" role="tabpanel">
+                            <div th:each="tournament : ${tournaments}" class="tournament-card card">
+                                <div class="card-body">
+                                    <div class="row align-items-center">
+                                        <!-- Информация о турнире -->
+                                        <div class="col-md-4">
+                                            <div class="d-flex align-items-center">
+                                                <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3">
+                                                    <span class="h5 mb-0" th:text="${tournament.id}">#</span>
+                                                </div>
+                                                <div>
+                                                    <h5 class="mb-1" th:text="${tournament.nombre}">Название турнира</h5>
+                                                    <div class="d-flex gap-2">
+                                                            <span class="status-badge"
+                                                                  th:classappend="'status-' + ${tournament.estado}"
+                                                                  th:text="${tournament.estado}">Статус</span>
+                                                        <span class="badge bg-light text-dark"
+                                                              th:text="${tournament.tipo}">Тип</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Статистика регистраций -->
+                                        <div class="col-md-4">
+                                            <div class="stats-badge" th:with="stats=${statsMap[__${tournament.id}__]}">
+                                                <div class="d-flex justify-content-between mb-1">
+                                                    <span>Регистрации:</span>
+                                                    <strong>
+                                                        <span th:text="${stats?.confirmed ?: 0}">0</span>
+                                                        / <span th:text="${tournament.cupoMax}">20</span>
+                                                    </strong>
+                                                </div>
+                                                <div class="progress mb-2">
+                                                    <div class="progress-bar bg-success"
+                                                         th:style="'width: ' + (${stats?.confirmed ?: 0} * 100.0 / ${tournament.cupoMax}) + '%'">
+                                                    </div>
+                                                </div>
+                                                <div class="row small text-muted">
+                                                    <div class="col-6">
+                                                        📊 Всего: <span th:text="${stats?.totalRegistrations ?: 0}">0</span>
+                                                    </div>
+                                                    <div class="col-6 text-end">
+                                                        🎯 Позиции: <span th:text="${stats?.minPosition ?: 0} + '-' + ${stats?.maxPosition ?: 0}">0-0</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Кнопки действий -->
+                                        <div class="col-md-4">
+                                            <div class="d-flex gap-2 justify-content-end">
+                                                <!-- Регистрация 25 игроков -->
+                                                <button class="btn btn-sm btn-success"
+                                                        th:onclick="'registerTestPlayers(' + ${tournament.id} + ', 25, this)'">
+                                                        <span class="d-flex align-items-center">
+                                                            <span class="me-1">➕</span>
+                                                            25 игроков
+                                                        </span>
+                                                </button>
+
+                                                <!-- Регистрация 10 игроков -->
+                                                <button class="btn btn-sm btn-outline-success"
+                                                        th:onclick="'registerTestPlayers(' + ${tournament.id} + ', 10, this)'">
+                                                    10 игроков
+                                                </button>
+
+                                                <!-- Очистить тестовых игроков -->
+                                                <button class="btn btn-sm btn-danger"
+                                                        th:onclick="'clearTestPlayers(' + ${tournament.id} + ', this)'">
+                                                        <span class="d-flex align-items-center">
+                                                            <span class="me-1">🗑️</span>
+                                                            Очистить
+                                                        </span>
+                                                </button>
+
+                                                <!-- Кнопка обновления статистики -->
+                                                <button class="btn btn-sm btn-outline-secondary"
+                                                        th:onclick="'refreshStats(' + ${tournament.id} + ', this)'"
+                                                        title="Обновить статистику">
+                                                    🔄
+                                                </button>
+                                            </div>
+
+                                            <!-- Дополнительная информация -->
+                                            <div class="text-end mt-2 small text-muted"
+                                                 th:id="'info-' + ${tournament.id}">
+                                                <span th:text="${tournament.fechaInicio} + ' ' + ${tournament.horaInicio}">Дата</span>
+                                                <span class="mx-1">•</span>
+                                                <span th:text="${tournament.clubNombre}">Клуб</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div th:if="${tournaments.empty}" class="text-center py-5">
+                                <p class="text-muted mb-0">Нет доступных турниров</p>
+                            </div>
+                        </div>
+
+                        <!-- Вкладка "Активные" -->
+                        <div class="tab-pane fade" id="active" role="tabpanel">
+                            <th:block th:each="tournament : ${tournaments}">
+                                <div th:if="${tournament.isActive}" class="tournament-card card">
+                                    <div class="card-body">
+                                        <div class="row align-items-center">
+                                            <!-- Информация о турнире (копия содержимого из all-tab) -->
+                                            <div class="col-md-4">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3">
+                                                        <span class="h5 mb-0" th:text="${tournament.id}">#</span>
+                                                    </div>
+                                                    <div>
+                                                        <h5 class="mb-1" th:text="${tournament.nombre}">Название турнира</h5>
+                                                        <div class="d-flex gap-2">
+                                                                <span class="status-badge"
+                                                                      th:classappend="'status-' + ${tournament.estado}"
+                                                                      th:text="${tournament.estado}">Статус</span>
+                                                            <span class="badge bg-light text-dark"
+                                                                  th:text="${tournament.tipo}">Тип</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Статистика регистраций -->
+                                            <div class="col-md-4">
+                                                <div class="stats-badge" th:with="stats=${statsMap[__${tournament.id}__]}">
+                                                    <div class="d-flex justify-content-between mb-1">
+                                                        <span>Регистрации:</span>
+                                                        <strong>
+                                                            <span th:text="${stats?.confirmed ?: 0}">0</span>
+                                                            / <span th:text="${tournament.cupoMax}">20</span>
+                                                        </strong>
+                                                    </div>
+                                                    <div class="progress mb-2">
+                                                        <div class="progress-bar bg-success"
+                                                             th:style="'width: ' + (${stats?.confirmed ?: 0} * 100.0 / ${tournament.cupoMax}) + '%'">
+                                                        </div>
+                                                    </div>
+                                                    <div class="row small text-muted">
+                                                        <div class="col-6">
+                                                            📊 Всего: <span th:text="${stats?.totalRegistrations ?: 0}">0</span>
+                                                        </div>
+                                                        <div class="col-6 text-end">
+                                                            🎯 Позиции: <span th:text="${stats?.minPosition ?: 0} + '-' + ${stats?.maxPosition ?: 0}">0-0</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Кнопки действий -->
+                                            <div class="col-md-4">
+                                                <div class="d-flex gap-2 justify-content-end">
+                                                    <button class="btn btn-sm btn-success"
+                                                            th:onclick="'registerTestPlayers(' + ${tournament.id} + ', 25, this)'">
+                                                            <span class="d-flex align-items-center">
+                                                                <span class="me-1">➕</span>
+                                                                25 игроков
+                                                            </span>
+                                                    </button>
+
+                                                    <button class="btn btn-sm btn-outline-success"
+                                                            th:onclick="'registerTestPlayers(' + ${tournament.id} + ', 10, this)'">
+                                                        10 игроков
+                                                    </button>
+
+                                                    <button class="btn btn-sm btn-danger"
+                                                            th:onclick="'clearTestPlayers(' + ${tournament.id} + ', this)'">
+                                                            <span class="d-flex align-items-center">
+                                                                <span class="me-1">🗑️</span>
+                                                                Очистить
+                                                            </span>
+                                                    </button>
+
+                                                    <button class="btn btn-sm btn-outline-secondary"
+                                                            th:onclick="'refreshStats(' + ${tournament.id} + ', this)'"
+                                                            title="Обновить статистику">
+                                                        🔄
+                                                    </button>
+                                                </div>
+
+                                                <div class="text-end mt-2 small text-muted">
+                                                    <span th:text="${tournament.fechaInicio} + ' ' + ${tournament.horaInicio}">Дата</span>
+                                                    <span class="mx-1">•</span>
+                                                    <span th:text="${tournament.clubNombre}">Клуб</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </th:block>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для результатов -->
+<div class="modal fade" id="resultModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Результат операции</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="resultContent"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                <button type="button" class="btn btn-primary" onclick="location.reload()">
+                    Обновить страницу
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Регистрация тестовых игроков
+    async function registerTestPlayers(tournamentId, count, button) {
+        const originalText = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = '⏳ Регистрация...';
+
+        try {
+            const response = await fetch(`/test/tournaments/${tournamentId}/register-test-players?count=${count}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showResult('success', `
+                        <div class="alert alert-success">
+                            <h6>✅ Успешно зарегистрировано!</h6>
+                            <p class="mb-0">
+                                Запрошено: ${result.requestedCount}<br>
+                                Зарегистрировано: ${result.successfullyRegistered}<br>
+                                Уже были: ${result.alreadyRegistered}<br>
+                                Ошибок: ${result.errors}
+                            </p>
+                        </div>
+                        <div class="mt-3">
+                            <strong>Статистика турнира:</strong><br>
+                            Всего регистраций: ${result.tournamentStats?.totalRegistrations || 0}<br>
+                            Подтверждено: ${result.tournamentStats?.confirmed || 0}<br>
+                            Позиции: ${result.tournamentStats?.minPosition || 0} - ${result.tournamentStats?.maxPosition || 0}
+                        </div>
+                    `);
+
+                // Обновляем статистику на странице
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showResult('danger', `<div class="alert alert-danger">${result.message}</div>`);
+            }
+        } catch (error) {
+            showResult('danger', `<div class="alert alert-danger">Ошибка: ${error.message}</div>`);
+        } finally {
+            button.disabled = false;
+            button.innerHTML = originalText;
+        }
+    }
+
+    // Очистка тестовых игроков
+    async function clearTestPlayers(tournamentId, button) {
+        if (!confirm('Удалить всех тестовых игроков (ID 1-50) с этого турнира?')) {
+            return;
+        }
+
+        const originalText = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = '⏳ Очистка...';
+
+        try {
+            const response = await fetch(`/test/tournaments/${tournamentId}/clear-test-players`, {
+                method: 'POST'
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showResult('success', `
+                        <div class="alert alert-success">
+                            <h6>✅ Очистка завершена</h6>
+                            <p class="mb-0">Удалено регистраций: ${result.deletedCount}</p>
+                        </div>
+                        <div class="mt-3">
+                            <strong>Обновленная статистика:</strong><br>
+                            Всего регистраций: ${result.tournamentStats?.totalRegistrations || 0}<br>
+                            Подтверждено: ${result.tournamentStats?.confirmed || 0}
+                        </div>
+                    `);
+
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showResult('danger', `<div class="alert alert-danger">${result.message}</div>`);
+            }
+        } catch (error) {
+            showResult('danger', `<div class="alert alert-danger">Ошибка: ${error.message}</div>`);
+        } finally {
+            button.disabled = false;
+            button.innerHTML = originalText;
+        }
+    }
+
+    // Обновление статистики
+    async function refreshStats(tournamentId, button) {
+        const originalText = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = '⏳';
+
+        try {
+            const response = await fetch(`/test/tournaments/${tournamentId}/stats`);
+            const stats = await response.json();
+
+            // Обновляем отображение
+            location.reload(); // Простой способ - перезагрузить страницу
+        } catch (error) {
+            console.error('Ошибка обновления статистики:', error);
+        } finally {
+            button.disabled = false;
+            button.innerHTML = originalText;
+        }
+    }
+
+    // Показать результат в модальном окне
+    function showResult(type, content) {
+        const modal = new bootstrap.Modal(document.getElementById('resultModal'));
+        document.getElementById('resultContent').innerHTML = content;
+        modal.show();
+    }
+</script>
+</body>
+</html>
