@@ -235,7 +235,25 @@ public class PaymentService {
                     payment.setAmount(dto.getAmount());
                     payment.setPaymentMethod(dto.getPaymentMethod());
                     payment.setStatus(dto.getPaymentStatus() != null ? dto.getPaymentStatus() : PaymentStatus.PAID);
-                    payment.setTransactionId(dto.getTransactionId());
+
+                    // Проверяем уникальность transaction_id при обновлении
+                    if (dto.getTransactionId() != null && !dto.getTransactionId().isEmpty()) {
+                        // Проверяем, не занят ли этот transaction_id другим платежом
+                        if (!dto.getTransactionId().equals(payment.getTransactionId())) {
+                            paymentRepository.findByTransactionId(dto.getTransactionId())
+                                    .ifPresent(existingPayment -> {
+                                        if (!existingPayment.getId().equals(payment.getId())) {
+                                            throw new IllegalArgumentException(
+                                                    "El ID de transacción '" + dto.getTransactionId() + "' ya está en uso por otro pago"
+                                            );
+                                        }
+                                    });
+                        }
+                        payment.setTransactionId(dto.getTransactionId());
+                    } else {
+                        payment.setTransactionId(null);
+                    }
+
                     payment.setNotes(dto.getNotes());
 
                     if (dto.getPaymentStatus() == PaymentStatus.PAID && payment.getPaymentDate() == null) {
@@ -252,10 +270,20 @@ public class PaymentService {
                             .currency(dto.getCurrency() != null ? dto.getCurrency() : "ARS")
                             .status(dto.getPaymentStatus() != null ? dto.getPaymentStatus() : PaymentStatus.PAID)
                             .paymentMethod(dto.getPaymentMethod())
-                            .transactionId(dto.getTransactionId())
                             .notes(dto.getNotes())
                             .createdBy(updatedBy)
                             .build();
+
+                    // Проверяем уникальность transaction_id при создании
+                    if (dto.getTransactionId() != null && !dto.getTransactionId().isEmpty()) {
+                        paymentRepository.findByTransactionId(dto.getTransactionId())
+                                .ifPresent(existingPayment -> {
+                                    throw new IllegalArgumentException(
+                                            "El ID de transacción '" + dto.getTransactionId() + "' ya está en uso"
+                                    );
+                                });
+                        payment.setTransactionId(dto.getTransactionId());
+                    }
 
                     if (payment.getStatus() == PaymentStatus.PAID) {
                         payment.setPaymentDate(LocalDateTime.now());
@@ -263,6 +291,10 @@ public class PaymentService {
 
                     paymentRepository.save(payment);
                 }
+            } else if (dto.isHasPayment() && dto.getPaymentId() != null) {
+                // Если сумма 0, но есть существующий платеж - возможно, его нужно удалить?
+                // По логике, можно оставить или удалить. Пока оставляем как есть.
+                log.debug("Payment with zero amount, skipping: {}", dto.getPaymentId());
             }
         }
     }
