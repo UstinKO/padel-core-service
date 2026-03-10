@@ -2,7 +2,7 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
     <meta name="description" content="Administración de Torneos - E-Padel">
     <title>Administración de Torneos - E-Padel</title>
 
@@ -53,8 +53,84 @@
             </a>
         </div>
 
-        <!-- Tabla de torneos -->
-        <div class="admin-table-container">
+        <!-- Карточки турниров для мобильных -->
+        <div class="tournaments-cards" id="tournamentsMobileView">
+            <div th:each="tournament : ${tournaments}" th:if="${not #lists.isEmpty(tournaments)}" class="tournament-card">
+                <div class="tournament-card-header">
+                    <div class="tournament-card-title">
+                        <i class="fas fa-trophy"></i>
+                        <strong th:text="${tournament.nombre}">Torneo Open</strong>
+                    </div>
+                    <div class="tournament-card-statuses">
+                        <span class="status-badge" th:classappend="'status-' + ${tournament.estado.name().toLowerCase()}"
+                              th:text="${tournament.estado}">Activo</span>
+                        <span th:if="${!tournament.isActive}" class="status-badge status-deleted">
+                            <i class="fas fa-trash-alt"></i> Eliminado
+                        </span>
+                    </div>
+                </div>
+
+                <div class="tournament-card-body">
+                    <div class="tournament-info-row">
+                        <i class="fas fa-building"></i>
+                        <span th:text="${tournament.clubNombre}">Club Padel</span>
+                    </div>
+                    <div class="tournament-info-row">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span th:text="${#temporals.format(tournament.fechaInicio, 'dd/MM/yyyy')}">15/03/2026</span>
+                    </div>
+                    <div class="tournament-info-row">
+                        <i class="fas fa-venus-mars"></i>
+                        <span th:text="${tournament.generoFormato}">Masculino</span>
+                    </div>
+                    <div class="tournament-info-row">
+                        <i class="fas fa-chart-line"></i>
+                        <span th:text="${tournament.categoriaNivel}">C8</span>
+                    </div>
+                    <div class="tournament-info-row">
+                        <i class="fas fa-users"></i>
+                        <span>
+                            <span th:text="${tournament.inscritosActuales} + '/' + ${tournament.cupoMax}">0/32</span>
+                            <span th:if="${tournament.waitlistCount > 0}" class="waitlist-badge" th:text="'(' + ${tournament.waitlistCount} + ' en espera)'">
+                                (5 en espera)
+                            </span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="tournament-card-footer">
+                    <a th:href="@{'/admin/tournaments/' + ${tournament.id}}" class="btn btn-outline btn-sm" title="Ver detalles">
+                        <i class="fas fa-eye"></i> Ver
+                    </a>
+                    <a th:href="@{'/admin/tournaments/' + ${tournament.id} + '/edit'}" class="btn btn-outline btn-sm" title="Editar">
+                        <i class="fas fa-edit"></i> Editar
+                    </a>
+
+                    <th:block th:if="${tournament.isActive}">
+                        <form th:action="@{'/admin/tournaments/' + ${tournament.id} + '/deactivate'}"
+                              method="post" style="display: inline;"
+                              onsubmit="return confirm('¿Desactivar este torneo? Los datos se conservarán.');">
+                            <button type="submit" class="btn btn-outline btn-sm btn-warning" title="Desactivar">
+                                <i class="fas fa-ban"></i> Desactivar
+                            </button>
+                        </form>
+                    </th:block>
+
+                    <th:block th:unless="${tournament.isActive}">
+                        <form th:action="@{'/admin/tournaments/' + ${tournament.id} + '/delete'}"
+                              method="post" style="display: inline;"
+                              onsubmit="return confirm('¿ELIMINAR PERMANENTEMENTE este torneo? Esta acción no se puede deshacer.');">
+                            <button type="submit" class="btn btn-outline btn-sm btn-danger" title="Eliminar permanentemente">
+                                <i class="fas fa-trash-alt"></i> Eliminar
+                            </button>
+                        </form>
+                    </th:block>
+                </div>
+            </div>
+        </div>
+
+        <!-- Таблица турниров (для десктопа) -->
+        <div class="admin-table-container" id="tournamentsTableView">
             <table class="admin-table">
                 <thead>
                 <tr>
@@ -102,36 +178,40 @@
                             <a th:href="@{'/admin/tournaments/' + ${tournament.id} + '/edit'}" class="btn-icon" title="Editar">
                                 <i class="fas fa-edit"></i>
                             </a>
-                            <form th:action="@{'/admin/tournaments/' + ${tournament.id} + '/deactivate'}"
-                                  method="post" style="display: inline;"
-                                  onsubmit="return confirm('¿Desactivar este torneo? Los datos se conservarán.');">
-                                <button type="submit" class="btn-icon" style="background: #f59e0b; color: white;" title="Desactivar">
-                                    <i class="fas fa-ban"></i>
-                                </button>
-                            </form>
-                        </div>
 
-                        <!-- Para torneos inactivos - botón de eliminación permanente -->
-                        <div th:unless="${tournament.isActive}" style="display: inline-block; margin-right: 4px;">
-                            <form th:action="@{'/admin/tournaments/' + ${tournament.id} + '/delete'}"
-                                  method="post" style="display: inline;"
-                                  onsubmit="return confirm('¿ELIMINAR PERMANENTEMENTE este torneo? Esta acción no se puede deshacer.');">
-                                <button type="submit" class="btn-icon delete" title="Eliminar permanentemente">
-                                    <i class="fas fa-trash-alt"></i>
-                                </button>
-                            </form>
+                            <th:block th:if="${tournament.isActive}">
+                                <form th:action="@{'/admin/tournaments/' + ${tournament.id} + '/deactivate'}"
+                                      method="post" style="display: inline;"
+                                      onsubmit="return confirm('¿Desactivar este torneo? Los datos se conservarán.');">
+                                    <button type="submit" class="btn-icon" style="background: #f59e0b; color: white;" title="Desactivar">
+                                        <i class="fas fa-ban"></i>
+                                    </button>
+                                </form>
+                            </th:block>
+
+                            <th:block th:unless="${tournament.isActive}">
+                                <form th:action="@{'/admin/tournaments/' + ${tournament.id} + '/delete'}"
+                                      method="post" style="display: inline;"
+                                      onsubmit="return confirm('¿ELIMINAR PERMANENTEMENTE este torneo? Esta acción no se puede deshacer.');">
+                                    <button type="submit" class="btn-icon delete" title="Eliminar permanentemente">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </form>
+                            </th:block>
                         </div>
                     </td>
                 </tr>
                 <tr th:unless="${not #lists.isEmpty(tournaments)}">
-                    <td colspan="10" style="text-align: center; padding: 3rem;">
-                        <i class="fas fa-trophy" style="font-size: 3rem; color: var(--admin-gray); margin-bottom: 1rem;"></i>
-                        <h3>No hay torneos</h3>
-                        <p>Comienza creando tu primer torneo</p>
-                        <a href="/admin/tournaments/new" class="btn btn-primary">
-                            <i class="fas fa-plus-circle"></i>
-                            Crear Torneo
-                        </a>
+                    <td colspan="10" class="empty-state-cell">
+                        <div class="admin-empty">
+                            <i class="fas fa-trophy"></i>
+                            <h3>No hay torneos</h3>
+                            <p>Comienza creando tu primer torneo</p>
+                            <a href="/admin/tournaments/new" class="btn btn-primary">
+                                <i class="fas fa-plus-circle"></i>
+                                Crear Torneo
+                            </a>
+                        </div>
                     </td>
                 </tr>
                 </tbody>

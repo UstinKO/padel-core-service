@@ -60,10 +60,76 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* Стили для разделения секций */
+        .registrations-list {
+            margin-top: 1.5rem;
+        }
+
+        .registrations-list h4 {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--admin-border);
+        }
+
+        .registrations-list .badge-warning {
+            background: #f59e0b;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+        }
+
+        .waitlist-items {
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 0.25rem;
+        }
+
+        .waitlist-items::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .waitlist-items::-webkit-scrollbar-track {
+            background: var(--admin-light);
+            border-radius: 4px;
+        }
+
+        .waitlist-items::-webkit-scrollbar-thumb {
+            background: var(--admin-gray);
+            border-radius: 4px;
+        }
+
+        .registration-item.waitlist {
+            background: #fff9e6;
+            border-left: 3px solid #f59e0b;
+        }
+
+        .registration-name-link {
+            color: var(--admin-primary);
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s;
+            display: inline-block;
+            margin-bottom: 0.25rem;
+        }
+
+        .registration-name-link:hover {
+            color: var(--admin-secondary);
+            text-decoration: underline;
+        }
+
+        .registration-position {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--admin-gray);
+        }
     </style>
 </head>
 <body>
-<!-- ✅ ИСПРАВЛЕНО: Детали турнира → Detalles del Torneo -->
 <header th:replace="~{fragments/admin-header :: header('Detalles del Torneo')}"></header>
 
 <main class="admin-main">
@@ -79,7 +145,7 @@
             <span th:text="${errorMessage}">Error en la operación</span>
         </div>
 
-        <!-- Заголовок турнира (компактный) -->
+        <!-- Заголовок турнира -->
         <div class="tournament-header tournament-header-compact">
             <div class="tournament-title-section">
                 <h1 th:text="${tournament.nombre}">Torneo Open de Padel 2026</h1>
@@ -100,7 +166,7 @@
             </div>
         </div>
 
-        <!-- Кнопки действий по центру -->
+        <!-- Кнопки действий -->
         <div class="action-buttons-center">
             <a th:href="@{'/admin/tournaments/' + ${tournament.id} + '/edit'}" class="btn btn-primary">
                 <i class="fas fa-edit"></i>
@@ -108,62 +174,48 @@
             </a>
 
             <!-- Кнопки изменения статуса -->
-
-            <!-- Кнопка Publicar -->
             <form th:action="@{'/admin/tournaments/' + ${tournament.id} + '/status'}"
                   method="post" style="display: inline-block;">
                 <input type="hidden" name="status" value="PUBLICADO">
                 <button type="submit" class="btn btn-outline"
-                        th:classappend="${tournament.estado.name() == 'PUBLICADO'} ? 'active' : ''"
-                        th:title="${tournament.estado.name() == 'PUBLICADO'} ? 'Estado actual' : ''">
-                    <i class="fas fa-upload"></i>
-                    Publicar
+                        th:classappend="${tournament.estado.name() == 'PUBLICADO'} ? 'active' : ''">
+                    <i class="fas fa-upload"></i> Publicar
                 </button>
             </form>
 
-            <!-- Кнопка Abrir Inscripción -->
             <form th:action="@{'/admin/tournaments/' + ${tournament.id} + '/status'}"
                   method="post" style="display: inline-block;">
                 <input type="hidden" name="status" value="REGISTRO_ABIERTO">
                 <button type="submit" class="btn btn-outline"
-                        th:classappend="${tournament.estado.name() == 'REGISTRO_ABIERTO'} ? 'active' : ''"
-                        th:title="${tournament.estado.name() == 'REGISTRO_ABIERTO'} ? 'Estado actual' : ''">
-                    <i class="fas fa-door-open"></i>
-                    Abrir Inscripción
+                        th:classappend="${tournament.estado.name() == 'REGISTRO_ABIERTO'} ? 'active' : ''">
+                    <i class="fas fa-door-open"></i> Abrir
                 </button>
             </form>
 
-            <!-- Кнопка Cerrar Inscripción -->
             <form th:action="@{'/admin/tournaments/' + ${tournament.id} + '/status'}"
                   method="post" style="display: inline-block;">
                 <input type="hidden" name="status" value="CERRADO">
                 <button type="submit" class="btn btn-outline"
-                        th:classappend="${tournament.estado.name() == 'CERRADO'} ? 'active' : ''"
-                        th:title="${tournament.estado.name() == 'CERRADO'} ? 'Estado actual' : ''">
-                    <i class="fas fa-door-closed"></i>
-                    Cerrar Inscripción
+                        th:classappend="${tournament.estado.name() == 'CERRADO'} ? 'active' : ''">
+                    <i class="fas fa-door-closed"></i> Cerrar
                 </button>
             </form>
 
-            <!-- Кнопка Finalizar -->
             <form th:action="@{'/admin/tournaments/' + ${tournament.id} + '/status'}"
                   method="post" style="display: inline-block;">
                 <input type="hidden" name="status" value="FINALIZADO">
                 <button type="submit" class="btn btn-outline"
                         th:classappend="${tournament.estado.name() == 'FINALIZADO'} ? 'active' : ''"
-                        onclick="return confirm('¿Estás seguro de finalizar el torneo? Esta acción no se puede deshacer.');">
-                    <i class="fas fa-flag-checkered"></i>
-                    Finalizar
+                        onclick="return confirm('¿Estás seguro de finalizar el torneo?');">
+                    <i class="fas fa-flag-checkered"></i> Finalizar
                 </button>
             </form>
 
-            <!-- Кнопка Desactivar Torneo -->
             <form th:action="@{'/admin/tournaments/' + ${tournament.id} + '/deactivate'}"
                   method="post" style="display: inline-block;"
-                  onsubmit="return confirm('¿Estás seguro de desactivar este torneo? Los jugadores no podrán registrarse, pero los datos se conservan.');">
+                  onsubmit="return confirm('¿Estás seguro de desactivar este torneo?');">
                 <button type="submit" class="btn btn-warning">
-                    <i class="fas fa-ban"></i>
-                    Desactivar Torneo
+                    <i class="fas fa-ban"></i> Desactivar
                 </button>
             </form>
         </div>
@@ -172,15 +224,14 @@
         <div th:unless="${tournament.isActive}" class="action-buttons-center" style="margin-top: 0;">
             <form th:action="@{'/admin/tournaments/' + ${tournament.id} + '/delete'}"
                   method="post" style="display: inline-block;"
-                  onsubmit="return confirm('¿Estás seguro de ELIMINAR PERMANENTEMENTE este torneo? Esta acción no se puede deshacer y eliminará todos los datos relacionados.');">
+                  onsubmit="return confirm('¿Estás seguro de ELIMINAR PERMANENTEMENTE?');">
                 <button type="submit" class="btn btn-danger">
-                    <i class="fas fa-trash-alt"></i>
-                    Eliminar Permanentemente
+                    <i class="fas fa-trash-alt"></i> Eliminar Permanentemente
                 </button>
             </form>
         </div>
 
-        <!-- Основная сетка: информация слева, регистрации и Король Корта справа -->
+        <!-- Основная сетка -->
         <div class="details-grid">
             <!-- Левая колонка: информация о турнире -->
             <div class="tournament-main-info">
@@ -209,7 +260,7 @@
                                 <i class="fas fa-clock"></i>
                             </div>
                             <div class="info-content">
-                                <span class="info-label">Duración estimada</span>
+                                <span class="info-label">Duración</span>
                                 <span class="info-value" th:text="${tournament.duracion ?: 'No especificada'}">4 horas</span>
                             </div>
                         </div>
@@ -229,7 +280,7 @@
                                 <i class="fas fa-calendar-times"></i>
                             </div>
                             <div class="info-content">
-                                <span class="info-label">Fecha límite de cancelación</span>
+                                <span class="info-label">Cancelación hasta</span>
                                 <span class="info-value" th:text="${#temporals.format(tournament.deadlineCancelacion, 'dd/MM/yyyy HH:mm')}">
                                     10/03/2026 23:59
                                 </span>
@@ -268,14 +319,13 @@
                     </h2>
                     <div class="tournament-faq">
                         <a th:href="${tournament.faqUrl}" target="_blank" class="faq-link">
-                            <i class="fas fa-external-link-alt"></i>
-                            Ver preguntas frecuentes
+                            <i class="fas fa-external-link-alt"></i> Ver preguntas frecuentes
                         </a>
                     </div>
                 </div>
             </div>
 
-            <!-- Правая колонка: регистрации и Король Корта -->
+            <!-- ========== ПРАВАЯ КОЛОНКА ========== -->
             <div class="tournament-sidebar">
                 <!-- Боковая панель с регистрациями -->
                 <div class="registration-card">
@@ -295,51 +345,117 @@
                         </div>
                     </div>
 
-                    <div class="registrations-list">
-                        <h4>Inscritos Confirmados (<span th:text="${tournament.inscritosActuales}">0</span>)</h4>
-                        <div class="registrations-items" th:if="${not #lists.isEmpty(registrations)}">
-                            <div class="registration-item" th:each="reg : ${registrations}"
-                                 th:if="${reg.status.name() == 'CONFIRMED'}">
-                                <div class="registration-avatar">
-                                    <i class="fas fa-user-circle"></i>
+                    <!-- ===== АВТОМАТИЧЕСКОЕ РАЗДЕЛЕНИЕ ===== -->
+                    <!-- Сортируем регистрации по позиции -->
+                    <th:block th:with="sortedRegs=${registrations.?[status.name() == 'CONFIRMED']}">
+
+                        <!-- СЕКЦИЯ 1: Основные участники (первые cupoMax) -->
+                        <div class="registrations-list">
+                            <h4>
+                                <i class="fas fa-check-circle" style="color: #10b981;"></i>
+                                Participantes (<span th:text="${tournament.cupoMax}">20</span>)
+                            </h4>
+                            <div class="registrations-items" th:if="${not #lists.isEmpty(sortedRegs)}">
+                                <div th:each="reg, iterStat : ${sortedRegs}"
+                                     th:if="${iterStat.index < tournament.cupoMax}"
+                                     class="registration-item">
+                                    <div class="registration-avatar">
+                                        <i class="fas fa-user-circle"></i>
+                                    </div>
+                                    <div class="registration-info">
+                                        <a th:href="@{'/admin/players/' + ${reg.playerId}}"
+                                           class="registration-name-link"
+                                           th:text="${reg.playerNombre} ?: 'Jugador ' + ${reg.playerId}"
+                                           title="Ver detalles del jugador">
+                                            Jugador
+                                        </a>
+                                        <span class="registration-position" th:text="'Posición: ' + ${reg.position}">
+                                            Posición: 1
+                                        </span>
+                                    </div>
+                                    <a th:href="@{'/admin/players/' + ${reg.playerId}}"
+                                       class="btn-icon"
+                                       title="Ver detalles del jugador">
+                                        <i class="fas fa-external-link-alt"></i>
+                                    </a>
                                 </div>
-                                <div class="registration-info">
-                                    <span class="registration-name" th:text="${reg.playerNombre} ?: 'Jugador ' + ${reg.playerId}">
-                                        Jugador
-                                    </span>
-                                    <span class="registration-position" th:text="'Posición: ' + ${reg.position}">
-                                        Posición: 1
-                                    </span>
+                            </div>
+                            <div th:if="${tournament.inscritosActuales == 0}" class="empty-registrations">
+                                <p>No hay participantes</p>
+                            </div>
+                        </div>
+
+                        <!-- СЕКЦИЯ 2: Резерв (те, кто не попал в первые cupoMax) -->
+                        <div class="registrations-list" th:if="${sortedRegs.size() > tournament.cupoMax}">
+                            <h4>
+                                <i class="fas fa-clock" style="color: #f59e0b;"></i>
+                                Reserva
+                                <span class="badge-warning" th:text="${sortedRegs.size() - tournament.cupoMax}"></span>
+                            </h4>
+                            <div class="registrations-items waitlist-items">
+                                <div th:each="reg, iterStat : ${sortedRegs}"
+                                     th:if="${iterStat.index >= tournament.cupoMax}"
+                                     class="registration-item waitlist">
+                                    <div class="registration-avatar">
+                                        <i class="fas fa-user-circle"></i>
+                                    </div>
+                                    <div class="registration-info">
+                                        <a th:href="@{'/admin/players/' + ${reg.playerId}}"
+                                           class="registration-name-link"
+                                           th:text="${reg.playerNombre} ?: 'Jugador ' + ${reg.playerId}"
+                                           title="Ver detalles del jugador">
+                                            Jugador
+                                        </a>
+                                        <span class="registration-position" th:text="'Posición: ' + ${reg.position}">
+                                            Posición: 1
+                                        </span>
+                                    </div>
+                                    <a th:href="@{'/admin/players/' + ${reg.playerId}}"
+                                       class="btn-icon"
+                                       title="Ver detalles del jugador">
+                                        <i class="fas fa-external-link-alt"></i>
+                                    </a>
                                 </div>
                             </div>
                         </div>
-                        <div th:unless="${not #lists.isEmpty(registrations)}" class="empty-registrations">
-                            <p>No hay inscritos confirmados</p>
-                        </div>
-                    </div>
+                    </th:block>
 
+                    <!-- Отдельный блок для WAITLIST (если есть такие) -->
                     <div class="registrations-list" th:if="${tournament.waitlistCount > 0}">
-                        <h4>Lista de Espera (<span th:text="${tournament.waitlistCount}">0</span>)</h4>
-                        <div class="registrations-items">
-                            <div class="registration-item waitlist" th:each="reg : ${registrations}"
-                                 th:if="${reg.status.name() == 'WAITLIST'}">
+                        <h4>
+                            <i class="fas fa-hourglass-half" style="color: #94a3b8;"></i>
+                            Lista de Espera
+                            <span class="badge-warning" th:text="${tournament.waitlistCount}"></span>
+                        </h4>
+                        <div class="registrations-items waitlist-items">
+                            <div th:each="reg : ${registrations}"
+                                 th:if="${reg.status.name() == 'WAITLIST'}"
+                                 class="registration-item waitlist">
                                 <div class="registration-avatar">
                                     <i class="fas fa-user-circle"></i>
                                 </div>
                                 <div class="registration-info">
-                                    <span class="registration-name" th:text="${reg.playerNombre} ?: 'Jugador ' + ${reg.playerId}">
+                                    <a th:href="@{'/admin/players/' + ${reg.playerId}}"
+                                       class="registration-name-link"
+                                       th:text="${reg.playerNombre} ?: 'Jugador ' + ${reg.playerId}"
+                                       title="Ver detalles del jugador">
                                         Jugador
-                                    </span>
+                                    </a>
                                     <span class="registration-position" th:text="'Espera: ' + ${reg.waitlistPosition}">
                                         Espera: 1
                                     </span>
                                 </div>
+                                <a th:href="@{'/admin/players/' + ${reg.playerId}}"
+                                   class="btn-icon"
+                                   title="Ver detalles del jugador">
+                                    <i class="fas fa-external-link-alt"></i>
+                                </a>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- ✅ НОВЫЙ БЛОК: Управление платежами и посещаемостью -->
+                <!-- Блок платежей -->
                 <div class="admin-card payment-card">
                     <div class="admin-card-header">
                         <h2><i class="fas fa-credit-card"></i> Pagos y Asistencia</h2>
@@ -365,12 +481,11 @@
                         <div class="payment-actions">
                             <a th:href="@{'/admin/tournaments/' + ${tournament.id} + '/payments'}"
                                class="btn btn-primary btn-block">
-                                <i class="fas fa-money-bill-wave"></i>
-                                Gestionar Pagos
+                                <i class="fas fa-money-bill-wave"></i> Gestionar Pagos
                             </a>
                         </div>
 
-                        <!-- Быстрый список должников (если есть) -->
+                        <!-- Быстрый список должников -->
                         <div class="debtors-list" th:if="${debtorsCount > 0}">
                             <h4>Pendientes de Pago <span class="badge" th:text="${debtorsCount}">0</span></h4>
                             <div class="debtors-items">
@@ -390,7 +505,7 @@
                     </div>
                 </div>
 
-                <!-- Секция King of Court (только для типа KING_OF_COURT) -->
+                <!-- Секция King of Court -->
                 <div th:if="${tournament.tipo.name() == 'KING_OF_COURT'}" class="admin-card king-card">
                     <div class="admin-card-header">
                         <h2><i class="fas fa-crown"></i> King of Court</h2>
@@ -399,8 +514,7 @@
                         <!-- Если турнир уже запущен -->
                         <div th:if="${kingOfCourtActive != null and kingOfCourtActive}">
                             <div class="alert alert-success">
-                                <i class="fas fa-check-circle"></i>
-                                ¡Torneo ya iniciado!
+                                <i class="fas fa-check-circle"></i> ¡Torneo ya iniciado!
                             </div>
                             <a th:href="@{'/admin/tournaments/king-of-court/' + ${kingOfCourtId}}"
                                class="btn btn-primary btn-block">
@@ -410,20 +524,12 @@
 
                         <!-- Если турнир можно запустить -->
                         <div th:unless="${kingOfCourtActive != null and kingOfCourtActive}">
-                            <!-- Проверка количества игроков -->
-                            <div th:if="${tournament.inscritosActuales % 4 != 0}"
+                            <!-- Проверка минимального количества игроков -->
+                            <div th:if="${tournament.inscritosActuales < 4}"
                                  class="alert alert-warning" style="margin-bottom: 15px;">
                                 <i class="fas fa-exclamation-triangle"></i>
-                                <span th:text="'No se puede iniciar: ' + ${tournament.inscritosActuales} + ' jugadores (necesario múltiplo de 4)'">
+                                <span th:text="'No se puede iniciar: Se necesitan al menos 4 jugadores confirmados (actualmente ' + ${tournament.inscritosActuales} + ')'">
                                     No se puede iniciar
-                                </span>
-                            </div>
-
-                            <div th:if="${tournament.inscritosActuales % 4 == 0}"
-                                 class="alert alert-success" style="margin-bottom: 15px;">
-                                <i class="fas fa-check-circle"></i>
-                                <span th:text="'Listo para iniciar! ' + ${tournament.inscritosActuales} + ' jugadores'">
-                                    Listo para iniciar!
                                 </span>
                             </div>
 
@@ -445,8 +551,20 @@
                                            class="form-control" value="3" min="1" max="10" required>
                                 </div>
 
+                                <!-- Предупреждение о некратности -->
+                                <div th:if="${tournament.inscritosActuales >= 4 and tournament.inscritosActuales % 4 != 0}"
+                                     class="text-warning" style="margin-bottom: 15px; font-size: 0.9rem; padding: 0.5rem; border: 1px solid #f59e0b; border-radius: 8px; background: #fff9e6;">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <span th:text="'Atención: El número de jugadores (' + ${tournament.inscritosActuales} + ') no es múltiplo de 4. ' +
+                                                  'El torneo iniciará con ' + (${tournament.inscritosActuales} - ${tournament.inscritosActuales % 4}) + ' jugadores. ' +
+                                                  'Los ' + ${tournament.inscritosActuales % 4} + ' jugadores restantes permanecerán en lista de espera.'">
+                                        Atención: El número de jugadores no es múltiplo de 4
+                                    </span>
+                                </div>
+
+                                <!-- Кнопка запуска -->
                                 <button type="submit" class="btn btn-primary btn-block"
-                                        th:disabled="${tournament.inscritosActuales % 4 != 0}">
+                                        th:disabled="${tournament.inscritosActuales < 4}">
                                     <i class="fas fa-play"></i> Iniciar King of Court
                                 </button>
                             </form>
@@ -462,7 +580,7 @@
                     <div class="admin-card-body">
                         <p>Este torneo es de tipo <strong th:text="${tournament.tipo.value}">Parejas</strong>.</p>
                         <p th:if="${tournament.tipo.name() == 'AMERICANA'}">
-                            <i class="fas fa-users"></i> Para torneos tipo "Americana", la funcionalidad estará disponible próximamente.
+                            <i class="fas fa-users"></i> Funcionalidad próximamente
                         </p>
                     </div>
                 </div>

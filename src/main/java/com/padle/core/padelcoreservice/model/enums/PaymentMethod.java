@@ -7,11 +7,10 @@ public enum PaymentMethod {
     // Офлайн методы
     CASH("Efectivo", "Наличные"),
     BANK_TRANSFER("Transferencia Bancaria", "Банковский перевод"),
-
-    // Онлайн методы (для будущей интеграции)
-    MERCADO_PAGO("Mercado Pago", "Mercado Pago"),
-    STRIPE("Stripe", "Stripe"),
-    PAYPAL("PayPal", "PayPal"),
+    BY_BIT("By Bit", "Бай бит"),
+    BINANCE("Binance", "Бинанс"),
+    TARJETA("Tarjeta", "Тарьета"),
+    TRANSFERENCIA("Transferencia", "Перевод"),
 
     // Другие
     OTHER("Otro", "Другой");

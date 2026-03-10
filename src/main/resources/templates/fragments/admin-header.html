@@ -9,37 +9,49 @@
     <div class="container">
         <nav class="navbar">
             <a href="/admin" class="navbar-brand">
-                <img th:src="@{/images/2.svg}" alt="E-Padel Logo" class="navbar-logo" width="40" height="40">
+                <img th:src="@{/images/1.svg}" alt="E-Padel Logo" class="navbar-logo" width="40" height="40">
                 <span class="navbar-brand-text">E-<span class="brand-highlight">PADEL</span> ADMIN</span>
             </a>
 
-            <!-- Навигация по разделам (переведено на испанский) -->
-            <div class="navbar-menu" style="flex: 1; justify-content: center;">
-                <a href="/" class="btn btn-outline btn-sm">
-                    <i class="fas fa-home"></i> Inicio
-                </a>
-                <a href="/admin/clubs" class="btn btn-outline btn-sm">
-                    <i class="fas fa-building"></i> Clubes
-                </a>
-                <a href="/admin/tournaments" class="btn btn-outline btn-sm">
-                    <i class="fas fa-trophy"></i> Torneos
-                </a>
-                <a href="/admin/players" class="btn btn-outline btn-sm">
-                    <i class="fas fa-users"></i> Jugadores
-                </a>
-            </div>
+            <!-- КНОПКА БУРГЕР-МЕНЮ ДЛЯ МОБИЛЬНЫХ -->
+            <button class="navbar-toggler" id="navbarToggler" type="button" aria-label="Menú">
+                <span class="navbar-toggler-icon"></span>
+                <span class="navbar-toggler-icon"></span>
+                <span class="navbar-toggler-icon"></span>
+            </button>
 
-            <!-- Приветствие и выход (один раз) -->
-            <div class="navbar-menu">
-                <span class="user-greeting" th:text="'Hola, Admin!'"></span>
-                <form th:action="@{/logout}" method="post" style="display: inline;">
-                    <button type="submit" class="btn btn-outline">
-                        <i class="fas fa-sign-out-alt"></i> Salir
-                    </button>
-                </form>
+            <!-- НАВИГАЦИЯ - теперь с ID для бургер-меню -->
+            <div class="navbar-collapse" id="navbarNav">
+                <div class="navbar-menu" style="flex: 1; justify-content: center;">
+                    <a href="/" class="btn btn-outline btn-sm">
+                        <i class="fas fa-home"></i> Inicio
+                    </a>
+                    <a href="/admin/clubs" class="btn btn-outline btn-sm">
+                        <i class="fas fa-building"></i> Clubes
+                    </a>
+                    <a href="/admin/tournaments" class="btn btn-outline btn-sm">
+                        <i class="fas fa-trophy"></i> Torneos
+                    </a>
+                    <a href="/admin/players" class="btn btn-outline btn-sm">
+                        <i class="fas fa-users"></i> Jugadores
+                    </a>
+                </div>
+
+                <!-- Приветствие и выход -->
+                <div class="navbar-menu">
+                    <span class="user-greeting" th:text="'Hola, Admin!'"></span>
+                    <form th:action="@{/logout}" method="post" style="display: inline;">
+                        <button type="submit" class="btn btn-outline">
+                            <i class="fas fa-sign-out-alt"></i> Salir
+                        </button>
+                    </form>
+                </div>
             </div>
         </nav>
     </div>
 </header>
+
+<!-- Добавляем скрипт для бургер-меню -->
+<script th:src="@{/js/admin-menu.js}"></script>
 </body>
 </html>

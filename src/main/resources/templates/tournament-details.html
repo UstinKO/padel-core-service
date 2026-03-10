@@ -40,7 +40,7 @@
         <nav class="navbar">
             <a href="/" class="navbar-brand">
                 <!-- Nuevo logo desde 2.svg -->
-                <img th:src="@{/images/2.svg}" alt="E-Padel Logo" class="navbar-logo" width="40" height="40">
+                <img th:src="@{/images/1.svg}" alt="E-Padel Logo" class="navbar-logo" width="40" height="40">
                 <span class="navbar-brand-text">E-<span class="brand-highlight">PADEL</span></span>
             </a>
 
@@ -60,12 +60,12 @@
                     <li class="nav-item" th:if="${isAuthenticated}">
                         <a href="/players/dashboard" class="nav-link">Dashboard</a>
                     </li>
-                    <li class="nav-item">
-                        <a href="/torneos" class="nav-link">Torneos</a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="/ranking" class="nav-link">Ranking</a>
-                    </li>
+<!--                    <li class="nav-item">-->
+<!--                        <a href="/torneos" class="nav-link">Torneos</a>-->
+<!--                    </li>-->
+<!--                    <li class="nav-item">-->
+<!--                        <a href="/ranking" class="nav-link">Ranking</a>-->
+<!--                    </li>-->
                     <li class="nav-item" th:if="${isAuthenticated}">
                         <a href="/perfil" class="nav-link">Perfil</a>
                     </li>
@@ -104,8 +104,8 @@
         <div class="breadcrumb">
             <a href="/" class="breadcrumb-link">Inicio</a>
             <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
-            <a href="/torneos" class="breadcrumb-link">Torneos</a>
-            <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
+<!--            <a href="/torneos" class="breadcrumb-link">Torneos</a>-->
+<!--            <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>-->
             <span class="breadcrumb-current" th:text="${tournament.nombre}">Torneo Open</span>
         </div>
 
@@ -354,10 +354,10 @@
 
                     <!-- Información adicional -->
                     <div class="additional-info">
-                        <div class="info-note">
-                            <i class="fas fa-info-circle"></i>
-                            <span>La inscripción se confirma al realizar el pago</span>
-                        </div>
+<!--                        <div class="info-note">-->
+<!--                            <i class="fas fa-info-circle"></i>-->
+<!--                            <span>La inscripción se confirma al realizar el pago</span>-->
+<!--                        </div>-->
                         <div class="info-note" th:if="${tournament.deadlineCancelacion}">
                             <i class="fas fa-clock"></i>
                             <span>Puedes cancelar hasta 24h antes del torneo</span>
@@ -366,23 +366,23 @@
                 </div>
 
                 <!-- Compartir -->
-                <div class="share-card">
-                    <h4>Compartir torneo</h4>
-                    <div class="share-buttons">
-                        <a href="#" class="share-btn whatsapp" onclick="shareOnWhatsApp(); return false;" aria-label="Compartir en WhatsApp">
-                            <i class="fab fa-whatsapp"></i>
-                        </a>
-                        <a href="#" class="share-btn facebook" onclick="shareOnFacebook(); return false;" aria-label="Compartir en Facebook">
-                            <i class="fab fa-facebook"></i>
-                        </a>
-                        <a href="#" class="share-btn twitter" onclick="shareOnTwitter(); return false;" aria-label="Compartir en Twitter">
-                            <i class="fab fa-twitter"></i>
-                        </a>
-                        <a href="#" class="share-btn email" onclick="shareByEmail(); return false;" aria-label="Compartir por email">
-                            <i class="fas fa-envelope"></i>
-                        </a>
-                    </div>
-                </div>
+<!--                <div class="share-card">-->
+<!--                    <h4>Compartir torneo</h4>-->
+<!--                    <div class="share-buttons">-->
+<!--                        <a href="#" class="share-btn whatsapp" onclick="shareOnWhatsApp(); return false;" aria-label="Compartir en WhatsApp">-->
+<!--                            <i class="fab fa-whatsapp"></i>-->
+<!--                        </a>-->
+<!--                        <a href="#" class="share-btn facebook" onclick="shareOnFacebook(); return false;" aria-label="Compartir en Facebook">-->
+<!--                            <i class="fab fa-facebook"></i>-->
+<!--                        </a>-->
+<!--                        <a href="#" class="share-btn twitter" onclick="shareOnTwitter(); return false;" aria-label="Compartir en Twitter">-->
+<!--                            <i class="fab fa-twitter"></i>-->
+<!--                        </a>-->
+<!--                        <a href="#" class="share-btn email" onclick="shareByEmail(); return false;" aria-label="Compartir por email">-->
+<!--                            <i class="fas fa-envelope"></i>-->
+<!--                        </a>-->
+<!--                    </div>-->
+<!--                </div>-->
             </div>
         </div>
     </div>

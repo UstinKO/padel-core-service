@@ -3,7 +3,44 @@
 document.addEventListener('DOMContentLoaded', function() {
     'use strict';
 
-    // Кнопки регистрации
+    // ===== БУРГЕР-МЕНЮ =====
+    const navbarToggler = document.getElementById('navbarToggler');
+    const navbarNav = document.getElementById('navbarNav');
+
+    if (navbarToggler && navbarNav) {
+        console.log('✅ Tournament details: найдены элементы меню');
+
+        // Убираем старые обработчики
+        const newToggler = navbarToggler.cloneNode(true);
+        navbarToggler.parentNode.replaceChild(newToggler, navbarToggler);
+
+        // Добавляем обработчик
+        newToggler.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            navbarNav.classList.toggle('show');
+            console.log('🍔 Меню:', navbarNav.classList.contains('show') ? 'открыто' : 'закрыто');
+        });
+
+        // Закрываем меню при клике на ссылку
+        navbarNav.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                navbarNav.classList.remove('show');
+            });
+        });
+
+        // Закрываем меню при клике вне его
+        document.addEventListener('click', (e) => {
+            if (navbarNav.classList.contains('show') &&
+                !navbarNav.contains(e.target) &&
+                !newToggler.contains(e.target)) {
+                navbarNav.classList.remove('show');
+            }
+        });
+    }
+
+    // ===== Кнопки регистрации =====
     const registerBtn = document.querySelector('.btn-register');
     const cancelBtn = document.querySelector('.btn-cancel');
 
@@ -99,28 +136,28 @@ document.addEventListener('DOMContentLoaded', function() {
             button.innerHTML = '<i class="fas fa-times-circle"></i> Cancelar inscripción';
         }
     }
+
+    // ===== Функции для шаринга (если понадобятся) =====
+    window.shareOnWhatsApp = function() {
+        const url = encodeURIComponent(window.location.href);
+        const text = encodeURIComponent(document.querySelector('h1').textContent);
+        window.open(`https://wa.me/?text=${text}%20${url}`, '_blank');
+    };
+
+    window.shareOnFacebook = function() {
+        const url = encodeURIComponent(window.location.href);
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
+    };
+
+    window.shareOnTwitter = function() {
+        const url = encodeURIComponent(window.location.href);
+        const text = encodeURIComponent(document.querySelector('h1').textContent);
+        window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
+    };
+
+    window.shareByEmail = function() {
+        const subject = encodeURIComponent(document.querySelector('h1').textContent);
+        const body = encodeURIComponent(`Mira este torneo de padel: ${window.location.href}`);
+        window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    };
 });
-
-// Функции для шаринга
-function shareOnWhatsApp() {
-    const url = encodeURIComponent(window.location.href);
-    const text = encodeURIComponent(document.querySelector('h1').textContent);
-    window.open(`https://wa.me/?text=${text}%20${url}`, '_blank');
-}
-
-function shareOnFacebook() {
-    const url = encodeURIComponent(window.location.href);
-    window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
-}
-
-function shareOnTwitter() {
-    const url = encodeURIComponent(window.location.href);
-    const text = encodeURIComponent(document.querySelector('h1').textContent);
-    window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
-}
-
-function shareByEmail() {
-    const subject = encodeURIComponent(document.querySelector('h1').textContent);
-    const body = encodeURIComponent(`Mira este torneo de padel: ${window.location.href}`);
-    window.location.href = `mailto:?subject=${subject}&body=${body}`;
-}

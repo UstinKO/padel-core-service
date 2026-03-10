@@ -5,6 +5,43 @@
 document.addEventListener('DOMContentLoaded', function() {
     'use strict';
 
+    // ===== БУРГЕР-МЕНЮ =====
+    const navbarToggler = document.getElementById('navbarToggler');
+    const navbarNav = document.getElementById('navbarNav');
+
+    if (navbarToggler && navbarNav) {
+        console.log('✅ Dashboard: найдены элементы меню');
+
+        // Убираем старые обработчики
+        const newToggler = navbarToggler.cloneNode(true);
+        navbarToggler.parentNode.replaceChild(newToggler, navbarToggler);
+
+        // Добавляем обработчик
+        newToggler.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            navbarNav.classList.toggle('show');
+            console.log('🍔 Меню дашборда:', navbarNav.classList.contains('show') ? 'открыто' : 'закрыто');
+        });
+
+        // Закрываем меню при клике на ссылку
+        navbarNav.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                navbarNav.classList.remove('show');
+            });
+        });
+
+        // Закрываем меню при клике вне его
+        document.addEventListener('click', (e) => {
+            if (navbarNav.classList.contains('show') &&
+                !navbarNav.contains(e.target) &&
+                !newToggler.contains(e.target)) {
+                navbarNav.classList.remove('show');
+            }
+        });
+    }
+
     // Маппинги для отображения значений
     const displayMaps = {
         nivel: {
@@ -202,62 +239,69 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Получаем отображаемые тексты
             const generoDisplay = displayMaps.genero[tournament.generoFormato] || tournament.generoFormato || 'N/A';
-            const nivelDisplay = displayMaps.nivel[tournament.categoriaNivel] || tournament.categoriaNivel || 'N/A';
+            const nivelDisplay = tournament.categoriaNivel || 'N/A'; // Только значение без описания
             const tipoDisplay = displayMaps.tipo[tournament.tipo] || tournament.tipo || 'N/A';
 
+            // Формируем адрес клуба, если он есть
+            const clubAddress = tournament.clubDireccion ?
+                `<span class="club-address">${escapeHtml(tournament.clubDireccion)}</span>` : '';
+
             return `
-            <div class="torneo-card ${isMyTournament ? 'my-tournament' : ''}" data-tournament-id="${tournament.id}">
-                <div class="torneo-card-header">
-                    <span class="torneo-badge">${generoDisplay}</span>
-                    <span class="torneo-badge torneo-badge-level">${nivelDisplay}</span>
-                </div>
-                <div class="torneo-card-body">
-                    <h3 class="torneo-title">${escapeHtml(tournament.nombre || '')}</h3>
-                    ${myTournamentBadge}
-                    <div class="torneo-info">
-                        <div class="torneo-info-item">
-                            <i class="fas fa-calendar-alt"></i>
-                            <span>${fechaStr} ${horaStr}</span>
-                        </div>
-                        <div class="torneo-info-item">
-                            <i class="fas fa-map-marker-alt"></i>
-                            <span>${escapeHtml(tournament.clubNombre || '')}</span>
-                        </div>
-                        <div class="torneo-info-item">
-                            <i class="fas fa-trophy"></i>
-                            <span>${tipoDisplay}</span>
-                        </div>
-                        <div class="torneo-info-item">
-                            <i class="fas fa-users"></i>
-                            <span>${tournament.inscritosActuales || 0}/${tournament.cupoMax || 0} inscritos</span>
-                        </div>
-                        <div class="torneo-info-item">
-                            <i class="fas fa-tag"></i>
-                            <span>${tournament.precio || 0} ${tournament.moneda || ''}</span>
+        <div class="torneo-card ${isMyTournament ? 'my-tournament' : ''}" data-tournament-id="${tournament.id}">
+            <div class="torneo-card-header">
+                <span class="torneo-badge">${generoDisplay}</span>
+                <span class="torneo-badge torneo-badge-level">${nivelDisplay}</span>
+            </div>
+            <div class="torneo-card-body">
+                <h3 class="torneo-title">${escapeHtml(tournament.nombre || '')}</h3>
+                ${myTournamentBadge}
+                <div class="torneo-info">
+                    <div class="torneo-info-item">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>${fechaStr} ${horaStr}</span>
+                    </div>
+                    <div class="torneo-info-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <div class="club-info">
+                            <span class="club-name">${escapeHtml(tournament.clubNombre || 'Club por definir')}</span>
+                            ${clubAddress}
                         </div>
                     </div>
-                    <div class="torneo-footer">
-    ${!isMyTournament ? `
-        <button class="btn btn-primary btn-small btn-register" 
-                data-tournament-id="${tournament.id}"
-                data-tournament-name="${escapeHtml(tournament.nombre)}">
-            <i class="fas fa-plus-circle"></i> 
-            <span>${registrationText}</span>
-        </button>
-    ` : `
-        <button class="btn btn-outline btn-small btn-cancel" 
-                data-tournament-id="${tournament.id}"
-                data-tournament-name="${escapeHtml(tournament.nombre)}">
-            <i class="fas fa-times-circle"></i> Cancelar
-        </button>
-    `}
+                    <div class="torneo-info-item">
+                        <i class="fas fa-trophy"></i>
+                        <span>${tipoDisplay}</span>
+                    </div>
+                    <div class="torneo-info-item">
+                        <i class="fas fa-users"></i>
+                        <span>${tournament.inscritosActuales || 0}/${tournament.cupoMax || 0} inscritos</span>
+                    </div>
+                    <div class="torneo-info-item">
+                        <i class="fas fa-tag"></i>
+                        <span>${tournament.precio || 0} ${tournament.moneda || ''}</span>
+                    </div>
+                </div>
+                <div class="torneo-footer">
+${!isMyTournament ? `
+    <button class="btn btn-primary btn-small btn-register" 
+            data-tournament-id="${tournament.id}"
+            data-tournament-name="${escapeHtml(tournament.nombre)}">
+        <i class="fas fa-plus-circle"></i> 
+        <span>${registrationText}</span>
+    </button>
+` : `
+    <button class="btn btn-outline btn-small btn-cancel" 
+            data-tournament-id="${tournament.id}"
+            data-tournament-name="${escapeHtml(tournament.nombre)}">
+        <i class="fas fa-times-circle"></i> Cancelar
+    </button>
+`}
     <a href="/torneo/${tournament.id}" class="btn btn-outline btn-small">
         <i class="fas fa-info-circle"></i> Detalles
     </a>
-                    </div>
                 </div>
             </div>
-        `}).join('');
+        </div>
+    `}).join('');
 
         // Добавляем обработчики для кнопок регистрации
         attachRegistrationHandlers();

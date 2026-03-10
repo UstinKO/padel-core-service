@@ -22,6 +22,7 @@ public class TournamentDto {
     private Long id;
     private Long clubId;
     private String clubNombre;
+    private String clubDireccion;
     private String nombre;
     private LocalDate fechaInicio;
     private LocalTime horaInicio;

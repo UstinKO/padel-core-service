@@ -5,6 +5,43 @@
 document.addEventListener('DOMContentLoaded', function() {
     'use strict';
 
+    // ===== БУРГЕР-МЕНЮ =====
+    const navbarToggler = document.getElementById('navbarToggler');
+    const navbarNav = document.getElementById('navbarNav');
+
+    if (navbarToggler && navbarNav) {
+        console.log('✅ Profile: найдены элементы меню');
+
+        // Убираем старые обработчики
+        const newToggler = navbarToggler.cloneNode(true);
+        navbarToggler.parentNode.replaceChild(newToggler, navbarToggler);
+
+        // Добавляем обработчик
+        newToggler.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            navbarNav.classList.toggle('show');
+            console.log('🍔 Меню профиля:', navbarNav.classList.contains('show') ? 'abierto' : 'cerrado');
+        });
+
+        // Закрываем меню при клике на ссылку
+        navbarNav.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                navbarNav.classList.remove('show');
+            });
+        });
+
+        // Закрываем меню при клике вне его
+        document.addEventListener('click', (e) => {
+            if (navbarNav.classList.contains('show') &&
+                !navbarNav.contains(e.target) &&
+                !newToggler.contains(e.target)) {
+                navbarNav.classList.remove('show');
+            }
+        });
+    }
+
     // ===== PASSWORD VISIBILITY TOGGLE =====
     document.querySelectorAll('.toggle-password').forEach(button => {
         button.addEventListener('click', function() {
@@ -16,8 +53,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 passwordInput.setAttribute('type', type);
 
                 const icon = this.querySelector('i');
-                icon.classList.toggle('fa-eye');
-                icon.classList.toggle('fa-eye-slash');
+                icon.classList.toggle('fas fa-eye');
+                icon.classList.toggle('fas fa-eye-slash');
             }
         });
     });
@@ -114,12 +151,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const profileForm = document.querySelector('.profile-form');
     if (profileForm) {
         profileForm.addEventListener('submit', function(e) {
-            const newPass = document.getElementById('newPassword').value;
-            const confirmPass = document.getElementById('confirmPassword').value;
+            const newPass = document.getElementById('newPassword')?.value || '';
+            const confirmPass = document.getElementById('confirmPassword')?.value || '';
 
             if (newPass || confirmPass) {
                 // Si se está intentando cambiar la contraseña
-                const currentPass = document.getElementById('currentPassword').value;
+                const currentPass = document.getElementById('currentPassword')?.value || '';
 
                 if (!currentPass) {
                     e.preventDefault();
