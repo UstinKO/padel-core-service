@@ -8,6 +8,7 @@ import com.padle.core.padelcoreservice.model.TournamentKingOfCourt;
 import com.padle.core.padelcoreservice.repository.TournamentKingOfCourtRepository;
 import com.padle.core.padelcoreservice.service.KingOfCourtService;
 import com.padle.core.padelcoreservice.service.TournamentService;
+import com.padle.core.padelcoreservice.util.SecurityUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
@@ -38,10 +39,13 @@ public class TournamentViewController {
     @GetMapping("/{id}")
     public String viewTournament(@PathVariable Long id,
                                  Model model,
-                                 @AuthenticationPrincipal PlayerPadel player) {
+                                 @AuthenticationPrincipal Object principal) {
         log.info("Viewing tournament details for id: {}", id);
 
         try {
+            // Извлекаем игрока из principal
+            PlayerPadel player = SecurityUtils.extractPlayer(principal);
+
             // Используем метод, который возвращает только активные турниры
             Optional<TournamentDto> tournamentOpt = tournamentService.getActiveTournamentById(id);
 

@@ -151,6 +151,10 @@ public class TournamentService {
                     reg.setPosition((int) confirmedCount + 1);
                     reg.setWaitlistPosition(null);
                     log.info("Player {} confirmed for tournament {}", playerId, tournamentId);
+
+                    // ОТПРАВЛЯЕМ ПОДТВЕРЖДЕНИЕ
+                    sendConfirmationEmail(player, tournament);
+
                 } else {
                     int waitlistPosition = registrationRepository.findMaxWaitlistPosition(tournamentId)
                             .orElse(0) + 1;
@@ -159,6 +163,9 @@ public class TournamentService {
                     reg.setPosition(null);
                     log.info("Player {} added to waitlist for tournament {} at position {}",
                             playerId, tournamentId, waitlistPosition);
+
+                    // ОТПРАВЛЯЕМ УВЕДОМЛЕНИЕ О ДОБАВЛЕНИИ В ЛИСТ ОЖИДАНИЯ
+                    sendWaitlistNotification(player, tournament, waitlistPosition);
                 }
 
                 TournamentRegistration updatedRegistration = registrationRepository.save(reg);
@@ -181,6 +188,10 @@ public class TournamentService {
             registration.setStatus(RegistrationStatus.CONFIRMED);
             registration.setPosition((int) confirmedCount + 1);
             log.info("Player {} confirmed for tournament {}", playerId, tournamentId);
+
+            // ОТПРАВЛЯЕМ ПОДТВЕРЖДЕНИЕ
+            sendConfirmationEmail(player, tournament);
+
         } else {
             int waitlistPosition = registrationRepository.findMaxWaitlistPosition(tournamentId)
                     .orElse(0) + 1;
@@ -188,10 +199,36 @@ public class TournamentService {
             registration.setWaitlistPosition(waitlistPosition);
             log.info("Player {} added to waitlist for tournament {} at position {}",
                     playerId, tournamentId, waitlistPosition);
+
+            // ОТПРАВЛЯЕМ УВЕДОМЛЕНИЕ О ДОБАВЛЕНИИ В ЛИСТ ОЖИДАНИЯ
+            sendWaitlistNotification(player, tournament, waitlistPosition);
         }
 
         TournamentRegistration savedRegistration = registrationRepository.save(registration);
         return registrationMapper.toDto(savedRegistration);
+    }
+
+    private void sendWaitlistNotification(PlayerPadel player, Tournament tournament, int waitlistPosition) {
+        try {
+            String dateStr = tournament.getFechaInicio().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+            String timeStr = tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm"));
+            String clubName = getClubName(tournament.getClubId());
+
+            // Отправляем письмо о добавлении в лист ожидания
+            emailService.sendWaitlistNotificationEmail(
+                    player.getEmail(),
+                    player.getNombre(),
+                    tournament.getNombre(),
+                    dateStr,
+                    timeStr,
+                    clubName,
+                    waitlistPosition
+            );
+            log.info("Waitlist notification email sent to {}", player.getEmail());
+
+        } catch (Exception e) {
+            log.error("Error sending waitlist notification email: {}", e.getMessage(), e);
+        }
     }
 
     @Transactional
@@ -671,7 +708,8 @@ public class TournamentService {
             String timeStr = tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm"));
             String clubName = getClubName(tournament.getClubId());
 
-            emailService.sendRegistrationConfirmationEmail(
+            // Используем новый метод для подтверждения регистрации в турнире
+            emailService.sendTournamentConfirmationEmail(
                     player.getEmail(),
                     player.getNombre(),
                     tournament.getNombre(),
@@ -679,17 +717,17 @@ public class TournamentService {
                     timeStr,
                     clubName
             );
-            log.info("Confirmation email sent to {}", player.getEmail());
+            log.info("Tournament confirmation email sent to {}", player.getEmail());
 
         } catch (Exception e) {
-            log.error("Error sending confirmation email: {}", e.getMessage());
+            log.error("Error sending tournament confirmation email: {}", e.getMessage(), e);
         }
     }
 
     /**
      * Проверка истекших приглашений (запускать по расписанию, каждые 5 минут)
      */
-    @Scheduled(cron = "0 */5 * * * *") // Каждую минуту
+    @Scheduled(cron = "0 */10 * * * *") // Каждые 10 минут
     @Transactional
     public void checkExpiredInvitations() {
         log.debug("Checking for expired waitlist invitations");

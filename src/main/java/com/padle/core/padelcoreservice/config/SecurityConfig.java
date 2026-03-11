@@ -2,6 +2,8 @@ package com.padle.core.padelcoreservice.config;
 
 import com.padle.core.padelcoreservice.security.CompositeUserDetailsService;
 import com.padle.core.padelcoreservice.security.JwtAuthenticationFilter;
+import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2UserService;
+import com.padle.core.padelcoreservice.security.oauth2.OAuth2AuthenticationSuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,6 +33,8 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CompositeUserDetailsService compositeUserDetailsService;
+    private final CustomOAuth2UserService customOAuth2UserService;
+    private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -50,6 +54,9 @@ public class SecurityConfig {
                                 "/api/auth/**",
                                 "/api/players/registro",
                                 "/api/players/confirmar-email/**",
+                                "/terminos",
+                                "/privacidad",
+                                "/cookies",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/webjars/**",
@@ -59,12 +66,18 @@ public class SecurityConfig {
                                 "/favicon.ico",
                                 "/players/confirmar-email",
                                 "/players/confirmar-email/**",
-                                "/error"
+                                "/error",
+                                "/recuperar-password/solicitar",
+                                "/recuperar-password/confirmar",
+                                "/recuperar-password",
+                                "/recuperar-password/**",
+                                "/oauth2/**",
+                                "/login/oauth2/**"
                         ).permitAll()
                         .requestMatchers("/players/dashboard").authenticated()
                         .requestMatchers("/players/lista").authenticated()
                         .requestMatchers("/players/perfil/**").authenticated()
-                        .requestMatchers("/players/mis-torneos").authenticated()  // <-- ДОБАВЛЯЕМ
+                        .requestMatchers("/players/mis-torneos").authenticated()
                         .requestMatchers("/admin/**").hasRole("OWNER")
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().authenticated()
@@ -73,6 +86,14 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .oauth2Login(oauth2 -> oauth2
+                        .loginPage("/login")
+                        .userInfoEndpoint(userInfo -> userInfo
+                                .userService(customOAuth2UserService)
+                        )
+                        .successHandler(oAuth2AuthenticationSuccessHandler)
+                        .failureUrl("/login?error=oauth2")
+                )
                 .formLogin(form -> form
                         .loginPage("/login")
                         .loginProcessingUrl("/login")

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Términos y Condiciones | E-Padel</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
+    <link rel="alternate icon" th:href="@{/images/favicon.ico}">
+
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<header class="header">
+    <div class="container">
+        <nav class="navbar">
+            <a href="/" class="navbar-brand">
+                <img th:src="@{/images/1.svg}" alt="E-Padel Logo" class="navbar-logo" width="40" height="40">
+                <span class="navbar-brand-text">E-<span class="brand-highlight">PADEL</span></span>
+            </a>
+            <div class="navbar-auth">
+                <a href="/login" class="btn btn-outline-sm">
+                    <i class="fas fa-sign-in-alt"></i> Iniciar sesión
+                </a>
+                <a href="/players/registro" class="btn btn-primary-sm">
+                    <i class="fas fa-user-plus"></i> Registrarse
+                </a>
+            </div>
+        </nav>
+    </div>
+</header>
+
+<main class="legal-main">
+    <div class="container">
+        <div class="legal-card">
+            <h1 class="legal-title">Términos y Condiciones de Uso</h1>
+            <p class="legal-date">Última actualización: 15 de marzo de 2026</p>
+
+            <div class="legal-content">
+                <section>
+                    <h2>1. Aceptación de los Términos</h2>
+                    <p>Al acceder y utilizar la plataforma E-Padel ("la Plataforma"), aceptas estar sujeto a estos Términos y Condiciones de Uso. Si no estás de acuerdo con alguna parte de estos términos, no podrás acceder al servicio.</p>
+                </section>
+
+                <section>
+                    <h2>2. Descripción del Servicio</h2>
+                    <p>E-Padel es una plataforma que permite a los usuarios:</p>
+                    <ul>
+                        <li>Registrarse en torneos de pádel</li>
+                        <li>Gestionar inscripciones</li>
+                        <li>Ver rankings y resultados</li>
+                        <li>Conectar con otros jugadores y clubes</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h2>3. Registro y Cuenta</h2>
+                    <p>Para utilizar ciertas funciones de la Plataforma, debes registrarte y crear una cuenta. Eres responsable de:</p>
+                    <ul>
+                        <li>Mantener la confidencialidad de tu contraseña</li>
+                        <li>Todas las actividades que ocurran bajo tu cuenta</li>
+                        <li>Proporcionar información precisa y actualizada</li>
+                    </ul>
+                    <p>Nos reservamos el derecho de suspender o terminar cuentas que proporcionen información falsa o violen estos términos.</p>
+                </section>
+
+                <section>
+                    <h2>4. Privacidad</h2>
+                    <p>El uso de la Plataforma está sujeto a nuestra <a href="/privacidad">Política de Privacidad</a>, que describe cómo recopilamos, usamos y protegemos tu información personal.</p>
+                </section>
+
+                <section>
+                    <h2>5. Conducta del Usuario</h2>
+                    <p>Al usar la Plataforma, aceptas no:</p>
+                    <ul>
+                        <li>Violar leyes o regulaciones aplicables</li>
+                        <li>Infringir derechos de propiedad intelectual</li>
+                        <li>Publicar contenido falso, engañoso o discriminatorio</li>
+                        <li>Intentar acceder sin autorización a sistemas o cuentas de otros usuarios</li>
+                        <li>Usar la Plataforma para actividades fraudulentas</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h2>6. Pagos y Cancelaciones</h2>
+                    <p>Las inscripciones a torneos pueden requerir el pago de una tarifa. Las políticas de cancelación y reembolso son establecidas por cada torneo y se muestran claramente antes de la inscripción. E-Padel actúa únicamente como intermediario en la gestión de pagos.</p>
+                </section>
+
+                <section>
+                    <h2>7. Propiedad Intelectual</h2>
+                    <p>Todo el contenido de la Plataforma, incluyendo logos, diseños, textos y software, es propiedad de E-Padel o sus licenciantes y está protegido por leyes de propiedad intelectual.</p>
+                </section>
+
+                <section>
+                    <h2>8. Limitación de Responsabilidad</h2>
+                    <p>E-Padel no será responsable por daños indirectos, incidentales o consecuentes derivados del uso o la imposibilidad de uso de la Plataforma. No garantizamos que el servicio sea ininterrumpido o libre de errores.</p>
+                </section>
+
+                <section>
+                    <h2>9. Modificaciones</h2>
+                    <p>Nos reservamos el derecho de modificar estos términos en cualquier momento. Los cambios entrarán en vigor inmediatamente después de su publicación en la Plataforma. El uso continuado de la Plataforma después de dichos cambios constituye tu aceptación de los nuevos términos.</p>
+                </section>
+
+                <section>
+                    <h2>10. Contacto</h2>
+                    <p>Si tienes preguntas sobre estos Términos y Condiciones, contáctanos en:</p>
+                    <p>Email: <a href="mailto:legal@e-padel.com">legal@e-padel.com</a></p>
+                </section>
+            </div>
+
+            <div class="legal-footer">
+                <a href="/" class="btn btn-outline">
+                    <i class="fas fa-arrow-left"></i> Volver al inicio
+                </a>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer-bottom">
+            <div class="footer-copyright">
+                <i class="far fa-copyright"></i> <span th:text="${year}">2026</span> E-Padel. Todos los derechos reservados.
+            </div>
+        </div>
+    </div>
+</footer>
+</body>
+</html>

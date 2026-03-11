@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmación de inscripción - E-Padel</title>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f7fa;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        }
+        .header {
+            background: linear-gradient(135deg, #FF6B35 0%, #FF8C5A 100%);
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header svg {
+            width: 60px;
+            height: 60px;
+        }
+        .header h1 {
+            color: white;
+            margin: 15px 0 0;
+            font-weight: 700;
+            font-size: 28px;
+            letter-spacing: 1px;
+        }
+        .header h1 span {
+            font-weight: 300;
+        }
+        .content {
+            padding: 40px 30px;
+            line-height: 1.6;
+        }
+        .greeting {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #FF6B35;
+        }
+        .message {
+            margin-bottom: 25px;
+            font-size: 16px;
+            color: #4a5568;
+        }
+        .info-box {
+            background-color: #f8fafc;
+            border-left: 4px solid #48bb78;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 25px 0;
+        }
+        .info-item {
+            margin-bottom: 10px;
+        }
+        .info-label {
+            font-weight: 600;
+            color: #2d3748;
+            display: inline-block;
+            width: 120px;
+        }
+        .info-value {
+            color: #48bb78;
+            font-weight: 500;
+        }
+        .button {
+            display: inline-block;
+            background: linear-gradient(135deg, #FF6B35 0%, #FF8C5A 100%);
+            color: white !important;
+            text-decoration: none;
+            padding: 14px 30px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 16px;
+            margin: 20px 0;
+            box-shadow: 0 4px 10px rgba(255,107,53,0.3);
+        }
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(255,107,53,0.4);
+        }
+        .footer {
+            background-color: #f8fafc;
+            padding: 20px 30px;
+            text-align: center;
+            font-size: 14px;
+            color: #718096;
+            border-top: 1px solid #e2e8f0;
+        }
+        .footer a {
+            color: #FF6B35;
+            text-decoration: none;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        .success-icon {
+            text-align: center;
+            font-size: 48px;
+            color: #48bb78;
+            margin: 20px 0;
+        }
+        .calendar-info {
+            background-color: #f0f9ff;
+            border-left: 4px solid #FF6B35;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+        .calendar-info i {
+            color: #FF6B35;
+            margin-right: 8px;
+        }
+        .qr-placeholder {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f8fafc;
+            border-radius: 8px;
+        }
+        .qr-placeholder img {
+            width: 120px;
+            height: 120px;
+        }
+    </style>
+</head>
+<body style="background-color: #f4f7fa; padding: 20px;">
+<div class="container">
+    <div class="header">
+        <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="30" cy="30" r="28" stroke="white" stroke-width="3" fill="none"/>
+            <path d="M20 20L40 40M40 20L20 40" stroke="white" stroke-width="4" stroke-linecap="round"/>
+            <circle cx="30" cy="30" r="8" fill="white"/>
+        </svg>
+        <h1>E-<span>PADEL</span></h1>
+    </div>
+
+    <div class="content">
+        <div class="success-icon">🎾</div>
+
+        <div class="greeting">
+            ¡Hola, <span th:text="${playerName}">Jugador</span>!
+        </div>
+
+        <div class="message">
+            <strong>¡Tu inscripción ha sido confirmada!</strong> Ya estás en la lista de participantes del torneo.
+        </div>
+
+        <div class="info-box">
+            <h3 style="margin-top: 0; color: #2d3748;">Detalles del torneo</h3>
+            <div class="info-item">
+                <span class="info-label">Torneo:</span>
+                <span class="info-value" th:text="${tournamentName}">Torneo de Pádel</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Club:</span>
+                <span class="info-value" th:text="${clubName}">Club de Pádel</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Fecha:</span>
+                <span class="info-value" th:text="${tournamentDate}">15/04/2026</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Hora:</span>
+                <span class="info-value" th:text="${tournamentTime}">10:00</span>
+            </div>
+        </div>
+
+        <div class="calendar-info">
+            <i>📅</i> <strong>Agenda en tu calendario:</strong> No olvides reservar la fecha. Te esperamos puntual.
+        </div>
+
+        <!-- QR Placeholder (para futuro) -->
+        <!--
+        <div class="qr-placeholder">
+            <p style="margin: 0 0 10px; color: #718096;">Tu código QR de acceso (próximamente)</p>
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=Tournament-123" alt="QR Code">
+        </div>
+        -->
+
+        <div style="text-align: center;">
+            <a th:href="${baseUrl + '/players/dashboard'}" class="button">
+                Ver mis torneos
+            </a>
+        </div>
+
+        <div style="margin-top: 30px; padding: 15px; background-color: #fef9e7; border-radius: 8px; border-left: 4px solid #fbbf24;">
+            <p style="margin: 0; color: #92400e; font-size: 14px;">
+                <i>📌 Recuerda:</i> Puedes cancelar tu participación hasta 48 horas antes del inicio del torneo
+                desde tu dashboard. Si no puedes asistir, cancela a tiempo para que otro jugador pueda ocupar tu lugar.
+            </p>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div style="margin-bottom: 10px;">
+            <span>🏓 E-Padel - La plataforma de torneos de pádel</span>
+        </div>
+        <div>
+            © <span th:text="${year}">2026</span> E-Padel. Todos los derechos reservados.
+        </div>
+        <div style="margin-top: 10px;">
+            <a th:href="${baseUrl}">e-padel.com</a> |
+            <a href="mailto:soporte@e-padel.com">soporte@e-padel.com</a>
+        </div>
+    </div>
+</div>
+</body>
+</html>
