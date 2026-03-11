@@ -2,6 +2,7 @@ package com.padle.core.padelcoreservice.controller.player;
 
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.service.PlayerService;
+import com.padle.core.padelcoreservice.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -22,7 +23,14 @@ public class PerfilController {
     private final PlayerService playerService;
 
     @GetMapping
-    public String verPerfil(Model model, @AuthenticationPrincipal PlayerPadel player) {
+    public String verPerfil(Model model, @AuthenticationPrincipal Object principal) {
+        PlayerPadel player = SecurityUtils.extractPlayer(principal);
+
+        if (player == null) {
+            log.warn("Intento de acceso a perfil sin autenticación");
+            return "redirect:/login";
+        }
+
         log.info("Viendo perfil de jugador: {}", player.getEmail());
 
         model.addAttribute("player", player);
@@ -31,7 +39,7 @@ public class PerfilController {
 
     @PostMapping("/actualizar")
     public String actualizarPerfil(
-            @AuthenticationPrincipal PlayerPadel player,
+            @AuthenticationPrincipal Object principal,
             @RequestParam(required = false) String nombre,
             @RequestParam(required = false) String apellido,
             @RequestParam(required = false) String telefono,
@@ -40,23 +48,30 @@ public class PerfilController {
             @RequestParam(required = false) String confirmPassword,
             RedirectAttributes redirectAttributes) {
 
+        PlayerPadel player = SecurityUtils.extractPlayer(principal);
+
+        if (player == null) {
+            log.warn("Intento de actualizar perfil sin autenticación");
+            return "redirect:/login";
+        }
+
         log.info("Actualizando perfil de jugador: {}", player.getEmail());
 
         try {
             // Actualizar datos básicos
             boolean actualizado = false;
 
-            if (nombre != null && !nombre.isEmpty()) {
+            if (nombre != null && !nombre.isEmpty() && !nombre.equals(player.getNombre())) {
                 player.setNombre(nombre);
                 actualizado = true;
             }
 
-            if (apellido != null && !apellido.isEmpty()) {
+            if (apellido != null && !apellido.isEmpty() && !apellido.equals(player.getApellido())) {
                 player.setApellido(apellido);
                 actualizado = true;
             }
 
-            if (telefono != null) {
+            if (telefono != null && !telefono.equals(player.getTelefono())) {
                 player.setTelefono(telefono);
                 actualizado = true;
             }
@@ -93,10 +108,13 @@ public class PerfilController {
                 playerService.actualizarJugador(player);
                 redirectAttributes.addFlashAttribute("successMessage",
                         "Perfil actualizado correctamente");
+            } else {
+                redirectAttributes.addFlashAttribute("infoMessage",
+                        "No se realizaron cambios en el perfil");
             }
 
         } catch (Exception e) {
-            log.error("Error actualizando perfil: {}", e.getMessage());
+            log.error("Error actualizando perfil: {}", e.getMessage(), e);
             redirectAttributes.addFlashAttribute("errorMessage",
                     "Error al actualizar el perfil: " + e.getMessage());
         }

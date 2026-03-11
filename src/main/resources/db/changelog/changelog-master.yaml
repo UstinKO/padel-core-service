@@ -56,3 +56,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.18-add-attended-to-registration.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.19-create-password-reset-token.yaml
+      relativeToChangelogFile: true

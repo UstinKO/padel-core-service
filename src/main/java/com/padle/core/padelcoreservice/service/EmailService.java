@@ -172,4 +172,84 @@ public class EmailService {
             throw new RuntimeException("Error sending email", e);
         }
     }
+
+    /**
+     * Отправка письма для сброса пароля
+     */
+    public void sendPasswordResetEmail(String to, String nombre, String resetUrl) {
+        try {
+            log.info("📧 Enviando email de recuperación de contraseña a: {}", to);
+
+            Context context = new Context();
+            context.setVariable("nombre", nombre);
+            context.setVariable("resetUrl", resetUrl);
+            context.setVariable("year", java.time.Year.now().getValue());
+
+            String htmlContent = templateEngine.process("email/recuperar-password", context);
+
+            sendHtmlEmail(to, "🔐 Recuperación de contraseña - E-Padel", htmlContent);
+            log.info("✅ Email de recuperación enviado a: {}", to);
+
+        } catch (Exception e) {
+            log.error("❌ Error enviando email de recuperación a {}: {}", to, e.getMessage());
+            // Не бросаем исключение, чтобы не раскрывать информацию
+        }
+    }
+
+    /**
+     * Отправка уведомления о добавлении в лист ожидания
+     */
+    public void sendWaitlistNotificationEmail(String to, String playerName, String tournamentName,
+                                              String tournamentDate, String tournamentTime,
+                                              String clubName, int waitlistPosition) {
+        try {
+            log.info("📧 Отправка уведомления о добавлении в лист ожидания на: {}", to);
+
+            Context context = new Context();
+            context.setVariable("playerName", playerName);
+            context.setVariable("tournamentName", tournamentName);
+            context.setVariable("tournamentDate", tournamentDate);
+            context.setVariable("tournamentTime", tournamentTime);
+            context.setVariable("clubName", clubName);
+            context.setVariable("waitlistPosition", waitlistPosition);
+            context.setVariable("baseUrl", baseUrl);
+            context.setVariable("year", java.time.Year.now().getValue());
+
+            String htmlContent = templateEngine.process("email/waitlist-notification", context);
+
+            sendHtmlEmail(to, "📋 Has sido agregado a la lista de espera", htmlContent);
+            log.info("✅ Уведомление о листе ожидания отправлено на: {}", to);
+
+        } catch (Exception e) {
+            log.error("❌ Ошибка отправки уведомления на {}: {}", to, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Отправка подтверждения регистрации на турнир
+     */
+    public void sendTournamentConfirmationEmail(String to, String playerName, String tournamentName,
+                                                String tournamentDate, String tournamentTime,
+                                                String clubName) {
+        try {
+            log.info("📧 Enviando confirmación de inscripción a torneo a: {}", to);
+
+            Context context = new Context();
+            context.setVariable("playerName", playerName);
+            context.setVariable("tournamentName", tournamentName);
+            context.setVariable("tournamentDate", tournamentDate);
+            context.setVariable("tournamentTime", tournamentTime);
+            context.setVariable("clubName", clubName);
+            context.setVariable("baseUrl", baseUrl);
+            context.setVariable("year", java.time.Year.now().getValue());
+
+            String htmlContent = templateEngine.process("email/tournament-confirmation", context);
+
+            sendHtmlEmail(to, "🎾 ¡Inscripción confirmada! - E-Padel", htmlContent);
+            log.info("✅ Confirmación de torneo enviada a: {}", to);
+
+        } catch (Exception e) {
+            log.error("❌ Error enviando confirmación de torneo a {}: {}", to, e.getMessage(), e);
+        }
+    }
 }

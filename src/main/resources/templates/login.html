@@ -142,12 +142,12 @@
 
                     <!-- Redes sociales (placeholder para futura implementación) -->
                     <div class="auth-social" style="display: flex; gap: 1rem; justify-content: center; margin-top: 1rem;">
-                        <a href="#" class="btn btn-outline" style="flex: 1;" onclick="alert('Google login próximamente')">
+                        <a href="/oauth2/authorization/google" class="btn btn-outline" style="flex: 1;">
                             <i class="fab fa-google"></i> Google
                         </a>
-                        <a href="#" class="btn btn-outline" style="flex: 1;" onclick="alert('Facebook login próximamente')">
-                            <i class="fab fa-facebook-f"></i> Facebook
-                        </a>
+<!--                        <a href="/oauth2/authorization/facebook" class="btn btn-outline" style="flex: 1;">-->
+<!--                            <i class="fab fa-facebook-f"></i> Facebook-->
+<!--                        </a>-->
                     </div>
                 </form>
             </div>
@@ -176,6 +176,7 @@
 <!-- JavaScript - порядок важен! -->
 <script th:src="@{/js/notifications.js}"></script>
 <script th:src="@{/js/auth.js}"></script>
+<script th:src="@{/js/password-reset.js}"></script>
 
 <!-- Script para manejar el parámetro confirmed (opcional) -->
 <script th:if="${param.confirmed}" th:inline="javascript">
@@ -183,6 +184,31 @@
     document.addEventListener('DOMContentLoaded', function() {
         if (typeof showNotification === 'function') {
             showNotification('¡Email confirmado exitosamente!', 'success');
+        }
+    });
+    /*]]>*/
+</script>
+<!-- Script para manejar el token en la URL (para cuando vuelven del email) -->
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    document.addEventListener('DOMContentLoaded', function() {
+        // Проверяем наличие токена в URL при загрузке страницы
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+
+        if (token && window.location.pathname === '/login') {
+            // Если есть токен на странице логина, показываем уведомление
+            if (typeof showNotification === 'function') {
+                showNotification('Revisa tu email para continuar con la recuperación de contraseña', 'info');
+            }
+        }
+
+        // Проверяем параметр reset (успешная смена пароля)
+        const reset = urlParams.get('reset');
+        if (reset === 'success') {
+            if (typeof showNotification === 'function') {
+                showNotification('¡Contraseña actualizada correctamente! Ya puedes iniciar sesión', 'success');
+            }
         }
     });
     /*]]>*/

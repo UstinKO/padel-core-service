@@ -4,13 +4,14 @@ import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
-import com.padle.core.padelcoreservice.service.PlayerService;
+import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2User;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -31,14 +32,19 @@ public class PlayerDashboardController {
     private final ObjectMapper objectMapper;
 
     @GetMapping("/dashboard")
-    public String dashboard(Model model, @AuthenticationPrincipal PlayerPadel player) {
-        log.info("Accessing dashboard for player: {}", player != null ? player.getEmail() : "null");
+    public String dashboard(Model model, @AuthenticationPrincipal Object principal) {
+        log.info("Accessing dashboard with principal type: {}",
+                principal != null ? principal.getClass().getName() : "null");
 
-        // Если player null, значит пользователь не аутентифицирован как игрок
+        // Извлекаем PlayerPadel из principal
+        PlayerPadel player = extractPlayerFromPrincipal(principal);
+
         if (player == null) {
             log.warn("Player is null, redirecting to login");
             return "redirect:/login";
         }
+
+        log.info("Dashboard accessed by player: {} (ID: {})", player.getEmail(), player.getId());
 
         try {
             // Получаем турниры, открытые для регистрации
@@ -80,7 +86,13 @@ public class PlayerDashboardController {
     @PostMapping("/tournaments/{tournamentId}/register")
     @ResponseBody
     public ResponseEntity<?> registerForTournament(@PathVariable Long tournamentId,
-                                                   @AuthenticationPrincipal PlayerPadel player) {
+                                                   @AuthenticationPrincipal Object principal) {
+        PlayerPadel player = extractPlayerFromPrincipal(principal);
+
+        if (player == null) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Usuario no autenticado"));
+        }
+
         log.info("Player {} registering for tournament {}", player.getId(), tournamentId);
 
         try {
@@ -107,8 +119,14 @@ public class PlayerDashboardController {
     @PostMapping("/tournaments/{tournamentId}/cancel")
     @ResponseBody
     public ResponseEntity<?> cancelRegistration(@PathVariable Long tournamentId,
-                                                @AuthenticationPrincipal PlayerPadel player,
+                                                @AuthenticationPrincipal Object principal,
                                                 @RequestParam(required = false) String reason) {
+        PlayerPadel player = extractPlayerFromPrincipal(principal);
+
+        if (player == null) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Usuario no autenticado"));
+        }
+
         log.info("Player {} cancelling registration for tournament {}", player.getId(), tournamentId);
 
         try {
@@ -134,5 +152,28 @@ public class PlayerDashboardController {
             response.put("message", e.getMessage());
             return ResponseEntity.badRequest().body(response);
         }
+    }
+
+    /**
+     * Вспомогательный метод для извлечения PlayerPadel из principal
+     */
+    private PlayerPadel extractPlayerFromPrincipal(Object principal) {
+        if (principal == null) {
+            return null;
+        }
+
+        if (principal instanceof CustomOAuth2User) {
+            return ((CustomOAuth2User) principal).getPlayer();
+        } else if (principal instanceof PlayerPadel) {
+            return (PlayerPadel) principal;
+        } else if (principal instanceof UserDetails) {
+            // Для обычной формы логина, если нужно
+            log.info("Principal is UserDetails: {}", ((UserDetails) principal).getUsername());
+            // Здесь можно загрузить из базы, но пока вернем null
+            return null;
+        }
+
+        log.warn("Unknown principal type: {}", principal.getClass().getName());
+        return null;
     }
 }

@@ -2701,3 +2701,226 @@ h1, h2, h3, h4, h5, h6 {
 .tournament-card {
     animation: fadeIn 0.5s ease forwards;
 }
+
+/* ===== MODAL STYLES ===== */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.3s;
+}
+
+.modal-content {
+    background-color: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    animation: slideIn 0.3s;
+}
+
+.modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, #FF6B35 0%, #FF8C5A 100%);
+    color: white;
+    border-radius: 12px 12px 0 0;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+
+.modal-close:hover {
+    opacity: 1;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    padding: 1.5rem;
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+}
+
+.modal-message {
+    padding: 0.75rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    display: none;
+}
+
+.modal-message.success {
+    background-color: rgba(72, 187, 120, 0.1);
+    color: #48bb78;
+    border: 1px solid #48bb78;
+    display: block;
+}
+
+.modal-message.error {
+    background-color: rgba(229, 62, 62, 0.1);
+    color: #e53e3e;
+    border: 1px solid #e53e3e;
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Ajustes para móviles */
+@media (max-width: 480px) {
+    .modal-content {
+        width: 95%;
+        margin: 1rem;
+    }
+
+    .modal-footer {
+        flex-direction: column;
+    }
+
+    .modal-footer .btn {
+        width: 100%;
+    }
+}
+
+/* Legal Pages */
+.legal-main {
+    min-height: calc(100vh - 200px);
+    padding: 2rem 0;
+    background-color: #f8fafc;
+}
+
+.legal-card {
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    padding: 2.5rem;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.legal-title {
+    font-size: 2rem;
+    color: #1a1a1a;
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+}
+
+.legal-date {
+    color: #718096;
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.legal-content {
+    line-height: 1.8;
+}
+
+.legal-content section {
+    margin-bottom: 2rem;
+}
+
+.legal-content h2 {
+    font-size: 1.5rem;
+    color: #FF6B35;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.legal-content h3 {
+    font-size: 1.2rem;
+    color: #2d3748;
+    margin: 1.5rem 0 1rem;
+    font-weight: 600;
+}
+
+.legal-content p {
+    color: #4a5568;
+    margin-bottom: 1rem;
+}
+
+.legal-content ul {
+    margin: 1rem 0;
+    padding-left: 2rem;
+    color: #4a5568;
+}
+
+.legal-content li {
+    margin-bottom: 0.5rem;
+}
+
+.legal-content a {
+    color: #FF6B35;
+    text-decoration: none;
+}
+
+.legal-content a:hover {
+    text-decoration: underline;
+}
+
+.legal-footer {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e2e8f0;
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .legal-card {
+        padding: 1.5rem;
+    }
+
+    .legal-title {
+        font-size: 1.5rem;
+    }
+
+    .legal-content h2 {
+        font-size: 1.3rem;
+    }
+}

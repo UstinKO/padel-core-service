@@ -30,6 +30,7 @@
 
     <!-- Custom Styles -->
     <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/cookie-consent.css}">
 </head>
 <body>
 <!-- Header dinámico según autenticación -->
@@ -227,13 +228,6 @@
                 <!-- Турниры будут вставляться динамически через JavaScript -->
             </div>
 
-            <!-- Кнопка "Показать больше" (опционально) -->
-            <div class="tournaments-more" id="tournamentsMore" style="text-align: center; margin-top: 2rem; display: none;">
-                <button class="btn btn-outline btn-large" id="loadMoreBtn">
-                    <i class="fas fa-plus-circle"></i> Cargar más torneos
-                </button>
-            </div>
-
             <!-- Сообщение когда нет турниров (без изменений) -->
             <div class="empty-state" id="noTournamentsMessage" style="display: none;">
                 <i class="fas fa-calendar-times empty-icon"></i>
@@ -340,7 +334,7 @@
 <!--                    La plataforma #1 de torneos de pádel. Conecta jugadores, organiza competiciones y mejora tu ranking.-->
 <!--                </p>-->
                 <div class="footer-social">
-                    <a href="#" class="social-link" aria-label="Instagram">
+                    <a href="https://www.instagram.com/e.padel.torneos?igsh=MXIzYnFmaHkxMTczdw%3D%3D&utm_source=qr" class="social-link" aria-label="Instagram">
                         <i class="fab fa-instagram"></i>
                     </a>
 <!--                    <a href="#" class="social-link" aria-label="Facebook">-->
@@ -349,10 +343,10 @@
 <!--                    <a href="#" class="social-link" aria-label="Twitter">-->
 <!--                        <i class="fab fa-twitter"></i>-->
 <!--                    </a>-->
-                    <a href="#" class="social-link" aria-label="YouTube">
+                    <a href="https://youtube.com/@padel_by_eugene?si=0PdQEr3HQxVMyMS6" class="social-link" aria-label="YouTube">
                         <i class="fab fa-youtube"></i>
                     </a>
-<!--                    <a href="#" class="social-link" aria-label="TikTok">-->
+<!--                    <a href="https://www.tiktok.com/@padel_by_eugene?_r=1&_t=ZS-93tFyhmZbQf" class="social-link" aria-label="TikTok">-->
 <!--                        <i class="fab fa-tiktok"></i>-->
 <!--                    </a>-->
                 </div>
@@ -380,15 +374,14 @@
 <!--            </div>-->
 
             <!-- Column 4: Legal & Contacto -->
-<!--            <div class="footer-links">-->
-<!--                <h4 class="footer-title">Legal</h4>-->
-<!--                <ul class="footer-menu">-->
-<!--                    <li><a href="/terminos"><i class="fas fa-file-contract"></i> Términos</a></li>-->
-<!--                    <li><a href="/privacidad"><i class="fas fa-shield-alt"></i> Privacidad</a></li>-->
-<!--                    <li><a href="/cookies"><i class="fas fa-cookie-bite"></i> Cookies</a></li>-->
-<!--                    <li><a href="/contacto"><i class="fas fa-envelope"></i> Contacto</a></li>-->
-<!--                </ul>-->
-<!--            </div>-->
+            <div class="footer-links">
+                <h4 class="footer-title">Legal</h4>
+                <ul class="footer-menu">
+                    <li><a href="/terminos"><i class="fas fa-file-contract"></i> Términos</a></li>
+                    <li><a href="/privacidad"><i class="fas fa-shield-alt"></i> Privacidad</a></li>
+                    <li><a href="/cookies"><i class="fas fa-cookie-bite"></i> Cookies</a></li>
+                </ul>
+            </div>
         </div>
 
         <!-- Bottom Footer -->
@@ -438,5 +431,7 @@
 <script th:src="@{/js/notifications.js}"></script>
 <script th:src="@{/js/main.js}"></script>
 <script th:src="@{/js/home.js}"></script>
+<script th:src="@{/js/password-reset.js}"></script>
+<script th:src="@{/js/cookie-consent.js}"></script>
 </body>
 </html>
