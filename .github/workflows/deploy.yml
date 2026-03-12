@@ -43,8 +43,8 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          timeout: 600s
-          command_timeout: 600s
+          timeout: 1200s
+          command_timeout: 1200s
           script: |
             set -e
 
@@ -114,9 +114,9 @@ jobs:
             echo "🔄 Restarting application..."
             docker compose up -d --no-deps padel-app
 
-            # Ждем запуска
-            echo "⏳ Waiting for application to start (30 seconds)..."
-            sleep 30
+            # Ждем запуска (60 секунд)
+            echo "⏳ Waiting for application to start (60 seconds)..."
+            sleep 60
 
             # Проверяем, запустился ли контейнер
             if ! docker ps | grep -q padel-core-app; then
@@ -127,10 +127,12 @@ jobs:
               exit 1
             fi
 
-            # Проверяем health endpoint (5 попыток)
-            echo "🏥 Checking health endpoint..."
+            # Проверяем health endpoint (60 попыток по 10 секунд = 600 секунд максимум)
+            echo "🏥 Checking health endpoint (will wait up to 10 minutes)..."
             HEALTH_CHECK="failed"
-            for i in {1..5}; do
+            MAX_ATTEMPTS=60
+            for i in $(seq 1 $MAX_ATTEMPTS); do
+              echo "⏳ Health check attempt $i/$MAX_ATTEMPTS..."
               HEALTH_CHECK=$(docker compose exec padel-app curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health 2>/dev/null || echo "failed")
             
               if [ "$HEALTH_CHECK" = "200" ]; then
@@ -138,12 +140,14 @@ jobs:
                 break
               fi
             
-              echo "⏳ Waiting for health check... (attempt $i/5)"
-              sleep 5
+              if [ $i -lt $MAX_ATTEMPTS ]; then
+                echo "⏳ Waiting 10 seconds before next attempt... ($(( (MAX_ATTEMPTS - i) * 10 )) seconds remaining)"
+                sleep 10
+              fi
             done
 
             if [ "$HEALTH_CHECK" != "200" ]; then
-              echo "❌ Health check failed with status: $HEALTH_CHECK"
+              echo "❌ Health check failed after $MAX_ATTEMPTS attempts"
               echo "📋 Application logs:"
               docker compose logs padel-app --tail=50
               rollback
