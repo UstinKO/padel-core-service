@@ -62,6 +62,15 @@ public class PlayerPadel implements UserDetails { // Реализуем UserDeta
     @Column(name = "activo", nullable = false)
     private boolean activo = true;
 
+    @Column(name = "oauth2_user", nullable = false)
+    private boolean oauth2User = false;
+
+    @Column(name = "provider", length = 50)
+    private String provider;
+
+    @Column(name = "password_changed_at")
+    private LocalDateTime passwordChangedAt;
+
     // ========== Реализация UserDetails ==========
 
     @Override

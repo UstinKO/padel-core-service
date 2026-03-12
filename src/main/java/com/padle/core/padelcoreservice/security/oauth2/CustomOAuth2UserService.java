@@ -1,29 +1,22 @@
 package com.padle.core.padelcoreservice.security.oauth2;
 
 import com.padle.core.padelcoreservice.model.PlayerPadel;
-import com.padle.core.padelcoreservice.repository.PlayerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
 
 @Slf4j
-@Service
 @RequiredArgsConstructor
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
-    private final PlayerRepository playerRepository;
+    private final OAuth2UserManagementService userManagementService;
 
     @Override
-    @Transactional
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
         OAuth2User oAuth2User = super.loadUser(userRequest);
 
@@ -36,8 +29,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String firstName = extractFirstName(attributes, registrationId, name);
         String lastName = extractLastName(attributes, registrationId);
 
-        // Создаем или обновляем пользователя
-        PlayerPadel player = createOrUpdateUser(email, firstName, lastName, registrationId);
+        PlayerPadel player = userManagementService.createOrUpdateUser(email, firstName, lastName, registrationId);
 
         return new CustomOAuth2User(oAuth2User, player);
     }
@@ -80,37 +72,5 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             return lastName != null ? lastName : "";
         }
         return "";
-    }
-
-    @Transactional
-    protected PlayerPadel createOrUpdateUser(String email, String firstName, String lastName, String provider) {
-        Optional<PlayerPadel> existingUser = playerRepository.findByEmail(email);
-
-        if (existingUser.isPresent()) {
-            PlayerPadel player = existingUser.get();
-            log.info("Usuario existente con email: {}, actualizando datos", email);
-
-            // Если у пользователя не было подтверждения email, подтверждаем
-            if (!player.isEmailConfirmado()) {
-                player.setEmailConfirmado(true);
-                player.setFechaConfirmacionEmail(java.time.LocalDateTime.now());
-            }
-
-            return playerRepository.save(player);
-        } else {
-            log.info("Creando nuevo usuario con email: {} via {}", email, provider);
-
-            PlayerPadel newPlayer = PlayerPadel.builder()
-                    .email(email)
-                    .nombre(firstName)
-                    .apellido(lastName)
-                    .passwordHash(UUID.randomUUID().toString()) // Случайный пароль
-                    .emailConfirmado(true) // Для OAuth2 почта уже подтверждена
-                    .fechaConfirmacionEmail(java.time.LocalDateTime.now())
-                    .activo(true)
-                    .build();
-
-            return playerRepository.save(newPlayer);
-        }
     }
 }
