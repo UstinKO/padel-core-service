@@ -4,8 +4,8 @@ services:
     container_name: padel-postgres
     environment:
       POSTGRES_DB: ${DB_NAME:-player_padel_db}
-      POSTGRES_USER: ${DB_USERNAME:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-root}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
@@ -32,8 +32,8 @@ services:
 
       # База данных
       DB_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-player_padel_db}
-      DB_USERNAME: ${DB_USERNAME:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD:-root}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
       DB_POOL_SIZE: ${DB_POOL_SIZE:-10}
       DB_MIN_IDLE: ${DB_MIN_IDLE:-5}
 

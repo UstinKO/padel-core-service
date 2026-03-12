@@ -1,0 +1,28 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.20-add-oauth2-fields
+      author: padel-core
+      changes:
+        - addColumn:
+            tableName: player_padel_db
+            columns:
+              - column:
+                  name: oauth2_user
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+              - column:
+                  name: provider
+                  type: VARCHAR(50)
+              - column:
+                  name: password_changed_at
+                  type: TIMESTAMP
+      rollback:
+        - dropColumn:
+            tableName: player_padel_db
+            columnName: oauth2_user
+        - dropColumn:
+            tableName: player_padel_db
+            columnName: provider
+        - dropColumn:
+            tableName: player_padel_db
+            columnName: password_changed_at
