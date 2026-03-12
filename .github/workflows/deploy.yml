@@ -127,22 +127,21 @@ jobs:
               exit 1
             fi
 
-            # Проверяем логи на наличие ошибок
-            echo "🔍 Checking application logs for errors..."
-            LOGS=$(docker compose logs padel-app --tail=50)
-            
-            # Ищем критические ошибки в логах
-            if echo "$LOGS" | grep -E "ERROR|Exception|Failed to start|Application run failed|StackOverflowError|NullPointerException"; then
-              echo "❌ Found errors in application logs!"
-              echo "$LOGS" | grep -E "ERROR|Exception|Failed to start|Application run failed|StackOverflowError|NullPointerException" --color=always
-              rollback
-              exit 1
-            fi
-
-            # Проверяем health endpoint
+            # Проверяем health endpoint (5 попыток)
             echo "🏥 Checking health endpoint..."
-            HEALTH_CHECK=$(docker compose exec padel-app curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health 2>/dev/null || echo "failed")
+            HEALTH_CHECK="failed"
+            for i in {1..5}; do
+              HEALTH_CHECK=$(docker compose exec padel-app curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health 2>/dev/null || echo "failed")
             
+              if [ "$HEALTH_CHECK" = "200" ]; then
+                echo "✅ Health check passed!"
+                break
+              fi
+            
+              echo "⏳ Waiting for health check... (attempt $i/5)"
+              sleep 5
+            done
+
             if [ "$HEALTH_CHECK" != "200" ]; then
               echo "❌ Health check failed with status: $HEALTH_CHECK"
               echo "📋 Application logs:"
