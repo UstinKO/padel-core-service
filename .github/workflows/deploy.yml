@@ -37,6 +37,7 @@ jobs:
           strip_components: 1
 
       - name: Deploy to server
+        id: deploy
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -49,7 +50,30 @@ jobs:
 
             echo "🔧 Starting deployment process..."
 
-            # Находим основной jar файл (игнорируем .original)
+            # Функция для отката
+            rollback() {
+              echo "⚠️ Rolling back to previous version..."
+              if [ -f "/home/deploy/app/app.jar.backup" ]; then
+                cp /home/deploy/app/app.jar.backup /home/deploy/app/app.jar
+                echo "🔄 Restored previous JAR"
+            
+                cd /home/deploy/app
+                docker compose build --no-cache padel-app
+                docker compose up -d --no-deps padel-app
+            
+                echo "✅ Rollback completed"
+              else
+                echo "❌ No backup found for rollback"
+              fi
+            }
+
+            # Сохраняем текущую версию для отката
+            if [ -f "/home/deploy/app/app.jar" ]; then
+              cp /home/deploy/app/app.jar /home/deploy/app/app.jar.backup
+              echo "💾 Current version backed up"
+            fi
+
+            # Находим основной jar файл
             MAIN_JAR=$(ls /home/deploy/app/temp/padel-core-service-*.jar | grep -v "original" | head -1)
 
             if [ -z "$MAIN_JAR" ]; then
@@ -61,11 +85,10 @@ jobs:
 
             echo "📦 Found JAR file: $(basename $MAIN_JAR)"
 
-            # Копируем как new.jar для deploy.sh
-            echo "📦 Copying JAR to app directory..."
-            cp "$MAIN_JAR" /home/deploy/app/new.jar
+            # Копируем новый JAR
+            cp "$MAIN_JAR" /home/deploy/app/app.jar
 
-            # Копируем version.txt если есть
+            # Копируем version.txt
             if [ -f "/home/deploy/app/temp/version.txt" ]; then
               cp /home/deploy/app/temp/version.txt /home/deploy/app/version.txt
               echo "📄 Version file copied:"
@@ -73,33 +96,78 @@ jobs:
             fi
 
             # Сохраняем информацию о версии
-            echo "$(basename $MAIN_JAR)" > /home/deploy/app/current_version.txt
-            echo "Deployed at: $(date)" >> /home/deploy/app/current_version.txt
+            echo "$(basename $MAIN_JAR)" > /home/deploy/app/new_version.txt
+            echo "Deployed at: $(date)" >> /home/deploy/app/new_version.txt
 
-            # Устанавливаем правильные права
-            sudo chown deploy:deploy /home/deploy/app/new.jar
-            sudo chmod 644 /home/deploy/app/new.jar
+            # Переходим в директорию приложения
+            cd /home/deploy/app
 
-            echo "✅ JAR file prepared for deployment:"
-            ls -la /home/deploy/app/new.jar
-
-            # Запускаем скрипт деплоя
-            echo "⚙️ Running deployment script..."
-            /home/deploy/deploy.sh
-
-            # Проверяем результат деплоя
-            if [ $? -eq 0 ]; then
-              echo "✅ Deployment script completed successfully!"
-            else
-              echo "❌ Deployment script failed!"
+            # Пересобираем образ
+            echo "🏗️ Building new Docker image..."
+            if ! docker compose build --no-cache padel-app; then
+              echo "❌ Docker build failed!"
+              rollback
               exit 1
             fi
+
+            # Перезапускаем приложение
+            echo "🔄 Restarting application..."
+            docker compose up -d --no-deps padel-app
+
+            # Ждем запуска
+            echo "⏳ Waiting for application to start (30 seconds)..."
+            sleep 30
+
+            # Проверяем, запустился ли контейнер
+            if ! docker ps | grep -q padel-core-app; then
+              echo "❌ Application container failed to start!"
+              echo "📋 Container logs:"
+              docker compose logs padel-app --tail=50
+              rollback
+              exit 1
+            fi
+
+            # Проверяем логи на наличие ошибок
+            echo "🔍 Checking application logs for errors..."
+            LOGS=$(docker compose logs padel-app --tail=50)
+            
+            # Ищем критические ошибки в логах
+            if echo "$LOGS" | grep -E "ERROR|Exception|Failed to start|Application run failed|StackOverflowError|NullPointerException"; then
+              echo "❌ Found errors in application logs!"
+              echo "$LOGS" | grep -E "ERROR|Exception|Failed to start|Application run failed|StackOverflowError|NullPointerException" --color=always
+              rollback
+              exit 1
+            fi
+
+            # Проверяем health endpoint
+            echo "🏥 Checking health endpoint..."
+            HEALTH_CHECK=$(docker compose exec padel-app curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health 2>/dev/null || echo "failed")
+            
+            if [ "$HEALTH_CHECK" != "200" ]; then
+              echo "❌ Health check failed with status: $HEALTH_CHECK"
+              echo "📋 Application logs:"
+              docker compose logs padel-app --tail=50
+              rollback
+              exit 1
+            fi
+
+            # Если всё хорошо, обновляем current_version
+            mv /home/deploy/app/new_version.txt /home/deploy/app/current_version.txt
+            echo "✅ New version is healthy!"
+
+            # Удаляем бэкап после успешного деплоя
+            rm -f /home/deploy/app/app.jar.backup
+            echo "🧹 Backup removed"
 
             # Очищаем temp директорию
             rm -rf /home/deploy/app/temp/*
             echo "🧹 Temp directory cleaned"
 
-            echo "✅ Deployment process completed!"
+            # Удаляем старые неиспользуемые образы
+            echo "🧹 Cleaning up old images..."
+            docker image prune -f
+
+            echo "✅ Deployment process completed successfully!"
 
       - name: Health check
         uses: appleboy/ssh-action@v1.0.3
@@ -108,24 +176,23 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
-            echo "🏥 Running health check..."
-            sleep 10
+            echo "🏥 Running final health check..."
             
-            # Проверяем статус сервиса
-            if sudo systemctl is-active --quiet myapp; then
-              echo "✅ Service is running"
+            cd /home/deploy/app
+            
+            # Проверяем статус контейнера
+            if docker ps | grep -q padel-core-app; then
+              echo "✅ Container is running"
               echo "📋 Current version:"
               cat /home/deploy/app/current_version.txt 2>/dev/null || echo "Unknown"
-              echo "📋 Java processes:"
-              ps aux | grep java | grep -v grep
-              echo "📋 Last 20 lines of application log:"
-              sudo tail -n 20 /home/deploy/logs/app.log 2>/dev/null || echo "No app.log file"
-              sudo systemctl status myapp --no-pager
+              echo "📋 Container status:"
+              docker compose ps
+              echo "📋 Last 20 lines of logs:"
+              docker compose logs padel-app --tail=20
             else
-              echo "❌ Service is not running!"
-              sudo systemctl status myapp --no-pager
-              echo "📋 Last 50 lines of journal:"
-              sudo journalctl -u myapp -n 50 --no-pager
+              echo "❌ Container is not running!"
+              docker compose ps
+              docker compose logs padel-app --tail=50
               exit 1
             fi
 
@@ -151,5 +218,6 @@ jobs:
           echo "🔗 Commit: ${{ github.sha }}"
           echo "🌍 Server: ${{ secrets.SERVER_HOST }}"
           echo "=================================="
+          echo "⚠️ Automatic rollback was performed"
           echo "Please check the logs above for details"
           exit 1
