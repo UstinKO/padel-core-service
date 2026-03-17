@@ -5,7 +5,12 @@ public enum RegistrationStatus {
     WAITLIST("Lista de Espera"),
     WAITLIST_INVITED("Invitado a Confirmar"),
     CANCELLED("Cancelado"),
-    PARTICIPATED("Participó");
+    PARTICIPATED("Participó"),
+
+    // Новые статусы для парных турниров
+    PENDING_PARTNER("Esperando Compañero"),      // Ожидает подтверждения партнера
+    PARTNER_INVITED("Compañero Invitado"),       // Партнер приглашен (незарегистрированный)
+    PAIR_REGISTERED("Pareja Registrada");        // Оба игрока зарегистрированы
 
     private final String value;
 

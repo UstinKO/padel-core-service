@@ -70,7 +70,8 @@ public class SecurityConfig {
                                 "/recuperar-password",
                                 "/recuperar-password/**",
                                 "/oauth2/**",
-                                "/login/oauth2/**"
+                                "/login/oauth2/**",
+                                "/double-registration/complete"
                         ).permitAll()
                         .requestMatchers("/players/dashboard").authenticated()
                         .requestMatchers("/players/lista").authenticated()

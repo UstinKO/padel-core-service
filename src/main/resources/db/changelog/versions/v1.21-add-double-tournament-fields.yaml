@@ -1,0 +1,60 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.21-add-double-tournament-fields
+      author: padel-core
+      changes:
+        - addColumn:
+            tableName: tournament_registrations_db
+            columns:
+              - column:
+                  name: is_double_registration
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: main_player_id
+                  type: BIGINT
+              - column:
+                  name: partner_first_name
+                  type: VARCHAR(100)
+              - column:
+                  name: partner_last_name
+                  type: VARCHAR(100)
+              - column:
+                  name: partner_phone
+                  type: VARCHAR(20)
+              - column:
+                  name: partner_email
+                  type: VARCHAR(255)
+              - column:
+                  name: partner_registration_token
+                  type: VARCHAR(100)
+              - column:
+                  name: partner_token_expiry
+                  type: TIMESTAMP
+      rollback:
+        - dropColumn:
+            tableName: tournament_registrations_db
+            columnName: is_double_registration
+        - dropColumn:
+            tableName: tournament_registrations_db
+            columnName: main_player_id
+        - dropColumn:
+            tableName: tournament_registrations_db
+            columnName: partner_first_name
+        - dropColumn:
+            tableName: tournament_registrations_db
+            columnName: partner_last_name
+        - dropColumn:
+            tableName: tournament_registrations_db
+            columnName: partner_phone
+        - dropColumn:
+            tableName: tournament_registrations_db
+            columnName: partner_email
+        - dropColumn:
+            tableName: tournament_registrations_db
+            columnName: partner_registration_token
+        - dropColumn:
+            tableName: tournament_registrations_db
+            columnName: partner_token_expiry

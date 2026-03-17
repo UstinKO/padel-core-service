@@ -37,6 +37,10 @@ class PadelCoreHome {
                 'CERRADO': 'Cerrado',
                 'FINALIZADO': 'Finalizado',
                 'CANCELADO': 'Cancelado'
+            },
+            modalidad: {
+                'INDIVIDUAL': 'Individual',
+                'DOBLES': 'Dobles'
             }
         };
 
@@ -73,6 +77,7 @@ class PadelCoreHome {
         this.navbarNav = document.getElementById('navbarNav'); // Должно быть!
         this.loadMoreBtn = document.getElementById('loadMoreBtn');
         this.tournamentsMore = document.getElementById('tournamentsMore');
+        this.modalidadFilter = document.getElementById('modalidadFilter');
     }
 
     initEventListeners() {
@@ -151,6 +156,7 @@ class PadelCoreHome {
         const genero = this.generoFilter?.value || 'todos';
         const nivel = this.nivelFilter?.value || 'todos';
         const tipo = this.tipoFilter?.value || 'todos';
+        const modalidad = this.modalidadFilter?.value || 'todos';
 
         this.filteredTournaments = this.tournaments.filter(t => {
             if (genero !== 'todos' && t.generoFormato !== genero) return false;
@@ -170,6 +176,10 @@ class PadelCoreHome {
             }
 
             if (tipo !== 'todos' && t.tipo !== tipo) return false;
+
+            // ✅ НОВЫЙ ФИЛЬТР: по модальности
+            if (modalidad !== 'todos' && t.modalidad && t.modalidad !== modalidad) return false;
+
             return true;
         });
 
@@ -185,6 +195,7 @@ class PadelCoreHome {
         if (this.generoFilter) this.generoFilter.value = 'todos';
         if (this.nivelFilter) this.nivelFilter.value = 'todos';
         if (this.tipoFilter) this.tipoFilter.value = 'todos';
+        if (this.modalidadFilter) this.modalidadFilter.value = 'todos';
 
         this.filteredTournaments = [...this.tournaments];
 

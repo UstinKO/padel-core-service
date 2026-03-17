@@ -678,3 +678,44 @@
     gap: 0.75rem;
     justify-content: flex-end;
 }
+
+/* Добавьте в ваш CSS файл */
+.alert {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    border: 1px solid #ffeeba;
+    color: #856404;
+}
+
+.alert-warning i {
+    margin-right: 8px;
+    color: #856404;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    border: 1px solid #bee5eb;
+    color: #0c5460;
+}
+
+.alert-info i {
+    margin-right: 8px;
+    color: #0c5460;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+}
+
+.alert-success i {
+    margin-right: 8px;
+    color: #155724;
+}

@@ -31,7 +31,7 @@ public class PaymentManagementController {
     public String paymentManagementPage(@PathVariable Long tournamentId, Model model) {
         log.info("Opening payment management page for tournament: {}", tournamentId);
 
-        var tournament = tournamentService.getTournamentById(tournamentId)
+        var tournament = tournamentService.getTournamentDtoById(tournamentId)
                 .orElseThrow(() -> new RuntimeException("Tournament not found"));
 
         List<PaymentManagementViewDto> players = paymentService.getPaymentManagementData(tournamentId);

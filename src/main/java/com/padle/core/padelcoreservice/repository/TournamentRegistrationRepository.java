@@ -43,7 +43,7 @@ public interface TournamentRegistrationRepository extends JpaRepository<Tourname
     Optional<Integer> findMaxWaitlistPosition(@Param("tournamentId") Long tournamentId);
 
     @Query("SELECT tr FROM TournamentRegistration tr " +
-            "WHERE tr.player.id = :playerId AND tr.status IN ('CONFIRMED', 'WAITLIST')")
+            "WHERE tr.player.id = :playerId AND tr.isActive = true")
     List<TournamentRegistration> findActiveRegistrationsByPlayerId(@Param("playerId") Long playerId);
 
     @Query("SELECT COUNT(tr) FROM TournamentRegistration tr WHERE tr.status = 'WAITLIST' AND tr.isActive = true")
@@ -61,4 +61,78 @@ public interface TournamentRegistrationRepository extends JpaRepository<Tourname
             RegistrationStatus status, LocalDateTime expiryTime);
 
     List<TournamentRegistration> findByTournamentIdOrderByPositionAscWaitlistPositionAsc(Long tournamentId);
+
+    @Query("SELECT COUNT(DISTINCT tr.mainPlayerId) FROM TournamentRegistration tr " +
+            "WHERE tr.tournament.id = :tournamentId AND tr.status IN ('CONFIRMED', 'PAIR_REGISTERED') " +
+            "AND tr.isDoubleRegistration = true")
+    long countConfirmedPairs(@Param("tournamentId") Long tournamentId);
+
+    @Query("SELECT tr FROM TournamentRegistration tr " +
+            "WHERE tr.player.id = :playerId AND tr.isDoubleRegistration = true " +
+            "AND tr.isActive = true AND tr.status IN ('CONFIRMED', 'PENDING_PARTNER', 'PAIR_REGISTERED')")
+    List<TournamentRegistration> findActiveDoubleRegistrationsByPlayerId(@Param("playerId") Long playerId);
+
+    Optional<TournamentRegistration> findByPartnerRegistrationToken(String token);
+
+    @Query("SELECT COUNT(DISTINCT r.mainPlayerId) FROM TournamentRegistration r " +
+            "WHERE r.tournament.id = :tournamentId " +
+            "AND r.isActive = true " +
+            "AND r.isDoubleRegistration = true " +
+            "AND r.status IN ('CONFIRMED', 'PARTNER_INVITED', 'PENDING_PARTNER', 'PAIR_REGISTERED')")
+    long countActivePairsByTournamentId(@Param("tournamentId") Long tournamentId);
+
+    @Query("SELECT COUNT(r) FROM TournamentRegistration r " +
+            "WHERE r.tournament.id = :tournamentId AND r.isActive = true")
+    long countByTournamentIdAndIsActiveTrue(@Param("tournamentId") Long tournamentId);
+
+    /**
+     * Подсчет количества активных одиночных регистраций в турнире (не парных)
+     * Используется для правильного подсчета занятых мест в парных турнирах
+     *
+     * @param tournamentId ID турнира
+     * @return количество активных одиночных регистраций
+     */
+    @Query("SELECT COUNT(r) FROM TournamentRegistration r " +
+            "WHERE r.tournament.id = :tournamentId " +
+            "AND r.isActive = true " +
+            "AND r.isDoubleRegistration = false")
+    long countByTournamentIdAndIsDoubleRegistrationFalseAndIsActiveTrue(@Param("tournamentId") Long tournamentId);
+
+    /**
+     * Считаем занятые места в турнире
+     * Простая логика:
+     * - Если запись имеет partner (ссылку на игрока) или partnerFirstName - это парная регистрация
+     * - Каждая такая запись занимает 2 места, но мы считаем их как 1 пару
+     */
+    @Query("SELECT COUNT(DISTINCT CASE " +
+            "WHEN r.mainPlayerId IS NOT NULL THEN r.mainPlayerId " +
+            "ELSE r.player.id END) * 2 " +
+            "FROM TournamentRegistration r " +
+            "WHERE r.tournament.id = :tournamentId " +
+            "AND r.isActive = true " +
+            "AND (r.partner IS NOT NULL OR r.partnerFirstName IS NOT NULL)")
+    long countSpotsOccupiedByPairs(@Param("tournamentId") Long tournamentId);
+
+    /**
+     * Считаем занятые места одиночными регистрациями
+     */
+    @Query("SELECT COUNT(r) FROM TournamentRegistration r " +
+            "WHERE r.tournament.id = :tournamentId " +
+            "AND r.isActive = true " +
+            "AND r.partner IS NULL " +
+            "AND r.partnerFirstName IS NULL")
+    long countSpotsOccupiedBySingles(@Param("tournamentId") Long tournamentId);
+
+    /**
+     * Считаем количество уникальных пар в турнире
+     */
+    @Query("SELECT COUNT(DISTINCT CASE " +
+            "WHEN r.mainPlayerId IS NOT NULL THEN r.mainPlayerId " +
+            "ELSE r.player.id END) " +
+            "FROM TournamentRegistration r " +
+            "WHERE r.tournament.id = :tournamentId " +
+            "AND r.isActive = true " +
+            "AND r.status = 'CONFIRMED' " +
+            "AND (r.partner IS NOT NULL OR r.partnerFirstName IS NOT NULL)")
+    long countUniquePairs(@Param("tournamentId") Long tournamentId);
 }

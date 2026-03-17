@@ -62,3 +62,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.20-add-oauth2-fields-to-player.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.21-add-double-tournament-fields.yaml
+      relativeToChangelogFile: true

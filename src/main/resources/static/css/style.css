@@ -2924,3 +2924,25 @@ h1, h2, h3, h4, h5, h6 {
         font-size: 1.3rem;
     }
 }
+
+/* Badge для отображения статуса регистрации на карточке */
+.my-tournament-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    margin-bottom: 12px;
+}
+
+.my-tournament-badge i {
+    margin-right: 5px;
+    font-size: 11px;
+}
+
+/* Подсветка карточки если пользователь зарегистрирован */
+.torneo-card.my-tournament {
+    border-left: 4px solid #28a745;
+}

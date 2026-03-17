@@ -21,4 +21,15 @@ public class TournamentRegistrationDto {
     private LocalDateTime cancellationDate;
     private String cancellationReason;
     private Boolean notifiedAboutVacancy;
+
+    // Новые поля для парного турнира
+    private Boolean isDoubleRegistration;
+    private Long partnerId;
+    private String partnerNombre;
+    private String partnerApellido;
+    private String partnerEmail;
+    private String partnerPhone;
+    private Boolean partnerRegistered;
+    private String partnerRegistrationToken;
+    private LocalDateTime partnerTokenExpiry;
 }

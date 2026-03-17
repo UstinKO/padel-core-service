@@ -1,10 +1,13 @@
 package com.padle.core.padelcoreservice.controller.player;
 
+import com.padle.core.padelcoreservice.dto.PartnerRegistrationDto;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
+import com.padle.core.padelcoreservice.exception.TournamentRegistrationException;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2User;
+import com.padle.core.padelcoreservice.service.DoubleTournamentRegistrationService;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +33,7 @@ public class PlayerDashboardController {
 
     private final TournamentService tournamentService;
     private final ObjectMapper objectMapper;
+    private final DoubleTournamentRegistrationService doubleTournamentRegistrationService;
 
     @GetMapping("/dashboard")
     public String dashboard(Model model, @AuthenticationPrincipal Object principal) {
@@ -175,5 +179,123 @@ public class PlayerDashboardController {
 
         log.warn("Unknown principal type: {}", principal.getClass().getName());
         return null;
+    }
+
+    @PostMapping("/tournaments/{tournamentId}/cancel-double")
+    @ResponseBody
+    public ResponseEntity<?> cancelDoubleRegistration(@PathVariable Long tournamentId,
+                                                      @AuthenticationPrincipal Object principal,
+                                                      @RequestParam String option,
+                                                      @RequestParam(required = false) String reason,
+                                                      @RequestParam(required = false) String replaceData) {
+        PlayerPadel player = extractPlayerFromPrincipal(principal);
+
+        if (player == null) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Usuario no autenticado"));
+        }
+
+        log.info("Player {} cancelling double registration for tournament {} with option: {}",
+                player.getId(), tournamentId, option);
+
+        try {
+            Map<String, Object> response = new HashMap<>();
+
+            // Получаем информацию о регистрации
+            TournamentRegistrationDto registration = tournamentService.getRegistration(tournamentId, player.getId())
+                    .orElseThrow(() -> new TournamentRegistrationException("Registro no encontrado"));
+
+            // Проверяем, зарегистрирован ли партнер
+            boolean isPartnerRegistered = registration.getPartnerId() != null;
+
+            if ("self".equals(option)) {
+                // Отмена только себя - доступно только если партнер зарегистрирован
+                if (!isPartnerRegistered) {
+                    return ResponseEntity.badRequest().body(Map.of("success", false,
+                            "message", "No puedes cancelar solo tu inscripción porque tu compañero no está registrado en el sistema. Debes cancelar toda la pareja."));
+                }
+
+                tournamentService.cancelRegistration(tournamentId, player.getId(), reason);
+                response.put("success", true);
+                response.put("message", "Tu inscripción ha sido cancelada. Tu compañero sigue inscrito.");
+
+            } else if ("full".equals(option)) {
+                // Отмена всей пары - доступно всегда
+                tournamentService.cancelPairRegistration(tournamentId, player.getId(), reason);
+                response.put("success", true);
+                response.put("message", "La inscripción de toda la pareja ha sido cancelada.");
+
+            } else if ("replace".equals(option)) {
+                // Замена себя другим игроком - доступно только если партнер зарегистрирован
+                if (!isPartnerRegistered) {
+                    return ResponseEntity.badRequest().body(Map.of("success", false,
+                            "message", "No puedes reemplazarte porque tu compañero no está registrado en el sistema. Debes cancelar toda la pareja."));
+                }
+
+                if (replaceData == null || replaceData.isEmpty()) {
+                    return ResponseEntity.badRequest().body(Map.of("success", false,
+                            "message", "Datos del nuevo jugador no proporcionados"));
+                }
+
+                // Парсим данные нового игрока
+                ObjectMapper mapper = new ObjectMapper();
+                Map<String, String> newPlayerData = mapper.readValue(replaceData, new com.fasterxml.jackson.core.type.TypeReference<Map<String, String>>(){});
+
+                // Создаем PartnerRegistrationDto из полученных данных
+                PartnerRegistrationDto partnerDto = new PartnerRegistrationDto();
+                partnerDto.setNombre(newPlayerData.get("firstName"));
+                partnerDto.setApellido(newPlayerData.get("lastName"));
+                partnerDto.setTelefono(newPlayerData.get("phone"));
+                partnerDto.setEmail(newPlayerData.get("email"));
+
+                // Получаем DTO турнира
+                TournamentDto tournamentDto = tournamentService.getTournamentDtoById(tournamentId)
+                        .orElseThrow(() -> new RuntimeException("Torneo no encontrado"));
+
+                // Вызываем метод замены
+                doubleTournamentRegistrationService.replacePlayerInPair(tournamentDto, player.getId(), partnerDto, reason);
+
+                response.put("success", true);
+                response.put("message", "Has sido reemplazado exitosamente. El nuevo jugador recibirá una invitación.");
+
+            } else {
+                return ResponseEntity.badRequest().body(Map.of("success", false,
+                        "message", "Opción no válida"));
+            }
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("Error cancelling double registration", e);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    @GetMapping("/tournaments/{tournamentId}/my-registration")
+    @ResponseBody
+    public ResponseEntity<?> getMyRegistration(@PathVariable Long tournamentId,
+                                               @AuthenticationPrincipal Object principal) {
+        PlayerPadel player = extractPlayerFromPrincipal(principal);
+
+        if (player == null) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Usuario no autenticado"));
+        }
+
+        Optional<TournamentRegistrationDto> registration = tournamentService.getRegistration(tournamentId, player.getId());
+
+        if (registration.isEmpty()) {
+            return ResponseEntity.ok(Map.of("registered", false));
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("registered", true);
+        response.put("partnerId", registration.get().getPartnerId());
+        response.put("partnerFirstName", registration.get().getPartnerNombre());
+        response.put("partnerLastName", registration.get().getPartnerApellido());
+        response.put("hasRegisteredPartner", registration.get().getPartnerId() != null);
+
+        return ResponseEntity.ok(response);
     }
 }

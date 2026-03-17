@@ -14,6 +14,8 @@ public interface PlayerRepository extends JpaRepository<PlayerPadel, Long> {
 
     Optional<PlayerPadel> findByEmail(String email);
 
+    Optional<PlayerPadel> findByTelefono(String telefono);  // Добавляем этот метод
+
     boolean existsByEmail(String email);
 
     boolean existsByTelefono(String telefono);

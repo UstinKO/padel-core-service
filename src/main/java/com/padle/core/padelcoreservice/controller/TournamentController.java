@@ -36,7 +36,7 @@ public class TournamentController {
 
     @GetMapping("/{id}")
     public ResponseEntity<TournamentDto> getTournamentById(@PathVariable Long id) {
-        return tournamentService.getTournamentById(id)
+        return tournamentService.getTournamentDtoById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
