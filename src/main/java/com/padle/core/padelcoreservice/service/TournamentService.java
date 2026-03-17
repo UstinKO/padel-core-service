@@ -42,6 +42,7 @@ public class TournamentService {
     private final PlayerService playerService;
     private final TournamentKingOfCourtRepository tournamentKingOfCourtRepository;
     private final EmailService emailService;
+    private final TournamentNotificationService notificationService;
 
     @Value("${app.base-url:http://localhost:8080}")
     private String baseUrl;
@@ -49,15 +50,18 @@ public class TournamentService {
     // ==================== Базовые методы для турниров ====================
 
     public List<TournamentDto> getAllTournaments() {
-        // Для админки показываем все, но помечаем удаленные
         return tournamentRepository.findAll().stream()
                 .map(this::mapToDtoWithDetails)
                 .collect(Collectors.toList());
     }
 
-    public Optional<TournamentDto> getTournamentById(Long id) {
+    public Optional<TournamentDto> getTournamentDtoById(Long id) {
         return tournamentRepository.findById(id)
                 .map(this::mapToDtoWithDetails);
+    }
+
+    public Optional<Tournament> getTournamentById(Long id) {
+        return tournamentRepository.findById(id);
     }
 
     public List<TournamentDto> getTournamentsByClub(Long clubId) {
@@ -103,8 +107,7 @@ public class TournamentService {
         Tournament tournament = tournamentRepository.findById(tournamentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tournament not found with id: " + tournamentId));
 
-        // Проверяем существование игрока
-        com.padle.core.padelcoreservice.model.PlayerPadel player = playerService.getPlayerById(playerId)
+        PlayerPadel player = playerService.getPlayerById(playerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Player not found with id: " + playerId));
 
         // Проверяем, активен ли турнир
@@ -152,7 +155,7 @@ public class TournamentService {
                     reg.setWaitlistPosition(null);
                     log.info("Player {} confirmed for tournament {}", playerId, tournamentId);
 
-                    // ОТПРАВЛЯЕМ ПОДТВЕРЖДЕНИЕ
+                    // Отправляем email напрямую через emailService (нет метода в notificationService)
                     sendConfirmationEmail(player, tournament);
 
                 } else {
@@ -164,7 +167,7 @@ public class TournamentService {
                     log.info("Player {} added to waitlist for tournament {} at position {}",
                             playerId, tournamentId, waitlistPosition);
 
-                    // ОТПРАВЛЯЕМ УВЕДОМЛЕНИЕ О ДОБАВЛЕНИИ В ЛИСТ ОЖИДАНИЯ
+                    // Отправляем email напрямую через emailService (нет метода в notificationService)
                     sendWaitlistNotification(player, tournament, waitlistPosition);
                 }
 
@@ -189,7 +192,7 @@ public class TournamentService {
             registration.setPosition((int) confirmedCount + 1);
             log.info("Player {} confirmed for tournament {}", playerId, tournamentId);
 
-            // ОТПРАВЛЯЕМ ПОДТВЕРЖДЕНИЕ
+            // Отправляем email напрямую через emailService
             sendConfirmationEmail(player, tournament);
 
         } else {
@@ -200,7 +203,7 @@ public class TournamentService {
             log.info("Player {} added to waitlist for tournament {} at position {}",
                     playerId, tournamentId, waitlistPosition);
 
-            // ОТПРАВЛЯЕМ УВЕДОМЛЕНИЕ О ДОБАВЛЕНИИ В ЛИСТ ОЖИДАНИЯ
+            // Отправляем email напрямую через emailService
             sendWaitlistNotification(player, tournament, waitlistPosition);
         }
 
@@ -225,7 +228,6 @@ public class TournamentService {
                     waitlistPosition
             );
             log.info("Waitlist notification email sent to {}", player.getEmail());
-
         } catch (Exception e) {
             log.error("Error sending waitlist notification email: {}", e.getMessage(), e);
         }
@@ -273,7 +275,6 @@ public class TournamentService {
         int availableSlots = tournament.getCupoMax() - (int) confirmedCount;
 
         if (availableSlots > 0) {
-            // Получаем только WAITLIST (без INVITED)
             List<TournamentRegistration> waitlist = registrationRepository
                     .findByTournamentIdAndStatusOrderByWaitlistPositionAsc(
                             tournamentId, RegistrationStatus.WAITLIST);
@@ -281,30 +282,79 @@ public class TournamentService {
             log.info("Found {} available slots and {} players in waitlist", availableSlots, waitlist.size());
 
             if (!waitlist.isEmpty()) {
-                // Берем только первого в очереди (независимо от количества свободных мест)
                 TournamentRegistration firstInWaitlist = waitlist.get(0);
-
-                // Отправляем приглашение только первому
                 sendInvitationToPlayer(firstInWaitlist, tournament);
             }
         }
     }
 
     private void sendInvitationToPlayer(TournamentRegistration registration, Tournament tournament) {
-        // Устанавливаем статус "приглашен" и время истечения (5 минут)
         registration.setStatus(RegistrationStatus.WAITLIST_INVITED);
-        registration.setInvitationExpiresAt(LocalDateTime.now().plusMinutes(5)); // 5 минут
+        registration.setInvitationExpiresAt(LocalDateTime.now().plusMinutes(5));
         registrationRepository.save(registration);
 
-        log.info("Invitation sent to player {} for tournament {} (expires at {})",
-                registration.getPlayer().getId(), tournament.getId(),
-                registration.getInvitationExpiresAt());
+        String confirmationUrl = String.format("%s/waitlist/confirm?registrationId=%d", baseUrl, registration.getId());
 
-        // Отправляем email с кнопкой подтверждения
+        // Отправляем email напрямую через emailService
         sendVacancyInvitationEmail(registration.getPlayer(), tournament, registration.getId());
     }
 
-    // ==================== Методы для получения информации о регистрациях ====================
+    private void sendVacancyInvitationEmail(PlayerPadel player, Tournament tournament, Long registrationId) {
+        try {
+            String dateStr = tournament.getFechaInicio().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+            String timeStr = tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm"));
+            String clubName = getClubName(tournament.getClubId());
+            String confirmationUrl = String.format("%s/waitlist/confirm?registrationId=%d", baseUrl, registrationId);
+
+            emailService.sendVacancyInvitationEmail(
+                    player.getEmail(),
+                    player.getNombre(),
+                    tournament.getNombre(),
+                    dateStr,
+                    timeStr,
+                    clubName,
+                    confirmationUrl
+            );
+            log.info("Vacancy invitation email sent to {}", player.getEmail());
+        } catch (Exception e) {
+            log.error("Error sending vacancy invitation email: {}", e.getMessage());
+        }
+    }
+
+    private void sendNoSpotsLeftEmail(PlayerPadel player, Tournament tournament) {
+        try {
+            emailService.sendNoSpotsLeftEmail(
+                    player.getEmail(),
+                    player.getNombre(),
+                    tournament.getNombre()
+            );
+            log.info("No spots left email sent to {}", player.getEmail());
+        } catch (Exception e) {
+            log.error("Error sending no spots left email: {}", e.getMessage());
+        }
+    }
+
+    private void sendConfirmationEmail(PlayerPadel player, Tournament tournament) {
+        try {
+            String dateStr = tournament.getFechaInicio().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+            String timeStr = tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm"));
+            String clubName = getClubName(tournament.getClubId());
+
+            emailService.sendTournamentConfirmationEmail(
+                    player.getEmail(),
+                    player.getNombre(),
+                    tournament.getNombre(),
+                    dateStr,
+                    timeStr,
+                    clubName
+            );
+            log.info("Tournament confirmation email sent to {}", player.getEmail());
+        } catch (Exception e) {
+            log.error("Error sending tournament confirmation email: {}", e.getMessage(), e);
+        }
+    }
+
+    // ==================== Остальные методы без изменений ====================
 
     public List<TournamentRegistrationDto> getRegistrationsByTournament(Long tournamentId) {
         return registrationRepository.findByTournamentId(tournamentId).stream()
@@ -461,24 +511,74 @@ public class TournamentService {
     private TournamentDto mapToDtoWithDetails(Tournament tournament) {
         TournamentDto dto = tournamentMapper.toDto(tournament);
 
-        // Загружаем информацию о клубе (название и адрес)
         clubService.getClubById(tournament.getClubId())
                 .ifPresent(club -> {
                     dto.setClubNombre(club.getNombre());
-                    // Получаем полный адрес через метод getDireccionCompleta()
                     dto.setClubDireccion(club.getDireccionCompleta());
                 });
 
-        long confirmedCount = registrationRepository.countByTournamentIdAndStatus(
-                tournament.getId(), RegistrationStatus.CONFIRMED);
+        long spotsByPairs = registrationRepository.countSpotsOccupiedByPairs(tournament.getId());
+        long spotsBySingles = registrationRepository.countSpotsOccupiedBySingles(tournament.getId());
+
+        long totalOccupiedSpots = spotsByPairs + spotsBySingles;
+
+        log.debug("Tournament {} - Pairs spots: {}, Singles spots: {}, Total: {}",
+                tournament.getId(), spotsByPairs, spotsBySingles, totalOccupiedSpots);
+
         long waitlistCount = registrationRepository.countByTournamentIdAndStatus(
                 tournament.getId(), RegistrationStatus.WAITLIST);
 
-        dto.setInscritosActuales((int) confirmedCount);
+        dto.setInscritosActuales((int) totalOccupiedSpots);
         dto.setWaitlistCount((int) waitlistCount);
-        dto.setDisponibles(tournament.getCupoMax() - (int) confirmedCount);
+        dto.setDisponibles(tournament.getCupoMax() - (int) totalOccupiedSpots);
 
         return dto;
+    }
+
+    @Transactional
+    public void cancelPairRegistration(Long tournamentId, Long playerId, String reason) {
+        log.info("Cancelling pair registration for player {} from tournament {}", playerId, tournamentId);
+
+        // Находим ВСЕ активные регистрации для этого турнира и этого игрока (и его пары)
+        List<TournamentRegistration> registrations = registrationRepository.findByTournamentId(tournamentId)
+                .stream()
+                .filter(r -> r.getIsActive())
+                .filter(r -> {
+                    // Если это регистрация самого игрока
+                    if (r.getPlayer().getId().equals(playerId)) {
+                        return true;
+                    }
+                    // Если это регистрация партнера (проверяем по mainPlayerId или partner)
+                    if (r.getMainPlayerId() != null && r.getMainPlayerId().equals(playerId)) {
+                        return true;
+                    }
+                    if (r.getPartner() != null && r.getPartner().getId().equals(playerId)) {
+                        return true;
+                    }
+                    return false;
+                })
+                .collect(Collectors.toList());
+
+        log.info("Found {} registrations to delete", registrations.size());
+
+        // Просто удаляем все найденные регистрации
+        for (TournamentRegistration reg : registrations) {
+            registrationRepository.delete(reg);
+            log.info("Deleted registration id: {} for player: {}", reg.getId(), reg.getPlayer().getId());
+        }
+
+        // Обрабатываем лист ожидания, если освободились места
+        Tournament tournament = tournamentRepository.findById(tournamentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tournament not found"));
+
+        long confirmedCount = registrationRepository.countByTournamentIdAndStatus(
+                tournamentId, RegistrationStatus.CONFIRMED);
+
+        if (confirmedCount < tournament.getCupoMax()) {
+            processWaitlistForTournament(tournamentId);
+        }
+
+        log.info("Pair registration deleted successfully for tournament {}", tournamentId);
     }
 
     private void validateStatusTransition(TournamentStatus current, TournamentStatus newStatus) {
@@ -655,73 +755,12 @@ public class TournamentService {
         log.info("Player {} confirmed from waitlist for tournament {}",
                 registration.getPlayer().getId(), tournament.getId());
 
-        // Отправляем подтверждение
+        // Отправляем email напрямую через emailService
         sendConfirmationEmail(registration.getPlayer(), tournament);
 
-        // После подтверждения одного игрока, запускаем обработку для следующего в очереди
-        // (если места еще есть)
         processWaitlistForTournament(tournament.getId());
 
         return true;
-    }
-
-    private void sendVacancyInvitationEmail(PlayerPadel player, Tournament tournament, Long registrationId) {
-        try {
-            String dateStr = tournament.getFechaInicio().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-            String timeStr = tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm"));
-            String clubName = getClubName(tournament.getClubId());
-            String confirmationUrl = String.format("%s/waitlist/confirm?registrationId=%d", baseUrl, registrationId);
-
-            emailService.sendVacancyInvitationEmail(
-                    player.getEmail(),
-                    player.getNombre(),
-                    tournament.getNombre(),
-                    dateStr,
-                    timeStr,
-                    clubName,
-                    confirmationUrl
-            );
-            log.info("Vacancy invitation email sent to {}", player.getEmail());
-
-        } catch (Exception e) {
-            log.error("Error sending vacancy invitation email: {}", e.getMessage());
-        }
-    }
-
-    private void sendNoSpotsLeftEmail(PlayerPadel player, Tournament tournament) {
-        try {
-            emailService.sendNoSpotsLeftEmail(
-                    player.getEmail(),
-                    player.getNombre(),
-                    tournament.getNombre()
-            );
-            log.info("No spots left email sent to {}", player.getEmail());
-
-        } catch (Exception e) {
-            log.error("Error sending no spots left email: {}", e.getMessage());
-        }
-    }
-
-    private void sendConfirmationEmail(PlayerPadel player, Tournament tournament) {
-        try {
-            String dateStr = tournament.getFechaInicio().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-            String timeStr = tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm"));
-            String clubName = getClubName(tournament.getClubId());
-
-            // Используем новый метод для подтверждения регистрации в турнире
-            emailService.sendTournamentConfirmationEmail(
-                    player.getEmail(),
-                    player.getNombre(),
-                    tournament.getNombre(),
-                    dateStr,
-                    timeStr,
-                    clubName
-            );
-            log.info("Tournament confirmation email sent to {}", player.getEmail());
-
-        } catch (Exception e) {
-            log.error("Error sending tournament confirmation email: {}", e.getMessage(), e);
-        }
     }
 
     /**

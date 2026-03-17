@@ -53,6 +53,96 @@ public class EmailService {
     }
 
     /**
+     * Отправка приглашения партнеру (для уже зарегистрированного пользователя)
+     */
+    public void sendPartnerInvitationEmail(String to, String partnerName, String mainPlayerName,
+                                           String tournamentName, String tournamentDate,
+                                           String tournamentTime, String clubName) {
+        try {
+            log.info("📧 Enviando invitación a compañero (registrado) a: {}", to);
+
+            Context context = new Context();
+            context.setVariable("partnerName", partnerName);
+            context.setVariable("mainPlayerName", mainPlayerName);
+            context.setVariable("tournamentName", tournamentName);
+            context.setVariable("tournamentDate", tournamentDate);
+            context.setVariable("tournamentTime", tournamentTime);
+            context.setVariable("clubName", clubName);
+            context.setVariable("baseUrl", baseUrl);
+            context.setVariable("year", java.time.Year.now().getValue());
+
+            String htmlContent = templateEngine.process("email/partner-invitation", context);
+
+            sendHtmlEmail(to, "🎾 Te han inscrito en un torneo de dobles - E-Padel", htmlContent);
+            log.info("✅ Invitación a compañero enviada a: {}", to);
+
+        } catch (Exception e) {
+            log.error("❌ Error enviando invitación a compañero a {}: {}", to, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Отправка приглашения новому партнеру (незарегистрированному)
+     */
+    public void sendNewPartnerInvitationEmail(String to, String partnerName, String mainPlayerName,
+                                              String tournamentName, String tournamentDate,
+                                              String tournamentTime, String clubName,
+                                              String completionUrl, int expiryHours) {
+        try {
+            log.info("📧 Enviando invitación a nuevo compañero a: {}", to);
+
+            Context context = new Context();
+            context.setVariable("partnerName", partnerName);
+            context.setVariable("mainPlayerName", mainPlayerName);
+            context.setVariable("tournamentName", tournamentName);
+            context.setVariable("tournamentDate", tournamentDate);      // ← добавляем
+            context.setVariable("tournamentTime", tournamentTime);      // ← добавляем
+            context.setVariable("clubName", clubName);                  // ← добавляем
+            context.setVariable("completionUrl", completionUrl);
+            context.setVariable("expiryHours", expiryHours);
+            context.setVariable("baseUrl", baseUrl);
+            context.setVariable("year", java.time.Year.now().getValue());
+
+            String htmlContent = templateEngine.process("email/new-partner-invitation", context);
+
+            sendHtmlEmail(to, "🎾 Te han invitado a jugar un torneo de dobles - E-Padel", htmlContent);
+            log.info("✅ Invitación a nuevo compañero enviada a: {}", to);
+
+        } catch (Exception e) {
+            log.error("❌ Error enviando invitación a nuevo compañero a {}: {}", to, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Отправка подтверждения регистрации пары
+     */
+    public void sendPairConfirmationEmail(String to, String playerName, String partnerName,
+                                          String tournamentName, String tournamentDate,
+                                          String tournamentTime, String clubName) {
+        try {
+            log.info("📧 Enviando confirmación de pareja a: {}", to);
+
+            Context context = new Context();
+            context.setVariable("playerName", playerName);
+            context.setVariable("partnerName", partnerName);
+            context.setVariable("tournamentName", tournamentName);
+            context.setVariable("tournamentDate", tournamentDate);
+            context.setVariable("tournamentTime", tournamentTime);
+            context.setVariable("clubName", clubName);
+            context.setVariable("baseUrl", baseUrl);
+            context.setVariable("year", java.time.Year.now().getValue());
+
+            String htmlContent = templateEngine.process("email/pair-confirmation", context);
+
+            sendHtmlEmail(to, "🎾 ¡Pareja confirmada para el torneo! - E-Padel", htmlContent);
+            log.info("✅ Confirmación de pareja enviada a: {}", to);
+
+        } catch (Exception e) {
+            log.error("❌ Error enviando confirmación de pareja a {}: {}", to, e.getMessage(), e);
+        }
+    }
+
+    /**
      * Отправка приветственного письма
      */
     public void sendWelcomeEmail(String to, String nombre) {
@@ -142,7 +232,7 @@ public class EmailService {
             context.setVariable("clubName", clubName);
             context.setVariable("year", java.time.Year.now().getValue());
 
-            String htmlContent = templateEngine.process("email/confirmation", context);
+            String htmlContent = templateEngine.process("email/tournament-confirmation", context);
 
             sendHtmlEmail(to, "✅ Tu participación ha sido confirmada", htmlContent);
             log.info("✅ Подтверждение регистрации отправлено на: {}", to);

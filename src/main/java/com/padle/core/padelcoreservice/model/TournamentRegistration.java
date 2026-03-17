@@ -80,6 +80,32 @@ public class TournamentRegistration {
     @Builder.Default
     private List<Payment> payments = new ArrayList<>();
 
+    @Column(name = "is_double_registration")
+    @Builder.Default
+    private Boolean isDoubleRegistration = false;
+
+    @Column(name = "main_player_id")
+    private Long mainPlayerId;  // ID главного игрока (кто создал регистрацию)
+
+    // Поля для хранения данных партнера (незарегистрированного)
+    @Column(name = "partner_first_name")
+    private String partnerFirstName;
+
+    @Column(name = "partner_last_name")
+    private String partnerLastName;
+
+    @Column(name = "partner_phone")
+    private String partnerPhone;
+
+    @Column(name = "partner_email")
+    private String partnerEmail;
+
+    @Column(name = "partner_registration_token")
+    private String partnerRegistrationToken;
+
+    @Column(name = "partner_token_expiry")
+    private LocalDateTime partnerTokenExpiry;
+
     // Хелпер-метод для получения последнего платежа
     public Optional<Payment> getLatestPayment() {
         return payments.stream()
@@ -137,5 +163,37 @@ public class TournamentRegistration {
         this.cancellationDate = LocalDateTime.now();
         this.cancellationReason = reason;
         this.isActive = false;
+    }
+
+    public boolean isPendingPartner() {
+        return status == RegistrationStatus.PENDING_PARTNER;
+    }
+
+    public boolean isPartnerInvited() {
+        return status == RegistrationStatus.PARTNER_INVITED;
+    }
+
+    public boolean isPairComplete() {
+        return status == RegistrationStatus.PAIR_REGISTERED ||
+                (status == RegistrationStatus.CONFIRMED && partner != null);
+    }
+
+    // Новые вспомогательные методы
+    public void setPartnerInvited(String token, LocalDateTime expiry) {
+        this.status = RegistrationStatus.PARTNER_INVITED;
+        this.partnerRegistrationToken = token;
+        this.partnerTokenExpiry = expiry;
+    }
+
+    public void setPartnerPending() {
+        this.status = RegistrationStatus.PENDING_PARTNER;
+        this.partnerRegistrationToken = null;
+        this.partnerTokenExpiry = null;
+    }
+
+    public void setPairConfirmed() {
+        this.status = RegistrationStatus.PAIR_REGISTERED;
+        this.partnerRegistrationToken = null;
+        this.partnerTokenExpiry = null;
     }
 }

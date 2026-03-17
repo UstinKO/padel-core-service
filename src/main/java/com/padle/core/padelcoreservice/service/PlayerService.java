@@ -4,7 +4,11 @@ import com.padle.core.padelcoreservice.dto.PlayerResponseDto;
 import com.padle.core.padelcoreservice.dto.RegistroRequestDto;
 import com.padle.core.padelcoreservice.mapper.PlayerMapper;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.padelcoreservice.model.Tournament;
+import com.padle.core.padelcoreservice.model.TournamentRegistration;
+import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
+import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -27,6 +32,8 @@ public class PlayerService {
     private final PlayerMapper playerMapper;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private final TournamentRegistrationRepository registrationRepository;
+    private final DoubleTournamentRegistrationService doubleTournamentRegistrationService;
 
     @Transactional
     public PlayerResponseDto registrarJugador(RegistroRequestDto request) {
@@ -101,6 +108,9 @@ public class PlayerService {
         PlayerPadel updatedPlayer = playerRepository.save(player);
         log.info("✅ Email confirmado para jugador con ID: {}", updatedPlayer.getId());
 
+        // После подтверждения email, обновляем статус регистрации для парных турниров
+        updateDoubleRegistrationStatusAfterEmailConfirm(updatedPlayer);
+
         // Enviar email de bienvenida (opcional)
         try {
             emailService.sendWelcomeEmail(
@@ -112,6 +122,42 @@ public class PlayerService {
         }
 
         return playerMapper.entityToResponse(updatedPlayer);
+    }
+
+    /**
+     * Обновляет статус регистрации после подтверждения email для парных турниров
+     */
+    @Transactional
+    protected void updateDoubleRegistrationStatusAfterEmailConfirm(PlayerPadel player) {
+        // Находим все регистрации в статусе PENDING_PARTNER для этого игрока
+        List<TournamentRegistration> pendingRegistrations = registrationRepository
+                .findActiveDoubleRegistrationsByPlayerId(player.getId())
+                .stream()
+                .filter(reg -> reg.getStatus() == RegistrationStatus.PENDING_PARTNER)
+                .toList();
+
+        for (TournamentRegistration registration : pendingRegistrations) {
+            // Определяем новый статус на основе наличия места
+            RegistrationStatus newStatus = registration.getPosition() != null ?
+                    RegistrationStatus.CONFIRMED : RegistrationStatus.WAITLIST;
+
+            registration.setStatus(newStatus);
+            registrationRepository.save(registration);
+
+            // Обновляем статус основной регистрации
+            registrationRepository.findByTournamentIdAndPlayerId(
+                            registration.getTournament().getId(), registration.getMainPlayerId())
+                    .ifPresent(mainReg -> {
+                        mainReg.setStatus(newStatus);
+                        registrationRepository.save(mainReg);
+
+                        // Отправляем подтверждение обоим игрокам через DoubleTournamentRegistrationService
+                        doubleTournamentRegistrationService.sendPairConfirmationEmails(mainReg, registration);
+                    });
+
+            log.info("Updated double registration status to {} for player {}",
+                    newStatus, player.getId());
+        }
     }
 
     // ✅ Resto de métodos sin cambios...
@@ -200,5 +246,23 @@ public class PlayerService {
         return playerRepository.findAllByOrderByFechaRegistroDesc().stream()
                 .map(playerMapper::entityToResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<PlayerPadel> findByTelefono(String telefono) {
+        return playerRepository.findByTelefono(telefono);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean existsByTelefono(String telefono) {
+        return playerRepository.existsByTelefono(telefono);
+    }
+
+    @Transactional
+    public PlayerPadel save(PlayerPadel player) {
+        if (player.getId() == null) {
+            player.setFechaRegistro(LocalDateTime.now());
+        }
+        return playerRepository.save(player);
     }
 }

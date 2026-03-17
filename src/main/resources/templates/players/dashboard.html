@@ -20,6 +20,7 @@
     <!-- Custom Styles -->
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+    <link rel="stylesheet" th:href="@{/css/tournament-details.css}">
 </head>
 <body>
 <!-- Header con navegación para usuarios autenticados -->
@@ -177,6 +178,17 @@
                     </div>
 
                     <div class="filter-group">
+                        <label for="dashboardModalidad">
+                            <i class="fas fa-users"></i> Modalidad
+                        </label>
+                        <select id="dashboardModalidad" class="filter-select">
+                            <option value="todos">Todos</option>
+                            <option value="INDIVIDUAL">Individual</option>
+                            <option value="DOBLES">Parejas</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
                         <label for="dashboardTipo">
                             <i class="fas fa-trophy"></i> Tipo
                         </label>
@@ -235,6 +247,187 @@
         <p>&copy; 2026 E-Padel. Todos los derechos reservados.</p>
     </div>
 </footer>
+
+<!-- Модальное окно для регистрации на парный турнир -->
+<div class="modal" id="partnerModal" tabindex="-1" role="dialog" aria-labelledby="partnerModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="partnerModalLabel">
+                    <i class="fas fa-user-friends"></i>
+                    Registrar pareja para <span id="modalTournamentName"></span>
+                </h5>
+                <button type="button" class="modal-close" data-dismiss="modal" aria-label="Cerrar">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="partnerForm">
+                    <input type="hidden" id="modalTournamentId">
+
+                    <div class="form-group">
+                        <label for="partnerFirstName">
+                            <i class="fas fa-user"></i>
+                            Nombre del compañero
+                        </label>
+                        <input type="text" class="form-control" id="partnerFirstName"
+                               placeholder="Ej: Juan" required maxlength="50">
+                        <div class="invalid-feedback">Por favor ingresa el nombre</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="partnerLastName">
+                            <i class="fas fa-user"></i>
+                            Apellido del compañero
+                        </label>
+                        <input type="text" class="form-control" id="partnerLastName"
+                               placeholder="Ej: Pérez" required maxlength="50">
+                        <div class="invalid-feedback">Por favor ingresa el apellido</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="partnerPhone">
+                            <i class="fas fa-phone"></i>
+                            Teléfono del compañero
+                        </label>
+                        <input type="tel" class="form-control" id="partnerPhone"
+                               placeholder="Ej: +34 600 123 456" required
+                               pattern="^\+?[0-9\s\-\(\)]{8,20}$">
+                        <div class="invalid-feedback">Por favor ingresa un teléfono válido</div>
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i>
+                            Si tu compañero ya está registrado, lo identificaremos por su teléfono
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="partnerEmail">
+                            <i class="fas fa-envelope"></i>
+                            Email del compañero (opcional)
+                        </label>
+                        <input type="email" class="form-control" id="partnerEmail"
+                               placeholder="Ej: juan@email.com">
+                        <small class="form-text text-muted">
+                            Si tu compañero no está registrado, le enviaremos un email para completar su registro
+                        </small>
+                    </div>
+                </form>
+
+                <!-- Информационные сообщения -->
+                <div id="partnerInfoMessage" class="info-message" style="display: none;">
+                    <i class="fas fa-info-circle"></i>
+                    <span id="infoMessageText"></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" data-dismiss="modal">
+                    <i class="fas fa-times"></i>
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" id="submitPartnerBtn">
+                    <i class="fas fa-check-circle"></i>
+                    Registrar pareja
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для подтверждения результата -->
+<div class="modal" id="resultModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-body text-center" id="resultModalBody">
+                <!-- Контент будет заполняться динамически -->
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-primary" data-dismiss="modal">Aceptar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно подтверждения -->
+<div class="modal" id="confirmModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmModalTitle">Confirmar</h5>
+                <button type="button" class="modal-close" data-dismiss="modal" aria-label="Cerrar">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmModalMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" id="confirmModalCancelBtn">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="confirmModalBtn">Aceptar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно отмены для парных турниров -->
+<div class="modal" id="doubleCancelModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-friends"></i>
+                    Cancelar inscripción <span id="doubleCancelTournamentName"></span>
+                </h5>
+                <button type="button" class="modal-close" data-dismiss="modal" aria-label="Cerrar">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="doubleCancelTournamentId">
+                <input type="hidden" id="doubleCancelRegistrationId">
+
+                <div class="form-group">
+                    <label>¿Qué deseas hacer?</label>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="cancelOption" value="full">
+                            <span class="radio-custom"></span>
+                            <span class="radio-text">
+                                <strong>Cancelar toda la pareja</strong>
+                                <small class="text-muted d-block">Ambos quedan fuera del torneo</small>
+                            </span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="cancelOption" value="replace" id="cancelOptionReplace">
+                            <span class="radio-custom"></span>
+                            <span class="radio-text">
+                                <strong>Reemplazarme por otro jugador</strong>
+                                <small class="text-muted d-block">Mi compañero sigue y yo soy reemplazado</small>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group" id="replacePlayerFields" style="display: none;">
+                    <label>Datos del nuevo jugador</label>
+                    <input type="text" class="form-control mb-2" id="replaceFirstName"
+                           placeholder="Nombre">
+                    <input type="text" class="form-control mb-2" id="replaceLastName"
+                           placeholder="Apellido">
+                    <input type="tel" class="form-control mb-2" id="replacePhone"
+                           placeholder="Teléfono">
+                    <input type="email" class="form-control" id="replaceEmail"
+                           placeholder="Email (opcional)">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" id="doubleCancelCancelBtn">Volver</button>
+                <button type="button" class="btn btn-danger" id="doubleCancelConfirmBtn">
+                    <i class="fas fa-times-circle"></i> Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Datos de torneos para JavaScript -->
 <script th:inline="javascript">

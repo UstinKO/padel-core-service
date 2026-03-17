@@ -43,10 +43,8 @@ public class TournamentViewController {
         log.info("Viewing tournament details for id: {}", id);
 
         try {
-            // Извлекаем игрока из principal
             PlayerPadel player = SecurityUtils.extractPlayer(principal);
 
-            // Используем метод, который возвращает только активные турниры
             Optional<TournamentDto> tournamentOpt = tournamentService.getActiveTournamentById(id);
 
             if (tournamentOpt.isEmpty()) {
@@ -56,22 +54,33 @@ public class TournamentViewController {
 
             TournamentDto tournament = tournamentOpt.get();
 
-            // Проверяем, есть ли активный турнир "Король Корта"
+            // ✅ Получаем ВСЕ регистрации на турнир
+            List<TournamentRegistrationDto> registrations =
+                    tournamentService.getRegistrationsByTournament(id);
+            model.addAttribute("registrations", registrations);
+
+            // Логируем для отладки
+            for (TournamentRegistrationDto reg : registrations) {
+                log.debug("Registration: player={} {}, partner={} {}, status={}, isDouble={}",
+                        reg.getPlayerNombre(), reg.getPlayerApellido(),
+                        reg.getPartnerNombre(), reg.getPartnerApellido(),
+                        reg.getStatus(), reg.getIsDoubleRegistration());
+            }
+
+            // Проверяем наличие King of Court
             List<TournamentKingOfCourt> activeKings = tournamentKingOfCourtRepository
                     .findAllByTournamentIdAndIsActiveTrue(id);
 
             if (!activeKings.isEmpty()) {
                 TournamentKingOfCourt king = activeKings.get(0);
                 model.addAttribute("kingOfCourtActive", true);
-
-                // Получаем данные для отображения
                 KingOfCourtStateDTO kingData = kingOfCourtService.getCurrentState(king.getId());
                 model.addAttribute("kingTournament", kingData);
             } else {
                 model.addAttribute("kingOfCourtActive", false);
             }
 
-            // Проверяем, зарегистрирован ли текущий пользователь на этот турнир
+            // Проверяем регистрацию текущего пользователя
             boolean isRegistered = false;
             boolean isInWaitlist = false;
             TournamentRegistrationDto userRegistration = null;
@@ -85,24 +94,22 @@ public class TournamentViewController {
                     userRegistration = registration.get();
                     isInWaitlist = userRegistration.getStatus() ==
                             com.padle.core.padelcoreservice.model.enums.RegistrationStatus.WAITLIST;
-                    log.info("User registration found: status={}, isActive should be true",
-                            userRegistration.getStatus());
+                    log.info("User registration found: status={}", userRegistration.getStatus());
                 } else {
                     log.info("No active registration found for user {} on tournament {}",
                             player.getId(), id);
                 }
             }
 
-            // Получаем количество свободных мест
             int availableSpots = tournament.getDisponibles();
 
-            // Конвертируем турнир в JSON для JavaScript
             ObjectMapper mapper = new ObjectMapper();
             mapper.registerModule(new JavaTimeModule());
             String tournamentJson = mapper.writeValueAsString(tournament);
 
             model.addAttribute("tournament", tournament);
             model.addAttribute("tournamentJson", tournamentJson);
+            model.addAttribute("registrations", registrations);
             model.addAttribute("isRegistered", isRegistered);
             model.addAttribute("isInWaitlist", isInWaitlist);
             model.addAttribute("userRegistration", userRegistration);

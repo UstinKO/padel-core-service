@@ -77,7 +77,7 @@ public class TestTournamentController {
 
         try (Connection conn = dataSource.getConnection()) {
             // Проверяем существование турнира
-            TournamentDto tournament = tournamentService.getTournamentById(tournamentId)
+            TournamentDto tournament = tournamentService.getTournamentDtoById(tournamentId)
                     .orElse(null);
 
             if (tournament == null) {
@@ -292,7 +292,7 @@ public class TestTournamentController {
                 stats.put("maxPosition", rs.getInt("max_pos"));
 
                 // Получаем информацию о турнире для лимита
-                TournamentDto tournament = tournamentService.getTournamentById(tournamentId).orElse(null);
+                TournamentDto tournament = tournamentService.getTournamentDtoById(tournamentId).orElse(null);
                 if (tournament != null) {
                     stats.put("maxAllowed", tournament.getCupoMax());
                     stats.put("available", tournament.getCupoMax() - rs.getInt("confirmed"));

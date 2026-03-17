@@ -407,5 +407,112 @@
     /*]]>*/
 </script>
 <script th:src="@{/js/tournament-details.js}"></script>
+
+<!-- Модальное окно для регистрации на парный турнир -->
+<div class="modal" id="partnerModal" tabindex="-1" role="dialog" aria-labelledby="partnerModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="partnerModalLabel">
+                    <i class="fas fa-user-friends"></i>
+                    Registrar pareja para <span id="modalTournamentName"></span>
+                </h5>
+                <button type="button" class="modal-close" data-dismiss="modal" aria-label="Cerrar">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="partnerForm">
+                    <input type="hidden" id="modalTournamentId">
+
+                    <div class="form-group">
+                        <label for="partnerFirstName">
+                            <i class="fas fa-user"></i>
+                            Nombre del compañero
+                        </label>
+                        <input type="text" class="form-control" id="partnerFirstName"
+                               placeholder="Ej: Juan" required maxlength="50">
+                        <div class="invalid-feedback">Por favor ingresa el nombre</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="partnerLastName">
+                            <i class="fas fa-user"></i>
+                            Apellido del compañero
+                        </label>
+                        <input type="text" class="form-control" id="partnerLastName"
+                               placeholder="Ej: Pérez" required maxlength="50">
+                        <div class="invalid-feedback">Por favor ingresa el apellido</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="partnerPhone">
+                            <i class="fas fa-phone"></i>
+                            Teléfono del compañero
+                        </label>
+                        <input type="tel" class="form-control" id="partnerPhone"
+                               placeholder="Ej: +34 600 123 456" required
+                               pattern="^\+?[0-9\s\-\(\)]{8,20}$">
+                        <div class="invalid-feedback">Por favor ingresa un teléfono válido</div>
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i>
+                            Si tu compañero ya está registrado, lo identificaremos por su teléfono
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="partnerEmail">
+                            <i class="fas fa-envelope"></i>
+                            Email del compañero (opcional)
+                        </label>
+                        <input type="email" class="form-control" id="partnerEmail"
+                               placeholder="Ej: juan@email.com">
+                        <small class="form-text text-muted">
+                            Si tu compañero no está registrado, le enviaremos un email para completar su registro
+                        </small>
+                    </div>
+                </form>
+
+                <!-- Информационные сообщения -->
+                <div id="partnerInfoMessage" class="info-message" style="display: none;">
+                    <i class="fas fa-info-circle"></i>
+                    <span id="infoMessageText"></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" data-dismiss="modal">
+                    <i class="fas fa-times"></i>
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" id="submitPartnerBtn">
+                    <i class="fas fa-check-circle"></i>
+                    Registrar pareja
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для подтверждения результата -->
+<div class="modal" id="resultModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-body text-center" id="resultModalBody">
+                <!-- Контент будет заполняться динамически -->
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-primary" data-dismiss="modal">Aceptar</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Datos para JavaScript -->
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    window.tournament = /*[[${tournament}]]*/ {};
+    window.isAuthenticated = /*[[${isAuthenticated}]]*/ false;
+    console.log('Tournament data from server:', window.tournament);
+    /*]]>*/
+</script>
 </body>
 </html>

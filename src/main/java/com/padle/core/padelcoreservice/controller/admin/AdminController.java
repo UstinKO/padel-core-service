@@ -141,7 +141,7 @@ public class AdminController {
     public String viewTournament(@PathVariable Long id, Model model) {
         log.info("Viewing tournament details: {}", id);
 
-        TournamentDto tournament = tournamentService.getTournamentById(id)
+        TournamentDto tournament = tournamentService.getTournamentDtoById(id)
                 .orElseThrow(() -> new RuntimeException("Tournament not found"));
 
         // Проверяем, есть ли активный турнир "Король Корта"
@@ -164,7 +164,7 @@ public class AdminController {
     public String showEditForm(@PathVariable Long id, Model model) {
         log.info("Editing tournament: {}", id);
 
-        TournamentDto tournament = tournamentService.getTournamentById(id)
+        TournamentDto tournament = tournamentService.getTournamentDtoById(id)
                 .orElseThrow(() -> new RuntimeException("Tournament not found"));
 
         model.addAttribute("tournament", tournament);

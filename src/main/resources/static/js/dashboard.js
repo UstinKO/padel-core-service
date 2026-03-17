@@ -39,6 +39,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 !newToggler.contains(e.target)) {
                 navbarNav.classList.remove('show');
             }
+            setTimeout(() => {
+                const modal = document.getElementById('partnerModal');
+                console.log('🔍 Проверка модального окна после загрузки:', modal ? '✅ найдено' : '❌ не найдено');
+                if (modal) {
+                    console.log('📌 Классы модального окна:', modal.className);
+                    console.log('📌 Стили модального окна:', modal.style.display);
+                }
+            }, 1000);
         });
     }
 
@@ -68,6 +76,10 @@ document.addEventListener('DOMContentLoaded', function() {
             'MASCULINO': 'Masculino',
             'FEMENINO': 'Femenino',
             'MIXTO': 'Mixto'
+        },
+        modalidad: {
+            'INDIVIDUAL': 'Individual',
+            'DOBLES': 'Dobles'
         }
     };
 
@@ -86,6 +98,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const totalCount = document.getElementById('totalCount');
     const noTournamentsMessage = document.getElementById('noTournamentsMessage');
     const resultsCounter = document.getElementById('resultsCounter');
+    const modalidadSelect = document.getElementById('dashboardModalidad');
 
     // Данные турниров
     const tournaments = window.tournamentData || [];
@@ -128,6 +141,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (generoSelect) generoSelect.value = 'todos';
             if (nivelSelect) nivelSelect.value = 'todos';
             if (tipoSelect) tipoSelect.value = 'todos';
+            if (modalidadSelect) modalidadSelect.value = 'todos';
             if (myTournamentsCheckbox) myTournamentsCheckbox.checked = false;
             applyFiltersFunction();
         });
@@ -139,6 +153,7 @@ document.addEventListener('DOMContentLoaded', function() {
             genero: generoSelect ? generoSelect.value : 'todos',
             nivel: nivelSelect ? nivelSelect.value : 'todos',
             tipo: tipoSelect ? tipoSelect.value : 'todos',
+            modalidad: modalidadSelect ? modalidadSelect.value : 'todos',
             myTournamentsOnly: myTournamentsCheckbox ? myTournamentsCheckbox.checked : false
         };
 
@@ -172,6 +187,13 @@ document.addEventListener('DOMContentLoaded', function() {
             // Фильтр по типу
             if (filters.tipo !== 'todos') {
                 if (tournament.tipo !== filters.tipo) {
+                    return false;
+                }
+            }
+
+            // ✅ НОВЫЙ ФИЛЬТР: по модальности (SINGLES/DOBLES)
+            if (filters.modalidad !== 'todos') {
+                if (tournament.modalidad !== filters.modalidad) {
                     return false;
                 }
             }
@@ -324,68 +346,455 @@ ${!isMyTournament ? `
         const tournamentId = button.dataset.tournamentId;
         const tournamentName = button.dataset.tournamentName;
 
-        // Показываем подтверждение
-        if (!confirm(`¿Deseas inscribirte en el torneo "${tournamentName}"?`)) {
+        const tournament = tournaments.find(t => t.id === parseInt(tournamentId));
+
+        if (tournament && tournament.modalidad === 'DOBLES') {
+            openPartnerModal(tournamentId, tournamentName, tournament);
             return;
         }
 
-        // Блокируем кнопку
-        button.disabled = true;
-        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+        // Вместо confirm используем модальное окно
+        showConfirmModal(
+            'Confirmar inscripción',
+            `¿Deseas inscribirte en el torneo "${tournamentName}"?`,
+            async () => {
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+
+                try {
+                    const response = await fetch(`/players/tournaments/${tournamentId}/register`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        showResultModal('success', data.message);
+                        myTournamentIds.add(parseInt(tournamentId));
+                        if (myTournamentsCount) {
+                            myTournamentsCount.textContent = `(${myTournamentIds.size})`;
+                        }
+                        applyFiltersFunction();
+                    } else {
+                        showResultModal('error', 'Error: ' + data.message);
+                        button.disabled = false;
+                        button.innerHTML = '<i class="fas fa-plus-circle"></i> Registrarse';
+                    }
+                } catch (error) {
+                    console.error('Error registering:', error);
+                    showResultModal('error', 'Error al procesar la solicitud');
+                    button.disabled = false;
+                    button.innerHTML = '<i class="fas fa-plus-circle"></i> Registrarse';
+                }
+            }
+        );
+    }
+
+    // Функция открытия модального окна для парной регистрации
+    function openPartnerModal(tournamentId, tournamentName, tournament) {
+        console.log('🔍 Ищем модальное окно с ID: partnerModal');
+
+        const modal = document.getElementById('partnerModal');
+        console.log('📌 Результат поиска:', modal);
+
+        if (!modal) {
+            console.error('❌ Модальное окно не найдено в DOM');
+            console.log('📋 Доступные модальные окна:', document.querySelectorAll('.modal'));
+            return;
+        }
+
+        console.log('✅ Модальное окно найдено, открываем...');
+
+        // Заполняем данные
+        const modalTitle = document.getElementById('modalTournamentName');
+        const modalId = document.getElementById('modalTournamentId');
+
+        if (modalTitle) modalTitle.textContent = tournamentName;
+        if (modalId) modalId.value = tournamentId;
+
+        // Очищаем форму
+        const firstName = document.getElementById('partnerFirstName');
+        const lastName = document.getElementById('partnerLastName');
+        const phone = document.getElementById('partnerPhone');
+        const email = document.getElementById('partnerEmail');
+
+        if (firstName) firstName.value = '';
+        if (lastName) lastName.value = '';
+        if (phone) phone.value = '';
+        if (email) email.value = '';
+
+        // Убираем старые обработчики и добавляем новый
+        const submitBtn = document.getElementById('submitPartnerBtn');
+        if (submitBtn) {
+            const newSubmitBtn = submitBtn.cloneNode(true);
+            submitBtn.parentNode.replaceChild(newSubmitBtn, submitBtn);
+            newSubmitBtn.addEventListener('click', () => submitPartnerRegistration(tournamentId));
+        }
+
+        // Показываем модальное окно
+        modal.style.display = 'block';
+        modal.classList.add('show');
+        toggleModalAriaHidden(modal, true);
+    }
+
+    // Отправка данных парной регистрации
+    async function submitPartnerRegistration(tournamentId) {
+        // Валидация
+        const firstName = document.getElementById('partnerFirstName')?.value.trim();
+        const lastName = document.getElementById('partnerLastName')?.value.trim();
+        const phone = document.getElementById('partnerPhone')?.value.trim();
+
+        if (!firstName || !lastName || !phone) {
+            alert('Por favor completa todos los campos obligatorios');
+            return;
+        }
+
+        const submitBtn = document.getElementById('submitPartnerBtn');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+        }
 
         try {
-            const response = await fetch(`/players/tournaments/${tournamentId}/register`, {
+            const partnerData = {
+                nombre: firstName,
+                apellido: lastName,
+                telefono: phone,
+                email: document.getElementById('partnerEmail')?.value.trim() || null
+            };
+
+            const response = await fetch(`/api/tournaments/double/${tournamentId}/register`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                }
+                },
+                body: JSON.stringify(partnerData)
             });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || 'Error en el registro');
+            }
 
             const data = await response.json();
 
-            if (data.success) {
-                // Показываем сообщение об успехе
-                alert(data.message);
-
-                // Добавляем турнир в список моих
-                myTournamentIds.add(parseInt(tournamentId));
-                if (myTournamentsCount) {
-                    myTournamentsCount.textContent = `(${myTournamentIds.size})`;
-                }
-
-                // Перерисовываем турниры
-                applyFiltersFunction();
-            } else {
-                alert('Error: ' + data.message);
-                button.disabled = false;
-                button.innerHTML = '<i class="fas fa-plus-circle"></i> Registrarse';
+            // Закрываем модальное окно
+            const modal = document.getElementById('partnerModal');
+            if (modal) {
+                modal.style.display = 'none';
+                modal.classList.remove('show');
             }
+
+            // ✅ ПОЛУЧАЕМ tournamentId ИЗ ОТВЕТА
+            const registeredTournamentId = data.tournamentId || tournamentId;
+
+            myTournamentIds.add(parseInt(registeredTournamentId));
+            if (myTournamentsCount) {
+                myTournamentsCount.textContent = `(${myTournamentIds.size})`;
+            }
+
+            // Показываем сообщение об успехе
+            showResultModal('success', '¡Registro completado! Se ha enviado un email a tu compañero.');
+
+            // Перерисовываем
+            applyFiltersFunction();
+
         } catch (error) {
-            console.error('Error registering:', error);
-            alert('Error al procesar la solicitud');
-            button.disabled = false;
-            button.innerHTML = '<i class="fas fa-plus-circle"></i> Registrarse';
+            console.error('Error:', error);
+            showResultModal('error', error.message || 'Error al procesar la solicitud');
+
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> Registrar pareja';
+            }
         }
     }
 
-    // Обработчик отмены регистрации
-    async function handleCancellation(event) {
-        const button = event.currentTarget;
-        const tournamentId = button.dataset.tournamentId;
-        const tournamentName = button.dataset.tournamentName;
+    // Показать модальное окно с результатом (успех/ошибка)
+    function showResultModal(type, message) {
+        const modal = document.getElementById('resultModal');
+        if (!modal) return;
 
-        const reason = prompt('¿Por qué cancelas tu inscripción? (opcional)');
+        const modalBody = document.getElementById('resultModalBody');
+        const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+        const color = type === 'success' ? '#28a745' : '#dc3545';
 
-        if (!confirm(`¿Estás seguro de cancelar tu inscripción en "${tournamentName}"?`)) {
+        modalBody.innerHTML = `
+        <i class="fas ${icon}" style="font-size: 48px; color: ${color}; margin-bottom: 15px;"></i>
+        <p style="font-size: 16px; margin: 0;">${message}</p>
+    `;
+
+        modal.style.display = 'block';
+        modal.classList.add('show');
+        toggleModalAriaHidden(modal, true);
+
+        // Автоматически закрываем через 3 секунды
+        setTimeout(() => {
+            toggleModalAriaHidden(modal, false);
+            modal.style.display = 'none';
+            modal.classList.remove('show');
+        }, 3000);
+    }
+
+// Показать confirmation modal
+    function showConfirmModal(title, message, onConfirm, onCancel) {
+        const modal = document.getElementById('confirmModal');
+        if (!modal) return;
+
+        document.getElementById('confirmModalTitle').textContent = title;
+        document.getElementById('confirmModalMessage').textContent = message;
+
+        const confirmBtn = document.getElementById('confirmModalBtn');
+        const cancelBtn = document.getElementById('confirmModalCancelBtn');
+
+        // Убираем старые обработчики
+        const newConfirmBtn = confirmBtn.cloneNode(true);
+        const newCancelBtn = cancelBtn.cloneNode(true);
+        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+        cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+
+        // Добавляем новые
+        newConfirmBtn.addEventListener('click', () => {
+            toggleModalAriaHidden(modal, false);
+            modal.style.display = 'none';
+            modal.classList.remove('show');
+            if (onConfirm) onConfirm();
+        });
+
+        newCancelBtn.addEventListener('click', () => {
+            toggleModalAriaHidden(modal, false);
+            modal.style.display = 'none';
+            modal.classList.remove('show');
+            if (onCancel) onCancel();
+        });
+
+        modal.style.display = 'block';
+        modal.classList.add('show');
+        toggleModalAriaHidden(modal, true);
+    }
+
+    // Показать модальное окно отмены для парного турнира
+    async function showDoubleCancellationModal(tournamentId, tournamentName, registrationId) {
+        const modal = document.getElementById('doubleCancelModal');
+        if (!modal) return;
+
+        // Проверяем существование всех необходимых элементов
+        const tournamentNameSpan = document.getElementById('doubleCancelTournamentName');
+        const tournamentIdInput = document.getElementById('doubleCancelTournamentId');
+        const registrationIdInput = document.getElementById('doubleCancelRegistrationId');
+
+        if (!tournamentNameSpan || !tournamentIdInput || !registrationIdInput) {
+            console.error('Не найдены необходимые элементы в модальном окне');
             return;
         }
 
-        button.disabled = true;
-        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+        // Проверяем, зарегистрирован ли партнер
+        const isPartnerRegistered = await checkIfPartnerIsRegistered(tournamentId);
+
+        tournamentNameSpan.textContent = tournamentName;
+        tournamentIdInput.value = tournamentId;
+        registrationIdInput.value = registrationId || '';
+
+        // Находим все опции с проверкой на существование
+        const selfRadio = document.querySelector('input[name="cancelOption"][value="self"]');
+        const fullRadio = document.querySelector('input[name="cancelOption"][value="full"]');
+        const replaceCheckbox = document.getElementById('cancelOptionReplace');
+
+        const selfOption = selfRadio?.closest('.radio-label');
+        const fullOption = fullRadio?.closest('.radio-label');
+        const replaceOption = replaceCheckbox?.closest('.radio-label');
+
+        // Удаляем существующее сообщение, если оно есть
+        const existingMessage = modal.querySelector('.partner-not-registered-message');
+        if (existingMessage) {
+            existingMessage.remove();
+        }
+
+        if (!isPartnerRegistered) {
+            // Если партнер не зарегистрирован - отключаем опции self и replace
+            if (selfOption) {
+                selfOption.style.opacity = '0.5';
+                selfOption.style.pointerEvents = 'none';
+                selfOption.title = 'No disponible: tu compañero no está registrado en el sistema';
+            }
+
+            if (replaceOption) {
+                replaceOption.style.opacity = '0.5';
+                replaceOption.style.pointerEvents = 'none';
+                replaceOption.title = 'No disponible: tu compañero no está registrado en el sistema';
+            }
+
+            if (fullOption) {
+                fullOption.style.opacity = '1';
+                fullOption.style.pointerEvents = 'auto';
+                fullOption.title = '';
+            }
+
+            // Показываем сообщение
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'alert alert-warning partner-not-registered-message';
+            messageDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Tu compañero no está registrado en el sistema. Solo puedes cancelar toda la pareja.';
+
+            // Добавляем сообщение в модальное окно
+            const modalBody = modal.querySelector('.modal-body');
+            const radioGroup = modal.querySelector('.radio-group');
+
+            if (modalBody) {
+                if (radioGroup && radioGroup.parentNode === modalBody) {
+                    // Вставляем перед radio-group
+                    modalBody.insertBefore(messageDiv, radioGroup);
+                } else {
+                    // Добавляем в начало modal-body
+                    modalBody.insertBefore(messageDiv, modalBody.firstChild);
+                }
+            }
+
+            // Выбираем опцию full по умолчанию
+            if (fullRadio) fullRadio.checked = true;
+            if (replaceCheckbox) replaceCheckbox.checked = false;
+
+            // Скрываем поля замены
+            const replaceFields = document.getElementById('replacePlayerFields');
+            if (replaceFields) replaceFields.style.display = 'none';
+
+        } else {
+            // Если оба зарегистрированы - все опции доступны
+            if (selfOption) {
+                selfOption.style.opacity = '1';
+                selfOption.style.pointerEvents = 'auto';
+                selfOption.title = '';
+            }
+
+            if (replaceOption) {
+                replaceOption.style.opacity = '1';
+                replaceOption.style.pointerEvents = 'auto';
+                replaceOption.title = '';
+            }
+
+            if (fullOption) {
+                fullOption.style.opacity = '1';
+                fullOption.style.pointerEvents = 'auto';
+                fullOption.title = '';
+            }
+        }
+
+        // Показываем/скрываем поле для замены
+        const replaceOptionCheckbox = document.getElementById('cancelOptionReplace');
+        const replaceFields = document.getElementById('replacePlayerFields');
+
+        if (replaceOptionCheckbox && replaceFields) {
+            // Убираем старые обработчики
+            const newReplaceOption = replaceOptionCheckbox.cloneNode(true);
+            replaceOptionCheckbox.parentNode.replaceChild(newReplaceOption, replaceOptionCheckbox);
+
+            newReplaceOption.addEventListener('change', function() {
+                replaceFields.style.display = this.checked ? 'block' : 'none';
+            });
+        }
+
+        // Очищаем поля
+        const replaceFirstName = document.getElementById('replaceFirstName');
+        const replaceLastName = document.getElementById('replaceLastName');
+        const replacePhone = document.getElementById('replacePhone');
+        const replaceEmail = document.getElementById('replaceEmail');
+
+        if (replaceFirstName) replaceFirstName.value = '';
+        if (replaceLastName) replaceLastName.value = '';
+        if (replacePhone) replacePhone.value = '';
+        if (replaceEmail) replaceEmail.value = '';
+
+        // Обработчики кнопок
+        const confirmBtn = document.getElementById('doubleCancelConfirmBtn');
+        const cancelBtn = document.getElementById('doubleCancelCancelBtn');
+
+        if (confirmBtn && cancelBtn) {
+            const newConfirmBtn = confirmBtn.cloneNode(true);
+            const newCancelBtn = cancelBtn.cloneNode(true);
+            confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+            cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+
+            newConfirmBtn.addEventListener('click', () => handleDoubleCancellation(tournamentId));
+            newCancelBtn.addEventListener('click', () => {
+                toggleModalAriaHidden(modal, false);
+                modal.style.display = 'none';
+                modal.classList.remove('show');
+            });
+        }
+
+        modal.style.display = 'block';
+        modal.classList.add('show');
+        toggleModalAriaHidden(modal, true);
+    }
+
+    // Функция для проверки, зарегистрирован ли партнер
+    function checkIfPartnerIsRegistered(tournamentId) {
+        // Находим текущего игрока в данных
+        const playerId = window.currentPlayerId; // Нужно добавить это в HTML
+
+        // Ищем регистрацию текущего игрока в этом турнире
+        // В данных турниров у нас нет информации о регистрациях, поэтому делаем запрос к серверу
+        return new Promise((resolve, reject) => {
+            fetch(`/players/tournaments/${tournamentId}/my-registration`)
+                .then(response => response.json())
+                .then(data => {
+                    // Если есть partnerId - партнер зарегистрирован
+                    // Если есть partnerFirstName но нет partnerId - партнер не зарегистрирован
+                    const isRegistered = data.partnerId != null;
+                    console.log('🔍 Проверка партнера:', isRegistered ? 'зарегистрирован' : 'не зарегистрирован');
+                    resolve(isRegistered);
+                })
+                .catch(error => {
+                    console.error('Ошибка при проверке партнера:', error);
+                    resolve(false); // По умолчанию считаем что не зарегистрирован
+                });
+        });
+    }
+
+    // Обработка отмены в парном турнире
+    async function handleDoubleCancellation(tournamentId) {
+        const cancelOptionElement = document.querySelector('input[name="cancelOption"]:checked');
+        if (!cancelOptionElement) {
+            showResultModal('error', 'Por favor selecciona una opción');
+            return;
+        }
+
+        const cancelOption = cancelOptionElement.value;
+        const registrationId = document.getElementById('doubleCancelRegistrationId').value;
+        const reason = document.getElementById('cancelReason')?.value || '';
+
+        const button = document.querySelector(`.btn-cancel[data-tournament-id="${tournamentId}"]`);
+        if (button) {
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+        }
 
         try {
-            const url = `/players/tournaments/${tournamentId}/cancel` +
-                (reason ? `?reason=${encodeURIComponent(reason)}` : '');
+            let url = `/players/tournaments/${tournamentId}/cancel-double?option=${cancelOption}`;
+            if (reason) url += `&reason=${encodeURIComponent(reason)}`;
+
+            // Если выбрана замена, добавляем данные нового игрока
+            if (cancelOption === 'replace') {
+                const replaceData = {
+                    firstName: document.getElementById('replaceFirstName').value.trim(),
+                    lastName: document.getElementById('replaceLastName').value.trim(),
+                    phone: document.getElementById('replacePhone').value.trim(),
+                    email: document.getElementById('replaceEmail').value.trim() || null
+                };
+
+                if (!replaceData.firstName || !replaceData.lastName || !replaceData.phone) {
+                    showResultModal('error', 'Por favor completa los datos del nuevo jugador');
+                    if (button) {
+                        button.disabled = false;
+                        button.innerHTML = '<i class="fas fa-times-circle"></i> Cancelar';
+                    }
+                    return;
+                }
+
+                url += `&replaceData=${encodeURIComponent(JSON.stringify(replaceData))}`;
+            }
 
             const response = await fetch(url, {
                 method: 'POST',
@@ -397,27 +806,112 @@ ${!isMyTournament ? `
             const data = await response.json();
 
             if (data.success) {
-                alert(data.message);
-
-                // Удаляем турнир из списка моих
-                myTournamentIds.delete(parseInt(tournamentId));
-                if (myTournamentsCount) {
-                    myTournamentsCount.textContent = `(${myTournamentIds.size})`;
+                // Закрываем модальное окно
+                const modal = document.getElementById('doubleCancelModal');
+                if (modal) {
+                    modal.style.display = 'none';
+                    modal.classList.remove('show');
                 }
 
-                // Перерисовываем турниры
+                showResultModal('success', data.message);
+
+                // Обновляем список моих турниров - ТОЛЬКО для полной отмены
+                if (cancelOption === 'full') {
+                    myTournamentIds.delete(parseInt(tournamentId));
+                    if (myTournamentsCount) {
+                        myTournamentsCount.textContent = `(${myTournamentIds.size})`;
+                    }
+                }
+                // Для опции replace НЕ удаляем, так как игрок заменяется, но остается в турнире
+
+                // Перерисовываем
                 applyFiltersFunction();
             } else {
-                alert('Error: ' + data.message);
-                button.disabled = false;
-                button.innerHTML = '<i class="fas fa-times-circle"></i> Cancelar inscripción';
+                showResultModal('error', 'Error: ' + data.message);
+                if (button) {
+                    button.disabled = false;
+                    button.innerHTML = '<i class="fas fa-times-circle"></i> Cancelar';
+                }
             }
         } catch (error) {
             console.error('Error cancelling:', error);
-            alert('Error al procesar la solicitud');
-            button.disabled = false;
-            button.innerHTML = '<i class="fas fa-times-circle"></i> Cancelar inscripción';
+            showResultModal('error', 'Error al procesar la solicitud');
+            if (button) {
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-times-circle"></i> Cancelar';
+            }
         }
+    }
+
+    // Функция для правильного управления aria-hidden при открытии/закрытии модалок
+    function toggleModalAriaHidden(modal, isOpen) {
+        if (!modal) return;
+
+        if (isOpen) {
+            // При открытии - убираем aria-hidden
+            modal.removeAttribute('aria-hidden');
+            // Не устанавливаем фокус на кнопку, чтобы избежать конфликтов
+        } else {
+            // При закрытии - добавляем aria-hidden обратно
+            modal.setAttribute('aria-hidden', 'true');
+        }
+    }
+
+
+    // Обработчик отмены регистрации
+    async function handleCancellation(event) {
+        const button = event.currentTarget;
+        const tournamentId = button.dataset.tournamentId;
+        const tournamentName = button.dataset.tournamentName;
+
+        // Находим турнир в данных
+        const tournament = tournaments.find(t => t.id === parseInt(tournamentId));
+        const isDoubles = tournament?.modalidad === 'DOBLES';
+
+        if (isDoubles) {
+            // Для парных турниров - специальное модальное окно
+            showDoubleCancellationModal(tournamentId, tournamentName, null);
+            return;
+        }
+
+        // Для одиночных - простое подтверждение
+        showConfirmModal(
+            'Cancelar inscripción',
+            `¿Estás seguro de cancelar tu inscripción en "${tournamentName}"?`,
+            async () => {
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+
+                try {
+                    const response = await fetch(`/players/tournaments/${tournamentId}/cancel`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        showResultModal('success', data.message);
+                        myTournamentIds.delete(parseInt(tournamentId));
+                        if (myTournamentsCount) {
+                            myTournamentsCount.textContent = `(${myTournamentIds.size})`;
+                        }
+                        applyFiltersFunction();
+                    } else {
+                        showResultModal('error', 'Error: ' + data.message);
+                        button.disabled = false;
+                        button.innerHTML = '<i class="fas fa-times-circle"></i> Cancelar';
+                    }
+                } catch (error) {
+                    console.error('Error cancelling:', error);
+                    showResultModal('error', 'Error al procesar la solicitud');
+                    button.disabled = false;
+                    button.innerHTML = '<i class="fas fa-times-circle"></i> Cancelar';
+                }
+            }
+        );
     }
 
     // Функция для безопасного экранирования HTML

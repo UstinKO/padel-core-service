@@ -141,7 +141,7 @@ public class MatchService {
         MatchDto dto = matchMapper.toDto(match);
 
         // Obtener información del torneo
-        tournamentService.getTournamentById(match.getTournamentId())
+        tournamentService.getTournamentDtoById(match.getTournamentId())
                 .ifPresent(t -> dto.setTournamentNombre(t.getNombre()));
 
         // Obtener información de los jugadores
