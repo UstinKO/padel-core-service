@@ -3,368 +3,2707 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Тестовое управление турнирами</title>
+    <title>Управление турнирами (для тестирования)</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
     <style>
-        .tournament-card {
-            transition: all 0.3s;
-            border-left: 4px solid #0d6efd;
-            margin-bottom: 15px;
+        :root {
+            --primary-color: #4361ee;
+            --success-color: #06d6a0;
+            --danger-color: #ef476f;
+            --warning-color: #ffd166;
+            --dark-color: #073b4c;
         }
-        .tournament-card:hover {
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            transform: translateY(-2px);
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        .stats-badge {
+
+        .main-container {
+            padding: 20px;
+        }
+
+        .header-card {
+            background: white;
+            border-radius: 20px;
+            border: none;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .header-gradient {
+            background: linear-gradient(135deg, var(--primary-color), var(--dark-color));
+            padding: 20px 30px;
+            color: white;
+        }
+
+        .header-gradient h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+
+        .header-gradient p {
+            margin: 5px 0 0;
+            opacity: 0.9;
+            font-size: 0.95rem;
+        }
+
+        .stats-overview {
             background: #f8f9fa;
-            padding: 8px;
-            border-radius: 8px;
+            padding: 15px 30px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 10px;
+            border-radius: 12px;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            line-height: 1.2;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .search-section {
+            background: white;
+            padding: 20px 30px;
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #adb5bd;
+        }
+
+        .search-box input {
+            padding-left: 45px;
+            border-radius: 30px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s;
+        }
+
+        .search-box input:focus {
+            border-color: var(--primary-color);
+            box-shadow: none;
+        }
+
+        .filter-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            margin: 0 5px 10px 0;
+            border-radius: 30px;
+            background: #f8f9fa;
+            color: #495057;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .filter-badge:hover {
+            background: #e9ecef;
+        }
+
+        .filter-badge.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .filter-badge i {
+            margin-right: 5px;
+        }
+
+        .tournament-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 20px;
+            padding: 20px 0;
+        }
+
+        .tournament-card {
+            background: white;
+            border-radius: 16px;
+            border: none;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            transition: all 0.3s;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .tournament-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+        }
+
+        .tournament-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--success-color));
+        }
+
+        .tournament-header {
+            padding: 20px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .tournament-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: var(--dark-color);
+        }
+
+        .tournament-meta {
+            display: flex;
+            gap: 10px;
+            font-size: 0.85rem;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-weight: 500;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-REGISTRO_ABIERTO {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-PUBLICADO {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .status-CERRADO {
+            background: #fed7aa;
+            color: #92400e;
+        }
+
+        .status-FINALIZADO {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .status-CANCELADO {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .type-badge {
+            background: #f3f4f6;
+            color: #4b5563;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.75rem;
+        }
+
+        .tournament-body {
+            padding: 20px;
+        }
+
+        .info-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            color: #6c757d;
             font-size: 0.9rem;
         }
-        .progress {
-            height: 10px;
-            border-radius: 5px;
+
+        .info-row i {
+            width: 24px;
+            color: var(--primary-color);
+            font-size: 1rem;
         }
-        .status-badge {
-            font-size: 0.8rem;
-            padding: 3px 8px;
+
+        .progress-section {
+            background: #f8f9fa;
             border-radius: 12px;
+            padding: 15px;
+            margin: 15px 0;
         }
-        .status-REGISTRO_ABIERTO { background: #d1e7dd; color: #0a3622; }
-        .status-PUBLICADO { background: #cfe2ff; color: #052c65; }
-        .status-CERRADO { background: #fff3cd; color: #664d03; }
-        .status-FINALIZADO { background: #e2e3e5; color: #41464b; }
-        .status-CANCELADO { background: #f8d7da; color: #842029; }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+
+        .progress {
+            height: 12px;
+            border-radius: 30px;
+            background: #e9ecef;
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, var(--primary-color), var(--success-color));
+            border-radius: 30px;
+            position: relative;
+            overflow: visible;
+        }
+
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: -2px;
+            width: 16px;
+            height: 16px;
+            background: white;
+            border: 3px solid var(--primary-color);
+            border-radius: 50%;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .stat-block {
+            background: white;
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+            border: 1px solid #e9ecef;
+        }
+
+        .stat-block .number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            line-height: 1.2;
+        }
+
+        .stat-block .label {
+            font-size: 0.75rem;
+            color: #6c757d;
+            text-transform: uppercase;
+        }
+
+        .player-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            margin-top: 15px;
+        }
+
+        .player-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            border-bottom: 1px solid #e9ecef;
+            transition: background 0.2s;
+        }
+
+        .player-item:last-child {
+            border-bottom: none;
+        }
+
+        .player-item:hover {
+            background: #f8f9fa;
+        }
+
+        .player-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .player-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color), var(--success-color));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .player-details {
+            font-size: 0.9rem;
+        }
+
+        .player-name {
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+
+        .player-position {
+            font-size: 0.75rem;
+            color: #6c757d;
+        }
+
+        .remove-player {
+            color: var(--danger-color);
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+
+        .remove-player:hover {
+            background: #fee2e2;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn-register {
+            flex: 1;
+            background: linear-gradient(135deg, var(--primary-color), var(--success-color));
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 30px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+
+        .btn-register:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+            color: white;
+        }
+
+        .btn-clear {
+            background: white;
+            border: 2px solid var(--danger-color);
+            color: var(--danger-color);
+            padding: 8px 15px;
+            border-radius: 30px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .btn-clear:hover {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .btn-view {
+            background: white;
+            border: 2px solid #e9ecef;
+            color: #6c757d;
+            padding: 8px 15px;
+            border-radius: 30px;
+            transition: all 0.3s;
+        }
+
+        .btn-view:hover {
+            background: #f8f9fa;
+            color: var(--dark-color);
+        }
+
+        .modal-content {
+            border-radius: 20px;
+            border: none;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--dark-color));
+            color: white;
+            border-radius: 20px 20px 0 0;
+            padding: 20px 30px;
+        }
+
+        .modal-header .btn-close {
+            filter: brightness(0) invert(1);
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .player-selector {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .search-player {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .search-player i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #adb5bd;
+        }
+
+        .search-player input {
+            padding-left: 45px;
+            border-radius: 30px;
+            border: 2px solid #e9ecef;
+        }
+
+        .players-checkbox-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            background: white;
+        }
+
+        .player-checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .player-checkbox-item:last-child {
+            border-bottom: none;
+        }
+
+        .player-checkbox-item input[type="checkbox"] {
+            margin-right: 15px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .player-checkbox-item label {
+            flex: 1;
+            margin: 0;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .player-email {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6c757d;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            opacity: 0.3;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+
+        .toast-custom {
+            background: white;
+            border-radius: 12px;
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .toast-success {
+            border-left: 4px solid var(--success-color);
+        }
+
+        .toast-error {
+            border-left: 4px solid var(--danger-color);
+        }
+
+        .toast-warning {
+            border-left: 4px solid var(--warning-color);
+        }
+
+        .badge-custom {
+            background: var(--primary-color);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            margin-left: 5px;
+        }
+
+        .progress-bar-updating {
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        /* Информационная сетка */
+        .info-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .info-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            color: #495057;
+            font-size: 0.9rem;
+        }
+
+        .info-row i {
+            width: 20px;
+            color: var(--primary-color);
+            font-size: 1rem;
+            margin-top: 2px;
+        }
+
+        .info-row > div {
+            flex: 1;
+        }
+
+        .info-label {
+            color: #6c757d;
+            font-size: 0.8rem;
+            display: block;
+            line-height: 1.2;
+        }
+
+        .info-value {
+            color: #212529;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .info-link {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .info-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Секция дедлайнов */
+        .deadline-section {
+            background: #fff3cd;
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin-bottom: 15px;
+            border-left: 4px solid #ffc107;
+        }
+
+        .deadline-section .info-row {
+            margin-bottom: 0;
+        }
+
+        .deadline-section .info-label {
+            color: #856404;
+        }
+
+        .deadline-section .info-value {
+            color: #856404;
+            font-weight: 600;
+        }
+
+        /* Мини-статистика */
+        .stats-mini {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px dashed #dee2e6;
+        }
+
+        .stat-mini-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+
+        .stat-mini-item i {
+            font-size: 0.9rem;
+            color: var(--primary-color);
+        }
+
+        /* Обновляем существующие стили */
+        .info-row {
+            margin-bottom: 8px; /* Уменьшаем отступ */
+        }
+
+        .progress-section {
+            padding: 12px; /* Немного уменьшаем отступы */
+            margin: 10px 0;
+        }
+
+        .btn-view {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-view .badge {
+            font-size: 0.7rem;
+            padding: 3px 6px;
+        }
+
+        /* Стили для списка пар */
+        .pairs-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .pair-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .pair-item:hover {
+            border-color: var(--primary-color);
+            background: #f8f9fa;
+        }
+
+        .pair-item.selected {
+            border-color: var(--success-color);
+            background: #f0fff4;
+        }
+
+        .pair-players {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .player-in-pair {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .player-avatar-sm {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color), var(--success-color));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
+        .pair-plus {
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        .pair-check {
+            font-size: 1.2rem;
+        }
+
+        .pair-check .bi-check-circle-fill {
+            color: var(--success-color);
+        }
+
+        .pair-check .bi-circle {
+            color: #adb5bd;
+        }
+
+        /* Стили для резерва */
+        .waitlist-item {
+            background-color: #fff9e6;
+            border-left: 4px solid #ffc107;
+        }
+
+        .waitlist-item:hover {
+            background-color: #fff3cd;
+        }
+
+        .player-avatar.bg-warning {
+            background: #ffc107 !important;
+            color: #212529;
+        }
+
+        .badge.bg-warning {
+            background-color: #ffc107 !important;
+            color: #212529 !important;
+            font-weight: 500;
+        }
+
+        /* Анимация для резерва */
+        @keyframes waitlistPulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.8; }
+            100% { opacity: 1; }
+        }
+
+        .waitlist-item {
+            animation: waitlistPulse 2s infinite;
+        }
     </style>
 </head>
-<body class="bg-light">
-<div class="container py-4">
-    <!-- Шапка -->
-    <div class="row mb-4">
-        <div class="col">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h1 class="h3 mb-2">🧪 Тестовое управление турнирами</h1>
-                            <p class="text-muted mb-0">
-                                Массовая регистрация тестовых игроков (ID: 1-25) и очистка турниров
-                            </p>
-                        </div>
-                        <div class="text-end">
-                            <span class="badge bg-secondary" th:text="${#lists.size(tournaments)} + ' турниров'"></span>
-                            <div class="small text-muted mt-1">
-                                Обновлено: <span th:text="${#temporals.format(now, 'dd.MM.yyyy HH:mm')}"></span>
-                            </div>
-                        </div>
+<body>
+<div class="container-fluid main-container">
+    <!-- Хедер -->
+    <div class="header-card">
+        <div class="header-gradient">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1><i class="bi bi-trophy-fill me-2"></i>Управление турнирами</h1>
+                    <p>Ручная регистрация реальных игроков для проведения тестовых турниров</p>
+                </div>
+                <div class="text-end">
+                        <span class="badge bg-light text-dark p-3">
+                            <i class="bi bi-calendar-check me-1"></i>
+                            <span th:text="${#temporals.format(now, 'dd.MM.yyyy HH:mm')}"></span>
+                        </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Статистика -->
+        <div class="stats-overview">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <div class="stat-item">
+                        <div class="stat-value" th:text="${tournaments.size()}"></div>
+                        <div class="stat-label">Всего турниров</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-item">
+                        <div class="stat-value" th:text="${activeTournamentsCount}"></div>
+                        <div class="stat-label">Активных</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-item">
+                        <div class="stat-value" th:text="${totalRegistrations}"></div>
+                        <div class="stat-label">Всего регистраций</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-item">
+                        <div class="stat-value" th:text="${availablePlayersCount}"></div>
+                        <div class="stat-label">Доступно игроков</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Панель управления игроками -->
+        <div class="search-section">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-2"><i class="bi bi-people-fill me-2"></i>Управление игроками</h6>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button class="btn btn-sm btn-outline-primary" onclick="openCreatePlayerModal()">
+                            <i class="bi bi-person-plus"></i> Добавить игрока
+                        </button>
+                        <button class="btn btn-sm btn-outline-success" onclick="createBulkPlayers()">
+                            <i class="bi bi-person-plus-fill"></i> +5 тестовых
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteBulkPlayers()">
+                            <i class="bi bi-person-dash-fill"></i> -5 тестовых
+                        </button>
+                        <button class="btn btn-sm btn-outline-info" onclick="refreshPlayersCount()">
+                            <i class="bi bi-arrow-repeat"></i> Обновить счет
+                        </button>
+                    </div>
+                </div>
+                <div class="text-end d-flex gap-2">
+            <span class="badge bg-primary p-2" id="playerCountBadge">
+                <i class="bi bi-people"></i> Загрузка...
+            </span>
+                    <span class="badge bg-info p-2" id="testPlayersCountBadge">
+                <i class="bi bi-people"></i> Тестовых: ...
+            </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Поиск и фильтры -->
+        <div class="search-section">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <div class="search-box">
+                        <i class="bi bi-search"></i>
+                        <input type="text" class="form-control" id="searchTournament"
+                               placeholder="Поиск по названию турнира, клубу или дате...">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="d-flex flex-wrap justify-content-end">
+                            <span class="filter-badge active" data-filter="all">
+                                <i class="bi bi-grid-3x3-gap-fill"></i> Все
+                            </span>
+                        <span class="filter-badge" data-filter="active">
+                                <i class="bi bi-play-circle-fill"></i> Активные
+                            </span>
+                        <span class="filter-badge" data-filter="registration">
+                                <i class="bi bi-pencil-square"></i> Открыта регистрация
+                            </span>
+                        <span class="filter-badge" data-filter="full">
+                                <i class="bi bi-people-fill"></i> Заполненные
+                            </span>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Список турниров -->
-    <div class="row">
-        <div class="col">
-            <div class="card shadow-sm">
-                <div class="card-header bg-white">
-                    <ul class="nav nav-tabs card-header-tabs" id="tournamentTabs" role="tablist">
-                        <li class="nav-item">
-                            <a class="nav-link active" id="all-tab" data-bs-toggle="tab" href="#all" role="tab">
-                                Все турниры
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" id="active-tab" data-bs-toggle="tab" href="#active" role="tab">
-                                Активные
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-                <div class="card-body">
-                    <div class="tab-content" id="tournamentTabsContent">
-                        <!-- Вкладка "Все турниры" -->
-                        <div class="tab-pane fade show active" id="all" role="tabpanel">
-                            <div th:each="tournament : ${tournaments}" class="tournament-card card">
-                                <div class="card-body">
-                                    <div class="row align-items-center">
-                                        <!-- Информация о турнире -->
-                                        <div class="col-md-4">
-                                            <div class="d-flex align-items-center">
-                                                <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3">
-                                                    <span class="h5 mb-0" th:text="${tournament.id}">#</span>
-                                                </div>
-                                                <div>
-                                                    <h5 class="mb-1" th:text="${tournament.nombre}">Название турнира</h5>
-                                                    <div class="d-flex gap-2">
-                                                            <span class="status-badge"
-                                                                  th:classappend="'status-' + ${tournament.estado}"
-                                                                  th:text="${tournament.estado}">Статус</span>
-                                                        <span class="badge bg-light text-dark"
-                                                              th:text="${tournament.tipo}">Тип</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
+    <!-- Сетка турниров -->
+    <div class="tournament-grid" id="tournamentGrid">
+        <div th:each="tournament : ${tournaments}"
+             class="tournament-card"
+             th:attr="data-tournament-id=${tournament.id},
+                      data-status=${tournament.estado},
+                      data-search='${tournament.nombre} ${tournament.clubNombre} ${tournament.fechaInicio}',
+                      data-registrations=${statsMap[__${tournament.id}__]?.confirmed ?: 0},
+                      data-max=${tournament.cupoMax}">
 
-                                        <!-- Статистика регистраций -->
-                                        <div class="col-md-4">
-                                            <div class="stats-badge" th:with="stats=${statsMap[__${tournament.id}__]}">
-                                                <div class="d-flex justify-content-between mb-1">
-                                                    <span>Регистрации:</span>
-                                                    <strong>
-                                                        <span th:text="${stats?.confirmed ?: 0}">0</span>
-                                                        / <span th:text="${tournament.cupoMax}">20</span>
-                                                    </strong>
-                                                </div>
-                                                <div class="progress mb-2">
-                                                    <div class="progress-bar bg-success"
-                                                         th:style="'width: ' + (${stats?.confirmed ?: 0} * 100.0 / ${tournament.cupoMax}) + '%'">
-                                                    </div>
-                                                </div>
-                                                <div class="row small text-muted">
-                                                    <div class="col-6">
-                                                        📊 Всего: <span th:text="${stats?.totalRegistrations ?: 0}">0</span>
-                                                    </div>
-                                                    <div class="col-6 text-end">
-                                                        🎯 Позиции: <span th:text="${stats?.minPosition ?: 0} + '-' + ${stats?.maxPosition ?: 0}">0-0</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Кнопки действий -->
-                                        <div class="col-md-4">
-                                            <div class="d-flex gap-2 justify-content-end">
-                                                <!-- Регистрация 25 игроков -->
-                                                <button class="btn btn-sm btn-success"
-                                                        th:onclick="'registerTestPlayers(' + ${tournament.id} + ', 25, this)'">
-                                                        <span class="d-flex align-items-center">
-                                                            <span class="me-1">➕</span>
-                                                            25 игроков
-                                                        </span>
-                                                </button>
-
-                                                <!-- Регистрация 10 игроков -->
-                                                <button class="btn btn-sm btn-outline-success"
-                                                        th:onclick="'registerTestPlayers(' + ${tournament.id} + ', 10, this)'">
-                                                    10 игроков
-                                                </button>
-
-                                                <!-- Очистить тестовых игроков -->
-                                                <button class="btn btn-sm btn-danger"
-                                                        th:onclick="'clearTestPlayers(' + ${tournament.id} + ', this)'">
-                                                        <span class="d-flex align-items-center">
-                                                            <span class="me-1">🗑️</span>
-                                                            Очистить
-                                                        </span>
-                                                </button>
-
-                                                <!-- Кнопка обновления статистики -->
-                                                <button class="btn btn-sm btn-outline-secondary"
-                                                        th:onclick="'refreshStats(' + ${tournament.id} + ', this)'"
-                                                        title="Обновить статистику">
-                                                    🔄
-                                                </button>
-                                            </div>
-
-                                            <!-- Дополнительная информация -->
-                                            <div class="text-end mt-2 small text-muted"
-                                                 th:id="'info-' + ${tournament.id}">
-                                                <span th:text="${tournament.fechaInicio} + ' ' + ${tournament.horaInicio}">Дата</span>
-                                                <span class="mx-1">•</span>
-                                                <span th:text="${tournament.clubNombre}">Клуб</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div th:if="${tournaments.empty}" class="text-center py-5">
-                                <p class="text-muted mb-0">Нет доступных турниров</p>
-                            </div>
+            <div class="tournament-header">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="tournament-title" th:text="${tournament.nombre}">Название турнира</div>
+                        <div class="tournament-meta">
+                        <span class="status-badge"
+                              th:classappend="'status-' + ${tournament.estado}"
+                              th:text="${tournament.estado}">Статус</span>
+                            <span class="type-badge" th:text="${tournament.tipo}">Тип</span>
+                            <span class="type-badge" th:text="${tournament.categoriaNivel}">Категория</span>
                         </div>
+                    </div>
+                    <span class="badge bg-primary rounded-pill" th:text="'#' + ${tournament.id}"></span>
+                </div>
+            </div>
 
-                        <!-- Вкладка "Активные" -->
-                        <div class="tab-pane fade" id="active" role="tabpanel">
-                            <th:block th:each="tournament : ${tournaments}">
-                                <div th:if="${tournament.isActive}" class="tournament-card card">
-                                    <div class="card-body">
-                                        <div class="row align-items-center">
-                                            <!-- Информация о турнире (копия содержимого из all-tab) -->
-                                            <div class="col-md-4">
-                                                <div class="d-flex align-items-center">
-                                                    <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3">
-                                                        <span class="h5 mb-0" th:text="${tournament.id}">#</span>
-                                                    </div>
-                                                    <div>
-                                                        <h5 class="mb-1" th:text="${tournament.nombre}">Название турнира</h5>
-                                                        <div class="d-flex gap-2">
-                                                                <span class="status-badge"
-                                                                      th:classappend="'status-' + ${tournament.estado}"
-                                                                      th:text="${tournament.estado}">Статус</span>
-                                                            <span class="badge bg-light text-dark"
-                                                                  th:text="${tournament.tipo}">Тип</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
+            <div class="tournament-body">
+                <!-- Основная информация -->
+                <div class="info-grid">
+                    <div class="info-row">
+                        <i class="bi bi-calendar-event"></i>
+                        <div>
+                            <span class="info-label">Дата и время:</span>
+                            <span class="info-value" th:text="${tournament.fechaInicio} + ' ' + ${tournament.horaInicio}">2024-03-20 18:00</span>
+                        </div>
+                    </div>
 
-                                            <!-- Статистика регистраций -->
-                                            <div class="col-md-4">
-                                                <div class="stats-badge" th:with="stats=${statsMap[__${tournament.id}__]}">
-                                                    <div class="d-flex justify-content-between mb-1">
-                                                        <span>Регистрации:</span>
-                                                        <strong>
-                                                            <span th:text="${stats?.confirmed ?: 0}">0</span>
-                                                            / <span th:text="${tournament.cupoMax}">20</span>
-                                                        </strong>
-                                                    </div>
-                                                    <div class="progress mb-2">
-                                                        <div class="progress-bar bg-success"
-                                                             th:style="'width: ' + (${stats?.confirmed ?: 0} * 100.0 / ${tournament.cupoMax}) + '%'">
-                                                        </div>
-                                                    </div>
-                                                    <div class="row small text-muted">
-                                                        <div class="col-6">
-                                                            📊 Всего: <span th:text="${stats?.totalRegistrations ?: 0}">0</span>
-                                                        </div>
-                                                        <div class="col-6 text-end">
-                                                            🎯 Позиции: <span th:text="${stats?.minPosition ?: 0} + '-' + ${stats?.maxPosition ?: 0}">0-0</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
+                    <div class="info-row">
+                        <i class="bi bi-geo-alt"></i>
+                        <div>
+                            <span class="info-label">Клуб:</span>
+                            <span class="info-value" th:text="${tournament.clubNombre}">Клуб Падель</span>
+                        </div>
+                    </div>
 
-                                            <!-- Кнопки действий -->
-                                            <div class="col-md-4">
-                                                <div class="d-flex gap-2 justify-content-end">
-                                                    <button class="btn btn-sm btn-success"
-                                                            th:onclick="'registerTestPlayers(' + ${tournament.id} + ', 25, this)'">
-                                                            <span class="d-flex align-items-center">
-                                                                <span class="me-1">➕</span>
-                                                                25 игроков
-                                                            </span>
-                                                    </button>
+                    <div class="info-row">
+                        <i class="bi bi-currency-dollar"></i>
+                        <div>
+                            <span class="info-label">Цена:</span>
+                            <span class="info-value" th:text="'₽' + ${tournament.precio}">1000₽</span>
+                        </div>
+                    </div>
 
-                                                    <button class="btn btn-sm btn-outline-success"
-                                                            th:onclick="'registerTestPlayers(' + ${tournament.id} + ', 10, this)'">
-                                                        10 игроков
-                                                    </button>
+                    <div class="info-row">
+                        <i class="bi bi-people"></i>
+                        <div>
+                            <span class="info-label">Формат:</span>
+                            <span class="info-value" th:text="${tournament.generoFormato}">Мужской</span>
+                        </div>
+                    </div>
 
-                                                    <button class="btn btn-sm btn-danger"
-                                                            th:onclick="'clearTestPlayers(' + ${tournament.id} + ', this)'">
-                                                            <span class="d-flex align-items-center">
-                                                                <span class="me-1">🗑️</span>
-                                                                Очистить
-                                                            </span>
-                                                    </button>
+                    <div class="info-row">
+                        <i class="bi bi-trophy"></i>
+                        <div>
+                            <span class="info-label">Уровень:</span>
+                            <span class="info-value" th:text="${tournament.categoriaNivel}">C7</span>
+                        </div>
+                    </div>
 
-                                                    <button class="btn btn-sm btn-outline-secondary"
-                                                            th:onclick="'refreshStats(' + ${tournament.id} + ', this)'"
-                                                            title="Обновить статистику">
-                                                        🔄
-                                                    </button>
-                                                </div>
+                    <div class="info-row">
+                        <i class="bi bi-grid-3x3"></i>
+                        <div>
+                            <span class="info-label">Модальность:</span>
+                            <span class="info-value" th:text="${tournament.modalidad}">Двойки</span>
+                        </div>
+                    </div>
 
-                                                <div class="text-end mt-2 small text-muted">
-                                                    <span th:text="${tournament.fechaInicio} + ' ' + ${tournament.horaInicio}">Дата</span>
-                                                    <span class="mx-1">•</span>
-                                                    <span th:text="${tournament.clubNombre}">Клуб</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </th:block>
+                    <div class="info-row" th:if="${tournament.contactoOrganizador}">
+                        <i class="bi bi-telephone"></i>
+                        <div>
+                            <span class="info-label">Контакты:</span>
+                            <span class="info-value" th:text="${tournament.contactoOrganizador}">+7 (999) 123-45-67</span>
+                        </div>
+                    </div>
+
+                    <div class="info-row">
+                        <i class="bi bi-${tournament.modalidad == 'DOBLES' ? 'people' : 'person'}"></i>
+                        <div>
+                            <span class="info-label">Тип турнира:</span>
+                            <span class="info-value">
+                                <span th:if="${tournament.modalidad.name() == 'DOBLES'}" class="badge bg-info">
+                                    <i class="bi bi-people-fill me-1"></i>Парный
+                                </span>
+                                <span th:if="${tournament.modalidad.name() == 'INDIVIDUAL'}" class="badge bg-success">
+                                    <i class="bi bi-person-fill me-1"></i>Индивидуальный
+                                </span>
+                            </span>
                         </div>
                     </div>
                 </div>
+
+                <!-- Сроки регистрации -->
+                <div class="deadline-section" th:if="${tournament.deadlineCancelacion}">
+                    <div class="info-row">
+                        <i class="bi bi-clock-history"></i>
+                        <div>
+                            <span class="info-label">Отмена до:</span>
+                            <span class="info-value" th:text="${#temporals.format(tournament.deadlineCancelacion, 'dd.MM.yyyy HH:mm')}">20.03.2024 12:00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Прогресс регистраций (уже есть) -->
+                <div class="progress-section" th:with="stats=${statsMap[__${tournament.id}__]}">
+                    <div class="progress-label">
+                        <span th:if="${tournament.modalidad.name() == 'DOBLES'}">Пары</span>
+                        <span th:if="${tournament.modalidad.name() == 'INDIVIDUAL'}">Регистрации</span>
+                        <strong>
+                            <span th:text="${stats?.confirmed ?: 0}">0</span>
+                            / <span th:text="${tournament.cupoMax}">20</span>
+                            <span th:if="${tournament.modalidad.name() == 'DOBLES'}" class="small text-muted">пар</span>
+                        </strong>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar"
+                             th:style="'width: ' + (${stats?.confirmed ?: 0} * 100.0 / ${tournament.cupoMax}) + '%'">
+                        </div>
+
+                        <!-- Добавляем информацию о резерве -->
+                        <div class="d-flex justify-content-between mt-2 small" th:if="${stats?.waitlistCount > 0}">
+                            <span class="text-warning">
+                                <i class="bi bi-clock-history"></i>
+                                В резерве: <strong th:text="${stats?.waitlistCount}">0</strong>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Дополнительная статистика для парных турниров -->
+                    <div class="stats-mini" th:if="${tournament.modalidad.name() == 'DOBLES' and stats?.totalPlayers > 0}">
+                        <div class="stat-mini-item">
+                            <i class="bi bi-people"></i>
+                            <span>Всего игроков: <span th:text="${stats?.totalPlayers ?: 0}">0</span></span>
+                        </div>
+                        <div class="stat-mini-item">
+                            <i class="bi bi-person-check"></i>
+                            <span>Подтв. пар: <span th:text="${stats?.confirmed ?: 0}">0</span></span>
+                        </div>
+                    </div>
+
+                    <!-- Дополнительная статистика для индивидуальных турниров -->
+                    <div class="stats-mini" th:if="${tournament.modalidad.name() == 'INDIVIDUAL' and stats?.totalRegistrations > 0}">
+                        <div class="stat-mini-item">
+                            <i class="bi bi-person-check"></i>
+                            <span>Подтв.: <span th:text="${stats?.confirmed ?: 0}">0</span></span>
+                        </div>
+                        <div class="stat-mini-item">
+                            <i class="bi bi-person-dash"></i>
+                            <span>Ожид.: <span th:text="${(stats?.totalRegistrations - stats?.confirmed) ?: 0}">0</span></span>
+                        </div>
+                        <div class="stat-mini-item">
+                            <i class="bi bi-sort-numeric-up"></i>
+                            <span>Поз.: <span th:text="${stats?.minPosition ?: 0} + '-' + ${stats?.maxPosition ?: 0}">0-0</span></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Кнопка просмотра игроков -->
+                <button class="btn btn-view w-100 mt-3"
+                        onclick="viewTournamentPlayers(this)"
+                        th:attr="data-tournament-id=${tournament.id},
+                            data-tournament-name='${tournament.nombre}'">
+                    <i class="bi bi-people me-2"></i>Просмотр игроков
+                    <span class="badge bg-secondary ms-2" th:text="${stats?.totalRegistrations ?: 0}">0</span>
+                </button>
+
+                <!-- Кнопки действий -->
+                <div class="action-buttons mt-3">
+                    <button class="btn-register"
+                            onclick="openRegisterModal(this)"
+                            th:attr="data-tournament-id=${tournament.id},
+                                data-tournament-name='${tournament.nombre}',
+                                data-max-players=${tournament.cupoMax},
+                                data-current=${statsMap[__${tournament.id}__]?.confirmed ?: 0},
+                                data-modalidad=${tournament.modalidad.name()}">
+                        <i class="bi bi-person-plus"></i>
+                        Регистрация игроков
+                    </button>
+
+                    <button class="btn-clear"
+                            onclick="clearTestPlayers(this)"
+                            th:attr="data-tournament-id=${tournament.id},
+                                data-tournament-name='${tournament.nombre}'"
+                            title="Очистить тестовые регистрации">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
             </div>
+        </div>
+
+        <!-- Пустое состояние -->
+        <div th:if="${tournaments.empty}" class="empty-state">
+            <i class="bi bi-trophy"></i>
+            <h5>Нет доступных турниров</h5>
+            <p class="text-muted">Создайте турнир для начала работы</p>
         </div>
     </div>
 </div>
 
-<!-- Модальное окно для результатов -->
-<div class="modal fade" id="resultModal" tabindex="-1">
+<!-- Модальное окно регистрации -->
+<div class="modal fade" id="registerModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Результат операции</h5>
+                <h5 class="modal-title">
+                    <i class="bi bi-person-plus-fill me-2"></i>
+                    Регистрация игроков на турнир
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <div id="resultContent"></div>
+                <div class="player-selector">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Турнир: <strong id="modalTournamentName"></strong>
+                        </h6>
+                        <span class="badge bg-primary" id="modalTournamentStats">0/0 мест</span>
+                    </div>
+
+                    <div class="search-player">
+                        <i class="bi bi-search"></i>
+                        <input type="text" class="form-control" id="searchPlayer"
+                               placeholder="Поиск по имени или email...">
+                    </div>
+
+                    <div class="d-flex justify-content-between mb-2">
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary" onclick="selectAllPlayers()">
+                                <i class="bi bi-check-all"></i> Выбрать всех
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="deselectAllPlayers()">
+                                <i class="bi bi-x"></i> Сбросить
+                            </button>
+                        </div>
+                        <span id="selectedCount" class="text-muted">Выбрано: 0</span>
+                    </div>
+
+                    <!-- КОНТЕЙНЕР ДЛЯ СПИСКА ИГРОКОВ (только для игроков) -->
+                    <div class="players-checkbox-list" id="playersList">
+                        <!-- Сюда будет вставляться список игроков -->
+                    </div>
+
+                    <!-- КНОПКА ОТЛАДКИ ТЕПЕРЬ ЗДЕСЬ - ПОСЛЕ СПИСКА -->
+                    <div class="mt-2 text-end">
+                        <button class="btn btn-sm btn-outline-secondary" type="button" onclick="debugPlayers()">
+                            <i class="bi bi-bug"></i> Отладка
+                        </button>
+                    </div>
+                </div>
+
+                <div class="alert alert-info" id="registrationLimitInfo" style="display: none;">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Можно зарегистрировать максимум <span id="availableSlots">0</span> игроков
+                </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-                <button type="button" class="btn btn-primary" onclick="location.reload()">
-                    Обновить страницу
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x"></i> Отмена
+                </button>
+                <button type="button" class="btn btn-primary" onclick="registerSelectedPlayers()" id="registerBtn">
+                    <i class="bi bi-check"></i> Зарегистрировать
                 </button>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Модальное окно создания игрока -->
+<div class="modal fade" id="createPlayerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-person-plus-fill me-2"></i>
+                    Создание нового игрока
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createPlayerForm">
+                    <div class="mb-3">
+                        <label class="form-label">Имя *</label>
+                        <input type="text" class="form-control" id="playerNombre" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Фамилия</label>
+                        <input type="text" class="form-control" id="playerApellido">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email *</label>
+                        <input type="email" class="form-control" id="playerEmail" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Телефон</label>
+                        <input type="tel" class="form-control" id="playerTelefono">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x"></i> Отмена
+                </button>
+                <button type="button" class="btn btn-primary" onclick="createPlayer()">
+                    <i class="bi bi-check"></i> Создать игрока
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно просмотра игроков -->
+<div class="modal fade" id="viewPlayersModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-people-fill me-2"></i>
+                    Зарегистрированные игроки
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <h6 id="viewModalTournamentName" class="mb-3"></h6>
+
+                <div class="player-list" id="playersListContainer">
+                    <div class="text-center p-4">
+                        <div class="loading-spinner me-2"></div>
+                        Загрузка списка игроков...
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x"></i> Закрыть
+                </button>
+                <button type="button" class="btn btn-primary" onclick="refreshPlayerList()">
+                    <i class="bi bi-arrow-repeat"></i> Обновить
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Контейнер для тостов -->
+<div class="toast-container" id="toastContainer"></div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // Регистрация тестовых игроков
-    async function registerTestPlayers(tournamentId, count, button) {
+    // Глобальные переменные
+    let currentTournamentId = null;
+    let currentViewTournamentId = null;
+    let currentTournamentMaxPlayers = 0;
+    let currentTournamentCurrentPlayers = 0;
+    let availablePlayers = [];
+    let availablePairs = []; // <-- ДОБАВИТЬ ЭТУ СТРОКУ
+    let selectedPlayers = new Set();
+    let selectedPairs = new Map(); // Для хранения выбранных пар {pairKey: [playerId1, playerId2]}
+    let registerModal = null;
+    let viewPlayersModal = null;
+    let currentTournamentModalidad = null;
+
+    // Инициализация
+    window._availablePlayers = [];
+    availablePlayers = window._availablePlayers;
+
+    // Защита глобальных переменных
+    Object.defineProperty(window, 'availablePlayers', {
+        set: function(value) {
+            console.log('🟢 availablePlayers устанавливается:', value);
+            this._availablePlayers = value;
+        },
+        get: function() {
+            return this._availablePlayers;
+        }
+    });
+
+    // Глобальные переменные
+    let createPlayerModal = null;
+
+    // Инициализация при загрузке
+    document.addEventListener('DOMContentLoaded', function() {
+        // Проверяем наличие всех необходимых элементов
+        const requiredElements = {
+            registerModal: document.getElementById('registerModal'),
+            viewPlayersModal: document.getElementById('viewPlayersModal'),
+            createPlayerModal: document.getElementById('createPlayerModal'),
+            modalTournamentName: document.getElementById('modalTournamentName'),
+            modalTournamentStats: document.getElementById('modalTournamentStats'),
+            registrationLimitInfo: document.getElementById('registrationLimitInfo'),
+            registerBtn: document.getElementById('registerBtn'),
+            selectedCount: document.getElementById('selectedCount'),
+            playersList: document.getElementById('playersList'),
+            searchPlayer: document.getElementById('searchPlayer'),
+            searchTournament: document.getElementById('searchTournament'),
+            playerCountBadge: document.getElementById('playerCountBadge'),
+            testPlayersCountBadge: document.getElementById('testPlayersCountBadge')
+        };
+
+        // Проверяем все ли элементы найдены
+        let allElementsFound = true;
+        Object.entries(requiredElements).forEach(([name, element]) => {
+            if (!element) {
+                console.error(`Элемент ${name} не найден в DOM`);
+                allElementsFound = false;
+            }
+        });
+
+        if (!allElementsFound) {
+            console.error('Не все необходимые элементы найдены!');
+        }
+
+        // Инициализация модалок
+        if (requiredElements.registerModal) {
+            registerModal = new bootstrap.Modal(requiredElements.registerModal);
+        }
+
+        if (requiredElements.viewPlayersModal) {
+            viewPlayersModal = new bootstrap.Modal(requiredElements.viewPlayersModal);
+        }
+
+        if (requiredElements.createPlayerModal) {
+            createPlayerModal = new bootstrap.Modal(requiredElements.createPlayerModal);
+        }
+
+        refreshPlayersCount();
+        refreshTestPlayersCount();
+
+        // Поиск по турнирам
+        if (requiredElements.searchTournament) {
+            requiredElements.searchTournament.addEventListener('input', filterTournaments);
+        }
+
+        // Фильтры
+        document.querySelectorAll('.filter-badge').forEach(badge => {
+            badge.addEventListener('click', function() {
+                document.querySelectorAll('.filter-badge').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                filterTournaments();
+            });
+        });
+
+        // Поиск игроков в модалке
+        if (requiredElements.searchPlayer) {
+            requiredElements.searchPlayer.addEventListener('input', filterPlayers);
+        }
+
+        // ПРИНУДИТЕЛЬНО ОБНОВЛЯЕМ СТАТИСТИКУ ВСЕХ ТУРНИРОВ
+        setTimeout(() => {
+            refreshAllTournamentsStats();
+        }, 500);
+    });
+
+    // Обновление статистики всех турниров
+    async function refreshAllTournamentsStats() {
+        console.log('🔄 Обновление статистики всех турниров...');
+
+        const tournamentCards = document.querySelectorAll('.tournament-card');
+        const promises = [];
+
+        tournamentCards.forEach(card => {
+            const tournamentId = card.dataset.tournamentId;
+            if (tournamentId) {
+                promises.push(refreshTournamentStats(tournamentId));
+            }
+        });
+
+        await Promise.all(promises);
+        console.log('✅ Статистика всех турниров обновлена');
+    }
+
+    window.refreshAll = function() {
+        refreshAllTournamentsStats();
+    }
+
+    // Открыть модалку создания игрока
+    function openCreatePlayerModal() {
+        document.getElementById('createPlayerForm').reset();
+        createPlayerModal.show();
+    }
+
+    window.debugPlayers = function() {
+        console.log('=== ОТЛАДОЧНАЯ ИНФОРМАЦИЯ ===');
+        console.log('currentTournamentId:', currentTournamentId);
+        console.log('availablePlayers:', availablePlayers);
+        console.log('selectedPlayers:', Array.from(selectedPlayers));
+        console.log('registerModal._isShown:', registerModal?._isShown);
+
+        // Проверим DOM элементы
+        const playersList = document.getElementById('playersList');
+        console.log('playersList innerHTML:', playersList?.innerHTML);
+
+        const checkboxes = document.querySelectorAll('.player-checkbox');
+        console.log('Найдено чекбоксов:', checkboxes.length);
+
+        // Проверим данные из модалки
+        console.log('modalTournamentName:', document.getElementById('modalTournamentName')?.textContent);
+        console.log('modalTournamentStats:', document.getElementById('modalTournamentStats')?.textContent);
+    }
+
+    // Создание одного игрока
+    async function createPlayer() {
+        const nombre = document.getElementById('playerNombre').value.trim();
+        const apellido = document.getElementById('playerApellido').value.trim();
+        const email = document.getElementById('playerEmail').value.trim();
+        const telefono = document.getElementById('playerTelefono').value.trim();
+
+        if (!nombre || !email) {
+            showToast('warning', 'Ошибка', 'Заполните обязательные поля');
+            return;
+        }
+
+        const button = event.target;
         const originalText = button.innerHTML;
         button.disabled = true;
-        button.innerHTML = '⏳ Регистрация...';
+        button.innerHTML = '<span class="loading-spinner me-2"></span>Создание...';
 
         try {
-            const response = await fetch(`/test/tournaments/${tournamentId}/register-test-players?count=${count}`, {
+            const response = await fetch('/test/tournaments/create-test-player', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
-                }
+                },
+                body: JSON.stringify({
+                    nombre: nombre,
+                    apellido: apellido,
+                    email: email,
+                    telefono: telefono
+                })
             });
 
             const result = await response.json();
 
             if (result.success) {
-                showResult('success', `
-                        <div class="alert alert-success">
-                            <h6>✅ Успешно зарегистрировано!</h6>
-                            <p class="mb-0">
-                                Запрошено: ${result.requestedCount}<br>
-                                Зарегистрировано: ${result.successfullyRegistered}<br>
-                                Уже были: ${result.alreadyRegistered}<br>
-                                Ошибок: ${result.errors}
-                            </p>
-                        </div>
-                        <div class="mt-3">
-                            <strong>Статистика турнира:</strong><br>
-                            Всего регистраций: ${result.tournamentStats?.totalRegistrations || 0}<br>
-                            Подтверждено: ${result.tournamentStats?.confirmed || 0}<br>
-                            Позиции: ${result.tournamentStats?.minPosition || 0} - ${result.tournamentStats?.maxPosition || 0}
-                        </div>
-                    `);
+                showToast('success', 'Успешно', 'Игрок создан');
+                createPlayerModal.hide();
+                refreshPlayersCount();
 
-                // Обновляем статистику на странице
-                setTimeout(() => location.reload(), 1500);
+                // Если открыта модалка регистрации, обновляем список
+                if (registerModal._isShown) {
+                    await loadAvailablePlayers();
+                }
             } else {
-                showResult('danger', `<div class="alert alert-danger">${result.message}</div>`);
+                showToast('error', 'Ошибка', result.message);
             }
         } catch (error) {
-            showResult('danger', `<div class="alert alert-danger">Ошибка: ${error.message}</div>`);
+            showToast('error', 'Ошибка', error.message);
         } finally {
             button.disabled = false;
             button.innerHTML = originalText;
         }
     }
 
-    // Очистка тестовых игроков
-    async function clearTestPlayers(tournamentId, button) {
-        if (!confirm('Удалить всех тестовых игроков (ID 1-50) с этого турнира?')) {
+    // Массовое создание тестовых игроков
+    async function createBulkPlayers() {
+        const count = 5;
+
+        if (!confirm(`Создать ${count} новых тестовых игроков?`)) {
             return;
         }
 
+        const button = event.target;
         const originalText = button.innerHTML;
         button.disabled = true;
-        button.innerHTML = '⏳ Очистка...';
+        button.innerHTML = '<span class="loading-spinner me-2"></span>Создание...';
+
+        try {
+            const response = await fetch(`/test/tournaments/create-test-players-bulk?count=${count}`, {
+                method: 'POST'
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showToast('success', 'Успешно',
+                    `Создано: ${result.created} из ${result.total} игроков`);
+                refreshPlayersCount();
+                refreshTestPlayersCount();
+
+                // Если открыта модалка регистрации, обновляем список
+                if (registerModal && registerModal._isShown) {
+                    if (currentTournamentModalidad === 'DOBLES') {
+                        await loadAvailablePlayersForPairs();
+                    } else {
+                        await loadAvailablePlayers();
+                    }
+                }
+            } else {
+                showToast('error', 'Ошибка', result.message);
+            }
+        } catch (error) {
+            showToast('error', 'Ошибка', error.message);
+        } finally {
+            button.disabled = false;
+            button.innerHTML = originalText;
+        }
+    }
+
+    // Массовое удаление тестовых игроков
+    async function deleteBulkPlayers() {
+        const count = 5;
+
+        const testPlayersCount = await getTestPlayersCount();
+        if (testPlayersCount === 0) {
+            showToast('info', 'Нет тестовых игроков', 'Нечего удалять');
+            return;
+        }
+
+        if (!confirm(`Удалить последних ${count} тестовых игроков?`)) {
+            return;
+        }
+
+        const button = event.target;
+        const originalText = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = '<span class="loading-spinner me-2"></span>Удаление...';
+
+        try {
+            const response = await fetch(`/test/tournaments/delete-test-players-bulk?count=${count}`, {
+                method: 'POST'
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showToast('success', 'Успешно',
+                    `Удалено: ${result.deleted} из ${result.requested} игроков`);
+                refreshPlayersCount();
+                refreshTestPlayersCount();
+
+                // Если открыта модалка регистрации, обновляем список
+                if (registerModal && registerModal._isShown) {
+                    if (currentTournamentModalidad === 'DOBLES') {
+                        await loadAvailablePlayersForPairs();
+                    } else {
+                        await loadAvailablePlayers();
+                    }
+                }
+            } else {
+                showToast('error', 'Ошибка', result.message);
+            }
+        } catch (error) {
+            showToast('error', 'Ошибка', error.message);
+        } finally {
+            button.disabled = false;
+            button.innerHTML = originalText;
+        }
+    }
+
+    // Получение количества тестовых игроков
+    async function getTestPlayersCount() {
+        try {
+            const response = await fetch('/test/tournaments/test-players-count');
+            const data = await response.json();
+            return data.success ? data.count : 0;
+        } catch (error) {
+            console.error('Ошибка получения количества тестовых игроков:', error);
+            return 0;
+        }
+    }
+
+    // Обновление счетчика тестовых игроков
+    async function refreshTestPlayersCount() {
+        try {
+            const response = await fetch('/test/tournaments/test-players-count');
+            const data = await response.json();
+
+            const badge = document.getElementById('testPlayersCountBadge');
+            if (badge) {
+                if (data.success) {
+                    badge.innerHTML = `<i class="bi bi-people"></i> Тестовых: ${data.count}`;
+                    badge.className = 'badge bg-info p-2';
+                } else {
+                    badge.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Ошибка';
+                    badge.className = 'badge bg-danger p-2';
+                }
+            }
+        } catch (error) {
+            console.error('Ошибка обновления счетчика тестовых игроков:', error);
+        }
+    }
+
+    // Обновление счетчика игроков
+    async function refreshPlayersCount() {
+        try {
+            const response = await fetch('/test/tournaments/debug/player-count');
+            const data = await response.json();
+
+            const badge = document.getElementById('playerCountBadge');
+            if (data.success) {
+                badge.innerHTML = `<i class="bi bi-people"></i> Всего: ${data.total_players} (Актив: ${data.active_players})`;
+                badge.className = 'badge bg-primary p-2';
+
+                // Также обновляем счетчик тестовых игроков
+                refreshTestPlayersCount();
+            } else {
+                badge.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Ошибка';
+                badge.className = 'badge bg-danger p-2';
+            }
+        } catch (error) {
+            console.error('Ошибка обновления счетчика:', error);
+        }
+    }
+
+    // Инициализация при загрузке
+    document.addEventListener('DOMContentLoaded', function() {
+        registerModal = new bootstrap.Modal(document.getElementById('registerModal'));
+        viewPlayersModal = new bootstrap.Modal(document.getElementById('viewPlayersModal'));
+
+        // Поиск по турнирам
+        document.getElementById('searchTournament').addEventListener('input', filterTournaments);
+
+        // Фильтры
+        document.querySelectorAll('.filter-badge').forEach(badge => {
+            badge.addEventListener('click', function() {
+                document.querySelectorAll('.filter-badge').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                filterTournaments();
+            });
+        });
+
+        // Поиск игроков в модалке
+        document.getElementById('searchPlayer')?.addEventListener('input', filterPlayers);
+    });
+
+    // Фильтрация турниров
+    function filterTournaments() {
+        const searchTerm = document.getElementById('searchTournament').value.toLowerCase();
+        const activeFilter = document.querySelector('.filter-badge.active')?.dataset.filter || 'all';
+        const cards = document.querySelectorAll('.tournament-card');
+
+        cards.forEach(card => {
+            const tournamentData = card.dataset;
+            const cardText = card.innerText.toLowerCase();
+
+            // Добавляем тип турнира в поиск
+            const searchData = card.dataset.search?.toLowerCase() + ' ' +
+                (tournamentData.status?.toLowerCase() || '') + ' ' +
+                (tournamentData.tipo?.toLowerCase() || '') + ' ' +
+                (tournamentData.nivel?.toLowerCase() || '') + ' ' +
+                (cardText.includes('парный') ? 'парный' : '') +
+                (cardText.includes('индивидуальный') ? 'индивидуальный' : '');
+
+            const status = card.dataset.status;
+            const registrations = parseInt(card.dataset.registrations || '0');
+            const maxPlayers = parseInt(card.dataset.max || '0');
+
+            // Поиск
+            let matchesSearch = searchTerm === '' ||
+                searchData.includes(searchTerm) ||
+                cardText.includes(searchTerm);
+
+            // Фильтр
+            let matchesFilter = true;
+            switch(activeFilter) {
+                case 'active':
+                    matchesFilter = ['REGISTRO_ABIERTO', 'PUBLICADO'].includes(status);
+                    break;
+                case 'registration':
+                    matchesFilter = status === 'REGISTRO_ABIERTO';
+                    break;
+                case 'full':
+                    matchesFilter = registrations >= maxPlayers;
+                    break;
+                case 'doubles': // Новый фильтр для парных
+                    matchesFilter = cardText.includes('парный');
+                    break;
+                case 'singles': // Новый фильтр для индивидуальных
+                    matchesFilter = cardText.includes('индивидуальный');
+                    break;
+            }
+
+            card.style.display = matchesSearch && matchesFilter ? 'block' : 'none';
+        });
+    }
+
+    // Открытие модалки регистрации
+    async function openRegisterModal(button) {
+        if (!button || !button.dataset) {
+            console.error('Кнопка или данные кнопки не найдены');
+            return;
+        }
+
+        // Проверяем, что модальное окно существует в DOM
+        const modalElement = document.getElementById('registerModal');
+        if (!modalElement) {
+            console.error('Модальное окно registerModal не найдено в DOM');
+            return;
+        }
+
+        // Убеждаемся, что модалка инициализирована
+        if (!registerModal) {
+            try {
+                registerModal = new bootstrap.Modal(modalElement);
+            } catch (e) {
+                console.error('Ошибка инициализации модалки:', e);
+                return;
+            }
+        }
+
+        currentTournamentId = button.dataset.tournamentId;
+        currentTournamentMaxPlayers = parseInt(button.dataset.maxPlayers || '0');
+        currentTournamentCurrentPlayers = parseInt(button.dataset.current || '0');
+        currentTournamentModalidad = button.dataset.modalidad;
+
+        // Проверяем наличие элементов внутри модалки
+        const tournamentNameElement = document.getElementById('modalTournamentName');
+        const tournamentStatsElement = document.getElementById('modalTournamentStats');
+        const limitInfoElement = document.getElementById('registrationLimitInfo');
+        const registerBtnElement = document.getElementById('registerBtn');
+        let availableSlotsElement = document.getElementById('availableSlots');
+
+        // Если элемент availableSlots не найден, создаем его
+        if (!availableSlotsElement) {
+            console.warn('Элемент availableSlots не найден, создаем новый');
+            availableSlotsElement = document.createElement('span');
+            availableSlotsElement.id = 'availableSlots';
+            availableSlotsElement.style.display = 'none';
+            document.body.appendChild(availableSlotsElement);
+        }
+
+        if (!tournamentNameElement || !tournamentStatsElement || !limitInfoElement || !registerBtnElement) {
+            console.error('Критические элементы модалки не найдены', {
+                tournamentNameElement: !!tournamentNameElement,
+                tournamentStatsElement: !!tournamentStatsElement,
+                limitInfoElement: !!limitInfoElement,
+                registerBtnElement: !!registerBtnElement
+            });
+            return; // Не пытаемся снова, просто выходим
+        }
+
+        tournamentNameElement.textContent = button.dataset.tournamentName || 'Неизвестный турнир';
+
+        // Получаем актуальную статистику с учетом резерва
+        const stats = await refreshTournamentStats(currentTournamentId);
+        const availableSlots = currentTournamentMaxPlayers - (stats?.confirmed || currentTournamentCurrentPlayers);
+        const waitlistCount = stats?.waitlistCount || 0;
+
+        tournamentStatsElement.textContent =
+            `${stats?.confirmed || currentTournamentCurrentPlayers}/${currentTournamentMaxPlayers} мест`;
+
+        if (availableSlots <= 0) {
+            limitInfoElement.style.display = 'block';
+            limitInfoElement.className = 'alert alert-warning';
+            limitInfoElement.innerHTML = `
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            Турнир заполнен. Регистрация будет в резерв (текущая очередь: ${waitlistCount + 1})
+        `;
+            registerBtnElement.disabled = false;
+        } else {
+            availableSlotsElement.textContent = availableSlots;
+            limitInfoElement.style.display = 'block';
+            limitInfoElement.className = 'alert alert-info';
+            limitInfoElement.innerHTML = `
+            <i class="bi bi-info-circle me-2"></i>
+            Свободно мест: ${availableSlots}
+        `;
+            registerBtnElement.disabled = false;
+        }
+
+        // Очищаем предыдущие данные
+        selectedPlayers.clear();
+        selectedPairs.clear();
+        availablePairs = [];
+
+        // Загружаем игроков в зависимости от типа турнира
+        if (currentTournamentModalidad === 'DOBLES') {
+            await loadAvailablePairs();
+            registerBtnElement.innerHTML = '<i class="bi bi-people"></i> Зарегистрировать пару';
+            updateSelectedPairsCount();
+        } else {
+            await loadAvailablePlayers();
+            registerBtnElement.innerHTML = '<i class="bi bi-person-plus"></i> Зарегистрировать';
+            updateSelectedCount();
+        }
+
+        registerModal.show();
+    }
+
+    // Загрузка доступных игроков для формирования пар
+    async function loadAvailablePlayersForPairs() {
+        const playersList = document.getElementById('playersList');
+        playersList.innerHTML = '<div class="text-center p-4"><div class="loading-spinner me-2"></div>Загрузка списка игроков...</div>';
+
+        try {
+            const response = await fetch(`/test/tournaments/available-players-for-pairs?tournamentId=${currentTournamentId}`);
+            const data = await response.json();
+
+            console.log('Загружены игроки для пар:', data);
+
+            if (data.success && data.players && data.players.length >= 2) {
+                renderPairCreator(data.players);
+                // Обновляем заголовок
+                document.querySelector('#registerModal .modal-title').innerHTML =
+                    '<i class="bi bi-people-fill me-2"></i>Создание пары для турнира';
+            } else {
+                playersList.innerHTML = `
+                <div class="empty-state">
+                    <i class="bi bi-people fs-1"></i>
+                    <p class="mt-3">Недостаточно игроков для создания пары</p>
+                    <small class="text-muted">
+                        Нужно минимум 2 свободных игрока<br>
+                        Доступно: ${data.players ? data.players.length : 0}
+                    </small>
+                </div>
+            `;
+            }
+        } catch (error) {
+            console.error('Ошибка загрузки игроков:', error);
+            playersList.innerHTML = `<div class="alert alert-danger m-3">Ошибка: ${error.message}</div>`;
+        }
+    }
+
+    // Отрисовка конструктора пар
+    function renderPairCreator(players) {
+        const playersList = document.getElementById('playersList');
+        const searchTerm = document.getElementById('searchPlayer')?.value.toLowerCase() || '';
+
+        // Сохраняем список игроков для превью
+        window.availablePlayers = players;
+
+        const filteredPlayers = players.filter(p =>
+            p.name.toLowerCase().includes(searchTerm) ||
+            p.email.toLowerCase().includes(searchTerm)
+        );
+
+        let html = `
+        <div class="pair-creator">
+            <div class="alert alert-info mb-3">
+                <i class="bi bi-info-circle me-2"></i>
+                Выберите двух игроков для формирования пары
+            </div>
+            <div class="selected-players-preview mb-4 p-3 bg-light rounded">
+                <div class="row align-items-center">
+                    <div class="col-5 text-end">
+                        <span id="player1Preview" class="badge bg-light text-dark p-3" style="font-size: 1rem;">Не выбран</span>
+                    </div>
+                    <div class="col-2 text-center">
+                        <i class="bi bi-plus-lg text-primary fs-4"></i>
+                    </div>
+                    <div class="col-5">
+                        <span id="player2Preview" class="badge bg-light text-dark p-3" style="font-size: 1rem;">Не выбран</span>
+                    </div>
+                </div>
+            </div>
+            <div class="players-for-pair-list" style="max-height: 300px; overflow-y: auto;">
+    `;
+
+        filteredPlayers.forEach(player => {
+            html += `
+            <div class="player-for-pair-item d-flex justify-content-between align-items-center p-2 border-bottom"
+                 data-player-id="${player.id}">
+                <div class="player-info d-flex align-items-center gap-2">
+                    <span class="player-avatar-sm">${player.name.charAt(0)}</span>
+                    <div>
+                        <div class="player-name fw-bold">${player.name}</div>
+                        <div class="player-email small text-muted">${player.email}</div>
+                    </div>
+                </div>
+                <div class="player-selector">
+                    <input type="checkbox" class="player-pair-checkbox form-check-input" value="${player.id}">
+                </div>
+            </div>
+        `;
+        });
+
+        html += `
+            </div>
+        </div>
+    `;
+
+        playersList.innerHTML = html;
+
+        // Добавляем обработчики для чекбоксов
+        document.querySelectorAll('.player-pair-checkbox').forEach(cb => {
+            cb.addEventListener('change', function(e) {
+                e.stopPropagation();
+                updatePairSelection();
+            });
+        });
+
+        // Сбрасываем выбор
+        selectedPlayers.clear();
+        updatePairSelection();
+    }
+
+    // Обновление выбора пары
+    function updatePairSelection() {
+        const selected = Array.from(document.querySelectorAll('.player-pair-checkbox:checked'))
+            .map(cb => parseInt(cb.value));
+
+        console.log('Выбрано игроков:', selected);
+
+        // Очищаем предыдущий выбор
+        selectedPlayers.clear();
+
+        // Добавляем выбранных игроков
+        selected.forEach(id => selectedPlayers.add(id));
+
+        // Обновляем превью
+        const player1Preview = document.getElementById('player1Preview');
+        const player2Preview = document.getElementById('player2Preview');
+
+        if (selected.length >= 1) {
+            const player1 = availablePlayers.find(p => p.id === selected[0]);
+            player1Preview.innerHTML = player1 ? player1.name : 'Не выбран';
+            player1Preview.className = 'badge bg-success p-2';
+        } else {
+            player1Preview.innerHTML = 'Не выбран';
+            player1Preview.className = 'badge bg-light text-dark p-2';
+        }
+
+        if (selected.length >= 2) {
+            const player2 = availablePlayers.find(p => p.id === selected[1]);
+            player2Preview.innerHTML = player2 ? player2.name : 'Не выбран';
+            player2Preview.className = 'badge bg-success p-2';
+        } else {
+            player2Preview.innerHTML = 'Не выбран';
+            player2Preview.className = 'badge bg-light text-dark p-2';
+        }
+
+        // Блокируем лишние чекбоксы
+        document.querySelectorAll('.player-pair-checkbox').forEach(cb => {
+            if (selected.length >= 2 && !cb.checked) {
+                cb.disabled = true;
+            } else {
+                cb.disabled = false;
+            }
+        });
+
+        // Обновляем кнопку регистрации
+        const registerBtn = document.getElementById('registerBtn');
+        if (selected.length === 2) {
+            registerBtn.disabled = false;
+            console.log('✅ Можно регистрировать пару');
+        } else {
+            registerBtn.disabled = true;
+            console.log('⏳ Нужно выбрать двух игроков');
+        }
+
+        // Обновляем счетчик
+        updateSelectedCount();
+    }
+
+    // Загрузка доступных пар для парного турнира
+    async function loadAvailablePairs() {
+        const playersList = document.getElementById('playersList');
+        playersList.innerHTML = '<div class="text-center p-4"><div class="loading-spinner me-2"></div>Загрузка списка пар...</div>';
+
+        console.log('=== ЗАГРУЗКА ПАР ===');
+        console.log('ID турнира:', currentTournamentId);
+
+        try {
+            const response = await fetch(`/test/tournaments/available-pairs?tournamentId=${currentTournamentId}`);
+            const data = await response.json();
+
+            if (data.success) {
+                if (data.pairs && data.pairs.length > 0) {
+                    renderPairsList(data.pairs);
+                } else {
+                    playersList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-people fs-1"></i>
+                        <p class="mt-3">Нет доступных пар</p>
+                        <small class="text-muted">
+                            Нужно минимум 2 свободных игрока для формирования пар
+                        </small>
+                    </div>
+                `;
+                }
+            } else {
+                playersList.innerHTML = `<div class="alert alert-danger m-3">${data.message || 'Ошибка загрузки'}</div>`;
+            }
+        } catch (error) {
+            console.error('Ошибка загрузки пар:', error);
+            playersList.innerHTML = `<div class="alert alert-danger m-3">Ошибка: ${error.message}</div>`;
+        }
+    }
+
+    // Отрисовка списка пар
+    function renderPairsList(pairs) {
+        const playersList = document.getElementById('playersList');
+        if (!playersList) return;
+
+        const searchTerm = document.getElementById('searchPlayer')?.value.toLowerCase() || '';
+
+        // Фильтруем пары по поиску
+        const filteredPairs = pairs.filter(pair =>
+            pair.displayName.toLowerCase().includes(searchTerm)
+        );
+
+        if (filteredPairs.length === 0) {
+            playersList.innerHTML = `
+            <div class="empty-state">
+                <i class="bi bi-people"></i>
+                <p>Пары не найдены</p>
+                ${searchTerm ? `<small>По запросу "${searchTerm}" ничего не найдено</small>` : ''}
+            </div>
+        `;
+            return;
+        }
+
+        let html = '<div class="pairs-list">';
+
+        filteredPairs.forEach((pair) => {
+            // Сортируем ID для создания уникального ключа пары
+            const sortedIds = [...pair.playerIds].sort();
+            const pairKey = sortedIds.join('-');
+            const isSelected = selectedPairs.has(pairKey);
+
+            // Создаем безопасные строки для передачи в data-атрибуты
+            const playerIdsJson = JSON.stringify(pair.playerIds).replace(/"/g, '&quot;');
+
+            html += `
+            <div class="pair-item ${isSelected ? 'selected' : ''}"
+                 data-pair-key="${pairKey}"
+                 data-player-ids='${playerIdsJson}'>
+                <div class="pair-players">
+                    <div class="player-in-pair">
+                        <span class="player-avatar-sm">${pair.player1.name.charAt(0)}</span>
+                        <span class="player-name">${pair.player1.name}</span>
+                    </div>
+                    <div class="pair-plus">
+                        <i class="bi bi-plus-lg"></i>
+                    </div>
+                    <div class="player-in-pair">
+                        <span class="player-avatar-sm">${pair.player2.name.charAt(0)}</span>
+                        <span class="player-name">${pair.player2.name}</span>
+                    </div>
+                </div>
+                <div class="pair-check">
+                    <i class="bi ${isSelected ? 'bi-check-circle-fill text-success' : 'bi-circle'}"></i>
+                </div>
+            </div>
+        `;
+        });
+
+        html += '</div>';
+
+        playersList.innerHTML = html;
+
+        // Добавляем обработчики событий после вставки HTML
+        document.querySelectorAll('.pair-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                const pairKey = this.dataset.pairKey;
+                const playerIds = JSON.parse(this.dataset.playerIds);
+                togglePair(pairKey, playerIds);
+            });
+        });
+    }
+
+    // Выбор/отмена выбора пары
+    function togglePair(pairKey, playerIds) {
+        const availableSlots = currentTournamentMaxPlayers - currentTournamentCurrentPlayers;
+
+        // Предотвращаем всплытие события, чтобы не было конфликтов
+        event.stopPropagation();
+
+        if (selectedPairs.has(pairKey)) {
+            // Если пара уже выбрана - убираем
+            selectedPairs.delete(pairKey);
+            console.log('Пара удалена:', pairKey);
+        } else {
+            // Если пара не выбрана - добавляем, если есть места
+            if (selectedPairs.size < availableSlots) {
+                selectedPairs.set(pairKey, playerIds);
+                console.log('Пара добавлена:', pairKey, playerIds);
+            } else {
+                showToast('warning', 'Достигнут лимит регистрации',
+                    `Можно выбрать максимум ${availableSlots} пар`);
+                return;
+            }
+        }
+
+        // Перерисовываем список с сохранением состояния
+        renderPairsList(availablePairs);
+
+        // Обновляем счетчик
+        const countElement = document.getElementById('selectedCount');
+        if (countElement) {
+            countElement.textContent = `Выбрано пар: ${selectedPairs.size}`;
+        }
+
+        // Для отладки
+        console.log('Текущие выбранные пары:', Array.from(selectedPairs.entries()));
+    }
+
+    // Обновление счетчика выбранных пар
+    function updateSelectedPairsCount() {
+        document.getElementById('selectedCount').textContent = `Выбрано пар: ${selectedPairs.size}`;
+    }
+
+    // Загрузка доступных игроков
+    async function loadAvailablePlayers() {
+        const playersList = document.getElementById('playersList');
+        playersList.innerHTML = '<div class="text-center p-4"><div class="loading-spinner me-2"></div>Загрузка списка игроков...</div>';
+
+        console.log('=== НАЧАЛО ЗАГРУЗКИ ИГРОКОВ ===');
+        console.log('ID турнира:', currentTournamentId);
+        console.log('availablePlayers ДО запроса:', availablePlayers);
+
+        try {
+            console.log('Отправляем запрос к /test/tournaments/available-players...');
+            const response = await fetch(`/test/tournaments/available-players?tournamentId=${currentTournamentId}`);
+
+            console.log('Статус ответа:', response.status, response.statusText);
+
+            const data = await response.json();
+            console.log('Данные от сервера (RAW):', data);
+
+            if (data.success) {
+                if (data.players && data.players.length > 0) {
+                    console.log('✅ Игроки получены, количество:', data.players.length);
+
+                    // СОХРАНЯЕМ В ГЛОБАЛЬНУЮ ПЕРЕМЕННУЮ
+                    window._tempPlayers = data.players; // временное хранилище
+                    availablePlayers = data.players;
+
+                    console.log('availablePlayers ПОСЛЕ присваивания:', availablePlayers);
+                    console.log('Первый игрок:', availablePlayers[0]);
+
+                    // ВЫЗЫВАЕМ РЕНДЕРИНГ
+                    renderRegistrationPlayersList();
+
+                    // Проверка через 100мс
+                    setTimeout(() => {
+                        console.log('Проверка через 100мс - availablePlayers:', availablePlayers);
+                        console.log('Проверка через 100мс - window._tempPlayers:', window._tempPlayers);
+                    }, 100);
+
+                } else {
+                    console.log('⚠️ Сервер вернул пустой список игроков');
+                    playersList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-people fs-1"></i>
+                        <p class="mt-3">Нет доступных игроков</p>
+                        <small class="text-muted">
+                            Создайте игроков через панель управления<br>
+                            <button class="btn btn-sm btn-outline-primary mt-3" onclick="openCreatePlayerModal()">
+                                <i class="bi bi-person-plus"></i> Создать игрока
+                            </button>
+                        </small>
+                    </div>
+                `;
+                }
+            } else {
+                console.log('❌ Сервер вернул ошибку:', data.message);
+                playersList.innerHTML = `<div class="alert alert-danger m-3">${data.message || 'Ошибка загрузки'}</div>`;
+            }
+        } catch (error) {
+            console.log('❌ Ошибка при запросе:', error);
+            playersList.innerHTML = `<div class="alert alert-danger m-3">Ошибка: ${error.message}</div>`;
+        }
+
+        console.log('=== КОНЕЦ ЗАГРУЗКИ ИГРОКОВ ===');
+        console.log('availablePlayers в конце:', availablePlayers);
+    }
+
+    // Тестовая функция для проверки рендеринга
+    window.forceRender = function() {
+        console.log('🔥 Принудительный вызов renderPlayersList()');
+        if (typeof renderPlayersList === 'function') {
+            renderRegistrationPlayersList();
+        } else {
+            console.error('❌ renderPlayersList не найдена!');
+        }
+    }
+
+    // Фильтрация игроков
+    function filterPlayers() {
+        renderRegistrationPlayersList();
+    }
+
+    // Выбор/снятие игрока
+    function togglePlayer(playerId) {
+        if (selectedPlayers.has(playerId)) {
+            selectedPlayers.delete(playerId);
+        } else {
+            // Убираем проверку лимита - теперь можно выбирать сколько угодно
+            selectedPlayers.add(playerId);
+        }
+        updateSelectedCount();
+    }
+
+    // Обновление статистики конкретного турнира
+    async function refreshTournamentStats(tournamentId) {
+        try {
+            const response = await fetch(`/test/tournaments/${tournamentId}/stats`);
+            const stats = await response.json();
+
+            // Находим карточку турнира
+            const tournamentCard = document.querySelector(`.tournament-card[data-tournament-id="${tournamentId}"]`);
+            if (!tournamentCard) return;
+
+            // Определяем тип турнира по бейджу
+            const isDoubles = tournamentCard.querySelector('.badge.bg-info') !== null;
+
+            // Обновляем данные в карточке
+            const progressBar = tournamentCard.querySelector('.progress-bar');
+            const progressLabel = tournamentCard.querySelector('.progress-label strong');
+            const registerButton = tournamentCard.querySelector('.btn-register');
+
+            if (progressLabel) {
+                const confirmed = stats.confirmed || 0;
+                const maxPlayers = parseInt(tournamentCard.dataset.max);
+
+                // Меняем текст в зависимости от типа турнира
+                const unit = isDoubles ? 'пар' : 'игроков';
+                progressLabel.innerHTML = `${confirmed}/${maxPlayers} ${unit}`;
+
+                // Обновляем ширину прогресс-бара
+                if (progressBar) {
+                    const percentage = (confirmed * 100) / maxPlayers;
+                    progressBar.style.width = percentage + '%';
+
+                    // Меняем цвет в зависимости от заполненности
+                    progressBar.className = 'progress-bar';
+                    if (percentage >= 100) {
+                        progressBar.classList.add('bg-danger');
+                    } else if (percentage >= 80) {
+                        progressBar.classList.add('bg-warning');
+                    } else if (percentage >= 50) {
+                        progressBar.classList.add('bg-info');
+                    } else {
+                        progressBar.classList.add('bg-success');
+                    }
+                }
+
+                // Обновляем данные в кнопке регистрации
+                if (registerButton) {
+                    registerButton.dataset.current = confirmed;
+                }
+
+                // Обновляем текст в кнопке просмотра
+                const viewButton = tournamentCard.querySelector('.btn-view');
+                if (viewButton) {
+                    const totalRegs = stats.totalRegistrations || 0;
+                    if (isDoubles) {
+                        viewButton.innerHTML = `<i class="bi bi-people me-2"></i>Пары (${totalRegs})`;
+                    } else {
+                        viewButton.innerHTML = `<i class="bi bi-people me-2"></i>Игроки (${totalRegs})`;
+                    }
+                }
+
+                // Обновляем мини-статистику если есть
+                const statsMini = tournamentCard.querySelector('.stats-mini');
+                if (statsMini) {
+                    if (isDoubles && stats.totalPlayers) {
+                        statsMini.innerHTML = `
+                        <div class="stat-mini-item">
+                            <i class="bi bi-people"></i>
+                            <span>Всего игроков: ${stats.totalPlayers}</span>
+                        </div>
+                        <div class="stat-mini-item">
+                            <i class="bi bi-person-check"></i>
+                            <span>Подтв. пар: ${stats.confirmed}</span>
+                        </div>
+                    `;
+                    }
+                }
+            }
+
+            return stats;
+        } catch (error) {
+            console.error('Ошибка обновления статистики:', error);
+        }
+    }
+
+    // Выбрать всех игроков
+    function selectAllPlayers() {
+        // Убираем ограничение по слотам
+        const checkboxes = document.querySelectorAll('.player-checkbox');
+
+        selectedPlayers.clear();
+
+        checkboxes.forEach(cb => {
+            const playerId = parseInt(cb.value);
+            selectedPlayers.add(playerId);
+            cb.checked = true;
+        });
+
+        updateSelectedCount();
+    }
+
+    // Сбросить выбор
+    function deselectAllPlayers() {
+        selectedPlayers.clear();
+        document.querySelectorAll('.player-checkbox').forEach(cb => cb.checked = false);
+        updateSelectedCount();
+    }
+
+    // Обновление счетчика выбранных
+    function updateSelectedCount() {
+        if (currentTournamentModalidad === 'DOBLES') {
+            document.getElementById('selectedCount').textContent = `Выбрано пар: ${selectedPairs.size}`;
+        } else {
+            document.getElementById('selectedCount').textContent = `Выбрано: ${selectedPlayers.size}`;
+        }
+    }
+
+    // Регистрация выбранных игроков
+    async function registerSelectedPlayers() {
+        if (currentTournamentModalidad === 'DOBLES') {
+            // Для парного турнира проверяем selectedPlayers (должно быть 2 игрока)
+            if (selectedPlayers.size !== 2) {
+                showToast('warning', 'Нужно выбрать ровно двух игроков', 'Выберите двух игроков для формирования пары');
+                return;
+            }
+        } else {
+            if (selectedPlayers.size === 0) {
+                showToast('warning', 'Нет выбранных игроков', 'Выберите хотя бы одного игрока');
+                return;
+            }
+        }
+
+        const registerBtn = document.getElementById('registerBtn');
+        const originalText = registerBtn.innerHTML;
+        registerBtn.disabled = true;
+        registerBtn.innerHTML = '<span class="loading-spinner me-2"></span>Регистрация...';
+
+        try {
+            if (currentTournamentModalidad === 'DOBLES') {
+                // Регистрируем пару (два выбранных игрока)
+                const playerIds = Array.from(selectedPlayers).map(id => parseInt(id));
+                console.log('Отправляем пару:', playerIds);
+
+                const response = await fetch(`/test/tournaments/${currentTournamentId}/register-pair-with-players`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        playerIds: playerIds
+                    })
+                });
+
+                const result = await response.json();
+                console.log('Результат регистрации пары:', result);
+
+                if (result.success) {
+                    showToast('success', 'Регистрация завершена', `Пара успешно зарегистрирована на позицию ${result.position}`);
+                } else {
+                    showToast('error', 'Ошибка регистрации', result.message);
+                    return;
+                }
+
+            } else {
+                // Регистрируем одиночных игроков
+                const playerIds = Array.from(selectedPlayers).map(id => parseInt(id));
+                console.log('Отправляем игроков:', playerIds);
+
+                const response = await fetch(`/test/tournaments/${currentTournamentId}/register-real-players`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        playerIds: playerIds
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    let message = '';
+                    if (result.successfullyRegistered > 0) {
+                        message += `✅ Зарегистрировано: ${result.successfullyRegistered}<br>`;
+                    }
+                    if (result.alreadyRegistered > 0) {
+                        message += `⚠️ Уже были в турнире: ${result.alreadyRegistered}<br>`;
+                    }
+                    showToast('success', 'Регистрация завершена', message);
+                } else {
+                    showToast('error', 'Ошибка регистрации', result.message);
+                    return;
+                }
+            }
+
+            // Обновляем статистику турнира
+            await refreshTournamentStats(currentTournamentId);
+
+            // Закрываем модалку
+            registerModal.hide();
+
+            // Очищаем выбранные данные
+            selectedPlayers.clear();
+
+        } catch (error) {
+            console.error('Ошибка:', error);
+            showToast('error', 'Ошибка', error.message);
+        } finally {
+            registerBtn.disabled = false;
+            registerBtn.innerHTML = originalText;
+        }
+    }
+
+    // Просмотр игроков турнира
+    async function viewTournamentPlayers(button) {
+        const tournamentId = button.dataset.tournamentId;
+        const tournamentName = button.dataset.tournamentName;
+
+        currentViewTournamentId = tournamentId;
+
+        document.getElementById('viewModalTournamentName').textContent = tournamentName;
+        document.getElementById('playersListContainer').innerHTML =
+            '<div class="text-center p-4"><div class="loading-spinner me-2"></div>Загрузка списка игроков...</div>';
+
+        viewPlayersModal.show();
+
+        try {
+            console.log('Загружаем игроков для турнира:', tournamentId);
+            const response = await fetch(`/test/tournaments/${tournamentId}/players`);
+            const data = await response.json();
+
+            if (data.success) {
+                renderViewPlayersList(data);
+            } else {
+                document.getElementById('playersListContainer').innerHTML =
+                    `<div class="alert alert-danger m-3">${data.message || 'Ошибка загрузки'}</div>`;
+            }
+        } catch (error) {
+            console.error('Ошибка загрузки:', error);
+            document.getElementById('playersListContainer').innerHTML =
+                `<div class="alert alert-danger m-3">Ошибка: ${error.message}</div>`;
+        }
+    }
+
+    // Отрисовка списка игроков в модалке просмотра
+    function renderViewPlayersList(data) {
+        const container = document.getElementById('playersListContainer');
+        console.log('>>> renderViewPlayersList() ВЫЗВАНА! <<<');
+        console.log('Данные для отображения:', data);
+
+        const mainPlayers = data.mainPlayers || [];
+        const waitlistPlayers = data.waitlistPlayers || [];
+
+        let html = '';
+
+        // Основной состав (есть позиция)
+        if (mainPlayers.length > 0) {
+            html += `
+            <div class="mb-4">
+                <h6 class="mb-3">
+                    <i class="bi bi-people-fill me-2 text-success"></i>
+                    Основной состав (${mainPlayers.length})
+                </h6>
+        `;
+
+            mainPlayers.forEach((player) => {
+                html += `
+                <div class="player-item" id="player-row-${player.id}">
+                    <div class="player-info">
+                        <div class="player-avatar">${player.name ? player.name.charAt(0).toUpperCase() : '?'}</div>
+                        <div class="player-details">
+                            <div class="player-name">${player.name || 'Без имени'}</div>
+                            <div class="player-email small text-muted">${player.email || 'Нет email'}</div>
+                            <div class="player-position">
+                                Позиция: ${player.position || '?'}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-success">В ТУРНИРЕ</span>
+                        <button class="btn btn-sm btn-outline-danger"
+                                onclick="removePlayerFromTournament(${currentViewTournamentId}, ${player.id}, '${player.name.replace(/'/g, "\\'")}')"
+                                title="Удалить игрока">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            });
+
+            html += `</div>`;
+        }
+
+        // Резерв (нет позиции)
+        if (waitlistPlayers.length > 0) {
+            html += `
+            <div class="mt-4">
+                <h6 class="mb-3">
+                    <i class="bi bi-clock-history me-2 text-warning"></i>
+                    Резерв (${waitlistPlayers.length})
+                </h6>
+                <div class="alert alert-warning py-2 mb-3" role="alert">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Игроки в резерве ждут свободного места
+                </div>
+        `;
+
+            waitlistPlayers.forEach((player) => {
+                html += `
+                <div class="player-item waitlist-item" id="player-row-${player.id}">
+                    <div class="player-info">
+                        <div class="player-avatar bg-warning">${player.name ? player.name.charAt(0).toUpperCase() : '?'}</div>
+                        <div class="player-details">
+                            <div class="player-name">${player.name || 'Без имени'}</div>
+                            <div class="player-email small text-muted">${player.email || 'Нет email'}</div>
+                            <div class="player-position">
+                                <span class="badge bg-warning text-dark">
+                                    <i class="bi bi-sort-numeric-up me-1"></i>
+                                    Резерв #${player.waitlistPosition || '?'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-warning text-dark">ОЖИДАНИЕ</span>
+                        <button class="btn btn-sm btn-outline-danger"
+                                onclick="removePlayerFromTournament(${currentViewTournamentId}, ${player.id}, '${player.name.replace(/'/g, "\\'")}')"
+                                title="Удалить из резерва">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            });
+
+            html += `</div>`;
+        }
+
+        // Если никого нет
+        if (mainPlayers.length === 0 && waitlistPlayers.length === 0) {
+            html = `
+            <div class="empty-state">
+                <i class="bi bi-people"></i>
+                <p>Нет зарегистрированных игроков</p>
+            </div>
+        `;
+        }
+
+        container.innerHTML = html;
+    }
+
+    // Удаление игрока из турнира
+    async function removePlayerFromTournament(tournamentId, playerId, playerName) {
+        if (!tournamentId) {
+            tournamentId = currentViewTournamentId;
+        }
+
+        if (!tournamentId) {
+            showToast('error', 'Ошибка', 'ID турнира не найден');
+            return;
+        }
+
+        if (!confirm(`Удалить игрока "${playerName}" из турнира?`)) {
+            return;
+        }
+
+        const button = event.target;
+        const originalHtml = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = '<span class="loading-spinner"></span>';
+
+        try {
+            const response = await fetch(`/test/tournaments/${tournamentId}/remove-player/${playerId}`, {
+                method: 'POST'
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showToast('success', 'Успешно', `Игрок "${playerName}" удален из турнира`);
+
+                // ОБНОВЛЯЕМ СТАТИСТИКУ ТУРНИРА
+                await refreshTournamentStats(tournamentId);
+
+                // Обновляем список в модалке просмотра
+                refreshPlayerList();
+            } else {
+                showToast('error', 'Ошибка', result.message);
+            }
+        } catch (error) {
+            showToast('error', 'Ошибка', error.message);
+        } finally {
+            button.disabled = false;
+            button.innerHTML = originalHtml;
+        }
+    }
+
+    // Отрисовка списка игроков в модалке регистрации
+    function renderRegistrationPlayersList() {
+        console.log('>>> renderRegistrationPlayersList() ВЫЗВАНА! <<<');
+
+        const playersList = document.getElementById('playersList');
+        if (!playersList) {
+            console.error('❌ Элемент playersList не найден!');
+            return;
+        }
+
+        const searchTerm = document.getElementById('searchPlayer')?.value.toLowerCase() || '';
+
+        if (!availablePlayers || availablePlayers.length === 0) {
+            playersList.innerHTML = `
+            <div class="empty-state">
+                <i class="bi bi-person-x"></i>
+                <p>Нет доступных игроков</p>
+            </div>
+        `;
+            return;
+        }
+
+        const filteredPlayers = availablePlayers.filter(p => {
+            const nameMatch = p.name?.toLowerCase().includes(searchTerm) || false;
+            const emailMatch = p.email?.toLowerCase().includes(searchTerm) || false;
+            return nameMatch || emailMatch;
+        });
+
+        if (filteredPlayers.length === 0) {
+            playersList.innerHTML = `
+            <div class="empty-state">
+                <i class="bi bi-person-x"></i>
+                <p>Игроки не найдены по запросу "${searchTerm}"</p>
+            </div>
+        `;
+            return;
+        }
+
+        let html = '';
+        filteredPlayers.forEach(player => {
+            const isSelected = selectedPlayers.has(player.id);
+            html += `
+            <div class="player-checkbox-item">
+                <input type="checkbox"
+                       class="player-checkbox"
+                       value="${player.id}"
+                       id="player_${player.id}"
+                       ${isSelected ? 'checked' : ''}
+                       onchange="togglePlayer(${player.id})">
+                <label for="player_${player.id}">
+                    <div>
+                        <strong>${player.name || 'Без имени'}</strong>
+                        <div class="player-email">${player.email || 'Нет email'}</div>
+                    </div>
+                </label>
+            </div>
+        `;
+        });
+
+        playersList.innerHTML = html;
+        updateSelectedCount();
+    }
+
+    // Очистка тестовых регистраций
+    async function clearTestPlayers(button) {
+        const tournamentId = button.dataset.tournamentId;
+        const tournamentName = button.dataset.tournamentName;
+
+        if (!confirm(`Удалить все тестовые регистрации (ID игроков 1-50) с турнира "${tournamentName}"?`)) {
+            return;
+        }
+
+        const originalHtml = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = '<span class="loading-spinner"></span>';
 
         try {
             const response = await fetch(`/test/tournaments/${tournamentId}/clear-test-players`, {
@@ -374,55 +2713,62 @@
             const result = await response.json();
 
             if (result.success) {
-                showResult('success', `
-                        <div class="alert alert-success">
-                            <h6>✅ Очистка завершена</h6>
-                            <p class="mb-0">Удалено регистраций: ${result.deletedCount}</p>
-                        </div>
-                        <div class="mt-3">
-                            <strong>Обновленная статистика:</strong><br>
-                            Всего регистраций: ${result.tournamentStats?.totalRegistrations || 0}<br>
-                            Подтверждено: ${result.tournamentStats?.confirmed || 0}
-                        </div>
-                    `);
+                showToast('success', 'Очистка завершена', `Удалено регистраций: ${result.deletedCount}`);
 
-                setTimeout(() => location.reload(), 1500);
+                // ОБНОВЛЯЕМ СТАТИСТИКУ ТУРНИРА
+                await refreshTournamentStats(tournamentId);
+
+                // Если открыта модалка просмотра, обновляем и её
+                if (currentViewTournamentId === parseInt(tournamentId)) {
+                    refreshPlayerList();
+                }
             } else {
-                showResult('danger', `<div class="alert alert-danger">${result.message}</div>`);
+                showToast('error', 'Ошибка очистки', result.message);
             }
         } catch (error) {
-            showResult('danger', `<div class="alert alert-danger">Ошибка: ${error.message}</div>`);
+            showToast('error', 'Ошибка', error.message);
         } finally {
             button.disabled = false;
-            button.innerHTML = originalText;
+            button.innerHTML = originalHtml;
         }
     }
 
-    // Обновление статистики
-    async function refreshStats(tournamentId, button) {
-        const originalText = button.innerHTML;
-        button.disabled = true;
-        button.innerHTML = '⏳';
-
-        try {
-            const response = await fetch(`/test/tournaments/${tournamentId}/stats`);
-            const stats = await response.json();
-
-            // Обновляем отображение
-            location.reload(); // Простой способ - перезагрузить страницу
-        } catch (error) {
-            console.error('Ошибка обновления статистики:', error);
-        } finally {
-            button.disabled = false;
-            button.innerHTML = originalText;
+    // Обновление списка игроков
+    function refreshPlayerList() {
+        if (!currentViewTournamentId) {
+            console.error('ID турнира не найден');
+            showToast('error', 'Ошибка', 'ID турнира не найден');
+            return;
         }
+
+        console.log('Обновляем список для турнира:', currentViewTournamentId);
+
+        viewTournamentPlayers({
+            dataset: {
+                tournamentId: currentViewTournamentId,
+                tournamentName: document.getElementById('viewModalTournamentName').textContent
+            }
+        });
     }
 
-    // Показать результат в модальном окне
-    function showResult(type, content) {
-        const modal = new bootstrap.Modal(document.getElementById('resultModal'));
-        document.getElementById('resultContent').innerHTML = content;
-        modal.show();
+    // Показ toast уведомления
+    function showToast(type, title, message) {
+        const toastContainer = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast-custom toast-${type}`;
+        toast.innerHTML = `
+                <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'} fs-4"></i>
+                <div>
+                    <strong>${title}</strong>
+                    <div class="small">${message}</div>
+                </div>
+            `;
+
+        toastContainer.appendChild(toast);
+
+        setTimeout(() => {
+            toast.remove();
+        }, 5000);
     }
 </script>
 </body>
