@@ -53,6 +53,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // Маппинги для отображения значений
     const displayMaps = {
         nivel: {
+            // Новые уровни
+            'SUMA_15': 'Suma 15+',
+            'SUMA_13': 'Suma 13+',
+            'D7': 'D7',
+            'D8': 'D8',
+            'D7_D8': 'D7/D8',
+            'D6': 'D6',
+            'C7_C6': 'C7/C6',
+            // Существующие уровни
             'C9': 'C9 (Principiante)',
             'C8': 'C8 (Intermedio)',
             'C7': 'C7 (Avanzado)',
@@ -171,6 +180,15 @@ document.addEventListener('DOMContentLoaded', function() {
             if (filters.nivel !== 'todos') {
                 // Маппинг значений фильтра на значения в БД
                 const nivelMap = {
+                    // Новые уровни
+                    'SUMA_15': 'SUMA_15',
+                    'SUMA_13': 'SUMA_13',
+                    'D7': 'D7',
+                    'D8': 'D8',
+                    'D7_D8': 'D7_D8',
+                    'D6': 'D6',
+                    'C7_C6': 'C7_C6',
+                    // Существующие уровни
                     'C9': 'C9',
                     'C8': 'C8',
                     'C7': 'C7',
@@ -237,96 +255,14 @@ document.addEventListener('DOMContentLoaded', function() {
         if (noTournamentsMessage) noTournamentsMessage.style.display = 'none';
         if (resultsCounter) resultsCounter.style.display = 'block';
 
-        torneosGrid.innerHTML = filteredTournaments.map(tournament => {
-            const isMyTournament = myTournamentIds.has(tournament.id);
-            const myTournamentBadge = isMyTournament ?
-                '<span class="my-tournament-badge"><i class="fas fa-check-circle"></i> Inscrito</span>' : '';
+        // Очищаем сетку
+        torneosGrid.innerHTML = '';
 
-            // Форматируем дату
-            const fechaArray = tournament.fechaInicio;
-            const fechaStr = Array.isArray(fechaArray) ?
-                `${fechaArray[2]}/${fechaArray[1]}/${fechaArray[0]}` :
-                tournament.fechaInicio || '';
-
-            // Форматируем время
-            const horaArray = tournament.horaInicio;
-            const horaStr = Array.isArray(horaArray) ?
-                `${horaArray[0]}:${horaArray[1].toString().padStart(2, '0')}` :
-                tournament.horaInicio || '';
-
-            // Определяем статус регистрации
-            const registrationStatus = tournament.inscritosActuales >= tournament.cupoMax ? 'full' : 'available';
-            const registrationText = tournament.inscritosActuales >= tournament.cupoMax ?
-                'Lista de espera' : 'Registrarse';
-
-            // Получаем отображаемые тексты
-            const generoDisplay = displayMaps.genero[tournament.generoFormato] || tournament.generoFormato || 'N/A';
-            const nivelDisplay = tournament.categoriaNivel || 'N/A'; // Только значение без описания
-            const tipoDisplay = displayMaps.tipo[tournament.tipo] || tournament.tipo || 'N/A';
-
-            // Формируем адрес клуба, если он есть
-            const clubAddress = tournament.clubDireccion ?
-                `<span class="club-address">${escapeHtml(tournament.clubDireccion)}</span>` : '';
-
-            return `
-        <div class="torneo-card ${isMyTournament ? 'my-tournament' : ''}" data-tournament-id="${tournament.id}">
-            <div class="torneo-card-header">
-                <span class="torneo-badge">${generoDisplay}</span>
-                <span class="torneo-badge torneo-badge-level">${nivelDisplay}</span>
-            </div>
-            <div class="torneo-card-body">
-                <h3 class="torneo-title">${escapeHtml(tournament.nombre || '')}</h3>
-                ${myTournamentBadge}
-                <div class="torneo-info">
-                    <div class="torneo-info-item">
-                        <i class="fas fa-calendar-alt"></i>
-                        <span>${fechaStr} ${horaStr}</span>
-                    </div>
-                    <div class="torneo-info-item">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <div class="club-info">
-                            <span class="club-name">${escapeHtml(tournament.clubNombre || 'Club por definir')}</span>
-                            ${clubAddress}
-                        </div>
-                    </div>
-                    <div class="torneo-info-item">
-                        <i class="fas fa-trophy"></i>
-                        <span>${tipoDisplay}</span>
-                    </div>
-                    <div class="torneo-info-item">
-                        <i class="fas fa-users"></i>
-                        <span>${tournament.inscritosActuales || 0}/${tournament.cupoMax || 0} inscritos</span>
-                    </div>
-                    <div class="torneo-info-item">
-                        <i class="fas fa-tag"></i>
-                        <span>${tournament.precio || 0} ${tournament.moneda || ''}</span>
-                    </div>
-                </div>
-                <div class="torneo-footer">
-${!isMyTournament ? `
-    <button class="btn btn-primary btn-small btn-register" 
-            data-tournament-id="${tournament.id}"
-            data-tournament-name="${escapeHtml(tournament.nombre)}">
-        <i class="fas fa-plus-circle"></i> 
-        <span>${registrationText}</span>
-    </button>
-` : `
-    <button class="btn btn-outline btn-small btn-cancel" 
-            data-tournament-id="${tournament.id}"
-            data-tournament-name="${escapeHtml(tournament.nombre)}">
-        <i class="fas fa-times-circle"></i> Cancelar
-    </button>
-`}
-    <a href="/torneo/${tournament.id}" class="btn btn-outline btn-small">
-        <i class="fas fa-info-circle"></i> Detalles
-    </a>
-                </div>
-            </div>
-        </div>
-    `}).join('');
-
-        // Добавляем обработчики для кнопок регистрации
-        attachRegistrationHandlers();
+        // Создаем карточки для каждого турнира
+        filteredTournaments.forEach(tournament => {
+            const card = createTournamentCardElement(tournament);
+            torneosGrid.appendChild(card);
+        });
     }
 
     // Прикрепляем обработчики к кнопкам регистрации
@@ -433,6 +369,22 @@ ${!isMyTournament ? `
             submitBtn.parentNode.replaceChild(newSubmitBtn, submitBtn);
             newSubmitBtn.addEventListener('click', () => submitPartnerRegistration(tournamentId));
         }
+
+        const closeButtons = modal.querySelectorAll('[data-dismiss="modal"]');
+        closeButtons.forEach(button => {
+            // Убираем старые обработчики
+            const newButton = button.cloneNode(true);
+            button.parentNode.replaceChild(newButton, button);
+
+            // Добавляем новый обработчик
+            newButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                modal.style.display = 'none';
+                modal.classList.remove('show');
+                toggleModalAriaHidden(modal, false);
+                console.log('✅ Модальное окно закрыто');
+            });
+        });
 
         // Показываем модальное окно
         modal.style.display = 'block';
@@ -813,19 +765,13 @@ ${!isMyTournament ? `
                     modal.classList.remove('show');
                 }
 
+                // Показываем сообщение об успехе
                 showResultModal('success', data.message);
 
-                // Обновляем список моих турниров - ТОЛЬКО для полной отмены
-                if (cancelOption === 'full') {
-                    myTournamentIds.delete(parseInt(tournamentId));
-                    if (myTournamentsCount) {
-                        myTournamentsCount.textContent = `(${myTournamentIds.size})`;
-                    }
-                }
-                // Для опции replace НЕ удаляем, так как игрок заменяется, но остается в турнире
-
-                // Перерисовываем
-                applyFiltersFunction();
+                // ИСПРАВЛЕНО: Принудительная перезагрузка страницы через 1 секунду
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
             } else {
                 showResultModal('error', 'Error: ' + data.message);
                 if (button) {
@@ -840,6 +786,141 @@ ${!isMyTournament ? `
                 button.disabled = false;
                 button.innerHTML = '<i class="fas fa-times-circle"></i> Cancelar';
             }
+        }
+    }
+
+    // Функция для создания элемента карточки турнира
+    function createTournamentCardElement(tournament) {
+        const card = document.createElement('div');
+        card.className = `torneo-card ${myTournamentIds.has(tournament.id) ? 'my-tournament' : ''}`;
+        card.dataset.tournamentId = tournament.id;
+
+        const isMyTournament = myTournamentIds.has(tournament.id);
+        const myTournamentBadge = isMyTournament ?
+            '<span class="my-tournament-badge"><i class="fas fa-check-circle"></i> Inscrito</span>' : '';
+
+        // Форматируем дату
+        const fechaArray = tournament.fechaInicio;
+        const fechaStr = Array.isArray(fechaArray) ?
+            `${fechaArray[2]}/${fechaArray[1]}/${fechaArray[0]}` :
+            tournament.fechaInicio || '';
+
+        // Форматируем время
+        const horaArray = tournament.horaInicio;
+        const horaStr = Array.isArray(horaArray) ?
+            `${horaArray[0]}:${horaArray[1].toString().padStart(2, '0')}` :
+            tournament.horaInicio || '';
+
+        // Определяем статус регистрации
+        const registrationText = tournament.inscritosActuales >= tournament.cupoMax ?
+            'Lista de espera' : 'Registrarse';
+
+        // Получаем отображаемые тексты
+        const generoDisplay = displayMaps.genero[tournament.generoFormato] || tournament.generoFormato || 'N/A';
+        const nivelDisplay = tournament.categoriaNivel || 'N/A';
+        const tipoDisplay = displayMaps.tipo[tournament.tipo] || tournament.tipo || 'N/A';
+
+        // Определяем текст для количества участников
+        const participantsText = tournament.modalidad === 'DOBLES' ? 'parejas' : 'jugadores';
+
+        // Формируем адрес клуба, если он есть
+        const clubAddress = tournament.clubDireccion ?
+            `<span class="club-address">${escapeHtml(tournament.clubDireccion)}</span>` : '';
+
+        card.innerHTML = `
+        <div class="torneo-card-header">
+            <span class="torneo-badge">${generoDisplay}</span>
+            <span class="torneo-badge torneo-badge-level">${nivelDisplay}</span>
+        </div>
+        <div class="torneo-card-body">
+            <h3 class="torneo-title">${escapeHtml(tournament.nombre || '')}</h3>
+            ${myTournamentBadge}
+            <div class="torneo-info">
+                <div class="torneo-info-item">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>${fechaStr} ${horaStr}</span>
+                </div>
+                <div class="torneo-info-item">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <div class="club-info">
+                        <span class="club-name">${escapeHtml(tournament.clubNombre || 'Club por definir')}</span>
+                        ${clubAddress}
+                    </div>
+                </div>
+                <div class="torneo-info-item">
+                    <i class="fas fa-trophy"></i>
+                    <span>${tipoDisplay}</span>
+                </div>
+                <div class="torneo-info-item">
+                    <i class="fas fa-users"></i>
+                    <span>${tournament.inscritosActuales || 0}/${tournament.cupoMax || 0} ${participantsText}</span>
+                </div>
+                <div class="torneo-info-item">
+                    <i class="fas fa-tag"></i>
+                    <span>${tournament.precio || 0} ${tournament.moneda || ''}</span>
+                </div>
+            </div>
+            <div class="torneo-footer">
+${!isMyTournament ? `
+    <button class="btn btn-primary btn-small btn-register" 
+            data-tournament-id="${tournament.id}"
+            data-tournament-name="${escapeHtml(tournament.nombre)}">
+        <i class="fas fa-plus-circle"></i> 
+        <span>${registrationText}</span>
+    </button>
+` : `
+    <button class="btn btn-outline btn-small btn-cancel" 
+            data-tournament-id="${tournament.id}"
+            data-tournament-name="${escapeHtml(tournament.nombre)}">
+        <i class="fas fa-times-circle"></i> Cancelar
+    </button>
+`}
+    <a href="/torneo/${tournament.id}" class="btn btn-outline btn-small">
+        <i class="fas fa-info-circle"></i> Detalles
+    </a>
+            </div>
+        </div>
+    `;
+
+        // Добавляем обработчики для кнопок
+        const registerBtn = card.querySelector('.btn-register');
+        if (registerBtn) {
+            registerBtn.addEventListener('click', handleRegistration);
+        }
+
+        const cancelBtn = card.querySelector('.btn-cancel');
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', handleCancellation);
+        }
+
+        return card;
+    }
+
+    // Функция для обновления данных турниров с сервера
+    async function refreshTournamentData() {
+        try {
+            console.log('🔄 Обновляем данные турниров с сервера...');
+            const response = await fetch('/api/tournaments/active');
+            if (response.ok) {
+                const data = await response.json();
+
+                // Обновляем глобальные данные
+                window.tournamentData = data;
+
+                // Обновляем локальные переменные
+                tournaments.length = 0;
+                tournaments.push(...data);
+
+                // Обновляем уникальные значения для отладки
+                const uniqueNiveles = [...new Set(tournaments.map(t => t.categoriaNivel))];
+                console.log('📊 Обновленные уникальные значения уровней:', uniqueNiveles);
+
+                console.log('✅ Данные турниров обновлены:', tournaments.length);
+            } else {
+                console.error('❌ Ошибка при обновлении данных:', response.status);
+            }
+        } catch (error) {
+            console.error('❌ Ошибка при обновлении данных:', error);
         }
     }
 
@@ -894,11 +975,11 @@ ${!isMyTournament ? `
 
                     if (data.success) {
                         showResultModal('success', data.message);
-                        myTournamentIds.delete(parseInt(tournamentId));
-                        if (myTournamentsCount) {
-                            myTournamentsCount.textContent = `(${myTournamentIds.size})`;
-                        }
-                        applyFiltersFunction();
+
+                        // ИСПРАВЛЕНО: Принудительная перезагрузка страницы через 1 секунду
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
                     } else {
                         showResultModal('error', 'Error: ' + data.message);
                         button.disabled = false;

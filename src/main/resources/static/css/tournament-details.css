@@ -1058,3 +1058,273 @@ input[type="tel"].form-control {
 .btn-danger:hover {
     background: #c82333;
 }
+
+/* ===== АДАПТИВНОСТЬ МОДАЛЬНЫХ ОКОН ===== */
+@media (max-width: 768px) {
+    .modal {
+        padding: 10px;
+        align-items: flex-start;
+        overflow-y: auto;
+    }
+
+    .modal-dialog {
+        margin: 0 auto;
+        max-width: 100%;
+        width: 100%;
+    }
+
+    .modal-content {
+        border-radius: 20px;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .modal-header {
+        padding: 1.25rem 1.5rem;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        border-radius: 20px 20px 0 0;
+    }
+
+    .modal-header .modal-title {
+        font-size: 1.1rem;
+        line-height: 1.3;
+        word-break: break-word;
+    }
+
+    .modal-header .modal-title i {
+        font-size: 1.3rem;
+    }
+
+    .modal-close {
+        width: 40px;
+        height: 40px;
+        font-size: 1.3rem;
+        flex-shrink: 0;
+    }
+
+    .modal-body {
+        padding: 1.5rem;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        max-height: calc(90vh - 140px);
+    }
+
+    .modal-footer {
+        padding: 1.25rem 1.5rem;
+        position: sticky;
+        bottom: 0;
+        background: white;
+        border-top: 1px solid #e9ecef;
+        z-index: 10;
+        border-radius: 0 0 20px 20px;
+        flex-direction: column-reverse;
+        gap: 0.75rem;
+    }
+
+    .modal-footer .btn {
+        width: 100%;
+        min-width: auto;
+        padding: 1rem;
+        font-size: 1rem;
+        margin: 0;
+    }
+
+    /* Специально для модалки парной регистрации */
+    #partnerModal .modal-body {
+        max-height: calc(90vh - 160px);
+    }
+
+    #partnerModal .form-group {
+        margin-bottom: 1.25rem;
+    }
+
+    #partnerModal .form-control {
+        padding: 1rem;
+        font-size: 16px; /* Предотвращает зум на iOS */
+    }
+
+    #partnerModal .form-text {
+        font-size: 0.8rem;
+        margin-top: 0.5rem;
+    }
+
+    /* Для модалки отмены */
+    #doubleCancelModal .modal-body {
+        max-height: calc(90vh - 140px);
+    }
+
+    .radio-label {
+        padding: 12px;
+    }
+
+    .radio-text {
+        font-size: 0.9rem;
+    }
+
+    .radio-text strong {
+        font-size: 1rem;
+    }
+
+    .text-muted {
+        font-size: 0.8rem;
+    }
+
+    /* Поля для замены игрока */
+    #replacePlayerFields .form-control {
+        margin-bottom: 0.75rem;
+    }
+
+    #replacePlayerFields .form-control:last-child {
+        margin-bottom: 0;
+    }
+
+    /* Информационное сообщение */
+    .info-message {
+        padding: 0.875rem 1rem;
+        font-size: 0.9rem;
+        margin-top: 0.75rem;
+    }
+
+    .info-message i {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .modal-header {
+        padding: 1rem 1.25rem;
+    }
+
+    .modal-body {
+        padding: 1.25rem;
+    }
+
+    .modal-footer {
+        padding: 1rem 1.25rem;
+    }
+
+    .modal-header .modal-title {
+        font-size: 1rem;
+    }
+
+    .modal-close {
+        width: 36px;
+        height: 36px;
+    }
+
+    .form-group label {
+        font-size: 0.9rem;
+        margin-bottom: 0.4rem;
+    }
+
+    .form-group label i {
+        font-size: 0.9rem;
+    }
+
+    .form-control {
+        padding: 0.875rem;
+        font-size: 15px;
+    }
+
+    /* Для маленьких экранов делаем заголовок компактнее */
+    #partnerModalLabel {
+        white-space: normal;
+        display: flex;
+        align-items: flex-start;
+    }
+
+    #partnerModalLabel i {
+        margin-top: 2px;
+    }
+
+    #modalTournamentName {
+        display: inline-block;
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+/* Для очень маленьких экранов */
+@media (max-width: 360px) {
+    .modal-header {
+        padding: 0.875rem 1rem;
+    }
+
+    .modal-body {
+        padding: 1rem;
+    }
+
+    .modal-footer {
+        padding: 0.875rem 1rem;
+    }
+
+    .modal-header .modal-title {
+        font-size: 0.95rem;
+    }
+
+    #modalTournamentName {
+        max-width: 150px;
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-control {
+        padding: 0.75rem;
+    }
+
+    .btn {
+        padding: 0.75rem;
+        font-size: 0.95rem;
+    }
+}
+
+/* Улучшаем скролл на мобильных */
+.modal-body::-webkit-scrollbar {
+    width: 4px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+    background: #FF6B35;
+    border-radius: 4px;
+}
+
+/* Улучшенное отображение описания с переносами строк */
+.tournament-description {
+    line-height: 1.6;
+    color: var(--admin-dark);
+    white-space: pre-line; /* Сохраняет переносы строк */
+    word-wrap: break-word; /* Переносит длинные слова */
+    font-size: 1rem;
+    padding: 0.5rem 0;
+}
+
+.tournament-description br {
+    display: block;
+    content: "";
+    margin-top: 0.5rem;
+}
+
+.tournament-description p {
+    margin-bottom: 1rem;
+}
+
+.tournament-description ul,
+.tournament-description ol {
+    margin-left: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.tournament-description li {
+    margin-bottom: 0.25rem;
+}

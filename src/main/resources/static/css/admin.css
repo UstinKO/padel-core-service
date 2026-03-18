@@ -3201,3 +3201,25 @@
         height: 28px;
     }
 }
+
+/* Стили для кнопки копирования */
+.btn-icon.copy {
+    background: #6366f1;
+    color: white;
+}
+
+.btn-icon.copy:hover {
+    background: #4f46e5;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(99, 102, 241, 0.3);
+}
+
+.btn-outline.copy {
+    color: #6366f1;
+    border-color: #6366f1;
+}
+
+.btn-outline.copy:hover {
+    background: #6366f1;
+    color: white;
+}

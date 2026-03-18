@@ -14,6 +14,15 @@ class PadelCoreHome {
         // Маппинги для отображения значений
         this.displayMaps = {
             nivel: {
+                // Новые уровни
+                'SUMA_15': 'Suma 15+',
+                'SUMA_13': 'Suma 13+',
+                'D7': 'D7',
+                'D8': 'D8',
+                'D7_D8': 'D7/D8',
+                'D6': 'D6',
+                'C7_C6': 'C7/C6',
+                // Существующие уровни
                 'C9': 'C9 (Principiante)',
                 'C8': 'C8 (Intermedio)',
                 'C7': 'C7 (Avanzado)',
@@ -164,6 +173,15 @@ class PadelCoreHome {
             // Фильтрация для уровня
             if (nivel !== 'todos') {
                 const nivelMap = {
+                    // Новые уровни
+                    'SUMA_15': 'SUMA_15',
+                    'SUMA_13': 'SUMA_13',
+                    'D7': 'D7',
+                    'D8': 'D8',
+                    'D7_D8': 'D7_D8',
+                    'D6': 'D6',
+                    'C7_C6': 'C7_C6',
+                    // Существующие уровни
                     'C9': 'C9',
                     'C8': 'C8',
                     'C7': 'C7',

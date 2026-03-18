@@ -87,29 +87,27 @@ public class DoubleTournamentRegistrationService {
      * Проверка свободных мест для пары
      */
     private void checkAvailableSlotsForPair(TournamentDto tournamentDto) {
-        long spotsByPairs = registrationRepository.countSpotsOccupiedByPairs(tournamentDto.getId());
-        long spotsBySingles = registrationRepository.countSpotsOccupiedBySingles(tournamentDto.getId());
+        // ИСПРАВЛЕНО: используем countUniquePairs для подсчета занятых мест
+        long occupiedPairs = registrationRepository.countUniquePairs(tournamentDto.getId());
 
-        int occupiedSpots = (int) (spotsByPairs + spotsBySingles);
-        int availableSpots = tournamentDto.getCupoMax() - occupiedSpots;
+        int availableSpots = tournamentDto.getCupoMax() - (int) occupiedPairs;
 
-        log.info("Tournament {} - Spots by pairs: {}, Spots by singles: {}, Occupied: {}, Available: {}",
-                tournamentDto.getId(), spotsByPairs, spotsBySingles, occupiedSpots, availableSpots);
+        log.info("Tournament {} - Occupied pairs: {}, Available: {}",
+                tournamentDto.getId(), occupiedPairs, availableSpots);
     }
 
     /**
      * Определяем статус для пары по свободным местам
      */
     private RegistrationStatus determineRegistrationStatusForPair(TournamentDto tournamentDto) {
-        long spotsByPairs = registrationRepository.countSpotsOccupiedByPairs(tournamentDto.getId());
-        long spotsBySingles = registrationRepository.countSpotsOccupiedBySingles(tournamentDto.getId());
+        // ИСПРАВЛЕНО: используем countUniquePairs для подсчета занятых мест
+        long occupiedPairs = registrationRepository.countUniquePairs(tournamentDto.getId());
 
-        int occupiedSpots = (int) (spotsByPairs + spotsBySingles);
-        int availableSpots = tournamentDto.getCupoMax() - occupiedSpots;
+        int availableSpots = tournamentDto.getCupoMax() - (int) occupiedPairs;
 
-        log.debug("Determining status for pair - Occupied: {}, Available: {}", occupiedSpots, availableSpots);
+        log.debug("Determining status for pair - Occupied pairs: {}, Available: {}", occupiedPairs, availableSpots);
 
-        if (availableSpots >= 2) {
+        if (availableSpots > 0) {
             return RegistrationStatus.CONFIRMED;
         } else {
             return RegistrationStatus.WAITLIST;
@@ -118,9 +116,11 @@ public class DoubleTournamentRegistrationService {
 
     private int calculatePosition(TournamentDto tournamentDto, RegistrationStatus status) {
         if (status == RegistrationStatus.CONFIRMED) {
-            long confirmedPairs = registrationRepository.countUniquePairs(tournamentDto.getId());
+            // Для CONFIRMED позиция - это количество подтвержденных пар + 1
+            long confirmedPairs = registrationRepository.countConfirmedPairs(tournamentDto.getId());
             return (int) confirmedPairs + 1;
         } else {
+            // Для WAITLIST позиция - максимальная позиция в листе ожидания + 1
             return registrationRepository.findMaxWaitlistPosition(tournamentDto.getId()).orElse(0) + 1;
         }
     }
@@ -310,20 +310,18 @@ public class DoubleTournamentRegistrationService {
 
         Tournament tournament = registration.getTournament();
 
+        // ИСПРАВЛЕНО: используем countUniquePairs для подсчета занятых мест
+        long occupiedPairs = registrationRepository.countUniquePairs(tournament.getId());
+        int availableSpots = tournament.getCupoMax() - (int) occupiedPairs;
+
+        log.info("Confirming partner - Occupied pairs: {}, Available: {}", occupiedPairs, availableSpots);
+
         RegistrationStatus finalStatus;
         int position;
 
-        long confirmedPairs = registrationRepository.countConfirmedPairs(tournament.getId());
-        long invitedPartners = registrationRepository.countByTournamentIdAndStatus(
-                tournament.getId(), RegistrationStatus.PARTNER_INVITED);
-
-        int occupiedSpots = (int) (confirmedPairs * 2 + invitedPartners);
-        int availableSpots = tournament.getCupoMax() - occupiedSpots;
-
-        log.info("Confirming partner - Occupied spots: {}, Available: {}", occupiedSpots, availableSpots);
-
-        if (availableSpots >= 1) {
+        if (availableSpots > 0) {
             finalStatus = RegistrationStatus.CONFIRMED;
+            long confirmedPairs = registrationRepository.countConfirmedPairs(tournament.getId());
             position = (int) confirmedPairs + 1;
 
             registration.setStatus(RegistrationStatus.CONFIRMED);
@@ -342,6 +340,7 @@ public class DoubleTournamentRegistrationService {
         registration.setPartnerRegistrationToken(null);
         registration.setPartnerTokenExpiry(null);
 
+        // Создаем регистрацию для партнера
         TournamentRegistration partnerRegistration = TournamentRegistration.builder()
                 .tournament(tournament)
                 .player(savedPartner)

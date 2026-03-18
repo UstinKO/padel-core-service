@@ -65,3 +65,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.21-add-double-tournament-fields.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.22-update-nivel-constraint.yaml
+      relativeToChangelogFile: true
