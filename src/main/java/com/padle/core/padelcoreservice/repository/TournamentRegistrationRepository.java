@@ -124,15 +124,44 @@ public interface TournamentRegistrationRepository extends JpaRepository<Tourname
     long countSpotsOccupiedBySingles(@Param("tournamentId") Long tournamentId);
 
     /**
-     * Считаем количество уникальных пар в турнире
+     * Подсчет всех активных регистраций (для индивидуальных турниров)
      */
-    @Query("SELECT COUNT(DISTINCT CASE " +
-            "WHEN r.mainPlayerId IS NOT NULL THEN r.mainPlayerId " +
-            "ELSE r.player.id END) " +
-            "FROM TournamentRegistration r " +
-            "WHERE r.tournament.id = :tournamentId " +
-            "AND r.isActive = true " +
-            "AND r.status = 'CONFIRMED' " +
-            "AND (r.partner IS NOT NULL OR r.partnerFirstName IS NOT NULL)")
+    @Query("SELECT COUNT(t) FROM TournamentRegistration t " +
+            "WHERE t.tournament.id = :tournamentId " +
+            "AND t.isActive = true")
+    long countActiveRegistrations(@Param("tournamentId") Long tournamentId);
+
+    /**
+     * Подсчет подтвержденных регистраций (для индивидуальных турниров)
+     */
+    @Query("SELECT COUNT(t) FROM TournamentRegistration t " +
+            "WHERE t.tournament.id = :tournamentId " +
+            "AND t.isActive = true " +
+            "AND t.status = 'CONFIRMED'")
+    long countConfirmedRegistrations(@Param("tournamentId") Long tournamentId);
+
+    /**
+     * Проверить, есть ли у игрока активная регистрация
+     */
+    @Query("SELECT CASE WHEN COUNT(t) > 0 THEN true ELSE false END FROM TournamentRegistration t " +
+            "WHERE t.player.id = :playerId AND t.tournament.id = :tournamentId AND t.isActive = true")
+    boolean existsActiveRegistration(@Param("playerId") Long playerId, @Param("tournamentId") Long tournamentId);
+
+    /**
+     * Найти все регистрации для партнера (где он является партнером)
+     */
+    @Query("SELECT t FROM TournamentRegistration t " +
+            "WHERE t.partner.id = :partnerId OR " +
+            "(t.mainPlayerId = :partnerId AND t.player.id != :partnerId)")
+    List<TournamentRegistration> findPartnerRegistrations(@Param("partnerId") Long partnerId);
+
+    /**
+     * Подсчет уникальных пар (группировка по mainPlayerId) для парных турниров
+     * Учитываем только CONFIRMED и PARTNER_INVITED (где приглашение действительно)
+     */
+    @Query("SELECT COUNT(DISTINCT t.mainPlayerId) FROM TournamentRegistration t " +
+            "WHERE t.tournament.id = :tournamentId " +
+            "AND t.isActive = true " +
+            "AND t.status IN ('CONFIRMED', 'PARTNER_INVITED')")
     long countUniquePairs(@Param("tournamentId") Long tournamentId);
 }

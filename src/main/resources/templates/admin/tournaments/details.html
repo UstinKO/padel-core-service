@@ -295,7 +295,8 @@
                         <i class="fas fa-align-left"></i>
                         Descripción
                     </h2>
-                    <div class="tournament-description" th:text="${tournament.infoDetallada}">
+                    <!-- ИСПРАВЛЕНО: используем простой текст с CSS -->
+                    <div class="tournament-description" style="white-space: pre-line;" th:text="${tournament.infoDetallada}">
                         Descripción detallada del torneo...
                     </div>
                 </div>
@@ -307,7 +308,19 @@
                         Contacto del Organizador
                     </h2>
                     <div class="contact-info">
-                        <p th:text="${tournament.contactoOrganizador}">Juan Pérez - 123456789</p>
+                        <!-- ===== ИСПРАВЛЕНО: теперь номер кликабельный и открывает WhatsApp ===== -->
+                        <p th:if="${tournament.contactoOrganizador}">
+                            <a th:href="'https://wa.me/5491158985854' + ${#strings.replace(tournament.contactoOrganizador, '+', '')}"
+                               class="whatsapp-contact-link"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               th:title="'Contactar por WhatsApp con ' + ${tournament.contactoOrganizador}">
+                                <i class="fab fa-whatsapp" style="color: #25D366; margin-right: 8px;"></i>
+                                <span th:text="${tournament.contactoOrganizador}">Juan Pérez - 123456789</span>
+                            </a>
+                        </p>
+                        <p th:unless="${tournament.contactoOrganizador}">No disponible</p>
+                        <!-- ===== КОНЕЦ ИСПРАВЛЕНИЯ ===== -->
                     </div>
                 </div>
 

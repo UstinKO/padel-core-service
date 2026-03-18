@@ -30,6 +30,10 @@
                     <i class="fas fa-plus-circle"></i>
                     Crear Nuevo Torneo
                 </h1>
+                <h1 th:if="${isCopy != null}">
+                    <i class="fas fa-copy"></i>
+                    Copiar Torneo: <span th:text="${tournament.nombre}" style="font-size: 1.5rem; color: var(--admin-primary);">Torneo</span>
+                </h1>
                 <h1 th:unless="${tournament.id == null}">
                     <i class="fas fa-edit"></i>
                     Editar Torneo
@@ -351,5 +355,66 @@
 
 <!-- Admin JavaScript -->
 <script th:src="@{/js/admin.js}"></script>
+
+<!-- Скрипт для автоматического расчета даты отмены -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const fechaInicio = document.getElementById('fechaInicio');
+        const horaInicio = document.getElementById('horaInicio');
+        const deadlineCancelacion = document.getElementById('deadlineCancelacion');
+
+        // Функция для расчета даты отмены (fechaInicio + horaInicio + 24 часа)
+        function calcularDeadlineCancelacion() {
+            // Если оба поля заполнены
+            if (fechaInicio.value && horaInicio.value) {
+                try {
+                    // Создаем строку с датой и временем начала
+                    const fechaHoraStr = fechaInicio.value + 'T' + horaInicio.value;
+                    const fechaHora = new Date(fechaHoraStr);
+
+                    // Проверяем, что дата валидная
+                    if (!isNaN(fechaHora.getTime())) {
+                        // Прибавляем 24 часа
+                        const deadline = new Date(fechaHora.getTime() + (24 * 60 * 60 * 1000));
+
+                        // Форматируем для datetime-local (YYYY-MM-DDTHH:mm)
+                        const year = deadline.getFullYear();
+                        const month = String(deadline.getMonth() + 1).padStart(2, '0');
+                        const day = String(deadline.getDate()).padStart(2, '0');
+                        const hours = String(deadline.getHours()).padStart(2, '0');
+                        const minutes = String(deadline.getMinutes()).padStart(2, '0');
+
+                        deadlineCancelacion.value = `${year}-${month}-${day}T${hours}:${minutes}`;
+
+                        console.log('✅ Fecha límite calculada:', deadlineCancelacion.value);
+                    }
+                } catch (error) {
+                    console.error('Error al calcular fecha límite:', error);
+                }
+            }
+        }
+
+        // Добавляем обработчики событий
+        if (fechaInicio && horaInicio && deadlineCancelacion) {
+            // При изменении даты или времени
+            fechaInicio.addEventListener('change', calcularDeadlineCancelacion);
+            horaInicio.addEventListener('change', calcularDeadlineCancelacion);
+
+            // При вводе (на случай если пользователь не использует календарь)
+            fechaInicio.addEventListener('input', calcularDeadlineCancelacion);
+            horaInicio.addEventListener('input', calcularDeadlineCancelacion);
+
+            // Если поля уже заполнены (при редактировании), не перезаписываем существующее значение
+            // Только если поле пустое
+            if (!deadlineCancelacion.value && fechaInicio.value && horaInicio.value) {
+                calcularDeadlineCancelacion();
+            }
+
+            console.log('✅ Автоматический расчет даты отмены активирован');
+        } else {
+            console.warn('❌ Не найдены поля для автоматического расчета даты отмены');
+        }
+    });
+</script>
 </body>
 </html>

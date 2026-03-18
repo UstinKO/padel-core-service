@@ -2946,3 +2946,50 @@ h1, h2, h3, h4, h5, h6 {
 .torneo-card.my-tournament {
     border-left: 4px solid #28a745;
 }
+
+/* WhatsApp contact link - для админки */
+.whatsapp-contact-link {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    color: var(--admin-text);
+    transition: all 0.2s ease;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    border: 1px solid var(--admin-border);
+    width: 100%;
+}
+
+.whatsapp-contact-link:hover {
+    background-color: #e8f5e9;
+    border-color: #25D366;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(37, 211, 102, 0.15);
+}
+
+.whatsapp-contact-link i {
+    font-size: 1.25rem;
+    transition: transform 0.2s;
+}
+
+.whatsapp-contact-link:hover i {
+    transform: scale(1.1);
+}
+
+.whatsapp-contact-link span {
+    font-weight: 500;
+    word-break: break-word;
+}
+
+/* Адаптивность для мобильных */
+@media (max-width: 768px) {
+    .whatsapp-contact-link {
+        padding: 10px 12px;
+        font-size: 0.95rem;
+    }
+
+    .whatsapp-contact-link i {
+        font-size: 1.3rem;
+    }
+}
