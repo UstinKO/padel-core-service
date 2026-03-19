@@ -828,6 +828,27 @@
         .waitlist-item {
             animation: waitlistPulse 2s infinite;
         }
+
+        .btn-light {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            color: #212529;
+            padding: 0.5rem 1rem;
+            border-radius: 30px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-light:hover {
+            background-color: #e9ecef;
+            border-color: #dee2e6;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .btn-light i {
+            font-size: 1rem;
+        }
     </style>
 </head>
 <body>
@@ -841,6 +862,11 @@
                     <p>Ручная регистрация реальных игроков для проведения тестовых турниров</p>
                 </div>
                 <div class="text-end">
+                    <!-- КНОПКА ВОЗВРАТА В АДМИНКУ -->
+                    <a href="/admin" class="btn btn-light">
+                        <i class="bi bi-arrow-left me-2"></i>
+                        Вернуться в админ-панель
+                    </a>
                         <span class="badge bg-light text-dark p-3">
                             <i class="bi bi-calendar-check me-1"></i>
                             <span th:text="${#temporals.format(now, 'dd.MM.yyyy HH:mm')}"></span>
@@ -1816,7 +1842,7 @@
 
         // Загружаем игроков в зависимости от типа турнира
         if (currentTournamentModalidad === 'DOBLES') {
-            await loadAvailablePairs();
+            await loadAvailablePlayersForPairs();
             registerBtnElement.innerHTML = '<i class="bi bi-people"></i> Зарегистрировать пару';
             updateSelectedPairsCount();
         } else {
@@ -2376,10 +2402,6 @@
                 console.log('Отправляем пару:', playerIds);
 
                 const response = await fetch(`/test/tournaments/${currentTournamentId}/register-pair-with-players`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
                     body: JSON.stringify({
                         playerIds: playerIds
                     })
