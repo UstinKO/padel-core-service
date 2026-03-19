@@ -67,6 +67,26 @@
                     </p>
                 </div>
 
+                <!-- ===== BLOQUE SOCIAL ÚNICO (AHORA CENTRADO) ===== -->
+                <div style="display: flex; justify-content: center; width: 100%;">
+                    <div class="auth-social" style="justify-content: center; width: auto; min-width: 200px;">
+                        <a href="/oauth2/authorization/google" class="btn" style="margin: 0;">
+                            <i class="fab fa-google"></i> Google
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Pequeño texto opcional debajo (puedes quitarlo si no quieres) -->
+                <p style="text-align: center; margin-top: 1rem; color: #6b7280; font-size: 0.85rem;">
+                    <i class="fas fa-shield-alt" style="margin-right: 0.25rem;"></i>
+                    Tus datos están seguros con Google
+                </p>
+
+                <!-- Separador -->
+                <div class="form-divider" style="margin-bottom: 2rem;">
+                    <span>o crea una cuenta con email</span>
+                </div>
+
                 <!-- Registration Form -->
                 <form action="/players/registro" method="post" class="auth-form" id="registroForm">
                     <!-- Error Messages -->
@@ -197,19 +217,9 @@
                     </button>
                 </form>
 
-                <!-- Separador opcional -->
-                <div class="form-divider">
+                <!-- Separador -->
+                <div class="form-divider" style="margin: 1.5rem 0 0.75rem;">
                     <span>o regístrate con</span>
-                </div>
-
-                <!-- Redes sociales (placeholder) -->
-                <div class="auth-social">
-                    <a href="/oauth2/authorization/google" class="btn">
-                        <i class="fab fa-google"></i> Google
-                    </a>
-<!--                    <a href="/oauth2/authorization/facebook" class="btn">-->
-<!--                        <i class="fab fa-facebook-f"></i> Facebook-->
-<!--                    </a>-->
                 </div>
             </div>
         </div>

@@ -386,11 +386,23 @@
                                             Posición: 1
                                         </span>
                                     </div>
-                                    <a th:href="@{'/admin/players/' + ${reg.playerId}}"
-                                       class="btn-icon"
-                                       title="Ver detalles del jugador">
-                                        <i class="fas fa-external-link-alt"></i>
-                                    </a>
+                                    <!-- ДОБАВЛЯЕМ КНОПКУ ДЛЯ ПЕРЕМЕЩЕНИЯ В РЕЗЕРВ -->
+                                    <div class="registration-actions">
+                                        <button type="button"
+                                                class="btn-icon move-to-waitlist"
+                                                th:attr="data-tournament-id=${tournament.id},
+                                                    data-player-id=${reg.playerId},
+                                                    data-player-name=${reg.playerNombre}"
+                                                onclick="moveToWaitlist(this)"
+                                                title="Mover a lista de espera">
+                                            <i class="fas fa-arrow-down"></i>
+                                        </button>
+                                        <a th:href="@{'/admin/players/' + ${reg.playerId}}"
+                                           class="btn-icon"
+                                           title="Ver detalles del jugador">
+                                            <i class="fas fa-external-link-alt"></i>
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                             <div th:if="${tournament.inscritosActuales == 0}" class="empty-registrations">
@@ -455,14 +467,26 @@
                                         Jugador
                                     </a>
                                     <span class="registration-position" th:text="'Espera: ' + ${reg.waitlistPosition}">
-                                        Espera: 1
-                                    </span>
+                    Espera: 1
+                </span>
                                 </div>
-                                <a th:href="@{'/admin/players/' + ${reg.playerId}}"
-                                   class="btn-icon"
-                                   title="Ver detalles del jugador">
-                                    <i class="fas fa-external-link-alt"></i>
-                                </a>
+                                <!-- ДОБАВЛЯЕМ КНОПКУ ДЛЯ ПЕРЕМЕЩЕНИЯ В ОСНОВНОЙ СОСТАВ -->
+                                <div class="registration-actions">
+                                    <button type="button"
+                                            class="btn-icon move-to-main"
+                                            th:attr="data-tournament-id=${tournament.id},
+                                 data-player-id=${reg.playerId},
+                                 data-player-name=${reg.playerNombre}"
+                                            onclick="moveToMain(this)"
+                                            title="Mover al torneo principal">
+                                        <i class="fas fa-arrow-up"></i>
+                                    </button>
+                                    <a th:href="@{'/admin/players/' + ${reg.playerId}}"
+                                       class="btn-icon"
+                                       title="Ver detalles del jugador">
+                                        <i class="fas fa-external-link-alt"></i>
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -605,5 +629,95 @@
 <footer th:replace="~{fragments/admin-footer :: footer}"></footer>
 
 <script th:src="@{/js/admin.js}"></script>
+<script>
+    // Функция для перемещения игрока в резерв
+    function moveToWaitlist(button) {
+        const tournamentId = button.dataset.tournamentId;
+        const playerId = button.dataset.playerId;
+        const playerName = button.dataset.playerName;
+
+        // Блокируем кнопку
+        button.disabled = true;
+        const originalHtml = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+        fetch(`/admin/tournaments/${tournamentId}/move-to-waitlist/${playerId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('success', `Jugador movido a la lista de espera`);
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showNotification('error', data.message || 'Error al mover jugador');
+                    button.disabled = false;
+                    button.innerHTML = originalHtml;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('error', 'Error de conexión');
+                button.disabled = false;
+                button.innerHTML = originalHtml;
+            });
+    }
+
+    // Функция для перемещения игрока в основной состав
+    function moveToMain(button) {
+        const tournamentId = button.dataset.tournamentId;
+        const playerId = button.dataset.playerId;
+        const playerName = button.dataset.playerName;
+
+        // Блокируем кнопку
+        button.disabled = true;
+        const originalHtml = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+        fetch(`/admin/tournaments/${tournamentId}/move-to-main/${playerId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('success', `Jugador movido al torneo principal`);
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showNotification('error', data.message || 'Error al mover jugador');
+                    button.disabled = false;
+                    button.innerHTML = originalHtml;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('error', 'Error de conexión');
+                button.disabled = false;
+                button.innerHTML = originalHtml;
+            });
+    }
+
+    // Функция для показа уведомлений
+    function showNotification(type, message) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'}`;
+        alertDiv.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+        <span>${message}</span>
+    `;
+
+        const container = document.querySelector('.container');
+        container.insertBefore(alertDiv, container.firstChild);
+
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 3000);
+    }
+</script>
 </body>
 </html>

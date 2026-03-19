@@ -296,15 +296,15 @@ public class TournamentService {
         Tournament tournament = tournamentRepository.findById(tournamentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tournament not found"));
 
-        // ИСПРАВЛЕНО: считаем занятые места с учетом модальности
-        long occupiedSpots = tournament.getModalidad() == Modalidad.DOBLES
-                ? registrationRepository.countSpotsOccupiedByPairs(tournamentId)
-                : registrationRepository.countSpotsOccupiedBySingles(tournamentId);
+        // ИСПРАВЛЕНО: считаем только CONFIRMED регистрации
+        long confirmedSpots = tournament.getModalidad() == Modalidad.DOBLES
+                ? registrationRepository.countConfirmedPairs(tournamentId)
+                : registrationRepository.countByTournamentIdAndStatus(tournamentId, RegistrationStatus.CONFIRMED);
 
-        int availableSlots = tournament.getCupoMax() - (int) occupiedSpots;
+        int availableSlots = tournament.getCupoMax() - (int) confirmedSpots;
 
-        log.info("Tournament {} - Modalidad: {}, Occupied spots: {}, Available slots: {}",
-                tournamentId, tournament.getModalidad(), occupiedSpots, availableSlots);
+        log.info("Tournament {} - Modalidad: {}, Confirmed spots: {}, Available slots: {}",
+                tournamentId, tournament.getModalidad(), confirmedSpots, availableSlots);
 
         if (availableSlots > 0) {
             List<TournamentRegistration> waitlist = registrationRepository
@@ -313,7 +313,6 @@ public class TournamentService {
 
             log.info("Found {} available slots and {} players in waitlist", availableSlots, waitlist.size());
 
-            // ИСПРАВЛЕНО: приглашаем столько игроков, сколько освободилось мест
             for (int i = 0; i < Math.min(availableSlots, waitlist.size()); i++) {
                 TournamentRegistration firstInWaitlist = waitlist.get(i);
                 sendInvitationToPlayer(firstInWaitlist, tournament);
@@ -550,36 +549,37 @@ public class TournamentService {
                     dto.setClubDireccion(club.getDireccionCompleta());
                 });
 
-        long occupiedSpots;
+        // ИСПРАВЛЕНО: считаем только CONFIRMED регистрации для основного состава
+        long confirmedSpots;
         long waitlistCount;
 
         if (tournament.getModalidad() == Modalidad.DOBLES) {
-            // Для парных турниров считаем количество уникальных пар
-            occupiedSpots = registrationRepository.countUniquePairs(tournament.getId());
-            // В листе ожидания для парных турниров тоже считаем пары
+            // Для парных турниров считаем количество уникальных позиций среди CONFIRMED
+            confirmedSpots = registrationRepository.countConfirmedPairs(tournament.getId());
             waitlistCount = registrationRepository.countByTournamentIdAndStatus(
                     tournament.getId(), RegistrationStatus.WAITLIST);
 
-            log.debug("DOUBLES Tournament {} - Unique pairs: {}, Waitlist pairs: {}",
-                    tournament.getId(), occupiedSpots, waitlistCount);
+            log.debug("DOUBLES Tournament {} - Confirmed pairs: {}, Waitlist pairs: {}",
+                    tournament.getId(), confirmedSpots, waitlistCount);
         } else {
-            // Для индивидуальных турниров считаем количество игроков
-            occupiedSpots = registrationRepository.countConfirmedRegistrations(tournament.getId());
+            // Для индивидуальных турниров считаем количество CONFIRMED игроков
+            confirmedSpots = registrationRepository.countByTournamentIdAndStatus(
+                    tournament.getId(), RegistrationStatus.CONFIRMED);
             waitlistCount = registrationRepository.countByTournamentIdAndStatus(
                     tournament.getId(), RegistrationStatus.WAITLIST);
 
             log.debug("SINGLES Tournament {} - Confirmed players: {}, Waitlist players: {}",
-                    tournament.getId(), occupiedSpots, waitlistCount);
+                    tournament.getId(), confirmedSpots, waitlistCount);
         }
 
-        dto.setInscritosActuales((int) occupiedSpots);
+        dto.setInscritosActuales((int) confirmedSpots);
         dto.setWaitlistCount((int) waitlistCount);
 
-        int disponibles = tournament.getCupoMax() - (int) occupiedSpots;
-        dto.setDisponibles(Math.max(disponibles, 0)); // Не даем уйти в минус
+        int disponibles = tournament.getCupoMax() - (int) confirmedSpots;
+        dto.setDisponibles(Math.max(disponibles, 0));
 
-        log.debug("Tournament {} - CupoMax: {}, Occupied: {}, Waitlist: {}, Available: {}",
-                tournament.getId(), tournament.getCupoMax(), occupiedSpots, waitlistCount, disponibles);
+        log.debug("Tournament {} - CupoMax: {}, Confirmed: {}, Waitlist: {}, Available: {}",
+                tournament.getId(), tournament.getCupoMax(), confirmedSpots, waitlistCount, disponibles);
 
         return dto;
     }
@@ -810,6 +810,90 @@ public class TournamentService {
         processWaitlistForTournament(tournament.getId());
 
         return true;
+    }
+
+    @Transactional
+    public void moveToWaitlist(Long tournamentId, Long playerId) {
+        log.info("Moving player {} from main to waitlist in tournament {}", playerId, tournamentId);
+
+        TournamentRegistration registration = registrationRepository
+                .findByTournamentIdAndPlayerId(tournamentId, playerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Registration not found"));
+
+        if (registration.getStatus() != RegistrationStatus.CONFIRMED) {
+            throw new InvalidStateException("El jugador no está en el torneo principal");
+        }
+
+        // Получаем следующую позицию в листе ожидания
+        int nextWaitlistPosition = registrationRepository
+                .findMaxWaitlistPosition(tournamentId)
+                .orElse(0) + 1;
+
+        // Перемещаем в резерв
+        registration.setStatus(RegistrationStatus.WAITLIST);
+        registration.setWaitlistPosition(nextWaitlistPosition);
+        registration.setPosition(null);
+
+        registrationRepository.save(registration);
+
+        // Пересчитываем позиции для оставшихся игроков
+        reorderPositions(tournamentId);
+    }
+
+    @Transactional
+    public void moveToMain(Long tournamentId, Long playerId) {
+        log.info("Moving player {} from waitlist to main in tournament {}", playerId, tournamentId);
+
+        TournamentRegistration registration = registrationRepository
+                .findByTournamentIdAndPlayerId(tournamentId, playerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Registration not found"));
+
+        if (registration.getStatus() != RegistrationStatus.WAITLIST) {
+            throw new InvalidStateException("El jugador no está en la lista de espera");
+        }
+
+        // Проверяем, есть ли свободные места
+        long confirmedCount = registrationRepository.countByTournamentIdAndStatus(
+                tournamentId, RegistrationStatus.CONFIRMED);
+
+        Tournament tournament = tournamentRepository.findById(tournamentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tournament not found"));
+
+        if (confirmedCount >= tournament.getCupoMax()) {
+            throw new InvalidStateException("No hay lugares disponibles en el torneo");
+        }
+
+        // Перемещаем в основной состав
+        registration.setStatus(RegistrationStatus.CONFIRMED);
+        registration.setPosition((int) confirmedCount + 1);
+        registration.setWaitlistPosition(null);
+
+        registrationRepository.save(registration);
+
+        // Пересчитываем позиции в листе ожидания
+        reorderWaitlist(tournamentId);
+    }
+
+    private void reorderPositions(Long tournamentId) {
+        List<TournamentRegistration> confirmed = registrationRepository
+                .findByTournamentIdAndStatusOrderByPositionAsc(
+                        tournamentId, RegistrationStatus.CONFIRMED);
+
+        for (int i = 0; i < confirmed.size(); i++) {
+            confirmed.get(i).setPosition(i + 1);
+        }
+        registrationRepository.saveAll(confirmed);
+    }
+
+    private void reorderWaitlist(Long tournamentId) {
+        List<TournamentRegistration> waitlist = registrationRepository
+                .findByTournamentIdAndStatusOrderByWaitlistPositionAsc(
+                        tournamentId, RegistrationStatus.WAITLIST);
+
+        for (int i = 0; i < waitlist.size(); i++) {
+            waitlist.get(i).setWaitlistPosition(i + 1);
+        }
+        registrationRepository.saveAll(waitlist);
     }
 
     /**
