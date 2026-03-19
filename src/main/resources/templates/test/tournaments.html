@@ -2397,11 +2397,14 @@
 
         try {
             if (currentTournamentModalidad === 'DOBLES') {
-                // Регистрируем пару (два выбранных игрока)
                 const playerIds = Array.from(selectedPlayers).map(id => parseInt(id));
                 console.log('Отправляем пару:', playerIds);
 
                 const response = await fetch(`/test/tournaments/${currentTournamentId}/register-pair-with-players`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify({
                         playerIds: playerIds
                     })

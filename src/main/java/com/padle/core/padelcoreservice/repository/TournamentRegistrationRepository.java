@@ -164,4 +164,7 @@ public interface TournamentRegistrationRepository extends JpaRepository<Tourname
             "AND t.isActive = true " +
             "AND t.status IN ('CONFIRMED', 'PARTNER_INVITED')")
     long countUniquePairs(@Param("tournamentId") Long tournamentId);
+
+    List<TournamentRegistration> findByTournamentIdAndStatusOrderByPositionAsc(
+            Long tournamentId, RegistrationStatus status);
 }

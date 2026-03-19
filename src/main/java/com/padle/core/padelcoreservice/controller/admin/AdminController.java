@@ -15,6 +15,7 @@ import com.padle.core.padelcoreservice.service.TournamentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -23,7 +24,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Controller
@@ -253,6 +256,56 @@ public class AdminController {
                     "Ошибка при деактивации: " + e.getMessage());
         }
         return "redirect:/admin/tournaments/" + id;
+    }
+
+    /**
+     * Перемещение игрока из основного состава в резерв
+     */
+    @PostMapping("/tournaments/{tournamentId}/move-to-waitlist/{playerId}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> moveToWaitlist(
+            @PathVariable Long tournamentId,
+            @PathVariable Long playerId) {
+
+        Map<String, Object> result = new HashMap<>();
+        log.info("Moving player {} from main to waitlist in tournament {}", playerId, tournamentId);
+
+        try {
+            tournamentService.moveToWaitlist(tournamentId, playerId);
+            result.put("success", true);
+            result.put("message", "Jugador movido a la lista de espera");
+        } catch (Exception e) {
+            log.error("Error moving player to waitlist", e);
+            result.put("success", false);
+            result.put("message", e.getMessage());
+        }
+
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * Перемещение игрока из резерва в основной состав
+     */
+    @PostMapping("/tournaments/{tournamentId}/move-to-main/{playerId}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> moveToMain(
+            @PathVariable Long tournamentId,
+            @PathVariable Long playerId) {
+
+        Map<String, Object> result = new HashMap<>();
+        log.info("Moving player {} from waitlist to main in tournament {}", playerId, tournamentId);
+
+        try {
+            tournamentService.moveToMain(tournamentId, playerId);
+            result.put("success", true);
+            result.put("message", "Jugador movido al torneo principal");
+        } catch (Exception e) {
+            log.error("Error moving player to main", e);
+            result.put("success", false);
+            result.put("message", e.getMessage());
+        }
+
+        return ResponseEntity.ok(result);
     }
 
     private List<Nivel> getNiveles() {

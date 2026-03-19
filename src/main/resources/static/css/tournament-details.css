@@ -1328,3 +1328,28 @@ input[type="tel"].form-control {
 .tournament-description li {
     margin-bottom: 0.25rem;
 }
+
+.registration-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-left: auto;
+}
+
+.btn-icon.move-to-waitlist {
+    color: #f59e0b;
+}
+
+.btn-icon.move-to-waitlist:hover {
+    background-color: #fff3cd;
+    color: #b45309;
+}
+
+.btn-icon.move-to-main {
+    color: #10b981;
+}
+
+.btn-icon.move-to-main:hover {
+    background-color: #d1fae5;
+    color: #047857;
+}

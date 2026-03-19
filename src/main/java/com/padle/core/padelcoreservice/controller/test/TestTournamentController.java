@@ -451,15 +451,15 @@ public class TestTournamentController {
         TournamentDto tournament = tournamentService.getTournamentDtoById(tournamentId).orElse(null);
         boolean isDoubles = tournament != null && "DOBLES".equals(tournament.getModalidad().name());
 
-        // ПРОСТОЙ SQL: берем все регистрации
+        // ИСПРАВЛЕННЫЙ SQL: добавляем waitlist_position в SELECT
         String sql = "SELECT tr.position, tr.status, tr.registration_date, tr.is_double_registration, " +
-                "tr.waitlist_position, " +
+                "tr.waitlist_position, " +  // ← ЭТО БЫЛО ПРОПУЩЕНО
                 "p.id, p.nombre, p.apellido, p.email, p.telefono " +
                 "FROM tournament_registrations_db tr " +
                 "JOIN player_padel_db p ON tr.player_id = p.id " +
                 "WHERE tr.tournament_id = ? " +
                 "ORDER BY " +
-                "CASE WHEN tr.status = 'WAITLIST' THEN 1 ELSE 0 END, " + // WAITLIST в конец
+                "CASE WHEN tr.status = 'WAITLIST' THEN 1 ELSE 0 END, " +
                 "tr.position, tr.waitlist_position";
 
         try (Connection conn = dataSource.getConnection();
@@ -481,7 +481,8 @@ public class TestTournamentController {
                     player.put("phone", rs.getString("telefono"));
                     player.put("position", rs.getObject("position"));
                     player.put("status", rs.getString("status"));
-                    player.put("waitlistPosition", rs.getObject("waitlistPosition"));
+                    // ИСПРАВЛЕНО: используем правильное имя колонки
+                    player.put("waitlistPosition", rs.getObject("waitlist_position"));
                     player.put("registrationDate", rs.getTimestamp("registration_date"));
                     player.put("isDoubleRegistration", rs.getBoolean("is_double_registration"));
 
