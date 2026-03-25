@@ -15,7 +15,6 @@
     <meta property="og:url" th:content="@{'/torneo/' + ${tournament.id}}">
     <meta name="twitter:card" content="summary_large_image">
 
-    <!-- ✅ ИСПРАВЛЕНО: нет лишних символов -->
     <title th:text="${tournament.nombre} + ' | E-Padel'">Torneo | E-Padel</title>
 
     <!-- Favicon con nuevo logo -->
@@ -29,17 +28,16 @@
     <!-- Google Fonts - Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-    <!-- Custom Styles - orden importante! -->
+    <!-- Custom Styles -->
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" th:href="@{/css/tournament-details.css}">
 </head>
 <body>
-<!-- Header con nuevo logo -->
+<!-- Header -->
 <header class="header">
     <div class="container">
         <nav class="navbar">
             <a href="/" class="navbar-brand">
-                <!-- Nuevo logo desde 2.svg -->
                 <img th:src="@{/images/1.svg}" alt="E-Padel Logo" class="navbar-logo" width="40" height="40">
                 <span class="navbar-brand-text">E-<span class="brand-highlight">PADEL</span></span>
             </a>
@@ -60,12 +58,6 @@
                     <li class="nav-item" th:if="${isAuthenticated}">
                         <a href="/players/dashboard" class="nav-link">Dashboard</a>
                     </li>
-<!--                    <li class="nav-item">-->
-<!--                        <a href="/torneos" class="nav-link">Torneos</a>-->
-<!--                    </li>-->
-<!--                    <li class="nav-item">-->
-<!--                        <a href="/ranking" class="nav-link">Ranking</a>-->
-<!--                    </li>-->
                     <li class="nav-item" th:if="${isAuthenticated}">
                         <a href="/perfil" class="nav-link">Perfil</a>
                     </li>
@@ -100,12 +92,10 @@
 
 <main class="tournament-main">
     <div class="container">
-        <!-- Navegación mejorada -->
+        <!-- Breadcrumb -->
         <div class="breadcrumb">
             <a href="/" class="breadcrumb-link">Inicio</a>
             <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
-<!--            <a href="/torneos" class="breadcrumb-link">Torneos</a>-->
-<!--            <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>-->
             <span class="breadcrumb-current" th:text="${tournament.nombre}">Torneo Open</span>
         </div>
 
@@ -130,8 +120,9 @@
             </div>
         </div>
 
-        <!-- Contenido principal -->
+        <!-- Contenido principal con grid -->
         <div class="tournament-content">
+            <!-- Columna izquierda - Información principal -->
             <div class="tournament-main-info">
                 <!-- Tarjeta de información -->
                 <div class="info-card">
@@ -169,8 +160,7 @@
                             </div>
                             <div class="info-content">
                                 <span class="info-label">Cupo máximo</span>
-                                <span class="info-value" th:text="${tournament.cupoMax} + ' ' + (${tournament.modalidad.name() == 'DOBLES'} ? 'parejas' : 'participantes')">16 parejas
-                                </span>
+                                <span class="info-value" th:text="${tournament.cupoMax} + ' ' + (${tournament.modalidad.name() == 'DOBLES'} ? 'parejas' : 'participantes')">16 parejas</span>
                             </div>
                         </div>
 
@@ -228,7 +218,6 @@
                         <i class="fas fa-align-left"></i>
                         Descripción
                     </h2>
-                    <!-- ИСПРАВЛЕНО: используем простой текст с CSS -->
                     <div class="tournament-description" style="white-space: pre-line;" th:text="${tournament.infoDetallada}">
                         Descripción detallada del torneo...
                     </div>
@@ -255,9 +244,8 @@
                         Contacto del Organizador
                     </h2>
                     <div class="contact-info">
-                        <!-- ===== ИСПРАВЛЕНО: теперь номер кликабельный и открывает WhatsApp ===== -->
                         <p th:if="${tournament.contactoOrganizador}">
-                            <a th:href="'https://wa.me/5491158985854' + ${#strings.replace(tournament.contactoOrganizador, '+', '')}"
+                            <a th:href="'https://wa.me/' + ${#strings.replace(tournament.contactoOrganizador, '+', '')}"
                                class="whatsapp-contact-link"
                                target="_blank"
                                rel="noopener noreferrer"
@@ -267,9 +255,10 @@
                             </a>
                         </p>
                         <p th:unless="${tournament.contactoOrganizador}">No disponible</p>
+                    </div>
                 </div>
 
-                <!-- Bloque para King of Court (solo para espectadores) -->
+                <!-- Bloque para King of Court -->
                 <div class="info-card" th:if="${kingOfCourtActive}">
                     <h2 class="info-card-title">
                         <i class="fas fa-crown" style="color: #fbbf24;"></i>
@@ -305,10 +294,31 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Bloque para Americano -->
+                <div class="info-card" th:if="${tournament.tipo.name() == 'AMERICANO' and isInitialized}">
+                    <h2 class="info-card-title">
+                        <i class="fas fa-trophy" style="color: #FF6B35;"></i>
+                        Torneo Americano
+                    </h2>
+                    <div class="americano-preview">
+                        <div class="americano-actions">
+                            <a th:href="@{'/tournaments/americano/' + ${tournament.id}}" class="btn btn-primary btn-block">
+                                <i class="fas fa-trophy"></i>
+                                Ver torneo Americano
+                            </a>
+                            <p class="americano-note">
+                                <i class="fas fa-info-circle"></i>
+                                Sigue el torneo, resultados, ranking y estadísticas en tiempo real
+                            </p>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Sidebar de inscripción -->
+            <!-- Columna derecha - Sidebar -->
             <div class="tournament-sidebar">
+                <!-- Блок регистрации -->
                 <div class="registration-card">
                     <h3 class="registration-title">Inscripción</h3>
 
@@ -368,41 +378,18 @@
 
                     <!-- Información adicional -->
                     <div class="additional-info">
-<!--                        <div class="info-note">-->
-<!--                            <i class="fas fa-info-circle"></i>-->
-<!--                            <span>La inscripción se confirma al realizar el pago</span>-->
-<!--                        </div>-->
                         <div class="info-note" th:if="${tournament.deadlineCancelacion}">
                             <i class="fas fa-clock"></i>
                             <span>Puedes cancelar hasta 24h antes del torneo</span>
                         </div>
                     </div>
                 </div>
-
-                <!-- Compartir -->
-<!--                <div class="share-card">-->
-<!--                    <h4>Compartir torneo</h4>-->
-<!--                    <div class="share-buttons">-->
-<!--                        <a href="#" class="share-btn whatsapp" onclick="shareOnWhatsApp(); return false;" aria-label="Compartir en WhatsApp">-->
-<!--                            <i class="fab fa-whatsapp"></i>-->
-<!--                        </a>-->
-<!--                        <a href="#" class="share-btn facebook" onclick="shareOnFacebook(); return false;" aria-label="Compartir en Facebook">-->
-<!--                            <i class="fab fa-facebook"></i>-->
-<!--                        </a>-->
-<!--                        <a href="#" class="share-btn twitter" onclick="shareOnTwitter(); return false;" aria-label="Compartir en Twitter">-->
-<!--                            <i class="fab fa-twitter"></i>-->
-<!--                        </a>-->
-<!--                        <a href="#" class="share-btn email" onclick="shareByEmail(); return false;" aria-label="Compartir por email">-->
-<!--                            <i class="fas fa-envelope"></i>-->
-<!--                        </a>-->
-<!--                    </div>-->
-<!--                </div>-->
             </div>
         </div>
     </div>
 </main>
 
-<!-- Footer con nuevo branding -->
+<!-- Footer -->
 <footer class="footer">
     <div class="container">
         <div class="footer-bottom" style="justify-content: center; text-align: center;">
@@ -422,7 +409,7 @@
 </script>
 <script th:src="@{/js/tournament-details.js}"></script>
 
-<!-- Модальное окно для регистрации на парный турнир -->
+<!-- Modal para registro de pareja -->
 <div class="modal" id="partnerModal" tabindex="-1" role="dialog" aria-labelledby="partnerModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
@@ -487,7 +474,6 @@
                     </div>
                 </form>
 
-                <!-- Информационные сообщения -->
                 <div id="partnerInfoMessage" class="info-message" style="display: none;">
                     <i class="fas fa-info-circle"></i>
                     <span id="infoMessageText"></span>
@@ -507,12 +493,12 @@
     </div>
 </div>
 
-<!-- Модальное окно для подтверждения результата -->
+<!-- Modal para confirmación de resultado -->
 <div class="modal" id="resultModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-sm" role="document">
         <div class="modal-content">
             <div class="modal-body text-center" id="resultModalBody">
-                <!-- Контент будет заполняться динамически -->
+                <!-- Contenido dinámico -->
             </div>
             <div class="modal-footer justify-content-center">
                 <button type="button" class="btn btn-primary" data-dismiss="modal">Aceptar</button>
@@ -520,7 +506,8 @@
         </div>
     </div>
 </div>
-<!-- Datos para JavaScript -->
+
+<!-- Script adicional -->
 <script th:inline="javascript">
     /*<![CDATA[*/
     window.tournament = /*[[${tournament}]]*/ {};

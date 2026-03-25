@@ -15,6 +15,9 @@ import com.padle.core.padelcoreservice.model.enums.*;
 import com.padle.core.padelcoreservice.repository.TournamentKingOfCourtRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
+import com.padle.core.padelcoreservice.repository.americano.AmericanoMatchRepository;
+import com.padle.core.padelcoreservice.repository.americano.AmericanoPlayerRepository;
+import com.padle.core.padelcoreservice.repository.americano.AmericanoRoundRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -42,7 +45,11 @@ public class TournamentService {
     private final PlayerService playerService;
     private final TournamentKingOfCourtRepository tournamentKingOfCourtRepository;
     private final EmailService emailService;
-    private final TournamentNotificationService notificationService;
+
+    // Добавляем репозитории Americano
+    private final AmericanoPlayerRepository americanoPlayerRepository;
+    private final AmericanoRoundRepository americanoRoundRepository;
+    private final AmericanoMatchRepository americanoMatchRepository;
 
     @Value("${app.base-url:http://localhost:8080}")
     private String baseUrl;
@@ -478,29 +485,48 @@ public class TournamentService {
                         log.warn("Tournament {} has {} registered players. Deleting anyway.", id, registrationsCount);
                     }
 
+                    // ===== УДАЛЯЕМ AMERICANO ДАННЫЕ =====
+                    // Удаляем матчи
+                    List<com.padle.core.padelcoreservice.model.americano.AmericanoMatch> matches =
+                            americanoMatchRepository.findByTournamentIdOrderByRoundIdAscMatchNumberAsc(id);
+                    if (!matches.isEmpty()) {
+                        americanoMatchRepository.deleteAll(matches);
+                        log.info("Deleted {} Americano matches", matches.size());
+                    }
+
+                    // Удаляем раунды
+                    List<com.padle.core.padelcoreservice.model.americano.AmericanoRound> rounds =
+                            americanoRoundRepository.findByTournamentIdOrderByRoundNumberAsc(id);
+                    if (!rounds.isEmpty()) {
+                        americanoRoundRepository.deleteAll(rounds);
+                        log.info("Deleted {} Americano rounds", rounds.size());
+                    }
+
+                    // Удаляем игроков Americano
+                    List<com.padle.core.padelcoreservice.model.americano.AmericanoPlayer> players =
+                            americanoPlayerRepository.findByTournamentId(id);
+                    if (!players.isEmpty()) {
+                        americanoPlayerRepository.deleteAll(players);
+                        log.info("Deleted {} Americano players", players.size());
+                    }
+                    // ===== КОНЕЦ УДАЛЕНИЯ AMERICANO =====
+
                     // Удаляем все KingOfCourt для турнира
                     List<TournamentKingOfCourt> kings = tournamentKingOfCourtRepository.findAllByTournamentId(id);
                     if (!kings.isEmpty()) {
-                        for (TournamentKingOfCourt king : kings) {
-                            tournamentKingOfCourtRepository.delete(king);
-                        }
-                        tournamentKingOfCourtRepository.flush();
-                        log.info("Deleted {} King of Court records for tournament {}", kings.size(), id);
-                    } else {
-                        log.info("No King of Court data found for tournament {}", id);
+                        tournamentKingOfCourtRepository.deleteAll(kings);
+                        log.info("Deleted {} King of Court records", kings.size());
                     }
 
                     // Удаляем все регистрации
                     List<TournamentRegistration> registrations = registrationRepository.findByTournamentId(id);
                     if (!registrations.isEmpty()) {
                         registrationRepository.deleteAll(registrations);
-                        registrationRepository.flush();
-                        log.info("Deleted {} registrations for tournament {}", registrations.size(), id);
+                        log.info("Deleted {} registrations", registrations.size());
                     }
 
                     // Удаляем турнир
                     tournamentRepository.delete(tournament);
-                    tournamentRepository.flush();
                     log.info("Permanently deleted tournament with id: {}", id);
 
                     return true;
@@ -824,6 +850,17 @@ public class TournamentService {
             throw new InvalidStateException("El jugador no está en el torneo principal");
         }
 
+        Tournament tournament = tournamentRepository.findById(tournamentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tournament not found"));
+
+        // Если это последний игрок в основном составе, не даем переместить
+        long confirmedCount = registrationRepository.countByTournamentIdAndStatus(
+                tournamentId, RegistrationStatus.CONFIRMED);
+
+        if (confirmedCount <= 4) {
+            throw new InvalidStateException("No se puede mover al último jugador. El torneo necesita al menos 4 jugadores.");
+        }
+
         // Получаем следующую позицию в листе ожидания
         int nextWaitlistPosition = registrationRepository
                 .findMaxWaitlistPosition(tournamentId)
@@ -852,15 +889,18 @@ public class TournamentService {
             throw new InvalidStateException("El jugador no está en la lista de espera");
         }
 
-        // Проверяем, есть ли свободные места
-        long confirmedCount = registrationRepository.countByTournamentIdAndStatus(
-                tournamentId, RegistrationStatus.CONFIRMED);
-
         Tournament tournament = tournamentRepository.findById(tournamentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tournament not found"));
 
+        long confirmedCount = registrationRepository.countByTournamentIdAndStatus(
+                tournamentId, RegistrationStatus.CONFIRMED);
+
+        // Если мест нет - увеличиваем cupoMax
         if (confirmedCount >= tournament.getCupoMax()) {
-            throw new InvalidStateException("No hay lugares disponibles en el torneo");
+            log.info("Tournament full ({} of {}), increasing cupoMax to {}",
+                    confirmedCount, tournament.getCupoMax(), confirmedCount + 1);
+            tournament.setCupoMax((int) confirmedCount + 1);
+            tournamentRepository.save(tournament);
         }
 
         // Перемещаем в основной состав
