@@ -127,6 +127,58 @@
             font-size: 0.8rem;
             color: var(--admin-gray);
         }
+
+        /* ── Americano — дополнительные стили (не конфликтуют с общими) ── */
+        .americano-card {
+            background: linear-gradient(145deg, #fff5f0, #fff);
+            border: 1px solid #FF6B35;
+            box-shadow: 0 4px 12px rgba(255, 107, 53, 0.08);
+        }
+        .americano-card .admin-card-header h2 { color: #c94a1a; }
+
+        .calc-info-box {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            border: 1px solid #e9ecef;
+        }
+        .calc-info-box h4 { margin: 0 0 .75rem; font-size: .95rem; color: #212529; }
+        .calc-grid { display: grid; grid-template-columns: auto 1fr; gap: .4rem .75rem; font-size: .875rem; }
+        .calc-grid .lbl { color: #6c757d; }
+        .calc-grid .val { font-weight: 600; }
+        .calc-grid .hint { color: #6c757d; font-size: .78rem; font-weight: 400; }
+
+        .format-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            padding: .3rem .65rem;
+            border-radius: 20px;
+            font-size: .78rem;
+            font-weight: 600;
+        }
+        .format-badge.full { background: #d1fae5; color: #065f46; }
+        .format-badge.flex { background: #fef3c7; color: #92400e; }
+
+        .format-msg-box {
+            padding: .75rem 1rem;
+            border-radius: 8px;
+            font-size: .875rem;
+            margin-bottom: 1rem;
+        }
+        .format-msg-box.full { background: #d1fae5; border: 1px solid #6ee7b7; color: #065f46; }
+        .format-msg-box.flex { background: #fef3c7; border: 1px solid #fcd34d; color: #92400e; }
+
+        .initialized-nav { display: flex; flex-direction: column; gap: .75rem; }
+
+        .btn-row {
+            display: flex;
+            flex-direction: column;
+            gap: .6rem;
+            margin-top: 1.25rem;
+        }
+        .btn-row .btn { width: 100%; text-align: center; justify-content: center; }
     </style>
 </head>
 <body>
@@ -308,7 +360,6 @@
                         Contacto del Organizador
                     </h2>
                     <div class="contact-info">
-                        <!-- ===== ИСПРАВЛЕНО: теперь номер кликабельный и открывает WhatsApp ===== -->
                         <p th:if="${tournament.contactoOrganizador}">
                             <a th:href="'https://wa.me/5491158985854' + ${#strings.replace(tournament.contactoOrganizador, '+', '')}"
                                class="whatsapp-contact-link"
@@ -320,7 +371,6 @@
                             </a>
                         </p>
                         <p th:unless="${tournament.contactoOrganizador}">No disponible</p>
-                        <!-- ===== КОНЕЦ ИСПРАВЛЕНИЯ ===== -->
                     </div>
                 </div>
 
@@ -359,7 +409,6 @@
                     </div>
 
                     <!-- ===== АВТОМАТИЧЕСКОЕ РАЗДЕЛЕНИЕ ===== -->
-                    <!-- Сортируем регистрации по позиции -->
                     <th:block th:with="sortedRegs=${registrations.?[status.name() == 'CONFIRMED']}">
 
                         <!-- СЕКЦИЯ 1: Основные участники (первые cupoMax) -->
@@ -467,8 +516,8 @@
                                         Jugador
                                     </a>
                                     <span class="registration-position" th:text="'Espera: ' + ${reg.waitlistPosition}">
-                    Espera: 1
-                </span>
+                                        Espera: 1
+                                    </span>
                                 </div>
                                 <!-- ДОБАВЛЯЕМ КНОПКУ ДЛЯ ПЕРЕМЕЩЕНИЯ В ОСНОВНОЙ СОСТАВ -->
                                 <div class="registration-actions">
@@ -609,18 +658,218 @@
                     </div>
                 </div>
 
-                <!-- Заглушка для других типов турниров -->
-                <div th:if="${tournament.tipo.name() != 'KING_OF_COURT'}" class="admin-card">
+                <!-- ═══════════════════════════════════════════════════════
+                     AMERICANO INDIVIDUAL
+                     Изменено только содержимое этого блока.
+                     Структура карточки (.admin-card) — оригинальная.
+                ═══════════════════════════════════════════════════════ -->
+                <div th:if="${tournament.tipo.name() == 'AMERICANO'}" class="admin-card americano-card">
                     <div class="admin-card-header">
-                        <h2><i class="fas fa-info-circle"></i> Tipo de Torneo</h2>
+                        <h2><i class="fas fa-trophy" style="color: #FF6B35;"></i> Torneo Americano</h2>
                     </div>
                     <div class="admin-card-body">
-                        <p>Este torneo es de tipo <strong th:text="${tournament.tipo.value}">Parejas</strong>.</p>
-                        <p th:if="${tournament.tipo.name() == 'AMERICANA'}">
-                            <i class="fas fa-users"></i> Funcionalidad próximamente
-                        </p>
+
+                        <!-- Турнир уже инициализирован -->
+                        <div th:if="${isInitialized == true or (ranking != null and ranking.ranking != null and not #lists.isEmpty(ranking.ranking))}" class="initialized-nav">
+
+                            <!-- Бейдж формата (если доступен) -->
+                            <div th:if="${ranking != null and ranking.formatType != null}">
+                                <div th:if="${ranking.formatType.name() == 'FULL'}" class="format-msg-box full">
+                                    <i class="fas fa-star"></i>
+                                    <span th:text="${ranking.formatMessage}">Full Americano</span>
+                                </div>
+                                <div th:if="${ranking.formatType.name() != 'FULL'}" class="format-msg-box flex">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span th:text="${ranking.formatMessage}">Flex Americano</span>
+                                </div>
+                            </div>
+
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle"></i>
+                                Torneo inicializado &middot; <strong th:text="${activePlayers}">0</strong> jugadores activos
+                            </div>
+
+                            <a th:href="@{'/tournaments/americano/admin/' + ${tournament.id}}"
+                               class="btn btn-primary btn-block">
+                                <i class="fas fa-arrow-right"></i> Ir al torneo en curso
+                            </a>
+                            <a th:href="@{'/tournaments/americano/' + ${tournament.id} + '/ranking'}"
+                               class="btn btn-outline btn-block">
+                                <i class="fas fa-chart-bar"></i> Ver clasificación
+                            </a>
+                        </div>
+
+                        <!-- Турнир ещё не инициализирован — форма запуска -->
+                        <div th:unless="${isInitialized == true or (ranking != null and ranking.ranking != null and not #lists.isEmpty(ranking.ranking))}">
+
+                            <!--
+                                Расчёт по ТЗ (п.6, 7, 9):
+                                  playersPerRound = courts × 4
+                                  bye = N - playersPerRound  (если N > playersPerRound)
+                                  Full Americano возможен если:
+                                    N % playersPerRound == 0
+                                    AND pairs_generated == pairs_total
+                            -->
+                            <th:block th:with="
+                                N=${tournament.inscritosActuales},
+                                sugCourts=${N >= 16 ? 4 : (N >= 12 ? 3 : 2)},
+                                ppr=${sugCourts * 4},
+                                byeN=${N > ppr ? N - ppr : 0},
+                                sugRounds=${N <= 6 ? 5 : (N <= 10 ? 7 : 9)},
+                                pairsTotal=${N * (N - 1) / 2},
+                                pairsGen=${sugRounds * sugCourts * 2},
+                                fullOk=${N % ppr == 0 and pairsGen == pairsTotal}">
+
+                                <!-- Блок расчётных параметров -->
+                                <div class="calc-info-box">
+                                    <h4><i class="fas fa-calculator"></i> Parámetros calculados</h4>
+                                    <div class="calc-grid">
+                                        <span class="lbl">Jugadores confirmados:</span>
+                                        <span class="val" th:text="${N}">16</span>
+
+                                        <span class="lbl">Canchas sugeridas:</span>
+                                        <span class="val">
+                                            <span th:text="${sugCourts}">2</span>
+                                            <span class="hint">(puedes cambiar)</span>
+                                        </span>
+
+                                        <span class="lbl">Rondas sugeridas:</span>
+                                        <span class="val">
+                                            <span th:text="${sugRounds}">5</span>
+                                            <span class="hint">(puedes cambiar)</span>
+                                        </span>
+
+                                        <span class="lbl">Jugadores por ronda:</span>
+                                        <span class="val" th:text="${ppr} + ' de ' + ${N}">8 de 10</span>
+
+                                        <span class="lbl">Bye por ronda:</span>
+                                        <span class="val"
+                                              th:style="${byeN > 0} ? 'color:#f59e0b' : 'color:#10b981'"
+                                              th:text="${byeN > 0 ? byeN + ' (se distribuyen equitativamente)' : 'Ninguno'}">
+                                            0
+                                        </span>
+
+                                        <span class="lbl">Formato esperado:</span>
+                                        <span class="val">
+                                            <span th:if="${fullOk}" class="format-badge full">
+                                                <i class="fas fa-star"></i> Full Americano
+                                            </span>
+                                            <span th:unless="${fullOk}" class="format-badge flex">
+                                                <i class="fas fa-random"></i> Flex Americano
+                                            </span>
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Форма инициализации -->
+                                <form th:action="@{'/tournaments/americano/admin/' + ${tournament.id} + '/initialize'}"
+                                      method="post" id="americanoForm">
+                                    <input type="hidden" name="tournamentId" th:value="${tournament.id}">
+
+                                    <!-- п.8 ТЗ: Режим генерации (Auto / Full / Flex) -->
+                                    <div class="form-group">
+                                        <label for="generationMode">
+                                            <i class="fas fa-cog"></i> Modo de generación
+                                        </label>
+                                        <select id="generationMode" name="generationMode" class="form-control" required>
+                                            <option value="AUTO" selected>Auto (Full si posible, Flex si no)</option>
+                                            <option value="FULL"
+                                                    th:disabled="${!fullOk}"
+                                                    th:text="${fullOk} ? 'Full Americano — cada par juega juntos 1 vez' : 'Full Americano — imposible con estos parámetros'">
+                                                Full
+                                            </option>
+                                            <option value="FLEX">Flex Americano — máxima variedad</option>
+                                        </select>
+                                        <small class="form-text text-muted">
+                                            <strong>Full</strong>: cada par juega juntos exactamente 1 vez, sin repeticiones.
+                                            <strong>Flex</strong>: formato flexible, minimiza repeticiones.
+                                        </small>
+                                    </div>
+
+                                    <!-- п.2 ТЗ: Лимит очков (15 / 21 / 24 / 32 / 40) -->
+                                    <div class="form-group">
+                                        <label for="pointsPerMatch">
+                                            <i class="fas fa-bullseye"></i> Límite de puntos por partido
+                                        </label>
+                                        <select id="pointsPerMatch" name="pointsPerMatch" class="form-control" required>
+                                            <option value="15">15 puntos</option>
+                                            <option value="21">21 puntos</option>
+                                            <option value="24">24 puntos (recomendado)</option>
+                                            <option value="32" selected>32 puntos (clásico)</option>
+                                            <option value="40">40 puntos (largo)</option>
+                                        </select>
+                                        <small class="form-text text-muted">
+                                            Suma de ambos equipos = este límite (ej. 8:7 si límite es 15).
+                                        </small>
+                                    </div>
+
+                                    <!-- Количество кортов -->
+                                    <div class="form-group">
+                                        <label for="courts">
+                                            <i class="fas fa-table-tennis"></i> Número de canchas
+                                        </label>
+                                        <input type="number" id="courts" name="courts"
+                                               class="form-control"
+                                               th:value="${sugCourts}"
+                                               min="1" max="10" required
+                                               oninput="recalcBye(this.value)">
+                                        <small class="form-text text-muted" id="courtsHint"
+                                               th:text="'Jugadores por ronda: ' + ${ppr} + ' · Bye: ' + ${byeN}"></small>
+                                    </div>
+
+                                    <!-- Количество раундов -->
+                                    <div class="form-group">
+                                        <label for="totalRounds">
+                                            <i class="fas fa-redo-alt"></i> Número de rondas
+                                        </label>
+                                        <input type="number" id="totalRounds" name="totalRounds"
+                                               class="form-control"
+                                               th:value="${sugRounds}"
+                                               min="1" max="30" required>
+                                        <small class="form-text text-muted">
+                                            Recomendado mínimo:
+                                            <strong th:text="${N - 1}">7</strong> rondas para diversidad de parejas.
+                                        </small>
+                                    </div>
+
+                                    <!-- п.5 ТЗ: Тип рейтинга -->
+                                    <div class="form-group">
+                                        <label for="rankingType">
+                                            <i class="fas fa-trophy"></i> Criterio de clasificación
+                                        </label>
+                                        <select id="rankingType" name="rankingType" class="form-control">
+                                            <option value="score" selected>
+                                                Por puntos (puntos → victorias → diferencia → menos derrotas)
+                                            </option>
+                                            <option value="wins">
+                                                Por victorias (victorias → puntos → diferencia → menos derrotas)
+                                            </option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Кнопки действий -->
+                                    <div class="btn-row">
+                                        <button type="button" class="btn btn-outline"
+                                                onclick="previewRounds()"
+                                                th:disabled="${tournament.inscritosActuales < 4}">
+                                            <i class="fas fa-eye"></i> Previsualizar
+                                        </button>
+                                        <button type="submit" class="btn btn-primary"
+                                                id="btnIniciarTorneo"
+                                                th:disabled="${tournament.inscritosActuales < 4 or tournament.estado.name() != 'CERRADO'}"
+                                                onclick="return confirmAndLock(this)">
+                                            <i class="fas fa-play"></i> Iniciar Torneo
+                                        </button>
+                                    </div>
+                                </form>
+
+                            </th:block>
+                        </div>
+
                     </div>
                 </div>
+                <!-- ── конец AMERICANO ── -->
+
             </div>
         </div>
     </div>
@@ -629,23 +878,66 @@
 <footer th:replace="~{fragments/admin-footer :: footer}"></footer>
 
 <script th:src="@{/js/admin.js}"></script>
-<script>
-    // Функция для перемещения игрока в резерв
+<script th:inline="javascript">
+    const TOURNAMENT_ID = /*[[${tournament.id}]]*/ 0;
+    const PLAYERS_COUNT = /*[[${tournament.inscritosActuales}]]*/ 0;
+
+
+    // Защита от двойного сабмита — блокируем кнопку после первого клика
+    function confirmAndLock(btn) {
+        if (!confirm("¿Iniciar el torneo Americano? Esta acción no se puede deshacer.")) {
+            return false;
+        }
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Iniciando...';
+        // Добавить отправку формы
+        document.getElementById('americanoForm').submit();
+        return false; // возвращаем false, чтобы браузер не отправлял форму повторно
+    }
+
+    // Пересчёт подсказки по bye при изменении кортов
+    function recalcBye(val) {
+        const courts = parseInt(val) || 0;
+        const ppr    = courts * 4;
+        const bye    = Math.max(0, PLAYERS_COUNT - ppr);
+        const el     = document.getElementById('courtsHint');
+        if (el) el.textContent = 'Jugadores por ronda: ' + Math.min(ppr, PLAYERS_COUNT) + ' · Bye: ' + bye;
+    }
+
+    // Предпросмотр раундов — отправляем параметры формы на /preview-rounds
+    function previewRounds() {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action  = '/tournaments/americano/' + TOURNAMENT_ID + '/preview-rounds';
+        form.style.display = 'none';
+
+        const fields = {
+            pointsPerMatch: document.getElementById('pointsPerMatch')?.value || '32',
+            courts:         document.getElementById('courts')?.value         || '2',
+            totalRounds:    document.getElementById('totalRounds')?.value    || '5',
+            generationMode: document.getElementById('generationMode')?.value || 'AUTO',
+            rankingType:    document.getElementById('rankingType')?.value    || 'score'
+        };
+        for (const [n, v] of Object.entries(fields)) {
+            const inp = document.createElement('input');
+            inp.type = 'hidden'; inp.name = n; inp.value = v;
+            form.appendChild(inp);
+        }
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    // Перемещение игрока в резерв
     function moveToWaitlist(button) {
         const tournamentId = button.dataset.tournamentId;
-        const playerId = button.dataset.playerId;
-        const playerName = button.dataset.playerName;
-
-        // Блокируем кнопку
-        button.disabled = true;
+        const playerId     = button.dataset.playerId;
+        button.disabled    = true;
         const originalHtml = button.innerHTML;
-        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        button.innerHTML   = '<i class="fas fa-spinner fa-spin"></i>';
 
         fetch(`/admin/tournaments/${tournamentId}/move-to-waitlist/${playerId}`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
+            headers: { 'Content-Type': 'application/json' }
         })
             .then(response => response.json())
             .then(data => {
@@ -666,22 +958,17 @@
             });
     }
 
-    // Функция для перемещения игрока в основной состав
+    // Перемещение игрока в основной состав
     function moveToMain(button) {
         const tournamentId = button.dataset.tournamentId;
-        const playerId = button.dataset.playerId;
-        const playerName = button.dataset.playerName;
-
-        // Блокируем кнопку
-        button.disabled = true;
+        const playerId     = button.dataset.playerId;
+        button.disabled    = true;
         const originalHtml = button.innerHTML;
-        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        button.innerHTML   = '<i class="fas fa-spinner fa-spin"></i>';
 
         fetch(`/admin/tournaments/${tournamentId}/move-to-main/${playerId}`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
+            headers: { 'Content-Type': 'application/json' }
         })
             .then(response => response.json())
             .then(data => {
@@ -702,7 +989,7 @@
             });
     }
 
-    // Функция для показа уведомлений
+    // Уведомления
     function showNotification(type, message) {
         const alertDiv = document.createElement('div');
         alertDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'}`;
@@ -710,14 +997,32 @@
         <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
         <span>${message}</span>
     `;
-
         const container = document.querySelector('.container');
         container.insertBefore(alertDiv, container.firstChild);
-
-        setTimeout(() => {
-            alertDiv.remove();
-        }, 3000);
+        setTimeout(() => { alertDiv.remove(); }, 3000);
     }
+</script>
+<script th:inline="javascript">
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('americanoForm');
+        if (form) {
+            console.log('✅ Форма найдена, action:', form.action);
+            form.addEventListener('submit', function(e) {
+                console.log('📤 Форма отправляется!');
+                console.log('URL:', form.action);
+                console.log('Данные:', new FormData(form));
+                // Не отменяем отправку, просто логируем
+            });
+        } else {
+            console.log('❌ Форма с id="americanoForm" не найдена!');
+            // Проверяем, может форма не видна из-за условий
+            const div = document.querySelector('.admin-card-body > div');
+            console.log('Первый div в карточке:', div);
+            console.log('Его классы:', div ? div.className : 'нет');
+            console.log('isInitialized из модели?', /*[[${isInitialized}]]*/ false);
+            console.log('ranking есть?', /*[[${ranking != null}]]*/ false);
+        }
+    });
 </script>
 </body>
 </html>

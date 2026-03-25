@@ -1,0 +1,1062 @@
+/* ===== AMERICANO PREVIEW PAGE STYLES ===== */
+
+/* Preview Header */
+.preview-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+
+.preview-title {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.preview-title i {
+    color: #FF6B35;
+    font-size: 2rem;
+}
+
+.preview-subtitle {
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Config Summary */
+.config-summary {
+    background-color: white;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.config-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1.5rem;
+}
+
+.config-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.config-label {
+    font-size: 0.85rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.config-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #212529;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.config-value i {
+    color: #FF6B35;
+    font-size: 1.2rem;
+}
+
+.config-badge {
+    background-color: #f1f3f5;
+    color: #495057;
+    padding: 0.2rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+}
+
+/* Action Buttons */
+.preview-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin: 2rem 0;
+}
+
+/* Round Navigation */
+.rounds-navigation {
+    display: flex;
+    justify-content: center;
+    margin: 2rem 0;
+}
+
+.round-selector {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background-color: white;
+    padding: 0.5rem;
+    border-radius: 40px;
+    border: 1px solid #e9ecef;
+}
+
+.round-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f1f3f5;
+    color: #495057;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.round-btn:hover:not(:disabled) {
+    background-color: #FF6B35;
+    color: white;
+}
+
+.round-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.round-indicator {
+    font-weight: 500;
+    color: #495057;
+    min-width: 120px;
+    text-align: center;
+}
+
+.round-indicator span {
+    color: #FF6B35;
+    font-weight: 600;
+}
+
+/* Round Card */
+.round-card {
+    background-color: white;
+    border: 1px solid #e9ecef;
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.round-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.round-header h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #212529;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.round-header h3 i {
+    color: #FF6B35;
+}
+
+.round-badge {
+    background-color: #f1f3f5;
+    color: #495057;
+    padding: 0.4rem 1rem;
+    border-radius: 30px;
+    font-size: 0.85rem;
+}
+
+/* Courts Grid */
+.courts-grid {
+    padding: 1.5rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+}
+
+/* Court Card */
+.court-card {
+    background-color: white;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.2s;
+}
+
+.court-card:hover {
+    border-color: #FF6B35;
+}
+
+.court-number {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: #495057;
+    font-weight: 500;
+}
+
+.court-number i {
+    color: #FF6B35;
+    margin-right: 0.5rem;
+}
+
+.match-tag {
+    background-color: #f1f3f5;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.court-players {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 0.5rem;
+    padding: 1.25rem;
+    background-color: #fafbfc;
+}
+
+/* Team columns */
+.team-left, .team-right {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.team-left {
+    text-align: right;
+}
+
+.team-right {
+    text-align: left;
+}
+
+/* Player rows */
+.player-top, .player-bottom {
+    padding: 0.5rem 0.75rem;
+    background-color: white;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: #212529;
+}
+
+.player-top {
+    border-left: 2px solid #FF6B35;
+}
+
+.player-bottom {
+    border-right: 2px solid #FF6B35;
+}
+
+/* VS Center */
+.vs-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.vs-badge {
+    background-color: #FF6B35;
+    color: white;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+/* Tournament Info Card */
+.tournament-info-card {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background-color: white;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+}
+
+.tournament-info-card h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #212529;
+}
+
+.tournament-info-card h3 i {
+    color: #FF6B35;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.info-grid div span {
+    color: #6c757d;
+    font-size: 0.9rem;
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.info-grid div strong {
+    color: #212529;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+/* Empty State */
+.empty-round {
+    text-align: center;
+    padding: 3rem;
+    background-color: white;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    color: #6c757d;
+}
+
+.empty-round i {
+    font-size: 3rem;
+    color: #dee2e6;
+    margin-bottom: 1rem;
+}
+
+/* Alerts */
+.alert {
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.alert-success {
+    background-color: #d1e7dd;
+    border: 1px solid #badbcc;
+    color: #0a3622;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    border: 1px solid #f5c2c7;
+    color: #58151c;
+}
+
+/* Список кортов - вертикально на всю ширину */
+.courts-list {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+}
+
+/* Карточка корта - на всю ширину */
+.court-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    border: 1px solid #e9ecef;
+    transition: all 0.2s;
+    width: 100%;
+}
+
+.court-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-color: #FF6B35;
+}
+
+.court-number {
+    background: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: #495057;
+    font-weight: 500;
+}
+
+.court-number i {
+    color: #FF6B35;
+    margin-right: 0.5rem;
+}
+
+.match-tag {
+    background-color: #f1f3f5;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+/* Игроки на корте - сетка 1fr auto 1fr */
+.court-players {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    background-color: #fafbfc;
+    align-items: center;
+}
+
+/* Левая и правая колонки */
+.team-left, .team-right {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.team-left {
+    text-align: right;
+}
+
+.team-right {
+    text-align: left;
+}
+
+/* Карточки игроков */
+.player-top, .player-bottom {
+    padding: 0.6rem 1rem;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #212529;
+    transition: all 0.2s;
+    display: inline-block;
+    width: 100%;
+}
+
+.team-left .player-top,
+.team-left .player-bottom {
+    border-left: 3px solid #FF6B35;
+}
+
+.team-right .player-top,
+.team-right .player-bottom {
+    border-right: 3px solid #FF6B35;
+}
+
+.player-top:hover, .player-bottom:hover {
+    border-color: #FF6B35;
+    background: #fff5f0;
+}
+
+.player-name {
+    font-weight: 500;
+    color: #212529;
+    font-size: 0.95rem;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* VS по центру */
+.vs-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.vs-badge {
+    background: #FF6B35;
+    color: white;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-weight: 600;
+    font-size: 0.9rem;
+    box-shadow: 0 2px 6px rgba(255, 107, 53, 0.2);
+}
+
+.score-input-form {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    justify-content: center;
+    background: white;
+    padding: 0.5rem 1rem;
+    border-radius: 30px;
+    border: 1px solid #e9ecef;
+}
+
+.score-input {
+    width: 50px;
+    padding: 0.5rem;
+    text-align: center;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.score-input:focus {
+    outline: none;
+    border-color: #FF6B35;
+}
+
+.score-display {
+    font-size: 1.2rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: white;
+    padding: 0.5rem 1rem;
+    border-radius: 30px;
+    border: 1px solid #e9ecef;
+}
+
+.score-display span {
+    background: #f8f9fa;
+    padding: 0.25rem 0.5rem;
+    border-radius: 8px;
+    min-width: 40px;
+    text-align: center;
+}
+
+.score-input-form {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    justify-content: center;
+}
+
+.score-input {
+    width: 50px;
+    padding: 0.25rem;
+    text-align: center;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.score-input:focus {
+    outline: none;
+    border-color: #FF6B35;
+}
+
+.submit-score-btn {
+    background: #FF6B35;
+    color: white;
+    border: none;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: all 0.2s;
+}
+
+.submit-score-btn:hover {
+    background: #e55a2b;
+}
+
+.edit-score-btn {
+    background: #f1f3f5;
+    color: #495057;
+    border: none;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: all 0.2s;
+}
+
+.edit-score-btn:hover {
+    background: #FF6B35;
+    color: white;
+}
+
+.score-display {
+    font-size: 1.2rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.score-display span {
+    background: #f8f9fa;
+    padding: 0.25rem 0.5rem;
+    border-radius: 8px;
+    min-width: 40px;
+    text-align: center;
+}
+
+.round-controls {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin: 1rem 0;
+}
+
+.round-control-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.round-control-btn:hover {
+    border-color: #FF6B35;
+    color: #FF6B35;
+}
+
+.round-control-btn.primary {
+    background: #FF6B35;
+    color: white;
+    border: none;
+}
+
+.round-control-btn.primary:hover {
+    background: #e55a2b;
+}
+
+.round-control-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.round-status-badge {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 500;
+}
+
+.round-status-badge.status-pending {
+    background: #f1f3f5;
+    color: #6c757d;
+}
+
+.round-status-badge.status-in_progress {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.round-status-badge.status-completed {
+    background: #d1e7dd;
+    color: #0a3622;
+}
+
+/* ===== AMERICANO TOURNAMENT ADMIN STYLES ===== */
+
+/* Список кортов - вертикально на всю ширину */
+.courts-list {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+}
+
+/* Форма ввода счета */
+.score-input-form {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    justify-content: center;
+    background: white;
+    padding: 0.5rem 1rem;
+    border-radius: 30px;
+    border: 1px solid #e9ecef;
+}
+
+.score-input {
+    width: 50px;
+    padding: 0.5rem;
+    text-align: center;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.score-input:focus {
+    outline: none;
+    border-color: #FF6B35;
+}
+
+.score-display {
+    font-size: 1.2rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: white;
+    padding: 0.5rem 1rem;
+    border-radius: 30px;
+    border: 1px solid #e9ecef;
+}
+
+.score-display span {
+    background: #f8f9fa;
+    padding: 0.25rem 0.5rem;
+    border-radius: 8px;
+    min-width: 40px;
+    text-align: center;
+}
+
+.submit-score-btn, .edit-score-btn {
+    background: #FF6B35;
+    color: white;
+    border: none;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: all 0.2s;
+}
+
+.submit-score-btn:hover, .edit-score-btn:hover {
+    background: #e55a2b;
+}
+
+/* Round Controls */
+.round-controls {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin: 1rem 0;
+}
+
+.round-control-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.round-control-btn:hover {
+    border-color: #FF6B35;
+    color: #FF6B35;
+}
+
+.round-control-btn.primary {
+    background: #FF6B35;
+    color: white;
+    border: none;
+}
+
+.round-control-btn.primary:hover {
+    background: #e55a2b;
+}
+
+.round-status-badge {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 500;
+}
+
+.round-status-badge.status-pending {
+    background: #f1f3f5;
+    color: #6c757d;
+}
+
+.round-status-badge.status-in_progress {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.round-status-badge.status-completed {
+    background: #d1e7dd;
+    color: #0a3622;
+}
+
+/* Ranking Section */
+.ranking-card {
+    margin-top: 2rem;
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 1.5rem;
+}
+
+.ranking-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.ranking-header h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #212529;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.ranking-header h3 i {
+    color: #FF6B35;
+}
+
+.ranking-table {
+    overflow-x: auto;
+}
+
+.ranking-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.ranking-table th {
+    text-align: left;
+    padding: 0.75rem 1rem;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    color: #495057;
+    font-weight: 600;
+}
+
+.ranking-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e9ecef;
+    color: #212529;
+}
+
+.ranking-table tr:hover {
+    background-color: #f8f9fa;
+}
+
+.points {
+    font-weight: 600;
+    color: #FF6B35;
+}
+
+/* Responsive - просто сжимаем, не ломая структуру */
+@media (max-width: 768px) {
+    .court-players {
+        gap: 0.5rem;
+        padding: 0.75rem;
+    }
+
+    .player-top, .player-bottom {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.8rem;
+    }
+
+    .player-name {
+        font-size: 0.8rem;
+        white-space: normal;
+        word-break: break-word;
+    }
+
+    .vs-badge {
+        width: 32px;
+        height: 32px;
+        font-size: 0.75rem;
+    }
+
+    .score-input {
+        width: 45px;
+        padding: 0.4rem;
+        font-size: 0.85rem;
+    }
+
+    .score-display {
+        padding: 0.3rem 0.6rem;
+        font-size: 1rem;
+    }
+
+    .score-display span {
+        min-width: 35px;
+        padding: 0.2rem 0.4rem;
+        font-size: 0.85rem;
+    }
+
+    .score-input-form {
+        padding: 0.3rem 0.6rem;
+    }
+
+    .court-number {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+    }
+
+    .match-tag {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.5rem;
+    }
+
+    .round-header {
+        flex-direction: column;
+        gap: 0.5rem;
+        text-align: center;
+        padding: 1rem;
+    }
+
+    .round-header h3 {
+        font-size: 1.1rem;
+    }
+
+    .round-badge {
+        font-size: 0.75rem;
+        padding: 0.3rem 0.8rem;
+    }
+
+    .round-selector {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .round-indicator {
+        min-width: 100px;
+        font-size: 0.9rem;
+    }
+
+    .preview-actions {
+        flex-direction: column;
+    }
+
+    .preview-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .court-players {
+        gap: 0.4rem;
+        padding: 0.5rem;
+    }
+
+    .player-top, .player-bottom {
+        padding: 0.3rem 0.5rem;
+        font-size: 0.7rem;
+    }
+
+    .player-name {
+        font-size: 0.7rem;
+    }
+
+    .vs-badge {
+        width: 28px;
+        height: 28px;
+        font-size: 0.65rem;
+    }
+
+    .score-input {
+        width: 40px;
+        padding: 0.3rem;
+        font-size: 0.75rem;
+    }
+
+    .score-display {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .score-display span {
+        min-width: 30px;
+        padding: 0.15rem 0.3rem;
+        font-size: 0.75rem;
+    }
+
+    .submit-score-btn, .edit-score-btn {
+        padding: 0.2rem 0.5rem;
+        font-size: 0.65rem;
+    }
+
+    .court-number {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.75rem;
+    }
+
+    .match-tag {
+        font-size: 0.65rem;
+        padding: 0.15rem 0.4rem;
+    }
+
+    .round-header h3 {
+        font-size: 1rem;
+    }
+
+    .round-indicator {
+        min-width: 80px;
+        font-size: 0.8rem;
+    }
+
+    .round-btn {
+        width: 32px;
+        height: 32px;
+    }
+}
+
+@media (max-width: 360px) {
+    .court-players {
+        gap: 0.3rem;
+        padding: 0.4rem;
+    }
+
+    .player-top, .player-bottom {
+        padding: 0.25rem 0.4rem;
+        font-size: 0.65rem;
+    }
+
+    .player-name {
+        font-size: 0.65rem;
+    }
+
+    .vs-badge {
+        width: 24px;
+        height: 24px;
+        font-size: 0.6rem;
+    }
+
+    .score-input {
+        width: 35px;
+        padding: 0.25rem;
+        font-size: 0.7rem;
+    }
+
+    .score-display span {
+        min-width: 25px;
+        padding: 0.1rem 0.25rem;
+        font-size: 0.7rem;
+    }
+}

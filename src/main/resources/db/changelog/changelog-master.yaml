@@ -68,3 +68,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.22-update-nivel-constraint.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.23-create-americano-tables.yaml
+      relativeToChangelogFile: true

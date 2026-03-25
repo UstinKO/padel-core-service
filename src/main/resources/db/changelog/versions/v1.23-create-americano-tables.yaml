@@ -1,0 +1,296 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.23-create-americano-tables
+      author: padel-core
+      comment: Создание таблиц для Americano турниров
+      changes:
+        - createTable:
+            tableName: americano_players_db
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: tournament_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_americano_player_tournament
+                    references: tournaments_db(id)
+              - column:
+                  name: player_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_americano_player_player
+                    references: player_padel_db(id)
+              - column:
+                  name: initial_position
+                  type: INT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: current_position
+                  type: INT
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  defaultValue: ACTIVE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: total_score
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: matches_played
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: matches_won
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: matches_lost
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: matches_drawn
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: points_scored
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: points_conceded
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: bye_count
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_bye_round
+                  type: INT
+              - column:
+                  name: unique_partners
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: unique_opponents
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: dropped_out_at
+                  type: TIMESTAMP
+              - column:
+                  name: dropped_out_reason
+                  type: VARCHAR(255)
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+        - createTable:
+            tableName: americano_rounds_db
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: tournament_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_americano_round_tournament
+                    references: tournaments_db(id)
+              - column:
+                  name: round_number
+                  type: INT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  defaultValue: PENDING
+                  constraints:
+                    nullable: false
+              - column:
+                  name: started_at
+                  type: TIMESTAMP
+              - column:
+                  name: completed_at
+                  type: TIMESTAMP
+              - column:
+                  name: points_per_match
+                  type: INT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: is_doubles
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: courts
+                  type: INT
+                  defaultValueNumeric: 2
+                  constraints:
+                    nullable: false
+              - column:
+                  name: note
+                  type: TEXT
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+        - createTable:
+            tableName: americano_matches_db
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: round_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_americano_match_round
+                    references: americano_rounds_db(id)
+              - column:
+                  name: tournament_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_americano_match_tournament
+                    references: tournaments_db(id)
+              - column:
+                  name: match_number
+                  type: INT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: team1_player1_id
+                  type: BIGINT
+                  constraints:
+                    foreignKeyName: fk_americano_match_team1_p1
+                    references: player_padel_db(id)
+              - column:
+                  name: team1_player2_id
+                  type: BIGINT
+                  constraints:
+                    foreignKeyName: fk_americano_match_team1_p2
+                    references: player_padel_db(id)
+              - column:
+                  name: team2_player1_id
+                  type: BIGINT
+                  constraints:
+                    foreignKeyName: fk_americano_match_team2_p1
+                    references: player_padel_db(id)
+              - column:
+                  name: team2_player2_id
+                  type: BIGINT
+                  constraints:
+                    foreignKeyName: fk_americano_match_team2_p2
+                    references: player_padel_db(id)
+              - column:
+                  name: team1_score
+                  type: INT
+              - column:
+                  name: team2_score
+                  type: INT
+              - column:
+                  name: is_doubles
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  defaultValue: PENDING
+                  constraints:
+                    nullable: false
+              - column:
+                  name: started_at
+                  type: TIMESTAMP
+              - column:
+                  name: completed_at
+                  type: TIMESTAMP
+              - column:
+                  name: court_number
+                  type: INT
+              - column:
+                  name: note
+                  type: TEXT
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+      rollback:
+        - dropTable:
+            tableName: americano_matches_db
+        - dropTable:
+            tableName: americano_rounds_db
+        - dropTable:
+            tableName: americano_players_db

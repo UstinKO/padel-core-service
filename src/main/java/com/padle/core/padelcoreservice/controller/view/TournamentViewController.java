@@ -3,11 +3,16 @@ package com.padle.core.padelcoreservice.controller.view;
 import com.padle.core.padelcoreservice.dto.KingOfCourtStateDTO;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
+import com.padle.core.padelcoreservice.dto.americano.AmericanoPlayerDto;
+import com.padle.core.padelcoreservice.dto.americano.AmericanoRoundDto;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.TournamentKingOfCourt;
+import com.padle.core.padelcoreservice.model.enums.AmericanoRoundStatus;
+import com.padle.core.padelcoreservice.model.enums.TournamentType;
 import com.padle.core.padelcoreservice.repository.TournamentKingOfCourtRepository;
 import com.padle.core.padelcoreservice.service.KingOfCourtService;
 import com.padle.core.padelcoreservice.service.TournamentService;
+import com.padle.core.padelcoreservice.service.americano.AmericanoService;
 import com.padle.core.padelcoreservice.util.SecurityUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -35,6 +40,7 @@ public class TournamentViewController {
     private final TournamentService tournamentService;
     private final TournamentKingOfCourtRepository tournamentKingOfCourtRepository;
     private final KingOfCourtService kingOfCourtService;
+    private final AmericanoService americanoService; // Добавлен AmericanoService
 
     @GetMapping("/{id}")
     public String viewTournament(@PathVariable Long id,
@@ -66,6 +72,42 @@ public class TournamentViewController {
                         reg.getPartnerNombre(), reg.getPartnerApellido(),
                         reg.getStatus(), reg.getIsDoubleRegistration());
             }
+
+            // ========== БЛОК ДЛЯ AMERICANO ==========
+            boolean isAmericanoInitialized = false;
+            if (tournament.getTipo() == TournamentType.AMERICANO) {
+                isAmericanoInitialized = americanoService.isInitialized(id);
+                model.addAttribute("isInitialized", isAmericanoInitialized);
+
+                if (isAmericanoInitialized) {
+                    // Получаем количество активных игроков
+                    int activePlayers = americanoService.getActivePlayersCount(id);
+                    model.addAttribute("activePlayers", activePlayers);
+
+                    // Получаем информацию о лидере
+                    List<AmericanoPlayerDto> ranking = americanoService.getRanking(id, "score", "DESC");
+                    if (!ranking.isEmpty()) {
+                        model.addAttribute("leaderName", ranking.get(0).getPlayerFullName());
+                    }
+
+                    // Получаем информацию о раундах
+                    List<AmericanoRoundDto> rounds = americanoService.getRounds(id);
+                    if (!rounds.isEmpty()) {
+                        long completedRounds = rounds.stream()
+                                .filter(r -> r.getStatus() == AmericanoRoundStatus.COMPLETED)
+                                .count();
+                        model.addAttribute("totalRounds", rounds.size());
+                        model.addAttribute("completedRounds", completedRounds);
+                    }
+                } else {
+                    // Даже если не инициализирован, добавляем атрибут с дефолтным значением
+                    model.addAttribute("activePlayers", 0);
+                }
+            } else {
+                // Для не-Americano турниров добавляем isInitialized = false
+                model.addAttribute("isInitialized", false);
+            }
+            // ========== КОНЕЦ БЛОКА AMERICANO ==========
 
             // Проверяем наличие King of Court
             List<TournamentKingOfCourt> activeKings = tournamentKingOfCourtRepository

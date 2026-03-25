@@ -320,22 +320,20 @@
     color: #6c757d;
 }
 
-.registration-actions {
-    margin-bottom: 1.5rem;
-}
-
 .btn-block {
-    display: block;
+    display: flex;
     width: 100%;
-    padding: 0.75rem;
+    padding: 0.75rem 1rem;
     text-align: center;
     border-radius: 8px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s;
-    margin-bottom: 0.5rem;
     border: none;
     font-size: 1rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
 }
 
 .btn-primary {
@@ -368,7 +366,7 @@
 
 .registration-closed {
     text-align: center;
-    padding: 1rem;
+    padding: 0.875rem 1rem;
     background: #e9ecef;
     border-radius: 8px;
     color: #6c757d;
@@ -376,6 +374,9 @@
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
+    font-weight: 500;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .additional-info {
@@ -471,28 +472,6 @@
     .info-grid {
         grid-template-columns: 1fr;
     }
-}
-
-/* Кнопки в детальной карточке */
-.registration-actions {
-    margin-bottom: 1.5rem;
-}
-
-.btn-block {
-    display: flex;
-    width: 100%;
-    padding: 0.75rem 1rem;
-    text-align: center;
-    border-radius: 8px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-    margin-bottom: 0.5rem;
-    border: none;
-    font-size: 1rem;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
 }
 
 .btn-block.btn-register {
@@ -1331,9 +1310,9 @@ input[type="tel"].form-control {
 
 .registration-actions {
     display: flex;
-    gap: 0.5rem;
-    align-items: center;
-    margin-left: auto;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
 }
 
 .btn-icon.move-to-waitlist {

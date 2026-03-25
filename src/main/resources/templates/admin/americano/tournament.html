@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${tournament.nombre} + ' - Admin Americano | E-Padel'">Admin Americano</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <link rel="stylesheet" th:href="@{/css/americano.css}">
+    <style>
+        /* ── Format banner ── */
+        .format-banner{padding:.85rem 1.25rem;border-radius:10px;margin-bottom:1.5rem;display:flex;align-items:flex-start;gap:.75rem;font-size:.9rem}
+        .format-banner.full{background:#d1fae5;border:1px solid #6ee7b7;color:#065f46}
+        .format-banner.flex{background:#fef3c7;border:1px solid #fcd34d;color:#92400e}
+        .format-badge-pill{font-size:.78rem;font-weight:700;padding:.3rem .65rem;border-radius:20px;white-space:nowrap}
+        .full .format-badge-pill{background:#10b981;color:#fff}
+        .flex .format-badge-pill{background:#f59e0b;color:#fff}
+
+        /* ── Rounds nav ── */
+        .rounds-navigation{margin-bottom:1.5rem}
+        .round-selector{display:flex;align-items:center;gap:.75rem;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:.5rem 1rem;display:inline-flex}
+        .round-btn{background:none;border:1px solid #e2e8f0;border-radius:6px;padding:.4rem .7rem;cursor:pointer;color:#64748b;transition:all .2s}
+        .round-btn:hover:not(:disabled){background:#f8fafc;color:#1e293b}
+        .round-btn:disabled{opacity:.4;cursor:not-allowed}
+        .round-indicator{font-weight:600;color:#1e293b;display:flex;align-items:center;gap:.5rem}
+        .round-status-badge{font-size:.75rem;padding:.2rem .5rem;border-radius:10px;font-weight:600}
+        .round-status-badge.PENDING{background:#f1f5f9;color:#64748b}
+        .round-status-badge.IN_PROGRESS{background:#dcfce7;color:#166534}
+        .round-status-badge.COMPLETED{background:#e0e7ff;color:#3730a3}
+        .round-status-badge.CANCELLED{background:#fee2e2;color:#991b1b}
+
+        /* ── Round controls ── */
+        .round-controls{display:flex;gap:.75rem;margin-bottom:1rem;flex-wrap:wrap}
+        .round-control-btn{padding:.5rem 1.25rem;border:none;border-radius:8px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:.5rem;font-size:.9rem}
+        .round-control-btn{background:#f1f5f9;color:#475569}
+        .round-control-btn.primary{background:#FF6B35;color:#fff}
+        .round-control-btn:disabled{opacity:.4;cursor:not-allowed}
+
+        /* ── Match cards — корты идут друг под другом ── */
+        .courts-list{display:flex;flex-direction:column;gap:1rem}
+        .court-card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden}
+        .court-number{background:#1e293b;color:#fff;padding:.5rem 1rem;font-size:.85rem;font-weight:600;display:flex;align-items:center;gap:.5rem}
+        .match-tag{background:rgba(255,255,255,.2);padding:.1rem .4rem;border-radius:10px;font-size:.75rem;margin-left:auto}
+        .court-players{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:1rem;gap:.75rem}
+        .team-left,.team-right{display:flex;flex-direction:column;gap:.4rem}
+        .team-right{text-align:right}
+        .player-name{font-size:.875rem;font-weight:500;color:#1e293b;line-height:1.3}
+        .vs-center{display:flex;flex-direction:column;align-items:center;gap:.4rem}
+        .vs-badge{background:#FF6B35;color:#fff;font-weight:700;font-size:.8rem;padding:.3rem .5rem;border-radius:6px}
+
+        /* Score display */
+        .score-display{display:flex;flex-direction:column;align-items:center;gap:.3rem}
+        .score-numbers{display:flex;align-items:center;gap:.4rem;font-size:1.1rem;font-weight:700}
+        .score-numbers .s1{color:#10b981}
+        .score-numbers .s2{color:#ef4444}
+        .score-numbers.draw .s1,.score-numbers.draw .s2{color:#f59e0b}
+        .edit-score-btn{background:none;border:1px solid #e2e8f0;border-radius:6px;padding:.25rem .5rem;cursor:pointer;font-size:.75rem;color:#64748b;transition:all .2s}
+        .edit-score-btn:hover{background:#f8fafc;border-color:#94a3b8}
+
+        /* Score input */
+        .score-input-form{display:flex;flex-direction:column;align-items:center;gap:.4rem}
+        .score-inputs-row{display:flex;align-items:center;gap:.4rem}
+        .score-input{width:52px;text-align:center;border:1px solid #e2e8f0;border-radius:6px;padding:.35rem;font-size:1rem;font-weight:600;color:#1e293b}
+        .score-input:focus{outline:none;border-color:#FF6B35;box-shadow:0 0 0 2px rgba(255,107,53,.15)}
+        .score-hint{font-size:.72rem;color:#94a3b8}
+        .submit-score-btn{background:#FF6B35;color:#fff;border:none;border-radius:6px;padding:.35rem .75rem;cursor:pointer;font-size:.8rem;font-weight:600;transition:all .2s}
+        .submit-score-btn:hover{background:#c94a1a}
+        .submit-score-btn:disabled{opacity:.5;cursor:not-allowed}
+
+        /* Bye section */
+        .bye-section{background:#fff9e6;border:1px solid #fcd34d;border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem;font-size:.875rem}
+        .bye-section-title{font-weight:600;color:#92400e;margin-bottom:.4rem;display:flex;align-items:center;gap:.4rem}
+        .bye-players{display:flex;flex-wrap:wrap;gap:.4rem}
+        .bye-tag{background:#fef3c7;border:1px solid #fcd34d;color:#92400e;padding:.2rem .55rem;border-radius:20px;font-size:.8rem}
+
+        /* Ranking table */
+        .ranking-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden}
+        .ranking-header{padding:1rem 1.5rem;background:#1e293b;color:#fff;display:flex;align-items:center;justify-content:space-between}
+        .ranking-header h3{margin:0;font-size:1rem;font-weight:600;display:flex;align-items:center;gap:.5rem}
+        .table{width:100%;border-collapse:collapse;font-size:.875rem}
+        .table thead tr{background:#f8fafc}
+        .table th{padding:.65rem 1rem;text-align:left;font-weight:600;color:#64748b;border-bottom:2px solid #e2e8f0;white-space:nowrap;font-size:.8rem}
+        .table td{padding:.65rem 1rem;border-bottom:1px solid #f1f5f9;color:#1e293b}
+        .table tbody tr:hover{background:#f8fafc}
+        .table tbody tr:first-child td{font-weight:600}
+        .table .pos-1{color:#f59e0b}
+        .table .pos-2{color:#94a3b8}
+        .table .pos-3{color:#cd7f32}
+        .points{font-weight:700;color:#FF6B35}
+        .positive{color:#10b981}
+        .negative{color:#ef4444}
+        .neutral{color:#94a3b8}
+
+        /* Finish tournament */
+        .finish-section{background:#fff5f0;border:1px solid #FF6B35;border-radius:10px;padding:1.25rem;margin-top:1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+        .finish-section p{margin:0;font-size:.9rem;color:#c94a1a}
+        .finish-section strong{color:#1e293b}
+
+        /* Tabs for completed/active rounds */
+        .rounds-tabs{display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap}
+        .round-tab-btn{padding:.4rem .85rem;border:1px solid #e2e8f0;border-radius:20px;background:#fff;font-size:.82rem;font-weight:500;cursor:pointer;transition:all .2s;color:#64748b}
+        .round-tab-btn.active{background:#FF6B35;color:#fff;border-color:#FF6B35}
+        .round-tab-btn.completed-tab{border-color:#a5b4fc;color:#4f46e5}
+        .round-tab-btn.completed-tab.active{background:#4f46e5;color:#fff;border-color:#4f46e5}
+
+        /* Points limit menu */
+        .points-option:hover {
+            background: #f1f5f9;
+        }
+        .points-option.active {
+            background: #FF6B35;
+            color: #fff;
+        }
+        .round-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        /* Sort menu styles */
+        .sort-option:hover {
+            background: #f1f5f9;
+        }
+        .sort-option.active {
+            background: #FF6B35;
+            color: #fff;
+        }
+        .sort-option.active i {
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+<header th:replace="~{fragments/admin-header :: header('Torneo Americano')}"></header>
+
+<main class="admin-main">
+    <div class="container">
+
+        <div style="margin-bottom:1rem">
+            <a th:href="@{'/admin/tournaments/' + ${tournament.id}}" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i> Volver a detalles del torneo
+            </a>
+        </div>
+
+        <!-- Header turнира -->
+        <div class="tournament-header" style="margin-bottom:1.5rem">
+            <div class="tournament-title-section">
+                <h1 th:text="${tournament.nombre}">Torneo Americano</h1>
+                <div class="tournament-badges">
+                    <span class="badge" th:text="${tournament.generoFormato}">Masculino</span>
+                    <span class="badge badge-level" th:text="${tournament.categoriaNivel}">C7</span>
+                    <span class="badge badge-type">Americano Individual</span>
+                    <span class="badge badge-status" th:text="${tournament.estado}"
+                          th:classappend="'badge-' + ${tournament.estado.toString().toLowerCase()}">En curso</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Баннер формата (п.15, 16 ТЗ) -->
+        <div th:if="${ranking != null and ranking.formatType != null}">
+            <div th:if="${ranking.formatType.name() == 'FULL'}" class="format-banner full">
+                <span class="format-badge-pill"><i class="fas fa-star"></i> Full Americano</span>
+                <span th:text="${ranking.formatMessage}">Cada par de jugadores jugó juntos exactamente 1 vez.</span>
+            </div>
+            <div th:if="${ranking.formatType.name() == 'FLEX'}" class="format-banner flex">
+                <span class="format-badge-pill"><i class="fas fa-random"></i> Flex Americano</span>
+                <span th:text="${ranking.formatMessage}">Formato flexible con máxima variedad de parejas.</span>
+            </div>
+        </div>
+
+        <!-- Навигация + управление раундом -->
+        <div th:if="${not #lists.isEmpty(rounds)}">
+
+            <!-- Вкладки раундов -->
+            <div class="rounds-tabs" id="roundsTabs">
+                <button th:each="r, stat : ${rounds}"
+                        th:id="'tab-' + ${stat.index}"
+                        th:text="'R' + ${r.roundNumber}"
+                        th:attr="data-idx=${stat.index},data-status=${r.status}"
+                        th:classappend="${(stat.index == 0 ? 'active' : '') + (r.status.name() == 'COMPLETED' ? ' completed-tab' : '')}"
+                        class="round-tab-btn"
+                        onclick="switchRound(this)">R1</button>
+            </div>
+
+            <!-- Селектор с навигацией -->
+            <div class="rounds-navigation">
+                <div class="round-selector">
+                    <button class="round-btn" id="prevRound" onclick="changeRound(-1)" disabled>
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <span class="round-indicator">
+                    Ronda <span id="currentRoundDisplay">1</span>
+                    de <span th:text="${rounds.size()}">5</span>
+                    <span class="round-status-badge" id="currentRoundStatus"></span>
+                </span>
+                    <button class="round-btn" id="nextRound" onclick="changeRound(1)">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Кнопки управления раундом -->
+            <div class="round-controls" id="roundControls"></div>
+
+            <!-- Карточки раундов -->
+            <div id="roundsContainer">
+                <div th:each="round, iterStat : ${rounds}"
+                     th:id="'round-' + ${iterStat.index}"
+                     th:data-round-id="${round.id}"
+                     th:data-round-status="${round.status}"
+                     th:data-points-per-match="${round.pointsPerMatch}"
+                     class="round-card" style="display:none">
+
+                    <div class="round-header">
+                        <h3><i class="fas fa-calendar-week"></i> Ronda <span th:text="${round.roundNumber}">1</span></h3>
+                        <div style="display:flex;gap:.5rem;align-items:center">
+                            <span class="round-badge" th:text="${round.status}">EN CURSO</span>
+                            <span class="round-badge" th:text="${round.completedMatches} + '/' + ${round.totalMatches} + ' partidos'">0/4</span>
+
+                            <!-- НОВОЕ: выпадающее меню для изменения лимита очков -->
+                            <div class="points-limit-selector" style="position:relative; margin-left:0.5rem;">
+                                <button class="round-badge" th:id="'pointsLimitBtn-' + ${iterStat.index}"
+                                        onclick="togglePointsMenu(this)"
+                                        style="background:#FF6B35; cursor:pointer; border:none;">
+                                    <i class="fas fa-bullseye"></i> <span class="current-limit" th:text="${round.pointsPerMatch}">32</span> pts
+                                    <i class="fas fa-chevron-down" style="font-size:0.7rem;"></i>
+                                </button>
+                                <div class="points-menu" th:id="'pointsMenu-' + ${iterStat.index}"
+                                     style="display:none; position:absolute; right:0; top:100%; margin-top:0.5rem; background:#fff; border:1px solid #e2e8f0; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.1); z-index:100; min-width:140px;">
+                                    <div style="padding:0.5rem 0;">
+                                        <div class="points-option" data-points="15" th:onclick="'changePointsLimit(this, ' + ${round.id} + ', ' + ${iterStat.index} + ')'" style="padding:0.5rem 1rem; cursor:pointer; transition:background 0.2s;">
+                                            15 puntos
+                                        </div>
+                                        <div class="points-option" data-points="21" th:onclick="'changePointsLimit(this, ' + ${round.id} + ', ' + ${iterStat.index} + ')'" style="padding:0.5rem 1rem; cursor:pointer; transition:background 0.2s;">
+                                            21 puntos
+                                        </div>
+                                        <div class="points-option" data-points="24" th:onclick="'changePointsLimit(this, ' + ${round.id} + ', ' + ${iterStat.index} + ')'" style="padding:0.5rem 1rem; cursor:pointer; transition:background 0.2s;">
+                                            24 puntos (recomendado)
+                                        </div>
+                                        <div class="points-option" data-points="32" th:onclick="'changePointsLimit(this, ' + ${round.id} + ', ' + ${iterStat.index} + ')'" style="padding:0.5rem 1rem; cursor:pointer; transition:background 0.2s;">
+                                            32 puntos (clásico)
+                                        </div>
+                                        <div class="points-option" data-points="40" th:onclick="'changePointsLimit(this, ' + ${round.id} + ', ' + ${iterStat.index} + ')'" style="padding:0.5rem 1rem; cursor:pointer; transition:background 0.2s;">
+                                            40 puntos (largo)
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bye игроки раунда — игроки, отдыхающие в этом раунде (п.7 ТЗ) -->
+                    <div th:if="${round.byePlayerNames != null and not #lists.isEmpty(round.byePlayerNames)}"
+                         class="bye-section">
+                        <div class="bye-section-title">
+                            <i class="fas fa-pause-circle"></i>
+                            Descansan en esta ronda
+                            <span style="font-weight:400;color:#b45309;font-size:.8rem"
+                                  th:text="'(' + ${#lists.size(round.byePlayerNames)} + ' jugador(es))'"></span>
+                        </div>
+                        <div class="bye-players">
+                        <span th:each="name : ${round.byePlayerNames}"
+                              class="bye-tag"
+                              th:text="${name}">Jugador</span>
+                        </div>
+                    </div>
+
+                    <!-- Матчи -->
+                    <div class="courts-list">
+                        <div th:each="match : ${round.matches}"
+                             class="court-card"
+                             th:id="'match-' + ${match.id}"
+                             th:data-match-id="${match.id}"
+                             th:data-completed="${match.isCompleted}"
+                             th:data-t1score="${match.team1Score}"
+                             th:data-t2score="${match.team2Score}">
+
+                            <div class="court-number">
+                                <i class="fas fa-table-tennis"></i>
+                                Cancha <span th:text="${match.courtNumber}">1</span>
+                                <span class="match-tag" th:text="'#' + ${match.matchNumber}">#1</span>
+                            </div>
+
+                            <div class="court-players">
+                                <!-- Team 1 -->
+                                <div class="team-left">
+                                    <span class="player-name" th:text="${match.team1Player1Name} + ' ' + ${match.team1Player1LastName}">J1</span>
+                                    <span class="player-name" th:text="${match.team1Player2Name} + ' ' + ${match.team1Player2LastName}">J2</span>
+                                </div>
+
+                                <!-- VS / Score -->
+                                <div class="vs-center">
+                                    <!-- Результат сыгранного матча -->
+                                    <div th:if="${match.isCompleted}" class="score-display">
+                                        <div th:with="draw=${match.team1Score == match.team2Score}"
+                                             th:classappend="${draw}?'draw':''"
+                                             class="score-numbers">
+                                            <span class="s1" th:text="${match.team1Score}">0</span>
+                                            <span class="vs-badge">:</span>
+                                            <span class="s2" th:text="${match.team2Score}">0</span>
+                                        </div>
+                                        <button class="edit-score-btn"
+                                                th:attr="data-match-id=${match.id},data-points=${round.pointsPerMatch}"
+                                                onclick="showEditScore(this)">
+                                            <i class="fas fa-edit"></i> editar
+                                        </button>
+                                    </div>
+                                    <!-- Форма ввода результата -->
+                                    <div th:unless="${match.isCompleted}" class="score-input-form"
+                                         th:attr="data-points=${round.pointsPerMatch}">
+                                        <div class="score-inputs-row">
+                                            <input type="number" class="score-input" id="s1-[[${match.id}]]"
+                                                   min="0" th:max="${round.pointsPerMatch}" value="0" placeholder="0">
+                                            <span class="vs-badge">VS</span>
+                                            <input type="number" class="score-input" id="s2-[[${match.id}]]"
+                                                   min="0" th:max="${round.pointsPerMatch}" value="0" placeholder="0">
+                                        </div>
+                                        <span class="score-hint">Suma = <span th:text="${round.pointsPerMatch}">32</span> pts</span>
+                                        <button class="submit-score-btn"
+                                                th:attr="data-match-id=${match.id},data-points=${round.pointsPerMatch}"
+                                                onclick="submitScore(this)">
+                                            Guardar
+                                        </button>
+                                    </div>
+                                    <!-- Матч ещё не начат -->
+                                    <div th:if="${match.status.name() == 'PENDING'}">
+                                        <span class="vs-badge" style="background:#94a3b8">-</span>
+                                    </div>
+                                </div>
+
+                                <!-- Team 2 -->
+                                <div class="team-right">
+                                    <span class="player-name" th:text="${match.team2Player1Name} + ' ' + ${match.team2Player1LastName}">J3</span>
+                                    <span class="player-name" th:text="${match.team2Player2Name} + ' ' + ${match.team2Player2LastName}">J4</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════ ТАБЛИЦА РЕЙТИНГА (п.4 ТЗ) ══════════════ -->
+        <div class="ranking-card" style="margin-top:2rem">
+            <div class="ranking-header">
+                <h3><i class="fas fa-chart-line"></i> Clasificación</h3>
+                <div style="display:flex;gap:.5rem;align-items:center">
+        <span style="font-size:.8rem;opacity:.75"
+              th:text="${ranking != null ? ranking.completedRounds + '/' + ranking.totalRounds + ' rondas completadas' : ''}"></span>
+
+                    <!-- Переключатель сортировки -->
+                    <div class="sort-selector" style="position:relative;">
+                        <button class="btn btn-outline-sm" id="sortByBtn"
+                                style="font-size:.78rem;padding:.3rem .7rem;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.3);color:#fff;cursor:pointer;">
+                            <i class="fas fa-sort"></i>
+                            <span id="currentSortLabel">Por puntos</span>
+                            <i class="fas fa-chevron-down" style="font-size:0.7rem; margin-left:0.3rem;"></i>
+                        </button>
+                        <div class="sort-menu" id="sortMenu"
+                             style="display:none; position:absolute; right:0; top:100%; margin-top:0.5rem; background:#fff; border:1px solid #e2e8f0; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.1); z-index:100; min-width:160px;">
+                            <div style="padding:0.5rem 0;">
+                                <div class="sort-option" data-sort="score" data-label="Por puntos" onclick="changeSort('score', 'Por puntos')" style="padding:0.5rem 1rem; cursor:pointer; transition:background 0.2s; color:#1e293b;">
+                                    <i class="fas fa-star"></i> Por puntos (puntos → victorias)
+                                </div>
+                                <div class="sort-option" data-sort="wins" data-label="Por victorias" onclick="changeSort('wins', 'Por victorias')" style="padding:0.5rem 1rem; cursor:pointer; transition:background 0.2s; color:#1e293b;">
+                                    <i class="fas fa-trophy"></i> Por victorias (victorias → puntos)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="overflow-x:auto">
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Jugador</th>
+                        <th title="Puntos totales">Pts</th>
+                        <th title="Partidos jugados">PJ</th>
+                        <th title="Victorias">V</th>
+                        <th title="Derrotas">D</th>
+                        <th title="Empates">E</th>
+                        <th title="Diferencia de puntos">Dif.</th>
+                        <th title="Bye / descansos">Bye</th>
+                        <th title="Parejas únicas">Pares</th>
+                        <th title="Rivales únicos">Rivales</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="player, stat : ${ranking != null ? ranking.ranking : #lists.empty()}">
+                        <td>
+                        <span th:text="${player.position}"
+                              th:class="${player.position == 1 ? 'pos-1' : (player.position == 2 ? 'pos-2' : (player.position == 3 ? 'pos-3' : ''))}">1</span>
+                        </td>
+                        <td th:text="${player.playerName} + ' ' + ${player.playerLastName}">Jugador</td>
+                        <td class="points" th:text="${player.totalScore}">120</td>
+                        <td th:text="${player.matchesPlayed}">8</td>
+                        <td th:text="${player.matchesWon}">6</td>
+                        <td th:text="${player.matchesLost}">1</td>
+                        <td th:text="${player.matchesDrawn}">1</td>
+                        <td th:classappend="${player.pointDifference > 0 ? 'positive' : (player.pointDifference < 0 ? 'negative' : 'neutral')}"
+                            th:text="${player.pointDifference > 0 ? '+' : ''} + ${player.pointDifference}">+24</td>
+                        <td th:text="${player.byeCount}">0</td>
+                        <td th:text="${player.uniquePartners}">5</td>
+                        <td th:text="${player.uniqueOpponents}">7</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Завершить турнир -->
+        <div th:if="${ranking != null and ranking.completedRounds == ranking.totalRounds and ranking.totalRounds > 0}"
+             class="finish-section">
+            <p>
+                <i class="fas fa-flag-checkered" style="color:#FF6B35"></i>
+                Todas las <strong th:text="${ranking.totalRounds}">5</strong> rondas completadas.
+                Puedes finalizar el torneo para fijar la clasificación oficial.
+            </p>
+            <form th:action="@{'/tournaments/americano/' + ${tournament.id} + '/finish'}" method="post"
+                  onsubmit="return confirm('¿Finalizar el torneo? La clasificación quedará fijada.')">
+                <input type="hidden" name="sortBy" value="score">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-trophy"></i> Finalizar torneo
+                </button>
+            </form>
+        </div>
+
+    </div>
+</main>
+
+<script th:inline="javascript">
+    const TOURNAMENT_ID = /*[[${tournament.id}]]*/ 0;
+
+    // ─── Данные раундов ────────────────────────────────────────────────────
+    const roundEls  = Array.from(document.querySelectorAll('[id^="round-"]'));
+    const tabBtns   = Array.from(document.querySelectorAll('.round-tab-btn'));
+    const total     = roundEls.length;
+    let   current   = 0;
+
+    function showRound(idx) {
+        console.log('=== showRound called, idx:', idx);
+
+        roundEls.forEach((r, i) => {
+            r.style.display = i === idx ? 'block' : 'none';
+            console.log('Round', i, 'display:', r.style.display);
+        });
+
+        // Найдем bye-section для текущего раунда
+        const currentRound = roundEls[idx];
+        const currentByeSection = currentRound.querySelector('.bye-section');
+        console.log('Current round bye-section:', currentByeSection);
+        console.log('Current round bye-section innerHTML:', currentByeSection ? currentByeSection.innerHTML : 'null');
+
+        // Скрываем все bye-section, показываем только текущий
+        document.querySelectorAll('.round-card .bye-section').forEach((section, i) => {
+            const shouldShow = section === currentByeSection;
+            console.log('Bye-section', i, 'shouldShow:', shouldShow);
+            section.style.display = shouldShow ? 'block' : 'none';
+        });
+
+        tabBtns.forEach((b, i) => b.classList.toggle('active', i === idx));
+        current = idx;
+
+        document.getElementById('currentRoundDisplay').textContent = idx + 1;
+        document.getElementById('prevRound').disabled = idx === 0;
+        document.getElementById('nextRound').disabled = idx === total - 1;
+
+        const status = roundEls[idx]?.dataset.roundStatus || '';
+        const statusEl = document.getElementById('currentRoundStatus');
+        if (statusEl) {
+            statusEl.textContent = status;
+            statusEl.className = 'round-status-badge ' + status;
+        }
+
+        renderRoundControls(roundEls[idx]);
+    }
+
+    function changeRound(delta) { const n = current + delta; if (n >= 0 && n < total) showRound(n); }
+    function switchRound(btn)   { showRound(parseInt(btn.dataset.idx)); }
+
+    function renderRoundControls(roundEl) {
+        const ctrl = document.getElementById('roundControls');
+        if (!ctrl || !roundEl) return;
+        const status  = roundEl.dataset.roundStatus;
+        const roundId = roundEl.dataset.roundId;
+        ctrl.innerHTML = '';
+
+        if (status === 'PENDING') {
+            const btn = document.createElement('button');
+            btn.className = 'round-control-btn';
+            btn.innerHTML = '<i class="fas fa-play"></i> Iniciar Ronda';
+            btn.onclick = () => startRound(roundId);
+            ctrl.appendChild(btn);
+        } else if (status === 'IN_PROGRESS') {
+            const btn = document.createElement('button');
+            btn.className = 'round-control-btn primary';
+            //btn.innerHTML = '<i class="fas fa-flag-checkered"></i> Finalizar Ronda';
+            btn.onclick = () => completeRound(roundId);
+            ctrl.appendChild(btn);
+        }
+    }
+
+    // ─── Score submit ──────────────────────────────────────────────────────
+    function submitScore(btn) {
+        const matchId = btn.dataset.matchId;
+        const limit   = parseInt(btn.dataset.points);
+
+        // Ищем родительский элемент матча
+        const matchCard = document.getElementById('match-' + matchId);
+        if (!matchCard) {
+            console.error('Match card not found for id:', matchId);
+            //showNotif('error', 'Error: no se encontró el partido');
+            return;
+        }
+
+        // Ищем инпуты внутри этого матча - пробуем по ID или по классу
+        let s1Input = matchCard.querySelector('#s1-' + matchId);
+        let s2Input = matchCard.querySelector('#s2-' + matchId);
+
+        // Если не нашли по ID, ищем по классу
+        if (!s1Input || !s2Input) {
+            const inputs = matchCard.querySelectorAll('.score-input');
+            if (inputs.length >= 2) {
+                s1Input = inputs[0];
+                s2Input = inputs[1];
+            }
+        }
+
+        if (!s1Input || !s2Input) {
+            console.error('Input elements not found!');
+            // showNotif('error', 'Error: elementos de puntuación no encontrados');
+            return;
+        }
+
+        const s1 = parseInt(s1Input.value) || 0;
+        const s2 = parseInt(s2Input.value) || 0;
+
+        if (s1 + s2 !== limit) {
+            // showNotif('error', 'La suma de puntos debe ser ' + limit + ' (actualmente ' + (s1+s2) + ')');
+            return;
+        }
+        if (s1 < 0 || s2 < 0) {
+            // showNotif('error', 'Los puntos no pueden ser negativos');
+            return;
+        }
+
+        sendScore(matchId, s1, s2, limit, btn);
+    }
+
+    function sendScore(matchId, s1, s2, limit, btn) {
+        btn.disabled = true;
+        btn.textContent = '...';
+
+        fetch('/api/tournaments/americano/matches/' + matchId + '/result', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ matchId, team1Score: s1, team2Score: s2 })
+        })
+            .then(r => r.ok ? r.json() : Promise.reject(r))
+            .then((updatedMatch) => {
+                // showNotif('success', 'Resultado guardado: ' + s1 + ':' + s2);
+
+                // Обновляем DOM без перезагрузки страницы
+                updateMatchInDOM(updatedMatch, limit);
+
+                // Обновляем таблицу рейтинга
+                updateRankingTable();
+
+                // Восстанавливаем кнопку
+                btn.disabled = false;
+                btn.textContent = 'Guardar';
+            })
+            .catch(() => {
+                // showNotif('error', 'Error al guardar resultado');
+                btn.disabled = false;
+                btn.textContent = 'Guardar';
+            });
+    }
+
+    function updateMatchInDOM(match, limit) {
+        const matchCard = document.getElementById('match-' + match.id);
+        if (!matchCard) return;
+
+        const vsCenter = matchCard.querySelector('.vs-center');
+        const isDraw = match.team1Score === match.team2Score;
+
+        // Обновляем отображение результата
+        vsCenter.innerHTML = `
+        <div class="score-display">
+            <div class="score-numbers ${isDraw ? 'draw' : ''}">
+                <span class="s1">${match.team1Score}</span>
+                <span class="vs-badge">:</span>
+                <span class="s2">${match.team2Score}</span>
+            </div>
+            <button class="edit-score-btn"
+                    data-match-id="${match.id}"
+                    data-points="${limit}"
+                    onclick="showEditScore(this)">
+                <i class="fas fa-edit"></i> editar
+            </button>
+        </div>
+    `;
+
+        // Обновляем data-атрибуты
+        matchCard.dataset.completed = 'true';
+        matchCard.dataset.t1score = match.team1Score;
+        matchCard.dataset.t2score = match.team2Score;
+
+        // Обновляем счетчик завершенных матчей в раунде
+        updateRoundCompletedCount(match.roundId);
+    }
+
+    function updateRoundCompletedCount(roundId) {
+        // Находим раунд, содержащий этот матч
+        const roundCard = document.querySelector(`.round-card[data-round-id="${roundId}"]`);
+        if (!roundCard) return;
+
+        const completedSpan = roundCard.querySelector('.round-badge:last-child');
+        if (!completedSpan) return;
+
+        // Получаем текущие значения
+        const text = completedSpan.textContent;
+        const match = text.match(/(\d+)\/(\d+)/);
+        if (match) {
+            let completed = parseInt(match[1]) + 1;
+            const total = parseInt(match[2]);
+            completedSpan.textContent = `${completed}/${total} partidos`;
+
+            // Если все матчи завершены, обновляем статус раунда
+            if (completed === total) {
+                const statusSpan = roundCard.querySelector('.round-badge:first-child');
+                if (statusSpan) {
+                    statusSpan.textContent = 'COMPLETED';
+                    statusSpan.className = 'round-badge';
+                    // Обновляем data-атрибут
+                    roundCard.dataset.roundStatus = 'COMPLETED';
+                    // Обновляем кнопки управления
+                    renderRoundControls(roundCard);
+                    // Обновляем таб
+                    updateTabStatus(roundCard);
+                }
+            }
+        }
+    }
+
+    function updateTabStatus(roundCard) {
+        const roundNumber = roundCard.querySelector('.round-header h3 span').textContent;
+        const tabButtons = document.querySelectorAll('.round-tab-btn');
+        tabButtons.forEach(btn => {
+            if (btn.textContent === `R${roundNumber}`) {
+                btn.classList.add('completed-tab');
+                btn.dataset.status = 'COMPLETED';
+            }
+        });
+    }
+
+    function showEditScore(btn) {
+        const matchId = btn.dataset.matchId;
+        const limit   = parseInt(btn.dataset.points);
+        const card    = document.getElementById('match-' + matchId);
+        const t1 = parseInt(card.dataset.t1score) || 0;
+        const t2 = parseInt(card.dataset.t2score) || 0;
+        const vs = card.querySelector('.vs-center');
+
+        // Создаем уникальный ID для инпутов
+        const uniqueId = Date.now() + '_' + matchId;
+
+        vs.innerHTML = `
+        <div class="score-input-form" data-points="${limit}">
+            <div class="score-inputs-row">
+                <input type="number" class="score-input" id="s1-${uniqueId}" value="${t1}" min="0" max="${limit}">
+                <span class="vs-badge">VS</span>
+                <input type="number" class="score-input" id="s2-${uniqueId}" value="${t2}" min="0" max="${limit}">
+            </div>
+            <span class="score-hint">Suma = ${limit} pts</span>
+            <button class="submit-score-btn" data-match-id="${matchId}" data-points="${limit}">Guardar</button>
+        </div>`;
+
+        // Назначаем обработчик на новую кнопку
+        const newBtn = vs.querySelector('.submit-score-btn');
+        newBtn.onclick = function() { submitScore(this); };
+    }
+
+    function updateRankingTable() {
+        // Получаем текущий ID турнира
+        const tournamentId = TOURNAMENT_ID;
+
+        // Получаем параметры сортировки из URL или используем значения по умолчанию
+        const urlParams = new URLSearchParams(window.location.search);
+        const sortBy = urlParams.get('sortBy') || 'score';
+        const ascending = urlParams.get('ascending') === 'true';
+
+        // Запрашиваем обновленный рейтинг
+        fetch(`/api/tournaments/americano/${tournamentId}/ranking?sortBy=${sortBy}&ascending=${ascending}`)
+            .then(response => response.json())
+            .then(rankingData => {
+                if (rankingData && rankingData.ranking) {
+                    updateRankingTableDOM(rankingData.ranking);
+                    // Обновляем счетчик завершенных раундов
+                    const roundsInfo = document.querySelector('.ranking-header span');
+                    if (roundsInfo) {
+                        roundsInfo.textContent = `${rankingData.completedRounds}/${rankingData.totalRounds} rondas completadas`;
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error updating ranking:', error);
+            });
+    }
+
+    function updateRankingTableDOM(ranking) {
+        const tbody = document.querySelector('.ranking-card .table tbody');
+        if (!tbody) return;
+
+        // Очищаем таблицу
+        tbody.innerHTML = '';
+
+        // Заполняем новыми данными
+        ranking.forEach(player => {
+            const row = document.createElement('tr');
+
+            // Определяем класс для позиции
+            let positionClass = '';
+            if (player.position === 1) positionClass = 'pos-1';
+            else if (player.position === 2) positionClass = 'pos-2';
+            else if (player.position === 3) positionClass = 'pos-3';
+
+            // Определяем класс для разницы очков
+            let diffClass = 'neutral';
+            let diffSign = '';
+            if (player.pointDifference > 0) {
+                diffClass = 'positive';
+                diffSign = '+';
+            } else if (player.pointDifference < 0) {
+                diffClass = 'negative';
+            }
+
+            row.innerHTML = `
+            <td><span class="${positionClass}">${player.position}</span></td>
+            <td>${player.playerName} ${player.playerLastName}</td>
+            <td class="points">${player.totalScore}</td>
+            <td>${player.matchesPlayed}</td>
+            <td>${player.matchesWon}</td>
+            <td>${player.matchesLost}</td>
+            <td>${player.matchesDrawn}</td>
+            <td class="${diffClass}">${diffSign}${player.pointDifference}</td>
+            <td>${player.byeCount}</td>
+            <td>${player.uniquePartners}</td>
+            <td>${player.uniqueOpponents}</td>
+        `;
+            tbody.appendChild(row);
+        });
+    }
+
+    // ─── Round controls ────────────────────────────────────────────────────
+    function startRound(roundId) {
+        fetch('/api/tournaments/americano/rounds/' + roundId + '/start', { method: 'POST' })
+            .then(r => r.ok ? r.json() : Promise.reject(r))
+            // .then(() => { showNotif('success', 'Ronda iniciada'); setTimeout(() => location.reload(), 800); })
+            // .catch(() => showNotif('error', 'Error al iniciar la ronda'));
+    }
+
+    function completeRound(roundId) {
+        fetch('/api/tournaments/americano/rounds/' + roundId + '/complete', { method: 'POST' })
+            .then(r => r.ok ? r.json() : Promise.reject(r))
+            .then(() => {
+                // showNotif('success', 'Ronda completada');
+                updateRankingTable(); // Обновляем таблицу
+                setTimeout(() => location.reload(), 800);
+            })
+            .catch(async r => {
+                const data = await r.json().catch(() => ({}));
+                // showNotif('error', data.message || 'Error al completar la ronda. ¿Todos los partidos están registrados?');
+            });
+    }
+    function updateByePlayers(roundEl) {
+        // Скрываем все bye-section в roundEl (текущий раунд может иметь или не иметь bye-section)
+        // Но на самом деле нужно просто убедиться, что для текущего раунда bye-section отображается правильно
+
+        // Находим bye-section в текущем раунде
+        const byeSection = roundEl.querySelector('.bye-section');
+
+        // Скрываем все bye-section во всех раундах
+        document.querySelectorAll('.round-card .bye-section').forEach(section => {
+            section.style.display = 'none';
+        });
+
+        // Если в текущем раунде есть bye-section, показываем его
+        if (byeSection) {
+            byeSection.style.display = 'block';
+        }
+    }
+
+    // ─── Notification ──────────────────────────────────────────────────────
+    // function showNotif(type, msg) {
+    //     let c = document.getElementById('notifC');
+    //     if (!c) { c = document.createElement('div'); c.id = 'notifC'; c.style.cssText = 'position:fixed;top:20px;right:20px;z-index:9999'; document.body.appendChild(c); }
+    //     const n = document.createElement('div');
+    //     n.style.cssText = 'background:' + (type==='success'?'#10b981':'#ef4444') + ';color:#fff;padding:12px 20px;border-radius:8px;margin-bottom:8px;box-shadow:0 4px 12px rgba(0,0,0,.15);display:flex;align-items:center;gap:8px;max-width:360px';
+    //     n.innerHTML = '<i class="fas fa-' + (type==='success'?'check-circle':'exclamation-circle') + '"></i><span>' + msg + '</span>';
+    //     c.appendChild(n);
+    //     setTimeout(() => n.remove(), 4000);
+    // }
+
+    // Переключение меню выбора очков
+    function togglePointsMenu(btn) {
+        const menuId = btn.id.replace('pointsLimitBtn', 'pointsMenu');
+        const menu = document.getElementById(menuId);
+        if (!menu) return;
+
+        // Закрываем все другие меню
+        document.querySelectorAll('.points-menu').forEach(m => {
+            if (m.id !== menuId) m.style.display = 'none';
+        });
+
+        // Переключаем текущее
+        menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    }
+
+    // Закрыть меню при клике вне
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.points-limit-selector')) {
+            document.querySelectorAll('.points-menu').forEach(menu => {
+                menu.style.display = 'none';
+            });
+        }
+    });
+
+    // Изменение лимита очков для раунда
+    function changePointsLimit(element, roundId, roundIndex) {
+        const newLimit = parseInt(element.dataset.points);
+        const roundCard = document.getElementById(`round-${roundIndex}`);
+        const currentLimitSpan = document.getElementById(`pointsLimitBtn-${roundIndex}`).querySelector('.current-limit');
+
+        if (!roundCard) {
+            // showNotif('error', 'No se encontró la ronda');
+            return;
+        }
+
+        // Проверяем, есть ли уже завершенные матчи в этом раунде
+        const matches = roundCard.querySelectorAll('.court-card');
+        let hasCompletedMatches = false;
+        matches.forEach(match => {
+            if (match.dataset.completed === 'true') {
+                hasCompletedMatches = true;
+            }
+        });
+
+        if (hasCompletedMatches) {
+            // showNotif('error', 'No se puede cambiar el límite de puntos para una ronda que ya tiene partidos jugados');
+            return;
+        }
+
+        // Сохраняем старый лимит для отката в случае ошибки
+        const oldLimit = parseInt(currentLimitSpan.textContent);
+
+        // Отправляем запрос на изменение лимита
+        fetch(`/api/tournaments/americano/rounds/${roundId}/points-limit`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pointsPerMatch: newLimit })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        throw new Error(text || `HTTP error ${response.status}`);
+                    });
+                }
+                return response;
+            })
+            .then(() => {
+                // showNotif('success', `Límite de puntos cambiado a ${newLimit} para esta y las siguientes rondas`);
+
+                // Обновляем отображение текущего раунда
+                if (currentLimitSpan) {
+                    currentLimitSpan.textContent = newLimit;
+                }
+                roundCard.dataset.pointsPerMatch = newLimit;
+
+                // Обновляем все формы ввода результатов в текущем раунде
+                updateRoundPointsLimitUI(roundCard, newLimit);
+
+                // Обновляем все последующие раунды
+                const currentRoundNumber = parseInt(roundCard.querySelector('.round-header h3 span').textContent);
+                const allRoundCards = document.querySelectorAll('.round-card');
+
+                allRoundCards.forEach(card => {
+                    const roundNumber = parseInt(card.querySelector('.round-header h3 span').textContent);
+                    if (roundNumber > currentRoundNumber) {
+                        const roundHasCompleted = Array.from(card.querySelectorAll('.court-card')).some(m =>
+                            m.dataset.completed === 'true'
+                        );
+                        if (!roundHasCompleted) {
+                            updateRoundPointsLimitUI(card, newLimit);
+                            // Обновляем кнопку лимита в этом раунде
+                            const limitBtn = card.querySelector(`.points-limit-selector .current-limit`);
+                            if (limitBtn) {
+                                limitBtn.textContent = newLimit;
+                            }
+                            card.dataset.pointsPerMatch = newLimit;
+                        }
+                    }
+                });
+
+                // Закрываем меню
+                const menu = element.closest('.points-menu');
+                if (menu) {
+                    menu.style.display = 'none';
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                // showNotif('error', `Error al cambiar el límite de puntos: ${error.message}`);
+            });
+    }
+
+    function updateRoundPointsLimitUI(roundCard, newLimit) {
+        // Обновляем все формы ввода результатов в этом раунде
+        const scoreForms = roundCard.querySelectorAll('.score-input-form');
+        scoreForms.forEach(form => {
+            form.dataset.points = newLimit;
+            const hintSpan = form.querySelector('.score-hint');
+            if (hintSpan) {
+                hintSpan.innerHTML = `Suma = ${newLimit} pts`;
+            }
+            const inputs = form.querySelectorAll('.score-input');
+            inputs.forEach(input => {
+                input.max = newLimit;
+            });
+            const submitBtn = form.querySelector('.submit-score-btn');
+            if (submitBtn) {
+                submitBtn.dataset.points = newLimit;
+                // Пересоздаем кнопку с новым обработчиком
+                const newBtn = submitBtn.cloneNode(true);
+                submitBtn.parentNode.replaceChild(newBtn, submitBtn);
+                newBtn.onclick = function() { submitScore(this); };
+            }
+        });
+
+        // Обновляем кнопки редактирования
+        const editBtns = roundCard.querySelectorAll('.edit-score-btn');
+        editBtns.forEach(btn => {
+            btn.dataset.points = newLimit;
+            // Пересоздаем кнопку с новым обработчиком
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
+            newBtn.onclick = function() { showEditScore(this); };
+        });
+    }
+
+    // Переключение меню сортировки
+    function toggleSortMenu() {
+        const menu = document.getElementById('sortMenu');
+        if (menu) {
+            menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+        }
+    }
+
+    // Закрыть меню при клике вне
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.sort-selector')) {
+            const menu = document.getElementById('sortMenu');
+            if (menu) menu.style.display = 'none';
+        }
+    });
+
+    // Изменение сортировки
+    function changeSort(sortType, label) {
+        // Обновляем URL с новыми параметрами
+        const url = new URL(window.location.href);
+        url.searchParams.set('sortBy', sortType);
+        url.searchParams.set('ascending', 'false');
+
+        // Обновляем метку кнопки
+        document.getElementById('currentSortLabel').textContent = label;
+
+        // Закрываем меню
+        document.getElementById('sortMenu').style.display = 'none';
+
+        // Обновляем таблицу с новой сортировкой
+        fetch(`/api/tournaments/americano/${TOURNAMENT_ID}/ranking?sortBy=${sortType}&ascending=false`)
+            .then(response => response.json())
+            .then(rankingData => {
+                if (rankingData && rankingData.ranking) {
+                    updateRankingTableDOM(rankingData.ranking);
+                    // Обновляем счетчик завершенных раундов
+                    const roundsInfo = document.querySelector('.ranking-header span');
+                    if (roundsInfo) {
+                        roundsInfo.textContent = `${rankingData.completedRounds}/${rankingData.totalRounds} rondas completadas`;
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error updating ranking:', error);
+                // showNotif('error', 'Error al cambiar la clasificación');
+            });
+
+        // Обновляем URL без перезагрузки страницы
+        window.history.pushState({}, '', url);
+    }
+
+    // ─── Init ──────────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('=== DOM loaded ===');
+        console.log('roundEls count:', roundEls.length);
+        roundEls.forEach((r, i) => {
+            const bye = r.querySelector('.bye-section');
+            console.log('Round', i, 'bye-section exists:', !!bye);
+            if (bye) {
+                console.log('Round', i, 'bye-players:', bye.querySelectorAll('.bye-tag').length);
+            }
+        });
+        if (roundEls.length > 0) showRound(0);
+        const sortBtn = document.getElementById('sortByBtn');
+        if (sortBtn) {
+            sortBtn.onclick = toggleSortMenu;
+        }
+
+        // Проверяем параметры сортировки из URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const sortBy = urlParams.get('sortBy');
+        if (sortBy === 'wins') {
+            document.getElementById('currentSortLabel').textContent = 'Por victorias';
+        } else {
+            document.getElementById('currentSortLabel').textContent = 'Por puntos';
+        }
+    });
+</script>
+</body>
+</html>
