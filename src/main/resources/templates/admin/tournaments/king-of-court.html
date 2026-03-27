@@ -139,18 +139,25 @@
         </div>
 
         <!-- Botones de administrador -->
-        <div class="admin-actions" style="justify-content: center; margin-top: 2rem;" th:if="${admin and not kingTournament.isFinished}">
+        <div class="admin-actions" style="justify-content: center; margin-top: 2rem; gap: 1rem; display: flex; flex-wrap: wrap;"
+             th:if="${admin and not kingTournament.isFinished}">
+
+            <!-- Следующий раунд — показывается JS когда все результаты введены -->
             <button id="nextRoundBtn" class="btn btn-primary" style="display: none;">
                 <i class="fas fa-forward"></i> Iniciar siguiente ronda
             </button>
-            <form th:action="@{'/admin/tournaments/king-of-court/' + ${kingTournament.id} + '/finish'}"
-                  method="post" style="display: inline-block;">
-                <button type="submit" class="btn btn-warning"
-                        th:if="${state.allResultsIn and kingTournament.currentRound > 0}"
-                        onclick="return confirm('¿Finalizar el torneo? No se podrán ingresar más resultados.');">
-                    <i class="fas fa-flag-checkered"></i> Finalizar torneo
-                </button>
-            </form>
+
+            <!-- Откатить раунд — показывается JS когда currentRound > 1 -->
+            <button id="rollbackRoundBtn" class="btn btn-warning" style="display: none;"
+                    onclick="window.kingOfCourt?.rollbackRound()">
+                <i class="fas fa-undo"></i> Cancelar último avance
+            </button>
+
+            <!-- Завершить турнир -->
+            <button id="endTournamentBtn" class="btn btn-danger" style="display: none;"
+                    onclick="window.kingOfCourt?.endTournament()">
+                <i class="fas fa-flag-checkered"></i> Finalizar torneo
+            </button>
         </div>
 
         <!-- Botón de volver (si está finalizado) -->

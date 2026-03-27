@@ -501,9 +501,13 @@ public class AmericanoViewController {
     }
 
     /**
-     * Инициализация из адмнской карточки турнира (POST /admin/{id}/initialize).
-     * ИСПРАВЛЕНО: если турнир уже инициализирован — не бросаем ошибку,
-     * а сразу редиректим на страницу управления турниром.
+     * Инициализация из страницы предпросмотра (POST /admin/{id}/initialize).
+     * ИСПРАВЛЕНО:
+     *   1. Если турнир уже инициализирован — тихий редирект без ошибки.
+     *   2. Если статус != CERRADO — закрываем регистрацию перед инициализацией
+     *      (аналогично тому как делает initializeAmericano из детальной карточки).
+     *      Без этого сервис бросал InvalidStateException и страница preview
+     *      не показывала ошибку — кнопка просто не работала.
      */
     @PostMapping("/admin/{tournamentId}/initialize")
     public String initializeAdminTournament(
@@ -511,30 +515,42 @@ public class AmericanoViewController {
             @ModelAttribute AmericanoConfigDto config,
             RedirectAttributes redirectAttributes) {
 
-        // ── ДОБАВЛЕНО: проверка до попытки инициализации ──────────────────
+        // Если уже инициализирован — просто переходим на страницу управления
         if (americanoService.isInitialized(tournamentId)) {
             log.info("Tournament {} already initialized, redirecting to management page", tournamentId);
             return "redirect:/tournaments/americano/admin/" + tournamentId;
         }
-        // ──────────────────────────────────────────────────────────────────
 
         try {
-            log.info("=== INITIALIZING AMERICANO TOURNAMENT ===");
+            log.info("=== INITIALIZING AMERICANO TOURNAMENT (from preview) ===");
             log.info("tournamentId: {}, config: {}", tournamentId, config);
+
+            // ── ИСПРАВЛЕНО: закрываем регистрацию если статус не CERRADO ──────
+            // Сервис требует CERRADO, иначе бросает InvalidStateException.
+            // Детальная карточка делает это в initializeAmericano — здесь тоже нужно.
+            TournamentDto tournament = tournamentService.getActiveTournamentById(tournamentId)
+                    .orElseThrow(() -> new IllegalArgumentException("Torneo no encontrado"));
+
+            if (!tournament.getEstado().toString().equals("CERRADO")) {
+                log.info("Closing registration for tournament {} before initialization (current status: {})",
+                        tournamentId, tournament.getEstado());
+                tournamentService.updateTournamentStatus(tournamentId,
+                        com.padle.core.padelcoreservice.model.enums.TournamentStatus.CERRADO,
+                        null);
+            }
+            // ──────────────────────────────────────────────────────────────────
 
             americanoService.initializeAmericanoTournament(tournamentId, config);
 
-            boolean isInitialized = americanoService.isInitialized(tournamentId);
-            int activePlayers    = americanoService.getActivePlayersCount(tournamentId);
-            List<AmericanoRoundDto> rounds = americanoService.getRounds(tournamentId);
-
-            log.info("After initialization — isInitialized: {}, activePlayers: {}, rounds: {}",
-                    isInitialized, activePlayers, rounds != null ? rounds.size() : 0);
+            log.info("Tournament {} initialized successfully — rounds: {}, activePlayers: {}",
+                    tournamentId,
+                    americanoService.getRounds(tournamentId).size(),
+                    americanoService.getActivePlayersCount(tournamentId));
 
             redirectAttributes.addFlashAttribute("success",
                     "Torneo Americano inicializado correctamente con " + config.getTotalRounds() + " rondas");
         } catch (Exception e) {
-            log.error("Error initializing Americano tournament: {}", e.getMessage(), e);
+            log.error("Error initializing Americano tournament {}: {}", tournamentId, e.getMessage(), e);
             redirectAttributes.addFlashAttribute("error", "Error al inicializar: " + e.getMessage());
         }
 

@@ -3,21 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <!-- ✅ ИСПРАВЛЕНО: Король Корта → King of Court, Padel Core → E-Padel -->
     <title th:text="'King of Court - ' + ${tournamentName} + ' | E-Padel'">King of Court | E-Padel</title>
 
-    <!-- ✅ ДОБАВЛЕН Favicon -->
     <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
     <link rel="alternate icon" th:href="@{/images/favicon.ico}">
     <link rel="apple-touch-icon" th:href="@{/images/apple-touch-icon.png}">
 
-    <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-
-    <!-- Google Fonts - Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-    <!-- Custom Styles -->
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" th:href="@{/css/admin.css}">
     <link rel="stylesheet" th:href="@{/css/king-of-court.css}">
@@ -36,12 +30,6 @@
                     <li class="nav-item">
                         <a href="/" class="nav-link">Inicio</a>
                     </li>
-<!--                    <li class="nav-item">-->
-<!--                        <a href="/torneos" class="nav-link">Torneos</a>-->
-<!--                    </li>-->
-<!--                    <li class="nav-item">-->
-<!--                        <a href="/ranking" class="nav-link">Ranking</a>-->
-<!--                    </li>-->
                 </ul>
                 <div class="navbar-user">
                     <a th:href="@{'/torneo/' + ${tournamentId}}" class="btn btn-outline-sm">
@@ -55,7 +43,7 @@
 
 <main class="admin-main">
     <div class="container">
-        <!-- Заголовок с информацией о турнире -->
+
         <div class="admin-header">
             <h1 class="admin-title">
                 <i class="fas fa-crown" style="color: #fbbf24;"></i>
@@ -73,45 +61,69 @@
             </div>
         </div>
 
-        <!-- YouTube ссылка (если есть) -->
+        <!-- YouTube ссылка -->
         <div class="admin-card" th:if="${kingData.youtubeLink}">
             <div class="admin-card-header">
                 <h2><i class="fab fa-youtube" style="color: #ff0000;"></i> Transmisión en vivo</h2>
             </div>
             <div class="admin-card-body">
-                <div class="youtube-link-view">
-                    <a th:href="${kingData.youtubeLink}" target="_blank" class="btn btn-primary">
-                        <i class="fab fa-youtube"></i> Ver en YouTube
-                    </a>
-                </div>
+                <a th:href="${kingData.youtubeLink}" target="_blank" class="btn btn-primary">
+                    <i class="fab fa-youtube"></i> Ver en YouTube
+                </a>
             </div>
         </div>
 
-        <!-- Информация о статусе турнира -->
-        <div th:if="${kingData.isFinished}" class="admin-card" style="text-align: center; padding: 2rem;">
-            <i class="fas fa-trophy" style="font-size: 4rem; color: #fbbf24; margin-bottom: 1rem;"></i>
-            <h2>¡Torneo finalizado!</h2>
-            <p>La clasificación final está disponible a continuación</p>
+        <!-- ══ ФИНАЛЬНЫЕ РЕЗУЛЬТАТЫ — показываем статично если турнир завершён ══
+             Это исправляет проблему "окно пропало через секунду":
+             раньше результаты показывались только через JS-модал который
+             закрывался. Теперь они всегда видны на странице. -->
+        <div th:if="${kingData.isFinished}" class="admin-card"
+             style="border: 2px solid #fbbf24; background: linear-gradient(145deg, #fffbeb, #fff);">
+            <div class="admin-card-header" style="background: #1e293b;">
+                <h2 style="color: #fbbf24;">
+                    <i class="fas fa-trophy"></i> Clasificación Final
+                </h2>
+            </div>
+            <div class="admin-card-body">
+                <div style="text-align:center; padding: 1rem 0 1.5rem;">
+                    <i class="fas fa-crown" style="font-size: 3rem; color: #fbbf24;"></i>
+                    <h2 style="margin: .5rem 0 .25rem">¡Torneo finalizado!</h2>
+                    <p style="color: #64748b; margin: 0">Clasificación oficial</p>
+                </div>
+                <table class="admin-table">
+                    <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Jugador</th>
+                        <th>Puntos</th>
+                        <th>Bonos</th>
+                        <th>Juegos</th>
+                        <th>V/D</th>
+                    </tr>
+                    </thead>
+                    <tbody id="finalLeaderboard">
+                    <!-- Заполняется JS из того же /state эндпоинта -->
+                    </tbody>
+                </table>
+            </div>
         </div>
 
-        <!-- Сетка кортов -->
-        <div class="admin-card">
+        <!-- Корты — показываем только для активного турнира -->
+        <div class="admin-card" th:unless="${kingData.isFinished}">
             <div class="admin-card-header">
                 <h2><i class="fas fa-map-marked-alt"></i> Canchas</h2>
-                <span class="badge" th:text="${kingData.allResultsIn} ? 'Todos los resultados ingresados' : 'Esperando resultados'"
+                <span class="badge"
+                      th:text="${kingData.allResultsIn} ? 'Todos los resultados ingresados' : 'Esperando resultados'"
                       th:classappend="${kingData.allResultsIn} ? 'badge-success' : 'badge-warning'">
                 </span>
             </div>
             <div class="admin-card-body">
-                <div id="courtsContainer" class="courts-grid">
-                    <!-- Динамическая загрузка через JavaScript -->
-                </div>
+                <div id="courtsContainer" class="courts-grid"></div>
             </div>
         </div>
 
-        <!-- Рейтинг и история в два столбца -->
+        <!-- Рейтинг и история -->
         <div class="admin-grid-two" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem;">
-            <!-- Live Рейтинг -->
             <div class="admin-card">
                 <div class="admin-card-header">
                     <h2><i class="fas fa-chart-line"></i> Clasificación en vivo</h2>
@@ -128,27 +140,22 @@
                             <th>V/D</th>
                         </tr>
                         </thead>
-                        <tbody id="leaderboard">
-                        <!-- Динамическая загрузка -->
-                        </tbody>
+                        <tbody id="leaderboard"></tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- История игр -->
             <div class="admin-card">
                 <div class="admin-card-header">
                     <h2><i class="fas fa-history"></i> Historial de partidos</h2>
                 </div>
                 <div class="admin-card-body">
-                    <ul id="matchHistory" class="history-list" style="list-style: none; padding: 0; margin: 0; max-height: 400px; overflow-y: auto;">
-                        <!-- Динамическая загрузка -->
-                    </ul>
+                    <ul id="matchHistory" class="history-list"
+                        style="list-style: none; padding: 0; margin: 0; max-height: 400px; overflow-y: auto;"></ul>
                 </div>
             </div>
         </div>
 
-        <!-- Кнопка возврата (дублирующая) -->
         <div class="admin-actions" style="justify-content: center; margin-top: 2rem;">
             <a th:href="@{'/torneo/' + ${tournamentId}}" class="btn btn-primary">
                 <i class="fas fa-arrow-left"></i> Volver al torneo
@@ -159,20 +166,16 @@
 
 <footer class="footer">
     <div class="container">
-        <!-- ✅ ИСПРАВЛЕНО: Padel Core → E-Padel -->
         <p>&copy; 2026 E-Padel. Todos los derechos reservados.</p>
     </div>
 </footer>
 
-<!-- Модальные окна -->
 <div th:replace="~{fragments/king-of-court-modals :: historyModal}"></div>
 <div th:replace="~{fragments/king-of-court-modals :: finalResultsModal}"></div>
 
-<!-- WebSocket библиотеки -->
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 
-<!-- Данные для JavaScript -->
 <script th:inline="javascript">
     /*<![CDATA[*/
     window.tournamentData = {
@@ -190,5 +193,40 @@
 
 <script th:src="@{/js/main.js}"></script>
 <script th:src="@{/js/king-of-court-viewer.js}"></script>
+
+<script>
+    /**
+     * Дополнение для страницы зрителя:
+     * если турнир завершён — заполняем финальную таблицу из API
+     * и НЕ показываем модальное окно (оно провисало секунду и исчезало).
+     */
+    document.addEventListener('DOMContentLoaded', async () => {
+        const isFinished = window.tournamentData?.isFinished;
+        const kingId     = window.tournamentData?.kingId;
+        if (!isFinished || !kingId) return;
+
+        try {
+            const res  = await fetch(`/api/king-of-court/tournaments/${kingId}/state?t=${Date.now()}`);
+            if (!res.ok) return;
+            const data = await res.json();
+
+            const tbody = document.getElementById('finalLeaderboard');
+            if (!tbody || !data.ranking?.length) return;
+
+            tbody.innerHTML = data.ranking.map(p => `
+                <tr>
+                    <td><strong>#${p.rank || ''}</strong></td>
+                    <td>${p.playerName || ''}</td>
+                    <td><strong>${p.totalPoints || 0}</strong></td>
+                    <td>+${p.bonusPoints || 0}</td>
+                    <td>${p.gamesPlayed || 0}</td>
+                    <td>${p.wins || 0}/${p.losses || 0}</td>
+                </tr>
+            `).join('');
+        } catch (e) {
+            console.error('Error loading final results:', e);
+        }
+    });
+</script>
 </body>
 </html>

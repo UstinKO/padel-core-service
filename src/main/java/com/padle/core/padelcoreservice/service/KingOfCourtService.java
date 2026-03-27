@@ -938,4 +938,71 @@ public class KingOfCourtService {
     public List<Object[]> getRawPlayerStats(Long kingTournamentId) {
         return statsRepository.findRawStats(kingTournamentId);
     }
+
+    /**
+     * Откат последнего раунда.
+     *
+     * Что делает:
+     *  1. Находит последний раунд турнира
+     *  2. Проверяет что он не первый (первый откатить нельзя)
+     *  3. Откатывает очки всех игроков за этот раунд
+     *  4. Удаляет все корты и результаты последнего раунда
+     *  5. Удаляет сам раунд
+     *  6. Снимает флаг isCompleted с предыдущего раунда — админ
+     *     может снова ввести результаты и перейти к следующему раунду
+     *  7. Уменьшает currentRound в турнире на 1
+     */
+    @Transactional
+    public void rollbackLastRound(Long kingTournamentId) {
+        log.info("Rolling back last round for tournament: {}", kingTournamentId);
+
+        TournamentKingOfCourt king = kingRepository.findById(kingTournamentId)
+                .orElseThrow(() -> new ResourceNotFoundException("King tournament not found"));
+
+        if (king.getIsFinished()) {
+            throw new InvalidStateException("Cannot rollback: tournament is already finished");
+        }
+
+        List<KingOfCourtRound> rounds =
+                roundRepository.findByTournamentKingOrderByRoundNumberAsc(king);
+
+        if (rounds.size() < 2) {
+            throw new InvalidStateException(
+                    "Cannot rollback: this is the first round. There is nothing to go back to.");
+        }
+
+        KingOfCourtRound lastRound    = rounds.get(rounds.size() - 1);
+        KingOfCourtRound prevRound    = rounds.get(rounds.size() - 2);
+
+        // 1. Откатываем очки за все матчи последнего раунда
+        for (KingOfCourtCourt court : lastRound.getCourts()) {
+            if (court.getResult() != null) {
+                revertPlayerStats(king, court.getResult());
+                log.info("Reverted stats for court {} of round {}",
+                        court.getCourtNumber(), lastRound.getRoundNumber());
+            }
+        }
+
+        // 2. Удаляем последний раунд (каскадно удалятся корты, команды и результаты)
+        king.getRounds().remove(lastRound);
+        roundRepository.delete(lastRound);
+        log.info("Deleted round {}", lastRound.getRoundNumber());
+
+        // 3. Снимаем флаг завершения с предыдущего раунда —
+        //    теперь он снова "активный" и можно исправить результаты
+        prevRound.setIsCompleted(false);
+        prevRound.setCompletedAt(null);
+        roundRepository.save(prevRound);
+        log.info("Reopened round {} for editing", prevRound.getRoundNumber());
+
+        // 4. Уменьшаем счётчик текущего раунда
+        king.setCurrentRound(king.getCurrentRound() - 1);
+        kingRepository.save(king);
+
+        // 5. Уведомляем всех подключённых клиентов
+        KingOfCourtStateDTO state = getCurrentState(kingTournamentId);
+        webSocketService.notifyTournamentStateUpdated(kingTournamentId, state);
+
+        log.info("Rollback complete. Now on round {}", king.getCurrentRound());
+    }
 }

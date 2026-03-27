@@ -257,15 +257,13 @@
                   method="post" style="display: inline-block;">
                 <input type="hidden" name="status" value="FINALIZADO">
                 <button type="submit" class="btn btn-outline"
-                        th:classappend="${tournament.estado.name() == 'FINALIZADO'} ? 'active' : ''"
-                        onclick="return confirm('¿Estás seguro de finalizar el torneo?');">
+                        th:classappend="${tournament.estado.name() == 'FINALIZADO'} ? 'active' : ''">
                     <i class="fas fa-flag-checkered"></i> Finalizar
                 </button>
             </form>
 
             <form th:action="@{'/admin/tournaments/' + ${tournament.id} + '/deactivate'}"
-                  method="post" style="display: inline-block;"
-                  onsubmit="return confirm('¿Estás seguro de desactivar este torneo?');">
+                  method="post" style="display: inline-block;">
                 <button type="submit" class="btn btn-warning">
                     <i class="fas fa-ban"></i> Desactivar
                 </button>
@@ -275,8 +273,7 @@
         <!-- Кнопка Eliminar Permanentemente (solo para torneos inactivos) -->
         <div th:unless="${tournament.isActive}" class="action-buttons-center" style="margin-top: 0;">
             <form th:action="@{'/admin/tournaments/' + ${tournament.id} + '/delete'}"
-                  method="post" style="display: inline-block;"
-                  onsubmit="return confirm('¿Estás seguro de ELIMINAR PERMANENTEMENTE?');">
+                  method="post" style="display: inline-block;">
                 <button type="submit" class="btn btn-danger">
                     <i class="fas fa-trash-alt"></i> Eliminar Permanentemente
                 </button>
@@ -885,9 +882,6 @@
 
     // Защита от двойного сабмита — блокируем кнопку после первого клика
     function confirmAndLock(btn) {
-        if (!confirm("¿Iniciar el torneo Americano? Esta acción no se puede deshacer.")) {
-            return false;
-        }
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Iniciando...';
         // Добавить отправку формы

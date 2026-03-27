@@ -530,37 +530,34 @@ class KingOfCourt {
     }
 
     checkAdminButtons(allResultsIn) {
-        const nextRoundBtn = document.getElementById('nextRoundBtn');
+        const nextRoundBtn    = document.getElementById('nextRoundBtn');
+        const rollbackBtn     = document.getElementById('rollbackRoundBtn');
         const endTournamentBtn = document.getElementById('endTournamentBtn');
 
         console.log('Checking admin buttons:', {
             isAdmin: this.isAdmin,
             isFinished: this.isFinished,
-            allResultsIn: allResultsIn,
+            allResultsIn,
             currentRound: this.currentRound
         });
 
-        // Кнопка следующего раунда
+        // "Следующий раунд" — только когда все результаты введены
         if (nextRoundBtn) {
-            if (this.isAdmin && !this.isFinished && allResultsIn) {
-                nextRoundBtn.style.display = 'block';
-                console.log('Next round button SHOWN');
-            } else {
-                nextRoundBtn.style.display = 'none';
-                console.log('Next round button HIDDEN');
-            }
+            nextRoundBtn.style.display =
+                (this.isAdmin && !this.isFinished && allResultsIn) ? 'block' : 'none';
         }
 
-        // Кнопка завершения турнира
+        // "Откатить раунд" — доступен когда мы уже перешли на раунд 2+
+        // (currentRound > 1 означает что есть хотя бы один предыдущий раунд)
+        if (rollbackBtn) {
+            rollbackBtn.style.display =
+                (this.isAdmin && !this.isFinished && this.currentRound > 1) ? 'block' : 'none';
+        }
+
+        // "Завершить турнир" — только когда все результаты введены
         if (endTournamentBtn) {
-            // Показываем кнопку завершения, если все результаты введены И турнир не завершен
-            if (this.isAdmin && !this.isFinished && allResultsIn) {
-                endTournamentBtn.style.display = 'block';
-                console.log('End tournament button SHOWN');
-            } else {
-                endTournamentBtn.style.display = 'none';
-                console.log('End tournament button HIDDEN');
-            }
+            endTournamentBtn.style.display =
+                (this.isAdmin && !this.isFinished && allResultsIn) ? 'block' : 'none';
         }
     }
 
@@ -1046,6 +1043,32 @@ class KingOfCourt {
             this.confirmAction();
         }
         this.closeConfirmModal();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // ПАТЧ для king-of-court.js
+    // Добавить два блока:
+    // 1. Метод rollbackRound — добавить в класс KingOfCourt
+    //    (например, после метода nextRound)
+
+    // ─── 1. НОВЫЙ МЕТОД rollbackRound ────────────────────────────────────
+    async rollbackRound() {
+        try {
+            const response = await fetch(`/api/king-of-court/tournaments/${this.kingId}/rollback`, {
+                method: 'POST'
+            });
+
+            if (response.ok) {
+                this.showNotification('Раунд отменён — исправьте результаты предыдущего раунда', 'success');
+                setTimeout(() => this.loadData(), 500);
+            } else {
+                const error = await response.json();
+                this.showError(error.message || 'Ошибка отката раунда');
+            }
+        } catch (error) {
+            console.error('Error rolling back round:', error);
+            this.showError('Ошибка соединения');
+        }
     }
 }
 

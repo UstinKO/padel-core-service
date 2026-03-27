@@ -374,8 +374,8 @@
 
                     // Проверяем, что дата валидная
                     if (!isNaN(fechaHora.getTime())) {
-                        // Прибавляем 24 часа
-                        const deadline = new Date(fechaHora.getTime() + (24 * 60 * 60 * 1000));
+                        // Отнимаем 24 часа
+                        const deadline = new Date(fechaHora.getTime() - (24 * 60 * 60 * 1000));
 
                         // Форматируем для datetime-local (YYYY-MM-DDTHH:mm)
                         const year = deadline.getFullYear();
