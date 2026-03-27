@@ -514,20 +514,22 @@
     }
 
     function confirmAndLock(btn) {
-        if (!confirm('¿Iniciar el torneo Americano con esta distribución? Esta acción no se puede deshacer.')) {
-            return false;
-        }
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Iniciando...';
+        // Блокируем кнопку ПОСЛЕ того как браузер начал отправку формы.
+        // Если сделать btn.disabled = true до return true — браузер отменяет сабмит.
         setTimeout(() => {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-play"></i> Iniciar torneo con esta distribución';
-        }, 10000);
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Iniciando...';
+        }, 0);
         return true;
     }
 
     document.addEventListener('DOMContentLoaded', () => {
         if (rounds.length > 0) showRound(0);
+    });
+
+    document.getElementById('navbarToggler')?.addEventListener('click', function () {
+        document.getElementById('navbarNav').classList.toggle('show');
+        this.classList.toggle('active');
     });
 </script>
 </body>

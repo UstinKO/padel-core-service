@@ -24,22 +24,29 @@ public class KingOfCourtViewController {
     @GetMapping("/torneo/{tournamentId}/king-of-court")
     public String viewKingOfCourt(@PathVariable Long tournamentId, Model model) {
 
-        List<TournamentKingOfCourt> activeKings = kingRepository
-                .findAllByTournamentIdAndIsActiveTrue(tournamentId);
+        // Сначала ищем активный турнир
+        List<TournamentKingOfCourt> kings =
+                kingRepository.findAllByTournamentIdAndIsActiveTrue(tournamentId);
 
-        if (activeKings.isEmpty()) {
+        // Если активного нет — ищем завершённый (isActive=false, isFinished=true)
+        if (kings.isEmpty()) {
+            kings = kingRepository.findAllByTournamentId(tournamentId)
+                    .stream()
+                    .filter(k -> Boolean.TRUE.equals(k.getIsFinished()))
+                    .toList();
+        }
+
+        if (kings.isEmpty()) {
             return "redirect:/torneo/" + tournamentId + "?error=no-active-tournament";
         }
 
-        TournamentKingOfCourt king = activeKings.get(0);
-
-        // Получаем данные для отображения (без кнопок управления)
+        TournamentKingOfCourt king = kings.get(0);
         KingOfCourtStateDTO viewData = kingOfCourtService.getCurrentState(king.getId());
 
         model.addAttribute("kingData", viewData);
         model.addAttribute("tournamentId", tournamentId);
         model.addAttribute("tournamentName", king.getTournament().getNombre());
-        model.addAttribute("isViewer", true); // для разграничения прав
+        model.addAttribute("isViewer", true);
 
         return "king-of-court-view";
     }

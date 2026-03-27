@@ -720,6 +720,7 @@ public class TournamentService {
         existing.setInfoDetallada(dto.getInfoDetallada());
         existing.setContactoOrganizador(dto.getContactoOrganizador());
         existing.setFaqUrl(dto.getFaqUrl());
+        existing.setEstado(dto.getEstado());
     }
 
     public String getClubName(Long clubId) {

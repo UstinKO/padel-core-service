@@ -198,6 +198,25 @@ public class KingOfCourtApiController {
     }
 
     /**
+     * Откат последнего раунда.
+     * Удаляет последний раунд, откатывает очки, возвращает предыдущий
+     * раунд в статус "не завершён" — можно исправить результаты.
+     *
+     * Добавить в KingOfCourtApiController рядом с /next-round
+     */
+    @PostMapping("/tournaments/{kingId}/rollback")
+    public ResponseEntity<?> rollbackLastRound(@PathVariable Long kingId) {
+        log.info("Rolling back last round for tournament: {}", kingId);
+        try {
+            kingOfCourtService.rollbackLastRound(kingId);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            log.error("Error rolling back round", e);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    /**
      * DTO для запроса инициализации
      */
     public static class InitializeKingOfCourtRequest {
