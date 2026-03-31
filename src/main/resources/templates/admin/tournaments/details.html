@@ -21,6 +21,7 @@
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" th:href="@{/css/admin.css}">
     <link rel="stylesheet" th:href="@{/css/tournament-details.css}">
+    <link rel="stylesheet" th:href="@{/css/admin_details_style_fix.css}">
     <style>
         /* Дополнительные стили для новой верстки */
         .tournament-header-compact {
@@ -220,6 +221,11 @@
 
         <!-- Кнопки действий -->
         <div class="action-buttons-center">
+            <button onclick="shareAdminTournament()"
+                    class="btn btn-outline"
+                    style="display:flex; align-items:center; gap:.5rem;">
+                <i class="fas fa-share-alt"></i> Compartir
+            </button>
             <a th:href="@{'/admin/tournaments/' + ${tournament.id} + '/edit'}" class="btn btn-primary">
                 <i class="fas fa-edit"></i>
                 Editar Torneo
@@ -1017,6 +1023,18 @@
             console.log('ranking есть?', /*[[${ranking != null}]]*/ false);
         }
     });
+</script>
+<script th:src="@{/js/share-panel.js}"></script>
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    function shareAdminTournament() {
+        // Всегда даём ссылку на публичную страницу игрока, не на админку
+        const tournamentId   = /*[[${tournament.id}]]*/ 0;
+        const tournamentName = /*[[${tournament.nombre}]]*/ 'Torneo';
+        const publicUrl = window.location.origin + '/torneo/' + tournamentId;
+        showSharePanel(tournamentName, publicUrl);
+    }
+    /*]]>*/
 </script>
 </body>
 </html>

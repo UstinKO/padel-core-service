@@ -1,6 +1,7 @@
 package com.padle.core.padelcoreservice.controller;
 
 import com.padle.core.padelcoreservice.dto.TournamentDto;
+import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.enums.GenderFormat;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
@@ -10,7 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -62,54 +62,71 @@ public class TournamentController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('OWNER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
     public ResponseEntity<TournamentDto> createTournament(@Valid @RequestBody TournamentDto tournamentDto,
                                                           Authentication authentication) {
-        // Получаем ID создателя из Authentication
-        Long createdBy = getCurrentUserId(authentication);
-        return ResponseEntity.ok(tournamentService.createTournament(tournamentDto, createdBy));
+        Owner owner = extractOwner(authentication);
+        return ResponseEntity.ok(tournamentService.createTournament(tournamentDto, owner.getId()));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('OWNER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
     public ResponseEntity<TournamentDto> updateTournament(@PathVariable Long id,
-                                                          @Valid @RequestBody TournamentDto tournamentDto) {
-        return tournamentService.updateTournament(id, tournamentDto)
+                                                          @Valid @RequestBody TournamentDto tournamentDto,
+                                                          Authentication authentication) {
+        Owner owner = extractOwner(authentication);
+        return tournamentService.updateTournament(id, tournamentDto, owner.getId(), owner.isSuperAdmin())
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasRole('OWNER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
     public ResponseEntity<TournamentDto> updateTournamentStatus(@PathVariable Long id,
                                                                 @RequestParam TournamentStatus status,
                                                                 Authentication authentication) {
-        Long updatedBy = getCurrentUserId(authentication);
-        return tournamentService.updateTournamentStatus(id, status, updatedBy)
+        Owner owner = extractOwner(authentication);
+        return tournamentService.updateTournamentStatus(id, status, owner.getId(), owner.getId(), owner.isSuperAdmin())
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('OWNER')")
-    public ResponseEntity<Void> deleteTournament(@PathVariable Long id) {
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    public ResponseEntity<Void> deleteTournament(@PathVariable Long id,
+                                                 Authentication authentication) {
+        Owner owner = extractOwner(authentication);
+
+        // Проверяем права на удаление
+        if (!owner.isSuperAdmin()) {
+            TournamentDto tournament = tournamentService.getTournamentDtoById(id)
+                    .orElseThrow(() -> new RuntimeException("Tournament not found"));
+            if (!tournament.getOwnerId().equals(owner.getId())) {
+                throw new SecurityException("No tienes permiso para eliminar este torneo");
+            }
+        }
+
         if (tournamentService.deleteTournament(id)) {
             return ResponseEntity.noContent().build();
         }
         return ResponseEntity.notFound().build();
     }
 
-    // Вспомогательный метод для получения ID текущего пользователя
-    private Long getCurrentUserId(Authentication authentication) {
-        if (authentication != null && authentication.getPrincipal() != null) {
-            // Здесь нужно реализовать логику получения ID пользователя из Principal
-            // В зависимости от того, как у вас реализована аутентификация
-            // Например, если в Principal хранится объект User с getId()
-            // return ((User) authentication.getPrincipal()).getId();
+    @GetMapping("/my")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    public ResponseEntity<List<TournamentDto>> getMyTournaments(Authentication authentication) {
+        Owner owner = extractOwner(authentication);
+        return ResponseEntity.ok(tournamentService.getTournamentsForOwner(owner.getId(), owner.isSuperAdmin()));
+    }
 
-            // Временное решение - возвращаем 1
-            return 1L;
+    private Owner extractOwner(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new SecurityException("Not authenticated");
         }
-        return null;
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof Owner) {
+            return (Owner) principal;
+        }
+        throw new SecurityException("Invalid principal type");
     }
 }

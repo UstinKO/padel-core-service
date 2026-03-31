@@ -117,6 +117,14 @@ public class TournamentService {
         PlayerPadel player = playerService.getPlayerById(playerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Player not found with id: " + playerId));
 
+        // ========== ДОБАВЛЯЕМ ПРОВЕРКУ КОНТАКТОВ ==========
+        if (!player.hasValidContact()) {
+            throw new TournamentRegistrationException(
+                    "Para inscribirte en un torneo necesitas tener al menos un dato de contacto: WhatsApp (+54) o Telegram"
+            );
+        }
+        // ========== КОНЕЦ ПРОВЕРКИ ==========
+
         // Проверяем, активен ли турнир
         if (!tournament.getIsActive()) {
             throw new TournamentRegistrationException("Tournament is not active");
@@ -236,6 +244,33 @@ public class TournamentService {
 
         TournamentRegistration savedRegistration = registrationRepository.save(registration);
         return registrationMapper.toDto(savedRegistration);
+    }
+
+    // Добавьте этот метод в TournamentService.java
+
+    @Transactional
+    public void updatePlayerContacts(PlayerPadel player) {
+        log.info("Updating player contacts for player id: {}", player.getId());
+
+        // Проверяем, есть ли уже такой телефон у других игроков
+        if (player.getTelefono() != null && !player.getTelefono().isBlank()) {
+            Optional<PlayerPadel> existingByPhone = playerService.findByTelefono(player.getTelefono());
+            if (existingByPhone.isPresent() && !existingByPhone.get().getId().equals(player.getId())) {
+                throw new IllegalArgumentException("Ya existe un jugador con ese número de teléfono");
+            }
+        }
+
+        // Проверяем, есть ли уже такой Telegram у других игроков
+        if (player.getTelegramUsername() != null && !player.getTelegramUsername().isBlank()) {
+            Optional<PlayerPadel> existingByTelegram = playerService.findByTelegramUsername(player.getTelegramUsername());
+            if (existingByTelegram.isPresent() && !existingByTelegram.get().getId().equals(player.getId())) {
+                throw new IllegalArgumentException("Ya existe un jugador con ese usuario de Telegram");
+            }
+        }
+
+        // Сохраняем через PlayerService
+        playerService.actualizarJugador(player);
+        log.info("Player contacts updated successfully for player id: {}", player.getId());
     }
 
     private void sendWaitlistNotification(PlayerPadel player, Tournament tournament, int waitlistPosition) {
@@ -423,30 +458,82 @@ public class TournamentService {
 
         Tournament tournament = tournamentMapper.toEntity(tournamentDto);
         tournament.setCreatedBy(createdBy);
+        tournament.setOwnerId(createdBy);  // ← ДОБАВИТЬ ЭТУ СТРОКУ
         tournament.setIsActive(true);
 
         if (tournament.getEstado() == null) {
             tournament.setEstado(TournamentStatus.REGISTRO_ABIERTO);
         }
 
+        // ✅ АВТОМАТИЧЕСКИ РАССЧИТЫВАЕМ ДЕДЛАЙН ОТМЕНЫ (24 ЧАСА ДО НАЧАЛА)
+        if (tournament.getDeadlineCancelacion() == null) {
+            LocalDateTime startDateTime = LocalDateTime.of(tournament.getFechaInicio(), tournament.getHoraInicio());
+            tournament.setDeadlineCancelacion(startDateTime.minusHours(24));
+        }
+
         Tournament savedTournament = tournamentRepository.save(tournament);
-        log.info("Created new tournament: {} with id: {}", savedTournament.getNombre(), savedTournament.getId());
+        log.info("Created new tournament: {} with id: {}, ownerId: {}, deadline cancellation: {}",
+                savedTournament.getNombre(),
+                savedTournament.getId(),
+                savedTournament.getOwnerId(),
+                savedTournament.getDeadlineCancelacion());
 
         return mapToDtoWithDetails(savedTournament);
     }
 
+//    @Transactional
+//    public Optional<TournamentDto> updateTournament(Long id, TournamentDto tournamentDto) {
+//        return tournamentRepository.findById(id)
+//                .map(existingTournament -> {
+//                    if (existingTournament.getEstado() == TournamentStatus.FINALIZADO ||
+//                            existingTournament.getEstado() == TournamentStatus.CANCELADO) {
+//                        throw new IllegalStateException("Cannot edit finished or cancelled tournament");
+//                    }
+//
+//                    updateTournamentFields(existingTournament, tournamentDto);
+//
+//                    // ✅ ПЕРЕРАССЧИТЫВАЕМ ДЕДЛАЙН ЕСЛИ ИЗМЕНИЛАСЬ ДАТА/ВРЕМЯ
+//                    if (tournamentDto.getFechaInicio() != null && tournamentDto.getHoraInicio() != null) {
+//                        LocalDateTime startDateTime = LocalDateTime.of(
+//                                tournamentDto.getFechaInicio(),
+//                                tournamentDto.getHoraInicio()
+//                        );
+//                        existingTournament.setDeadlineCancelacion(startDateTime.minusHours(24));
+//                    }
+//
+//                    Tournament updated = tournamentRepository.save(existingTournament);
+//                    log.info("Updated tournament with id: {}, new deadline: {}",
+//                            id, existingTournament.getDeadlineCancelacion());
+//                    return mapToDtoWithDetails(updated);
+//                });
+//    }
+
     @Transactional
-    public Optional<TournamentDto> updateTournament(Long id, TournamentDto tournamentDto) {
+    public Optional<TournamentDto> updateTournament(Long id, TournamentDto tournamentDto, Long ownerId, boolean isSuperAdmin) {
         return tournamentRepository.findById(id)
                 .map(existingTournament -> {
+                    // Проверка прав
+                    if (!isSuperAdmin && !existingTournament.getOwnerId().equals(ownerId)) {
+                        throw new SecurityException("No tienes permiso para editar este torneo");
+                    }
+
                     if (existingTournament.getEstado() == TournamentStatus.FINALIZADO ||
                             existingTournament.getEstado() == TournamentStatus.CANCELADO) {
                         throw new IllegalStateException("Cannot edit finished or cancelled tournament");
                     }
 
                     updateTournamentFields(existingTournament, tournamentDto);
+
+                    if (tournamentDto.getFechaInicio() != null && tournamentDto.getHoraInicio() != null) {
+                        LocalDateTime startDateTime = LocalDateTime.of(
+                                tournamentDto.getFechaInicio(),
+                                tournamentDto.getHoraInicio()
+                        );
+                        existingTournament.setDeadlineCancelacion(startDateTime.minusHours(24));
+                    }
+
                     Tournament updated = tournamentRepository.save(existingTournament);
-                    log.info("Updated tournament with id: {}", id);
+                    log.info("Updated tournament with id: {} by owner: {}", id, ownerId);
                     return mapToDtoWithDetails(updated);
                 });
     }
@@ -455,6 +542,22 @@ public class TournamentService {
     public Optional<TournamentDto> updateTournamentStatus(Long id, TournamentStatus newStatus, Long updatedBy) {
         return tournamentRepository.findById(id)
                 .map(tournament -> {
+                    validateStatusTransition(tournament.getEstado(), newStatus);
+                    tournament.setEstado(newStatus);
+                    Tournament updated = tournamentRepository.save(tournament);
+                    log.info("Updated tournament {} status to: {} by user {}", id, newStatus, updatedBy);
+                    return mapToDtoWithDetails(updated);
+                });
+    }
+
+    @Transactional
+    public Optional<TournamentDto> updateTournamentStatus(Long id, TournamentStatus newStatus, Long updatedBy, Long ownerId, boolean isSuperAdmin) {
+        return tournamentRepository.findById(id)
+                .map(tournament -> {
+                    // Проверка прав
+                    if (!isSuperAdmin && !tournament.getOwnerId().equals(ownerId)) {
+                        throw new SecurityException("No tienes permiso para modificar este torneo");
+                    }
                     validateStatusTransition(tournament.getEstado(), newStatus);
                     tournament.setEstado(newStatus);
                     Tournament updated = tournamentRepository.save(tournament);
@@ -935,6 +1038,16 @@ public class TournamentService {
             waitlist.get(i).setWaitlistPosition(i + 1);
         }
         registrationRepository.saveAll(waitlist);
+    }
+
+    @Transactional(readOnly = true)
+    public List<TournamentDto> getTournamentsForOwner(Long ownerId, boolean isSuperAdmin) {
+        if (isSuperAdmin) {
+            return getAllTournaments();
+        }
+        return tournamentRepository.findByOwnerId(ownerId).stream()
+                .map(this::mapToDtoWithDetails)
+                .collect(Collectors.toList());
     }
 
     /**

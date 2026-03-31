@@ -109,7 +109,7 @@
                         <a th:href="@{'/admin/players/' + ${player.id}}" class="btn-icon" title="Ver detalles">
                             <i class="fas fa-eye"></i>
                         </a>
-                        <form th:action="@{'/admin/players/' + ${player.id} + '/toggle-status'}" method="post" style="display: inline;">
+                        <form th:if="${isSuperAdmin}" th:action="@{'/admin/players/' + ${player.id} + '/toggle-status'}" method="post" style="display: inline;">
                             <button type="submit" class="btn-icon"
                                     th:title="${player.activo} ? 'Desactivar' : 'Activar'"
                                     th:classappend="${player.activo} ? '' : 'success'">
@@ -162,7 +162,7 @@
                             <a th:href="@{'/admin/players/' + ${player.id}}" class="btn-icon" title="Ver detalles">
                                 <i class="fas fa-eye"></i>
                             </a>
-                            <form th:action="@{'/admin/players/' + ${player.id} + '/toggle-status'}"
+                            <form th:if="${isSuperAdmin}" th:action="@{'/admin/players/' + ${player.id} + '/toggle-status'}"
                                   method="post"
                                   style="display: inline;">
                                 <button type="submit" class="btn-icon"

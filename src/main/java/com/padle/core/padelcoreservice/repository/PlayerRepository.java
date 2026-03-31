@@ -29,4 +29,6 @@ public interface PlayerRepository extends JpaRepository<PlayerPadel, Long> {
 
     @Query("SELECT p FROM PlayerPadel p ORDER BY p.fechaRegistro DESC")
     List<PlayerPadel> findAllByOrderByFechaRegistroDesc();
+
+    Optional<PlayerPadel> findByTelegramUsername(String telegramUsername);
 }

@@ -3,7 +3,9 @@ package com.padle.core.padelcoreservice.repository;
 import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.TournamentRegistration;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -167,4 +169,29 @@ public interface TournamentRegistrationRepository extends JpaRepository<Tourname
 
     List<TournamentRegistration> findByTournamentIdAndStatusOrderByPositionAsc(
             Long tournamentId, RegistrationStatus status);
+
+    // В TournamentRegistrationRepository
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT tr FROM TournamentRegistration tr WHERE tr.tournament.id = :tournamentId AND tr.player.id = :playerId")
+    Optional<TournamentRegistration> findByTournamentIdAndPlayerIdWithLock(
+            @Param("tournamentId") Long tournamentId,
+            @Param("playerId") Long playerId
+    );
+
+    // TournamentRegistrationRepository.java
+    @Query("SELECT tr FROM TournamentRegistration tr " +
+            "WHERE tr.tournament.id = :tournamentId " +
+            "AND tr.player.id = :playerId " +
+            "AND tr.isActive = true")
+    Optional<TournamentRegistration> findByTournamentIdAndPlayerIdAndIsActiveTrue(
+            @Param("tournamentId") Long tournamentId,
+            @Param("playerId") Long playerId);
+
+    @Query("SELECT tr FROM TournamentRegistration tr " +
+            "WHERE tr.tournament.id = :tournamentId " +
+            "AND tr.player.id = :playerId " +
+            "AND tr.isActive = false")
+    Optional<TournamentRegistration> findByTournamentIdAndPlayerIdAndIsActiveFalse(
+            @Param("tournamentId") Long tournamentId,
+            @Param("playerId") Long playerId);
 }

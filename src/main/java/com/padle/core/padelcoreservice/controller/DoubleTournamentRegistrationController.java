@@ -3,6 +3,7 @@ package com.padle.core.padelcoreservice.controller;
 import com.padle.core.padelcoreservice.dto.PartnerRegistrationDto;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
+import com.padle.core.padelcoreservice.exception.TournamentRegistrationException;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.service.DoubleTournamentRegistrationService;
 import com.padle.core.padelcoreservice.service.TournamentService;
@@ -30,23 +31,49 @@ public class DoubleTournamentRegistrationController {
             @Valid @RequestBody PartnerRegistrationDto partnerDto,
             @AuthenticationPrincipal Object principal) {
 
-        Long currentUserId = extractCurrentUserId(principal);
-
-        TournamentDto tournamentDto = tournamentService.getTournamentDtoById(tournamentId)
-                .orElseThrow(() -> new RuntimeException("Torneo no encontrado con id: " + tournamentId));
-
-        TournamentRegistrationDto registration = doubleRegistrationService
-                .registerForDoubleTournament(tournamentDto, currentUserId, partnerDto);
-
-        // Возвращаем такой же формат, как в обычной регистрации
         Map<String, Object> response = new HashMap<>();
-        response.put("success", true);
-        response.put("message", "Registro completado");
-        response.put("status", registration.getStatus());
-        response.put("position", registration.getPosition());
-        response.put("waitlistPosition", registration.getWaitlistPosition());
 
-        return ResponseEntity.ok(response);
+        Long currentUserId;
+        try {
+            currentUserId = extractCurrentUserId(principal);
+        } catch (SecurityException e) {
+            response.put("success", false);
+            response.put("message", "Usuario no autenticado");
+            return ResponseEntity.status(401).body(response);
+        }
+
+        try {
+            TournamentDto tournamentDto = tournamentService.getTournamentDtoById(tournamentId)
+                    .orElseThrow(() -> new RuntimeException("Torneo no encontrado con id: " + tournamentId));
+
+            TournamentRegistrationDto registration = doubleRegistrationService
+                    .registerForDoubleTournament(tournamentDto, currentUserId, partnerDto);
+
+            response.put("success", true);
+            response.put("message", "Registro completado");
+            response.put("status", registration.getStatus());
+            response.put("position", registration.getPosition());
+            response.put("waitlistPosition", registration.getWaitlistPosition());
+
+            return ResponseEntity.ok(response);
+
+        } catch (TournamentRegistrationException e) {
+            // Бизнес-ошибки (включая само-регистрацию, уже зарегистрирован и т.д.)
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            // Fallback на случай если constraint сработал раньше нашей проверки
+            response.put("success", false);
+            response.put("message", "Ya estás registrado en este torneo o los datos del compañero son inválidos.");
+            return ResponseEntity.badRequest().body(response);
+
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Error al procesar el registro: " + e.getMessage());
+            return ResponseEntity.status(500).body(response);
+        }
     }
 
     @PostMapping("/confirm")

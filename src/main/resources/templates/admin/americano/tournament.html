@@ -143,6 +143,11 @@
             <a th:href="@{'/admin/tournaments/' + ${tournament.id}}" class="btn btn-outline">
                 <i class="fas fa-arrow-left"></i> Volver a detalles del torneo
             </a>
+            <button onclick="shareAdminTournament()"
+                    class="btn btn-outline"
+                    style="display:flex; align-items:center; gap:.5rem;">
+                <i class="fas fa-share-alt"></i> Compartir torneo
+            </button>
         </div>
 
         <!-- Header turнира -->
@@ -1032,5 +1037,16 @@
         }
     });
 </script>
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    function shareAdminTournament() {
+        const tournamentId = /*[[${tournament.id}]]*/ 0;
+        const tournamentName = /*[[${tournament.nombre}]]*/ 'Torneo';
+        const publicUrl = window.location.origin + '/torneo/' + tournamentId;
+        showSharePanel(tournamentName, publicUrl);
+    }
+    /*]]>*/
+</script>
+<script th:src="@{/js/share-panel.js}"></script>
 </body>
 </html>

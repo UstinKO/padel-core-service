@@ -138,6 +138,15 @@
             </div>
         </div>
 
+        <!-- Кнопка шаринга — всегда видна -->
+        <div class="admin-actions" style="justify-content: center; margin-top: 1.5rem;">
+            <button onclick="shareAdminTournament()"
+                    class="btn btn-outline"
+                    style="display:flex; align-items:center; gap:.5rem;">
+                <i class="fas fa-share-alt"></i> Compartir torneo
+            </button>
+        </div>
+
         <!-- Botones de administrador -->
         <div class="admin-actions" style="justify-content: center; margin-top: 2rem; gap: 1rem; display: flex; flex-wrap: wrap;"
              th:if="${admin and not kingTournament.isFinished}">
@@ -197,5 +206,17 @@
 </script>
 
 <script th:src="@{/js/king-of-court.js}"></script>
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    function shareAdminTournament() {
+        // Формируем публичную ссылку на страницу турнира для игроков
+        const tournamentId = /*[[${tournament.id}]]*/ 0;
+        const tournamentName = /*[[${tournament.nombre}]]*/ 'Torneo';
+        const publicUrl = window.location.origin + '/torneo/' + tournamentId;
+        showSharePanel(tournamentName, publicUrl);
+    }
+    /*]]>*/
+</script>
+<script th:src="@{/js/share-panel.js}"></script>
 </body>
 </html>

@@ -1,0 +1,49 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.24-add-contact-and-owner-fields
+      author: padel-core
+      changes:
+        - addColumn:
+            tableName: player_padel_db
+            columns:
+              - column:
+                  name: telegram_username
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: true
+        - addColumn:
+            tableName: owners_db
+            columns:
+              - column:
+                  name: role
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: true
+        - addColumn:
+            tableName: tournaments_db
+            columns:
+              - column:
+                  name: owner_id
+                  type: BIGINT
+                  constraints:
+                    nullable: true
+        - sql:
+            sql: |
+              -- Для существующих записей устанавливаем SUPER_ADMIN
+              UPDATE owners_db SET role = 'SUPER_ADMIN' WHERE role IS NULL;
+              
+              -- Для новых записей будет дефолт через код, а не через БД
+        - addNotNullConstraint:
+            tableName: owners_db
+            columnName: role
+            defaultNullValue: "ORGANIZER"
+      rollback:
+        - dropColumn:
+            tableName: tournaments_db
+            columnName: owner_id
+        - dropColumn:
+            tableName: owners_db
+            columnName: role
+        - dropColumn:
+            tableName: player_padel_db
+            columnName: telegram_username

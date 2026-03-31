@@ -320,6 +320,44 @@
             <div class="tournament-sidebar">
                 <!-- Блок регистрации -->
                 <div class="registration-card">
+                    <!-- Блок шаринга — показываем всем -->
+                    <div class="registration-card" style="margin-top: 1rem;">
+                        <h3 class="registration-title">
+                            <i class="fas fa-share-alt"></i> Compartir torneo
+                        </h3>
+                        <div style="display: flex; flex-direction: column; gap: .6rem; margin-top: .75rem;">
+
+                            <!-- WhatsApp -->
+                            <a id="shareWhatsapp"
+                               target="_blank" rel="noopener noreferrer"
+                               style="display:flex; align-items:center; gap:.6rem; padding:.6rem 1rem;
+                                  background:#25D366; color:#fff; border-radius:8px;
+                                  text-decoration:none; font-weight:600; font-size:.9rem;">
+                                <i class="fab fa-whatsapp" style="font-size:1.1rem;"></i>
+                                Enviar por WhatsApp
+                            </a>
+
+                            <!-- Telegram -->
+                            <a id="shareTelegram"
+                               target="_blank" rel="noopener noreferrer"
+                               style="display:flex; align-items:center; gap:.6rem; padding:.6rem 1rem;
+                                  background:#2CA5E0; color:#fff; border-radius:8px;
+                                  text-decoration:none; font-weight:600; font-size:.9rem;">
+                                <i class="fab fa-telegram" style="font-size:1.1rem;"></i>
+                                Enviar por Telegram
+                            </a>
+
+                            <!-- Copiar enlace -->
+                            <button id="copyLinkBtn" onclick="copyTournamentLink()"
+                                    style="display:flex; align-items:center; gap:.6rem; padding:.6rem 1rem;
+                                       background:#f1f5f9; color:#1e293b; border:1px solid #e2e8f0;
+                                       border-radius:8px; font-weight:600; font-size:.9rem;
+                                       cursor:pointer; width:100%;">
+                                <i class="fas fa-link" style="font-size:1rem;"></i>
+                                Copiar enlace
+                            </button>
+                        </div>
+                    </div>
                     <h3 class="registration-title">Inscripción</h3>
 
                     <!-- Estado de registro del usuario -->
@@ -399,15 +437,6 @@
         </div>
     </div>
 </footer>
-
-<!-- Datos para JavaScript -->
-<script th:inline="javascript">
-    /*<![CDATA[*/
-    var tournament = /*[(${tournamentJson})]*/ {};
-    var isAuthenticated = /*[(${isAuthenticated})]*/ false;
-    /*]]>*/
-</script>
-<script th:src="@{/js/tournament-details.js}"></script>
 
 <!-- Modal para registro de pareja -->
 <div class="modal" id="partnerModal" tabindex="-1" role="dialog" aria-labelledby="partnerModalLabel" aria-hidden="true">
@@ -507,13 +536,91 @@
     </div>
 </div>
 
+<!-- Modal para cancelar inscripción -->
+<div class="modal" id="cancelModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-times-circle" style="color: #dc3545;"></i>
+                    Cancelar inscripción
+                </h5>
+                <button type="button" class="modal-close" data-dismiss="modal" aria-label="Cerrar">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="cancelModalTournamentName" style="font-weight: 500; margin-bottom: 1rem;"></p>
+                <div class="form-group">
+                    <label for="cancelReason">
+                        <i class="fas fa-comment"></i>
+                        Motivo de cancelación (opcional)
+                    </label>
+                    <textarea id="cancelReason" class="form-control" rows="3"
+                              placeholder="Cuéntanos por qué cancelas tu inscripción..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" data-dismiss="modal">
+                    <i class="fas fa-arrow-left"></i>
+                    Volver
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmCancelBtn">
+                    <i class="fas fa-check-circle"></i>
+                    Confirmar cancelación
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Script adicional -->
+<script th:src="@{/js/contact-check.js}"></script>
 <script th:inline="javascript">
     /*<![CDATA[*/
     window.tournament = /*[[${tournament}]]*/ {};
     window.isAuthenticated = /*[[${isAuthenticated}]]*/ false;
     console.log('Tournament data from server:', window.tournament);
     /*]]>*/
+</script>
+
+<!-- Datos para JavaScript -->
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    var tournament = /*[(${tournamentJson})]*/ {};
+    var isAuthenticated = /*[(${isAuthenticated})]*/ false;
+    /*]]>*/
+</script>
+<script th:src="@{/js/tournament-details.js}"></script>
+<script>
+    (function() {
+        const url  = window.location.href;
+        const name = document.querySelector('h1') ? document.querySelector('h1').textContent.trim() : 'Torneo E-Padel';
+        const text = `🎾 ¡Te invito a este torneo de pádel!\n*${name}*\n${url}`;
+
+        const wa = document.getElementById('shareWhatsapp');
+        if (wa) wa.href = 'https://wa.me/?text=' + encodeURIComponent(text);
+
+        const tg = document.getElementById('shareTelegram');
+        if (tg) tg.href = 'https://t.me/share/url?url=' + encodeURIComponent(url) +
+            '&text=' + encodeURIComponent(`🎾 ${name}`);
+    })();
+
+    function copyTournamentLink() {
+        const url = window.location.href;
+        navigator.clipboard.writeText(url).then(() => {
+            const btn = document.getElementById('copyLinkBtn');
+            const original = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check" style="font-size:1rem;"></i> ¡Enlace copiado!';
+            btn.style.background = '#dcfce7';
+            btn.style.borderColor = '#86efac';
+            setTimeout(() => {
+                btn.innerHTML = original;
+                btn.style.background = '#f1f5f9';
+                btn.style.borderColor = '#e2e8f0';
+            }, 2500);
+        });
+    }
 </script>
 </body>
 </html>

@@ -106,6 +106,9 @@ public class Tournament {
     @Builder.Default
     private Boolean isActive = true;
 
+    @Column(name = "owner_id")
+    private Long ownerId;
+
     // Связь с регистрациями
     @OneToMany(mappedBy = "tournament", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
@@ -120,11 +123,17 @@ public class Tournament {
         return estado == TournamentStatus.REGISTRO_ABIERTO;
     }
 
+    public LocalDateTime calculateDefaultDeadline() {
+        LocalDateTime startDateTime = LocalDateTime.of(fechaInicio, horaInicio);
+        return startDateTime.minusHours(24);
+    }
+
     public boolean canCancelRegistration() {
-        if (deadlineCancelacion == null) {
-            return true;
-        }
-        return LocalDateTime.now().isBefore(deadlineCancelacion);
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime effectiveDeadline = deadlineCancelacion != null
+                ? deadlineCancelacion
+                : calculateDefaultDeadline();
+        return now.isBefore(effectiveDeadline);
     }
 
     public String getFormattedPrecio() {
