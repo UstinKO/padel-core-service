@@ -15,7 +15,7 @@ public class OwnerController {
     private final OwnerService ownerService;
 
     @GetMapping("/super-admin")
-    @PreAuthorize("hasRole('OWNER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
     public ResponseEntity<OwnerDto> getSuperAdmin() {
         return ownerService.getSuperAdmin()
                 .map(ResponseEntity::ok)
@@ -23,7 +23,7 @@ public class OwnerController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('OWNER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
     public ResponseEntity<OwnerDto> getOwnerById(@PathVariable Long id) {
         return ownerService.getOwnerById(id)
                 .map(ResponseEntity::ok)
@@ -31,7 +31,7 @@ public class OwnerController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('OWNER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
     public ResponseEntity<OwnerDto> updateOwner(@PathVariable Long id, @RequestBody OwnerDto ownerDto) {
         try {
             OwnerDto updated = ownerService.updateOwner(id, ownerDto);

@@ -116,9 +116,10 @@ public class HomeController {
 
     private boolean isOwner(Authentication authentication) {
         if (authentication == null) return false;
-
         Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
         return authorities.stream()
-                .anyMatch(auth -> auth.getAuthority().equals("ROLE_OWNER"));
+                .anyMatch(auth ->
+                        auth.getAuthority().equals("ROLE_SUPER_ADMIN") ||
+                                auth.getAuthority().equals("ROLE_ORGANIZER"));
     }
 }

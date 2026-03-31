@@ -279,54 +279,57 @@ document.addEventListener('DOMContentLoaded', function() {
     // Обработчик регистрации
     async function handleRegistration(event) {
         const button = event.currentTarget;
-        const tournamentId = button.dataset.tournamentId;
+        const tournamentId   = button.dataset.tournamentId;
         const tournamentName = button.dataset.tournamentName;
 
         const tournament = tournaments.find(t => t.id === parseInt(tournamentId));
 
-        if (tournament && tournament.modalidad === 'DOBLES') {
-            openPartnerModal(tournamentId, tournamentName, tournament);
-            return;
-        }
+        ContactCheck.beforeRegister(tournamentId, tournamentName, async () => {
 
-        // Вместо confirm используем модальное окно
-        showConfirmModal(
-            'Confirmar inscripción',
-            `¿Deseas inscribirte en el torneo "${tournamentName}"?`,
-            async () => {
-                button.disabled = true;
-                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+            if (tournament && tournament.modalidad === 'DOBLES') {
+                // ContactCheck уже проверил и при необходимости сохранил контакты.
+                // Теперь можно открывать форму регистрации пары.
+                openPartnerModal(tournamentId, tournamentName, tournament);
+                return;
+            }
 
-                try {
-                    const response = await fetch(`/players/tournaments/${tournamentId}/register`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
+            showConfirmModal(
+                'Confirmar inscripción',
+                `¿Deseas inscribirte en el torneo "${tournamentName}"?`,
+                async () => {
+                    button.disabled = true;
+                    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+
+                    try {
+                        const response = await fetch(`/players/tournaments/${tournamentId}/register`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            showResultModal('success', data.message);
+                            myTournamentIds.add(parseInt(tournamentId));
+                            if (myTournamentsCount) {
+                                myTournamentsCount.textContent = `(${myTournamentIds.size})`;
+                            }
+                            applyFiltersFunction();
+                        } else {
+                            showResultModal('error', 'Error: ' + data.message);
+                            button.disabled = false;
+                            button.innerHTML = '<i class="fas fa-plus-circle"></i> Registrarse';
                         }
-                    });
-
-                    const data = await response.json();
-
-                    if (data.success) {
-                        showResultModal('success', data.message);
-                        myTournamentIds.add(parseInt(tournamentId));
-                        if (myTournamentsCount) {
-                            myTournamentsCount.textContent = `(${myTournamentIds.size})`;
-                        }
-                        applyFiltersFunction();
-                    } else {
-                        showResultModal('error', 'Error: ' + data.message);
+                    } catch (error) {
+                        console.error('Error registering:', error);
+                        showResultModal('error', 'Error al procesar la solicitud');
                         button.disabled = false;
                         button.innerHTML = '<i class="fas fa-plus-circle"></i> Registrarse';
                     }
-                } catch (error) {
-                    console.error('Error registering:', error);
-                    showResultModal('error', 'Error al procesar la solicitud');
-                    button.disabled = false;
-                    button.innerHTML = '<i class="fas fa-plus-circle"></i> Registrarse';
                 }
-            }
-        );
+            );
+
+        });
     }
 
     // Функция открытия модального окна для парной регистрации

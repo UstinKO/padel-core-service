@@ -161,15 +161,19 @@
 
         <!-- Botones de acción -->
         <div class="club-actions">
-            <a th:href="@{'/admin/clubs/' + ${club.id} + '/edit'}" class="btn btn-primary">
-                <i class="fas fa-edit"></i> Editar Club
-            </a>
-            <form th:action="@{'/admin/clubs/' + ${club.id} + '/toggle-status'}" method="post" class="action-form">
-                <button type="submit" class="btn" th:classappend="${club.isActive} ? 'btn-warning' : 'btn-success'">
-                    <i th:class="${club.isActive} ? 'fas fa-ban' : 'fas fa-check-circle'"></i>
-                    <span th:text="${club.isActive} ? 'Desactivar Club' : 'Activar Club'"></span>
-                </button>
-            </form>
+            <!-- Editar y Desactivar — solo SUPER_ADMIN -->
+            <th:block th:if="${isSuperAdmin}">
+                <a th:href="@{'/admin/clubs/' + ${club.id} + '/edit'}" class="btn btn-primary">
+                    <i class="fas fa-edit"></i> Editar Club
+                </a>
+                <form th:action="@{'/admin/clubs/' + ${club.id} + '/toggle-status'}" method="post" class="action-form">
+                    <button type="submit" class="btn" th:classappend="${club.isActive} ? 'btn-warning' : 'btn-success'">
+                        <i th:class="${club.isActive} ? 'fas fa-ban' : 'fas fa-check-circle'"></i>
+                        <span th:text="${club.isActive} ? 'Desactivar Club' : 'Activar Club'"></span>
+                    </button>
+                </form>
+            </th:block>
+
             <a href="/admin/clubs" class="btn btn-outline">
                 <i class="fas fa-arrow-left"></i> Volver a Clubes
             </a>

@@ -25,9 +25,10 @@ public class AdminClubController {
     private final OwnerService ownerService;
 
     @GetMapping
-    public String listClubs(Model model) {
+    public String listClubs(Model model, @AuthenticationPrincipal Owner owner) {
         log.info("Listing all clubs for admin");
         model.addAttribute("clubs", clubService.getAllClubsForAdmin());
+        model.addAttribute("isSuperAdmin", owner.isSuperAdmin());
         return "admin/clubs/list";
     }
 
@@ -38,24 +39,36 @@ public class AdminClubController {
         return "admin/clubs/form";
     }
 
-    @GetMapping("/{id}/edit")
-    public String editClubForm(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
-        log.info("Showing edit form for club: {}", id);
+    // Просмотр — доступен всем
+    @GetMapping("/{id}")
+    public String viewClub(@PathVariable Long id, Model model,
+                           @AuthenticationPrincipal Owner owner,
+                           RedirectAttributes redirectAttributes) {
+        log.info("Viewing club details: {}", id);
         try {
             model.addAttribute("club", clubService.getClubByIdForAdmin(id));
-            return "admin/clubs/form";
+            model.addAttribute("isSuperAdmin", owner.isSuperAdmin());
+            return "admin/clubs/details";
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Club no encontrado");
             return "redirect:/admin/clubs";
         }
     }
 
-    @GetMapping("/{id}")
-    public String viewClub(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
-        log.info("Viewing club details: {}", id);
+    // Форма редактирования — только SUPER_ADMIN
+    @GetMapping("/{id}/edit")
+    public String editClubForm(@PathVariable Long id, Model model,
+                               @AuthenticationPrincipal Owner owner,
+                               RedirectAttributes redirectAttributes) {
+        if (!owner.isSuperAdmin()) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "No tienes permiso para editar clubes");
+            return "redirect:/admin/clubs";
+        }
+        log.info("Showing edit form for club: {}", id);
         try {
             model.addAttribute("club", clubService.getClubByIdForAdmin(id));
-            return "admin/clubs/details";
+            return "admin/clubs/form";
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Club no encontrado");
             return "redirect:/admin/clubs";
@@ -88,11 +101,18 @@ public class AdminClubController {
         }
     }
 
+    // Сохранение правок — только SUPER_ADMIN
     @PostMapping("/{id}/edit")
     public String updateClub(@PathVariable Long id,
                              @Valid @ModelAttribute("club") ClubDto clubDto,
                              BindingResult result,
+                             @AuthenticationPrincipal Owner owner,
                              RedirectAttributes redirectAttributes) {
+        if (!owner.isSuperAdmin()) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "No tienes permiso para editar clubes");
+            return "redirect:/admin/clubs";
+        }
         log.info("Updating club: {}", id);
 
         if (result.hasErrors()) {
@@ -112,10 +132,17 @@ public class AdminClubController {
         }
     }
 
+    // Переключение статуса — только SUPER_ADMIN
     @PostMapping("/{id}/toggle-status")
-    public String toggleClubStatus(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public String toggleClubStatus(@PathVariable Long id,
+                                   @AuthenticationPrincipal Owner owner,
+                                   RedirectAttributes redirectAttributes) {
+        if (!owner.isSuperAdmin()) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "No tienes permiso para cambiar el estado de los clubes");
+            return "redirect:/admin/clubs";
+        }
         log.info("Toggling club status: {}", id);
-
         try {
             clubService.toggleClubStatus(id);
             redirectAttributes.addFlashAttribute("successMessage", "Estado del club actualizado");
@@ -123,14 +150,20 @@ public class AdminClubController {
             log.error("Error toggling club status", e);
             redirectAttributes.addFlashAttribute("errorMessage", "Error al cambiar estado: " + e.getMessage());
         }
-
         return "redirect:/admin/clubs";
     }
 
+    // Удаление — только SUPER_ADMIN
     @PostMapping("/{id}/delete")
-    public String deleteClub(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public String deleteClub(@PathVariable Long id,
+                             @AuthenticationPrincipal Owner owner,
+                             RedirectAttributes redirectAttributes) {
+        if (!owner.isSuperAdmin()) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "No tienes permiso para eliminar clubes");
+            return "redirect:/admin/clubs";
+        }
         log.info("Soft deleting club: {}", id);
-
         try {
             if (clubService.deleteClub(id)) {
                 redirectAttributes.addFlashAttribute("successMessage", "Club desactivado exitosamente");
@@ -141,7 +174,6 @@ public class AdminClubController {
             log.error("Error deleting club", e);
             redirectAttributes.addFlashAttribute("errorMessage", "Error al desactivar club: " + e.getMessage());
         }
-
         return "redirect:/admin/clubs";
     }
 }

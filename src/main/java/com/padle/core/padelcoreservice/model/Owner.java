@@ -1,11 +1,8 @@
 package com.padle.core.padelcoreservice.model;
 
+import com.padle.core.padelcoreservice.model.enums.OwnerRole;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.security.core.GrantedAuthority;
@@ -44,9 +41,10 @@ public class Owner implements UserDetails {
     @Column(name = "phone")
     private String phone;
 
-    @Column(name = "is_super_admin", nullable = false)
+    @Column(name = "role", nullable = false)
+    @Enumerated(EnumType.STRING)
     @Builder.Default
-    private Boolean isSuperAdmin = true;
+    private OwnerRole role = OwnerRole.ORGANIZER;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -66,12 +64,18 @@ public class Owner implements UserDetails {
     // Реализация UserDetails для Spring Security
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_OWNER"));
+        // Возвращаем роль пользователя
+        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role.name()));
     }
 
     @Override
     public String getUsername() {
         return email;
+    }
+
+    @Override
+    public String getPassword() {
+        return password;
     }
 
     @Override
@@ -101,5 +105,9 @@ public class Owner implements UserDetails {
 
     public void updateLastLogin() {
         this.lastLoginAt = LocalDateTime.now();
+    }
+
+    public boolean isSuperAdmin() {
+        return role == OwnerRole.SUPER_ADMIN;
     }
 }

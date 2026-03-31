@@ -61,6 +61,24 @@ public class DoubleTournamentRegistrationService {
         PlayerPadel mainPlayer = playerRepository.findById(mainPlayerId)
                 .orElseThrow(() -> new TournamentRegistrationException("Jugador principal no encontrado"));
 
+        // Проверяем что игрок не указал себя как партнёра
+        if (partnerDto.getEmail() != null &&
+                !partnerDto.getEmail().isBlank() &&
+                partnerDto.getEmail().trim().equalsIgnoreCase(mainPlayer.getEmail())) {
+            throw new TournamentRegistrationException(
+                    "No puedes registrarte como tu propio compañero. " +
+                            "Por favor ingresa el email de tu compañero de pareja.");
+        }
+
+        if (partnerDto.getTelefono() != null &&
+                !partnerDto.getTelefono().isBlank() &&
+                mainPlayer.getTelefono() != null &&
+                partnerDto.getTelefono().trim().equals(mainPlayer.getTelefono().trim())) {
+            throw new TournamentRegistrationException(
+                    "No puedes registrarte como tu propio compañero. " +
+                            "Por favor ingresa el teléfono de tu compañero de pareja.");
+        }
+
         // Проверяем, не зарегистрирован ли уже главный игрок на ЭТОТ турнир
         checkPlayerNotRegisteredInThisTournament(tournamentDto.getId(), mainPlayerId);
 

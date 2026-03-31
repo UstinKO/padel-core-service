@@ -1,0 +1,95 @@
+/*
+     * ПАТЧ: добавить в <style> блок в templates/admin/tournaments/details.html
+     * (после существующих стилей в <style> теге)
+     *
+     * Проблема: tournament-details.css переопределяет .btn-outline глобально —
+     * при hover делает фон оранжевым и скрывает текст.
+     * Это ломает кнопки статусов (Publicar, Abrir, Cerrar, Finalizar) в admin-деталях.
+     *
+     * Решение: переопределить стили кнопок внутри .action-buttons-center
+     * чтобы серые кнопки статусов работали правильно.
+     */
+
+/* Восстанавливаем нормальный вид кнопок статусов в action-buttons-center */
+.action-buttons-center .btn-outline {
+    background: transparent;
+    border: 1px solid #6c757d;
+    color: #6c757d;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.action-buttons-center .btn-outline:hover {
+    background: #6c757d;
+    color: white;
+    border-color: #6c757d;
+}
+
+/* Кнопка Compartir — оранжевая */
+.action-buttons-center .btn-outline.share-btn-orange {
+    border-color: #FF6B35;
+    color: #FF6B35;
+}
+
+.action-buttons-center .btn-outline.share-btn-orange:hover {
+    background: #FF6B35;
+    color: white;
+    border-color: #FF6B35;
+}
+
+/* Кнопка Editar — основная оранжевая */
+.action-buttons-center .btn-primary {
+    background: #FF6B35;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    text-decoration: none;
+}
+
+.action-buttons-center .btn-primary:hover {
+    background: #e55a2b;
+    color: white;
+}
+
+/* Кнопка Desactivar — жёлтая */
+.action-buttons-center .btn-warning {
+    background: #f59e0b;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.action-buttons-center .btn-warning:hover {
+    background: #d97706;
+    color: white;
+}
+
+/* Активный статус — показываем что текущий */
+.action-buttons-center .btn-outline.active {
+    background: #6c757d;
+    color: white;
+}
+
+/* Бейджи в заголовке турнира — не меняем цвет текста при hover */
+.tournament-badges .badge:hover {
+    color: inherit;
+}

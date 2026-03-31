@@ -43,6 +43,8 @@ public class PerfilController {
             @RequestParam(required = false) String nombre,
             @RequestParam(required = false) String apellido,
             @RequestParam(required = false) String telefono,
+            // ДОБАВЛЕНО: поле для Telegram ника
+            @RequestParam(required = false) String telegramUsername,
             @RequestParam(required = false) String currentPassword,
             @RequestParam(required = false) String newPassword,
             @RequestParam(required = false) String confirmPassword,
@@ -58,7 +60,6 @@ public class PerfilController {
         log.info("Actualizando perfil de jugador: {}", player.getEmail());
 
         try {
-            // Actualizar datos básicos
             boolean actualizado = false;
 
             if (nombre != null && !nombre.isEmpty() && !nombre.equals(player.getNombre())) {
@@ -72,11 +73,31 @@ public class PerfilController {
             }
 
             if (telefono != null && !telefono.equals(player.getTelefono())) {
-                player.setTelefono(telefono);
+                // Валидация: телефон должен начинаться с +54 если не пустой
+                if (!telefono.isBlank() && !telefono.trim().startsWith("+54")) {
+                    redirectAttributes.addFlashAttribute("errorMessage",
+                            "El número de WhatsApp debe comenzar con +54 (Argentina)");
+                    return "redirect:/perfil";
+                }
+                player.setTelefono(telefono.isBlank() ? null : telefono.trim());
                 actualizado = true;
             }
 
-            // Cambiar contraseña si se solicitó
+            // ДОБАВЛЕНО: обновляем Telegram ник
+            if (telegramUsername != null && !telegramUsername.equals(player.getTelegramUsername())) {
+                if (!telegramUsername.isBlank()) {
+                    String tg = telegramUsername.trim();
+                    // Добавляем @ если не указан
+                    if (!tg.startsWith("@")) {
+                        tg = "@" + tg;
+                    }
+                    player.setTelegramUsername(tg);
+                } else {
+                    player.setTelegramUsername(null);
+                }
+                actualizado = true;
+            }
+
             if (newPassword != null && !newPassword.isEmpty()) {
                 if (currentPassword == null || currentPassword.isEmpty()) {
                     redirectAttributes.addFlashAttribute("errorMessage",
@@ -84,21 +105,18 @@ public class PerfilController {
                     return "redirect:/perfil";
                 }
 
-                // Verificar contraseña actual
                 if (!playerService.checkPassword(player, currentPassword)) {
                     redirectAttributes.addFlashAttribute("errorMessage",
                             "La contraseña actual es incorrecta");
                     return "redirect:/perfil";
                 }
 
-                // Verificar que las contraseñas nuevas coincidan
                 if (!newPassword.equals(confirmPassword)) {
                     redirectAttributes.addFlashAttribute("errorMessage",
                             "Las contraseñas nuevas no coinciden");
                     return "redirect:/perfil";
                 }
 
-                // Cambiar contraseña
                 playerService.cambiarPassword(player.getId(), newPassword);
                 actualizado = true;
                 log.info("Contraseña actualizada para jugador: {}", player.getEmail());

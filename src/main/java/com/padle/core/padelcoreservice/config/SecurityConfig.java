@@ -77,7 +77,7 @@ public class SecurityConfig {
                         .requestMatchers("/players/lista").authenticated()
                         .requestMatchers("/players/perfil/**").authenticated()
                         .requestMatchers("/players/mis-torneos").authenticated()
-                        .requestMatchers("/admin/**").hasRole("OWNER")
+                        .requestMatchers("/admin/**").hasAnyRole("OWNER", "SUPER_ADMIN", "ORGANIZER")
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().authenticated()
                 )
@@ -138,10 +138,12 @@ public class SecurityConfig {
         return (request, response, authentication) -> {
             String targetUrl = "/players/dashboard";
 
-            boolean isOwner = authentication.getAuthorities().stream()
-                    .anyMatch(auth -> auth.getAuthority().equals("ROLE_OWNER"));
+            boolean isAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(auth -> auth.getAuthority().equals("ROLE_OWNER") ||
+                            auth.getAuthority().equals("ROLE_SUPER_ADMIN") ||
+                            auth.getAuthority().equals("ROLE_ORGANIZER"));
 
-            if (isOwner) {
+            if (isAdmin) {
                 targetUrl = "/admin";
             }
 

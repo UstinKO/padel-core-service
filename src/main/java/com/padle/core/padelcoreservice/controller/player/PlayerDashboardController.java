@@ -44,6 +44,12 @@ public class PlayerDashboardController {
         PlayerPadel player = extractPlayerFromPrincipal(principal);
 
         if (player == null) {
+            // Если principal — это Owner (SUPER_ADMIN или ORGANIZER),
+            // редиректим на админ-панель, а не на /login
+            if (principal instanceof com.padle.core.padelcoreservice.model.Owner) {
+                log.info("Principal is Owner, redirecting to admin panel");
+                return "redirect:/admin";
+            }
             log.warn("Player is null, redirecting to login");
             return "redirect:/login";
         }
@@ -94,10 +100,23 @@ public class PlayerDashboardController {
         PlayerPadel player = extractPlayerFromPrincipal(principal);
 
         if (player == null) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Usuario no autenticado"));
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "Usuario no autenticado"
+            ));
         }
 
         log.info("Player {} registering for tournament {}", player.getId(), tournamentId);
+
+        // ПРОВЕРКА КОНТАКТОВ - возвращаем needContact, а не ошибку
+        if (!player.hasValidContact()) {
+            log.warn("Player {} has no valid contact (phone+54 or telegram)", player.getId());
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "Para inscribirte en un torneo necesitas tener al menos un dato de contacto: WhatsApp (+54) o Telegram",
+                    "needContact", true
+            ));
+        }
 
         try {
             TournamentRegistrationDto registration = tournamentService.registerPlayer(tournamentId, player.getId());
@@ -297,5 +316,77 @@ public class PlayerDashboardController {
         response.put("hasRegisteredPartner", registration.get().getPartnerId() != null);
 
         return ResponseEntity.ok(response);
+    }
+
+    // Добавьте эти методы в PlayerDashboardController.java
+
+    @PatchMapping("/api/players/me/contact")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> updateContact(
+            @AuthenticationPrincipal Object principal,
+            @RequestBody Map<String, String> contactData) {
+
+        PlayerPadel player = extractPlayerFromPrincipal(principal);
+
+        if (player == null) {
+            return ResponseEntity.status(401).body(Map.of(
+                    "success", false,
+                    "message", "Usuario no autenticado"
+            ));
+        }
+
+        log.info("Updating contact for player {}: {}", player.getId(), contactData);
+
+        try {
+            String telefono = contactData.get("telefono");
+            String telegramUsername = contactData.get("telegramUsername");
+
+            // Обновляем поля
+            if (telefono != null && !telefono.trim().isEmpty()) {
+                player.setTelefono(telefono.trim());
+            }
+            if (telegramUsername != null && !telegramUsername.trim().isEmpty()) {
+                player.setTelegramUsername(telegramUsername.trim());
+            }
+
+            // Сохраняем
+            tournamentService.updatePlayerContacts(player);
+
+            log.info("Contact updated for player {}: phone={}, telegram={}",
+                    player.getId(), player.getTelefono(), player.getTelegramUsername());
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Contacto actualizado correctamente"
+            ));
+
+        } catch (Exception e) {
+            log.error("Error updating contact", e);
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "Error al actualizar contacto: " + e.getMessage()
+            ));
+        }
+    }
+
+    @GetMapping("/api/players/me/contact-status")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getContactStatus(
+            @AuthenticationPrincipal Object principal) {
+
+        PlayerPadel player = extractPlayerFromPrincipal(principal);
+
+        if (player == null) {
+            return ResponseEntity.status(401).body(Map.of(
+                    "success", false,
+                    "message", "Usuario no autenticado"
+            ));
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "hasContact", player.hasValidContact(),
+                "telefono", player.getTelefono(),
+                "telegramUsername", player.getTelegramUsername()
+        ));
     }
 }

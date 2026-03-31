@@ -265,4 +265,8 @@ public class PlayerService {
         }
         return playerRepository.save(player);
     }
+
+    public Optional<PlayerPadel> findByTelegramUsername(String telegramUsername) {
+        return playerRepository.findByTelegramUsername(telegramUsername);
+    }
 }

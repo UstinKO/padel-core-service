@@ -53,4 +53,6 @@ public interface TournamentRepository extends JpaRepository<Tournament, Long> {
 
     @Query("SELECT t FROM Tournament t WHERE t.estado IN :estados AND t.isActive = true")
     List<Tournament> findByEstadoInAndIsActiveTrue(@Param("estados") List<TournamentStatus> estados);
+
+    List<Tournament> findByOwnerId(Long ownerId);
 }

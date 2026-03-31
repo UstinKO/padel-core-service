@@ -21,6 +21,7 @@ import java.time.LocalTime;
 public class TournamentDto {
     private Long id;
     private Long clubId;
+    private Long ownerId;
     private String clubNombre;
     private String clubDireccion;
     private String nombre;

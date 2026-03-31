@@ -3,6 +3,7 @@ package com.padle.core.padelcoreservice.service;
 import com.padle.core.padelcoreservice.dto.OwnerDto;
 import com.padle.core.padelcoreservice.mapper.OwnerMapper;
 import com.padle.core.padelcoreservice.model.Owner;
+import com.padle.core.padelcoreservice.model.enums.OwnerRole;
 import com.padle.core.padelcoreservice.repository.OwnerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

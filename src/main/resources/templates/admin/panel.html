@@ -164,25 +164,29 @@
                     </a>
                 </div>
                 <div class="admin-card-body">
-                    <div th:if="${not #lists.isEmpty(recentTournaments)}">
+                    <div th:if="${not #lists.isEmpty(recentTournamentsWithFlags)}">
                         <ul class="admin-list">
-                            <li th:each="tournament : ${recentTournaments}" class="admin-list-item">
+                            <li th:each="item : ${recentTournamentsWithFlags}" class="admin-list-item">
                                 <div class="admin-list-icon">
                                     <i class="fas fa-trophy"></i>
                                 </div>
                                 <div class="admin-list-content">
-                                    <div class="admin-list-title" th:text="${tournament.nombre}">Torneo</div>
-                                    <div class="admin-list-subtitle" th:text="${tournament.clubNombre} + ' - ' + ${#temporals.format(tournament.fechaInicio, 'dd/MM/yyyy')}">
+                                    <div class="admin-list-title" th:text="${item.tournament.nombre}">Torneo</div>
+                                    <div class="admin-list-subtitle" th:text="${item.tournament.clubNombre} + ' - ' + ${#temporals.format(item.tournament.fechaInicio, 'dd/MM/yyyy')}">
                                         Club - Fecha
                                     </div>
                                 </div>
-                                <a th:href="@{'/admin/tournaments/' + ${tournament.id}}" class="btn-icon" title="Ver detalles">
+                                <!-- Глазик только для своих турниров -->
+                                <a th:if="${item.isOwner}"
+                                   th:href="@{'/admin/tournaments/' + ${item.tournament.id}}"
+                                   class="btn-icon" title="Ver detalles">
                                     <i class="fas fa-eye"></i>
                                 </a>
+                                <!-- Для чужих турниров - ничего, только название и клуб -->
                             </li>
                         </ul>
                     </div>
-                    <div th:unless="${not #lists.isEmpty(recentTournaments)}" class="admin-empty small">
+                    <div th:unless="${not #lists.isEmpty(recentTournamentsWithFlags)}" class="admin-empty small">
                         <i class="fas fa-trophy"></i>
                         <p>No hay torneos creados</p>
                         <a href="/admin/tournaments/new" class="btn btn-primary btn-sm" style="margin-top: 0.5rem;">
@@ -201,11 +205,13 @@
             </a>
 
             <!-- КНОПКА ПЕРЕХОДА НА ТЕСТОВУЮ СТРАНИЦУ -->
-            <a href="/test/tournaments" class="btn btn-outline" style="margin-left: 1rem;">
-                <i class="fas fa-flask"></i>
-                Panel de pruebas
-                <span style="font-size: 0.8rem; margin-left: 0.5rem; opacity: 0.7;">(beta)</span>
-            </a>
+            <div th:if="${isSuperAdmin}" style="margin-left: 1rem; display: inline-block;">
+                <a href="/test/tournaments" class="btn btn-outline">
+                    <i class="fas fa-flask"></i>
+                    Panel de pruebas
+                    <span style="font-size: 0.8rem; margin-left: 0.5rem; opacity: 0.7;">(beta)</span>
+                </a>
+            </div>
         </div>
     </div>
 </main>

@@ -21,7 +21,7 @@ import java.util.Objects;
 @AllArgsConstructor
 @Builder
 @ToString(exclude = "passwordHash")
-public class PlayerPadel implements UserDetails { // Реализуем UserDetails
+public class PlayerPadel implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -38,6 +38,14 @@ public class PlayerPadel implements UserDetails { // Реализуем UserDeta
 
     @Column(name = "telefono", length = 20)
     private String telefono;
+
+    /**
+     * Ник игрока в Telegram.
+     * Необязателен при регистрации на сайт.
+     * Обязателен при регистрации на турнир если telefono не начинается с +54.
+     */
+    @Column(name = "telegram_username", length = 64)
+    private String telegramUsername;
 
     @Column(name = "password_hash", nullable = false, length = 255)
     private String passwordHash;
@@ -132,5 +140,18 @@ public class PlayerPadel implements UserDetails { // Реализуем UserDeta
         this.emailConfirmado = true;
         this.fechaConfirmacionEmail = LocalDateTime.now();
         this.codigoConfirmacion = null;
+    }
+
+    /**
+     * Проверяет достаточно ли контактных данных для регистрации на турнир.
+     * Нужен телефон +54 ИЛИ Telegram ник.
+     */
+    public boolean hasValidContact() {
+        boolean hasPhone = telefono != null
+                && !telefono.isBlank()
+                && telefono.trim().startsWith("+54");
+        boolean hasTelegram = telegramUsername != null
+                && !telegramUsername.isBlank();
+        return hasPhone || hasTelegram;
     }
 }

@@ -55,7 +55,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const modalidad = window.tournament.modalidad;
         console.log('Tournament modalidad:', modalidad);
 
-        // Проверяем разные варианты написания
         const isDouble = modalidad === 'DOBLES' ||
             modalidad === 'Dobles' ||
             modalidad === 'dobles';
@@ -71,7 +70,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Закрытие по клику вне модального окна
     window.addEventListener('click', (e) => {
         if (e.target === partnerModal) {
             closeModal();
@@ -83,8 +81,6 @@ document.addEventListener('DOMContentLoaded', function() {
             partnerModal.classList.remove('show');
             if (partnerForm) partnerForm.reset();
             hideInfoMessage();
-
-            // Сбрасываем ошибки валидации
             document.querySelectorAll('.form-control').forEach(input => {
                 input.classList.remove('is-invalid');
             });
@@ -101,8 +97,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (partnerInfoMessage && infoMessageText) {
             infoMessageText.textContent = message;
             partnerInfoMessage.style.display = 'flex';
-
-            // Меняем цвет иконки в зависимости от типа
             const icon = partnerInfoMessage.querySelector('i');
             if (icon) {
                 icon.style.color = type === 'warning' ? '#ffc107' :
@@ -144,7 +138,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         resultModal.classList.add('show');
 
-        // Автоматически закрываем через 3 секунды для успеха
         if (type === 'success') {
             setTimeout(() => {
                 resultModal.classList.remove('show');
@@ -153,14 +146,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // ===== Кнопки регистрации =====
+    // ===== КНОПКИ РЕГИСТРАЦИИ =====
     const registerBtn = document.querySelector('.btn-register');
     const cancelBtn = document.querySelector('.btn-cancel');
 
     if (registerBtn) {
         console.log('✅ Register button found');
 
-        // Сохраняем оригинальный обработчик
         const newRegisterBtn = registerBtn.cloneNode(true);
         registerBtn.parentNode.replaceChild(newRegisterBtn, registerBtn);
 
@@ -173,26 +165,75 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Проверяем, парный ли турнир
             if (isDoubleTournament()) {
-                console.log('🎾 Double tournament - showing modal');
+                console.log('🎾 Double tournament - checking contacts first');
                 event.preventDefault();
                 event.stopPropagation();
 
-                // Заполняем данные в модальном окне
-                const modalTournamentId = document.getElementById('modalTournamentId');
-                const modalTournamentName = document.getElementById('modalTournamentName');
+                // Сначала проверяем контактные данные игрока,
+                // и только после — открываем форму регистрации пары.
+                ContactCheck.beforeRegister(tournamentId, tournamentName, () => {
+                    const modalTournamentId = document.getElementById('modalTournamentId');
+                    const modalTournamentName = document.getElementById('modalTournamentName');
 
-                if (modalTournamentId) modalTournamentId.value = tournamentId;
-                if (modalTournamentName) modalTournamentName.textContent = tournamentName;
+                    if (modalTournamentId) modalTournamentId.value = tournamentId;
+                    if (modalTournamentName) modalTournamentName.textContent = tournamentName;
 
-                showModal();
+                    showModal();
+                });
             } else {
-                console.log('🎾 Single tournament - direct registration');
-                // Для одиночного турнира - обычная регистрация
-                handleSingleRegistration(event);
+                console.log('🎾 Single tournament - using ContactCheck');
+                event.preventDefault();
+                event.stopPropagation();
+
+                // ВСЯ ЛОГИКА РЕГИСТРАЦИИ В ContactCheck
+                if (typeof ContactCheck !== 'undefined' && ContactCheck.beforeRegister) {
+                    ContactCheck.beforeRegister(tournamentId, tournamentName, async () => {
+                        // ContactCheck вызовет этот колбэк когда контакты есть
+                        // ИЛИ после сохранения контактов
+                        const btn = newRegisterBtn;
+                        btn.disabled = true;
+                        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+
+                        try {
+                            const response = await fetch(`/players/tournaments/${tournamentId}/register`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' }
+                            });
+
+                            const data = await response.json();
+
+                            if (data.success) {
+                                showResultModal('success', '¡Registro exitoso!', data.message);
+                            } else {
+                                btn.disabled = false;
+                                btn.innerHTML = window.tournament?.inscritosActuales >= window.tournament?.cupoMax ?
+                                    '<i class="fas fa-clock"></i> Apuntarme a lista de espera' :
+                                    '<i class="fas fa-check-circle"></i> Inscribirme';
+
+                                const modalBody = document.getElementById('resultModalBody');
+                                const resultModal = document.getElementById('resultModal');
+                                if (modalBody && resultModal) {
+                                    modalBody.innerHTML = `
+                                        <i class="fas fa-exclamation-circle"
+                                           style="font-size:48px; color:#dc3545; margin-bottom:15px;"></i>
+                                        <p style="font-size:16px; margin:0;">${data.message}</p>`;
+                                    resultModal.style.display = 'block';
+                                    resultModal.classList.add('show');
+                                }
+                            }
+                        } catch (error) {
+                            console.error('Error registering:', error);
+                            btn.disabled = false;
+                            btn.innerHTML = window.tournament?.inscritosActuales >= window.tournament?.cupoMax ?
+                                '<i class="fas fa-clock"></i> Apuntarme a lista de espera' :
+                                '<i class="fas fa-check-circle"></i> Inscribirme';
+                        }
+                    });
+                } else {
+                    console.error('❌ ContactCheck not available');
+                }
             }
         });
-    } else {
-        console.log('❌ Register button not found');
     }
 
     if (cancelBtn) {
@@ -204,7 +245,6 @@ document.addEventListener('DOMContentLoaded', function() {
         submitPartnerBtn.addEventListener('click', handleDoubleRegistration);
     }
 
-    // Валидация формы в реальном времени
     document.querySelectorAll('#partnerForm .form-control').forEach(input => {
         input.addEventListener('input', function() {
             if (this.classList.contains('is-invalid')) {
@@ -220,9 +260,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const phone = document.getElementById('partnerPhone').value.trim();
         const email = document.getElementById('partnerEmail').value.trim();
 
-        console.log('Submitting double registration:', { tournamentId, firstName, lastName, phone, email });
-
-        // Валидация
         let isValid = true;
 
         if (!firstName) {
@@ -254,7 +291,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Блокируем кнопку
         submitPartnerBtn.disabled = true;
         submitPartnerBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
         hideInfoMessage();
@@ -269,14 +305,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const response = await fetch(`/api/tournaments/double/${tournamentId}/register`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(partnerData)
             });
 
             const data = await response.json();
-            console.log('Registration response:', data);
 
             if (response.ok) {
                 closeModal();
@@ -295,8 +328,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 showResultModal('success', '¡Registro exitoso!', message);
             } else {
                 const errorData = await response.json();
-
-                // Обрабатываем ошибку "уже зарегистрирован"
                 if (errorData.message && (errorData.message.includes('Ya estás registrado') ||
                     errorData.message.includes('Ya tienes una registro'))) {
                     showResultModal('info', 'Ya estás registrado', errorData.message);
@@ -304,7 +335,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     showInfoMessage(errorData.message || 'Error al procesar la solicitud', 'error');
                 }
-
                 submitPartnerBtn.disabled = false;
                 submitPartnerBtn.innerHTML = '<i class="fas fa-check-circle"></i> Registrar pareja';
             }
@@ -316,87 +346,106 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    async function handleSingleRegistration(event) {
-        const button = event.currentTarget;
-        const tournamentId = button.dataset.tournamentId;
-        const tournamentName = button.dataset.tournamentName;
-
-        if (!confirm(`¿Deseas inscribirte en el torneo "${tournamentName}"?`)) {
-            return;
-        }
-
-        button.disabled = true;
-        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
-
-        try {
-            const response = await fetch(`/players/tournaments/${tournamentId}/register`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                showResultModal('success', '¡Registro exitoso!', data.message);
-            } else {
-                alert('Error: ' + data.message);
-                button.disabled = false;
-                button.innerHTML = window.tournament?.inscritosActuales >= window.tournament?.cupoMax ?
-                    '<i class="fas fa-clock"></i> Apuntarme a lista de espera' :
-                    '<i class="fas fa-check-circle"></i> Inscribirme';
-            }
-        } catch (error) {
-            console.error('Error registering:', error);
-            alert('Error al procesar la solicitud');
-            button.disabled = false;
-            button.innerHTML = window.tournament?.inscritosActuales >= window.tournament?.cupoMax ?
-                '<i class="fas fa-clock"></i> Apuntarme a lista de espera' :
-                '<i class="fas fa-check-circle"></i> Inscribirme';
-        }
-    }
-
     async function handleCancellation(event) {
         const button = event.currentTarget;
         const tournamentId = button.dataset.tournamentId;
         const tournamentName = button.dataset.tournamentName;
 
-        const reason = prompt('¿Por qué cancelas tu inscripción? (opcional)');
+        // Получаем модальное окно
+        const cancelModal = document.getElementById('cancelModal');
+        const cancelModalTournamentName = document.getElementById('cancelModalTournamentName');
+        const cancelReason = document.getElementById('cancelReason');
+        const confirmCancelBtn = document.getElementById('confirmCancelBtn');
 
-        if (!confirm(`¿Estás seguro de cancelar tu inscripción en "${tournamentName}"?`)) {
+        if (!cancelModal) {
+            console.error('Cancel modal not found');
             return;
         }
 
-        button.disabled = true;
-        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+        // Устанавливаем название турнира в модалке
+        if (cancelModalTournamentName) {
+            cancelModalTournamentName.innerHTML = `¿Estás seguro de cancelar tu inscripción en <strong>"${escapeHtml(tournamentName)}"</strong>?`;
+        }
 
-        try {
-            const url = `/players/tournaments/${tournamentId}/cancel` +
-                (reason ? `?reason=${encodeURIComponent(reason)}` : '');
+        // Очищаем поле причины
+        if (cancelReason) {
+            cancelReason.value = '';
+        }
 
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
+        // Показываем модальное окно
+        cancelModal.classList.add('show');
+        cancelModal.style.display = 'block';
+
+        // Убираем старые обработчики
+        const newConfirmBtn = confirmCancelBtn.cloneNode(true);
+        confirmCancelBtn.parentNode.replaceChild(newConfirmBtn, confirmCancelBtn);
+
+        // Обработчик подтверждения
+        newConfirmBtn.addEventListener('click', async () => {
+            const reason = cancelReason ? cancelReason.value.trim() : '';
+
+            // Закрываем модальное окно
+            cancelModal.classList.remove('show');
+            cancelModal.style.display = 'none';
+
+            // Блокируем кнопку и показываем спиннер
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+
+            try {
+                const url = `/players/tournaments/${tournamentId}/cancel` +
+                    (reason ? `?reason=${encodeURIComponent(reason)}` : '');
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showResultModal('success', 'Cancelación exitosa', data.message);
+                } else {
+                    button.disabled = false;
+                    button.innerHTML = '<i class="fas fa-times-circle"></i> Cancelar inscripción';
+                    showResultModal('error', 'Error', data.message);
                 }
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                showResultModal('success', 'Cancelación exitosa', data.message);
-            } else {
-                alert('Error: ' + data.message);
+            } catch (error) {
+                console.error('Error cancelling:', error);
                 button.disabled = false;
                 button.innerHTML = '<i class="fas fa-times-circle"></i> Cancelar inscripción';
+                showResultModal('error', 'Error', 'Error al procesar la solicitud');
             }
-        } catch (error) {
-            console.error('Error cancelling:', error);
-            alert('Error al procesar la solicitud');
-            button.disabled = false;
-            button.innerHTML = '<i class="fas fa-times-circle"></i> Cancelar inscripción';
-        }
+        });
+
+        // Обработчик закрытия модалки по клику на фон
+        const closeModalHandler = () => {
+            cancelModal.classList.remove('show');
+            cancelModal.style.display = 'none';
+        };
+
+        // Убираем старые обработчики закрытия
+        const closeButtons = cancelModal.querySelectorAll('[data-dismiss="modal"]');
+        closeButtons.forEach(btn => {
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
+            newBtn.addEventListener('click', closeModalHandler);
+        });
+
+        // Закрытие по клику вне модалки
+        cancelModal.addEventListener('click', (e) => {
+            if (e.target === cancelModal) {
+                closeModalHandler();
+            }
+        });
+    }
+
+// Функция для экранирования HTML
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 
     // ===== Функции для шаринга =====
