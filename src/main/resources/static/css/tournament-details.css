@@ -1387,3 +1387,83 @@ input[type="tel"].form-control {
 textarea.form-control {
     resize: vertical;
 }
+
+.btn-register.btn-primary.btn-block,
+.btn-cancel.btn-outline.btn-block,
+.btn-login.btn-outline.btn-block {
+    display: flex;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 1rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    box-sizing: border-box;
+}
+
+.btn-register.btn-primary.btn-block {
+    background: linear-gradient(135deg, #FF6B35, #e55a2b);
+    color: white;
+    border: none;
+}
+
+.btn-register.btn-primary.btn-block:hover:not(:disabled) {
+    background: linear-gradient(135deg, #e55a2b, #FF6B35);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+}
+
+.btn-register.btn-primary.btn-block:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-cancel.btn-outline.btn-block {
+    background: transparent;
+    border: 1px solid #dc3545;
+    color: #dc3545;
+    text-decoration: none;
+}
+
+.btn-cancel.btn-outline.btn-block:hover {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-login.btn-outline.btn-block {
+    background: transparent;
+    border: 1px solid #FF6B35;
+    color: #FF6B35;
+    text-decoration: none;
+}
+
+.btn-login.btn-outline.btn-block:hover {
+    background: #FF6B35;
+    color: white;
+}
+
+/* Бейджи в заголовке турнира — скругление и цвета */
+.tournament-badges .badge {
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    background: #e9ecef;
+    color: #495057;
+    display: inline-block;
+}
+
+.tournament-badges .badge-level  { background: #e3f2fd; color: #0d47a1; }
+.tournament-badges .badge-type   { background: #e8f5e9; color: #1b5e20; }
+.tournament-badges .badge-status { background: #fff3e0; color: #e65100; }
+.tournament-badges .badge-status.badge-borrador         { background: #e9ecef; color: #495057; }
+.tournament-badges .badge-status.badge-publicado        { background: #e3f2fd; color: #0d47a1; }
+.tournament-badges .badge-status.badge-registro_abierto { background: #e8f5e9; color: #1b5e20; }
+.tournament-badges .badge-status.badge-cerrado          { background: #fff3e0; color: #e65100; }
+.tournament-badges .badge-status.badge-finalizado       { background: #f3e5f5; color: #4a148c; }
+.tournament-badges .badge-status.badge-cancelado        { background: #ffebee; color: #b71c1c; }
