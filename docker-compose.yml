@@ -79,6 +79,11 @@ services:
 
       # Сервер
       SERVER_PORT: ${SERVER_PORT:-8080}
+
+      # ===== ДОБАВЬ ЭТИ ПЕРЕМЕННЫЕ =====
+      LOKI_ENABLED: ${LOKI_ENABLED:-true}
+      LOKI_URL: ${LOKI_URL:-http://loki:3100/loki/api/v1/push}
+      EMAIL_DAILY_LIMIT: ${EMAIL_DAILY_LIMIT:-300}
     ports:
       - "${HOST_PORT:-8080}:${SERVER_PORT:-8080}"
     depends_on:
@@ -98,9 +103,75 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # ========== OBSERVABILITY STACK ==========
+
+  loki:
+    image: grafana/loki:3.0.0
+    container_name: padel-loki
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - loki-data:/loki
+    networks:
+      - padel-network
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: padel-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+    networks:
+      - padel-network
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  grafana:
+    image: grafana/grafana:11.0.0
+    container_name: padel-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+    volumes:
+      - grafana-data:/var/lib/grafana
+    networks:
+      - padel-network
+    depends_on:
+      - loki
+      - prometheus
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 networks:
   padel-network:
     driver: bridge
 
 volumes:
   postgres_data:
+  loki-data:
+  prometheus-data:
+  grafana-data:

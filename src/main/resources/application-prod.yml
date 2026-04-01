@@ -51,4 +51,27 @@ logging:
   logback:
     rollingpolicy:
       max-file-size: ${LOG_MAX_SIZE:10MB}
-      max-history: ${LOG_MAX_HISTORY}
+      max-history: ${LOG_MAX_HISTORY:30}
+  loki:
+    enabled: ${LOKI_ENABLED:false}
+    url: ${LOKI_URL:http://loki:3100/loki/api/v1/push}
+    batchMaxItems: 1000
+    batchTimeoutMs: 5000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+      base-path: /actuator
+  metrics:
+    tags:
+      application: ${spring.application.name}
+      environment: ${ENVIRONMENT:production}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+  prometheus:
+    metrics:
+      export:
+        enabled: true

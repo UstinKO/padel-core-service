@@ -93,6 +93,7 @@
         <appender-ref ref="FILE"/>
         <appender-ref ref="ERROR_FILE"/>
         <appender-ref ref="JSON_FILE"/>
+        <appender-ref ref="LOKI"/>
     </logger>
 
     <!-- Логгер для ошибок (дублирует ERROR_FILE) -->
@@ -141,6 +142,65 @@
     <springProfile name="staging">
         <logger name="com.padle.core" level="DEBUG"/>
         <logger name="org.springframework.security" level="INFO"/>
+    </springProfile>
+
+    <!-- ========== LOKI АППЕНДЕР (централизованное логирование) ========== -->
+    <springProperty scope="context" name="LOKI_URL" source="logging.loki.url" defaultValue="http://localhost:3100/loki/api/v1/push"/>
+    <springProperty scope="context" name="LOKI_ENABLED" source="logging.loki.enabled" defaultValue="false"/>
+    <springProperty scope="context" name="LOKI_BATCH_SIZE" source="logging.loki.batchMaxItems" defaultValue="1000"/>
+    <springProperty scope="context" name="LOKI_BATCH_TIMEOUT" source="logging.loki.batchTimeoutMs" defaultValue="5000"/>
+
+    <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
+        <http>
+            <url>${LOKI_URL}</url>
+            <!-- Если нужна аутентификация -->
+            <auth>
+                <username>${LOKI_USERNAME:-}</username>
+                <password>${LOKI_PASSWORD:-}</password>
+            </auth>
+        </http>
+        <format>
+            <label>
+                <pattern>app=${APP_NAME},host=${HOSTNAME},level=%level,environment=${ENVIRONMENT:-local}</pattern>
+                <readMarkers>true</readMarkers>
+            </label>
+            <message>
+                <pattern>{
+                    "@timestamp": "%d{yyyy-MM-dd'T'HH:mm:ss.SSSZ}",
+                    "level": "%level",
+                    "logger": "%logger{36}",
+                    "thread": "%thread",
+                    "traceId": "%X{traceId:-}",
+                    "userId": "%X{userId:-}",
+                    "requestId": "%X{requestId:-}",
+                    "message": "%msg",
+                    "exception": "%ex{full}"
+                    }</pattern>
+            </message>
+            <sortByTime>true</sortByTime>
+        </format>
+        <batchConfig>
+            <maxItems>${LOKI_BATCH_SIZE}</maxItems>
+            <timeoutMs>${LOKI_BATCH_TIMEOUT}</timeoutMs>
+        </batchConfig>
+    </appender>
+
+    <!-- Профиль production - включаем Loki -->
+    <springProfile name="prod,production">
+        <logger name="com.padle.core" level="INFO"/>
+        <logger name="org.springframework.security" level="WARN"/>
+        <logger name="org.springframework" level="WARN"/>
+        <logger name="org.hibernate" level="WARN"/>
+
+        <!-- Включаем Loki только в продакшене -->
+        <root level="INFO">
+            <appender-ref ref="LOKI"/>
+        </root>
+
+        <!-- В продакшне пишем JSON логи только для важных событий -->
+        <logger name="com.padle.core.service.PaymentService" level="INFO" additivity="false">
+            <appender-ref ref="JSON_FILE"/>
+        </logger>
     </springProfile>
 
     <!-- ========== КОРНЕВОЙ ЛОГГЕР ========== -->

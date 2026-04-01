@@ -1,0 +1,60 @@
+services:
+  # Loki - агрегация логов
+  loki:
+    image: grafana/loki:3.0.0
+    container_name: padel-loki
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - observability
+    volumes:
+      - loki-data:/loki
+    restart: unless-stopped
+
+  # Prometheus - сбор метрик
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: padel-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+    networks:
+      - observability
+    restart: unless-stopped
+
+  # Grafana - визуализация
+  grafana:
+    image: grafana/grafana:11.0.0
+    container_name: padel-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel,grafana-clock-panel
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    networks:
+      - observability
+    depends_on:
+      - loki
+      - prometheus
+    restart: unless-stopped
+
+networks:
+  observability:
+    driver: bridge
+
+volumes:
+  loki-data:
+  prometheus-data:
+  grafana-data:

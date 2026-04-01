@@ -89,6 +89,13 @@ server:
 
 # ------ LOGGING ------
 logging:
+  loki:
+    enabled: ${LOKI_ENABLED:false}
+    url: ${LOKI_URL:http://localhost:3100/loki/api/v1/push}
+    batchMaxItems: 1000
+    batchTimeoutMs: 5000
+    username: ${LOKI_USERNAME:}
+    password: ${LOKI_PASSWORD:}
   level:
     com.padle.core: ${LOG_LEVEL:INFO}
     org.hibernate.SQL: ${LOG_HIBERNATE_SQL:false}
@@ -115,3 +122,36 @@ app:
   email:
     from: ${EMAIL_FROM:info@epadel.org}
     sender-name: ${EMAIL_SENDER_NAME:E-Padel}
+
+# ==========================================
+# ACTUATOR & METRICS (Prometheus)
+# ==========================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics,loggers
+      base-path: /actuator
+    enabled-by-default: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      application: ${spring.application.name}
+      environment: ${ENVIRONMENT:local}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+        hikari.connections: true
+      slo:
+        http.server.requests: 10ms, 50ms, 100ms, 200ms, 500ms, 1s, 2s
+  endpoint:
+    prometheus:
+      enabled: true
+    metrics:
+      enabled: true
+    health:
+      show-details: always
+      probes:
+        enabled: true  # Для kubernetes liveness/readiness
