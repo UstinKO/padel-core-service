@@ -1,5 +1,8 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.padelcoreservice.annotation.Counted;
+import com.padle.core.padelcoreservice.annotation.Timed;
+import com.padle.core.padelcoreservice.annotation.TrackErrors;
 import com.padle.core.padelcoreservice.dto.PartnerRegistrationDto;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
@@ -41,6 +44,21 @@ public class DoubleTournamentRegistrationService {
 
     private static final int TOKEN_EXPIRY_HOURS = 48;
 
+    @Timed(
+            name = "double.registration.time",
+            description = "Time taken to register a pair for tournament",
+            percentiles = true,
+            tags = {"service=double", "operation=register"}
+    )
+    @Counted(
+            name = "double.registration.attempts",
+            description = "Total double registration attempts",
+            tags = {"operation=register"}
+    )
+    @TrackErrors(
+            name = "double.registration.errors",
+            exceptions = {TournamentRegistrationException.class}
+    )
     @Transactional
     public TournamentRegistrationDto registerForDoubleTournament(
             TournamentDto tournamentDto,
@@ -104,6 +122,11 @@ public class DoubleTournamentRegistrationService {
     /**
      * Проверка свободных мест для пары
      */
+    @Timed(
+            name = "double.registration.slots.check",
+            description = "Check available slots for pair",
+            tags = {"service=double", "operation=checkSlots"}
+    )
     private void checkAvailableSlotsForPair(TournamentDto tournamentDto) {
         // ИСПРАВЛЕНО: используем countConfirmedPairs вместо countUniquePairs
         long confirmedPairs = registrationRepository.countConfirmedPairs(tournamentDto.getId());
@@ -117,6 +140,11 @@ public class DoubleTournamentRegistrationService {
     /**
      * Определяем статус для пары по свободным местам
      */
+    @Timed(
+            name = "double.registration.status.determine",
+            description = "Determine registration status for pair",
+            tags = {"service=double", "operation=determineStatus"}
+    )
     private RegistrationStatus determineRegistrationStatusForPair(TournamentDto tournamentDto) {
         // ИСПРАВЛЕНО: используем countConfirmedPairs вместо countUniquePairs
         long confirmedPairs = registrationRepository.countConfirmedPairs(tournamentDto.getId());
@@ -132,6 +160,11 @@ public class DoubleTournamentRegistrationService {
         }
     }
 
+    @Timed(
+            name = "double.registration.position.calculate",
+            description = "Calculate position for pair",
+            tags = {"service=double", "operation=calculatePosition"}
+    )
     private int calculatePosition(TournamentDto tournamentDto, RegistrationStatus status) {
         if (status == RegistrationStatus.CONFIRMED) {
             // Для CONFIRMED позиция - это количество подтвержденных пар + 1
@@ -158,6 +191,11 @@ public class DoubleTournamentRegistrationService {
         return Optional.empty();
     }
 
+    @Timed(
+            name = "double.registration.existing.partner",
+            description = "Register with existing partner",
+            tags = {"service=double", "operation=registerExisting"}
+    )
     private TournamentRegistration registerWithExistingPartner(
             TournamentDto tournamentDto,
             PlayerPadel mainPlayer,
@@ -234,6 +272,11 @@ public class DoubleTournamentRegistrationService {
         return savedMainRegistration;
     }
 
+    @Timed(
+            name = "double.registration.new.partner",
+            description = "Register with new partner",
+            tags = {"service=double", "operation=registerNew"}
+    )
     private TournamentRegistration registerWithNewPartner(
             TournamentDto tournamentDto,
             PlayerPadel mainPlayer,
@@ -295,6 +338,20 @@ public class DoubleTournamentRegistrationService {
         return registration;
     }
 
+    @Timed(
+            name = "double.registration.confirm.time",
+            description = "Time taken to confirm partner registration",
+            tags = {"service=double", "operation=confirm"}
+    )
+    @Counted(
+            name = "double.registration.confirm.attempts",
+            description = "Partner confirmation attempts",
+            tags = {"operation=confirm"}
+    )
+    @TrackErrors(
+            name = "double.registration.confirm.errors",
+            exceptions = {TournamentRegistrationException.class}
+    )
     @Transactional
     public TournamentRegistrationDto confirmPartnerRegistration(String token) {
         log.info("Confirming partner registration with token: {}", token);
@@ -384,6 +441,16 @@ public class DoubleTournamentRegistrationService {
         return registrationMapper.toDto(savedRegistration);
     }
 
+    @Timed(
+            name = "double.registration.complete.time",
+            description = "Time taken to complete partner registration",
+            tags = {"service=double", "operation=complete"}
+    )
+    @Counted(
+            name = "double.registration.complete.attempts",
+            description = "Partner completion attempts",
+            tags = {"operation=complete"}
+    )
     @Transactional
     public TournamentRegistrationDto completePartnerRegistration(Long partnerId, String email) {
         log.info("Completing partner registration: partnerId={}", partnerId);
@@ -427,10 +494,30 @@ public class DoubleTournamentRegistrationService {
         return registrationMapper.toDto(registration);
     }
 
+    @Timed(
+            name = "double.registration.emails.send",
+            description = "Send pair confirmation emails",
+            tags = {"service=double", "operation=sendEmails"}
+    )
     public void sendPairConfirmationEmails(TournamentRegistration mainReg, TournamentRegistration partnerReg) {
         notificationService.sendPairConfirmationEmails(mainReg, partnerReg);
     }
 
+    @Timed(
+            name = "double.registration.replace.time",
+            description = "Time taken to replace player in pair",
+            percentiles = true,
+            tags = {"service=double", "operation=replace"}
+    )
+    @Counted(
+            name = "double.registration.replace.attempts",
+            description = "Player replacement attempts",
+            tags = {"operation=replace"}
+    )
+    @TrackErrors(
+            name = "double.registration.replace.errors",
+            exceptions = {TournamentRegistrationException.class}
+    )
     @Transactional
     public TournamentRegistrationDto replacePlayerInPair(
             TournamentDto tournamentDto,

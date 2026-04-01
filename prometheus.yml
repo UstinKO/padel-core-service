@@ -1,0 +1,27 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    environment: ${ENVIRONMENT:-production}
+    project: padel-core
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+      scheme: http
+      timeout: 10s
+
+rule_files:
+# - "alerts.yml"
+
+scrape_configs:
+  - job_name: 'padel-core-service'
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['padel-app:8080']  # имя сервиса в Docker Compose
+        labels:
+          application: 'padel-core-service'
+          service: 'backend'
+          environment: 'production'

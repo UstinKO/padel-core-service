@@ -1,5 +1,8 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.padelcoreservice.annotation.Counted;
+import com.padle.core.padelcoreservice.annotation.Timed;
+import com.padle.core.padelcoreservice.annotation.TrackErrors;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
 import com.padle.core.padelcoreservice.exception.InvalidStateException;
@@ -105,7 +108,25 @@ public class TournamentService {
     }
 
     // ==================== Методы для регистрации ====================
-
+    @Timed(
+            name = "tournament.registration.time",
+            description = "Time taken to register player for tournament",
+            percentiles = true,
+            tags = {"service=tournament", "operation=register"}
+    )
+    @Counted(
+            name = "tournament.registration.attempts",
+            description = "Total registration attempts",
+            tags = {"operation=register"}
+    )
+    @TrackErrors(
+            name = "tournament.registration.errors",
+            exceptions = {
+                    ResourceNotFoundException.class,
+                    TournamentRegistrationException.class,
+                    IllegalArgumentException.class
+            }
+    )
     @Transactional
     public TournamentRegistrationDto registerPlayer(Long tournamentId, Long playerId) {
         log.info("Registering player {} to tournament {}", playerId, tournamentId);
@@ -295,6 +316,20 @@ public class TournamentService {
         }
     }
 
+    @Timed(
+            name = "tournament.cancellation.time",
+            description = "Time taken to cancel registration",
+            tags = {"operation=cancel"}  // ← правильный формат key=value
+    )
+    @Counted(
+            name = "tournament.cancellation.attempts",
+            description = "Cancellation attempts count",
+            tags = {"operation=cancel"}  // ← правильный формат
+    )
+    @TrackErrors(
+            name = "tournament.cancellation.errors",
+            exceptions = {ResourceNotFoundException.class, TournamentRegistrationException.class}
+    )
     @Transactional
     public void cancelRegistration(Long tournamentId, Long playerId, String reason) {
         log.info("Cancelling registration for player {} from tournament {}", playerId, tournamentId);
@@ -331,6 +366,11 @@ public class TournamentService {
         }
     }
 
+    @Timed(
+            name = "tournament.waitlist.process.time",
+            description = "Time taken to process waitlist",
+            tags = {"operation=processWaitlist"}
+    )
     @Transactional
     protected void processWaitlistForTournament(Long tournamentId) {
         log.info("Processing waitlist for tournament {}", tournamentId);
@@ -450,6 +490,16 @@ public class TournamentService {
 
     // ==================== CRUD операции для турниров ====================
 
+    @Timed(
+            name = "tournament.create.time",
+            description = "Time taken to create tournament",
+            tags = {"operation=create"}
+    )
+    @Counted(
+            name = "tournament.create.attempts",
+            description = "Tournament creation attempts",
+            tags = {"operation=create"}
+    )
     @Transactional
     public TournamentDto createTournament(TournamentDto tournamentDto, Long createdBy) {
         if (tournamentDto.getFechaInicio().isBefore(java.time.LocalDate.now())) {
@@ -874,6 +924,16 @@ public class TournamentService {
                 .collect(Collectors.toList());
     }
 
+    @Timed(
+            name = "tournament.waitlist.confirm.time",
+            description = "Time taken to confirm from waitlist",
+            tags = {"operation=waitlistConfirm"}
+    )
+    @Counted(
+            name = "tournament.waitlist.confirm.attempts",
+            description = "Waitlist confirmation attempts",
+            tags = {"operation=waitlistConfirm"}
+    )
     @Transactional
     public boolean confirmFromWaitlist(Long registrationId) {
         log.info("Confirming registration from waitlist: {}", registrationId);
