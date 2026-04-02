@@ -3,6 +3,10 @@
     <!-- Подключаем стандартные настройки Spring Boot -->
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
 
+    <!-- ========== МАСКИРОВЩИК ЧУВСТВИТЕЛЬНЫХ ДАННЫХ ========== -->
+    <conversionRule conversionWord="mask"
+                    converterClass="com.padle.core.padelcoreservice.logging.MaskingConverter"/>
+
     <!-- Свойства из application.yml/properties -->
     <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="padel-core"/>
     <springProperty scope="context" name="LOG_PATH" source="logging.file.path" defaultValue="logs"/>
@@ -31,16 +35,9 @@
         <file>${LOG_DIR}/${APP_NAME}.log</file>
 
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <!-- Ежедневная ротация с разделением по размеру -->
             <fileNamePattern>${LOG_DIR}/archive/${APP_NAME}.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
-
-            <!-- Максимальный размер одного файла -->
             <maxFileSize>${MAX_FILE_SIZE}</maxFileSize>
-
-            <!-- Максимальное количество дней хранения -->
             <maxHistory>${MAX_HISTORY}</maxHistory>
-
-            <!-- Общий лимит на все архивы -->
             <totalSizeCap>${TOTAL_SIZE_CAP}</totalSizeCap>
         </rollingPolicy>
 
@@ -78,7 +75,7 @@
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
             <fileNamePattern>${LOG_DIR}/archive/${APP_NAME}-json.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
             <maxFileSize>${MAX_FILE_SIZE}</maxFileSize>
-            <maxHistory>14</maxHistory> <!-- Для JSON храним меньше -->
+            <maxHistory>14</maxHistory>
             <totalSizeCap>500MB</totalSizeCap>
         </rollingPolicy>
 
@@ -116,7 +113,6 @@
 
     <!-- ========== ПРОФАЙЛЫ ========== -->
 
-    <!-- Профиль development (подробное логирование) -->
     <springProfile name="dev,development,default">
         <logger name="com.padle.core" level="DEBUG"/>
         <logger name="org.springframework.security" level="DEBUG"/>
@@ -125,26 +121,23 @@
         <logger name="org.hibernate.type.descriptor.sql" level="TRACE"/>
     </springProfile>
 
-    <!-- Профиль production (только важное) -->
     <springProfile name="prod,production">
         <logger name="com.padle.core" level="INFO"/>
         <logger name="org.springframework.security" level="WARN"/>
         <logger name="org.springframework" level="WARN"/>
         <logger name="org.hibernate" level="WARN"/>
 
-        <!-- В продакшне пишем JSON логи только для важных событий -->
         <logger name="com.padle.core.service.PaymentService" level="INFO" additivity="false">
             <appender-ref ref="JSON_FILE"/>
         </logger>
     </springProfile>
 
-    <!-- Профиль staging (как production, но с debug по запросу) -->
     <springProfile name="staging">
         <logger name="com.padle.core" level="DEBUG"/>
         <logger name="org.springframework.security" level="INFO"/>
     </springProfile>
 
-    <!-- ========== LOKI АППЕНДЕР (централизованное логирование) ========== -->
+    <!-- ========== LOKI АППЕНДЕР ========== -->
     <springProperty scope="context" name="LOKI_URL" source="logging.loki.url" defaultValue="http://localhost:3100/loki/api/v1/push"/>
     <springProperty scope="context" name="LOKI_ENABLED" source="logging.loki.enabled" defaultValue="false"/>
     <springProperty scope="context" name="LOKI_BATCH_SIZE" source="logging.loki.batchMaxItems" defaultValue="1000"/>
@@ -153,7 +146,6 @@
     <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
         <http>
             <url>${LOKI_URL}</url>
-            <!-- Если нужна аутентификация -->
             <auth>
                 <username>${LOKI_USERNAME:-}</username>
                 <password>${LOKI_PASSWORD:-}</password>
@@ -165,6 +157,7 @@
                 <readMarkers>true</readMarkers>
             </label>
             <message>
+                <!-- %mask вместо %msg — маскируем данные и в Loki -->
                 <pattern>{
                     "@timestamp": "%d{yyyy-MM-dd'T'HH:mm:ss.SSSZ}",
                     "level": "%level",
@@ -173,7 +166,7 @@
                     "traceId": "%X{traceId:-}",
                     "userId": "%X{userId:-}",
                     "requestId": "%X{requestId:-}",
-                    "message": "%msg",
+                    "message": "%mask",
                     "exception": "%ex{full}"
                     }</pattern>
             </message>
@@ -185,19 +178,16 @@
         </batchConfig>
     </appender>
 
-    <!-- Профиль production - включаем Loki -->
     <springProfile name="prod,production">
         <logger name="com.padle.core" level="INFO"/>
         <logger name="org.springframework.security" level="WARN"/>
         <logger name="org.springframework" level="WARN"/>
         <logger name="org.hibernate" level="WARN"/>
 
-        <!-- Включаем Loki только в продакшене -->
         <root level="INFO">
             <appender-ref ref="LOKI"/>
         </root>
 
-        <!-- В продакшне пишем JSON логи только для важных событий -->
         <logger name="com.padle.core.service.PaymentService" level="INFO" additivity="false">
             <appender-ref ref="JSON_FILE"/>
         </logger>
@@ -213,20 +203,19 @@
 
     <!-- ========== ДОПОЛНИТЕЛЬНЫЕ НАСТРОЙКИ ========== -->
 
-    <!-- Статус логирования (выводит инфо о конфигурации) -->
     <statusListener class="ch.qos.logback.core.status.OnConsoleStatusListener"/>
 
-    <!-- Очистка старых логов при старте (если превышен лимит) -->
     <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator">
         <resetJUL>true</resetJUL>
     </contextListener>
 
-    <!-- Конвертеры для цветного вывода в консоли (исправлено) -->
+    <!-- Конвертеры — clr/wex/wEx оригинальные + mask новый -->
     <conversionRule conversionWord="clr" class="org.springframework.boot.logging.logback.ColorConverter"/>
     <conversionRule conversionWord="wex" class="org.springframework.boot.logging.logback.WhitespaceThrowableProxyConverter"/>
     <conversionRule conversionWord="wEx" class="org.springframework.boot.logging.logback.ExtendedWhitespaceThrowableProxyConverter"/>
 
-    <!-- Паттерны для логов -->
-    <property name="CONSOLE_LOG_PATTERN" value="%clr(%d{yyyy-MM-dd HH:mm:ss}){faint} %clr(%-5level) %clr(${PID:-}){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %msg%n%wEx"/>
-    <property name="FILE_LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss} %-5level ${PID:-} --- [%t] %-40.40logger{39} : %msg%n%wEx"/>
+    <!-- Паттерны: %mask вместо %msg — единственное изменение по сравнению с оригиналом -->
+    <property name="CONSOLE_LOG_PATTERN" value="%clr(%d{yyyy-MM-dd HH:mm:ss}){faint} %clr(%-5level) %clr(${PID:-}){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %mask%n%wEx"/>
+    <property name="FILE_LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss} %-5level ${PID:-} --- [%t] %-40.40logger{39} : %mask%n%wEx"/>
+
 </configuration>

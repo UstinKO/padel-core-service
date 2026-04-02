@@ -149,6 +149,22 @@ public class AdminController {
         }
     }
 
+    @GetMapping("/tournaments/new")
+    public String newTournamentForm(Model model,
+                                    @AuthenticationPrincipal Owner owner) {
+        log.info("Showing new tournament form for owner: {}", owner.getEmail());
+
+        model.addAttribute("tournament", new TournamentDto());
+        model.addAttribute("clubs", clubService.getActiveClubsForAdmin());
+        model.addAttribute("genderFormats", Arrays.asList(GenderFormat.values()));
+        model.addAttribute("tournamentTypes", Arrays.asList(TournamentType.values()));
+        model.addAttribute("tournamentStatuses", Arrays.asList(TournamentStatus.values()));
+        model.addAttribute("niveles", getNiveles());
+        model.addAttribute("modalidades", Modalidad.values());
+
+        return "admin/tournaments/form";
+    }
+
     @GetMapping("/tournaments/{id}")
     public String viewTournament(@PathVariable Long id,
                                  Model model,
