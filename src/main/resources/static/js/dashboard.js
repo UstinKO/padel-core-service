@@ -124,6 +124,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (myTournamentsCount) {
         myTournamentsCount.textContent = `(${myTournamentIds.size})`;
     }
+    // Обновляем кнопку Inscriptos в welcome-card
+    updateMyTournamentsBtn();
 
     // Текущие отфильтрованные турниры
     let filteredTournaments = [...tournaments];
@@ -220,6 +222,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (filters.myTournamentsOnly && !myTournamentIds.has(tournament.id)) {
                 return false;
             }
+            updateMyTournamentsBtn()
 
             return true;
         });
@@ -236,6 +239,52 @@ document.addEventListener('DOMContentLoaded', function() {
 
         renderTournaments();
     }
+
+    function updateMyTournamentsBtn() {
+        const btn = document.getElementById('myTournamentsBtn');
+        const btnText = document.getElementById('myTournamentsBtnText');
+        if (!btn || !btnText) return;
+
+        const count = myTournamentIds.size;
+
+        // Всегда показываем кнопку
+        btn.style.display = 'flex';
+
+        // Текст зависит от количества регистраций
+        if (count > 0) {
+            btnText.textContent = `Inscriptos (${count})`;
+        } else {
+            btnText.textContent = 'Inscriptos';
+        }
+    }
+
+    // Фильтрует по "Mis torneos" — вызывается по кнопке Inscriptos
+    window.filterMyTournaments = function() {
+        const btn = document.getElementById('myTournamentsBtn');
+        const checkbox = document.getElementById('myTournamentsOnly');
+
+        // Переключаем фильтр
+        const isActive = btn.classList.contains('active');
+
+        if (isActive) {
+            // Снимаем фильтр
+            btn.classList.remove('active');
+            if (checkbox) checkbox.checked = false;
+        } else {
+            // Включаем фильтр
+            btn.classList.add('active');
+            if (checkbox) checkbox.checked = true;
+            // Раскрываем панель фильтров если она скрыта
+            const filtersPanel = document.getElementById('filtersPanel');
+            if (filtersPanel) filtersPanel.style.display = 'block';
+        }
+
+        applyFiltersFunction();
+
+        // Прокручиваем к списку турниров
+        const grid = document.getElementById('dashboardTorneosGrid');
+        if (grid) grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
 
     // Отрисовка турниров
     function renderTournaments() {
@@ -314,6 +363,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             if (myTournamentsCount) {
                                 myTournamentsCount.textContent = `(${myTournamentIds.size})`;
                             }
+                            updateMyTournamentsBtn()
                             applyFiltersFunction();
                         } else {
                             showResultModal('error', 'Error: ' + data.message);
@@ -450,6 +500,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (myTournamentsCount) {
                 myTournamentsCount.textContent = `(${myTournamentIds.size})`;
             }
+            updateMyTournamentsBtn()
 
             // Показываем сообщение об успехе
             showResultModal('success', '¡Registro completado! Se ha enviado un email a tu compañero.');
