@@ -207,19 +207,19 @@ class KingOfCourt {
         switch (update.type) {
             case 'RESULT_SAVED':
                 console.log('🎯 Result saved for court');
-                this.showNotification('Результат сохранен', 'success');
+                this.showNotification('Resultado guardado', 'success');
                 this.loadData();
                 break;
             case 'ROUND_COMPLETED':
                 console.log('🏁 Round completed');
-                this.showNotification(`Раунд ${update.data} завершен`, 'success');
+                this.showNotification(`Ronda ${update.data} completada`, 'success');
                 this.loadData(); // Загружаем данные, чтобы обновить состояние кнопок
                 break;
             case 'NEXT_ROUND_STARTED':
                 console.log('➡️ Next round started');
                 this.currentRoundData = null;
                 this.loadData();
-                this.showNotification(`Начался раунд ${update.data}`, 'success');
+                this.showNotification(`Comenzó la ronda ${update.data}`, 'success');
                 break;
             case 'STATE_UPDATED':
                 console.log('🔄 State updated');
@@ -231,7 +231,7 @@ class KingOfCourt {
                     this.showFinalResults(update.data.ranking);
                 }
                 this.loadData();
-                this.showNotification('Турнир завершен', 'success');
+                this.showNotification('Torneo finalizado', 'success');
                 break;
             default:
                 console.log('Unknown update type:', update.type);
@@ -329,11 +329,11 @@ class KingOfCourt {
             container.innerHTML = `
                 <div class="empty-state" style="text-align: center; padding: 2rem;">
                     <i class="fas fa-crown" style="font-size: 3rem; color: #9ca3af;"></i>
-                    <h3 style="margin-top: 1rem;">Нет активных кортов</h3>
-                    <p style="color: #6b7280;">Возможно, турнир еще не инициализирован</p>
+                    <h3 style="margin-top: 1rem;">No hay canchas activas</h3>
+                    <p style="color: #6b7280;">Posiblemente el torneo aún no está inicializado</p>
                     ${this.isAdmin ? `
                         <button class="btn btn-primary" style="margin-top: 1rem;" onclick="window.kingOfCourt?.initializeTournament()">
-                            <i class="fas fa-play"></i> Инициализировать турнир
+                            <i class="fas fa-play"></i> Inicializar torneo
                         </button>
                     ` : ''}
                 </div>
@@ -348,7 +348,7 @@ class KingOfCourt {
     }
 
     async initializeTournament() {
-        if (!confirm('Инициализировать турнир Король Корта?')) return;
+        if (!confirm('Inicializar torneo King of Court?')) return;
 
         try {
             const response = await fetch(`/api/king-of-court/tournaments/${this.tournamentId}/initialize`, {
@@ -366,17 +366,17 @@ class KingOfCourt {
                 const data = await response.json();
                 this.kingId = data.id;
                 console.log('Tournament initialized with ID:', this.kingId);
-                this.showNotification('Турнир инициализирован', 'success');
+                this.showNotification('Torneo inicializado', 'success');
                 this.loadData();
                 this.connectWebSocket();
             } else {
                 const error = await response.json();
                 console.error('Init error:', error);
-                this.showError(error.message || 'Ошибка инициализации');
+                this.showError(error.message || 'Error de inicialización');
             }
         } catch (error) {
             console.error('Error initializing tournament:', error);
-            this.showError('Ошибка соединения');
+            this.showError('Error de conexión');
         }
     }
 
@@ -388,7 +388,7 @@ class KingOfCourt {
             <div class="court-header">
                 <h3>Корт ${court.courtNumber}</h3>
                 <span class="court-status ${court.hasResult ? 'completed' : 'in-progress'}">
-                    ${court.hasResult ? 'ГОТОВО' : 'ИДЕТ ИГРА'}
+                    ${court.hasResult ? 'COMPLETADO' : 'EN JUEGO'}
                 </span>
             </div>
         `;
@@ -416,7 +416,7 @@ class KingOfCourt {
                                 data-court-id="${court.id}"
                                 data-court-number="${court.courtNumber}"
                                 style="flex: 1;">
-                            <i class="fas fa-edit"></i> Редактировать
+                            <i class="fas fa-edit"></i> Editar
                         </button>
                     </div>
                 `;
@@ -428,7 +428,7 @@ class KingOfCourt {
                 const teamPlayers = team.players.map(p => p.name).join(' & ');
                 content += `
                     <div class="team">
-                        <span class="team-number">Команда ${team.teamNumber}</span>
+                        <span class="team-number">Equipo  ${team.teamNumber}</span>
                         <span class="team-players">${teamPlayers}</span>
                     </div>
                 `;
@@ -442,12 +442,12 @@ class KingOfCourt {
                             data-court-id="${court.id}"
                             data-court-number="${court.courtNumber}"
                             style="margin-top: 1rem; width: 100%;">
-                        <i class="fas fa-edit"></i> Ввести результат
+                        <i class="fas fa-edit"></i> Ingresar resultado
                     </button>
                 `;
             }
         } else {
-            content += '<p class="text-gray-500">Корт свободен</p>';
+            content += '<p class="text-gray-500">Cancha libre</p>';
         }
 
         card.innerHTML = content;
@@ -466,7 +466,7 @@ class KingOfCourt {
         tbody.innerHTML = '';
 
         if (ranking.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center">Нет данных. Зарегистрируйте игроков и инициализируйте турнир.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center">No hay datos. Registra jugadores e inicializa el torneo.</td></tr>';
             return;
         }
 
@@ -478,7 +478,7 @@ class KingOfCourt {
                     <a href="#" class="view-history-btn" 
                        data-player-id="${player.playerId || ''}"
                        data-player-name="${player.playerName || ''}">
-                        ${player.playerName || 'Неизвестный игрок'}
+                        ${player.playerName || 'Jugador desconocido'}
                     </a>
                 </td>
                 <td><strong>${player.totalPoints || 0}</strong></td>
@@ -502,7 +502,7 @@ class KingOfCourt {
         list.innerHTML = '';
 
         if (history.length === 0) {
-            list.innerHTML = '<li class="text-center text-gray-500">История пуста</li>';
+            list.innerHTML = '<li class="text-center text-gray-500">Historial vacío</li>';
             return;
         }
 
@@ -580,8 +580,8 @@ class KingOfCourt {
         const modalTitle = document.querySelector('#resultModal .admin-title');
         if (modalTitle) {
             modalTitle.innerHTML = isEditMode ?
-                '<i class="fas fa-edit"></i> Редактировать результат для Корта ' + courtNumber :
-                '<i class="fas fa-trophy"></i> Результат для Корта ' + courtNumber;
+                '<i class="fas fa-edit"></i> Editar resultado para Cancha ' + courtNumber :
+                '<i class="fas fa-trophy"></i> Resultado para Cancha ' + courtNumber;
         }
 
         const oldResultIdField = document.getElementById('resultId');
@@ -606,7 +606,7 @@ class KingOfCourt {
             const modalPlayersInfo = document.getElementById('modalPlayersInfo');
             if (modalPlayersInfo && court.teams) {
                 const teamsInfo = court.teams.map(t =>
-                    `Команда ${t.teamNumber}: ${t.players.map(p => p.name).join(' & ')}`
+                    `Equipo  ${t.teamNumber}: ${t.players.map(p => p.name).join(' & ')}`
                 ).join(' vs ');
                 modalPlayersInfo.textContent = teamsInfo;
             }
@@ -711,23 +711,23 @@ class KingOfCourt {
         console.log('resultId:', resultId);
 
         if (!winner1 || !winner2 || isNaN(scoreWinners) || isNaN(scoreLosers)) {
-            this.showError('Не все поля заполнены');
+            this.showError('No todos los campos están completos');
             return;
         }
 
         if (winner1 === winner2) {
-            this.showError('Выберите двух разных победителей');
+            this.showError('Selecciona dos ganadores diferentes');
             return;
         }
 
         if (scoreWinners <= scoreLosers) {
-            this.showError('Счет победителей должен быть больше счета проигравших');
+            this.showError('El puntaje de los ganadores debe ser mayor que el de los perdedores');
             return;
         }
 
         const courtData = await this.getCourtData(this.currentCourtId);
         if (!courtData) {
-            this.showError('Не удалось загрузить данные корта');
+            this.showError('No se pudieron cargar los datos de la cancha');
             return;
         }
 
@@ -736,7 +736,7 @@ class KingOfCourt {
         const losers = allPlayerIds.filter(id => !winners.includes(id));
 
         if (losers.length !== 2) {
-            this.showError('Ошибка определения проигравших');
+            this.showError('Error al determinar los perdedores');
             return;
         }
 
@@ -773,22 +773,22 @@ class KingOfCourt {
             if (response.ok) {
                 console.log('Result saved successfully');
                 this.closeResultModal();
-                this.showNotification(resultId ? 'Результат обновлен' : 'Результат сохранен', 'success');
+                this.showNotification(resultId ? 'Resultado actualizado' : 'Resultado guardado', 'success');
                 // Данные обновятся через WebSocket, но для надежности загружаем сразу
                 setTimeout(() => this.loadData(), 500);
             } else {
                 const error = await response.json();
                 console.error('Error response:', error);
-                this.showError(error.message || 'Ошибка сохранения');
+                this.showError(error.message || 'Error al guardar');
             }
         } catch (error) {
             console.error('Error saving result:', error);
-            this.showError('Ошибка соединения');
+            this.showError('Error de conexión');
         }
     }
 
     async nextRound() {
-        if (!confirm('Перейти к следующему раунду?')) return;
+        if (!confirm('¿Pasar a la siguiente ronda?')) return;
 
         try {
             const response = await fetch(`/api/king-of-court/tournaments/${this.kingId}/next-round`, {
@@ -797,22 +797,22 @@ class KingOfCourt {
 
             if (response.ok) {
                 console.log('Next round started successfully');
-                this.showNotification('Переход к следующему раунду', 'success');
+                this.showNotification('Pasando a la siguiente ronda', 'success');
                 // Данные обновятся через WebSocket, но для надежности загружаем сразу
                 setTimeout(() => this.loadData(), 500);
             } else {
                 const error = await response.json();
                 console.error('Error response:', error);
-                this.showError(error.message || 'Ошибка перехода');
+                this.showError(error.message || 'Error al pasar de ronda');
             }
         } catch (error) {
             console.error('Error next round:', error);
-            this.showError('Ошибка соединения');
+            this.showError('Error de conexión');
         }
     }
 
     async endTournament() {
-        if (!confirm('Завершить турнир? Дальнейший ввод результатов будет невозможен.')) return;
+        if (!confirm('¿Finalizar torneo? No se podrán ingresar más resultados.')) return;
 
         try {
             const response = await fetch(`/api/king-of-court/tournaments/${this.kingId}/finish`, {
@@ -821,16 +821,16 @@ class KingOfCourt {
 
             if (response.ok) {
                 console.log('Tournament finished successfully');
-                this.showNotification('Турнир завершен', 'success');
+                this.showNotification('Torneo finalizado', 'success');
                 setTimeout(() => this.loadData(), 500);
             } else {
                 const error = await response.json();
                 console.error('Error response:', error);
-                this.showError(error.message || 'Ошибка завершения турнира');
+                this.showError(error.message || 'Error al finalizar el torneo');
             }
         } catch (error) {
             console.error('Error finishing tournament:', error);
-            this.showError('Ошибка соединения');
+            this.showError('Error de conexión');
         }
     }
 
@@ -843,7 +843,7 @@ class KingOfCourt {
             });
 
             if (response.ok) {
-                this.showNotification('YouTube ссылка сохранена', 'success');
+                this.showNotification('Enlace de YouTube guardado', 'success');
                 setTimeout(() => this.loadData(), 500);
             } else {
                 console.error('Error saving YouTube link');
@@ -871,7 +871,7 @@ class KingOfCourt {
             tbody.innerHTML = '';
 
             if (history.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center">Нет истории матчей</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">No hay historial de partidos</td></tr>';
             } else {
                 history.forEach(match => {
                     const row = document.createElement('tr');
@@ -881,7 +881,7 @@ class KingOfCourt {
                         <td>${match.round || ''}</td>
                         <td>${match.courtNumber || ''}</td>
                         <td class="${isWinner ? 'text-success' : 'text-danger'}">
-                            <strong>${isWinner ? 'Победа' : 'Поражение'}</strong>
+                            <strong>${isWinner ? 'Victoria' : 'Derrota'}</strong>
                         </td>
                         <td>${match.winnersScore || 0}:${match.losersScore || 0}</td>
                         <td>${isWinner && match.winners ?
@@ -1059,15 +1059,15 @@ class KingOfCourt {
             });
 
             if (response.ok) {
-                this.showNotification('Раунд отменён — исправьте результаты предыдущего раунда', 'success');
+                this.showNotification('Ronda cancelada — corrige los resultados de la ronda anterior', 'success');
                 setTimeout(() => this.loadData(), 500);
             } else {
                 const error = await response.json();
-                this.showError(error.message || 'Ошибка отката раунда');
+                this.showError(error.message || 'Error al revertir la ronda');
             }
         } catch (error) {
             console.error('Error rolling back round:', error);
-            this.showError('Ошибка соединения');
+            this.showError('Error de conexión');
         }
     }
 }

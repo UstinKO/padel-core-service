@@ -661,8 +661,10 @@ public class TestTournamentController {
 
             // Регистрируем обоих игроков как одну команду
             String insertSql = "INSERT INTO tournament_registrations_db " +
-                    "(tournament_id, player_id, registration_date, status, position, is_active, is_double_registration) " +
-                    "VALUES (?, ?, ?, 'CONFIRMED', ?, true, true)";
+                    "(tournament_id, player_id, registration_date, status, position, is_active, is_double_registration, main_player_id) " +
+                    "VALUES (?, ?, ?, 'CONFIRMED', ?, true, true, ?)";
+
+            Long mainPlayerId = playerIds.get(0); // первый игрок — главный в паре
 
             List<Map<String, Object>> registeredPlayers = new ArrayList<>();
             for (Long playerId : playerIds) {
@@ -671,6 +673,7 @@ public class TestTournamentController {
                     ps.setLong(2, playerId);
                     ps.setObject(3, LocalDateTime.now());
                     ps.setInt(4, nextPosition);
+                    ps.setLong(5, mainPlayerId);
 
                     int inserted = ps.executeUpdate();
                     if (inserted > 0) {
@@ -1538,12 +1541,27 @@ public class TestTournamentController {
         }
 
         // Получаем ВСЕ регистрации включая WAITLIST
-        String totalSql = "SELECT COUNT(*) as total, " +
-                "SUM(CASE WHEN status = 'WAITLIST' THEN 1 ELSE 0 END) as waitlist " +
-                "FROM tournament_registrations_db WHERE tournament_id = ?";
+        String totalSql;
+        if ("DOBLES".equals(tournament.getModalidad().name())) {
+            // Для парных: totalRegistrations = общее число записей,
+            // waitlist = уникальные пары в очереди (по mainPlayerId)
+            totalSql = "SELECT COUNT(*) as total, " +
+                    "(SELECT COUNT(DISTINCT main_player_id) " +
+                    " FROM tournament_registrations_db " +
+                    " WHERE tournament_id = ? AND status = 'WAITLIST' " +
+                    " AND is_double_registration = true AND main_player_id IS NOT NULL) as waitlist " +
+                    "FROM tournament_registrations_db WHERE tournament_id = ?";
+        } else {
+            totalSql = "SELECT COUNT(*) as total, " +
+                    "SUM(CASE WHEN status = 'WAITLIST' THEN 1 ELSE 0 END) as waitlist " +
+                    "FROM tournament_registrations_db WHERE tournament_id = ?";
+        }
 
         try (PreparedStatement totalPs = conn.prepareStatement(totalSql)) {
             totalPs.setLong(1, tournamentId);
+            if ("DOBLES".equals(tournament.getModalidad().name())) {
+                totalPs.setLong(2, tournamentId); // второй параметр для подзапроса waitlist
+            }
             ResultSet totalRs = totalPs.executeQuery();
             if (totalRs.next()) {
                 stats.put("totalRegistrations", totalRs.getInt("total"));
@@ -1556,13 +1574,39 @@ public class TestTournamentController {
         // Получаем подтвержденные регистрации (основной состав)
         String confirmedSql;
         if ("DOBLES".equals(tournament.getModalidad().name())) {
-            confirmedSql = "SELECT COUNT(DISTINCT position) as confirmed " +
+            // Для парных турниров считаем уникальные пары по mainPlayerId.
+            // Включаем CONFIRMED + PAIR_REGISTERED + PARTNER_INVITED —
+            // во всех трёх случаях место занято.
+            // mainPlayerId IS NOT NULL — только запись главного игрока пары.
+            confirmedSql = "SELECT COUNT(DISTINCT main_player_id) as confirmed " +
                     "FROM tournament_registrations_db " +
-                    "WHERE tournament_id = ? AND status != 'WAITLIST'";
+                    "WHERE tournament_id = ? " +
+                    "AND status IN ('CONFIRMED', 'PAIR_REGISTERED', 'PARTNER_INVITED') " +
+                    "AND is_double_registration = true " +
+                    "AND is_active = true " +
+                    "AND main_player_id IS NOT NULL";
         } else {
             confirmedSql = "SELECT COUNT(*) as confirmed " +
                     "FROM tournament_registrations_db " +
-                    "WHERE tournament_id = ? AND status != 'WAITLIST'";
+                    "WHERE tournament_id = ? " +
+                    "AND status NOT IN ('WAITLIST', 'CANCELLED') " +
+                    "AND is_active = true";
+        }
+
+        if ("DOBLES".equals(tournament.getModalidad().name())) {
+            // Считаем реальное кол-во уникальных игроков (записей с is_active=true)
+            String totalPlayersSql = "SELECT COUNT(*) FROM tournament_registrations_db " +
+                    "WHERE tournament_id = ? AND is_active = true " +
+                    "AND status IN ('CONFIRMED', 'PAIR_REGISTERED', 'PARTNER_INVITED')";
+            try (PreparedStatement ps = conn.prepareStatement(totalPlayersSql)) {
+                ps.setLong(1, tournamentId);
+                ResultSet rs = ps.executeQuery();
+                if (rs.next()) {
+                    stats.put("totalPlayers", rs.getInt(1));
+                }
+            } catch (Exception e) {
+                log.error("Ошибка при подсчёте total players для DOBLES", e);
+            }
         }
 
         try (PreparedStatement confPs = conn.prepareStatement(confirmedSql)) {

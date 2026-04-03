@@ -412,16 +412,18 @@
                     </div>
 
                     <!-- ===== АВТОМАТИЧЕСКОЕ РАЗДЕЛЕНИЕ ===== -->
-                    <th:block th:with="sortedRegs=${registrations.?[status.name() == 'CONFIRMED']}">
+                    <th:block th:with="
+                        confirmedRegs=${registrations.?[status.name() == 'CONFIRMED']},
+                        invitedRegs=${registrations.?[status.name() == 'PARTNER_INVITED' and isDoubleRegistration == true]}">
 
-                        <!-- СЕКЦИЯ 1: Основные участники (первые cupoMax) -->
+                        <!-- СЕКЦИЯ 1: Подтверждённые участники -->
                         <div class="registrations-list">
                             <h4>
                                 <i class="fas fa-check-circle" style="color: #10b981;"></i>
                                 Participantes (<span th:text="${tournament.cupoMax}">20</span>)
                             </h4>
-                            <div class="registrations-items" th:if="${not #lists.isEmpty(sortedRegs)}">
-                                <div th:each="reg, iterStat : ${sortedRegs}"
+                            <div class="registrations-items" th:if="${not #lists.isEmpty(confirmedRegs)}">
+                                <div th:each="reg, iterStat : ${confirmedRegs}"
                                      th:if="${iterStat.index < tournament.cupoMax}"
                                      class="registration-item">
                                     <div class="registration-avatar">
@@ -434,17 +436,22 @@
                                            title="Ver detalles del jugador">
                                             Jugador
                                         </a>
-                                        <span class="registration-position" th:text="'Posición: ' + ${reg.position}">
-                                            Posición: 1
+                                        <!-- Для парных показываем имя партнёра -->
+                                        <span th:if="${reg.isDoubleRegistration and reg.partnerNombre != null}"
+                                              class="registration-position"
+                                              th:text="'Pareja: ' + ${reg.partnerNombre}">
+                                        </span>
+                                        <span th:unless="${reg.isDoubleRegistration}"
+                                              class="registration-position"
+                                              th:text="'Posición: ' + ${reg.position}">
                                         </span>
                                     </div>
-                                    <!-- ДОБАВЛЯЕМ КНОПКУ ДЛЯ ПЕРЕМЕЩЕНИЯ В РЕЗЕРВ -->
                                     <div class="registration-actions">
                                         <button type="button"
                                                 class="btn-icon move-to-waitlist"
                                                 th:attr="data-tournament-id=${tournament.id},
-                                                    data-player-id=${reg.playerId},
-                                                    data-player-name=${reg.playerNombre}"
+                                                         data-player-id=${reg.playerId},
+                                                         data-player-name=${reg.playerNombre}"
                                                 onclick="moveToWaitlist(this)"
                                                 title="Mover a lista de espera">
                                             <i class="fas fa-arrow-down"></i>
@@ -457,20 +464,20 @@
                                     </div>
                                 </div>
                             </div>
-                            <div th:if="${tournament.inscritosActuales == 0}" class="empty-registrations">
-                                <p>No hay participantes</p>
+                            <div th:if="${#lists.isEmpty(confirmedRegs)}" class="empty-registrations">
+                                <p>No hay participantes confirmados</p>
                             </div>
                         </div>
 
-                        <!-- СЕКЦИЯ 2: Резерв (те, кто не попал в первые cupoMax) -->
-                        <div class="registrations-list" th:if="${sortedRegs.size() > tournament.cupoMax}">
+                        <!-- СЕКЦИЯ 2: Резерв подтверждённых (overflow) -->
+                        <div class="registrations-list" th:if="${confirmedRegs.size() > tournament.cupoMax}">
                             <h4>
                                 <i class="fas fa-clock" style="color: #f59e0b;"></i>
                                 Reserva
-                                <span class="badge-warning" th:text="${sortedRegs.size() - tournament.cupoMax}"></span>
+                                <span class="badge-warning" th:text="${confirmedRegs.size() - tournament.cupoMax}"></span>
                             </h4>
                             <div class="registrations-items waitlist-items">
-                                <div th:each="reg, iterStat : ${sortedRegs}"
+                                <div th:each="reg, iterStat : ${confirmedRegs}"
                                      th:if="${iterStat.index >= tournament.cupoMax}"
                                      class="registration-item waitlist">
                                     <div class="registration-avatar">
@@ -484,7 +491,6 @@
                                             Jugador
                                         </a>
                                         <span class="registration-position" th:text="'Posición: ' + ${reg.position}">
-                                            Posición: 1
                                         </span>
                                     </div>
                                     <a th:href="@{'/admin/players/' + ${reg.playerId}}"
@@ -495,9 +501,49 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- СЕКЦИЯ 3: Пары с ожидающим приглашением — PARTNER_INVITED -->
+                        <!-- Показываем только для парных турниров -->
+                        <div class="registrations-list"
+                             th:if="${not #lists.isEmpty(invitedRegs)}">
+                            <h4>
+                                <i class="fas fa-envelope" style="color: #6366f1;"></i>
+                                Invitación pendiente
+                                <span class="badge-warning"
+                                      style="background: #6366f1;"
+                                      th:text="${#lists.size(invitedRegs)}"></span>
+                            </h4>
+                            <div class="registrations-items waitlist-items">
+                                <div th:each="reg : ${invitedRegs}"
+                                     class="registration-item"
+                                     style="border-left: 3px solid #6366f1; background: #f5f3ff;">
+                                    <div class="registration-avatar">
+                                        <i class="fas fa-user-clock" style="color: #6366f1;"></i>
+                                    </div>
+                                    <div class="registration-info">
+                                        <a th:href="@{'/admin/players/' + ${reg.playerId}}"
+                                           class="registration-name-link"
+                                           th:text="${reg.playerNombre} ?: 'Jugador ' + ${reg.playerId}"
+                                           title="Ver detalles del jugador">
+                                            Jugador
+                                        </a>
+                                        <!-- Имя приглашённого партнёра из полей -->
+                                        <span class="registration-position"
+                                              th:text="'Invitando a: ' + ${reg.partnerNombre} + ' ' + (${reg.partnerApellido} ?: '')">
+                                        </span>
+                                    </div>
+                                    <a th:href="@{'/admin/players/' + ${reg.playerId}}"
+                                       class="btn-icon"
+                                       title="Ver detalles del jugador">
+                                        <i class="fas fa-external-link-alt"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
                     </th:block>
 
-                    <!-- Отдельный блок для WAITLIST (если есть такие) -->
+                    <!-- Отдельный блок для WAITLIST -->
                     <div class="registrations-list" th:if="${tournament.waitlistCount > 0}">
                         <h4>
                             <i class="fas fa-hourglass-half" style="color: #94a3b8;"></i>
@@ -518,17 +564,16 @@
                                        title="Ver detalles del jugador">
                                         Jugador
                                     </a>
-                                    <span class="registration-position" th:text="'Espera: ' + ${reg.waitlistPosition}">
-                                        Espera: 1
+                                    <span class="registration-position"
+                                          th:text="'Espera: ' + ${reg.waitlistPosition}">
                                     </span>
                                 </div>
-                                <!-- ДОБАВЛЯЕМ КНОПКУ ДЛЯ ПЕРЕМЕЩЕНИЯ В ОСНОВНОЙ СОСТАВ -->
                                 <div class="registration-actions">
                                     <button type="button"
                                             class="btn-icon move-to-main"
                                             th:attr="data-tournament-id=${tournament.id},
-                                 data-player-id=${reg.playerId},
-                                 data-player-name=${reg.playerNombre}"
+                                                     data-player-id=${reg.playerId},
+                                                     data-player-name=${reg.playerNombre}"
                                             onclick="moveToMain(this)"
                                             title="Mover al torneo principal">
                                         <i class="fas fa-arrow-up"></i>

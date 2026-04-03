@@ -100,7 +100,7 @@ class KingOfCourtViewer {
         this.courtsContainer.innerHTML = '';
 
         if (courts.length === 0) {
-            this.courtsContainer.innerHTML = '<p class="text-center">Нет активных кортов</p>';
+            this.courtsContainer.innerHTML = '<p class="text-center">No hay canchas activas</p>';
             return;
         }
 
@@ -116,9 +116,9 @@ class KingOfCourtViewer {
 
         let content = `
             <div class="court-header">
-                <h3>Корт ${court.courtNumber}</h3>
+                <h3>Cancha ${court.courtNumber}</h3>
                 <span class="court-status ${court.hasResult ? 'completed' : 'in-progress'}">
-                    ${court.hasResult ? 'ГОТОВО' : 'ИДЕТ ИГРА'}
+                    ${court.hasResult ? 'COMPLETADO' : 'EN JUEGO'}
                 </span>
             </div>
         `;
@@ -144,14 +144,14 @@ class KingOfCourtViewer {
                 const teamPlayers = team.players.map(p => p.name).join(' & ');
                 content += `
                     <div class="team">
-                        <span class="team-number">Команда ${team.teamNumber}</span>
+                        <span class="team-number">Equipo ${team.teamNumber}</span>
                         <span class="team-players">${teamPlayers}</span>
                     </div>
                 `;
             });
             content += '</div>';
         } else {
-            content += '<p class="text-gray-500">Корт свободен</p>';
+            content += '<p class="text-gray-500">Cancha libre</p>';
         }
 
         card.innerHTML = content;
@@ -164,7 +164,7 @@ class KingOfCourtViewer {
         this.leaderboard.innerHTML = '';
 
         if (ranking.length === 0) {
-            this.leaderboard.innerHTML = '<tr><td colspan="6" class="text-center">Нет данных</td></tr>';
+            this.leaderboard.innerHTML = '<tr><td colspan="6" class="text-center">No hay datos</td></tr>';
             return;
         }
 
@@ -176,7 +176,7 @@ class KingOfCourtViewer {
                     <a href="#" class="view-history-btn" 
                        data-player-id="${player.playerId || ''}"
                        data-player-name="${player.playerName || ''}">
-                        ${player.playerName || 'Неизвестный игрок'}
+                        ${player.playerName || 'Jugador desconocido'}
                     </a>
                 </td>
                 <td><strong>${player.totalPoints || 0}</strong></td>
@@ -202,7 +202,7 @@ class KingOfCourtViewer {
         this.matchHistory.innerHTML = '';
 
         if (history.length === 0) {
-            this.matchHistory.innerHTML = '<li class="text-center">История пуста</li>';
+            this.matchHistory.innerHTML = '<li class="text-center">Historial vacío</li>';
             return;
         }
 
@@ -211,15 +211,15 @@ class KingOfCourtViewer {
             li.className = 'history-item';
             li.innerHTML = `
                 <div class="history-header">
-                    <span class="badge">Раунд ${match.round || '-'}</span>
-                    <span class="badge badge-level">Корт ${match.courtNumber || '-'}</span>
+                    <span class="badge">Ronda ${match.round || '-'}</span>
+                    <span class="badge badge-level">Cancha ${match.courtNumber || '-'}</span>
                 </div>
                 <div class="history-winners">
                     <i class="fas fa-trophy" style="color: #fbbf24;"></i>
-                    ${match.winners?.join(' & ') || 'Неизвестно'}
+                    ${match.winners?.join(' & ') || 'Desconocido'}
                 </div>
                 <div class="history-losers">
-                    <span style="margin-left: 1.5rem;">${match.losers?.join(' & ') || 'Неизвестно'}</span>
+                    <span style="margin-left: 1.5rem;">${match.losers?.join(' & ') || 'Desconocido'}</span>
                 </div>
                 <div class="history-score">
                     <strong>${match.winnersScore || 0} : ${match.losersScore || 0}</strong>
@@ -242,7 +242,7 @@ class KingOfCourtViewer {
                 this.historyTableBody.innerHTML = '';
 
                 if (history.length === 0) {
-                    this.historyTableBody.innerHTML = '<tr><td colspan="6" class="text-center">Нет истории матчей</td></tr>';
+                    this.historyTableBody.innerHTML = '<tr><td colspan="6" class="text-center">No hay historial de partidos</td></tr>';
                 } else {
                     history.forEach(match => {
                         const row = document.createElement('tr');
@@ -252,7 +252,7 @@ class KingOfCourtViewer {
                             <td>${match.round || ''}</td>
                             <td>${match.courtNumber || ''}</td>
                             <td class="${isWinner ? 'text-success' : 'text-danger'}">
-                                <strong>${isWinner ? 'Победа' : 'Поражение'}</strong>
+                                <strong>${isWinner ? 'Victoria' : 'Derrota'}</strong>
                             </td>
                             <td>${match.winnersScore || 0}:${match.losersScore || 0}</td>
                             <td>${isWinner ?
