@@ -1081,30 +1081,36 @@
                 <!-- Прогресс регистраций (уже есть) -->
                 <div class="progress-section" th:with="stats=${statsMap[__${tournament.id}__]}">
                     <div class="progress-label">
-                        <span th:if="${tournament.modalidad.name() == 'DOBLES'}">Пары</span>
-                        <span th:if="${tournament.modalidad.name() == 'INDIVIDUAL'}">Регистрации</span>
+                            <span>
+                                <th:block th:if="${tournament.modalidad.name() == 'DOBLES'}">Parejas</th:block>
+                                <th:block th:unless="${tournament.modalidad.name() == 'DOBLES'}">Inscripciones</th:block>
+                            </span>
                         <strong>
                             <span th:text="${stats?.confirmed ?: 0}">0</span>
                             / <span th:text="${tournament.cupoMax}">20</span>
-                            <span th:if="${tournament.modalidad.name() == 'DOBLES'}" class="small text-muted">пар</span>
+                            <span th:if="${tournament.modalidad.name() == 'DOBLES'}" class="small text-muted">pares</span>
+                            <span th:unless="${tournament.modalidad.name() == 'DOBLES'}" class="small text-muted">jugadores</span>
                         </strong>
                     </div>
                     <div class="progress">
                         <div class="progress-bar"
                              th:style="'width: ' + (${stats?.confirmed ?: 0} * 100.0 / ${tournament.cupoMax}) + '%'">
                         </div>
-
-                        <!-- Добавляем информацию о резерве -->
-                        <div class="d-flex justify-content-between mt-2 small" th:if="${stats?.waitlistCount > 0}">
-                            <span class="text-warning">
-                                <i class="bi bi-clock-history"></i>
-                                В резерве: <strong th:text="${stats?.waitlistCount}">0</strong>
-                            </span>
-                        </div>
                     </div>
 
-                    <!-- Дополнительная статистика для парных турниров -->
-                    <div class="stats-mini" th:if="${tournament.modalidad.name() == 'DOBLES' and stats?.totalPlayers > 0}">
+                    <!-- Резерв -->
+                    <div class="d-flex justify-content-between mt-2 small" th:if="${(stats?.waitlistCount ?: 0) > 0}">
+                            <span class="text-warning">
+                                <i class="bi bi-clock-history"></i>
+                                В резерве:
+                                <strong th:text="${stats?.waitlistCount}">0</strong>
+                                <th:block th:if="${tournament.modalidad.name() == 'DOBLES'}">пар</th:block>
+                                <th:block th:unless="${tournament.modalidad.name() == 'DOBLES'}">игроков</th:block>
+                            </span>
+                    </div>
+
+                    <!-- Мини-статистика для парных -->
+                    <div class="stats-mini" th:if="${tournament.modalidad.name() == 'DOBLES'}">
                         <div class="stat-mini-item">
                             <i class="bi bi-people"></i>
                             <span>Всего игроков: <span th:text="${stats?.totalPlayers ?: 0}">0</span></span>
@@ -1115,19 +1121,15 @@
                         </div>
                     </div>
 
-                    <!-- Дополнительная статистика для индивидуальных турниров -->
-                    <div class="stats-mini" th:if="${tournament.modalidad.name() == 'INDIVIDUAL' and stats?.totalRegistrations > 0}">
+                    <!-- Мини-статистика для одиночных -->
+                    <div class="stats-mini" th:unless="${tournament.modalidad.name() == 'DOBLES'}">
                         <div class="stat-mini-item">
                             <i class="bi bi-person-check"></i>
                             <span>Подтв.: <span th:text="${stats?.confirmed ?: 0}">0</span></span>
                         </div>
                         <div class="stat-mini-item">
                             <i class="bi bi-person-dash"></i>
-                            <span>Ожид.: <span th:text="${(stats?.totalRegistrations - stats?.confirmed) ?: 0}">0</span></span>
-                        </div>
-                        <div class="stat-mini-item">
-                            <i class="bi bi-sort-numeric-up"></i>
-                            <span>Поз.: <span th:text="${stats?.minPosition ?: 0} + '-' + ${stats?.maxPosition ?: 0}">0-0</span></span>
+                            <span>Резерв: <span th:text="${stats?.waitlistCount ?: 0}">0</span></span>
                         </div>
                     </div>
                 </div>

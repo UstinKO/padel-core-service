@@ -733,12 +733,13 @@ public class TournamentService {
         long waitlistCount;
 
         if (tournament.getModalidad() == Modalidad.DOBLES) {
-            // Для парных турниров считаем количество уникальных позиций среди CONFIRMED
+            // Занятые места: CONFIRMED + PAIR_REGISTERED + PARTNER_INVITED
             confirmedSpots = registrationRepository.countConfirmedPairs(tournament.getId());
-            waitlistCount = registrationRepository.countByTournamentIdAndStatus(
-                    tournament.getId(), RegistrationStatus.WAITLIST);
 
-            log.debug("DOUBLES Tournament {} - Confirmed pairs: {}, Waitlist pairs: {}",
+            // Лист ожидания — уникальные пары (не отдельные игроки)
+            waitlistCount = registrationRepository.countUniquePairsInWaitlist(tournament.getId());
+
+            log.debug("DOUBLES Tournament {} - Confirmed/invited pairs: {}, Waitlist pairs: {}",
                     tournament.getId(), confirmedSpots, waitlistCount);
         } else {
             // Для индивидуальных турниров считаем количество CONFIRMED игроков

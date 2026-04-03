@@ -65,9 +65,24 @@ public interface TournamentRegistrationRepository extends JpaRepository<Tourname
     List<TournamentRegistration> findByTournamentIdOrderByPositionAscWaitlistPositionAsc(Long tournamentId);
 
     @Query("SELECT COUNT(DISTINCT tr.mainPlayerId) FROM TournamentRegistration tr " +
-            "WHERE tr.tournament.id = :tournamentId AND tr.status IN ('CONFIRMED', 'PAIR_REGISTERED') " +
-            "AND tr.isDoubleRegistration = true")
+            "WHERE tr.tournament.id = :tournamentId " +
+            "AND tr.status IN ('CONFIRMED', 'PAIR_REGISTERED', 'PARTNER_INVITED') " +
+            "AND tr.isDoubleRegistration = true " +
+            "AND tr.isActive = true " +
+            "AND tr.mainPlayerId IS NOT NULL")
     long countConfirmedPairs(@Param("tournamentId") Long tournamentId);
+
+    /**
+     * Считает уникальные пары в листе ожидания.
+     * Аналогично countConfirmedPairs — группируем по mainPlayerId.
+     */
+    @Query("SELECT COUNT(DISTINCT tr.mainPlayerId) FROM TournamentRegistration tr " +
+            "WHERE tr.tournament.id = :tournamentId " +
+            "AND tr.status = 'WAITLIST' " +
+            "AND tr.isDoubleRegistration = true " +
+            "AND tr.isActive = true " +
+            "AND tr.mainPlayerId IS NOT NULL")
+    long countUniquePairsInWaitlist(@Param("tournamentId") Long tournamentId);
 
     @Query("SELECT tr FROM TournamentRegistration tr " +
             "WHERE tr.player.id = :playerId AND tr.isDoubleRegistration = true " +
