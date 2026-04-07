@@ -182,21 +182,17 @@ document.addEventListener('DOMContentLoaded', function() {
             if (filters.nivel !== 'todos') {
                 // Маппинг значений фильтра на значения в БД
                 const nivelMap = {
-                    // Новые уровни
-                    'SUMA_15': 'SUMA_15',
-                    'SUMA_13': 'SUMA_13',
-                    'D7': 'D7',
-                    'D8': 'D8',
-                    'D7_D8': 'D7_D8',
-                    'D6': 'D6',
-                    'C7_C6': 'C7_C6',
-                    // Существующие уровни
+                    'Principiante': 'PRINCIPIANTES',
                     'C9': 'C9',
                     'C8': 'C8',
                     'C7': 'C7',
                     'C6': 'C6',
                     'C5': 'C5',
-                    'Principiante': 'PRINCIPIANTES'
+                    'D8': 'D8',
+                    'D7': 'D7',
+                    'D6': 'D6',
+                    'SUMA_15': 'SUMA_15',
+                    'SUMA_13': 'SUMA_13',
                 };
                 const dbValue = nivelMap[filters.nivel];
                 if (tournament.categoriaNivel !== dbValue) {
@@ -875,7 +871,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const tipoDisplay = displayMaps.tipo[tournament.tipo] || tournament.tipo || 'N/A';
 
         // Определяем текст для количества участников
-        const participantsText = tournament.modalidad === 'DOBLES' ? 'parejas' : 'jugadores';
+        const participantsText = tournament.modalidad === 'DOBLES' ? 'cupos' : 'jugadores';
 
         // Формируем адрес клуба, если он есть
         const clubAddress = tournament.clubDireccion ?

@@ -14,21 +14,17 @@ class PadelCoreHome {
         // Маппинги для отображения значений
         this.displayMaps = {
             nivel: {
-                // Новые уровни
-                'SUMA_15': 'Suma 15+',
-                'SUMA_13': 'Suma 13+',
-                'D7': 'D7',
-                'D8': 'D8',
-                'D7_D8': 'D7/D8',
-                'D6': 'D6',
-                'C7_C6': 'C7/C6',
-                // Существующие уровни
+                'PRINCIPIANTES': 'Principiante',
                 'C9': 'C9 (Principiante)',
                 'C8': 'C8 (Intermedio)',
                 'C7': 'C7 (Avanzado)',
                 'C6': 'C6 (Profesional)',
                 'C5': 'C5 (Élite)',
-                'PRINCIPIANTES': 'Principiante'
+                'D8': 'D8',
+                'D7': 'D7',
+                'D6': 'D6',
+                'SUMA_15': 'Suma 15+',
+                'SUMA_13': 'Suma 13+'
             },
             tipo: {
                 'KING_OF_COURT': 'King of Court',
@@ -315,7 +311,7 @@ class PadelCoreHome {
                 </div>
                 <div class="tournament-info-item">
                     <i class="fas fa-users"></i>
-                    <span>${tournament.cupoMax || 0} ${tournament.tipo === 'KING_OF_COURT' ? 'jugadores' : 'parejas'}</span>
+                    <span>${tournament.cupoMax || 0} ${tournament.tipo === 'KING_OF_COURT' ? 'jugadores' : 'cupos'}</span>
                 </div>
                 <div class="tournament-info-item">
                     <i class="fas fa-tag"></i>

@@ -106,7 +106,7 @@
                 <div class="tournament-badges">
                     <span class="badge" th:text="${tournament.generoFormato}">Masculino</span>
                     <span class="badge badge-level" th:text="${tournament.categoriaNivel}">C7 - Avanzado</span>
-                    <span class="badge badge-type" th:text="${tournament.tipo}">Parejas</span>
+                    <span class="badge badge-type" th:text="${tournament.tipo}">Cupos</span>
                     <span class="badge badge-status"
                           th:text="${tournament.estado}"
                           th:classappend="'badge-' + ${tournament.estado.toString().toLowerCase()}">
@@ -160,7 +160,7 @@
                             </div>
                             <div class="info-content">
                                 <span class="info-label">Cupo máximo</span>
-                                <span class="info-value" th:text="${tournament.cupoMax} + ' ' + (${tournament.modalidad.name() == 'DOBLES'} ? 'parejas' : 'participantes')">16 parejas</span>
+                                <span class="info-value" th:text="${tournament.cupoMax} + ' ' + (${tournament.modalidad.name() == 'DOBLES'} ? 'cupos' : 'participantes')">16 cupos</span>
                             </div>
                         </div>
 
@@ -170,8 +170,8 @@
                             </div>
                             <div class="info-content">
                                 <span class="info-label">Inscritos actuales</span>
-                                <span class="info-value" th:text="${tournament.inscritosActuales} + ' / ' + ${tournament.cupoMax} + ' ' + (${tournament.modalidad.name() == 'DOBLES'} ? 'parejas' : 'jugadores')">
-                                    12 / 16 parejas
+                                <span class="info-value" th:text="${tournament.inscritosActuales} + ' / ' + ${tournament.cupoMax} + ' ' + (${tournament.modalidad.name() == 'DOBLES'} ? 'cupos' : 'jugadores')">
+                                    12 / 16 cupos
                                 </span>
                             </div>
                         </div>
@@ -182,8 +182,8 @@
                             </div>
                             <div class="info-content">
                                 <span class="info-label">Lista de espera</span>
-                                <span class="info-value" th:text="${tournament.waitlistCount} + ' ' + (${tournament.modalidad.name() == 'DOBLES'} ? 'parejas' : 'personas')">
-                                    5 parejas
+                                <span class="info-value" th:text="${tournament.waitlistCount} + ' ' + (${tournament.modalidad.name() == 'DOBLES'} ? 'cupos' : 'personas')">
+                                    5 cupos
                                 </span>
                             </div>
                         </div>
@@ -319,7 +319,7 @@
                     <div class="info-card" th:if="${not #lists.isEmpty(registrations)}">
                         <h2 class="info-card-title">
                             <i class="fas fa-users"></i>
-                            <th:block th:if="${tournament.modalidad.name() == 'DOBLES'}">Parejas inscritas</th:block>
+                            <th:block th:if="${tournament.modalidad.name() == 'DOBLES'}">Cupos inscritas</th:block>
                             <th:block th:unless="${tournament.modalidad.name() == 'DOBLES'}">Participantes inscritos</th:block>
                             <span style="margin-left:.5rem; font-size:.9rem; font-weight:400; color:#6c757d;"
                                   th:text="'(' + ${tournament.inscritosActuales} + '/' + ${tournament.cupoMax} + ')'"></span>
