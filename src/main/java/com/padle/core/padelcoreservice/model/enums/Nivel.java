@@ -19,7 +19,9 @@ public enum Nivel {
     D8("D8"),
     D7_D8("D7/D8"),
     D6("D6"),
-    C7_C6("C7/C6");
+    C7_C6("C7/C6"),
+    C4("C4"),
+    SUMA_14("14+");
 
     private final String orden;
 

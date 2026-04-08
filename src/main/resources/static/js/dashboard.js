@@ -188,10 +188,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     'C7': 'C7',
                     'C6': 'C6',
                     'C5': 'C5',
+                    'C4': 'C4',
                     'D8': 'D8',
                     'D7': 'D7',
                     'D6': 'D6',
                     'SUMA_15': 'SUMA_15',
+                    'SUMA_14': 'SUMA_14',
                     'SUMA_13': 'SUMA_13',
                 };
                 const dbValue = nivelMap[filters.nivel];

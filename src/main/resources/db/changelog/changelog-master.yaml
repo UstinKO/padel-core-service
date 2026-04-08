@@ -74,3 +74,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.24-add-contact-fields-to-player.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.25-add-nivel-c4-suma14.yaml
+      relativeToChangelogFile: true
