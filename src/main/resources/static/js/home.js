@@ -20,10 +20,12 @@ class PadelCoreHome {
                 'C7': 'C7 (Avanzado)',
                 'C6': 'C6 (Profesional)',
                 'C5': 'C5 (Élite)',
+                'C4': 'C4',
                 'D8': 'D8',
                 'D7': 'D7',
                 'D6': 'D6',
                 'SUMA_15': 'Suma 15+',
+                'SUMA_14': 'Suma 14+',
                 'SUMA_13': 'Suma 13+'
             },
             tipo: {
