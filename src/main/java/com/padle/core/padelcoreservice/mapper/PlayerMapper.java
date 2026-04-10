@@ -17,8 +17,14 @@ public interface PlayerMapper {
     @Mapping(target = "fechaConfirmacionEmail", ignore = true)
     @Mapping(target = "codigoConfirmacion", ignore = true)
     @Mapping(target = "activo", constant = "true")
+    @Mapping(target = "telegramUsername", ignore = true)
+    @Mapping(target = "oauth2User", ignore = true)
+    @Mapping(target = "provider", ignore = true)
+    @Mapping(target = "passwordChangedAt", ignore = true)
     PlayerPadel registroRequestToEntity(RegistroRequestDto request);
 
+    @Mapping(target = "nombreCompleto", expression = "java(player.getNombreCompleto())")
+    @Mapping(target = "telegramUsername", source = "telegramUsername")
     PlayerResponseDto entityToResponse(PlayerPadel player);
 
     default PlayerPadel toEntity(RegistroRequestDto request, String passwordHash) {

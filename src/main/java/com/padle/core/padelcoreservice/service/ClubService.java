@@ -156,39 +156,6 @@ public class ClubService {
         log.info("Club status toggled. New active status: {}", club.getIsActive());
     }
 
-    // ========== НОВЫЙ МЕТОД для получения названия клуба по ID ==========
-
-    /**
-     * Получает название клуба по его ID
-     * @param clubId ID клуба
-     * @return Название клуба или "Club Desconocido" если клуб не найден
-     */
-    public String getClubName(Long clubId) {
-        if (clubId == null) {
-            return "Club no especificado";
-        }
-
-        return clubRepository.findById(clubId)
-                .map(Club::getNombre)
-                .orElseGet(() -> {
-                    log.warn("Club not found with id: {}, using default name", clubId);
-                    return getDefaultClubName(clubId);
-                });
-    }
-
-    /**
-     * Возвращает название клуба по умолчанию для тестовых/демо данных
-     */
-    private String getDefaultClubName(Long clubId) {
-        return switch (clubId.intValue()) {
-            case 1 -> "Padel Indoor Madrid";
-            case 2 -> "Barcelona Padel Club";
-            case 3 -> "Valencia Padel Center";
-            case 4 -> "Sevilla Padel & Sport";
-            default -> "Club Desconocido";
-        };
-    }
-
     // ========== Вспомогательные методы ==========
 
     private void updateClubFields(Club existing, ClubDto dto) {

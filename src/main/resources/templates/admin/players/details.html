@@ -76,6 +76,21 @@
                             <span class="info-label">Teléfono:</span>
                             <span class="info-value" th:text="${player.telefono ?: 'No especificado'}">123456789</span>
                         </div>
+                        <div class="info-row" th:if="${player.telegramUsername}">
+                            <span class="info-label">Telegram:</span>
+                            <span class="info-value">
+                                <a th:href="'https://t.me/' + ${#strings.replace(player.telegramUsername, '@', '')}"
+                                   target="_blank" rel="noopener noreferrer"
+                                   style="color:#2CA5E0; text-decoration:none;">
+                                    <i class="fab fa-telegram" style="margin-right:.3rem;"></i>
+                                    <span th:text="${player.telegramUsername}">@usuario</span>
+                                </a>
+                            </span>
+                        </div>
+                        <div class="info-row" th:unless="${player.telegramUsername}">
+                            <span class="info-label">Telegram:</span>
+                            <span class="info-value" style="color:#adb5bd;">No especificado</span>
+                        </div>
                     </div>
                 </div>
             </div>
