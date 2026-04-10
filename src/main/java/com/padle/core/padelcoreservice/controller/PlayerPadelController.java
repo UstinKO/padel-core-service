@@ -77,7 +77,12 @@ public class PlayerPadelController {
             log.info("Jugador registrado exitosamente: {}", jugadorRegistrado.getEmail());
 
             // REDIRECT A LOGIN CON PARÁMETRO DE ÉXITO
-            return "redirect:/login?registered=true";
+            log.info("Jugador registrado exitosamente: {}", jugadorRegistrado.getEmail());
+            String encodedEmail = java.net.URLEncoder.encode(
+                    jugadorRegistrado.getEmail(),
+                    java.nio.charset.StandardCharsets.UTF_8
+            );
+            return "redirect:/?registroExitoso=true&email=" + encodedEmail;
 
         } catch (IllegalArgumentException e) {
             log.error("Error al registrar jugador: {}", e.getMessage());

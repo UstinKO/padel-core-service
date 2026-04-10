@@ -28,8 +28,19 @@ public class HomeController {
     private final TournamentService tournamentService;
 
     @GetMapping("/")
-    public String homePage(Model model) {
+    public String homePage(
+            // Читаем параметры из URL — надёжнее чем flash-атрибуты
+            @RequestParam(value = "registroExitoso", required = false) Boolean registroExitoso,
+            @RequestParam(value = "email", required = false) String emailRegistrado,
+            Model model) {
+
         log.info("Accessing home page");
+
+        if (Boolean.TRUE.equals(registroExitoso)) {
+            log.info("Post-registro message: email={}", emailRegistrado);
+            model.addAttribute("registroExitoso", true);
+            model.addAttribute("emailRegistrado", emailRegistrado);
+        }
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         boolean isAuthenticated = authentication != null &&
@@ -41,7 +52,6 @@ public class HomeController {
         if (isAuthenticated) {
             try {
                 String email = authentication.getName();
-
                 if (isOwner(authentication)) {
                     model.addAttribute("userName", "Admin");
                     model.addAttribute("isOwner", true);
@@ -57,10 +67,8 @@ public class HomeController {
             }
         }
 
-        // Получаем активные турниры со статусом REGISTRO_ABIERTO или PUBLICADO
         List<TournamentDto> allTournaments = tournamentService.getActiveTournamentsForHome();
 
-        // Конвертируем в JSON для JavaScript фильтров
         try {
             ObjectMapper mapper = new ObjectMapper();
             mapper.registerModule(new JavaTimeModule());
@@ -74,7 +82,7 @@ public class HomeController {
         model.addAttribute("upcomingTournaments", allTournaments);
         model.addAttribute("totalTournaments", allTournaments.size());
         model.addAttribute("totalPlayers", playerService.contarJugadoresActivos());
-        model.addAttribute("totalClubs", 50); // TODO: Получить реальное количество клубов
+        model.addAttribute("totalClubs", 50);
 
         return "index";
     }

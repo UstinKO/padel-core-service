@@ -19,6 +19,7 @@ public class PlayerResponseDto {
     private String apellido;
     private String email;
     private String telefono;
+    private String telegramUsername;
 
     @JsonFormat(pattern = "dd/MM/yyyy HH:mm:ss")
     private LocalDateTime fechaRegistro;

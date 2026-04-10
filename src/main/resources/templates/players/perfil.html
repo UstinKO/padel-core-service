@@ -149,6 +149,22 @@
                                    class="form-control"
                                    placeholder="+34 123 456 789">
                         </div>
+
+                        <div class="form-group">
+                            <label for="telegramUsername">
+                                <i class="fab fa-telegram"></i>
+                                Telegram
+                            </label>
+                            <input type="text"
+                                   id="telegramUsername"
+                                   name="telegramUsername"
+                                   th:value="${player.telegramUsername}"
+                                   class="form-control"
+                                   placeholder="@tu_usuario">
+                            <small class="form-text">
+                                Necesario para inscribirte si no tienes WhatsApp (+54)
+                            </small>
+                        </div>
                     </div>
                 </div>
 

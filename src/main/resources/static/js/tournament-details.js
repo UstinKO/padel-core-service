@@ -472,3 +472,70 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = `mailto:?subject=${subject}&body=${body}`;
     };
 });
+
+// Функция для проверки, начался ли турнир (аналог той, что в карточке)
+function isTournamentStarted(tournament) {
+    if (!tournament) return false;
+
+    // Проверка по статусу
+    const closedStatuses = ['FINALIZADO', 'CANCELADO', 'CERRADO'];
+    if (closedStatuses.includes(tournament.estado)) {
+        return true;
+    }
+
+    let start = null;
+
+    const fechaInicio = tournament.fechaInicio;
+    const horaInicio = tournament.horaInicio;
+
+    if (Array.isArray(fechaInicio) && Array.isArray(horaInicio)) {
+        // Формат массива: [2026, 4, 5] + [18, 0]
+        start = new Date(fechaInicio[0], fechaInicio[1] - 1, fechaInicio[2],
+            horaInicio[0], horaInicio[1], 0);
+    } else if (typeof fechaInicio === 'string') {
+        // Формат строки: "2026-04-04 18:00:00"
+        if (typeof horaInicio === 'string') {
+            start = new Date((fechaInicio + ' ' + horaInicio).replace(' ', 'T'));
+        } else {
+            start = new Date(fechaInicio.replace(' ', 'T'));
+        }
+    }
+
+    if (!start || isNaN(start.getTime())) return false;
+
+    const now = new Date();
+    return now > start;
+}
+
+// Затем, в том месте где ищешь registerBtn, добавь блокировку:
+const registerBtn = document.querySelector('.btn-register');
+
+if (registerBtn) {
+    // Проверяем, нужно ли заблокировать кнопку
+    if (window.tournament && isTournamentStarted(window.tournament)) {
+        // Блокируем кнопку
+        registerBtn.disabled = true;
+        registerBtn.style.opacity = '0.6';
+        registerBtn.style.cursor = 'not-allowed';
+        registerBtn.innerHTML = '<i class="fas fa-clock"></i> Registro cerrado';
+
+        // Добавляем пояснение рядом
+        const parentDiv = registerBtn.parentElement;
+        const closedMessage = document.createElement('div');
+        closedMessage.className = 'registration-closed';
+        closedMessage.style.marginTop = '0.5rem';
+        closedMessage.innerHTML = '<i class="fas fa-calendar-times"></i> <span>Fecha de registro finalizada</span>';
+
+        // Удаляем старый, если есть, и добавляем новый
+        const oldMessage = parentDiv.querySelector('.registration-closed:not(:last-child)');
+        if (oldMessage && oldMessage.innerHTML.includes('Fecha de registro')) {
+            oldMessage.remove();
+        }
+        parentDiv.appendChild(closedMessage);
+
+        console.log('🔒 Registration button blocked - tournament already started');
+    } else {
+        // Твой существующий код для registerBtn (клонирование и addEventListener)
+        // ... весь остальной код, который у тебя уже есть ...
+    }
+}

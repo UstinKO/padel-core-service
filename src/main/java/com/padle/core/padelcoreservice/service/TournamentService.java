@@ -3,6 +3,7 @@ package com.padle.core.padelcoreservice.service;
 import com.padle.core.padelcoreservice.annotation.Counted;
 import com.padle.core.padelcoreservice.annotation.Timed;
 import com.padle.core.padelcoreservice.annotation.TrackErrors;
+import com.padle.core.padelcoreservice.dto.ClubDto;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
 import com.padle.core.padelcoreservice.exception.InvalidStateException;
@@ -298,7 +299,7 @@ public class TournamentService {
         try {
             String dateStr = tournament.getFechaInicio().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
             String timeStr = tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm"));
-            String clubName = getClubName(tournament.getClubId());
+            String clubName = resolveClubName(tournament.getClubId());
 
             // Отправляем письмо о добавлении в лист ожидания
             emailService.sendWaitlistNotificationEmail(
@@ -417,7 +418,7 @@ public class TournamentService {
         try {
             String dateStr = tournament.getFechaInicio().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
             String timeStr = tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm"));
-            String clubName = getClubName(tournament.getClubId());
+            String clubName = resolveClubName(tournament.getClubId());
             String confirmationUrl = String.format("%s/waitlist/confirm?registrationId=%d", baseUrl, registrationId);
 
             emailService.sendVacancyInvitationEmail(
@@ -452,7 +453,7 @@ public class TournamentService {
         try {
             String dateStr = tournament.getFechaInicio().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
             String timeStr = tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm"));
-            String clubName = getClubName(tournament.getClubId());
+            String clubName = resolveClubName(tournament.getClubId());
 
             emailService.sendTournamentConfirmationEmail(
                     player.getEmail(),
@@ -877,16 +878,6 @@ public class TournamentService {
         existing.setEstado(dto.getEstado());
     }
 
-    public String getClubName(Long clubId) {
-        return switch (clubId.intValue()) {
-            case 1 -> "Padel Indoor Madrid";
-            case 2 -> "Barcelona Padel Club";
-            case 3 -> "Valencia Padel Center";
-            case 4 -> "Sevilla Padel & Sport";
-            default -> "Club Desconocido";
-        };
-    }
-
     // Для публичного доступа (например, через API) - только активные
     public Optional<TournamentDto> getActiveTournamentById(Long id) {
         return tournamentRepository.findById(id)
@@ -1109,6 +1100,15 @@ public class TournamentService {
         return tournamentRepository.findByOwnerId(ownerId).stream()
                 .map(this::mapToDtoWithDetails)
                 .collect(Collectors.toList());
+    }
+
+    private String resolveClubName(Long clubId) {
+        return clubService.getClubById(clubId)
+                .map(ClubDto::getNombre)
+                .orElseGet(() -> {
+                    log.warn("Club not found for id: {}", clubId);
+                    return "Club";
+                });
     }
 
     /**

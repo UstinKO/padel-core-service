@@ -2,16 +2,47 @@
  * Padel Core - Home Page JavaScript
  */
 
+// Проверяет, начался ли уже турнир (текущее время > дата+время старта)
+function isTournamentStarted(tournament) {
+    // Проверка по статусу
+    const closedStatuses = ['FINALIZADO', 'CANCELADO', 'CERRADO'];
+    if (closedStatuses.includes(tournament.estado)) {
+        return true;
+    }
+
+    let start = null;
+
+    const fechaInicio = tournament.fechaInicio;
+    const horaInicio  = tournament.horaInicio;
+
+    if (Array.isArray(fechaInicio) && Array.isArray(horaInicio)) {
+        // Формат массива: [2026, 4, 5] + [18, 0]
+        start = new Date(fechaInicio[0], fechaInicio[1] - 1, fechaInicio[2],
+            horaInicio[0], horaInicio[1], 0);
+    } else if (typeof fechaInicio === 'string') {
+        // Формат строки: "2026-04-04 18:00:00" или "2026-04-04T18:00:00"
+        // Если hora отдельно — добавляем
+        if (typeof horaInicio === 'string') {
+            start = new Date((fechaInicio + ' ' + horaInicio).replace(' ', 'T'));
+        } else {
+            start = new Date(fechaInicio.replace(' ', 'T'));
+        }
+    }
+
+    if (!start || isNaN(start.getTime())) return false;
+
+    const now = new Date();
+    console.log(`[isTournamentStarted] ${tournament.nombre}: start=${start}, now=${now}, started=${now > start}`);
+    return now > start;
+}
+
 class PadelCoreHome {
     constructor() {
         this.tournaments = [];
         this.filteredTournaments = [];
-
-        // Для пагинации (если нужно будет добавить "Показать еще")
-        this.itemsPerPage = 9; // Показывать по 9 турниров за раз
+        this.itemsPerPage = 9;
         this.currentPage = 1;
 
-        // Маппинги для отображения значений
         this.displayMaps = {
             nivel: {
                 'PRINCIPIANTES': 'Principiante',
@@ -64,8 +95,6 @@ class PadelCoreHome {
         this.initElements();
         this.initEventListeners();
         this.renderTournaments();
-
-        // Инициализируем аккордеон для FAQ
         this.initFaqAccordion();
     }
 
@@ -80,8 +109,8 @@ class PadelCoreHome {
         this.nivelFilter = document.getElementById('nivelFilter');
         this.tipoFilter = document.getElementById('tipoFilter');
         this.noTournamentsMessage = document.getElementById('noTournamentsMessage');
-        this.navbarToggler = document.getElementById('navbarToggler'); // Должно быть!
-        this.navbarNav = document.getElementById('navbarNav'); // Должно быть!
+        this.navbarToggler = document.getElementById('navbarToggler');
+        this.navbarNav = document.getElementById('navbarNav');
         this.loadMoreBtn = document.getElementById('loadMoreBtn');
         this.tournamentsMore = document.getElementById('tournamentsMore');
         this.modalidadFilter = document.getElementById('modalidadFilter');
@@ -90,7 +119,6 @@ class PadelCoreHome {
     initEventListeners() {
         console.log('initEventListeners started');
 
-        // Обработчики для фильтров
         if (this.filtersToggle) {
             this.filtersToggle.addEventListener('click', () => this.toggleFilters());
         }
@@ -107,33 +135,22 @@ class PadelCoreHome {
             this.loadMoreBtn.addEventListener('click', () => this.loadMore());
         }
 
-        // ПРОСТЕЙШИЙ обработчик для бургер-меню
         const toggler = document.getElementById('navbarToggler');
         const nav = document.getElementById('navbarNav');
 
         if (toggler && nav) {
             console.log('✅ Нашли бургер и меню');
-
-            // Убираем ВСЕ старые обработчики через замену элемента
             const newToggler = toggler.cloneNode(true);
             toggler.parentNode.replaceChild(newToggler, toggler);
-
-            // Обновляем ссылки
             this.navbarToggler = newToggler;
             this.navbarNav = document.getElementById('navbarNav');
 
-            // Добавляем один простой обработчик
             this.navbarToggler.onclick = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-
-                // Переключаем класс
                 this.navbarNav.classList.toggle('show');
-
-                // Логируем для отладки
                 console.log('🍔 Меню:', this.navbarNav.classList.contains('show') ? 'открыто' : 'закрыто');
             };
-
             console.log('✅ Новый обработчик добавлен');
         } else {
             console.log('❌ Не найдены элементы меню');
@@ -143,10 +160,8 @@ class PadelCoreHome {
     toggleFilters() {
         if (this.filtersForm) {
             this.filtersForm.classList.toggle('collapsed');
-
             const icon = this.filtersToggle.querySelector('i');
             const span = this.filtersToggle.querySelector('span');
-
             if (this.filtersForm.classList.contains('collapsed')) {
                 icon.classList.remove('fa-chevron-up');
                 icon.classList.add('fa-chevron-down');
@@ -168,42 +183,25 @@ class PadelCoreHome {
         this.filteredTournaments = this.tournaments.filter(t => {
             if (genero !== 'todos' && t.generoFormato !== genero) return false;
 
-            // Фильтрация для уровня
             if (nivel !== 'todos') {
                 const nivelMap = {
-                    // Новые уровни
-                    'SUMA_15': 'SUMA_15',
-                    'SUMA_13': 'SUMA_13',
-                    'D7': 'D7',
-                    'D8': 'D8',
-                    'D7_D8': 'D7_D8',
-                    'D6': 'D6',
-                    'C7_C6': 'C7_C6',
-                    // Существующие уровни
-                    'C9': 'C9',
-                    'C8': 'C8',
-                    'C7': 'C7',
-                    'C6': 'C6',
-                    'C5': 'C5',
+                    'SUMA_15': 'SUMA_15', 'SUMA_13': 'SUMA_13',
+                    'D7': 'D7', 'D8': 'D8', 'D7_D8': 'D7_D8',
+                    'D6': 'D6', 'C7_C6': 'C7_C6',
+                    'C9': 'C9', 'C8': 'C8', 'C7': 'C7',
+                    'C6': 'C6', 'C5': 'C5', 'C4': 'C4',
                     'Principiante': 'PRINCIPIANTES'
                 };
-                const dbValue = nivelMap[nivel];
-                if (t.categoriaNivel !== dbValue) return false;
+                if (t.categoriaNivel !== nivelMap[nivel]) return false;
             }
 
             if (tipo !== 'todos' && t.tipo !== tipo) return false;
-
-            // ✅ НОВЫЙ ФИЛЬТР: по модальности
             if (modalidad !== 'todos' && t.modalidad && t.modalidad !== modalidad) return false;
-
             return true;
         });
 
-        // Сбрасываем пагинацию
         this.currentPage = 1;
         this.renderTournaments();
-
-        // Показываем/скрываем кнопку "Показать больше"
         this.toggleLoadMoreButton();
     }
 
@@ -212,9 +210,7 @@ class PadelCoreHome {
         if (this.nivelFilter) this.nivelFilter.value = 'todos';
         if (this.tipoFilter) this.tipoFilter.value = 'todos';
         if (this.modalidadFilter) this.modalidadFilter.value = 'todos';
-
         this.filteredTournaments = [...this.tournaments];
-
         this.currentPage = 1;
         this.renderTournaments();
         this.toggleLoadMoreButton();
@@ -222,44 +218,22 @@ class PadelCoreHome {
 
     renderTournaments() {
         if (!this.tournamentsGrid) return;
-
-        // Очищаем сетку
         this.tournamentsGrid.innerHTML = '';
 
         if (this.filteredTournaments.length === 0) {
-            // Показываем сообщение "нет турниров"
-            if (this.noTournamentsMessage) {
-                this.noTournamentsMessage.style.display = 'block';
-            }
-            if (this.tournamentsMore) {
-                this.tournamentsMore.style.display = 'none';
-            }
+            if (this.noTournamentsMessage) this.noTournamentsMessage.style.display = 'block';
+            if (this.tournamentsMore) this.tournamentsMore.style.display = 'none';
             return;
         }
 
-        // Скрываем сообщение "нет турниров"
-        if (this.noTournamentsMessage) {
-            this.noTournamentsMessage.style.display = 'none';
-        }
-
+        if (this.noTournamentsMessage) this.noTournamentsMessage.style.display = 'none';
         console.log('Рендерим турниры:', this.filteredTournaments.length);
 
-        // Определяем, сколько турниров показывать
-        const start = 0;
-        const end = this.filteredTournaments.length; // Показываем все сразу
-        // Если хотите пагинацию, раскомментируйте следующую строку и закомментируйте верхнюю
-        // const end = Math.min(this.currentPage * this.itemsPerPage, this.filteredTournaments.length);
-
-        const tournamentsToShow = this.filteredTournaments.slice(start, end);
-
-        // Создаем карточки для каждого турнира
+        const tournamentsToShow = this.filteredTournaments.slice(0, this.filteredTournaments.length);
         tournamentsToShow.forEach(tournament => {
             const card = this.createTournamentCard(tournament);
             this.tournamentsGrid.appendChild(card);
         });
-
-        // Показываем кнопку "Показать больше" если есть еще турниры
-        // this.toggleLoadMoreButton();
     }
 
     createTournamentCard(tournament) {
@@ -275,18 +249,19 @@ class PadelCoreHome {
             ? `${tournament.horaInicio[0]}:${tournament.horaInicio[1].toString().padStart(2, '0')}`
             : tournament.horaInicio || 'Hora por definir';
 
-        // Упрощенное отображение уровня - только C9, C8 и т.д.
         const generoDisplay = this.displayMaps.genero[tournament.generoFormato] || tournament.generoFormato || 'N/A';
-        const nivelDisplay = tournament.categoriaNivel || 'N/A'; // Только значение без описания
-        const tipoDisplay = this.displayMaps.tipo[tournament.tipo] || tournament.tipo || 'N/A';
+        const nivelDisplay  = tournament.categoriaNivel || 'N/A';
+        const tipoDisplay   = this.displayMaps.tipo[tournament.tipo] || tournament.tipo || 'N/A';
         const estadoDisplay = this.displayMaps.estado[tournament.estado] || tournament.estado || '';
-        const estadoClass = tournament.estado ? `status-${tournament.estado.toLowerCase()}` : '';
+        const estadoClass   = tournament.estado ? `status-${tournament.estado.toLowerCase()}` : '';
         const isAuthenticated = typeof window.isAuthenticated !== 'undefined' ? window.isAuthenticated : false;
 
-        // Формируем адрес клуба, если он есть в данных
-        const clubAddress = tournament.clubDireccion ?
-            `<span class="club-address">${this.escapeHtml(tournament.clubDireccion)}</span>` :
-            '';
+        // ── НОВАЯ ПРОВЕРКА: начался ли турнир ──────────────────────
+        const started = isTournamentStarted(tournament);
+
+        const clubAddress = tournament.clubDireccion
+            ? `<span class="club-address">${this.escapeHtml(tournament.clubDireccion)}</span>`
+            : '';
 
         card.innerHTML = `
         <div class="tournament-card-header">
@@ -321,15 +296,15 @@ class PadelCoreHome {
                 </div>
             </div>
             <div class="tournament-footer">
-                ${isAuthenticated ?
-            `<a href="/torneo/${tournament.id}" class="btn btn-outline btn-small">
-                        <i class="fas fa-info-circle"></i> Ver detalles
-                    </a>` :
-            `<a href="/login" class="btn btn-outline btn-small">
-                        <i class="fas fa-sign-in-alt"></i> Inicia sesión
-                    </a>`
+                <a href="/torneo/${tournament.id}" class="btn btn-outline btn-small">
+                    <i class="fas fa-info-circle"></i> Ver detalles
+                </a>
+                ${started
+            ? `<span class="tournament-status" style="color:#6c757d; font-size:.8rem;">
+                           <i class="fas fa-lock"></i> Iniciado
+                       </span>`
+            : `<span class="tournament-status ${estadoClass}">${estadoDisplay}</span>`
         }
-                <span class="tournament-status ${estadoClass}">${estadoDisplay}</span>
             </div>
         </div>
     `;
@@ -339,7 +314,6 @@ class PadelCoreHome {
 
     toggleLoadMoreButton() {
         if (!this.tournamentsMore) return;
-
         const hasMore = this.filteredTournaments.length > this.currentPage * this.itemsPerPage;
         this.tournamentsMore.style.display = hasMore ? 'block' : 'none';
     }
@@ -351,24 +325,17 @@ class PadelCoreHome {
 
     initFaqAccordion() {
         const faqItems = document.querySelectorAll('.faq-item');
-
         faqItems.forEach(item => {
             const question = item.querySelector('.faq-question');
-
             question.addEventListener('click', () => {
-                // Закрываем другие открытые вопросы (опционально)
-                // Если хотите, чтобы одновременно был открыт только один вопрос
                 faqItems.forEach(otherItem => {
                     if (otherItem !== item && otherItem.classList.contains('active')) {
                         otherItem.classList.remove('active');
                     }
                 });
-
-                // Открываем/закрываем текущий вопрос
                 item.classList.toggle('active');
             });
         });
-
         console.log('✅ FAQ Accordion inicializado');
     }
 
@@ -380,7 +347,6 @@ class PadelCoreHome {
     }
 }
 
-// Инициализация
 document.addEventListener('DOMContentLoaded', () => {
     window.padelCore = new PadelCoreHome();
 });

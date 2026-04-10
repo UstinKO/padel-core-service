@@ -5,6 +5,39 @@
 document.addEventListener('DOMContentLoaded', function() {
     'use strict';
 
+    function isTournamentStarted(tournament) {
+        // Проверка по статусу
+        const closedStatuses = ['FINALIZADO', 'CANCELADO', 'CERRADO'];
+        if (closedStatuses.includes(tournament.estado)) {
+            return true;
+        }
+
+        let start = null;
+
+        const fechaInicio = tournament.fechaInicio;
+        const horaInicio  = tournament.horaInicio;
+
+        if (Array.isArray(fechaInicio) && Array.isArray(horaInicio)) {
+            // Формат массива: [2026, 4, 5] + [18, 0]
+            start = new Date(fechaInicio[0], fechaInicio[1] - 1, fechaInicio[2],
+                horaInicio[0], horaInicio[1], 0);
+        } else if (typeof fechaInicio === 'string') {
+            // Формат строки: "2026-04-04 18:00:00" или "2026-04-04T18:00:00"
+            // Если hora отдельно — добавляем
+            if (typeof horaInicio === 'string') {
+                start = new Date((fechaInicio + ' ' + horaInicio).replace(' ', 'T'));
+            } else {
+                start = new Date(fechaInicio.replace(' ', 'T'));
+            }
+        }
+
+        if (!start || isNaN(start.getTime())) return false;
+
+        const now = new Date();
+        console.log(`[isTournamentStarted] ${tournament.nombre}: start=${start}, now=${now}, started=${now > start}`);
+        return now > start;
+    }
+
     // ===== БУРГЕР-МЕНЮ =====
     const navbarToggler = document.getElementById('navbarToggler');
     const navbarNav = document.getElementById('navbarNav');
@@ -913,15 +946,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
             <div class="torneo-footer">
-${!isMyTournament ? `
-    <button class="btn btn-primary btn-small btn-register" 
+                ${isTournamentStarted(tournament) ? `
+    <span class="btn btn-small" style="background:#e9ecef; color:#6c757d; cursor:default; pointer-events:none;">
+        <i class="fas fa-lock"></i> Torneo iniciado
+    </span>
+` : !isMyTournament ? `
+    <button class="btn btn-primary btn-small btn-register"
             data-tournament-id="${tournament.id}"
             data-tournament-name="${escapeHtml(tournament.nombre)}">
-        <i class="fas fa-plus-circle"></i> 
+        <i class="fas fa-plus-circle"></i>
         <span>${registrationText}</span>
     </button>
 ` : `
-    <button class="btn btn-outline btn-small btn-cancel" 
+    <button class="btn btn-outline btn-small btn-cancel"
             data-tournament-id="${tournament.id}"
             data-tournament-name="${escapeHtml(tournament.nombre)}">
         <i class="fas fa-times-circle"></i> Cancelar
