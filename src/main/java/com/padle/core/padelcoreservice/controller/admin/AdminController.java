@@ -12,6 +12,7 @@ import com.padle.core.padelcoreservice.service.MatchService;
 import com.padle.core.padelcoreservice.service.OwnerService;
 import com.padle.core.padelcoreservice.service.PlayerService;
 import com.padle.core.padelcoreservice.service.TournamentService;
+import com.padle.core.padelcoreservice.service.americano.TeamAmericanoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +43,7 @@ public class AdminController {
     private final OwnerService ownerService;
     private final MatchService matchService;
     private final TournamentKingOfCourtRepository tournamentKingOfCourtRepository;
+    private final TeamAmericanoService teamAmericanoService;
 
     @GetMapping
     public String adminPanel(Model model, @AuthenticationPrincipal Owner owner) {
@@ -194,6 +196,16 @@ public class AdminController {
         model.addAttribute("tournament", tournament);
         model.addAttribute("registrations", tournamentService.getRegistrationsByTournament(id));
         model.addAttribute("isSuperAdmin", owner.isSuperAdmin());
+
+        if (tournament.getTipo() == TournamentType.AMERICANO
+                && tournament.getModalidad() == Modalidad.DOBLES) {
+            boolean isTeamInit = teamAmericanoService.isInitialized(id);
+            model.addAttribute("isTeamAmericanoInitialized", isTeamInit);
+            if (isTeamInit) {
+                model.addAttribute("teamAmericanoRanking",
+                        teamAmericanoService.getRanking(id));
+            }
+        }
 
         return "admin/tournaments/details";
     }

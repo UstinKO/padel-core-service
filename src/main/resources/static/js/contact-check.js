@@ -4,7 +4,6 @@ const ContactCheck = (() => {
     let pendingCallback = null;
     let pendingTournamentId = null;
     let pendingTournamentName = null;
-    let isRegistering = false;
 
     function ensureModal() {
         if (document.getElementById('contactCheckModal')) return;
@@ -28,7 +27,6 @@ const ContactCheck = (() => {
                     necesitamos un dato de contacto. Completa al menos uno:
                 </p>
 
-                <!-- WhatsApp -->
                 <div style="margin-bottom:1rem;">
                     <label style="display:block; font-size:.85rem; font-weight:600;
                                   color:#1e293b; margin-bottom:.35rem;">
@@ -45,7 +43,6 @@ const ContactCheck = (() => {
                     </span>
                 </div>
 
-                <!-- Telegram -->
                 <div style="margin-bottom:1.5rem;">
                     <label style="display:block; font-size:.85rem; font-weight:600;
                                   color:#1e293b; margin-bottom:.35rem;">
@@ -125,11 +122,13 @@ const ContactCheck = (() => {
             }
             const data = await res.json();
 
+            // Контакты уже есть — сразу вызываем колбэк
             if (data.hasContact) {
                 onReady();
                 return;
             }
 
+            // Контактов нет — показываем форму
             ensureModal();
 
             pendingCallback = onReady;
@@ -193,14 +192,12 @@ const ContactCheck = (() => {
                         return;
                     }
 
+                    // Сохраняем колбэк до closeModal (который его обнуляет)
+                    const cb = pendingCallback;
                     closeModal();
 
-                    if (pendingCallback) {
-                        console.log('Calling registration callback for tournament:', pendingTournamentId);
-                        pendingCallback();
-                        pendingCallback = null;
-                        pendingTournamentId = null;
-                        pendingTournamentName = null;
+                    if (cb) {
+                        cb();
                     }
 
                 } catch (err) {
@@ -217,152 +214,5 @@ const ContactCheck = (() => {
         }
     }
 
-    function resetRegisteringFlag() {
-        isRegistering = false;
-    }
-
-    function showContactModal(tournamentId, tournamentName) {
-        ensureModal();
-        pendingCallback = null;
-        pendingTournamentId = tournamentId;
-        pendingTournamentName = tournamentName;
-
-        document.getElementById('ccTournamentName').textContent = tournamentName;
-        document.getElementById('contactCheckModal').style.display = 'flex';
-
-        const phoneInput = document.getElementById('ccPhone');
-        const telegramInput = document.getElementById('ccTelegram');
-        if (phoneInput) phoneInput.value = '';
-        if (telegramInput) telegramInput.value = '';
-
-        const saveBtn = document.getElementById('ccSaveBtn');
-        const newSaveBtn = saveBtn.cloneNode(true);
-        saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
-
-        newSaveBtn.addEventListener('click', async () => {
-            const phone = document.getElementById('ccPhone').value.trim();
-            const telegram = document.getElementById('ccTelegram').value.trim();
-
-            document.getElementById('ccPhoneError').style.display = 'none';
-            document.getElementById('ccTgError').style.display = 'none';
-            document.getElementById('ccGlobalError').style.display = 'none';
-
-            if (!phone && !telegram) {
-                showGlobalError('Por favor, ingresa al menos un dato de contacto.');
-                return;
-            }
-
-            if (phone && !phone.startsWith('+54')) {
-                document.getElementById('ccPhoneError').style.display = 'block';
-                return;
-            }
-
-            if (telegram && !telegram.startsWith('@')) {
-                document.getElementById('ccTgError').style.display = 'block';
-                return;
-            }
-
-            newSaveBtn.disabled = true;
-            newSaveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
-
-            try {
-                const patchRes = await fetch('/api/players/me/contact', {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        telefono: phone || null,
-                        telegramUsername: telegram || null
-                    })
-                });
-
-                const patchData = await patchRes.json();
-
-                if (!patchData.success) {
-                    showGlobalError(patchData.message || 'Error al guardar');
-                    newSaveBtn.disabled = false;
-                    newSaveBtn.innerHTML = '<i class="fas fa-save"></i> Guardar e inscribirse';
-                    return;
-                }
-
-                closeModal();
-
-                if (pendingTournamentId) {
-                    console.log('Initiating registration for tournament:', pendingTournamentId);
-                    const registerBtn = document.querySelector('.btn-register');
-                    if (registerBtn) {
-                        registerBtn.click();
-                    }
-                    pendingTournamentId = null;
-                    pendingTournamentName = null;
-                }
-
-            } catch (err) {
-                console.error('Error saving contact:', err);
-                showGlobalError('Error de conexión. Inténtalo de nuevo.');
-                newSaveBtn.disabled = false;
-                newSaveBtn.innerHTML = '<i class="fas fa-save"></i> Guardar e inscribirse';
-            }
-        });
-    }
-
-    // ========== ДОБАВЛЯЕМ ИНИЦИАЛИЗАЦИЮ ОБРАБОТЧИКА ==========
-    function init() {
-        document.addEventListener('DOMContentLoaded', () => {
-            const registerBtn = document.querySelector('.btn-register');
-            if (registerBtn) {
-                registerBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-
-                    if (this.disabled) return;
-
-                    const tournamentId = this.dataset.tournamentId || window.tournament?.id;
-                    const tournamentName = this.dataset.tournamentName || window.tournament?.nombre || 'este torneo';
-
-                    beforeRegister(tournamentId, tournamentName, async () => {
-                        const btn = registerBtn;
-                        btn.disabled = true;
-                        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
-
-                        try {
-                            const response = await fetch(`/players/tournaments/${tournamentId}/register`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' }
-                            });
-
-                            const data = await response.json();
-
-                            if (data.success) {
-                                btn.innerHTML = '<i class="fas fa-check-circle"></i> ¡Inscrito!';
-                                btn.style.background = '#10b981';
-                                setTimeout(() => window.location.reload(), 1200);
-                            } else {
-                                btn.disabled = false;
-                                btn.innerHTML = '<i class="fas fa-check-circle"></i> Inscribirme';
-
-                                const modalBody = document.getElementById('resultModalBody');
-                                const resultModal = document.getElementById('resultModal');
-                                if (modalBody && resultModal) {
-                                    modalBody.innerHTML = `
-                                        <i class="fas fa-exclamation-circle"
-                                           style="font-size:48px; color:#dc3545; margin-bottom:15px;"></i>
-                                        <p style="font-size:16px; margin:0;">${data.message}</p>`;
-                                    resultModal.style.display = 'block';
-                                    resultModal.classList.add('show');
-                                }
-                            }
-                        } catch (error) {
-                            console.error('Error registering:', error);
-                            btn.disabled = false;
-                            btn.innerHTML = '<i class="fas fa-check-circle"></i> Inscribirme';
-                        }
-                    });
-                });
-            }
-        });
-    }
-
-    // Запускаем инициализацию
-    init();
-
-    return { beforeRegister, showContactModal, resetRegisteringFlag };
+    return { beforeRegister };
 })();

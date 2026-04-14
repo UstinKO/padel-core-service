@@ -22,6 +22,7 @@ import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoMatchRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoPlayerRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoRoundRepository;
+import com.padle.core.padelcoreservice.repository.americano.AmericanoTeamRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -54,6 +56,7 @@ public class TournamentService {
     private final AmericanoPlayerRepository americanoPlayerRepository;
     private final AmericanoRoundRepository americanoRoundRepository;
     private final AmericanoMatchRepository americanoMatchRepository;
+    private final AmericanoTeamRepository americanoTeamRepository;
 
     @Value("${app.base-url:http://localhost:8080}")
     private String baseUrl;
@@ -105,6 +108,8 @@ public class TournamentService {
     public List<TournamentDto> getVisibleTournamentsForPlayer() {
         return tournamentRepository.findByIsActiveTrue().stream()
                 .map(this::mapToDtoWithDetails)
+                .sorted(Comparator.comparing(TournamentDto::getFechaInicio)
+                        .thenComparing(TournamentDto::getHoraInicio))
                 .collect(Collectors.toList());
     }
 
@@ -654,6 +659,14 @@ public class TournamentService {
                     if (!rounds.isEmpty()) {
                         americanoRoundRepository.deleteAll(rounds);
                         log.info("Deleted {} Americano rounds", rounds.size());
+                    }
+
+                    // Удаляем команды Team Americano
+                    List<com.padle.core.padelcoreservice.model.americano.AmericanoTeam> teams =
+                            americanoTeamRepository.findByTournamentId(id);
+                    if (!teams.isEmpty()) {
+                        americanoTeamRepository.deleteAll(teams);
+                        log.info("Deleted {} Americano teams", teams.size());
                     }
 
                     // Удаляем игроков Americano

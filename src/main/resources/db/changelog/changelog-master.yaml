@@ -77,3 +77,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.25-add-nivel-c4-suma14.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.26-create-americano-teams.yaml
+      relativeToChangelogFile: true

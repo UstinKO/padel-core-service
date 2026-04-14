@@ -1,0 +1,120 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.26-create-americano-teams
+      author: padel-core
+      comment: Создание таблицы для команд Team Americano турниров
+      changes:
+        - createTable:
+            tableName: americano_teams_db
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: tournament_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_americano_team_tournament
+                    references: tournaments_db(id)
+              - column:
+                  name: player1_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_americano_team_player1
+                    references: player_padel_db(id)
+              - column:
+                  name: player2_id
+                  type: BIGINT
+                  constraints:
+                    nullable: true
+                    foreignKeyName: fk_americano_team_player2
+                    references: player_padel_db(id)
+              - column:
+                  name: player2_name
+                  type: VARCHAR(200)
+              - column:
+                  name: player2_phone
+                  type: VARCHAR(30)
+              - column:
+                  name: team_number
+                  type: INT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: current_position
+                  type: INT
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  defaultValue: ACTIVE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: total_score
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: matches_played
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: matches_won
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: matches_lost
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: matches_drawn
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: points_scored
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: points_conceded
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+        - addUniqueConstraint:
+            tableName: americano_teams_db
+            columnNames: tournament_id, player1_id
+            constraintName: uq_americano_team_tournament_player1
+
+      rollback:
+        - dropTable:
+            tableName: americano_teams_db

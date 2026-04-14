@@ -41,7 +41,6 @@ public class PaymentManagementController {
         model.addAttribute("paymentMethods", PaymentMethod.values());
         model.addAttribute("paymentStatuses", PaymentStatus.values());
 
-        // ИСПРАВЛЕНО: меняем путь с "admin/payments/management" на "admin/tournaments/payments"
         return "admin/tournaments/payments";
     }
 
@@ -61,22 +60,48 @@ public class PaymentManagementController {
                 Long registrationId = formWrapper.getRegistrationIds().get(i);
                 dto.setRegistrationId(registrationId);
 
+                // paymentId
+                if (formWrapper.getPaymentIds() != null && i < formWrapper.getPaymentIds().size()) {
+                    String paymentIdStr = formWrapper.getPaymentIds().get(i);
+                    if (paymentIdStr != null && !paymentIdStr.isBlank()) {
+                        try {
+                            dto.setPaymentId(Long.parseLong(paymentIdStr));
+                        } catch (NumberFormatException ignored) {}
+                    }
+                }
+
+                // hasPayment
+                if (formWrapper.getHasPayments() != null && i < formWrapper.getHasPayments().size()) {
+                    dto.setHasPayment(Boolean.parseBoolean(formWrapper.getHasPayments().get(i)));
+                }
+
+                // isPartnerRow
+                if (formWrapper.getPartnerRows() != null && i < formWrapper.getPartnerRows().size()) {
+                    dto.setPartnerRow(Boolean.parseBoolean(formWrapper.getPartnerRows().get(i)));
+                }
+
                 // Посещение
                 dto.setAttended(formWrapper.getAttended() != null &&
                         formWrapper.getAttended().contains(registrationId));
 
-                // Платежные данные
+                // Сумма
                 if (formWrapper.getAmounts() != null && i < formWrapper.getAmounts().size()) {
                     String amountStr = formWrapper.getAmounts().get(i);
                     if (amountStr != null && !amountStr.trim().isEmpty()) {
-                        dto.setAmount(new BigDecimal(amountStr));
+                        try {
+                            dto.setAmount(new BigDecimal(amountStr));
+                        } catch (NumberFormatException e) {
+                            log.warn("Invalid amount at index {}: {}", i, amountStr);
+                        }
                     }
                 }
 
+                // Валюта
                 if (formWrapper.getCurrencies() != null && i < formWrapper.getCurrencies().size()) {
                     dto.setCurrency(formWrapper.getCurrencies().get(i));
                 }
 
+                // Статус платежа
                 if (formWrapper.getPaymentStatuses() != null && i < formWrapper.getPaymentStatuses().size()) {
                     String status = formWrapper.getPaymentStatuses().get(i);
                     if (status != null && !status.isEmpty()) {
@@ -84,6 +109,7 @@ public class PaymentManagementController {
                     }
                 }
 
+                // Метод платежа
                 if (formWrapper.getPaymentMethods() != null && i < formWrapper.getPaymentMethods().size()) {
                     String method = formWrapper.getPaymentMethods().get(i);
                     if (method != null && !method.isEmpty()) {
@@ -91,32 +117,33 @@ public class PaymentManagementController {
                     }
                 }
 
+                // ID транзакции
                 if (formWrapper.getTransactionIds() != null && i < formWrapper.getTransactionIds().size()) {
                     dto.setTransactionId(formWrapper.getTransactionIds().get(i));
                 }
 
+                // Заметки
                 if (formWrapper.getNotes() != null && i < formWrapper.getNotes().size()) {
                     dto.setNotes(formWrapper.getNotes().get(i));
                 }
 
                 updates.add(dto);
+                log.debug("Payment update [{}]: regId={}, paymentId={}, hasPayment={}, partnerRow={}, amount={}",
+                        i, dto.getRegistrationId(), dto.getPaymentId(),
+                        dto.isHasPayment(), dto.isPartnerRow(), dto.getAmount());
             }
 
             paymentService.savePaymentManagementData(tournamentId, updates, owner.getId());
-
-            redirectAttributes.addFlashAttribute("successMessage",
-                    "Datos de pago guardados correctamente");
+            redirectAttributes.addFlashAttribute("successMessage", "Datos de pago guardados correctamente");
 
         } catch (Exception e) {
             log.error("Error saving payment data", e);
-            redirectAttributes.addFlashAttribute("errorMessage",
-                    "Error al guardar: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "Error al guardar: " + e.getMessage());
         }
 
         return "redirect:/admin/tournaments/" + tournamentId;
     }
 
-    // Вспомогательный класс для формы
     public static class PaymentFormWrapper {
         private List<Long> registrationIds;
         private List<Long> attended;
@@ -126,30 +153,41 @@ public class PaymentManagementController {
         private List<String> paymentMethods;
         private List<String> transactionIds;
         private List<String> notes;
+        private List<String> paymentIds;
+        private List<String> hasPayments;
+        private List<String> partnerRows;   // ← ДОБАВЛЕНО
 
-        // Геттеры и сеттеры
         public List<Long> getRegistrationIds() { return registrationIds; }
-        public void setRegistrationIds(List<Long> registrationIds) { this.registrationIds = registrationIds; }
+        public void setRegistrationIds(List<Long> v) { this.registrationIds = v; }
 
         public List<Long> getAttended() { return attended; }
-        public void setAttended(List<Long> attended) { this.attended = attended; }
+        public void setAttended(List<Long> v) { this.attended = v; }
 
         public List<String> getAmounts() { return amounts; }
-        public void setAmounts(List<String> amounts) { this.amounts = amounts; }
+        public void setAmounts(List<String> v) { this.amounts = v; }
 
         public List<String> getCurrencies() { return currencies; }
-        public void setCurrencies(List<String> currencies) { this.currencies = currencies; }
+        public void setCurrencies(List<String> v) { this.currencies = v; }
 
         public List<String> getPaymentStatuses() { return paymentStatuses; }
-        public void setPaymentStatuses(List<String> paymentStatuses) { this.paymentStatuses = paymentStatuses; }
+        public void setPaymentStatuses(List<String> v) { this.paymentStatuses = v; }
 
         public List<String> getPaymentMethods() { return paymentMethods; }
-        public void setPaymentMethods(List<String> paymentMethods) { this.paymentMethods = paymentMethods; }
+        public void setPaymentMethods(List<String> v) { this.paymentMethods = v; }
 
         public List<String> getTransactionIds() { return transactionIds; }
-        public void setTransactionIds(List<String> transactionIds) { this.transactionIds = transactionIds; }
+        public void setTransactionIds(List<String> v) { this.transactionIds = v; }
 
         public List<String> getNotes() { return notes; }
-        public void setNotes(List<String> notes) { this.notes = notes; }
+        public void setNotes(List<String> v) { this.notes = v; }
+
+        public List<String> getPaymentIds() { return paymentIds; }
+        public void setPaymentIds(List<String> v) { this.paymentIds = v; }
+
+        public List<String> getHasPayments() { return hasPayments; }
+        public void setHasPayments(List<String> v) { this.hasPayments = v; }
+
+        public List<String> getPartnerRows() { return partnerRows; }
+        public void setPartnerRows(List<String> v) { this.partnerRows = v; }
     }
 }

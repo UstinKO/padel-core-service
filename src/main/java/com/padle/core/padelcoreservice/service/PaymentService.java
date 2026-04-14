@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class PaymentService {
+    private static final String PARTNER_PAYMENT_MARKER = "PARTNER_PAYMENT";
 
     private final PaymentRepository paymentRepository;
     private final TournamentRegistrationRepository registrationRepository;
@@ -170,29 +171,45 @@ public class PaymentService {
     public List<PaymentManagementViewDto> getPaymentManagementData(Long tournamentId) {
         log.info("Getting payment management data for tournament: {}", tournamentId);
 
-        // Получаем все подтвержденные регистрации
         List<TournamentRegistration> registrations = registrationRepository
                 .findByTournamentIdOrderByPositionAscWaitlistPositionAsc(tournamentId);
 
-        // Получаем все платежи по турниру
         List<Payment> payments = paymentRepository.findByTournamentId(tournamentId);
 
-        return registrations.stream()
-                .filter(reg -> reg.getStatus() == RegistrationStatus.CONFIRMED)
-                .map(reg -> {
-                    PaymentManagementViewDto dto = new PaymentManagementViewDto();
+        List<PaymentManagementViewDto> result = new java.util.ArrayList<>();
 
-                    // Данные регистрации
+        registrations.stream()
+                .filter(reg -> reg.getStatus() == RegistrationStatus.CONFIRMED
+                        || reg.getStatus() == RegistrationStatus.PARTNER_INVITED)
+                .forEach(reg -> {
+
+                    boolean isDouble = Boolean.TRUE.equals(reg.getIsDoubleRegistration());
+                    boolean isMainPlayer = !isDouble
+                            || (reg.getMainPlayerId() != null
+                            && reg.getMainPlayerId().equals(reg.getPlayer().getId()));
+                    boolean isPartnerInDb = isDouble
+                            && reg.getMainPlayerId() != null
+                            && !reg.getMainPlayerId().equals(reg.getPlayer().getId());
+
+                    // ── Строка для любого игрока (главный или партнёр в БД) ──
+                    PaymentManagementViewDto dto = new PaymentManagementViewDto();
                     dto.setRegistrationId(reg.getId());
                     dto.setPlayerId(reg.getPlayer().getId());
-                    dto.setPlayerName(reg.getPlayer().getNombre());
+                    dto.setPlayerName(reg.getPlayer().getNombre()
+                            + (reg.getPlayer().getApellido() != null
+                            ? " " + reg.getPlayer().getApellido() : "")
+                            + (isPartnerInDb ? " (compañero)" : ""));
                     dto.setPlayerEmail(reg.getPlayer().getEmail());
+                    dto.setPlayerPhone(reg.getPlayer().getTelefono());
                     dto.setPosition(reg.getPosition());
                     dto.setAttended(reg.getAttended() != null ? reg.getAttended() : false);
+                    dto.setPartnerRow(false); // у него есть своя регистрация — не виртуальная строка
 
-                    // Ищем платеж для этой регистрации
+                    // Платёж — без маркера PARTNER_PAYMENT (у каждого своя запись)
                     payments.stream()
                             .filter(p -> p.getRegistration().getId().equals(reg.getId()))
+                            .filter(p -> p.getNotes() == null
+                                    || !p.getNotes().startsWith(PARTNER_PAYMENT_MARKER))
                             .findFirst()
                             .ifPresentOrElse(p -> {
                                 dto.setPaymentId(p.getId());
@@ -201,102 +218,201 @@ public class PaymentService {
                                 dto.setPaymentStatus(p.getStatus());
                                 dto.setPaymentMethod(p.getPaymentMethod());
                                 dto.setTransactionId(p.getTransactionId());
-                                dto.setNotes(p.getNotes());
+                                dto.setNotes(cleanNotes(p.getNotes()));
                                 dto.setHasPayment(true);
                             }, () -> {
                                 dto.setHasPayment(false);
-                                dto.setCurrency("ARS"); // Дефолтная валюта
+                                dto.setCurrency("ARS");
                             });
 
-                    return dto;
-                })
-                .collect(Collectors.toList());
+                    result.add(dto);
+
+                    // ── Виртуальная строка партнёра (только если партнёр НЕ в БД) ──
+                    // Условие: главный игрок + партнёр не зарегистрирован (partner == null)
+                    boolean partnerNotInDb = isMainPlayer
+                            && isDouble
+                            && reg.getPartner() == null
+                            && reg.getPartnerFirstName() != null
+                            && !reg.getPartnerFirstName().isBlank();
+
+                    if (partnerNotInDb) {
+                        PaymentManagementViewDto partnerDto = new PaymentManagementViewDto();
+                        partnerDto.setRegistrationId(reg.getId()); // та же запись
+                        partnerDto.setMainRegistrationId(reg.getId());
+                        partnerDto.setPartnerRow(true);
+
+                        String partnerName = reg.getPartnerFirstName()
+                                + (reg.getPartnerLastName() != null
+                                ? " " + reg.getPartnerLastName() : "");
+                        partnerDto.setPlayerName(partnerName + " (compañero)");
+                        partnerDto.setPlayerEmail(reg.getPartnerEmail());
+                        partnerDto.setPartnerPhone(reg.getPartnerPhone());
+                        partnerDto.setPartnerEmail(reg.getPartnerEmail());
+                        partnerDto.setPosition(reg.getPosition());
+                        partnerDto.setAttended(false);
+
+                        // Платёж партнёра — с маркером PARTNER_PAYMENT
+                        payments.stream()
+                                .filter(p -> p.getRegistration().getId().equals(reg.getId()))
+                                .filter(p -> p.getNotes() != null
+                                        && p.getNotes().startsWith(PARTNER_PAYMENT_MARKER))
+                                .findFirst()
+                                .ifPresentOrElse(p -> {
+                                    partnerDto.setPaymentId(p.getId());
+                                    partnerDto.setAmount(p.getAmount());
+                                    partnerDto.setCurrency(p.getCurrency());
+                                    partnerDto.setPaymentStatus(p.getStatus());
+                                    partnerDto.setPaymentMethod(p.getPaymentMethod());
+                                    partnerDto.setTransactionId(p.getTransactionId());
+                                    partnerDto.setNotes(cleanNotes(p.getNotes()));
+                                    partnerDto.setHasPayment(true);
+                                }, () -> {
+                                    partnerDto.setHasPayment(false);
+                                    partnerDto.setCurrency("ARS");
+                                });
+
+                        result.add(partnerDto);
+                    }
+                });
+
+        return result;
     }
 
     @Transactional
-    public void savePaymentManagementData(Long tournamentId, List<PaymentManagementViewDto> updates, Long updatedBy) {
+    public void savePaymentManagementData(Long tournamentId,
+                                          List<PaymentManagementViewDto> updates,
+                                          Long updatedBy) {
         log.info("Saving payment management data for tournament: {}", tournamentId);
 
         for (PaymentManagementViewDto dto : updates) {
-            // Обновляем отметку о посещении
-            TournamentRegistration registration = registrationRepository.findById(dto.getRegistrationId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Registration not found: " + dto.getRegistrationId()));
+            TournamentRegistration registration = registrationRepository
+                    .findById(dto.getRegistrationId())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Registration not found: " + dto.getRegistrationId()));
 
-            registration.setAttended(dto.getAttended());
-            registrationRepository.save(registration);
+            // Посещение — для основной строки
+            if (!dto.isPartnerRow()) {
+                registration.setAttended(dto.getAttended());
+                registrationRepository.save(registration);
 
-            // Если есть данные платежа
-            if (dto.getAmount() != null && dto.getAmount().compareTo(BigDecimal.ZERO) > 0) {
-                if (dto.isHasPayment() && dto.getPaymentId() != null) {
-                    // Обновляем существующий платеж
-                    Payment payment = paymentRepository.findById(dto.getPaymentId())
-                            .orElseThrow(() -> new ResourceNotFoundException("Payment not found: " + dto.getPaymentId()));
-
-                    payment.setAmount(dto.getAmount());
-                    payment.setPaymentMethod(dto.getPaymentMethod());
-                    payment.setStatus(dto.getPaymentStatus() != null ? dto.getPaymentStatus() : PaymentStatus.PAID);
-
-                    // Проверяем уникальность transaction_id при обновлении
-                    if (dto.getTransactionId() != null && !dto.getTransactionId().isEmpty()) {
-                        // Проверяем, не занят ли этот transaction_id другим платежом
-                        if (!dto.getTransactionId().equals(payment.getTransactionId())) {
-                            paymentRepository.findByTransactionId(dto.getTransactionId())
-                                    .ifPresent(existingPayment -> {
-                                        if (!existingPayment.getId().equals(payment.getId())) {
-                                            throw new IllegalArgumentException(
-                                                    "El ID de transacción '" + dto.getTransactionId() + "' ya está en uso por otro pago"
-                                            );
-                                        }
-                                    });
-                        }
-                        payment.setTransactionId(dto.getTransactionId());
-                    } else {
-                        payment.setTransactionId(null);
-                    }
-
-                    payment.setNotes(dto.getNotes());
-
-                    if (dto.getPaymentStatus() == PaymentStatus.PAID && payment.getPaymentDate() == null) {
-                        payment.setPaymentDate(LocalDateTime.now());
-                    }
-
-                    paymentRepository.save(payment);
-
-                } else {
-                    // Создаем новый платеж
-                    Payment payment = Payment.builder()
-                            .registration(registration)
-                            .amount(dto.getAmount())
-                            .currency(dto.getCurrency() != null ? dto.getCurrency() : "ARS")
-                            .status(dto.getPaymentStatus() != null ? dto.getPaymentStatus() : PaymentStatus.PAID)
-                            .paymentMethod(dto.getPaymentMethod())
-                            .notes(dto.getNotes())
-                            .createdBy(updatedBy)
-                            .build();
-
-                    // Проверяем уникальность transaction_id при создании
-                    if (dto.getTransactionId() != null && !dto.getTransactionId().isEmpty()) {
-                        paymentRepository.findByTransactionId(dto.getTransactionId())
-                                .ifPresent(existingPayment -> {
-                                    throw new IllegalArgumentException(
-                                            "El ID de transacción '" + dto.getTransactionId() + "' ya está en uso"
-                                    );
-                                });
-                        payment.setTransactionId(dto.getTransactionId());
-                    }
-
-                    if (payment.getStatus() == PaymentStatus.PAID) {
-                        payment.setPaymentDate(LocalDateTime.now());
-                    }
-
-                    paymentRepository.save(payment);
+                // Если это парная регистрация — синхронизируем attended партнёру (если он в БД)
+                if (Boolean.TRUE.equals(registration.getIsDoubleRegistration())
+                        && registration.getMainPlayerId() != null) {
+                    registrationRepository
+                            .findByTournamentIdOrderByPositionAscWaitlistPositionAsc(
+                                    registration.getTournament().getId())
+                            .stream()
+                            .filter(r -> r.getIsActive()
+                                    && !r.getId().equals(registration.getId())
+                                    && Boolean.TRUE.equals(r.getIsDoubleRegistration())
+                                    && registration.getMainPlayerId().equals(r.getMainPlayerId()))
+                            .forEach(partnerReg -> {
+                                partnerReg.setAttended(dto.getAttended());
+                                registrationRepository.save(partnerReg);
+                                log.debug("Synced attended={} to partner registration {}",
+                                        dto.getAttended(), partnerReg.getId());
+                            });
                 }
-            } else if (dto.isHasPayment() && dto.getPaymentId() != null) {
-                // Если сумма 0, но есть существующий платеж - возможно, его нужно удалить?
-                // По логике, можно оставить или удалить. Пока оставляем как есть.
-                log.debug("Payment with zero amount, skipping: {}", dto.getPaymentId());
+            }
+
+            // Нет суммы — пропускаем
+            if (dto.getAmount() == null || dto.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+                log.debug("No amount for registration {}, skipping", dto.getRegistrationId());
+                continue;
+            }
+
+            // Для партнёра добавляем маркер в notes
+            String notesValue = dto.isPartnerRow()
+                    ? PARTNER_PAYMENT_MARKER
+                    + (dto.getNotes() != null && !dto.getNotes().isBlank()
+                    ? "|" + dto.getNotes() : "")
+                    : dto.getNotes();
+
+            if (dto.isHasPayment() && dto.getPaymentId() != null) {
+                // Обновляем существующий платёж
+                Payment payment = paymentRepository.findById(dto.getPaymentId())
+                        .orElseThrow(() -> new ResourceNotFoundException(
+                                "Payment not found: " + dto.getPaymentId()));
+
+                payment.setAmount(dto.getAmount());
+                payment.setPaymentMethod(dto.getPaymentMethod());
+                payment.setStatus(dto.getPaymentStatus() != null
+                        ? dto.getPaymentStatus() : PaymentStatus.PAID);
+                payment.setNotes(notesValue);
+
+                if (dto.getCurrency() != null) {
+                    payment.setCurrency(dto.getCurrency());
+                }
+
+                if (dto.getTransactionId() != null && !dto.getTransactionId().isBlank()) {
+                    if (!dto.getTransactionId().equals(payment.getTransactionId())) {
+                        paymentRepository.findByTransactionId(dto.getTransactionId())
+                                .ifPresent(existing -> {
+                                    if (!existing.getId().equals(payment.getId())) {
+                                        throw new IllegalArgumentException(
+                                                "El ID de transacción '" + dto.getTransactionId()
+                                                        + "' ya está en uso");
+                                    }
+                                });
+                    }
+                    payment.setTransactionId(dto.getTransactionId());
+                } else {
+                    payment.setTransactionId(null);
+                }
+
+                if (dto.getPaymentStatus() == PaymentStatus.PAID
+                        && payment.getPaymentDate() == null) {
+                    payment.setPaymentDate(java.time.LocalDateTime.now());
+                }
+
+                paymentRepository.save(payment);
+                log.info("Updated payment {} for registration {} (partnerRow={})",
+                        payment.getId(), dto.getRegistrationId(), dto.isPartnerRow());
+
+            } else {
+                // Создаём новый платёж
+                Payment payment = Payment.builder()
+                        .registration(registration)
+                        .amount(dto.getAmount())
+                        .currency(dto.getCurrency() != null ? dto.getCurrency() : "ARS")
+                        .status(dto.getPaymentStatus() != null
+                                ? dto.getPaymentStatus() : PaymentStatus.PAID)
+                        .paymentMethod(dto.getPaymentMethod())
+                        .notes(notesValue)
+                        .createdBy(updatedBy)
+                        .build();
+
+                if (dto.getTransactionId() != null && !dto.getTransactionId().isBlank()) {
+                    paymentRepository.findByTransactionId(dto.getTransactionId())
+                            .ifPresent(existing -> {
+                                throw new IllegalArgumentException(
+                                        "El ID de transacción '" + dto.getTransactionId()
+                                                + "' ya está en uso");
+                            });
+                    payment.setTransactionId(dto.getTransactionId());
+                }
+
+                if (payment.getStatus() == PaymentStatus.PAID) {
+                    payment.setPaymentDate(java.time.LocalDateTime.now());
+                }
+
+                paymentRepository.save(payment);
+                log.info("Created payment for registration {} (partnerRow={})",
+                        dto.getRegistrationId(), dto.isPartnerRow());
             }
         }
+    }
+
+    // Убирает маркер PARTNER_PAYMENT из notes для отображения в UI
+    private String cleanNotes(String notes) {
+        if (notes == null) return null;
+        if (notes.startsWith(PARTNER_PAYMENT_MARKER + "|")) {
+            return notes.substring(PARTNER_PAYMENT_MARKER.length() + 1);
+        }
+        if (notes.equals(PARTNER_PAYMENT_MARKER)) {
+            return null;
+        }
+        return notes;
     }
 
     @lombok.Builder
