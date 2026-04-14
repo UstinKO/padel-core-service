@@ -30,6 +30,24 @@ spring:
               - profile
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
 
+# Конфигурация защиты от ботов и disposable email
+disposable-email-domains:
+  enabled: true  # Включение защиты
+  checkers:
+    reload:
+      enabled: true  # Автоматическое обновление черного списка
+      fixed-date: PT12H  # Обновление каждые 12 часов
+    daily-updated-domains: true  # Скачивание свежего списка с GitHub
+    static-domains:
+      - telus.com
+      - telusinternational.com
+      - telus.net
+      - test.com
+      - example.com
+      - domain.com
+    # Опционально: локальный файл со списком (если нужно добавить свои домены)
+    # local-file: /app/config/blocked-domains.txt
+
 jwt:
   secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION}
@@ -44,6 +62,14 @@ app:
   email:
     from: ${EMAIL_FROM}
     sender-name: ${EMAIL_SENDER_NAME}
+  security:
+    registration:
+      max-attempts-per-hour: 5  # Лимит попыток регистрации с одного IP
+      block-duration-minutes: 60  # Блокировка IP на час при превышении
+      require-email-verification: true  # Требовать подтверждение email
+      # Honeypot поле (скрытое поле в форме, которое не должны заполнять люди)
+      honeypot-enabled: true
+      honeypot-field-name: website_url  # Название скрытого поля
 
 logging:
   file:
@@ -57,6 +83,10 @@ logging:
     url: ${LOKI_URL:http://loki:3100/loki/api/v1/push}
     batchMaxItems: 1000
     batchTimeoutMs: 5000
+  level:
+    # Логирование подозрительных регистраций для мониторинга
+    com.padle.core.padelcoreservice.validation: WARN
+    com.padle.core.padelcoreservice.security: INFO
 
 management:
   endpoints:

@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Previsualizar Team Americano | E-Padel</title>
+
+    <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
+    <link rel="alternate icon" th:href="@{/images/favicon.ico}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <link rel="stylesheet" th:href="@{/css/americano.css}">
+    <style>
+        .rounds-navigation{margin-bottom:1.5rem}
+        .round-selector{display:inline-flex;align-items:center;gap:.75rem;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:.5rem 1rem}
+        .round-btn{background:none;border:1px solid #e2e8f0;border-radius:6px;padding:.4rem .7rem;cursor:pointer;color:#64748b;transition:all .2s}
+        .round-btn:hover:not(:disabled){background:#f8fafc;color:#1e293b}
+        .round-btn:disabled{opacity:.4;cursor:not-allowed}
+        .round-indicator{font-weight:600;color:#1e293b;display:flex;align-items:center;gap:.5rem}
+        .courts-list{display:flex;flex-direction:column;gap:1rem}
+        .court-card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden}
+        .court-number{background:#1e293b;color:#fff;padding:.5rem 1rem;font-size:.85rem;font-weight:600;display:flex;align-items:center;gap:.5rem}
+        .match-tag{background:rgba(255,255,255,.2);padding:.1rem .4rem;border-radius:10px;font-size:.75rem;margin-left:auto}
+        .court-players{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;justify-items:center;padding:1rem;gap:.75rem}
+        .team-left{display:flex;flex-direction:column;gap:.4rem;width:100%;text-align:left}
+        .team-right{display:flex;flex-direction:column;gap:.4rem;width:100%;text-align:right}
+        .player-name{font-size:.875rem;font-weight:500;color:#1e293b;line-height:1.3}
+        .team-label{font-size:.7rem;font-weight:700;color:#FF6B35;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:.15rem}
+        .vs-center{display:flex;flex-direction:column;align-items:center;gap:.4rem}
+        .vs-badge{background:#FF6B35;color:#fff;font-weight:700;font-size:.8rem;padding:.3rem .5rem;border-radius:6px}
+        .config-summary{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:1rem;margin-bottom:1.5rem}
+        .config-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem}
+        .config-item{display:flex;flex-direction:column;gap:.25rem}
+        .config-label{font-size:.75rem;color:#64748b;text-transform:uppercase;letter-spacing:.5px}
+        .config-value{font-size:1rem;font-weight:600;color:#1e293b;display:flex;align-items:center;gap:.5rem}
+        .config-value i{color:#FF6B35;width:1.25rem}
+        .preview-actions{display:flex;gap:1rem;margin-bottom:2rem;flex-wrap:wrap}
+        .round-header{display:flex;justify-content:space-between;align-items:center;padding:1rem 1.5rem;background:#f8fafc;border-bottom:1px solid #e2e8f0}
+        .round-header h3{margin:0;font-size:1rem;font-weight:600;display:flex;align-items:center;gap:.5rem;color:#1e293b}
+        .round-badge{padding:.25rem .75rem;border-radius:20px;font-size:.75rem;font-weight:600;background:#f1f5f9;color:#475569}
+        .init-status-banner{background:#d1fae5;border:1px solid #6ee7b7;color:#065f46;padding:.85rem 1.25rem;border-radius:10px;margin-bottom:1rem;display:flex;align-items:flex-start;gap:.75rem;font-size:.9rem}
+        .empty-round{text-align:center;padding:3rem;background:#fff;border-radius:12px;border:1px solid #e2e8f0}
+        .empty-round i{font-size:3rem;color:#cbd5e1;margin-bottom:1rem;display:block}
+        .team-americano-banner{background:#d1fae5;border:1px solid #6ee7b7;color:#065f46;padding:.85rem 1.25rem;border-radius:10px;margin-bottom:1.5rem;display:flex;align-items:center;gap:.75rem;font-size:.9rem}
+        .team-americano-banner .badge-pill{font-size:.78rem;font-weight:700;padding:.3rem .65rem;border-radius:20px;white-space:nowrap;background:#10b981;color:#fff}
+
+        @media (max-width:768px) {
+            .court-players{grid-template-columns:1fr;text-align:center;gap:1rem}
+            .team-left,.team-right{text-align:center}
+            .round-selector{width:100%;justify-content:center}
+            .config-grid{grid-template-columns:1fr 1fr}
+            .preview-actions{flex-direction:column}
+        }
+    </style>
+</head>
+<body>
+<header th:replace="~{fragments/admin-header :: header('Previsualizar Team Americano')}"></header>
+
+<main class="admin-main">
+    <div class="container">
+
+        <!-- Кнопка назад -->
+        <div style="margin-bottom:1rem">
+            <a th:href="@{'/admin/tournaments/' + ${tournament.id}}" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i> Volver a configuración
+            </a>
+        </div>
+
+        <!-- Header турнира -->
+        <div class="tournament-header" style="margin-bottom:1.5rem">
+            <div class="tournament-title-section">
+                <h1 th:text="${tournament.nombre}">Team Americano</h1>
+                <div class="tournament-badges">
+                    <span class="badge" th:text="${tournament.generoFormato}">Mixto</span>
+                    <span class="badge badge-level" th:text="${tournament.categoriaNivel}">C7</span>
+                    <span class="badge badge-type">Team Americano</span>
+                    <span class="badge badge-status" th:text="${tournament.estado}"
+                          th:classappend="'badge-' + ${tournament.estado.toString().toLowerCase()}">Cerrado</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Баннер Team Americano -->
+        <div class="team-americano-banner">
+            <span class="badge-pill"><i class="fas fa-users"></i> Team Americano</span>
+            <span>Parejas fijas — Round Robin completo. Cada pareja juega contra todas las demás exactamente una vez.</span>
+        </div>
+
+        <!-- Баннер: турнир уже запущен -->
+        <div th:if="${isTeamAmericanoInitialized}" class="init-status-banner">
+            <i class="fas fa-check-circle" style="font-size:1.2rem;flex-shrink:0"></i>
+            <div>
+                <strong>Este torneo ya está en curso.</strong>
+                Esta es solo una previsualización del fixture generado.
+            </div>
+        </div>
+
+        <!-- Конфигурация -->
+        <div class="config-summary">
+            <div class="config-grid">
+                <div class="config-item">
+                    <span class="config-label">Parejas</span>
+                    <span class="config-value">
+                        <i class="fas fa-users"></i>
+                        <span th:text="${totalTeams}">8</span>
+                    </span>
+                </div>
+                <div class="config-item">
+                    <span class="config-label">Total partidos</span>
+                    <span class="config-value">
+                        <i class="fas fa-list"></i>
+                        <span th:text="${totalMatches}">28</span>
+                    </span>
+                </div>
+                <div class="config-item">
+                    <span class="config-label">Límite de puntos</span>
+                    <span class="config-value">
+                        <i class="fas fa-bullseye"></i>
+                        <span th:text="${config.pointsPerMatch}">32</span>
+                    </span>
+                </div>
+                <div class="config-item">
+                    <span class="config-label">Canchas</span>
+                    <span class="config-value">
+                        <i class="fas fa-table-tennis"></i>
+                        <span th:text="${config.courts}">2</span>
+                    </span>
+                </div>
+                <div class="config-item">
+                    <span class="config-label">Rondas</span>
+                    <span class="config-value">
+                        <i class="fas fa-redo-alt"></i>
+                        <span th:text="${previewRounds.size()}">14</span>
+                    </span>
+                </div>
+                <div class="config-item">
+                    <span class="config-label">Formato</span>
+                    <span class="config-value">
+                        <i class="fas fa-star" style="color:#10b981"></i>
+                        <span style="color:#065f46;font-size:.85rem">Round Robin</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Кнопки действий -->
+        <div class="preview-actions">
+            <a th:href="@{'/admin/tournaments/' + ${tournament.id}}" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i> Volver a configuración
+            </a>
+
+            <!-- Турнир уже запущен -->
+            <a th:if="${isTeamAmericanoInitialized}"
+               th:href="@{'/tournaments/team-americano/admin/' + ${tournament.id}}"
+               class="btn btn-primary">
+                <i class="fas fa-arrow-right"></i> Ir al torneo en curso
+            </a>
+
+            <!-- Турнир не запущен → форма инициализации -->
+            <form th:unless="${isTeamAmericanoInitialized}"
+                  th:action="@{'/tournaments/team-americano/initialize'}"
+                  method="post"
+                  style="display:inline-block">
+                <input type="hidden" name="tournamentId"   th:value="${tournament.id}">
+                <input type="hidden" name="pointsPerMatch" th:value="${config.pointsPerMatch}">
+                <input type="hidden" name="courts"         th:value="${config.courts}">
+                <button type="submit" class="btn btn-primary"
+                        onclick="return confirmAndLock(this)">
+                    <i class="fas fa-play"></i> Iniciar con este fixture
+                </button>
+            </form>
+        </div>
+
+        <!-- Навигация по раундам -->
+        <div class="rounds-navigation" th:if="${not #lists.isEmpty(previewRounds)}">
+            <div class="round-selector">
+                <button class="round-btn" id="prevRound" onclick="changeRound(-1)" disabled>
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <span class="round-indicator">
+                    Ronda <span id="currentRoundDisplay">1</span>
+                    de <span th:text="${previewRounds.size()}">14</span>
+                </span>
+                <button class="round-btn" id="nextRound" onclick="changeRound(1)">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Карточки раундов -->
+        <div id="roundsContainer">
+            <div th:each="round, iterStat : ${previewRounds}"
+                 th:data-round-id="${iterStat.index}"
+                 class="round-card"
+                 style="display:none;background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:1rem">
+
+                <div class="round-header">
+                    <h3>
+                        <i class="fas fa-calendar-week"></i>
+                        Ronda <span th:text="${round.roundNumber}">1</span>
+                    </h3>
+                    <span class="round-badge"
+                          th:text="${round.matches.size()} + ' partido(s)'">2 partido(s)</span>
+                </div>
+
+                <!-- Матчи -->
+                <div class="courts-list" style="padding:1rem">
+                    <div th:each="match : ${round.matches}" class="court-card">
+                        <div class="court-number">
+                            <i class="fas fa-table-tennis"></i>
+                            Cancha <span th:text="${match.courtNumber}">1</span>
+                            <span class="match-tag"
+                                  th:text="${match.note != null ? match.note : '#' + match.matchNumber}">
+                                Equipo 1 vs Equipo 2
+                            </span>
+                        </div>
+                        <div class="court-players">
+                            <!-- Team 1 -->
+                            <div class="team-left">
+                                <span class="team-label">Pareja A</span>
+                                <span class="player-name" th:text="${match.team1Player1Name}">Jugador 1</span>
+                                <span class="player-name"
+                                      th:if="${match.team1Player2Name != null and !match.team1Player2Name.isEmpty()}"
+                                      th:text="${match.team1Player2Name}">Jugador 2</span>
+                            </div>
+                            <!-- VS -->
+                            <div class="vs-center">
+                                <span class="vs-badge">VS</span>
+                            </div>
+                            <!-- Team 2 -->
+                            <div class="team-right">
+                                <span class="team-label">Pareja B</span>
+                                <span class="player-name" th:text="${match.team2Player1Name}">Jugador 3</span>
+                                <span class="player-name"
+                                      th:if="${match.team2Player2Name != null and !match.team2Player2Name.isEmpty()}"
+                                      th:text="${match.team2Player2Name}">Jugador 4</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Empty State -->
+        <div th:if="${#lists.isEmpty(previewRounds)}" class="empty-round">
+            <i class="fas fa-exclamation-circle"></i>
+            <h3>No hay rondas para previsualizar</h3>
+            <p>Verifica que haya al menos 2 parejas confirmadas.</p>
+        </div>
+
+    </div>
+</main>
+
+<footer th:replace="~{fragments/admin-footer :: footer}"></footer>
+
+<script>
+    let currentRound = 0;
+    const rounds      = document.querySelectorAll('[data-round-id]');
+    const totalRounds = rounds.length;
+    const prevBtn     = document.getElementById('prevRound');
+    const nextBtn     = document.getElementById('nextRound');
+    const roundDisp   = document.getElementById('currentRoundDisplay');
+
+    function showRound(index) {
+        rounds.forEach((r, i) => r.style.display = i === index ? 'block' : 'none');
+        currentRound = index;
+        if (roundDisp) roundDisp.textContent = index + 1;
+        if (prevBtn)   prevBtn.disabled = index === 0;
+        if (nextBtn)   nextBtn.disabled = index === totalRounds - 1;
+    }
+
+    function changeRound(delta) {
+        const next = currentRound + delta;
+        if (next >= 0 && next < totalRounds) showRound(next);
+    }
+
+    function confirmAndLock(btn) {
+        setTimeout(() => {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Iniciando...';
+        }, 0);
+        return true;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (rounds.length > 0) showRound(0);
+    });
+</script>
+</body>
+</html>

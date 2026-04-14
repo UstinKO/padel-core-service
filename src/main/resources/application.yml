@@ -122,6 +122,13 @@ app:
   email:
     from: ${EMAIL_FROM:info@epadel.org}
     sender-name: ${EMAIL_SENDER_NAME:E-Padel}
+  security:
+    registration:
+      max-attempts-per-hour: 10  # По умолчанию выше для dev
+      block-duration-minutes: 15
+      require-email-verification: false  # В dev можно отключить
+      honeypot-enabled: true
+      honeypot-field-name: contact_me_by_phone_only
 
 # ==========================================
 # ACTUATOR & METRICS (Prometheus)
@@ -149,3 +156,18 @@ management:
     metrics:
       export:
         enabled: true
+
+# Общие настройки для всех окружений
+disposable-email-domains:
+  enabled: true
+  checkers:
+    reload:
+      enabled: true
+      fixed-date: PT24H  # По умолчанию раз в сутки
+    daily-updated-domains: true
+    static-domains: []  # Пустой список, переопределяется в prod
+    # Настройки прокси, если нужны (опционально)
+    proxy:
+      enabled: false
+      host:
+      port:

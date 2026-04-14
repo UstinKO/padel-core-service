@@ -58,6 +58,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-websocket</artifactId>
         </dependency>
+        <dependency>
+            <groupId>dev.caceresenzo.disposableemaildomains</groupId>
+            <artifactId>disposable-email-domains-spring-boot-starter</artifactId>
+            <version>0.5.0</version>
+        </dependency>
 
         <!-- OAuth2 Client -->
         <dependency>

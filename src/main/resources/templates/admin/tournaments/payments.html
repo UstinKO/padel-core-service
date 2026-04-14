@@ -91,11 +91,30 @@
                         </tr>
                         </thead>
                         <tbody>
-                        <tr th:each="player, iterStat : ${players}">
-                            <!-- Hidden fields -->
+                        <tr th:each="player, iterStat : ${players}"
+                            th:classappend="${player.partnerRow} ? 'partner-row' : ''"
+                            th:style="${player.partnerRow} ? 'background:#f5f3ff; border-left:3px solid #6366f1;' : ''">
+
+                            <!-- Hidden fields — для партнёра используем ту же registrationId
+                                 но на бэке savePaymentManagementData должен это обработать -->
                             <input type="hidden"
                                    th:name="'registrationIds[' + ${iterStat.index} + ']'"
                                    th:value="${player.registrationId}" />
+
+                            <!-- paymentId — для обновления существующего платежа -->
+                            <input type="hidden"
+                                   th:name="'paymentIds[' + ${iterStat.index} + ']'"
+                                   th:value="${player.paymentId}" />
+
+                            <!-- hasPayment — флаг существующего платежа -->
+                            <input type="hidden"
+                                   th:name="'hasPayments[' + ${iterStat.index} + ']'"
+                                   th:value="${player.hasPayment}" />
+
+                            <!-- isPartnerRow — флаг строки партнёра -->
+                            <input type="hidden"
+                                   th:name="'partnerRows[' + ${iterStat.index} + ']'"
+                                   th:value="${player.partnerRow}" />
 
                             <!-- Posición -->
                             <td>
@@ -105,19 +124,49 @@
                             <!-- Jugador -->
                             <td>
                                 <div class="player-info">
-                                    <span class="player-name" th:text="${player.playerName}">Juan Pérez</span>
-                                    <span class="player-email" th:text="${player.playerEmail}">email@example.com</span>
+                                    <!-- Иконка: партнёр или обычный игрок -->
+                                    <span class="player-name">
+                                        <i th:if="${player.partnerRow}"
+                                           class="fas fa-user-friends"
+                                           style="color:#6366f1; margin-right:.3rem;"
+                                           title="Compañero no registrado"></i>
+                                        <span th:text="${player.playerName}">Juan Pérez</span>
+                                    </span>
+                                    <!-- Email -->
+                                    <span class="player-email"
+                                          th:if="${player.playerEmail != null and !player.playerEmail.isEmpty()}"
+                                          th:text="${player.playerEmail}">
+                                        email@example.com
+                                    </span>
+                                    <!-- Телефон партнёра -->
+                                    <span class="player-email"
+                                          th:if="${player.partnerRow and player.partnerPhone != null and !player.partnerPhone.isEmpty()}">
+                                        <i class="fab fa-whatsapp" style="color:#25D366;"></i>
+                                        <a th:href="'https://wa.me/' + ${#strings.replace(player.partnerPhone, '+', '')}"
+                                           target="_blank" rel="noopener noreferrer"
+                                           style="color:#25D366; text-decoration:none;"
+                                           th:text="${player.partnerPhone}">
+                                        </a>
+                                    </span>
+                                    <!-- Бейдж "compañero" -->
+                                    <span th:if="${player.partnerRow}"
+                                          style="display:inline-block; margin-top:.2rem; padding:.15rem .5rem;
+                                                 background:#ede9fe; color:#6366f1; border-radius:20px;
+                                                 font-size:.75rem; font-weight:600;">
+                                        compañero
+                                    </span>
                                 </div>
                             </td>
 
                             <!-- Asistió -->
                             <td>
-                                <div class="checkbox-wrapper">
+                                <div class="checkbox-wrapper" th:if="${!player.partnerRow}">
                                     <input type="checkbox"
                                            th:name="'attended[' + ${iterStat.index} + ']'"
                                            th:value="${player.registrationId}"
                                            th:checked="${player.attended}" />
                                 </div>
+                                <span th:if="${player.partnerRow}" style="color:#adb5bd; font-size:.8rem;"></span>
                             </td>
 
                             <!-- Monto -->
@@ -135,7 +184,7 @@
                             <td>
                                 <select th:name="'currencies[' + ${iterStat.index} + ']'"
                                         class="form-control-sm">
-                                    <option value="ARS" th:selected="${player.currency == 'ARS'}">ARS</option>
+                                    <option value="ARS" th:selected="${player.currency == 'ARS' or player.currency == null}">ARS</option>
                                     <option value="USD" th:selected="${player.currency == 'USD'}">USD</option>
                                     <option value="EUR" th:selected="${player.currency == 'EUR'}">EUR</option>
                                     <option value="USDT" th:selected="${player.currency == 'USDT'}">USDT</option>

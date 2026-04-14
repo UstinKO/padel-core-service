@@ -414,17 +414,18 @@
                     <!-- ===== АВТОМАТИЧЕСКОЕ РАЗДЕЛЕНИЕ ===== -->
                     <th:block th:with="
                         confirmedRegs=${registrations.?[status.name() == 'CONFIRMED']},
-                        invitedRegs=${registrations.?[status.name() == 'PARTNER_INVITED' and isDoubleRegistration == true]}">
+                        invitedRegs=${registrations.?[status.name() == 'PARTNER_INVITED' and isDoubleRegistration == true]},
+                        effectiveCupoMax=${tournament.modalidad.name() == 'DOBLES' ? tournament.cupoMax * 2 : tournament.cupoMax}">
 
                         <!-- СЕКЦИЯ 1: Подтверждённые участники -->
                         <div class="registrations-list">
                             <h4>
                                 <i class="fas fa-check-circle" style="color: #10b981;"></i>
-                                Inscripciones (<span th:text="${tournament.cupoMax}">20</span>)
+                                Inscripciones (<span th:text="${effectiveCupoMax}">20</span>)
                             </h4>
                             <div class="registrations-items" th:if="${not #lists.isEmpty(confirmedRegs)}">
                                 <div th:each="reg, iterStat : ${confirmedRegs}"
-                                     th:if="${iterStat.index < tournament.cupoMax}"
+                                     th:if="${iterStat.index < effectiveCupoMax}"
                                      class="registration-item">
                                     <div class="registration-avatar">
                                         <i class="fas fa-user-circle"></i>
@@ -438,8 +439,25 @@
                                         </a>
                                         <!-- Для парных показываем имя партнёра -->
                                         <span th:if="${reg.isDoubleRegistration and reg.partnerNombre != null}"
-                                              class="registration-position"
-                                              th:text="'Pareja: ' + ${reg.partnerNombre}">
+                                              class="registration-position">
+                                            <strong>Pareja:</strong>
+                                            <span th:text="${reg.partnerNombre}"></span>
+                                            <!-- Телефон партнёра (если есть) -->
+                                            <span th:if="${reg.partnerPhone != null and !reg.partnerPhone.isEmpty()}"
+                                                  style="display:block; font-size:.8rem; color:#6c757d; margin-top:.1rem;">
+                                                <i class="fab fa-whatsapp" style="color:#25D366;"></i>
+                                                <a th:href="'https://wa.me/' + ${#strings.replace(reg.partnerPhone, '+', '')}"
+                                                   target="_blank" rel="noopener noreferrer"
+                                                   style="color:#25D366; text-decoration:none;"
+                                                   th:text="${reg.partnerPhone}">
+                                                </a>
+                                            </span>
+                                            <!-- Email партнёра (если есть) -->
+                                            <span th:if="${reg.partnerEmail != null and !reg.partnerEmail.isEmpty()}"
+                                                  style="display:block; font-size:.8rem; color:#6c757d; margin-top:.1rem;">
+                                                <i class="fas fa-envelope" style="color:#6366f1;"></i>
+                                                <span th:text="${reg.partnerEmail}"></span>
+                                            </span>
                                         </span>
                                         <span th:unless="${reg.isDoubleRegistration}"
                                               class="registration-position"
@@ -470,15 +488,15 @@
                         </div>
 
                         <!-- СЕКЦИЯ 2: Резерв подтверждённых (overflow) -->
-                        <div class="registrations-list" th:if="${confirmedRegs.size() > tournament.cupoMax}">
+                        <div class="registrations-list" th:if="${confirmedRegs.size() > effectiveCupoMax}">
                             <h4>
                                 <i class="fas fa-clock" style="color: #f59e0b;"></i>
                                 Reserva
-                                <span class="badge-warning" th:text="${confirmedRegs.size() - tournament.cupoMax}"></span>
+                                <span class="badge-warning" th:text="${confirmedRegs.size() - effectiveCupoMax}"></span>
                             </h4>
                             <div class="registrations-items waitlist-items">
                                 <div th:each="reg, iterStat : ${confirmedRegs}"
-                                     th:if="${iterStat.index >= tournament.cupoMax}"
+                                     th:if="${iterStat.index >= effectiveCupoMax}"
                                      class="registration-item waitlist">
                                     <div class="registration-avatar">
                                         <i class="fas fa-user-circle"></i>
@@ -711,7 +729,8 @@
                      Изменено только содержимое этого блока.
                      Структура карточки (.admin-card) — оригинальная.
                 ═══════════════════════════════════════════════════════ -->
-                <div th:if="${tournament.tipo.name() == 'AMERICANO'}" class="admin-card americano-card">
+                <div th:if="${tournament.tipo.name() == 'AMERICANO' and tournament.modalidad.name() == 'INDIVIDUAL'}"
+                     class="admin-card americano-card">
                     <div class="admin-card-header">
                         <h2><i class="fas fa-trophy" style="color: #FF6B35;"></i> Torneo Americano</h2>
                     </div>
@@ -918,6 +937,148 @@
                 </div>
                 <!-- ── конец AMERICANO ── -->
 
+                <!-- ═══════════════════════════════════════════════════════════
+                     TEAM AMERICANO (AMERICANO + DOBLES)
+                ═══════════════════════════════════════════════════════════ -->
+                <div th:if="${tournament.tipo.name() == 'AMERICANO' and tournament.modalidad.name() == 'DOBLES'}"
+                     class="admin-card americano-card">
+                    <div class="admin-card-header">
+                        <h2><i class="fas fa-users" style="color:#FF6B35;"></i> Team Americano</h2>
+                    </div>
+                    <div class="admin-card-body">
+
+                        <!-- Турнир уже инициализирован -->
+                        <div th:if="${isTeamAmericanoInitialized == true}" class="initialized-nav">
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle"></i>
+                                Torneo inicializado &middot;
+                                <strong th:text="${teamAmericanoRanking != null ? teamAmericanoRanking.totalTeams : 0}">0</strong>
+                                parejas activas
+                            </div>
+                            <a th:href="@{'/tournaments/team-americano/admin/' + ${tournament.id}}"
+                               class="btn btn-primary btn-block">
+                                <i class="fas fa-arrow-right"></i> Ir al torneo en curso
+                            </a>
+                            <a th:href="@{'/tournaments/team-americano/' + ${tournament.id}}"
+                               class="btn btn-outline btn-block" target="_blank">
+                                <i class="fas fa-eye"></i> Vista pública
+                            </a>
+                        </div>
+
+                        <!-- Турнир ещё не инициализирован -->
+                        <div th:unless="${isTeamAmericanoInitialized == true}">
+
+                            <th:block th:with="
+                                pairsCount=${tournament.inscritosActuales / 2},
+                                sugCourts=${tournament.inscritosActuales / 2 >= 8 ? 3 : (tournament.inscritosActuales / 2 >= 4 ? 2 : 1)}">
+                                <th:block th:with="
+                                totalMatches=${pairsCount * (pairsCount - 1) / 2},
+                                sugRounds=${sugCourts > 0 ? (pairsCount * (pairsCount - 1) / 2 + sugCourts - 1) / sugCourts : 1}">
+
+                                    <!-- Расчётные параметры -->
+                                    <div class="calc-info-box">
+                                        <h4><i class="fas fa-calculator"></i> Parámetros calculados</h4>
+                                        <div class="calc-grid">
+                                            <span class="lbl">Parejas confirmadas:</span>
+                                            <span class="val" th:text="${pairsCount}">8</span>
+
+                                            <span class="lbl">Total partidos:</span>
+                                            <span class="val" th:text="${totalMatches}">28</span>
+
+                                            <span class="lbl">Canchas sugeridas:</span>
+                                            <span class="val">
+                                            <span th:text="${sugCourts}">2</span>
+                                            <span class="hint">(puedes cambiar)</span>
+                                        </span>
+
+                                            <span class="lbl">Rondas necesarias:</span>
+                                            <span class="val" th:text="${sugRounds}">14</span>
+
+                                            <span class="lbl">Formato:</span>
+                                            <span class="val">
+                                            <span class="format-badge full">
+                                                <i class="fas fa-star"></i> Round Robin completo
+                                            </span>
+                                        </span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Форма инициализации -->
+                                    <form th:action="@{'/tournaments/team-americano/initialize'}"
+                                          method="post" id="teamAmericanoForm">
+                                        <input type="hidden" name="tournamentId" th:value="${tournament.id}">
+
+                                        <!-- Очки за матч -->
+                                        <div class="form-group">
+                                            <label for="teamPointsPerMatch">
+                                                <i class="fas fa-bullseye"></i> Límite de puntos por partido
+                                            </label>
+                                            <select id="teamPointsPerMatch" name="pointsPerMatch"
+                                                    class="form-control" required>
+                                                <option value="15">15 puntos</option>
+                                                <option value="21">21 puntos</option>
+                                                <option value="24">24 puntos (recomendado)</option>
+                                                <option value="32" selected>32 puntos (clásico)</option>
+                                                <option value="40">40 puntos (largo)</option>
+                                            </select>
+                                            <small class="form-text text-muted">
+                                                Suma de ambas parejas = este límite (ej. 17:15 si límite es 32).
+                                            </small>
+                                        </div>
+
+                                        <!-- Количество кортов -->
+                                        <div class="form-group">
+                                            <label for="teamCourts">
+                                                <i class="fas fa-table-tennis"></i> Número de canchas
+                                            </label>
+                                            <input type="number" id="teamCourts" name="courts"
+                                                   class="form-control"
+                                                   th:value="${sugCourts}"
+                                                   min="1" max="10" required>
+                                            <small class="form-text text-muted"
+                                                   th:text="'Se generarán ' + ${sugRounds} + ' rondas para ' + ${pairsCount} + ' parejas con esta cantidad de canchas.'">
+                                            </small>
+                                        </div>
+
+                                        <!-- Предупреждение если мало пар -->
+                                        <div th:if="${pairsCount < 2}"
+                                             class="alert alert-warning" style="margin-bottom:1rem">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                            Se necesitan al menos 2 parejas confirmadas para inicializar.
+                                            Actualmente: <strong th:text="${pairsCount}">0</strong> parejas.
+                                        </div>
+
+                                        <!-- Кнопки -->
+                                        <div class="btn-row">
+                                            <!-- Кнопка превью — отдельная форма с action /preview -->
+                                            <button type="button" class="btn btn-outline"
+                                                    th:disabled="${pairsCount < 2}"
+                                                    onclick="previewTeamAmericano()">
+                                                <i class="fas fa-eye"></i> Previsualizar fixture
+                                            </button>
+                                            <button type="submit" class="btn btn-primary"
+                                                    id="btnIniciarTeamAmericano"
+                                                    th:disabled="${pairsCount < 2 or tournament.estado.name() != 'CERRADO'}"
+                                                    onclick="return confirmAndLockTeam(this)">
+                                                <i class="fas fa-play"></i> Iniciar Team Americano
+                                            </button>
+                                        </div>
+
+                                        <div th:if="${tournament.estado.name() != 'CERRADO'}"
+                                             style="margin-top:.75rem;font-size:.82rem;color:#94a3b8;text-align:center">
+                                            <i class="fas fa-info-circle"></i>
+                                            El torneo debe estar en estado <strong>CERRADO</strong> para inicializarlo.
+                                        </div>
+                                    </form>
+
+                                </th:block>
+                            </th:block>
+                        </div>
+
+                    </div>
+                </div>
+                <!-- ── конец TEAM AMERICANO ── -->
+
             </div>
         </div>
     </div>
@@ -938,6 +1099,33 @@
         // Добавить отправку формы
         document.getElementById('americanoForm').submit();
         return false; // возвращаем false, чтобы браузер не отправлял форму повторно
+    }
+
+    function confirmAndLockTeam(btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Iniciando...';
+        document.getElementById('teamAmericanoForm').submit();
+        return false;
+    }
+
+    function previewTeamAmericano() {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/tournaments/team-americano/preview';
+        form.style.display = 'none';
+
+        const fields = {
+            tournamentId:   TOURNAMENT_ID,
+            pointsPerMatch: document.getElementById('teamPointsPerMatch')?.value || '32',
+            courts:         document.getElementById('teamCourts')?.value         || '2'
+        };
+        for (const [n, v] of Object.entries(fields)) {
+            const inp = document.createElement('input');
+            inp.type = 'hidden'; inp.name = n; inp.value = v;
+            form.appendChild(inp);
+        }
+        document.body.appendChild(form);
+        form.submit();
     }
 
     // Пересчёт подсказки по bye при изменении кортов

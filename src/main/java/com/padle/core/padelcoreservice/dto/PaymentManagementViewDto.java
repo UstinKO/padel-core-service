@@ -8,13 +8,21 @@ import java.math.BigDecimal;
 
 @Data
 public class PaymentManagementViewDto {
+
     // Данные регистрации
     private Long registrationId;
     private Long playerId;
     private String playerName;
     private String playerEmail;
+    private String playerPhone;       // ← ДОБАВЛЕНО: телефон игрока
     private Integer position;
     private Boolean attended;
+
+    // ── Поля для партнёра незарегистрированного на сайте ──
+    private boolean isPartnerRow;           // ← ДОБАВЛЕНО: true = виртуальная строка партнёра
+    private Long mainRegistrationId;        // ← ДОБАВЛЕНО: id основной регистрации пары
+    private String partnerPhone;            // ← ДОБАВЛЕНО: телефон партнёра
+    private String partnerEmail;            // ← ДОБАВЛЕНО: email партнёра
 
     // Данные платежа
     private Long paymentId;
