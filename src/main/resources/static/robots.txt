@@ -1,0 +1,32 @@
+User-agent: *
+
+# Запрещаем индексацию служебных разделов
+Disallow: /admin/
+Disallow: /api/
+Disallow: /actuator/
+Disallow: /swagger-ui/
+Disallow: /v3/api-docs/
+Disallow: /players/dashboard
+Disallow: /players/perfil/
+Disallow: /players/lista
+Disallow: /players/mis-torneos
+Disallow: /login
+Disallow: /logout
+Disallow: /recuperar-password/
+Disallow: /double-registration/
+Disallow: /oauth2/
+Disallow: /error
+
+# Разрешаем публичный контент
+Allow: /
+Allow: /torneos
+Allow: /torneo/
+Allow: /css/
+Allow: /js/
+Allow: /images/
+Allow: /terminos
+Allow: /privacidad
+Allow: /cookies
+
+# Sitemap (добавь когда будет готов)
+# Sitemap: https://yourdomain.com/sitemap.xml

@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
+    <meta name="app-profile" th:content="${@environment.getActiveProfiles().length > 0
+        ? @environment.getActiveProfiles()[0]
+        : 'default'}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
     <title th:text="'Gestionar Pagos - ' + ${tournament.nombre} + ' - E-Padel Admin'">Gestionar Pagos - E-Padel Admin</title>
@@ -270,6 +273,7 @@
 <footer th:replace="~{fragments/admin-footer :: footer}"></footer>
 
 <!-- Подключаем JavaScript -->
+<script th:src="@{/js/logger.js}"></script>
 <script th:src="@{/js/payment-management.js}"></script>
 </body>
 </html>

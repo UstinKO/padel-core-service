@@ -1,8 +1,10 @@
 package com.padle.core.padelcoreservice.controller;
 
+import com.padle.core.padelcoreservice.config.RecaptchaProperties;
 import com.padle.core.padelcoreservice.dto.PlayerResponseDto;
 import com.padle.core.padelcoreservice.dto.RegistroRequestDto;
 import com.padle.core.padelcoreservice.service.PlayerService;
+import com.padle.core.padelcoreservice.service.RecaptchaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,12 +25,15 @@ import java.util.List;
 public class PlayerPadelController {
 
     private final PlayerService playerService;
+    private final RecaptchaService recaptchaService;
+    private final RecaptchaProperties recaptchaProperties;
 
     @GetMapping("/registro")
     public String mostrarFormularioRegistro(Model model) {
         if (!model.containsAttribute("registroRequest")) {
             model.addAttribute("registroRequest", new RegistroRequestDto());
         }
+        model.addAttribute("recaptchaSiteKey", recaptchaProperties.getSiteKey());
         return "registro";
     }
 
@@ -36,9 +41,20 @@ public class PlayerPadelController {
     public String registrarJugador(
             @Valid @ModelAttribute("registroRequest") RegistroRequestDto request,
             BindingResult result,
+            @RequestParam(value = "g-recaptcha-response", required = false) String recaptchaToken,
+            Model model,
             RedirectAttributes redirectAttributes) {
 
         log.info("Recibida solicitud de registro para: {}", request.getEmail());
+
+        // Проверяем reCAPTCHA
+        if (!recaptchaService.verify(recaptchaToken, "register")) {
+            model.addAttribute("recaptchaSiteKey", recaptchaProperties.getSiteKey());
+            model.addAttribute("registroRequest", request); // ← сохраняем введённые данные
+            model.addAttribute("errorMessage",
+                    "Verificación de seguridad fallida. Por favor intenta de nuevo.");
+            return "registro";
+        }
 
         // Limpiar espacios
         if (request.getNombre() != null) request.setNombre(request.getNombre().trim());

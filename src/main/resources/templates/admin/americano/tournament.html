@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
+    <meta name="app-profile" th:content="${@environment.getActiveProfiles().length > 0
+        ? @environment.getActiveProfiles()[0]
+        : 'default'}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${tournament.nombre} + ' - Admin Americano | E-Padel'">Admin Americano</title>
@@ -439,6 +442,7 @@
     </div>
 </main>
 
+<script th:src="@{/js/logger.js}"></script>
 <script th:inline="javascript">
     const TOURNAMENT_ID = /*[[${tournament.id}]]*/ 0;
 

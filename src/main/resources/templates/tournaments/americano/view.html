@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
+    <meta name="app-profile" th:content="${@environment.getActiveProfiles().length > 0
+        ? @environment.getActiveProfiles()[0]
+        : 'default'}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${tournament.nombre} + ' - Torneo Americano | E-Padel'">Torneo Americano | E-Padel</title>
@@ -389,7 +392,7 @@
         </div>
     </div>
 </footer>
-
+<script th:src="@{/js/logger.js}"></script>
 <script>
     // Round navigation
     const roundEls = Array.from(document.querySelectorAll('[id^="round-"]'));

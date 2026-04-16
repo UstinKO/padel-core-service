@@ -2,6 +2,7 @@ package com.padle.core.padelcoreservice.config;
 
 import com.padle.core.padelcoreservice.security.CompositeUserDetailsService;
 import com.padle.core.padelcoreservice.security.JwtAuthenticationFilter;
+import com.padle.core.padelcoreservice.security.RateLimitFilter;
 import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2UserService;
 import com.padle.core.padelcoreservice.security.oauth2.OAuth2AuthenticationSuccessHandler;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,7 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
@@ -37,6 +39,7 @@ public class SecurityConfig {
     private final CompositeUserDetailsService compositeUserDetailsService;
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
+    private final RateLimitFilter rateLimitFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -90,6 +93,7 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .oauth2Login(oauth2 -> oauth2
                         .loginPage("/login")
                         .userInfoEndpoint(userInfo -> userInfo
@@ -119,6 +123,29 @@ public class SecurityConfig {
                         .key("uniqueAndSecret")
                         .tokenValiditySeconds(86400)
                         .userDetailsService(compositeUserDetailsService)
+                )
+                .headers(headers -> headers
+                        // Запрет встраивания в iframe (защита от clickjacking)
+                        .frameOptions(HeadersConfigurer.FrameOptionsConfig::deny)
+                        // Запрет определения типа контента браузером
+                        .contentTypeOptions(content -> {})
+                        // HSTS — только HTTPS (включить когда будет SSL)
+                         .httpStrictTransportSecurity(hsts -> hsts
+                             .includeSubDomains(true)
+                             .maxAgeInSeconds(31536000))
+                        // Content Security Policy
+                        .contentSecurityPolicy(csp -> csp
+                                .policyDirectives(
+                                        "default-src 'self'; " +
+                                                "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://www.google.com https://www.gstatic.com; " +
+                                                "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; " +
+                                                "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; " +
+                                                "img-src 'self' data: https:; " +
+                                                "connect-src 'self' https://www.google.com; " +
+                                                "frame-src https://www.google.com; " +  // Важно для reCAPTCHA
+                                                "frame-ancestors 'none';"
+                                )
+                        )
                 )
                 .build();
     }
