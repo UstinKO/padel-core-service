@@ -122,14 +122,38 @@
     </springProfile>
 
     <springProfile name="prod,production">
-        <logger name="com.padle.core" level="INFO"/>
+        <!-- Приложение — только INFO и выше, без DEBUG -->
+        <logger name="com.padle.core" level="INFO" additivity="false">
+            <appender-ref ref="FILE"/>
+            <appender-ref ref="ERROR_FILE"/>
+            <appender-ref ref="JSON_FILE"/>
+            <appender-ref ref="LOKI"/>
+        </logger>
+
+        <!-- Spring и Hibernate — только WARN -->
         <logger name="org.springframework.security" level="WARN"/>
+        <logger name="org.springframework.web" level="WARN"/>
         <logger name="org.springframework" level="WARN"/>
+        <logger name="org.hibernate.SQL" level="OFF"/>
+        <logger name="org.hibernate.type.descriptor.sql" level="OFF"/>
         <logger name="org.hibernate" level="WARN"/>
 
+        <!-- Hikari connection pool — только ERROR -->
+        <logger name="com.zaxxer.hikari" level="ERROR"/>
+
+        <!-- Liquibase — только WARN -->
+        <logger name="liquibase" level="WARN"/>
+
+        <!-- Платежи — отдельный JSON файл -->
         <logger name="com.padle.core.service.PaymentService" level="INFO" additivity="false">
             <appender-ref ref="JSON_FILE"/>
         </logger>
+
+        <!-- Корневой логгер — только WARN в prod, без консоли -->
+        <root level="WARN">
+            <appender-ref ref="FILE"/>
+            <appender-ref ref="ERROR_FILE"/>
+        </root>
     </springProfile>
 
     <springProfile name="staging">
@@ -177,21 +201,6 @@
             <timeoutMs>${LOKI_BATCH_TIMEOUT}</timeoutMs>
         </batchConfig>
     </appender>
-
-    <springProfile name="prod,production">
-        <logger name="com.padle.core" level="INFO"/>
-        <logger name="org.springframework.security" level="WARN"/>
-        <logger name="org.springframework" level="WARN"/>
-        <logger name="org.hibernate" level="WARN"/>
-
-        <root level="INFO">
-            <appender-ref ref="LOKI"/>
-        </root>
-
-        <logger name="com.padle.core.service.PaymentService" level="INFO" additivity="false">
-            <appender-ref ref="JSON_FILE"/>
-        </logger>
-    </springProfile>
 
     <!-- ========== КОРНЕВОЙ ЛОГГЕР ========== -->
 

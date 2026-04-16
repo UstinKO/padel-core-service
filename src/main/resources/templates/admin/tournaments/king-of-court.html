@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
+    <meta name="app-profile" th:content="${@environment.getActiveProfiles().length > 0
+        ? @environment.getActiveProfiles()[0]
+        : 'default'}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="'King of Court - ' + ${tournament.nombre}">King of Court</title>
@@ -184,7 +187,7 @@
 <div th:replace="~{fragments/king-of-court-modals :: finalResultsModal}"></div>
 
 <footer th:replace="~{fragments/admin-footer :: footer}"></footer>
-
+<script th:src="@{/js/logger.js}"></script>
 <!-- WebSocket libraries -->
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>

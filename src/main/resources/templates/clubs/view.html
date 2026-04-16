@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
+    <meta name="app-profile" th:content="${@environment.getActiveProfiles().length > 0
+        ? @environment.getActiveProfiles()[0]
+        : 'default'}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${club.nombre} + ' - E-Padel'">Club Padel</title>
@@ -68,5 +71,6 @@
 </main>
 
 <footer th:replace="~{fragments/public-footer :: footer}"></footer>
+<script th:src="@{/js/logger.js}"></script>
 </body>
 </html>

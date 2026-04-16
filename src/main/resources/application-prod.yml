@@ -105,3 +105,9 @@ management:
     metrics:
       export:
         enabled: true
+
+recaptcha:
+  site-key: ${SITE_KEY}
+  secret-key: ${SECRET_KEY}
+  min-score: 0.5
+  enabled: true

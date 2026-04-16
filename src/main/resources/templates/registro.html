@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
+    <meta name="app-profile" th:content="${@environment.getActiveProfiles().length > 0
+        ? @environment.getActiveProfiles()[0]
+        : 'default'}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
     <meta name="description" content="E-Padel - Regístrate gratis en la plataforma de torneos de pádel. Crea tu cuenta y empieza a jugar.">
@@ -31,6 +34,7 @@
     <!-- Custom Styles - orden importante! -->
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" th:href="@{/css/registro.css}">
+    <script th:src="'https://www.google.com/recaptcha/api.js?render=' + ${recaptchaSiteKey}"></script>
 </head>
 <body class="auth-page-simple">
 <!-- Header con nuevo logo y botón de login -->
@@ -210,6 +214,9 @@
                         </label>
                     </div>
 
+                    <!-- reCAPTCHA token -->
+                    <input type="hidden" id="g-recaptcha-response" name="g-recaptcha-response">
+
                     <!-- Submit Button -->
                     <button type="submit" class="btn btn-primary btn-block btn-large" id="submitBtn">
                         <i class="fas fa-user-plus"></i>
@@ -236,65 +243,71 @@
         </div>
     </div>
 </footer>
-
+<script th:src="@{/js/logger.js}"></script>
 <script th:src="@{/js/auth.js}"></script>
 
 <!-- Script adicional para validación en cliente -->
 <script th:inline="javascript">
     /*<![CDATA[*/
+    const RECAPTCHA_SITE_KEY = /*[[${recaptchaSiteKey}]]*/ '';
+
     document.addEventListener('DOMContentLoaded', function() {
         const form = document.getElementById('registroForm');
         const submitBtn = document.getElementById('submitBtn');
 
-        if (form) {
-            form.addEventListener('submit', function(e) {
-                const password = document.getElementById('password').value;
-                const confirmPassword = document.getElementById('confirmPassword').value;
-                const terminos = document.getElementById('terminos').checked;
+        if (!form) return;
 
-                // Validación de términos
-                if (!terminos) {
-                    e.preventDefault();
-                    showNotification('Debes aceptar los términos y condiciones', 'warning');
-                    return false;
-                }
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
 
-                // Validación de contraseñas
-                if (password !== confirmPassword) {
-                    e.preventDefault();
-                    showNotification('Las contraseñas no coinciden', 'error');
-                    return false;
-                }
+            // Валидация терминов
+            const terminos = document.getElementById('terminos').checked;
+            if (!terminos) {
+                showNotification('Debes aceptar los términos y condiciones', 'warning');
+                return;
+            }
 
-                // Validación de complejidad
-                const passwordRegex = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!]).{8,}$/;
-                if (!passwordRegex.test(password)) {
-                    e.preventDefault();
-                    showNotification('La contraseña debe contener al menos: 1 mayúscula, 1 minúscula, 1 número y 1 carácter especial', 'warning');
-                    return false;
-                }
+            // Валидация паролей
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            if (password !== confirmPassword) {
+                showNotification('Las contraseñas no coinciden', 'error');
+                return;
+            }
 
-                // Deshabilitar botón para evitar doble envío
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
-            });
+            // Валидация сложности пароля
+            const passwordRegex = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!]).{8,}$/;
+            if (!passwordRegex.test(password)) {
+                showNotification('La contraseña debe contener al menos: 1 mayúscula, 1 minúscula, 1 número y 1 carácter especial', 'warning');
+                return;
+            }
 
-            // Validación en tiempo real para el checkbox
-            const terminosCheckbox = document.getElementById('terminos');
-            terminosCheckbox.addEventListener('change', function() {
-                if (this.checked) {
-                    this.closest('.form-checkbox').style.color = '';
-                }
-            });
-        }
+            // Блокируем кнопку
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
 
-        // Auto-hide alerts después de 5 segundos
-        const alerts = document.querySelectorAll('.alert');
-        alerts.forEach(alert => {
-            setTimeout(() => {
-                alert.style.animation = 'slideIn 0.3s reverse';
-                setTimeout(() => alert.remove(), 300);
-            }, 5000);
+            // Получаем reCAPTCHA токен
+            if (RECAPTCHA_SITE_KEY && typeof grecaptcha !== 'undefined') {
+                grecaptcha.ready(function() {
+                    grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'register' })
+                        .then(function(token) {
+                            // Устанавливаем токен в скрытое поле
+                            document.getElementById('g-recaptcha-response').value = token;
+                            // Отправляем форму
+                            form.submit();
+                        })
+                        .catch(function(error) {
+                            console.error('reCAPTCHA error:', error);
+                            showNotification('Error de verificación de seguridad. Recarga la página e intenta de nuevo.', 'error');
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = '<i class="fas fa-user-plus"></i> Registrarse';
+                        });
+                });
+            } else {
+                // Если reCAPTCHA не загружена (например, в dev режиме)
+                console.warn('reCAPTCHA not loaded, submitting without token');
+                form.submit();
+            }
         });
     });
     /*]]>*/

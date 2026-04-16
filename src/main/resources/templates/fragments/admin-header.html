@@ -1,7 +1,11 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
+    <meta name="app-profile" th:content="${@environment.getActiveProfiles().length > 0
+        ? @environment.getActiveProfiles()[0]
+        : 'default'}">
     <meta charset="UTF-8">
+    <meta name="app-profile">
 </head>
 <body>
 <!-- Фрагмент заголовка для админ-панели -->
@@ -52,6 +56,7 @@
 </header>
 
 <!-- Добавляем скрипт для бургер-меню -->
+<script th:src="@{/js/logger.js}"></script>
 <script th:src="@{/js/admin-menu.js}"></script>
 </body>
 </html>

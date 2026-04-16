@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
+    <meta name="app-profile" th:content="${@environment.getActiveProfiles().length > 0
+        ? @environment.getActiveProfiles()[0]
+        : 'default'}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Previsualización de rondas - Torneo Americano">
@@ -492,6 +495,7 @@
 <!-- Футер через общий фрагмент -->
 <footer th:replace="~{fragments/admin-footer :: footer}"></footer>
 
+<script th:src="@{/js/logger.js}"></script>
 <script>
     let currentRound = 0;
     const rounds      = document.querySelectorAll('[data-round-id]');
