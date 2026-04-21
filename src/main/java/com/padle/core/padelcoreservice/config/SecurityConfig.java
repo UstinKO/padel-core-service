@@ -137,12 +137,12 @@ public class SecurityConfig {
                         .contentSecurityPolicy(csp -> csp
                                 .policyDirectives(
                                         "default-src 'self'; " +
-                                                "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://www.google.com https://www.gstatic.com; " +
-                                                "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; " +
-                                                "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; " +
+                                                "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://www.google.com https://www.gstatic.com https://cdn.jsdelivr.net; " +
+                                                "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://cdn.jsdelivr.net; " +
+                                                "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; " +
                                                 "img-src 'self' data: https:; " +
                                                 "connect-src 'self' https://www.google.com; " +
-                                                "frame-src https://www.google.com; " +  // Важно для reCAPTCHA
+                                                "frame-src https://www.google.com; " +
                                                 "frame-ancestors 'none';"
                                 )
                         )
