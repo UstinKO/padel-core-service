@@ -6,8 +6,10 @@ import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
 import com.padle.core.padelcoreservice.exception.TournamentRegistrationException;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
+import com.padle.core.padelcoreservice.repository.PlayerRepository;
 import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2User;
 import com.padle.core.padelcoreservice.service.DoubleTournamentRegistrationService;
+import com.padle.core.padelcoreservice.service.PlayerService;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +36,7 @@ public class PlayerDashboardController {
     private final TournamentService tournamentService;
     private final ObjectMapper objectMapper;
     private final DoubleTournamentRegistrationService doubleTournamentRegistrationService;
+    private final PlayerRepository playerRepository;
 
     @GetMapping("/dashboard")
     public String dashboard(Model model, @AuthenticationPrincipal Object principal) {
@@ -190,10 +193,9 @@ public class PlayerDashboardController {
         } else if (principal instanceof PlayerPadel) {
             return (PlayerPadel) principal;
         } else if (principal instanceof UserDetails) {
-            // Для обычной формы логина, если нужно
-            log.info("Principal is UserDetails: {}", ((UserDetails) principal).getUsername());
-            // Здесь можно загрузить из базы, но пока вернем null
-            return null;
+            String email = ((UserDetails) principal).getUsername();
+            log.info("Principal is UserDetails: {}", email);
+            return playerRepository.findByEmail(email).orElse(null); // ← загружаем из БД
         }
 
         log.warn("Unknown principal type: {}", principal.getClass().getName());
