@@ -5,8 +5,16 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.10</version>
-        <relativePath/> <!-- lookup parent from repository -->
+        <!-- Обновлено с 3.5.10 до 3.5.14 для исправления:
+             - CVE в ApplicationTemp (session persistence)
+             - CVE в ${random.value} (слабый PRNG)
+             - CVE в ApplicationPidFileWriter (symlink)
+             - CVE в Cassandra SSL (hostname verification)
+             - CVE в RabbitMQ SSL (hostname verification)
+             - CVE в DevTools (timing attack на remote secret)
+             - CVE в Actuator (Authentication Bypass) -->
+        <version>3.5.14</version>
+        <relativePath/>
     </parent>
     <groupId>com.padle.core</groupId>
     <artifactId>padel-core-service</artifactId>
@@ -22,10 +30,23 @@
         <assertj.version>3.27.7</assertj.version>
         <!-- JWT версии -->
         <jjwt.version>0.12.6</jjwt.version>
-        <!-- Tomcat version for CVE fix (CVE-2025-32221) -->
-        <tomcat.version>10.1.52</tomcat.version>
-        <!-- Jackson version for async parser DoS fix -->
+        <!-- Tomcat: 10.1.52 → 10.1.54 для исправления:
+             - CVE в CLIENT_CERT аутентификации
+             - CVE в JsonAccessLogValve (Improper Encoding)
+             - CVE в EncryptInterceptor (Padding Oracle)
+             - CVE в cipher preference order
+             - CVE в LoadBalancerDrainingValve (Open Redirect)
+             - CVE в Input Validation (CVE-2025-66614) -->
+        <tomcat.version>10.1.54</tomcat.version>
+        <!-- Jackson: 2.18.6 без изменений, актуальная -->
         <jackson.version>2.18.6</jackson.version>
+        <!-- Thymeleaf: обновлён для исправления SSTI уязвимостей -->
+        <thymeleaf.version>3.1.4.RELEASE</thymeleaf.version>
+        <!-- Apache POI: 5.3.0 → 5.4.0 для исправления CVE в OOXML парсинге -->
+        <poi.version>5.4.0</poi.version>
+        <!-- PostgreSQL JDBC: обновлён для исправления DoS в SCRAM-SHA-256 -->
+        <postgresql.version>42.7.11</postgresql.version>
+        <!-- Spring Framework: pinned to latest via Boot parent -->
     </properties>
 
     <dependencies>
@@ -79,6 +100,7 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
+            <version>${postgresql.version}</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
@@ -120,6 +142,13 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- Guava Cache для отслеживания подозрительных IP -->
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>33.0.0-jre</version>
+        </dependency>
+
         <!-- Dev Tools -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -158,6 +187,13 @@
             <groupId>net.logstash.logback</groupId>
             <artifactId>logstash-logback-encoder</artifactId>
             <version>8.0</version>
+        </dependency>
+
+        <!-- Apache POI for Excel export (temporary) -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>${poi.version}</version>
         </dependency>
 
         <!-- Testing -->
@@ -248,6 +284,12 @@
                                         <exclude>org.apache.commons:commons-lang3:(,3.18.0)</exclude>
                                         <!-- Запрещаем уязвимые версии AssertJ -->
                                         <exclude>org.assertj:assertj-core:(,3.27.7)</exclude>
+                                        <!-- Запрещаем уязвимые версии Tomcat -->
+                                        <exclude>org.apache.tomcat.embed:tomcat-embed-core:(,10.1.54)</exclude>
+                                        <!-- Запрещаем уязвимые версии PostgreSQL JDBC -->
+                                        <exclude>org.postgresql:postgresql:(,42.7.11)</exclude>
+                                        <!-- Запрещаем уязвимые версии Apache POI -->
+                                        <exclude>org.apache.poi:poi-ooxml:(,5.4.0)</exclude>
                                     </excludes>
                                     <searchTransitive>true</searchTransitive>
                                 </bannedDependencies>
@@ -274,7 +316,7 @@
                 <version>${assertj.version}</version>
             </dependency>
 
-            <!-- Явно указываем версию Tomcat для устранения уязвимости CVE-2025-32221 -->
+            <!-- Явно указываем версию Tomcat -->
             <dependency>
                 <groupId>org.apache.tomcat.embed</groupId>
                 <artifactId>tomcat-embed-core</artifactId>
@@ -291,7 +333,7 @@
                 <version>${tomcat.version}</version>
             </dependency>
 
-            <!-- Явно указываем версию Jackson для устранения DoS уязвимости -->
+            <!-- Явно указываем версию Jackson -->
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-core</artifactId>
@@ -313,13 +355,38 @@
                 <version>${jackson.version}</version>
             </dependency>
 
-            <!-- Liquibase уже включает commons-lang3 транзитивно, управляем версией -->
+            <!-- Явно указываем версию Thymeleaf для исправления SSTI -->
+            <dependency>
+                <groupId>org.thymeleaf</groupId>
+                <artifactId>thymeleaf</artifactId>
+                <version>${thymeleaf.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.thymeleaf</groupId>
+                <artifactId>thymeleaf-spring6</artifactId>
+                <version>${thymeleaf.version}</version>
+            </dependency>
+
+            <!-- PostgreSQL JDBC Driver -->
+            <dependency>
+                <groupId>org.postgresql</groupId>
+                <artifactId>postgresql</artifactId>
+                <version>${postgresql.version}</version>
+            </dependency>
+
+            <!-- Apache POI -->
+            <dependency>
+                <groupId>org.apache.poi</groupId>
+                <artifactId>poi-ooxml</artifactId>
+                <version>${poi.version}</version>
+            </dependency>
+
+            <!-- Liquibase -->
             <dependency>
                 <groupId>org.liquibase</groupId>
                 <artifactId>liquibase-core</artifactId>
                 <version>${liquibase.version}</version>
                 <exclusions>
-                    <!-- Исключаем старые версии commons-lang если есть -->
                     <exclusion>
                         <groupId>commons-lang</groupId>
                         <artifactId>commons-lang</artifactId>

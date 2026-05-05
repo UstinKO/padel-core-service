@@ -18,24 +18,54 @@ public class BotPatternValidator implements ConstraintValidator<NoBotPattern, St
             "^[bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ]{8,}$"
     );
 
+    private static final Pattern ONLY_VOWELS = Pattern.compile(
+            "^[aeiouyAEIOUY]{8,}$"  // Только гласные — подозрительно
+    );
+
+    private static final Pattern LETTER_DIGIT_MIX = Pattern.compile(
+            "(?=.*[a-z])(?=.*[0-9])(?=.*[A-Z])"  // Смесь регистров + цифры
+    );
+
+    private static final Pattern THREE_CONSECUTIVE_CONSONANTS = Pattern.compile(
+            "[bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ]{4,}"  // 4+ согласных подряд
+    );
+
     @Override
     public boolean isValid(String value, ConstraintValidatorContext context) {
         if (value == null || value.isBlank()) {
             return true;
         }
 
-        // Проверка на случайную строку (как в ваших логах: MFclENHzfgO)
-        if (RANDOM_STRING_PATTERN.matcher(value).matches()) {
+        String trimmed = value.trim();
+
+        // Случайная строка типа sdf.234s
+        if (LETTER_DIGIT_MIX.matcher(trimmed).find()
+                && trimmed.length() < 6
+                && trimmed.contains(".")) {
             return false;
         }
 
-        // Проверка на повторяющиеся символы
-        if (REPETITIVE_PATTERN.matcher(value).find()) {
+        // Только гласные — baaaad
+        if (ONLY_VOWELS.matcher(trimmed).matches()) {
             return false;
         }
 
-        // Проверка, что строка не состоит только из согласных
-        if (ONLY_CONSONANTS.matcher(value).matches()) {
+        // 4+ согласных подряд без гласных
+        if (THREE_CONSECUTIVE_CONSONANTS.matcher(trimmed).find()
+                && !trimmed.toLowerCase().matches(".*[aeiouyáéíóúü].*")) {
+            return false;
+        }
+
+        // Существующие проверки...
+        if (RANDOM_STRING_PATTERN.matcher(trimmed).matches()) {
+            return false;
+        }
+
+        if (REPETITIVE_PATTERN.matcher(trimmed).find()) {
+            return false;
+        }
+
+        if (ONLY_CONSONANTS.matcher(trimmed).matches()) {
             return false;
         }
 

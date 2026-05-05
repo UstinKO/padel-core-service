@@ -60,31 +60,18 @@ public class PlayerService {
         String passwordHash = passwordEncoder.encode(request.getPassword());
         PlayerPadel player = playerMapper.toEntity(request, passwordHash);
 
-        // 🔥 ВАЖНО: Новый пользователь НЕ подтвержден!
-        player.setEmailConfirmado(false);  // ← ЯВНО УСТАНАВЛИВАЕМ false
+        // ✅ СРАЗУ ПОДТВЕРЖДАЕМ EMAIL — без отправки письма
+        player.setEmailConfirmado(true);
+        player.setFechaConfirmacionEmail(LocalDateTime.now());
         player.setActivo(true);
-
-        // Генерируем код подтверждения
-        String codigoConfirmacion = generarCodigoConfirmacion();
-        player.setCodigoConfirmacion(codigoConfirmacion);
+        player.setCodigoConfirmacion(null); // код не нужен
 
         // Сохраняем в БД
         PlayerPadel savedPlayer = playerRepository.save(player);
-        log.info("✅ Jugador registrado con ID: {}, Email confirmado: {}",
-                savedPlayer.getId(), savedPlayer.isEmailConfirmado());
+        log.info("✅ Jugador registrado con ID: {}, Email confirmado automáticamente", savedPlayer.getId());
 
-        // ✅ ВСЕГДА отправляем письмо новому пользователю
-        try {
-            emailService.sendConfirmationEmail(
-                    savedPlayer.getEmail(),
-                    savedPlayer.getNombre(),
-                    savedPlayer.getCodigoConfirmacion()
-            );
-            log.info("📧 Email de confirmación ENVIADO a: {}", savedPlayer.getEmail());
-        } catch (Exception e) {
-            log.error("❌ Error al enviar email a {}: {}", savedPlayer.getEmail(), e.getMessage());
-            // НЕ выбрасываем исключение - пользователь создан, письмо попробуем позже
-        }
+        // Письмо НЕ отправляем — игрок уже может войти
+        log.info("📧 Email de bienvenida NO enviado (confirmación automática)");
 
         return playerMapper.entityToResponse(savedPlayer);
     }
@@ -268,5 +255,10 @@ public class PlayerService {
 
     public Optional<PlayerPadel> findByTelegramUsername(String telegramUsername) {
         return playerRepository.findByTelegramUsername(telegramUsername);
+    }
+
+    public PlayerPadel getPlayerByEmail(String email) {
+        return playerRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Jugador no encontrado con email: " + email));
     }
 }
