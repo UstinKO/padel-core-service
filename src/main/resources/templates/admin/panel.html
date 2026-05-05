@@ -207,6 +207,16 @@
                 Crear nuevo torneo
             </a>
 
+            <!-- Кнопка экспорта данных -->
+            <a th:if="${isSuperAdmin}"
+               href="/admin/export"
+               class="btn btn-outline"
+               style="margin-left: 1rem;"
+               onclick="return confirm('¿Exportar toda la base de datos a Excel?\\n\\nEl archivo contendrá todas las tablas y datos del sistema.')">
+                <i class="fas fa-download"></i>
+                Exportar datos (Excel)
+            </a>
+
             <!-- КНОПКА ПЕРЕХОДА НА ТЕСТОВУЮ СТРАНИЦУ -->
             <div th:if="${isSuperAdmin}" style="margin-left: 1rem; display: inline-block;">
                 <a href="/test/tournaments" class="btn btn-outline">

@@ -150,34 +150,34 @@
     </section>
 
     <!-- Mensaje post-registro: confirmar email -->
-    <div th:if="${registroExitoso}" class="container" style="padding-top:1.5rem; padding-bottom:.5rem;">
-        <div style="background:linear-gradient(135deg,#ecfdf5,#d1fae5);
-                    border:1px solid #6ee7b7;
-                    border-left:5px solid #10B981;
-                    border-radius:12px;
-                    padding:1.25rem 1.75rem;
-                    display:flex;
-                    gap:1rem;
-                    align-items:flex-start;">
-            <i class="fas fa-envelope-open-text"
-               style="color:#10B981; font-size:2rem; flex-shrink:0; margin-top:.15rem;"></i>
-            <div>
-                <p style="margin:0 0 .35rem; font-weight:700; font-size:1.05rem; color:#065f46;">
-                    ¡Registro exitoso! Revisa tu email para activar tu cuenta
-                </p>
-                <p style="margin:0 0 .35rem; color:#047857; font-size:.95rem;">
-                    Enviamos un enlace de confirmación a
-                    <strong th:text="${emailRegistrado}">tu@email.com</strong>.
-                    Haz clic en ese enlace y luego podrás iniciar sesión.
-                </p>
-                <p style="margin:0; color:#6b7280; font-size:.85rem;">
-                    <i class="fas fa-exclamation-triangle" style="color:#f59e0b; margin-right:.3rem;"></i>
-                    ¿No ves el email? Revisa la carpeta <strong>Spam</strong> o
-                    <strong>Correo no deseado</strong>.
-                </p>
-            </div>
-        </div>
-    </div>
+<!--    <div th:if="${registroExitoso}" class="container" style="padding-top:1.5rem; padding-bottom:.5rem;">-->
+<!--        <div style="background:linear-gradient(135deg,#ecfdf5,#d1fae5);-->
+<!--                    border:1px solid #6ee7b7;-->
+<!--                    border-left:5px solid #10B981;-->
+<!--                    border-radius:12px;-->
+<!--                    padding:1.25rem 1.75rem;-->
+<!--                    display:flex;-->
+<!--                    gap:1rem;-->
+<!--                    align-items:flex-start;">-->
+<!--            <i class="fas fa-envelope-open-text"-->
+<!--               style="color:#10B981; font-size:2rem; flex-shrink:0; margin-top:.15rem;"></i>-->
+<!--            <div>-->
+<!--                <p style="margin:0 0 .35rem; font-weight:700; font-size:1.05rem; color:#065f46;">-->
+<!--                    ¡Registro exitoso! Revisa tu email para activar tu cuenta-->
+<!--                </p>-->
+<!--                <p style="margin:0 0 .35rem; color:#047857; font-size:.95rem;">-->
+<!--                    Enviamos un enlace de confirmación a-->
+<!--                    <strong th:text="${emailRegistrado}">tu@email.com</strong>.-->
+<!--                    Haz clic en ese enlace y luego podrás iniciar sesión.-->
+<!--                </p>-->
+<!--                <p style="margin:0; color:#6b7280; font-size:.85rem;">-->
+<!--                    <i class="fas fa-exclamation-triangle" style="color:#f59e0b; margin-right:.3rem;"></i>-->
+<!--                    ¿No ves el email? Revisa la carpeta <strong>Spam</strong> o-->
+<!--                    <strong>Correo no deseado</strong>.-->
+<!--                </p>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </div>-->
 
     <!-- Torneos Section - ИЗМЕНЕНО: теперь все турниры в сетке -->
     <section class="torneos-section">

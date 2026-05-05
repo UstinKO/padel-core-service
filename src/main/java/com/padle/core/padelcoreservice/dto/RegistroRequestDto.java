@@ -19,14 +19,14 @@ import lombok.NoArgsConstructor;
 public class RegistroRequestDto {
 
     @NotBlank(message = "El nombre es obligatorio")
-    @Size(min = 2, max = 100, message = "El nombre debe tener entre 2 y 100 caracteres")
-    @Pattern(regexp = "^[\\p{L} .'-]+$", message = "El nombre contiene caracteres inválidos")
+    @Size(min = 3, max = 100, message = "El nombre debe tener entre 3 y 100 caracteres")  // ← БЫЛО 2, СТАЛО 3
+    @Pattern(regexp = "^[\\p{L} .'-]{3,}$", message = "El nombre debe tener al menos 3 letras reales")
     @NoBotPattern(message = "Nombre parece ser generado automáticamente")
     private String nombre;
 
     @NotBlank(message = "El apellido es obligatorio")
-    @Size(min = 2, max = 100, message = "El apellido debe tener entre 2 y 100 caracteres")
-    @Pattern(regexp = "^[\\p{L} .'-]+$", message = "El apellido contiene caracteres inválidos")
+    @Size(min = 3, max = 100, message = "El apellido debe tener entre 3 y 100 caracteres")  // ← БЫЛО 2, СТАЛО 3
+    @Pattern(regexp = "^[\\p{L} .'-]{3,}$", message = "El apellido debe tener al menos 3 letras reales")
     @NoBotPattern(message = "Apellido parece ser generado automáticamente")
     private String apellido;
 
