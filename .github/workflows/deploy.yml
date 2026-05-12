@@ -33,7 +33,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           source: "target/*.jar,target/version.txt"
-          target: "/home/deploy/app/temp/"
+          target: "/opt/padel-app/temp/"
           strip_components: 1
 
       - name: Deploy to server
@@ -42,7 +42,7 @@ jobs:
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
+          key: ${{ secrets.SSH_KEY_NEW }}
           timeout: 1200s
           command_timeout: 1200s
           script: |
@@ -53,11 +53,11 @@ jobs:
             # Функция для отката
             rollback() {
               echo "⚠️ Rolling back to previous version..."
-              if [ -f "/home/deploy/app/app.jar.backup" ]; then
-                cp /home/deploy/app/app.jar.backup /home/deploy/app/app.jar
+              if [ -f "/opt/padel-app/app.jar.backup" ]; then
+                cp /opt/padel-app/app.jar.backup /opt/padel-app/app.jar
                 echo "🔄 Restored previous JAR"
             
-                cd /home/deploy/app
+                cd /opt/padel-app
                 docker compose build --no-cache padel-app
                 docker compose up -d --no-deps padel-app
             
@@ -68,39 +68,39 @@ jobs:
             }
 
             # Сохраняем текущую версию для отката
-            if [ -f "/home/deploy/app/app.jar" ]; then
-              cp /home/deploy/app/app.jar /home/deploy/app/app.jar.backup
+            if [ -f "/opt/padel-app/app.jar" ]; then
+              cp /opt/padel-app/app.jar /opt/padel-app/app.jar.backup
               echo "💾 Current version backed up"
             fi
 
             # Находим основной jar файл
-            MAIN_JAR=$(ls /home/deploy/app/temp/padel-core-service-*.jar | grep -v "original" | head -1)
+            MAIN_JAR=$(ls /opt/padel-app/temp/padel-core-service-*.jar | grep -v "original" | head -1)
 
             if [ -z "$MAIN_JAR" ]; then
               echo "❌ No main JAR file found in temp directory!"
               echo "Contents of temp directory:"
-              ls -la /home/deploy/app/temp/
+              ls -la /opt/padel-app/temp/
               exit 1
             fi
 
             echo "📦 Found JAR file: $(basename $MAIN_JAR)"
 
             # Копируем новый JAR
-            cp "$MAIN_JAR" /home/deploy/app/app.jar
+            cp "$MAIN_JAR" /opt/padel-app/app.jar
 
             # Копируем version.txt
-            if [ -f "/home/deploy/app/temp/version.txt" ]; then
-              cp /home/deploy/app/temp/version.txt /home/deploy/app/version.txt
+            if [ -f "/opt/padel-app/temp/version.txt" ]; then
+              cp /opt/padel-app/temp/version.txt /opt/padel-app/version.txt
               echo "📄 Version file copied:"
-              cat /home/deploy/app/version.txt
+              cat /opt/padel-app/version.txt
             fi
 
             # Сохраняем информацию о версии
-            echo "$(basename $MAIN_JAR)" > /home/deploy/app/new_version.txt
-            echo "Deployed at: $(date)" >> /home/deploy/app/new_version.txt
+            echo "$(basename $MAIN_JAR)" > /opt/padel-app/new_version.txt
+            echo "Deployed at: $(date)" >> /opt/padel-app/new_version.txt
 
             # Переходим в директорию приложения
-            cd /home/deploy/app
+            cd /opt/padel-app
 
             # Пересобираем образ
             echo "🏗️ Building new Docker image..."
@@ -144,10 +144,8 @@ jobs:
             for i in $(seq 1 $MAX_ATTEMPTS); do
               echo "⏳ Health check attempt $i/$MAX_ATTEMPTS..."
             
-              # Проверяем, не запустилось ли приложение (по логам) - выходим если да
               if docker compose logs padel-app --tail=20 | grep -q "Started PadelCoreServiceApplication"; then
                 echo "✅ Application startup detected in logs!"
-                # Даем еще 5 секунд на полную инициализацию
                 sleep 5
                 break
               fi
@@ -169,7 +167,6 @@ jobs:
 
             # Финальная проверка
             if [ "$HEALTH_CHECK" != "200" ]; then
-              # Проверяем еще раз логи - может приложение работает, но health endpoint недоступен
               if docker compose logs padel-app --tail=50 | grep -q "Started PadelCoreServiceApplication"; then
                 echo "⚠️ Health check failed but application appears to be running!"
                 echo "✅ Continuing deployment (application is running)"
@@ -183,15 +180,15 @@ jobs:
             fi
 
             # Если всё хорошо, обновляем current_version
-            mv /home/deploy/app/new_version.txt /home/deploy/app/current_version.txt
+            mv /opt/padel-app/new_version.txt /opt/padel-app/current_version.txt
             echo "✅ New version is healthy!"
 
             # Удаляем бэкап после успешного деплоя
-            rm -f /home/deploy/app/app.jar.backup
+            rm -f /opt/padel-app/app.jar.backup
             echo "🧹 Backup removed"
 
             # Очищаем temp директорию
-            rm -rf /home/deploy/app/temp/*
+            rm -rf /opt/padel-app/temp/*
             echo "🧹 Temp directory cleaned"
 
             # Удаляем старые неиспользуемые образы
@@ -205,17 +202,16 @@ jobs:
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
+          key: ${{ secrets.SSH_KEY_NEW }}
           script: |
             echo "🏥 Running final health check..."
             
-            cd /home/deploy/app
+            cd /opt/padel-app
             
-            # Проверяем статус контейнера
             if docker ps | grep -q padel-core-app; then
               echo "✅ Container is running"
               echo "📋 Current version:"
-              cat /home/deploy/app/current_version.txt 2>/dev/null || echo "Unknown"
+              cat /opt/padel-app/current_version.txt 2>/dev/null || echo "Unknown"
               echo "📋 Container status:"
               docker compose ps
               echo "📋 Last 20 lines of logs:"
