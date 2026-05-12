@@ -107,7 +107,7 @@ management:
         enabled: true
 
 recaptcha:
-  site-key: ${SITE_KEY}
-  secret-key: ${SECRET_KEY}
+  site-key: ${SITE_KEY_V2}
+  secret-key: ${SECRET_KEY_V2}
   min-score: 0.5
   enabled: true
