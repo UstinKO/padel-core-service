@@ -68,7 +68,7 @@ public class PlayerPadelController {
         }
 
         // Проверяем reCAPTCHA
-        if (!recaptchaService.verify(recaptchaToken, "register")) {
+        if (!recaptchaService.verify(recaptchaToken)) {
             log.warn("reCAPTCHA fallida para IP: {}", httpRequest.getRemoteAddr());
             rateLimitFilter.markRegistrationFailed(httpRequest.getRemoteAddr());  // ← фейл
             model.addAttribute("recaptchaSiteKey", recaptchaProperties.getSiteKey());

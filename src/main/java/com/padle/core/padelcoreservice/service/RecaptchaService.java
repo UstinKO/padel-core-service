@@ -19,14 +19,7 @@ public class RecaptchaService {
     private final RecaptchaProperties props;
     private final RestTemplate restTemplate;
 
-    /**
-     * Проверяет токен reCAPTCHA v3 полученный от клиента.
-     *
-     * @param token  токен из поля g-recaptcha-response
-     * @param action ожидаемый action (например "register")
-     * @return true если токен валиден и score >= minScore
-     */
-    public boolean verify(String token, String action) {
+    public boolean verify(String token) {
         if (!props.isEnabled()) {
             log.debug("reCAPTCHA disabled, skipping verification");
             return true;
@@ -49,35 +42,16 @@ public class RecaptchaService {
             }
 
             boolean success = Boolean.TRUE.equals(response.get("success"));
-            double score = response.get("score") != null
-                    ? ((Number) response.get("score")).doubleValue() : 0.0;
-            String responseAction = (String) response.get("action");
-
-            log.info("reCAPTCHA: success={}, score={}, action={}",
-                    success, score, responseAction);
+            log.info("reCAPTCHA v2: success={}", success);
 
             if (!success) {
                 log.warn("reCAPTCHA failed: {}", response.get("error-codes"));
-                return false;
             }
 
-            // Проверяем action чтобы токен не был переиспользован
-            if (action != null && !action.equals(responseAction)) {
-                log.warn("reCAPTCHA action mismatch: expected={}, got={}",
-                        action, responseAction);
-                return false;
-            }
-
-            if (score < props.getMinScore()) {
-                log.warn("reCAPTCHA score too low: {} < {}", score, props.getMinScore());
-                return false;
-            }
-
-            return true;
+            return success;
 
         } catch (Exception e) {
             log.error("reCAPTCHA verification error: {}", e.getMessage());
-            // В случае ошибки сети — пропускаем (не блокируем пользователей)
             return true;
         }
     }

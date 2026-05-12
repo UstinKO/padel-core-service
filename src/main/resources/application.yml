@@ -173,7 +173,6 @@ disposable-email-domains:
       port:
 
 recaptcha:
-  site-key: ${SITE_KEY}       # Публичный ключ — вставить в JS
-  secret-key: ${SECRET_KEY}   # Приватный ключ — только на сервере
-  min-score: 0.5                     # Минимальный score (0.0-1.0), 0.5 — баланс
-  enabled: true                      # false — отключить в dev/test
+  site-key: ${SITE_KEY_V2}
+  secret-key: ${SECRET_KEY_V2}
+  enabled: true

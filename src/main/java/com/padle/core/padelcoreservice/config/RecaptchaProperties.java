@@ -10,6 +10,5 @@ import org.springframework.stereotype.Component;
 public class RecaptchaProperties {
     private String siteKey;
     private String secretKey;
-    private double minScore = 0.5;
     private boolean enabled = true;
 }

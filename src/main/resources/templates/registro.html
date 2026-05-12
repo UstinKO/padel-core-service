@@ -29,16 +29,7 @@
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" th:href="@{/css/registro.css}">
 
-    <!-- reCAPTCHA: сначала загружаем API, потом передаём ключ в JS -->
-    <script th:src="'https://www.google.com/recaptcha/api.js?render=' + ${recaptchaSiteKey}"></script>
-    <script th:inline="javascript">
-        /*<![CDATA[*/
-        // Глобальная переменная для ключа reCAPTCHA
-        window.RECAPTCHA_SITE_KEY = /*[[${recaptchaSiteKey}]]*/ '';
-        console.log('reCAPTCHA site key loaded:', window.RECAPTCHA_SITE_KEY ? 'OK' : 'EMPTY - will submit without token');
-        /*]]>*/
-    </script>
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body class="auth-page-simple">
 <!-- Header con nuevo logo y botón de login -->
@@ -218,16 +209,14 @@
                         </label>
                     </div>
 
-                    <!-- reCAPTCHA token -->
-                    <input type="hidden" id="g-recaptcha-response" name="g-recaptcha-response">
+                    <!-- reCAPTCHA v2 -->
+                    <div class="g-recaptcha" th:attr="data-sitekey=${recaptchaSiteKey}" style="margin-bottom: 1rem;"></div>
 
                     <!-- Honeypot: боты заполнят, люди — нет -->
                     <div style="position: absolute; left: -9999px; opacity: 0;" aria-hidden="true">
                         <input type="text" name="website" id="website" tabindex="-1" autocomplete="off">
                         <label for="website">Website</label>
                     </div>
-
-                    <div class="cf-turnstile" data-sitekey="YOUR_TURNSTILE_SITE_KEY"></div>
 
                     <!-- Submit Button -->
                     <button type="submit" class="btn btn-primary btn-block btn-large" id="submitBtn">
@@ -293,32 +282,16 @@
                 return;
             }
 
-            // Блокируем кнопку
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
-
-            // Получаем reCAPTCHA токен или отправляем без него
-            const siteKey = window.RECAPTCHA_SITE_KEY;
-
-            if (siteKey && typeof grecaptcha !== 'undefined') {
-                grecaptcha.ready(function() {
-                    grecaptcha.execute(siteKey, { action: 'register' })
-                        .then(function(token) {
-                            document.getElementById('g-recaptcha-response').value = token;
-                            console.log('reCAPTCHA token obtained, submitting form...');
-                            form.submit();
-                        })
-                        .catch(function(error) {
-                            console.error('reCAPTCHA error:', error);
-                            // Пробуем отправить без токена
-                            console.warn('Submitting without reCAPTCHA token due to error');
-                            form.submit();
-                        });
-                });
-            } else {
-                console.warn('reCAPTCHA not available, submitting without token');
-                form.submit();
+            // Проверяем reCAPTCHA v2
+            if (typeof grecaptcha !== 'undefined' && !grecaptcha.getResponse()) {
+                showNotification('Por favor completa la verificación de seguridad', 'warning');
+                return;
             }
+
+            // Блокируем кнопку и отправляем
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registrando...';
+            form.submit();
         });
     });
     /*]]>*/
