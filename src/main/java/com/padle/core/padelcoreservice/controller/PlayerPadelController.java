@@ -18,7 +18,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -37,9 +36,6 @@ public class PlayerPadelController {
     private final RecaptchaService recaptchaService;
     private final RecaptchaProperties recaptchaProperties;
     private final RateLimitFilter rateLimitFilter;
-
-    @Value("${app.base-url}")
-    private String appBaseUrl;
 
     @GetMapping("/registro")
     public String mostrarFormularioRegistro(Model model) {
@@ -66,15 +62,14 @@ public class PlayerPadelController {
         if (honeypot != null && !honeypot.isBlank()) {
             log.warn("🪤 Honeypot triggered! IP: {}, honeypot value: '{}'",
                     httpRequest.getRemoteAddr(), honeypot);
-            // Бот думает что всё ок, но мы его помечаем
             rateLimitFilter.markRegistrationFailed(httpRequest.getRemoteAddr());
-            return "redirect:" + appBaseUrl + "/?welcome=true";
+            return "redirect:/?welcome=true";
         }
 
         // Проверяем reCAPTCHA
         if (!recaptchaService.verify(recaptchaToken)) {
             log.warn("reCAPTCHA fallida para IP: {}", httpRequest.getRemoteAddr());
-            rateLimitFilter.markRegistrationFailed(httpRequest.getRemoteAddr());  // ← фейл
+            rateLimitFilter.markRegistrationFailed(httpRequest.getRemoteAddr());
             model.addAttribute("recaptchaSiteKey", recaptchaProperties.getSiteKey());
             model.addAttribute("registroRequest", request);
             model.addAttribute("errorMessage",
@@ -93,9 +88,8 @@ public class PlayerPadelController {
         // Verificar que las contraseñas coinciden
         if (!request.passwordsMatch()) {
             log.warn("Las contraseñas no coinciden para IP: {}", httpRequest.getRemoteAddr());
-            rateLimitFilter.markRegistrationFailed(httpRequest.getRemoteAddr());  // ← фейл
+            rateLimitFilter.markRegistrationFailed(httpRequest.getRemoteAddr());
 
-            // Искусственная задержка при ошибке
             sleepRandom(2, 5);
 
             redirectAttributes.addFlashAttribute("errorMessage", "Las contraseñas no coinciden");
@@ -109,14 +103,13 @@ public class PlayerPadelController {
                     log.warn("Error: {}", error.getDefaultMessage())
             );
 
-            rateLimitFilter.markRegistrationFailed(httpRequest.getRemoteAddr());  // ← фейл
+            rateLimitFilter.markRegistrationFailed(httpRequest.getRemoteAddr());
 
             String errorMessage = result.getAllErrors().stream()
                     .map(error -> error.getDefaultMessage())
                     .findFirst()
                     .orElse("Por favor, corrige los errores en el formulario");
 
-            // Искусственная задержка при ошибке
             sleepRandom(2, 5);
 
             redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
@@ -156,15 +149,13 @@ public class PlayerPadelController {
             }
 
             // 3. Редирект на главную
-            return "redirect:" + appBaseUrl + "/?welcome=true";
+            return "redirect:/?welcome=true";
 
         } catch (IllegalArgumentException e) {
             log.error("Error al registrar jugador: {} (IP: {})", e.getMessage(), httpRequest.getRemoteAddr());
 
-            // ← ФЕЙЛ — увеличиваем счётчик
             rateLimitFilter.markRegistrationFailed(httpRequest.getRemoteAddr());
 
-            // Искусственная задержка 2-5 секунд
             sleepRandom(2, 5);
 
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
@@ -172,7 +163,6 @@ public class PlayerPadelController {
         }
     }
 
-    // Вспомогательный метод в том же контроллере
     private void sleepRandom(int minSeconds, int maxSeconds) {
         try {
             long delay = minSeconds * 1000L + (long) (Math.random() * (maxSeconds - minSeconds) * 1000L);
