@@ -66,6 +66,11 @@ public class RateLimitFilter extends OncePerRequestFilter {
             return;
         }
 
+        if (limitType == LimitType.BLOCKED) {
+            sendRateLimitResponse(response, LimitType.BLOCKED);
+            return;
+        }
+
         String bucketKey = ip + ":" + limitType.name();
         Bucket bucket = buckets.computeIfAbsent(bucketKey, k -> createBucket(limitType));
 
@@ -146,8 +151,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
             case AUTH -> Bandwidth.classic(10, Refill.intervally(10, Duration.ofMinutes(1)));
             // ✅ Ужесточаем: 3 регистрации в минуту вместо 5
             case REGISTER -> Bandwidth.classic(3, Refill.intervally(3, Duration.ofMinutes(1)));
-            // ✅ Заблокированные IP — ноль запросов
-            case BLOCKED -> Bandwidth.classic(0, Refill.intervally(0, Duration.ofMinutes(15)));
+            case BLOCKED -> Bandwidth.classic(1, Refill.intervally(1, Duration.ofMinutes(15)));
             case API -> Bandwidth.classic(60, Refill.greedy(60, Duration.ofMinutes(1)));
             case GENERAL -> Bandwidth.classic(200, Refill.greedy(200, Duration.ofMinutes(1)));
         };
