@@ -18,6 +18,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -36,6 +37,9 @@ public class PlayerPadelController {
     private final RecaptchaService recaptchaService;
     private final RecaptchaProperties recaptchaProperties;
     private final RateLimitFilter rateLimitFilter;
+
+    @Value("${app.base-url}")
+    private String appBaseUrl;
 
     @GetMapping("/registro")
     public String mostrarFormularioRegistro(Model model) {
@@ -64,7 +68,7 @@ public class PlayerPadelController {
                     httpRequest.getRemoteAddr(), honeypot);
             // Бот думает что всё ок, но мы его помечаем
             rateLimitFilter.markRegistrationFailed(httpRequest.getRemoteAddr());
-            return "redirect:/?welcome=true";
+            return "redirect:" + appBaseUrl + "/?welcome=true";
         }
 
         // Проверяем reCAPTCHA
@@ -152,7 +156,7 @@ public class PlayerPadelController {
             }
 
             // 3. Редирект на главную
-            return "redirect:/?welcome=true";
+            return "redirect:" + appBaseUrl + "/?welcome=true";
 
         } catch (IllegalArgumentException e) {
             log.error("Error al registrar jugador: {} (IP: {})", e.getMessage(), httpRequest.getRemoteAddr());
