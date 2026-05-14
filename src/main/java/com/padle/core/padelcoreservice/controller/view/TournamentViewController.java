@@ -12,7 +12,9 @@ import com.padle.core.padelcoreservice.model.enums.TournamentType;
 import com.padle.core.padelcoreservice.repository.TournamentKingOfCourtRepository;
 import com.padle.core.padelcoreservice.service.KingOfCourtService;
 import com.padle.core.padelcoreservice.service.TournamentService;
+import com.padle.core.padelcoreservice.model.enums.Modalidad;
 import com.padle.core.padelcoreservice.service.americano.AmericanoService;
+import com.padle.core.padelcoreservice.service.americano.TeamPlayoffService;
 import com.padle.core.padelcoreservice.util.SecurityUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -40,7 +42,8 @@ public class TournamentViewController {
     private final TournamentService tournamentService;
     private final TournamentKingOfCourtRepository tournamentKingOfCourtRepository;
     private final KingOfCourtService kingOfCourtService;
-    private final AmericanoService americanoService; // Добавлен AmericanoService
+    private final AmericanoService americanoService;
+    private final TeamPlayoffService teamPlayoffService;
 
     @GetMapping("/{id}")
     public String viewTournament(@PathVariable Long id,
@@ -67,30 +70,28 @@ public class TournamentViewController {
 
             // Логируем для отладки
             for (TournamentRegistrationDto reg : registrations) {
-                log.debug("Registration: player={} {}, partner={} {}, status={}, isDouble={}",
+                log.info("Registration: player={} {}, partner={} {}, status={}, isDouble={}",
                         reg.getPlayerNombre(), reg.getPlayerApellido(),
                         reg.getPartnerNombre(), reg.getPartnerApellido(),
                         reg.getStatus(), reg.getIsDoubleRegistration());
             }
 
-            // ========== БЛОК ДЛЯ AMERICANO ==========
+            // ========== AMERICANO INDIVIDUAL ==========
             boolean isAmericanoInitialized = false;
-            if (tournament.getTipo() == TournamentType.AMERICANO) {
+            if (tournament.getTipo() == TournamentType.AMERICANO
+                    && tournament.getModalidad() != Modalidad.DOBLES) {
                 isAmericanoInitialized = americanoService.isInitialized(id);
                 model.addAttribute("isInitialized", isAmericanoInitialized);
 
                 if (isAmericanoInitialized) {
-                    // Получаем количество активных игроков
                     int activePlayers = americanoService.getActivePlayersCount(id);
                     model.addAttribute("activePlayers", activePlayers);
 
-                    // Получаем информацию о лидере
                     List<AmericanoPlayerDto> ranking = americanoService.getRanking(id, "score", "DESC");
                     if (!ranking.isEmpty()) {
                         model.addAttribute("leaderName", ranking.get(0).getPlayerFullName());
                     }
 
-                    // Получаем информацию о раундах
                     List<AmericanoRoundDto> rounds = americanoService.getRounds(id);
                     if (!rounds.isEmpty()) {
                         long completedRounds = rounds.stream()
@@ -100,14 +101,29 @@ public class TournamentViewController {
                         model.addAttribute("completedRounds", completedRounds);
                     }
                 } else {
-                    // Даже если не инициализирован, добавляем атрибут с дефолтным значением
                     model.addAttribute("activePlayers", 0);
                 }
             } else {
-                // Для не-Americano турниров добавляем isInitialized = false
                 model.addAttribute("isInitialized", false);
             }
-            // ========== КОНЕЦ БЛОКА AMERICANO ==========
+
+            // ========== AMERICANO PAREJAS (qual+playoff) ==========
+            boolean isTeamPlayoffFormat =
+                    tournament.getTipo() == TournamentType.AMERICANO_TEAMS
+                    || (tournament.getTipo() == TournamentType.AMERICANO
+                        && tournament.getModalidad() == Modalidad.DOBLES);
+            if (isTeamPlayoffFormat) {
+                boolean qualStarted  = teamPlayoffService.isQualificationStarted(id);
+                boolean playoffStarted = teamPlayoffService.isPlayoffStarted(id);
+                model.addAttribute("isTeamPlayoffFormat", true);
+                model.addAttribute("isPlayoffQualStarted", qualStarted);
+                model.addAttribute("isPlayoffStarted", playoffStarted);
+                model.addAttribute("tournamentTeams", teamPlayoffService.getTeamDtos(id));
+            } else {
+                model.addAttribute("isTeamPlayoffFormat", false);
+                model.addAttribute("tournamentTeams", java.util.List.of());
+            }
+            // ========== КОНЕЦ БЛОКОВ AMERICANO ==========
 
             // Проверяем наличие King of Court
             List<TournamentKingOfCourt> activeKings = tournamentKingOfCourtRepository

@@ -13,6 +13,7 @@ import com.padle.core.padelcoreservice.service.OwnerService;
 import com.padle.core.padelcoreservice.service.PlayerService;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import com.padle.core.padelcoreservice.service.americano.TeamAmericanoService;
+import com.padle.core.padelcoreservice.service.americano.TeamPlayoffService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +45,7 @@ public class AdminController {
     private final MatchService matchService;
     private final TournamentKingOfCourtRepository tournamentKingOfCourtRepository;
     private final TeamAmericanoService teamAmericanoService;
+    private final TeamPlayoffService teamPlayoffService;
 
     @GetMapping
     public String adminPanel(Model model, @AuthenticationPrincipal Owner owner) {
@@ -202,9 +204,23 @@ public class AdminController {
             boolean isTeamInit = teamAmericanoService.isInitialized(id);
             model.addAttribute("isTeamAmericanoInitialized", isTeamInit);
             if (isTeamInit) {
-                model.addAttribute("teamAmericanoRanking",
-                        teamAmericanoService.getRanking(id));
+                // Турнир уже запущен по Round Robin — не трогаем
+                model.addAttribute("teamAmericanoRanking", teamAmericanoService.getRanking(id));
+            } else {
+                // Новый формат: квалификация + плей-офф
+                model.addAttribute("isPlayoffQualStarted", teamPlayoffService.isQualificationStarted(id));
+                model.addAttribute("isPlayoffStarted", teamPlayoffService.isPlayoffStarted(id));
+                model.addAttribute("playoffTeamsCount", teamPlayoffService.getTeams(id).size());
             }
+        }
+
+        if (tournament.getTipo() == TournamentType.AMERICANO_TEAMS) {
+            model.addAttribute("isTeamAmericanoInitialized", false);
+            boolean qualStarted   = teamPlayoffService.isQualificationStarted(id);
+            boolean playoffStarted = teamPlayoffService.isPlayoffStarted(id);
+            model.addAttribute("isPlayoffQualStarted", qualStarted);
+            model.addAttribute("isPlayoffStarted", playoffStarted);
+            model.addAttribute("playoffTeamsCount", teamPlayoffService.getTeams(id).size());
         }
 
         return "admin/tournaments/details";

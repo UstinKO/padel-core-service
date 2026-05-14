@@ -3,6 +3,7 @@ package com.padle.core.padelcoreservice.model.americano;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.enums.AmericanoPlayerStatus;
+import com.padle.core.padelcoreservice.model.enums.RegistrationSource;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -96,6 +97,41 @@ public class AmericanoTeam {
     @Builder.Default
     private Integer pointsConceded = 0;
 
+    // ── Статистика сетов/геймов (для AMERICANO_TEAMS) ──────────────────────
+
+    @Column(name = "sets_won", nullable = false)
+    @Builder.Default
+    private Integer setsWon = 0;
+
+    @Column(name = "sets_lost", nullable = false)
+    @Builder.Default
+    private Integer setsLost = 0;
+
+    @Column(name = "games_won", nullable = false)
+    @Builder.Default
+    private Integer gamesWon = 0;
+
+    @Column(name = "games_lost", nullable = false)
+    @Builder.Default
+    private Integer gamesLost = 0;
+
+    // ── Данные регистрации ──────────────────────────────────────────────────
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "registration_source", length = 20)
+    private RegistrationSource registrationSource;
+
+    @Column(name = "has_paid", nullable = false)
+    @Builder.Default
+    private Boolean hasPaid = false;
+
+    @Column(name = "attended", nullable = false)
+    @Builder.Default
+    private Boolean attended = false;
+
+    @Column(name = "admin_comment", length = 500)
+    private String adminComment;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -130,6 +166,40 @@ public class AmericanoTeam {
 
     public Integer getPointDifference() {
         return pointsScored - pointsConceded;
+    }
+
+    public Integer getSetDifference() {
+        return setsWon - setsLost;
+    }
+
+    public Integer getGameDifference() {
+        return gamesWon - gamesLost;
+    }
+
+    public void addSetMatchResult(int myGames, int oppGames) {
+        this.gamesWon  += myGames;
+        this.gamesLost += oppGames;
+        this.matchesPlayed++;
+        if (myGames > oppGames) {
+            this.setsWon++;
+            this.matchesWon++;
+        } else {
+            this.setsLost++;
+            this.matchesLost++;
+        }
+    }
+
+    public void revertSetMatchResult(int myGames, int oppGames) {
+        this.gamesWon  -= myGames;
+        this.gamesLost -= oppGames;
+        this.matchesPlayed--;
+        if (myGames > oppGames) {
+            this.setsWon--;
+            this.matchesWon--;
+        } else {
+            this.setsLost--;
+            this.matchesLost--;
+        }
     }
 
     /** Отображаемое имя команды */

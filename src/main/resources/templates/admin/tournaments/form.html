@@ -190,18 +190,20 @@
                                     id="tipo"
                                     class="form-control"
                                     th:classappend="${#fields.hasErrors('tipo')} ? 'is-invalid' : ''"
+                                    onchange="onTipoChange(this)"
                                     required>
                                 <option value="">Seleccione tipo</option>
-                                <option th:each="tipo : ${tournamentTypes}"
-                                        th:value="${tipo}"
-                                        th:text="${tipo.value}"></option>
+                                <option value="KING_OF_COURT">Rey de Cancha</option>
+                                <option value="AMERICANO">Americano (Individual)</option>
+                                <option value="AMERICANO_TEAMS">Americano Parejas (Calificación + Playoff)</option>
                             </select>
+                            <div id="tipoHint" style="font-size:.8rem;margin-top:.35rem;color:#64748b"></div>
                             <div class="invalid-feedback" th:if="${#fields.hasErrors('tipo')}"
                                  th:errors="*{tipo}">Error en el campo</div>
                         </div>
 
-                        <!-- НОВОЕ ПОЛЕ: Modalidad (Парный / Индивидуальный) -->
-                        <div class="form-group">
+                        <!-- Modalidad — скрывается для AMERICANO_TEAMS (всегда Dobles) -->
+                        <div class="form-group" id="modalidadGroup">
                             <label for="modalidad" class="required">Modalidad de Juego</label>
                             <select th:field="*{modalidad}"
                                     id="modalidad"
@@ -209,10 +211,9 @@
                                     th:classappend="${#fields.hasErrors('modalidad')} ? 'is-invalid' : ''"
                                     required>
                                 <option value="">Seleccione modalidad</option>
-                                <!-- Предполагаем, что в модель передается список modalidades -->
                                 <option th:each="modalidad : ${modalidades}"
                                         th:value="${modalidad}"
-                                        th:text="${modalidad.nombre}"></option> <!-- Или modalidad.displayName -->
+                                        th:text="${modalidad.nombre}"></option>
                             </select>
                             <div class="invalid-feedback" th:if="${#fields.hasErrors('modalidad')}"
                                  th:errors="*{modalidad}">Error en el campo</div>
@@ -361,7 +362,36 @@
 
 <!-- Скрипт для автоматического расчета даты отмены -->
 <script>
+    function onTipoChange(sel) {
+        const modalidadGroup = document.getElementById('modalidadGroup');
+        const modalidadSelect = document.getElementById('modalidad');
+        const tipoHint = document.getElementById('tipoHint');
+        const val = sel ? sel.value : (document.getElementById('tipo') ? document.getElementById('tipo').value : '');
+
+        if (val === 'AMERICANO_TEAMS') {
+            modalidadGroup.style.display = 'none';
+            modalidadSelect.value = 'DOBLES';
+            modalidadSelect.required = false;
+            tipoHint.textContent = 'Formato parejas: Calificación (2 partidos) + Playoff eliminatorio. Modalidad siempre Dobles.';
+        } else if (val === 'AMERICANO') {
+            modalidadGroup.style.display = '';
+            modalidadSelect.required = true;
+            tipoHint.textContent = 'Americano individual o parejas (Round Robin clásico).';
+        } else if (val === 'KING_OF_COURT') {
+            modalidadGroup.style.display = '';
+            modalidadSelect.required = true;
+            tipoHint.textContent = 'Rey de Cancha.';
+        } else {
+            modalidadGroup.style.display = '';
+            modalidadSelect.required = true;
+            tipoHint.textContent = '';
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
+        // Применяем логику для уже выбранного типа (при редактировании)
+        onTipoChange(null);
+
         const fechaInicio = document.getElementById('fechaInicio');
         const horaInicio = document.getElementById('horaInicio');
         const deadlineCancelacion = document.getElementById('deadlineCancelacion');

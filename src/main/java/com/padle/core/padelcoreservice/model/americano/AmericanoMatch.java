@@ -2,6 +2,7 @@ package com.padle.core.padelcoreservice.model.americano;
 
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.enums.AmericanoRoundStatus;
+import com.padle.core.padelcoreservice.model.enums.PlayoffStage;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -74,6 +75,24 @@ public class AmericanoMatch {
 
     @Column(name = "note")
     private String note;
+
+    /** ID команды (AmericanoTeam) — используется в AMERICANO_TEAMS */
+    @Column(name = "team1_id")
+    private Long team1Id;
+
+    @Column(name = "team2_id")
+    private Long team2Id;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "playoff_stage", length = 20)
+    private PlayoffStage playoffStage;
+
+    /** Счёт в геймах (для AMERICANO_TEAMS с сетовым форматом) */
+    @Column(name = "team1_games")
+    private Integer team1Games;
+
+    @Column(name = "team2_games")
+    private Integer team2Games;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

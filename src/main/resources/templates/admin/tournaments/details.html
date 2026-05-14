@@ -148,8 +148,8 @@
             border: 1px solid #e9ecef;
         }
         .calc-info-box h4 { margin: 0 0 .75rem; font-size: .95rem; color: #212529; }
-        .calc-grid { display: grid; grid-template-columns: auto 1fr; gap: .4rem .75rem; font-size: .875rem; }
-        .calc-grid .lbl { color: #6c757d; }
+        .calc-grid { display: grid; grid-template-columns: auto 1fr; gap: .4rem .75rem; font-size: .875rem; align-items: center; }
+        .calc-grid .lbl { color: #6c757d; white-space: nowrap; }
         .calc-grid .val { font-weight: 600; }
         .calc-grid .hint { color: #6c757d; font-size: .78rem; font-weight: 400; }
 
@@ -157,13 +157,16 @@
             display: inline-flex;
             align-items: center;
             gap: .35rem;
-            padding: .3rem .65rem;
-            border-radius: 20px;
-            font-size: .78rem;
+            padding: .25rem .6rem;
+            border-radius: 12px;
+            font-size: .75rem;
             font-weight: 600;
+            white-space: nowrap;
         }
         .format-badge.full { background: #d1fae5; color: #065f46; }
         .format-badge.flex { background: #fef3c7; color: #92400e; }
+
+        .alert-text { flex: 1; line-height: 1.45; }
 
         .format-msg-box {
             padding: .75rem 1rem;
@@ -941,17 +944,23 @@
                 <!-- ── конец AMERICANO ── -->
 
                 <!-- ═══════════════════════════════════════════════════════════
-                     TEAM AMERICANO (AMERICANO + DOBLES)
+                     AMERICANO PAREJAS (AMERICANO + DOBLES)
+                     Формат: Квалификация (2 матча/команда) + Плей-офф
+                     LEGACY: если уже запущен Round Robin → старый путь
                 ═══════════════════════════════════════════════════════════ -->
                 <div th:if="${tournament.tipo.name() == 'AMERICANO' and tournament.modalidad.name() == 'DOBLES'}"
                      class="admin-card americano-card">
                     <div class="admin-card-header">
-                        <h2><i class="fas fa-users" style="color:#FF6B35;"></i> Team Americano</h2>
+                        <h2><i class="fas fa-users" style="color:#FF6B35;"></i> Americano Parejas</h2>
                     </div>
                     <div class="admin-card-body">
 
-                        <!-- Турнир уже инициализирован -->
+                        <!-- ── LEGACY: Round Robin уже запущен ── -->
                         <div th:if="${isTeamAmericanoInitialized == true}" class="initialized-nav">
+                            <div class="alert alert-info" style="font-size:.82rem;margin-bottom:.75rem">
+                                <i class="fas fa-info-circle"></i>
+                                Torneo en formato <strong>Round Robin</strong> (formato clásico).
+                            </div>
                             <div class="alert alert-success">
                                 <i class="fas fa-check-circle"></i>
                                 Torneo inicializado &middot;
@@ -960,127 +969,159 @@
                             </div>
                             <a th:href="@{'/tournaments/team-americano/admin/' + ${tournament.id}}"
                                class="btn btn-primary btn-block">
-                                <i class="fas fa-arrow-right"></i> Ir al torneo en curso
-                            </a>
-                            <a th:href="@{'/tournaments/team-americano/' + ${tournament.id}}"
-                               class="btn btn-outline btn-block" target="_blank">
-                                <i class="fas fa-eye"></i> Vista pública
+                                <i class="fas fa-arrow-right"></i> Ir al torneo Round Robin
                             </a>
                         </div>
 
-                        <!-- Турнир ещё не инициализирован -->
+                        <!-- ── NUEVO FORMATO: Calificación + Playoff ── -->
                         <div th:unless="${isTeamAmericanoInitialized == true}">
 
-                            <th:block th:with="
-                                pairsCount=${tournament.inscritosActuales / 2},
-                                sugCourts=${tournament.inscritosActuales / 2 >= 8 ? 3 : (tournament.inscritosActuales / 2 >= 4 ? 2 : 1)}">
-                                <th:block th:with="
-                                totalMatches=${pairsCount * (pairsCount - 1) / 2},
-                                sugRounds=${sugCourts > 0 ? (pairsCount * (pairsCount - 1) / 2 + sugCourts - 1) / sugCourts : 1}">
+                            <div class="alert alert-info" style="font-size:.85rem;margin-bottom:1rem">
+                                <i class="fas fa-info-circle" style="flex-shrink:0"></i>
+                                <span class="alert-text">
+                                    <strong>Formato Americano Parejas</strong>: cada equipo juega
+                                    <strong>2 partidos de calificación</strong> (1 set, resultado en games:
+                                    ej. 6:4). Los mejores equipos pasan al <strong>playoff eliminatorio</strong>.
+                                </span>
+                            </div>
 
-                                    <!-- Расчётные параметры -->
-                                    <div class="calc-info-box">
-                                        <h4><i class="fas fa-calculator"></i> Parámetros calculados</h4>
-                                        <div class="calc-grid">
-                                            <span class="lbl">Parejas confirmadas:</span>
-                                            <span class="val" th:text="${pairsCount}">8</span>
+                            <!-- Уже запущен qual+playoff -->
+                            <div th:if="${isPlayoffQualStarted == true}" class="initialized-nav">
+                                <div class="alert alert-success">
+                                    <i class="fas fa-check-circle"></i>
+                                    <strong th:text="${playoffTeamsCount}">0</strong> equipos &middot;
+                                    <span th:if="${isPlayoffStarted == true}">Playoff en curso</span>
+                                    <span th:unless="${isPlayoffStarted == true}">Calificación en curso</span>
+                                </div>
+                                <a th:href="@{'/tournaments/team-playoff/admin/' + ${tournament.id}}"
+                                   class="btn btn-primary btn-block">
+                                    <i class="fas fa-arrow-right"></i> Ir al panel del torneo
+                                </a>
+                            </div>
 
-                                            <span class="lbl">Total partidos:</span>
-                                            <span class="val" th:text="${totalMatches}">28</span>
+                            <!-- Ещё не запущен -->
+                            <div th:unless="${isPlayoffQualStarted == true}">
 
-                                            <span class="lbl">Canchas sugeridas:</span>
-                                            <span class="val">
-                                            <span th:text="${sugCourts}">2</span>
-                                            <span class="hint">(puedes cambiar)</span>
-                                        </span>
+                                <!-- Параметры команд -->
+                                <div class="calc-info-box">
+                                    <h4><i class="fas fa-calculator"></i> Estado de inscripción</h4>
+                                    <div class="calc-grid">
+                                        <span class="lbl">Inscriptos confirmados:</span>
+                                        <span class="val" th:text="${tournament.inscritosActuales}">0</span>
 
-                                            <span class="lbl">Rondas necesarias:</span>
-                                            <span class="val" th:text="${sugRounds}">14</span>
+                                        <span class="lbl">Parejas inscritas:</span>
+                                        <span class="val" th:text="${tournament.inscritosActuales / 2}">0</span>
 
-                                            <span class="lbl">Formato:</span>
-                                            <span class="val">
+                                        <span class="lbl">Equipos cargados (manual):</span>
+                                        <span class="val" th:text="${playoffTeamsCount}">0</span>
+
+                                        <span style="grid-column:1/-1;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;color:#6c757d;font-size:.875rem">
+                                            Formato:
                                             <span class="format-badge full">
-                                                <i class="fas fa-star"></i> Round Robin completo
+                                                <i class="fas fa-list-ol"></i> Calificación (2 partidos) + Playoff
                                             </span>
                                         </span>
-                                        </div>
                                     </div>
+                                </div>
 
-                                    <!-- Форма инициализации -->
-                                    <form th:action="@{'/tournaments/team-americano/initialize'}"
-                                          method="post" id="teamAmericanoForm">
-                                        <input type="hidden" name="tournamentId" th:value="${tournament.id}">
-
-                                        <!-- Очки за матч -->
-                                        <div class="form-group">
-                                            <label for="teamPointsPerMatch">
-                                                <i class="fas fa-bullseye"></i> Límite de puntos por partido
-                                            </label>
-                                            <select id="teamPointsPerMatch" name="pointsPerMatch"
-                                                    class="form-control" required>
-                                                <option value="15">15 puntos</option>
-                                                <option value="21">21 puntos</option>
-                                                <option value="24">24 puntos (recomendado)</option>
-                                                <option value="32" selected>32 puntos (clásico)</option>
-                                                <option value="40">40 puntos (largo)</option>
-                                            </select>
-                                            <small class="form-text text-muted">
-                                                Suma de ambas parejas = este límite (ej. 17:15 si límite es 32).
-                                            </small>
-                                        </div>
-
-                                        <!-- Количество кортов -->
-                                        <div class="form-group">
-                                            <label for="teamCourts">
-                                                <i class="fas fa-table-tennis"></i> Número de canchas
-                                            </label>
-                                            <input type="number" id="teamCourts" name="courts"
-                                                   class="form-control"
-                                                   th:value="${sugCourts}"
-                                                   min="1" max="10" required>
-                                            <small class="form-text text-muted"
-                                                   th:text="'Se generarán ' + ${sugRounds} + ' rondas para ' + ${pairsCount} + ' parejas con esta cantidad de canchas.'">
-                                            </small>
-                                        </div>
-
-                                        <!-- Предупреждение если мало пар -->
-                                        <div th:if="${pairsCount < 2}"
-                                             class="alert alert-warning" style="margin-bottom:1rem">
-                                            <i class="fas fa-exclamation-triangle"></i>
-                                            Se necesitan al menos 2 parejas confirmadas para inicializar.
-                                            Actualmente: <strong th:text="${pairsCount}">0</strong> parejas.
-                                        </div>
-
-                                        <!-- Кнопки -->
-                                        <div class="btn-row">
-                                            <!-- Кнопка превью — отдельная форма с action /preview -->
-                                            <button type="button" class="btn btn-outline"
-                                                    th:disabled="${pairsCount < 2}"
-                                                    onclick="previewTeamAmericano()">
-                                                <i class="fas fa-eye"></i> Previsualizar fixture
+                                <!-- Шаг 1: Импорт из регистраций -->
+                                <div style="margin-bottom:1rem">
+                                    <strong style="font-size:.875rem;color:#1e293b">Paso 1 — Cargar equipos</strong>
+                                    <p style="font-size:.82rem;color:#64748b;margin:.25rem 0 .5rem">
+                                        Importa las parejas ya inscritas, o dirígete al panel para agregarlas manualmente.
+                                    </p>
+                                    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+                                        <form th:action="@{'/tournaments/team-playoff/admin/' + ${tournament.id} + '/import-registrations'}"
+                                              method="post">
+                                            <button type="submit" class="btn btn-outline"
+                                                    th:disabled="${tournament.inscritosActuales < 2}">
+                                                <i class="fas fa-download"></i> Importar parejas inscritas
+                                                (<span th:text="${tournament.inscritosActuales / 2}">0</span>)
                                             </button>
-                                            <button type="submit" class="btn btn-primary"
-                                                    id="btnIniciarTeamAmericano"
-                                                    th:disabled="${pairsCount < 2 or tournament.estado.name() != 'CERRADO'}"
-                                                    onclick="return confirmAndLockTeam(this)">
-                                                <i class="fas fa-play"></i> Iniciar Team Americano
-                                            </button>
-                                        </div>
+                                        </form>
+                                        <a th:href="@{'/tournaments/team-playoff/admin/' + ${tournament.id}}"
+                                           class="btn btn-outline">
+                                            <i class="fas fa-user-plus"></i> Agregar manualmente
+                                        </a>
+                                    </div>
+                                </div>
 
-                                        <div th:if="${tournament.estado.name() != 'CERRADO'}"
-                                             style="margin-top:.75rem;font-size:.82rem;color:#94a3b8;text-align:center">
-                                            <i class="fas fa-info-circle"></i>
-                                            El torneo debe estar en estado <strong>CERRADO</strong> para inicializarlo.
-                                        </div>
-                                    </form>
+                                <!-- Шаг 2: Запуск квалификации -->
+                                <div style="margin-bottom:.75rem">
+                                    <strong style="font-size:.875rem;color:#1e293b">Paso 2 — Iniciar calificación</strong>
+                                    <p style="font-size:.82rem;color:#64748b;margin:.25rem 0 .5rem">
+                                        Se necesitan <strong>mínimo 4 equipos</strong> cargados.
+                                        Actualmente: <strong th:text="${playoffTeamsCount}">0</strong>.
+                                    </p>
+                                    <a th:href="@{'/tournaments/team-playoff/admin/' + ${tournament.id}}"
+                                       class="btn btn-primary"
+                                       th:classappend="${playoffTeamsCount < 4} ? 'disabled' : ''"
+                                       th:attr="aria-disabled=${playoffTeamsCount < 4}">
+                                        <i class="fas fa-play"></i> Ir al panel e iniciar
+                                    </a>
+                                </div>
 
-                                </th:block>
-                            </th:block>
+                            </div>
                         </div>
 
                     </div>
                 </div>
-                <!-- ── конец TEAM AMERICANO ── -->
+                <!-- ── конец AMERICANO PAREJAS ── -->
+
+                <!-- ═══════════════════════════════════════════════════════════
+                     AMERICANO_TEAMS (tipo explícito — mismo formato que Dobles)
+                ═══════════════════════════════════════════════════════════ -->
+                <div th:if="${tournament.tipo.name() == 'AMERICANO_TEAMS'}"
+                     class="admin-card americano-card">
+                    <div class="admin-card-header">
+                        <h2><i class="fas fa-trophy" style="color:#FF6B35;"></i> Americano Parejas</h2>
+                    </div>
+                    <div class="admin-card-body">
+
+                        <div class="alert alert-info" style="margin-bottom:1rem;font-size:.85rem">
+                            <i class="fas fa-info-circle" style="flex-shrink:0"></i>
+                            <span class="alert-text">
+                                <strong>Calificación</strong> (2 partidos por equipo, puntuación en games: 6:4)
+                                + <strong>Playoff eliminatorio</strong>.
+                                Los equipos se agregan manualmente o importando inscriptos.
+                            </span>
+                        </div>
+
+                        <!-- Уже запущен -->
+                        <div th:if="${isPlayoffQualStarted == true}" class="initialized-nav">
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle"></i>
+                                <strong th:text="${playoffTeamsCount}">0</strong> equipos &middot;
+                                <span th:if="${isPlayoffStarted == true}">Playoff en curso</span>
+                                <span th:unless="${isPlayoffStarted == true}">Calificación en curso</span>
+                            </div>
+                            <a th:href="@{'/tournaments/team-playoff/admin/' + ${tournament.id}}"
+                               class="btn btn-primary btn-block">
+                                <i class="fas fa-arrow-right"></i> Ir al panel del torneo
+                            </a>
+                        </div>
+
+                        <!-- Ещё не запущен -->
+                        <div th:unless="${isPlayoffQualStarted == true}">
+                            <div class="calc-info-box">
+                                <h4><i class="fas fa-users"></i> Estado de equipos</h4>
+                                <div class="calc-grid">
+                                    <span class="lbl">Equipos cargados:</span>
+                                    <span class="val" th:text="${playoffTeamsCount}">0</span>
+                                    <span class="lbl">Mínimo requerido:</span>
+                                    <span class="val">4 equipos</span>
+                                </div>
+                            </div>
+
+                            <a th:href="@{'/tournaments/team-playoff/admin/' + ${tournament.id}}"
+                               class="btn btn-primary btn-block" style="margin-top:1rem">
+                                <i class="fas fa-cogs"></i> Gestionar equipos e iniciar torneo
+                            </a>
+                        </div>
+
+                    </div>
+                </div>
+                <!-- ── конец AMERICANO_TEAMS ── -->
 
             </div>
         </div>

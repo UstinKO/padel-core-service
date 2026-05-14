@@ -2,6 +2,7 @@ package com.padle.core.padelcoreservice.model.americano;
 
 import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.enums.AmericanoRoundStatus;
+import com.padle.core.padelcoreservice.model.enums.TournamentPhase;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -53,6 +54,10 @@ public class AmericanoRound {
 
     @Column(name = "note")
     private String note;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "phase", length = 20)
+    private TournamentPhase phase;
 
     @OneToMany(mappedBy = "round", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default

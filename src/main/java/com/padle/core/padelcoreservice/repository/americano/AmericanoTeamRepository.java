@@ -31,4 +31,11 @@ public interface AmericanoTeamRepository extends JpaRepository<AmericanoTeam, Lo
     long countActiveTeams(@Param("tournamentId") Long tournamentId);
 
     boolean existsByTournamentIdAndPlayer1Id(Long tournamentId, Long player1Id);
+
+    @Query("SELECT t FROM AmericanoTeam t WHERE t.tournament.id = :tournamentId " +
+            "ORDER BY t.setsWon DESC, (t.gamesWon - t.gamesLost) DESC, t.gamesWon DESC")
+    List<AmericanoTeam> findPlayoffRankingByTournamentId(@Param("tournamentId") Long tournamentId);
+
+    @Query("SELECT MAX(t.teamNumber) FROM AmericanoTeam t WHERE t.tournament.id = :tournamentId")
+    Optional<Integer> findMaxTeamNumber(@Param("tournamentId") Long tournamentId);
 }
