@@ -23,12 +23,21 @@ import java.util.concurrent.TimeUnit;
 /**
  * Rate limiting filter на основе IP адреса.
  *
- * Лимиты:
- *   /login, /api/auth/**        — 10 запросов / минуту (защита от brute force)
- *   /players/registro/**        — 5 запросов / минуту (защита от регистрации ботов)
- *   /recuperar-password/**      — 5 запросов / минуту
- *   /api/** (остальные)         — 60 запросов / минуту
- *   Все остальные endpoints     — 200 запросов / минуту
+ * Лимиты (bucket4j, окно сброса — 1 минута):
+ *   AUTH    /login, /api/auth/**, /oauth2/**, /login/oauth2/**  — 10 запросов / минуту
+ *   REGISTER /players/registro, /recuperar-password,
+ *            /double-registration/**                            — 3 запроса / минуту
+ *   API     /api/** (остальные)                                 — 60 запросов / минуту
+ *   GENERAL все остальные endpoints                             — 200 запросов / минуту
+ *
+ * Блокировка подозрительных IP:
+ *   — каждый запрос на REGISTER увеличивает счётчик на +1
+ *   — провал регистрации (из контроллера) увеличивает счётчик на +2
+ *   — при счётчике >= 5 за 15 минут IP получает статус BLOCKED (1 запрос / 15 мин)
+ *   — счётчик сбрасывается автоматически через 15 минут
+ *
+ * Статические ресурсы (/css/, /js/, /images/, /webjars/, favicon, robots.txt)
+ * не учитываются в лимитах.
  */
 @Component
 @Slf4j

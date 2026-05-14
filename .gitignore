@@ -33,3 +33,6 @@ build/
 application-*.yml
 !application.yml
 !application-prod.yml
+
+claude/
+qodana.yaml

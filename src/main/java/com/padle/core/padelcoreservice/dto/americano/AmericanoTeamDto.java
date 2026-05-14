@@ -39,4 +39,18 @@ public class AmericanoTeamDto {
     private Integer pointsScored;
     private Integer pointsConceded;
     private Integer pointDifference;
+
+    // Статистика сетов/геймов (AMERICANO_TEAMS)
+    private Integer setsWon;
+    private Integer setsLost;
+    private Integer gamesWon;
+    private Integer gamesLost;
+    private Integer setDifference;
+    private Integer gameDifference;
+
+    // Данные регистрации (AMERICANO_TEAMS)
+    private String registrationSource;
+    private Boolean hasPaid;
+    private Boolean attended;
+    private String adminComment;
 }

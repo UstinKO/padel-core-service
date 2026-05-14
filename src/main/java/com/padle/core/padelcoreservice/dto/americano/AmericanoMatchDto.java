@@ -47,4 +47,11 @@ public class AmericanoMatchDto {
     private String note;
     private Boolean isCompleted;
     private Boolean isTeam1Winner;
+
+    // AMERICANO_TEAMS: геймы в сете и плей-офф стадия
+    private Integer team1Games;
+    private Integer team2Games;
+    private String playoffStage;
+    private Long team1Id;
+    private Long team2Id;
 }

@@ -1,0 +1,125 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.27-americano-teams-playoff
+      author: padel-core
+      comment: Добавляет поля для AMERICANO_TEAMS формата (квалификация + плей-офф)
+      changes:
+
+        # Новые поля AmericanoTeam — статистика сетов/геймов
+        - addColumn:
+            tableName: americano_teams_db
+            columns:
+              - column:
+                  name: sets_won
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: sets_lost
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: games_won
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: games_lost
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: registration_source
+                  type: VARCHAR(20)
+              - column:
+                  name: has_paid
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: attended
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: admin_comment
+                  type: VARCHAR(500)
+
+        # Фаза раунда (QUALIFICATION / PLAYOFF)
+        - addColumn:
+            tableName: americano_rounds_db
+            columns:
+              - column:
+                  name: phase
+                  type: VARCHAR(20)
+
+        # Новые поля AmericanoMatch — ссылки на команды и плей-офф стадия
+        - addColumn:
+            tableName: americano_matches_db
+            columns:
+              - column:
+                  name: team1_id
+                  type: BIGINT
+              - column:
+                  name: team2_id
+                  type: BIGINT
+              - column:
+                  name: playoff_stage
+                  type: VARCHAR(20)
+              - column:
+                  name: team1_games
+                  type: INT
+              - column:
+                  name: team2_games
+                  type: INT
+
+      rollback:
+        - dropColumn:
+            tableName: americano_teams_db
+            columnName: sets_won
+        - dropColumn:
+            tableName: americano_teams_db
+            columnName: sets_lost
+        - dropColumn:
+            tableName: americano_teams_db
+            columnName: games_won
+        - dropColumn:
+            tableName: americano_teams_db
+            columnName: games_lost
+        - dropColumn:
+            tableName: americano_teams_db
+            columnName: registration_source
+        - dropColumn:
+            tableName: americano_teams_db
+            columnName: has_paid
+        - dropColumn:
+            tableName: americano_teams_db
+            columnName: attended
+        - dropColumn:
+            tableName: americano_teams_db
+            columnName: admin_comment
+        - dropColumn:
+            tableName: americano_rounds_db
+            columnName: phase
+        - dropColumn:
+            tableName: americano_matches_db
+            columnName: team1_id
+        - dropColumn:
+            tableName: americano_matches_db
+            columnName: team2_id
+        - dropColumn:
+            tableName: americano_matches_db
+            columnName: playoff_stage
+        - dropColumn:
+            tableName: americano_matches_db
+            columnName: team1_games
+        - dropColumn:
+            tableName: americano_matches_db
+            columnName: team2_games

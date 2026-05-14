@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta name="app-profile" th:content="${@environment.getActiveProfiles().length > 0
+        ? @environment.getActiveProfiles()[0]
+        : 'default'}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${tournament.nombre} + ' - Americano Equipos | E-Padel'">Americano Equipos | E-Padel</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/americano.css}">
+    <style>
+        .section-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:1.5rem;overflow:hidden}
+        .section-header{padding:1rem 1.5rem;background:#1e293b;color:#fff;display:flex;align-items:center;justify-content:space-between}
+        .section-header h3{margin:0;font-size:1rem;font-weight:600;display:flex;align-items:center;gap:.5rem}
+        .table{width:100%;border-collapse:collapse;font-size:.875rem}
+        .table thead tr{background:#f8fafc}
+        .table th{padding:.65rem 1rem;text-align:left;font-weight:600;color:#64748b;border-bottom:2px solid #e2e8f0;font-size:.8rem;white-space:nowrap}
+        .table td{padding:.65rem 1rem;border-bottom:1px solid #f1f5f9;color:#1e293b;vertical-align:middle}
+        .table tbody tr:hover{background:#f8fafc}
+        .positive{color:#10b981}
+        .negative{color:#ef4444}
+        .neutral{color:#94a3b8}
+        .pos-1{color:#f59e0b;font-weight:700}
+        .pos-2{color:#94a3b8;font-weight:700}
+        .pos-3{color:#cd7f32;font-weight:700}
+        .pair-names .p1{font-weight:500}
+        .pair-names .p2{font-size:.8rem;color:#64748b}
+        .match-card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:.75rem}
+        .match-header{background:#f1f5f9;padding:.5rem 1rem;font-size:.82rem;font-weight:600;color:#475569;display:flex;justify-content:space-between;align-items:center}
+        .match-body{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:.75rem 1rem;gap:.5rem}
+        .team-left{text-align:left}
+        .team-right{text-align:right}
+        .team-name{font-size:.9rem;font-weight:500;color:#1e293b;line-height:1.3}
+        .team-sub{font-size:.75rem;color:#64748b}
+        .vs-block{display:flex;flex-direction:column;align-items:center;gap:.3rem}
+        .vs-badge{background:#FF6B35;color:#fff;font-weight:700;font-size:.8rem;padding:.25rem .45rem;border-radius:6px}
+        .score-display{font-size:1.1rem;font-weight:700;display:flex;align-items:center;gap:.3rem}
+        .s1{color:#10b981}
+        .s2{color:#ef4444}
+        .playoff-stage-label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:.2rem .5rem;border-radius:10px;background:#fef3c7;color:#92400e}
+        .rounds-tabs{display:flex;gap:.5rem;flex-wrap:wrap;padding:1rem 1.5rem 0}
+        .round-tab{padding:.35rem .75rem;border:1px solid #e2e8f0;border-radius:16px;background:#fff;font-size:.8rem;font-weight:500;cursor:pointer;color:#64748b;transition:all .2s}
+        .round-tab.active{background:#FF6B35;color:#fff;border-color:#FF6B35}
+        .round-tab.completed{border-color:#a5b4fc;color:#4f46e5}
+        .round-tab.completed.active{background:#4f46e5;color:#fff}
+        .round-content{padding:1rem 1.5rem}
+        .info-pill{display:inline-flex;align-items:center;gap:.3rem;padding:.25rem .6rem;border-radius:10px;font-size:.78rem;font-weight:600;background:#f1f5f9;color:#475569}
+        .tbd{color:#94a3b8;font-style:italic}
+        .not-started{text-align:center;padding:3rem 2rem;color:#94a3b8}
+        .not-started i{font-size:2.5rem;margin-bottom:1rem;display:block}
+        .tournament-banner{background:linear-gradient(135deg,#1e293b,#334155);color:#fff;padding:1.5rem;border-radius:12px;margin-bottom:1.5rem}
+        .tournament-banner h1{margin:0 0 .5rem;font-size:1.5rem;font-weight:700}
+        .tournament-meta{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.5rem}
+        .meta-badge{background:rgba(255,255,255,.15);padding:.25rem .6rem;border-radius:8px;font-size:.8rem}
+    </style>
+</head>
+<body>
+<header class="header">
+    <div class="container">
+        <nav class="navbar">
+            <a href="/" class="navbar-brand">
+                <img th:src="@{/images/1.svg}" alt="E-Padel Logo" class="navbar-logo" width="40" height="40">
+                <span class="navbar-brand-text">E-<span class="brand-highlight">PADEL</span></span>
+            </a>
+            <button class="navbar-toggler" id="navbarToggler" type="button" aria-label="Menú">
+                <span class="navbar-toggler-icon"></span>
+                <span class="navbar-toggler-icon"></span>
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item"><a href="/" class="nav-link"><i class="fas fa-home"></i> Inicio</a></li>
+                    <li class="nav-item" th:if="${isAuthenticated}"><a href="/players/dashboard" class="nav-link">Dashboard</a></li>
+                    <li class="nav-item" th:if="${isAuthenticated}"><a href="/perfil" class="nav-link">Perfil</a></li>
+                </ul>
+                <div class="navbar-user" th:if="${isAuthenticated}">
+                    <span class="user-name">
+                        <i class="fas fa-user-circle"></i>
+                        <span th:text="${player != null ? player.nombreCompleto : 'Usuario'}">Usuario</span>
+                    </span>
+                    <form th:action="@{/logout}" method="post" style="display:inline">
+                        <button type="submit" class="btn btn-outline-sm"><i class="fas fa-sign-out-alt"></i> Salir</button>
+                    </form>
+                </div>
+                <div class="navbar-user" th:unless="${isAuthenticated}">
+                    <a href="/login" class="btn btn-outline-sm"><i class="fas fa-sign-in-alt"></i> Iniciar sesión</a>
+                    <a href="/players/registro" class="btn btn-primary-sm"><i class="fas fa-user-plus"></i> Registrarse</a>
+                </div>
+            </div>
+        </nav>
+    </div>
+</header>
+
+<main class="container" style="padding:1.5rem 1rem;max-width:900px;margin:0 auto">
+
+    <!-- Banner -->
+    <div class="tournament-banner">
+        <h1 th:text="${tournament.nombre}">Americano Equipos</h1>
+        <div class="tournament-meta">
+            <span class="meta-badge" th:text="${tournament.generoFormato}">Mixto</span>
+            <span class="meta-badge" th:text="${tournament.categoriaNivel}">C7</span>
+            <span class="meta-badge">Americano Equipos</span>
+            <span class="meta-badge" th:text="${tournament.estado}">En curso</span>
+        </div>
+    </div>
+
+    <!-- Турнир ещё не начат -->
+    <div th:unless="${qualStarted}" class="not-started">
+        <i class="fas fa-hourglass-half"></i>
+        <p>El torneo aún no ha comenzado.<br>La calificación se iniciará pronto.</p>
+    </div>
+
+    <!-- ══ РЕЙТИНГ КВАЛИФИКАЦИИ ══ -->
+    <div th:if="${qualStarted}" class="section-card">
+        <div class="section-header">
+            <h3><i class="fas fa-list-ol"></i> Clasificación de Calificación</h3>
+        </div>
+        <div style="overflow-x:auto">
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Pareja</th>
+                    <th title="Sets ganados">SG</th>
+                    <th title="Sets perdidos">SP</th>
+                    <th title="Games ganados">GG</th>
+                    <th title="Games perdidos">GP</th>
+                    <th title="Diferencia de sets">Dif.S</th>
+                    <th title="Partidos jugados">PJ</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="team : ${ranking != null ? ranking.ranking : #lists.empty()}">
+                    <td>
+                        <span th:text="${team.currentPosition}"
+                              th:class="${team.currentPosition == 1 ? 'pos-1' : (team.currentPosition == 2 ? 'pos-2' : (team.currentPosition == 3 ? 'pos-3' : ''))}">1</span>
+                    </td>
+                    <td>
+                        <div class="pair-names">
+                            <span class="p1" th:text="${team.displayName}">Jugador 1 / 2</span>
+                        </div>
+                    </td>
+                    <td class="positive" th:text="${team.setsWon}">0</td>
+                    <td class="negative" th:text="${team.setsLost}">0</td>
+                    <td class="positive" th:text="${team.gamesWon}">0</td>
+                    <td class="negative" th:text="${team.gamesLost}">0</td>
+                    <td th:classappend="${team.setDifference > 0 ? 'positive' : (team.setDifference < 0 ? 'negative' : 'neutral')}"
+                        th:text="${(team.setDifference > 0 ? '+' : '') + team.setDifference}">0</td>
+                    <td th:text="${team.matchesPlayed}">0</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ══ РАУНДЫ КВАЛИФИКАЦИИ ══ -->
+    <div th:if="${qualStarted and not #lists.isEmpty(qualRounds)}" class="section-card">
+        <div class="section-header">
+            <h3><i class="fas fa-calendar-week"></i> Partidos de Calificación</h3>
+        </div>
+
+        <div class="rounds-tabs">
+            <button th:each="r, stat : ${qualRounds}"
+                    th:id="'qtab-' + ${stat.index}"
+                    th:text="'R' + ${r.roundNumber}"
+                    th:attr="data-idx=${stat.index}"
+                    th:classappend="${(stat.index == 0 ? ' active' : '') + (r.status.name() == 'COMPLETED' ? ' completed' : '')}"
+                    class="round-tab"
+                    onclick="switchQualRound(this)">R1</button>
+        </div>
+
+        <div class="round-content">
+            <div th:each="round, iterStat : ${qualRounds}"
+                 th:id="'qround-' + ${iterStat.index}"
+                 style="display:none">
+                <div style="margin-bottom:.75rem">
+                    <span class="info-pill" th:text="${round.status}">EN CURSO</span>
+                    <span class="info-pill" th:text="${round.completedMatches} + '/' + ${round.totalMatches} + ' partidos'">0/4</span>
+                </div>
+
+                <div th:each="match : ${round.matches}" class="match-card">
+                    <div class="match-header">
+                        <span>Cancha <span th:text="${match.courtNumber}">1</span></span>
+                    </div>
+                    <div class="match-body">
+                        <div class="team-left">
+                            <div class="team-name" th:text="${match.team1Player1Name}">Jugador 1</div>
+                            <div class="team-sub" th:if="${match.team1Player2Name != null}"
+                                 th:text="${match.team1Player2Name}">Jugador 2</div>
+                        </div>
+                        <div class="vs-block">
+                            <div th:if="${match.isCompleted}" class="score-display">
+                                <span class="s1" th:text="${match.team1Games}">6</span>
+                                <span class="vs-badge">:</span>
+                                <span class="s2" th:text="${match.team2Games}">4</span>
+                            </div>
+                            <span th:unless="${match.isCompleted}" class="vs-badge">VS</span>
+                        </div>
+                        <div class="team-right">
+                            <div class="team-name" th:text="${match.team2Player1Name}">Jugador 3</div>
+                            <div class="team-sub" th:if="${match.team2Player2Name != null}"
+                                 th:text="${match.team2Player2Name}">Jugador 4</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ ПЛЕЙ-ОФФ ══ -->
+    <div th:if="${playoffStarted}" class="section-card">
+        <div class="section-header">
+            <h3><i class="fas fa-trophy"></i> Playoff</h3>
+        </div>
+
+        <div class="round-content">
+            <div th:each="match : ${playoffMatches}" class="match-card">
+                <div class="match-header">
+                    <span>Cancha <span th:text="${match.courtNumber}">1</span></span>
+                    <span th:if="${match.playoffStage != null}" class="playoff-stage-label"
+                          th:text="${match.playoffStage}">SEMI_FINAL</span>
+                </div>
+                <div class="match-body">
+                    <div class="team-left">
+                        <div th:if="${match.team1Player1Name != null}" class="team-name"
+                             th:text="${match.team1Player1Name}">TBD</div>
+                        <div th:if="${match.team1Player2Name != null}" class="team-sub"
+                             th:text="${match.team1Player2Name}">TBD</div>
+                        <div th:if="${match.team1Player1Name == null}" class="tbd">TBD</div>
+                    </div>
+                    <div class="vs-block">
+                        <div th:if="${match.isCompleted}" class="score-display">
+                            <span class="s1" th:text="${match.team1Games}">6</span>
+                            <span class="vs-badge">:</span>
+                            <span class="s2" th:text="${match.team2Games}">4</span>
+                        </div>
+                        <span th:unless="${match.isCompleted}" class="vs-badge">VS</span>
+                    </div>
+                    <div class="team-right">
+                        <div th:if="${match.team2Player1Name != null}" class="team-name"
+                             th:text="${match.team2Player1Name}">TBD</div>
+                        <div th:if="${match.team2Player2Name != null}" class="team-sub"
+                             th:text="${match.team2Player2Name}">TBD</div>
+                        <div th:if="${match.team2Player1Name == null}" class="tbd">TBD</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script th:src="@{/js/logger.js}"></script>
+<script>
+    const qRounds = Array.from(document.querySelectorAll('[id^="qround-"]'));
+    const qTabs   = Array.from(document.querySelectorAll('.round-tab'));
+
+    function switchQualRound(btn) {
+        const idx = parseInt(btn.dataset.idx);
+        qRounds.forEach((r, i) => r.style.display = i === idx ? 'block' : 'none');
+        qTabs.forEach((b, i) => b.classList.toggle('active', i === idx));
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (qRounds.length > 0) qRounds[0].style.display = 'block';
+
+        const navbarToggler = document.getElementById('navbarToggler');
+        const navbarNav = document.getElementById('navbarNav');
+        if (navbarToggler && navbarNav) {
+            navbarToggler.addEventListener('click', function(e) {
+                e.preventDefault();
+                navbarNav.classList.toggle('show');
+                this.classList.toggle('active');
+            });
+            navbarNav.querySelectorAll('a, button').forEach(link => {
+                link.addEventListener('click', () => {
+                    navbarNav.classList.remove('show');
+                    navbarToggler.classList.remove('active');
+                });
+            });
+        }
+    });
+</script>
+</body>
+</html>

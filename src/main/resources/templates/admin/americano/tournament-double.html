@@ -96,13 +96,9 @@
 <main class="admin-main">
     <div class="container">
 
-        <div style="margin-bottom:1rem;display:flex;gap:.75rem;flex-wrap:wrap">
+        <div style="margin-bottom:1rem">
             <a th:href="@{'/admin/tournaments/' + ${tournament.id}}" class="btn btn-outline">
                 <i class="fas fa-arrow-left"></i> Volver a detalles del torneo
-            </a>
-            <a th:href="@{'/tournaments/team-americano/' + ${tournament.id}}"
-               class="btn btn-outline" target="_blank">
-                <i class="fas fa-eye"></i> Vista pública
             </a>
         </div>
 
@@ -489,9 +485,7 @@
             .catch(() => {});
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-        if (roundEls.length > 0) showRound(0);
-    });
+    if (roundEls.length > 0) showRound(0);
 </script>
 <script th:src="@{/js/share-panel.js}"></script>
 </body>

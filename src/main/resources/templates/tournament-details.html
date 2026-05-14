@@ -298,8 +298,32 @@
                     </div>
                 </div>
 
+                <!-- Bloque para Americano Parejas (Calificación + Playoff) -->
+                <div class="info-card" th:if="${isTeamPlayoffFormat == true and isPlayoffQualStarted == true}">
+                    <h2 class="info-card-title">
+                        <i class="fas fa-users" style="color:#FF6B35;"></i>
+                        Americano Parejas
+                    </h2>
+                    <div class="americano-preview">
+                        <div class="americano-actions">
+                            <a th:href="@{'/tournaments/team-playoff/' + ${tournament.id}}" class="btn btn-primary btn-block">
+                                <i class="fas fa-sitemap"></i>
+                                Ver torneo — Calificación y Playoff
+                            </a>
+                            <p class="americano-note" th:if="${isPlayoffStarted == true}">
+                                <i class="fas fa-trophy"></i>
+                                Playoff en curso · Sigue la bracket en tiempo real
+                            </p>
+                            <p class="americano-note" th:unless="${isPlayoffStarted == true}">
+                                <i class="fas fa-list-ol"></i>
+                                Calificación en curso · Consulta resultados y clasificación
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Bloque para Americano -->
-                <div class="info-card" th:if="${tournament.tipo.name() == 'AMERICANO' and isInitialized}">
+                <div class="info-card" th:if="${tournament.tipo.name() == 'AMERICANO' and tournament.modalidad.name() != 'DOBLES' and isInitialized}">
                     <h2 class="info-card-title">
                         <i class="fas fa-trophy" style="color: #FF6B35;"></i>
                         Torneo Americano
@@ -318,8 +342,8 @@
                     </div>
                 </div>
 
-                <div class="info-card" th:if="${not #lists.isEmpty(registrations)}">
-                    <div class="info-card" th:if="${not #lists.isEmpty(registrations)}">
+                <div class="info-card" th:if="${not #lists.isEmpty(registrations) or not #lists.isEmpty(tournamentTeams)}">
+                    <div class="info-card" th:if="${not #lists.isEmpty(registrations) or not #lists.isEmpty(tournamentTeams)}">
                         <h2 class="info-card-title">
                             <i class="fas fa-users"></i>
                             <th:block th:if="${tournament.modalidad.name() == 'DOBLES'}">Cupos inscritas</th:block>
@@ -364,76 +388,150 @@
 
                         <!-- ── DOBLES ── -->
                         <th:block th:if="${tournament.modalidad.name() == 'DOBLES'}">
-                            <!--
-                                Показываем только записи главного игрока пары:
-                                isDoubleRegistration=true
-                                AND (CONFIRMED или PARTNER_INVITED)
-                                AND partnerNombre != null  ← это поле заполнено только у главного игрока
-                            -->
-                            <table style="width:100%; border-collapse:collapse; font-size:.95rem;">
-                                <thead>
-                                <tr style="border-bottom:2px solid #e9ecef;">
-                                    <th style="padding:.6rem .75rem; text-align:left; color:#6c757d; font-weight:600; width:3rem;">#</th>
-                                    <th style="padding:.6rem .75rem; text-align:left; color:#6c757d; font-weight:600;">Jugador 1</th>
-                                    <th style="padding:.6rem .25rem; text-align:center; color:#6c757d; font-weight:600; width:2rem;"></th>
-                                    <th style="padding:.6rem .75rem; text-align:left; color:#6c757d; font-weight:600;">Jugador 2</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                <th:block th:each="reg, stat : ${registrations}"
-                                          th:if="${reg.isDoubleRegistration == true
-                                                   and (reg.status.name() == 'CONFIRMED' or reg.status.name() == 'PARTNER_INVITED')
-                                                   and reg.partnerNombre != null}">
-                                    <tr th:style="${stat.count % 2 == 0} ? 'background:#fafafa;' : ''">
-                                        <td style="padding:.6rem .75rem; color:#adb5bd; font-size:.85rem;"
-                                            th:text="${stat.count}">1</td>
 
-                                        <!-- Jugador 1 (principal) -->
+                            <!-- AMERICANO PAREJAS: команды уже назначены → показываем их -->
+                            <th:block th:if="${isTeamPlayoffFormat == true and not #lists.isEmpty(tournamentTeams)}">
+                                <table style="width:100%; border-collapse:collapse; font-size:.95rem;">
+                                    <thead>
+                                    <tr style="border-bottom:2px solid #e9ecef;">
+                                        <th style="padding:.6rem .75rem; text-align:left; color:#6c757d; font-weight:600; width:3rem;">#</th>
+                                        <th style="padding:.6rem .75rem; text-align:left; color:#6c757d; font-weight:600;">Jugador 1</th>
+                                        <th style="padding:.6rem .25rem; text-align:center; color:#6c757d; font-weight:600; width:2rem;"></th>
+                                        <th style="padding:.6rem .75rem; text-align:left; color:#6c757d; font-weight:600;">Jugador 2</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr th:each="team, tStat : ${tournamentTeams}"
+                                        th:style="${tStat.odd} ? '' : 'background:#fafafa;'">
+                                        <td style="padding:.6rem .75rem; color:#adb5bd; font-size:.85rem;"
+                                            th:text="${tStat.count}">1</td>
                                         <td style="padding:.6rem .75rem;">
                                             <span style="font-weight:500; color:#212529;">
                                                 <i class="fas fa-user-circle" style="color:#FF6B35; margin-right:.4rem;"></i>
-                                                <th:block th:text="${reg.playerNombre}">Juan</th:block>
-                                                <th:block th:text="${' ' + (reg.playerApellido ?: '')}">Pérez</th:block>
+                                                <th:block th:text="${team.player1Name}">Jugador</th:block>
                                             </span>
                                         </td>
-
-                                        <!-- Separador -->
                                         <td style="padding:.6rem .25rem; text-align:center; color:#adb5bd; font-size:.8rem;">
                                             <i class="fas fa-plus"></i>
                                         </td>
-
-                                        <!-- Jugador 2 (pareja) -->
                                         <td style="padding:.6rem .75rem;">
-                                            <!-- Confirmado -->
-                                            <th:block th:if="${reg.status.name() == 'CONFIRMED'}">
-                                                <span style="font-weight:500; color:#212529;">
-                                                    <i class="fas fa-user-circle" style="color:#FF6B35; margin-right:.4rem;"></i>
-                                                    <th:block th:text="${reg.partnerNombre}">Ana</th:block>
-                                                    <th:block th:text="${' ' + (reg.partnerApellido ?: '')}">García</th:block>
-                                                </span>
-                                            </th:block>
-                                            <!-- Invitado (pendiente) -->
-                                            <th:block th:if="${reg.status.name() == 'PARTNER_INVITED'}">
-                                                <span style="color:#f59e0b; font-size:.875rem; font-style:italic;">
-                                                    <i class="fas fa-envelope" style="margin-right:.35rem;"></i>
-                                                    <th:block th:text="${reg.partnerNombre}">Ana</th:block>
-                                                    <th:block th:text="${' ' + (reg.partnerApellido ?: '')}">García</th:block>
-                                                    <small style="display:block; margin-top:.15rem; color:#adb5bd;">(invitación enviada)</small>
-                                                </span>
-                                            </th:block>
+                                            <span th:if="${team.player2Name != null}" style="font-weight:500; color:#212529;">
+                                                <i class="fas fa-user-circle" style="color:#FF6B35; margin-right:.4rem;"></i>
+                                                <th:block th:text="${team.player2Name}">Jugador</th:block>
+                                            </span>
+                                            <span th:unless="${team.player2Name != null}" style="color:#adb5bd; font-style:italic; font-size:.85rem;">
+                                                por asignar
+                                            </span>
                                         </td>
                                     </tr>
-                                </th:block>
-                                </tbody>
-                            </table>
+                                    </tbody>
+                                </table>
+                            </th:block>
 
-                            <div th:if="${tournament.waitlistCount > 0}"
-                                 style="margin-top:1rem; padding:.75rem 1rem; background:#fff9e6;
-                                    border-radius:8px; border-left:3px solid #f59e0b;
-                                    font-size:.875rem; color:#92400e;">
-                                <i class="fas fa-clock"></i>
-                                <span th:text="${tournament.waitlistCount} + ' pareja(s) en lista de espera'">2 en espera</span>
-                            </div>
+                            <!-- Обычный DOBLES (или AMERICANO PAREJAS без назначенных команд) -->
+                            <th:block th:unless="${isTeamPlayoffFormat == true and not #lists.isEmpty(tournamentTeams)}">
+                                <table style="width:100%; border-collapse:collapse; font-size:.95rem;">
+                                    <thead>
+                                    <tr style="border-bottom:2px solid #e9ecef;">
+                                        <th style="padding:.6rem .75rem; text-align:left; color:#6c757d; font-weight:600; width:3rem;">#</th>
+                                        <th style="padding:.6rem .75rem; text-align:left; color:#6c757d; font-weight:600;">Jugador 1</th>
+                                        <th style="padding:.6rem .25rem; text-align:center; color:#6c757d; font-weight:600; width:2rem;"></th>
+                                        <th style="padding:.6rem .75rem; text-align:left; color:#6c757d; font-weight:600;">Jugador 2</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <!-- AMERICANO PAREJAS: показываем ВСЕХ зарегистрированных, даже без партнёра -->
+                                    <th:block th:if="${isTeamPlayoffFormat == true}">
+                                        <th:block th:each="reg, stat : ${registrations}"
+                                                  th:if="${reg.isDoubleRegistration == true
+                                                           and (reg.status.name() == 'CONFIRMED' or reg.status.name() == 'PARTNER_INVITED' or reg.status.name() == 'PAIR_REGISTERED')}">
+                                            <tr th:style="${stat.odd} ? '' : 'background:#fafafa;'">
+                                                <td style="padding:.6rem .75rem; color:#adb5bd; font-size:.85rem;"
+                                                    th:text="${stat.count}">1</td>
+                                                <td style="padding:.6rem .75rem;">
+                                                    <span style="font-weight:500; color:#212529;">
+                                                        <i class="fas fa-user-circle" style="color:#FF6B35; margin-right:.4rem;"></i>
+                                                        <th:block th:text="${reg.playerNombre}">Juan</th:block>
+                                                        <th:block th:text="${' ' + (reg.playerApellido ?: '')}">Pérez</th:block>
+                                                    </span>
+                                                </td>
+                                                <td style="padding:.6rem .25rem; text-align:center; color:#adb5bd; font-size:.8rem;">
+                                                    <i class="fas fa-plus"></i>
+                                                </td>
+                                                <td style="padding:.6rem .75rem;">
+                                                    <th:block th:if="${reg.partnerNombre != null and (reg.status.name() == 'CONFIRMED' or reg.status.name() == 'PAIR_REGISTERED')}">
+                                                        <span style="font-weight:500; color:#212529;">
+                                                            <i class="fas fa-user-circle" style="color:#FF6B35; margin-right:.4rem;"></i>
+                                                            <th:block th:text="${reg.partnerNombre}">Ana</th:block>
+                                                            <th:block th:text="${' ' + (reg.partnerApellido ?: '')}">García</th:block>
+                                                        </span>
+                                                    </th:block>
+                                                    <th:block th:if="${reg.partnerNombre != null and reg.status.name() == 'PARTNER_INVITED'}">
+                                                        <span style="color:#f59e0b; font-size:.875rem; font-style:italic;">
+                                                            <i class="fas fa-envelope" style="margin-right:.35rem;"></i>
+                                                            <th:block th:text="${reg.partnerNombre}">Ana</th:block>
+                                                            <th:block th:text="${' ' + (reg.partnerApellido ?: '')}">García</th:block>
+                                                            <small style="display:block; margin-top:.15rem; color:#adb5bd;">(invitación enviada)</small>
+                                                        </span>
+                                                    </th:block>
+                                                    <th:block th:if="${reg.partnerNombre == null}">
+                                                        <span style="color:#adb5bd; font-style:italic; font-size:.85rem;">sin pareja asignada</span>
+                                                    </th:block>
+                                                </td>
+                                            </tr>
+                                        </th:block>
+                                    </th:block>
+                                    <!-- Обычный DOBLES: только пары с указанным партнёром -->
+                                    <th:block th:unless="${isTeamPlayoffFormat == true}">
+                                        <th:block th:each="reg, stat : ${registrations}"
+                                                  th:if="${reg.isDoubleRegistration == true
+                                                           and (reg.status.name() == 'CONFIRMED' or reg.status.name() == 'PARTNER_INVITED' or reg.status.name() == 'PAIR_REGISTERED')
+                                                           and reg.partnerNombre != null}">
+                                            <tr th:style="${stat.count % 2 == 0} ? 'background:#fafafa;' : ''">
+                                                <td style="padding:.6rem .75rem; color:#adb5bd; font-size:.85rem;"
+                                                    th:text="${stat.count}">1</td>
+                                                <td style="padding:.6rem .75rem;">
+                                                    <span style="font-weight:500; color:#212529;">
+                                                        <i class="fas fa-user-circle" style="color:#FF6B35; margin-right:.4rem;"></i>
+                                                        <th:block th:text="${reg.playerNombre}">Juan</th:block>
+                                                        <th:block th:text="${' ' + (reg.playerApellido ?: '')}">Pérez</th:block>
+                                                    </span>
+                                                </td>
+                                                <td style="padding:.6rem .25rem; text-align:center; color:#adb5bd; font-size:.8rem;">
+                                                    <i class="fas fa-plus"></i>
+                                                </td>
+                                                <td style="padding:.6rem .75rem;">
+                                                    <th:block th:if="${reg.status.name() == 'CONFIRMED' or reg.status.name() == 'PAIR_REGISTERED'}">
+                                                        <span style="font-weight:500; color:#212529;">
+                                                            <i class="fas fa-user-circle" style="color:#FF6B35; margin-right:.4rem;"></i>
+                                                            <th:block th:text="${reg.partnerNombre}">Ana</th:block>
+                                                            <th:block th:text="${' ' + (reg.partnerApellido ?: '')}">García</th:block>
+                                                        </span>
+                                                    </th:block>
+                                                    <th:block th:if="${reg.status.name() == 'PARTNER_INVITED'}">
+                                                        <span style="color:#f59e0b; font-size:.875rem; font-style:italic;">
+                                                            <i class="fas fa-envelope" style="margin-right:.35rem;"></i>
+                                                            <th:block th:text="${reg.partnerNombre}">Ana</th:block>
+                                                            <th:block th:text="${' ' + (reg.partnerApellido ?: '')}">García</th:block>
+                                                            <small style="display:block; margin-top:.15rem; color:#adb5bd;">(invitación enviada)</small>
+                                                        </span>
+                                                    </th:block>
+                                                </td>
+                                            </tr>
+                                        </th:block>
+                                    </th:block>
+                                    </tbody>
+                                </table>
+
+                                <div th:if="${tournament.waitlistCount > 0}"
+                                     style="margin-top:1rem; padding:.75rem 1rem; background:#fff9e6;
+                                        border-radius:8px; border-left:3px solid #f59e0b;
+                                        font-size:.875rem; color:#92400e;">
+                                    <i class="fas fa-clock"></i>
+                                    <span th:text="${tournament.waitlistCount} + ' pareja(s) en lista de espera'">2 en espera</span>
+                                </div>
+                            </th:block>
+
                         </th:block>
 
                     </div>

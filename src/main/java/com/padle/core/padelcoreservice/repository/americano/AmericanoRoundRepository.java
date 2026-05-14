@@ -29,4 +29,10 @@ public interface AmericanoRoundRepository extends JpaRepository<AmericanoRound, 
     @Query("SELECT COUNT(ar) FROM AmericanoRound ar WHERE ar.tournament.id = :tournamentId " +
             "AND ar.status = 'COMPLETED'")
     int countCompletedRounds(@Param("tournamentId") Long tournamentId);
+
+    @Query("SELECT ar FROM AmericanoRound ar WHERE ar.tournament.id = :tournamentId " +
+            "AND ar.phase = :phase ORDER BY ar.roundNumber")
+    List<AmericanoRound> findByTournamentIdAndPhase(
+            @Param("tournamentId") Long tournamentId,
+            @Param("phase") com.padle.core.padelcoreservice.model.enums.TournamentPhase phase);
 }
