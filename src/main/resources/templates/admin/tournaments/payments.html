@@ -84,7 +84,8 @@
                         <tr>
                             <th><i class="fas fa-hashtag"></i> Pos</th>
                             <th><i class="fas fa-user"></i> Jugador</th>
-                            <th><i class="fas fa-check-circle"></i> Asistió</th>
+                            <th><i class="fas fa-phone-alt"></i> Confirmó</th>
+                        <th><i class="fas fa-check-circle"></i> Asistió</th>
                             <th><i class="fas fa-money-bill-wave"></i> Monto</th>
                             <th><i class="fas fa-coins"></i> Moneda</th>
                             <th><i class="fas fa-tag"></i> Estado</th>
@@ -159,6 +160,17 @@
                                         compañero
                                     </span>
                                 </div>
+                            </td>
+
+                            <!-- Confirmó participación -->
+                            <td>
+                                <div class="checkbox-wrapper" th:if="${!player.partnerRow}">
+                                    <input type="checkbox"
+                                           th:name="'participationConfirmed[' + ${iterStat.index} + ']'"
+                                           th:value="${player.registrationId}"
+                                           th:checked="${player.participationConfirmed}" />
+                                </div>
+                                <span th:if="${player.partnerRow}" style="color:#adb5bd; font-size:.8rem;"></span>
                             </td>
 
                             <!-- Asistió -->
@@ -241,7 +253,7 @@
 
                         <!-- Если нет игроков -->
                         <tr th:unless="${players != null and not #lists.isEmpty(players)}">
-                            <td colspan="9" class="empty-state-cell">
+                            <td colspan="10" class="empty-state-cell">
                                 <div class="admin-empty">
                                     <i class="fas fa-users"></i>
                                     <h3>No hay jugadores inscritos</h3>

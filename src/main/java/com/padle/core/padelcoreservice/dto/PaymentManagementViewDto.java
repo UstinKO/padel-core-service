@@ -17,6 +17,7 @@ public class PaymentManagementViewDto {
     private String playerPhone;       // ← ДОБАВЛЕНО: телефон игрока
     private Integer position;
     private Boolean attended;
+    private Boolean participationConfirmed;
 
     // ── Поля для партнёра незарегистрированного на сайте ──
     private boolean isPartnerRow;           // ← ДОБАВЛЕНО: true = виртуальная строка партнёра
