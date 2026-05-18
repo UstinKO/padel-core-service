@@ -86,3 +86,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.28-add-participation-confirmed-to-registration.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.29-drop-old-categoria-nivel-constraint.yaml
+      relativeToChangelogFile: true
