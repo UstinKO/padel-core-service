@@ -84,6 +84,10 @@ public class PaymentManagementController {
                 dto.setAttended(formWrapper.getAttended() != null &&
                         formWrapper.getAttended().contains(registrationId));
 
+                // Подтверждение участия
+                dto.setParticipationConfirmed(formWrapper.getParticipationConfirmed() != null &&
+                        formWrapper.getParticipationConfirmed().contains(registrationId));
+
                 // Сумма
                 if (formWrapper.getAmounts() != null && i < formWrapper.getAmounts().size()) {
                     String amountStr = formWrapper.getAmounts().get(i);
@@ -147,6 +151,7 @@ public class PaymentManagementController {
     public static class PaymentFormWrapper {
         private List<Long> registrationIds;
         private List<Long> attended;
+        private List<Long> participationConfirmed;
         private List<String> amounts;
         private List<String> currencies;
         private List<String> paymentStatuses;
@@ -162,6 +167,9 @@ public class PaymentManagementController {
 
         public List<Long> getAttended() { return attended; }
         public void setAttended(List<Long> v) { this.attended = v; }
+
+        public List<Long> getParticipationConfirmed() { return participationConfirmed; }
+        public void setParticipationConfirmed(List<Long> v) { this.participationConfirmed = v; }
 
         public List<String> getAmounts() { return amounts; }
         public void setAmounts(List<String> v) { this.amounts = v; }

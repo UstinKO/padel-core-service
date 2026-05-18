@@ -76,6 +76,10 @@ public class TournamentRegistration {
     @Builder.Default
     private Boolean attended = false;
 
+    @Column(name = "participation_confirmed", nullable = false)
+    @Builder.Default
+    private Boolean participationConfirmed = false;
+
     @OneToMany(mappedBy = "registration", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
     private List<Payment> payments = new ArrayList<>();

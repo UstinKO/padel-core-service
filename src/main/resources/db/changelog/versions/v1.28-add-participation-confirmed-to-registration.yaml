@@ -1,0 +1,22 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.28-add-participation-confirmed-to-registration
+      author: padel-core
+      comment: Add participation_confirmed field to tournament_registrations_db table
+
+      changes:
+        - addColumn:
+            tableName: tournament_registrations_db
+            columns:
+              - column:
+                  name: participation_confirmed
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+                  remarks: "Подтверждение участия игрока после прозвона"
+
+      rollback:
+        - dropColumn:
+            tableName: tournament_registrations_db
+            columnName: participation_confirmed

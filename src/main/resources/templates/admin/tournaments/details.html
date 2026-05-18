@@ -186,6 +186,130 @@
             margin-top: 1.25rem;
         }
         .btn-row .btn { width: 100%; text-align: center; justify-content: center; }
+
+        /* ── Полноширинные таблицы регистраций ── */
+        .reg-tables-section {
+            margin-top: 2rem;
+        }
+        .reg-table-card {
+            background: #fff;
+            border: 1px solid var(--admin-border, #e2e8f0);
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+            box-shadow: 0 1px 4px rgba(0,0,0,.05);
+        }
+        .reg-table-header {
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+            padding: .9rem 1.25rem;
+            border-bottom: 1px solid var(--admin-border, #e2e8f0);
+            background: var(--admin-light, #f8fafc);
+        }
+        .reg-table-header h3 {
+            margin: 0;
+            font-size: .95rem;
+            font-weight: 600;
+            color: var(--admin-dark, #1e293b);
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+        }
+        .reg-badge-count {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 22px;
+            height: 22px;
+            padding: 0 6px;
+            border-radius: 11px;
+            background: var(--admin-primary, #6366f1);
+            color: #fff;
+            font-size: .72rem;
+            font-weight: 700;
+        }
+        .reg-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .875rem;
+        }
+        .reg-table thead th {
+            padding: .55rem 1rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: .75rem;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            color: var(--admin-gray, #64748b);
+            background: var(--admin-light, #f8fafc);
+            border-bottom: 1px solid var(--admin-border, #e2e8f0);
+        }
+        .reg-table tbody td {
+            padding: .65rem 1rem;
+            border-bottom: 1px solid var(--admin-border, #e2e8f0);
+            vertical-align: middle;
+        }
+        .reg-table tbody tr:last-child td { border-bottom: none; }
+        .reg-table tbody tr:hover { background: var(--admin-light, #f8fafc); }
+        .reg-pos {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: var(--admin-primary, #6366f1);
+            color: #fff;
+            font-size: .72rem;
+            font-weight: 700;
+        }
+        .reg-pos.wait { background: #94a3b8; }
+        .reg-pos.reserve { background: #f59e0b; }
+        .reg-player-link {
+            color: var(--admin-primary, #6366f1);
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .reg-player-link:hover { text-decoration: underline; }
+        .reg-wa-link {
+            display: inline-flex;
+            align-items: center;
+            gap: .3rem;
+            color: #25D366;
+            text-decoration: none;
+            font-size: .82rem;
+        }
+        .reg-wa-link:hover { text-decoration: underline; }
+        .reg-email-row {
+            display: inline-flex;
+            align-items: center;
+            gap: .3rem;
+            font-size: .82rem;
+            color: #6366f1;
+            margin-top: .15rem;
+        }
+        .reg-tg-link {
+            display: inline-flex;
+            align-items: center;
+            gap: .3rem;
+            color: #229ED9;
+            text-decoration: none;
+            font-size: .82rem;
+        }
+        .reg-tg-link:hover { text-decoration: underline; }
+        .reg-action-cell { display: flex; gap: .4rem; align-items: center; }
+        .reg-empty-cell {
+            padding: 1.5rem;
+            text-align: center;
+            color: var(--admin-gray, #64748b);
+            font-style: italic;
+        }
+        @media (max-width: 640px) {
+            .reg-table { font-size: .8rem; }
+            .reg-table thead th,
+            .reg-table tbody td { padding: .45rem .5rem; }
+        }
     </style>
 </head>
 <body>
@@ -417,199 +541,18 @@
                         </div>
                     </div>
 
-                    <!-- ===== АВТОМАТИЧЕСКОЕ РАЗДЕЛЕНИЕ ===== -->
-                    <th:block th:with="
-                        confirmedRegs=${registrations.?[status.name() == 'CONFIRMED']},
-                        invitedRegs=${registrations.?[status.name() == 'PARTNER_INVITED' and isDoubleRegistration == true]},
-                        effectiveCupoMax=${tournament.modalidad.name() == 'DOBLES' ? tournament.cupoMax * 2 : tournament.cupoMax}">
-
-                        <!-- СЕКЦИЯ 1: Подтверждённые участники -->
-                        <div class="registrations-list">
-                            <h4>
-                                <i class="fas fa-check-circle" style="color: #10b981;"></i>
-                                Inscripciones (<span th:text="${effectiveCupoMax}">20</span>)
-                            </h4>
-                            <div class="registrations-items" th:if="${not #lists.isEmpty(confirmedRegs)}">
-                                <div th:each="reg, iterStat : ${confirmedRegs}"
-                                     th:if="${iterStat.index < effectiveCupoMax}"
-                                     class="registration-item">
-                                    <div class="registration-avatar">
-                                        <i class="fas fa-user-circle"></i>
-                                    </div>
-                                    <div class="registration-info">
-                                        <a th:href="@{'/admin/players/' + ${reg.playerId}}"
-                                           class="registration-name-link"
-                                           th:text="${reg.playerNombre} ?: 'Jugador ' + ${reg.playerId}"
-                                           title="Ver detalles del jugador">
-                                            Jugador
-                                        </a>
-                                        <!-- Для парных показываем имя партнёра -->
-                                        <span th:if="${reg.isDoubleRegistration and reg.partnerNombre != null}"
-                                              class="registration-position">
-                                            <strong>Pareja:</strong>
-                                            <span th:text="${reg.partnerNombre}"></span>
-                                            <!-- Телефон партнёра (если есть) -->
-                                            <span th:if="${reg.partnerPhone != null and !reg.partnerPhone.isEmpty()}"
-                                                  style="display:block; font-size:.8rem; color:#6c757d; margin-top:.1rem;">
-                                                <i class="fab fa-whatsapp" style="color:#25D366;"></i>
-                                                <a th:href="'https://wa.me/' + ${#strings.replace(reg.partnerPhone, '+', '')}"
-                                                   target="_blank" rel="noopener noreferrer"
-                                                   style="color:#25D366; text-decoration:none;"
-                                                   th:text="${reg.partnerPhone}">
-                                                </a>
-                                            </span>
-                                            <!-- Email партнёра (если есть) -->
-                                            <span th:if="${reg.partnerEmail != null and !reg.partnerEmail.isEmpty()}"
-                                                  style="display:block; font-size:.8rem; color:#6c757d; margin-top:.1rem;">
-                                                <i class="fas fa-envelope" style="color:#6366f1;"></i>
-                                                <span th:text="${reg.partnerEmail}"></span>
-                                            </span>
-                                        </span>
-                                        <span th:unless="${reg.isDoubleRegistration}"
-                                              class="registration-position"
-                                              th:text="'Posición: ' + ${reg.position}">
-                                        </span>
-                                    </div>
-                                    <div class="registration-actions">
-                                        <button type="button"
-                                                class="btn-icon move-to-waitlist"
-                                                th:attr="data-tournament-id=${tournament.id},
-                                                         data-player-id=${reg.playerId},
-                                                         data-player-name=${reg.playerNombre}"
-                                                onclick="moveToWaitlist(this)"
-                                                title="Mover a lista de espera">
-                                            <i class="fas fa-arrow-down"></i>
-                                        </button>
-                                        <a th:href="@{'/admin/players/' + ${reg.playerId}}"
-                                           class="btn-icon"
-                                           title="Ver detalles del jugador">
-                                            <i class="fas fa-external-link-alt"></i>
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                            <div th:if="${#lists.isEmpty(confirmedRegs)}" class="empty-registrations">
-                                <p>No hay participantes confirmados</p>
-                            </div>
-                        </div>
-
-                        <!-- СЕКЦИЯ 2: Резерв подтверждённых (overflow) -->
-                        <div class="registrations-list" th:if="${confirmedRegs.size() > effectiveCupoMax}">
-                            <h4>
-                                <i class="fas fa-clock" style="color: #f59e0b;"></i>
-                                Reserva
-                                <span class="badge-warning" th:text="${confirmedRegs.size() - effectiveCupoMax}"></span>
-                            </h4>
-                            <div class="registrations-items waitlist-items">
-                                <div th:each="reg, iterStat : ${confirmedRegs}"
-                                     th:if="${iterStat.index >= effectiveCupoMax}"
-                                     class="registration-item waitlist">
-                                    <div class="registration-avatar">
-                                        <i class="fas fa-user-circle"></i>
-                                    </div>
-                                    <div class="registration-info">
-                                        <a th:href="@{'/admin/players/' + ${reg.playerId}}"
-                                           class="registration-name-link"
-                                           th:text="${reg.playerNombre} ?: 'Jugador ' + ${reg.playerId}"
-                                           title="Ver detalles del jugador">
-                                            Jugador
-                                        </a>
-                                        <span class="registration-position" th:text="'Posición: ' + ${reg.position}">
-                                        </span>
-                                    </div>
-                                    <a th:href="@{'/admin/players/' + ${reg.playerId}}"
-                                       class="btn-icon"
-                                       title="Ver detalles del jugador">
-                                        <i class="fas fa-external-link-alt"></i>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- СЕКЦИЯ 3: Пары с ожидающим приглашением — PARTNER_INVITED -->
-                        <!-- Показываем только для парных турниров -->
-                        <div class="registrations-list"
-                             th:if="${not #lists.isEmpty(invitedRegs)}">
-                            <h4>
-                                <i class="fas fa-envelope" style="color: #6366f1;"></i>
-                                Invitación pendiente
-                                <span class="badge-warning"
-                                      style="background: #6366f1;"
-                                      th:text="${#lists.size(invitedRegs)}"></span>
-                            </h4>
-                            <div class="registrations-items waitlist-items">
-                                <div th:each="reg : ${invitedRegs}"
-                                     class="registration-item"
-                                     style="border-left: 3px solid #6366f1; background: #f5f3ff;">
-                                    <div class="registration-avatar">
-                                        <i class="fas fa-user-clock" style="color: #6366f1;"></i>
-                                    </div>
-                                    <div class="registration-info">
-                                        <a th:href="@{'/admin/players/' + ${reg.playerId}}"
-                                           class="registration-name-link"
-                                           th:text="${reg.playerNombre} ?: 'Jugador ' + ${reg.playerId}"
-                                           title="Ver detalles del jugador">
-                                            Jugador
-                                        </a>
-                                        <!-- Имя приглашённого партнёра из полей -->
-                                        <span class="registration-position"
-                                              th:text="'Invitando a: ' + ${reg.partnerNombre} + ' ' + (${reg.partnerApellido} ?: '')">
-                                        </span>
-                                    </div>
-                                    <a th:href="@{'/admin/players/' + ${reg.playerId}}"
-                                       class="btn-icon"
-                                       title="Ver detalles del jugador">
-                                        <i class="fas fa-external-link-alt"></i>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-
-                    </th:block>
-
-                    <!-- Отдельный блок для WAITLIST -->
-                    <div class="registrations-list" th:if="${tournament.waitlistCount > 0}">
-                        <h4>
-                            <i class="fas fa-hourglass-half" style="color: #94a3b8;"></i>
-                            Lista de Espera
-                            <span class="badge-warning" th:text="${tournament.waitlistCount}"></span>
-                        </h4>
-                        <div class="registrations-items waitlist-items">
-                            <div th:each="reg : ${registrations}"
-                                 th:if="${reg.status.name() == 'WAITLIST'}"
-                                 class="registration-item waitlist">
-                                <div class="registration-avatar">
-                                    <i class="fas fa-user-circle"></i>
-                                </div>
-                                <div class="registration-info">
-                                    <a th:href="@{'/admin/players/' + ${reg.playerId}}"
-                                       class="registration-name-link"
-                                       th:text="${reg.playerNombre} ?: 'Jugador ' + ${reg.playerId}"
-                                       title="Ver detalles del jugador">
-                                        Jugador
-                                    </a>
-                                    <span class="registration-position"
-                                          th:text="'Espera: ' + ${reg.waitlistPosition}">
-                                    </span>
-                                </div>
-                                <div class="registration-actions">
-                                    <button type="button"
-                                            class="btn-icon move-to-main"
-                                            th:attr="data-tournament-id=${tournament.id},
-                                                     data-player-id=${reg.playerId},
-                                                     data-player-name=${reg.playerNombre}"
-                                            onclick="moveToMain(this)"
-                                            title="Mover al torneo principal">
-                                        <i class="fas fa-arrow-up"></i>
-                                    </button>
-                                    <a th:href="@{'/admin/players/' + ${reg.playerId}}"
-                                       class="btn-icon"
-                                       title="Ver detalles del jugador">
-                                        <i class="fas fa-external-link-alt"></i>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
+                    <!-- Детальные списки — в таблицах ниже на странице -->
+                    <div style="margin-top:.75rem;">
+                        <a href="#reg-tables"
+                           style="display:flex;align-items:center;justify-content:center;gap:.5rem;
+                                  padding:.55rem .75rem;border-radius:8px;
+                                  border:1px solid var(--admin-border,#e2e8f0);
+                                  color:var(--admin-primary,#6366f1);font-size:.875rem;
+                                  text-decoration:none;font-weight:500;transition:background .15s;"
+                           onmouseover="this.style.background='var(--admin-light,#f8fafc)'"
+                           onmouseout="this.style.background='transparent'">
+                            <i class="fas fa-table"></i> Ver inscripciones ↓
+                        </a>
                     </div>
                 </div>
 
@@ -1125,6 +1068,309 @@
 
             </div>
         </div>
+
+        <!-- ================================================================
+             ТАБЛИЦЫ РЕГИСТРАЦИЙ (полноширинные, под основной сеткой)
+        ================================================================ -->
+        <div id="reg-tables" class="reg-tables-section">
+        <th:block th:with="
+            confirmedRegs=${registrations.?[status.name() == 'CONFIRMED']},
+            invitedRegs=${registrations.?[status.name() == 'PARTNER_INVITED' and isDoubleRegistration == true]},
+            effectiveCupoMax=${tournament.cupoMax}">
+
+            <!-- ── Таблица 1: Inscripciones (подтверждённые участники) ── -->
+            <div class="reg-table-card">
+                <div class="reg-table-header">
+                    <h3>
+                        <i class="fas fa-check-circle" style="color:#10b981;"></i>
+                        Inscripciones
+                        <!-- DOBLES: пары = confirmedRegs/2 из cupoMax/2 -->
+                        <span class="reg-badge-count"
+                              th:if="${tournament.modalidad.name() == 'DOBLES'}"
+                              th:text="${confirmedRegs.size() / 2}"></span>
+                        <span th:if="${tournament.modalidad.name() == 'DOBLES'}"
+                              style="font-size:.78rem;font-weight:400;color:#64748b;margin-left:.25rem;"
+                              th:text="'/ ' + ${effectiveCupoMax / 2} + ' parejas'"></span>
+                        <!-- INDIVIDUAL: показываем игроков -->
+                        <span class="reg-badge-count"
+                              th:unless="${tournament.modalidad.name() == 'DOBLES'}"
+                              th:text="${confirmedRegs.size() > effectiveCupoMax ? effectiveCupoMax : confirmedRegs.size()}"></span>
+                        <span th:unless="${tournament.modalidad.name() == 'DOBLES'}"
+                              style="font-size:.78rem;font-weight:400;color:#64748b;margin-left:.25rem;"
+                              th:text="'/ ' + ${effectiveCupoMax} + ' cupos'"></span>
+                    </h3>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table class="reg-table">
+                        <thead>
+                            <tr>
+                                <th style="width:48px;">#</th>
+                                <th>Jugador</th>
+                                <th th:if="${tournament.modalidad.name() == 'DOBLES'}">Pareja</th>
+                                <th th:if="${tournament.modalidad.name() == 'DOBLES'}">Contacto pareja</th>
+                                <th th:unless="${tournament.modalidad.name() == 'DOBLES'}">Posición</th>
+                                <th th:unless="${tournament.modalidad.name() == 'DOBLES'}">Contacto</th>
+                                <th style="width:90px;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${#lists.isEmpty(confirmedRegs)}">
+                                <td th:colspan="${tournament.modalidad.name() == 'DOBLES' ? 5 : 6}"
+                                    class="reg-empty-cell">No hay participantes confirmados</td>
+                            </tr>
+                            <tr th:each="reg, iterStat : ${confirmedRegs}"
+                                th:if="${iterStat.index < effectiveCupoMax}">
+                                <td>
+                                    <span class="reg-pos" th:text="${iterStat.count}"></span>
+                                </td>
+                                <td>
+                                    <a th:href="@{'/admin/players/' + ${reg.playerId}}"
+                                       class="reg-player-link"
+                                       th:text="${reg.playerNombre} ?: 'Jugador ' + ${reg.playerId}">
+                                        Jugador
+                                    </a>
+                                </td>
+                                <!-- Колонка паря (только DOBLES) -->
+                                <td th:if="${tournament.modalidad.name() == 'DOBLES'}">
+                                    <span th:if="${reg.partnerNombre != null and !reg.partnerNombre.isEmpty()}"
+                                          th:text="${reg.partnerNombre + (reg.partnerApellido != null ? ' ' + reg.partnerApellido : '')}"></span>
+                                    <span th:unless="${reg.partnerNombre != null and !reg.partnerNombre.isEmpty()}"
+                                          style="color:#94a3b8;">—</span>
+                                </td>
+                                <!-- Колонка контакт партнёра (только DOBLES): Telegram > WhatsApp -->
+                                <td th:if="${tournament.modalidad.name() == 'DOBLES'}">
+                                    <!-- Telegram (приоритет) -->
+                                    <a th:if="${reg.partnerTelegram != null and !reg.partnerTelegram.isEmpty()}"
+                                       th:href="'https://t.me/' + ${#strings.replace(reg.partnerTelegram, '@', '')}"
+                                       class="reg-tg-link"
+                                       target="_blank" rel="noopener noreferrer">
+                                        <i class="fab fa-telegram"></i>
+                                        <span th:text="${reg.partnerTelegram}"></span>
+                                    </a>
+                                    <!-- WhatsApp (если нет Telegram) -->
+                                    <a th:if="${(reg.partnerTelegram == null or reg.partnerTelegram.isEmpty()) and reg.partnerPhone != null and !reg.partnerPhone.isEmpty()}"
+                                       th:href="'https://wa.me/' + ${#strings.replace(reg.partnerPhone, '+', '')}"
+                                       class="reg-wa-link"
+                                       target="_blank" rel="noopener noreferrer">
+                                        <i class="fab fa-whatsapp"></i>
+                                        <span th:text="${reg.partnerPhone}"></span>
+                                    </a>
+                                    <!-- Нет ни Telegram ни Phone -->
+                                    <span th:if="${(reg.partnerTelegram == null or reg.partnerTelegram.isEmpty()) and (reg.partnerPhone == null or reg.partnerPhone.isEmpty())}"
+                                          style="color:#94a3b8;">—</span>
+                                </td>
+                                <!-- Колонка позиция (одиночный) -->
+                                <td th:unless="${tournament.modalidad.name() == 'DOBLES'}">
+                                    <span class="reg-pos" th:text="${reg.position != null ? reg.position : iterStat.count}"></span>
+                                </td>
+                                <!-- Колонка Contacto (одиночный): Telegram > WhatsApp -->
+                                <td th:unless="${tournament.modalidad.name() == 'DOBLES'}">
+                                    <a th:if="${reg.playerTelegram != null and !reg.playerTelegram.isEmpty()}"
+                                       th:href="'https://t.me/' + ${#strings.replace(reg.playerTelegram, '@', '')}"
+                                       class="reg-tg-link"
+                                       target="_blank" rel="noopener noreferrer">
+                                        <i class="fab fa-telegram"></i>
+                                        <span th:text="${reg.playerTelegram}"></span>
+                                    </a>
+                                    <a th:if="${(reg.playerTelegram == null or reg.playerTelegram.isEmpty()) and reg.playerPhone != null and !reg.playerPhone.isEmpty()}"
+                                       th:href="'https://wa.me/' + ${#strings.replace(reg.playerPhone, '+', '')}"
+                                       class="reg-wa-link"
+                                       target="_blank" rel="noopener noreferrer">
+                                        <i class="fab fa-whatsapp"></i>
+                                        <span th:text="${reg.playerPhone}"></span>
+                                    </a>
+                                    <span th:if="${(reg.playerTelegram == null or reg.playerTelegram.isEmpty()) and (reg.playerPhone == null or reg.playerPhone.isEmpty())}"
+                                          style="color:#94a3b8;">—</span>
+                                </td>
+                                <td>
+                                    <div class="reg-action-cell">
+                                        <button type="button"
+                                                class="btn-icon move-to-waitlist"
+                                                th:attr="data-tournament-id=${tournament.id},
+                                                         data-player-id=${reg.playerId},
+                                                         data-player-name=${reg.playerNombre}"
+                                                onclick="moveToWaitlist(this)"
+                                                title="Mover a lista de espera">
+                                            <i class="fas fa-arrow-down"></i>
+                                        </button>
+                                        <a th:href="@{'/admin/players/' + ${reg.playerId}}"
+                                           class="btn-icon"
+                                           title="Ver detalles del jugador">
+                                            <i class="fas fa-external-link-alt"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ── Таблица 2: Reserva (overflow сверх лимита) ── -->
+            <div class="reg-table-card" th:if="${confirmedRegs.size() > effectiveCupoMax}">
+                <div class="reg-table-header">
+                    <h3>
+                        <i class="fas fa-clock" style="color:#f59e0b;"></i>
+                        Reserva
+                        <span class="reg-badge-count" style="background:#f59e0b;"
+                              th:text="${confirmedRegs.size() - effectiveCupoMax}"></span>
+                    </h3>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table class="reg-table">
+                        <thead>
+                            <tr>
+                                <th style="width:48px;">#</th>
+                                <th>Jugador</th>
+                                <th>Posición</th>
+                                <th style="width:70px;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="reg, iterStat : ${confirmedRegs}"
+                                th:if="${iterStat.index >= effectiveCupoMax}">
+                                <td>
+                                    <span class="reg-pos reserve" th:text="${iterStat.count}"></span>
+                                </td>
+                                <td>
+                                    <a th:href="@{'/admin/players/' + ${reg.playerId}}"
+                                       class="reg-player-link"
+                                       th:text="${reg.playerNombre} ?: 'Jugador ' + ${reg.playerId}">
+                                        Jugador
+                                    </a>
+                                </td>
+                                <td>
+                                    <span style="color:#64748b; font-size:.82rem;" th:text="'#' + ${reg.position}"></span>
+                                </td>
+                                <td>
+                                    <a th:href="@{'/admin/players/' + ${reg.playerId}}"
+                                       class="btn-icon"
+                                       title="Ver detalles del jugador">
+                                        <i class="fas fa-external-link-alt"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ── Таблица 3: Invitación pendiente (PARTNER_INVITED) ── -->
+            <div class="reg-table-card" th:if="${not #lists.isEmpty(invitedRegs)}">
+                <div class="reg-table-header">
+                    <h3>
+                        <i class="fas fa-envelope" style="color:#6366f1;"></i>
+                        Invitación pendiente
+                        <span class="reg-badge-count" style="background:#6366f1;"
+                              th:text="${#lists.size(invitedRegs)}"></span>
+                    </h3>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table class="reg-table">
+                        <thead>
+                            <tr>
+                                <th style="width:48px;">#</th>
+                                <th>Jugador</th>
+                                <th>Invitando a</th>
+                                <th style="width:70px;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="reg, iterStat : ${invitedRegs}"
+                                style="border-left: 3px solid #6366f1;">
+                                <td>
+                                    <span class="reg-pos" style="background:#6366f1;"
+                                          th:text="${iterStat.count}"></span>
+                                </td>
+                                <td>
+                                    <a th:href="@{'/admin/players/' + ${reg.playerId}}"
+                                       class="reg-player-link"
+                                       th:text="${reg.playerNombre} ?: 'Jugador ' + ${reg.playerId}">
+                                        Jugador
+                                    </a>
+                                </td>
+                                <td>
+                                    <span th:text="${reg.partnerNombre} + ' ' + (${reg.partnerApellido} ?: '')"></span>
+                                </td>
+                                <td>
+                                    <a th:href="@{'/admin/players/' + ${reg.playerId}}"
+                                       class="btn-icon"
+                                       title="Ver detalles del jugador">
+                                        <i class="fas fa-external-link-alt"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </th:block>
+
+        <!-- ── Таблица 4: Lista de Espera ── -->
+        <div class="reg-table-card" th:if="${tournament.waitlistCount > 0}">
+            <div class="reg-table-header">
+                <h3>
+                    <i class="fas fa-hourglass-half" style="color:#94a3b8;"></i>
+                    Lista de Espera
+                    <span class="reg-badge-count" style="background:#94a3b8;"
+                          th:text="${tournament.waitlistCount}"></span>
+                </h3>
+            </div>
+            <div style="overflow-x:auto;">
+                <table class="reg-table">
+                    <thead>
+                        <tr>
+                            <th style="width:48px;">#</th>
+                            <th>Jugador</th>
+                            <th>Posición en espera</th>
+                            <th style="width:90px;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="reg : ${registrations}"
+                            th:if="${reg.status.name() == 'WAITLIST'}">
+                            <td>
+                                <span class="reg-pos wait" th:text="${reg.waitlistPosition}"></span>
+                            </td>
+                            <td>
+                                <a th:href="@{'/admin/players/' + ${reg.playerId}}"
+                                   class="reg-player-link"
+                                   th:text="${reg.playerNombre} ?: 'Jugador ' + ${reg.playerId}">
+                                    Jugador
+                                </a>
+                            </td>
+                            <td>
+                                <span style="color:#64748b; font-size:.82rem;"
+                                      th:text="'Espera #' + ${reg.waitlistPosition}"></span>
+                            </td>
+                            <td>
+                                <div class="reg-action-cell">
+                                    <button type="button"
+                                            class="btn-icon move-to-main"
+                                            th:attr="data-tournament-id=${tournament.id},
+                                                     data-player-id=${reg.playerId},
+                                                     data-player-name=${reg.playerNombre}"
+                                            onclick="moveToMain(this)"
+                                            title="Mover al torneo principal">
+                                        <i class="fas fa-arrow-up"></i>
+                                    </button>
+                                    <a th:href="@{'/admin/players/' + ${reg.playerId}}"
+                                       class="btn-icon"
+                                       title="Ver detalles del jugador">
+                                        <i class="fas fa-external-link-alt"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        </div>
+        <!-- ── конец таблиц регистраций ── -->
+
     </div>
 </main>
 

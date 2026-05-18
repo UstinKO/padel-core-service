@@ -15,6 +15,8 @@ public interface TournamentRegistrationMapper {
     @Mapping(source = "player.nombre", target = "playerNombre")
     @Mapping(source = "player.apellido", target = "playerApellido")
     @Mapping(source = "player.email", target = "playerEmail")
+    @Mapping(source = "player.telefono", target = "playerPhone")
+    @Mapping(source = "player.telegramUsername", target = "playerTelegram")
     @Mapping(source = "tournament.id", target = "tournamentId")
     @Mapping(source = "tournament.nombre", target = "tournamentNombre")
     @Mapping(source = "partner.id", target = "partnerId")
@@ -22,6 +24,7 @@ public interface TournamentRegistrationMapper {
     @Mapping(target = "partnerApellido", expression = "java(getPartnerApellido(registration))")
     @Mapping(target = "partnerEmail", expression = "java(getPartnerEmail(registration))")
     @Mapping(target = "partnerPhone", source = "partnerPhone")
+    @Mapping(target = "partnerTelegram", expression = "java(getPartnerTelegram(registration))")
     @Mapping(target = "partnerRegistered", expression = "java(registration.getPartner() != null)")
     TournamentRegistrationDto toDto(TournamentRegistration registration);
 
@@ -46,5 +49,12 @@ public interface TournamentRegistrationMapper {
             return registration.getPartner().getEmail();
         }
         return registration.getPartnerEmail();
+    }
+
+    default String getPartnerTelegram(TournamentRegistration registration) {
+        if (registration.getPartner() != null) {
+            return registration.getPartner().getTelegramUsername();
+        }
+        return null;
     }
 }

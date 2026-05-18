@@ -33,7 +33,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -477,8 +479,39 @@ public class TournamentService {
     // ==================== Остальные методы без изменений ====================
 
     public List<TournamentRegistrationDto> getRegistrationsByTournament(Long tournamentId) {
-        return registrationRepository.findByTournamentId(tournamentId).stream()
-                .map(registrationMapper::toDto)
+        List<TournamentRegistration> registrations = registrationRepository
+                .findByTournamentIdOrderByPositionAscWaitlistPositionAsc(tournamentId);
+
+        // Строим карту mainPlayerId → список регистраций пары
+        Map<Long, List<TournamentRegistration>> pairMap = registrations.stream()
+                .filter(r -> Boolean.TRUE.equals(r.getIsDoubleRegistration()) && r.getMainPlayerId() != null)
+                .collect(Collectors.groupingBy(TournamentRegistration::getMainPlayerId));
+
+        return registrations.stream()
+                .map(reg -> {
+                    TournamentRegistrationDto dto = registrationMapper.toDto(reg);
+
+                    // Если данные партнёра не заполнены маппером — ищем через mainPlayerId
+                    if (Boolean.TRUE.equals(reg.getIsDoubleRegistration())
+                            && reg.getMainPlayerId() != null
+                            && dto.getPartnerNombre() == null) {
+
+                        List<TournamentRegistration> pair = pairMap.get(reg.getMainPlayerId());
+                        if (pair != null) {
+                            pair.stream()
+                                    .filter(r -> !r.getPlayer().getId().equals(reg.getPlayer().getId()))
+                                    .findFirst()
+                                    .ifPresent(partnerReg -> {
+                                        PlayerPadel partner = partnerReg.getPlayer();
+                                        dto.setPartnerNombre(partner.getNombre());
+                                        dto.setPartnerApellido(partner.getApellido());
+                                        dto.setPartnerPhone(partner.getTelefono());
+                                        dto.setPartnerTelegram(partner.getTelegramUsername());
+                                    });
+                        }
+                    }
+                    return dto;
+                })
                 .collect(Collectors.toList());
     }
 
@@ -747,13 +780,16 @@ public class TournamentService {
         long waitlistCount;
 
         if (tournament.getModalidad() == Modalidad.DOBLES) {
-            // Занятые места: CONFIRMED + PAIR_REGISTERED + PARTNER_INVITED
-            confirmedSpots = registrationRepository.countConfirmedPairs(tournament.getId());
+            // cupoMax хранится в единицах ИГРОКОВ (не пар), поэтому считаем
+            // индивидуальные регистрации чтобы сравнивать в одних единицах
+            confirmedSpots = registrationRepository.countByTournamentIdAndStatusIn(
+                    tournament.getId(),
+                    List.of(RegistrationStatus.CONFIRMED, RegistrationStatus.PARTNER_INVITED, RegistrationStatus.PAIR_REGISTERED));
 
             // Лист ожидания — уникальные пары (не отдельные игроки)
             waitlistCount = registrationRepository.countUniquePairsInWaitlist(tournament.getId());
 
-            log.debug("DOUBLES Tournament {} - Confirmed/invited pairs: {}, Waitlist pairs: {}",
+            log.debug("DOUBLES Tournament {} - Confirmed/invited players: {}, Waitlist pairs: {}",
                     tournament.getId(), confirmedSpots, waitlistCount);
         } else {
             // Для индивидуальных турниров считаем количество CONFIRMED игроков

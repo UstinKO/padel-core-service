@@ -203,6 +203,7 @@ public class PaymentService {
                     dto.setPlayerPhone(reg.getPlayer().getTelefono());
                     dto.setPosition(reg.getPosition());
                     dto.setAttended(reg.getAttended() != null ? reg.getAttended() : false);
+                    dto.setParticipationConfirmed(reg.getParticipationConfirmed() != null ? reg.getParticipationConfirmed() : false);
                     dto.setPartnerRow(false); // у него есть своя регистрация — не виртуальная строка
 
                     // Платёж — без маркера PARTNER_PAYMENT (у каждого своя запись)
@@ -250,6 +251,7 @@ public class PaymentService {
                         partnerDto.setPartnerEmail(reg.getPartnerEmail());
                         partnerDto.setPosition(reg.getPosition());
                         partnerDto.setAttended(false);
+                        partnerDto.setParticipationConfirmed(false);
 
                         // Платёж партнёра — с маркером PARTNER_PAYMENT
                         payments.stream()
@@ -290,9 +292,10 @@ public class PaymentService {
                     .orElseThrow(() -> new ResourceNotFoundException(
                             "Registration not found: " + dto.getRegistrationId()));
 
-            // Посещение — для основной строки
+            // Посещение и подтверждение участия — для основной строки
             if (!dto.isPartnerRow()) {
                 registration.setAttended(dto.getAttended());
+                registration.setParticipationConfirmed(dto.getParticipationConfirmed() != null ? dto.getParticipationConfirmed() : false);
                 registrationRepository.save(registration);
 
                 // Если это парная регистрация — синхронизируем attended партнёру (если он в БД)
