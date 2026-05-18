@@ -374,13 +374,15 @@
             modalidadSelect.required = false;
             tipoHint.textContent = 'Formato parejas: Calificación (2 partidos) + Playoff eliminatorio. Modalidad siempre Dobles.';
         } else if (val === 'AMERICANO') {
-            modalidadGroup.style.display = '';
-            modalidadSelect.required = true;
-            tipoHint.textContent = 'Americano individual o parejas (Round Robin clásico).';
+            modalidadGroup.style.display = 'none';
+            modalidadSelect.value = 'INDIVIDUAL';
+            modalidadSelect.required = false;
+            tipoHint.textContent = 'Americano individual (Round Robin clásico). Modalidad siempre Individual.';
         } else if (val === 'KING_OF_COURT') {
-            modalidadGroup.style.display = '';
-            modalidadSelect.required = true;
-            tipoHint.textContent = 'Rey de Cancha.';
+            modalidadGroup.style.display = 'none';
+            modalidadSelect.value = 'INDIVIDUAL';
+            modalidadSelect.required = false;
+            tipoHint.textContent = 'Rey de Cancha. Modalidad siempre Individual.';
         } else {
             modalidadGroup.style.display = '';
             modalidadSelect.required = true;
