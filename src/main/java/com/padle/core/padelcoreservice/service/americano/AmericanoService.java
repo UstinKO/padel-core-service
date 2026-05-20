@@ -393,85 +393,120 @@ public class AmericanoService {
         return pairsGenerated == pairsTotal;
     }
 
-    // ── Full Americano: строгий алгоритм покрытия всех пар ──────────────────
+    // ── Full Americano: метод круга (гарантирует каждую партнёрскую пару ровно 1 раз) ────
 
     private List<AmericanoRound> buildFullAmericano(Tournament tournament,
                                                     List<AmericanoPlayer> players,
                                                     AmericanoConfigDto config) {
-        log.info("Building Full Americano schedule");
+        log.info("Building Full Americano schedule using circle method");
 
-        int N = players.size();
+        int N      = players.size();
         int courts = config.getCourts();
-
-        // Генерируем все уникальные партнёрские пары
-        List<int[]> allPairs = new ArrayList<>();
-        for (int i = 0; i < N; i++) {
-            for (int j = i + 1; j < N; j++) {
-                allPairs.add(new int[]{i, j});
-            }
-        }
-
-        // Собираем матчи: берём 2 непересекающиеся пары = 1 матч (4 игрока)
-        List<int[]> matchSlots = new ArrayList<>(); // каждый слот = [p1, p2, p3, p4]
-        boolean[] usedPair = new boolean[allPairs.size()];
-
-        for (int i = 0; i < allPairs.size(); i++) {
-            if (usedPair[i]) continue;
-            int[] pair1 = allPairs.get(i);
-            // ищем непересекающуюся пару
-            for (int j = i + 1; j < allPairs.size(); j++) {
-                if (usedPair[j]) continue;
-                int[] pair2 = allPairs.get(j);
-                if (pair1[0] != pair2[0] && pair1[0] != pair2[1]
-                        && pair1[1] != pair2[0] && pair1[1] != pair2[1]) {
-                    matchSlots.add(new int[]{pair1[0], pair1[1], pair2[0], pair2[1]});
-                    usedPair[i] = true;
-                    usedPair[j] = true;
-                    break;
-                }
-            }
-        }
-
-        // Раскладываем матчи по раундам: никто не играет дважды в одном раунде
         int totalRounds = config.getTotalRounds();
-        List<List<int[]>> roundSlots = new ArrayList<>();
-        for (int r = 0; r < totalRounds; r++) roundSlots.add(new ArrayList<>());
 
-        boolean[] usedMatch = new boolean[matchSlots.size()];
-        for (int r = 0; r < totalRounds && r * courts < matchSlots.size(); r++) {
-            Set<Integer> playersInRound = new HashSet<>();
-            int placed = 0;
-            for (int m = 0; m < matchSlots.size() && placed < courts; m++) {
-                if (usedMatch[m]) continue;
-                int[] slot = matchSlots.get(m);
-                if (!playersInRound.contains(slot[0]) && !playersInRound.contains(slot[1])
-                        && !playersInRound.contains(slot[2]) && !playersInRound.contains(slot[3])) {
-                    roundSlots.get(r).add(slot);
-                    playersInRound.addAll(List.of(slot[0], slot[1], slot[2], slot[3]));
-                    usedMatch[m] = true;
-                    placed++;
-                }
-            }
+        // Метод круга требует N == playersPerRound (все играют в каждом раунде)
+        if (N != courts * 4) {
+            log.warn("Full Americano: N={} != playersPerRound={}, falling back to Flex", N, courts * 4);
+            return buildFlexAmericano(tournament, players, config);
         }
 
-        return persistRounds(tournament, players, roundSlots, config);
+        Map<Long, Map<Long, Integer>> opponentCount = new HashMap<>();
+        for (AmericanoPlayer ap : players)
+            opponentCount.put(ap.getPlayer().getId(), new HashMap<>());
+
+        List<List<int[]>> allRoundSlots = new ArrayList<>();
+
+        for (int r = 0; r < totalRounds; r++) {
+            // Генерируем совершенное паросочетание раунда r (метод круга)
+            List<int[]> pairs = buildCirclePairs(N, r);
+            // Расставляем пары по кортам, минимизируя повторы соперников
+            List<int[]> slots = pairPartnersIntoMatches(players, pairs, courts, opponentCount);
+            for (int[] slot : slots) {
+                Long p1 = players.get(slot[0]).getPlayer().getId();
+                Long p2 = players.get(slot[1]).getPlayer().getId();
+                Long p3 = players.get(slot[2]).getPlayer().getId();
+                Long p4 = players.get(slot[3]).getPlayer().getId();
+                incrementPair(opponentCount, p1, p3);
+                incrementPair(opponentCount, p1, p4);
+                incrementPair(opponentCount, p2, p3);
+                incrementPair(opponentCount, p2, p4);
+            }
+            allRoundSlots.add(slots);
+        }
+
+        return persistRounds(tournament, players, allRoundSlots, config);
     }
 
-    // ── Flex Americano: оптимизатор с системой штрафов ──────────────────────
+    /**
+     * Метод круга: игрок N-1 фиксирован, игроки 0..N-2 вращаются.
+     * Раунд r даёт совершенное паросочетание K_N — каждая пара ровно в одном раунде.
+     */
+    private List<int[]> buildCirclePairs(int N, int r) {
+        List<int[]> pairs = new ArrayList<>();
+        int mod = N - 1;
+        pairs.add(new int[]{r % mod, N - 1});
+        for (int k = 1; k <= (N - 2) / 2; k++) {
+            int a = ((r - k) % mod + mod) % mod;
+            int b = (r + k) % mod;
+            pairs.add(new int[]{a, b});
+        }
+        return pairs;
+    }
+
+    /**
+     * Группирует N/2 партнёрских пар (совершенное паросочетание) в C матчей.
+     * Жадно минимизирует повторы соперников.
+     */
+    private List<int[]> pairPartnersIntoMatches(List<AmericanoPlayer> players,
+                                                 List<int[]> pairs,
+                                                 int courts,
+                                                 Map<Long, Map<Long, Integer>> opponentCount) {
+        boolean[] used = new boolean[pairs.size()];
+        List<int[]> slots = new ArrayList<>();
+
+        for (int i = 0; i < pairs.size() && slots.size() < courts; i++) {
+            if (used[i]) continue;
+            int[] p1 = pairs.get(i);
+            int bestJ = -1, bestScore = Integer.MAX_VALUE;
+
+            for (int j = i + 1; j < pairs.size(); j++) {
+                if (used[j]) continue;
+                int[] p2  = pairs.get(j);
+                Long  a   = players.get(p1[0]).getPlayer().getId();
+                Long  b   = players.get(p1[1]).getPlayer().getId();
+                Long  c   = players.get(p2[0]).getPlayer().getId();
+                Long  d   = players.get(p2[1]).getPlayer().getId();
+                int score = getPairCount(opponentCount, a, c)
+                          + getPairCount(opponentCount, a, d)
+                          + getPairCount(opponentCount, b, c)
+                          + getPairCount(opponentCount, b, d);
+                if (score < bestScore) { bestScore = score; bestJ = j; }
+                if (score == 0) break;
+            }
+
+            if (bestJ >= 0) {
+                int[] p2 = pairs.get(bestJ);
+                slots.add(new int[]{p1[0], p1[1], p2[0], p2[1]});
+                used[i] = used[bestJ] = true;
+            }
+        }
+        return slots;
+    }
+
+    // ── Flex Americano: двухшаговый алгоритм с приоритетом новых партнёрских пар ──────────
 
     private List<AmericanoRound> buildFlexAmericano(Tournament tournament,
                                                     List<AmericanoPlayer> players,
                                                     AmericanoConfigDto config) {
         log.info("Building Flex Americano schedule");
 
-        int N       = players.size();
-        int courts  = config.getCourts();
-        int rounds  = config.getTotalRounds();
+        int N               = players.size();
+        int courts          = config.getCourts();
+        int rounds          = config.getTotalRounds();
         int playersPerRound = courts * 4;
 
-        // Счётчики для штрафов
-        Map<Long, Map<Long, Integer>> partnerCount  = new HashMap<>(); // p→p→count
-        Map<Long, Map<Long, Integer>> opponentCount = new HashMap<>(); // p→p→count
+        Map<Long, Map<Long, Integer>> partnerCount  = new HashMap<>();
+        Map<Long, Map<Long, Integer>> opponentCount = new HashMap<>();
         Map<Long, Integer>            byePerPlayer  = new HashMap<>();
         Map<Long, Integer>            lastByeRound  = new HashMap<>();
         Map<Long, Integer>            matchesPlayed = new HashMap<>();
@@ -488,48 +523,39 @@ public class AmericanoService {
         List<List<int[]>> allRoundSlots = new ArrayList<>();
 
         for (int r = 1; r <= rounds; r++) {
-            // Выбираем игроков для раунда (минимизируем bye)
             List<Integer> activeIndices = selectPlayersForRound(
                     players, N, playersPerRound, byePerPlayer, lastByeRound, matchesPlayed, r);
 
-            // Для игроков с bye обновляем счётчики
             for (int i = 0; i < N; i++) {
                 if (!activeIndices.contains(i)) {
                     Long pid = players.get(i).getPlayer().getId();
                     byePerPlayer.merge(pid, 1, Integer::sum);
                     lastByeRound.put(pid, r);
-                    // Добавить: игрок на bye тоже "прожил" раунд
                     matchesPlayed.merge(pid, 1, Integer::sum);
                 }
             }
 
-            // Генерируем лучшую расстановку матчей с минимальным штрафом
-            List<int[]> bestSlots = findBestMatchArrangement(
-                    players, activeIndices, courts, partnerCount, opponentCount, matchesPlayed, r);
+            List<int[]> slots = findFlexMatchArrangement(
+                    players, activeIndices, courts, partnerCount, opponentCount);
 
-            // Обновляем счётчики
-            for (int[] slot : bestSlots) {
+            for (int[] slot : slots) {
                 Long p1 = players.get(slot[0]).getPlayer().getId();
                 Long p2 = players.get(slot[1]).getPlayer().getId();
                 Long p3 = players.get(slot[2]).getPlayer().getId();
                 Long p4 = players.get(slot[3]).getPlayer().getId();
-
-                // партнёры: (p1,p2) и (p3,p4)
                 incrementPair(partnerCount, p1, p2);
                 incrementPair(partnerCount, p3, p4);
-                // соперники: p1↔p3, p1↔p4, p2↔p3, p2↔p4
                 incrementPair(opponentCount, p1, p3);
                 incrementPair(opponentCount, p1, p4);
                 incrementPair(opponentCount, p2, p3);
                 incrementPair(opponentCount, p2, p4);
-
                 matchesPlayed.merge(p1, 1, Integer::sum);
                 matchesPlayed.merge(p2, 1, Integer::sum);
                 matchesPlayed.merge(p3, 1, Integer::sum);
                 matchesPlayed.merge(p4, 1, Integer::sum);
             }
 
-            allRoundSlots.add(bestSlots);
+            allRoundSlots.add(slots);
         }
 
         return persistRounds(tournament, players, allRoundSlots, config);
@@ -619,85 +645,82 @@ public class AmericanoService {
     }
 
     /**
-     * Перебирает несколько случайных перестановок и выбирает с минимальным штрафом.
-     * Система штрафов (п. 14 ТЗ):
-     *   повтор партнёра      +100
-     *   повтор соперника     +20
-     *   большая разница по матчам +200
+     * Двухшаговый алгоритм Flex-раунда:
+     * 1) Находит паросочетание активных игроков с минимальным числом повторов партнёров.
+     * 2) Разбивает партнёрские пары по кортам, минимизируя повторы соперников.
      */
-    private List<int[]> findBestMatchArrangement(List<AmericanoPlayer> players,
-                                                 List<Integer> activeIndices,
-                                                 int courts,
-                                                 Map<Long, Map<Long, Integer>> partnerCount,
-                                                 Map<Long, Map<Long, Integer>> opponentCount,
-                                                 Map<Long, Integer> matchesPlayed,
-                                                 int round) {
-        List<int[]> best      = null;
-        int         bestScore = Integer.MAX_VALUE;
+    private List<int[]> findFlexMatchArrangement(List<AmericanoPlayer> players,
+                                                  List<Integer> activeIndices,
+                                                  int courts,
+                                                  Map<Long, Map<Long, Integer>> partnerCount,
+                                                  Map<Long, Map<Long, Integer>> opponentCount) {
+        int n = activeIndices.size();
 
-        int attempts = Math.min(200, factorial(Math.min(activeIndices.size(), 8)));
-
-        for (int attempt = 0; attempt < attempts; attempt++) {
-            List<Integer> shuffled = new ArrayList<>(activeIndices);
-            Collections.shuffle(shuffled);
-
-            List<int[]> slots = new ArrayList<>();
-            for (int c = 0; c < courts; c++) {
-                int base = c * 4;
-                if (base + 3 < shuffled.size()) {
-                    slots.add(new int[]{
-                            shuffled.get(base),
-                            shuffled.get(base + 1),
-                            shuffled.get(base + 2),
-                            shuffled.get(base + 3)
-                    });
-                }
+        // Строим список кандидатов партнёрских пар с текущим счётчиком использования
+        List<int[]> candidates = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            for (int j = i + 1; j < n; j++) {
+                int idxI = activeIndices.get(i);
+                int idxJ = activeIndices.get(j);
+                Long pi  = players.get(idxI).getPlayer().getId();
+                Long pj  = players.get(idxJ).getPlayer().getId();
+                candidates.add(new int[]{idxI, idxJ, getPairCount(partnerCount, pi, pj)});
             }
+        }
+        // Сортируем по возрастанию использования (0-раз-сыгравшие — первые)
+        candidates.sort(Comparator.comparingInt(p -> p[2]));
 
-            int score = scorePenalty(players, slots, partnerCount, opponentCount, matchesPlayed);
+        // Многократный жадный поиск лучшего паросочетания
+        List<int[]> bestPairs = null;
+        int         bestScore = Integer.MAX_VALUE;
+        Random      rng       = new Random();
+
+        for (int attempt = 0; attempt < 500 && bestScore > 0; attempt++) {
+            if (attempt > 0) shuffleEqualGroups(candidates, rng);
+            List<int[]> matching = greedyPairMatch(candidates, courts * 2);
+            if (matching.size() < courts * 2) continue;
+            int score = matching.stream().mapToInt(p -> p[2]).sum();
             if (score < bestScore) {
                 bestScore = score;
-                best = slots;
-                if (score == 0) break; // идеально
+                bestPairs = new ArrayList<>(matching);
             }
         }
 
-        return best != null ? best : List.of();
+        if (bestPairs == null) return List.of();
+
+        List<int[]> pureIndexPairs = bestPairs.stream()
+                .map(p -> new int[]{p[0], p[1]})
+                .collect(Collectors.toList());
+
+        return pairPartnersIntoMatches(players, pureIndexPairs, courts, opponentCount);
     }
 
-    /**
-     * Считает штраф для набора матчей.
-     */
-    private int scorePenalty(List<AmericanoPlayer> players,
-                             List<int[]> slots,
-                             Map<Long, Map<Long, Integer>> partnerCount,
-                             Map<Long, Map<Long, Integer>> opponentCount,
-                             Map<Long, Integer> matchesPlayed) {
-        int penalty = 0;
-
-        // Разница по количеству матчей между игроками
-        int minMatches = matchesPlayed.values().stream().mapToInt(v -> v).min().orElse(0);
-        int maxMatches = matchesPlayed.values().stream().mapToInt(v -> v).max().orElse(0);
-        if (maxMatches - minMatches > 1) penalty += 200;
-
-        for (int[] slot : slots) {
-            Long p1 = players.get(slot[0]).getPlayer().getId();
-            Long p2 = players.get(slot[1]).getPlayer().getId();
-            Long p3 = players.get(slot[2]).getPlayer().getId();
-            Long p4 = players.get(slot[3]).getPlayer().getId();
-
-            // Повторы партнёров
-            if (getPairCount(partnerCount, p1, p2) > 0) penalty += 100;
-            if (getPairCount(partnerCount, p3, p4) > 0) penalty += 100;
-
-            // Повторы соперников
-            if (getPairCount(opponentCount, p1, p3) > 0) penalty += 20;
-            if (getPairCount(opponentCount, p1, p4) > 0) penalty += 20;
-            if (getPairCount(opponentCount, p2, p3) > 0) penalty += 20;
-            if (getPairCount(opponentCount, p2, p4) > 0) penalty += 20;
+    /** Жадное паросочетание: берёт пары по порядку, пропускает уже занятых игроков. */
+    private List<int[]> greedyPairMatch(List<int[]> candidates, int targetPairs) {
+        Set<Integer> usedPlayers = new HashSet<>();
+        List<int[]>  result      = new ArrayList<>();
+        for (int[] cand : candidates) {
+            if (usedPlayers.contains(cand[0]) || usedPlayers.contains(cand[1])) continue;
+            result.add(cand);
+            usedPlayers.add(cand[0]);
+            usedPlayers.add(cand[1]);
+            if (result.size() == targetPairs) break;
         }
+        return result;
+    }
 
-        return penalty;
+    /** Перемешивает элементы внутри групп с одинаковым usage (сохраняя общий порядок сортировки). */
+    private void shuffleEqualGroups(List<int[]> sorted, Random rng) {
+        int i = 0;
+        while (i < sorted.size()) {
+            int j = i, usage = sorted.get(i)[2];
+            while (j < sorted.size() && sorted.get(j)[2] == usage) j++;
+            for (int k = j - 1; k > i; k--) {
+                int s = i + rng.nextInt(k - i + 1);
+                int[] tmp = sorted.get(k); sorted.set(k, sorted.get(s)); sorted.set(s, tmp);
+            }
+            i = j;
+        }
     }
 
     // ── Сохранение раундов в БД ──────────────────────────────────────────────
@@ -905,8 +928,8 @@ public class AmericanoService {
                 }
             }
 
-            List<int[]> slots = findBestMatchArrangement(
-                    players, activeIndices, courts, partnerCount, opponentCount, matchesPlayed, r);
+            List<int[]> slots = findFlexMatchArrangement(
+                    players, activeIndices, courts, partnerCount, opponentCount);
 
             for (int[] slot : slots) {
                 Long p1 = players.get(slot[0]).getPlayer().getId();
@@ -1481,16 +1504,6 @@ public class AmericanoService {
 
     private Long idOf(PlayerPadel p) {
         return p != null ? p.getId() : null;
-    }
-
-    /** Вычисляет n! но не более Integer.MAX_VALUE (для ограничения числа попыток). */
-    private int factorial(int n) {
-        int result = 1;
-        for (int i = 2; i <= n; i++) {
-            if (result > 10_000) return 10_000; // cap
-            result *= i;
-        }
-        return result;
     }
 
     // ═══════════════════════════════════════════════════════════════════════
