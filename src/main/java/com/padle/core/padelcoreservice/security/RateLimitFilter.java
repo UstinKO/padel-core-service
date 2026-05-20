@@ -17,6 +17,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -43,6 +44,12 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class RateLimitFilter extends OncePerRequestFilter {
 
+    // IP-адреса, которые полностью обходят rate limiting (разработчики / владелец)
+    private static final Set<String> WHITELISTED_IPS = Set.of(
+            "194.124.210.113",  // разработчик
+            "152.171.139.176"   // владелец приложения
+    );
+
     // Кэш buckets по ключу "IP:endpoint_type"
     private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
 
@@ -67,6 +74,12 @@ public class RateLimitFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String ip = extractIp(request);
+
+        if (WHITELISTED_IPS.contains(ip)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String path = request.getRequestURI();
         LimitType limitType = classifyPath(path, ip);  // ← передаём ip
 

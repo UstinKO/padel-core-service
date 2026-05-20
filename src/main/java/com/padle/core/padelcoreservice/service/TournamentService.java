@@ -32,11 +32,15 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -368,9 +372,13 @@ public class TournamentService {
         log.info("Registration cancelled. Old status: {}, New status: {}, Active: {}",
                 oldStatus, registration.getStatus(), registration.getIsActive());
 
-        // Если отменяется подтвержденная регистрация, обрабатываем лист ожидания
         if (oldStatus == RegistrationStatus.CONFIRMED) {
             processWaitlistForTournament(tournamentId);
+            if (tournament.getModalidad() == Modalidad.DOBLES) {
+                reorderPairPositions(tournamentId);
+            } else {
+                reorderPositions(tournamentId);
+            }
         }
     }
 
@@ -487,11 +495,29 @@ public class TournamentService {
                 .filter(r -> Boolean.TRUE.equals(r.getIsDoubleRegistration()) && r.getMainPlayerId() != null)
                 .collect(Collectors.groupingBy(TournamentRegistration::getMainPlayerId));
 
-        return registrations.stream()
+        // Дедупликация: для парных регистраций оставляем только запись основного игрока.
+        // Также дедуплицируем взаимные регистрации через канонический ключ пары.
+        Set<String> seenPairKeys = new HashSet<>();
+        List<TournamentRegistration> deduped = registrations.stream()
+                .filter(r -> {
+                    if (!Boolean.TRUE.equals(r.getIsDoubleRegistration())) return true;
+                    if (r.getMainPlayerId() == null) return true;
+                    if (!r.getPlayer().getId().equals(r.getMainPlayerId())) return false;
+
+                    Long pid = r.getPlayer().getId();
+                    Long partnerId = r.getPartner() != null ? r.getPartner().getId() : null;
+                    if (partnerId == null) return true;
+
+                    long lo = Math.min(pid, partnerId);
+                    long hi = Math.max(pid, partnerId);
+                    return seenPairKeys.add(lo + "-" + hi);
+                })
+                .collect(Collectors.toList());
+
+        return deduped.stream()
                 .map(reg -> {
                     TournamentRegistrationDto dto = registrationMapper.toDto(reg);
 
-                    // Если данные партнёра не заполнены маппером — ищем через mainPlayerId
                     if (Boolean.TRUE.equals(reg.getIsDoubleRegistration())
                             && reg.getMainPlayerId() != null
                             && dto.getPartnerNombre() == null) {
@@ -780,16 +806,13 @@ public class TournamentService {
         long waitlistCount;
 
         if (tournament.getModalidad() == Modalidad.DOBLES) {
-            // cupoMax хранится в единицах ИГРОКОВ (не пар), поэтому считаем
-            // индивидуальные регистрации чтобы сравнивать в одних единицах
-            confirmedSpots = registrationRepository.countByTournamentIdAndStatusIn(
-                    tournament.getId(),
-                    List.of(RegistrationStatus.CONFIRMED, RegistrationStatus.PARTNER_INVITED, RegistrationStatus.PAIR_REGISTERED));
+            // cupoMax в единицах ПАР, считаем уникальные подтверждённые пары
+            confirmedSpots = registrationRepository.countConfirmedPairs(tournament.getId());
 
             // Лист ожидания — уникальные пары (не отдельные игроки)
             waitlistCount = registrationRepository.countUniquePairsInWaitlist(tournament.getId());
 
-            log.debug("DOUBLES Tournament {} - Confirmed/invited players: {}, Waitlist pairs: {}",
+            log.debug("DOUBLES Tournament {} - Confirmed pairs: {}, Waitlist pairs: {}",
                     tournament.getId(), confirmedSpots, waitlistCount);
         } else {
             // Для индивидуальных турниров считаем количество CONFIRMED игроков
@@ -857,7 +880,34 @@ public class TournamentService {
             processWaitlistForTournament(tournamentId);
         }
 
+        reorderPairPositions(tournamentId);
         log.info("Pair registration deleted successfully for tournament {}", tournamentId);
+    }
+
+    @Transactional
+    public void adminRemovePlayerRegistration(Long tournamentId, Long playerId) {
+        Optional<TournamentRegistration> playerRegOpt = registrationRepository
+                .findByTournamentId(tournamentId)
+                .stream()
+                .filter(r -> r.getPlayer().getId().equals(playerId))
+                .findFirst();
+
+        if (playerRegOpt.isEmpty()) {
+            throw new ResourceNotFoundException("Registro no encontrado para el jugador");
+        }
+
+        TournamentRegistration playerReg = playerRegOpt.get();
+
+        if (Boolean.TRUE.equals(playerReg.getIsDoubleRegistration())) {
+            cancelPairRegistration(tournamentId, playerId, "Eliminado por el organizador");
+        } else if (playerReg.getIsActive()) {
+            RegistrationStatus oldStatus = playerReg.getStatus();
+            registrationRepository.delete(playerReg);
+            if (oldStatus == RegistrationStatus.CONFIRMED) {
+                processWaitlistForTournament(tournamentId);
+            }
+            reorderPositions(tournamentId);
+        }
     }
 
     private void validateStatusTransition(TournamentStatus current, TournamentStatus newStatus) {
@@ -1139,6 +1189,29 @@ public class TournamentService {
             waitlist.get(i).setWaitlistPosition(i + 1);
         }
         registrationRepository.saveAll(waitlist);
+    }
+
+    private void reorderPairPositions(Long tournamentId) {
+        List<TournamentRegistration> confirmed = registrationRepository
+                .findByTournamentIdAndStatusOrderByPositionAsc(tournamentId, RegistrationStatus.CONFIRMED)
+                .stream()
+                .filter(r -> Boolean.TRUE.equals(r.getIsDoubleRegistration()) && Boolean.TRUE.equals(r.getIsActive()))
+                .collect(Collectors.toList());
+
+        Map<Long, List<TournamentRegistration>> byPair = new LinkedHashMap<>();
+        for (TournamentRegistration reg : confirmed) {
+            Long key = reg.getMainPlayerId() != null ? reg.getMainPlayerId() : reg.getId();
+            byPair.computeIfAbsent(key, k -> new ArrayList<>()).add(reg);
+        }
+
+        int pairPosition = 1;
+        for (List<TournamentRegistration> pairRegs : byPair.values()) {
+            for (TournamentRegistration reg : pairRegs) {
+                reg.setPosition(pairPosition);
+            }
+            pairPosition++;
+        }
+        registrationRepository.saveAll(confirmed);
     }
 
     @Transactional(readOnly = true)
