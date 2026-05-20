@@ -100,6 +100,11 @@ public class DoubleTournamentRegistrationService {
         // Проверяем, не зарегистрирован ли уже главный игрок на ЭТОТ турнир
         checkPlayerNotRegisteredInThisTournament(tournamentDto.getId(), mainPlayerId);
 
+        // Удаляем старую отменённую запись, если она есть (иначе INSERT нарушит uk_tournament_player)
+        registrationRepository.findByTournamentIdAndPlayerIdAndIsActiveFalse(tournamentDto.getId(), mainPlayerId)
+                .ifPresent(registrationRepository::delete);
+        registrationRepository.flush();
+
         Optional<PlayerPadel> existingPartner = findPartnerByContact(partnerDto);
 
         // Проверяем свободные места
@@ -206,6 +211,11 @@ public class DoubleTournamentRegistrationService {
 
         // ЕДИНСТВЕННАЯ ПРОВЕРКА: не зарегистрирован ли партнер в ЭТОМ же турнире
         checkPlayerNotRegisteredInThisTournament(tournamentDto.getId(), partner.getId());
+
+        // Удаляем старую отменённую запись партнера, если она есть
+        registrationRepository.findByTournamentIdAndPlayerIdAndIsActiveFalse(tournamentDto.getId(), partner.getId())
+                .ifPresent(registrationRepository::delete);
+        registrationRepository.flush();
 
         RegistrationStatus status = determineRegistrationStatusForPair(tournamentDto);
         int position = calculatePosition(tournamentDto, status);

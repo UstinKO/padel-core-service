@@ -69,12 +69,17 @@ public interface TournamentRegistrationRepository extends JpaRepository<Tourname
 
     List<TournamentRegistration> findByTournamentIdOrderByPositionAscWaitlistPositionAsc(Long tournamentId);
 
-    @Query("SELECT COUNT(DISTINCT tr.mainPlayerId) FROM TournamentRegistration tr " +
-            "WHERE tr.tournament.id = :tournamentId " +
+    @Query(nativeQuery = true, value =
+            "SELECT COUNT(DISTINCT " +
+            "LEAST(tr.player_id, COALESCE(tr.partner_id, tr.player_id))::text || '-' || " +
+            "GREATEST(tr.player_id, COALESCE(tr.partner_id, tr.player_id))::text) " +
+            "FROM tournament_registrations_db tr " +
+            "WHERE tr.tournament_id = :tournamentId " +
             "AND tr.status IN ('CONFIRMED', 'PAIR_REGISTERED', 'PARTNER_INVITED') " +
-            "AND tr.isDoubleRegistration = true " +
-            "AND tr.isActive = true " +
-            "AND tr.mainPlayerId IS NOT NULL")
+            "AND tr.is_double_registration = true " +
+            "AND tr.is_active = true " +
+            "AND tr.main_player_id IS NOT NULL " +
+            "AND tr.player_id = tr.main_player_id")
     long countConfirmedPairs(@Param("tournamentId") Long tournamentId);
 
     /**

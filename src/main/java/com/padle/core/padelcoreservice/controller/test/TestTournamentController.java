@@ -1167,30 +1167,10 @@ public class TestTournamentController {
 
         Map<String, Object> result = new HashMap<>();
 
-        String sql = "DELETE FROM tournament_registrations_db " +
-                "WHERE tournament_id = ? AND player_id = ?";
-
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setLong(1, tournamentId);
-            ps.setLong(2, playerId);
-
-            int deleted = ps.executeUpdate();
-
-            if (deleted > 0) {
-                result.put("success", true);
-                result.put("message", "Игрок удален из турнира");
-                result.put("deletedCount", deleted);
-
-                // Получаем обновленную статистику
-                Map<String, Object> stats = getTournamentStats(conn, tournamentId);
-                result.put("tournamentStats", stats);
-            } else {
-                result.put("success", false);
-                result.put("message", "Игрок не найден в турнире");
-            }
-
+        try {
+            tournamentService.adminRemovePlayerRegistration(tournamentId, playerId);
+            result.put("success", true);
+            result.put("message", "Игрок удален из турнира");
         } catch (Exception e) {
             log.error("Ошибка при удалении игрока из турнира", e);
             result.put("success", false);
