@@ -64,6 +64,10 @@ public class TournamentRegistration {
     @Column(name = "invitation_expires_at")
     private LocalDateTime invitationExpiresAt;
 
+    @Column(name = "invitation_attempts", nullable = false)
+    @Builder.Default
+    private Integer invitationAttempts = 0;
+
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;

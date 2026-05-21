@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.30-add-invitation-attempts
+      author: system
+      changes:
+        - addColumn:
+            tableName: tournament_registrations_db
+            columns:
+              - column:
+                  name: invitation_attempts
+                  type: integer
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false

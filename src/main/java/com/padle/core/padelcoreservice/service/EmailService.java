@@ -317,7 +317,8 @@ public class EmailService {
             String tournamentDate,
             String tournamentTime,
             String clubName,
-            String confirmationUrl) {
+            String confirmationUrl,
+            java.time.LocalDateTime deadline) {
 
         emailMetricsService.recordEmailAttempt("VACANCY_INVITATION");
 
@@ -330,6 +331,10 @@ public class EmailService {
         try {
             log.info("📧 Отправка приглашения из листа ожидания на: {}", to);
 
+            String deadlineStr = deadline != null
+                    ? deadline.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
+                    : "";
+
             Context context = new Context();
             context.setVariable("playerName", playerName);
             context.setVariable("tournamentName", tournamentName);
@@ -337,6 +342,7 @@ public class EmailService {
             context.setVariable("tournamentTime", tournamentTime);
             context.setVariable("clubName", clubName);
             context.setVariable("confirmationUrl", confirmationUrl);
+            context.setVariable("deadline", deadlineStr);
             context.setVariable("year", java.time.Year.now().getValue());
 
             String htmlContent = templateEngine.process("email/vacancy-invitation", context);
