@@ -418,18 +418,31 @@ public class TournamentService {
         }
     }
 
+    private static final int MAX_INVITATION_ATTEMPTS = 2;
+
     private void sendInvitationToPlayer(TournamentRegistration registration, Tournament tournament) {
+        int attempts = registration.getInvitationAttempts() == null ? 0 : registration.getInvitationAttempts();
+
+        if (attempts >= MAX_INVITATION_ATTEMPTS) {
+            log.info("Player {} in tournament {} has exhausted {} invitation attempts, removing from waitlist",
+                    registration.getPlayer().getId(), tournament.getId(), MAX_INVITATION_ATTEMPTS);
+            registration.setStatus(RegistrationStatus.CANCELLED);
+            registration.setWaitlistPosition(null);
+            registration.setInvitationExpiresAt(null);
+            registrationRepository.save(registration);
+            return;
+        }
+
         registration.setStatus(RegistrationStatus.WAITLIST_INVITED);
-        registration.setInvitationExpiresAt(LocalDateTime.now().plusMinutes(5));
+        registration.setInvitationAttempts(attempts + 1);
+        LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(5);
+        registration.setInvitationExpiresAt(expiresAt);
         registrationRepository.save(registration);
 
-        String confirmationUrl = String.format("%s/waitlist/confirm?registrationId=%d", baseUrl, registration.getId());
-
-        // Отправляем email напрямую через emailService
-        sendVacancyInvitationEmail(registration.getPlayer(), tournament, registration.getId());
+        sendVacancyInvitationEmail(registration.getPlayer(), tournament, registration.getId(), expiresAt);
     }
 
-    private void sendVacancyInvitationEmail(PlayerPadel player, Tournament tournament, Long registrationId) {
+    private void sendVacancyInvitationEmail(PlayerPadel player, Tournament tournament, Long registrationId, LocalDateTime deadline) {
         try {
             String dateStr = tournament.getFechaInicio().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
             String timeStr = tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm"));
@@ -443,7 +456,8 @@ public class TournamentService {
                     dateStr,
                     timeStr,
                     clubName,
-                    confirmationUrl
+                    confirmationUrl,
+                    deadline
             );
             log.info("Vacancy invitation email sent to {}", player.getEmail());
         } catch (Exception e) {
@@ -1246,16 +1260,18 @@ public class TournamentService {
                 .findByStatusAndInvitationExpiresAtBefore(RegistrationStatus.WAITLIST_INVITED, now);
 
         for (TournamentRegistration registration : expiredInvitations) {
+            Long tournamentId = registration.getTournament().getId();
             log.info("Invitation expired for player {} in tournament {}",
-                    registration.getPlayer().getId(), registration.getTournament().getId());
+                    registration.getPlayer().getId(), tournamentId);
 
-            // Возвращаем в лист ожидания
+            // Возвращаем в КОНЕЦ листа ожидания, чтобы следующий игрок получил шанс
+            int maxPosition = registrationRepository.findMaxWaitlistPosition(tournamentId).orElse(0);
             registration.setStatus(RegistrationStatus.WAITLIST);
             registration.setInvitationExpiresAt(null);
+            registration.setWaitlistPosition(maxPosition + 1);
             registrationRepository.save(registration);
 
-            // Обрабатываем очередь для этого турнира (отправим приглашение следующему)
-            processWaitlistForTournament(registration.getTournament().getId());
+            processWaitlistForTournament(tournamentId);
         }
     }
 }

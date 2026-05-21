@@ -89,3 +89,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.29-drop-old-categoria-nivel-constraint.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.30-add-invitation-attempts.yaml
+      relativeToChangelogFile: true

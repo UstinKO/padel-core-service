@@ -294,8 +294,7 @@
 </div>
 
 <!-- Fallback para clientes sin CSS -->
-<div style="display: none; max-height: 0; overflow: hidden;">
-    ¡Hay un lugar disponible en ${tournamentName}! Confirma tu participación antes de ${deadline} en: ${confirmationUrl}
-</div>
+<div style="display: none; max-height: 0; overflow: hidden;"
+     th:text="|¡Hay un lugar disponible en ${tournamentName}! Confirma tu participación antes de ${deadline}|"></div>
 </body>
 </html>
