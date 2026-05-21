@@ -972,7 +972,7 @@
              class="tournament-card"
              th:attr="data-tournament-id=${tournament.id},
                       data-status=${tournament.estado},
-                      data-search='${tournament.nombre} ${tournament.clubNombre} ${tournament.fechaInicio}',
+                      data-search=|${tournament.nombre} ${tournament.clubNombre} ${tournament.fechaInicio}|,
                       data-registrations=${statsMap[__${tournament.id}__]?.confirmed ?: 0},
                       data-max=${tournament.cupoMax}">
 
@@ -1138,7 +1138,7 @@
                 <button class="btn btn-view w-100 mt-3"
                         onclick="viewTournamentPlayers(this)"
                         th:attr="data-tournament-id=${tournament.id},
-                            data-tournament-name='${tournament.nombre}'">
+                            data-tournament-name=${tournament.nombre}">
                     <i class="bi bi-people me-2"></i>Просмотр игроков
                     <span class="badge bg-secondary ms-2" th:text="${stats?.totalRegistrations ?: 0}">0</span>
                 </button>
@@ -1148,7 +1148,7 @@
                     <button class="btn-register"
                             onclick="openRegisterModal(this)"
                             th:attr="data-tournament-id=${tournament.id},
-                                data-tournament-name='${tournament.nombre}',
+                                data-tournament-name=${tournament.nombre},
                                 data-max-players=${tournament.cupoMax},
                                 data-current=${statsMap[__${tournament.id}__]?.confirmed ?: 0},
                                 data-modalidad=${tournament.modalidad.name()}">
@@ -1159,7 +1159,7 @@
                     <button class="btn-clear"
                             onclick="clearTestPlayers(this)"
                             th:attr="data-tournament-id=${tournament.id},
-                                data-tournament-name='${tournament.nombre}'"
+                                data-tournament-name=${tournament.nombre}"
                             title="Очистить тестовые регистрации">
                         <i class="bi bi-trash"></i>
                     </button>
@@ -1225,6 +1225,107 @@
                         <button class="btn btn-sm btn-outline-secondary" type="button" onclick="debugPlayers()">
                             <i class="bi bi-bug"></i> Отладка
                         </button>
+                    </div>
+                </div>
+
+                <!-- ГОСТЕВАЯ ПАРА — только для DOBLES -->
+                <div id="guestPairSection" style="display:none;">
+                    <hr class="my-3">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="text-muted small fw-bold">
+                            <i class="bi bi-person-plus me-1"></i> Или зарегистрировать пару вручную
+                        </span>
+                        <button class="btn btn-sm btn-outline-success" type="button"
+                                onclick="toggleGuestPairForm()">
+                            <i class="bi bi-chevron-down" id="guestPairToggleIcon"></i> Гостевая пара
+                        </button>
+                    </div>
+                    <div id="guestPairForm" style="display:none;">
+                        <div class="row g-3">
+                            <!-- Игрок 1 -->
+                            <div class="col-6">
+                                <div class="card border-primary">
+                                    <div class="card-header bg-primary text-white py-2 d-flex justify-content-between align-items-center">
+                                        <span><i class="bi bi-person-fill me-1"></i> Игрок 1</span>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button type="button" class="btn btn-light active" id="g1BtnDb"
+                                                    onclick="switchGuestMode(1,'db')">Из базы</button>
+                                            <button type="button" class="btn btn-light" id="g1BtnManual"
+                                                    onclick="switchGuestMode(1,'manual')">Вручную</button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body py-2">
+                                        <!-- Режим "из базы" -->
+                                        <div id="g1DbMode">
+                                            <div class="position-relative">
+                                                <input type="text" class="form-control form-control-sm"
+                                                       id="g1Search" placeholder="Поиск по имени или email..."
+                                                       oninput="searchGuestPlayer(1, this.value)">
+                                                <div id="g1Dropdown" class="dropdown-menu w-100" style="display:none; max-height:160px; overflow-y:auto;"></div>
+                                            </div>
+                                            <div id="g1Selected" class="mt-2" style="display:none;">
+                                                <span class="badge bg-primary p-2" id="g1SelectedName"></span>
+                                                <button class="btn btn-sm btn-link text-danger p-0 ms-1" onclick="clearGuestPlayer(1)">✕</button>
+                                            </div>
+                                            <input type="hidden" id="g1Id">
+                                        </div>
+                                        <!-- Режим "вручную" -->
+                                        <div id="g1ManualMode" style="display:none;">
+                                            <input type="text" class="form-control form-control-sm mb-2"
+                                                   id="guest1Nombre" placeholder="Имя *">
+                                            <input type="text" class="form-control form-control-sm mb-2"
+                                                   id="guest1Apellido" placeholder="Фамилия">
+                                            <input type="text" class="form-control form-control-sm"
+                                                   id="guest1Telefono" placeholder="Телефон / Telegram">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Игрок 2 -->
+                            <div class="col-6">
+                                <div class="card border-success">
+                                    <div class="card-header bg-success text-white py-2 d-flex justify-content-between align-items-center">
+                                        <span><i class="bi bi-person-fill me-1"></i> Игрок 2</span>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button type="button" class="btn btn-light active" id="g2BtnDb"
+                                                    onclick="switchGuestMode(2,'db')">Из базы</button>
+                                            <button type="button" class="btn btn-light" id="g2BtnManual"
+                                                    onclick="switchGuestMode(2,'manual')">Вручную</button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body py-2">
+                                        <!-- Режим "из базы" -->
+                                        <div id="g2DbMode">
+                                            <div class="position-relative">
+                                                <input type="text" class="form-control form-control-sm"
+                                                       id="g2Search" placeholder="Поиск по имени или email..."
+                                                       oninput="searchGuestPlayer(2, this.value)">
+                                                <div id="g2Dropdown" class="dropdown-menu w-100" style="display:none; max-height:160px; overflow-y:auto;"></div>
+                                            </div>
+                                            <div id="g2Selected" class="mt-2" style="display:none;">
+                                                <span class="badge bg-success p-2" id="g2SelectedName"></span>
+                                                <button class="btn btn-sm btn-link text-danger p-0 ms-1" onclick="clearGuestPlayer(2)">✕</button>
+                                            </div>
+                                            <input type="hidden" id="g2Id">
+                                        </div>
+                                        <!-- Режим "вручную" -->
+                                        <div id="g2ManualMode" style="display:none;">
+                                            <input type="text" class="form-control form-control-sm mb-2"
+                                                   id="guest2Nombre" placeholder="Имя *">
+                                            <input type="text" class="form-control form-control-sm mb-2"
+                                                   id="guest2Apellido" placeholder="Фамилия">
+                                            <input type="text" class="form-control form-control-sm"
+                                                   id="guest2Telefono" placeholder="Телефон / Telegram">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-end mt-3">
+                            <button class="btn btn-success" type="button" onclick="registerGuestPair()">
+                                <i class="bi bi-people-fill me-1"></i> Зарегистрировать гостевую пару
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -1847,10 +1948,14 @@
             await loadAvailablePlayersForPairs();
             registerBtnElement.innerHTML = '<i class="bi bi-people"></i> Зарегистрировать пару';
             updateSelectedPairsCount();
+            document.getElementById('guestPairSection').style.display = 'block';
+            document.getElementById('guestPairForm').style.display = 'none';
+            document.getElementById('guestPairToggleIcon').className = 'bi bi-chevron-down';
         } else {
             await loadAvailablePlayers();
             registerBtnElement.innerHTML = '<i class="bi bi-person-plus"></i> Зарегистрировать';
             updateSelectedCount();
+            document.getElementById('guestPairSection').style.display = 'none';
         }
 
         registerModal.show();
@@ -2247,7 +2352,140 @@
 
     // Фильтрация игроков
     function filterPlayers() {
-        renderRegistrationPlayersList();
+        if (currentTournamentModalidad === 'DOBLES') {
+            if (window.availablePlayers) {
+                renderPairCreator(window.availablePlayers);
+            }
+        } else {
+            renderRegistrationPlayersList();
+        }
+    }
+
+    // Режимы гостевой пары: 'db' или 'manual' для каждого слота
+    const guestMode = { 1: 'db', 2: 'db' };
+    let guestSearchTimeout = {};
+
+    function toggleGuestPairForm() {
+        const form = document.getElementById('guestPairForm');
+        const icon = document.getElementById('guestPairToggleIcon');
+        const visible = form.style.display !== 'none';
+        form.style.display = visible ? 'none' : 'block';
+        icon.className = visible ? 'bi bi-chevron-down' : 'bi bi-chevron-up';
+    }
+
+    function switchGuestMode(num, mode) {
+        guestMode[num] = mode;
+        document.getElementById(`g${num}DbMode`).style.display     = mode === 'db'     ? 'block' : 'none';
+        document.getElementById(`g${num}ManualMode`).style.display = mode === 'manual' ? 'block' : 'none';
+        document.getElementById(`g${num}BtnDb`).classList.toggle('active', mode === 'db');
+        document.getElementById(`g${num}BtnManual`).classList.toggle('active', mode === 'manual');
+        // Сбрасываем при переключении
+        if (mode === 'db') clearGuestPlayer(num);
+    }
+
+    function searchGuestPlayer(num, query) {
+        clearTimeout(guestSearchTimeout[num]);
+        const dropdown = document.getElementById(`g${num}Dropdown`);
+        if (query.length < 2) { dropdown.style.display = 'none'; return; }
+
+        guestSearchTimeout[num] = setTimeout(async () => {
+            try {
+                const resp = await fetch(`/test/tournaments/search-players?query=${encodeURIComponent(query)}&tournamentId=${currentTournamentId}`);
+                const data = await resp.json();
+                if (!data.success || !data.players.length) {
+                    dropdown.innerHTML = '<div class="dropdown-item text-muted small">Не найдено</div>';
+                } else {
+                    dropdown.innerHTML = data.players.map(p => `
+                        <button class="dropdown-item small" type="button"
+                                onclick="selectGuestPlayer(${num}, ${p.id}, '${(p.name || '').replace(/'/g, "\\'")}')">
+                            <strong>${p.name}</strong>
+                            <span class="text-muted ms-1">${p.email || ''}</span>
+                        </button>`).join('');
+                }
+                dropdown.style.display = 'block';
+            } catch(e) { dropdown.style.display = 'none'; }
+        }, 300);
+    }
+
+    function selectGuestPlayer(num, id, name) {
+        document.getElementById(`g${num}Id`).value = id;
+        document.getElementById(`g${num}Search`).value = '';
+        document.getElementById(`g${num}Dropdown`).style.display = 'none';
+        document.getElementById(`g${num}SelectedName`).textContent = name;
+        document.getElementById(`g${num}Selected`).style.display = 'block';
+    }
+
+    function clearGuestPlayer(num) {
+        document.getElementById(`g${num}Id`).value = '';
+        document.getElementById(`g${num}Search`).value = '';
+        document.getElementById(`g${num}Dropdown`).style.display = 'none';
+        document.getElementById(`g${num}Selected`).style.display = 'none';
+        document.getElementById(`g${num}SelectedName`).textContent = '';
+    }
+
+    function buildGuestPlayerPayload(num) {
+        if (guestMode[num] === 'db') {
+            const id = document.getElementById(`g${num}Id`).value;
+            if (!id) return null;
+            return { id: parseInt(id) };
+        } else {
+            const nombre = document.getElementById(`guest${num}Nombre`).value.trim();
+            if (!nombre) return null;
+            return {
+                nombre,
+                apellido: document.getElementById(`guest${num}Apellido`).value.trim(),
+                telefono: document.getElementById(`guest${num}Telefono`).value.trim()
+            };
+        }
+    }
+
+    async function registerGuestPair() {
+        const p1 = buildGuestPlayerPayload(1);
+        const p2 = buildGuestPlayerPayload(2);
+
+        if (!p1) {
+            showToast('error', 'Ошибка', guestMode[1] === 'db' ? 'Выберите Игрока 1 из базы' : 'Введите имя Игрока 1');
+            return;
+        }
+        if (!p2) {
+            showToast('error', 'Ошибка', guestMode[2] === 'db' ? 'Выберите Игрока 2 из базы' : 'Введите имя Игрока 2');
+            return;
+        }
+
+        const btn = document.querySelector('#guestPairForm .btn-success');
+        const originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Регистрация...';
+
+        try {
+            const resp = await fetch(`/test/tournaments/${currentTournamentId}/register-guest-pair`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ player1: p1, player2: p2 })
+            });
+            const data = await resp.json();
+
+            if (data.success) {
+                const label1 = p1.nombre || document.getElementById('g1SelectedName').textContent;
+                const label2 = p2.nombre || document.getElementById('g2SelectedName').textContent;
+                showToast('success', 'Готово', `Пара "${label1} + ${label2}" зарегистрирована на позицию ${data.position}`);
+                // Сбрасываем форму
+                [1, 2].forEach(n => { clearGuestPlayer(n); switchGuestMode(n, 'db'); });
+                ['guest1Nombre','guest1Apellido','guest1Telefono','guest2Nombre','guest2Apellido','guest2Telefono']
+                    .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+                document.getElementById('guestPairForm').style.display = 'none';
+                document.getElementById('guestPairToggleIcon').className = 'bi bi-chevron-down';
+                await refreshTournamentStats(currentTournamentId);
+                registerModal.hide();
+            } else {
+                showToast('error', 'Ошибка', data.message || 'Не удалось зарегистрировать пару');
+            }
+        } catch (e) {
+            showToast('error', 'Ошибка', e.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        }
     }
 
     // Выбор/снятие игрока

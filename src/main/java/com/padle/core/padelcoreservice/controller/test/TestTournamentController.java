@@ -627,23 +627,24 @@ public class TestTournamentController {
             }
 
             // Проверяем, не зарегистрированы ли уже эти игроки
-            List<Long> alreadyRegistered = new ArrayList<>();
+            List<String> alreadyRegistered = new ArrayList<>();
             for (Long playerId : playerIds) {
-                String checkSql = "SELECT COUNT(*) FROM tournament_registrations_db " +
-                        "WHERE tournament_id = ? AND player_id = ?";
+                String checkSql = "SELECT p.nombre, p.apellido FROM tournament_registrations_db r " +
+                        "JOIN player_padel_db p ON p.id = r.player_id " +
+                        "WHERE r.tournament_id = ? AND r.player_id = ?";
                 try (PreparedStatement checkPs = conn.prepareStatement(checkSql)) {
                     checkPs.setLong(1, tournamentId);
                     checkPs.setLong(2, playerId);
                     ResultSet rs = checkPs.executeQuery();
-                    if (rs.next() && rs.getInt(1) > 0) {
-                        alreadyRegistered.add(playerId);
+                    if (rs.next()) {
+                        alreadyRegistered.add(rs.getString("nombre") + " " + rs.getString("apellido"));
                     }
                 }
             }
 
             if (!alreadyRegistered.isEmpty()) {
                 result.put("success", false);
-                result.put("message", "Игроки с ID " + alreadyRegistered + " уже зарегистрированы");
+                result.put("message", "Следующие игроки уже зарегистрированы: " + String.join(", ", alreadyRegistered));
                 return ResponseEntity.badRequest().body(result);
             }
 
@@ -719,11 +720,10 @@ public class TestTournamentController {
 
         log.info("Запрос доступных игроков для формирования пар, турнир ID: {}", tournamentId);
 
-        // Получаем всех свободных игроков
+        // Показываем всех игроков из БД (без фильтра по activo/email_confirmado — это инструмент администратора)
         String sql = "SELECT p.id, p.nombre, p.apellido, p.email, p.telefono " +
                 "FROM player_padel_db p " +
-                "WHERE p.activo = true AND p.email_confirmado = true " +
-                "AND p.id NOT IN ( " +
+                "WHERE p.id NOT IN ( " +
                 "    SELECT player_id FROM tournament_registrations_db WHERE tournament_id = ? " +
                 ") " +
                 "ORDER BY p.nombre, p.apellido";
@@ -1269,6 +1269,198 @@ public class TestTournamentController {
     }
 
     /**
+     * Регистрация гостевой пары (один или оба игрока не в базе данных)
+     */
+    @PostMapping("/{tournamentId}/register-guest-pair")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> registerGuestPair(
+            @PathVariable Long tournamentId,
+            @RequestBody Map<String, Object> request) {
+
+        log.info("Регистрация гостевой пары на турнир: {}", tournamentId);
+
+        Map<String, Object> result = new HashMap<>();
+
+        try (Connection conn = dataSource.getConnection()) {
+            TournamentDto tournament = tournamentService.getTournamentDtoById(tournamentId).orElse(null);
+            if (tournament == null) {
+                result.put("success", false);
+                result.put("message", "Турнир не найден");
+                return ResponseEntity.badRequest().body(result);
+            }
+
+            if (!"DOBLES".equals(tournament.getModalidad().name())) {
+                result.put("success", false);
+                result.put("message", "Гостевая пара только для парных турниров");
+                return ResponseEntity.badRequest().body(result);
+            }
+
+            Map<String, Object> currentStats = getTournamentStats(conn, tournamentId);
+            int confirmed = (int) currentStats.getOrDefault("confirmed", 0);
+            if (confirmed >= tournament.getCupoMax()) {
+                result.put("success", false);
+                result.put("message", "Нет свободных мест в турнире");
+                return ResponseEntity.badRequest().body(result);
+            }
+
+            Map<String, Object> p1Data = (Map<String, Object>) request.get("player1");
+            Map<String, Object> p2Data = (Map<String, Object>) request.get("player2");
+
+            if (p1Data == null || p2Data == null) {
+                result.put("success", false);
+                result.put("message", "Данные обоих игроков обязательны");
+                return ResponseEntity.badRequest().body(result);
+            }
+
+            // Сначала проверяем игроков с явным ID — до создания гостевых записей,
+            // чтобы не оставлять осиротевших записей при ошибке
+            for (Map<String, Object> pData : List.of(p1Data, p2Data)) {
+                Object idObj = pData.get("id");
+                if (idObj != null) {
+                    long existingId = ((Number) idObj).longValue();
+                    if (existingId > 0) {
+                        String checkSql = "SELECT p.nombre, p.apellido FROM tournament_registrations_db r " +
+                                "JOIN player_padel_db p ON p.id = r.player_id " +
+                                "WHERE r.tournament_id=? AND r.player_id=?";
+                        try (PreparedStatement ps = conn.prepareStatement(checkSql)) {
+                            ps.setLong(1, tournamentId);
+                            ps.setLong(2, existingId);
+                            ResultSet rs = ps.executeQuery();
+                            if (rs.next()) {
+                                String name = rs.getString("nombre") + " " + rs.getString("apellido");
+                                result.put("success", false);
+                                result.put("message", "Игрок " + name.trim() + " уже зарегистрирован в этом турнире");
+                                return ResponseEntity.badRequest().body(result);
+                            }
+                        }
+                    }
+                }
+            }
+
+            Long player1Id = resolveOrCreateGuestPlayer(conn, p1Data);
+            Long player2Id = resolveOrCreateGuestPlayer(conn, p2Data);
+
+            // Финальная проверка — на случай если resolveOrCreate вернул уже зарегистрированного игрока (например по телефону)
+            for (Long pid : List.of(player1Id, player2Id)) {
+                String checkSql = "SELECT p.nombre, p.apellido FROM tournament_registrations_db r " +
+                        "JOIN player_padel_db p ON p.id = r.player_id " +
+                        "WHERE r.tournament_id=? AND r.player_id=?";
+                try (PreparedStatement ps = conn.prepareStatement(checkSql)) {
+                    ps.setLong(1, tournamentId);
+                    ps.setLong(2, pid);
+                    ResultSet rs = ps.executeQuery();
+                    if (rs.next()) {
+                        String name = rs.getString("nombre") + " " + rs.getString("apellido");
+                        result.put("success", false);
+                        result.put("message", "Игрок " + name.trim() + " уже зарегистрирован в этом турнире");
+                        return ResponseEntity.badRequest().body(result);
+                    }
+                }
+            }
+
+            String maxPosSql = "SELECT COALESCE(MAX(position), 0) FROM tournament_registrations_db WHERE tournament_id=?";
+            int nextPosition = 1;
+            try (PreparedStatement ps = conn.prepareStatement(maxPosSql)) {
+                ps.setLong(1, tournamentId);
+                ResultSet rs = ps.executeQuery();
+                if (rs.next()) nextPosition = rs.getInt(1) + 1;
+            }
+
+            String insertSql = "INSERT INTO tournament_registrations_db " +
+                    "(tournament_id, player_id, registration_date, status, position, is_active, is_double_registration, main_player_id) " +
+                    "VALUES (?, ?, ?, 'CONFIRMED', ?, true, true, ?)";
+
+            for (Long pid : List.of(player1Id, player2Id)) {
+                try (PreparedStatement ps = conn.prepareStatement(insertSql)) {
+                    ps.setLong(1, tournamentId);
+                    ps.setLong(2, pid);
+                    ps.setObject(3, LocalDateTime.now());
+                    ps.setInt(4, nextPosition);
+                    ps.setLong(5, player1Id);
+                    ps.executeUpdate();
+                }
+            }
+
+            Map<String, Object> stats = getTournamentStats(conn, tournamentId);
+            result.put("success", true);
+            result.put("message", "Гостевая пара успешно зарегистрирована");
+            result.put("position", nextPosition);
+            result.put("player1Id", player1Id);
+            result.put("player2Id", player2Id);
+            result.put("tournamentStats", stats);
+
+            log.info("Гостевая пара зарегистрирована на позицию {}: игроки {} и {}", nextPosition, player1Id, player2Id);
+
+        } catch (Exception e) {
+            log.error("Ошибка при регистрации гостевой пары", e);
+            result.put("success", false);
+            result.put("message", "Ошибка: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(result);
+        }
+
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * Находит игрока по ID или по телефону, либо создаёт нового гостевого игрока
+     */
+    private Long resolveOrCreateGuestPlayer(Connection conn, Map<String, Object> playerData) throws Exception {
+        Object idObj = playerData.get("id");
+        if (idObj != null) {
+            long id = ((Number) idObj).longValue();
+            if (id > 0) {
+                String check = "SELECT id FROM player_padel_db WHERE id=?";
+                try (PreparedStatement ps = conn.prepareStatement(check)) {
+                    ps.setLong(1, id);
+                    ResultSet rs = ps.executeQuery();
+                    if (rs.next()) return rs.getLong(1);
+                }
+            }
+        }
+
+        String nombre = (String) playerData.getOrDefault("nombre", "Invitado");
+        String apellido = (String) playerData.getOrDefault("apellido", "");
+        String telefono = (String) playerData.getOrDefault("telefono", "");
+
+        // Если указан телефон — сначала ищем существующего игрока, чтобы не нарушать уникальность
+        if (telefono != null && !telefono.isBlank()) {
+            String phoneLookup = "SELECT id FROM player_padel_db WHERE telefono = ?";
+            try (PreparedStatement ps = conn.prepareStatement(phoneLookup)) {
+                ps.setString(1, telefono);
+                ResultSet rs = ps.executeQuery();
+                if (rs.next()) {
+                    long existingId = rs.getLong(1);
+                    log.info("Найден существующий игрок по телефону {}: ID={}", telefono, existingId);
+                    return existingId;
+                }
+            }
+        }
+
+        String email = "guest." + System.currentTimeMillis() + "@epadel.guest";
+
+        String insertSql = "INSERT INTO player_padel_db " +
+                "(nombre, apellido, email, telefono, password_hash, activo, email_confirmado, fecha_registro) " +
+                "VALUES (?, ?, ?, NULLIF(?, ''), ?, true, true, NOW())";
+
+        try (PreparedStatement ps = conn.prepareStatement(insertSql, PreparedStatement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, nombre);
+            ps.setString(2, apellido);
+            ps.setString(3, email);
+            ps.setString(4, telefono);
+            ps.setString(5, "$2a$10$guest" + System.currentTimeMillis());
+            ps.executeUpdate();
+
+            ResultSet keys = ps.getGeneratedKeys();
+            if (keys.next()) {
+                long newId = keys.getLong(1);
+                log.info("Создан гостевой игрок: {} {} (ID={})", nombre, apellido, newId);
+                return newId;
+            }
+        }
+        throw new Exception("Не удалось создать гостевого игрока: " + nombre + " " + apellido);
+    }
+
+    /**
      * Регистрация пары на турнир
      */
     @PostMapping("/{tournamentId}/register-pair")
@@ -1323,23 +1515,24 @@ public class TestTournamentController {
             }
 
             // Проверяем, не зарегистрированы ли уже эти игроки
-            List<Long> alreadyRegistered = new ArrayList<>();
+            List<String> alreadyRegistered = new ArrayList<>();
             for (Long playerId : playerIds) {
-                String checkSql = "SELECT COUNT(*) FROM tournament_registrations_db " +
-                        "WHERE tournament_id = ? AND player_id = ?";
+                String checkSql = "SELECT p.nombre, p.apellido FROM tournament_registrations_db r " +
+                        "JOIN player_padel_db p ON p.id = r.player_id " +
+                        "WHERE r.tournament_id = ? AND r.player_id = ?";
                 try (PreparedStatement checkPs = conn.prepareStatement(checkSql)) {
                     checkPs.setLong(1, tournamentId);
                     checkPs.setLong(2, playerId);
                     ResultSet rs = checkPs.executeQuery();
-                    if (rs.next() && rs.getInt(1) > 0) {
-                        alreadyRegistered.add(playerId);
+                    if (rs.next()) {
+                        alreadyRegistered.add(rs.getString("nombre") + " " + rs.getString("apellido"));
                     }
                 }
             }
 
             if (!alreadyRegistered.isEmpty()) {
                 result.put("success", false);
-                result.put("message", "Игроки с ID " + alreadyRegistered + " уже зарегистрированы");
+                result.put("message", "Следующие игроки уже зарегистрированы: " + String.join(", ", alreadyRegistered));
                 return ResponseEntity.badRequest().body(result);
             }
 
