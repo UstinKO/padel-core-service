@@ -389,47 +389,8 @@
                         <!-- ── DOBLES ── -->
                         <th:block th:if="${tournament.modalidad.name() == 'DOBLES'}">
 
-                            <!-- AMERICANO PAREJAS: команды уже назначены → показываем их -->
-                            <th:block th:if="${isTeamPlayoffFormat == true and not #lists.isEmpty(tournamentTeams)}">
-                                <table style="width:100%; border-collapse:collapse; font-size:.95rem;">
-                                    <thead>
-                                    <tr style="border-bottom:2px solid #e9ecef;">
-                                        <th style="padding:.6rem .75rem; text-align:left; color:#6c757d; font-weight:600; width:3rem;">#</th>
-                                        <th style="padding:.6rem .75rem; text-align:left; color:#6c757d; font-weight:600;">Jugador 1</th>
-                                        <th style="padding:.6rem .25rem; text-align:center; color:#6c757d; font-weight:600; width:2rem;"></th>
-                                        <th style="padding:.6rem .75rem; text-align:left; color:#6c757d; font-weight:600;">Jugador 2</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    <tr th:each="team, tStat : ${tournamentTeams}"
-                                        th:style="${tStat.odd} ? '' : 'background:#fafafa;'">
-                                        <td style="padding:.6rem .75rem; color:#adb5bd; font-size:.85rem;"
-                                            th:text="${tStat.count}">1</td>
-                                        <td style="padding:.6rem .75rem;">
-                                            <span style="font-weight:500; color:#212529;">
-                                                <i class="fas fa-user-circle" style="color:#FF6B35; margin-right:.4rem;"></i>
-                                                <th:block th:text="${team.player1Name}">Jugador</th:block>
-                                            </span>
-                                        </td>
-                                        <td style="padding:.6rem .25rem; text-align:center; color:#adb5bd; font-size:.8rem;">
-                                            <i class="fas fa-plus"></i>
-                                        </td>
-                                        <td style="padding:.6rem .75rem;">
-                                            <span th:if="${team.player2Name != null}" style="font-weight:500; color:#212529;">
-                                                <i class="fas fa-user-circle" style="color:#FF6B35; margin-right:.4rem;"></i>
-                                                <th:block th:text="${team.player2Name}">Jugador</th:block>
-                                            </span>
-                                            <span th:unless="${team.player2Name != null}" style="color:#adb5bd; font-style:italic; font-size:.85rem;">
-                                                por asignar
-                                            </span>
-                                        </td>
-                                    </tr>
-                                    </tbody>
-                                </table>
-                            </th:block>
-
-                            <!-- Обычный DOBLES (или AMERICANO PAREJAS без назначенных команд) -->
-                            <th:block th:unless="${isTeamPlayoffFormat == true and not #lists.isEmpty(tournamentTeams)}">
+                            <!-- Всегда показываем список пар из registrations (актуальные данные) -->
+                            <th:block>
                                 <table style="width:100%; border-collapse:collapse; font-size:.95rem;">
                                     <thead>
                                     <tr style="border-bottom:2px solid #e9ecef;">
