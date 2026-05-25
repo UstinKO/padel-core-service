@@ -30,6 +30,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -70,8 +71,19 @@ public class TournamentService {
     // ==================== Базовые методы для турниров ====================
 
     public List<TournamentDto> getAllTournaments() {
+        LocalDate today = LocalDate.now();
+        Comparator<TournamentDto> byDateFromToday = (a, b) -> {
+            LocalDate da = a.getFechaInicio();
+            LocalDate db = b.getFechaInicio();
+            boolean aUpcoming = da != null && !da.isBefore(today);
+            boolean bUpcoming = db != null && !db.isBefore(today);
+            if (aUpcoming && bUpcoming) return da.compareTo(db);   // оба предстоящие → ASC
+            if (!aUpcoming && !bUpcoming) return db.compareTo(da); // оба прошедшие  → DESC (свежее первым)
+            return aUpcoming ? -1 : 1;                             // предстоящий перед прошедшим
+        };
         return tournamentRepository.findAll().stream()
                 .map(this::mapToDtoWithDetails)
+                .sorted(byDateFromToday)
                 .collect(Collectors.toList());
     }
 
