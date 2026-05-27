@@ -33,8 +33,9 @@ public class Payment {
     @Column(name = "amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;
 
-    // Валюта (на случай разных валют)
-    @Column(name = "currency", nullable = false, length = 3)
+    // Валюта (ISO 4217 + криптотикеры: ARS, USD, EUR, USDT и др.)
+    // length = 10 — запас для тикеров длиннее 3 символов (USDT = 4)
+    @Column(name = "currency", nullable = false, length = 10)
     @Builder.Default
     private String currency = "ARS";
 

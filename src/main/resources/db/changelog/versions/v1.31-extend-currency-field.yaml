@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.31-extend-currency-field
+      author: system
+      comment: >
+        Расширяем поле currency с VARCHAR(3) до VARCHAR(10),
+        чтобы поддерживать "USDT" (4 символа) и другие криптовалюты.
+        VARCHAR(3) поддерживал только ISO 4217 коды (ARS, USD, EUR),
+        но не тикеры криптовалют.
+      changes:
+        - modifyDataType:
+            tableName: payments_db
+            columnName: currency
+            newDataType: VARCHAR(10)
