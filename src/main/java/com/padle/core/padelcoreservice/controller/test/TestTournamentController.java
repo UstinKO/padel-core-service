@@ -451,13 +451,14 @@ public class TestTournamentController {
         TournamentDto tournament = tournamentService.getTournamentDtoById(tournamentId).orElse(null);
         boolean isDoubles = tournament != null && "DOBLES".equals(tournament.getModalidad().name());
 
-        // ИСПРАВЛЕННЫЙ SQL: добавляем waitlist_position в SELECT
+        // Фильтруем: только активные регистрации + INNER JOIN гарантирует что игрок существует.
+        // is_active = true исключает CANCELLED записи (дубли от повторных регистраций или деактивации).
         String sql = "SELECT tr.position, tr.status, tr.registration_date, tr.is_double_registration, " +
-                "tr.waitlist_position, " +  // ← ЭТО БЫЛО ПРОПУЩЕНО
+                "tr.waitlist_position, " +
                 "p.id, p.nombre, p.apellido, p.email, p.telefono " +
                 "FROM tournament_registrations_db tr " +
                 "JOIN player_padel_db p ON tr.player_id = p.id " +
-                "WHERE tr.tournament_id = ? " +
+                "WHERE tr.tournament_id = ? AND tr.is_active = true " +
                 "ORDER BY " +
                 "CASE WHEN tr.status = 'WAITLIST' THEN 1 ELSE 0 END, " +
                 "tr.position, tr.waitlist_position";
@@ -1041,43 +1042,78 @@ public class TestTournamentController {
 
         Map<String, Object> result = new HashMap<>();
 
-        // Удаляем последних созданных тестовых игроков
-        String sql = "DELETE FROM player_padel_db " +
-                "WHERE id IN (" +
-                "    SELECT id FROM player_padel_db " +
-                "    WHERE email LIKE 'test.player%@test.com' " +
-                "    ORDER BY id DESC " +
-                "    LIMIT ?" +
-                ") RETURNING id, email";
+        // Шаг 1: находим ID игроков которые будут удалены
+        String selectSql = "SELECT id, email FROM player_padel_db " +
+                "WHERE email LIKE 'test.player%@test.com' " +
+                "ORDER BY id DESC LIMIT ?";
+
+        List<Long> playerIdsToDelete = new ArrayList<>();
+        List<Map<String, Object>> deletedInfo = new ArrayList<>();
 
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+             PreparedStatement selectPs = conn.prepareStatement(selectSql)) {
 
-            ps.setInt(1, count);
-
-            List<Map<String, Object>> deleted = new ArrayList<>();
-            int deletedCount = 0;
-
-            try (ResultSet rs = ps.executeQuery()) {
+            selectPs.setInt(1, count);
+            try (ResultSet rs = selectPs.executeQuery()) {
                 while (rs.next()) {
-                    Map<String, Object> player = new HashMap<>();
-                    player.put("id", rs.getLong("id"));
-                    player.put("email", rs.getString("email"));
-                    deleted.add(player);
-                    deletedCount++;
+                    long playerId = rs.getLong("id");
+                    playerIdsToDelete.add(playerId);
+                    Map<String, Object> info = new HashMap<>();
+                    info.put("id", playerId);
+                    info.put("email", rs.getString("email"));
+                    deletedInfo.add(info);
                 }
             }
+        } catch (Exception e) {
+            log.error("Ошибка при поиске тестовых игроков для удаления", e);
+            result.put("success", false);
+            result.put("message", "Ошибка поиска: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(result);
+        }
+
+        if (playerIdsToDelete.isEmpty()) {
+            result.put("success", true);
+            result.put("deleted", 0);
+            result.put("message", "Тестовые игроки не найдены");
+            return ResponseEntity.ok(result);
+        }
+
+        // Шаг 2: отменяем регистрации и обрабатываем листы ожидания ПЕРЕД удалением.
+        // Без этого FK ON DELETE CASCADE удалял регистрации напрямую в БД,
+        // минуя processWaitlistForTournament — освободившиеся места никому не доставались.
+        int cancelledRegistrations = 0;
+        for (Long playerId : playerIdsToDelete) {
+            try {
+                tournamentService.cancelAllRegistrationsForPlayer(playerId);
+                cancelledRegistrations++;
+            } catch (Exception e) {
+                log.warn("Не удалось отменить регистрации для игрока {}: {}", playerId, e.getMessage());
+            }
+        }
+        log.info("Отменены регистрации для {} игроков перед удалением", cancelledRegistrations);
+
+        // Шаг 3: удаляем игроков (CASCADE в FK почистит оставшиеся записи в tournament_registrations_db)
+        String deleteSql = "DELETE FROM player_padel_db WHERE id IN (" +
+                "SELECT id FROM player_padel_db " +
+                "WHERE email LIKE 'test.player%@test.com' " +
+                "ORDER BY id DESC LIMIT ?)";
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement deletePs = conn.prepareStatement(deleteSql)) {
+
+            deletePs.setInt(1, count);
+            int deletedCount = deletePs.executeUpdate();
 
             result.put("success", true);
             result.put("deleted", deletedCount);
             result.put("requested", count);
-            result.put("players", deleted);
+            result.put("players", deletedInfo);
             result.put("message", "Удалено игроков: " + deletedCount + " из " + count);
 
         } catch (Exception e) {
             log.error("Ошибка при удалении тестовых игроков", e);
             result.put("success", false);
-            result.put("message", "Ошибка: " + e.getMessage());
+            result.put("message", "Ошибка удаления: " + e.getMessage());
             return ResponseEntity.internalServerError().body(result);
         }
 
@@ -1713,7 +1749,10 @@ public class TestTournamentController {
             return stats;
         }
 
-        // Получаем ВСЕ регистрации включая WAITLIST
+        // Считаем только активные регистрации (is_active = true исключает CANCELLED/деактивированных).
+        // Ранее COUNT(*) без фильтра давал завышенные числа из-за:
+        // 1) orphaned записей при физическом удалении игрока до нашего фикса
+        // 2) CANCELLED записей при деактивации игрока
         String totalSql;
         if ("DOBLES".equals(tournament.getModalidad().name())) {
             // Для парных: totalRegistrations = общее число записей,
@@ -1722,12 +1761,13 @@ public class TestTournamentController {
                     "(SELECT COUNT(DISTINCT main_player_id) " +
                     " FROM tournament_registrations_db " +
                     " WHERE tournament_id = ? AND status = 'WAITLIST' " +
-                    " AND is_double_registration = true AND main_player_id IS NOT NULL) as waitlist " +
-                    "FROM tournament_registrations_db WHERE tournament_id = ?";
+                    " AND is_double_registration = true AND main_player_id IS NOT NULL" +
+                    " AND is_active = true) as waitlist " +
+                    "FROM tournament_registrations_db WHERE tournament_id = ? AND is_active = true";
         } else {
             totalSql = "SELECT COUNT(*) as total, " +
                     "SUM(CASE WHEN status = 'WAITLIST' THEN 1 ELSE 0 END) as waitlist " +
-                    "FROM tournament_registrations_db WHERE tournament_id = ?";
+                    "FROM tournament_registrations_db WHERE tournament_id = ? AND is_active = true";
         }
 
         try (PreparedStatement totalPs = conn.prepareStatement(totalSql)) {
