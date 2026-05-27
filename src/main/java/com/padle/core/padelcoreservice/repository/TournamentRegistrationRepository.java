@@ -25,8 +25,12 @@ public interface TournamentRegistrationRepository extends JpaRepository<Tourname
 
     List<TournamentRegistration> findByTournamentIdAndStatus(Long tournamentId, RegistrationStatus status);
 
+    // Bug #4 fix: добавлен фильтр isActive = true, чтобы исключить "мусорные" отменённые
+    // записи с некорректными статусами (возможны после миграции данных между серверами).
+    // Без этого фильтра confirmedSpots в processWaitlistForTournament мог быть завышен,
+    // что приводило к некорректному расчёту availableSlots.
     @Query("SELECT COUNT(tr) FROM TournamentRegistration tr " +
-            "WHERE tr.tournament.id = :tournamentId AND tr.status = :status")
+            "WHERE tr.tournament.id = :tournamentId AND tr.status = :status AND tr.isActive = true")
     long countByTournamentIdAndStatus(@Param("tournamentId") Long tournamentId,
                                       @Param("status") RegistrationStatus status);
 
