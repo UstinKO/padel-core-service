@@ -201,6 +201,9 @@ public class TournamentService {
             // ИСПРАВЛЕНО: если регистрация неактивна (отменена) - реактивируем
             log.info("Reactivating cancelled registration with id: {}, old status: {}",
                     reg.getId(), reg.getStatus());
+            // Bug #3 fix: сбрасываем счётчик попыток приглашений при реактивации,
+            // иначе игрок с 2 попытками сразу получит CANCELLED вместо нового приглашения
+            reg.setInvitationAttempts(0);
 
             reg.setIsActive(true);
             reg.setRegistrationDate(LocalDateTime.now());
@@ -1156,6 +1159,10 @@ public class TournamentService {
 
         // Пересчитываем позиции для оставшихся игроков
         reorderPositions(tournamentId);
+
+        // Уведомляем игрока о переносе в лист ожидания
+        // (Bug #1 fix: ранее игрок не получал никакого письма при перемещении администратором)
+        sendWaitlistNotification(registration.getPlayer(), tournament, nextWaitlistPosition);
     }
 
     @Transactional
@@ -1260,7 +1267,7 @@ public class TournamentService {
     }
 
     /**
-     * Проверка истекших приглашений (запускать по расписанию, каждые 5 минут)
+     * Проверка истекших приглашений (запускать по расписанию, каждые 10 минут)
      */
     @Scheduled(cron = "0 */10 * * * *") // Каждые 10 минут
     @Transactional
@@ -1270,6 +1277,13 @@ public class TournamentService {
         LocalDateTime now = LocalDateTime.now();
         List<TournamentRegistration> expiredInvitations = registrationRepository
                 .findByStatusAndInvitationExpiresAtBefore(RegistrationStatus.WAITLIST_INVITED, now);
+
+        // Bug #2 fix: собираем уникальные tournamentId для processWaitlist.
+        // Раньше processWaitlistForTournament вызывался ВНУТРИ цикла — для каждого истёкшего игрока
+        // по отдельности. Это приводило к тому, что при нескольких одновременно истёкших приглашениях
+        // (например, после миграции сервера) processWaitlist запускался N раз, каждый раз независимо
+        // считал availableSlots и рассылал приглашения — число приглашений превышало свободные места.
+        Set<Long> tournamentIdsToProcess = new HashSet<>();
 
         for (TournamentRegistration registration : expiredInvitations) {
             Long tournamentId = registration.getTournament().getId();
@@ -1283,6 +1297,12 @@ public class TournamentService {
             registration.setWaitlistPosition(maxPosition + 1);
             registrationRepository.save(registration);
 
+            tournamentIdsToProcess.add(tournamentId);
+        }
+
+        // Обрабатываем каждый затронутый турнир ОДИН раз — уже после того как все игроки
+        // возвращены в WAITLIST, чтобы подсчёт свободных мест был корректным
+        for (Long tournamentId : tournamentIdsToProcess) {
             processWaitlistForTournament(tournamentId);
         }
     }
