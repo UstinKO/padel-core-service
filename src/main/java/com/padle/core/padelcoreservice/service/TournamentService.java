@@ -16,6 +16,7 @@ import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.TournamentKingOfCourt;
 import com.padle.core.padelcoreservice.model.TournamentRegistration;
 import com.padle.core.padelcoreservice.model.enums.*;
+import com.padle.core.padelcoreservice.repository.PlayerRepository;
 import com.padle.core.padelcoreservice.repository.TournamentKingOfCourtRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
@@ -55,7 +56,7 @@ public class TournamentService {
     private final TournamentMapper tournamentMapper;
     private final TournamentRegistrationMapper registrationMapper;
     private final ClubService clubService;
-    private final PlayerService playerService;
+    private final PlayerRepository playerRepository;
     private final TournamentKingOfCourtRepository tournamentKingOfCourtRepository;
     private final EmailService emailService;
 
@@ -159,7 +160,7 @@ public class TournamentService {
         Tournament tournament = tournamentRepository.findById(tournamentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tournament not found with id: " + tournamentId));
 
-        PlayerPadel player = playerService.getPlayerById(playerId)
+        PlayerPadel player = playerRepository.findById(playerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Player not found with id: " + playerId));
 
         // ========== ДОБАВЛЯЕМ ПРОВЕРКУ КОНТАКТОВ ==========
@@ -302,7 +303,7 @@ public class TournamentService {
 
         // Проверяем, есть ли уже такой телефон у других игроков
         if (player.getTelefono() != null && !player.getTelefono().isBlank()) {
-            Optional<PlayerPadel> existingByPhone = playerService.findByTelefono(player.getTelefono());
+            Optional<PlayerPadel> existingByPhone = playerRepository.findByTelefono(player.getTelefono());
             if (existingByPhone.isPresent() && !existingByPhone.get().getId().equals(player.getId())) {
                 throw new IllegalArgumentException("Ya existe un jugador con ese número de teléfono");
             }
@@ -310,14 +311,13 @@ public class TournamentService {
 
         // Проверяем, есть ли уже такой Telegram у других игроков
         if (player.getTelegramUsername() != null && !player.getTelegramUsername().isBlank()) {
-            Optional<PlayerPadel> existingByTelegram = playerService.findByTelegramUsername(player.getTelegramUsername());
+            Optional<PlayerPadel> existingByTelegram = playerRepository.findByTelegramUsername(player.getTelegramUsername());
             if (existingByTelegram.isPresent() && !existingByTelegram.get().getId().equals(player.getId())) {
                 throw new IllegalArgumentException("Ya existe un jugador con ese usuario de Telegram");
             }
         }
 
-        // Сохраняем через PlayerService
-        playerService.actualizarJugador(player);
+        playerRepository.save(player);
         log.info("Player contacts updated successfully for player id: {}", player.getId());
     }
 
@@ -911,6 +911,45 @@ public class TournamentService {
 
         reorderPairPositions(tournamentId);
         log.info("Pair registration deleted successfully for tournament {}", tournamentId);
+    }
+
+    /**
+     * Отменяет все активные регистрации игрока на турниры и запускает обработку листов ожидания
+     * для турниров, где игрок занимал подтверждённое место.
+     * Вызывается при деактивации или удалении игрока из системы.
+     */
+    @Transactional
+    public void cancelAllRegistrationsForPlayer(Long playerId) {
+        log.info("Cancelling all active registrations for player {}", playerId);
+
+        List<TournamentRegistration> activeRegs =
+                registrationRepository.findActiveRegistrationsByPlayerId(playerId);
+
+        if (activeRegs.isEmpty()) {
+            log.info("No active registrations found for player {}", playerId);
+            return;
+        }
+
+        Set<Long> confirmedTournamentIds = new HashSet<>();
+
+        for (TournamentRegistration reg : activeRegs) {
+            if (reg.getStatus() == RegistrationStatus.CONFIRMED
+                    || reg.getStatus() == RegistrationStatus.PAIR_REGISTERED) {
+                confirmedTournamentIds.add(reg.getTournament().getId());
+            }
+            reg.setStatus(RegistrationStatus.CANCELLED);
+            reg.setIsActive(false);
+            reg.setCancellationDate(LocalDateTime.now());
+            reg.setCancellationReason("Jugador eliminado/desactivado del sistema");
+        }
+        registrationRepository.saveAll(activeRegs);
+        log.info("Cancelled {} registrations for player {}", activeRegs.size(), playerId);
+
+        // Обрабатываем лист ожидания для всех турниров, где игрок освободил место
+        for (Long tournamentId : confirmedTournamentIds) {
+            log.info("Processing waitlist for tournament {} after player {} removal", tournamentId, playerId);
+            processWaitlistForTournament(tournamentId);
+        }
     }
 
     @Transactional

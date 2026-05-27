@@ -34,6 +34,7 @@ public class PlayerService {
     private final EmailService emailService;
     private final TournamentRegistrationRepository registrationRepository;
     private final DoubleTournamentRegistrationService doubleTournamentRegistrationService;
+    private final TournamentService tournamentService;
 
     @Transactional
     public PlayerResponseDto registrarJugador(RegistroRequestDto request) {
@@ -176,6 +177,10 @@ public class PlayerService {
         player.setActivo(false);
         playerRepository.save(player);
         log.info("Jugador desactivado con ID: {}", id);
+
+        // Отменяем все активные регистрации игрока и освобождаем места в турнирах
+        // Без этого деактивированный игрок продолжал висеть в списке участников
+        tournamentService.cancelAllRegistrationsForPlayer(id);
     }
 
     @Transactional
