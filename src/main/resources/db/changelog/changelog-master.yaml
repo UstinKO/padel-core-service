@@ -92,3 +92,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.30-add-invitation-attempts.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.31-extend-currency-field.yaml
+      relativeToChangelogFile: true
