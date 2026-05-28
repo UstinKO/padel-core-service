@@ -6,6 +6,7 @@ import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
 import com.padle.core.padelcoreservice.mapper.KingOfCourtMapper;
 import com.padle.core.padelcoreservice.model.*;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
+import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -754,6 +755,46 @@ public class KingOfCourtService {
         webSocketService.notifyTournamentStateUpdated(kingTournamentId, stateDTO);
 
         log.info("Tournament {} finished", kingTournamentId);
+    }
+
+    /**
+     * Полный сброс King of Court: удаляет все раунды, корты, результаты и статистику.
+     * Возвращает турнир в статус REGISTRO_ABIERTO, чтобы можно было поменять состав и запустить заново.
+     * Возвращает ID основного турнира для редиректа.
+     */
+    @Transactional
+    public Long resetTournament(Long kingId) {
+        log.info("Resetting King of Court tournament: {}", kingId);
+
+        TournamentKingOfCourt king = kingRepository.findById(kingId)
+                .orElseThrow(() -> new ResourceNotFoundException("King tournament not found"));
+
+        Long tournamentId = king.getTournament().getId();
+
+        // 1. Удаляем статистику игроков
+        List<KingOfCourtPlayerStats> allStats = statsRepository.findAllByTournamentKingId(kingId);
+        statsRepository.deleteAll(allStats);
+        statsRepository.flush();
+
+        // 2. Удаляем все раунды по одному — как в rollback (каскад на корты, команды и результаты)
+        List<KingOfCourtRound> allRounds = new ArrayList<>(
+                roundRepository.findByTournamentKingOrderByRoundNumberAsc(king));
+        for (KingOfCourtRound round : allRounds) {
+            king.getRounds().remove(round);
+            roundRepository.delete(round);
+        }
+        roundRepository.flush();
+
+        // 3. Возвращаем статус турнира в "открытая регистрация"
+        Tournament tournament = king.getTournament();
+        tournament.setEstado(TournamentStatus.REGISTRO_ABIERTO);
+        tournamentRepository.save(tournament);
+
+        // 4. Удаляем сам King of Court экземпляр
+        kingRepository.delete(king);
+
+        log.info("King of Court {} reset: tournament {} returned to REGISTRO_ABIERTO", kingId, tournamentId);
+        return tournamentId;
     }
 
     /**
