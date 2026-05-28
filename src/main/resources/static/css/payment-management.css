@@ -1,20 +1,21 @@
-/* ===== PAYMENT MANAGEMENT STYLES ===== */
+/* ===== PAYMENT MANAGEMENT — COMPACT EXCEL STYLE ===== */
 
 .payment-management {
-    padding: 2rem 0;
+    padding: 0.75rem 0;
 }
 
+/* Заголовок страницы */
 .page-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
+    margin-bottom: 0.6rem;
     flex-wrap: wrap;
-    gap: 1rem;
+    gap: 0.5rem;
 }
 
 .page-header h1 {
-    font-size: 1.875rem;
+    font-size: 1.2rem;
     font-weight: 700;
     color: #0f172a;
     margin: 0;
@@ -22,83 +23,217 @@
 
 .page-header h1 i {
     color: #10b981;
-    margin-right: 0.75rem;
+    margin-right: 0.4rem;
 }
 
 .tournament-info {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    padding: 1rem 2rem;
-    border-radius: 1rem;
+    padding: 0.35rem 0.9rem;
+    border-radius: 0.5rem;
     font-weight: 500;
+    font-size: 0.82rem;
     white-space: nowrap;
+    flex: none;
 }
+
+/* Статистика — одна компактная полоса */
+.summary-stats {
+    display: flex;
+    gap: 0;
+    background: #f1f5f9;
+    border-radius: 0.4rem;
+    margin-bottom: 0.4rem;
+    border: 1px solid #cbd5e1;
+    overflow: hidden;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.75rem;
+    border-right: 1px solid #cbd5e1;
+}
+
+.stat-item:last-child { border-right: none; }
+.stat-item.stat-success { background: #f0fdf4; }
+.stat-item.stat-danger  { background: #fff1f2; }
+.stat-item.stat-money   { background: #f0f9ff; }
+
+.stat-label {
+    font-size: 0.7rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.stat-value {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.stat-item.stat-success .stat-value { color: #16a34a; }
+.stat-item.stat-danger  .stat-value { color: #dc2626; }
+.stat-item.stat-money   .stat-value { color: #0369a1; }
+
+/* Легенда — одна строка под статами */
+.payment-legend {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.6rem;
+    background: #f8fafc;
+    border-radius: 0.35rem;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+    font-size: 0.72rem;
+    border: 1px solid #e2e8f0;
+}
+
+.legend-title {
+    font-weight: 600;
+    color: #475569;
+}
+
+.legend-item {
+    padding: 0.1rem 0.45rem;
+    border-radius: 20px;
+    font-weight: 500;
+    color: #374151;
+}
+
+.legend-cash     { background: #dcfce7; border: 1px solid #86efac; }
+.legend-transfer { background: #dbeafe; border: 1px solid #93c5fd; }
+.legend-crypto   { background: #fef9c3; border: 1px solid #fde047; }
+.legend-card     { background: #ede9fe; border: 1px solid #c4b5fd; }
 
 /* Таблица */
 .table-container {
     background: white;
-    border-radius: 1rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
     overflow-x: auto;
-    margin-bottom: 2rem;
+    margin-bottom: 0.6rem;
 }
 
 .payments-table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 1200px;
+    min-width: 860px;
 }
 
 .payments-table th {
-    background: #f8fafc;
-    padding: 1rem;
+    background: #f1f5f9;
+    padding: 0.28rem 0.4rem;
     font-weight: 600;
+    font-size: 0.72rem;
     color: #475569;
     text-align: left;
-    border-bottom: 2px solid #e2e8f0;
+    border-bottom: 2px solid #cbd5e1;
     white-space: nowrap;
 }
 
-.payments-table th i {
-    margin-right: 0.5rem;
-    color: #667eea;
-}
+.payments-table th i { color: #667eea; }
 
 .payments-table td {
-    padding: 1rem;
+    padding: 0.18rem 0.4rem;
     border-bottom: 1px solid #e2e8f0;
     vertical-align: middle;
+    font-size: 0.78rem;
+    line-height: 1.3;
 }
 
-.payments-table tr:hover {
-    background: #f8fafc;
-}
+.payments-table tr:last-child td { border-bottom: none; }
 
-/* Информация об игроке */
-.player-info {
+/* Цвета строк по методу оплаты */
+tr.pm-cash          { background-color: #f0fdf4; }
+tr.pm-bank_transfer { background-color: #eff6ff; }
+tr.pm-transferencia { background-color: #eff6ff; }
+tr.pm-by_bit        { background-color: #fefce8; }
+tr.pm-binance       { background-color: #fefce8; }
+tr.pm-tarjeta       { background-color: #f5f3ff; }
+tr.pm-other         { background-color: #f8fafc; }
+tr.pm-none          { background-color: #ffffff; }
+
+tr.pm-cash:hover          { background-color: #dcfce7; }
+tr.pm-bank_transfer:hover { background-color: #dbeafe; }
+tr.pm-transferencia:hover { background-color: #dbeafe; }
+tr.pm-by_bit:hover        { background-color: #fef9c3; }
+tr.pm-binance:hover       { background-color: #fef9c3; }
+tr.pm-tarjeta:hover       { background-color: #ede9fe; }
+tr.pm-other:hover         { background-color: #f1f5f9; }
+tr.pm-none:hover          { background-color: #f8fafc; }
+
+/* Партнёр */
+tr.partner-row {
+    background-color: #f5f3ff !important;
+    border-left: 3px solid #6366f1;
+}
+tr.partner-row:hover { background-color: #ede9fe !important; }
+
+/* Ячейка игрока — однострочная */
+.player-info-line {
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.pi-icon {
+    color: #6366f1;
+    font-size: 0.72rem;
+    flex-shrink: 0;
 }
 
 .player-name {
     font-weight: 600;
+    font-size: 0.78rem;
     color: #0f172a;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+    flex-shrink: 0;
 }
 
-.player-email {
-    font-size: 0.875rem;
-    color: #64748b;
+.contact-link {
+    font-size: 0.72rem;
+    text-decoration: none;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.tg-link { color: #0288d1; }
+.tg-link:hover { text-decoration: underline; }
+
+.wa-link { color: #16a34a; }
+.wa-link:hover { text-decoration: underline; }
+
+.companion-badge {
+    display: inline-block;
+    padding: 0 0.3rem;
+    background: #ede9fe;
+    color: #6366f1;
+    border-radius: 9999px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    flex-shrink: 0;
 }
 
 .position-badge {
     background: #e2e8f0;
-    padding: 0.25rem 0.75rem;
+    padding: 0.1rem 0.4rem;
     border-radius: 9999px;
-    font-size: 0.875rem;
-    font-weight: 500;
+    font-size: 0.7rem;
+    font-weight: 600;
     color: #475569;
     display: inline-block;
 }
+
+/* Выравнивание */
+.cell-center { text-align: center; }
 
 /* Чекбокс */
 .checkbox-wrapper {
@@ -108,70 +243,40 @@
 }
 
 .checkbox-wrapper input[type="checkbox"] {
-    width: 1.25rem;
-    height: 1.25rem;
+    width: 0.85rem;
+    height: 0.85rem;
     cursor: pointer;
+    accent-color: #667eea;
 }
 
 /* Элементы формы */
 .form-control-sm {
-    padding: 0.5rem;
-    border: 1px solid #e2e8f0;
-    border-radius: 0.5rem;
-    font-size: 0.875rem;
+    padding: 0.12rem 0.3rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.3rem;
+    font-size: 0.76rem;
     width: 100%;
-    transition: border-color 0.15s ease-in-out;
+    background: white;
+    transition: border-color 0.1s;
+    line-height: 1.35;
 }
 
 .form-control-sm:focus {
     outline: none;
     border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    box-shadow: 0 0 0 2px rgba(102,126,234,0.12);
 }
 
-select.form-control-sm {
-    background-color: white;
-    cursor: pointer;
-}
+select.form-control-sm { cursor: pointer; }
 
-.amount-input {
-    width: 100px;
-}
+.amount-input   { width: 70px; }
+.currency-select { width: 60px; }
 
-/* Статистика */
-.summary-stats {
-    display: flex;
-    gap: 2rem;
-    padding: 1rem;
-    background: #f8fafc;
-    border-radius: 0.5rem;
-    margin-bottom: 1.5rem;
-    flex-wrap: wrap;
-}
-
-.stat-item {
-    display: flex;
-    flex-direction: column;
-}
-
-.stat-label {
-    font-size: 0.75rem;
-    color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.stat-value {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #0f172a;
-}
-
-/* Кнопки действий */
+/* Кнопки */
 .action-buttons {
     display: flex;
-    gap: 1rem;
-    margin-top: 2rem;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
     justify-content: flex-end;
     flex-wrap: wrap;
 }
@@ -179,151 +284,17 @@ select.form-control-sm {
 /* Пустое состояние */
 .empty-state-cell {
     text-align: center;
-    padding: 3rem;
+    padding: 2rem;
 }
 
 /* ===== АДАПТИВНОСТЬ ===== */
-@media (max-width: 1024px) {
-    .payments-table {
-        min-width: 1000px;
-    }
-}
-
 @media (max-width: 768px) {
-    .payment-management {
-        padding: 1rem 0;
-    }
-
-    .page-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.75rem;
-    }
-
-    .page-header h1 {
-        font-size: 1.5rem;
-    }
-
-    .tournament-info {
-        width: 100%;
-        text-align: center;
-        padding: 0.75rem 1rem;
-        white-space: normal;
-        word-break: break-word;
-    }
-
-    .summary-stats {
-        gap: 1rem;
-        padding: 0.75rem;
-    }
-
-    .stat-item {
-        width: calc(50% - 0.5rem);
-    }
-
-    .stat-value {
-        font-size: 1.2rem;
-    }
-
-    .table-container {
-        margin-bottom: 1rem;
-        border-radius: 0.75rem;
-    }
-
-    .payments-table th,
-    .payments-table td {
-        padding: 0.75rem;
-    }
-
-    .action-buttons {
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-
-    .action-buttons .btn {
-        width: 100%;
-        justify-content: center;
-    }
-}
-
-@media (max-width: 480px) {
-    .page-header h1 {
-        font-size: 1.3rem;
-    }
-
-    .summary-stats {
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-
-    .stat-item {
-        width: 100%;
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .stat-label {
-        font-size: 0.7rem;
-    }
-
-    .stat-value {
-        font-size: 1rem;
-    }
-
-    .position-badge {
-        padding: 0.2rem 0.5rem;
-        font-size: 0.75rem;
-    }
-
-    .player-name {
-        font-size: 0.9rem;
-    }
-
-    .player-email {
-        font-size: 0.75rem;
-    }
-
-    .checkbox-wrapper input[type="checkbox"] {
-        width: 1rem;
-        height: 1rem;
-    }
-
-    .payments-table th,
-    .payments-table td {
-        padding: 0.5rem;
-    }
-
-    .form-control-sm {
-        padding: 0.4rem;
-        font-size: 0.8rem;
-    }
-
-    .amount-input {
-        width: 80px;
-    }
-}
-
-/* Для планшетов */
-@media (min-width: 769px) and (max-width: 1024px) {
-    .page-header h1 {
-        font-size: 1.6rem;
-    }
-
-    .stat-value {
-        font-size: 1.3rem;
-    }
-}
-
-/* Улучшения для touch-устройств */
-@media (hover: none) and (pointer: coarse) {
-    .form-control-sm,
-    select.form-control-sm,
-    .checkbox-wrapper input[type="checkbox"] {
-        min-height: 44px;
-    }
-
-    .action-buttons .btn {
-        min-height: 44px;
-    }
+    .payment-management { padding: 0.5rem 0; }
+    .page-header { flex-direction: column; align-items: flex-start; }
+    .page-header h1 { font-size: 1rem; }
+    .tournament-info { width: 100%; text-align: center; white-space: normal; }
+    .summary-stats { flex-wrap: wrap; }
+    .stat-item { border-right: none; border-bottom: 1px solid #cbd5e1; }
+    .action-buttons { flex-direction: column; }
+    .action-buttons .btn { width: 100%; justify-content: center; }
 }
