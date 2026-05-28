@@ -149,19 +149,53 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('🏆 Турниров загружено:', tournaments.length);
     console.log('📋 Мои турниры:', myTournamentIds.size, 'ID:', [...myTournamentIds]);
 
-    // Логируем уникальные значения для отладки
-    const uniqueNiveles = [...new Set(tournaments.map(t => t.categoriaNivel))];
-    console.log('📊 Уникальные значения уровней:', uniqueNiveles);
+    // === Вкладки ===
+    let currentTab = 'mis'; // Дефолт: мои предстоящие
 
-    // Обновляем счетчик моих турниров
-    if (myTournamentsCount) {
-        myTournamentsCount.textContent = `(${myTournamentIds.size})`;
+    function getTabBaseList() {
+        switch (currentTab) {
+            case 'mis':
+                return tournaments.filter(t => myTournamentIds.has(t.id) && !isTournamentStarted(t));
+            case 'historial':
+                return tournaments.filter(t => myTournamentIds.has(t.id) && isTournamentStarted(t));
+            case 'todos':
+            default:
+                return [...tournaments];
+        }
     }
-    // Обновляем кнопку Inscriptos в welcome-card
-    updateMyTournamentsBtn();
+
+    function updateTabCounts() {
+        const misList    = tournaments.filter(t => myTournamentIds.has(t.id) && !isTournamentStarted(t));
+        const histList   = tournaments.filter(t => myTournamentIds.has(t.id) && isTournamentStarted(t));
+        const countMis   = document.getElementById('countMis');
+        const countTodos = document.getElementById('countTodos');
+        const countHist  = document.getElementById('countHistorial');
+        if (countMis)   countMis.textContent   = misList.length;
+        if (countTodos) countTodos.textContent  = tournaments.length;
+        if (countHist)  countHist.textContent   = histList.length;
+    }
+
+    window.switchTab = function(tab) {
+        currentTab = tab;
+        // Обновляем стиль кнопок
+        document.getElementById('tabMisTorneos')?.classList.toggle('active', tab === 'mis');
+        document.getElementById('tabTodos')?.classList.toggle('active', tab === 'todos');
+        document.getElementById('tabHistorial')?.classList.toggle('active', tab === 'historial');
+        // Сбрасываем фильтры
+        if (generoSelect) generoSelect.value = 'todos';
+        if (nivelSelect) nivelSelect.value = 'todos';
+        if (tipoSelect) tipoSelect.value = 'todos';
+        if (modalidadSelect) modalidadSelect.value = 'todos';
+        if (myTournamentsCheckbox) myTournamentsCheckbox.checked = false;
+        if (filtersPanel) filtersPanel.style.display = 'none';
+        if (toggleFilters) toggleFilters.innerHTML = '<i class="fas fa-sliders-h"></i> Filtrar';
+        // Рендер
+        filteredTournaments = getTabBaseList();
+        renderTournaments();
+    };
 
     // Текущие отфильтрованные турниры
-    let filteredTournaments = [...tournaments];
+    let filteredTournaments = [];
 
     // Показать/скрыть панель фильтров
     if (toggleFilters) {
@@ -203,7 +237,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         console.log('🔍 Применяем фильтры:', filters);
 
-        filteredTournaments = tournaments.filter(tournament => {
+        filteredTournaments = getTabBaseList().filter(tournament => {
             // Фильтр по полу - сравниваем напрямую с enum значениями
             if (filters.genero !== 'todos') {
                 if (tournament.generoFormato !== filters.genero) {
@@ -249,11 +283,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
 
-            // Фильтр "Мои турниры"
+            // Фильтр "Мои турниры" (актуален только на вкладке "Todos")
             if (filters.myTournamentsOnly && !myTournamentIds.has(tournament.id)) {
                 return false;
             }
-            updateMyTournamentsBtn()
 
             return true;
         });
@@ -271,51 +304,6 @@ document.addEventListener('DOMContentLoaded', function() {
         renderTournaments();
     }
 
-    function updateMyTournamentsBtn() {
-        const btn = document.getElementById('myTournamentsBtn');
-        const btnText = document.getElementById('myTournamentsBtnText');
-        if (!btn || !btnText) return;
-
-        const count = myTournamentIds.size;
-
-        // Всегда показываем кнопку
-        btn.style.display = 'flex';
-
-        // Текст зависит от количества регистраций
-        if (count > 0) {
-            btnText.textContent = `Inscriptos (${count})`;
-        } else {
-            btnText.textContent = 'Inscriptos';
-        }
-    }
-
-    // Фильтрует по "Mis torneos" — вызывается по кнопке Inscriptos
-    window.filterMyTournaments = function() {
-        const btn = document.getElementById('myTournamentsBtn');
-        const checkbox = document.getElementById('myTournamentsOnly');
-
-        // Переключаем фильтр
-        const isActive = btn.classList.contains('active');
-
-        if (isActive) {
-            // Снимаем фильтр
-            btn.classList.remove('active');
-            if (checkbox) checkbox.checked = false;
-        } else {
-            // Включаем фильтр
-            btn.classList.add('active');
-            if (checkbox) checkbox.checked = true;
-            // Раскрываем панель фильтров если она скрыта
-            const filtersPanel = document.getElementById('filtersPanel');
-            if (filtersPanel) filtersPanel.style.display = 'block';
-        }
-
-        applyFiltersFunction();
-
-        // Прокручиваем к списку турниров
-        const grid = document.getElementById('dashboardTorneosGrid');
-        if (grid) grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    };
 
     // Отрисовка турниров
     function renderTournaments() {
@@ -327,6 +315,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (filteredTournaments.length === 0) {
             torneosGrid.innerHTML = '';
+            // Подсказки зависят от вкладки
+            const title  = document.getElementById('emptyStateTitle');
+            const text   = document.getElementById('emptyStateText');
+            const hint   = document.getElementById('emptyStateHint');
+            if (currentTab === 'mis') {
+                if (title) title.textContent = 'No estás inscrito en ningún torneo';
+                if (text)  text.textContent  = 'Aquí aparecerán tus torneos próximos cuando te inscribas.';
+                if (hint)  { hint.innerHTML = 'Ve a la pestaña <a href="#" onclick="switchTab(\'todos\');return false;">Todos</a> para ver torneos disponibles.'; hint.style.display = ''; }
+            } else if (currentTab === 'historial') {
+                if (title) title.textContent = 'Sin historial de torneos';
+                if (text)  text.textContent  = 'Aquí aparecerán los torneos en los que ya hayas participado.';
+                if (hint)  hint.style.display = 'none';
+            } else {
+                if (title) title.textContent = 'No hay torneos';
+                if (text)  text.textContent  = 'No se encontraron torneos con los filtros seleccionados.';
+                if (hint)  hint.style.display = 'none';
+            }
             if (noTournamentsMessage) noTournamentsMessage.style.display = 'block';
             if (resultsCounter) resultsCounter.style.display = 'none';
             return;
@@ -391,10 +396,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (data.success) {
                             showResultModal('success', data.message);
                             myTournamentIds.add(parseInt(tournamentId));
-                            if (myTournamentsCount) {
-                                myTournamentsCount.textContent = `(${myTournamentIds.size})`;
-                            }
-                            updateMyTournamentsBtn()
+                            updateTabCounts();
                             applyFiltersFunction();
                         } else {
                             showResultModal('error', 'Error: ' + data.message);
@@ -528,10 +530,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const registeredTournamentId = data.tournamentId || tournamentId;
 
             myTournamentIds.add(parseInt(registeredTournamentId));
-            if (myTournamentsCount) {
-                myTournamentsCount.textContent = `(${myTournamentIds.size})`;
-            }
-            updateMyTournamentsBtn()
+            updateTabCounts();
 
             // Показываем сообщение об успехе
             showResultModal('success', '¡Registro completado! Se ha enviado un email a tu compañero.');
@@ -1092,7 +1091,9 @@ document.addEventListener('DOMContentLoaded', function() {
         return div.innerHTML;
     }
 
-    // Инициализация - показываем все турниры
+    // Инициализация — показываем вкладку "Mis torneos" по умолчанию
+    filteredTournaments = getTabBaseList();
+    updateTabCounts();
     renderTournaments();
 
     // Автоматически обновляем список каждые 30 секунд (опционально)
