@@ -79,13 +79,21 @@ public class SecurityConfig {
                                 "/recuperar-password/**",
                                 "/oauth2/**",
                                 "/login/oauth2/**",
-                                "/double-registration/complete"
+                                "/double-registration/complete",
+                                "/ws/**"
                         ).permitAll()
                         .requestMatchers("/players/dashboard").authenticated()
                         .requestMatchers("/players/lista").authenticated()
                         .requestMatchers("/players/perfil/**").authenticated()
                         .requestMatchers("/players/mis-torneos").authenticated()
                         .requestMatchers("/admin/**").hasAnyRole("OWNER", "SUPER_ADMIN", "ORGANIZER")
+                        // Публичные GET-эндпоинты King of Court для страницы зрителей
+                        .requestMatchers(org.springframework.http.HttpMethod.GET,
+                                "/api/king-of-court/tournaments/*/state",
+                                "/api/king-of-court/tournaments/*/ranking",
+                                "/api/king-of-court/tournaments/*/players/*/history",
+                                "/api/king-of-court/ping"
+                        ).permitAll()
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().authenticated()
                 )
