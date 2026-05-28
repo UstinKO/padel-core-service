@@ -117,6 +117,26 @@ public class AdminKingOfCourtController {
     }
 
     /**
+     * Полный сброс турнира — удаляет все раунды/статистику, возвращает регистрацию открытой
+     */
+    @PostMapping("/{kingId}/reset")
+    public String resetTournament(@PathVariable Long kingId,
+                                  RedirectAttributes redirectAttributes) {
+        log.info("Admin requested full reset of King of Court tournament: {}", kingId);
+        try {
+            Long tournamentId = kingOfCourtService.resetTournament(kingId);
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Torneo reiniciado. Modifica los jugadores y vuelve a iniciarlo cuando estés listo.");
+            return "redirect:/admin/tournaments/" + tournamentId;
+        } catch (Exception e) {
+            log.error("Error resetting King of Court tournament", e);
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Error al reiniciar el torneo: " + e.getMessage());
+            return "redirect:/admin/tournaments/king-of-court/" + kingId;
+        }
+    }
+
+    /**
      * Переход к следующему раунду
      */
     @PostMapping("/{kingId}/next-round")

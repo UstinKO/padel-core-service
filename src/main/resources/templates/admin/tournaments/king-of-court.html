@@ -172,6 +172,21 @@
             </button>
         </div>
 
+        <!-- Кнопка сброса — отдельный блок, всегда видна администратору -->
+        <div th:if="${admin and not kingTournament.isFinished}"
+             style="display:flex; justify-content:center; margin-top:1rem;">
+            <form th:action="@{'/admin/tournaments/king-of-court/' + ${kingTournament.id} + '/reset'}"
+                  method="post"
+                  id="resetTournamentForm">
+                <button type="button"
+                        class="btn btn-outline"
+                        style="border-color:#dc2626; color:#dc2626; gap:.5rem; display:flex; align-items:center;"
+                        onclick="confirmReset()">
+                    <i class="fas fa-redo-alt"></i> Reiniciar torneo
+                </button>
+            </form>
+        </div>
+
         <!-- Botón de volver (si está finalizado) -->
         <div class="admin-actions" style="justify-content: center; margin-top: 2rem;" th:if="${kingTournament.isFinished}">
             <a th:href="@{'/admin/tournaments/' + ${tournament.id}}" class="btn btn-primary">
@@ -221,5 +236,27 @@
     /*]]>*/
 </script>
 <script th:src="@{/js/share-panel.js}"></script>
+<script>
+    function confirmReset() {
+        const first = confirm(
+            '⚠️ REINICIAR TORNEO\n\n' +
+            'Esto eliminará:\n' +
+            '• Todos los raundas y resultados\n' +
+            '• Distribución de canchas\n' +
+            '• Estadísticas de jugadores\n\n' +
+            'Los jugadores CONFIRMADOS quedan intactos.\n' +
+            'Podrás modificar el plantel y volver a iniciar.\n\n' +
+            '¿Continuar?'
+        );
+        if (!first) return;
+
+        const second = confirm(
+            '¿Estás seguro?\n\nEsta acción NO se puede deshacer.'
+        );
+        if (!second) return;
+
+        document.getElementById('resetTournamentForm').submit();
+    }
+</script>
 </body>
 </html>
