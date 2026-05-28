@@ -62,9 +62,33 @@
                     <span class="stat-label">Asistieron</span>
                     <span class="stat-value" th:text="${#lists.size(players.?[attended == true])}">0</span>
                 </div>
-                <div class="stat-item stat-money">
-                    <span class="stat-label">Recaudado</span>
-                    <span class="stat-value" th:text="'$ ' + ${#aggregates.sum(players.![amount != null ? amount : 0])}">0</span>
+                <!-- ARS -->
+                <div class="stat-item stat-money"
+                     th:if="${#lists.size(players.?[amount != null and amount > 0 and (currency == null or currency == 'ARS')]) > 0}">
+                    <span class="stat-label">ARS</span>
+                    <span class="stat-value"
+                          th:text="'$ ' + ${#aggregates.sum(players.?[amount != null and (currency == null or currency == 'ARS')].![amount != null ? amount : 0])}">0</span>
+                </div>
+                <!-- USD -->
+                <div class="stat-item stat-money"
+                     th:if="${#lists.size(players.?[amount != null and amount > 0 and currency == 'USD']) > 0}">
+                    <span class="stat-label">USD</span>
+                    <span class="stat-value"
+                          th:text="'$ ' + ${#aggregates.sum(players.?[amount != null and currency == 'USD'].![amount != null ? amount : 0])}">0</span>
+                </div>
+                <!-- USDT -->
+                <div class="stat-item stat-money"
+                     th:if="${#lists.size(players.?[amount != null and amount > 0 and currency == 'USDT']) > 0}">
+                    <span class="stat-label">USDT</span>
+                    <span class="stat-value"
+                          th:text="${#aggregates.sum(players.?[amount != null and currency == 'USDT'].![amount != null ? amount : 0])}">0</span>
+                </div>
+                <!-- EUR -->
+                <div class="stat-item stat-money"
+                     th:if="${#lists.size(players.?[amount != null and amount > 0 and currency == 'EUR']) > 0}">
+                    <span class="stat-label">EUR</span>
+                    <span class="stat-value"
+                          th:text="'€ ' + ${#aggregates.sum(players.?[amount != null and currency == 'EUR'].![amount != null ? amount : 0])}">0</span>
                 </div>
             </div>
 
