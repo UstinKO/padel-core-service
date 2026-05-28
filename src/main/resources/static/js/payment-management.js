@@ -20,6 +20,22 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // ===== ДИНАМИЧЕСКОЕ ОБНОВЛЕНИЕ ЦВЕТА СТРОКИ ПО МЕТОДУ ОПЛАТЫ =====
+    const PM_CLASSES = ['pm-cash','pm-bank_transfer','pm-transferencia','pm-by_bit',
+                        'pm-binance','pm-tarjeta','pm-other','pm-none'];
+
+    function applyMethodColor(row, methodValue) {
+        row.classList.remove(...PM_CLASSES);
+        if (row.classList.contains('partner-row')) return;
+        row.classList.add(methodValue ? 'pm-' + methodValue.toLowerCase() : 'pm-none');
+    }
+
+    document.querySelectorAll('select.method-select').forEach(select => {
+        select.addEventListener('change', function() {
+            applyMethodColor(this.closest('tr'), this.value);
+        });
+    });
+
     // ===== ПОДТВЕРЖДЕНИЕ ПЕРЕД ОТПРАВКОЙ =====
     const form = document.getElementById('paymentForm');
     if (form) {

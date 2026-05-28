@@ -201,10 +201,12 @@ public class PaymentService {
                             + (isPartnerInDb ? " (compañero)" : ""));
                     dto.setPlayerEmail(reg.getPlayer().getEmail());
                     dto.setPlayerPhone(reg.getPlayer().getTelefono());
+                    dto.setTelegramUsername(reg.getPlayer().getTelegramUsername());
                     dto.setPosition(reg.getPosition());
+                    dto.setPairGroupId(reg.getMainPlayerId() != null ? reg.getMainPlayerId() : reg.getPlayer().getId());
                     dto.setAttended(reg.getAttended() != null ? reg.getAttended() : false);
                     dto.setParticipationConfirmed(reg.getParticipationConfirmed() != null ? reg.getParticipationConfirmed() : false);
-                    dto.setPartnerRow(false); // у него есть своя регистрация — не виртуальная строка
+                    dto.setPartnerRow(false);
 
                     // Платёж — без маркера PARTNER_PAYMENT (у каждого своя запись)
                     payments.stream()
@@ -250,6 +252,7 @@ public class PaymentService {
                         partnerDto.setPartnerPhone(reg.getPartnerPhone());
                         partnerDto.setPartnerEmail(reg.getPartnerEmail());
                         partnerDto.setPosition(reg.getPosition());
+                        partnerDto.setPairGroupId(reg.getPlayer().getId());
                         partnerDto.setAttended(false);
                         partnerDto.setParticipationConfirmed(false);
 
@@ -276,6 +279,17 @@ public class PaymentService {
                         result.add(partnerDto);
                     }
                 });
+
+        // Нормализация позиций: устраняет дубли из-за тестовых данных или race conditions.
+        // Группируем по pairGroupId и присваиваем последовательные номера пар.
+        java.util.Map<Long, Integer> groupToPos = new java.util.LinkedHashMap<>();
+        int[] nextPos = {1};
+        for (PaymentManagementViewDto dto : result) {
+            if (dto.getPairGroupId() != null) {
+                int displayPos = groupToPos.computeIfAbsent(dto.getPairGroupId(), k -> nextPos[0]++);
+                dto.setPosition(displayPos);
+            }
+        }
 
         return result;
     }

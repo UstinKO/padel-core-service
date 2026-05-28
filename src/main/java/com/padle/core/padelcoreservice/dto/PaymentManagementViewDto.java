@@ -14,7 +14,8 @@ public class PaymentManagementViewDto {
     private Long playerId;
     private String playerName;
     private String playerEmail;
-    private String playerPhone;       // ← ДОБАВЛЕНО: телефон игрока
+    private String playerPhone;
+    private String telegramUsername;
     private Integer position;
     private Boolean attended;
     private Boolean participationConfirmed;
@@ -36,4 +37,7 @@ public class PaymentManagementViewDto {
 
     // Флаг для нового платежа (если еще нет платежа)
     private boolean hasPayment;
+
+    // Служебное поле для группировки пар при нормализации позиций (не выводится в шаблоне)
+    private Long pairGroupId;
 }
