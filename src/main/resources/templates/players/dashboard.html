@@ -114,18 +114,6 @@
                         Email confirmado · Miembro desde <span th:text="${#temporals.format(player.fechaRegistro, 'dd/MM/yyyy')}">01/01/2024</span>
                     </p>
                 </div>
-                <!-- Кнопка Inscriptos — количество обновляется через JS -->
-                <button id="myTournamentsBtn"
-                        onclick="filterMyTournaments()"
-                        style="display:flex; align-items:center; gap:.5rem;
-                               padding:.6rem 1.25rem; background:#FF6B35; color:#fff;
-                               border:none; border-radius:8px; font-weight:600;
-                               font-size:.95rem; cursor:pointer; white-space:nowrap;
-                               transition: background 0.2s, transform 0.1s;
-                               margin-left: auto;">
-                    <i class="fas fa-calendar-check"></i>
-                    <span id="myTournamentsBtnText">Inscriptos</span>
-                </button>
             </div>
         </div>
 
@@ -172,10 +160,26 @@
 <!--            </div>-->
         </div>
 
-        <!-- Próximos Torneos con filtros -->
+        <!-- Mis torneos / Todos / Historial -->
         <div class="dashboard-card">
             <div class="card-header">
-                <h2>Próximos torneos</h2>
+                <div class="dashboard-tabs">
+                    <button class="tab-btn active" id="tabMisTorneos" onclick="switchTab('mis')">
+                        <i class="fas fa-calendar-check"></i>
+                        Mis torneos
+                        <span class="tab-badge" id="countMis">0</span>
+                    </button>
+                    <button class="tab-btn" id="tabTodos" onclick="switchTab('todos')">
+                        <i class="fas fa-list"></i>
+                        Todos
+                        <span class="tab-badge" id="countTodos">0</span>
+                    </button>
+                    <button class="tab-btn" id="tabHistorial" onclick="switchTab('historial')">
+                        <i class="fas fa-history"></i>
+                        Historial
+                        <span class="tab-badge" id="countHistorial">0</span>
+                    </button>
+                </div>
                 <button class="btn-filter" id="toggleFilters">
                     <i class="fas fa-sliders-h"></i> Filtrar
                 </button>
@@ -275,8 +279,9 @@
             <!-- Сообщение когда нет турниров -->
             <div class="empty-state" id="noTournamentsMessage" style="display: none;">
                 <i class="fas fa-calendar-times"></i>
-                <h3>No hay torneos</h3>
-                <p>No se encontraron torneos con los filtros seleccionados</p>
+                <h3 id="emptyStateTitle">No hay torneos</h3>
+                <p id="emptyStateText">No se encontraron torneos con los filtros seleccionados</p>
+                <div class="tab-empty-hint" id="emptyStateHint" style="display:none;"></div>
             </div>
         </div>
     </div>

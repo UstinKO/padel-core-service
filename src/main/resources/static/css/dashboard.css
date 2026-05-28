@@ -104,6 +104,8 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
 }
 
 .card-header h2 {
@@ -112,6 +114,69 @@
     margin: 0;
     color: #212529;
 }
+
+/* === Dashboard Tabs === */
+.dashboard-tabs {
+    display: flex;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+}
+
+.tab-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 0.9rem;
+    border: 1px solid #dee2e6;
+    background: transparent;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #6c757d;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.tab-btn:hover {
+    border-color: #FF6B35;
+    color: #FF6B35;
+}
+
+.tab-btn.active {
+    background: #FF6B35;
+    border-color: #FF6B35;
+    color: white;
+}
+
+.tab-badge {
+    background: rgba(0,0,0,0.1);
+    border-radius: 20px;
+    padding: 0.05rem 0.45rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    min-width: 1.4rem;
+    text-align: center;
+}
+
+.tab-btn.active .tab-badge {
+    background: rgba(255,255,255,0.3);
+}
+
+.tab-empty-hint {
+    text-align: center;
+    padding: 0.5rem;
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.tab-empty-hint a {
+    color: #FF6B35;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.tab-empty-hint a:hover { text-decoration: underline; }
 
 /* Filter Button */
 .btn-filter {
