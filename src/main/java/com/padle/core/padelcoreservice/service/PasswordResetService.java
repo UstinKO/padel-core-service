@@ -34,7 +34,7 @@ public class PasswordResetService {
      * Запрос на сброс пароля
      */
     @Transactional
-    public boolean requestPasswordReset(String email) {
+    public boolean requestPasswordReset(String email, String baseUrl) {
         log.info("Solicitud de restablecimiento de contraseña para email: {}", email);
 
         PlayerPadel player = playerRepository.findByEmail(email)
@@ -60,7 +60,6 @@ public class PasswordResetService {
 
         tokenRepository.save(resetToken);
 
-        // ИСПРАВЛЕНО: /recuperar-password вместо /reset-password
         String resetUrl = baseUrl + "/recuperar-password?token=" + token;
         emailService.sendPasswordResetEmail(player.getEmail(), player.getNombre(), resetUrl);
 
