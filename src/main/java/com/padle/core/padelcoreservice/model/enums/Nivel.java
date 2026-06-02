@@ -21,7 +21,10 @@ public enum Nivel {
     D6("D6"),
     C7_C6("C7/C6"),
     C4("C4"),
-    SUMA_14("14+");
+    SUMA_14("14+"),
+
+    // Категория "Todos" по просьбе заказчика
+    TODOS("Todos");
 
     private final String orden;
 

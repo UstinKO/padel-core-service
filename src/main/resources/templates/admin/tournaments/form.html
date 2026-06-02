@@ -196,6 +196,7 @@
                                 <option value="KING_OF_COURT">Rey de Cancha</option>
                                 <option value="AMERICANO">Americano (Individual)</option>
                                 <option value="AMERICANO_TEAMS">Americano Parejas (Calificación + Playoff)</option>
+                                <option value="CANCHA_ABIERTA">Cancha Abierta</option>
                             </select>
                             <div id="tipoHint" style="font-size:.8rem;margin-top:.35rem;color:#64748b"></div>
                             <div class="invalid-feedback" th:if="${#fields.hasErrors('tipo')}"
@@ -383,6 +384,10 @@
             modalidadSelect.value = 'INDIVIDUAL';
             modalidadSelect.required = false;
             tipoHint.textContent = 'Rey de Cancha. Modalidad siempre Individual.';
+        } else if (val === 'CANCHA_ABIERTA') {
+            modalidadGroup.style.display = '';
+            modalidadSelect.required = true;
+            tipoHint.textContent = 'Cancha Abierta: inscripción libre de jugadores.';
         } else {
             modalidadGroup.style.display = '';
             modalidadSelect.required = true;

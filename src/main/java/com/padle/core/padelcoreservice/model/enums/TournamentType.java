@@ -3,7 +3,8 @@ package com.padle.core.padelcoreservice.model.enums;
 public enum TournamentType {
     KING_OF_COURT("Rey de Cancha"),
     AMERICANO("Americano"),
-    AMERICANO_TEAMS("Americano Equipos");
+    AMERICANO_TEAMS("Americano Equipos"),
+    CANCHA_ABIERTA("Cancha Abierta");
 
     private final String value;
 
