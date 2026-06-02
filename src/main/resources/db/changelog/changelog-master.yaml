@@ -95,3 +95,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.31-extend-currency-field.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.32-add-nivel-todos.yaml
+      relativeToChangelogFile: true
