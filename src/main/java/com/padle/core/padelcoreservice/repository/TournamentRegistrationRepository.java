@@ -223,4 +223,40 @@ public interface TournamentRegistrationRepository extends JpaRepository<Tourname
     Optional<TournamentRegistration> findByTournamentIdAndPlayerIdAndIsActiveFalse(
             @Param("tournamentId") Long tournamentId,
             @Param("playerId") Long playerId);
+
+    // ── Batch queries for home page (N+1 fix) ────────────────────────────────
+
+    @Query("SELECT tr.tournament.id, tr.status, COUNT(tr) " +
+            "FROM TournamentRegistration tr " +
+            "WHERE tr.tournament.id IN :ids " +
+            "AND tr.status IN :statuses " +
+            "AND tr.isActive = true " +
+            "GROUP BY tr.tournament.id, tr.status")
+    List<Object[]> countStatusesByTournamentIds(
+            @Param("ids") List<Long> ids,
+            @Param("statuses") List<RegistrationStatus> statuses);
+
+    @Query(nativeQuery = true, value =
+            "SELECT tournament_id, COUNT(DISTINCT " +
+            "LEAST(player_id, COALESCE(partner_id, player_id))::text || '-' || " +
+            "GREATEST(player_id, COALESCE(partner_id, player_id))::text) " +
+            "FROM tournament_registrations_db " +
+            "WHERE tournament_id IN :ids " +
+            "AND status IN ('CONFIRMED', 'PAIR_REGISTERED', 'PARTNER_INVITED') " +
+            "AND is_double_registration = true " +
+            "AND is_active = true " +
+            "AND main_player_id IS NOT NULL " +
+            "AND player_id = main_player_id " +
+            "GROUP BY tournament_id")
+    List<Object[]> countConfirmedPairsByTournamentIds(@Param("ids") List<Long> ids);
+
+    @Query("SELECT tr.tournament.id, COUNT(DISTINCT tr.mainPlayerId) " +
+            "FROM TournamentRegistration tr " +
+            "WHERE tr.tournament.id IN :ids " +
+            "AND tr.status = 'WAITLIST' " +
+            "AND tr.isDoubleRegistration = true " +
+            "AND tr.isActive = true " +
+            "AND tr.mainPlayerId IS NOT NULL " +
+            "GROUP BY tr.tournament.id")
+    List<Object[]> countWaitlistPairsByTournamentIds(@Param("ids") List<Long> ids);
 }

@@ -41,6 +41,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -1054,10 +1055,84 @@ public class TournamentService {
 
     @Transactional(readOnly = true)
     public List<TournamentDto> getActiveTournamentsForHome() {
-        log.debug("Fetching active tournaments for home page");
-        return tournamentRepository.findActiveForHome().stream()
-                .map(this::mapToDtoWithDetails)
+        List<Tournament> tournaments = tournamentRepository.findActiveForHome();
+        if (tournaments.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> ids = tournaments.stream().map(Tournament::getId).collect(Collectors.toList());
+
+        // Batch-load clubs in one query
+        Set<Long> clubIds = tournaments.stream()
+                .map(Tournament::getClubId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        Map<Long, ClubDto> clubsById = clubService.findClubsByIds(clubIds);
+
+        // Batch-load registration counts for singles: CONFIRMED + WAITLIST in one query
+        Map<Long, Map<RegistrationStatus, Long>> singlesCounts = new HashMap<>();
+        List<Object[]> statusRows = registrationRepository.countStatusesByTournamentIds(
+                ids, List.of(RegistrationStatus.CONFIRMED, RegistrationStatus.WAITLIST));
+        for (Object[] row : statusRows) {
+            Long tid = (Long) row[0];
+            RegistrationStatus status = (RegistrationStatus) row[1];
+            Long count = (Long) row[2];
+            singlesCounts.computeIfAbsent(tid, k -> new HashMap<>()).put(status, count);
+        }
+
+        // Batch-load confirmed pairs for doubles tournaments
+        List<Long> doublesIds = tournaments.stream()
+                .filter(t -> t.getModalidad() == Modalidad.DOBLES)
+                .map(Tournament::getId)
                 .collect(Collectors.toList());
+        Map<Long, Long> confirmedPairsById = new HashMap<>();
+        Map<Long, Long> waitlistPairsById = new HashMap<>();
+        if (!doublesIds.isEmpty()) {
+            for (Object[] row : registrationRepository.countConfirmedPairsByTournamentIds(doublesIds)) {
+                confirmedPairsById.put(((Number) row[0]).longValue(), ((Number) row[1]).longValue());
+            }
+            for (Object[] row : registrationRepository.countWaitlistPairsByTournamentIds(doublesIds)) {
+                waitlistPairsById.put((Long) row[0], (Long) row[1]);
+            }
+        }
+
+        return tournaments.stream()
+                .map(t -> mapToDtoWithBatchedData(t, clubsById, singlesCounts, confirmedPairsById, waitlistPairsById))
+                .collect(Collectors.toList());
+    }
+
+    private TournamentDto mapToDtoWithBatchedData(
+            Tournament tournament,
+            Map<Long, ClubDto> clubsById,
+            Map<Long, Map<RegistrationStatus, Long>> singlesCounts,
+            Map<Long, Long> confirmedPairsById,
+            Map<Long, Long> waitlistPairsById) {
+
+        TournamentDto dto = tournamentMapper.toDto(tournament);
+
+        ClubDto club = clubsById.get(tournament.getClubId());
+        if (club != null) {
+            dto.setClubNombre(club.getNombre());
+            dto.setClubDireccion(club.getDireccionCompleta());
+        }
+
+        long confirmedSpots;
+        long waitlistCount;
+
+        if (tournament.getModalidad() == Modalidad.DOBLES) {
+            confirmedSpots = confirmedPairsById.getOrDefault(tournament.getId(), 0L);
+            waitlistCount = waitlistPairsById.getOrDefault(tournament.getId(), 0L);
+        } else {
+            Map<RegistrationStatus, Long> counts = singlesCounts.getOrDefault(tournament.getId(), Map.of());
+            confirmedSpots = counts.getOrDefault(RegistrationStatus.CONFIRMED, 0L);
+            waitlistCount = counts.getOrDefault(RegistrationStatus.WAITLIST, 0L);
+        }
+
+        dto.setInscritosActuales((int) confirmedSpots);
+        dto.setWaitlistCount((int) waitlistCount);
+        dto.setDisponibles(Math.max(tournament.getCupoMax() - (int) confirmedSpots, 0));
+
+        return dto;
     }
 
     @Transactional(readOnly = true)

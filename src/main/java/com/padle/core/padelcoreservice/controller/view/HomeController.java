@@ -1,7 +1,6 @@
 package com.padle.core.padelcoreservice.controller.view;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.padle.core.padelcoreservice.dto.PlayerResponseDto;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.service.PlayerService;
@@ -26,6 +25,7 @@ public class HomeController {
 
     private final PlayerService playerService;
     private final TournamentService tournamentService;
+    private final ObjectMapper objectMapper;
 
     @GetMapping("/")
     public String homePage(
@@ -70,10 +70,7 @@ public class HomeController {
         List<TournamentDto> allTournaments = tournamentService.getActiveTournamentsForHome();
 
         try {
-            ObjectMapper mapper = new ObjectMapper();
-            mapper.registerModule(new JavaTimeModule());
-            String tournamentsJson = mapper.writeValueAsString(allTournaments);
-            model.addAttribute("tournamentsJson", tournamentsJson);
+            model.addAttribute("tournamentsJson", objectMapper.writeValueAsString(allTournaments));
         } catch (Exception e) {
             log.error("Error converting tournaments to JSON", e);
             model.addAttribute("tournamentsJson", "[]");
