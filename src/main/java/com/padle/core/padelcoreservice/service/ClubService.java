@@ -11,7 +11,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -40,6 +42,11 @@ public class ClubService {
     public Optional<ClubDto> getClubById(Long id) {
         return clubRepository.findById(id)
                 .map(clubMapper::toDto);
+    }
+
+    public Map<Long, ClubDto> findClubsByIds(Set<Long> ids) {
+        return clubRepository.findAllById(ids).stream()
+                .collect(Collectors.toMap(Club::getId, clubMapper::toDto));
     }
 
     public Optional<ClubDto> getClubByNombre(String nombre) {
