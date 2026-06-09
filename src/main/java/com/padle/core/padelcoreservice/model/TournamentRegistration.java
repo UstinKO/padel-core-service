@@ -146,7 +146,6 @@ public class TournamentRegistration {
 
     public void confirm() {
         this.status = RegistrationStatus.CONFIRMED;
-        this.position = null;
         this.waitlistPosition = null;
         this.invitationExpiresAt = null;
         this.notifiedAboutVacancy = null;
