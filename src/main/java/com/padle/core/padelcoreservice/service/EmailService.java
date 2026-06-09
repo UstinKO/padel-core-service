@@ -305,35 +305,30 @@ public class EmailService {
     }
 
     /**
-     * Отправка письма с приглашением из листа ожидания
+     * Уведомление об автоматическом переводе из листа ожидания в основной состав
      */
-    @Timed(name = "email.send.time", tags = {"service=email", "type=vacancy_invitation"})
-    @Counted(name = "email.send.attempts", tags = {"service=email", "type=vacancy_invitation"})
-    @TrackErrors(name = "email.send.errors", tags = {"service=email", "type=vacancy_invitation"})
-    public void sendVacancyInvitationEmail(
+    @Timed(name = "email.send.time", tags = {"service=email", "type=waitlist_auto_confirm"})
+    @Counted(name = "email.send.attempts", tags = {"service=email", "type=waitlist_auto_confirm"})
+    @TrackErrors(name = "email.send.errors", tags = {"service=email", "type=waitlist_auto_confirm"})
+    public void sendWaitlistAutoConfirmEmail(
             @MetricTag("recipient") String to,
             @MetricTag("playerName") String playerName,
             String tournamentName,
             String tournamentDate,
             String tournamentTime,
             String clubName,
-            String confirmationUrl,
-            java.time.LocalDateTime deadline) {
+            String tournamentUrl) {
 
-        emailMetricsService.recordEmailAttempt("VACANCY_INVITATION");
+        emailMetricsService.recordEmailAttempt("WAITLIST_AUTO_CONFIRM");
 
         if (emailMetricsService.isDailyLimitReached(dailyEmailLimit)) {
-            log.warn("Daily email limit reached, rejecting vacancy invitation to: {}", to);
-            emailMetricsService.recordEmailRejected("VACANCY_INVITATION", "DAILY_LIMIT");
+            log.warn("Daily email limit reached, rejecting waitlist auto-confirm to: {}", to);
+            emailMetricsService.recordEmailRejected("WAITLIST_AUTO_CONFIRM", "DAILY_LIMIT");
             return;
         }
 
         try {
-            log.info("📧 Отправка приглашения из листа ожидания на: {}", to);
-
-            String deadlineStr = deadline != null
-                    ? deadline.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
-                    : "";
+            log.info("📧 Отправка уведомления об авто-подтверждении из листа ожидания на: {}", to);
 
             Context context = new Context();
             context.setVariable("playerName", playerName);
@@ -341,20 +336,19 @@ public class EmailService {
             context.setVariable("tournamentDate", tournamentDate);
             context.setVariable("tournamentTime", tournamentTime);
             context.setVariable("clubName", clubName);
-            context.setVariable("confirmationUrl", confirmationUrl);
-            context.setVariable("deadline", deadlineStr);
+            context.setVariable("tournamentUrl", tournamentUrl);
             context.setVariable("year", java.time.Year.now().getValue());
 
             String htmlContent = templateEngine.process("email/vacancy-invitation", context);
 
-            sendHtmlEmail(to, "🎾 ¡Se ha liberado un lugar en el torneo! Confirma tu participación", htmlContent);
+            sendHtmlEmail(to, "🎾 ¡Fuiste confirmado en el torneo!", htmlContent);
 
-            emailMetricsService.recordEmailSent("VACANCY_INVITATION");
-            log.info("✅ Приглашение из листа ожидания отправлено на: {}", to);
+            emailMetricsService.recordEmailSent("WAITLIST_AUTO_CONFIRM");
+            log.info("✅ Уведомление об авто-подтверждении отправлено на: {}", to);
 
         } catch (Exception e) {
-            emailMetricsService.recordEmailError("VACANCY_INVITATION", e.getClass().getSimpleName());
-            log.error("❌ Ошибка отправки приглашения на {}: {}", to, e.getMessage(), e);
+            emailMetricsService.recordEmailError("WAITLIST_AUTO_CONFIRM", e.getClass().getSimpleName());
+            log.error("❌ Ошибка отправки уведомления об авто-подтверждении на {}: {}", to, e.getMessage(), e);
         }
     }
 

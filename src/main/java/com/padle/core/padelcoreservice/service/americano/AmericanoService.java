@@ -216,7 +216,7 @@ public class AmericanoService {
         Tournament tournament = tournamentRepository.findById(tournamentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tournament not found"));
 
-        long occupied = registrationRepository.countSpotsOccupiedBySingles(tournamentId);
+        long occupied = registrationRepository.countByTournamentIdAndStatus(tournamentId, RegistrationStatus.CONFIRMED);
         int available = tournament.getCupoMax() - (int) occupied;
         if (available <= 0) return;
 

@@ -428,56 +428,51 @@ public class TournamentService {
             log.info("Found {} available slots and {} players in waitlist", availableSlots, waitlist.size());
 
             for (int i = 0; i < Math.min(availableSlots, waitlist.size()); i++) {
-                TournamentRegistration firstInWaitlist = waitlist.get(i);
-                sendInvitationToPlayer(firstInWaitlist, tournament);
+                autoConfirmFromWaitlist(waitlist.get(i), tournament);
+            }
+            if (!waitlist.isEmpty()) {
+                if (tournament.getModalidad() == Modalidad.DOBLES) {
+                    reorderPairPositions(tournamentId);
+                } else {
+                    reorderPositions(tournamentId);
+                }
             }
         }
     }
 
-    private static final int MAX_INVITATION_ATTEMPTS = 2;
+    private void autoConfirmFromWaitlist(TournamentRegistration registration, Tournament tournament) {
+        long confirmedCount = registrationRepository.countByTournamentIdAndStatus(
+                tournament.getId(), RegistrationStatus.CONFIRMED);
 
-    private void sendInvitationToPlayer(TournamentRegistration registration, Tournament tournament) {
-        int attempts = registration.getInvitationAttempts() == null ? 0 : registration.getInvitationAttempts();
-
-        if (attempts >= MAX_INVITATION_ATTEMPTS) {
-            log.info("Player {} in tournament {} has exhausted {} invitation attempts, removing from waitlist",
-                    registration.getPlayer().getId(), tournament.getId(), MAX_INVITATION_ATTEMPTS);
-            registration.setStatus(RegistrationStatus.CANCELLED);
-            registration.setWaitlistPosition(null);
-            registration.setInvitationExpiresAt(null);
-            registrationRepository.save(registration);
-            return;
-        }
-
-        registration.setStatus(RegistrationStatus.WAITLIST_INVITED);
-        registration.setInvitationAttempts(attempts + 1);
-        LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(5);
-        registration.setInvitationExpiresAt(expiresAt);
+        registration.confirm();
+        registration.setPosition((int) confirmedCount + 1);
         registrationRepository.save(registration);
 
-        sendVacancyInvitationEmail(registration.getPlayer(), tournament, registration.getId(), expiresAt);
+        log.info("Player {} auto-confirmed from waitlist for tournament {}",
+                registration.getPlayer().getId(), tournament.getId());
+
+        sendWaitlistAutoConfirmEmail(registration.getPlayer(), tournament);
     }
 
-    private void sendVacancyInvitationEmail(PlayerPadel player, Tournament tournament, Long registrationId, LocalDateTime deadline) {
+    private void sendWaitlistAutoConfirmEmail(PlayerPadel player, Tournament tournament) {
         try {
             String dateStr = tournament.getFechaInicio().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
             String timeStr = tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm"));
             String clubName = resolveClubName(tournament.getClubId());
-            String confirmationUrl = String.format("%s/waitlist/confirm?registrationId=%d", baseUrl, registrationId);
+            String tournamentUrl = String.format("%s/tournaments/%d", baseUrl, tournament.getId());
 
-            emailService.sendVacancyInvitationEmail(
+            emailService.sendWaitlistAutoConfirmEmail(
                     player.getEmail(),
                     player.getNombre(),
                     tournament.getNombre(),
                     dateStr,
                     timeStr,
                     clubName,
-                    confirmationUrl,
-                    deadline
+                    tournamentUrl
             );
-            log.info("Vacancy invitation email sent to {}", player.getEmail());
+            log.info("Waitlist auto-confirm email sent to {}", player.getEmail());
         } catch (Exception e) {
-            log.error("Error sending vacancy invitation email: {}", e.getMessage());
+            log.error("Error sending waitlist auto-confirm email: {}", e.getMessage());
         }
     }
 
@@ -1228,6 +1223,9 @@ public class TournamentService {
         log.info("Player {} confirmed from waitlist for tournament {}",
                 registration.getPlayer().getId(), tournament.getId());
 
+        // Нормализуем позиции: устраняет null-position у CONFIRMED-игроков (если такие есть)
+        reorderPositions(tournament.getId());
+
         // Отправляем email напрямую через emailService
         sendConfirmationEmail(registration.getPlayer(), tournament);
 
@@ -1312,7 +1310,8 @@ public class TournamentService {
 
         registrationRepository.save(registration);
 
-        // Пересчитываем позиции в листе ожидания
+        // Нормализуем позиции CONFIRMED-игроков и пересчитываем лист ожидания
+        reorderPositions(tournamentId);
         reorderWaitlist(tournamentId);
     }
 

@@ -1,0 +1,72 @@
+# Скопируй этот файл в application-dev.yml:
+#   cp src/main/resources/application-dev.yml.example src/main/resources/application-dev.yml
+#
+# Запуск локально:
+#   ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+#
+# IntelliJ: Run/Debug Configurations → Active profiles → dev
+#
+# Без каких-либо изменений приложение стартует и работает.
+# Для просмотра писем запусти MailHog:
+#   docker run -d -p 1025:1025 -p 8025:8025 mailhog/mailhog
+# UI: http://localhost:8025
+
+spring:
+  datasource:
+    username: postgres
+    password: root
+
+  mail:
+    host: localhost
+    port: 1025
+    username: ""
+    password: ""
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+            required: false
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            # Для Google OAuth2 нужны реальные креды из Google Cloud Console.
+            # Без них вход через Google недоступен, но приложение стартует нормально.
+            client-id: dev-placeholder
+            client-secret: dev-placeholder
+
+  thymeleaf:
+    cache: false
+
+  jpa:
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: false
+
+app:
+  base-url: http://localhost:8080
+  demo:
+    auto-confirm-email: true
+
+recaptcha:
+  site-key: dev-placeholder
+  secret-key: dev-placeholder
+  enabled: false
+
+management:
+  health:
+    mail:
+      enabled: false
+
+logging:
+  level:
+    com.padle.core: DEBUG
+    org.springframework.security: INFO
+    org.springframework.mail: DEBUG
+  loki:
+    enabled: false
