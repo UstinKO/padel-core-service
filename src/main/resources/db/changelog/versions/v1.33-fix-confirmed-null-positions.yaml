@@ -1,0 +1,37 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.33-fix-confirmed-null-positions
+      author: SergUstin
+      comment: >
+        Fix CONFIRMED registrations with null position (LFPT-0047).
+        For each tournament, assign sequential positions to any CONFIRMED
+        player whose position was left null, ordered by registration_date,
+        starting after the current maximum position in that tournament.
+      changes:
+        - sql:
+            sql: >
+              WITH null_pos AS (
+                SELECT
+                  id,
+                  tournament_id,
+                  COALESCE(
+                    (SELECT MAX(t2.position)
+                     FROM tournament_registrations_db t2
+                     WHERE t2.tournament_id = t.tournament_id
+                       AND t2.status = 'CONFIRMED'
+                       AND t2.position IS NOT NULL),
+                    0
+                  ) + ROW_NUMBER() OVER (
+                    PARTITION BY tournament_id
+                    ORDER BY registration_date
+                  ) AS new_position
+                FROM tournament_registrations_db t
+                WHERE status = 'CONFIRMED'
+                  AND position IS NULL
+                  AND is_active = true
+              )
+              UPDATE tournament_registrations_db t
+              SET position = np.new_position
+              FROM null_pos np
+              WHERE t.id = np.id;
+            dbms: postgresql

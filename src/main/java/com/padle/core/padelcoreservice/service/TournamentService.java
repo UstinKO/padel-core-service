@@ -443,6 +443,7 @@ public class TournamentService {
             log.info("Player {} in tournament {} has exhausted {} invitation attempts, removing from waitlist",
                     registration.getPlayer().getId(), tournament.getId(), MAX_INVITATION_ATTEMPTS);
             registration.setStatus(RegistrationStatus.CANCELLED);
+            registration.setIsActive(false);
             registration.setWaitlistPosition(null);
             registration.setInvitationExpiresAt(null);
             registrationRepository.save(registration);
@@ -1228,6 +1229,9 @@ public class TournamentService {
         log.info("Player {} confirmed from waitlist for tournament {}",
                 registration.getPlayer().getId(), tournament.getId());
 
+        // Нормализуем позиции: устраняет null-position у CONFIRMED-игроков (если такие есть)
+        reorderPositions(tournament.getId());
+
         // Отправляем email напрямую через emailService
         sendConfirmationEmail(registration.getPlayer(), tournament);
 
@@ -1312,7 +1316,8 @@ public class TournamentService {
 
         registrationRepository.save(registration);
 
-        // Пересчитываем позиции в листе ожидания
+        // Нормализуем позиции CONFIRMED-игроков и пересчитываем лист ожидания
+        reorderPositions(tournamentId);
         reorderWaitlist(tournamentId);
     }
 
