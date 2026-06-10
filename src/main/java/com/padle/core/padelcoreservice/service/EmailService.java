@@ -1,6 +1,5 @@
 package com.padle.core.padelcoreservice.service;
 
-import com.padle.core.padelcoreservice.annotation.Counted;
 import com.padle.core.padelcoreservice.annotation.MetricTag;
 import com.padle.core.padelcoreservice.annotation.Timed;
 import com.padle.core.padelcoreservice.annotation.TrackErrors;
@@ -40,11 +39,6 @@ public class EmailService {
     @Timed(
             name = "email.send.time",
             description = "Time taken to send email",
-            tags = {"service=email", "type=confirmation"}
-    )
-    @Counted(
-            name = "email.send.attempts",
-            description = "Total email send attempts",
             tags = {"service=email", "type=confirmation"}
     )
     @TrackErrors(
@@ -94,10 +88,6 @@ public class EmailService {
      */
     @Timed(
             name = "email.send.time",
-            tags = {"service=email", "type=partner_invitation"}
-    )
-    @Counted(
-            name = "email.send.attempts",
             tags = {"service=email", "type=partner_invitation"}
     )
     @TrackErrors(
@@ -152,10 +142,6 @@ public class EmailService {
      */
     @Timed(
             name = "email.send.time",
-            tags = {"service=email", "type=new_partner_invitation"}
-    )
-    @Counted(
-            name = "email.send.attempts",
             tags = {"service=email", "type=new_partner_invitation"}
     )
     @TrackErrors(
@@ -216,10 +202,6 @@ public class EmailService {
             name = "email.send.time",
             tags = {"service=email", "type=pair_confirmation"}
     )
-    @Counted(
-            name = "email.send.attempts",
-            tags = {"service=email", "type=pair_confirmation"}
-    )
     @TrackErrors(
             name = "email.send.errors",
             tags = {"service=email", "type=pair_confirmation"}
@@ -271,7 +253,6 @@ public class EmailService {
      * Отправка приветственного письма
      */
     @Timed(name = "email.send.time", tags = {"service=email", "type=welcome"})
-    @Counted(name = "email.send.attempts", tags = {"service=email", "type=welcome"})
     @TrackErrors(name = "email.send.errors", tags = {"service=email", "type=welcome"})
     public void sendWelcomeEmail(@MetricTag("recipient") String to, @MetricTag("playerName") String nombre) {
         emailMetricsService.recordEmailAttempt("WELCOME");
@@ -308,7 +289,6 @@ public class EmailService {
      * Уведомление об автоматическом переводе из листа ожидания в основной состав
      */
     @Timed(name = "email.send.time", tags = {"service=email", "type=waitlist_auto_confirm"})
-    @Counted(name = "email.send.attempts", tags = {"service=email", "type=waitlist_auto_confirm"})
     @TrackErrors(name = "email.send.errors", tags = {"service=email", "type=waitlist_auto_confirm"})
     public void sendWaitlistAutoConfirmEmail(
             @MetricTag("recipient") String to,
@@ -356,7 +336,6 @@ public class EmailService {
      * Отправка письма о том, что мест больше нет
      */
     @Timed(name = "email.send.time", tags = {"service=email", "type=no_spots_left"})
-    @Counted(name = "email.send.attempts", tags = {"service=email", "type=no_spots_left"})
     @TrackErrors(name = "email.send.errors", tags = {"service=email", "type=no_spots_left"})
     public void sendNoSpotsLeftEmail(
             @MetricTag("recipient") String to,
@@ -396,7 +375,6 @@ public class EmailService {
      * Отправка подтверждения регистрации
      */
     @Timed(name = "email.send.time", tags = {"service=email", "type=registration_confirmation"})
-    @Counted(name = "email.send.attempts", tags = {"service=email", "type=registration_confirmation"})
     @TrackErrors(name = "email.send.errors", tags = {"service=email", "type=registration_confirmation"})
     public void sendRegistrationConfirmationEmail(
             @MetricTag("recipient") String to,
@@ -442,7 +420,6 @@ public class EmailService {
      * Отправка письма для сброса пароля
      */
     @Timed(name = "email.send.time", tags = {"service=email", "type=password_reset"})
-    @Counted(name = "email.send.attempts", tags = {"service=email", "type=password_reset"})
     @TrackErrors(name = "email.send.errors", tags = {"service=email", "type=password_reset"})
     public void sendPasswordResetEmail(
             @MetricTag("recipient") String to,
@@ -482,7 +459,6 @@ public class EmailService {
      * Отправка уведомления о добавлении в лист ожидания
      */
     @Timed(name = "email.send.time", tags = {"service=email", "type=waitlist_notification"})
-    @Counted(name = "email.send.attempts", tags = {"service=email", "type=waitlist_notification"})
     @TrackErrors(name = "email.send.errors", tags = {"service=email", "type=waitlist_notification"})
     public void sendWaitlistNotificationEmail(
             @MetricTag("recipient") String to,
@@ -531,7 +507,6 @@ public class EmailService {
      * Отправка подтверждения регистрации на турнир
      */
     @Timed(name = "email.send.time", tags = {"service=email", "type=tournament_confirmation"})
-    @Counted(name = "email.send.attempts", tags = {"service=email", "type=tournament_confirmation"})
     @TrackErrors(name = "email.send.errors", tags = {"service=email", "type=tournament_confirmation"})
     public void sendTournamentConfirmationEmail(
             @MetricTag("recipient") String to,
