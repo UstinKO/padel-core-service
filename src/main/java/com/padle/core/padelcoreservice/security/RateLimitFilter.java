@@ -189,17 +189,15 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
 
     private String extractIp(HttpServletRequest request) {
-        String cfConnectingIp = request.getHeader("CF-Connecting-IP");
-        if (cfConnectingIp != null && !cfConnectingIp.isBlank()) {
-            return cfConnectingIp;
+        // X-Real-IP is set by Nginx to $remote_addr (real IP after Cloudflare real_ip_module).
+        // Trusting CF-Connecting-IP directly would allow forgery on non-Cloudflare connections.
+        String xRealIp = request.getHeader("X-Real-IP");
+        if (xRealIp != null && !xRealIp.isBlank()) {
+            return xRealIp;
         }
         String xForwardedFor = request.getHeader("X-Forwarded-For");
         if (xForwardedFor != null && !xForwardedFor.isBlank()) {
             return xForwardedFor.split(",")[0].trim();
-        }
-        String xRealIp = request.getHeader("X-Real-IP");
-        if (xRealIp != null && !xRealIp.isBlank()) {
-            return xRealIp;
         }
         return request.getRemoteAddr();
     }
