@@ -82,6 +82,13 @@
         <encoder class="ch.qos.logback.classic.encoder.JsonEncoder"/>
     </appender>
 
+    <!-- Аппендер для отправки WARN/ERROR в Telegram (через статическую очередь) -->
+    <appender name="TELEGRAM" class="com.padle.core.padelcoreservice.logging.TelegramLogAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>WARN</level>
+        </filter>
+    </appender>
+
     <!-- ========== ЛОГГЕРЫ ========== -->
 
     <!-- Логгер для самого приложения -->
@@ -91,6 +98,7 @@
         <appender-ref ref="ERROR_FILE"/>
         <appender-ref ref="JSON_FILE"/>
         <appender-ref ref="LOKI"/>
+        <appender-ref ref="TELEGRAM"/>
     </logger>
 
     <!-- Логгер для ошибок (дублирует ERROR_FILE) -->
@@ -114,9 +122,17 @@
     <!-- ========== ПРОФАЙЛЫ ========== -->
 
     <springProfile name="dev,development,default">
-        <logger name="com.padle.core" level="DEBUG"/>
+        <logger name="com.padle.core" level="DEBUG" additivity="false">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE"/>
+            <appender-ref ref="ERROR_FILE"/>
+            <appender-ref ref="TELEGRAM"/>
+        </logger>
         <logger name="org.springframework.security" level="DEBUG"/>
         <logger name="org.springframework.web" level="DEBUG"/>
+        <!-- Поллер дёргает Telegram каждые 5 сек — без этого HttpLogging заливает консоль DEBUG-ом -->
+        <logger name="org.springframework.web.client.RestTemplate" level="WARN"/>
+        <logger name="org.springframework.web.HttpLogging" level="WARN"/>
         <logger name="org.hibernate.SQL" level="DEBUG"/>
         <logger name="org.hibernate.type.descriptor.sql" level="TRACE"/>
     </springProfile>
@@ -128,6 +144,7 @@
             <appender-ref ref="ERROR_FILE"/>
             <appender-ref ref="JSON_FILE"/>
             <appender-ref ref="LOKI"/>
+            <appender-ref ref="TELEGRAM"/>
         </logger>
 
         <!-- Spring и Hibernate — только WARN -->
@@ -208,6 +225,7 @@
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="FILE"/>
         <appender-ref ref="ERROR_FILE"/>
+        <appender-ref ref="TELEGRAM"/>
     </root>
 
     <!-- ========== ДОПОЛНИТЕЛЬНЫЕ НАСТРОЙКИ ========== -->

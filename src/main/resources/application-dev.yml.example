@@ -58,6 +58,10 @@ recaptcha:
   secret-key: dev-placeholder
   enabled: false
 
+telegram:
+  enabled: false
+  # Для теста напоминаний — задай TELEGRAM_BOT_TOKEN и TELEGRAM_CHAT_ID и установи enabled: true
+
 management:
   health:
     mail:
