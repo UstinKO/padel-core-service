@@ -101,3 +101,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.33-fix-confirmed-null-positions.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.34-add-telegram-chat-id.yaml
+      relativeToChangelogFile: true

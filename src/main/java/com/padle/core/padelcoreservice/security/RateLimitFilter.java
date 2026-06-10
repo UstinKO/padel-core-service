@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Rate limiting filter на основе IP адреса.
@@ -60,6 +61,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
             .maximumSize(10000)
             .build();
 
+    // Счётчик заблокированных запросов за текущие сутки (сбрасывается в 23:55 планировщиком)
+    public static final AtomicInteger BLOCKED_TODAY = new AtomicInteger(0);
+
     private enum LimitType {
         AUTH,        // логин, токены
         REGISTER,    // регистрация, восстановление пароля
@@ -89,6 +93,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
 
         if (limitType == LimitType.BLOCKED) {
+            BLOCKED_TODAY.incrementAndGet();
             sendRateLimitResponse(response, LimitType.BLOCKED);
             return;
         }
@@ -100,6 +105,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
         } else {
             log.warn("Rate limit exceeded: ip={}, path={}, type={}", ip, path, limitType);
+            BLOCKED_TODAY.incrementAndGet();
             sendRateLimitResponse(response, limitType);
         }
     }

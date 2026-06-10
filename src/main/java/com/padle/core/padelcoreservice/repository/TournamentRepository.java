@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Repository
@@ -55,4 +56,12 @@ public interface TournamentRepository extends JpaRepository<Tournament, Long> {
     List<Tournament> findByEstadoInAndIsActiveTrue(@Param("estados") List<TournamentStatus> estados);
 
     List<Tournament> findByOwnerId(Long ownerId);
+
+    @Query("SELECT t FROM Tournament t WHERE t.fechaInicio = :date AND t.isActive = true " +
+            "AND t.estado NOT IN ('CANCELADO', 'FINALIZADO')")
+    List<Tournament> findByFechaInicioAndActive(@Param("date") LocalDate date);
+
+    @Query("SELECT t FROM Tournament t WHERE t.fechaInicio IN :dates AND t.isActive = true " +
+            "AND t.estado NOT IN ('CANCELADO', 'FINALIZADO')")
+    List<Tournament> findByFechaInicioInAndActive(@Param("dates") java.util.Collection<LocalDate> dates);
 }

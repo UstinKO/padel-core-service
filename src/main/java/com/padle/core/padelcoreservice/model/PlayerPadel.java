@@ -47,6 +47,10 @@ public class PlayerPadel implements UserDetails {
     @Column(name = "telegram_username", length = 64)
     private String telegramUsername;
 
+    /** Заполняется когда игрок пишет боту /start. Нужен для личных DM-напоминаний. */
+    @Column(name = "telegram_chat_id")
+    private Long telegramChatId;
+
     @Column(name = "password_hash", nullable = false, length = 255)
     private String passwordHash;
 

@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.34-add-telegram-chat-id
+      author: SerjUstin
+      changes:
+        - addColumn:
+            tableName: player_padel_db
+            columns:
+              - column:
+                  name: telegram_chat_id
+                  type: BIGINT
+                  constraints:
+                    nullable: true

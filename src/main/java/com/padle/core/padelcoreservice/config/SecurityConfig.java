@@ -89,7 +89,8 @@ public class SecurityConfig {
                                 "/oauth2/**",
                                 "/login/oauth2/**",
                                 "/double-registration/complete",
-                                "/ws/**"
+                                "/ws/**",
+                                "/test/telegram/**"
                         ).permitAll()
                         .requestMatchers("/players/dashboard").authenticated()
                         .requestMatchers("/players/lista").authenticated()
