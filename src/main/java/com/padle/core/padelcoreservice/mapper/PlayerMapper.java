@@ -18,6 +18,7 @@ public interface PlayerMapper {
     @Mapping(target = "codigoConfirmacion", ignore = true)
     @Mapping(target = "activo", constant = "true")
     @Mapping(target = "telegramUsername", ignore = true)
+    @Mapping(target = "telegramChatId", ignore = true)
     @Mapping(target = "oauth2User", ignore = true)
     @Mapping(target = "provider", ignore = true)
     @Mapping(target = "passwordChangedAt", ignore = true)

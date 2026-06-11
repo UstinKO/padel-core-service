@@ -94,6 +94,12 @@
                             <span class="info-label">Telegram:</span>
                             <span class="info-value" style="color:#adb5bd;">No especificado</span>
                         </div>
+                        <div class="info-row">
+                            <span class="info-label">Nivel de juego:</span>
+                            <span class="info-value"
+                                  th:text="${player.nivelJugador != null ? player.nivelJugador.name() : 'No especificado'}"
+                                  th:style="${player.nivelJugador != null ? '' : 'color:#adb5bd;'}">No especificado</span>
+                        </div>
                     </div>
                 </div>
             </div>

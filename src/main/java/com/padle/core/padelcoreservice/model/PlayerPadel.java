@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.model;
 
+import com.padle.core.padelcoreservice.model.enums.Nivel;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -82,6 +83,10 @@ public class PlayerPadel implements UserDetails {
 
     @Column(name = "password_changed_at")
     private LocalDateTime passwordChangedAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "nivel_jugador", length = 20)
+    private Nivel nivelJugador;
 
     // ========== Реализация UserDetails ==========
 
