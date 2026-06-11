@@ -116,6 +116,38 @@
                         Abierto
                     </span>
                 </div>
+
+                <!-- Кнопка быстрого доступа к сетке — только когда турнир инициализирован -->
+                <div th:if="${kingOfCourtActive or (tournament.tipo.name() == 'AMERICANO' and tournament.modalidad.name() != 'DOBLES' and isInitialized) or (isTeamPlayoffFormat == true and isPlayoffQualStarted == true)}"
+                     style="margin-top: 1rem;">
+                    <a th:if="${kingOfCourtActive}"
+                       th:href="@{'/torneo/' + ${tournament.id} + '/king-of-court'}"
+                       style="display:inline-flex; align-items:center; gap:.5rem; padding:.65rem 1.25rem;
+                              background:#FF6B35; color:#fff; border-radius:8px; text-decoration:none;
+                              font-weight:600; font-size:.95rem; transition:opacity .2s;"
+                       onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+                        <i class="fas fa-crown"></i>
+                        Ver distribución y resultados
+                    </a>
+                    <a th:if="${tournament.tipo.name() == 'AMERICANO' and tournament.modalidad.name() != 'DOBLES' and isInitialized}"
+                       th:href="@{'/tournaments/americano/' + ${tournament.id}}"
+                       style="display:inline-flex; align-items:center; gap:.5rem; padding:.65rem 1.25rem;
+                              background:#FF6B35; color:#fff; border-radius:8px; text-decoration:none;
+                              font-weight:600; font-size:.95rem; transition:opacity .2s;"
+                       onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+                        <i class="fas fa-trophy"></i>
+                        Ver distribución y resultados
+                    </a>
+                    <a th:if="${isTeamPlayoffFormat == true and isPlayoffQualStarted == true}"
+                       th:href="@{'/tournaments/team-playoff/' + ${tournament.id}}"
+                       style="display:inline-flex; align-items:center; gap:.5rem; padding:.65rem 1.25rem;
+                              background:#FF6B35; color:#fff; border-radius:8px; text-decoration:none;
+                              font-weight:600; font-size:.95rem; transition:opacity .2s;"
+                       onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+                        <i class="fas fa-sitemap"></i>
+                        Ver distribución y resultados
+                    </a>
+                </div>
             </div>
             <div class="tournament-price">
                 <span class="price-value" th:text="${tournament.precio} + ' ' + ${tournament.moneda}">50 ARS</span>
