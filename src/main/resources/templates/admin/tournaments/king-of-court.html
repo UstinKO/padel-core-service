@@ -227,10 +227,9 @@
 <script th:inline="javascript">
     /*<![CDATA[*/
     function shareAdminTournament() {
-        // Формируем публичную ссылку на страницу турнира для игроков
-        const tournamentId = /*[[${tournament.id}]]*/ 0;
+        const kingId = /*[[${kingTournament.id}]]*/ 0;
         const tournamentName = /*[[${tournament.nombre}]]*/ 'Torneo';
-        const publicUrl = window.location.origin + '/torneo/' + tournamentId;
+        const publicUrl = window.location.origin + '/tournaments/king-of-court/' + kingId;
         showSharePanel(tournamentName, publicUrl);
     }
     /*]]>*/

@@ -353,7 +353,18 @@
         <div class="action-buttons-center">
             <button onclick="shareAdminTournament()"
                     class="btn btn-outline"
-                    style="display:flex; align-items:center; gap:.5rem;">
+                    style="display:flex; align-items:center; gap:.5rem;"
+                    th:attr="data-share-url=${
+                        (kingOfCourtActive != null and kingOfCourtActive and kingOfCourtId != null)
+                            ? '/tournaments/king-of-court/' + kingOfCourtId
+                            : (tournament.tipo.name() == 'AMERICANO' and tournament.modalidad.name() == 'INDIVIDUAL' and isInitialized == true)
+                                ? '/tournaments/americano/' + tournament.id
+                            : (tournament.tipo.name() == 'AMERICANO' and tournament.modalidad.name() == 'DOBLES' and isTeamAmericanoInitialized == true)
+                                ? '/tournaments/team-americano/' + tournament.id
+                            : (tournament.tipo.name() == 'AMERICANO_TEAMS' and isPlayoffQualStarted == true)
+                                ? '/tournaments/team-playoff/' + tournament.id
+                            : '/torneo/' + tournament.id
+                    }">
                 <i class="fas fa-share-alt"></i> Compartir
             </button>
             <a th:href="@{'/admin/tournaments/' + ${tournament.id} + '/edit'}" class="btn btn-primary">
@@ -1551,11 +1562,10 @@
 <script th:inline="javascript">
     /*<![CDATA[*/
     function shareAdminTournament() {
-        // Всегда даём ссылку на публичную страницу игрока, не на админку
-        const tournamentId   = /*[[${tournament.id}]]*/ 0;
         const tournamentName = /*[[${tournament.nombre}]]*/ 'Torneo';
-        const publicUrl = window.location.origin + '/torneo/' + tournamentId;
-        showSharePanel(tournamentName, publicUrl);
+        const btn = document.querySelector('[data-share-url]');
+        const path = btn ? btn.getAttribute('data-share-url') : '/torneo/' + /*[[${tournament.id}]]*/ 0;
+        showSharePanel(tournamentName, window.location.origin + path);
     }
     /*]]>*/
 </script>
