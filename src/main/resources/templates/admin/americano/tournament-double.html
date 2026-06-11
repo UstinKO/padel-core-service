@@ -329,6 +329,21 @@
 <script th:inline="javascript">
     const TOURNAMENT_ID = /*[[${tournament.id}]]*/ 0;
 
+    // ─── localStorage backup для незакрытых счётов ────────────────────────
+    function lsKey(inputId) { return 'padel_t' + TOURNAMENT_ID + '_' + inputId; }
+    function lsSave(id, v)  { try { localStorage.setItem(lsKey(id), v); } catch(e) {} }
+    function lsClear(id)    { try { localStorage.removeItem(lsKey(id)); } catch(e) {} }
+    function lsRestore() {
+        document.querySelectorAll('.score-input[id]').forEach(inp => {
+            try { const v = localStorage.getItem(lsKey(inp.id)); if (v !== null) inp.value = v; } catch(e) {}
+        });
+    }
+    // event delegation — ловит и динамически созданные инпуты
+    document.addEventListener('input', e => {
+        if (e.target.matches('.score-input') && e.target.id) lsSave(e.target.id, e.target.value);
+    });
+    // ─────────────────────────────────────────────────────────────────────
+
     const roundEls = Array.from(document.querySelectorAll('[id^="round-"]'));
     const tabBtns  = Array.from(document.querySelectorAll('.round-tab-btn'));
     const total    = roundEls.length;
@@ -396,6 +411,8 @@
             .then(r => r.ok ? r.json() : Promise.reject(r))
             .then(data => {
                 if (data.success) {
+                    lsClear('s1-' + matchId);
+                    lsClear('s2-' + matchId);
                     updateMatchInDOM(matchId, s1, s2, limit);
                     updateRankingTable();
                 }
@@ -486,6 +503,7 @@
     }
 
     if (roundEls.length > 0) showRound(0);
+    lsRestore();
 </script>
 <script th:src="@{/js/share-panel.js}"></script>
 </body>

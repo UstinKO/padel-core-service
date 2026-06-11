@@ -562,6 +562,34 @@
         sendScore(matchId, s1, s2, limit, btn);
     }
 
+    // ─── localStorage backup для незакрытых счётов ────────────────────────────
+    function storageKey(matchId) {
+        return 'americano_t' + TOURNAMENT_ID + '_m' + matchId;
+    }
+    function saveScoreToStorage(matchId, s1, s2) {
+        try { localStorage.setItem(storageKey(matchId), JSON.stringify({s1, s2})); } catch(e) {}
+    }
+    function clearScoreFromStorage(matchId) {
+        try { localStorage.removeItem(storageKey(matchId)); } catch(e) {}
+    }
+    function restoreScoresFromStorage() {
+        document.querySelectorAll('.score-input-form').forEach(form => {
+            const btn = form.querySelector('.submit-score-btn');
+            if (!btn) return;
+            const matchId = btn.dataset.matchId;
+            try {
+                const saved = localStorage.getItem(storageKey(matchId));
+                if (!saved) return;
+                const {s1, s2} = JSON.parse(saved);
+                const i1 = form.querySelector('#s1-' + matchId) || form.querySelectorAll('.score-input')[0];
+                const i2 = form.querySelector('#s2-' + matchId) || form.querySelectorAll('.score-input')[1];
+                if (i1 && s1 !== undefined) i1.value = s1;
+                if (i2 && s2 !== undefined) i2.value = s2;
+            } catch(e) {}
+        });
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     function sendScore(matchId, s1, s2, limit, btn) {
         btn.disabled = true;
         btn.textContent = '...';
@@ -573,7 +601,7 @@
         })
             .then(r => r.ok ? r.json() : Promise.reject(r))
             .then((updatedMatch) => {
-                // showNotif('success', 'Resultado guardado: ' + s1 + ':' + s2);
+                clearScoreFromStorage(matchId);
 
                 // Обновляем DOM без перезагрузки страницы
                 updateMatchInDOM(updatedMatch, limit);
@@ -1026,6 +1054,25 @@
             }
         });
         if (roundEls.length > 0) showRound(0);
+
+        // Восстанавливаем незакрытые счёта из localStorage
+        restoreScoresFromStorage();
+
+        // Сохраняем в localStorage при каждом изменении инпута
+        document.querySelectorAll('.score-input').forEach(input => {
+            input.addEventListener('input', () => {
+                const form = input.closest('.score-input-form');
+                if (!form) return;
+                const btn = form.querySelector('.submit-score-btn');
+                if (!btn) return;
+                const matchId = btn.dataset.matchId;
+                const inputs = form.querySelectorAll('.score-input');
+                const s1 = parseInt(inputs[0]?.value) || 0;
+                const s2 = parseInt(inputs[1]?.value) || 0;
+                saveScoreToStorage(matchId, s1, s2);
+            });
+        });
+
         const sortBtn = document.getElementById('sortByBtn');
         if (sortBtn) {
             sortBtn.onclick = toggleSortMenu;
