@@ -145,7 +145,7 @@ public class PaymentManagementController {
             redirectAttributes.addFlashAttribute("errorMessage", "Error al guardar: " + e.getMessage());
         }
 
-        return "redirect:/admin/tournaments/" + tournamentId;
+        return "redirect:/admin/tournaments/" + tournamentId + "/payments";
     }
 
     public static class PaymentFormWrapper {
