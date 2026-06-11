@@ -521,6 +521,21 @@
 <script th:inline="javascript">
     const TOURNAMENT_ID = /*[[${tournament.id}]]*/ 0;
 
+    // ─── localStorage backup для незакрытых счётов ────────────────────────
+    function lsKey(inputId) { return 'padel_t' + TOURNAMENT_ID + '_' + inputId; }
+    function lsSave(id, v)  { try { localStorage.setItem(lsKey(id), v); } catch(e) {} }
+    function lsClear(id)    { try { localStorage.removeItem(lsKey(id)); } catch(e) {} }
+    function lsRestore() {
+        document.querySelectorAll('.score-inp[id]').forEach(inp => {
+            try { const v = localStorage.getItem(lsKey(inp.id)); if (v !== null) inp.value = v; } catch(e) {}
+        });
+    }
+    // event delegation — ловит и динамически созданные инпуты (showQualEdit/showPlayoffEdit)
+    document.addEventListener('input', e => {
+        if (e.target.matches('.score-inp') && e.target.id) lsSave(e.target.id, e.target.value);
+    });
+    // ─────────────────────────────────────────────────────────────────────
+
     function toggleAddForm() {
         const f = document.getElementById('addTeamForm');
         f.style.display = f.style.display === 'none' ? 'block' : 'none';
@@ -538,6 +553,7 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         if (qRounds.length > 0) qRounds[0].style.display = 'block';
+        lsRestore();
     });
 
     // ── Сохранение результата квалификации ────────────────────────────
@@ -560,6 +576,8 @@
         .then(r => r.json())
         .then(data => {
             if (data.success) {
+                lsClear('qg1-' + matchId);
+                lsClear('qg2-' + matchId);
                 const vs = card.querySelector('.vs-block');
                 vs.innerHTML = `<div class="score-display">
                     <span class="s1">${g1}</span>
@@ -641,6 +659,8 @@
         .then(r => r.json())
         .then(data => {
             if (data.success) {
+                lsClear('pg1-' + matchId);
+                lsClear('pg2-' + matchId);
                 location.reload();
             } else {
                 alert(data.message || 'Error');

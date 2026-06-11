@@ -12,6 +12,7 @@ import com.padle.core.padelcoreservice.service.MatchService;
 import com.padle.core.padelcoreservice.service.OwnerService;
 import com.padle.core.padelcoreservice.service.PlayerService;
 import com.padle.core.padelcoreservice.service.TournamentService;
+import com.padle.core.padelcoreservice.service.americano.AmericanoService;
 import com.padle.core.padelcoreservice.service.americano.TeamAmericanoService;
 import com.padle.core.padelcoreservice.service.americano.TeamPlayoffService;
 import jakarta.validation.Valid;
@@ -44,6 +45,7 @@ public class AdminController {
     private final OwnerService ownerService;
     private final MatchService matchService;
     private final TournamentKingOfCourtRepository tournamentKingOfCourtRepository;
+    private final AmericanoService americanoService;
     private final TeamAmericanoService teamAmericanoService;
     private final TeamPlayoffService teamPlayoffService;
 
@@ -198,6 +200,15 @@ public class AdminController {
         model.addAttribute("tournament", tournament);
         model.addAttribute("registrations", tournamentService.getRegistrationsByTournament(id));
         model.addAttribute("isSuperAdmin", owner.isSuperAdmin());
+
+        if (tournament.getTipo() == TournamentType.AMERICANO
+                && tournament.getModalidad() == Modalidad.INDIVIDUAL) {
+            boolean isInit = americanoService.isInitialized(id);
+            model.addAttribute("isInitialized", isInit);
+            if (isInit) {
+                model.addAttribute("activePlayers", americanoService.getActivePlayersCount(id));
+            }
+        }
 
         if (tournament.getTipo() == TournamentType.AMERICANO
                 && tournament.getModalidad() == Modalidad.DOBLES) {
