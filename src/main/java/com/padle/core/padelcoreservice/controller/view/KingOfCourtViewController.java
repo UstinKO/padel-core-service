@@ -21,6 +21,25 @@ public class KingOfCourtViewController {
     private final TournamentKingOfCourtRepository kingRepository;
     private final KingOfCourtService kingOfCourtService;
 
+    // URL вида /tournaments/king-of-court/{kingId} — по ID записи TournamentKingOfCourt
+    @GetMapping("/tournaments/king-of-court/{kingId}")
+    public String viewKingOfCourtByKingId(@PathVariable Long kingId, Model model) {
+        TournamentKingOfCourt king = kingRepository.findById(kingId).orElse(null);
+        if (king == null) {
+            return "redirect:/?error=not-found";
+        }
+
+        KingOfCourtStateDTO viewData = kingOfCourtService.getCurrentState(king.getId());
+
+        model.addAttribute("kingData", viewData);
+        model.addAttribute("tournamentId", king.getTournament().getId());
+        model.addAttribute("tournamentName", king.getTournament().getNombre());
+        model.addAttribute("isViewer", true);
+
+        return "king-of-court-view";
+    }
+
+    // URL вида /torneo/{tournamentId}/king-of-court — по ID родительского турнира
     @GetMapping("/torneo/{tournamentId}/king-of-court")
     public String viewKingOfCourt(@PathVariable Long tournamentId, Model model) {
 
