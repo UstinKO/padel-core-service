@@ -70,9 +70,30 @@
             </div>
         </div>
 
+        <!-- Поиск игроков -->
+        <div style="margin: 1.25rem 0 1.5rem;">
+            <div style="position: relative; max-width: 480px;">
+                <i class="fas fa-search" style="position:absolute; left:.85rem; top:50%; transform:translateY(-50%);
+                   color:#94a3b8; font-size:.95rem; pointer-events:none;"></i>
+                <input type="text" id="playerSearch" autocomplete="off"
+                       placeholder="Buscar por nombre, email, teléfono, @telegram o ID..."
+                       style="width:100%; padding:.65rem .85rem .65rem 2.4rem; border:1px solid #e2e8f0;
+                              border-radius:10px; font-size:.95rem; color:#1e293b; background:#f8fafc;
+                              outline:none; box-sizing:border-box; transition:border-color .2s;"
+                       onfocus="this.style.borderColor='#FF6B35'; this.style.background='#fff';"
+                       onblur="this.style.borderColor='#e2e8f0'; this.style.background='#f8fafc';">
+            </div>
+            <p id="searchHint" style="margin:.4rem 0 0 .25rem; font-size:.8rem; color:#94a3b8;"></p>
+        </div>
+
         <!-- Карточки игроков для мобильных -->
         <div class="players-cards" id="playersMobileView">
-            <div th:each="player : ${players}" th:if="${not #lists.isEmpty(players)}" class="player-card">
+            <div th:each="player : ${players}" th:if="${not #lists.isEmpty(players)}" class="player-card"
+                 th:attr="data-id=${player.id},
+                          data-name=${#strings.toLowerCase(player.nombreCompleto)},
+                          data-email=${#strings.toLowerCase(player.email)},
+                          data-phone=${player.telefono ?: ''},
+                          data-telegram=${player.telegramUsername ?: ''}">
                 <div class="player-card-header">
                     <div class="player-avatar">
                         <i class="fas fa-user-circle"></i>
@@ -140,7 +161,12 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="player : ${players}" th:if="${not #lists.isEmpty(players)}">
+                <tr th:each="player : ${players}" th:if="${not #lists.isEmpty(players)}"
+                    th:attr="data-id=${player.id},
+                             data-name=${#strings.toLowerCase(player.nombreCompleto)},
+                             data-email=${#strings.toLowerCase(player.email)},
+                             data-phone=${player.telefono ?: ''},
+                             data-telegram=${player.telegramUsername ?: ''}">
                     <td th:text="${player.id}">1</td>
                     <td>
                         <strong th:text="${player.nombreCompleto}">Juan Pérez</strong>
@@ -195,5 +221,57 @@
 <footer th:replace="~{fragments/admin-footer :: footer}"></footer>
 <script th:src="@{/js/logger.js}"></script>
 <script th:src="@{/js/admin.js}"></script>
+<script>
+(function () {
+    const input = document.getElementById('playerSearch');
+    const hint  = document.getElementById('searchHint');
+    const rows  = document.querySelectorAll('#playersTableView tbody tr[data-id]');
+    const cards = document.querySelectorAll('#playersMobileView .player-card[data-id]');
+
+    // Определяем тип запроса только для однозначных случаев
+    function detectType(q) {
+        if (!q) return null;
+        if (q.startsWith('@'))  return 'telegram';  // @username
+        if (q.startsWith('+'))  return 'phone';     // +54...
+        if (q.includes('@'))    return 'email';     // содержит @ → email
+        return 'all';                               // всё остальное — по всем полям
+    }
+
+    const labels = {
+        telegram: '✈️ Búsqueda por Telegram',
+        email:    '📧 Búsqueda por email',
+        phone:    '📞 Búsqueda por teléfono',
+        all:      '🔍 Búsqueda en nombre, email y teléfono',
+    };
+
+    function v(el, key) { return (el.dataset[key] || '').toLowerCase(); }
+
+    function matches(el, q, type) {
+        switch (type) {
+            case 'telegram': return v(el,'telegram').includes(q.slice(1));
+            case 'email':    return v(el,'email').includes(q);
+            case 'phone':    return v(el,'phone').replace(/\D/g,'').includes(q.replace(/\D/g,''));
+            case 'all':      return v(el,'name').includes(q)
+                                 || v(el,'email').includes(q)
+                                 || v(el,'phone').replace(/\D/g,'').includes(q.replace(/\D/g,''));
+        }
+        return true;
+    }
+
+    let timer;
+    input.addEventListener('input', function () {
+        clearTimeout(timer);
+        timer = setTimeout(function () {
+            const q    = input.value.trim().toLowerCase();
+            const type = detectType(q);
+
+            hint.textContent = (q && type) ? labels[type] : '';
+
+            rows.forEach(row   => { row.style.display  = (!q || matches(row,  q, type)) ? '' : 'none'; });
+            cards.forEach(card => { card.style.display = (!q || matches(card, q, type)) ? '' : 'none'; });
+        }, 250);
+    });
+})();
+</script>
 </body>
 </html>
