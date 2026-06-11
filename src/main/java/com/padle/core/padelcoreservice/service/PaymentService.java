@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -332,12 +333,6 @@ public class PaymentService {
                 }
             }
 
-            // Нет суммы — пропускаем
-            if (dto.getAmount() == null || dto.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
-                log.debug("No amount for registration {}, skipping", dto.getRegistrationId());
-                continue;
-            }
-
             // Для партнёра добавляем маркер в notes
             String notesValue = dto.isPartnerRow()
                     ? PARTNER_PAYMENT_MARKER
@@ -346,12 +341,14 @@ public class PaymentService {
                     : dto.getNotes();
 
             if (dto.isHasPayment() && dto.getPaymentId() != null) {
-                // Обновляем существующий платёж
+                // Обновляем существующий платёж — всегда, даже если сумма 0
                 Payment payment = paymentRepository.findById(dto.getPaymentId())
                         .orElseThrow(() -> new ResourceNotFoundException(
                                 "Payment not found: " + dto.getPaymentId()));
 
-                payment.setAmount(dto.getAmount());
+                if (dto.getAmount() != null) {
+                    payment.setAmount(normalizeAmount(dto.getAmount()));
+                }
                 payment.setPaymentMethod(dto.getPaymentMethod());
                 payment.setStatus(dto.getPaymentStatus() != null
                         ? dto.getPaymentStatus() : PaymentStatus.PAID);
@@ -387,10 +384,23 @@ public class PaymentService {
                         payment.getId(), dto.getRegistrationId(), dto.isPartnerRow());
 
             } else {
+                // Новый платёж создаём если заполнено хотя бы одно значимое поле
+                boolean hasMeaningfulData =
+                        (dto.getAmount() != null && dto.getAmount().compareTo(BigDecimal.ZERO) > 0)
+                        || dto.getPaymentStatus() != null
+                        || dto.getPaymentMethod() != null
+                        || (dto.getNotes() != null && !dto.getNotes().isBlank())
+                        || (dto.getTransactionId() != null && !dto.getTransactionId().isBlank());
+
+                if (!hasMeaningfulData) {
+                    log.debug("No meaningful data for registration {}, skipping new payment creation", dto.getRegistrationId());
+                    continue;
+                }
+
                 // Создаём новый платёж
                 Payment payment = Payment.builder()
                         .registration(registration)
-                        .amount(dto.getAmount())
+                        .amount(normalizeAmount(dto.getAmount()))
                         .currency(dto.getCurrency() != null ? dto.getCurrency() : "ARS")
                         .status(dto.getPaymentStatus() != null
                                 ? dto.getPaymentStatus() : PaymentStatus.PAID)
@@ -418,6 +428,18 @@ public class PaymentService {
                         dto.getRegistrationId(), dto.isPartnerRow());
             }
         }
+    }
+
+    // Округляет сумму до scale=2 и проверяет что не превышает лимит колонки NUMERIC(10,2)
+    private BigDecimal normalizeAmount(BigDecimal amount) {
+        if (amount == null) return BigDecimal.ZERO;
+        BigDecimal scaled = amount.setScale(2, RoundingMode.HALF_UP);
+        BigDecimal max = new BigDecimal("99999999.99");
+        if (scaled.compareTo(max) > 0) {
+            log.warn("Amount {} exceeds column max {}, capping", scaled, max);
+            return max;
+        }
+        return scaled;
     }
 
     // Убирает маркер PARTNER_PAYMENT из notes для отображения в UI
