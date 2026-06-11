@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.dto;
 
+import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.validation.ValidDomain;
 import com.padle.core.padelcoreservice.validation.NoBotPattern;
 import dev.caceresenzo.disposableemaildomains.validation.constraints.NonDisposableEmailDomain;
@@ -47,6 +48,8 @@ public class RegistroRequestDto {
 
     @NotBlank(message = "La confirmación de contraseña es obligatoria")
     private String confirmPassword;
+
+    private Nivel nivelJugador;
 
     public boolean passwordsMatch() {
         return password != null && confirmPassword != null && password.equals(confirmPassword);

@@ -29,7 +29,7 @@
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" th:href="@{/css/registro.css}">
 
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <script th:if="${recaptchaEnabled}" src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body class="auth-page-simple">
 <!-- Header con nuevo logo y botón de login -->
@@ -159,6 +159,29 @@
                         </div>
                     </div>
 
+                    <!-- Nivel de juego -->
+                    <div class="form-group">
+                        <label for="nivelJugador" class="form-label">
+                            <i class="fas fa-chart-line"></i> Nivel de juego
+                            <span style="color: #999; font-weight: 400;">(opcional)</span>
+                        </label>
+                        <div class="input-with-icon">
+                            <select id="nivelJugador" name="nivelJugador" class="form-control">
+                                <option value="">Selecciona tu nivel</option>
+                                <option value="C9">C9</option>
+                                <option value="C8">C8</option>
+                                <option value="C7">C7</option>
+                                <option value="C6">C6</option>
+                                <option value="C5">C5</option>
+                                <option value="D7">D7</option>
+                                <option value="D8">D8</option>
+                                <option value="D6">D6</option>
+                                <option value="C4">C4</option>
+                            </select>
+                            <i class="fas fa-chart-line input-icon"></i>
+                        </div>
+                    </div>
+
                     <!-- Contraseña -->
                     <div class="form-group">
                         <label for="password" class="form-label">
@@ -210,7 +233,7 @@
                     </div>
 
                     <!-- reCAPTCHA v2 -->
-                    <div class="g-recaptcha" th:attr="data-sitekey=${recaptchaSiteKey}" style="margin-bottom: 1rem;"></div>
+                    <div th:if="${recaptchaEnabled}" class="g-recaptcha" th:attr="data-sitekey=${recaptchaSiteKey}" style="margin-bottom: 1rem;"></div>
 
                     <!-- Honeypot: боты заполнят, люди — нет -->
                     <div style="position: absolute; left: -9999px; opacity: 0;" aria-hidden="true">
@@ -282,8 +305,9 @@
                 return;
             }
 
-            // Проверяем reCAPTCHA v2
-            if (typeof grecaptcha !== 'undefined' && !grecaptcha.getResponse()) {
+            // Проверяем reCAPTCHA v2 (только если включена)
+            const recaptchaEnabled = /*[[${recaptchaEnabled}]]*/ false;
+            if (recaptchaEnabled && typeof grecaptcha !== 'undefined' && !grecaptcha.getResponse()) {
                 showNotification('Por favor completa la verificación de seguridad', 'warning');
                 return;
             }

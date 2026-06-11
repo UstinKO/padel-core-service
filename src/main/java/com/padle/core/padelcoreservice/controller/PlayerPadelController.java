@@ -43,6 +43,7 @@ public class PlayerPadelController {
             model.addAttribute("registroRequest", new RegistroRequestDto());
         }
         model.addAttribute("recaptchaSiteKey", recaptchaProperties.getSiteKey());
+        model.addAttribute("recaptchaEnabled", recaptchaProperties.isEnabled());
         return "registro";
     }
 
@@ -71,6 +72,7 @@ public class PlayerPadelController {
             log.warn("reCAPTCHA fallida para IP: {}", httpRequest.getRemoteAddr());
             rateLimitFilter.markRegistrationFailed(httpRequest.getRemoteAddr());
             model.addAttribute("recaptchaSiteKey", recaptchaProperties.getSiteKey());
+            model.addAttribute("recaptchaEnabled", recaptchaProperties.isEnabled());
             model.addAttribute("registroRequest", request);
             model.addAttribute("errorMessage",
                     "Verificación de seguridad fallida. Por favor intenta de nuevo.");

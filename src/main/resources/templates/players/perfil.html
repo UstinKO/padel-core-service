@@ -168,6 +168,25 @@
                                 Necesario para inscribirte si no tienes WhatsApp (+54)
                             </small>
                         </div>
+
+                        <div class="form-group">
+                            <label for="nivelJugador">
+                                <i class="fas fa-chart-line"></i>
+                                Nivel de juego
+                            </label>
+                            <select id="nivelJugador" name="nivelJugador" class="form-control">
+                                <option value="" th:selected="${player.nivelJugador == null}">Sin especificar</option>
+                                <option value="C9"  th:selected="${player.nivelJugador?.name() == 'C9'}">C9</option>
+                                <option value="C8"  th:selected="${player.nivelJugador?.name() == 'C8'}">C8</option>
+                                <option value="C7"  th:selected="${player.nivelJugador?.name() == 'C7'}">C7</option>
+                                <option value="C6"  th:selected="${player.nivelJugador?.name() == 'C6'}">C6</option>
+                                <option value="C5"  th:selected="${player.nivelJugador?.name() == 'C5'}">C5</option>
+                                <option value="D7"  th:selected="${player.nivelJugador?.name() == 'D7'}">D7</option>
+                                <option value="D8"  th:selected="${player.nivelJugador?.name() == 'D8'}">D8</option>
+                                <option value="D6"  th:selected="${player.nivelJugador?.name() == 'D6'}">D6</option>
+                                <option value="C4"  th:selected="${player.nivelJugador?.name() == 'C4'}">C4</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 

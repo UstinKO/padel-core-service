@@ -104,3 +104,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.34-add-telegram-chat-id.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.35-add-nivel-jugador-to-player.yaml
+      relativeToChangelogFile: true

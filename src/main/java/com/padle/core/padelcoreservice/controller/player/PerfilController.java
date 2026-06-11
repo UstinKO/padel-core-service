@@ -1,6 +1,7 @@
 package com.padle.core.padelcoreservice.controller.player;
 
 import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.service.PlayerService;
 import com.padle.core.padelcoreservice.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
@@ -45,6 +46,7 @@ public class PerfilController {
             @RequestParam(required = false) String telefono,
             // ДОБАВЛЕНО: поле для Telegram ника
             @RequestParam(required = false) String telegramUsername,
+            @RequestParam(required = false) String nivelJugador,
             @RequestParam(required = false) String currentPassword,
             @RequestParam(required = false) String newPassword,
             @RequestParam(required = false) String confirmPassword,
@@ -80,6 +82,14 @@ public class PerfilController {
                     return "redirect:/perfil";
                 }
                 player.setTelefono(telefono.isBlank() ? null : telefono.trim());
+                actualizado = true;
+            }
+
+            // Nivel de juego
+            Nivel nivelParsed = (nivelJugador != null && !nivelJugador.isBlank())
+                    ? Nivel.valueOf(nivelJugador) : null;
+            if (nivelParsed != player.getNivelJugador()) {
+                player.setNivelJugador(nivelParsed);
                 actualizado = true;
             }
 

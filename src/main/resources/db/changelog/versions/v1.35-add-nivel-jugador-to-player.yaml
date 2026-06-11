@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.35-add-nivel-jugador-to-player
+      author: SerjUstin
+      changes:
+        - addColumn:
+            tableName: player_padel_db
+            columns:
+              - column:
+                  name: nivel_jugador
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: true
