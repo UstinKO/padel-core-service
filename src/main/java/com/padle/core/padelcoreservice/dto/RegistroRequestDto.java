@@ -51,6 +51,8 @@ public class RegistroRequestDto {
 
     private Nivel nivelJugador;
 
+    private String recaptchaToken;
+
     public boolean passwordsMatch() {
         return password != null && confirmPassword != null && password.equals(confirmPassword);
     }
