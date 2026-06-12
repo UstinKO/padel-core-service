@@ -132,7 +132,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
 
         // Регистрация и восстановление пароля
-        if (path.startsWith("/players/registro") || path.startsWith("/api/players/registro")
+        if (path.startsWith("/players/registro") || path.startsWith("/players/api/registro")
                 || path.startsWith("/recuperar-password")
                 || path.startsWith("/double-registration/")) {
             // Увеличиваем счётчик подозрительных регистраций

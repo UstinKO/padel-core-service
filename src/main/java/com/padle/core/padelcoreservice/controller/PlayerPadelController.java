@@ -174,15 +174,28 @@ public class PlayerPadelController {
         }
     }
 
-    // ========== RESTO DEL CONTROLADOR (без изменений) ==========
-
     @PostMapping("/api/registro")
     @ResponseBody
-    public ResponseEntity<?> registrarJugadorApi(@Valid @RequestBody RegistroRequestDto request) {
+    public ResponseEntity<?> registrarJugadorApi(
+            @Valid @RequestBody RegistroRequestDto request,
+            HttpServletRequest httpRequest) {
+
+        if (!recaptchaService.verify(request.getRecaptchaToken())) {
+            log.warn("reCAPTCHA fallida (API) para IP: {}", httpRequest.getRemoteAddr());
+            rateLimitFilter.markRegistrationFailed(httpRequest.getRemoteAddr());
+            return ResponseEntity.badRequest()
+                    .body("Verificación de seguridad fallida. Por favor intenta de nuevo.");
+        }
+
+        if (!request.passwordsMatch()) {
+            return ResponseEntity.badRequest().body("Las contraseñas no coinciden");
+        }
+
         try {
             PlayerResponseDto jugadorRegistrado = playerService.registrarJugador(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(jugadorRegistrado);
         } catch (IllegalArgumentException e) {
+            rateLimitFilter.markRegistrationFailed(httpRequest.getRemoteAddr());
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
