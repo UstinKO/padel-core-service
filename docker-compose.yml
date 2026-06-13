@@ -34,8 +34,12 @@ services:
       DB_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-player_padel_db}
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
-      DB_POOL_SIZE: ${DB_POOL_SIZE:-10}
+      DB_POOL_SIZE: ${DB_POOL_SIZE:-20}
       DB_MIN_IDLE: ${DB_MIN_IDLE:-5}
+      DB_IDLE_TIMEOUT: ${DB_IDLE_TIMEOUT:-600000}
+      DB_MAX_LIFETIME: ${DB_MAX_LIFETIME:-1800000}
+      DB_KEEPALIVE_TIME: ${DB_KEEPALIVE_TIME:-60000}
+      DB_LEAK_DETECTION: ${DB_LEAK_DETECTION:-60000}
 
       # JPA
       JPA_DDL_AUTO: ${JPA_DDL_AUTO:-validate}

@@ -12,6 +12,10 @@ spring:
       maximum-pool-size: ${DB_POOL_SIZE:10}
       minimum-idle: ${DB_MIN_IDLE:5}
       connection-timeout: 30000
+      idle-timeout: ${DB_IDLE_TIMEOUT:600000}
+      max-lifetime: ${DB_MAX_LIFETIME:1800000}
+      keepalive-time: ${DB_KEEPALIVE_TIME:60000}
+      leak-detection-threshold: ${DB_LEAK_DETECTION:60000}
 
   # ------ JPA ------
   jpa:
