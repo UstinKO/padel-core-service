@@ -1,7 +1,9 @@
 package com.padle.core.padelcoreservice.controller.admin;
 
 import com.padle.core.padelcoreservice.dto.PlayerResponseDto;
+import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
 import com.padle.core.padelcoreservice.service.PlayerService;
+import com.padle.core.padelcoreservice.service.TournamentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -21,6 +23,7 @@ import java.util.List;
 public class AdminPlayerController {
 
     private final PlayerService playerService;
+    private final TournamentService tournamentService;
 
     @GetMapping
     public String listPlayers(Model model) {
@@ -35,10 +38,11 @@ public class AdminPlayerController {
 
     @GetMapping("/{id}")
     public String viewPlayer(@PathVariable Long id, Model model) {
-        log.info("Viendo detalles del jugador: {}", id);
-
         PlayerResponseDto player = playerService.obtenerJugadorPorId(id);
+        List<TournamentRegistrationDto> registrations = tournamentService.getActiveRegistrationsByPlayer(id);
+
         model.addAttribute("player", player);
+        model.addAttribute("registrations", registrations);
 
         return "admin/players/details";
     }
