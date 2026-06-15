@@ -22,9 +22,9 @@ public class PartnerRegistrationDto {
     @Email(message = "Некорректный email")
     private String email;  // Опционально, если партнер не в системе
 
-    @NotBlank(message = "Телефон обязателен")
+    // Не обязателен, если existingUserId указан — сервис найдёт партнёра по ID
     private String telefono;
 
-    private Boolean isExistingUser; // Флаг, найден ли пользователь в системе
-    private Long existingUserId;    // ID если найден
+    private Boolean isExistingUser;
+    private Long existingUserId;
 }

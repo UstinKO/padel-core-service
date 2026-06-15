@@ -415,64 +415,160 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // ===== ПОИСК ПАРТНЁРА (дашборд) =====
+    const dashPartnerSearch   = document.getElementById('partnerSearch');
+    const dashSearchResults   = document.getElementById('partnerSearchResults');
+    const dashSelectedCard    = document.getElementById('selectedPartnerCard');
+    const dashSelectedId      = document.getElementById('selectedPartnerId');
+    const dashClearBtn        = document.getElementById('clearPartnerBtn');
+    let   dashSearchTimer     = null;
+
+    const dashManualFields = document.getElementById('manualPartnerFields');
+
+    function dashClearSelectedPartner() {
+        if (dashSelectedId)    dashSelectedId.value         = '';
+        if (dashSelectedCard)  dashSelectedCard.style.display  = 'none';
+        if (dashPartnerSearch) dashPartnerSearch.value      = '';
+        if (dashSearchResults) dashSearchResults.style.display = 'none';
+        if (dashManualFields)  dashManualFields.style.display  = '';
+    }
+
+    function dashSelectPartner(player) {
+        dashSelectedId.value = player.id;
+        document.getElementById('selectedPartnerName').textContent  = player.nombreCompleto;
+        document.getElementById('selectedPartnerEmail').textContent = player.email;
+        document.getElementById('partnerFirstName').value = player.nombre  || '';
+        document.getElementById('partnerLastName').value  = player.apellido || '';
+        document.getElementById('partnerEmail').value     = player.email   || '';
+        document.getElementById('partnerPhone').value     = '';
+        dashSelectedCard.style.display  = 'flex';
+        dashSearchResults.style.display = 'none';
+        dashPartnerSearch.value = '';
+        if (dashManualFields) dashManualFields.style.display = 'none';
+    }
+
+    function dashPositionDropdown() {
+        if (!dashPartnerSearch || !dashSearchResults) return;
+        const rect      = dashPartnerSearch.getBoundingClientRect();
+        const gap       = 4;
+        const maxH      = 200;
+        const spaceBelow = window.innerHeight - rect.bottom - gap;
+        const spaceAbove = rect.top - gap;
+
+        dashSearchResults.style.width = rect.width + 'px';
+        dashSearchResults.style.left  = rect.left  + 'px';
+
+        if (spaceBelow >= Math.min(maxH, 80) || spaceBelow >= spaceAbove) {
+            dashSearchResults.style.top    = (rect.bottom + gap) + 'px';
+            dashSearchResults.style.bottom = 'auto';
+        } else {
+            dashSearchResults.style.top    = 'auto';
+            dashSearchResults.style.bottom = (window.innerHeight - rect.top + gap) + 'px';
+        }
+    }
+
+    function dashRenderResults(players) {
+        dashSearchResults.innerHTML = '';
+        if (!players.length) {
+            dashSearchResults.innerHTML =
+                '<li style="padding:.6rem 1rem; color:#9ca3af; font-size:.9rem;">No se encontraron jugadores</li>';
+        } else {
+            players.forEach(p => {
+                const li = document.createElement('li');
+                li.style.cssText = 'padding:.6rem 1rem; cursor:pointer; border-bottom:1px solid #f3f4f6;';
+                li.innerHTML = `
+                    <div style="font-weight:500;">${p.nombreCompleto}</div>
+                    <div style="font-size:.82rem;color:#6b7280;">${p.email}${p.nivelJugador ? ' · ' + p.nivelJugador : ''}</div>
+                `;
+                li.addEventListener('mousedown', () => dashSelectPartner(p));
+                li.addEventListener('mouseover', () => { li.style.background = '#f9fafb'; });
+                li.addEventListener('mouseout',  () => { li.style.background = ''; });
+                dashSearchResults.appendChild(li);
+            });
+        }
+        dashPositionDropdown();
+        dashSearchResults.style.display = 'block';
+    }
+
+    if (dashClearBtn) {
+        dashClearBtn.addEventListener('click', () => {
+            dashClearSelectedPartner();
+            ['partnerFirstName','partnerLastName','partnerEmail','partnerPhone']
+                .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        });
+    }
+
+    if (dashPartnerSearch) {
+        dashPartnerSearch.addEventListener('input', () => {
+            clearTimeout(dashSearchTimer);
+            const query = dashPartnerSearch.value.trim();
+            if (query.length < 2) { dashSearchResults.style.display = 'none'; return; }
+            dashSearchTimer = setTimeout(async () => {
+                const tournamentId = document.getElementById('modalTournamentId').value;
+                try {
+                    const res = await fetch(
+                        `/api/players/search?query=${encodeURIComponent(query)}&tournamentId=${tournamentId}`
+                    );
+                    if (!res.ok) return;
+                    dashRenderResults(await res.json());
+                } catch (e) {
+                    dashSearchResults.style.display = 'none';
+                }
+            }, 300);
+        });
+
+        dashPartnerSearch.addEventListener('blur',  () => {
+            setTimeout(() => { dashSearchResults.style.display = 'none'; }, 200);
+        });
+        dashPartnerSearch.addEventListener('focus', () => {
+            if (dashSearchResults.children.length > 0) {
+                dashPositionDropdown();
+                dashSearchResults.style.display = 'block';
+            }
+        });
+    }
+
+    const dashModalBody = document.querySelector('#partnerModal .modal-body');
+    if (dashModalBody) {
+        dashModalBody.addEventListener('scroll', () => {
+            if (dashSearchResults && dashSearchResults.style.display !== 'none') {
+                dashPositionDropdown();
+            }
+        });
+    }
+
     // Функция открытия модального окна для парной регистрации
     function openPartnerModal(tournamentId, tournamentName, tournament) {
-        console.log('🔍 Ищем модальное окно с ID: partnerModal');
-
         const modal = document.getElementById('partnerModal');
-        console.log('📌 Результат поиска:', modal);
+        if (!modal) return;
 
-        if (!modal) {
-            console.error('❌ Модальное окно не найдено в DOM');
-            console.log('📋 Доступные модальные окна:', document.querySelectorAll('.modal'));
-            return;
-        }
+        document.getElementById('modalTournamentName').textContent = tournamentName;
+        document.getElementById('modalTournamentId').value         = tournamentId;
 
-        console.log('✅ Модальное окно найдено, открываем...');
+        // Очищаем форму и состояние поиска
+        ['partnerFirstName','partnerLastName','partnerPhone','partnerEmail']
+            .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        dashClearSelectedPartner();
 
-        // Заполняем данные
-        const modalTitle = document.getElementById('modalTournamentName');
-        const modalId = document.getElementById('modalTournamentId');
-
-        if (modalTitle) modalTitle.textContent = tournamentName;
-        if (modalId) modalId.value = tournamentId;
-
-        // Очищаем форму
-        const firstName = document.getElementById('partnerFirstName');
-        const lastName = document.getElementById('partnerLastName');
-        const phone = document.getElementById('partnerPhone');
-        const email = document.getElementById('partnerEmail');
-
-        if (firstName) firstName.value = '';
-        if (lastName) lastName.value = '';
-        if (phone) phone.value = '';
-        if (email) email.value = '';
-
-        // Убираем старые обработчики и добавляем новый
         const submitBtn = document.getElementById('submitPartnerBtn');
         if (submitBtn) {
-            const newSubmitBtn = submitBtn.cloneNode(true);
-            submitBtn.parentNode.replaceChild(newSubmitBtn, submitBtn);
-            newSubmitBtn.addEventListener('click', () => submitPartnerRegistration(tournamentId));
+            const newBtn = submitBtn.cloneNode(true);
+            submitBtn.parentNode.replaceChild(newBtn, submitBtn);
+            newBtn.addEventListener('click', () => submitPartnerRegistration(tournamentId));
         }
 
-        const closeButtons = modal.querySelectorAll('[data-dismiss="modal"]');
-        closeButtons.forEach(button => {
-            // Убираем старые обработчики
-            const newButton = button.cloneNode(true);
-            button.parentNode.replaceChild(newButton, button);
-
-            // Добавляем новый обработчик
-            newButton.addEventListener('click', function(e) {
+        modal.querySelectorAll('[data-dismiss="modal"]').forEach(btn => {
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
+            newBtn.addEventListener('click', e => {
                 e.preventDefault();
                 modal.style.display = 'none';
                 modal.classList.remove('show');
+                dashClearSelectedPartner();
                 toggleModalAriaHidden(modal, false);
-                console.log('✅ Модальное окно закрыто');
             });
         });
 
-        // Показываем модальное окно
         modal.style.display = 'block';
         modal.classList.add('show');
         toggleModalAriaHidden(modal, true);
@@ -480,14 +576,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Отправка данных парной регистрации
     async function submitPartnerRegistration(tournamentId) {
-        // Валидация
-        const firstName = document.getElementById('partnerFirstName')?.value.trim();
-        const lastName = document.getElementById('partnerLastName')?.value.trim();
-        const phone = document.getElementById('partnerPhone')?.value.trim();
+        const firstName      = document.getElementById('partnerFirstName')?.value.trim();
+        const lastName       = document.getElementById('partnerLastName')?.value.trim();
+        const phone          = document.getElementById('partnerPhone')?.value.trim();
+        const existingUserId = document.getElementById('selectedPartnerId')?.value;
 
-        if (!firstName || !lastName || !phone) {
-            alert('Por favor completa todos los campos obligatorios');
+        if (!firstName || !lastName) {
+            alert('Por favor ingresa el nombre y apellido del compañero');
             return;
+        }
+
+        if (!existingUserId) {
+            const phoneRegex = /^\+?[0-9\s\-\(\)]{8,20}$/;
+            if (!phone || !phoneRegex.test(phone)) {
+                alert('Por favor ingresa un teléfono válido o selecciona un compañero del buscador');
+                return;
+            }
         }
 
         const submitBtn = document.getElementById('submitPartnerBtn');
@@ -498,10 +602,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         try {
             const partnerData = {
-                nombre: firstName,
-                apellido: lastName,
-                telefono: phone,
-                email: document.getElementById('partnerEmail')?.value.trim() || null
+                nombre:         firstName,
+                apellido:       lastName,
+                telefono:       phone || null,
+                email:          document.getElementById('partnerEmail')?.value.trim() || null,
+                isExistingUser: !!existingUserId,
+                existingUserId: existingUserId ? parseInt(existingUserId) : null
             };
 
             const response = await fetch(`/api/tournaments/double/${tournamentId}/register`, {
