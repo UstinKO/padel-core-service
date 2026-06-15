@@ -1,8 +1,10 @@
 package com.padle.core.padelcoreservice.controller.api;
 
+import com.padle.core.padelcoreservice.dto.PlayerResponseDto;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
 import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2User;
+import com.padle.core.padelcoreservice.service.PlayerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -10,6 +12,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -19,6 +22,7 @@ import java.util.Map;
 public class PlayerContactController {
 
     private final PlayerRepository playerRepository;
+    private final PlayerService playerService;
 
     /**
      * Обновление контактных данных игрока (телефон и/или Telegram).
@@ -149,6 +153,24 @@ public class PlayerContactController {
 
         log.warn("Unknown principal type: {}", principal.getClass().getName());
         return null;
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<PlayerResponseDto>> searchPartners(
+            @RequestParam String query,
+            @RequestParam Long tournamentId,
+            Authentication authentication) {
+
+        if (query == null || query.trim().length() < 2) {
+            return ResponseEntity.ok(List.of());
+        }
+
+        PlayerPadel currentPlayer = extractPlayer(authentication.getPrincipal());
+        Long excludeId = currentPlayer != null ? currentPlayer.getId() : -1L;
+
+        return ResponseEntity.ok(
+                playerService.searchPartnerCandidates(query.trim(), tournamentId, excludeId)
+        );
     }
 
     // ── DTO ──────────────────────────────────────────────────────────────────

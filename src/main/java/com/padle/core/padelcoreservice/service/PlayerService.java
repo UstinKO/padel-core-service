@@ -12,6 +12,7 @@ import com.padle.core.padelcoreservice.repository.TournamentRegistrationReposito
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -236,6 +237,15 @@ public class PlayerService {
     public List<PlayerResponseDto> getAllPlayers() {
         log.debug("Obteniendo todos los jugadores");
         return playerRepository.findAllByOrderByFechaRegistroDesc().stream()
+                .map(playerMapper::entityToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<PlayerResponseDto> searchPartnerCandidates(String query, Long tournamentId, Long excludeId) {
+        return playerRepository
+                .searchPartnerCandidates(query, tournamentId, excludeId, PageRequest.of(0, 15))
+                .stream()
                 .map(playerMapper::entityToResponse)
                 .collect(Collectors.toList());
     }

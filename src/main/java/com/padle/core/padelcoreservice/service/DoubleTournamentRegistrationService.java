@@ -105,7 +105,7 @@ public class DoubleTournamentRegistrationService {
                 .ifPresent(registrationRepository::delete);
         registrationRepository.flush();
 
-        Optional<PlayerPadel> existingPartner = findPartnerByContact(partnerDto);
+        Optional<PlayerPadel> existingPartner = findPartner(partnerDto);
 
         // Проверяем свободные места
         checkAvailableSlotsForPair(tournamentDto);
@@ -179,6 +179,13 @@ public class DoubleTournamentRegistrationService {
             // Для WAITLIST позиция - максимальная позиция в листе ожидания + 1
             return registrationRepository.findMaxWaitlistPosition(tournamentDto.getId()).orElse(0) + 1;
         }
+    }
+
+    private Optional<PlayerPadel> findPartner(PartnerRegistrationDto partnerDto) {
+        if (partnerDto.getExistingUserId() != null) {
+            return playerRepository.findById(partnerDto.getExistingUserId());
+        }
+        return findPartnerByContact(partnerDto);
     }
 
     private Optional<PlayerPadel> findPartnerByContact(PartnerRegistrationDto partnerDto) {
