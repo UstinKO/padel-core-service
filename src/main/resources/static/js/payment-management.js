@@ -1,5 +1,5 @@
 /**
- * Payment Management - E-Padel Admin
+ * Payment Management - 1-Padel Admin
  */
 
 document.addEventListener('DOMContentLoaded', function() {

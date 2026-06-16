@@ -78,7 +78,7 @@ public class TelegramBotPoller {
         if (username == null || username.isBlank()) {
             sendReply(chatId,
                     "Para recibir recordatorios necesitas tener un @username de Telegram " +
-                    "guardado en tu perfil de epadel.org");
+                    "guardado en tu perfil de 1-padel.com");
             return;
         }
 
@@ -100,7 +100,7 @@ public class TelegramBotPoller {
         } else {
             log.warn("Telegram /start от @{} — игрок не найден в базе", username);
             sendReply(chatId,
-                    "No encontré tu cuenta en epadel.org 😕\n" +
+                    "No encontré tu cuenta en 1-padel.com 😕\n" +
                     "Asegúrate de guardar <b>@" + username + "</b> en tu perfil y volvé a intentarlo.");
         }
     }

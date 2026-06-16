@@ -6,19 +6,19 @@
         : 'default'}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <meta name="description" th:content="'E-Padel - ' + ${tournament.nombre} + '. Información del torneo, inscripción y detalles.'">
-    <meta name="keywords" content="pádel, torneo, inscripción, detalles, e-padel">
-    <meta name="author" content="E-Padel">
+    <meta name="description" th:content="'1-Padel - ' + ${tournament.nombre} + '. Información del torneo, inscripción y detalles.'">
+    <meta name="keywords" content="pádel, torneo, inscripción, detalles, 1-padel">
+    <meta name="author" content="1-Padel">
     <meta name="theme-color" content="#FF6B35">
 
     <!-- Open Graph / Social Media -->
-    <meta property="og:title" th:content="${tournament.nombre} + ' | E-Padel'">
+    <meta property="og:title" th:content="${tournament.nombre} + ' | 1-Padel'">
     <meta property="og:description" th:content="'Inscríbete en ' + ${tournament.nombre} + ' - ' + ${tournament.generoFormato} + ', nivel ' + ${tournament.categoriaNivel}">
     <meta property="og:image" content="/images/og-image.jpg">
     <meta property="og:url" th:content="@{'/torneo/' + ${tournament.id}}">
     <meta name="twitter:card" content="summary_large_image">
 
-    <title th:text="${tournament.nombre} + ' | E-Padel'">Torneo | E-Padel</title>
+    <title th:text="${tournament.nombre} + ' | 1-Padel'">Torneo | 1-Padel</title>
 
     <!-- Favicon con nuevo logo -->
     <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
@@ -41,8 +41,8 @@
     <div class="container">
         <nav class="navbar">
             <a href="/" class="navbar-brand">
-                <img th:src="@{/images/1.svg}" alt="E-Padel Logo" class="navbar-logo" width="40" height="40">
-                <span class="navbar-brand-text">E-<span class="brand-highlight">PADEL</span></span>
+                <img th:src="@{/images/1.svg}" alt="1-Padel Logo" class="navbar-logo" width="40" height="40">
+                <span class="navbar-brand-text">1-<span class="brand-highlight">PADEL</span></span>
             </a>
 
             <button class="navbar-toggler" id="navbarToggler" type="button" aria-label="Menú">
@@ -817,7 +817,7 @@
     <div class="container">
         <div class="footer-bottom" style="justify-content: center; text-align: center;">
             <div class="footer-copyright">
-                <i class="far fa-copyright"></i> 2026 E-Padel. Todos los derechos reservados.
+                <i class="far fa-copyright"></i> 2026 1-Padel. Todos los derechos reservados.
             </div>
         </div>
     </div>
@@ -1060,7 +1060,7 @@
 <script>
     (function() {
         const url  = window.location.href;
-        const name = document.querySelector('h1') ? document.querySelector('h1').textContent.trim() : 'Torneo E-Padel';
+        const name = document.querySelector('h1') ? document.querySelector('h1').textContent.trim() : 'Torneo 1-Padel';
         const text = `🎾 ¡Te invito a este torneo de pádel!\n*${name}*\n${url}`;
 
         const wa = document.getElementById('shareWhatsapp');
