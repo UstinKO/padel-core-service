@@ -539,14 +539,15 @@
 
 .modal.show {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
+    padding: 30px 20px;
 }
 
 .modal-dialog {
     width: 100%;
     max-width: 500px;
-    margin: auto;
+    margin: 0 auto;
     animation: modalSlideIn 0.3s ease-out;
 }
 
@@ -571,6 +572,9 @@
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
     overflow: hidden;
     border: 1px solid #e9ecef;
+    max-height: calc(100vh - 60px);
+    display: flex;
+    flex-direction: column;
 }
 
 /* Modal Header */
@@ -579,6 +583,7 @@
     background: linear-gradient(135deg, #FF6B35, #e55a2b);
     color: white;
     display: flex;
+    flex-shrink: 0;
     align-items: center;
     justify-content: space-between;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -623,6 +628,9 @@
 /* Modal Body */
 .modal-body {
     padding: 2rem;
+    overflow-y: auto;
+    flex: 1;
+    -webkit-overflow-scrolling: touch;
 }
 
 /* Modal Footer */
@@ -630,6 +638,7 @@
     padding: 1.25rem 2rem;
     background: #f8f9fa;
     border-top: 1px solid #e9ecef;
+    flex-shrink: 0;
     display: flex;
     justify-content: flex-end;
     gap: 1rem;
@@ -1467,3 +1476,56 @@ textarea.form-control {
 .tournament-badges .badge-status.badge-cerrado          { background: #fff3e0; color: #e65100; }
 .tournament-badges .badge-status.badge-finalizado       { background: #f3e5f5; color: #4a148c; }
 .tournament-badges .badge-status.badge-cancelado        { background: #ffebee; color: #b71c1c; }
+
+/* ── Кнопки выбора режима регистрации ── */
+.mode-btn {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    width: 100%;
+    padding: .65rem 1rem;
+    background: #f9fafb;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: .9rem;
+    font-weight: 500;
+    color: #374151;
+    cursor: pointer;
+    transition: border-color .15s, background .15s, color .15s;
+    text-align: left;
+}
+.mode-btn:hover { border-color: #FF6B35; color: #FF6B35; background: #fff7f4; }
+.mode-btn--active { border-color: #FF6B35; color: #FF6B35; background: #fff7f4; font-weight: 600; }
+
+/* ── Блок «ищу партнёра» на странице турнира ── */
+.looking-for-partner-block { margin-bottom: 1.5rem; }
+.looking-for-partner-block h3 { font-size: 1rem; font-weight: 600; color: #1f2937; margin-bottom: .75rem; }
+.lp-card {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .6rem .9rem;
+    background: #eff6ff;
+    border-radius: 8px;
+    margin-bottom: .4rem;
+    font-size: .9rem;
+}
+.lp-card-name { font-weight: 600; color: #1e40af; flex: 1; }
+.lp-card-nivel { font-size: .8rem; color: #6b7280; }
+.lp-card-contacts { display: flex; gap: .4rem; }
+.lp-contact-btn {
+    display: inline-flex; align-items: center; gap: .3rem;
+    padding: .25rem .6rem; border-radius: 6px;
+    font-size: .8rem; font-weight: 500; text-decoration: none; color: white;
+}
+.lp-contact-btn--tg  { background: #0088cc; }
+.lp-contact-btn--wa  { background: #25d366; }
+.lp-empty { font-size: .875rem; color: #9ca3af; padding: .5rem 0; }
+.lp-propose-btn {
+    display: inline-flex; align-items: center; gap: .3rem;
+    padding: .3rem .7rem; border-radius: 6px;
+    font-size: .8rem; font-weight: 600; border: none; cursor: pointer;
+    background: linear-gradient(135deg, #FF6B35, #e55a2b); color: white;
+    transition: opacity .2s;
+}
+.lp-propose-btn:disabled { opacity: .6; cursor: not-allowed; }

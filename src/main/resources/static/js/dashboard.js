@@ -537,6 +537,40 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // ===== РЕЖИМЫ РЕГИСТРАЦИИ =====
+    window.dashSetMode = function(mode) {
+        document.getElementById('registrationMode').value = mode;
+        const withPartnerSection = document.getElementById('withPartnerSection');
+        const searchSection      = document.getElementById('searchSection');
+        const addLaterSection    = document.getElementById('addLaterSection');
+        const submitBtnText      = document.getElementById('submitPartnerBtnText');
+        const modeWithPartner    = document.getElementById('modeWithPartner');
+        const modeSearch         = document.getElementById('modeSearch');
+        const modeLater          = document.getElementById('modeLater');
+
+        [modeWithPartner, modeSearch, modeLater].forEach(b => b && b.classList.remove('mode-btn--active'));
+
+        if (mode === 'WITH_PARTNER') {
+            if (withPartnerSection) withPartnerSection.style.display = '';
+            if (searchSection)      searchSection.style.display      = 'none';
+            if (addLaterSection)    addLaterSection.style.display     = 'none';
+            if (submitBtnText) submitBtnText.textContent = 'Registrar pareja';
+            modeWithPartner && modeWithPartner.classList.add('mode-btn--active');
+        } else if (mode === 'SEARCH') {
+            if (withPartnerSection) withPartnerSection.style.display = 'none';
+            if (searchSection)      searchSection.style.display      = '';
+            if (addLaterSection)    addLaterSection.style.display     = 'none';
+            if (submitBtnText) submitBtnText.textContent = 'Buscar compañero';
+            modeSearch && modeSearch.classList.add('mode-btn--active');
+        } else if (mode === 'ADD_LATER') {
+            if (withPartnerSection) withPartnerSection.style.display = 'none';
+            if (searchSection)      searchSection.style.display      = 'none';
+            if (addLaterSection)    addLaterSection.style.display     = '';
+            if (submitBtnText) submitBtnText.textContent = 'Inscribirme sin compañero';
+            modeLater && modeLater.classList.add('mode-btn--active');
+        }
+    };
+
     // Функция открытия модального окна для парной регистрации
     function openPartnerModal(tournamentId, tournamentName, tournament) {
         const modal = document.getElementById('partnerModal');
@@ -545,9 +579,12 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('modalTournamentName').textContent = tournamentName;
         document.getElementById('modalTournamentId').value         = tournamentId;
 
-        // Очищаем форму и состояние поиска
+        // Сбрасываем режим и форму
+        dashSetMode('WITH_PARTNER');
         ['partnerFirstName','partnerLastName','partnerPhone','partnerEmail']
             .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        const shareEl = document.getElementById('shareContactsCheckbox');
+        if (shareEl) shareEl.checked = false;
         dashClearSelectedPartner();
 
         const submitBtn = document.getElementById('submitPartnerBtn');
@@ -576,31 +613,73 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Отправка данных парной регистрации
     async function submitPartnerRegistration(tournamentId) {
-        const firstName      = document.getElementById('partnerFirstName')?.value.trim();
-        const lastName       = document.getElementById('partnerLastName')?.value.trim();
-        const phone          = document.getElementById('partnerPhone')?.value.trim();
-        const existingUserId = document.getElementById('selectedPartnerId')?.value;
-
-        if (!firstName || !lastName) {
-            alert('Por favor ingresa el nombre y apellido del compañero');
-            return;
-        }
-
-        if (!existingUserId) {
-            const phoneRegex = /^\+?[0-9\s\-\(\)]{8,20}$/;
-            if (!phone || !phoneRegex.test(phone)) {
-                alert('Por favor ingresa un teléfono válido o selecciona un compañero del buscador');
-                return;
-            }
-        }
-
+        const mode = document.getElementById('registrationMode')?.value || 'WITH_PARTNER';
         const submitBtn = document.getElementById('submitPartnerBtn');
         if (submitBtn) {
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
         }
 
+        const closePartnerModal = () => {
+            const modal = document.getElementById('partnerModal');
+            if (modal) { modal.style.display = 'none'; modal.classList.remove('show'); }
+            dashClearSelectedPartner();
+            dashSetMode('WITH_PARTNER');
+        };
+
+        const resetBtn = () => {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> <span id="submitPartnerBtnText">Registrar pareja</span>';
+            }
+        };
+
         try {
+            // Соло-регистрация
+            if (mode === 'SEARCH' || mode === 'ADD_LATER') {
+                const shareContacts = mode === 'SEARCH'
+                    && document.getElementById('shareContactsCheckbox')?.checked;
+
+                const response = await fetch(`/api/tournaments/double/${tournamentId}/register-solo`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ soloType: mode, shareContacts: !!shareContacts })
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    closePartnerModal();
+                    myTournamentIds.add(parseInt(tournamentId));
+                    updateTabCounts();
+                    showResultModal('success', data.message || '¡Registro completado!');
+                    applyFiltersFunction();
+                } else {
+                    showResultModal('error', data.message || 'Error al procesar la solicitud');
+                    resetBtn();
+                }
+                return;
+            }
+
+            // Режим WITH_PARTNER
+            const firstName      = document.getElementById('partnerFirstName')?.value.trim();
+            const lastName       = document.getElementById('partnerLastName')?.value.trim();
+            const phone          = document.getElementById('partnerPhone')?.value.trim();
+            const existingUserId = document.getElementById('selectedPartnerId')?.value;
+
+            if (!existingUserId) {
+                if (!firstName || !lastName) {
+                    showResultModal('error', 'Por favor ingresa el nombre y apellido del compañero');
+                    resetBtn();
+                    return;
+                }
+                const phoneRegex = /^\+?[0-9\s\-\(\)]{8,20}$/;
+                if (!phone || !phoneRegex.test(phone)) {
+                    showResultModal('error', 'Por favor ingresa un teléfono válido o selecciona un compañero del buscador');
+                    resetBtn();
+                    return;
+                }
+            }
+
             const partnerData = {
                 nombre:         firstName,
                 apellido:       lastName,
@@ -612,9 +691,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const response = await fetch(`/api/tournaments/double/${tournamentId}/register`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(partnerData)
             });
 
@@ -624,34 +701,16 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const data = await response.json();
-
-            // Закрываем модальное окно
-            const modal = document.getElementById('partnerModal');
-            if (modal) {
-                modal.style.display = 'none';
-                modal.classList.remove('show');
-            }
-
-            // ✅ ПОЛУЧАЕМ tournamentId ИЗ ОТВЕТА
-            const registeredTournamentId = data.tournamentId || tournamentId;
-
-            myTournamentIds.add(parseInt(registeredTournamentId));
+            closePartnerModal();
+            myTournamentIds.add(parseInt(tournamentId));
             updateTabCounts();
-
-            // Показываем сообщение об успехе
             showResultModal('success', '¡Registro completado! Se ha enviado un email a tu compañero.');
-
-            // Перерисовываем
             applyFiltersFunction();
 
         } catch (error) {
             console.error('Error:', error);
             showResultModal('error', error.message || 'Error al procesar la solicitud');
-
-            if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> Registrar pareja';
-            }
+            resetBtn();
         }
     }
 

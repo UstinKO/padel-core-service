@@ -24,6 +24,9 @@ public class TournamentRegistrationDto {
     private String cancellationReason;
     private Boolean notifiedAboutVacancy;
 
+    // Соло-регистрация на парный турнир
+    private Boolean shareContacts;
+
     // Новые поля для парного турнира
     private Boolean isDoubleRegistration;
     private Long mainPlayerId;

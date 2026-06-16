@@ -374,6 +374,23 @@
                     </div>
                 </div>
 
+                <!-- ── Блок «Jugadores que buscan compañero» (только для DOBLES) ── -->
+                <div class="info-card looking-for-partner-block"
+                     id="lookingForPartnerBlock"
+                     th:if="${tournament.modalidad.name() == 'DOBLES'}"
+                     th:attr="data-current-user-is-solo=${currentUserIsSolo},
+                              data-current-user-solo-reg-id=${currentUserSoloRegId},
+                              data-current-user-player-id=${currentUserPlayerId}"
+                     style="display:none;">
+                    <h2 class="info-card-title">
+                        <i class="fas fa-search" style="color:#3b82f6;"></i>
+                        Jugadores que buscan compañero
+                    </h2>
+                    <div id="lookingForPartnerList">
+                        <p class="lp-empty">Cargando...</p>
+                    </div>
+                </div>
+
                 <div class="info-card" th:if="${not #lists.isEmpty(registrations) or not #lists.isEmpty(tournamentTeams)}">
                     <div class="info-card" th:if="${not #lists.isEmpty(registrations) or not #lists.isEmpty(tournamentTeams)}">
                         <h2 class="info-card-title">
@@ -474,7 +491,7 @@
                                             </tr>
                                         </th:block>
                                     </th:block>
-                                    <!-- Обычный DOBLES: только пары с указанным партнёром -->
+                                    <!-- Обычный DOBLES: зарегистрированные пары -->
                                     <th:block th:unless="${isTeamPlayoffFormat == true}">
                                         <th:block th:each="reg, stat : ${registrations}"
                                                   th:if="${reg.isDoubleRegistration == true
@@ -512,6 +529,38 @@
                                                 </td>
                                             </tr>
                                         </th:block>
+                                    </th:block>
+                                    <!-- SOLO_ADD_LATER: игроки без партнёра (для всех форматов DOBLES) -->
+                                    <th:block th:each="reg : ${registrations}"
+                                              th:if="${reg.status != null and reg.status.name() == 'SOLO_ADD_LATER'}">
+                                        <tr style="background:#fffbeb; border-left:3px solid #f59e0b;">
+                                            <td style="padding:.6rem .75rem; color:#adb5bd; font-size:.85rem;">—</td>
+                                            <td style="padding:.6rem .75rem;">
+                                                <span style="font-weight:500; color:#212529;">
+                                                    <i class="fas fa-user-circle" style="color:#FF6B35; margin-right:.4rem;"></i>
+                                                    <th:block th:text="${reg.playerNombre}">Juan</th:block>
+                                                    <th:block th:text="${' ' + (reg.playerApellido ?: '')}">Pérez</th:block>
+                                                </span>
+                                            </td>
+                                            <td style="padding:.6rem .25rem; text-align:center; color:#d1d5db; font-size:.8rem;">
+                                                <i class="fas fa-plus"></i>
+                                            </td>
+                                            <td style="padding:.6rem .75rem;">
+                                                <span style="color:#d97706; font-style:italic; font-size:.875rem;">
+                                                    <i class="fas fa-clock" style="margin-right:.35rem;"></i>
+                                                    Pendiente — sin datos de pareja
+                                                </span>
+                                                <th:block th:if="${currentUserPlayerId != null and currentUserPlayerId == reg.playerId}">
+                                                    <button
+                                                        onclick="openAddPartnerModal()"
+                                                        style="display:inline-block; margin-top:.4rem; padding:.3rem .8rem;
+                                                               background:#FF6B35; color:#fff; border:none; border-radius:6px;
+                                                               font-size:.8rem; font-weight:600; cursor:pointer;">
+                                                        <i class="fas fa-user-plus"></i> Agregar compañero
+                                                    </button>
+                                                </th:block>
+                                            </td>
+                                        </tr>
                                     </th:block>
                                     </tbody>
                                 </table>
@@ -645,6 +694,124 @@
     </div>
 </main>
 
+<!-- ── Модал «Agregar compañero» (для SOLO_ADD_LATER игроков) ── -->
+<div id="addPartnerModal" th:if="${currentUserIsSolo and userRegistration != null and userRegistration.status.name() == 'SOLO_ADD_LATER'}"
+     style="display:none; position:fixed; inset:0; z-index:9000;
+            background:rgba(0,0,0,.55); align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:14px; padding:28px 32px; max-width:480px;
+                width:90%; box-shadow:0 20px 60px rgba(0,0,0,.3);">
+        <h3 style="margin:0 0 6px; font-size:1.1rem; color:#1e293b;">
+            <i class="fas fa-user-plus" style="color:#FF6B35;"></i> Agregar compañero de pareja
+        </h3>
+        <p style="color:#64748b; font-size:.875rem; margin:0 0 20px;">
+            Ingresá los datos de tu compañero. Si está registrado en la plataforma, lo confirmaremos automáticamente.
+        </p>
+        <!-- Nombre -->
+        <div style="margin-bottom:12px;">
+            <label style="font-size:.85rem; font-weight:600; color:#374151; display:block; margin-bottom:4px;">Nombre *</label>
+            <input id="apNombre" type="text" placeholder="Nombre"
+                   style="width:100%; padding:.5rem .75rem; border:1px solid #e2e8f0; border-radius:8px; font-size:.9rem; box-sizing:border-box;">
+        </div>
+        <!-- Apellido -->
+        <div style="margin-bottom:12px;">
+            <label style="font-size:.85rem; font-weight:600; color:#374151; display:block; margin-bottom:4px;">Apellido *</label>
+            <input id="apApellido" type="text" placeholder="Apellido"
+                   style="width:100%; padding:.5rem .75rem; border:1px solid #e2e8f0; border-radius:8px; font-size:.9rem; box-sizing:border-box;">
+        </div>
+        <!-- Teléfono -->
+        <div style="margin-bottom:12px;">
+            <label style="font-size:.85rem; font-weight:600; color:#374151; display:block; margin-bottom:4px;">Teléfono (WhatsApp)</label>
+            <input id="apTelefono" type="tel" placeholder="+54 9 11 1234-5678"
+                   style="width:100%; padding:.5rem .75rem; border:1px solid #e2e8f0; border-radius:8px; font-size:.9rem; box-sizing:border-box;">
+        </div>
+        <!-- Email -->
+        <div style="margin-bottom:20px;">
+            <label style="font-size:.85rem; font-weight:600; color:#374151; display:block; margin-bottom:4px;">Email</label>
+            <input id="apEmail" type="email" placeholder="email@ejemplo.com"
+                   style="width:100%; padding:.5rem .75rem; border:1px solid #e2e8f0; border-radius:8px; font-size:.9rem; box-sizing:border-box;">
+            <small style="color:#9ca3af; font-size:.78rem;">Si tu compañero no está en la plataforma, le enviaremos una invitación por email.</small>
+        </div>
+        <div id="apError" style="display:none; background:#fee2e2; color:#991b1b; border-radius:8px;
+                                  padding:.5rem .8rem; font-size:.85rem; margin-bottom:12px;"></div>
+        <div style="display:flex; gap:.75rem; justify-content:flex-end;">
+            <button onclick="closeAddPartnerModal()"
+                    style="padding:.5rem 1.1rem; border:1px solid #e2e8f0; border-radius:8px;
+                           background:#fff; cursor:pointer; color:#64748b; font-size:.9rem;">
+                Cancelar
+            </button>
+            <button id="apConfirmBtn" onclick="submitAddPartner()"
+                    style="padding:.5rem 1.3rem; border:none; border-radius:8px;
+                           background:#FF6B35; color:#fff; font-weight:600; cursor:pointer; font-size:.9rem;">
+                <i class="fas fa-check"></i> Confirmar pareja
+            </button>
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript" th:if="${currentUserIsSolo and userRegistration != null and userRegistration.status.name() == 'SOLO_ADD_LATER'}">
+    const _addPartnerTournamentId = /*[[${tournament.id}]]*/ 0;
+
+    function openAddPartnerModal() {
+        document.getElementById('addPartnerModal').style.display = 'flex';
+    }
+    function closeAddPartnerModal() {
+        document.getElementById('addPartnerModal').style.display = 'none';
+    }
+
+    async function submitAddPartner() {
+        const nombre    = document.getElementById('apNombre').value.trim();
+        const apellido  = document.getElementById('apApellido').value.trim();
+        const telefono  = document.getElementById('apTelefono').value.trim();
+        const email     = document.getElementById('apEmail').value.trim();
+        const errEl     = document.getElementById('apError');
+        errEl.style.display = 'none';
+
+        if (!nombre || !apellido) {
+            errEl.textContent = 'Nombre y apellido son obligatorios.';
+            errEl.style.display = 'block';
+            return;
+        }
+        if (!telefono && !email) {
+            errEl.textContent = 'Ingresá al menos teléfono o email del compañero.';
+            errEl.style.display = 'block';
+            return;
+        }
+
+        const btn = document.getElementById('apConfirmBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+
+        try {
+            const res = await fetch(`/api/tournaments/double/${_addPartnerTournamentId}/add-partner`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nombre, apellido, telefono, email })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                closeAddPartnerModal();
+                location.reload();
+            } else {
+                errEl.textContent = data.message || 'Error al agregar compañero';
+                errEl.style.display = 'block';
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-check"></i> Confirmar pareja';
+            }
+        } catch (e) {
+            errEl.textContent = 'Error de conexión. Intentá de nuevo.';
+            errEl.style.display = 'block';
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-check"></i> Confirmar pareja';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const modal = document.getElementById('addPartnerModal');
+        if (modal) modal.addEventListener('click', function (e) { if (e.target === this) closeAddPartnerModal(); });
+    });
+</script>
+
 <!-- Footer -->
 <footer class="footer">
     <div class="container">
@@ -673,100 +840,131 @@
                 <form id="partnerForm">
                     <input type="hidden" id="modalTournamentId">
                     <input type="hidden" id="selectedPartnerId">
+                    <input type="hidden" id="registrationMode" value="WITH_PARTNER">
 
-                    <!-- Поиск по зарегистрированным игрокам -->
-                    <div class="form-group">
-                        <label for="partnerSearch">
-                            <i class="fas fa-search"></i>
-                            Buscar compañero registrado
-                        </label>
-                        <input type="text" class="form-control" id="partnerSearch"
-                               placeholder="Nombre, apellido o email..." autocomplete="off">
-                        <small class="form-text text-muted">
-                            Escribe al menos 2 caracteres para buscar entre jugadores registrados
-                        </small>
-                    </div>
-                    <ul id="partnerSearchResults"
-                        style="display:none; position:fixed; z-index:2000; background:#fff;
-                               border:1px solid #dee2e6; border-radius:6px;
-                               list-style:none; padding:0; margin:0; max-height:200px; overflow-y:auto;
-                               box-shadow:0 4px 12px rgba(0,0,0,.15);"></ul>
-
-                    <!-- Карточка выбранного игрока -->
-                    <div id="selectedPartnerCard"
-                         style="display:none; background:#f0fdf4; border:1px solid #86efac;
-                                border-radius:8px; padding:.75rem 1rem; margin-bottom:1rem;
-                                align-items:center; gap:.75rem;">
-                        <i class="fas fa-user-check" style="color:#16a34a; font-size:1.2rem;"></i>
-                        <div>
-                            <div id="selectedPartnerName" style="font-weight:600; color:#15803d;"></div>
-                            <div id="selectedPartnerEmail" style="font-size:.85rem; color:#6b7280;"></div>
+                    <!-- Шаг 0: выбор режима регистрации -->
+                    <div id="registrationModeStep" style="margin-bottom:1.25rem;">
+                        <p style="font-size:.875rem; color:#6b7280; margin-bottom:.75rem; font-weight:500;">
+                            ¿Cómo querés registrarte?
+                        </p>
+                        <div style="display:flex; flex-direction:column; gap:.5rem;">
+                            <button type="button" class="mode-btn mode-btn--active" id="modeWithPartner"
+                                    onclick="setRegistrationMode('WITH_PARTNER')">
+                                <i class="fas fa-user-friends"></i>
+                                Tengo compañero
+                            </button>
+                            <button type="button" class="mode-btn" id="modeSearch"
+                                    onclick="setRegistrationMode('SEARCH')">
+                                <i class="fas fa-search"></i>
+                                Busco compañero
+                            </button>
+                            <button type="button" class="mode-btn" id="modeLater"
+                                    onclick="setRegistrationMode('ADD_LATER')">
+                                <i class="fas fa-clock"></i>
+                                Agrego compañero más tarde
+                            </button>
                         </div>
-                        <button type="button" id="clearPartnerBtn"
-                                style="margin-left:auto; background:none; border:none; cursor:pointer;
-                                       color:#9ca3af; font-size:1rem;">
-                            <i class="fas fa-times"></i>
-                        </button>
                     </div>
 
-                    <!-- Блок ручного ввода — скрывается при выборе из поиска -->
-                    <div id="manualPartnerFields">
+                    <!-- Режим WITH_PARTNER: поиск + ручной ввод -->
+                    <div id="withPartnerSection">
+                        <div class="form-group">
+                            <label for="partnerSearch">
+                                <i class="fas fa-search"></i>
+                                Buscar compañero registrado
+                            </label>
+                            <input type="text" class="form-control" id="partnerSearch"
+                                   placeholder="Nombre, apellido o email..." autocomplete="off">
+                            <small class="form-text text-muted">
+                                Escribe al menos 2 caracteres para buscar entre jugadores registrados
+                            </small>
+                        </div>
+                        <ul id="partnerSearchResults"
+                            style="display:none; position:fixed; z-index:2000; background:#fff;
+                                   border:1px solid #dee2e6; border-radius:6px;
+                                   list-style:none; padding:0; margin:0; max-height:200px; overflow-y:auto;
+                                   box-shadow:0 4px 12px rgba(0,0,0,.15);"></ul>
 
-                    <!-- Разделитель -->
-                    <div style="display:flex; align-items:center; gap:.75rem; margin:.5rem 0 1rem;">
-                        <hr style="flex:1; margin:0; border-color:#e5e7eb;">
-                        <span style="font-size:.8rem; color:#9ca3af; white-space:nowrap;">o ingresa manualmente</span>
-                        <hr style="flex:1; margin:0; border-color:#e5e7eb;">
-                    </div>
+                        <div id="selectedPartnerCard"
+                             style="display:none; background:#f0fdf4; border:1px solid #86efac;
+                                    border-radius:8px; padding:.75rem 1rem; margin-bottom:1rem;
+                                    align-items:center; gap:.75rem;">
+                            <i class="fas fa-user-check" style="color:#16a34a; font-size:1.2rem;"></i>
+                            <div>
+                                <div id="selectedPartnerName" style="font-weight:600; color:#15803d;"></div>
+                                <div id="selectedPartnerEmail" style="font-size:.85rem; color:#6b7280;"></div>
+                            </div>
+                            <button type="button" id="clearPartnerBtn"
+                                    style="margin-left:auto; background:none; border:none; cursor:pointer;
+                                           color:#9ca3af; font-size:1rem;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
 
-                    <div class="form-group">
-                        <label for="partnerFirstName">
-                            <i class="fas fa-user"></i>
-                            Nombre del compañero
-                        </label>
-                        <input type="text" class="form-control" id="partnerFirstName"
-                               placeholder="Ej: Juan" required maxlength="50">
-                        <div class="invalid-feedback">Por favor ingresa el nombre</div>
-                    </div>
+                        <div id="manualPartnerFields">
+                            <div style="display:flex; align-items:center; gap:.75rem; margin:.5rem 0 1rem;">
+                                <hr style="flex:1; margin:0; border-color:#e5e7eb;">
+                                <span style="font-size:.8rem; color:#9ca3af; white-space:nowrap;">o ingresa manualmente</span>
+                                <hr style="flex:1; margin:0; border-color:#e5e7eb;">
+                            </div>
 
-                    <div class="form-group">
-                        <label for="partnerLastName">
-                            <i class="fas fa-user"></i>
-                            Apellido del compañero
-                        </label>
-                        <input type="text" class="form-control" id="partnerLastName"
-                               placeholder="Ej: Pérez" required maxlength="50">
-                        <div class="invalid-feedback">Por favor ingresa el apellido</div>
-                    </div>
+                            <div class="form-group">
+                                <label for="partnerFirstName"><i class="fas fa-user"></i> Nombre del compañero</label>
+                                <input type="text" class="form-control" id="partnerFirstName"
+                                       placeholder="Ej: Juan" maxlength="50">
+                                <div class="invalid-feedback">Por favor ingresa el nombre</div>
+                            </div>
+                            <div class="form-group">
+                                <label for="partnerLastName"><i class="fas fa-user"></i> Apellido del compañero</label>
+                                <input type="text" class="form-control" id="partnerLastName"
+                                       placeholder="Ej: Pérez" maxlength="50">
+                                <div class="invalid-feedback">Por favor ingresa el apellido</div>
+                            </div>
+                            <div class="form-group">
+                                <label for="partnerPhone"><i class="fas fa-phone"></i> Teléfono del compañero</label>
+                                <input type="tel" class="form-control" id="partnerPhone"
+                                       placeholder="Ej: +54 9 11 1234 5678">
+                                <div class="invalid-feedback">Por favor ingresa un teléfono válido</div>
+                                <small class="form-text text-muted"><i class="fas fa-info-circle"></i> Requerido si tu compañero no está registrado</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="partnerEmail"><i class="fas fa-envelope"></i> Email del compañero (opcional)</label>
+                                <input type="email" class="form-control" id="partnerEmail"
+                                       placeholder="Ej: juan@email.com">
+                                <small class="form-text text-muted">Le enviaremos un email si no está registrado</small>
+                            </div>
+                        </div><!-- /manualPartnerFields -->
+                    </div><!-- /withPartnerSection -->
 
-                    <div class="form-group">
-                        <label for="partnerPhone">
-                            <i class="fas fa-phone"></i>
-                            Teléfono del compañero
-                        </label>
-                        <input type="tel" class="form-control" id="partnerPhone"
-                               placeholder="Ej: +54 9 11 1234 5678"
-                               pattern="^\+?[0-9\s\-\(\)]{8,20}$">
-                        <div class="invalid-feedback">Por favor ingresa un teléfono válido</div>
-                        <small class="form-text text-muted">
+                    <!-- Режим SEARCH: только галочка shareContacts -->
+                    <div id="searchSection" style="display:none;">
+                        <div style="background:#eff6ff; border-radius:10px; padding:1rem 1.25rem; margin-bottom:1rem;
+                                    border-left:4px solid #3b82f6; font-size:.9rem; color:#1e40af; line-height:1.5;">
                             <i class="fas fa-info-circle"></i>
-                            Requerido si tu compañero no está registrado
-                        </small>
+                            Vas a aparecer en el listado de <strong>«Jugadores que buscan compañero»</strong>
+                            visible en la página del torneo. Los demás jugadores podrán contactarte.
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label style="display:flex; align-items:flex-start; gap:.6rem; cursor:pointer; font-weight:400;">
+                                <input type="checkbox" id="shareContactsCheckbox" style="margin-top:.2rem; flex-shrink:0;">
+                                <span style="font-size:.9rem; color:#374151;">
+                                    Autorizo mostrar mi Telegram y teléfono a otros jugadores que también buscan compañero en este torneo
+                                </span>
+                            </label>
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="partnerEmail">
-                            <i class="fas fa-envelope"></i>
-                            Email del compañero (opcional)
-                        </label>
-                        <input type="email" class="form-control" id="partnerEmail"
-                               placeholder="Ej: juan@email.com">
-                        <small class="form-text text-muted">
-                            Si tu compañero no está registrado, le enviaremos un email para completar su registro
-                        </small>
+                    <!-- Режим ADD_LATER: информационный блок -->
+                    <div id="addLaterSection" style="display:none;">
+                        <div style="background:#fffbeb; border-radius:10px; padding:1rem 1.25rem;
+                                    border-left:4px solid #f59e0b; font-size:.9rem; color:#92400e; line-height:1.5;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>Importante:</strong> los datos del segundo participante deben agregarse
+                            <strong>al menos 24 horas antes del inicio del torneo</strong>.
+                            Si no se completa la inscripción a tiempo, la solicitud podrá ser eliminada.
+                        </div>
                     </div>
 
-                    </div><!-- /manualPartnerFields -->
                 </form>
 
                 <div id="partnerInfoMessage" class="info-message" style="display: none;">
@@ -781,7 +979,7 @@
                 </button>
                 <button type="button" class="btn btn-primary" id="submitPartnerBtn">
                     <i class="fas fa-check-circle"></i>
-                    Registrar pareja
+                    <span id="submitPartnerBtnText">Registrar pareja</span>
                 </button>
             </div>
         </div>

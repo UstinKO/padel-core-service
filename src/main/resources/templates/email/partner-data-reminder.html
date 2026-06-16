@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recordatorio: agrega tu compañero - E-Padel</title>
+    <style>
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f7fa; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        .header { background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); padding: 30px 20px; text-align: center; }
+        .header h1 { color: white; margin: 15px 0 0; font-weight: 700; font-size: 24px; }
+        .content { padding: 35px 30px; line-height: 1.7; }
+        .greeting { font-size: 20px; font-weight: 600; color: #d97706; margin-bottom: 16px; }
+        .message { font-size: 16px; color: #4a5568; margin-bottom: 20px; }
+        .warning-box { background: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 20px 0; font-size: 15px; color: #92400e; }
+        .info-box { background: #f8fafc; border-radius: 10px; padding: 16px 20px; margin: 16px 0; }
+        .label { font-size: 12px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 3px; }
+        .value { font-size: 15px; color: #1f2937; margin-bottom: 12px; }
+        .btn { display: inline-block; background: #f59e0b; color: white; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-weight: 600; font-size: 15px; margin-top: 20px; }
+        .footer { background: #f8fafc; padding: 20px 30px; text-align: center; font-size: 13px; color: #9ca3af; }
+    </style>
+</head>
+<body>
+<div style="padding: 20px 0;">
+<div class="container">
+    <div class="header">
+        <h1>⏰ Recordatorio: agrega tu compañero</h1>
+    </div>
+    <div class="content">
+        <div class="greeting" th:text="'¡Hola, ' + ${playerName} + '!'">¡Hola, Juan!</div>
+        <div class="message">
+            Te inscribiste en el torneo <strong th:text="${tournamentName}">Torneo Dobles</strong>
+            sin compañero. El torneo es en <strong>menos de 48 horas</strong>.
+        </div>
+
+        <div class="warning-box">
+            ⚠️ <strong>Importante:</strong> tenés hasta <strong th:text="${deadline}">las 10:00 del 14 de julio</strong>
+            para agregar los datos de tu compañero. Si no lo hacés, tu inscripción podría ser eliminada.
+        </div>
+
+        <div class="info-box">
+            <div class="label">Torneo</div>
+            <div class="value" th:text="${tournamentName}">Torneo Dobles Masculino</div>
+            <div class="label">Fecha</div>
+            <div class="value" th:text="${tournamentDate}">15 de julio de 2025, 10:00</div>
+            <div class="label">Club</div>
+            <div class="value" th:text="${clubName}">Club Padel Central</div>
+        </div>
+
+        <p class="message">
+            Podés agregar a tu compañero desde la página del torneo o desde tu panel de jugador.
+        </p>
+
+        <a th:href="${tournamentUrl}" class="btn">Agregar compañero ahora</a>
+    </div>
+    <div class="footer">
+        E-Padel &copy; <span th:text="${year}">2025</span>
+    </div>
+</div>
+</div>
+</body>
+</html>

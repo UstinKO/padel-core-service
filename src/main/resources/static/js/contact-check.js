@@ -31,15 +31,15 @@ const ContactCheck = (() => {
                     <label style="display:block; font-size:.85rem; font-weight:600;
                                   color:#1e293b; margin-bottom:.35rem;">
                         <i class="fab fa-whatsapp" style="color:#25D366;"></i>
-                        WhatsApp (Argentina, +54)
+                        WhatsApp
                     </label>
                     <input id="ccPhone" type="tel"
-                           placeholder="+54 9 11 1234-5678"
+                           placeholder="+549 11 1234-5678"
                            style="width:100%; padding:.6rem .75rem; border:1px solid #e2e8f0;
                                   border-radius:8px; font-size:.95rem; box-sizing:border-box;">
                     <span id="ccPhoneError"
                           style="display:none; color:#ef4444; font-size:.78rem; margin-top:.25rem;">
-                        El número debe comenzar con +54
+                        Ingresa un número válido con código de país (ej. +549...)
                     </span>
                 </div>
 
@@ -160,7 +160,7 @@ const ContactCheck = (() => {
                     return;
                 }
 
-                if (phone && !phone.startsWith('+54')) {
+                if (phone && (!/^\+[0-9]{7,20}$/.test(phone.replace(/[\s\-\(\)]/g, '')))) {
                     document.getElementById('ccPhoneError').style.display = 'block';
                     return;
                 }

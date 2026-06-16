@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.37-add-pair-proposal-field
+      author: system
+      changes:
+        - addColumn:
+            tableName: tournament_registrations_db
+            columns:
+              - column:
+                  name: pair_proposer_reg_id
+                  type: BIGINT
+                  constraints:
+                    nullable: true

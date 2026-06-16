@@ -113,10 +113,10 @@ public class PlayerDashboardController {
 
         // ПРОВЕРКА КОНТАКТОВ - возвращаем needContact, а не ошибку
         if (!player.hasValidContact()) {
-            log.warn("Player {} has no valid contact (phone+54 or telegram)", player.getId());
+            log.warn("Player {} has no valid contact (phone or telegram)", player.getId());
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
-                    "message", "Para inscribirte en un torneo necesitas tener al menos un dato de contacto: WhatsApp (+54) o Telegram",
+                    "message", "Para inscribirte en un torneo necesitas tener al menos un dato de contacto: WhatsApp o Telegram",
                     "needContact", true
             ));
         }

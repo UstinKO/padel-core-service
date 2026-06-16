@@ -121,6 +121,7 @@ logging:
 # ------ APP CUSTOM PROPERTIES ------
 app:
   base-url: ${APP_BASE_URL:http://localhost:8080}
+  admin-email: ${ADMIN_EMAIL:eugene.g.work@gmail.com}
   demo:
     auto-confirm-email: ${AUTO_CONFIRM_EMAIL:false}
   email:

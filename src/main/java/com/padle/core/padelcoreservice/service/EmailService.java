@@ -549,6 +549,159 @@ public class EmailService {
         }
     }
 
+    @Timed(name = "email.send.time", tags = {"service=email", "type=admin_solo_registration"})
+    @TrackErrors(name = "email.send.errors", tags = {"service=email", "type=admin_solo_registration"})
+    public void sendAdminSoloRegistrationNotification(
+            String adminEmail,
+            String playerName,
+            String playerEmail,
+            String playerPhone,
+            String playerTelegram,
+            String tournamentName,
+            String tournamentDate,
+            String clubName,
+            String soloType,
+            String adminTournamentUrl) {
+
+        emailMetricsService.recordEmailAttempt("ADMIN_SOLO_REGISTRATION");
+        if (emailMetricsService.isDailyLimitReached(dailyEmailLimit)) {
+            log.warn("Daily email limit reached, skipping admin solo registration notification");
+            emailMetricsService.recordEmailRejected("ADMIN_SOLO_REGISTRATION", "DAILY_LIMIT");
+            return;
+        }
+        try {
+            Context context = new Context();
+            context.setVariable("playerName", playerName);
+            context.setVariable("playerEmail", playerEmail);
+            context.setVariable("playerPhone", playerPhone);
+            context.setVariable("playerTelegram", playerTelegram);
+            context.setVariable("tournamentName", tournamentName);
+            context.setVariable("tournamentDate", tournamentDate);
+            context.setVariable("clubName", clubName);
+            context.setVariable("soloType", soloType);
+            context.setVariable("adminTournamentUrl", adminTournamentUrl);
+            context.setVariable("year", java.time.Year.now().getValue());
+
+            String html = templateEngine.process("email/admin-solo-registration", context);
+            String subject = "⚠️ Nueva inscripción sin pareja — " + tournamentName;
+            sendHtmlEmail(adminEmail, subject, html);
+
+            emailMetricsService.recordEmailSent("ADMIN_SOLO_REGISTRATION");
+            log.info("✅ Admin solo registration notification sent for tournament: {}", tournamentName);
+        } catch (Exception e) {
+            emailMetricsService.recordEmailError("ADMIN_SOLO_REGISTRATION", e.getClass().getSimpleName());
+            log.error("❌ Error sending admin solo registration notification: {}", e.getMessage(), e);
+        }
+    }
+
+    @Timed(name = "email.send.time", tags = {"service=email", "type=looking_for_partner_notification"})
+    @TrackErrors(name = "email.send.errors", tags = {"service=email", "type=looking_for_partner_notification"})
+    public void sendLookingForPartnerNotification(
+            @MetricTag("recipient") String to,
+            @MetricTag("playerName") String playerName,
+            String tournamentName,
+            String tournamentDate,
+            String tournamentUrl) {
+
+        emailMetricsService.recordEmailAttempt("LOOKING_FOR_PARTNER_NOTIFICATION");
+        if (emailMetricsService.isDailyLimitReached(dailyEmailLimit)) {
+            log.warn("Daily email limit reached, skipping looking-for-partner notification to: {}", to);
+            emailMetricsService.recordEmailRejected("LOOKING_FOR_PARTNER_NOTIFICATION", "DAILY_LIMIT");
+            return;
+        }
+        try {
+            Context context = new Context();
+            context.setVariable("playerName", playerName);
+            context.setVariable("tournamentName", tournamentName);
+            context.setVariable("tournamentDate", tournamentDate);
+            context.setVariable("tournamentUrl", tournamentUrl);
+            context.setVariable("year", java.time.Year.now().getValue());
+
+            String html = templateEngine.process("email/looking-for-partner-notification", context);
+            String subject = "🔍 Nuevo jugador busca compañero — " + tournamentName;
+            sendHtmlEmail(to, subject, html);
+
+            emailMetricsService.recordEmailSent("LOOKING_FOR_PARTNER_NOTIFICATION");
+            log.info("✅ Looking-for-partner notification sent to: {}", to);
+        } catch (Exception e) {
+            emailMetricsService.recordEmailError("LOOKING_FOR_PARTNER_NOTIFICATION", e.getClass().getSimpleName());
+            log.error("❌ Error sending looking-for-partner notification to {}: {}", to, e.getMessage(), e);
+        }
+    }
+
+    @Timed(name = "email.send.time", tags = {"service=email", "type=partner_data_reminder"})
+    @TrackErrors(name = "email.send.errors", tags = {"service=email", "type=partner_data_reminder"})
+    public void sendPartnerDataReminder(
+            @MetricTag("recipient") String to,
+            @MetricTag("playerName") String playerName,
+            String tournamentName,
+            String tournamentDate,
+            String clubName,
+            String deadline,
+            String tournamentUrl) {
+
+        emailMetricsService.recordEmailAttempt("PARTNER_DATA_REMINDER");
+        if (emailMetricsService.isDailyLimitReached(dailyEmailLimit)) {
+            log.warn("Daily email limit reached, skipping partner data reminder to: {}", to);
+            emailMetricsService.recordEmailRejected("PARTNER_DATA_REMINDER", "DAILY_LIMIT");
+            return;
+        }
+        try {
+            Context context = new Context();
+            context.setVariable("playerName", playerName);
+            context.setVariable("tournamentName", tournamentName);
+            context.setVariable("tournamentDate", tournamentDate);
+            context.setVariable("clubName", clubName);
+            context.setVariable("deadline", deadline);
+            context.setVariable("tournamentUrl", tournamentUrl);
+            context.setVariable("year", java.time.Year.now().getValue());
+
+            String html = templateEngine.process("email/partner-data-reminder", context);
+            String subject = "⏰ Recordatorio: agrega tu compañero — " + tournamentName;
+            sendHtmlEmail(to, subject, html);
+
+            emailMetricsService.recordEmailSent("PARTNER_DATA_REMINDER");
+            log.info("✅ Partner data reminder sent to: {}", to);
+        } catch (Exception e) {
+            emailMetricsService.recordEmailError("PARTNER_DATA_REMINDER", e.getClass().getSimpleName());
+            log.error("❌ Error sending partner data reminder to {}: {}", to, e.getMessage(), e);
+        }
+    }
+
+    public void sendPairProposalEmail(
+            String to,
+            String targetPlayerName,
+            String proposerName,
+            String tournamentName,
+            String tournamentDate,
+            String acceptUrl) {
+
+        emailMetricsService.recordEmailAttempt("PAIR_PROPOSAL");
+        if (emailMetricsService.isDailyLimitReached(dailyEmailLimit)) {
+            log.warn("Daily email limit reached, skipping pair proposal to: {}", to);
+            emailMetricsService.recordEmailRejected("PAIR_PROPOSAL", "DAILY_LIMIT");
+            return;
+        }
+        try {
+            Context context = new Context();
+            context.setVariable("targetPlayerName", targetPlayerName);
+            context.setVariable("proposerName", proposerName);
+            context.setVariable("tournamentName", tournamentName);
+            context.setVariable("tournamentDate", tournamentDate);
+            context.setVariable("acceptUrl", acceptUrl);
+
+            String html = templateEngine.process("email/pair-proposal", context);
+            String subject = "🎾 " + proposerName + " quiere ser tu compañero — " + tournamentName;
+            sendHtmlEmail(to, subject, html);
+
+            emailMetricsService.recordEmailSent("PAIR_PROPOSAL");
+            log.info("✅ Pair proposal email sent to: {}", to);
+        } catch (Exception e) {
+            emailMetricsService.recordEmailError("PAIR_PROPOSAL", e.getClass().getSimpleName());
+            log.error("❌ Error sending pair proposal email to {}: {}", to, e.getMessage(), e);
+        }
+    }
+
     /**
      * Универсальный метод для отправки HTML писем (БЕЗ ИЗМЕНЕНИЙ)
      */

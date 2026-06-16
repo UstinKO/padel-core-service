@@ -86,6 +86,9 @@
             border-radius: 20px;
             font-size: 0.75rem;
         }
+        .badge-solo-later   { background: #fef3c7; color: #92400e; padding:.2rem .6rem; border-radius:20px; font-size:.75rem; font-weight:600; }
+        .badge-solo-search  { background: #dbeafe; color: #1d4ed8; padding:.2rem .6rem; border-radius:20px; font-size:.75rem; font-weight:600; }
+        .badge-solo-expired { background: #fee2e2; color: #991b1b; padding:.2rem .6rem; border-radius:20px; font-size:.75rem; font-weight:600; }
 
         .waitlist-items {
             max-height: 300px;
@@ -1315,6 +1318,174 @@
                     </table>
                 </div>
             </div>
+
+        </th:block>
+
+        <!-- ── Таблица: Solo sin pareja (SOLO_ADD_LATER + SOLO_SEARCH + SOLO_EXPIRED) ── -->
+        <th:block th:with="soloRegs=${registrations.?[status.name() == 'SOLO_ADD_LATER' or status.name() == 'SOLO_SEARCH' or status.name() == 'SOLO_EXPIRED']}">
+        <div class="reg-table-card" th:if="${not #lists.isEmpty(soloRegs)}">
+            <div class="reg-table-header" style="display:flex; align-items:center; justify-content:space-between;">
+                <h3>
+                    <i class="fas fa-user" style="color:#3b82f6;"></i>
+                    Inscripciones sin pareja
+                    <span class="reg-badge-count" style="background:#3b82f6;"
+                          th:text="${#lists.size(soloRegs)}"></span>
+                </h3>
+                <button class="btn btn-sm btn-primary"
+                        th:if="${#lists.size(soloRegs) >= 2}"
+                        onclick="openPairModal()"
+                        style="font-size:.82rem; padding:.35rem .9rem;">
+                    <i class="fas fa-handshake"></i> Emparejar
+                </button>
+            </div>
+            <div style="overflow-x:auto;">
+                <table class="reg-table" id="soloRegsTable">
+                    <thead>
+                        <tr>
+                            <th style="width:48px;">#</th>
+                            <th>Jugador</th>
+                            <th>Escenario</th>
+                            <th>Fecha inscripción</th>
+                            <th style="width:70px;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="reg, iterStat : ${soloRegs}"
+                            th:data-reg-id="${reg.id}"
+                            th:data-player-name="${reg.playerNombre + ' ' + (reg.playerApellido ?: '')}"
+                            th:style="${reg.status.name() == 'SOLO_EXPIRED' ? 'border-left:3px solid #ef4444;' : (reg.status.name() == 'SOLO_SEARCH' ? 'border-left:3px solid #3b82f6;' : 'border-left:3px solid #f59e0b;')}">
+                            <td><span class="reg-pos" th:text="${iterStat.count}"></span></td>
+                            <td>
+                                <a th:href="@{'/admin/players/' + ${reg.playerId}}"
+                                   class="reg-player-link"
+                                   th:text="${reg.playerNombre} + ' ' + (${reg.playerApellido} ?: '')">Jugador</a>
+                                <div style="font-size:.78rem; color:#9ca3af;" th:text="${reg.playerEmail}"></div>
+                            </td>
+                            <td>
+                                <span th:if="${reg.status.name() == 'SOLO_ADD_LATER'}"
+                                      class="badge-solo-later">⏳ Agrega compañero luego</span>
+                                <span th:if="${reg.status.name() == 'SOLO_SEARCH'}"
+                                      class="badge-solo-search">🔍 Busca compañero</span>
+                                <span th:if="${reg.status.name() == 'SOLO_EXPIRED'}"
+                                      class="badge-solo-expired">⚠️ Plazo vencido</span>
+                            </td>
+                            <td style="font-size:.82rem; color:#6b7280;"
+                                th:text="${#temporals.format(reg.registrationDate, 'dd/MM/yyyy HH:mm')}"></td>
+                            <td>
+                                <a th:href="@{'/admin/players/' + ${reg.playerId}}"
+                                   class="btn-icon" title="Ver jugador">
+                                    <i class="fas fa-external-link-alt"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ── Модал «Emparejar» ── -->
+        <div id="pairSoloModal" style="display:none; position:fixed; inset:0; z-index:9000;
+             background:rgba(0,0,0,.5); align-items:center; justify-content:center;">
+            <div style="background:#fff; border-radius:14px; padding:28px; max-width:460px;
+                        width:90%; box-shadow:0 20px 60px rgba(0,0,0,.25);">
+                <h3 style="margin:0 0 16px; font-size:1.1rem; color:#1e293b;">
+                    <i class="fas fa-handshake" style="color:#FF6B35;"></i> Emparejar jugadores
+                </h3>
+                <p style="color:#64748b; font-size:.88rem; margin-bottom:16px;">
+                    Seleccioná dos jugadores sin pareja para confirmarlos como pareja en el torneo.
+                </p>
+                <div style="margin-bottom:12px;">
+                    <label style="font-size:.85rem; font-weight:600; color:#374151; display:block; margin-bottom:4px;">Jugador 1</label>
+                    <select id="pairSelect1" style="width:100%; padding:.5rem; border:1px solid #e2e8f0; border-radius:8px; font-size:.9rem;">
+                        <option value="">— Seleccionar —</option>
+                    </select>
+                </div>
+                <div style="margin-bottom:20px;">
+                    <label style="font-size:.85rem; font-weight:600; color:#374151; display:block; margin-bottom:4px;">Jugador 2</label>
+                    <select id="pairSelect2" style="width:100%; padding:.5rem; border:1px solid #e2e8f0; border-radius:8px; font-size:.9rem;">
+                        <option value="">— Seleccionar —</option>
+                    </select>
+                </div>
+                <div id="pairModalError" style="display:none; background:#fee2e2; color:#991b1b; border-radius:8px; padding:.5rem .8rem; font-size:.85rem; margin-bottom:12px;"></div>
+                <div style="display:flex; gap:.75rem; justify-content:flex-end;">
+                    <button onclick="closePairModal()"
+                            style="padding:.5rem 1.1rem; border:1px solid #e2e8f0; border-radius:8px; background:#fff; cursor:pointer; color:#64748b;">
+                        Cancelar
+                    </button>
+                    <button id="pairConfirmBtn" onclick="confirmAdminPair()"
+                            style="padding:.5rem 1.2rem; border:none; border-radius:8px; background:#FF6B35; color:#fff; font-weight:600; cursor:pointer;">
+                        <i class="fas fa-handshake"></i> Confirmar pareja
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <script th:inline="javascript">
+            const _pairTournamentId = /*[[${tournament.id}]]*/ 0;
+
+            function _getSoloRegs() {
+                const rows = document.querySelectorAll('#soloRegsTable tbody tr[data-reg-id]');
+                return Array.from(rows).map(r => ({ id: r.dataset.regId, name: r.dataset.playerName }));
+            }
+
+            function openPairModal() {
+                const regs = _getSoloRegs();
+                ['pairSelect1', 'pairSelect2'].forEach(selId => {
+                    const sel = document.getElementById(selId);
+                    sel.innerHTML = '<option value="">— Seleccionar —</option>';
+                    regs.forEach(r => {
+                        const opt = document.createElement('option');
+                        opt.value = r.id;
+                        opt.textContent = r.name;
+                        sel.appendChild(opt);
+                    });
+                });
+                document.getElementById('pairModalError').style.display = 'none';
+                document.getElementById('pairSoloModal').style.display = 'flex';
+            }
+
+            function closePairModal() {
+                document.getElementById('pairSoloModal').style.display = 'none';
+            }
+
+            async function confirmAdminPair() {
+                const regId1 = document.getElementById('pairSelect1').value;
+                const regId2 = document.getElementById('pairSelect2').value;
+                const errEl  = document.getElementById('pairModalError');
+                errEl.style.display = 'none';
+
+                if (!regId1 || !regId2) { errEl.textContent = 'Seleccioná dos jugadores.'; errEl.style.display = 'block'; return; }
+                if (regId1 === regId2)  { errEl.textContent = 'Seleccioná dos jugadores distintos.'; errEl.style.display = 'block'; return; }
+
+                const btn = document.getElementById('pairConfirmBtn');
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+
+                try {
+                    const res = await fetch(`/admin/tournaments/${_pairTournamentId}/pair-solo?regId1=${regId1}&regId2=${regId2}`, { method: 'POST' });
+                    const data = await res.json();
+                    if (data.success) {
+                        closePairModal();
+                        location.reload();
+                    } else {
+                        errEl.textContent = data.message || 'Error al emparejar';
+                        errEl.style.display = 'block';
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-handshake"></i> Confirmar pareja';
+                    }
+                } catch (e) {
+                    errEl.textContent = 'Error de conexión';
+                    errEl.style.display = 'block';
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-handshake"></i> Confirmar pareja';
+                }
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+                const modal = document.getElementById('pairSoloModal');
+                if (modal) modal.addEventListener('click', function(e) { if (e.target === this) closePairModal(); });
+            });
+        </script>
 
         </th:block>
 
