@@ -1,6 +1,7 @@
 package com.padle.core.padelcoreservice.controller.admin;
 
 import com.padle.core.padelcoreservice.dto.KingOfCourtStateDTO;
+import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.TournamentKingOfCourt;
 import com.padle.core.padelcoreservice.repository.TournamentKingOfCourtRepository;
@@ -8,6 +9,7 @@ import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import com.padle.core.padelcoreservice.service.KingOfCourtService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -50,9 +52,9 @@ public class AdminKingOfCourtController {
     public String startTournament(@RequestParam Long tournamentId,
                                   @RequestParam Integer maxCourts,
                                   @RequestParam Integer calibrationRounds,
-                                  RedirectAttributes redirectAttributes) {
+                                  RedirectAttributes redirectAttributes, @AuthenticationPrincipal Owner owner) {
         try {
-            TournamentKingOfCourt kingTournament = kingOfCourtService.initializeTournament(
+            TournamentKingOfCourt kingTournament = kingOfCourtService.initializeTournament(owner.getId(),
                     tournamentId, maxCourts, calibrationRounds);
 
             redirectAttributes.addFlashAttribute("successMessage",
