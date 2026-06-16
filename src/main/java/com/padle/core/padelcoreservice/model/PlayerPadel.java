@@ -43,7 +43,7 @@ public class PlayerPadel implements UserDetails {
     /**
      * Ник игрока в Telegram.
      * Необязателен при регистрации на сайт.
-     * Обязателен при регистрации на турнир если telefono не начинается с +54.
+     * Обязателен при регистрации на турнир если telefono не указан.
      */
     @Column(name = "telegram_username", length = 64)
     private String telegramUsername;
@@ -153,14 +153,11 @@ public class PlayerPadel implements UserDetails {
 
     /**
      * Проверяет достаточно ли контактных данных для регистрации на турнир.
-     * Нужен телефон +54 ИЛИ Telegram ник.
+     * Нужен любой телефон ИЛИ Telegram ник.
      */
     public boolean hasValidContact() {
-        boolean hasPhone = telefono != null
-                && !telefono.isBlank()
-                && telefono.trim().startsWith("+54");
-        boolean hasTelegram = telegramUsername != null
-                && !telegramUsername.isBlank();
+        boolean hasPhone = telefono != null && !telefono.isBlank();
+        boolean hasTelegram = telegramUsername != null && !telegramUsername.isBlank();
         return hasPhone || hasTelegram;
     }
 }

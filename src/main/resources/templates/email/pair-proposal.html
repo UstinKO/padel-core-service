@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Propuesta de pareja - E-Padel</title>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .header { background: linear-gradient(135deg, #FF6B35, #e55a2b); padding: 30px; text-align: center; }
+        .header h1 { color: white; margin: 0; font-size: 24px; }
+        .header p { color: rgba(255,255,255,0.9); margin: 8px 0 0; font-size: 14px; }
+        .content { padding: 30px; }
+        .content p { color: #555; line-height: 1.6; }
+        .highlight-box { background: #fff7f0; border-left: 4px solid #FF6B35; padding: 16px 20px; border-radius: 8px; margin: 20px 0; }
+        .highlight-box p { margin: 0; color: #444; font-size: 15px; }
+        .info-row { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
+        .info-row strong { color: #333; }
+        .btn { display: inline-block; background: linear-gradient(135deg, #FF6B35, #e55a2b); color: white; padding: 14px 32px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 16px; margin: 20px 0; }
+        .btn-decline { display: inline-block; background: #f1f5f9; color: #64748b; padding: 12px 24px; border-radius: 10px; text-decoration: none; font-weight: 500; font-size: 14px; margin-left: 12px; }
+        .footer { background: #f8f9fa; padding: 20px 30px; text-align: center; }
+        .footer p { color: #888; font-size: 12px; margin: 4px 0; }
+        .expiry-note { color: #ef4444; font-size: 13px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>¡Propuesta de pareja!</h1>
+        <p>Alguien quiere jugar contigo en E-Padel</p>
+    </div>
+    <div class="content">
+        <p>Hola <strong th:text="${targetPlayerName}">Jugador</strong>,</p>
+        <p>
+            <strong th:text="${proposerName}">Otro jugador</strong> te propone formar pareja
+            para el siguiente torneo:
+        </p>
+        <div class="highlight-box">
+            <p><strong th:text="${tournamentName}">Torneo</strong></p>
+            <p style="margin-top:6px; color:#666;" th:text="${tournamentDate}"></p>
+        </div>
+        <p>Si aceptas, ambos quedarán <strong>confirmados</strong> como pareja en el torneo.</p>
+        <div style="text-align:center; margin: 28px 0 16px;">
+            <a th:href="${acceptUrl}" class="btn">✅ Aceptar propuesta</a>
+        </div>
+        <p class="expiry-note" style="text-align:center;">
+            Esta propuesta expira en 48 horas. Si no aceptas, tu inscripción individual continúa activa.
+        </p>
+    </div>
+    <div class="footer">
+        <p>E-Padel &mdash; Gestión de Torneos</p>
+        <p>Si no esperabas este mensaje, ignóralo.</p>
+    </div>
+</div>
+</body>
+</html>

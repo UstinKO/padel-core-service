@@ -7,6 +7,7 @@ import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2User;
 import com.padle.core.padelcoreservice.service.PlayerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -62,16 +63,16 @@ public class PlayerContactController {
                             "message", "Debes ingresar al menos un dato de contacto"));
         }
 
-        // Валидация телефона: должен начинаться с +54
-        if (hasPhone && !request.getTelefono().trim().startsWith("+54")) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("success", false,
-                            "message", "El número de WhatsApp debe comenzar con +54 (Argentina)"));
-        }
-
         // Обновляем данные
         if (hasPhone) {
-            player.setTelefono(request.getTelefono().trim());
+            String newPhone = request.getTelefono().trim();
+            if (!newPhone.equals(player.getTelefono())
+                    && playerService.existsByTelefono(newPhone)) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("success", false,
+                                "message", "Este número de teléfono ya está en uso por otro jugador"));
+            }
+            player.setTelefono(newPhone);
         }
         if (hasTelegram) {
             String tg = request.getTelegramUsername().trim();
@@ -82,7 +83,13 @@ public class PlayerContactController {
             player.setTelegramUsername(tg);
         }
 
-        playerRepository.save(player);
+        try {
+            playerRepository.save(player);
+        } catch (DataIntegrityViolationException e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("success", false,
+                            "message", "Este número de teléfono ya está en uso por otro jugador"));
+        }
         log.info("Player {} updated contact: phone={}, telegram={}",
                 player.getId(),
                 hasPhone ? "set" : "unchanged",
@@ -122,7 +129,7 @@ public class PlayerContactController {
 
         return ResponseEntity.ok(Map.of(
                 "hasContact", player.hasValidContact(),
-                "hasPhone", player.getTelefono() != null && !player.getTelefono().isBlank() && player.getTelefono().startsWith("+54"),
+                "hasPhone", player.getTelefono() != null && !player.getTelefono().isBlank(),
                 "hasTelegram", player.getTelegramUsername() != null && !player.getTelegramUsername().isBlank(),
                 "telefono", player.getTelefono() != null ? player.getTelefono() : "",
                 "telegramUsername", player.getTelegramUsername() != null ? player.getTelegramUsername() : ""

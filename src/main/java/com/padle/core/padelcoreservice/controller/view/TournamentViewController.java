@@ -165,6 +165,10 @@ public class TournamentViewController {
             mapper.registerModule(new JavaTimeModule());
             String tournamentJson = mapper.writeValueAsString(tournament);
 
+            boolean currentUserIsSolo = userRegistration != null
+                    && (userRegistration.getStatus() == com.padle.core.padelcoreservice.model.enums.RegistrationStatus.SOLO_SEARCH
+                    || userRegistration.getStatus() == com.padle.core.padelcoreservice.model.enums.RegistrationStatus.SOLO_ADD_LATER);
+
             model.addAttribute("tournament", tournament);
             model.addAttribute("tournamentJson", tournamentJson);
             model.addAttribute("registrations", registrations);
@@ -174,6 +178,9 @@ public class TournamentViewController {
             model.addAttribute("availableSpots", availableSpots);
             model.addAttribute("isAuthenticated", player != null);
             model.addAttribute("player", player);
+            model.addAttribute("currentUserIsSolo", currentUserIsSolo);
+            model.addAttribute("currentUserSoloRegId", currentUserIsSolo ? userRegistration.getId() : null);
+            model.addAttribute("currentUserPlayerId", player != null ? player.getId() : null);
 
             return "tournament-details";
 

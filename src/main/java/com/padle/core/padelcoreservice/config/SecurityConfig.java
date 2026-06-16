@@ -89,6 +89,7 @@ public class SecurityConfig {
                                 "/oauth2/**",
                                 "/login/oauth2/**",
                                 "/double-registration/complete",
+                                "/double-registration/accept-pair",
                                 "/ws/**",
                                 "/test/telegram/**"
                         ).permitAll()
@@ -102,7 +103,11 @@ public class SecurityConfig {
                                 "/api/king-of-court/tournaments/*/state",
                                 "/api/king-of-court/tournaments/*/ranking",
                                 "/api/king-of-court/tournaments/*/players/*/history",
-                                "/api/king-of-court/ping"
+                                "/api/king-of-court/ping",
+                                "/api/tournaments/double/*/looking-for-partner"
+                        ).permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.POST,
+                                "/api/tournaments/double/accept-pair"
                         ).permitAll()
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().authenticated()

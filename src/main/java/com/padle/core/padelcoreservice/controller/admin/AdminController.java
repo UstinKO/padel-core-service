@@ -8,6 +8,7 @@ import com.padle.core.padelcoreservice.model.TournamentKingOfCourt;
 import com.padle.core.padelcoreservice.model.enums.*;
 import com.padle.core.padelcoreservice.repository.TournamentKingOfCourtRepository;
 import com.padle.core.padelcoreservice.service.ClubService;
+import com.padle.core.padelcoreservice.service.DoubleTournamentRegistrationService;
 import com.padle.core.padelcoreservice.service.MatchService;
 import com.padle.core.padelcoreservice.service.OwnerService;
 import com.padle.core.padelcoreservice.service.PlayerService;
@@ -48,6 +49,7 @@ public class AdminController {
     private final AmericanoService americanoService;
     private final TeamAmericanoService teamAmericanoService;
     private final TeamPlayoffService teamPlayoffService;
+    private final DoubleTournamentRegistrationService doubleRegistrationService;
 
     @GetMapping
     public String adminPanel(Model model, @AuthenticationPrincipal Owner owner) {
@@ -433,6 +435,29 @@ public class AdminController {
             result.put("message", e.getMessage());
         }
 
+        return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/tournaments/{tournamentId}/pair-solo")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> pairSoloPlayers(
+            @PathVariable Long tournamentId,
+            @RequestParam Long regId1,
+            @RequestParam Long regId2) {
+
+        Map<String, Object> result = new HashMap<>();
+        try {
+            doubleRegistrationService.adminPairSoloPlayers(regId1, regId2);
+            result.put("success", true);
+            result.put("message", "¡Pareja formada con éxito! Ambos jugadores están ahora confirmados.");
+        } catch (com.padle.core.padelcoreservice.exception.TournamentRegistrationException e) {
+            result.put("success", false);
+            result.put("message", e.getMessage());
+        } catch (Exception e) {
+            log.error("Error pairing solo players in tournament {}", tournamentId, e);
+            result.put("success", false);
+            result.put("message", "Error al emparejar jugadores");
+        }
         return ResponseEntity.ok(result);
     }
 

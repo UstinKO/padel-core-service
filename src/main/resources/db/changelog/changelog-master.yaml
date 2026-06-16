@@ -107,3 +107,9 @@ databaseChangeLog:
   - include:
       file: versions/v1.35-add-nivel-jugador-to-player.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.36-add-solo-registration-fields.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: versions/v1.37-add-pair-proposal-field.yaml
+      relativeToChangelogFile: true

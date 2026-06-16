@@ -114,6 +114,19 @@ public class TournamentRegistration {
     @Column(name = "partner_token_expiry")
     private LocalDateTime partnerTokenExpiry;
 
+    // Поля для соло-регистрации на парный турнир
+    @Column(name = "share_contacts", nullable = false)
+    @Builder.Default
+    private Boolean shareContacts = false;
+
+    @Column(name = "solo_reminder_sent", nullable = false)
+    @Builder.Default
+    private Boolean soloReminderSent = false;
+
+    // ID регистрации игрока, предложившего пару (для SOLO_SEARCH flow)
+    @Column(name = "pair_proposer_reg_id")
+    private Long pairProposerRegId;
+
     // Хелпер-метод для получения последнего платежа
     public Optional<Payment> getLatestPayment() {
         return payments.stream()

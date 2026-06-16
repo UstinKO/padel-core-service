@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmar pareja - E-Padel</title>
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+    <style>
+        .accept-pair-container {
+            max-width: 480px;
+            margin: 80px auto;
+            padding: 40px 32px;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,.12);
+            text-align: center;
+        }
+        .accept-pair-icon { font-size: 3rem; margin-bottom: 16px; }
+        .accept-pair-title { font-size: 1.5rem; font-weight: 700; color: #1e293b; margin-bottom: 10px; }
+        .accept-pair-subtitle { color: #64748b; margin-bottom: 28px; font-size: .95rem; }
+        .btn-accept {
+            display: inline-block;
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: #fff;
+            border: none;
+            padding: 14px 36px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 12px;
+        }
+        .btn-accept:disabled { opacity: .6; cursor: not-allowed; }
+        .btn-cancel {
+            display: inline-block;
+            background: #f1f5f9;
+            color: #64748b;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: .9rem;
+            cursor: pointer;
+            width: 100%;
+            text-decoration: none;
+        }
+        #resultMsg {
+            display: none;
+            margin-top: 16px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: .9rem;
+        }
+        #resultMsg.success { background: #dcfce7; color: #166534; }
+        #resultMsg.error   { background: #fee2e2; color: #991b1b; }
+    </style>
+</head>
+<body>
+<div class="accept-pair-container">
+    <div class="accept-pair-icon">🎾</div>
+    <div class="accept-pair-title">Confirmar pareja</div>
+    <p class="accept-pair-subtitle">
+        Al aceptar, quedarán confirmados como pareja en el torneo. Esta acción no se puede deshacer.
+    </p>
+
+    <button id="acceptBtn" class="btn-accept" th:data-token="${token}">
+        ✅ Aceptar y confirmar pareja
+    </button>
+    <a href="/" class="btn-cancel">Volver al inicio</a>
+
+    <div id="resultMsg"></div>
+</div>
+
+<script>
+    document.getElementById('acceptBtn').addEventListener('click', async function () {
+        const btn = this;
+        const token = btn.getAttribute('data-token');
+        btn.disabled = true;
+        btn.textContent = 'Confirmando...';
+
+        try {
+            const res = await fetch('/api/tournaments/double/accept-pair?token=' + encodeURIComponent(token), {
+                method: 'POST'
+            });
+            const data = await res.json();
+            const msg = document.getElementById('resultMsg');
+            msg.style.display = 'block';
+            if (data.success) {
+                msg.className = 'success';
+                msg.textContent = '¡Pareja confirmada! Ya están inscriptos juntos en el torneo.';
+                btn.textContent = '✅ Confirmado';
+            } else {
+                msg.className = 'error';
+                msg.textContent = data.message || 'Error al confirmar';
+                btn.disabled = false;
+                btn.textContent = '✅ Aceptar y confirmar pareja';
+            }
+        } catch (e) {
+            const msg = document.getElementById('resultMsg');
+            msg.style.display = 'block';
+            msg.className = 'error';
+            msg.textContent = 'Error de conexión. Intentá de nuevo.';
+            btn.disabled = false;
+            btn.textContent = '✅ Aceptar y confirmar pareja';
+        }
+    });
+</script>
+</body>
+</html>

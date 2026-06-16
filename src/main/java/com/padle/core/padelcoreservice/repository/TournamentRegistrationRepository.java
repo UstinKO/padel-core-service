@@ -82,8 +82,11 @@ public interface TournamentRegistrationRepository extends JpaRepository<Tourname
             "AND tr.status IN ('CONFIRMED', 'PAIR_REGISTERED', 'PARTNER_INVITED') " +
             "AND tr.is_double_registration = true " +
             "AND tr.is_active = true " +
-            "AND tr.main_player_id IS NOT NULL " +
-            "AND tr.player_id = tr.main_player_id")
+            "AND (" +
+            "  (tr.main_player_id IS NOT NULL AND tr.player_id = tr.main_player_id)" +
+            "  OR" +
+            "  (tr.main_player_id IS NULL AND tr.partner_id IS NOT NULL AND tr.player_id < tr.partner_id)" +
+            ")")
     long countConfirmedPairs(@Param("tournamentId") Long tournamentId);
 
     /**
@@ -259,4 +262,44 @@ public interface TournamentRegistrationRepository extends JpaRepository<Tourname
             "AND tr.mainPlayerId IS NOT NULL " +
             "GROUP BY tr.tournament.id")
     List<Object[]> countWaitlistPairsByTournamentIds(@Param("ids") List<Long> ids);
+
+    // ── Соло-регистрации на парный турнир ────────────────────────────────────
+
+    @Query("SELECT tr FROM TournamentRegistration tr " +
+            "WHERE tr.tournament.id = :tournamentId " +
+            "AND tr.status = 'SOLO_SEARCH' " +
+            "AND tr.isActive = true")
+    List<TournamentRegistration> findLookingForPartnerByTournamentId(@Param("tournamentId") Long tournamentId);
+
+    @Query("SELECT COUNT(tr) FROM TournamentRegistration tr " +
+            "WHERE tr.tournament.id = :tournamentId " +
+            "AND tr.status IN ('SOLO_ADD_LATER', 'SOLO_SEARCH') " +
+            "AND tr.isActive = true")
+    long countActiveSoloRegistrations(@Param("tournamentId") Long tournamentId);
+
+    @Query("SELECT tr FROM TournamentRegistration tr " +
+            "JOIN FETCH tr.tournament t " +
+            "JOIN FETCH tr.player p " +
+            "WHERE tr.status = 'SOLO_ADD_LATER' " +
+            "AND tr.isActive = true " +
+            "AND tr.soloReminderSent = false " +
+            "AND t.fechaInicio >= :from " +
+            "AND t.fechaInicio < :to")
+    List<TournamentRegistration> findSoloAddLaterForReminder(
+            @Param("from") java.time.LocalDate from,
+            @Param("to") java.time.LocalDate to);
+
+    @Query("SELECT tr FROM TournamentRegistration tr " +
+            "JOIN FETCH tr.tournament t " +
+            "JOIN FETCH tr.player p " +
+            "WHERE tr.status = 'SOLO_ADD_LATER' " +
+            "AND tr.isActive = true " +
+            "AND t.fechaInicio < :deadline")
+    List<TournamentRegistration> findSoloAddLaterExpired(@Param("deadline") java.time.LocalDate deadline);
+
+    @Query("SELECT tr FROM TournamentRegistration tr " +
+            "WHERE tr.tournament.id = :tournamentId " +
+            "AND tr.status IN ('SOLO_ADD_LATER', 'SOLO_SEARCH') " +
+            "AND tr.isActive = true")
+    List<TournamentRegistration> findActiveSoloByTournamentId(@Param("tournamentId") Long tournamentId);
 }

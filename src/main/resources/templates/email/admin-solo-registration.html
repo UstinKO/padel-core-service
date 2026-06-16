@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nueva inscripción sin pareja - E-Padel</title>
+    <style>
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f7fa; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        .header { background: linear-gradient(135deg, #FF6B35 0%, #FF8C5A 100%); padding: 30px 20px; text-align: center; }
+        .header h1 { color: white; margin: 15px 0 0; font-weight: 700; font-size: 24px; }
+        .content { padding: 35px 30px; line-height: 1.7; }
+        .label { font-size: 12px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 3px; }
+        .value { font-size: 16px; color: #1f2937; margin-bottom: 16px; }
+        .info-box { background: #f8fafc; border-radius: 10px; padding: 20px 24px; margin: 20px 0; }
+        .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+        .badge-search { background: #dbeafe; color: #1d4ed8; }
+        .badge-later { background: #fef3c7; color: #92400e; }
+        .btn { display: inline-block; background: #FF6B35; color: white; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-weight: 600; font-size: 15px; margin-top: 20px; }
+        .footer { background: #f8fafc; padding: 20px 30px; text-align: center; font-size: 13px; color: #9ca3af; }
+    </style>
+</head>
+<body>
+<div style="padding: 20px 0;">
+<div class="container">
+    <div class="header">
+        <h1>🎾 Nueva inscripción sin pareja</h1>
+    </div>
+    <div class="content">
+        <p style="font-size:16px; color:#4a5568; margin-bottom:24px;">
+            Un jugador se ha inscripto en un torneo de dobles sin compañero.
+        </p>
+
+        <div class="info-box">
+            <div class="label">Escenario</div>
+            <div class="value">
+                <span th:if="${soloType == 'SEARCH'}" class="badge badge-search">🔍 Busca compañero</span>
+                <span th:if="${soloType == 'ADD_LATER'}" class="badge badge-later">⏳ Agrega compañero luego</span>
+            </div>
+
+            <div class="label">Jugador</div>
+            <div class="value" th:text="${playerName}">Juan Pérez</div>
+
+            <div class="label">Email</div>
+            <div class="value" th:text="${playerEmail}">juan@email.com</div>
+
+            <div class="label">Teléfono / WhatsApp</div>
+            <div class="value" th:text="${playerPhone ?: '—'}">+54 9 11 1234 5678</div>
+
+            <div class="label">Telegram</div>
+            <div class="value" th:text="${playerTelegram != null} ? '@' + ${playerTelegram} : '—'">@juan_padel</div>
+
+            <div class="label">Torneo</div>
+            <div class="value" th:text="${tournamentName}">Torneo Dobles Masculino</div>
+
+            <div class="label">Fecha del torneo</div>
+            <div class="value" th:text="${tournamentDate}">15 de julio de 2025</div>
+
+            <div class="label">Club</div>
+            <div class="value" th:text="${clubName}">Club Padel Central</div>
+        </div>
+
+        <a th:href="${adminTournamentUrl}" class="btn">Ver torneo en el panel</a>
+    </div>
+    <div class="footer">
+        E-Padel &copy; <span th:text="${year}">2025</span>
+    </div>
+</div>
+</div>
+</body>
+</html>

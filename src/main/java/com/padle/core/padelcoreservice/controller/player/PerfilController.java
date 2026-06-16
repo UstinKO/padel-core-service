@@ -6,6 +6,7 @@ import com.padle.core.padelcoreservice.service.PlayerService;
 import com.padle.core.padelcoreservice.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -75,13 +76,14 @@ public class PerfilController {
             }
 
             if (telefono != null && !telefono.equals(player.getTelefono())) {
-                // Валидация: телефон должен начинаться с +54 если не пустой
-                if (!telefono.isBlank() && !telefono.trim().startsWith("+54")) {
+                String newPhone = telefono.isBlank() ? null : telefono.trim();
+                if (newPhone != null && playerService.existsByTelefono(newPhone)
+                        && !newPhone.equals(player.getTelefono())) {
                     redirectAttributes.addFlashAttribute("errorMessage",
-                            "El número de WhatsApp debe comenzar con +54 (Argentina)");
+                            "Este número de teléfono ya está en uso por otro jugador");
                     return "redirect:/perfil";
                 }
-                player.setTelefono(telefono.isBlank() ? null : telefono.trim());
+                player.setTelefono(newPhone);
                 actualizado = true;
             }
 
@@ -141,10 +143,14 @@ public class PerfilController {
                         "No se realizaron cambios en el perfil");
             }
 
+        } catch (DataIntegrityViolationException e) {
+            log.warn("Duplicate phone/contact on perfil update: {}", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Este número de teléfono ya está en uso por otro jugador");
         } catch (Exception e) {
             log.error("Error actualizando perfil: {}", e.getMessage(), e);
             redirectAttributes.addFlashAttribute("errorMessage",
-                    "Error al actualizar el perfil: " + e.getMessage());
+                    "Error al actualizar el perfil");
         }
 
         return "redirect:/perfil";

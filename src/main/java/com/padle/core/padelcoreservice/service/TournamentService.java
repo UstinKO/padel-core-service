@@ -167,7 +167,7 @@ public class TournamentService {
         // ========== ДОБАВЛЯЕМ ПРОВЕРКУ КОНТАКТОВ ==========
         if (!player.hasValidContact()) {
             throw new TournamentRegistrationException(
-                    "Para inscribirte en un torneo necesitas tener al menos un dato de contacto: WhatsApp (+54) o Telegram"
+                    "Para inscribirte en un torneo necesitas tener al menos un dato de contacto: WhatsApp o Telegram"
             );
         }
         // ========== КОНЕЦ ПРОВЕРКИ ==========
@@ -520,22 +520,28 @@ public class TournamentService {
                 .filter(r -> Boolean.TRUE.equals(r.getIsDoubleRegistration()) && r.getMainPlayerId() != null)
                 .collect(Collectors.groupingBy(TournamentRegistration::getMainPlayerId));
 
-        // Дедупликация: для парных регистраций оставляем только запись основного игрока.
-        // Также дедуплицируем взаимные регистрации через канонический ключ пары.
+        // Дедупликация: для парных регистраций оставляем одну запись на пару.
         Set<String> seenPairKeys = new HashSet<>();
         List<TournamentRegistration> deduped = registrations.stream()
                 .filter(r -> {
                     if (!Boolean.TRUE.equals(r.getIsDoubleRegistration())) return true;
-                    if (r.getMainPlayerId() == null) return true;
-                    if (!r.getPlayer().getId().equals(r.getMainPlayerId())) return false;
 
                     Long pid = r.getPlayer().getId();
                     Long partnerId = r.getPartner() != null ? r.getPartner().getId() : null;
-                    if (partnerId == null) return true;
 
-                    long lo = Math.min(pid, partnerId);
-                    long hi = Math.max(pid, partnerId);
-                    return seenPairKeys.add(lo + "-" + hi);
+                    // Пара с mainPlayerId: показываем только строку основного игрока
+                    if (r.getMainPlayerId() != null) {
+                        if (!pid.equals(r.getMainPlayerId())) return false;
+                        if (partnerId == null) return true;
+                        long lo = Math.min(pid, partnerId);
+                        long hi = Math.max(pid, partnerId);
+                        return seenPairKeys.add(lo + "-" + hi);
+                    }
+
+                    // Пара без mainPlayerId (solo-pair flow): показываем строку с меньшим player_id
+                    if (partnerId == null) return true;
+                    if (pid >= partnerId) return false;
+                    return seenPairKeys.add(pid + "-" + partnerId);
                 })
                 .collect(Collectors.toList());
 

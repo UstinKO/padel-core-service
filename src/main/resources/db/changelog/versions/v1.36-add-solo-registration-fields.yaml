@@ -1,0 +1,22 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.36-add-solo-registration-fields
+      author: system
+      changes:
+        - addColumn:
+            tableName: tournament_registrations_db
+            columns:
+              - column:
+                  name: share_contacts
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+                  remarks: "Согласие игрока показывать контакты в блоке «ищу партнёра»"
+              - column:
+                  name: solo_reminder_sent
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+                  remarks: "Отправлено ли 48h-напоминание для SOLO_ADD_LATER регистрации"
