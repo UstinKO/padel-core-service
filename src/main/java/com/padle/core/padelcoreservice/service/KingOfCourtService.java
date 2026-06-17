@@ -10,6 +10,7 @@ import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,11 +37,18 @@ public class KingOfCourtService {
     /**
      * Инициализация турнира "Король Корта"
      */
-    public TournamentKingOfCourt initializeTournament(Long tournamentId, Integer maxCourts, Integer calibrationRounds) {
+    public TournamentKingOfCourt initializeTournament(Owner currentOwner, Long tournamentId, Integer maxCourts, Integer calibrationRounds) {
         log.info("Initializing King of Court tournament with ID: {}", tournamentId);
 
         Tournament tournament = tournamentRepository.findById(tournamentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tournament not found with ID: " + tournamentId));
+
+        if (!currentOwner.isSuperAdmin()) {
+            Long ownerId = tournament.getOwnerId();
+            if (ownerId == null || !ownerId.equals(currentOwner.getId())) {
+                throw new AccessDeniedException("You don't have permission to initialize this tournament");
+            }
+        }
 
         // Проверяем, есть ли уже активный турнир
         if (kingRepository.existsActiveByTournamentId(tournamentId)) {
@@ -982,16 +990,16 @@ public class KingOfCourtService {
 
     /**
      * Откат последнего раунда.
-     *
+     * <p>
      * Что делает:
-     *  1. Находит последний раунд турнира
-     *  2. Проверяет что он не первый (первый откатить нельзя)
-     *  3. Откатывает очки всех игроков за этот раунд
-     *  4. Удаляет все корты и результаты последнего раунда
-     *  5. Удаляет сам раунд
-     *  6. Снимает флаг isCompleted с предыдущего раунда — админ
-     *     может снова ввести результаты и перейти к следующему раунду
-     *  7. Уменьшает currentRound в турнире на 1
+     * 1. Находит последний раунд турнира
+     * 2. Проверяет что он не первый (первый откатить нельзя)
+     * 3. Откатывает очки всех игроков за этот раунд
+     * 4. Удаляет все корты и результаты последнего раунда
+     * 5. Удаляет сам раунд
+     * 6. Снимает флаг isCompleted с предыдущего раунда — админ
+     * может снова ввести результаты и перейти к следующему раунду
+     * 7. Уменьшает currentRound в турнире на 1
      */
     @Transactional
     public void rollbackLastRound(Long kingTournamentId) {
@@ -1012,8 +1020,8 @@ public class KingOfCourtService {
                     "Cannot rollback: this is the first round. There is nothing to go back to.");
         }
 
-        KingOfCourtRound lastRound    = rounds.get(rounds.size() - 1);
-        KingOfCourtRound prevRound    = rounds.get(rounds.size() - 2);
+        KingOfCourtRound lastRound = rounds.get(rounds.size() - 1);
+        KingOfCourtRound prevRound = rounds.get(rounds.size() - 2);
 
         // 1. Откатываем очки за все матчи последнего раунда
         for (KingOfCourtCourt court : lastRound.getCourts()) {
