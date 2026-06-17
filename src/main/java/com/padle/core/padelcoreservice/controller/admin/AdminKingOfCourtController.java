@@ -52,9 +52,9 @@ public class AdminKingOfCourtController {
     public String startTournament(@RequestParam Long tournamentId,
                                   @RequestParam Integer maxCourts,
                                   @RequestParam Integer calibrationRounds,
-                                  RedirectAttributes redirectAttributes, @AuthenticationPrincipal Owner owner) {
+                                  RedirectAttributes redirectAttributes, @AuthenticationPrincipal Owner currentOwner) {
         try {
-            TournamentKingOfCourt kingTournament = kingOfCourtService.initializeTournament(owner.getId(),
+            TournamentKingOfCourt kingTournament = kingOfCourtService.initializeTournament(currentOwner,
                     tournamentId, maxCourts, calibrationRounds);
 
             redirectAttributes.addFlashAttribute("successMessage",

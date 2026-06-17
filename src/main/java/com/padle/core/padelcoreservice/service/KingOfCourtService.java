@@ -10,7 +10,7 @@ import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,15 +33,12 @@ public class KingOfCourtService {
     private final PlayerRepository playerRepository;
     private final KingOfCourtMapper kingOfCourtMapper;
     private final WebSocketService webSocketService;
-    private final OwnerRepository ownerRepository;
 
     /**
      * Инициализация турнира "Король Корта"
      */
-    public TournamentKingOfCourt initializeTournament(Long currentUserId, Long tournamentId, Integer maxCourts, Integer calibrationRounds) {
+    public TournamentKingOfCourt initializeTournament(Owner currentOwner, Long tournamentId, Integer maxCourts, Integer calibrationRounds) {
         log.info("Initializing King of Court tournament with ID: {}", tournamentId);
-
-        Owner currentOwner = ownerRepository.findById(currentUserId).orElseThrow(() -> new UsernameNotFoundException("User not found with ID: " + currentUserId));
 
         Tournament tournament = tournamentRepository.findById(tournamentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tournament not found with ID: " + tournamentId));
@@ -49,7 +46,7 @@ public class KingOfCourtService {
         if (!currentOwner.isSuperAdmin()) {
             Long ownerId = tournament.getOwnerId();
             if (ownerId == null || !ownerId.equals(currentOwner.getId())) {
-                throw new SecurityException("You don't have permission to initialize this tournament");
+                throw new AccessDeniedException("You don't have permission to initialize this tournament");
             }
         }
 
