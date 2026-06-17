@@ -1472,7 +1472,7 @@ public class TestTournamentController {
             }
         }
 
-        String email = "guest." + System.currentTimeMillis() + "@epadel.guest";
+        String email = "guest." + System.currentTimeMillis() + "@1padel.guest";
 
         String insertSql = "INSERT INTO player_padel_db " +
                 "(nombre, apellido, email, telefono, password_hash, activo, email_confirmado, fecha_registro) " +

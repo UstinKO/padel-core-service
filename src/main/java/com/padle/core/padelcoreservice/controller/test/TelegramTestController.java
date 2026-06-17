@@ -37,7 +37,7 @@ public class TelegramTestController {
     // POST /test/telegram/ping — отправить тестовое сообщение
     @PostMapping("/ping")
     public ResponseEntity<String> ping() {
-        telegramService.sendMessage("🔔 <b>Test</b>: Telegram-интеграция работает! Сервис E-Padel подключён.");
+        telegramService.sendMessage("🔔 <b>Test</b>: Telegram-интеграция работает! Сервис 1-Padel подключён.");
         return ResponseEntity.ok("Сообщение отправлено");
     }
 

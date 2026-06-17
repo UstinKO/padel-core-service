@@ -194,7 +194,8 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:8080", "http://localhost:8081", "http://localhost:3000",
-                "https://epadel.org", "https://www.epadel.org"));
+                "https://epadel.org", "https://www.epadel.org",
+                "https://1-padel.com", "https://www.1-padel.com"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setExposedHeaders(List.of("Authorization"));

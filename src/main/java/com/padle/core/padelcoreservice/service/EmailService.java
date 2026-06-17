@@ -126,7 +126,7 @@ public class EmailService {
 
             String htmlContent = templateEngine.process("email/partner-invitation", context);
 
-            sendHtmlEmail(to, "🎾 Te han inscrito en un torneo de dobles - E-Padel", htmlContent);
+            sendHtmlEmail(to, "🎾 Te han inscrito en un torneo de dobles - 1-Padel", htmlContent);
 
             emailMetricsService.recordEmailSent("PARTNER_INVITATION");
             log.info("✅ Invitación a compañero enviada a: {}", to);
@@ -184,7 +184,7 @@ public class EmailService {
 
             String htmlContent = templateEngine.process("email/new-partner-invitation", context);
 
-            sendHtmlEmail(to, "🎾 Te han invitado a jugar un torneo de dobles - E-Padel", htmlContent);
+            sendHtmlEmail(to, "🎾 Te han invitado a jugar un torneo de dobles - 1-Padel", htmlContent);
 
             emailMetricsService.recordEmailSent("NEW_PARTNER_INVITATION");
             log.info("✅ Invitación a nuevo compañero enviada a: {}", to);
@@ -238,7 +238,7 @@ public class EmailService {
 
             String htmlContent = templateEngine.process("email/pair-confirmation", context);
 
-            sendHtmlEmail(to, "🎾 ¡Pareja confirmada para el torneo! - E-Padel", htmlContent);
+            sendHtmlEmail(to, "🎾 ¡Pareja confirmada para el torneo! - 1-Padel", htmlContent);
 
             emailMetricsService.recordEmailSent("PAIR_CONFIRMATION");
             log.info("✅ Confirmación de pareja enviada a: {}", to);
@@ -444,7 +444,7 @@ public class EmailService {
 
             String htmlContent = templateEngine.process("email/recuperar-password", context);
 
-            sendHtmlEmail(to, "🔐 Recuperación de contraseña - E-Padel", htmlContent);
+            sendHtmlEmail(to, "🔐 Recuperación de contraseña - 1-Padel", htmlContent);
 
             emailMetricsService.recordEmailSent("PASSWORD_RESET");
             log.info("✅ Email de recuperación enviado a: {}", to);
@@ -538,7 +538,7 @@ public class EmailService {
 
             String htmlContent = templateEngine.process("email/tournament-confirmation", context);
 
-            sendHtmlEmail(to, "🎾 ¡Inscripción confirmada! - E-Padel", htmlContent);
+            sendHtmlEmail(to, "🎾 ¡Inscripción confirmada! - 1-Padel", htmlContent);
 
             emailMetricsService.recordEmailSent("TOURNAMENT_CONFIRMATION");
             log.info("✅ Confirmación de torneo enviada a: {}", to);
