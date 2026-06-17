@@ -1,8 +1,8 @@
 package com.padle.core.padelcoreservice.service;
 
 import com.padle.core.padelcoreservice.config.TelegramProperties;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -16,13 +16,18 @@ import java.util.Map;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class TelegramService {
 
     private static final String API_URL = "https://api.telegram.org/bot%s/sendMessage";
 
     private final TelegramProperties properties;
     private final RestTemplate restTemplate;
+
+    public TelegramService(TelegramProperties properties,
+                           @Qualifier("telegramRestTemplate") RestTemplate restTemplate) {
+        this.properties = properties;
+        this.restTemplate = restTemplate;
+    }
 
     /** Отправить admin-алерт (ошибки, атаки) в основной чат. */
     public void sendMessage(String text) {

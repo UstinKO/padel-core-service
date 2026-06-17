@@ -17,6 +17,12 @@ spring:
       keepalive-time: ${DB_KEEPALIVE_TIME:60000}
       leak-detection-threshold: ${DB_LEAK_DETECTION:60000}
 
+  # ------ TASK SCHEDULING ------
+  task:
+    scheduling:
+      pool:
+        size: ${SCHEDULER_POOL_SIZE:5}
+
   # ------ JPA ------
   jpa:
     hibernate:
