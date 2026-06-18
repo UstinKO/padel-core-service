@@ -7,10 +7,7 @@ import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
 import com.padle.core.padelcoreservice.exception.TournamentRegistrationException;
 import com.padle.core.padelcoreservice.mapper.TournamentRegistrationMapper;
 import com.padle.core.padelcoreservice.mapper.americano.AmericanoMapper;
-import com.padle.core.padelcoreservice.model.Club;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
-import com.padle.core.padelcoreservice.model.Tournament;
-import com.padle.core.padelcoreservice.model.TournamentRegistration;
+import com.padle.core.padelcoreservice.model.*;
 import com.padle.core.padelcoreservice.model.americano.AmericanoMatch;
 import com.padle.core.padelcoreservice.model.americano.AmericanoPlayer;
 import com.padle.core.padelcoreservice.model.americano.AmericanoRound;
@@ -25,6 +22,8 @@ import com.padle.core.padelcoreservice.service.EmailService;
 import com.padle.core.padelcoreservice.service.PlayerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,11 +57,18 @@ public class AmericanoService {
     // ═══════════════════════════════════════════════════════════════════════
 
     @Transactional
-    public TournamentRegistrationDto registerForAmericano(Long tournamentId, Long playerId) {
+    public TournamentRegistrationDto registerForAmericano(Long tournamentId, Long playerId, Owner currentOwner) {
         log.info("Registering player {} for Americano tournament {}", playerId, tournamentId);
 
         Tournament tournament = tournamentRepository.findById(tournamentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tournament not found"));
+
+        if (!currentOwner.isSuperAdmin()) {
+            Long ownerId = currentOwner.getId();
+            if (ownerId == null || !ownerId.equals(playerId)) {
+                throw new AccessDeniedException("You don't have permission to register this player");
+            }
+        }
 
         validateTournamentForRegistration(tournament);
         return registerPlayerInternal(tournamentId, playerId);
@@ -173,13 +179,20 @@ public class AmericanoService {
     // ═══════════════════════════════════════════════════════════════════════
 
     @Transactional
-    public void cancelRegistration(Long tournamentId, Long playerId, String reason) {
+    public void cancelRegistration(Long tournamentId, Long playerId, String reason, Owner currentOwner) {
         log.info("Cancelling registration player={} tournament={}", playerId, tournamentId);
         validateCancellation(tournamentId);
 
         TournamentRegistration registration = registrationRepository
                 .findByTournamentIdAndPlayerId(tournamentId, playerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Registro no encontrado"));
+
+        if (!currentOwner.isSuperAdmin()) {
+            Long ownerId = currentOwner.getId();
+            if (ownerId == null || !ownerId.equals(playerId)) {
+                throw new AccessDeniedException("You don't have permission to register this player");
+            }
+        }
 
         if (!registration.getIsActive()) {
             throw new TournamentRegistrationException("Esta registración ya está cancelada");
@@ -365,9 +378,9 @@ public class AmericanoService {
 
         // ── Пост-проверка (п. 11 ТЗ) ────────────────────────────────────────
         AmericanoFormatType verified = verifyFormat(rounds, N);
-        int repeatCount  = countPartnerRepeats(rounds);
-        int maxByeDiff   = calcMaxByeDifference(rounds, players);
-        String message   = buildFormatMessage(verified, repeatCount, maxByeDiff);
+        int repeatCount = countPartnerRepeats(rounds);
+        int maxByeDiff = calcMaxByeDifference(rounds, players);
+        String message = buildFormatMessage(verified, repeatCount, maxByeDiff);
 
         log.info("Format verification: requested={}, chosen={}, verified={}, repeats={}, maxByeDiff={}",
                 requestedMode, chosenMode, verified, repeatCount, maxByeDiff);
@@ -379,15 +392,15 @@ public class AmericanoService {
 
     /**
      * Full возможен если:
-     *   pairs_generated == pairs_total
-     *   И все игроки помещаются в раунд без bye (N == playersPerRound * k)
+     * pairs_generated == pairs_total
+     * И все игроки помещаются в раунд без bye (N == playersPerRound * k)
      */
     private boolean isFullAmericanoPossible(int N, int courts, int totalRounds) {
         int playersPerRound = courts * 4;
         if (N % playersPerRound != 0) return false;          // есть bye → не Full
 
-        long pairsTotal     = (long) N * (N - 1) / 2;
-        long matchesTotal   = (long) totalRounds * courts;
+        long pairsTotal = (long) N * (N - 1) / 2;
+        long matchesTotal = (long) totalRounds * courts;
         long pairsGenerated = matchesTotal * 2;              // 2 партнёрских пары на матч
 
         return pairsGenerated == pairsTotal;
@@ -400,7 +413,7 @@ public class AmericanoService {
                                                     AmericanoConfigDto config) {
         log.info("Building Full Americano schedule using circle method");
 
-        int N      = players.size();
+        int N = players.size();
         int courts = config.getCourts();
         int totalRounds = config.getTotalRounds();
 
@@ -458,9 +471,9 @@ public class AmericanoService {
      * Жадно минимизирует повторы соперников.
      */
     private List<int[]> pairPartnersIntoMatches(List<AmericanoPlayer> players,
-                                                 List<int[]> pairs,
-                                                 int courts,
-                                                 Map<Long, Map<Long, Integer>> opponentCount) {
+                                                List<int[]> pairs,
+                                                int courts,
+                                                Map<Long, Map<Long, Integer>> opponentCount) {
         boolean[] used = new boolean[pairs.size()];
         List<int[]> slots = new ArrayList<>();
 
@@ -471,16 +484,19 @@ public class AmericanoService {
 
             for (int j = i + 1; j < pairs.size(); j++) {
                 if (used[j]) continue;
-                int[] p2  = pairs.get(j);
-                Long  a   = players.get(p1[0]).getPlayer().getId();
-                Long  b   = players.get(p1[1]).getPlayer().getId();
-                Long  c   = players.get(p2[0]).getPlayer().getId();
-                Long  d   = players.get(p2[1]).getPlayer().getId();
+                int[] p2 = pairs.get(j);
+                Long a = players.get(p1[0]).getPlayer().getId();
+                Long b = players.get(p1[1]).getPlayer().getId();
+                Long c = players.get(p2[0]).getPlayer().getId();
+                Long d = players.get(p2[1]).getPlayer().getId();
                 int score = getPairCount(opponentCount, a, c)
-                          + getPairCount(opponentCount, a, d)
-                          + getPairCount(opponentCount, b, c)
-                          + getPairCount(opponentCount, b, d);
-                if (score < bestScore) { bestScore = score; bestJ = j; }
+                        + getPairCount(opponentCount, a, d)
+                        + getPairCount(opponentCount, b, c)
+                        + getPairCount(opponentCount, b, d);
+                if (score < bestScore) {
+                    bestScore = score;
+                    bestJ = j;
+                }
                 if (score == 0) break;
             }
 
@@ -500,16 +516,16 @@ public class AmericanoService {
                                                     AmericanoConfigDto config) {
         log.info("Building Flex Americano schedule");
 
-        int N               = players.size();
-        int courts          = config.getCourts();
-        int rounds          = config.getTotalRounds();
+        int N = players.size();
+        int courts = config.getCourts();
+        int rounds = config.getTotalRounds();
         int playersPerRound = courts * 4;
 
-        Map<Long, Map<Long, Integer>> partnerCount  = new HashMap<>();
+        Map<Long, Map<Long, Integer>> partnerCount = new HashMap<>();
         Map<Long, Map<Long, Integer>> opponentCount = new HashMap<>();
-        Map<Long, Integer>            byePerPlayer  = new HashMap<>();
-        Map<Long, Integer>            lastByeRound  = new HashMap<>();
-        Map<Long, Integer>            matchesPlayed = new HashMap<>();
+        Map<Long, Integer> byePerPlayer = new HashMap<>();
+        Map<Long, Integer> lastByeRound = new HashMap<>();
+        Map<Long, Integer> matchesPlayed = new HashMap<>();
 
         for (AmericanoPlayer ap : players) {
             Long id = ap.getPlayer().getId();
@@ -650,10 +666,10 @@ public class AmericanoService {
      * 2) Разбивает партнёрские пары по кортам, минимизируя повторы соперников.
      */
     private List<int[]> findFlexMatchArrangement(List<AmericanoPlayer> players,
-                                                  List<Integer> activeIndices,
-                                                  int courts,
-                                                  Map<Long, Map<Long, Integer>> partnerCount,
-                                                  Map<Long, Map<Long, Integer>> opponentCount) {
+                                                 List<Integer> activeIndices,
+                                                 int courts,
+                                                 Map<Long, Map<Long, Integer>> partnerCount,
+                                                 Map<Long, Map<Long, Integer>> opponentCount) {
         int n = activeIndices.size();
 
         // Строим список кандидатов партнёрских пар с текущим счётчиком использования
@@ -662,8 +678,8 @@ public class AmericanoService {
             for (int j = i + 1; j < n; j++) {
                 int idxI = activeIndices.get(i);
                 int idxJ = activeIndices.get(j);
-                Long pi  = players.get(idxI).getPlayer().getId();
-                Long pj  = players.get(idxJ).getPlayer().getId();
+                Long pi = players.get(idxI).getPlayer().getId();
+                Long pj = players.get(idxJ).getPlayer().getId();
                 candidates.add(new int[]{idxI, idxJ, getPairCount(partnerCount, pi, pj)});
             }
         }
@@ -672,8 +688,8 @@ public class AmericanoService {
 
         // Многократный жадный поиск лучшего паросочетания
         List<int[]> bestPairs = null;
-        int         bestScore = Integer.MAX_VALUE;
-        Random      rng       = new Random();
+        int bestScore = Integer.MAX_VALUE;
+        Random rng = new Random();
 
         for (int attempt = 0; attempt < 500 && bestScore > 0; attempt++) {
             if (attempt > 0) shuffleEqualGroups(candidates, rng);
@@ -695,10 +711,12 @@ public class AmericanoService {
         return pairPartnersIntoMatches(players, pureIndexPairs, courts, opponentCount);
     }
 
-    /** Жадное паросочетание: берёт пары по порядку, пропускает уже занятых игроков. */
+    /**
+     * Жадное паросочетание: берёт пары по порядку, пропускает уже занятых игроков.
+     */
     private List<int[]> greedyPairMatch(List<int[]> candidates, int targetPairs) {
         Set<Integer> usedPlayers = new HashSet<>();
-        List<int[]>  result      = new ArrayList<>();
+        List<int[]> result = new ArrayList<>();
         for (int[] cand : candidates) {
             if (usedPlayers.contains(cand[0]) || usedPlayers.contains(cand[1])) continue;
             result.add(cand);
@@ -709,7 +727,9 @@ public class AmericanoService {
         return result;
     }
 
-    /** Перемешивает элементы внутри групп с одинаковым usage (сохраняя общий порядок сортировки). */
+    /**
+     * Перемешивает элементы внутри групп с одинаковым usage (сохраняя общий порядок сортировки).
+     */
     private void shuffleEqualGroups(List<int[]> sorted, Random rng) {
         int i = 0;
         while (i < sorted.size()) {
@@ -717,7 +737,9 @@ public class AmericanoService {
             while (j < sorted.size() && sorted.get(j)[2] == usage) j++;
             for (int k = j - 1; k > i; k--) {
                 int s = i + rng.nextInt(k - i + 1);
-                int[] tmp = sorted.get(k); sorted.set(k, sorted.get(s)); sorted.set(s, tmp);
+                int[] tmp = sorted.get(k);
+                sorted.set(k, sorted.get(s));
+                sorted.set(s, tmp);
             }
             i = j;
         }
@@ -737,7 +759,7 @@ public class AmericanoService {
 
         for (int r = 0; r < allRoundSlots.size(); r++) {
             List<int[]> slots = allRoundSlots.get(r);
-            int roundNumber   = r + 1;
+            int roundNumber = r + 1;
 
             AmericanoRound round = AmericanoRound.builder()
                     .tournament(tournament)
@@ -895,12 +917,12 @@ public class AmericanoService {
         int playersPerRound = courts * 4;
 
         // Счётчики только для preview (не сохраняем)
-        Map<Long, Map<Long, Integer>> partnerCount  = new HashMap<>();
+        Map<Long, Map<Long, Integer>> partnerCount = new HashMap<>();
         Map<Long, Map<Long, Integer>> opponentCount = new HashMap<>();
-        Map<Long, Integer> byePerPlayer  = new HashMap<>();
-        Map<Long, Integer> lastByeRound  = new HashMap<>();
+        Map<Long, Integer> byePerPlayer = new HashMap<>();
+        Map<Long, Integer> lastByeRound = new HashMap<>();
         Map<Long, Integer> matchesPlayed = new HashMap<>();
-        Map<Long, Integer> byeCountMap   = new HashMap<>();
+        Map<Long, Integer> byeCountMap = new HashMap<>();
 
         for (AmericanoPlayer ap : players) {
             Long id = ap.getPlayer().getId();
@@ -1188,7 +1210,7 @@ public class AmericanoService {
 
         for (AmericanoPlayer ap : players) {
             Long pid = ap.getPlayer().getId();
-            Set<Long> partners  = new HashSet<>();
+            Set<Long> partners = new HashSet<>();
             Set<Long> opponents = new HashSet<>();
 
             for (AmericanoMatch match : allMatches) {
@@ -1274,7 +1296,7 @@ public class AmericanoService {
         List<AmericanoPlayer> players = getSortedPlayers(
                 tournamentId, criteria.getSortBy(), !criteria.isAscending());
 
-        int totalRounds     = americanoRoundRepository.findMaxRoundNumber(tournamentId).orElse(0);
+        int totalRounds = americanoRoundRepository.findMaxRoundNumber(tournamentId).orElse(0);
         int completedRounds = americanoRoundRepository.countCompletedRounds(tournamentId);
 
         AtomicInteger pos = new AtomicInteger(1);
@@ -1289,10 +1311,10 @@ public class AmericanoService {
         // Определяем тип формата и качество сетки
         List<AmericanoRound> rounds =
                 americanoRoundRepository.findByTournamentIdOrderByRoundNumberAsc(tournamentId);
-        AmericanoFormatType fmt     = verifyFormat(rounds, players.size());
-        int repeatCount  = countPartnerRepeats(rounds);
-        int maxByeDiff   = calcMaxByeDifference(rounds, players);
-        String message   = buildFormatMessage(fmt, repeatCount, maxByeDiff);
+        AmericanoFormatType fmt = verifyFormat(rounds, players.size());
+        int repeatCount = countPartnerRepeats(rounds);
+        int maxByeDiff = calcMaxByeDifference(rounds, players);
+        String message = buildFormatMessage(fmt, repeatCount, maxByeDiff);
 
         return AmericanoRankingDto.builder()
                 .tournamentId(tournamentId)
@@ -1464,7 +1486,7 @@ public class AmericanoService {
         Tournament tournament = tournamentRepository.findById(tournamentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tournament not found"));
 
-        int total     = americanoRoundRepository.findMaxRoundNumber(tournamentId).orElse(0);
+        int total = americanoRoundRepository.findMaxRoundNumber(tournamentId).orElse(0);
         int completed = americanoRoundRepository.countCompletedRounds(tournamentId);
 
         if (completed < total) {
@@ -1514,8 +1536,8 @@ public class AmericanoService {
                                               RegistrationStatus status, int position) {
         try {
             String clubName = getClubName(tournament.getClubId());
-            String dateStr  = tournament.getFechaInicio().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-            String timeStr  = tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm"));
+            String dateStr = tournament.getFechaInicio().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+            String timeStr = tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm"));
 
             if (status == RegistrationStatus.CONFIRMED) {
                 emailService.sendTournamentConfirmationEmail(
@@ -1594,5 +1616,6 @@ public class AmericanoService {
             int partnerRepeatCount,
             int maxByeDifference,
             String message
-    ) {}
+    ) {
+    }
 }

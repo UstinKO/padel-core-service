@@ -3,11 +3,14 @@ package com.padle.core.padelcoreservice.controller.view.americano;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
 import com.padle.core.padelcoreservice.dto.americano.*;
+import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import com.padle.core.padelcoreservice.service.americano.AmericanoService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -107,13 +110,14 @@ public class AmericanoViewController {
     }
 
     @PostMapping("/{tournamentId}/register")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
     public String registerForTournament(
             @PathVariable Long tournamentId,
             @RequestParam Long playerId,
-            RedirectAttributes redirectAttributes) {
+            RedirectAttributes redirectAttributes, @AuthenticationPrincipal Owner currentOwner) {
 
         try {
-            TournamentRegistrationDto registration = americanoService.registerForAmericano(tournamentId, playerId);
+            TournamentRegistrationDto registration = americanoService.registerForAmericano(tournamentId, playerId, currentOwner);
 
             String status = registration.getStatus().name();
             if ("CONFIRMED".equals(status)) {
@@ -130,14 +134,15 @@ public class AmericanoViewController {
     }
 
     @PostMapping("/{tournamentId}/cancel")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
     public String cancelRegistration(
             @PathVariable Long tournamentId,
             @RequestParam Long playerId,
             @RequestParam(required = false) String reason,
-            RedirectAttributes redirectAttributes) {
+            RedirectAttributes redirectAttributes, @AuthenticationPrincipal Owner currentOwner) {
 
         try {
-            americanoService.cancelRegistration(tournamentId, playerId, reason);
+            americanoService.cancelRegistration(tournamentId, playerId, reason, currentOwner);
             redirectAttributes.addFlashAttribute("success", "Registro cancelado correctamente");
         } catch (Exception e) {
             log.error("Error cancelling registration: {}", e.getMessage());
