@@ -23,6 +23,15 @@ spring:
       pool:
         size: ${SCHEDULER_POOL_SIZE:5}
 
+  # ------ STATIC RESOURCES ------
+  web:
+    resources:
+      chain:
+        strategy:
+          content:
+            enabled: true
+            paths: /**
+
   # ------ JPA ------
   jpa:
     hibernate:
