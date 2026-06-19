@@ -1529,3 +1529,38 @@ textarea.form-control {
     transition: opacity .2s;
 }
 .lp-propose-btn:disabled { opacity: .6; cursor: not-allowed; }
+.lp-no-contact-hint {
+    position: relative;
+    display: inline-flex; align-items: center;
+    background: none; border: none; cursor: pointer;
+    color: #f59e0b; font-size: 1.1rem; padding: 0;
+}
+.lp-no-contact-tooltip {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 6px);
+    right: 0;
+    width: 220px;
+    background: #1e293b;
+    color: #f1f5f9;
+    font-size: .78rem;
+    line-height: 1.4;
+    padding: .5rem .7rem;
+    border-radius: 7px;
+    z-index: 10;
+    pointer-events: none;
+    text-align: left;
+    white-space: normal;
+}
+.lp-no-contact-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%; right: 8px;
+    border: 5px solid transparent;
+    border-top-color: #1e293b;
+}
+.lp-no-contact-hint:hover .lp-no-contact-tooltip,
+.lp-no-contact-hint:focus .lp-no-contact-tooltip,
+.lp-no-contact-hint:focus-within .lp-no-contact-tooltip {
+    display: block;
+}

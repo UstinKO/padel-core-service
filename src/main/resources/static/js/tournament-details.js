@@ -539,16 +539,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 block.style.display = '';
                 list.innerHTML = players.map(p => {
                     const isOwnCard = String(p.playerId) === String(currentUserPlayerId);
-                    const contacts = p.shareContacts
-                        ? `<div class="lp-card-contacts">
-                            ${p.telegramUsername
-                                ? `<a class="lp-contact-btn lp-contact-btn--tg" href="https://t.me/${p.telegramUsername}" target="_blank"><i class="fab fa-telegram"></i> Telegram</a>`
-                                : ''}
-                            ${p.telefono
-                                ? `<a class="lp-contact-btn lp-contact-btn--wa" href="https://wa.me/${p.telefono.replace(/\D/g,'')}" target="_blank"><i class="fab fa-whatsapp"></i> WhatsApp</a>`
-                                : ''}
-                          </div>`
-                        : '';
+                    const tgUsername = p.telegramUsername ? p.telegramUsername.replace(/^@/, '') : null;
+                    const hasTg  = !!tgUsername;
+                    const hasWa  = !!p.telefono;
+                    let contacts = '';
+                    if (p.shareContacts) {
+                        if (hasTg || hasWa) {
+                            contacts = `<div class="lp-card-contacts">
+                                ${hasTg ? `<a class="lp-contact-btn lp-contact-btn--tg" href="https://t.me/${tgUsername}" target="_blank"><i class="fab fa-telegram"></i> Telegram</a>` : ''}
+                                ${hasWa ? `<a class="lp-contact-btn lp-contact-btn--wa" href="https://wa.me/${p.telefono.replace(/\D/g,'')}" target="_blank"><i class="fab fa-whatsapp"></i> WhatsApp</a>` : ''}
+                            </div>`;
+                        } else if (isOwnCard) {
+                            contacts = `<div class="lp-card-contacts">
+                                <button class="lp-no-contact-hint" tabindex="0"
+                                    aria-label="Para que otros jugadores puedan contactarte, completá tu número de teléfono o username de Telegram en tu perfil">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    <span class="lp-no-contact-tooltip">
+                                        Para que otros jugadores puedan contactarte, completá tu número de teléfono o username de Telegram en tu perfil.
+                                    </span>
+                                </button>
+                            </div>`;
+                        }
+                    }
                     const proposeBtn = (!isOwnCard && currentUserIsSolo && currentUserSoloRegId)
                         ? `<button class="lp-propose-btn"
                                    data-reg-id="${p.registrationId}"
