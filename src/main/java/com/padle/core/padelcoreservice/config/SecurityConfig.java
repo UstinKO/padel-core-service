@@ -176,8 +176,7 @@ public class SecurityConfig {
     @Bean
     public AuthenticationFailureHandler customAuthenticationFailureHandler() {
         return (request, response, exception) -> {
-            // Логируем точный тип и сообщение для диагностики
-            log.warn("Authentication failure: type={}, message={}",
+            log.info("Authentication failure: type={}, message={}",
                     exception.getClass().getName(), exception.getMessage());
 
             if (exception instanceof DisabledException

@@ -34,7 +34,7 @@ public class CompositeUserDetailsService implements UserDetailsService {
             log.info("Player found: {}", username);
             return player;
         } catch (UsernameNotFoundException e) {
-            log.error("User not found: {}", username);
+            log.info("User not found: {}", username);
             throw new UsernameNotFoundException("Usuario no encontrado con email: " + username);
         }
     }
