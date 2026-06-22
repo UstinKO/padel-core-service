@@ -15,7 +15,7 @@ spring:
       idle-timeout: ${DB_IDLE_TIMEOUT:600000}
       max-lifetime: ${DB_MAX_LIFETIME:1800000}
       keepalive-time: ${DB_KEEPALIVE_TIME:60000}
-      leak-detection-threshold: ${DB_LEAK_DETECTION:60000}
+      leak-detection-threshold: ${DB_LEAK_DETECTION:20000}
 
   # ------ TASK SCHEDULING ------
   task:

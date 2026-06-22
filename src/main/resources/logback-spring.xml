@@ -116,6 +116,9 @@
     <!-- Spring Framework (только предупреждения) -->
     <logger name="org.springframework" level="WARN"/>
 
+    <!-- 400-ошибки от клиентов (бот-сканеры, невалидный ввод) — не инцидент, в Telegram не отправлять -->
+    <logger name="org.springframework.web.servlet.mvc.support.DefaultHandlerExceptionResolver" level="ERROR"/>
+
     <!-- Hibernate (только предупреждения) -->
     <logger name="org.hibernate" level="WARN"/>
 
