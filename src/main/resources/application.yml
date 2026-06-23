@@ -49,6 +49,13 @@ spring:
     enabled: true
     change-log: classpath:db/changelog/changelog-master.yaml
 
+  # ------ I18N ------
+  messages:
+    basename: i18n/messages
+    encoding: UTF-8
+    fallback-to-system-locale: false
+    use-code-as-default-message: false
+
   # ------ THYMELEAF ------
   thymeleaf:
     cache: ${THYMELEAF_CACHE:true}
