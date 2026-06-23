@@ -138,6 +138,7 @@ public class HomeController {
         return authorities.stream()
                 .anyMatch(auth ->
                         auth.getAuthority().equals("ROLE_SUPER_ADMIN") ||
-                                auth.getAuthority().equals("ROLE_ORGANIZER"));
+                        auth.getAuthority().equals("ROLE_ORGANIZER") ||
+                        auth.getAuthority().equals("ROLE_ADMIN"));
     }
 }

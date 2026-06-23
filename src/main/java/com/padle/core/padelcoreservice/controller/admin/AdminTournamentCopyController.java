@@ -2,16 +2,19 @@ package com.padle.core.padelcoreservice.controller.admin;
 
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
+import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.enums.*;
 import com.padle.core.padelcoreservice.service.ClubService;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/admin/tournaments")
@@ -23,7 +26,13 @@ public class AdminTournamentCopyController {
     private final ClubService clubService;
 
     @GetMapping("/{id}/copy")
-    public String copyTournament(@PathVariable Long id, Model model) {
+    public String copyTournament(@PathVariable Long id, Model model,
+                                 @AuthenticationPrincipal Owner owner,
+                                 RedirectAttributes redirectAttributes) {
+        if (owner.isAdminRole()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "No tienes permiso para copiar torneos");
+            return "redirect:/admin/tournaments";
+        }
         log.info("Copying tournament with id: {}", id);
 
         // Получаем существующий турнир

@@ -370,13 +370,17 @@
                     }">
                 <i class="fas fa-share-alt"></i> Compartir
             </button>
-            <a th:href="@{'/admin/tournaments/' + ${tournament.id} + '/edit'}" class="btn btn-primary">
+
+            <!-- Редактирование — недоступно для ADMIN -->
+            <a th:unless="${isAdminRole}"
+               th:href="@{'/admin/tournaments/' + ${tournament.id} + '/edit'}" class="btn btn-primary">
                 <i class="fas fa-edit"></i>
                 Editar Torneo
             </a>
 
-            <!-- Кнопки изменения статуса -->
-            <form th:action="@{'/admin/tournaments/' + ${tournament.id} + '/status'}"
+            <!-- Кнопки изменения статуса (Publicar — только для владельцев, не ADMIN) -->
+            <form th:unless="${isAdminRole}"
+                  th:action="@{'/admin/tournaments/' + ${tournament.id} + '/status'}"
                   method="post" style="display: inline-block;">
                 <input type="hidden" name="status" value="PUBLICADO">
                 <button type="submit" class="btn btn-outline"
@@ -412,7 +416,9 @@
                 </button>
             </form>
 
-            <form th:action="@{'/admin/tournaments/' + ${tournament.id} + '/deactivate'}"
+            <!-- Деактивация — недоступна для ADMIN -->
+            <form th:unless="${isAdminRole}"
+                  th:action="@{'/admin/tournaments/' + ${tournament.id} + '/deactivate'}"
                   method="post" style="display: inline-block;">
                 <button type="submit" class="btn btn-warning">
                     <i class="fas fa-ban"></i> Desactivar
@@ -420,8 +426,8 @@
             </form>
         </div>
 
-        <!-- Кнопка Eliminar Permanentemente (solo para torneos inactivos) -->
-        <div th:unless="${tournament.isActive}" class="action-buttons-center" style="margin-top: 0;">
+        <!-- Кнопка Eliminar Permanentemente (solo para torneos inactivos, no para ADMIN) -->
+        <div th:if="${!tournament.isActive and !isAdminRole}" class="action-buttons-center" style="margin-top: 0;">
             <form th:action="@{'/admin/tournaments/' + ${tournament.id} + '/delete'}"
                   method="post" style="display: inline-block;">
                 <button type="submit" class="btn btn-danger">

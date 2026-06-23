@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.38-add-admin-role
+      author: padel-core
+      comment: "Добавлена роль ADMIN в код. Колонка role в owners_db уже VARCHAR(50) — схема не меняется. Пользователи с ролью ADMIN добавляются вручную через SQL."
+      changes:
+        - sql:
+            sql: |
+              -- Роль ADMIN добавлена в enum OwnerRole.
+              -- Пользователей с этой ролью вставлять вручную (не в миграциях).
+              SELECT 1;
+      rollback:
+        - sql:
+            sql: SELECT 1;

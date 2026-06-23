@@ -110,4 +110,12 @@ public class Owner implements UserDetails {
     public boolean isSuperAdmin() {
         return role == OwnerRole.SUPER_ADMIN;
     }
+
+    public boolean isAdminRole() {
+        return role == OwnerRole.ADMIN;
+    }
+
+    public boolean canViewAllTournaments() {
+        return role == OwnerRole.SUPER_ADMIN || role == OwnerRole.ADMIN;
+    }
 }
