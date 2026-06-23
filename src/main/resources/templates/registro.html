@@ -88,6 +88,18 @@
 
                 <!-- Registration Form -->
                 <form action="/players/registro" method="post" class="auth-form" id="registroForm">
+                    <!-- Rate limit -->
+                    <div th:if="${param.error != null and param.error[0] == 'rate-limit'}"
+                         style="background:#fff7ed; border-left:4px solid #f59e0b; border-radius:8px;
+                                color:#92400e; padding:1rem 1.25rem; display:flex;
+                                gap:.75rem; align-items:flex-start; margin-bottom:.5rem;">
+                        <i class="fas fa-clock" style="color:#f59e0b; font-size:1.25rem; flex-shrink:0; margin-top:.1rem;"></i>
+                        <div>
+                            <strong style="display:block; margin-bottom:.25rem;">Demasiadas solicitudes</strong>
+                            Has superado el límite de intentos. Por favor, espera <strong>1 minuto</strong> antes de intentarlo de nuevo.
+                        </div>
+                    </div>
+
                     <!-- Error Messages -->
                     <div th:if="${errorMessage}" class="alert alert-error">
                         <i class="fas fa-exclamation-circle"></i>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+    <meta name="robots" content="noindex">
+    <title th:text="${isBlocked} ? 'Acceso bloqueado | 1-Padel' : 'Demasiados intentos | 1-Padel'">
+        Demasiados intentos | 1-Padel
+    </title>
+
+    <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
+    <link rel="alternate icon" th:href="@{/images/favicon.ico}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body class="auth-page-simple">
+
+<header class="header">
+    <div class="container">
+        <nav class="navbar">
+            <a href="/" class="navbar-brand">
+                <img th:src="@{/images/1.svg}" alt="1-Padel Logo" class="navbar-logo" width="40" height="40">
+                <span class="navbar-brand-text">1-<span class="brand-highlight">PADEL</span></span>
+            </a>
+        </nav>
+    </div>
+</header>
+
+<main class="auth-main-simple">
+    <div class="container">
+        <div class="auth-container">
+            <div class="auth-card" style="text-align: center;">
+
+                <!-- Icono -->
+                <div style="margin-bottom: 1.5rem;">
+                    <div th:if="${isBlocked}"
+                         style="display: inline-flex; align-items: center; justify-content: center;
+                                width: 80px; height: 80px; border-radius: 50%;
+                                background: rgba(239,68,68,0.1);">
+                        <i class="fas fa-shield-alt" style="font-size: 2.2rem; color: var(--color-error);"></i>
+                    </div>
+                    <div th:unless="${isBlocked}"
+                         style="display: inline-flex; align-items: center; justify-content: center;
+                                width: 80px; height: 80px; border-radius: 50%;
+                                background: rgba(245,158,11,0.1);">
+                        <i class="fas fa-clock" style="font-size: 2.2rem; color: var(--color-warning);"></i>
+                    </div>
+                </div>
+
+                <!-- Título -->
+                <h2 class="auth-card-title"
+                    th:text="${isBlocked} ? 'Acceso bloqueado temporalmente' : 'Demasiados intentos'">
+                    Demasiados intentos
+                </h2>
+
+                <!-- Descripción -->
+                <p style="color: var(--color-text-light); margin: 0.75rem 0 1.75rem; line-height: 1.6;"
+                   th:text="${isBlocked}
+                       ? 'Tu dirección IP ha sido bloqueada por actividad sospechosa. Por favor, espera 15 minutos antes de intentarlo de nuevo.'
+                       : 'Has superado el límite de solicitudes permitidas. Espera un momento y vuelve a intentarlo.'">
+                </p>
+
+                <!-- Cuenta regresiva -->
+                <div id="countdown-block"
+                     style="padding: 1.25rem 1.5rem; border-radius: var(--border-radius-lg);
+                            margin-bottom: 1.75rem;"
+                     th:style="${isBlocked}
+                         ? 'background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.15); padding: 1.25rem 1.5rem; border-radius: var(--border-radius-lg); margin-bottom: 1.75rem;'
+                         : 'background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.2); padding: 1.25rem 1.5rem; border-radius: var(--border-radius-lg); margin-bottom: 1.75rem;'">
+                    <p style="font-size: 0.85rem; color: var(--color-text-light); margin-bottom: 0.5rem;">
+                        Podrás intentarlo de nuevo en
+                    </p>
+                    <div id="countdown-display"
+                         style="font-size: 2.75rem; font-weight: 800; letter-spacing: 0.05em;"
+                         th:style="${isBlocked} ? 'color: var(--color-error); font-size: 2.75rem; font-weight: 800; letter-spacing: 0.05em;' : 'color: var(--color-warning); font-size: 2.75rem; font-weight: 800; letter-spacing: 0.05em;'">
+                        --:--
+                    </div>
+                </div>
+
+                <!-- Mensaje "listo" (oculto al principio) -->
+                <div id="ready-block"
+                     style="display: none; padding: 1.25rem 1.5rem;
+                            background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2);
+                            border-radius: var(--border-radius-lg); margin-bottom: 1.75rem;">
+                    <i class="fas fa-check-circle" style="font-size: 2rem; color: var(--color-success);"></i>
+                    <p style="color: var(--color-success); font-weight: 600; margin-top: 0.5rem; margin-bottom: 0;">
+                        ¡Ya puedes intentarlo de nuevo!
+                    </p>
+                </div>
+
+                <!-- Botones -->
+                <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                    <a href="javascript:history.back()" class="btn btn-primary">
+                        <i class="fas fa-redo"></i> Intentar de nuevo
+                    </a>
+                    <a href="/" class="btn btn-outline">
+                        <i class="fas fa-home"></i> Inicio
+                    </a>
+                </div>
+
+            </div>
+
+            <div style="text-align: center; margin-top: 1.5rem; color: var(--color-text-light);">
+                <small>
+                    <i class="fas fa-shield-alt"></i>
+                    Esta protección evita el abuso automatizado del sistema
+                </small>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="footer" style="padding: 1rem 0;">
+    <div class="container">
+        <div class="footer-bottom" style="justify-content: center; text-align: center; border-top: none;">
+            <div class="footer-copyright">
+                <i class="far fa-copyright"></i> 2026 1-Padel. Todos los derechos reservados.
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script th:inline="javascript">
+/*<![CDATA[*/
+const retryAfter = /*[[${retryAfter}]]*/ 60;
+
+function formatTime(s) {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return m > 0
+        ? m + ':' + String(sec).padStart(2, '0')
+        : sec + 's';
+}
+
+let remaining = retryAfter;
+const display = document.getElementById('countdown-display');
+const countdownBlock = document.getElementById('countdown-block');
+const readyBlock = document.getElementById('ready-block');
+
+display.textContent = formatTime(remaining);
+
+const interval = setInterval(function() {
+    remaining--;
+    if (remaining <= 0) {
+        clearInterval(interval);
+        countdownBlock.style.display = 'none';
+        readyBlock.style.display = 'block';
+    } else {
+        display.textContent = formatTime(remaining);
+    }
+}, 1000);
+/*]]>*/
+</script>
+</body>
+</html>

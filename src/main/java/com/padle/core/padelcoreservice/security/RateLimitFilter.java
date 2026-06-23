@@ -47,7 +47,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     // IP-адреса, которые полностью обходят rate limiting (разработчики / владелец)
     private static final Set<String> WHITELISTED_IPS = Set.of(
-            "194.124.210.113",  // разработчик
+            //"194.124.210.113",  // разработчик
             "152.171.139.176"   // владелец приложения
     );
 
@@ -94,7 +94,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
         if (limitType == LimitType.BLOCKED) {
             BLOCKED_TODAY.incrementAndGet();
-            sendRateLimitResponse(response, LimitType.BLOCKED);
+            sendRateLimitResponse(request, response, LimitType.BLOCKED);
             return;
         }
 
@@ -106,16 +106,17 @@ public class RateLimitFilter extends OncePerRequestFilter {
         } else {
             log.warn("Rate limit exceeded: ip={}, path={}, type={}", ip, path, limitType);
             BLOCKED_TODAY.incrementAndGet();
-            sendRateLimitResponse(response, limitType);
+            sendRateLimitResponse(request, response, limitType);
         }
     }
 
     // ✅ Метод с параметром ip
     private LimitType classifyPath(String path, String ip) {
-        // Статические ресурсы — пропускаем без лимита
+        // Статические ресурсы и служебные страницы ошибок — пропускаем без лимита
         if (path.startsWith("/css/") || path.startsWith("/js/")
                 || path.startsWith("/images/") || path.startsWith("/webjars/")
-                || path.equals("/favicon.ico") || path.equals("/robots.txt")) {
+                || path.equals("/favicon.ico") || path.equals("/robots.txt")
+                || path.startsWith("/error/")) {
             return null;
         }
 
@@ -202,11 +203,41 @@ public class RateLimitFilter extends OncePerRequestFilter {
         return request.getRemoteAddr();
     }
 
-    private void sendRateLimitResponse(HttpServletResponse response,
+    private void sendRateLimitResponse(HttpServletRequest request,
+                                       HttpServletResponse response,
                                        LimitType type) throws IOException {
+        String path = request.getRequestURI();
+        String method = request.getMethod();
+        int retryAfter = (type == LimitType.BLOCKED) ? 900 : 60;
+
+        // BLOCKED на браузерных путях → отдельная страница с объяснением
+        if (type == LimitType.BLOCKED && !path.startsWith("/api/")) {
+            response.sendRedirect("/error/rate-limit?retry=900&blocked=true");
+            return;
+        }
+
+        // Form POST /login → редирект на страницу логина с ошибкой
+        if ("POST".equalsIgnoreCase(method) && path.equals("/login")) {
+            response.sendRedirect("/login?error=rate-limit");
+            return;
+        }
+
+        // Form POST /players/registro → редирект на форму регистрации с ошибкой
+        if ("POST".equalsIgnoreCase(method) && path.equals("/players/registro")) {
+            response.sendRedirect("/players/registro?error=rate-limit");
+            return;
+        }
+
+        // GENERAL на браузерных путях → стилизованная страница 429
+        if (type == LimitType.GENERAL) {
+            response.sendRedirect("/error/rate-limit?retry=60");
+            return;
+        }
+
+        // Всё остальное (API, OAuth2, recuperar-password и т.д.) → JSON
         response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
         response.setContentType("application/json;charset=UTF-8");
-        response.setHeader("Retry-After", "60");
+        response.setHeader("Retry-After", String.valueOf(retryAfter));
 
         String message = switch (type) {
             case AUTH -> "Demasiados intentos. Intenta en 1 minuto.";
@@ -214,18 +245,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
             case BLOCKED -> "IP bloqueado por actividad sospechosa. Intenta en 15 minutos.";
             default -> "Demasiadas solicitudes. Intenta en 1 minuto.";
         };
-
-        if (type == LimitType.GENERAL) {
-            response.setContentType("text/html;charset=UTF-8");
-            response.getWriter().write(
-                    "<html><body><h2>429 - Demasiadas solicitudes</h2>" +
-                            "<p>" + message + "</p>" +
-                            "<a href='/'>Volver al inicio</a></body></html>"
-            );
-        } else {
-            response.getWriter().write(
-                    "{\"success\":false,\"message\":\"" + message + "\",\"retryAfter\":60}"
-            );
-        }
+        response.getWriter().write(
+                "{\"success\":false,\"message\":\"" + message + "\",\"retryAfter\":" + retryAfter + "}");
     }
 }
