@@ -48,8 +48,8 @@
             <span th:text="${errorMessage}">Error en la operación</span>
         </div>
 
-        <!-- Botón de nuevo torneo -->
-        <div class="admin-actions">
+        <!-- Botón de nuevo torneo (oculto para rol ADMIN) -->
+        <div class="admin-actions" th:unless="${isAdminRole}">
             <a href="/admin/tournaments/new" class="btn btn-primary">
                 <i class="fas fa-plus-circle"></i>
                 Nuevo Torneo
@@ -102,13 +102,19 @@
                 </div>
 
                 <div class="tournament-card-footer">
-                    <!-- Кнопка копирования — видна всем организаторам на любом турнире -->
+                    <!-- Кнопка копирования — не для ADMIN -->
                     <a th:if="${item.canCopy}"
                        th:href="@{'/admin/tournaments/' + ${item.tournament.id} + '/copy'}"
                        class="btn btn-outline btn-sm"
                        style="color: #6366f1; border-color: #6366f1;"
                        title="Copiar torneo">
                         <i class="fas fa-copy"></i> Copiar
+                    </a>
+
+                    <!-- Кнопка Ver — для ADMIN (canView без isOwner) -->
+                    <a th:if="${item.canView and !item.isOwner}"
+                       th:href="@{'/admin/tournaments/' + ${item.tournament.id}}" class="btn btn-outline btn-sm" title="Ver detalles">
+                        <i class="fas fa-eye"></i> Ver
                     </a>
 
                     <!-- Остальные кнопки — только для владельца -->
@@ -191,12 +197,18 @@
                     </td>
                     <td>
                         <div class="action-buttons" style="display: flex; gap: 0.25rem; flex-wrap: wrap;">
-                            <!-- Копирование — для всех -->
+                            <!-- Копирование — не для ADMIN -->
                             <a th:if="${item.canCopy}"
                                th:href="@{'/admin/tournaments/' + ${item.tournament.id} + '/copy'}"
                                class="btn-icon" title="Copiar torneo"
                                style="background: #6366f1; color: white;">
                                 <i class="fas fa-copy"></i>
+                            </a>
+
+                            <!-- Ver — для ADMIN (canView без isOwner) -->
+                            <a th:if="${item.canView and !item.isOwner}"
+                               th:href="@{'/admin/tournaments/' + ${item.tournament.id}}" class="btn-icon" title="Ver detalles" style="background: #3b82f6; color: white;">
+                                <i class="fas fa-eye"></i>
                             </a>
 
                             <!-- Остальные действия — только для владельца -->

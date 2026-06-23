@@ -29,11 +29,17 @@ public class AdminClubController {
         log.info("Listing all clubs for admin");
         model.addAttribute("clubs", clubService.getAllClubsForAdmin());
         model.addAttribute("isSuperAdmin", owner.isSuperAdmin());
+        model.addAttribute("isAdminRole", owner.isAdminRole());
         return "admin/clubs/list";
     }
 
     @GetMapping("/new")
-    public String newClubForm(Model model) {
+    public String newClubForm(Model model, @AuthenticationPrincipal Owner owner,
+                              org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
+        if (owner.isAdminRole()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "No tienes permiso para crear clubes");
+            return "redirect:/admin/clubs";
+        }
         log.info("Showing new club form");
         model.addAttribute("club", new ClubDto());
         return "admin/clubs/form";
@@ -80,6 +86,10 @@ public class AdminClubController {
                              BindingResult result,
                              @AuthenticationPrincipal UserDetails userDetails,
                              RedirectAttributes redirectAttributes) {
+        if (userDetails instanceof Owner owner && owner.isAdminRole()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "No tienes permiso para crear clubes");
+            return "redirect:/admin/clubs";
+        }
         log.info("Creating new club");
 
         if (result.hasErrors()) {

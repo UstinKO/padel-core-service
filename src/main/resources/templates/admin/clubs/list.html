@@ -34,8 +34,8 @@
             <span th:text="${errorMessage}">Error en la operación</span>
         </div>
 
-        <!-- Кнопка создания — доступна всем -->
-        <div class="admin-actions">
+        <!-- Кнопка создания — недоступна для ADMIN -->
+        <div class="admin-actions" th:unless="${isAdminRole}">
             <a href="/admin/clubs/new" class="btn btn-primary">
                 <i class="fas fa-plus-circle"></i>
                 Nuevo Club

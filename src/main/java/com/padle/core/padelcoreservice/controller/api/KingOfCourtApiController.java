@@ -32,7 +32,7 @@ public class KingOfCourtApiController {
      * Инициализация турнира "Король Корта"
      */
     @PostMapping("/tournaments/{tournamentId}/initialize")
-    @PreAuthorize("hasAnyRole('OWNER', 'SUPER_ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('OWNER', 'SUPER_ADMIN', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<TournamentKingOfCourt> initializeKingOfCourt(
             @PathVariable Long tournamentId,
             @Valid @RequestBody InitializeKingOfCourtRequest request,
@@ -78,7 +78,7 @@ public class KingOfCourtApiController {
      * Сохранение результата матча
      */
     @PostMapping("/matches/result")
-    @PreAuthorize("hasAnyRole('OWNER', 'SUPER_ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('OWNER', 'SUPER_ADMIN', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> saveMatchResult(@Valid @RequestBody MatchResultRequest request) {
         log.info("Saving match result: {}", request);
 
@@ -98,7 +98,7 @@ public class KingOfCourtApiController {
      * Переход к следующему раунду
      */
     @PostMapping("/tournaments/{kingId}/next-round")
-    @PreAuthorize("hasAnyRole('OWNER', 'SUPER_ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('OWNER', 'SUPER_ADMIN', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> nextRound(@PathVariable Long kingId) {
         log.info("Moving to next round for tournament: {}", kingId);
         kingOfCourtService.nextRound(kingId);
@@ -109,7 +109,7 @@ public class KingOfCourtApiController {
      * Завершение турнира
      */
     @PostMapping("/tournaments/{kingId}/finish")
-    @PreAuthorize("hasAnyRole('OWNER', 'SUPER_ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('OWNER', 'SUPER_ADMIN', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> finishTournament(@PathVariable Long kingId) {
         log.info("Finishing tournament: {}", kingId);
         kingOfCourtService.finishTournament(kingId);
@@ -120,7 +120,7 @@ public class KingOfCourtApiController {
      * Обновление YouTube ссылки
      */
     @PostMapping("/tournaments/{kingId}/youtube")
-    @PreAuthorize("hasAnyRole('OWNER', 'SUPER_ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('OWNER', 'SUPER_ADMIN', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> updateYoutubeLink(@PathVariable Long kingId,
                                                @RequestParam String youtubeLink) {
         log.info("Updating YouTube link for tournament: {}", kingId);
@@ -145,7 +145,7 @@ public class KingOfCourtApiController {
      * Обновление результата матча
      */
     @PutMapping("/matches/result/{resultId}")
-    @PreAuthorize("hasAnyRole('OWNER', 'SUPER_ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('OWNER', 'SUPER_ADMIN', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> updateMatchResult(
             @PathVariable Long resultId,
             @Valid @RequestBody MatchResultRequest request) {
@@ -217,7 +217,7 @@ public class KingOfCourtApiController {
      * Добавить в KingOfCourtApiController рядом с /next-round
      */
     @PostMapping("/tournaments/{kingId}/rollback")
-    @PreAuthorize("hasAnyRole('OWNER', 'SUPER_ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('OWNER', 'SUPER_ADMIN', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> rollbackLastRound(@PathVariable Long kingId) {
         log.info("Rolling back last round for tournament: {}", kingId);
         try {

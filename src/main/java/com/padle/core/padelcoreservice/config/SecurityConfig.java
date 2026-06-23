@@ -98,7 +98,7 @@ public class SecurityConfig {
                         .requestMatchers("/players/lista").authenticated()
                         .requestMatchers("/players/perfil/**").authenticated()
                         .requestMatchers("/players/mis-torneos").authenticated()
-                        .requestMatchers("/admin/**").hasAnyRole("OWNER", "SUPER_ADMIN", "ORGANIZER")
+                        .requestMatchers("/admin/**").hasAnyRole("OWNER", "SUPER_ADMIN", "ORGANIZER", "ADMIN")
                         // Публичные GET-эндпоинты King of Court для страницы зрителей
                         .requestMatchers(org.springframework.http.HttpMethod.GET,
                                 "/api/king-of-court/tournaments/*/state",
@@ -215,7 +215,8 @@ public class SecurityConfig {
             boolean isAdmin = authentication.getAuthorities().stream()
                     .anyMatch(auth -> auth.getAuthority().equals("ROLE_OWNER") ||
                             auth.getAuthority().equals("ROLE_SUPER_ADMIN") ||
-                            auth.getAuthority().equals("ROLE_ORGANIZER"));
+                            auth.getAuthority().equals("ROLE_ORGANIZER") ||
+                            auth.getAuthority().equals("ROLE_ADMIN"));
 
             if (isAdmin) {
                 targetUrl = "/admin";

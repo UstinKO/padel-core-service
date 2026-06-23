@@ -84,12 +84,13 @@ public class AdminController {
         model.addAttribute("totalTournaments", totalTournaments);
         model.addAttribute("totalWaitlist", totalWaitlist);
         model.addAttribute("recentTournaments", recentTournaments);
-        model.addAttribute("recentTournamentsWithFlags", recentTournamentsWithFlags); // добавляем
+        model.addAttribute("recentTournamentsWithFlags", recentTournamentsWithFlags);
         model.addAttribute("recentPlayers", recentPlayers);
         model.addAttribute("matchesInProgress", matchesInProgress);
         model.addAttribute("upcomingMatches", upcomingMatches);
         model.addAttribute("activeTournaments", activeTournaments);
         model.addAttribute("isSuperAdmin", owner.isSuperAdmin());
+        model.addAttribute("isAdminRole", owner.isAdminRole());
 
         return "admin/panel";
     }
@@ -101,7 +102,7 @@ public class AdminController {
         // Получаем ВСЕ турниры
         List<TournamentDto> allTournaments = tournamentService.getAllTournaments();
 
-        // Добавляем флаг isOwner для каждого турнира
+        // Добавляем флаги для каждого турнира
         List<Map<String, Object>> tournamentsWithFlags = allTournaments.stream()
                 .map(t -> {
                     Map<String, Object> map = new HashMap<>();
@@ -111,8 +112,9 @@ public class AdminController {
                             (t.getOwnerId() != null && t.getOwnerId().equals(owner.getId()));
                     map.put("isOwner", isOwner);
 
-                    // Кнопка "Copiar" доступна всем авторизованным: и superAdmin, и organizer
-                    map.put("canCopy", true);
+                    // ADMIN: видит все турниры, но не может копировать/редактировать/удалять
+                    map.put("canCopy", !owner.isAdminRole());
+                    map.put("canView", isOwner || owner.isAdminRole());
 
                     return map;
                 })
@@ -120,6 +122,7 @@ public class AdminController {
 
         model.addAttribute("tournaments", tournamentsWithFlags);
         model.addAttribute("isSuperAdmin", owner.isSuperAdmin());
+        model.addAttribute("isAdminRole", owner.isAdminRole());
 
         return "admin/tournaments/list";
     }
@@ -131,6 +134,10 @@ public class AdminController {
                                    RedirectAttributes redirectAttributes,
                                    Model model) {
 
+        if (owner.isAdminRole()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "No tienes permiso para crear torneos");
+            return "redirect:/admin/tournaments";
+        }
         log.info("Creating new tournament: {} by owner: {}", tournamentDto.getNombre(), owner.getEmail());
 
         if (bindingResult.hasErrors()) {
@@ -159,7 +166,12 @@ public class AdminController {
 
     @GetMapping("/tournaments/new")
     public String newTournamentForm(Model model,
-                                    @AuthenticationPrincipal Owner owner) {
+                                    @AuthenticationPrincipal Owner owner,
+                                    org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
+        if (owner.isAdminRole()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "No tienes permiso para crear torneos");
+            return "redirect:/admin/tournaments";
+        }
         log.info("Showing new tournament form for owner: {}", owner.getEmail());
 
         model.addAttribute("tournament", new TournamentDto());
@@ -182,8 +194,8 @@ public class AdminController {
         TournamentDto tournament = tournamentService.getTournamentDtoById(id)
                 .orElseThrow(() -> new RuntimeException("Tournament not found"));
 
-        // Проверяем права для ORGANIZER
-        if (!owner.isSuperAdmin()) {
+        // ADMIN и SUPER_ADMIN видят все турниры; ORGANIZER — только свои
+        if (!owner.canViewAllTournaments()) {
             Long tournamentOwnerId = tournament.getOwnerId();
             if (tournamentOwnerId == null || !tournamentOwnerId.equals(owner.getId())) {
                 throw new SecurityException("No tienes permiso para ver este torneo");
@@ -202,6 +214,7 @@ public class AdminController {
         model.addAttribute("tournament", tournament);
         model.addAttribute("registrations", tournamentService.getRegistrationsByTournament(id));
         model.addAttribute("isSuperAdmin", owner.isSuperAdmin());
+        model.addAttribute("isAdminRole", owner.isAdminRole());
 
         if (tournament.getTipo() == TournamentType.AMERICANO
                 && tournament.getModalidad() == Modalidad.INDIVIDUAL) {
@@ -242,7 +255,12 @@ public class AdminController {
     @GetMapping("/tournaments/{id}/edit")
     public String showEditForm(@PathVariable Long id,
                                Model model,
-                               @AuthenticationPrincipal Owner owner) {
+                               @AuthenticationPrincipal Owner owner,
+                               RedirectAttributes redirectAttributes) {
+        if (owner.isAdminRole()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "No tienes permiso para editar torneos");
+            return "redirect:/admin/tournaments/" + id;
+        }
         log.info("Editing tournament: {} by owner: {}", id, owner.getEmail());
 
         TournamentDto tournament = tournamentService.getTournamentDtoById(id)
@@ -272,6 +290,10 @@ public class AdminController {
                                    RedirectAttributes redirectAttributes,
                                    Model model) {
 
+        if (owner.isAdminRole()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "No tienes permiso para editar torneos");
+            return "redirect:/admin/tournaments/" + id;
+        }
         log.info("Updating tournament: {} by owner: {}", id, owner.getEmail());
 
         if (bindingResult.hasErrors()) {
@@ -307,7 +329,8 @@ public class AdminController {
                                @AuthenticationPrincipal Owner owner,
                                RedirectAttributes redirectAttributes) {
         try {
-            tournamentService.updateTournamentStatus(id, status, owner.getId(), owner.getId(), owner.isSuperAdmin());
+            // ADMIN может менять статус любого турнира (как SUPER_ADMIN)
+            tournamentService.updateTournamentStatus(id, status, owner.getId(), owner.getId(), owner.canViewAllTournaments());
             redirectAttributes.addFlashAttribute("successMessage",
                     "Статус турнира изменен на " + status.getValue());
         } catch (SecurityException e) {
@@ -323,6 +346,10 @@ public class AdminController {
     public String deleteTournament(@PathVariable Long id,
                                    @AuthenticationPrincipal Owner owner,
                                    RedirectAttributes redirectAttributes) {
+        if (owner.isAdminRole()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "No tienes permiso para eliminar torneos");
+            return "redirect:/admin/tournaments/" + id;
+        }
         try {
             // Проверяем права
             if (!owner.isSuperAdmin()) {
@@ -347,6 +374,10 @@ public class AdminController {
     public String deactivateTournament(@PathVariable Long id,
                                        @AuthenticationPrincipal Owner owner,
                                        RedirectAttributes redirectAttributes) {
+        if (owner.isAdminRole()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "No tienes permiso para desactivar torneos");
+            return "redirect:/admin/tournaments/" + id;
+        }
         log.info("Deactivating tournament: {} by owner: {}", id, owner.getEmail());
         try {
             // Проверяем права
@@ -381,8 +412,8 @@ public class AdminController {
         log.info("Moving player {} from main to waitlist in tournament {} by owner: {}", playerId, tournamentId, owner.getEmail());
 
         try {
-            // Проверяем права
-            if (!owner.isSuperAdmin()) {
+            // ADMIN и SUPER_ADMIN управляют составом любого турнира
+            if (!owner.canViewAllTournaments()) {
                 TournamentDto tournament = tournamentService.getTournamentDtoById(tournamentId)
                         .orElseThrow(() -> new RuntimeException("Tournament not found"));
                 if (!tournament.getOwnerId().equals(owner.getId())) {
@@ -415,8 +446,8 @@ public class AdminController {
         log.info("Moving player {} from waitlist to main in tournament {} by owner: {}", playerId, tournamentId, owner.getEmail());
 
         try {
-            // Проверяем права
-            if (!owner.isSuperAdmin()) {
+            // ADMIN и SUPER_ADMIN управляют составом любого турнира
+            if (!owner.canViewAllTournaments()) {
                 TournamentDto tournament = tournamentService.getTournamentDtoById(tournamentId)
                         .orElseThrow(() -> new RuntimeException("Tournament not found"));
                 if (!tournament.getOwnerId().equals(owner.getId())) {
