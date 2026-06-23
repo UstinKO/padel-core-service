@@ -14,6 +14,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
 import java.util.Collection;
 import java.util.List;
@@ -117,6 +119,17 @@ public class HomeController {
         }
 
         return "login";
+    }
+
+    @GetMapping("/error/rate-limit")
+    @ResponseStatus(HttpStatus.TOO_MANY_REQUESTS)
+    public String rateLimitPage(
+            @RequestParam(value = "retry", required = false, defaultValue = "60") int retry,
+            @RequestParam(value = "blocked", required = false) Boolean blocked,
+            Model model) {
+        model.addAttribute("retryAfter", retry);
+        model.addAttribute("isBlocked", Boolean.TRUE.equals(blocked));
+        return "error/rate-limit";
     }
 
     private boolean isOwner(Authentication authentication) {

@@ -82,6 +82,7 @@ public class SecurityConfig {
                                 "/players/confirmar-email",
                                 "/players/confirmar-email/**",
                                 "/error",
+                                "/error/rate-limit",
                                 "/recuperar-password/solicitar",
                                 "/recuperar-password/confirmar",
                                 "/recuperar-password",
