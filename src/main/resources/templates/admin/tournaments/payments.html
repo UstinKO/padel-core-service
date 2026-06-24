@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html lang="es" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta name="app-profile" th:content="${@environment.getActiveProfiles().length > 0
         ? @environment.getActiveProfiles()[0]
@@ -18,7 +18,7 @@
     <link rel="stylesheet" th:href="@{/css/payment-management.css}">
 </head>
 <body>
-<header th:replace="~{fragments/admin-header :: header('Gestión de Pagos')}"></header>
+<header th:replace="~{fragments/admin-header :: header(#{admin.payments.title})}"></header>
 
 <main class="admin-main">
     <div class="container">
@@ -27,7 +27,7 @@
             <div class="page-header">
                 <h1>
                     <i class="fas fa-credit-card"></i>
-                    Gestionar Pagos y Asistencia
+                    <span th:text="#{admin.payments.heading}">Gestionar Pagos y Asistencia</span>
                 </h1>
                 <div class="tournament-info">
                     <i class="fas fa-trophy"></i>
@@ -51,15 +51,15 @@
                     <span class="stat-value" th:text="${#lists.size(players.?[!partnerRow])}">0</span>
                 </div>
                 <div class="stat-item stat-success">
-                    <span class="stat-label">Pagados</span>
+                    <span class="stat-label" th:text="#{admin.payments.stat.paid}">Pagados</span>
                     <span class="stat-value" th:text="${#lists.size(players.?[paymentStatus != null and paymentStatus.name() == 'PAID'])}">0</span>
                 </div>
                 <div class="stat-item stat-danger">
-                    <span class="stat-label">Sin pago</span>
+                    <span class="stat-label" th:text="#{admin.payments.stat.unpaid}">Sin pago</span>
                     <span class="stat-value" th:text="${#lists.size(players.?[!partnerRow and (paymentStatus == null or paymentStatus.name() == 'PENDING')])}">0</span>
                 </div>
                 <div class="stat-item">
-                    <span class="stat-label">Asistieron</span>
+                    <span class="stat-label" th:text="#{admin.payments.stat.attended}">Asistieron</span>
                     <span class="stat-value" th:text="${#lists.size(players.?[attended == true])}">0</span>
                 </div>
                 <!-- ARS -->
@@ -94,11 +94,11 @@
 
             <!-- Легенда цветов -->
             <div class="payment-legend">
-                <span class="legend-title">Color por método:</span>
-                <span class="legend-item legend-cash"><i class="fas fa-money-bill-wave"></i> Efectivo</span>
-                <span class="legend-item legend-transfer"><i class="fas fa-university"></i> Transferencia</span>
-                <span class="legend-item legend-crypto"><i class="fas fa-coins"></i> Crypto</span>
-                <span class="legend-item legend-card"><i class="fas fa-credit-card"></i> Tarjeta</span>
+                <span class="legend-title" th:text="#{admin.payments.legend.title}">Color por método:</span>
+                <span class="legend-item legend-cash"><i class="fas fa-money-bill-wave"></i> <span th:text="#{admin.payments.legend.cash}">Efectivo</span></span>
+                <span class="legend-item legend-transfer"><i class="fas fa-university"></i> <span th:text="#{admin.payments.legend.transfer}">Transferencia</span></span>
+                <span class="legend-item legend-crypto"><i class="fas fa-coins"></i> <span th:text="#{admin.payments.legend.crypto}">Crypto</span></span>
+                <span class="legend-item legend-card"><i class="fas fa-credit-card"></i> <span th:text="#{admin.payments.legend.card}">Tarjeta</span></span>
             </div>
 
             <!-- Форма -->
@@ -111,15 +111,15 @@
                         <thead>
                         <tr>
                             <th>#</th>
-                            <th>Jugador / Contacto</th>
-                            <th title="Confirmó participación"><i class="fas fa-phone-alt"></i></th>
-                            <th title="Asistió"><i class="fas fa-check-double"></i></th>
-                            <th>Monto</th>
-                            <th>Mon.</th>
-                            <th>Estado</th>
-                            <th>Método</th>
-                            <th>Transacción</th>
-                            <th>Notas</th>
+                            <th th:text="#{admin.payments.col.contact}">Jugador / Contacto</th>
+                            <th th:title="#{admin.payments.col.confirmed_title}"><i class="fas fa-phone-alt"></i></th>
+                            <th th:title="#{admin.payments.col.attended_title}"><i class="fas fa-check-double"></i></th>
+                            <th th:text="#{admin.payments.col.amount}">Monto</th>
+                            <th th:text="#{admin.payments.col.currency}">Mon.</th>
+                            <th th:text="#{admin.common.col.status}">Estado</th>
+                            <th th:text="#{admin.payments.col.method}">Método</th>
+                            <th th:text="#{admin.payments.col.transaction}">Transacción</th>
+                            <th th:text="#{admin.payments.col.notes}">Notas</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -267,8 +267,8 @@
                             <td colspan="10" class="empty-state-cell">
                                 <div class="admin-empty">
                                     <i class="fas fa-users"></i>
-                                    <h3>No hay jugadores inscritos</h3>
-                                    <p>No hay jugadores inscritos en este torneo</p>
+                                    <h3 th:text="#{admin.payments.empty.title}">No hay jugadores inscritos</h3>
+                                    <p th:text="#{admin.payments.empty.text}">No hay jugadores inscritos en este torneo</p>
                                 </div>
                             </td>
                         </tr>
@@ -279,11 +279,11 @@
                 <div class="action-buttons">
                     <a th:href="@{'/admin/tournaments/' + ${tournament.id}}" class="btn btn-outline">
                         <i class="fas fa-arrow-left"></i>
-                        Volver al Torneo
+                        <span th:text="#{admin.payments.btn.back}">Volver al Torneo</span>
                     </a>
                     <button type="submit" class="btn btn-primary" th:if="${players != null and not #lists.isEmpty(players)}">
                         <i class="fas fa-save"></i>
-                        Guardar Cambios
+                        <span th:text="#{admin.payments.btn.save_changes}">Guardar Cambios</span>
                     </button>
                 </div>
             </form>

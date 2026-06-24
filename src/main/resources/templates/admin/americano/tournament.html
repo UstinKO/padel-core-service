@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html lang="es" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta name="app-profile" th:content="${@environment.getActiveProfiles().length > 0
         ? @environment.getActiveProfiles()[0]
@@ -137,19 +137,21 @@
     </style>
 </head>
 <body>
-<header th:replace="~{fragments/admin-header :: header('Torneo Americano')}"></header>
+<header th:replace="~{fragments/admin-header :: header(#{admin.americano.title})}"></header>
 
 <main class="admin-main">
     <div class="container">
 
         <div style="margin-bottom:1rem">
             <a th:href="@{'/admin/tournaments/' + ${tournament.id}}" class="btn btn-outline">
-                <i class="fas fa-arrow-left"></i> Volver a detalles del torneo
+                <i class="fas fa-arrow-left"></i>
+                <span th:text="#{admin.americano.btn.back_to_details}">Volver a detalles del torneo</span>
             </a>
             <button onclick="shareAdminTournament()"
                     class="btn btn-outline"
                     style="display:flex; align-items:center; gap:.5rem;">
-                <i class="fas fa-share-alt"></i> Compartir torneo
+                <i class="fas fa-share-alt"></i>
+                <span th:text="#{admin.americano.btn.share}">Compartir torneo</span>
             </button>
         </div>
 
@@ -158,10 +160,10 @@
             <div class="tournament-title-section">
                 <h1 th:text="${tournament.nombre}">Torneo Americano</h1>
                 <div class="tournament-badges">
-                    <span class="badge" th:text="${tournament.generoFormato}">Masculino</span>
+                    <span class="badge" th:text="#{__${'enum.genero.' + tournament.generoFormato.name()}__}">Masculino</span>
                     <span class="badge badge-level" th:text="${tournament.categoriaNivel}">C7</span>
-                    <span class="badge badge-type">Americano Individual</span>
-                    <span class="badge badge-status" th:text="${tournament.estado}"
+                    <span class="badge badge-type" th:text="#{__${'enum.tipo.' + tournament.tipo.name()}__}">Americano Individual</span>
+                    <span class="badge badge-status" th:text="#{__${'enum.estado.' + tournament.estado.name()}__}"
                           th:classappend="'badge-' + ${tournament.estado.toString().toLowerCase()}">En curso</span>
                 </div>
             </div>
@@ -200,8 +202,10 @@
                         <i class="fas fa-chevron-left"></i>
                     </button>
                     <span class="round-indicator">
-                    Ronda <span id="currentRoundDisplay">1</span>
-                    de <span th:text="${rounds.size()}">5</span>
+                    <span th:text="#{admin.americano.label.round}">Ronda</span>
+                    <span id="currentRoundDisplay">1</span>
+                    <span th:text="#{admin.americano.label.round_of}">de</span>
+                    <span th:text="${rounds.size()}">5</span>
                     <span class="round-status-badge" id="currentRoundStatus"></span>
                 </span>
                     <button class="round-btn" id="nextRound" onclick="changeRound(1)">
@@ -223,10 +227,15 @@
                      class="round-card" style="display:none">
 
                     <div class="round-header">
-                        <h3><i class="fas fa-calendar-week"></i> Ronda <span th:text="${round.roundNumber}">1</span></h3>
+                        <h3>
+                            <i class="fas fa-calendar-week"></i>
+                            <span th:text="#{admin.americano.label.round}">Ronda</span>
+                            <span th:text="${round.roundNumber}">1</span>
+                        </h3>
                         <div style="display:flex;gap:.5rem;align-items:center">
                             <span class="round-badge" th:text="${round.status}">EN CURSO</span>
-                            <span class="round-badge" th:text="${round.completedMatches} + '/' + ${round.totalMatches} + ' partidos'">0/4</span>
+                            <span class="round-badge"
+                                  th:text="${round.completedMatches} + '/' + ${round.totalMatches} + ' ' + #{admin.americano.label.matches_count}">0/4</span>
 
                             <!-- НОВОЕ: выпадающее меню для изменения лимита очков -->
                             <div class="points-limit-selector" style="position:relative; margin-left:0.5rem;">
@@ -265,7 +274,7 @@
                          class="bye-section">
                         <div class="bye-section-title">
                             <i class="fas fa-pause-circle"></i>
-                            Descansan en esta ronda
+                            <span th:text="#{admin.americano.label.bye_players}">Descansan en esta ronda</span>
                             <span style="font-weight:400;color:#b45309;font-size:.8rem"
                                   th:text="'(' + ${#lists.size(round.byePlayerNames)} + ' jugador(es))'"></span>
                         </div>
@@ -288,7 +297,8 @@
 
                             <div class="court-number">
                                 <i class="fas fa-table-tennis"></i>
-                                Cancha <span th:text="${match.courtNumber}">1</span>
+                                <span th:text="#{admin.americano.label.court}">Cancha</span>
+                                <span th:text="${match.courtNumber}">1</span>
                                 <span class="match-tag" th:text="'#' + ${match.matchNumber}">#1</span>
                             </div>
 
@@ -313,7 +323,8 @@
                                         <button class="edit-score-btn"
                                                 th:attr="data-match-id=${match.id},data-points=${round.pointsPerMatch}"
                                                 onclick="showEditScore(this)">
-                                            <i class="fas fa-edit"></i> editar
+                                            <i class="fas fa-edit"></i>
+                                            <span th:text="#{admin.americano.btn.edit_score}">editar</span>
                                         </button>
                                     </div>
                                     <!-- Форма ввода результата -->
@@ -326,10 +337,15 @@
                                             <input type="number" class="score-input" id="s2-[[${match.id}]]"
                                                    min="0" th:max="${round.pointsPerMatch}" value="0" placeholder="0">
                                         </div>
-                                        <span class="score-hint">Suma = <span th:text="${round.pointsPerMatch}">32</span> pts</span>
+                                        <span class="score-hint">
+                                            <span th:text="#{admin.americano.label.sum_pts}">Suma =</span>
+                                            <span th:text="${round.pointsPerMatch}">32</span>
+                                            <span th:text="#{admin.americano.label.pts}">pts</span>
+                                        </span>
                                         <button class="submit-score-btn"
                                                 th:attr="data-match-id=${match.id},data-points=${round.pointsPerMatch}"
-                                                onclick="submitScore(this)">
+                                                onclick="submitScore(this)"
+                                                th:text="#{admin.americano.btn.save_result}">
                                             Guardar
                                         </button>
                                     </div>
@@ -354,27 +370,27 @@
         <!-- ══════════════ ТАБЛИЦА РЕЙТИНГА (п.4 ТЗ) ══════════════ -->
         <div class="ranking-card" style="margin-top:2rem">
             <div class="ranking-header">
-                <h3><i class="fas fa-chart-line"></i> Clasificación</h3>
+                <h3><i class="fas fa-chart-line"></i> <span th:text="#{admin.americano.section.ranking}">Clasificación</span></h3>
                 <div style="display:flex;gap:.5rem;align-items:center">
         <span style="font-size:.8rem;opacity:.75"
-              th:text="${ranking != null ? ranking.completedRounds + '/' + ranking.totalRounds + ' rondas completadas' : ''}"></span>
+              th:text="${ranking != null ? ranking.completedRounds + '/' + ranking.totalRounds + ' ' + #{admin.americano.label.rounds_completed} : ''}"></span>
 
                     <!-- Переключатель сортировки -->
                     <div class="sort-selector" style="position:relative;">
                         <button class="btn btn-outline-sm" id="sortByBtn"
                                 style="font-size:.78rem;padding:.3rem .7rem;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.3);color:#fff;cursor:pointer;">
                             <i class="fas fa-sort"></i>
-                            <span id="currentSortLabel">Por puntos</span>
+                            <span id="currentSortLabel" th:text="#{admin.americano.sort.by_points}">Por puntos</span>
                             <i class="fas fa-chevron-down" style="font-size:0.7rem; margin-left:0.3rem;"></i>
                         </button>
                         <div class="sort-menu" id="sortMenu"
                              style="display:none; position:absolute; right:0; top:100%; margin-top:0.5rem; background:#fff; border:1px solid #e2e8f0; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.1); z-index:100; min-width:160px;">
                             <div style="padding:0.5rem 0;">
-                                <div class="sort-option" data-sort="score" data-label="Por puntos" onclick="changeSort('score', 'Por puntos')" style="padding:0.5rem 1rem; cursor:pointer; transition:background 0.2s; color:#1e293b;">
-                                    <i class="fas fa-star"></i> Por puntos (puntos → victorias)
+                                <div class="sort-option" data-sort="score" th:attr="data-label=#{admin.americano.sort.by_points}" th:onclick="'changeSort(\'score\', \'' + #{admin.americano.sort.by_points} + '\')'" style="padding:0.5rem 1rem; cursor:pointer; transition:background 0.2s; color:#1e293b;">
+                                    <i class="fas fa-star"></i> <span th:text="#{admin.americano.sort.points_label}">Por puntos (puntos → victorias)</span>
                                 </div>
-                                <div class="sort-option" data-sort="wins" data-label="Por victorias" onclick="changeSort('wins', 'Por victorias')" style="padding:0.5rem 1rem; cursor:pointer; transition:background 0.2s; color:#1e293b;">
-                                    <i class="fas fa-trophy"></i> Por victorias (victorias → puntos)
+                                <div class="sort-option" data-sort="wins" th:attr="data-label=#{admin.americano.sort.by_wins}" th:onclick="'changeSort(\'wins\', \'' + #{admin.americano.sort.by_wins} + '\')'" style="padding:0.5rem 1rem; cursor:pointer; transition:background 0.2s; color:#1e293b;">
+                                    <i class="fas fa-trophy"></i> <span th:text="#{admin.americano.sort.wins_label}">Por victorias (victorias → puntos)</span>
                                 </div>
                             </div>
                         </div>
@@ -387,16 +403,16 @@
                     <thead>
                     <tr>
                         <th>#</th>
-                        <th>Jugador</th>
-                        <th title="Puntos totales">Pts</th>
-                        <th title="Partidos jugados">PJ</th>
-                        <th title="Victorias">V</th>
-                        <th title="Derrotas">D</th>
-                        <th title="Empates">E</th>
-                        <th title="Diferencia de puntos">Dif.</th>
-                        <th title="Bye / descansos">Bye</th>
-                        <th title="Parejas únicas">Pares</th>
-                        <th title="Rivales únicos">Rivales</th>
+                        <th th:text="#{admin.americano.col.player}">Jugador</th>
+                        <th th:title="#{admin.americano.col.pts}" th:text="#{admin.americano.col.pts}">Pts</th>
+                        <th th:title="#{admin.americano.col.played}" th:text="#{admin.americano.col.played}">PJ</th>
+                        <th th:title="#{admin.americano.col.wins}" th:text="#{admin.americano.col.wins}">V</th>
+                        <th th:title="#{admin.americano.col.losses}" th:text="#{admin.americano.col.losses}">D</th>
+                        <th th:title="#{admin.americano.col.draws}" th:text="#{admin.americano.col.draws}">E</th>
+                        <th th:title="#{admin.americano.col.diff}" th:text="#{admin.americano.col.diff}">Dif.</th>
+                        <th th:title="#{admin.americano.col.bye}" th:text="#{admin.americano.col.bye}">Bye</th>
+                        <th th:title="#{admin.americano.col.pairs}" th:text="#{admin.americano.col.pairs}">Pares</th>
+                        <th th:title="#{admin.americano.col.rivals}" th:text="#{admin.americano.col.rivals}">Rivales</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -427,14 +443,16 @@
              class="finish-section">
             <p>
                 <i class="fas fa-flag-checkered" style="color:#FF6B35"></i>
-                Todas las <strong th:text="${ranking.totalRounds}">5</strong> rondas completadas.
-                Puedes finalizar el torneo para fijar la clasificación oficial.
+                <span th:text="#{admin.americano.label.finish_all_rounds}">Todas las</span>
+                <strong th:text="${ranking.totalRounds}">5</strong>
+                <span th:text="#{admin.americano.label.finish_rounds_text}">rondas completadas. Puedes finalizar el torneo para fijar la clasificación oficial.</span>
             </p>
             <form th:action="@{'/tournaments/americano/' + ${tournament.id} + '/finish'}" method="post"
                   onsubmit="return confirm('¿Finalizar el torneo? La clasificación quedará fijada.')">
                 <input type="hidden" name="sortBy" value="score">
                 <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-trophy"></i> Finalizar torneo
+                    <i class="fas fa-trophy"></i>
+                    <span th:text="#{admin.americano.btn.finish_tournament}">Finalizar torneo</span>
                 </button>
             </form>
         </div>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html lang="es" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta name="app-profile" th:content="${@environment.getActiveProfiles().length > 0
         ? @environment.getActiveProfiles()[0]
@@ -7,7 +7,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Panel de Administración - 1-Padel">
-    <title>Panel de Administración - 1-Padel</title>
+    <title th:text="#{admin.panel.title} + ' - 1-Padel'">Panel de Administración - 1-Padel</title>
 
     <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -25,16 +25,16 @@
     <link rel="stylesheet" th:href="@{/css/admin.css}">
 </head>
 <body>
-<header th:replace="~{fragments/admin-header :: header('Panel de Control')}"></header>
+<header th:replace="~{fragments/admin-header :: header(#{admin.panel.title})}"></header>
 
 <main class="admin-main">
     <div class="container">
         <div class="admin-header">
             <h1 class="admin-title">
                 <i class="fas fa-cog"></i>
-                Panel de Control
+                <span th:text="#{admin.panel.title}">Panel de Control</span>
             </h1>
-            <p class="admin-subtitle">Gestión de jugadores y torneos 1-Padel</p>
+            <p class="admin-subtitle" th:text="#{admin.panel.subtitle}">Gestión de jugadores y torneos 1-Padel</p>
         </div>
 
         <!-- Estadísticas -->
@@ -44,7 +44,7 @@
                     <i class="fas fa-users"></i>
                 </div>
                 <div class="stat-content">
-                    <h3 class="stat-label">Total jugadores</h3>
+                    <h3 class="stat-label" th:text="#{admin.panel.stat.players}">Total jugadores</h3>
                     <p class="stat-value" th:text="${totalPlayers}">0</p>
                 </div>
             </div>
@@ -54,7 +54,7 @@
                     <i class="fas fa-user-cog"></i>
                 </div>
                 <div class="stat-content">
-                    <h3 class="stat-label">Administradores</h3>
+                    <h3 class="stat-label" th:text="#{admin.panel.stat.admins}">Administradores</h3>
                     <p class="stat-value" th:text="${totalOwners}">0</p>
                 </div>
             </div>
@@ -64,7 +64,7 @@
                     <i class="fas fa-trophy"></i>
                 </div>
                 <div class="stat-content">
-                    <h3 class="stat-label">Torneos activos</h3>
+                    <h3 class="stat-label" th:text="#{admin.panel.stat.active_tournaments}">Torneos activos</h3>
                     <p class="stat-value" th:text="${totalTournaments}">0</p>
                 </div>
             </div>
@@ -74,7 +74,7 @@
                     <i class="fas fa-clock"></i>
                 </div>
                 <div class="stat-content">
-                    <h3 class="stat-label">Lista de espera</h3>
+                    <h3 class="stat-label" th:text="#{admin.panel.stat.waitlist}">Lista de espera</h3>
                     <p class="stat-value" th:text="${totalWaitlist}">0</p>
                 </div>
             </div>
@@ -85,7 +85,7 @@
             <div class="admin-card-header">
                 <h2>
                     <i class="fas fa-crown" style="color: #fbbf24;"></i>
-                    Torneos en curso
+                    <span th:text="#{admin.panel.koc.section}">Torneos en curso</span>
                 </h2>
                 <span class="badge" th:text="${#lists.size(activeKingTournaments)} + ' activos'">2 activos</span>
             </div>
@@ -98,11 +98,11 @@
                         </div>
                         <div class="match-mini-players">
                             <div class="player-mini">
-                                <span class="name">Rondas calibración:</span>
+                                <span class="name" th:text="#{admin.panel.koc.rounds}">Rondas calibración:</span>
                                 <span class="score" th:text="${tournament.calibrationRounds}">3</span>
                             </div>
                             <div class="player-mini">
-                                <span class="name">Canchas:</span>
+                                <span class="name" th:text="#{admin.panel.koc.courts}">Canchas:</span>
                                 <span class="score" th:text="${tournament.maxCourts}">5</span>
                             </div>
                         </div>
@@ -125,10 +125,10 @@
                 <div class="admin-card-header">
                     <h2>
                         <i class="fas fa-users"></i>
-                        Últimos jugadores
+                        <span th:text="#{admin.panel.section.players}">Últimos jugadores</span>
                     </h2>
                     <a href="/admin/players" class="btn btn-outline btn-sm">
-                        Ver todos <i class="fas fa-arrow-right"></i>
+                        <span th:text="#{admin.common.btn.view_all}">Ver todos</span> <i class="fas fa-arrow-right"></i>
                     </a>
                 </div>
                 <div class="admin-card-body">
@@ -150,7 +150,7 @@
                     </div>
                     <div th:unless="${not #lists.isEmpty(recentPlayers)}" class="admin-empty small">
                         <i class="fas fa-users"></i>
-                        <p>No hay jugadores registrados</p>
+                        <p th:text="#{admin.panel.players.empty}">No hay jugadores registrados</p>
                     </div>
                 </div>
             </div>
@@ -160,10 +160,10 @@
                 <div class="admin-card-header">
                     <h2>
                         <i class="fas fa-trophy"></i>
-                        Últimos torneos
+                        <span th:text="#{admin.panel.section.tournaments}">Últimos torneos</span>
                     </h2>
                     <a href="/admin/tournaments" class="btn btn-outline btn-sm">
-                        Ver todos <i class="fas fa-arrow-right"></i>
+                        <span th:text="#{admin.common.btn.view_all}">Ver todos</span> <i class="fas fa-arrow-right"></i>
                     </a>
                 </div>
                 <div class="admin-card-body">
@@ -191,9 +191,10 @@
                     </div>
                     <div th:unless="${not #lists.isEmpty(recentTournamentsWithFlags)}" class="admin-empty small">
                         <i class="fas fa-trophy"></i>
-                        <p>No hay torneos creados</p>
+                        <p th:text="#{admin.panel.tournaments.empty}">No hay torneos creados</p>
                         <a href="/admin/tournaments/new" class="btn btn-primary btn-sm" style="margin-top: 0.5rem;">
-                            <i class="fas fa-plus-circle"></i> Crear torneo
+                            <i class="fas fa-plus-circle"></i>
+                            <span th:text="#{admin.common.btn.create_tournament}">Crear nuevo torneo</span>
                         </a>
                     </div>
                 </div>
@@ -204,7 +205,7 @@
         <div class="admin-actions" style="justify-content: center; margin-top: 2rem;">
             <a th:unless="${isAdminRole}" href="/admin/tournaments/new" class="btn btn-primary">
                 <i class="fas fa-plus-circle"></i>
-                Crear nuevo torneo
+                <span th:text="#{admin.common.btn.create_tournament}">Crear nuevo torneo</span>
             </a>
 
             <!-- Кнопка экспорта данных -->
@@ -212,16 +213,16 @@
                href="/admin/export"
                class="btn btn-outline"
                style="margin-left: 1rem;"
-               onclick="return confirm('¿Exportar toda la base de datos a Excel?\\n\\nEl archivo contendrá todas las tablas y datos del sistema.')">
+               th:onclick="|return confirm('#{admin.common.confirm.export}')|">
                 <i class="fas fa-download"></i>
-                Exportar datos (Excel)
+                <span th:text="#{admin.common.btn.export}">Exportar datos (Excel)</span>
             </a>
 
             <!-- КНОПКА ПЕРЕХОДА НА ТЕСТОВУЮ СТРАНИЦУ -->
             <div th:if="${isSuperAdmin}" style="margin-left: 1rem; display: inline-block;">
                 <a href="/test/tournaments" class="btn btn-outline">
                     <i class="fas fa-flask"></i>
-                    Panel de pruebas
+                    <span th:text="#{admin.common.btn.test_panel}">Panel de pruebas</span>
                     <span style="font-size: 0.8rem; margin-left: 0.5rem; opacity: 0.7;">(beta)</span>
                 </a>
             </div>

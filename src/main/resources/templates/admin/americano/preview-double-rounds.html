@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html lang="es" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta name="app-profile" th:content="${@environment.getActiveProfiles().length > 0
         ? @environment.getActiveProfiles()[0]
         : 'default'}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Previsualizar Team Americano | 1-Padel</title>
+    <title th:text="#{admin.preview.title.double} + ' | 1-Padel'">Previsualizar Team Americano | 1-Padel</title>
 
     <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
     <link rel="alternate icon" th:href="@{/images/favicon.ico}">
@@ -59,7 +59,7 @@
     </style>
 </head>
 <body>
-<header th:replace="~{fragments/admin-header :: header('Previsualizar Team Americano')}"></header>
+<header th:replace="~{fragments/admin-header :: header(#{admin.preview.title.double})}"></header>
 
 <main class="admin-main">
     <div class="container">
@@ -67,7 +67,8 @@
         <!-- Кнопка назад -->
         <div style="margin-bottom:1rem">
             <a th:href="@{'/admin/tournaments/' + ${tournament.id}}" class="btn btn-outline">
-                <i class="fas fa-arrow-left"></i> Volver a configuración
+                <i class="fas fa-arrow-left"></i>
+                <span th:text="#{admin.americano.btn.back_to_config}">Volver a configuración</span>
             </a>
         </div>
 
@@ -87,16 +88,16 @@
 
         <!-- Баннер Team Americano -->
         <div class="team-americano-banner">
-            <span class="badge-pill"><i class="fas fa-users"></i> Team Americano</span>
-            <span>Parejas fijas — Round Robin completo. Cada pareja juega contra todas las demás exactamente una vez.</span>
+            <span class="badge-pill"><i class="fas fa-users"></i> <span th:text="#{admin.preview.badge.team_americano}">Team Americano</span></span>
+            <span th:text="#{admin.preview.badge.team_americano_desc}">Parejas fijas — Round Robin completo. Cada pareja juega contra todas las demás exactamente una vez.</span>
         </div>
 
         <!-- Баннер: турнир уже запущен -->
         <div th:if="${isTeamAmericanoInitialized}" class="init-status-banner">
             <i class="fas fa-check-circle" style="font-size:1.2rem;flex-shrink:0"></i>
             <div>
-                <strong>Este torneo ya está en curso.</strong>
-                Esta es solo una previsualización del fixture generado.
+                <strong th:text="#{admin.preview.initialized}">Este torneo ya está en curso.</strong>
+                <span th:text="#{admin.preview.initialized_preview}">Esta es solo una previsualización del fixture generado.</span>
             </div>
         </div>
 
@@ -104,42 +105,42 @@
         <div class="config-summary">
             <div class="config-grid">
                 <div class="config-item">
-                    <span class="config-label">Parejas</span>
+                    <span class="config-label" th:text="#{admin.americano.config.pairs}">Parejas</span>
                     <span class="config-value">
                         <i class="fas fa-users"></i>
                         <span th:text="${totalTeams}">8</span>
                     </span>
                 </div>
                 <div class="config-item">
-                    <span class="config-label">Total partidos</span>
+                    <span class="config-label" th:text="#{admin.americano.config.total_matches}">Total partidos</span>
                     <span class="config-value">
                         <i class="fas fa-list"></i>
                         <span th:text="${totalMatches}">28</span>
                     </span>
                 </div>
                 <div class="config-item">
-                    <span class="config-label">Límite de puntos</span>
+                    <span class="config-label" th:text="#{admin.americano.config.points_limit}">Límite de puntos</span>
                     <span class="config-value">
                         <i class="fas fa-bullseye"></i>
                         <span th:text="${config.pointsPerMatch}">32</span>
                     </span>
                 </div>
                 <div class="config-item">
-                    <span class="config-label">Canchas</span>
+                    <span class="config-label" th:text="#{admin.americano.config.courts}">Canchas</span>
                     <span class="config-value">
                         <i class="fas fa-table-tennis"></i>
                         <span th:text="${config.courts}">2</span>
                     </span>
                 </div>
                 <div class="config-item">
-                    <span class="config-label">Rondas</span>
+                    <span class="config-label" th:text="#{admin.americano.config.rounds}">Rondas</span>
                     <span class="config-value">
                         <i class="fas fa-redo-alt"></i>
                         <span th:text="${previewRounds.size()}">14</span>
                     </span>
                 </div>
                 <div class="config-item">
-                    <span class="config-label">Formato</span>
+                    <span class="config-label" th:text="#{admin.americano.config.format}">Formato</span>
                     <span class="config-value">
                         <i class="fas fa-star" style="color:#10b981"></i>
                         <span style="color:#065f46;font-size:.85rem">Round Robin</span>
@@ -151,14 +152,16 @@
         <!-- Кнопки действий -->
         <div class="preview-actions">
             <a th:href="@{'/admin/tournaments/' + ${tournament.id}}" class="btn btn-outline">
-                <i class="fas fa-arrow-left"></i> Volver a configuración
+                <i class="fas fa-arrow-left"></i>
+                <span th:text="#{admin.americano.btn.back_to_config}">Volver a configuración</span>
             </a>
 
             <!-- Турнир уже запущен -->
             <a th:if="${isTeamAmericanoInitialized}"
                th:href="@{'/tournaments/team-americano/admin/' + ${tournament.id}}"
                class="btn btn-primary">
-                <i class="fas fa-arrow-right"></i> Ir al torneo en curso
+                <i class="fas fa-arrow-right"></i>
+                <span th:text="#{admin.americano.btn.go_to_tournament}">Ir al torneo en curso</span>
             </a>
 
             <!-- Турнир не запущен → форма инициализации -->
@@ -171,7 +174,8 @@
                 <input type="hidden" name="courts"         th:value="${config.courts}">
                 <button type="submit" class="btn btn-primary"
                         onclick="return confirmAndLock(this)">
-                    <i class="fas fa-play"></i> Iniciar con este fixture
+                    <i class="fas fa-play"></i>
+                    <span th:text="#{admin.americano.btn.start_fixture}">Iniciar con este fixture</span>
                 </button>
             </form>
         </div>
@@ -183,8 +187,10 @@
                     <i class="fas fa-chevron-left"></i>
                 </button>
                 <span class="round-indicator">
-                    Ronda <span id="currentRoundDisplay">1</span>
-                    de <span th:text="${previewRounds.size()}">14</span>
+                    <span th:text="#{admin.preview.label.round}">Ronda</span>
+                    <span id="currentRoundDisplay">1</span>
+                    <span th:text="#{admin.preview.label.round_of}">de</span>
+                    <span th:text="${previewRounds.size()}">14</span>
                 </span>
                 <button class="round-btn" id="nextRound" onclick="changeRound(1)">
                     <i class="fas fa-chevron-right"></i>
@@ -202,10 +208,11 @@
                 <div class="round-header">
                     <h3>
                         <i class="fas fa-calendar-week"></i>
-                        Ronda <span th:text="${round.roundNumber}">1</span>
+                        <span th:text="#{admin.preview.label.round}">Ronda</span>
+                        <span th:text="${round.roundNumber}">1</span>
                     </h3>
                     <span class="round-badge"
-                          th:text="${round.matches.size()} + ' partido(s)'">2 partido(s)</span>
+                          th:text="${round.matches.size()} + ' ' + #{admin.preview.label.matches}">2 partido(s)</span>
                 </div>
 
                 <!-- Матчи -->
@@ -213,7 +220,8 @@
                     <div th:each="match : ${round.matches}" class="court-card">
                         <div class="court-number">
                             <i class="fas fa-table-tennis"></i>
-                            Cancha <span th:text="${match.courtNumber}">1</span>
+                            <span th:text="#{admin.preview.label.court}">Cancha</span>
+                            <span th:text="${match.courtNumber}">1</span>
                             <span class="match-tag"
                                   th:text="${match.note != null ? match.note : '#' + match.matchNumber}">
                                 Equipo 1 vs Equipo 2
@@ -222,7 +230,7 @@
                         <div class="court-players">
                             <!-- Team 1 -->
                             <div class="team-left">
-                                <span class="team-label">Pareja A</span>
+                                <span class="team-label" th:text="#{admin.preview.label.pair_a}">Pareja A</span>
                                 <span class="player-name" th:text="${match.team1Player1Name}">Jugador 1</span>
                                 <span class="player-name"
                                       th:if="${match.team1Player2Name != null and !match.team1Player2Name.isEmpty()}"
@@ -234,7 +242,7 @@
                             </div>
                             <!-- Team 2 -->
                             <div class="team-right">
-                                <span class="team-label">Pareja B</span>
+                                <span class="team-label" th:text="#{admin.preview.label.pair_b}">Pareja B</span>
                                 <span class="player-name" th:text="${match.team2Player1Name}">Jugador 3</span>
                                 <span class="player-name"
                                       th:if="${match.team2Player2Name != null and !match.team2Player2Name.isEmpty()}"
@@ -249,8 +257,8 @@
         <!-- Empty State -->
         <div th:if="${#lists.isEmpty(previewRounds)}" class="empty-round">
             <i class="fas fa-exclamation-circle"></i>
-            <h3>No hay rondas para previsualizar</h3>
-            <p>Verifica que haya al menos 2 parejas confirmadas.</p>
+            <h3 th:text="#{admin.americano.empty.preview}">No hay rondas para previsualizar</h3>
+            <p th:text="#{admin.americano.empty.preview_check}">Verifica que haya al menos 2 parejas confirmadas.</p>
         </div>
 
     </div>

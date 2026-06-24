@@ -101,7 +101,7 @@ class AdminPanel {
             });
 
             if (response.ok) {
-                this.showNotification('Elemento eliminado correctamente', 'success');
+                this.showNotification(t('admin.common.success.deleted'), 'success');
                 // Удаляем строку из таблицы или перезагружаем
                 const row = button.closest('tr');
                 if (row) {
@@ -111,13 +111,13 @@ class AdminPanel {
                 }
             } else {
                 const data = await response.json();
-                this.showNotification(data.message || 'Error al eliminar', 'error');
+                this.showNotification(data.message || t('admin.common.error.delete'), 'error');
                 button.disabled = false;
                 button.innerHTML = originalText;
             }
         } catch (error) {
             console.error('Error:', error);
-            this.showNotification('Error de conexión', 'error');
+            this.showNotification(t('admin.common.error.connection'), 'error');
             button.disabled = false;
             button.innerHTML = originalText;
         }
@@ -140,16 +140,16 @@ class AdminPanel {
             });
 
             if (response.ok) {
-                this.showNotification('Estado actualizado correctamente', 'success');
+                this.showNotification(t('admin.common.success.status'), 'success');
             } else {
                 const data = await response.json();
-                this.showNotification(data.message || 'Error al actualizar estado', 'error');
+                this.showNotification(data.message || t('admin.common.error.status'), 'error');
                 // Возвращаем предыдущее значение
                 select.value = select.dataset.previousValue;
             }
         } catch (error) {
             console.error('Error:', error);
-            this.showNotification('Error de conexión', 'error');
+            this.showNotification(t('admin.common.error.connection'), 'error');
             select.value = select.dataset.previousValue;
         } finally {
             select.disabled = false;

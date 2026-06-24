@@ -116,7 +116,7 @@
             <div class="admin-card-header">
                 <h2><i class="fas fa-map-marked-alt"></i> <span th:text="#{koc.courts.title}">Canchas</span></h2>
                 <span class="badge"
-                      th:text="${kingData.allResultsIn ? #messages.msg('koc.courts.all_results') : #messages.msg('koc.courts.waiting')}"
+                      th:text="${kingData.allResultsIn} ? #{koc.courts.all_results} : #{koc.courts.waiting}"
                       th:classappend="${kingData.allResultsIn} ? 'badge-success' : 'badge-warning'">
                 </span>
             </div>

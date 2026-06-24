@@ -53,7 +53,12 @@ function showRound(index) {
 }
 
 function formatStatus(status) {
-    const map = { PENDING: 'Pendiente', IN_PROGRESS: 'En curso', COMPLETED: 'Completado', CANCELLED: 'Cancelado' };
+    const map = {
+        PENDING:     t('admin.americano.status.pending'),
+        IN_PROGRESS: t('admin.americano.status.in_progress'),
+        COMPLETED:   t('admin.americano.status.completed'),
+        CANCELLED:   t('admin.americano.status.cancelled'),
+    };
     return map[status] || status;
 }
 
@@ -100,16 +105,16 @@ async function startRound(button) {
         });
 
         if (resp.ok) {
-            showToast('success', 'Ronda iniciada');
+            showToast('success', t('admin.americano.round.started'));
             location.reload();
         } else {
             const data = await resp.json().catch(() => ({}));
-            showToast('error', data.message || 'Error al iniciar ronda');
+            showToast('error', data.message || t('admin.americano.error.start_round'));
             button.disabled = false;
             button.innerHTML = '<i class="fas fa-play"></i> Iniciar Ronda';
         }
     } catch {
-        showToast('error', 'Error de conexión');
+        showToast('error', t('admin.common.error.connection'));
         button.disabled = false;
         button.innerHTML = '<i class="fas fa-play"></i> Iniciar Ronda';
     }
@@ -121,7 +126,7 @@ async function completeRound(button) {
     const roundId = button.dataset.roundId;
     if (!roundId) return;
 
-    if (!confirm('¿Finalizar esta ronda? Todos los partidos deben estar guardados.')) return;
+    if (!confirm(t('admin.americano.confirm.complete_round'))) return;
 
     button.disabled = true;
     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Finalizando...';
@@ -133,16 +138,16 @@ async function completeRound(button) {
         });
 
         if (resp.ok) {
-            showToast('success', 'Ronda completada');
+            showToast('success', t('admin.americano.round.completed'));
             location.reload();
         } else {
             const data = await resp.json().catch(() => ({}));
-            showToast('error', data.message || 'Error al completar ronda');
+            showToast('error', data.message || t('admin.americano.error.complete_round'));
             button.disabled = false;
             button.innerHTML = '<i class="fas fa-flag-checkered"></i> Finalizar Ronda';
         }
     } catch {
-        showToast('error', 'Error de conexión');
+        showToast('error', t('admin.common.error.connection'));
         button.disabled = false;
         button.innerHTML = '<i class="fas fa-flag-checkered"></i> Finalizar Ronda';
     }
@@ -215,17 +220,17 @@ async function submitScore(button) {
         });
 
         if (resp.ok) {
-            showToast('success', 'Resultado guardado');
+            showToast('success', t('admin.americano.result.saved'));
             // Переключаем форму → отображение счёта без перезагрузки
             replaceFormWithDisplay(matchId, team1Score, team2Score);
         } else {
             const data = await resp.json().catch(() => ({}));
-            showToast('error', data.message || 'Error al guardar resultado');
+            showToast('error', data.message || t('admin.americano.error.save_result'));
             button.disabled = false;
             button.innerHTML = orig;
         }
     } catch {
-        showToast('error', 'Error de conexión');
+        showToast('error', t('admin.common.error.connection'));
         button.disabled = false;
         button.innerHTML = orig;
     }

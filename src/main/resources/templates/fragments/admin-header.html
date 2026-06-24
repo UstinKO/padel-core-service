@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html lang="es" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta name="app-profile" th:content="${@environment.getActiveProfiles().length > 0
         ? @environment.getActiveProfiles()[0]
@@ -28,25 +28,25 @@
             <div class="navbar-collapse" id="navbarNav">
                 <div class="navbar-menu" style="flex: 1; justify-content: center;">
                     <a href="/" class="btn btn-outline btn-sm">
-                        <i class="fas fa-home"></i> Inicio
+                        <i class="fas fa-home"></i> <span th:text="#{admin.nav.home}">Inicio</span>
                     </a>
                     <a href="/admin/clubs" class="btn btn-outline btn-sm">
-                        <i class="fas fa-building"></i> Clubes
+                        <i class="fas fa-building"></i> <span th:text="#{admin.nav.clubs}">Clubes</span>
                     </a>
                     <a href="/admin/tournaments" class="btn btn-outline btn-sm">
-                        <i class="fas fa-trophy"></i> Torneos
+                        <i class="fas fa-trophy"></i> <span th:text="#{admin.nav.tournaments}">Torneos</span>
                     </a>
                     <a href="/admin/players" class="btn btn-outline btn-sm">
-                        <i class="fas fa-users"></i> Jugadores
+                        <i class="fas fa-users"></i> <span th:text="#{admin.nav.players}">Jugadores</span>
                     </a>
                 </div>
 
                 <!-- Приветствие и выход -->
                 <div class="navbar-menu">
-                    <span class="user-greeting" th:text="'Hola, Admin!'"></span>
+                    <span class="user-greeting" th:text="#{admin.nav.greeting}">Hola, Admin!</span>
                     <form th:action="@{/logout}" method="post" style="display: inline;">
                         <button type="submit" class="btn btn-outline">
-                            <i class="fas fa-sign-out-alt"></i> Salir
+                            <i class="fas fa-sign-out-alt"></i> <span th:text="#{admin.nav.logout}">Salir</span>
                         </button>
                     </form>
                 </div>

@@ -234,5 +234,81 @@ window.APP_MESSAGES = {
     'koc.admin.init_confirm':     'Инициализировать турнир King of Court?',
     'koc.admin.init_success':     'Турнир инициализирован',
     'koc.admin.error_init':       'Ошибка инициализации',
-    'koc.admin.error_connection': 'Ошибка соединения'
+    'koc.admin.error_connection': 'Ошибка соединения',
+
+    // ── king-of-court.js (admin — additional) ───────────────────────────────
+    'koc.admin.result_updated':     'Результат обновлён',
+    'koc.admin.next_round':         'Переход к следующему раунду',
+    'koc.admin.youtube_saved':      'Ссылка YouTube сохранена',
+    'koc.admin.rollback':           'Раунд отменён — исправьте результаты предыдущего раунда',
+    'koc.admin.confirm_next_round': 'Перейти к следующему раунду?',
+    'koc.admin.confirm_finish':     'Завершить турнир? Ввод результатов будет закрыт.',
+    'koc.admin.error_fields':       'Не все поля заполнены',
+    'koc.admin.error_same_winners': 'Выберите двух разных победителей',
+    'koc.admin.error_score':        'Счёт победителей должен быть выше счёта проигравших',
+    'koc.admin.error_court_data':   'Не удалось загрузить данные корта',
+    'koc.admin.error_losers':       'Ошибка при определении проигравших',
+    'koc.admin.error_save':         'Ошибка при сохранении',
+    'koc.admin.error_next_round':   'Ошибка перехода к следующему раунду',
+    'koc.admin.error_finish':       'Ошибка завершения турнира',
+    'koc.admin.error_rollback':     'Ошибка отката раунда',
+    'koc.admin.btn_initialize':     'Инициализировать турнир',
+
+    // ── admin.js ─────────────────────────────────────────────────────────────
+    'admin.common.confirm.delete':      'Вы уверены, что хотите удалить {0}?',
+    'admin.common.success.deleted':     'Элемент успешно удалён',
+    'admin.common.error.delete':        'Ошибка при удалении',
+    'admin.common.success.status':      'Статус успешно обновлён',
+    'admin.common.error.status':        'Ошибка при обновлении статуса',
+    'admin.common.error.connection':    'Ошибка соединения',
+
+    // ── admin-americano.js ───────────────────────────────────────────────────
+    'admin.americano.round.started':         'Раунд начался',
+    'admin.americano.round.completed':       'Раунд завершён',
+    'admin.americano.result.saved':          'Результат сохранён',
+    'admin.americano.error.start_round':     'Ошибка при запуске раунда',
+    'admin.americano.error.complete_round':  'Ошибка при завершении раунда',
+    'admin.americano.error.save_result':     'Ошибка при сохранении результата',
+    'admin.americano.confirm.complete_round':'Завершить этот раунд? Все матчи должны быть сохранены.',
+    'admin.americano.error.score_sum':       'Сумма очков должна быть {0}',
+    'admin.americano.status.pending':        'Ожидает',
+    'admin.americano.status.in_progress':    'В процессе',
+    'admin.americano.status.completed':      'Завершён',
+    'admin.americano.status.cancelled':      'Отменён',
+
+    // ── payment-management.js ────────────────────────────────────────────────
+    'admin.payments.confirm.save': 'Сохранить изменения платежей и посещаемости?',
+
+    // ── king-of-court.js (court card / modal JS) ─────────────────────────────
+    'koc.admin.btn.enter_result':       'Ввести результат',
+    'koc.admin.modal.result_new':       'Результат — Корт {0}',
+    'koc.admin.modal.result_edit':      'Редактировать результат — Корт {0}',
+
+    // ── tournament-double / tournament-playoff (inline JS) ────────────────────
+    'admin.americano.double.confirm.finish':     'Завершить турнир? Таблица будет зафиксирована.',
+    'admin.americano.btn.start_round':           'Начать раунд',
+    'admin.common.btn.save':                     'Сохранить',
+    'admin.common.btn.edit':                     'Редактировать',
+    'admin.americano.double.hint.sum_pts':       'Сумма = {0} очков',
+    'admin.tournaments.list.confirm.deactivate': 'Деактивировать турнир? Данные сохранятся.',
+    'admin.tournaments.list.confirm.delete':     'УДАЛИТЬ турнир НАВСЕГДА? Это действие нельзя отменить.',
+    'admin.playoff.confirm.import':              'Импортировать пары из подтверждённых регистраций?',
+
+    // Players search hints
+    'admin.players.search.hint.telegram': 'Поиск по Telegram',
+    'admin.players.search.hint.email':    'Поиск по email',
+    'admin.players.search.hint.phone':    'Поиск по телефону',
+    'admin.players.search.hint.id':       'Поиск по ID',
+    'admin.players.search.hint.all':      'Поиск по имени, email и телефону',
+
+    // Playoff confirms
+    'admin.playoff.confirm.delete_team':   'Удалить эту команду?',
+    'admin.playoff.confirm.start_qual':    'Начать квалификацию?',
+    'admin.playoff.confirm.start_playoff': 'Начать плей-офф с лучшими командами?',
+
+    // Round status
+    'enum.round.status.PENDING':    'Ожидает',
+    'enum.round.status.IN_PROGRESS':'В процессе',
+    'enum.round.status.COMPLETED':  'Завершена',
+    'enum.round.status.CANCELLED':  'Отменена'
 };

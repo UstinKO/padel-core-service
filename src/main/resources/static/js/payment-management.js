@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('paymentForm');
     if (form) {
         form.addEventListener('submit', function(e) {
-            if (!confirm('¿Guardar los cambios de pagos y asistencia?')) {
+            if (!confirm(t('admin.payments.confirm.save'))) {
                 e.preventDefault();
             }
         });

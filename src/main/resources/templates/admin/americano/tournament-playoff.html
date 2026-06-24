@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html lang="es" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta name="app-profile" th:content="${@environment.getActiveProfiles().length > 0
         ? @environment.getActiveProfiles()[0]
@@ -81,7 +81,7 @@
     </style>
 </head>
 <body>
-<header th:replace="~{fragments/admin-header :: header('Americano Equipos')}"></header>
+<header th:replace="~{fragments/admin-header :: header(#{admin.playoff.title})}"></header>
 
 <main class="admin-main">
     <div class="container">
@@ -89,7 +89,8 @@
         <!-- Навигация -->
         <div style="margin-bottom:1rem">
             <a th:href="@{'/admin/tournaments/' + ${tournament.id}}" class="btn btn-outline">
-                <i class="fas fa-arrow-left"></i> Volver a detalles
+                <i class="fas fa-arrow-left"></i>
+                <span th:text="#{admin.americano.btn.back_to_details}">Volver a detalles</span>
             </a>
         </div>
 
@@ -98,10 +99,10 @@
             <div class="tournament-title-section">
                 <h1 th:text="${tournament.nombre}">Americano Equipos</h1>
                 <div class="tournament-badges">
-                    <span class="badge" th:text="${tournament.generoFormato}">Mixto</span>
+                    <span class="badge" th:text="#{__${'enum.genero.' + tournament.generoFormato.name()}__}">Mixto</span>
                     <span class="badge badge-level" th:text="${tournament.categoriaNivel}">C7</span>
-                    <span class="badge badge-type">Americano Equipos</span>
-                    <span class="badge badge-status" th:text="${tournament.estado}"
+                    <span class="badge badge-type" th:text="#{__${'enum.tipo.' + tournament.tipo.name()}__}">Americano Equipos</span>
+                    <span class="badge badge-status" th:text="#{__${'enum.estado.' + tournament.estado.name()}__}"
                           th:classappend="'badge-' + ${tournament.estado.toString().toLowerCase()}">En curso</span>
                 </div>
             </div>
@@ -116,18 +117,24 @@
         ══════════════════════════════════════════════════════════════ -->
         <div class="section-card">
             <div class="section-header">
-                <h3><i class="fas fa-users"></i> Equipos registrados (<span th:text="${#lists.size(teams)}">0</span>)</h3>
+                <h3>
+                    <i class="fas fa-users"></i>
+                    <span th:text="#{admin.playoff.section.teams}">Equipos registrados</span>
+                    (<span th:text="${#lists.size(teams)}">0</span>)
+                </h3>
                 <div style="display:flex;gap:.5rem;flex-wrap:wrap">
                     <form th:action="@{'/tournaments/team-playoff/admin/' + ${tournament.id} + '/import-registrations'}"
                           method="post" style="margin:0">
                         <button type="submit" class="btn-sm"
                                 style="background:#dbeafe;color:#1e3a8a"
-                                onclick="return confirm('¿Importar parejas desde las inscripciones confirmadas?')">
-                            <i class="fas fa-file-import"></i> Importar inscripciones
+                                onclick="return confirm(t('admin.playoff.confirm.import'))">
+                            <i class="fas fa-file-import"></i>
+                            <span th:text="#{admin.playoff.btn.import}">Importar inscripciones</span>
                         </button>
                     </form>
                     <button class="btn-sm btn-success" onclick="toggleAddForm()">
-                        <i class="fas fa-plus"></i> Agregar equipo
+                        <i class="fas fa-plus"></i>
+                        <span th:text="#{admin.playoff.btn.add_team}">Agregar equipo</span>
                     </button>
                 </div>
             </div>
@@ -136,39 +143,40 @@
             <div id="addTeamForm" style="display:none;border-bottom:1px solid #e2e8f0">
                 <div class="add-team-form">
                     <h4 style="margin:0 0 1rem;font-size:.95rem;color:#1e293b">
-                        <i class="fas fa-user-plus" style="color:#FF6B35"></i> Nuevo Equipo
+                        <i class="fas fa-user-plus" style="color:#FF6B35"></i>
+                        <span th:text="#{admin.playoff.form.new_team}">Nuevo Equipo</span>
                     </h4>
                     <form th:action="@{'/tournaments/team-playoff/admin/' + ${tournament.id} + '/teams/add'}"
                           method="post">
                         <div class="form-row">
                             <div class="form-group">
-                                <label>ID Jugador 1 (titular) *</label>
+                                <label th:text="#{admin.playoff.form.player1_id}">ID Jugador 1 (titular) *</label>
                                 <input type="number" name="player1Id" class="form-control"
-                                       placeholder="ID del jugador" required>
+                                       th:placeholder="#{admin.playoff.form.player1_id}" required>
                             </div>
                             <div class="form-group">
-                                <label>ID Jugador 2 (si está registrado)</label>
+                                <label th:text="#{admin.playoff.form.player2_id}">ID Jugador 2 (si está registrado)</label>
                                 <input type="number" name="player2Id" class="form-control"
-                                       placeholder="ID del jugador 2 (opcional)">
+                                       th:placeholder="#{admin.playoff.form.player2_id}">
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
-                                <label>Nombre Jugador 2 (si no está registrado)</label>
+                                <label th:text="#{admin.playoff.form.player2_name}">Nombre Jugador 2 (si no está registrado)</label>
                                 <input type="text" name="player2Name" class="form-control"
-                                       placeholder="Nombre completo">
+                                       th:placeholder="#{admin.playoff.form.placeholder.player2_name}">
                             </div>
                             <div class="form-group">
-                                <label>Teléfono Jugador 2</label>
+                                <label th:text="#{admin.playoff.form.player2_phone}">Teléfono Jugador 2</label>
                                 <input type="text" name="player2Phone" class="form-control"
-                                       placeholder="+54 9 ...">
+                                       th:placeholder="#{admin.playoff.form.placeholder.player2_phone}">
                             </div>
                         </div>
                         <div class="form-row-3">
                             <div class="form-group">
-                                <label>Origen de registro</label>
+                                <label th:text="#{admin.playoff.form.reg_source}">Origen de registro</label>
                                 <select name="registrationSource" class="form-control">
-                                    <option value="">— ninguno —</option>
+                                    <option value="" th:text="#{admin.playoff.form.source_none}">— ninguno —</option>
                                     <option value="WEBSITE">Web</option>
                                     <option value="WHATSAPP">WhatsApp</option>
                                     <option value="WALK_IN">Walk-in</option>
@@ -177,24 +185,26 @@
                             </div>
                             <div class="form-group" style="display:flex;align-items:center;gap:.5rem;padding-top:1.5rem">
                                 <input type="checkbox" name="hasPaid" value="true" id="hasPaidNew">
-                                <label for="hasPaidNew" style="margin:0;cursor:pointer">Pagó</label>
+                                <label for="hasPaidNew" style="margin:0;cursor:pointer" th:text="#{admin.playoff.form.paid}">Pagó</label>
                             </div>
                             <div class="form-group" style="display:flex;align-items:center;gap:.5rem;padding-top:1.5rem">
                                 <input type="checkbox" name="attended" value="true" id="attendedNew">
-                                <label for="attendedNew" style="margin:0;cursor:pointer">Asistió</label>
+                                <label for="attendedNew" style="margin:0;cursor:pointer" th:text="#{admin.playoff.form.attended}">Asistió</label>
                             </div>
                         </div>
                         <div class="form-group">
-                            <label>Comentario del admin</label>
+                            <label th:text="#{admin.playoff.form.comment}">Comentario del admin</label>
                             <input type="text" name="adminComment" class="form-control"
-                                   placeholder="Notas internas...">
+                                   th:placeholder="#{admin.playoff.form.placeholder.comment}">
                         </div>
                         <div class="btn-row">
                             <button type="submit" class="btn btn-primary btn-sm">
-                                <i class="fas fa-save"></i> Guardar equipo
+                                <i class="fas fa-save"></i>
+                                <span th:text="#{admin.playoff.btn.save_team}">Guardar equipo</span>
                             </button>
                             <button type="button" class="btn btn-outline btn-sm"
-                                    onclick="toggleAddForm()">Cancelar</button>
+                                    onclick="toggleAddForm()"
+                                    th:text="#{admin.playoff.btn.cancel_form}">Cancelar</button>
                         </div>
                     </form>
                 </div>
@@ -206,13 +216,13 @@
                     <thead>
                     <tr>
                         <th>#</th>
-                        <th>Pareja</th>
-                        <th>Origen</th>
-                        <th title="Pagó">Pag.</th>
-                        <th title="Asistió">Asi.</th>
-                        <th>Nota admin</th>
-                        <th th:if="${qualStarted}">Sets G/P</th>
-                        <th th:if="${qualStarted}">Games G/P</th>
+                        <th th:text="#{admin.playoff.col.pair}">Pareja</th>
+                        <th th:text="#{admin.playoff.col.origin}">Origen</th>
+                        <th th:title="#{admin.playoff.col.paid_title}" th:text="#{admin.playoff.col.paid}">Pag.</th>
+                        <th th:title="#{admin.playoff.col.attended_title}" th:text="#{admin.playoff.col.attended}">Asi.</th>
+                        <th th:text="#{admin.playoff.col.admin_note}">Nota admin</th>
+                        <th th:if="${qualStarted}" th:text="#{admin.playoff.col.sets}">Sets G/P</th>
+                        <th th:if="${qualStarted}" th:text="#{admin.playoff.col.games}">Games G/P</th>
                         <th></th>
                     </tr>
                     </thead>
@@ -254,7 +264,7 @@
                             <form th:if="${not qualStarted}"
                                   th:action="@{'/tournaments/team-playoff/admin/teams/' + ${team.id} + '/delete'}"
                                   method="post"
-                                  onsubmit="return confirm('¿Eliminar este equipo?')"
+                                  onsubmit="return confirm(t('admin.playoff.confirm.delete_team'))"
                                   style="display:inline">
                                 <input type="hidden" name="tournamentId" th:value="${tournament.id}">
                                 <button type="submit" class="btn-sm btn-danger">
@@ -264,7 +274,8 @@
                         </td>
                     </tr>
                     <tr th:if="${#lists.isEmpty(teams)}">
-                        <td colspan="9" style="text-align:center;color:#94a3b8;padding:2rem">
+                        <td colspan="9" style="text-align:center;color:#94a3b8;padding:2rem"
+                            th:text="#{admin.playoff.empty.teams}">
                             No hay equipos registrados. Agrega equipos manualmente.
                         </td>
                     </tr>
@@ -278,33 +289,40 @@
         ══════════════════════════════════════════════════════════════ -->
         <div class="section-card">
             <div class="section-header">
-                <h3><i class="fas fa-list-ol"></i> Calificación</h3>
+                <h3>
+                    <i class="fas fa-list-ol"></i>
+                    <span th:text="#{admin.playoff.section.qualification}">Calificación</span>
+                </h3>
                 <span class="info-pill" th:if="${qualStarted}">
-                    <i class="fas fa-check"></i> Iniciada
+                    <i class="fas fa-check"></i>
+                    <span th:text="#{admin.playoff.qual.started}">Iniciada</span>
                 </span>
             </div>
 
             <!-- Квалификация не начата -->
             <div th:unless="${qualStarted}" class="init-box">
                 <p>
-                    <strong>Fase de calificación</strong> — cada equipo juega 2 partidos por sets.<br>
-                    Se necesitan al menos <strong>4 equipos</strong> para iniciar.
+                    <strong th:text="#{admin.playoff.qual.description}">Fase de calificación — cada equipo juega 2 partidos por sets.</strong><br>
+                    <span th:text="#{admin.playoff.qual.min_teams}">Se necesitan al menos 4 equipos para iniciar.</span>
                 </p>
                 <form th:action="@{'/tournaments/team-playoff/admin/' + ${tournament.id} + '/init-qualification'}"
                       method="post" style="display:inline-flex;gap:.75rem;align-items:center">
-                    <label style="font-size:.85rem;font-weight:600">Canchas:</label>
+                    <label style="font-size:.85rem;font-weight:600" th:text="#{admin.playoff.qual.courts_label}">Canchas:</label>
                     <input type="number" name="courts" value="2" min="1" max="10"
                            style="width:60px;border:1px solid #e2e8f0;border-radius:6px;padding:.3rem .5rem;text-align:center">
                     <button type="submit" class="btn btn-primary"
                             th:disabled="${#lists.size(teams) < 4}"
-                            onclick="return confirm('¿Iniciar calificación?')">
-                        <i class="fas fa-play"></i> Iniciar calificación
+                            onclick="return confirm(t('admin.playoff.confirm.start_qual'))">
+                        <i class="fas fa-play"></i>
+                        <span th:text="#{admin.playoff.btn.start_qual}">Iniciar calificación</span>
                     </button>
                 </form>
                 <div th:if="${#lists.size(teams) < 4}"
                      style="margin-top:.75rem;font-size:.82rem;color:#94a3b8">
                     <i class="fas fa-info-circle"></i>
-                    Faltan <strong th:text="${4 - #lists.size(teams)}">4</strong> equipos más.
+                    <span th:text="#{admin.playoff.qual.need_more}">Faltan</span>
+                    <strong th:text="${4 - #lists.size(teams)}">4</strong>
+                    <span th:text="#{admin.playoff.qual.need_more_suffix}">equipos más.</span>
                 </div>
             </div>
 
@@ -317,14 +335,14 @@
                         <thead>
                         <tr>
                             <th>#</th>
-                            <th>Pareja</th>
-                            <th>Sets G</th>
-                            <th>Sets P</th>
-                            <th>Games G</th>
-                            <th>Games P</th>
-                            <th>Dif. Sets</th>
-                            <th>Dif. Games</th>
-                            <th>PJ</th>
+                            <th th:text="#{admin.playoff.col.pair}">Pareja</th>
+                            <th th:text="#{admin.playoff.col.sets_won}">Sets G</th>
+                            <th th:text="#{admin.playoff.col.sets_lost}">Sets P</th>
+                            <th th:text="#{admin.playoff.col.games_won}">Games G</th>
+                            <th th:text="#{admin.playoff.col.games_lost}">Games P</th>
+                            <th th:text="#{admin.playoff.col.set_diff}">Dif. Sets</th>
+                            <th th:text="#{admin.playoff.col.game_diff}">Dif. Games</th>
+                            <th th:text="#{admin.playoff.col.played}">PJ</th>
                         </tr>
                         </thead>
                         <tbody id="qualRankingTbody">
@@ -371,7 +389,8 @@
                              style="display:none">
                             <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.75rem;flex-wrap:wrap">
                                 <span class="info-pill" th:text="${round.status}">EN CURSO</span>
-                                <span class="info-pill" th:text="${round.completedMatches} + '/' + ${round.totalMatches} + ' partidos'">0/4</span>
+                                <span class="info-pill"
+                                      th:text="${round.completedMatches} + '/' + ${round.totalMatches} + ' ' + #{admin.americano.label.matches_count}">0/4</span>
                             </div>
 
                             <div th:each="match : ${round.matches}" class="match-card"
@@ -380,7 +399,10 @@
                                  th:data-completed="${match.isCompleted}">
 
                                 <div class="match-header">
-                                    <span>Cancha <span th:text="${match.courtNumber}">1</span></span>
+                                    <span>
+                                        <span th:text="#{admin.playoff.label.court}">Cancha</span>
+                                        <span th:text="${match.courtNumber}">1</span>
+                                    </span>
                                     <span style="font-size:.75rem;color:#94a3b8" th:text="${match.note}">Equipo A vs B</span>
                                 </div>
 
@@ -401,7 +423,8 @@
                                         <button th:if="${match.isCompleted}" class="edit-btn"
                                                 th:attr="data-match-id=${match.id},data-g1=${match.team1Games},data-g2=${match.team2Games}"
                                                 onclick="showQualEdit(this)">
-                                            <i class="fas fa-edit"></i> editar
+                                            <i class="fas fa-edit"></i>
+                                            <span th:text="#{admin.americano.btn.edit_score}">editar</span>
                                         </button>
 
                                         <!-- Ввод результата -->
@@ -433,13 +456,15 @@
                      style="padding:1rem 1.5rem;background:#fef9c3;border-top:1px solid #fcd34d">
                     <p style="margin:0 0 .75rem;font-size:.9rem;color:#78350f">
                         <i class="fas fa-flag-checkered"></i>
-                        Calificación completada. Puedes iniciar el <strong>Playoff</strong>.
+                        <span th:text="#{admin.playoff.qual.completed}">Calificación completada. Puedes iniciar el</span>
+                        <strong th:text="#{admin.playoff.qual.completed_playoff}">Playoff</strong>.
                     </p>
                     <form th:action="@{'/tournaments/team-playoff/admin/' + ${tournament.id} + '/init-playoff'}"
                           method="post" style="display:inline">
                         <button type="submit" class="btn btn-primary"
-                                onclick="return confirm('¿Iniciar playoff con los mejores equipos?')">
-                            <i class="fas fa-trophy"></i> Iniciar Playoff
+                                onclick="return confirm(t('admin.playoff.confirm.start_playoff'))">
+                            <i class="fas fa-trophy"></i>
+                            <span th:text="#{admin.playoff.btn.start_playoff}">Iniciar Playoff</span>
                         </button>
                     </form>
                 </div>
@@ -451,7 +476,10 @@
         ══════════════════════════════════════════════════════════════ -->
         <div th:if="${playoffStarted}" class="section-card">
             <div class="section-header">
-                <h3><i class="fas fa-trophy"></i> Playoff</h3>
+                <h3>
+                    <i class="fas fa-trophy"></i>
+                    <span th:text="#{admin.playoff.section.playoff}">Playoff</span>
+                </h3>
             </div>
 
             <div class="round-content">
@@ -466,7 +494,10 @@
                          th:id="'pmatch-' + ${match.id}">
 
                         <div class="match-header">
-                            <span>Cancha <span th:text="${match.courtNumber}">1</span></span>
+                            <span>
+                                <span th:text="#{admin.playoff.label.court}">Cancha</span>
+                                <span th:text="${match.courtNumber}">1</span>
+                            </span>
                             <span th:if="${match.playoffStage != null}" class="playoff-stage-label"
                                   th:text="${match.playoffStage}">SEMI_FINAL</span>
                         </div>
@@ -477,7 +508,8 @@
                                      th:text="${match.team1Player1Name}">TBD</div>
                                 <div th:if="${match.team1Player2Name != null}" class="team-sub"
                                      th:text="${match.team1Player2Name}">TBD</div>
-                                <div th:if="${match.team1Player1Name == null}" class="tbd">TBD</div>
+                                <div th:if="${match.team1Player1Name == null}" class="tbd"
+                                     th:text="#{admin.playoff.bracket.tbd}">TBD</div>
                             </div>
 
                             <div class="vs-block">
@@ -498,7 +530,7 @@
                                             onclick="submitPlayoffScore(this)">OK</button>
                                 </div>
                                 <span th:if="${match.team1Player1Name == null or match.team2Player1Name == null}"
-                                      class="tbd">Esperando...</span>
+                                      class="tbd" th:text="#{admin.playoff.tbd}">Esperando...</span>
                             </div>
 
                             <div class="team-right">
@@ -506,7 +538,8 @@
                                      th:text="${match.team2Player1Name}">TBD</div>
                                 <div th:if="${match.team2Player2Name != null}" class="team-sub"
                                      th:text="${match.team2Player2Name}">TBD</div>
-                                <div th:if="${match.team2Player1Name == null}" class="tbd">TBD</div>
+                                <div th:if="${match.team2Player1Name == null}" class="tbd"
+                                     th:text="#{admin.playoff.bracket.tbd}">TBD</div>
                             </div>
                         </div>
                     </div>

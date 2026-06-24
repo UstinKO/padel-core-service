@@ -234,5 +234,81 @@ window.APP_MESSAGES = {
     'koc.admin.init_confirm':     'Initialise King of Court tournament?',
     'koc.admin.init_success':     'Tournament initialised',
     'koc.admin.error_init':       'Initialisation error',
-    'koc.admin.error_connection': 'Connection error'
+    'koc.admin.error_connection': 'Connection error',
+
+    // ── king-of-court.js (admin — additional) ───────────────────────────────
+    'koc.admin.result_updated':     'Result updated',
+    'koc.admin.next_round':         'Moving to next round',
+    'koc.admin.youtube_saved':      'YouTube link saved',
+    'koc.admin.rollback':           'Round cancelled — fix the results of the previous round',
+    'koc.admin.confirm_next_round': 'Move to next round?',
+    'koc.admin.confirm_finish':     'Finish tournament? No more results can be entered.',
+    'koc.admin.error_fields':       'Not all fields are completed',
+    'koc.admin.error_same_winners': 'Please select two different winners',
+    'koc.admin.error_score':        'Winners\' score must be higher than losers\' score',
+    'koc.admin.error_court_data':   'Could not load court data',
+    'koc.admin.error_losers':       'Error determining the losers',
+    'koc.admin.error_save':         'Error saving',
+    'koc.admin.error_next_round':   'Error moving to next round',
+    'koc.admin.error_finish':       'Error finishing the tournament',
+    'koc.admin.error_rollback':     'Error rolling back the round',
+    'koc.admin.btn_initialize':     'Initialise tournament',
+
+    // ── admin.js ─────────────────────────────────────────────────────────────
+    'admin.common.confirm.delete':      'Are you sure you want to delete {0}?',
+    'admin.common.success.deleted':     'Item deleted successfully',
+    'admin.common.error.delete':        'Error deleting',
+    'admin.common.success.status':      'Status updated successfully',
+    'admin.common.error.status':        'Error updating status',
+    'admin.common.error.connection':    'Connection error',
+
+    // ── admin-americano.js ───────────────────────────────────────────────────
+    'admin.americano.round.started':         'Round started',
+    'admin.americano.round.completed':       'Round completed',
+    'admin.americano.result.saved':          'Result saved',
+    'admin.americano.error.start_round':     'Error starting round',
+    'admin.americano.error.complete_round':  'Error completing round',
+    'admin.americano.error.save_result':     'Error saving result',
+    'admin.americano.confirm.complete_round':'Complete this round? All matches must be saved.',
+    'admin.americano.error.score_sum':       'The sum of points must be {0}',
+    'admin.americano.status.pending':        'Pending',
+    'admin.americano.status.in_progress':    'In progress',
+    'admin.americano.status.completed':      'Completed',
+    'admin.americano.status.cancelled':      'Cancelled',
+
+    // ── payment-management.js ────────────────────────────────────────────────
+    'admin.payments.confirm.save': 'Save payment and attendance changes?',
+
+    // ── king-of-court.js (court card / modal JS) ─────────────────────────────
+    'koc.admin.btn.enter_result':       'Enter result',
+    'koc.admin.modal.result_new':       'Result for Court {0}',
+    'koc.admin.modal.result_edit':      'Edit result — Court {0}',
+
+    // ── tournament-double / tournament-playoff (inline JS) ────────────────────
+    'admin.americano.double.confirm.finish':     'Finish the tournament? The standings will be final.',
+    'admin.americano.btn.start_round':           'Start Round',
+    'admin.common.btn.save':                     'Save',
+    'admin.common.btn.edit':                     'Edit',
+    'admin.americano.double.hint.sum_pts':       'Sum = {0} pts',
+    'admin.tournaments.list.confirm.deactivate': 'Deactivate this tournament? Data will be preserved.',
+    'admin.tournaments.list.confirm.delete':     'PERMANENTLY DELETE this tournament? This cannot be undone.',
+    'admin.playoff.confirm.import':              'Import pairs from confirmed registrations?',
+
+    // Players search hints
+    'admin.players.search.hint.telegram': 'Search by Telegram',
+    'admin.players.search.hint.email':    'Search by email',
+    'admin.players.search.hint.phone':    'Search by phone',
+    'admin.players.search.hint.id':       'Search by ID',
+    'admin.players.search.hint.all':      'Search by name, email and phone',
+
+    // Playoff confirms
+    'admin.playoff.confirm.delete_team':   'Delete this team?',
+    'admin.playoff.confirm.start_qual':    'Start qualification?',
+    'admin.playoff.confirm.start_playoff': 'Start playoff with the best teams?',
+
+    // Round status
+    'enum.round.status.PENDING':    'Pending',
+    'enum.round.status.IN_PROGRESS':'In Progress',
+    'enum.round.status.COMPLETED':  'Completed',
+    'enum.round.status.CANCELLED':  'Cancelled'
 };

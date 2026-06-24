@@ -5,8 +5,8 @@
 <div th:fragment="resultModal" id="resultModal" class="modal" style="display: none;">
     <div class="modal-content" style="max-width: 500px; padding: 2rem;">
         <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-            <h2 class="admin-title" style="font-size: 1.5rem; margin: 0;">
-                <i class="fas fa-trophy"></i> Resultado para Cancha <span id="modalCourtNumber"></span>
+            <h2 class="admin-title" id="modalTitle" style="font-size: 1.5rem; margin: 0;">
+                <i class="fas fa-trophy"></i> <span id="modalCourtNumber"></span>
             </h2>
             <button class="modal-close" onclick="window.kingOfCourt.closeResultModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">
                 <i class="fas fa-times"></i>
@@ -19,22 +19,22 @@
 
         <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
             <div class="form-group">
-                <label class="form-label">Ganador 1</label>
+                <label class="form-label" th:text="#{koc.admin.modal.winner1}">Ganador 1</label>
                 <select id="winner1" class="form-control" required></select>
             </div>
 
             <div class="form-group">
-                <label class="form-label">Ganador 2</label>
+                <label class="form-label" th:text="#{koc.admin.modal.winner2}">Ganador 2</label>
                 <select id="winner2" class="form-control" required></select>
             </div>
 
             <div class="form-group">
-                <label class="form-label">Puntos ganadores</label>
+                <label class="form-label" th:text="#{koc.admin.modal.pts_winners}">Puntos ganadores</label>
                 <input type="number" id="scoreWinners" class="form-control" min="0" required>
             </div>
 
             <div class="form-group">
-                <label class="form-label">Puntos perdedores</label>
+                <label class="form-label" th:text="#{koc.admin.modal.pts_losers}">Puntos perdedores</label>
                 <input type="number" id="scoreLosers" class="form-control" min="0" required>
             </div>
         </div>
@@ -42,8 +42,8 @@
         <p id="modalError" class="text-danger" style="color: #ef4444; margin-top: 1rem; display: none;"></p>
 
         <div class="modal-actions" style="display: flex; gap: 1rem; margin-top: 2rem;">
-            <button class="btn btn-outline" style="flex: 1;" onclick="window.kingOfCourt.closeResultModal()">Cancelar</button>
-            <button class="btn btn-primary" style="flex: 1;" onclick="window.kingOfCourt.saveResult()">Guardar</button>
+            <button class="btn btn-outline" style="flex: 1;" onclick="window.kingOfCourt.closeResultModal()" th:text="#{koc.admin.modal.cancel}">Cancelar</button>
+            <button class="btn btn-primary" style="flex: 1;" onclick="window.kingOfCourt.saveResult()" th:text="#{koc.admin.modal.save}">Guardar</button>
         </div>
     </div>
 </div>
@@ -53,7 +53,7 @@
     <div class="modal-content" style="max-width: 800px; padding: 2rem;">
         <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
             <h2 class="admin-title" style="font-size: 1.5rem; margin: 0;">
-                <i class="fas fa-history"></i> Historial de: <span id="historyPlayerName"></span>
+                <i class="fas fa-history"></i> <span id="historyModalLabel" th:text="#{koc.admin.modal.history_title}">Historial de:</span> <span id="historyPlayerName"></span>
             </h2>
             <button class="modal-close" onclick="window.kingOfCourt.closeHistoryModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">
                 <i class="fas fa-times"></i>
@@ -64,12 +64,12 @@
             <table class="admin-table">
                 <thead>
                 <tr>
-                    <th>Ronda</th>
-                    <th>Cancha</th>
-                    <th>Resultado</th>
-                    <th>Marcador</th>
-                    <th>Compañero</th>
-                    <th>Rivales</th>
+                    <th th:text="#{koc.admin.modal.col.round}">Ronda</th>
+                    <th th:text="#{koc.admin.modal.col.court}">Cancha</th>
+                    <th th:text="#{koc.admin.modal.col.result}">Resultado</th>
+                    <th th:text="#{koc.admin.modal.col.score}">Marcador</th>
+                    <th th:text="#{koc.admin.modal.col.partner}">Compañero</th>
+                    <th th:text="#{koc.admin.modal.col.rivals}">Rivales</th>
                 </tr>
                 </thead>
                 <tbody id="historyTableBody">
@@ -79,7 +79,7 @@
         </div>
 
         <div class="modal-actions" style="margin-top: 1.5rem;">
-            <button class="btn btn-outline" style="width: 100%;" onclick="window.kingOfCourt.closeHistoryModal()">Cerrar</button>
+            <button class="btn btn-outline" style="width: 100%;" onclick="window.kingOfCourt.closeHistoryModal()" th:text="#{koc.admin.modal.close}">Cerrar</button>
         </div>
     </div>
 </div>
@@ -89,21 +89,21 @@
     <div class="modal-content" style="max-width: 600px; padding: 2rem; text-align: center;">
         <i class="fas fa-crown" style="font-size: 4rem; color: #fbbf24; margin-bottom: 1rem;"></i>
 
-        <h2 class="admin-title" style="font-size: 2rem; margin-bottom: 0.5rem;">¡Torneo Finalizado!</h2>
+        <h2 class="admin-title" style="font-size: 2rem; margin-bottom: 0.5rem;" th:text="#{koc.admin.modal.finished_title}">¡Torneo Finalizado!</h2>
 
-        <p class="text-lg" style="color: var(--admin-gray); margin-bottom: 1rem;">Rey de la Cancha:</p>
+        <p class="text-lg" style="color: var(--admin-gray); margin-bottom: 1rem;" th:text="#{koc.admin.modal.king_label}">Rey de la Cancha:</p>
 
         <p id="finalWinnerName" class="text-3xl font-bold" style="color: var(--admin-primary); margin-bottom: 2rem;"></p>
 
         <div style="margin-top: 1.5rem;">
-            <h3 class="admin-subtitle" style="margin-bottom: 1rem;">Clasificación Final</h3>
+            <h3 class="admin-subtitle" style="margin-bottom: 1rem;" th:text="#{koc.admin.modal.final_ranking}">Clasificación Final</h3>
             <div id="finalLeaderboardContainer" style="max-height: 300px; overflow-y: auto;">
                 <!-- Таблица будет вставлена через JS -->
             </div>
         </div>
 
         <div class="modal-actions" style="margin-top: 2rem;">
-            <button class="btn btn-outline" style="width: 100%;" onclick="window.kingOfCourt.closeFinalModal()">Cerrar</button>
+            <button class="btn btn-outline" style="width: 100%;" onclick="window.kingOfCourt.closeFinalModal()" th:text="#{koc.admin.modal.close}">Cerrar</button>
         </div>
     </div>
 </div>
@@ -113,13 +113,13 @@
     <div class="modal-content" style="max-width: 400px; padding: 2rem; text-align: center;">
         <i class="fas fa-question-circle" style="font-size: 3rem; color: var(--admin-warning); margin-bottom: 1rem;"></i>
 
-        <h2 id="confirmModalTitle" class="text-xl font-bold" style="margin-bottom: 1rem;">Confirmar acción</h2>
+        <h2 id="confirmModalTitle" class="text-xl font-bold" style="margin-bottom: 1rem;" th:text="#{koc.admin.modal.confirm_title}">Confirmar acción</h2>
 
-        <p id="confirmModalText" class="text-gray-600" style="margin-bottom: 2rem;">¿Estás seguro?</p>
+        <p id="confirmModalText" class="text-gray-600" style="margin-bottom: 2rem;" th:text="#{koc.admin.modal.confirm_text}">¿Estás seguro?</p>
 
         <div style="display: flex; gap: 1rem;">
-            <button class="btn btn-outline" style="flex: 1;" onclick="window.kingOfCourt.closeConfirmModal()">Cancelar</button>
-            <button class="btn btn-danger" style="flex: 1;" onclick="window.kingOfCourt.executeConfirmAction()">Confirmar</button>
+            <button class="btn btn-outline" style="flex: 1;" onclick="window.kingOfCourt.closeConfirmModal()" th:text="#{koc.admin.modal.cancel}">Cancelar</button>
+            <button class="btn btn-danger" style="flex: 1;" onclick="window.kingOfCourt.executeConfirmAction()" th:text="#{koc.admin.modal.confirm}">Confirmar</button>
         </div>
     </div>
 </div>
