@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta name="app-profile" th:content="${@environment.getActiveProfiles().length > 0
         ? @environment.getActiveProfiles()[0]
@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
 
     <meta name="description" content="Ranking de jugadores - 1-Padel">
-    <title>Ranking | 1-Padel</title>
+    <title th:text="#{ranking.title}">Ranking | 1-Padel</title>
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
@@ -43,13 +43,13 @@
             <div class="navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav">
                     <li class="nav-item">
-                        <a href="/" class="nav-link">Inicio</a>
+                        <a href="/" class="nav-link" th:text="#{nav.home}">Inicio</a>
                     </li>
                     <li class="nav-item">
-                        <a href="/torneos" class="nav-link">Torneos</a>
+                        <a href="/torneos" class="nav-link" th:text="#{nav.torneos}">Torneos</a>
                     </li>
                     <li class="nav-item">
-                        <a href="/ranking" class="nav-link active">Ranking</a>
+                        <a href="/ranking" class="nav-link active" th:text="#{nav.ranking}">Ranking</a>
                     </li>
                 </ul>
             </div>
@@ -62,10 +62,10 @@
         <div class="ranking-header">
             <h1 class="ranking-title">
                 <i class="fas fa-chart-line"></i>
-                Ranking de Jugadores
+                <span th:text="#{ranking.heading}">Ranking de Jugadores</span>
             </h1>
             <p class="ranking-subtitle">
-                Clasificación oficial de jugadores · Total: <strong th:text="${totalJugadores}">0</strong> jugadores
+                <span th:text="#{ranking.subtitle.prefix}">Clasificación oficial de jugadores · Total:</span> <strong th:text="${totalJugadores}">0</strong> <span th:text="#{ranking.subtitle.players}">jugadores</span>
             </p>
         </div>
 
@@ -105,7 +105,7 @@
         <!-- Filtros -->
         <div class="ranking-filters">
             <div class="filter-tabs">
-                <button class="filter-tab active" data-filter="all">Todos</button>
+                <button class="filter-tab active" data-filter="all" th:text="#{ranking.filter.all}">Todos</button>
                 <button class="filter-tab" data-filter="C5">C5 (Élite)</button>
                 <button class="filter-tab" data-filter="C6">C6 (Profesional)</button>
                 <button class="filter-tab" data-filter="C7">C7 (Avanzado)</button>
@@ -119,14 +119,14 @@
             <table class="ranking-table">
                 <thead>
                 <tr>
-                    <th>Pos.</th>
-                    <th>Jugador</th>
-                    <th>Nivel</th>
-                    <th>Torneos</th>
-                    <th>Ganados</th>
-                    <th>Win Rate</th>
-                    <th>Puntos</th>
-                    <th>Tendencia</th>
+                    <th th:text="#{ranking.table.pos}">Pos.</th>
+                    <th th:text="#{ranking.table.player}">Jugador</th>
+                    <th th:text="#{ranking.table.level}">Nivel</th>
+                    <th th:text="#{ranking.table.tournaments}">Torneos</th>
+                    <th th:text="#{ranking.table.won}">Ganados</th>
+                    <th th:text="#{ranking.table.winrate}">Win Rate</th>
+                    <th th:text="#{ranking.table.points}">Puntos</th>
+                    <th th:text="#{ranking.table.trend}">Tendencia</th>
                 </tr>
                 </thead>
                 <tbody id="rankingBody">
@@ -138,14 +138,14 @@
         <!-- Cargando -->
         <div class="ranking-loading" id="rankingLoading">
             <div class="spinner"></div>
-            <p>Cargando ranking...</p>
+            <p th:text="#{ranking.loading}">Cargando ranking...</p>
         </div>
 
         <!-- Mensaje sin resultados -->
         <div class="ranking-empty" id="rankingEmpty" style="display: none;">
             <i class="fas fa-chart-line"></i>
-            <h3>No hay datos de ranking</h3>
-            <p>Los jugadores aparecerán aquí cuando participen en torneos</p>
+            <h3 th:text="#{ranking.empty.title}">No hay datos de ranking</h3>
+            <p th:text="#{ranking.empty.msg}">Los jugadores aparecerán aquí cuando participen en torneos</p>
         </div>
     </div>
 </main>
@@ -153,12 +153,14 @@
 <!-- Footer -->
 <footer class="footer">
     <div class="container">
-        <p>&copy; 2026 1-Padel. Todos los derechos reservados.</p>
+        <p th:text="#{footer.copyright}">© 2026 1-Padel. Todos los derechos reservados.</p>
     </div>
 </footer>
 
 <!-- Datos para JavaScript -->
 <script th:src="@{/js/logger.js}"></script>
+<script th:src="${'/js/i18n/messages-' + #locale.language + '.js'}"></script>
+<script th:src="@{/js/i18n/t.js}"></script>
 <script th:inline="javascript">
     /*<![CDATA[*/
     var rankingData = /*[(${rankingJson})]*/ [];

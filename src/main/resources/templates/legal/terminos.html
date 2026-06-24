@@ -6,7 +6,7 @@
         : 'default'}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Términos y Condiciones | 1-Padel</title>
+    <title th:text="#{legal.terminos.page.title}">Términos y Condiciones | 1-Padel</title>
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
@@ -31,10 +31,10 @@
             </a>
             <div class="navbar-auth">
                 <a href="/login" class="btn btn-outline-sm">
-                    <i class="fas fa-sign-in-alt"></i> Iniciar sesión
+                    <i class="fas fa-sign-in-alt"></i> <span th:text="#{nav.login}">Iniciar sesión</span>
                 </a>
                 <a href="/players/registro" class="btn btn-primary-sm">
-                    <i class="fas fa-user-plus"></i> Registrarse
+                    <i class="fas fa-user-plus"></i> <span th:text="#{nav.register}">Registrarse</span>
                 </a>
             </div>
         </nav>
@@ -44,84 +44,218 @@
 <main class="legal-main">
     <div class="container">
         <div class="legal-card">
-            <h1 class="legal-title">Términos y Condiciones de Uso</h1>
-            <p class="legal-date">Última actualización: 15 de marzo de 2026</p>
 
-            <div class="legal-content">
-                <section>
-                    <h2>1. Aceptación de los Términos</h2>
-                    <p>Al acceder y utilizar la plataforma 1-Padel ("la Plataforma"), aceptas estar sujeto a estos Términos y Condiciones de Uso. Si no estás de acuerdo con alguna parte de estos términos, no podrás acceder al servicio.</p>
-                </section>
+            <div th:switch="${#locale.language}">
 
-                <section>
-                    <h2>2. Descripción del Servicio</h2>
-                    <p>1-Padel es una plataforma que permite a los usuarios:</p>
-                    <ul>
-                        <li>Registrarse en torneos de pádel</li>
-                        <li>Gestionar inscripciones</li>
-                        <li>Ver rankings y resultados</li>
-                        <li>Conectar con otros jugadores y clubes</li>
-                    </ul>
-                </section>
+                <!-- ── RUSSIAN ── -->
+                <div th:case="'ru'">
+                    <h1 class="legal-title">Условия использования</h1>
+                    <p class="legal-date">Последнее обновление: 15 марта 2026</p>
+                    <div class="legal-content">
+                        <section>
+                            <h2>1. Принятие условий</h2>
+                            <p>Получая доступ к платформе 1-Padel («Платформа») и используя её, вы соглашаетесь соблюдать настоящие Условия использования. Если вы не согласны с какой-либо частью этих условий, вы не сможете получить доступ к сервису.</p>
+                        </section>
+                        <section>
+                            <h2>2. Описание сервиса</h2>
+                            <p>1-Padel — платформа, позволяющая пользователям:</p>
+                            <ul>
+                                <li>Регистрироваться на турниры по падель</li>
+                                <li>Управлять регистрациями</li>
+                                <li>Просматривать рейтинги и результаты</li>
+                                <li>Общаться с другими игроками и клубами</li>
+                            </ul>
+                        </section>
+                        <section>
+                            <h2>3. Регистрация и аккаунт</h2>
+                            <p>Для использования определённых функций Платформы необходимо зарегистрироваться и создать аккаунт. Вы несёте ответственность за:</p>
+                            <ul>
+                                <li>Сохранение конфиденциальности вашего пароля</li>
+                                <li>Все действия, совершённые под вашим аккаунтом</li>
+                                <li>Предоставление точной и актуальной информации</li>
+                            </ul>
+                            <p>Мы оставляем за собой право приостановить или закрыть аккаунты, предоставляющие ложную информацию или нарушающие настоящие условия.</p>
+                        </section>
+                        <section>
+                            <h2>4. Конфиденциальность</h2>
+                            <p>Использование Платформы регулируется нашей <a href="/privacidad">Политикой конфиденциальности</a>, в которой описывается, как мы собираем, используем и защищаем вашу личную информацию.</p>
+                        </section>
+                        <section>
+                            <h2>5. Поведение пользователя</h2>
+                            <p>Используя Платформу, вы соглашаетесь не:</p>
+                            <ul>
+                                <li>Нарушать применимые законы и нормативные акты</li>
+                                <li>Нарушать права интеллектуальной собственности</li>
+                                <li>Публиковать ложный, вводящий в заблуждение или дискриминационный контент</li>
+                                <li>Пытаться получить несанкционированный доступ к системам или аккаунтам других пользователей</li>
+                                <li>Использовать Платформу в мошеннических целях</li>
+                            </ul>
+                        </section>
+                        <section>
+                            <h2>6. Оплата и отмена</h2>
+                            <p>Регистрация на турниры может потребовать оплаты. Политика отмены и возврата устанавливается каждым турниром и чётко отображается перед регистрацией. 1-Padel выступает исключительно посредником в управлении платежами.</p>
+                        </section>
+                        <section>
+                            <h2>7. Интеллектуальная собственность</h2>
+                            <p>Весь контент Платформы, включая логотипы, дизайн, тексты и программное обеспечение, является собственностью 1-Padel или её лицензиаров и защищён законами об интеллектуальной собственности.</p>
+                        </section>
+                        <section>
+                            <h2>8. Ограничение ответственности</h2>
+                            <p>1-Padel не несёт ответственности за косвенный, случайный или последующий ущерб, возникший в результате использования или невозможности использования Платформы. Мы не гарантируем бесперебойность или безошибочность работы сервиса.</p>
+                        </section>
+                        <section>
+                            <h2>9. Изменения</h2>
+                            <p>Мы оставляем за собой право изменять настоящие условия в любое время. Изменения вступают в силу сразу после публикации на Платформе. Продолжение использования Платформы после внесённых изменений означает ваше согласие с новыми условиями.</p>
+                        </section>
+                        <section>
+                            <h2>10. Контакт</h2>
+                            <p>Если у вас есть вопросы по настоящим Условиям использования, свяжитесь с нами:</p>
+                            <p>Email: <a href="mailto:legal@1-padel.com">legal@1-padel.com</a></p>
+                        </section>
+                    </div>
+                </div>
 
-                <section>
-                    <h2>3. Registro y Cuenta</h2>
-                    <p>Para utilizar ciertas funciones de la Plataforma, debes registrarte y crear una cuenta. Eres responsable de:</p>
-                    <ul>
-                        <li>Mantener la confidencialidad de tu contraseña</li>
-                        <li>Todas las actividades que ocurran bajo tu cuenta</li>
-                        <li>Proporcionar información precisa y actualizada</li>
-                    </ul>
-                    <p>Nos reservamos el derecho de suspender o terminar cuentas que proporcionen información falsa o violen estos términos.</p>
-                </section>
+                <!-- ── ENGLISH ── -->
+                <div th:case="'en'">
+                    <h1 class="legal-title">Terms and Conditions of Use</h1>
+                    <p class="legal-date">Last updated: March 15, 2026</p>
+                    <div class="legal-content">
+                        <section>
+                            <h2>1. Acceptance of Terms</h2>
+                            <p>By accessing and using the 1-Padel platform ("the Platform"), you agree to be bound by these Terms and Conditions of Use. If you disagree with any part of these terms, you will not be able to access the service.</p>
+                        </section>
+                        <section>
+                            <h2>2. Description of Service</h2>
+                            <p>1-Padel is a platform that allows users to:</p>
+                            <ul>
+                                <li>Register for padel tournaments</li>
+                                <li>Manage registrations</li>
+                                <li>View rankings and results</li>
+                                <li>Connect with other players and clubs</li>
+                            </ul>
+                        </section>
+                        <section>
+                            <h2>3. Registration and Account</h2>
+                            <p>To use certain features of the Platform, you must register and create an account. You are responsible for:</p>
+                            <ul>
+                                <li>Maintaining the confidentiality of your password</li>
+                                <li>All activities that occur under your account</li>
+                                <li>Providing accurate and up-to-date information</li>
+                            </ul>
+                            <p>We reserve the right to suspend or terminate accounts that provide false information or violate these terms.</p>
+                        </section>
+                        <section>
+                            <h2>4. Privacy</h2>
+                            <p>Your use of the Platform is subject to our <a href="/privacidad">Privacy Policy</a>, which describes how we collect, use and protect your personal information.</p>
+                        </section>
+                        <section>
+                            <h2>5. User Conduct</h2>
+                            <p>When using the Platform, you agree not to:</p>
+                            <ul>
+                                <li>Violate applicable laws or regulations</li>
+                                <li>Infringe intellectual property rights</li>
+                                <li>Post false, misleading or discriminatory content</li>
+                                <li>Attempt to gain unauthorised access to systems or other users' accounts</li>
+                                <li>Use the Platform for fraudulent activities</li>
+                            </ul>
+                        </section>
+                        <section>
+                            <h2>6. Payments and Cancellations</h2>
+                            <p>Tournament registrations may require the payment of a fee. Cancellation and refund policies are set by each tournament and are clearly displayed before registration. 1-Padel acts solely as an intermediary in the management of payments.</p>
+                        </section>
+                        <section>
+                            <h2>7. Intellectual Property</h2>
+                            <p>All content on the Platform, including logos, designs, texts and software, is the property of 1-Padel or its licensors and is protected by intellectual property laws.</p>
+                        </section>
+                        <section>
+                            <h2>8. Limitation of Liability</h2>
+                            <p>1-Padel shall not be liable for indirect, incidental or consequential damages arising from the use or inability to use the Platform. We do not guarantee that the service will be uninterrupted or error-free.</p>
+                        </section>
+                        <section>
+                            <h2>9. Modifications</h2>
+                            <p>We reserve the right to modify these terms at any time. Changes will take effect immediately upon publication on the Platform. Your continued use of the Platform after such changes constitutes your acceptance of the new terms.</p>
+                        </section>
+                        <section>
+                            <h2>10. Contact</h2>
+                            <p>If you have questions about these Terms and Conditions, contact us at:</p>
+                            <p>Email: <a href="mailto:legal@1-padel.com">legal@1-padel.com</a></p>
+                        </section>
+                    </div>
+                </div>
 
-                <section>
-                    <h2>4. Privacidad</h2>
-                    <p>El uso de la Plataforma está sujeto a nuestra <a href="/privacidad">Política de Privacidad</a>, que describe cómo recopilamos, usamos y protegemos tu información personal.</p>
-                </section>
+                <!-- ── SPANISH (default) ── -->
+                <div th:case="*">
+                    <h1 class="legal-title">Términos y Condiciones de Uso</h1>
+                    <p class="legal-date">Última actualización: 15 de marzo de 2026</p>
+                    <div class="legal-content">
+                        <section>
+                            <h2>1. Aceptación de los Términos</h2>
+                            <p>Al acceder y utilizar la plataforma 1-Padel ("la Plataforma"), aceptas estar sujeto a estos Términos y Condiciones de Uso. Si no estás de acuerdo con alguna parte de estos términos, no podrás acceder al servicio.</p>
+                        </section>
+                        <section>
+                            <h2>2. Descripción del Servicio</h2>
+                            <p>1-Padel es una plataforma que permite a los usuarios:</p>
+                            <ul>
+                                <li>Registrarse en torneos de pádel</li>
+                                <li>Gestionar inscripciones</li>
+                                <li>Ver rankings y resultados</li>
+                                <li>Conectar con otros jugadores y clubes</li>
+                            </ul>
+                        </section>
+                        <section>
+                            <h2>3. Registro y Cuenta</h2>
+                            <p>Para utilizar ciertas funciones de la Plataforma, debes registrarte y crear una cuenta. Eres responsable de:</p>
+                            <ul>
+                                <li>Mantener la confidencialidad de tu contraseña</li>
+                                <li>Todas las actividades que ocurran bajo tu cuenta</li>
+                                <li>Proporcionar información precisa y actualizada</li>
+                            </ul>
+                            <p>Nos reservamos el derecho de suspender o terminar cuentas que proporcionen información falsa o violen estos términos.</p>
+                        </section>
+                        <section>
+                            <h2>4. Privacidad</h2>
+                            <p>El uso de la Plataforma está sujeto a nuestra <a href="/privacidad">Política de Privacidad</a>, que describe cómo recopilamos, usamos y protegemos tu información personal.</p>
+                        </section>
+                        <section>
+                            <h2>5. Conducta del Usuario</h2>
+                            <p>Al usar la Plataforma, aceptas no:</p>
+                            <ul>
+                                <li>Violar leyes o regulaciones aplicables</li>
+                                <li>Infringir derechos de propiedad intelectual</li>
+                                <li>Publicar contenido falso, engañoso o discriminatorio</li>
+                                <li>Intentar acceder sin autorización a sistemas o cuentas de otros usuarios</li>
+                                <li>Usar la Plataforma para actividades fraudulentas</li>
+                            </ul>
+                        </section>
+                        <section>
+                            <h2>6. Pagos y Cancelaciones</h2>
+                            <p>Las inscripciones a torneos pueden requerir el pago de una tarifa. Las políticas de cancelación y reembolso son establecidas por cada torneo y se muestran claramente antes de la inscripción. 1-Padel actúa únicamente como intermediario en la gestión de pagos.</p>
+                        </section>
+                        <section>
+                            <h2>7. Propiedad Intelectual</h2>
+                            <p>Todo el contenido de la Plataforma, incluyendo logos, diseños, textos y software, es propiedad de 1-Padel o sus licenciantes y está protegido por leyes de propiedad intelectual.</p>
+                        </section>
+                        <section>
+                            <h2>8. Limitación de Responsabilidad</h2>
+                            <p>1-Padel no será responsable por daños indirectos, incidentales o consecuentes derivados del uso o la imposibilidad de uso de la Plataforma. No garantizamos que el servicio sea ininterrumpido o libre de errores.</p>
+                        </section>
+                        <section>
+                            <h2>9. Modificaciones</h2>
+                            <p>Nos reservamos el derecho de modificar estos términos en cualquier momento. Los cambios entrarán en vigor inmediatamente después de su publicación en la Plataforma. El uso continuado de la Plataforma después de dichos cambios constituye tu aceptación de los nuevos términos.</p>
+                        </section>
+                        <section>
+                            <h2>10. Contacto</h2>
+                            <p>Si tienes preguntas sobre estos Términos y Condiciones, contáctanos en:</p>
+                            <p>Email: <a href="mailto:legal@1-padel.com">legal@1-padel.com</a></p>
+                        </section>
+                    </div>
+                </div>
 
-                <section>
-                    <h2>5. Conducta del Usuario</h2>
-                    <p>Al usar la Plataforma, aceptas no:</p>
-                    <ul>
-                        <li>Violar leyes o regulaciones aplicables</li>
-                        <li>Infringir derechos de propiedad intelectual</li>
-                        <li>Publicar contenido falso, engañoso o discriminatorio</li>
-                        <li>Intentar acceder sin autorización a sistemas o cuentas de otros usuarios</li>
-                        <li>Usar la Plataforma para actividades fraudulentas</li>
-                    </ul>
-                </section>
-
-                <section>
-                    <h2>6. Pagos y Cancelaciones</h2>
-                    <p>Las inscripciones a torneos pueden requerir el pago de una tarifa. Las políticas de cancelación y reembolso son establecidas por cada torneo y se muestran claramente antes de la inscripción. 1-Padel actúa únicamente como intermediario en la gestión de pagos.</p>
-                </section>
-
-                <section>
-                    <h2>7. Propiedad Intelectual</h2>
-                    <p>Todo el contenido de la Plataforma, incluyendo logos, diseños, textos y software, es propiedad de 1-Padel o sus licenciantes y está protegido por leyes de propiedad intelectual.</p>
-                </section>
-
-                <section>
-                    <h2>8. Limitación de Responsabilidad</h2>
-                    <p>1-Padel no será responsable por daños indirectos, incidentales o consecuentes derivados del uso o la imposibilidad de uso de la Plataforma. No garantizamos que el servicio sea ininterrumpido o libre de errores.</p>
-                </section>
-
-                <section>
-                    <h2>9. Modificaciones</h2>
-                    <p>Nos reservamos el derecho de modificar estos términos en cualquier momento. Los cambios entrarán en vigor inmediatamente después de su publicación en la Plataforma. El uso continuado de la Plataforma después de dichos cambios constituye tu aceptación de los nuevos términos.</p>
-                </section>
-
-                <section>
-                    <h2>10. Contacto</h2>
-                    <p>Si tienes preguntas sobre estos Términos y Condiciones, contáctanos en:</p>
-                    <p>Email: <a href="mailto:legal@1-padel.com">legal@1-padel.com</a></p>
-                </section>
             </div>
 
             <div class="legal-footer">
                 <a href="/" class="btn btn-outline">
-                    <i class="fas fa-arrow-left"></i> Volver al inicio
+                    <i class="fas fa-arrow-left"></i> <span th:text="#{legal.btn.back}">Volver al inicio</span>
                 </a>
             </div>
         </div>
@@ -132,11 +266,13 @@
     <div class="container">
         <div class="footer-bottom">
             <div class="footer-copyright">
-                <i class="far fa-copyright"></i> <span th:text="${year}">2026</span> 1-Padel. Todos los derechos reservados.
+                <i class="far fa-copyright"></i> <span th:text="${year}">2026</span> <span th:text="#{legal.footer.rights}">1-Padel. Todos los derechos reservados.</span>
             </div>
         </div>
     </div>
 </footer>
 <script th:src="@{/js/logger.js}"></script>
+<script th:src="${'/js/i18n/messages-' + #locale.language + '.js'}"></script>
+<script th:src="@{/js/i18n/t.js}"></script>
 </body>
 </html>

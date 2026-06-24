@@ -30,22 +30,22 @@
             <div id="cookieConsentBanner" class="cookie-banner">
                 <div class="cookie-banner-content">
                     <div class="cookie-banner-text">
-                        <h3>🍪 Uso de cookies</h3>
-                        <p>Utilizamos cookies propias y de terceros para mejorar tu experiencia en nuestra plataforma, personalizar contenido y analizar nuestro tráfico. Puedes aceptar todas las cookies, rechazarlas o personalizar tu configuración.</p>
+                        <h3>${t('cookie.banner.title')}</h3>
+                        <p>${t('cookie.banner.desc')}</p>
                         <p class="cookie-links">
-                            <a href="/cookies" target="_blank">Más información sobre cookies</a> | 
-                            <a href="/privacidad" target="_blank">Política de privacidad</a>
+                            <a href="/cookies" target="_blank">${t('cookie.banner.more_info')}</a> |
+                            <a href="/privacidad" target="_blank">${t('cookie.banner.privacy')}</a>
                         </p>
                     </div>
                     <div class="cookie-banner-buttons">
                         <button class="cookie-btn cookie-btn-reject" onclick="rejectCookies()">
-                            Rechazar todas
+                            ${t('cookie.btn.reject')}
                         </button>
                         <button class="cookie-btn cookie-btn-customize" onclick="showCookieSettings()">
-                            Personalizar
+                            ${t('cookie.btn.customize')}
                         </button>
                         <button class="cookie-btn cookie-btn-accept" onclick="acceptCookies()">
-                            Aceptar todas
+                            ${t('cookie.btn.accept')}
                         </button>
                     </div>
                 </div>
@@ -63,47 +63,47 @@
         banner.innerHTML = `
             <div class="cookie-banner-content cookie-settings">
                 <div class="cookie-banner-text">
-                    <h3>⚙️ Personalizar cookies</h3>
-                    <p>Selecciona qué tipos de cookies aceptas:</p>
+                    <h3>${t('cookie.custom.title')}</h3>
+                    <p>${t('cookie.custom.desc')}</p>
                 </div>
                 <div class="cookie-options">
                     <div class="cookie-option">
                         <div class="cookie-option-header">
-                            <span class="cookie-option-title">Cookies necesarias</span>
-                            <span class="cookie-option-badge">Siempre activas</span>
+                            <span class="cookie-option-title">${t('cookie.type.necessary')}</span>
+                            <span class="cookie-option-badge">${t('cookie.type.necessary.always')}</span>
                         </div>
-                        <p class="cookie-option-description">Estas cookies son esenciales para el funcionamiento básico del sitio. No pueden ser desactivadas.</p>
+                        <p class="cookie-option-description">${t('cookie.type.necessary.desc')}</p>
                     </div>
-                    
+
                     <div class="cookie-option">
                         <div class="cookie-option-header">
-                            <span class="cookie-option-title">Cookies de análisis</span>
+                            <span class="cookie-option-title">${t('cookie.type.analytics')}</span>
                             <label class="cookie-switch">
                                 <input type="checkbox" id="analyticsCookies" checked>
                                 <span class="cookie-slider"></span>
                             </label>
                         </div>
-                        <p class="cookie-option-description">Nos ayudan a entender cómo los visitantes interactúan con el sitio, permitiéndonos mejorar tu experiencia.</p>
+                        <p class="cookie-option-description">${t('cookie.type.analytics.desc')}</p>
                     </div>
-                    
+
                     <div class="cookie-option">
                         <div class="cookie-option-header">
-                            <span class="cookie-option-title">Cookies de marketing</span>
+                            <span class="cookie-option-title">${t('cookie.type.marketing')}</span>
                             <label class="cookie-switch">
                                 <input type="checkbox" id="marketingCookies">
                                 <span class="cookie-slider"></span>
                             </label>
                         </div>
-                        <p class="cookie-option-description">Se utilizan para mostrar anuncios relevantes y medir la efectividad de nuestras campañas.</p>
+                        <p class="cookie-option-description">${t('cookie.type.marketing.desc')}</p>
                     </div>
                 </div>
-                
+
                 <div class="cookie-banner-buttons">
                     <button class="cookie-btn cookie-btn-outline" onclick="showCookieBannerSimple()">
-                        ← Volver
+                        ${t('cookie.btn.back')}
                     </button>
                     <button class="cookie-btn cookie-btn-accept" onclick="saveCookieSettings()">
-                        Guardar configuración
+                        ${t('cookie.btn.save')}
                     </button>
                 </div>
             </div>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta name="app-profile" th:content="${@environment.getActiveProfiles().length > 0
         ? @environment.getActiveProfiles()[0]
@@ -10,7 +10,7 @@
     <meta name="description" content="1-Padel - Todos los torneos de pádel">
     <meta name="theme-color" content="#FF6B35">
     <!-- ✅ ИСПРАВЛЕНО: Padel Core → 1-Padel -->
-    <title>Todos los Torneos | 1-Padel</title>
+    <title th:text="#{torneos.title}">Todos los Torneos | 1-Padel</title>
 
     <!-- ✅ ДОБАВЛЕН Favicon -->
     <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
@@ -48,13 +48,13 @@
             <div class="navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav">
                     <li class="nav-item">
-                        <a href="/" class="nav-link">Inicio</a>
+                        <a href="/" class="nav-link" th:text="#{nav.home}">Inicio</a>
                     </li>
                     <li class="nav-item">
-                        <a href="/torneos" class="nav-link active">Torneos</a>
+                        <a href="/torneos" class="nav-link active" th:text="#{nav.torneos}">Torneos</a>
                     </li>
                     <li class="nav-item">
-                        <a href="/ranking" class="nav-link">Ranking</a>
+                        <a href="/ranking" class="nav-link" th:text="#{nav.ranking}">Ranking</a>
                     </li>
                 </ul>
 
@@ -62,11 +62,11 @@
                 <div class="navbar-auth" th:if="${!isAuthenticated}">
                     <a href="/login" class="btn btn-outline-sm">
                         <i class="fas fa-sign-in-alt"></i>
-                        Iniciar sesión
+                        <span th:text="#{nav.login}">Iniciar sesión</span>
                     </a>
                     <a href="/players/registro" class="btn btn-primary-sm">
                         <i class="fas fa-user-plus"></i>
-                        Registrarse
+                        <span th:text="#{nav.register}">Registrarse</span>
                     </a>
                 </div>
 
@@ -77,12 +77,12 @@
                     </span>
                     <a href="/players/dashboard" class="btn btn-primary-sm">
                         <i class="fas fa-tachometer-alt"></i>
-                        Dashboard
+                        <span th:text="#{nav.dashboard}">Dashboard</span>
                     </a>
                     <form th:action="@{/logout}" method="post" style="display: inline;">
                         <button type="submit" class="btn btn-outline-sm">
                             <i class="fas fa-sign-out-alt"></i>
-                            Salir
+                            <span th:text="#{nav.logout}">Salir</span>
                         </button>
                     </form>
                 </div>
@@ -97,9 +97,9 @@
         <div class="page-header">
             <h1 class="page-title">
                 <i class="fas fa-trophy"></i>
-                Todos los Torneos
+                <span th:text="#{torneos.heading}">Todos los Torneos</span>
             </h1>
-            <p class="page-description">
+            <p class="page-description" th:text="#{torneos.description}">
                 Explora todos los torneos disponibles y encuentra el perfecto para ti
             </p>
         </div>
@@ -109,11 +109,11 @@
             <div class="filters-header">
                 <h3>
                     <i class="fas fa-sliders-h"></i>
-                    Filtros de búsqueda
+                    <span th:text="#{filter.title}">Filtros de búsqueda</span>
                 </h3>
                 <span class="filters-toggle" id="filtersToggle">
                     <i class="fas fa-chevron-up"></i>
-                    <span>Ocultar filtros</span>
+                    <span th:text="#{filter.hide}">Ocultar filtros</span>
                 </span>
             </div>
 
@@ -121,22 +121,22 @@
                 <div class="filters-grid">
                     <div class="filter-group">
                         <label for="generoFilter" class="filter-label">
-                            <i class="fas fa-venus-mars"></i> Género
+                            <i class="fas fa-venus-mars"></i> <span th:text="#{filter.genero}">Género</span>
                         </label>
                         <select id="generoFilter" class="filter-select">
-                            <option value="todos">Todos</option>
-                            <option value="MASCULINO">Masculino</option>
-                            <option value="FEMENINO">Femenino</option>
-                            <option value="MIXTO">Mixto</option>
+                            <option value="todos" th:text="#{filter.genero.all}">Todos</option>
+                            <option value="MASCULINO" th:text="#{filter.genero.m}">Masculino</option>
+                            <option value="FEMENINO" th:text="#{filter.genero.f}">Femenino</option>
+                            <option value="MIXTO" th:text="#{filter.genero.mix}">Mixto</option>
                         </select>
                     </div>
 
                     <div class="filter-group">
                         <label for="nivelFilter" class="filter-label">
-                            <i class="fas fa-chart-line"></i> Nivel
+                            <i class="fas fa-chart-line"></i> <span th:text="#{filter.nivel}">Nivel</span>
                         </label>
                         <select id="nivelFilter" class="filter-select">
-                            <option value="todos">Todos</option>
+                            <option value="todos" th:text="#{filter.nivel.all}">Todos</option>
                             <option value="C9">C9 (Principiante)</option>
                             <option value="C8">C8 (Intermedio)</option>
                             <option value="C7">C7 (Avanzado)</option>
@@ -147,37 +147,39 @@
 
                     <div class="filter-group">
                         <label for="tipoFilter" class="filter-label">
-                            <i class="fas fa-users"></i> Tipo
+                            <i class="fas fa-users"></i> <span th:text="#{filter.tipo}">Tipo</span>
                         </label>
                         <select id="tipoFilter" class="filter-select">
-                            <option value="todos">Todos</option>
-                            <option value="KING_OF_COURT">King of Court</option>
-                            <option value="AMERICANA">Americana</option>
+                            <option value="todos" th:text="#{filter.tipo.all}">Todos</option>
+                            <option value="KING_OF_COURT" th:text="#{filter.tipo.koc}">King of Court</option>
+                            <option value="AMERICANO" th:text="#{filter.tipo.americano}">Americano</option>
+                            <option value="AMERICANO_TEAMS" th:text="#{filter.tipo.americano_teams}">Americano Equipos</option>
+                            <option value="CANCHA_ABIERTA" th:text="#{filter.tipo.cancha_abierta}">Cancha Abierta</option>
                         </select>
                     </div>
 
                     <div class="filter-group">
                         <label for="estadoFilter" class="filter-label">
-                            <i class="fas fa-info-circle"></i> Estado
+                            <i class="fas fa-info-circle"></i> <span th:text="#{filter.estado}">Estado</span>
                         </label>
                         <select id="estadoFilter" class="filter-select">
-                            <option value="todos">Todos</option>
-                            <option value="REGISTRO_ABIERTO">Inscripción abierta</option>
-                            <option value="PUBLICADO">Próximamente</option>
-                            <option value="CERRADO">Cerrado</option>
-                            <option value="FINALIZADO">Finalizado</option>
+                            <option value="todos" th:text="#{filter.estado.all}">Todos</option>
+                            <option value="REGISTRO_ABIERTO" th:text="#{filter.estado.open}">Inscripción abierta</option>
+                            <option value="PUBLICADO" th:text="#{filter.estado.upcoming}">Próximamente</option>
+                            <option value="CERRADO" th:text="#{filter.estado.closed}">Cerrado</option>
+                            <option value="FINALIZADO" th:text="#{filter.estado.finished}">Finalizado</option>
                         </select>
                     </div>
 
                     <div class="filter-group filter-group-button">
                         <button type="button" id="applyFilters" class="btn btn-primary btn-block">
-                            <i class="fas fa-search"></i> Aplicar filtros
+                            <i class="fas fa-search"></i> <span th:text="#{filter.apply}">Aplicar filtros</span>
                         </button>
                     </div>
 
                     <div class="filter-group filter-group-button">
                         <button type="button" id="clearFilters" class="btn btn-outline btn-block">
-                            <i class="fas fa-undo"></i> Limpiar
+                            <i class="fas fa-undo"></i> <span th:text="#{filter.clear}">Limpiar</span>
                         </button>
                     </div>
                 </div>
@@ -186,7 +188,7 @@
 
         <!-- Contador de resultados -->
         <div class="results-counter">
-            Mostrando <span id="visibleCount">0</span> de <span id="totalCount">0</span> torneos
+            <span th:text="#{torneos.results.showing}">Mostrando</span> <span id="visibleCount">0</span> <span th:text="#{torneos.results.of}">de</span> <span id="totalCount">0</span> <span th:text="#{torneos.results.tournaments}">torneos</span>
         </div>
 
         <!-- Grid de Torneos -->
@@ -197,21 +199,21 @@
         <!-- Mensaje cuando no hay torneos -->
         <div class="empty-state" id="noTournamentsMessage" style="display: none;">
             <i class="fas fa-calendar-times empty-icon"></i>
-            <h3>No hay torneos con esos filtros</h3>
-            <p>Prueba con otros criterios de búsqueda</p>
+            <h3 th:text="#{filter.empty.title}">No hay torneos con esos filtros</h3>
+            <p th:text="#{filter.empty.desc}">Prueba con otros criterios de búsqueda</p>
             <button class="btn btn-primary" id="clearFiltersEmpty">
-                <i class="fas fa-undo"></i> Limpiar filtros
+                <i class="fas fa-undo"></i> <span th:text="#{filter.clear}">Limpiar filtros</span>
             </button>
         </div>
 
         <!-- Paginación (opcional) -->
         <div class="pagination" id="pagination" style="display: none;">
             <button class="pagination-prev" id="paginationPrev" disabled>
-                <i class="fas fa-chevron-left"></i> Anterior
+                <i class="fas fa-chevron-left"></i> <span th:text="#{torneos.pagination.prev}">Anterior</span>
             </button>
             <div class="pagination-pages" id="paginationPages"></div>
             <button class="pagination-next" id="paginationNext">
-                Siguiente <i class="fas fa-chevron-right"></i>
+                <span th:text="#{torneos.pagination.next}">Siguiente</span> <i class="fas fa-chevron-right"></i>
             </button>
         </div>
     </div>
@@ -288,22 +290,21 @@
 
         <!-- Bottom Footer -->
         <div class="footer-bottom">
-            <div class="footer-copyright">
-                <!-- ✅ ИСПРАВЛЕНО: Padel Core → 1-Padel -->
-                <i class="far fa-copyright"></i> 2026 1-Padel. Todos los derechos reservados.
+            <div class="footer-copyright" th:text="#{footer.copyright}">
+                © 2026 1-Padel. Todos los derechos reservados.
             </div>
             <div class="footer-badges">
                 <span class="badge">
-                    <i class="fas fa-check-circle"></i> Verificado
+                    <i class="fas fa-check-circle"></i> <span th:text="#{footer.badge.verified}">Verificado</span>
                 </span>
                 <span class="badge">
-                    <i class="fas fa-shield"></i> SSL Secure
+                    <i class="fas fa-shield"></i> <span th:text="#{footer.badge.ssl}">SSL Secure</span>
                 </span>
                 <span class="badge">
-                    <i class="fas fa-mobile-alt"></i> Responsive
+                    <i class="fas fa-mobile-alt"></i> <span th:text="#{footer.badge.responsive}">Responsive</span>
                 </span>
                 <span class="badge">
-                    <i class="fas fa-padel"></i> Padel Friendly
+                    <i class="fas fa-padel"></i> <span th:text="#{footer.badge.padel}">Padel Friendly</span>
                 </span>
             </div>
         </div>
@@ -312,6 +313,8 @@
 
 <!-- Данные турниров для JavaScript -->
 <script th:src="@{/js/logger.js}"></script>
+<script th:src="${'/js/i18n/messages-' + #locale.language + '.js'}"></script>
+<script th:src="@{/js/i18n/t.js}"></script>
 <script th:inline="javascript">
     /*<![CDATA[*/
     var tournamentData = /*[(${tournamentsJson})]*/ [];

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta name="app-profile" th:content="${@environment.getActiveProfiles().length > 0
         ? @environment.getActiveProfiles()[0]
@@ -31,12 +31,12 @@
             <div class="navbar-collapse">
                 <ul class="navbar-nav">
                     <li class="nav-item">
-                        <a href="/" class="nav-link">Inicio</a>
+                        <a href="/" class="nav-link" th:text="#{nav.home}">Inicio</a>
                     </li>
                 </ul>
                 <div class="navbar-user">
                     <a th:href="@{'/torneo/' + ${tournamentId}}" class="btn btn-outline-sm">
-                        <i class="fas fa-arrow-left"></i> Volver al torneo
+                        <i class="fas fa-arrow-left"></i> <span th:text="#{koc.btn.back}">Volver al torneo</span>
                     </a>
                 </div>
             </div>
@@ -53,12 +53,12 @@
                 <span th:text="${tournamentName}">Torneo</span>
             </h1>
             <div class="admin-subtitle">
-                <span class="badge" th:text="'Ronda ' + ${kingData.currentRound}">Ronda 1</span>
+                <span class="badge" th:text="#{koc.round.prefix} + ' ' + ${kingData.currentRound}">Ronda 1</span>
                 <span class="badge badge-level"
-                      th:text="${kingData.currentRound <= kingData.calibrationRounds} ? 'Calibración' : 'Bonus'"
+                      th:text="${kingData.currentRound <= kingData.calibrationRounds} ? #{koc.badge.calibration} : #{koc.badge.bonus}"
                       th:classappend="${kingData.currentRound <= kingData.calibrationRounds} ? 'badge-warning' : 'badge-success'">
                 </span>
-                <span class="badge" th:text="${kingData.isFinished} ? 'Finalizado' : 'Activo'"
+                <span class="badge" th:text="${kingData.isFinished} ? #{koc.badge.finished} : #{koc.badge.active}"
                       th:classappend="${kingData.isFinished} ? 'badge-danger' : 'badge-success'">
                 </span>
             </div>
@@ -67,11 +67,11 @@
         <!-- YouTube ссылка -->
         <div class="admin-card" th:if="${kingData.youtubeLink}">
             <div class="admin-card-header">
-                <h2><i class="fab fa-youtube" style="color: #ff0000;"></i> Transmisión en vivo</h2>
+                <h2><i class="fab fa-youtube" style="color: #ff0000;"></i> <span th:text="#{koc.youtube.title}">Transmisión en vivo</span></h2>
             </div>
             <div class="admin-card-body">
                 <a th:href="${kingData.youtubeLink}" target="_blank" class="btn btn-primary">
-                    <i class="fab fa-youtube"></i> Ver en YouTube
+                    <i class="fab fa-youtube"></i> <span th:text="#{koc.youtube.btn}">Ver en YouTube</span>
                 </a>
             </div>
         </div>
@@ -84,24 +84,24 @@
              style="border: 2px solid #fbbf24; background: linear-gradient(145deg, #fffbeb, #fff);">
             <div class="admin-card-header" style="background: #1e293b;">
                 <h2 style="color: #fbbf24;">
-                    <i class="fas fa-trophy"></i> Clasificación Final
+                    <i class="fas fa-trophy"></i> <span th:text="#{koc.final.title}">Clasificación Final</span>
                 </h2>
             </div>
             <div class="admin-card-body">
                 <div style="text-align:center; padding: 1rem 0 1.5rem;">
                     <i class="fas fa-crown" style="font-size: 3rem; color: #fbbf24;"></i>
-                    <h2 style="margin: .5rem 0 .25rem">¡Torneo finalizado!</h2>
-                    <p style="color: #64748b; margin: 0">Clasificación oficial</p>
+                    <h2 style="margin: .5rem 0 .25rem" th:text="#{koc.final.finished}">¡Torneo finalizado!</h2>
+                    <p style="color: #64748b; margin: 0" th:text="#{koc.final.subtitle}">Clasificación oficial</p>
                 </div>
                 <table class="admin-table">
                     <thead>
                     <tr>
                         <th>#</th>
-                        <th>Jugador</th>
-                        <th>Puntos</th>
-                        <th>Bonos</th>
-                        <th>Juegos</th>
-                        <th>V/D</th>
+                        <th th:text="#{koc.table.player}">Jugador</th>
+                        <th th:text="#{koc.table.points}">Puntos</th>
+                        <th th:text="#{koc.table.bonus}">Bonos</th>
+                        <th th:text="#{koc.table.games}">Juegos</th>
+                        <th th:text="#{koc.table.wd}">V/D</th>
                     </tr>
                     </thead>
                     <tbody id="finalLeaderboard">
@@ -114,9 +114,9 @@
         <!-- Корты — показываем только для активного турнира -->
         <div class="admin-card" th:unless="${kingData.isFinished}">
             <div class="admin-card-header">
-                <h2><i class="fas fa-map-marked-alt"></i> Canchas</h2>
+                <h2><i class="fas fa-map-marked-alt"></i> <span th:text="#{koc.courts.title}">Canchas</span></h2>
                 <span class="badge"
-                      th:text="${kingData.allResultsIn} ? 'Todos los resultados ingresados' : 'Esperando resultados'"
+                      th:text="${kingData.allResultsIn ? #messages.msg('koc.courts.all_results') : #messages.msg('koc.courts.waiting')}"
                       th:classappend="${kingData.allResultsIn} ? 'badge-success' : 'badge-warning'">
                 </span>
             </div>
@@ -129,18 +129,18 @@
         <div class="admin-grid-two" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem;">
             <div class="admin-card">
                 <div class="admin-card-header">
-                    <h2><i class="fas fa-chart-line"></i> Clasificación en vivo</h2>
+                    <h2><i class="fas fa-chart-line"></i> <span th:text="#{koc.ranking.title}">Clasificación en vivo</span></h2>
                 </div>
                 <div class="admin-card-body">
                     <table class="admin-table">
                         <thead>
                         <tr>
                             <th>#</th>
-                            <th>Jugador</th>
-                            <th>Puntos</th>
-                            <th>Bonos</th>
-                            <th>Juegos</th>
-                            <th>V/D</th>
+                            <th th:text="#{koc.table.player}">Jugador</th>
+                            <th th:text="#{koc.table.points}">Puntos</th>
+                            <th th:text="#{koc.table.bonus}">Bonos</th>
+                            <th th:text="#{koc.table.games}">Juegos</th>
+                            <th th:text="#{koc.table.wd}">V/D</th>
                         </tr>
                         </thead>
                         <tbody id="leaderboard"></tbody>
@@ -150,7 +150,7 @@
 
             <div class="admin-card">
                 <div class="admin-card-header">
-                    <h2><i class="fas fa-history"></i> Historial de partidos</h2>
+                    <h2><i class="fas fa-history"></i> <span th:text="#{koc.history.title}">Historial de partidos</span></h2>
                 </div>
                 <div class="admin-card-body">
                     <ul id="matchHistory" class="history-list"
@@ -161,7 +161,7 @@
 
         <div class="admin-actions" style="justify-content: center; margin-top: 2rem;">
             <a th:href="@{'/torneo/' + ${tournamentId}}" class="btn btn-primary">
-                <i class="fas fa-arrow-left"></i> Volver al torneo
+                <i class="fas fa-arrow-left"></i> <span th:text="#{koc.btn.back}">Volver al torneo</span>
             </a>
         </div>
     </div>
@@ -169,13 +169,15 @@
 
 <footer class="footer">
     <div class="container">
-        <p>&copy; 2026 1-Padel. Todos los derechos reservados.</p>
+        <p th:text="#{footer.copyright}">© 2026 1-Padel. Todos los derechos reservados.</p>
     </div>
 </footer>
 
 <div th:replace="~{fragments/king-of-court-modals :: historyModal}"></div>
 <div th:replace="~{fragments/king-of-court-modals :: finalResultsModal}"></div>
 <script th:src="@{/js/logger.js}"></script>
+<script th:src="${'/js/i18n/messages-' + #locale.language + '.js'}"></script>
+<script th:src="@{/js/i18n/t.js}"></script>
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 

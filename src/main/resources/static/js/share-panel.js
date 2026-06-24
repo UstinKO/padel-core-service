@@ -28,7 +28,7 @@ function showSharePanel(tournamentName, publicUrl) {
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
                 <h3 style="margin:0; font-size:1.05rem; color:#1e293b;">
                     <i class="fas fa-share-alt" style="color:#FF6B35;"></i>
-                    Compartir torneo
+                    ${t('share.title')}
                 </h3>
                 <button onclick="closeSharePanel()"
                         style="background:none; border:none; cursor:pointer; color:#94a3b8; font-size:1.2rem;">
@@ -46,7 +46,7 @@ function showSharePanel(tournamentName, publicUrl) {
                         style="padding:.55rem .9rem; background:#f1f5f9; border:1px solid #e2e8f0;
                                border-radius:8px; cursor:pointer; color:#475569; font-size:.85rem;
                                white-space:nowrap;" id="copyShareBtn">
-                    <i class="fas fa-copy"></i> Copiar
+                    <i class="fas fa-copy"></i> ${t('share.btn.copy')}
                 </button>
             </div>
 
@@ -59,7 +59,7 @@ function showSharePanel(tournamentName, publicUrl) {
                           background:#25D366; color:#fff; border-radius:8px;
                           text-decoration:none; font-weight:600; font-size:.9rem;">
                     <i class="fab fa-whatsapp" style="font-size:1.15rem;"></i>
-                    Enviar por WhatsApp
+                    ${t('share.btn.whatsapp')}
                 </a>
 
                 <a href="https://t.me/share/url?url=${tgUrl}&text=${tgText}"
@@ -68,7 +68,7 @@ function showSharePanel(tournamentName, publicUrl) {
                           background:#2CA5E0; color:#fff; border-radius:8px;
                           text-decoration:none; font-weight:600; font-size:.9rem;">
                     <i class="fab fa-telegram" style="font-size:1.15rem;"></i>
-                    Enviar por Telegram
+                    ${t('share.btn.telegram')}
                 </a>
 
                 <button onclick="copyShareLink()"
@@ -77,12 +77,12 @@ function showSharePanel(tournamentName, publicUrl) {
                                border-radius:8px; font-weight:600; font-size:.9rem;
                                cursor:pointer; width:100%;" id="copyShareBtn2">
                     <i class="fas fa-link" style="font-size:1rem;"></i>
-                    Copiar enlace para Instagram / redes
+                    ${t('share.btn.copy_link')}
                 </button>
             </div>
 
             <p style="margin:.9rem 0 0; font-size:.78rem; color:#94a3b8; text-align:center;">
-                El enlace lleva directamente a la página del torneo para jugadores
+                ${t('share.footer')}
             </p>
         </div>
     </div>`;
@@ -107,8 +107,8 @@ function copyShareLink() {
             if (!btn) return;
             const orig = btn.innerHTML;
             btn.innerHTML = btn.id === 'copyShareBtn'
-                ? '<i class="fas fa-check"></i> ¡Copiado!'
-                : '<i class="fas fa-check" style="font-size:1rem;"></i> ¡Enlace copiado!';
+                ? `<i class="fas fa-check"></i> ${t('share.btn.copied')}`
+                : `<i class="fas fa-check" style="font-size:1rem;"></i> ${t('share.btn.link_copied')}`;
             btn.style.background = '#dcfce7';
             btn.style.borderColor = '#86efac';
             setTimeout(() => {

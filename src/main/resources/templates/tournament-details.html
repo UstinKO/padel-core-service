@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta name="app-profile" th:content="${@environment.getActiveProfiles().length > 0
         ? @environment.getActiveProfiles()[0]
@@ -55,14 +55,14 @@
                 <ul class="navbar-nav">
                     <li class="nav-item">
                         <a href="/" class="nav-link">
-                            <i class="fas fa-home"></i> Inicio
+                            <i class="fas fa-home"></i> <span th:text="#{nav.home}">Inicio</span>
                         </a>
                     </li>
                     <li class="nav-item" th:if="${isAuthenticated}">
-                        <a href="/players/dashboard" class="nav-link">Dashboard</a>
+                        <a href="/players/dashboard" class="nav-link" th:text="#{nav.dashboard}">Dashboard</a>
                     </li>
                     <li class="nav-item" th:if="${isAuthenticated}">
-                        <a href="/perfil" class="nav-link">Perfil</a>
+                        <a href="/perfil" class="nav-link" th:text="#{nav.perfil}">Perfil</a>
                     </li>
                 </ul>
 
@@ -74,18 +74,18 @@
                     <form th:action="@{/logout}" method="post" style="display: inline;">
                         <button type="submit" class="btn btn-outline-sm">
                             <i class="fas fa-sign-out-alt"></i>
-                            Salir
+                            <span th:text="#{nav.logout}">Salir</span>
                         </button>
                     </form>
                 </div>
                 <div class="navbar-user" th:unless="${isAuthenticated}">
                     <a href="/login" class="btn btn-outline-sm">
                         <i class="fas fa-sign-in-alt"></i>
-                        Iniciar sesión
+                        <span th:text="#{nav.login}">Iniciar sesión</span>
                     </a>
                     <a href="/players/registro" class="btn btn-primary-sm">
                         <i class="fas fa-user-plus"></i>
-                        Registrarse
+                        <span th:text="#{nav.register}">Registrarse</span>
                     </a>
                 </div>
             </div>
@@ -97,7 +97,7 @@
     <div class="container">
         <!-- Breadcrumb -->
         <div class="breadcrumb">
-            <a href="/" class="breadcrumb-link">Inicio</a>
+            <a href="/" class="breadcrumb-link" th:text="#{breadcrumb.home}">Inicio</a>
             <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
             <span class="breadcrumb-current" th:text="${tournament.nombre}">Torneo Open</span>
         </div>
@@ -127,7 +127,7 @@
                               font-weight:600; font-size:.95rem; transition:opacity .2s;"
                        onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
                         <i class="fas fa-crown"></i>
-                        Ver distribución y resultados
+                        <span th:text="#{tournament.btn.results}">Ver distribución y resultados</span>
                     </a>
                     <a th:if="${tournament.tipo.name() == 'AMERICANO' and tournament.modalidad.name() != 'DOBLES' and isInitialized}"
                        th:href="@{'/tournaments/americano/' + ${tournament.id}}"
@@ -136,7 +136,7 @@
                               font-weight:600; font-size:.95rem; transition:opacity .2s;"
                        onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
                         <i class="fas fa-trophy"></i>
-                        Ver distribución y resultados
+                        <span th:text="#{tournament.btn.results}">Ver distribución y resultados</span>
                     </a>
                     <a th:if="${isTeamPlayoffFormat == true and isPlayoffQualStarted == true}"
                        th:href="@{'/tournaments/team-playoff/' + ${tournament.id}}"
@@ -145,13 +145,13 @@
                               font-weight:600; font-size:.95rem; transition:opacity .2s;"
                        onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
                         <i class="fas fa-sitemap"></i>
-                        Ver distribución y resultados
+                        <span th:text="#{tournament.btn.results}">Ver distribución y resultados</span>
                     </a>
                 </div>
             </div>
             <div class="tournament-price">
                 <span class="price-value" th:text="${tournament.precio} + ' ' + ${tournament.moneda}">50 ARS</span>
-                <span class="price-label">por persona</span>
+                <span class="price-label" th:text="#{tournament.price.label}">por persona</span>
             </div>
         </div>
 
@@ -163,7 +163,7 @@
                 <div class="info-card">
                     <h2 class="info-card-title">
                         <i class="fas fa-info-circle"></i>
-                        Información del Torneo
+                        <span th:text="#{tournament.info.title}">Información del Torneo</span>
                     </h2>
 
                     <div class="info-grid">
@@ -172,7 +172,7 @@
                                 <i class="fas fa-calendar-alt"></i>
                             </div>
                             <div class="info-content">
-                                <span class="info-label">Fecha de inicio</span>
+                                <span class="info-label" th:text="#{tournament.info.start_date}">Fecha de inicio</span>
                                 <span class="info-value" th:text="${#temporals.format(tournament.fechaInicio, 'dd/MM/yyyy')} + ' - ' + ${#temporals.format(tournament.horaInicio, 'HH:mm')}">
                                     15/03/2026 - 10:00
                                 </span>
@@ -184,8 +184,8 @@
                                 <i class="fas fa-clock"></i>
                             </div>
                             <div class="info-content">
-                                <span class="info-label">Duración estimada</span>
-                                <span class="info-value" th:text="${tournament.duracion ?: 'No especificada'}">4 horas</span>
+                                <span class="info-label" th:text="#{tournament.info.duration}">Duración estimada</span>
+                                <span class="info-value" th:text="${tournament.duracion ?: #messages.msg('tournament.info.duration.unknown')}">4 horas</span>
                             </div>
                         </div>
 
@@ -194,8 +194,8 @@
                                 <i class="fas fa-users"></i>
                             </div>
                             <div class="info-content">
-                                <span class="info-label">Cupo máximo</span>
-                                <span class="info-value" th:text="${tournament.cupoMax} + ' ' + (${tournament.modalidad.name() == 'DOBLES'} ? 'cupos' : 'participantes')">16 cupos</span>
+                                <span class="info-label" th:text="#{tournament.info.capacity}">Cupo máximo</span>
+                                <span class="info-value" th:text="${tournament.cupoMax} + ' ' + (${tournament.modalidad.name() == 'DOBLES'} ? #{tournament.info.capacity.cupos} : #{tournament.info.capacity.players})">16 cupos</span>
                             </div>
                         </div>
 
@@ -204,8 +204,8 @@
                                 <i class="fas fa-user-check"></i>
                             </div>
                             <div class="info-content">
-                                <span class="info-label">Inscritos actuales</span>
-                                <span class="info-value" th:text="${tournament.inscritosActuales} + ' / ' + ${tournament.cupoMax} + ' ' + (${tournament.modalidad.name() == 'DOBLES'} ? 'cupos' : 'jugadores')">
+                                <span class="info-label" th:text="#{tournament.info.registered}">Inscritos actuales</span>
+                                <span class="info-value" th:text="${tournament.inscritosActuales} + ' / ' + ${tournament.cupoMax} + ' ' + (${tournament.modalidad.name() == 'DOBLES'} ? #{tournament.info.registered.cupos} : #{tournament.info.registered.players})">
                                     12 / 16 cupos
                                 </span>
                             </div>
@@ -216,8 +216,8 @@
                                 <i class="fas fa-clock"></i>
                             </div>
                             <div class="info-content">
-                                <span class="info-label">Lista de espera</span>
-                                <span class="info-value" th:text="${tournament.waitlistCount} + ' ' + (${tournament.modalidad.name() == 'DOBLES'} ? 'cupos' : 'personas')">
+                                <span class="info-label" th:text="#{tournament.info.waitlist}">Lista de espera</span>
+                                <span class="info-value" th:text="${tournament.waitlistCount} + ' ' + (${tournament.modalidad.name() == 'DOBLES'} ? #{tournament.info.waitlist.cupos} : #{tournament.info.waitlist.persons})">
                                     5 cupos
                                 </span>
                             </div>
@@ -228,7 +228,7 @@
                                 <i class="fas fa-map-marker-alt"></i>
                             </div>
                             <div class="info-content">
-                                <span class="info-label">Club</span>
+                                <span class="info-label" th:text="#{tournament.info.club}">Club</span>
                                 <span class="info-value" th:text="${tournament.clubNombre}">Club Padel Center</span>
                             </div>
                         </div>
@@ -238,7 +238,7 @@
                                 <i class="fas fa-calendar-times"></i>
                             </div>
                             <div class="info-content">
-                                <span class="info-label">Fecha límite de cancelación</span>
+                                <span class="info-label" th:text="#{tournament.info.deadline}">Fecha límite de cancelación</span>
                                 <span class="info-value" th:text="${#temporals.format(tournament.deadlineCancelacion, 'dd/MM/yyyy HH:mm')}">
                                     10/03/2026 23:59
                                 </span>
@@ -251,7 +251,7 @@
                 <div class="info-card" th:if="${tournament.infoDetallada}">
                     <h2 class="info-card-title">
                         <i class="fas fa-align-left"></i>
-                        Descripción
+                        <span th:text="#{tournament.description.title}">Descripción</span>
                     </h2>
                     <div class="tournament-description" style="white-space: pre-line;" th:text="${tournament.infoDetallada}">
                         Descripción detallada del torneo...
@@ -262,12 +262,12 @@
                 <div class="info-card" th:if="${tournament.faqUrl}">
                     <h2 class="info-card-title">
                         <i class="fas fa-question-circle"></i>
-                        Preguntas Frecuentes
+                        <span th:text="#{tournament.faq.title}">Preguntas Frecuentes</span>
                     </h2>
                     <div class="tournament-faq">
                         <a th:href="${tournament.faqUrl}" target="_blank" rel="noopener noreferrer" class="faq-link">
                             <i class="fas fa-external-link-alt"></i>
-                            Ver preguntas frecuentes
+                            <span th:text="#{tournament.faq.link}">Ver preguntas frecuentes</span>
                         </a>
                     </div>
                 </div>
@@ -276,7 +276,7 @@
                 <div class="info-card">
                     <h2 class="info-card-title">
                         <i class="fas fa-phone-alt"></i>
-                        Contacto del Organizador
+                        <span th:text="#{tournament.contact.title}">Contacto del Organizador</span>
                     </h2>
                     <div class="contact-info">
                         <p th:if="${tournament.contactoOrganizador}">
@@ -289,7 +289,7 @@
                                 <span th:text="${tournament.contactoOrganizador}">Juan Pérez - 123456789</span>
                             </a>
                         </p>
-                        <p th:unless="${tournament.contactoOrganizador}">No disponible</p>
+                        <p th:unless="${tournament.contactoOrganizador}" th:text="#{tournament.contact.none}">No disponible</p>
                     </div>
                 </div>
 
@@ -297,22 +297,22 @@
                 <div class="info-card" th:if="${kingOfCourtActive}">
                     <h2 class="info-card-title">
                         <i class="fas fa-crown" style="color: #fbbf24;"></i>
-                        Torneo "King of Court"
+                        <span th:text="#{tournament.koc.title}">Torneo "King of Court"</span>
                     </h2>
                     <div class="king-court-preview">
                         <div class="king-info">
                             <div class="king-info-item">
-                                <span class="king-label">Ronda actual:</span>
-                                <span class="king-value" th:text="'Ronda ' + ${kingTournament.currentRound}">Ronda 3</span>
+                                <span class="king-label" th:text="#{tournament.koc.round.label}">Ronda actual:</span>
+                                <span class="king-value" th:text="#{tournament.koc.round.prefix} + ' ' + ${kingTournament.currentRound}">Ronda 3</span>
                             </div>
                             <div class="king-info-item">
-                                <span class="king-label">Estado:</span>
-                                <span class="king-value" th:text="${kingTournament.isFinished} ? 'Finalizado' : 'En vivo'">En vivo</span>
+                                <span class="king-label" th:text="#{tournament.koc.status.label}">Estado:</span>
+                                <span class="king-value" th:text="${kingTournament.isFinished} ? #{tournament.koc.status.finished} : #{tournament.koc.status.live}">En vivo</span>
                             </div>
                             <div class="king-info-item" th:if="${kingTournament.youtubeLink}">
-                                <span class="king-label">Transmisión:</span>
+                                <span class="king-label" th:text="#{tournament.koc.broadcast.label}">Transmisión:</span>
                                 <a th:href="${kingTournament.youtubeLink}" target="_blank" rel="noopener noreferrer" class="youtube-link">
-                                    <i class="fab fa-youtube" style="color: #ff0000;"></i> Ver en YouTube
+                                    <i class="fab fa-youtube" style="color: #ff0000;"></i> <span th:text="#{tournament.koc.youtube}">Ver en YouTube</span>
                                 </a>
                             </div>
                         </div>
@@ -320,11 +320,11 @@
                         <div class="king-actions">
                             <a th:href="@{'/torneo/' + ${tournament.id} + '/king-of-court'}" class="btn btn-primary btn-block">
                                 <i class="fas fa-crown"></i>
-                                Ver bracket del torneo
+                                <span th:text="#{tournament.koc.btn}">Ver bracket del torneo</span>
                             </a>
                             <p class="king-note">
                                 <i class="fas fa-info-circle"></i>
-                                Sigue el torneo en vivo, resultados y clasificación en tiempo real
+                                <span th:text="#{tournament.koc.note}">Sigue el torneo en vivo, resultados y clasificación en tiempo real</span>
                             </p>
                         </div>
                     </div>
@@ -334,21 +334,21 @@
                 <div class="info-card" th:if="${isTeamPlayoffFormat == true and isPlayoffQualStarted == true}">
                     <h2 class="info-card-title">
                         <i class="fas fa-users" style="color:#FF6B35;"></i>
-                        Americano Parejas
+                        <span th:text="#{tournament.americano_pairs.title}">Americano Parejas</span>
                     </h2>
                     <div class="americano-preview">
                         <div class="americano-actions">
                             <a th:href="@{'/tournaments/team-playoff/' + ${tournament.id}}" class="btn btn-primary btn-block">
                                 <i class="fas fa-sitemap"></i>
-                                Ver torneo — Calificación y Playoff
+                                <span th:text="#{tournament.americano_pairs.btn}">Ver torneo — Calificación y Playoff</span>
                             </a>
                             <p class="americano-note" th:if="${isPlayoffStarted == true}">
                                 <i class="fas fa-trophy"></i>
-                                Playoff en curso · Sigue la bracket en tiempo real
+                                <span th:text="#{tournament.americano_pairs.playoff}">Playoff en curso · Sigue la bracket en tiempo real</span>
                             </p>
                             <p class="americano-note" th:unless="${isPlayoffStarted == true}">
                                 <i class="fas fa-list-ol"></i>
-                                Calificación en curso · Consulta resultados y clasificación
+                                <span th:text="#{tournament.americano_pairs.qual}">Calificación en curso · Consulta resultados y clasificación</span>
                             </p>
                         </div>
                     </div>
@@ -358,17 +358,17 @@
                 <div class="info-card" th:if="${tournament.tipo.name() == 'AMERICANO' and tournament.modalidad.name() != 'DOBLES' and isInitialized}">
                     <h2 class="info-card-title">
                         <i class="fas fa-trophy" style="color: #FF6B35;"></i>
-                        Torneo Americano
+                        <span th:text="#{tournament.americano.title}">Torneo Americano</span>
                     </h2>
                     <div class="americano-preview">
                         <div class="americano-actions">
                             <a th:href="@{'/tournaments/americano/' + ${tournament.id}}" class="btn btn-primary btn-block">
                                 <i class="fas fa-trophy"></i>
-                                Ver torneo Americano
+                                <span th:text="#{tournament.americano.btn}">Ver torneo Americano</span>
                             </a>
                             <p class="americano-note">
                                 <i class="fas fa-info-circle"></i>
-                                Sigue el torneo, resultados, ranking y estadísticas en tiempo real
+                                <span th:text="#{tournament.americano.note}">Sigue el torneo, resultados, ranking y estadísticas en tiempo real</span>
                             </p>
                         </div>
                     </div>
@@ -384,10 +384,10 @@
                      style="display:none;">
                     <h2 class="info-card-title">
                         <i class="fas fa-search" style="color:#3b82f6;"></i>
-                        Jugadores que buscan compañero
+                        <span th:text="#{tournament.looking_partner.title}">Jugadores que buscan compañero</span>
                     </h2>
                     <div id="lookingForPartnerList">
-                        <p class="lp-empty">Cargando...</p>
+                        <p class="lp-empty" th:text="#{tournament.looking_partner.loading}">Cargando...</p>
                     </div>
                 </div>
 
@@ -395,8 +395,8 @@
                     <div class="info-card" th:if="${not #lists.isEmpty(registrations) or not #lists.isEmpty(tournamentTeams)}">
                         <h2 class="info-card-title">
                             <i class="fas fa-users"></i>
-                            <th:block th:if="${tournament.modalidad.name() == 'DOBLES'}">Cupos inscritas</th:block>
-                            <th:block th:unless="${tournament.modalidad.name() == 'DOBLES'}">Participantes inscritos</th:block>
+                            <th:block th:if="${tournament.modalidad.name() == 'DOBLES'}" th:text="#{tournament.participants.doubles}">Cupos inscritas</th:block>
+                            <th:block th:unless="${tournament.modalidad.name() == 'DOBLES'}" th:text="#{tournament.participants.individual}">Participantes inscritos</th:block>
                             <span style="margin-left:.5rem; font-size:.9rem; font-weight:400; color:#6c757d;"
                                   th:text="'(' + ${tournament.inscritosActuales} + '/' + ${tournament.cupoMax} + ')'"></span>
                         </h2>
@@ -407,7 +407,7 @@
                                 <thead>
                                 <tr style="border-bottom:2px solid #e9ecef;">
                                     <th style="padding:.6rem .75rem; text-align:left; color:#6c757d; font-weight:600; width:3rem;">#</th>
-                                    <th style="padding:.6rem .75rem; text-align:left; color:#6c757d; font-weight:600;">Jugador</th>
+                                    <th style="padding:.6rem .75rem; text-align:left; color:#6c757d; font-weight:600;" th:text="#{tournament.table.player}">Jugador</th>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -431,7 +431,7 @@
                                     border-radius:8px; border-left:3px solid #f59e0b;
                                     font-size:.875rem; color:#92400e;">
                                 <i class="fas fa-clock"></i>
-                                <span th:text="${tournament.waitlistCount} + ' persona(s) en lista de espera'">5 en espera</span>
+                                <span th:text="${tournament.waitlistCount} + ' ' + #{tournament.waitlist.single}">5 en espera</span>
                             </div>
                         </th:block>
 
@@ -444,9 +444,9 @@
                                     <thead>
                                     <tr style="border-bottom:2px solid #e9ecef;">
                                         <th style="padding:.6rem .75rem; text-align:left; color:#6c757d; font-weight:600; width:3rem;">#</th>
-                                        <th style="padding:.6rem .75rem; text-align:left; color:#6c757d; font-weight:600;">Jugador 1</th>
+                                        <th style="padding:.6rem .75rem; text-align:left; color:#6c757d; font-weight:600;" th:text="#{tournament.table.player1}">Jugador 1</th>
                                         <th style="padding:.6rem .25rem; text-align:center; color:#6c757d; font-weight:600; width:2rem;"></th>
-                                        <th style="padding:.6rem .75rem; text-align:left; color:#6c757d; font-weight:600;">Jugador 2</th>
+                                        <th style="padding:.6rem .75rem; text-align:left; color:#6c757d; font-weight:600;" th:text="#{tournament.table.player2}">Jugador 2</th>
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -481,11 +481,11 @@
                                                             <i class="fas fa-envelope" style="margin-right:.35rem;"></i>
                                                             <th:block th:text="${reg.partnerNombre}">Ana</th:block>
                                                             <th:block th:text="${' ' + (reg.partnerApellido ?: '')}">García</th:block>
-                                                            <small style="display:block; margin-top:.15rem; color:#adb5bd;">(invitación enviada)</small>
+                                                            <small style="display:block; margin-top:.15rem; color:#adb5bd;" th:text="#{tournament.partner.invited}">(invitación enviada)</small>
                                                         </span>
                                                     </th:block>
                                                     <th:block th:if="${reg.partnerNombre == null}">
-                                                        <span style="color:#adb5bd; font-style:italic; font-size:.85rem;">sin pareja asignada</span>
+                                                        <span style="color:#adb5bd; font-style:italic; font-size:.85rem;" th:text="#{tournament.partner.none}">sin pareja asignada</span>
                                                     </th:block>
                                                 </td>
                                             </tr>
@@ -523,7 +523,7 @@
                                                             <i class="fas fa-envelope" style="margin-right:.35rem;"></i>
                                                             <th:block th:text="${reg.partnerNombre}">Ana</th:block>
                                                             <th:block th:text="${' ' + (reg.partnerApellido ?: '')}">García</th:block>
-                                                            <small style="display:block; margin-top:.15rem; color:#adb5bd;">(invitación enviada)</small>
+                                                            <small style="display:block; margin-top:.15rem; color:#adb5bd;" th:text="#{tournament.partner.invited}">(invitación enviada)</small>
                                                         </span>
                                                     </th:block>
                                                 </td>
@@ -548,7 +548,7 @@
                                             <td style="padding:.6rem .75rem;">
                                                 <span style="color:#d97706; font-style:italic; font-size:.875rem;">
                                                     <i class="fas fa-clock" style="margin-right:.35rem;"></i>
-                                                    Pendiente — sin datos de pareja
+                                                    <span th:text="#{tournament.partner.pending}">Pendiente — sin datos de pareja</span>
                                                 </span>
                                                 <th:block th:if="${currentUserPlayerId != null and currentUserPlayerId == reg.playerId}">
                                                     <button
@@ -556,7 +556,7 @@
                                                         style="display:inline-block; margin-top:.4rem; padding:.3rem .8rem;
                                                                background:#FF6B35; color:#fff; border:none; border-radius:6px;
                                                                font-size:.8rem; font-weight:600; cursor:pointer;">
-                                                        <i class="fas fa-user-plus"></i> Agregar compañero
+                                                        <i class="fas fa-user-plus"></i> <span th:text="#{tournament.partner.add}">Agregar compañero</span>
                                                     </button>
                                                 </th:block>
                                             </td>
@@ -570,7 +570,7 @@
                                         border-radius:8px; border-left:3px solid #f59e0b;
                                         font-size:.875rem; color:#92400e;">
                                     <i class="fas fa-clock"></i>
-                                    <span th:text="${tournament.waitlistCount} + ' pareja(s) en lista de espera'">2 en espera</span>
+                                    <span th:text="${tournament.waitlistCount} + ' ' + #{tournament.waitlist.double}">2 en espera</span>
                                 </div>
                             </th:block>
 
@@ -588,7 +588,7 @@
                     <!-- Блок шаринга — показываем всем -->
                     <div class="registration-card" style="margin-top: 1rem;">
                         <h3 class="registration-title">
-                            <i class="fas fa-share-alt"></i> Compartir torneo
+                            <i class="fas fa-share-alt"></i> <span th:text="#{tournament.share.title}">Compartir torneo</span>
                         </h3>
                         <div style="display: flex; flex-direction: column; gap: .6rem; margin-top: .75rem;">
 
@@ -599,7 +599,7 @@
                                   background:#25D366; color:#fff; border-radius:8px;
                                   text-decoration:none; font-weight:600; font-size:.9rem;">
                                 <i class="fab fa-whatsapp" style="font-size:1.1rem;"></i>
-                                Enviar por WhatsApp
+                                <span th:text="#{tournament.share.whatsapp}">Enviar por WhatsApp</span>
                             </a>
 
                             <!-- Telegram -->
@@ -609,7 +609,7 @@
                                   background:#2CA5E0; color:#fff; border-radius:8px;
                                   text-decoration:none; font-weight:600; font-size:.9rem;">
                                 <i class="fab fa-telegram" style="font-size:1.1rem;"></i>
-                                Enviar por Telegram
+                                <span th:text="#{tournament.share.telegram}">Enviar por Telegram</span>
                             </a>
 
                             <!-- Copiar enlace -->
@@ -619,21 +619,21 @@
                                        border-radius:8px; font-weight:600; font-size:.9rem;
                                        cursor:pointer; width:100%;">
                                 <i class="fas fa-link" style="font-size:1rem;"></i>
-                                Copiar enlace
+                                <span th:text="#{tournament.share.copy}">Copiar enlace</span>
                             </button>
                         </div>
                     </div>
-                    <h3 class="registration-title">Inscripción</h3>
+                    <h3 class="registration-title" th:text="#{tournament.registration.title}">Inscripción</h3>
 
                     <!-- Estado de registro del usuario -->
                     <div class="user-registration-status" th:if="${isRegistered}">
                         <div class="status-message" th:classappend="${isInWaitlist} ? 'status-waitlist' : 'status-confirmed'">
                             <i class="fas" th:class="${isInWaitlist} ? 'fa-clock' : 'fa-check-circle'"></i>
-                            <span th:text="${isInWaitlist} ? 'Estás en lista de espera' : '¡Estás inscrito!'"></span>
+                            <span th:text="${isInWaitlist} ? #{tournament.status.waitlist} : #{tournament.status.confirmed}"></span>
                         </div>
                         <div class="registration-position" th:if="${userRegistration != null}">
-                            <span th:if="${!isInWaitlist}" th:text="'Posición: ' + ${userRegistration.position}">Posición: 15</span>
-                            <span th:if="${isInWaitlist}" th:text="'Posición en espera: ' + ${userRegistration.waitlistPosition}">Posición en espera: 3</span>
+                            <span th:if="${!isInWaitlist}" th:text="#{tournament.position.main} + ' ' + ${userRegistration.position}">Posición: 15</span>
+                            <span th:if="${isInWaitlist}" th:text="#{tournament.position.waitlist} + ' ' + ${userRegistration.waitlistPosition}">Posición en espera: 3</span>
                         </div>
                     </div>
 
@@ -641,11 +641,11 @@
                     <div class="availability-info">
                         <div class="spots-available" th:classappend="${availableSpots > 0} ? 'spots-good' : 'spots-full'">
                             <span class="spots-number" th:text="${availableSpots}">8</span>
-                            <span class="spots-text" th:text="${availableSpots == 1} ? 'lugar disponible' : 'lugares disponibles'">lugares disponibles</span>
+                            <span class="spots-text" th:text="${availableSpots == 1} ? #{tournament.spots.one} : #{tournament.spots.many}">lugares disponibles</span>
                         </div>
                         <div class="waitlist-info" th:if="${tournament.waitlistCount > 0}">
                             <i class="fas fa-users"></i>
-                            <span th:text="${tournament.waitlistCount} + ' personas en lista de espera'">5 personas en lista de espera</span>
+                            <span th:text="${tournament.waitlistCount} + ' ' + #{tournament.waitlist.count}">5 personas en lista de espera</span>
                         </div>
                     </div>
 
@@ -656,21 +656,21 @@
                                 th:attr="data-tournament-id=${tournament.id}, data-tournament-name=${tournament.nombre}"
                                 id="registerButton">
                             <i class="fas fa-check-circle"></i>
-                            <span th:text="${availableSpots > 0} ? 'Inscribirme' : 'Apuntarme a lista de espera'"></span>
+                            <span th:text="${availableSpots > 0} ? #{tournament.btn.register} : #{tournament.btn.waitlist}"></span>
                         </button>
 
                         <!-- Остальные кнопки без изменений -->
                         <a href="/login" class="btn-login btn-outline btn-block"
                            th:if="${!isAuthenticated && tournament.estado.toString() == 'REGISTRO_ABIERTO'}">
                             <i class="fas fa-sign-in-alt"></i>
-                            Iniciar sesión para inscribirse
+                            <span th:text="#{tournament.btn.login}">Iniciar sesión para inscribirse</span>
                         </a>
 
                         <button class="btn-cancel btn-outline btn-block"
                                 th:if="${isRegistered}"
                                 th:attr="data-tournament-id=${tournament.id}, data-tournament-name=${tournament.nombre}">
                             <i class="fas fa-times-circle"></i>
-                            Cancelar inscripción
+                            <span th:text="#{tournament.btn.cancel}">Cancelar inscripción</span>
                         </button>
 
                         <div class="registration-closed" th:if="${tournament.estado.toString() != 'REGISTRO_ABIERTO'}">
@@ -685,7 +685,7 @@
                     <div class="additional-info">
                         <div class="info-note" th:if="${tournament.deadlineCancelacion}">
                             <i class="fas fa-clock"></i>
-                            <span>Puedes cancelar hasta 24h antes del torneo</span>
+                            <span th:text="#{tournament.cancel.hint}">Puedes cancelar hasta 24h antes del torneo</span>
                         </div>
                     </div>
                 </div>
@@ -701,48 +701,48 @@
     <div style="background:#fff; border-radius:14px; padding:28px 32px; max-width:480px;
                 width:90%; box-shadow:0 20px 60px rgba(0,0,0,.3);">
         <h3 style="margin:0 0 6px; font-size:1.1rem; color:#1e293b;">
-            <i class="fas fa-user-plus" style="color:#FF6B35;"></i> Agregar compañero de pareja
+            <i class="fas fa-user-plus" style="color:#FF6B35;"></i> <span th:text="#{modal.add_partner.title}">Agregar compañero de pareja</span>
         </h3>
-        <p style="color:#64748b; font-size:.875rem; margin:0 0 20px;">
+        <p style="color:#64748b; font-size:.875rem; margin:0 0 20px;" th:text="#{modal.add_partner.subtitle}">
             Ingresá los datos de tu compañero. Si está registrado en la plataforma, lo confirmaremos automáticamente.
         </p>
         <!-- Nombre -->
         <div style="margin-bottom:12px;">
-            <label style="font-size:.85rem; font-weight:600; color:#374151; display:block; margin-bottom:4px;">Nombre *</label>
-            <input id="apNombre" type="text" placeholder="Nombre"
+            <label style="font-size:.85rem; font-weight:600; color:#374151; display:block; margin-bottom:4px;" th:text="#{modal.add_partner.field.nombre}">Nombre *</label>
+            <input id="apNombre" type="text" th:placeholder="#{modal.add_partner.field.nombre.placeholder}"
                    style="width:100%; padding:.5rem .75rem; border:1px solid #e2e8f0; border-radius:8px; font-size:.9rem; box-sizing:border-box;">
         </div>
         <!-- Apellido -->
         <div style="margin-bottom:12px;">
-            <label style="font-size:.85rem; font-weight:600; color:#374151; display:block; margin-bottom:4px;">Apellido *</label>
-            <input id="apApellido" type="text" placeholder="Apellido"
+            <label style="font-size:.85rem; font-weight:600; color:#374151; display:block; margin-bottom:4px;" th:text="#{modal.add_partner.field.apellido}">Apellido *</label>
+            <input id="apApellido" type="text" th:placeholder="#{modal.add_partner.field.apellido.placeholder}"
                    style="width:100%; padding:.5rem .75rem; border:1px solid #e2e8f0; border-radius:8px; font-size:.9rem; box-sizing:border-box;">
         </div>
         <!-- Teléfono -->
         <div style="margin-bottom:12px;">
-            <label style="font-size:.85rem; font-weight:600; color:#374151; display:block; margin-bottom:4px;">Teléfono (WhatsApp)</label>
-            <input id="apTelefono" type="tel" placeholder="+54 9 11 1234-5678"
+            <label style="font-size:.85rem; font-weight:600; color:#374151; display:block; margin-bottom:4px;" th:text="#{modal.add_partner.field.telefono}">Teléfono (WhatsApp)</label>
+            <input id="apTelefono" type="tel" th:placeholder="#{modal.add_partner.field.telefono.placeholder}"
                    style="width:100%; padding:.5rem .75rem; border:1px solid #e2e8f0; border-radius:8px; font-size:.9rem; box-sizing:border-box;">
         </div>
         <!-- Email -->
         <div style="margin-bottom:20px;">
-            <label style="font-size:.85rem; font-weight:600; color:#374151; display:block; margin-bottom:4px;">Email</label>
-            <input id="apEmail" type="email" placeholder="email@ejemplo.com"
+            <label style="font-size:.85rem; font-weight:600; color:#374151; display:block; margin-bottom:4px;" th:text="#{modal.add_partner.field.email}">Email</label>
+            <input id="apEmail" type="email" th:placeholder="#{modal.add_partner.field.email.placeholder}"
                    style="width:100%; padding:.5rem .75rem; border:1px solid #e2e8f0; border-radius:8px; font-size:.9rem; box-sizing:border-box;">
-            <small style="color:#9ca3af; font-size:.78rem;">Si tu compañero no está en la plataforma, le enviaremos una invitación por email.</small>
+            <small style="color:#9ca3af; font-size:.78rem;" th:text="#{modal.add_partner.field.email.hint}">Si tu compañero no está en la plataforma, le enviaremos una invitación por email.</small>
         </div>
         <div id="apError" style="display:none; background:#fee2e2; color:#991b1b; border-radius:8px;
                                   padding:.5rem .8rem; font-size:.85rem; margin-bottom:12px;"></div>
         <div style="display:flex; gap:.75rem; justify-content:flex-end;">
             <button onclick="closeAddPartnerModal()"
                     style="padding:.5rem 1.1rem; border:1px solid #e2e8f0; border-radius:8px;
-                           background:#fff; cursor:pointer; color:#64748b; font-size:.9rem;">
+                           background:#fff; cursor:pointer; color:#64748b; font-size:.9rem;" th:text="#{modal.add_partner.btn.cancel}">
                 Cancelar
             </button>
             <button id="apConfirmBtn" onclick="submitAddPartner()"
                     style="padding:.5rem 1.3rem; border:none; border-radius:8px;
                            background:#FF6B35; color:#fff; font-weight:600; cursor:pointer; font-size:.9rem;">
-                <i class="fas fa-check"></i> Confirmar pareja
+                <i class="fas fa-check"></i> <span th:text="#{modal.add_partner.btn.confirm}">Confirmar pareja</span>
             </button>
         </div>
     </div>
@@ -817,7 +817,7 @@
     <div class="container">
         <div class="footer-bottom" style="justify-content: center; text-align: center;">
             <div class="footer-copyright">
-                <i class="far fa-copyright"></i> 2026 1-Padel. Todos los derechos reservados.
+                <span th:text="#{footer.copyright}"><i class="far fa-copyright"></i> 2026 1-Padel. Todos los derechos reservados.</span>
             </div>
         </div>
     </div>
@@ -830,7 +830,7 @@
             <div class="modal-header">
                 <h5 class="modal-title" id="partnerModalLabel">
                     <i class="fas fa-user-friends"></i>
-                    Registrar pareja para <span id="modalTournamentName"></span>
+                    <span th:text="#{modal.partner.title}">Registrar pareja para</span> <span id="modalTournamentName"></span>
                 </h5>
                 <button type="button" class="modal-close" data-dismiss="modal" aria-label="Cerrar">
                     <i class="fas fa-times"></i>
@@ -844,24 +844,24 @@
 
                     <!-- Шаг 0: выбор режима регистрации -->
                     <div id="registrationModeStep" style="margin-bottom:1.25rem;">
-                        <p style="font-size:.875rem; color:#6b7280; margin-bottom:.75rem; font-weight:500;">
+                        <p style="font-size:.875rem; color:#6b7280; margin-bottom:.75rem; font-weight:500;" th:text="#{modal.partner.mode.question}">
                             ¿Cómo querés registrarte?
                         </p>
                         <div style="display:flex; flex-direction:column; gap:.5rem;">
                             <button type="button" class="mode-btn mode-btn--active" id="modeWithPartner"
                                     onclick="setRegistrationMode('WITH_PARTNER')">
                                 <i class="fas fa-user-friends"></i>
-                                Tengo compañero
+                                <span th:text="#{modal.partner.mode.with}">Tengo compañero</span>
                             </button>
                             <button type="button" class="mode-btn" id="modeSearch"
                                     onclick="setRegistrationMode('SEARCH')">
                                 <i class="fas fa-search"></i>
-                                Busco compañero
+                                <span th:text="#{modal.partner.mode.search}">Busco compañero</span>
                             </button>
                             <button type="button" class="mode-btn" id="modeLater"
                                     onclick="setRegistrationMode('ADD_LATER')">
                                 <i class="fas fa-clock"></i>
-                                Agrego compañero más tarde
+                                <span th:text="#{modal.partner.mode.later}">Agrego compañero más tarde</span>
                             </button>
                         </div>
                     </div>
@@ -871,11 +871,11 @@
                         <div class="form-group">
                             <label for="partnerSearch">
                                 <i class="fas fa-search"></i>
-                                Buscar compañero registrado
+                                <span th:text="#{modal.partner.search.label}">Buscar compañero registrado</span>
                             </label>
                             <input type="text" class="form-control" id="partnerSearch"
-                                   placeholder="Nombre, apellido o email..." autocomplete="off">
-                            <small class="form-text text-muted">
+                                   th:placeholder="#{modal.partner.search.placeholder}" autocomplete="off">
+                            <small class="form-text text-muted" th:text="#{modal.partner.search.hint}">
                                 Escribe al menos 2 caracteres para buscar entre jugadores registrados
                             </small>
                         </div>
@@ -904,34 +904,34 @@
                         <div id="manualPartnerFields">
                             <div style="display:flex; align-items:center; gap:.75rem; margin:.5rem 0 1rem;">
                                 <hr style="flex:1; margin:0; border-color:#e5e7eb;">
-                                <span style="font-size:.8rem; color:#9ca3af; white-space:nowrap;">o ingresa manualmente</span>
+                                <span style="font-size:.8rem; color:#9ca3af; white-space:nowrap;" th:text="#{modal.partner.manual.divider}">o ingresa manualmente</span>
                                 <hr style="flex:1; margin:0; border-color:#e5e7eb;">
                             </div>
 
                             <div class="form-group">
-                                <label for="partnerFirstName"><i class="fas fa-user"></i> Nombre del compañero</label>
+                                <label for="partnerFirstName"><i class="fas fa-user"></i> <span th:text="#{modal.partner.field.nombre}">Nombre del compañero</span></label>
                                 <input type="text" class="form-control" id="partnerFirstName"
-                                       placeholder="Ej: Juan" maxlength="50">
-                                <div class="invalid-feedback">Por favor ingresa el nombre</div>
+                                       th:placeholder="#{modal.partner.field.nombre.placeholder}" maxlength="50">
+                                <div class="invalid-feedback" th:text="#{modal.partner.field.nombre.error}">Por favor ingresa el nombre</div>
                             </div>
                             <div class="form-group">
-                                <label for="partnerLastName"><i class="fas fa-user"></i> Apellido del compañero</label>
+                                <label for="partnerLastName"><i class="fas fa-user"></i> <span th:text="#{modal.partner.field.apellido}">Apellido del compañero</span></label>
                                 <input type="text" class="form-control" id="partnerLastName"
-                                       placeholder="Ej: Pérez" maxlength="50">
-                                <div class="invalid-feedback">Por favor ingresa el apellido</div>
+                                       th:placeholder="#{modal.partner.field.apellido.placeholder}" maxlength="50">
+                                <div class="invalid-feedback" th:text="#{modal.partner.field.apellido.error}">Por favor ingresa el apellido</div>
                             </div>
                             <div class="form-group">
-                                <label for="partnerPhone"><i class="fas fa-phone"></i> Teléfono del compañero</label>
+                                <label for="partnerPhone"><i class="fas fa-phone"></i> <span th:text="#{modal.partner.field.telefono}">Teléfono del compañero</span></label>
                                 <input type="tel" class="form-control" id="partnerPhone"
-                                       placeholder="Ej: +54 9 11 1234 5678">
-                                <div class="invalid-feedback">Por favor ingresa un teléfono válido</div>
-                                <small class="form-text text-muted"><i class="fas fa-info-circle"></i> Requerido si tu compañero no está registrado</small>
+                                       th:placeholder="#{modal.partner.field.telefono.placeholder}">
+                                <div class="invalid-feedback" th:text="#{modal.partner.field.telefono.error}">Por favor ingresa un teléfono válido</div>
+                                <small class="form-text text-muted"><i class="fas fa-info-circle"></i> <span th:text="#{modal.partner.field.telefono.hint}">Requerido si tu compañero no está registrado</span></small>
                             </div>
                             <div class="form-group">
-                                <label for="partnerEmail"><i class="fas fa-envelope"></i> Email del compañero (opcional)</label>
+                                <label for="partnerEmail"><i class="fas fa-envelope"></i> <span th:text="#{modal.partner.field.email}">Email del compañero (opcional)</span></label>
                                 <input type="email" class="form-control" id="partnerEmail"
-                                       placeholder="Ej: juan@email.com">
-                                <small class="form-text text-muted">Le enviaremos un email si no está registrado</small>
+                                       th:placeholder="#{modal.partner.field.email.placeholder}">
+                                <small class="form-text text-muted" th:text="#{modal.partner.field.email.hint}">Le enviaremos un email si no está registrado</small>
                             </div>
                         </div><!-- /manualPartnerFields -->
                     </div><!-- /withPartnerSection -->
@@ -941,13 +941,13 @@
                         <div style="background:#eff6ff; border-radius:10px; padding:1rem 1.25rem; margin-bottom:1rem;
                                     border-left:4px solid #3b82f6; font-size:.9rem; color:#1e40af; line-height:1.5;">
                             <i class="fas fa-info-circle"></i>
-                            Vas a aparecer en el listado de <strong>«Jugadores que buscan compañero»</strong>
-                            visible en la página del torneo. Los demás jugadores podrán contactarte.
+                            <span th:utext="#{modal.partner.search_mode.info}">Vas a aparecer en el listado de <strong>«Jugadores que buscan compañero»</strong>
+                            visible en la página del torneo. Los demás jugadores podrán contactarte.</span>
                         </div>
                         <div class="form-group" style="margin-bottom:0;">
                             <label style="display:flex; align-items:flex-start; gap:.6rem; cursor:pointer; font-weight:400;">
                                 <input type="checkbox" id="shareContactsCheckbox" style="margin-top:.2rem; flex-shrink:0;">
-                                <span style="font-size:.9rem; color:#374151;">
+                                <span style="font-size:.9rem; color:#374151;" th:text="#{modal.partner.search_mode.consent}">
                                     Autorizo mostrar mi Telegram y teléfono a otros jugadores que también buscan compañero en este torneo
                                 </span>
                             </label>
@@ -959,9 +959,9 @@
                         <div style="background:#fffbeb; border-radius:10px; padding:1rem 1.25rem;
                                     border-left:4px solid #f59e0b; font-size:.9rem; color:#92400e; line-height:1.5;">
                             <i class="fas fa-exclamation-triangle"></i>
-                            <strong>Importante:</strong> los datos del segundo participante deben agregarse
+                            <span th:utext="#{modal.partner.later.warning}"><strong>Importante:</strong> los datos del segundo participante deben agregarse
                             <strong>al menos 24 horas antes del inicio del torneo</strong>.
-                            Si no se completa la inscripción a tiempo, la solicitud podrá ser eliminada.
+                            Si no se completa la inscripción a tiempo, la solicitud podrá ser eliminada.</span>
                         </div>
                     </div>
 
@@ -975,11 +975,11 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline" data-dismiss="modal">
                     <i class="fas fa-times"></i>
-                    Cancelar
+                    <span th:text="#{modal.partner.btn.cancel}">Cancelar</span>
                 </button>
                 <button type="button" class="btn btn-primary" id="submitPartnerBtn">
                     <i class="fas fa-check-circle"></i>
-                    <span id="submitPartnerBtnText">Registrar pareja</span>
+                    <span id="submitPartnerBtnText" th:text="#{modal.partner.btn.submit}">Registrar pareja</span>
                 </button>
             </div>
         </div>
@@ -994,7 +994,7 @@
                 <!-- Contenido dinámico -->
             </div>
             <div class="modal-footer justify-content-center">
-                <button type="button" class="btn btn-primary" data-dismiss="modal">Aceptar</button>
+                <button type="button" class="btn btn-primary" data-dismiss="modal" th:text="#{modal.result.btn.accept}">Aceptar</button>
             </div>
         </div>
     </div>
@@ -1007,7 +1007,7 @@
             <div class="modal-header">
                 <h5 class="modal-title">
                     <i class="fas fa-times-circle" style="color: #dc3545;"></i>
-                    Cancelar inscripción
+                    <span th:text="#{modal.cancel.title}">Cancelar inscripción</span>
                 </h5>
                 <button type="button" class="modal-close" data-dismiss="modal" aria-label="Cerrar">
                     <i class="fas fa-times"></i>
@@ -1018,20 +1018,20 @@
                 <div class="form-group">
                     <label for="cancelReason">
                         <i class="fas fa-comment"></i>
-                        Motivo de cancelación (opcional)
+                        <span th:text="#{modal.cancel.reason.label}">Motivo de cancelación (opcional)</span>
                     </label>
                     <textarea id="cancelReason" class="form-control" rows="3"
-                              placeholder="Cuéntanos por qué cancelas tu inscripción..."></textarea>
+                              th:placeholder="#{modal.cancel.reason.placeholder}"></textarea>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline" data-dismiss="modal">
                     <i class="fas fa-arrow-left"></i>
-                    Volver
+                    <span th:text="#{modal.cancel.btn.back}">Volver</span>
                 </button>
                 <button type="button" class="btn btn-danger" id="confirmCancelBtn">
                     <i class="fas fa-check-circle"></i>
-                    Confirmar cancelación
+                    <span th:text="#{modal.cancel.btn.confirm}">Confirmar cancelación</span>
                 </button>
             </div>
         </div>
@@ -1040,6 +1040,8 @@
 
 <!-- Script adicional -->
 <script th:src="@{/js/logger.js}"></script>
+<script th:src="${'/js/i18n/messages-' + #locale.language + '.js'}"></script>
+<script th:src="@{/js/i18n/t.js}"></script>
 <script th:src="@{/js/contact-check.js}"></script>
 <script th:inline="javascript">
     /*<![CDATA[*/

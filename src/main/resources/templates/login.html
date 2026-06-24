@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta name="app-profile" th:content="${@environment.getActiveProfiles().length > 0
         ? @environment.getActiveProfiles()[0]
@@ -17,7 +17,7 @@
     <meta property="og:url" content="https://1-padel.com/login">
     <meta name="twitter:card" content="summary_large_image">
 
-    <title>1-Padel - Iniciar sesión</title>
+    <title th:text="#{login.title}">1-Padel - Iniciar sesión</title>
 
     <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
     <link rel="alternate icon" th:href="@{/images/favicon.ico}">
@@ -38,7 +38,7 @@
             <div class="navbar-auth">
                 <a href="/players/registro" class="btn btn-primary-sm">
                     <i class="fas fa-user-plus"></i>
-                    Registrarse
+                    <span th:text="#{login.btn.register}">Registrarse</span>
                 </a>
             </div>
         </nav>
@@ -50,10 +50,10 @@
         <div class="auth-container">
             <div class="auth-card">
                 <div class="auth-card-header">
-                    <h2 class="auth-card-title">Iniciar sesión</h2>
+                    <h2 class="auth-card-title" th:text="#{login.heading}">Iniciar sesión</h2>
                     <p class="auth-card-subtitle">
-                        ¿No tienes cuenta?
-                        <a href="/players/registro" class="auth-link">Regístrate gratis</a>
+                        <span th:text="#{login.no_account}">¿No tienes cuenta?</span>
+                        <a href="/players/registro" class="auth-link" th:text="#{login.register_free}">Regístrate gratis</a>
                     </p>
                 </div>
 
@@ -62,13 +62,13 @@
                     <!-- Registro exitoso (ya no se usa, pero por si acaso) -->
                     <div th:if="${param.registered}" class="alert alert-success">
                         <i class="fas fa-check-circle"></i>
-                        <span>¡Registro exitoso! Ya puedes iniciar sesión.</span>
+                        <span th:text="#{login.alert.registered}">¡Registro exitoso! Ya puedes iniciar sesión.</span>
                     </div>
 
                     <!-- Email confirmado -->
                     <div th:if="${param.confirmed}" class="alert alert-success">
                         <i class="fas fa-check-circle"></i>
-                        <span>¡Email confirmado! Ya puedes iniciar sesión.</span>
+                        <span th:text="#{login.alert.confirmed}">¡Email confirmado! Ya puedes iniciar sesión.</span>
                     </div>
 
                     <!-- ★ КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: используем param.error[0] вместо toString() ★ -->
@@ -80,8 +80,8 @@
                                 gap:.75rem; align-items:flex-start; margin-bottom:.5rem;">
                         <i class="fas fa-clock" style="color:#f59e0b; font-size:1.25rem; flex-shrink:0; margin-top:.1rem;"></i>
                         <div>
-                            <strong style="display:block; margin-bottom:.25rem;">Demasiados intentos</strong>
-                            Has superado el límite de intentos. Por favor, espera <strong>1 minuto</strong> antes de intentarlo de nuevo.
+                            <strong style="display:block; margin-bottom:.25rem;" th:text="#{login.alert.rate_limit.title}">Demasiados intentos</strong>
+                            <span th:utext="#{login.alert.rate_limit.msg}">Has superado el límite de intentos. Por favor, espera <strong>1 minuto</strong> antes de intentarlo de nuevo.</span>
                         </div>
                     </div>
 
@@ -92,9 +92,8 @@
                                 gap:.75rem; align-items:flex-start; margin-bottom:.5rem;">
                         <i class="fas fa-envelope" style="color:#f59e0b; font-size:1.25rem; flex-shrink:0; margin-top:.1rem;"></i>
                         <div>
-                            <strong style="display:block; margin-bottom:.25rem;">Email no confirmado</strong>
-                            Abre tu bandeja de entrada y haz clic en el enlace que te enviamos al registrarte.
-                            Si no lo ves, revisa la carpeta <strong>Spam</strong> o <strong>Correo no deseado</strong>.
+                            <strong style="display:block; margin-bottom:.25rem;" th:text="#{login.alert.not_confirmed.title}">Email no confirmado</strong>
+                            <span th:utext="#{login.alert.not_confirmed.msg}">Abre tu bandeja de entrada y haz clic en el enlace que te enviamos al registrarte. Si no lo ves, revisa la carpeta <strong>Spam</strong> o <strong>Correo no deseado</strong>.</span>
                         </div>
                     </div>
 
@@ -102,19 +101,19 @@
                     <div th:if="${param.error != null and param.error[0] != 'not_confirmed' and param.error[0] != 'rate-limit'}"
                          class="alert alert-error">
                         <i class="fas fa-exclamation-circle"></i>
-                        <span>Email o contraseña incorrectos</span>
+                        <span th:text="#{login.alert.error}">Email o contraseña incorrectos</span>
                     </div>
 
                     <!-- Cierre de sesión -->
                     <div th:if="${param.logout}" class="alert alert-success">
                         <i class="fas fa-check-circle"></i>
-                        <span>Has cerrado sesión correctamente</span>
+                        <span th:text="#{login.alert.logout}">Has cerrado sesión correctamente</span>
                     </div>
 
                     <!-- Email -->
                     <div class="form-group">
                         <label for="username" class="form-label">
-                            <i class="fas fa-envelope"></i> Email
+                            <i class="fas fa-envelope"></i> <span th:text="#{login.field.email}">Email</span>
                         </label>
                         <div class="input-with-icon">
                             <input type="email" id="username" name="username"
@@ -129,15 +128,16 @@
                     <!-- Contraseña -->
                     <div class="form-group">
                         <label for="password" class="form-label">
-                            <i class="fas fa-lock"></i> Contraseña
+                            <i class="fas fa-lock"></i> <span th:text="#{login.field.password}">Contraseña</span>
                         </label>
                         <div class="input-with-icon">
                             <input type="password" id="password" name="password"
                                    class="form-control"
-                                   placeholder="Tu contraseña"
+                                   th:placeholder="#{login.field.password.placeholder}"
                                    required>
                             <i class="fas fa-lock input-icon"></i>
-                            <button type="button" class="toggle-password" data-target="password" aria-label="Mostrar/ocultar contraseña">
+                            <button type="button" class="toggle-password" data-target="password"
+                                    th:attr="aria-label=#{login.field.password.toggle}">
                                 <i class="fas fa-eye"></i>
                             </button>
                         </div>
@@ -147,9 +147,9 @@
                     <div class="form-options">
                         <div class="form-checkbox">
                             <input type="checkbox" id="remember-me" name="remember-me">
-                            <label for="remember-me">Recordarme</label>
+                            <label for="remember-me" th:text="#{login.remember_me}">Recordarme</label>
                         </div>
-                        <a href="/recuperar-password" class="forgot-password">
+                        <a href="/recuperar-password" class="forgot-password" th:text="#{login.forgot_password}">
                             ¿Olvidaste tu contraseña?
                         </a>
                     </div>
@@ -157,11 +157,11 @@
                     <!-- Botón de inicio -->
                     <button type="submit" class="btn btn-primary btn-block btn-large">
                         <i class="fas fa-sign-in-alt"></i>
-                        Iniciar sesión
+                        <span th:text="#{login.btn.submit}">Iniciar sesión</span>
                     </button>
 
                     <div class="auth-divider" style="text-align: center; margin: 1.5rem 0 0; color: var(--color-text-light);">
-                        <small>o continúa con</small>
+                        <small th:text="#{login.or_continue}">o continúa con</small>
                     </div>
 
                     <div class="auth-social" style="display: flex; gap: 1rem; justify-content: center; margin-top: 1rem;">
@@ -174,7 +174,7 @@
 
             <div class="auth-info" style="text-align: center; margin-top: 1.5rem; color: var(--color-text-light);">
                 <small>
-                    <i class="fas fa-shield-alt"></i> Tus datos están seguros con nosotros
+                    <i class="fas fa-shield-alt"></i> <span th:text="#{login.security_note}">Tus datos están seguros con nosotros</span>
                 </small>
             </div>
         </div>
@@ -184,13 +184,15 @@
 <footer class="footer" style="padding: 1rem 0;">
     <div class="container">
         <div class="footer-bottom" style="justify-content: center; text-align: center; border-top: none;">
-            <div class="footer-copyright">
-                <i class="far fa-copyright"></i> 2026 1-Padel. Todos los derechos reservados.
+            <div class="footer-copyright" th:text="#{footer.copyright}">
+                © 2026 1-Padel. Todos los derechos reservados.
             </div>
         </div>
     </div>
 </footer>
 <script th:src="@{/js/logger.js}"></script>
+<script th:src="${'/js/i18n/messages-' + #locale.language + '.js'}"></script>
+<script th:src="@{/js/i18n/t.js}"></script>
 <script th:src="@{/js/notifications.js}"></script>
 <script th:src="@{/js/auth.js}"></script>
 <script th:src="@{/js/password-reset.js}"></script>

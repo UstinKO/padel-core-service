@@ -12,31 +12,33 @@ class TorneosPage {
 
         // Маппинг для отображения значений enum в читаемые тексты
         this.nivelDisplayMap = {
-            'C9': 'C9 (Principiante)',
-            'C8': 'C8 (Intermedio)',
-            'C7': 'C7 (Avanzado)',
-            'C6': 'C6 (Profesional)',
-            'C5': 'C5 (Élite)'
+            'C9': t('enum.nivel.c9'),
+            'C8': t('enum.nivel.c8'),
+            'C7': t('enum.nivel.c7'),
+            'C6': t('enum.nivel.c6'),
+            'C5': t('enum.nivel.c5')
         };
 
         this.tipoDisplayMap = {
-            'KING_OF_COURT': 'King of Court',
-            'AMERICANA': 'Americana'
+            'KING_OF_COURT':    t('enum.tipo.koc'),
+            'AMERICANO':        t('enum.tipo.americana'),
+            'AMERICANO_TEAMS':  t('enum.tipo.americano_teams'),
+            'CANCHA_ABIERTA':   t('enum.tipo.cancha_abierta')
         };
 
         this.estadoDisplayMap = {
-            'REGISTRO_ABIERTO': 'Inscripción abierta',
-            'PUBLICADO': 'Próximamente',
-            'BORRADOR': 'Borrador',
-            'CERRADO': 'Cerrado',
-            'FINALIZADO': 'Finalizado',
-            'CANCELADO': 'Cancelado'
+            'REGISTRO_ABIERTO': t('enum.estado.open'),
+            'PUBLICADO': t('enum.estado.published'),
+            'BORRADOR': t('enum.estado.draft'),
+            'CERRADO': t('enum.estado.closed'),
+            'FINALIZADO': t('enum.estado.finished'),
+            'CANCELADO': t('enum.estado.cancelled')
         };
 
         this.generoDisplayMap = {
-            'MASCULINO': 'Masculino',
-            'FEMENINO': 'Femenino',
-            'MIXTO': 'Mixto'
+            'MASCULINO': t('enum.genero.m'),
+            'FEMENINO': t('enum.genero.f'),
+            'MIXTO': t('enum.genero.mix')
         };
 
         this.init();
@@ -123,11 +125,11 @@ class TorneosPage {
             if (this.filtersForm.classList.contains('collapsed')) {
                 icon.classList.remove('fa-chevron-up');
                 icon.classList.add('fa-chevron-down');
-                if (span) span.textContent = 'Mostrar filtros';
+                if (span) span.textContent = t('filter.toggle.show');
             } else {
                 icon.classList.remove('fa-chevron-down');
                 icon.classList.add('fa-chevron-up');
-                if (span) span.textContent = 'Ocultar filtros';
+                if (span) span.textContent = t('filter.toggle.hide');
             }
         }
     }
@@ -246,11 +248,11 @@ class TorneosPage {
     renderTournamentCard(tournament) {
         const fecha = Array.isArray(tournament.fechaInicio)
             ? `${tournament.fechaInicio[2]}/${tournament.fechaInicio[1]}/${tournament.fechaInicio[0]}`
-            : tournament.fechaInicio || 'Fecha por definir';
+            : tournament.fechaInicio || t('card.date.unknown');
 
         const hora = Array.isArray(tournament.horaInicio)
             ? `${tournament.horaInicio[0]}:${tournament.horaInicio[1].toString().padStart(2, '0')}`
-            : tournament.horaInicio || 'Hora por definir';
+            : tournament.horaInicio || t('card.time.unknown');
 
         const estadoTexto = this.getEstadoTexto(tournament.estado);
         const estadoClass = this.getEstadoClass(tournament.estado);
@@ -277,7 +279,7 @@ class TorneosPage {
                         </div>
                         <div class="torneo-info-item">
                             <i class="fas fa-map-marker-alt"></i>
-                            <span>${this.escapeHtml(tournament.clubNombre || 'Club por definir')}</span>
+                            <span>${this.escapeHtml(tournament.clubNombre || t('card.club.unknown'))}</span>
                         </div>
                         <div class="torneo-info-item">
                             <i class="fas fa-trophy"></i>
@@ -294,7 +296,7 @@ class TorneosPage {
                     </div>
                     <div class="torneo-footer">
                         <a href="/torneo/${tournament.id}" class="btn btn-primary btn-small">
-                            <i class="fas fa-info-circle"></i> Ver detalles
+                            <i class="fas fa-info-circle"></i> ${t('card.btn.details')}
                         </a>
                         <span class="torneo-status ${estadoClass}">${estadoTexto}</span>
                     </div>

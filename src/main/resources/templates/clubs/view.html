@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta name="app-profile" th:content="${@environment.getActiveProfiles().length > 0
         ? @environment.getActiveProfiles()[0]
@@ -23,9 +23,9 @@
 <main class="main">
     <div class="container">
         <nav class="breadcrumb">
-            <a href="/" class="breadcrumb-link">Inicio</a>
+            <a href="/" class="breadcrumb-link" th:text="#{breadcrumb.home}">Inicio</a>
             <span class="breadcrumb-separator">/</span>
-            <a href="/clubs" class="breadcrumb-link">Clubes</a>
+            <a href="/clubs" class="breadcrumb-link" th:text="#{breadcrumb.clubs}">Clubes</a>
             <span class="breadcrumb-separator">/</span>
             <span class="breadcrumb-current" th:text="${club.nombre}">Club</span>
         </nav>
@@ -35,33 +35,33 @@
 
             <div class="club-info">
                 <div class="info-section">
-                    <h2><i class="fas fa-info-circle"></i> Información</h2>
+                    <h2><i class="fas fa-info-circle"></i> <span th:text="#{clubs.view.section.info}">Información</span></h2>
                     <p th:if="${club.direccionCompleta}">
-                        <strong>Dirección:</strong> <span th:text="${club.direccionCompleta}">Dirección</span>
+                        <strong th:text="#{clubs.view.field.direccion}">Dirección:</strong> <span th:text="${club.direccionCompleta}">Dirección</span>
                     </p>
                     <p th:if="${club.telefonoContacto}">
-                        <strong>Teléfono:</strong> <span th:text="${club.telefonoContacto}">Teléfono</span>
+                        <strong th:text="#{clubs.view.field.telefono}">Teléfono:</strong> <span th:text="${club.telefonoContacto}">Teléfono</span>
                     </p>
                     <p th:if="${club.emailContacto}">
-                        <strong>Email:</strong> <span th:text="${club.emailContacto}">Email</span>
+                        <strong th:text="#{clubs.view.field.email}">Email:</strong> <span th:text="${club.emailContacto}">Email</span>
                     </p>
                 </div>
 
                 <div class="info-section" th:if="${club.descripcion}">
-                    <h2><i class="fas fa-align-left"></i> Descripción</h2>
+                    <h2><i class="fas fa-align-left"></i> <span th:text="#{clubs.view.section.descripcion}">Descripción</span></h2>
                     <p th:text="${club.descripcion}">Descripción</p>
                 </div>
 
                 <div class="info-section" th:if="${club.websiteUrl or club.mapaUrl}">
-                    <h2><i class="fas fa-link"></i> Enlaces</h2>
+                    <h2><i class="fas fa-link"></i> <span th:text="#{clubs.view.section.enlaces}">Enlaces</span></h2>
                     <p th:if="${club.websiteUrl}">
                         <a th:href="${club.websiteUrl}" target="_blank" class="btn btn-outline">
-                            <i class="fas fa-globe"></i> Sitio web
+                            <i class="fas fa-globe"></i> <span th:text="#{clubs.view.link.website}">Sitio web</span>
                         </a>
                     </p>
                     <p th:if="${club.mapaUrl}">
                         <a th:href="${club.mapaUrl}" target="_blank" class="btn btn-outline">
-                            <i class="fas fa-map"></i> Ver en mapa
+                            <i class="fas fa-map"></i> <span th:text="#{clubs.view.link.mapa}">Ver en mapa</span>
                         </a>
                     </p>
                 </div>
@@ -72,5 +72,7 @@
 
 <footer th:replace="~{fragments/public-footer :: footer}"></footer>
 <script th:src="@{/js/logger.js}"></script>
+<script th:src="${'/js/i18n/messages-' + #locale.language + '.js'}"></script>
+<script th:src="@{/js/i18n/t.js}"></script>
 </body>
 </html>

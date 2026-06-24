@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta name="app-profile" th:content="${@environment.getActiveProfiles().length > 0
         ? @environment.getActiveProfiles()[0]
@@ -7,7 +7,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
     <meta name="description" content="1-Padel - Mi Perfil">
-    <title>Mi Perfil | 1-Padel</title>
+    <title th:text="#{perfil.title}">Mi Perfil | 1-Padel</title>
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
@@ -46,17 +46,17 @@
                 <ul class="navbar-nav">
                     <li class="nav-item">
                         <a href="/" class="nav-link">
-                            <i class="fas fa-home"></i> Inicio
+                            <i class="fas fa-home"></i> <span th:text="#{nav.home}">Inicio</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="/players/dashboard" class="nav-link">Dashboard</a>
+                        <a href="/players/dashboard" class="nav-link" th:text="#{nav.dashboard}">Dashboard</a>
                     </li>
 <!--                    <li class="nav-item">-->
 <!--                        <a href="/torneos" class="nav-link">Torneos</a>-->
 <!--                    </li>-->
                     <li class="nav-item">
-                        <a href="/perfil" class="nav-link active">Perfil</a>
+                        <a href="/perfil" class="nav-link active" th:text="#{nav.perfil}">Perfil</a>
                     </li>
                 </ul>
 
@@ -65,7 +65,7 @@
                     <form th:action="@{/logout}" method="post" style="display: inline;">
                         <button type="submit" class="btn btn-outline-sm">
                             <i class="fas fa-sign-out-alt"></i>
-                            Salir
+                            <span th:text="#{nav.logout}">Salir</span>
                         </button>
                     </form>
                 </div>
@@ -94,33 +94,33 @@
                 <div class="form-section">
                     <h2 class="section-title">
                         <i class="fas fa-user"></i>
-                        Información personal
+                        <span th:text="#{perfil.section.personal}">Información personal</span>
                     </h2>
 
                     <div class="form-grid">
                         <div class="form-group">
                             <label for="nombre" class="required">
                                 <i class="fas fa-user"></i>
-                                Nombre
+                                <span th:text="#{perfil.field.nombre}">Nombre</span>
                             </label>
                             <input type="text"
                                    id="nombre"
                                    th:field="*{nombre}"
                                    class="form-control"
-                                   placeholder="Tu nombre"
+                                   th:placeholder="#{perfil.field.nombre.placeholder}"
                                    required>
                         </div>
 
                         <div class="form-group">
                             <label for="apellido" class="required">
                                 <i class="fas fa-user"></i>
-                                Apellido
+                                <span th:text="#{perfil.field.apellido}">Apellido</span>
                             </label>
                             <input type="text"
                                    id="apellido"
                                    th:field="*{apellido}"
                                    class="form-control"
-                                   placeholder="Tu apellido"
+                                   th:placeholder="#{perfil.field.apellido.placeholder}"
                                    required>
                         </div>
                     </div>
@@ -129,7 +129,7 @@
                         <div class="form-group">
                             <label for="email" class="required">
                                 <i class="fas fa-envelope"></i>
-                                Email
+                                <span th:text="#{perfil.field.email}">Email</span>
                             </label>
                             <input type="email"
                                    id="email"
@@ -138,13 +138,13 @@
                                    placeholder="tu@email.com"
                                    readonly
                                    disabled>
-                            <small class="form-text">El email no se puede cambiar</small>
+                            <small class="form-text" th:text="#{perfil.field.email.readonly}">El email no se puede cambiar</small>
                         </div>
 
                         <div class="form-group">
                             <label for="telefono">
                                 <i class="fas fa-phone"></i>
-                                Teléfono
+                                <span th:text="#{perfil.field.telefono}">Teléfono</span>
                             </label>
                             <input type="tel"
                                    id="telefono"
@@ -156,7 +156,7 @@
                         <div class="form-group">
                             <label for="telegramUsername">
                                 <i class="fab fa-telegram"></i>
-                                Telegram
+                                <span th:text="#{perfil.field.telegram}">Telegram</span>
                             </label>
                             <input type="text"
                                    id="telegramUsername"
@@ -164,7 +164,7 @@
                                    th:value="${player.telegramUsername}"
                                    class="form-control"
                                    placeholder="@tu_usuario">
-                            <small class="form-text">
+                            <small class="form-text" th:text="#{perfil.field.telegram.hint}">
                                 Necesario para inscribirte si no tienes WhatsApp
                             </small>
                         </div>
@@ -172,10 +172,10 @@
                         <div class="form-group">
                             <label for="nivelJugador">
                                 <i class="fas fa-chart-line"></i>
-                                Nivel de juego
+                                <span th:text="#{perfil.field.nivel}">Nivel de juego</span>
                             </label>
                             <select id="nivelJugador" name="nivelJugador" class="form-control">
-                                <option value="" th:selected="${player.nivelJugador == null}">Sin especificar</option>
+                                <option value="" th:selected="${player.nivelJugador == null}" th:text="#{perfil.field.nivel.none}">Sin especificar</option>
                                 <option value="C9"  th:selected="${player.nivelJugador?.name() == 'C9'}">C9</option>
                                 <option value="C8"  th:selected="${player.nivelJugador?.name() == 'C8'}">C8</option>
                                 <option value="C7"  th:selected="${player.nivelJugador?.name() == 'C7'}">C7</option>
@@ -193,14 +193,14 @@
                 <div class="form-section">
                     <h2 class="section-title">
                         <i class="fas fa-lock"></i>
-                        Seguridad
+                        <span th:text="#{perfil.section.security}">Seguridad</span>
                     </h2>
 
                     <div class="form-grid">
                         <div class="form-group">
                             <label for="currentPassword">
                                 <i class="fas fa-key"></i>
-                                Contraseña actual
+                                <span th:text="#{perfil.field.current_password}">Contraseña actual</span>
                             </label>
                             <div class="input-with-icon">
                                 <input type="password"
@@ -217,7 +217,7 @@
                         <div class="form-group">
                             <label for="newPassword">
                                 <i class="fas fa-key"></i>
-                                Nueva contraseña
+                                <span th:text="#{perfil.field.new_password}">Nueva contraseña</span>
                             </label>
                             <div class="input-with-icon">
                                 <input type="password"
@@ -235,7 +235,7 @@
                         <div class="form-group">
                             <label for="confirmPassword">
                                 <i class="fas fa-key"></i>
-                                Confirmar contraseña
+                                <span th:text="#{perfil.field.confirm_password}">Confirmar contraseña</span>
                             </label>
                             <div class="input-with-icon">
                                 <input type="password"
@@ -254,34 +254,34 @@
                     <!-- Индикатор силы пароля -->
                     <div class="password-strength" id="passwordStrength" style="display: none;">
                         <div class="strength-bar"></div>
-                        <span class="strength-text">Seguridad de la contraseña</span>
+                        <span class="strength-text" th:text="#{perfil.password.strength}">Seguridad de la contraseña</span>
                     </div>
 
-                    <small class="form-text password-hint">
+                    <small class="form-text password-hint" th:text="#{perfil.password.hint}">
                         La contraseña debe tener al menos 8 caracteres, incluir mayúsculas, minúsculas, números y caracteres especiales.
                     </small>
                 </div>
 
                 <!-- Información de la cuenta -->
                 <div class="account-info">
-                    <h3>Información de la cuenta</h3>
+                    <h3 th:text="#{perfil.account.title}">Información de la cuenta</h3>
                     <div class="info-grid">
                         <div class="info-item">
-                            <span class="info-label">Miembro desde:</span>
+                            <span class="info-label" th:text="#{perfil.account.member_since}">Miembro desde:</span>
                             <span class="info-value" th:text="${#temporals.format(player.fechaRegistro, 'dd/MM/yyyy')}">01/01/2024</span>
                         </div>
                         <div class="info-item">
-                            <span class="info-label">Email confirmado:</span>
+                            <span class="info-label" th:text="#{perfil.account.email_confirmed}">Email confirmado:</span>
                             <span class="info-value" th:classappend="${player.emailConfirmado} ? 'text-success' : 'text-warning'">
                                 <i th:class="${player.emailConfirmado} ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'"></i>
-                                <span th:text="${player.emailConfirmado} ? 'Sí' : 'No'"></span>
+                                <span th:text="${player.emailConfirmado} ? #{perfil.account.email_yes} : #{perfil.account.email_no}"></span>
                             </span>
                         </div>
                         <div class="info-item">
-                            <span class="info-label">Estado:</span>
+                            <span class="info-label" th:text="#{perfil.account.status}">Estado:</span>
                             <span class="info-value" th:classappend="${player.activo} ? 'text-success' : 'text-error'">
                                 <i th:class="${player.activo} ? 'fas fa-check-circle' : 'fas fa-times-circle'"></i>
-                                <span th:text="${player.activo} ? 'Activo' : 'Inactivo'"></span>
+                                <span th:text="${player.activo} ? #{perfil.account.active} : #{perfil.account.inactive}"></span>
                             </span>
                         </div>
                     </div>
@@ -291,11 +291,11 @@
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-save"></i>
-                        Guardar cambios
+                        <span th:text="#{perfil.btn.save}">Guardar cambios</span>
                     </button>
                     <a href="/players/dashboard" class="btn btn-outline">
                         <i class="fas fa-times"></i>
-                        Cancelar
+                        <span th:text="#{perfil.btn.cancel}">Cancelar</span>
                     </a>
                 </div>
             </form>
@@ -305,10 +305,12 @@
 
 <footer class="footer">
     <div class="container">
-        <p>&copy; 2026 1-Padel. Todos los derechos reservados.</p>
+        <p th:text="#{footer.copyright}">&copy; 2026 1-Padel. Todos los derechos reservados.</p>
     </div>
 </footer>
 <script th:src="@{/js/logger.js}"></script>
+<script th:src="${'/js/i18n/messages-' + #locale.language + '.js'}"></script>
+<script th:src="@{/js/i18n/t.js}"></script>
 <script th:src="@{/js/main.js}"></script>
 <script th:src="@{/js/profile.js}"></script>
 </body>

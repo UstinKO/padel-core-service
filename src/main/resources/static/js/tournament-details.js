@@ -107,19 +107,19 @@ document.addEventListener('DOMContentLoaded', function() {
             withPartnerSection && (withPartnerSection.style.display = '');
             searchSection      && (searchSection.style.display      = 'none');
             addLaterSection    && (addLaterSection.style.display     = 'none');
-            if (submitBtnText) submitBtnText.textContent = 'Registrar pareja';
+            if (submitBtnText) submitBtnText.textContent = t('details.mode.register_pair');
             modeWithPartner && modeWithPartner.classList.add('mode-btn--active');
         } else if (mode === 'SEARCH') {
             withPartnerSection && (withPartnerSection.style.display = 'none');
             searchSection      && (searchSection.style.display      = '');
             addLaterSection    && (addLaterSection.style.display     = 'none');
-            if (submitBtnText) submitBtnText.textContent = 'Buscar compañero';
+            if (submitBtnText) submitBtnText.textContent = t('details.mode.search');
             modeSearch && modeSearch.classList.add('mode-btn--active');
         } else if (mode === 'ADD_LATER') {
             withPartnerSection && (withPartnerSection.style.display = 'none');
             searchSection      && (searchSection.style.display      = 'none');
             addLaterSection    && (addLaterSection.style.display     = '');
-            if (submitBtnText) submitBtnText.textContent = 'Inscribirme sin compañero';
+            if (submitBtnText) submitBtnText.textContent = t('details.mode.later');
             modeLater && modeLater.classList.add('mode-btn--active');
         }
     };
@@ -235,7 +235,7 @@ document.addEventListener('DOMContentLoaded', function() {
         partnerSearchResults.innerHTML = '';
         if (!players.length) {
             partnerSearchResults.innerHTML =
-                '<li style="padding:.6rem 1rem; color:#9ca3af; font-size:.9rem;">No se encontraron jugadores</li>';
+                `<li style="padding:.6rem 1rem; color:#9ca3af; font-size:.9rem;">${t('details.search.no_results')}</li>`;
         } else {
             players.forEach(p => {
                 const li = document.createElement('li');
@@ -359,7 +359,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         // ИЛИ после сохранения контактов
                         const btn = newRegisterBtn;
                         btn.disabled = true;
-                        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+                        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('details.processing')}`;
 
                         try {
                             const response = await fetch(`/players/tournaments/${tournamentId}/register`, {
@@ -370,12 +370,13 @@ document.addEventListener('DOMContentLoaded', function() {
                             const data = await response.json();
 
                             if (data.success) {
-                                showResultModal('success', '¡Registro exitoso!', data.message);
+                                const msg = data.status === 'CONFIRMED' ? t('details.success.confirmed') : t('details.success.waitlist_added');
+                                showResultModal('success', t('details.success.registered'), msg);
                             } else {
                                 btn.disabled = false;
                                 btn.innerHTML = window.tournament?.inscritosActuales >= window.tournament?.cupoMax ?
-                                    '<i class="fas fa-clock"></i> Apuntarme a lista de espera' :
-                                    '<i class="fas fa-check-circle"></i> Inscribirme';
+                                    `<i class="fas fa-clock"></i> ${t('details.btn.waitlist')}` :
+                                    `<i class="fas fa-check-circle"></i> ${t('details.btn.register')}`;
 
                                 const modalBody = document.getElementById('resultModalBody');
                                 const resultModal = document.getElementById('resultModal');
@@ -392,8 +393,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             console.error('Error registering:', error);
                             btn.disabled = false;
                             btn.innerHTML = window.tournament?.inscritosActuales >= window.tournament?.cupoMax ?
-                                '<i class="fas fa-clock"></i> Apuntarme a lista de espera' :
-                                '<i class="fas fa-check-circle"></i> Inscribirme';
+                                `<i class="fas fa-clock"></i> ${t('details.btn.waitlist')}` :
+                                `<i class="fas fa-check-circle"></i> ${t('details.btn.register')}`;
                         }
                     });
                 } else {
@@ -425,7 +426,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const mode = document.getElementById('registrationMode').value;
 
         submitPartnerBtn.disabled = true;
-        submitPartnerBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+        submitPartnerBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('details.processing')}`;
         hideInfoMessage();
 
         try {
@@ -444,11 +445,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (response.ok) {
                     closeModal();
                     loadLookingForPartner(tournamentId);
-                    showResultModal('success', '¡Listo!', data.message);
+                    const soloMsg = mode === 'SEARCH' ? t('details.success.solo_search') : t('details.success.solo_later');
+                    showResultModal('success', t('details.success.ready'), soloMsg);
                 } else {
-                    showInfoMessage(data.message || 'Error al procesar la solicitud', 'error');
+                    showInfoMessage(data.message || t('details.error.process'), 'error');
                     submitPartnerBtn.disabled = false;
-                    submitPartnerBtn.innerHTML = '<i class="fas fa-check-circle"></i> <span id="submitPartnerBtnText">Registrar pareja</span>';
+                    submitPartnerBtn.innerHTML = `<i class="fas fa-check-circle"></i> <span id="submitPartnerBtnText">${t('details.mode.register_pair')}</span>`;
                 }
                 return;
             }
@@ -473,9 +475,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             if (!isValid) {
-                showInfoMessage('Por favor completa todos los campos requeridos correctamente', 'warning');
+                showInfoMessage(t('details.error.required_fields'), 'warning');
                 submitPartnerBtn.disabled = false;
-                submitPartnerBtn.innerHTML = '<i class="fas fa-check-circle"></i> <span id="submitPartnerBtnText">Registrar pareja</span>';
+                submitPartnerBtn.innerHTML = `<i class="fas fa-check-circle"></i> <span id="submitPartnerBtnText">${t('details.mode.register_pair')}</span>`;
                 return;
             }
 
@@ -496,26 +498,26 @@ document.addEventListener('DOMContentLoaded', function() {
             if (response.ok) {
                 closeModal();
                 let message = '';
-                if (data.status === 'PARTNER_INVITED') message = '¡Registro exitoso! Hemos enviado un email a tu compañero para completar su registro.';
-                else if (data.status === 'CONFIRMED')  message = '¡Registro exitoso! Tu compañero ya estaba registrado y ha recibido una notificación.';
-                else if (data.status === 'WAITLIST')   message = 'Has sido añadido a la lista de espera. Te notificaremos si hay algún cambio.';
-                else message = '¡Registro completado exitosamente!';
-                showResultModal('success', '¡Registro exitoso!', message);
+                if (data.status === 'PARTNER_INVITED') message = t('details.success.partner_invited');
+                else if (data.status === 'CONFIRMED')  message = t('details.success.partner_confirmed');
+                else if (data.status === 'WAITLIST')   message = t('details.success.waitlist_pair');
+                else message = t('details.success.pair_complete');
+                showResultModal('success', t('details.success.registered'), message);
             } else {
                 if (data.message && data.message.includes('Ya estás registrado')) {
-                    showResultModal('info', 'Ya estás registrado', data.message);
+                    showResultModal('info', t('details.already_registered'), t('details.already_registered'));
                     closeModal();
                 } else {
-                    showInfoMessage(data.message || 'Error al procesar la solicitud', 'error');
+                    showInfoMessage(data.message || t('details.error.process'), 'error');
                 }
                 submitPartnerBtn.disabled = false;
-                submitPartnerBtn.innerHTML = '<i class="fas fa-check-circle"></i> <span id="submitPartnerBtnText">Registrar pareja</span>';
+                submitPartnerBtn.innerHTML = `<i class="fas fa-check-circle"></i> <span id="submitPartnerBtnText">${t('details.mode.register_pair')}</span>`;
             }
         } catch (error) {
             console.error('Error registering double tournament:', error);
-            showInfoMessage('Error de conexión. Por favor intenta de nuevo.', 'error');
+            showInfoMessage(t('common.error.connection'), 'error');
             submitPartnerBtn.disabled = false;
-            submitPartnerBtn.innerHTML = '<i class="fas fa-check-circle"></i> <span id="submitPartnerBtnText">Registrar pareja</span>';
+            submitPartnerBtn.innerHTML = `<i class="fas fa-check-circle"></i> <span id="submitPartnerBtnText">${t('details.mode.register_pair')}</span>`;
         }
     }
 
@@ -552,10 +554,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         } else if (isOwnCard) {
                             contacts = `<div class="lp-card-contacts">
                                 <button class="lp-no-contact-hint" tabindex="0"
-                                    aria-label="Para que otros jugadores puedan contactarte, completá tu número de teléfono o username de Telegram en tu perfil">
+                                    aria-label="${t('details.no_contact.hint')}">
                                     <i class="fas fa-exclamation-circle"></i>
                                     <span class="lp-no-contact-tooltip">
-                                        Para que otros jugadores puedan contactarte, completá tu número de teléfono o username de Telegram en tu perfil.
+                                        ${t('details.no_contact.hint')}
                                     </span>
                                 </button>
                             </div>`;
@@ -566,7 +568,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                    data-reg-id="${p.registrationId}"
                                    data-player-name="${escapeHtml(p.playerName)}"
                                    onclick="proposePair(${tournamentId}, ${p.registrationId}, '${escapeHtml(p.playerName)}', this)">
-                               <i class="fas fa-handshake"></i> Proponer pareja
+                               <i class="fas fa-handshake"></i> ${t('details.proposal.btn')}
                            </button>`
                         : '';
                     const nivel = p.nivel ? `<span class="lp-card-nivel">${p.nivel}</span>` : '';
@@ -587,7 +589,7 @@ document.addEventListener('DOMContentLoaded', function() {
     window.proposePair = async function(tournamentId, targetRegId, playerName, btn) {
         if (!confirm(`¿Querés proponer pareja a ${playerName}? Se le enviará un email para que acepte.`)) return;
         btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('details.sending')}`;
         try {
             const res = await fetch(`/api/tournaments/double/${tournamentId}/propose-pair/${targetRegId}`, {
                 method: 'POST',
@@ -595,17 +597,17 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             const data = await res.json();
             if (data.success) {
-                btn.innerHTML = '<i class="fas fa-check"></i> Propuesta enviada';
+                btn.innerHTML = `<i class="fas fa-check"></i> ${t('details.proposal.sent')}`;
                 btn.style.background = '#22c55e';
             } else {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-handshake"></i> Proponer pareja';
+                btn.innerHTML = `<i class="fas fa-handshake"></i> ${t('details.proposal.btn')}`;
                 alert(data.message || 'Error al enviar la propuesta');
             }
         } catch (e) {
             btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-handshake"></i> Proponer pareja';
-            alert('Error de conexión');
+            btn.innerHTML = `<i class="fas fa-handshake"></i> ${t('details.proposal.btn')}`;
+            alert(t('common.error.connection'));
         }
     };
 
@@ -634,7 +636,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Устанавливаем название турнира в модалке
         if (cancelModalTournamentName) {
-            cancelModalTournamentName.innerHTML = `¿Estás seguro de cancelar tu inscripción en <strong>"${escapeHtml(tournamentName)}"</strong>?`;
+            cancelModalTournamentName.innerHTML = t('details.cancel.confirm', `<strong>"${escapeHtml(tournamentName)}"</strong>`);
         }
 
         // Очищаем поле причины
@@ -660,7 +662,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Блокируем кнопку и показываем спиннер
             button.disabled = true;
-            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+            button.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('details.processing')}`;
 
             try {
                 const url = `/players/tournaments/${tournamentId}/cancel` +
@@ -674,17 +676,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 const data = await response.json();
 
                 if (data.success) {
-                    showResultModal('success', 'Cancelación exitosa', data.message);
+                    showResultModal('success', t('common.cancel.success'), t('details.success.cancelled'));
                 } else {
                     button.disabled = false;
-                    button.innerHTML = '<i class="fas fa-times-circle"></i> Cancelar inscripción';
+                    button.innerHTML = `<i class="fas fa-times-circle"></i> ${t('details.btn.cancel_registration')}`;
                     showResultModal('error', 'Error', data.message);
                 }
             } catch (error) {
                 console.error('Error cancelling:', error);
                 button.disabled = false;
-                button.innerHTML = '<i class="fas fa-times-circle"></i> Cancelar inscripción';
-                showResultModal('error', 'Error', 'Error al procesar la solicitud');
+                button.innerHTML = `<i class="fas fa-times-circle"></i> ${t('details.btn.cancel_registration')}`;
+                showResultModal('error', 'Error', t('details.error.process'));
             }
         });
 
@@ -787,14 +789,14 @@ if (registerBtn) {
         registerBtn.disabled = true;
         registerBtn.style.opacity = '0.6';
         registerBtn.style.cursor = 'not-allowed';
-        registerBtn.innerHTML = '<i class="fas fa-clock"></i> Registro cerrado';
+        registerBtn.innerHTML = `<i class="fas fa-clock"></i> ${t('details.status.closed')}`;
 
         // Добавляем пояснение рядом
         const parentDiv = registerBtn.parentElement;
         const closedMessage = document.createElement('div');
         closedMessage.className = 'registration-closed';
         closedMessage.style.marginTop = '0.5rem';
-        closedMessage.innerHTML = '<i class="fas fa-calendar-times"></i> <span>Fecha de registro finalizada</span>';
+        closedMessage.innerHTML = `<i class="fas fa-calendar-times"></i> <span>${t('details.status.deadline')}</span>`;
 
         // Удаляем старый, если есть, и добавляем новый
         const oldMessage = parentDiv.querySelector('.registration-closed:not(:last-child)');

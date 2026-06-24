@@ -71,6 +71,7 @@ public class SecurityConfig {
                                 "/terminos",
                                 "/privacidad",
                                 "/cookies",
+                                "/legal/**",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/webjars/**",

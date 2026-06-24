@@ -79,31 +79,31 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (password.length >= 8) {
                     strength += 25;
                 } else {
-                    feedback.push('mínimo 8 caracteres');
+                    feedback.push(t('profile.pwd.req.min8'));
                 }
 
                 if (password.match(/[a-z]+/)) {
                     strength += 25;
                 } else {
-                    feedback.push('minúsculas');
+                    feedback.push(t('profile.pwd.req.lowercase'));
                 }
 
                 if (password.match(/[A-Z]+/)) {
                     strength += 25;
                 } else {
-                    feedback.push('mayúsculas');
+                    feedback.push(t('profile.pwd.req.uppercase'));
                 }
 
                 if (password.match(/[0-9]+/)) {
                     strength += 15;
                 } else {
-                    feedback.push('números');
+                    feedback.push(t('profile.pwd.req.numbers'));
                 }
 
                 if (password.match(/[$@#&!]+/)) {
                     strength += 10;
                 } else {
-                    feedback.push('caracteres especiales');
+                    feedback.push(t('profile.pwd.req.special'));
                 }
 
                 strength = Math.min(strength, 100);
@@ -111,15 +111,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if (strength < 40) {
                     strengthBar.style.background = 'linear-gradient(90deg, #EF4444, #F59E0B)';
-                    strengthText.textContent = 'Contraseña débil: falta ' + feedback.join(', ');
+                    strengthText.textContent = t('profile.pwd.weak', feedback.join(', '));
                     strengthText.style.color = '#EF4444';
                 } else if (strength < 70) {
                     strengthBar.style.background = 'linear-gradient(90deg, #F59E0B, #10B981)';
-                    strengthText.textContent = 'Contraseña media';
+                    strengthText.textContent = t('profile.pwd.medium');
                     strengthText.style.color = '#F59E0B';
                 } else {
                     strengthBar.style.background = 'linear-gradient(90deg, #10B981, #10B981)';
-                    strengthText.textContent = 'Contraseña fuerte';
+                    strengthText.textContent = t('profile.pwd.strong');
                     strengthText.style.color = '#10B981';
                 }
             } else {
@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const avatarEdit = document.getElementById('avatarEdit');
     if (avatarEdit) {
         avatarEdit.addEventListener('click', function() {
-            alert('Función de cambio de foto próximamente disponible');
+            alert(t('profile.avatar.soon'));
         });
     }
 
@@ -160,20 +160,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if (!currentPass) {
                     e.preventDefault();
-                    alert('Debes ingresar tu contraseña actual para cambiarla');
+                    alert(t('profile.error.current_pwd'));
                     return false;
                 }
 
                 if (newPass !== confirmPass) {
                     e.preventDefault();
-                    alert('Las contraseñas nuevas no coinciden');
+                    alert(t('profile.error.pwd_no_match'));
                     return false;
                 }
 
                 const passwordRegex = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!])(?=\S+$).{8,}$/;
                 if (!passwordRegex.test(newPass)) {
                     e.preventDefault();
-                    alert('La nueva contraseña debe contener al menos: 1 mayúscula, 1 minúscula, 1 número y 1 carácter especial');
+                    alert(t('profile.error.pwd_requirements'));
                     return false;
                 }
             }

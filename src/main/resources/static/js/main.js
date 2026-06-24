@@ -78,14 +78,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (password !== confirmPassword) {
                 e.preventDefault();
-                showError('Las contraseñas no coinciden');
+                showError(t('main.error.pwd_no_match'));
                 return false;
             }
 
             const passwordRegex = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!])(?=\S+$).{8,}$/;
             if (!passwordRegex.test(password)) {
                 e.preventDefault();
-                showError('La contraseña debe contener al menos: 1 mayúscula, 1 minúscula, 1 número y 1 carácter especial');
+                showError(t('main.error.pwd_requirements'));
                 return false;
             }
         });

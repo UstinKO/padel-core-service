@@ -6,7 +6,7 @@
         : 'default'}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Política de Privacidad | 1-Padel</title>
+    <title th:text="#{legal.privacidad.page.title}">Política de Privacidad | 1-Padel</title>
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
@@ -31,10 +31,10 @@
             </a>
             <div class="navbar-auth">
                 <a href="/login" class="btn btn-outline-sm">
-                    <i class="fas fa-sign-in-alt"></i> Iniciar sesión
+                    <i class="fas fa-sign-in-alt"></i> <span th:text="#{nav.login}">Iniciar sesión</span>
                 </a>
                 <a href="/players/registro" class="btn btn-primary-sm">
-                    <i class="fas fa-user-plus"></i> Registrarse
+                    <i class="fas fa-user-plus"></i> <span th:text="#{nav.register}">Registrarse</span>
                 </a>
             </div>
         </nav>
@@ -44,119 +44,314 @@
 <main class="legal-main">
     <div class="container">
         <div class="legal-card">
-            <h1 class="legal-title">Política de Privacidad</h1>
-            <p class="legal-date">Última actualización: 15 de marzo de 2026</p>
 
-            <div class="legal-content">
-                <section>
-                    <h2>1. Introducción</h2>
-                    <p>En 1-Padel, respetamos tu privacidad y estamos comprometidos a proteger tus datos personales. Esta política describe cómo recopilamos, usamos y compartimos tu información cuando utilizas nuestra plataforma.</p>
-                </section>
+            <div th:switch="${#locale.language}">
 
-                <section>
-                    <h2>2. Información que Recopilamos</h2>
-                    <p>Podemos recopilar los siguientes tipos de información:</p>
-                    <h3>2.1 Información que nos proporcionas directamente:</h3>
-                    <ul>
-                        <li>Nombre y apellidos</li>
-                        <li>Dirección de email</li>
-                        <li>Número de teléfono</li>
-                        <li>Información de perfil (foto, nivel de juego, etc.)</li>
-                        <li>Preferencias de torneos</li>
-                    </ul>
+                <!-- ── RUSSIAN ── -->
+                <div th:case="'ru'">
+                    <h1 class="legal-title">Политика конфиденциальности</h1>
+                    <p class="legal-date">Последнее обновление: 15 марта 2026</p>
+                    <div class="legal-content">
+                        <section>
+                            <h2>1. Введение</h2>
+                            <p>В 1-Padel мы уважаем вашу конфиденциальность и стремимся защитить ваши персональные данные. Настоящая политика описывает, как мы собираем, используем и передаём вашу информацию при использовании нашей платформы.</p>
+                        </section>
+                        <section>
+                            <h2>2. Информация, которую мы собираем</h2>
+                            <p>Мы можем собирать следующие типы информации:</p>
+                            <h3>2.1 Информация, предоставляемая вами напрямую:</h3>
+                            <ul>
+                                <li>Имя и фамилия</li>
+                                <li>Адрес электронной почты</li>
+                                <li>Номер телефона</li>
+                                <li>Информация профиля (фото, уровень игры и т.д.)</li>
+                                <li>Предпочтения по турнирам</li>
+                            </ul>
+                            <h3>2.2 Информация, собираемая автоматически:</h3>
+                            <ul>
+                                <li>Данные об использовании (посещённые страницы, время сессии)</li>
+                                <li>IP-адрес и тип устройства</li>
+                                <li>Cookie и аналогичные технологии</li>
+                            </ul>
+                            <h3>2.3 Информация от третьих сторон:</h3>
+                            <ul>
+                                <li>При регистрации через Google или Facebook мы получаем базовую информацию вашего профиля (имя, email)</li>
+                            </ul>
+                        </section>
+                        <section>
+                            <h2>3. Как мы используем вашу информацию</h2>
+                            <p>Мы используем вашу информацию для:</p>
+                            <ul>
+                                <li>Управления вашим аккаунтом и регистрациями на турниры</li>
+                                <li>Обработки платежей и управления регистрациями</li>
+                                <li>Отправки важных уведомлений (подтверждения, напоминания)</li>
+                                <li>Улучшения наших услуг и пользовательского опыта</li>
+                                <li>Выполнения правовых обязательств</li>
+                            </ul>
+                        </section>
+                        <section>
+                            <h2>4. Правовые основания для обработки</h2>
+                            <p>Мы обрабатываем ваши данные на основании:</p>
+                            <ul>
+                                <li><strong>Исполнение договора:</strong> для управления вашей регистрацией и участием в турнирах</li>
+                                <li><strong>Согласие:</strong> для маркетинговых коммуникаций (вы можете отозвать согласие в любое время)</li>
+                                <li><strong>Законный интерес:</strong> для улучшения наших услуг и предотвращения мошенничества</li>
+                                <li><strong>Соблюдение требований законодательства:</strong> для выполнения налоговых и правовых обязательств</li>
+                            </ul>
+                        </section>
+                        <section>
+                            <h2>5. Передача вашей информации</h2>
+                            <p>Мы можем передавать вашу информацию:</p>
+                            <ul>
+                                <li><strong>Организаторам турниров:</strong> для управления вашим участием</li>
+                                <li><strong>Платёжным системам:</strong> для обработки транзакций</li>
+                                <li><strong>Поставщикам услуг:</strong> таким как email-сервисы и хостинг</li>
+                                <li><strong>Государственным органам:</strong> когда этого требует закон</li>
+                            </ul>
+                            <p>Мы не продаём вашу личную информацию третьим сторонам.</p>
+                        </section>
+                        <section>
+                            <h2>6. Ваши права</h2>
+                            <p>Вы имеете право:</p>
+                            <ul>
+                                <li>Получить доступ к своим персональным данным</li>
+                                <li>Исправить неточные данные</li>
+                                <li>Запросить удаление своих данных</li>
+                                <li>Возразить против обработки</li>
+                                <li>Запросить переносимость данных</li>
+                                <li>Отозвать своё согласие в любое время</li>
+                            </ul>
+                            <p>Для реализации этих прав обратитесь к нам по адресу <a href="mailto:privacidad@1-padel.com">privacidad@1-padel.com</a></p>
+                        </section>
+                        <section>
+                            <h2>7. Безопасность</h2>
+                            <p>Мы применяем технические и организационные меры для защиты ваших данных от несанкционированного доступа, потери или изменения. Однако ни одна система не является полностью защищённой, поэтому мы не можем гарантировать абсолютную безопасность.</p>
+                        </section>
+                        <section>
+                            <h2>8. Хранение данных</h2>
+                            <p>Мы храним ваши данные, пока ваш аккаунт активен. После закрытия аккаунта мы можем сохранять определённую информацию в течение более длительных периодов в соответствии с требованиями законодательства или для разрешения споров.</p>
+                        </section>
+                        <section>
+                            <h2>9. Cookie</h2>
+                            <p>Мы используем cookie и аналогичные технологии для улучшения вашего опыта. Вы можете управлять настройками cookie в своём браузере. Подробнее — в нашей <a href="/cookies">Политике cookie</a>.</p>
+                        </section>
+                        <section>
+                            <h2>10. Изменения политики</h2>
+                            <p>Мы можем периодически обновлять настоящую политику. О любых существенных изменениях мы уведомим вас через платформу или по электронной почте. Рекомендуем регулярно проверять эту страницу.</p>
+                        </section>
+                        <section>
+                            <h2>11. Контакт</h2>
+                            <p>Если у вас есть вопросы по настоящей Политике конфиденциальности, свяжитесь с нами:</p>
+                            <p>Email: <a href="mailto:privacidad@1-padel.com">privacidad@1-padel.com</a></p>
+                        </section>
+                    </div>
+                </div>
 
-                    <h3>2.2 Información recopilada automáticamente:</h3>
-                    <ul>
-                        <li>Datos de uso (páginas visitadas, tiempo de sesión)</li>
-                        <li>Dirección IP y tipo de dispositivo</li>
-                        <li>Cookies y tecnologías similares</li>
-                    </ul>
+                <!-- ── ENGLISH ── -->
+                <div th:case="'en'">
+                    <h1 class="legal-title">Privacy Policy</h1>
+                    <p class="legal-date">Last updated: March 15, 2026</p>
+                    <div class="legal-content">
+                        <section>
+                            <h2>1. Introduction</h2>
+                            <p>At 1-Padel, we respect your privacy and are committed to protecting your personal data. This policy describes how we collect, use and share your information when you use our platform.</p>
+                        </section>
+                        <section>
+                            <h2>2. Information We Collect</h2>
+                            <p>We may collect the following types of information:</p>
+                            <h3>2.1 Information you provide directly:</h3>
+                            <ul>
+                                <li>First and last name</li>
+                                <li>Email address</li>
+                                <li>Phone number</li>
+                                <li>Profile information (photo, playing level, etc.)</li>
+                                <li>Tournament preferences</li>
+                            </ul>
+                            <h3>2.2 Automatically collected information:</h3>
+                            <ul>
+                                <li>Usage data (pages visited, session time)</li>
+                                <li>IP address and device type</li>
+                                <li>Cookies and similar technologies</li>
+                            </ul>
+                            <h3>2.3 Information from third parties:</h3>
+                            <ul>
+                                <li>If you register using Google or Facebook, we receive basic profile information (name, email)</li>
+                            </ul>
+                        </section>
+                        <section>
+                            <h2>3. How We Use Your Information</h2>
+                            <p>We use your information to:</p>
+                            <ul>
+                                <li>Manage your account and tournament registrations</li>
+                                <li>Process payments and manage registrations</li>
+                                <li>Send important notifications (confirmations, reminders)</li>
+                                <li>Improve our services and user experience</li>
+                                <li>Comply with legal obligations</li>
+                            </ul>
+                        </section>
+                        <section>
+                            <h2>4. Legal Bases for Processing</h2>
+                            <p>We process your data based on:</p>
+                            <ul>
+                                <li><strong>Contract performance:</strong> to manage your registration and tournament participation</li>
+                                <li><strong>Consent:</strong> for marketing communications (you may withdraw at any time)</li>
+                                <li><strong>Legitimate interest:</strong> to improve our services and prevent fraud</li>
+                                <li><strong>Legal compliance:</strong> to meet tax and legal obligations</li>
+                            </ul>
+                        </section>
+                        <section>
+                            <h2>5. Sharing Your Information</h2>
+                            <p>We may share your information with:</p>
+                            <ul>
+                                <li><strong>Tournament organisers:</strong> to manage your participation</li>
+                                <li><strong>Payment processors:</strong> to handle transactions</li>
+                                <li><strong>Service providers:</strong> such as email and hosting services</li>
+                                <li><strong>Legal authorities:</strong> when required by law</li>
+                            </ul>
+                            <p>We do not sell your personal information to third parties.</p>
+                        </section>
+                        <section>
+                            <h2>6. Your Rights</h2>
+                            <p>You have the right to:</p>
+                            <ul>
+                                <li>Access your personal data</li>
+                                <li>Rectify inaccurate data</li>
+                                <li>Request deletion of your data</li>
+                                <li>Object to processing</li>
+                                <li>Request data portability</li>
+                                <li>Withdraw your consent at any time</li>
+                            </ul>
+                            <p>To exercise these rights, contact us at <a href="mailto:privacidad@1-padel.com">privacidad@1-padel.com</a></p>
+                        </section>
+                        <section>
+                            <h2>7. Security</h2>
+                            <p>We implement technical and organisational measures to protect your data against unauthorised access, loss or alteration. However, no system is completely secure, so we cannot guarantee absolute security.</p>
+                        </section>
+                        <section>
+                            <h2>8. Data Retention</h2>
+                            <p>We retain your data while your account is active. After account closure, we may retain certain information for longer periods according to legal requirements or to resolve disputes.</p>
+                        </section>
+                        <section>
+                            <h2>9. Cookies</h2>
+                            <p>We use cookies and similar technologies to improve your experience. You can manage your cookie preferences in your browser settings. See our <a href="/cookies">Cookie Policy</a> for more information.</p>
+                        </section>
+                        <section>
+                            <h2>10. Changes to This Policy</h2>
+                            <p>We may update this policy periodically. We will notify you of any significant changes through the platform or by email. We recommend reviewing this page regularly.</p>
+                        </section>
+                        <section>
+                            <h2>11. Contact</h2>
+                            <p>If you have questions about this Privacy Policy, contact us at:</p>
+                            <p>Email: <a href="mailto:privacidad@1-padel.com">privacidad@1-padel.com</a></p>
+                        </section>
+                    </div>
+                </div>
 
-                    <h3>2.3 Información de terceros:</h3>
-                    <ul>
-                        <li>Si te registras usando Google o Facebook, recibimos información básica de tu perfil (nombre, email)</li>
-                    </ul>
-                </section>
+                <!-- ── SPANISH (default) ── -->
+                <div th:case="*">
+                    <h1 class="legal-title">Política de Privacidad</h1>
+                    <p class="legal-date">Última actualización: 15 de marzo de 2026</p>
+                    <div class="legal-content">
+                        <section>
+                            <h2>1. Introducción</h2>
+                            <p>En 1-Padel, respetamos tu privacidad y estamos comprometidos a proteger tus datos personales. Esta política describe cómo recopilamos, usamos y compartimos tu información cuando utilizas nuestra plataforma.</p>
+                        </section>
+                        <section>
+                            <h2>2. Información que Recopilamos</h2>
+                            <p>Podemos recopilar los siguientes tipos de información:</p>
+                            <h3>2.1 Información que nos proporcionas directamente:</h3>
+                            <ul>
+                                <li>Nombre y apellidos</li>
+                                <li>Dirección de email</li>
+                                <li>Número de teléfono</li>
+                                <li>Información de perfil (foto, nivel de juego, etc.)</li>
+                                <li>Preferencias de torneos</li>
+                            </ul>
+                            <h3>2.2 Información recopilada automáticamente:</h3>
+                            <ul>
+                                <li>Datos de uso (páginas visitadas, tiempo de sesión)</li>
+                                <li>Dirección IP y tipo de dispositivo</li>
+                                <li>Cookies y tecnologías similares</li>
+                            </ul>
+                            <h3>2.3 Información de terceros:</h3>
+                            <ul>
+                                <li>Si te registras usando Google o Facebook, recibimos información básica de tu perfil (nombre, email)</li>
+                            </ul>
+                        </section>
+                        <section>
+                            <h2>3. Cómo Usamos tu Información</h2>
+                            <p>Utilizamos tu información para:</p>
+                            <ul>
+                                <li>Gestionar tu cuenta y registros en torneos</li>
+                                <li>Procesar pagos y gestionar inscripciones</li>
+                                <li>Enviar notificaciones importantes (confirmaciones, recordatorios)</li>
+                                <li>Mejorar nuestros servicios y experiencia de usuario</li>
+                                <li>Cumplir con obligaciones legales</li>
+                            </ul>
+                        </section>
+                        <section>
+                            <h2>4. Bases Legales para el Procesamiento</h2>
+                            <p>Procesamos tus datos basándonos en:</p>
+                            <ul>
+                                <li><strong>Ejecución de un contrato:</strong> Para gestionar tu registro y participación en torneos</li>
+                                <li><strong>Consentimiento:</strong> Para comunicaciones de marketing (puedes retirarlo en cualquier momento)</li>
+                                <li><strong>Interés legítimo:</strong> Para mejorar nuestros servicios y prevenir fraudes</li>
+                                <li><strong>Cumplimiento legal:</strong> Para cumplir con obligaciones fiscales y legales</li>
+                            </ul>
+                        </section>
+                        <section>
+                            <h2>5. Compartir tu Información</h2>
+                            <p>Podemos compartir tu información con:</p>
+                            <ul>
+                                <li><strong>Organizadores de torneos:</strong> Para gestionar tu participación</li>
+                                <li><strong>Procesadores de pago:</strong> Para gestionar transacciones</li>
+                                <li><strong>Proveedores de servicios:</strong> Como servicios de email y hosting</li>
+                                <li><strong>Autoridades legales:</strong> Cuando sea requerido por ley</li>
+                            </ul>
+                            <p>No vendemos tu información personal a terceros.</p>
+                        </section>
+                        <section>
+                            <h2>6. Tus Derechos</h2>
+                            <p>Tienes derecho a:</p>
+                            <ul>
+                                <li>Acceder a tus datos personales</li>
+                                <li>Rectificar datos inexactos</li>
+                                <li>Solicitar la eliminación de tus datos</li>
+                                <li>Oponerte al procesamiento</li>
+                                <li>Solicitar la portabilidad de datos</li>
+                                <li>Retirar tu consentimiento en cualquier momento</li>
+                            </ul>
+                            <p>Para ejercer estos derechos, contáctanos en <a href="mailto:privacidad@1-padel.com">privacidad@1-padel.com</a></p>
+                        </section>
+                        <section>
+                            <h2>7. Seguridad</h2>
+                            <p>Implementamos medidas técnicas y organizativas para proteger tus datos contra acceso no autorizado, pérdida o alteración. Sin embargo, ningún sistema es completamente seguro, por lo que no podemos garantizar la seguridad absoluta.</p>
+                        </section>
+                        <section>
+                            <h2>8. Retención de Datos</h2>
+                            <p>Conservamos tus datos mientras mantengas una cuenta activa. Después del cierre de cuenta, podemos retener cierta información por períodos más largos según requisitos legales o para resolver disputas.</p>
+                        </section>
+                        <section>
+                            <h2>9. Cookies</h2>
+                            <p>Utilizamos cookies y tecnologías similares para mejorar tu experiencia. Puedes gestionar tus preferencias de cookies en la configuración de tu navegador. Consulta nuestra <a href="/cookies">Política de Cookies</a> para más información.</p>
+                        </section>
+                        <section>
+                            <h2>10. Cambios en esta Política</h2>
+                            <p>Podemos actualizar esta política periódicamente. Te notificaremos cualquier cambio significativo a través de la plataforma o por email. Te recomendamos revisar esta página regularmente.</p>
+                        </section>
+                        <section>
+                            <h2>11. Contacto</h2>
+                            <p>Si tienes preguntas sobre esta Política de Privacidad, contáctanos en:</p>
+                            <p>Email: <a href="mailto:privacidad@1-padel.com">privacidad@1-padel.com</a></p>
+                        </section>
+                    </div>
+                </div>
 
-                <section>
-                    <h2>3. Cómo Usamos tu Información</h2>
-                    <p>Utilizamos tu información para:</p>
-                    <ul>
-                        <li>Gestionar tu cuenta y registros en torneos</li>
-                        <li>Procesar pagos y gestionar inscripciones</li>
-                        <li>Enviar notificaciones importantes (confirmaciones, recordatorios)</li>
-                        <li>Mejorar nuestros servicios y experiencia de usuario</li>
-                        <li>Cumplir con obligaciones legales</li>
-                    </ul>
-                </section>
-
-                <section>
-                    <h2>4. Bases Legales para el Procesamiento</h2>
-                    <p>Procesamos tus datos basándonos en:</p>
-                    <ul>
-                        <li><strong>Ejecución de un contrato:</strong> Para gestionar tu registro y participación en torneos</li>
-                        <li><strong>Consentimiento:</strong> Para comunicaciones de marketing (puedes retirarlo en cualquier momento)</li>
-                        <li><strong>Interés legítimo:</strong> Para mejorar nuestros servicios y prevenir fraudes</li>
-                        <li><strong>Cumplimiento legal:</strong> Para cumplir con obligaciones fiscales y legales</li>
-                    </ul>
-                </section>
-
-                <section>
-                    <h2>5. Compartir tu Información</h2>
-                    <p>Podemos compartir tu información con:</p>
-                    <ul>
-                        <li><strong>Organizadores de torneos:</strong> Para gestionar tu participación</li>
-                        <li><strong>Procesadores de pago:</strong> Para gestionar transacciones</li>
-                        <li><strong>Proveedores de servicios:</strong> Como servicios de email y hosting</li>
-                        <li><strong>Autoridades legales:</strong> Cuando sea requerido por ley</li>
-                    </ul>
-                    <p>No vendemos tu información personal a terceros.</p>
-                </section>
-
-                <section>
-                    <h2>6. Tus Derechos</h2>
-                    <p>Tienes derecho a:</p>
-                    <ul>
-                        <li>Acceder a tus datos personales</li>
-                        <li>Rectificar datos inexactos</li>
-                        <li>Solicitar la eliminación de tus datos</li>
-                        <li>Oponerte al procesamiento</li>
-                        <li>Solicitar la portabilidad de datos</li>
-                        <li>Retirar tu consentimiento en cualquier momento</li>
-                    </ul>
-                    <p>Para ejercer estos derechos, contáctanos en <a href="mailto:privacidad@1-padel.com">privacidad@1-padel.com</a></p>
-                </section>
-
-                <section>
-                    <h2>7. Seguridad</h2>
-                    <p>Implementamos medidas técnicas y organizativas para proteger tus datos contra acceso no autorizado, pérdida o alteración. Sin embargo, ningún sistema es completamente seguro, por lo que no podemos garantizar la seguridad absoluta.</p>
-                </section>
-
-                <section>
-                    <h2>8. Retención de Datos</h2>
-                    <p>Conservamos tus datos mientras mantengas una cuenta activa. Después del cierre de cuenta, podemos retener cierta información por períodos más largos según requisitos legales o para resolver disputas.</p>
-                </section>
-
-                <section>
-                    <h2>9. Cookies</h2>
-                    <p>Utilizamos cookies y tecnologías similares para mejorar tu experiencia. Puedes gestionar tus preferencias de cookies en la configuración de tu navegador. Consulta nuestra <a href="/cookies">Política de Cookies</a> para más información.</p>
-                </section>
-
-                <section>
-                    <h2>10. Cambios en esta Política</h2>
-                    <p>Podemos actualizar esta política periódicamente. Te notificaremos cualquier cambio significativo a través de la plataforma o por email. Te recomendamos revisar esta página regularmente.</p>
-                </section>
-
-                <section>
-                    <h2>11. Contacto</h2>
-                    <p>Si tienes preguntas sobre esta Política de Privacidad, contáctanos en:</p>
-                    <p>Email: <a href="mailto:privacidad@1-padel.com">privacidad@1-padel.com</a></p>
-                </section>
             </div>
 
             <div class="legal-footer">
                 <a href="/" class="btn btn-outline">
-                    <i class="fas fa-arrow-left"></i> Volver al inicio
+                    <i class="fas fa-arrow-left"></i> <span th:text="#{legal.btn.back}">Volver al inicio</span>
                 </a>
             </div>
         </div>
@@ -167,11 +362,13 @@
     <div class="container">
         <div class="footer-bottom">
             <div class="footer-copyright">
-                <i class="far fa-copyright"></i> <span th:text="${year}">2026</span> 1-Padel. Todos los derechos reservados.
+                <i class="far fa-copyright"></i> <span th:text="${year}">2026</span> <span th:text="#{legal.footer.rights}">1-Padel. Todos los derechos reservados.</span>
             </div>
         </div>
     </div>
 </footer>
 <script th:src="@{/js/logger.js}"></script>
+<script th:src="${'/js/i18n/messages-' + #locale.language + '.js'}"></script>
+<script th:src="@{/js/i18n/t.js}"></script>
 </body>
 </html>

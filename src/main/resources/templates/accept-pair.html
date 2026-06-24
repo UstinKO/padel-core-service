@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Confirmar pareja - 1-Padel</title>
+    <title th:text="#{accept_pair.title}">Confirmar pareja - 1-Padel</title>
     <link rel="stylesheet" th:href="@{/css/main.css}">
     <style>
         .accept-pair-container {
@@ -58,15 +58,16 @@
 <body>
 <div class="accept-pair-container">
     <div class="accept-pair-icon">🎾</div>
-    <div class="accept-pair-title">Confirmar pareja</div>
-    <p class="accept-pair-subtitle">
+    <div class="accept-pair-title" th:text="#{accept_pair.heading}">Confirmar pareja</div>
+    <p class="accept-pair-subtitle" th:text="#{accept_pair.subtitle}">
         Al aceptar, quedarán confirmados como pareja en el torneo. Esta acción no se puede deshacer.
     </p>
 
-    <button id="acceptBtn" class="btn-accept" th:data-token="${token}">
-        ✅ Aceptar y confirmar pareja
+    <button id="acceptBtn" class="btn-accept" th:data-token="${token}"
+            th:attr="data-txt-confirming=#{accept_pair.confirming},data-txt-confirmed=#{accept_pair.confirmed},data-txt-success=#{accept_pair.success},data-txt-error-default=#{accept_pair.error.default},data-txt-error-connection=#{accept_pair.error.connection}">
+        ✅ <span th:text="#{accept_pair.btn.accept}">Aceptar y confirmar pareja</span>
     </button>
-    <a href="/" class="btn-cancel">Volver al inicio</a>
+    <a href="/" class="btn-cancel" th:text="#{accept_pair.btn.back}">Volver al inicio</a>
 
     <div id="resultMsg"></div>
 </div>
@@ -75,8 +76,14 @@
     document.getElementById('acceptBtn').addEventListener('click', async function () {
         const btn = this;
         const token = btn.getAttribute('data-token');
+        const txtConfirming = btn.getAttribute('data-txt-confirming') || 'Confirmando...';
+        const txtConfirmed  = btn.getAttribute('data-txt-confirmed')  || '✅ Confirmado';
+        const txtSuccess    = btn.getAttribute('data-txt-success')    || '¡Pareja confirmada! Ya están inscriptos juntos en el torneo.';
+        const txtErrDefault = btn.getAttribute('data-txt-error-default') || 'Error al confirmar';
+        const txtErrConn    = btn.getAttribute('data-txt-error-connection') || 'Error de conexión. Intentá de nuevo.';
+        const btnLabel      = btn.querySelector('span') ? btn.querySelector('span').textContent : '✅ Aceptar y confirmar pareja';
         btn.disabled = true;
-        btn.textContent = 'Confirmando...';
+        btn.textContent = txtConfirming;
 
         try {
             const res = await fetch('/api/tournaments/double/accept-pair?token=' + encodeURIComponent(token), {
@@ -87,21 +94,21 @@
             msg.style.display = 'block';
             if (data.success) {
                 msg.className = 'success';
-                msg.textContent = '¡Pareja confirmada! Ya están inscriptos juntos en el torneo.';
-                btn.textContent = '✅ Confirmado';
+                msg.textContent = txtSuccess;
+                btn.textContent = txtConfirmed;
             } else {
                 msg.className = 'error';
-                msg.textContent = data.message || 'Error al confirmar';
+                msg.textContent = data.message || txtErrDefault;
                 btn.disabled = false;
-                btn.textContent = '✅ Aceptar y confirmar pareja';
+                btn.textContent = '✅ ' + btnLabel;
             }
         } catch (e) {
             const msg = document.getElementById('resultMsg');
             msg.style.display = 'block';
             msg.className = 'error';
-            msg.textContent = 'Error de conexión. Intentá de nuevo.';
+            msg.textContent = txtErrConn;
             btn.disabled = false;
-            btn.textContent = '✅ Aceptar y confirmar pareja';
+            btn.textContent = '✅ ' + btnLabel;
         }
     });
 </script>

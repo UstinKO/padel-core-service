@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta name="app-profile" th:content="${@environment.getActiveProfiles().length > 0
         ? @environment.getActiveProfiles()[0]
@@ -7,7 +7,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
     <meta name="description" content="1-Padel - Panel de control">
-    <title>Dashboard | 1-Padel</title>
+    <title th:text="#{dashboard.title}">Dashboard | 1-Padel</title>
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
@@ -65,11 +65,11 @@
                 <ul class="navbar-nav">
                     <li class="nav-item">
                         <a href="/" class="nav-link">
-                            <i class="fas fa-home"></i> Inicio
+                            <i class="fas fa-home"></i> <span th:text="#{nav.home}">Inicio</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="/players/dashboard" class="nav-link active">Dashboard</a>
+                        <a href="/players/dashboard" class="nav-link active" th:text="#{nav.dashboard}">Dashboard</a>
                     </li>
 <!--                    <li class="nav-item">-->
 <!--                        <a href="/torneos" class="nav-link">Torneos</a>-->
@@ -78,7 +78,7 @@
 <!--                        <a href="/ranking" class="nav-link">Ranking</a>-->
 <!--                    </li>-->
                     <li class="nav-item">
-                        <a href="/perfil" class="nav-link">Perfil</a>
+                        <a href="/perfil" class="nav-link" th:text="#{nav.perfil}">Perfil</a>
                     </li>
                 </ul>
 
@@ -90,7 +90,7 @@
                     <form th:action="@{/logout}" method="post" style="display: inline;">
                         <button type="submit" class="btn btn-outline-sm">
                             <i class="fas fa-sign-out-alt"></i>
-                            Salir
+                            <span th:text="#{nav.logout}">Salir</span>
                         </button>
                     </form>
                 </div>
@@ -108,10 +108,10 @@
                     <i class="fas fa-user-circle"></i>
                 </div>
                 <div class="welcome-text">
-                    <h1>¡Bienvenido, <span th:text="${player.nombre}">Juan</span>!</h1>
+                    <h1><span th:text="#{dashboard.welcome.prefix}">¡Bienvenido,</span> <span th:text="${player.nombre}">Juan</span>!</h1>
                     <p>
                         <i class="fas fa-check-circle" style="color: #10b981;"></i>
-                        Email confirmado · Miembro desde <span th:text="${#temporals.format(player.fechaRegistro, 'dd/MM/yyyy')}">01/01/2024</span>
+                        <span th:text="#{dashboard.member_since}">Email confirmado · Miembro desde</span> <span th:text="${#temporals.format(player.fechaRegistro, 'dd/MM/yyyy')}">01/01/2024</span>
                     </p>
                 </div>
             </div>
@@ -166,22 +166,22 @@
                 <div class="dashboard-tabs">
                     <button class="tab-btn active" id="tabMisTorneos" onclick="switchTab('mis')">
                         <i class="fas fa-calendar-check"></i>
-                        Mis torneos
+                        <span th:text="#{dashboard.tabs.my}">Mis torneos</span>
                         <span class="tab-badge" id="countMis">0</span>
                     </button>
                     <button class="tab-btn" id="tabTodos" onclick="switchTab('todos')">
                         <i class="fas fa-list"></i>
-                        Todos
+                        <span th:text="#{dashboard.tabs.all}">Todos</span>
                         <span class="tab-badge" id="countTodos">0</span>
                     </button>
                     <button class="tab-btn" id="tabHistorial" onclick="switchTab('historial')">
                         <i class="fas fa-history"></i>
-                        Historial
+                        <span th:text="#{dashboard.tabs.history}">Historial</span>
                         <span class="tab-badge" id="countHistorial">0</span>
                     </button>
                 </div>
                 <button class="btn-filter" id="toggleFilters">
-                    <i class="fas fa-sliders-h"></i> Filtrar
+                    <i class="fas fa-sliders-h"></i> <span th:text="#{dashboard.btn.filter}">Filtrar</span>
                 </button>
             </div>
 
@@ -190,22 +190,22 @@
                 <div class="filters-grid">
                     <div class="filter-group">
                         <label for="dashboardGenero">
-                            <i class="fas fa-venus-mars"></i> Género
+                            <i class="fas fa-venus-mars"></i> <span th:text="#{dashboard.filter.genero}">Género</span>
                         </label>
                         <select id="dashboardGenero" class="filter-select">
-                            <option value="todos">Todos</option>
-                            <option value="MASCULINO">Masculino</option>
-                            <option value="FEMENINO">Femenino</option>
-                            <option value="MIXTO">Mixto</option>
+                            <option value="todos" th:text="#{filter.genero.all}">Todos</option>
+                            <option value="MASCULINO" th:text="#{filter.genero.m}">Masculino</option>
+                            <option value="FEMENINO" th:text="#{filter.genero.f}">Femenino</option>
+                            <option value="MIXTO" th:text="#{filter.genero.mix}">Mixto</option>
                         </select>
                     </div>
 
                     <div class="filter-group">
                         <label for="dashboardNivel">
-                            <i class="fas fa-chart-line"></i> Nivel
+                            <i class="fas fa-chart-line"></i> <span th:text="#{dashboard.filter.nivel}">Nivel</span>
                         </label>
                         <select id="dashboardNivel" class="filter-select">
-                            <option value="todos">Todos</option>
+                            <option value="todos" th:text="#{filter.nivel.all}">Todos</option>
                             <option value="Principiante">Principiante</option>
                             <option value="C9">C9</option>
                             <option value="C8">C8</option>
@@ -224,23 +224,25 @@
 
                     <div class="filter-group">
                         <label for="dashboardModalidad">
-                            <i class="fas fa-users"></i> Modalidad
+                            <i class="fas fa-users"></i> <span th:text="#{dashboard.filter.modalidad}">Modalidad</span>
                         </label>
                         <select id="dashboardModalidad" class="filter-select">
-                            <option value="todos">Todos</option>
-                            <option value="INDIVIDUAL">Individual</option>
-                            <option value="DOBLES">Cupos</option>
+                            <option value="todos" th:text="#{filter.modalidad.all}">Todos</option>
+                            <option value="INDIVIDUAL" th:text="#{filter.modalidad.individual}">Individual</option>
+                            <option value="DOBLES" th:text="#{filter.modalidad.doubles}">Cupos</option>
                         </select>
                     </div>
 
                     <div class="filter-group">
                         <label for="dashboardTipo">
-                            <i class="fas fa-trophy"></i> Tipo
+                            <i class="fas fa-trophy"></i> <span th:text="#{dashboard.filter.tipo}">Tipo</span>
                         </label>
                         <select id="dashboardTipo" class="filter-select">
-                            <option value="todos">Todos</option>
-                            <option value="KING_OF_COURT">Rey de Cancha</option>
-                            <option value="AMERICANO">Americano</option>
+                            <option value="todos" th:text="#{filter.tipo.all}">Todos</option>
+                            <option value="KING_OF_COURT" th:text="#{filter.tipo.koc}">Rey de Cancha</option>
+                            <option value="AMERICANO" th:text="#{filter.tipo.americano}">Americano</option>
+                            <option value="AMERICANO_TEAMS" th:text="#{filter.tipo.americano_teams}">Americano Equipos</option>
+                            <option value="CANCHA_ABIERTA" th:text="#{filter.tipo.cancha_abierta}">Cancha Abierta</option>
                         </select>
                     </div>
 
@@ -251,7 +253,7 @@
                             <span class="checkbox-custom"></span>
                             <span class="checkbox-text">
                                 <i class="fas fa-calendar-check"></i>
-                                Mis torneos
+                                <span th:text="#{dashboard.filter.my_only}">Mis torneos</span>
                                 <span class="my-tournaments-count" id="myTournamentsCount">(0)</span>
                             </span>
                         </label>
@@ -259,10 +261,10 @@
 
                     <div class="filter-actions">
                         <button class="btn btn-primary" id="applyDashboardFilters">
-                            <i class="fas fa-check"></i> Aplicar
+                            <i class="fas fa-check"></i> <span th:text="#{dashboard.filter.apply}">Aplicar</span>
                         </button>
                         <button class="btn btn-outline" id="clearDashboardFilters">
-                            <i class="fas fa-undo"></i> Limpiar
+                            <i class="fas fa-undo"></i> <span th:text="#{dashboard.filter.clear}">Limpiar</span>
                         </button>
                     </div>
                 </div>
@@ -270,7 +272,7 @@
 
             <!-- Счетчик результатов -->
             <div class="results-counter" id="resultsCounter">
-                Mostrando <span id="visibleCount">0</span> de <span id="totalCount">0</span> torneos
+                <span th:text="#{dashboard.results.showing}">Mostrando</span> <span id="visibleCount">0</span> <span th:text="#{dashboard.results.of}">de</span> <span id="totalCount">0</span> <span th:text="#{dashboard.results.tournaments}">torneos</span>
             </div>
 
             <!-- Grid турниров -->
@@ -279,8 +281,8 @@
             <!-- Сообщение когда нет турниров -->
             <div class="empty-state" id="noTournamentsMessage" style="display: none;">
                 <i class="fas fa-calendar-times"></i>
-                <h3 id="emptyStateTitle">No hay torneos</h3>
-                <p id="emptyStateText">No se encontraron torneos con los filtros seleccionados</p>
+                <h3 id="emptyStateTitle" th:text="#{dashboard.empty.title}">No hay torneos</h3>
+                <p id="emptyStateText" th:text="#{dashboard.empty.desc}">No se encontraron torneos con los filtros seleccionados</p>
                 <div class="tab-empty-hint" id="emptyStateHint" style="display:none;"></div>
             </div>
         </div>
@@ -289,8 +291,7 @@
 
 <footer class="footer">
     <div class="container">
-        <!-- ✅ ИСПРАВЛЕНО: Padel Core → 1-Padel -->
-        <p>&copy; 2026 1-Padel. Todos los derechos reservados.</p>
+        <p th:text="#{footer.copyright}">&copy; 2026 1-Padel. Todos los derechos reservados.</p>
     </div>
 </footer>
 
@@ -301,7 +302,7 @@
             <div class="modal-header">
                 <h5 class="modal-title" id="partnerModalLabel">
                     <i class="fas fa-user-friends"></i>
-                    Registrar pareja para <span id="modalTournamentName"></span>
+                    <span th:text="#{modal.partner.title}">Registrar pareja para</span> <span id="modalTournamentName"></span>
                 </h5>
                 <button type="button" class="modal-close" data-dismiss="modal" aria-label="Cerrar">
                     <i class="fas fa-times"></i>
@@ -315,24 +316,24 @@
 
                     <!-- Шаг 0: выбор режима регистрации -->
                     <div id="registrationModeStep" style="margin-bottom:1.25rem;">
-                        <p style="font-size:.875rem; color:#6b7280; margin-bottom:.75rem; font-weight:500;">
+                        <p style="font-size:.875rem; color:#6b7280; margin-bottom:.75rem; font-weight:500;" th:text="#{modal.partner.mode.question}">
                             ¿Cómo querés registrarte?
                         </p>
                         <div style="display:flex; flex-direction:column; gap:.5rem;">
                             <button type="button" class="mode-btn mode-btn--active" id="modeWithPartner"
                                     onclick="dashSetMode('WITH_PARTNER')">
                                 <i class="fas fa-user-friends"></i>
-                                Tengo compañero
+                                <span th:text="#{modal.partner.mode.with}">Tengo compañero</span>
                             </button>
                             <button type="button" class="mode-btn" id="modeSearch"
                                     onclick="dashSetMode('SEARCH')">
                                 <i class="fas fa-search"></i>
-                                Busco compañero
+                                <span th:text="#{modal.partner.mode.search}">Busco compañero</span>
                             </button>
                             <button type="button" class="mode-btn" id="modeLater"
                                     onclick="dashSetMode('ADD_LATER')">
                                 <i class="fas fa-clock"></i>
-                                Agrego compañero más tarde
+                                <span th:text="#{modal.partner.mode.later}">Agrego compañero más tarde</span>
                             </button>
                         </div>
                     </div>
@@ -340,10 +341,10 @@
                     <!-- Режим WITH_PARTNER -->
                     <div id="withPartnerSection">
                         <div class="form-group">
-                            <label for="partnerSearch"><i class="fas fa-search"></i> Buscar compañero registrado</label>
+                            <label for="partnerSearch"><i class="fas fa-search"></i> <span th:text="#{modal.partner.search.label}">Buscar compañero registrado</span></label>
                             <input type="text" class="form-control" id="partnerSearch"
-                                   placeholder="Nombre, apellido o email..." autocomplete="off">
-                            <small class="form-text text-muted">Escribe al menos 2 caracteres para buscar entre jugadores registrados</small>
+                                   th:placeholder="#{modal.partner.search.placeholder}" autocomplete="off">
+                            <small class="form-text text-muted" th:text="#{modal.partner.search.hint}">Escribe al menos 2 caracteres para buscar entre jugadores registrados</small>
                         </div>
                         <ul id="partnerSearchResults"
                             style="display:none; position:fixed; z-index:2000; background:#fff;
@@ -369,29 +370,29 @@
                         <div id="manualPartnerFields">
                             <div style="display:flex; align-items:center; gap:.75rem; margin:.5rem 0 1rem;">
                                 <hr style="flex:1; margin:0; border-color:#e5e7eb;">
-                                <span style="font-size:.8rem; color:#9ca3af; white-space:nowrap;">o ingresa manualmente</span>
+                                <span style="font-size:.8rem; color:#9ca3af; white-space:nowrap;" th:text="#{modal.partner.manual.divider}">o ingresa manualmente</span>
                                 <hr style="flex:1; margin:0; border-color:#e5e7eb;">
                             </div>
                             <div class="form-group">
-                                <label for="partnerFirstName"><i class="fas fa-user"></i> Nombre del compañero</label>
-                                <input type="text" class="form-control" id="partnerFirstName" placeholder="Ej: Juan" maxlength="50">
-                                <div class="invalid-feedback">Por favor ingresa el nombre</div>
+                                <label for="partnerFirstName"><i class="fas fa-user"></i> <span th:text="#{modal.partner.field.nombre}">Nombre del compañero</span></label>
+                                <input type="text" class="form-control" id="partnerFirstName" th:placeholder="#{modal.partner.field.nombre.placeholder}" maxlength="50">
+                                <div class="invalid-feedback" th:text="#{modal.partner.field.nombre.error}">Por favor ingresa el nombre</div>
                             </div>
                             <div class="form-group">
-                                <label for="partnerLastName"><i class="fas fa-user"></i> Apellido del compañero</label>
-                                <input type="text" class="form-control" id="partnerLastName" placeholder="Ej: Pérez" maxlength="50">
-                                <div class="invalid-feedback">Por favor ingresa el apellido</div>
+                                <label for="partnerLastName"><i class="fas fa-user"></i> <span th:text="#{modal.partner.field.apellido}">Apellido del compañero</span></label>
+                                <input type="text" class="form-control" id="partnerLastName" th:placeholder="#{modal.partner.field.apellido.placeholder}" maxlength="50">
+                                <div class="invalid-feedback" th:text="#{modal.partner.field.apellido.error}">Por favor ingresa el apellido</div>
                             </div>
                             <div class="form-group">
-                                <label for="partnerPhone"><i class="fas fa-phone"></i> Teléfono del compañero</label>
-                                <input type="tel" class="form-control" id="partnerPhone" placeholder="Ej: +54 9 11 1234 5678">
-                                <div class="invalid-feedback">Por favor ingresa un teléfono válido</div>
-                                <small class="form-text text-muted"><i class="fas fa-info-circle"></i> Requerido si tu compañero no está registrado</small>
+                                <label for="partnerPhone"><i class="fas fa-phone"></i> <span th:text="#{modal.partner.field.telefono}">Teléfono del compañero</span></label>
+                                <input type="tel" class="form-control" id="partnerPhone" th:placeholder="#{modal.partner.field.telefono.placeholder}">
+                                <div class="invalid-feedback" th:text="#{modal.partner.field.telefono.error}">Por favor ingresa un teléfono válido</div>
+                                <small class="form-text text-muted"><i class="fas fa-info-circle"></i> <span th:text="#{modal.partner.field.telefono.hint}">Requerido si tu compañero no está registrado</span></small>
                             </div>
                             <div class="form-group">
-                                <label for="partnerEmail"><i class="fas fa-envelope"></i> Email del compañero (opcional)</label>
-                                <input type="email" class="form-control" id="partnerEmail" placeholder="Ej: juan@email.com">
-                                <small class="form-text text-muted">Le enviaremos un email si no está registrado</small>
+                                <label for="partnerEmail"><i class="fas fa-envelope"></i> <span th:text="#{modal.partner.field.email}">Email del compañero (opcional)</span></label>
+                                <input type="email" class="form-control" id="partnerEmail" th:placeholder="#{modal.partner.field.email.placeholder}">
+                                <small class="form-text text-muted" th:text="#{modal.partner.field.email.hint}">Le enviaremos un email si no está registrado</small>
                             </div>
                         </div>
                     </div>
@@ -401,13 +402,12 @@
                         <div style="background:#eff6ff; border-radius:10px; padding:1rem 1.25rem; margin-bottom:1rem;
                                     border-left:4px solid #3b82f6; font-size:.9rem; color:#1e40af; line-height:1.5;">
                             <i class="fas fa-info-circle"></i>
-                            Vas a aparecer en el listado de <strong>«Jugadores que buscan compañero»</strong>
-                            visible en la página del torneo.
+                            <span th:utext="#{modal.partner.search_mode.info}">Vas a aparecer en el listado de <strong>«Jugadores que buscan compañero»</strong> visible en la página del torneo.</span>
                         </div>
                         <div class="form-group" style="margin-bottom:0;">
                             <label style="display:flex; align-items:flex-start; gap:.6rem; cursor:pointer; font-weight:400;">
                                 <input type="checkbox" id="shareContactsCheckbox" style="margin-top:.2rem; flex-shrink:0;">
-                                <span style="font-size:.9rem; color:#374151;">
+                                <span style="font-size:.9rem; color:#374151;" th:text="#{modal.partner.search_mode.consent}">
                                     Autorizo mostrar mi Telegram y teléfono a otros jugadores que buscan compañero
                                 </span>
                             </label>
@@ -419,9 +419,7 @@
                         <div style="background:#fffbeb; border-radius:10px; padding:1rem 1.25rem;
                                     border-left:4px solid #f59e0b; font-size:.9rem; color:#92400e; line-height:1.5;">
                             <i class="fas fa-exclamation-triangle"></i>
-                            <strong>Importante:</strong> los datos del segundo participante deben agregarse
-                            <strong>al menos 24 horas antes del inicio del torneo</strong>.
-                            Si no se completa a tiempo, la inscripción podrá ser eliminada.
+                            <span th:utext="#{modal.partner.later.warning}">...</span>
                         </div>
                     </div>
                 </form>
@@ -434,11 +432,11 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline" data-dismiss="modal">
                     <i class="fas fa-times"></i>
-                    Cancelar
+                    <span th:text="#{modal.partner.btn.cancel}">Cancelar</span>
                 </button>
                 <button type="button" class="btn btn-primary" id="submitPartnerBtn">
                     <i class="fas fa-check-circle"></i>
-                    <span id="submitPartnerBtnText">Registrar pareja</span>
+                    <span id="submitPartnerBtnText" th:text="#{modal.partner.btn.submit}">Registrar pareja</span>
                 </button>
             </div>
         </div>
@@ -453,7 +451,7 @@
                 <!-- Контент будет заполняться динамически -->
             </div>
             <div class="modal-footer justify-content-center">
-                <button type="button" class="btn btn-primary" data-dismiss="modal">Aceptar</button>
+                <button type="button" class="btn btn-primary" data-dismiss="modal" th:text="#{modal.result.btn.accept}">Aceptar</button>
             </div>
         </div>
     </div>
@@ -464,7 +462,7 @@
     <div class="modal-dialog modal-sm" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="confirmModalTitle">Confirmar</h5>
+                <h5 class="modal-title" id="confirmModalTitle" th:text="#{modal.btn.accept}">Confirmar</h5>
                 <button type="button" class="modal-close" data-dismiss="modal" aria-label="Cerrar">
                     <i class="fas fa-times"></i>
                 </button>
@@ -473,8 +471,8 @@
                 <p id="confirmModalMessage"></p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-outline" id="confirmModalCancelBtn">Cancelar</button>
-                <button type="button" class="btn btn-primary" id="confirmModalBtn">Aceptar</button>
+                <button type="button" class="btn btn-outline" id="confirmModalCancelBtn" th:text="#{modal.btn.cancel}">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="confirmModalBtn" th:text="#{modal.btn.accept}">Aceptar</button>
             </div>
         </div>
     </div>
@@ -487,7 +485,7 @@
             <div class="modal-header">
                 <h5 class="modal-title">
                     <i class="fas fa-user-friends"></i>
-                    Cancelar inscripción <span id="doubleCancelTournamentName"></span>
+                    <span th:text="#{modal.double_cancel.title}">Cancelar inscripción</span> <span id="doubleCancelTournamentName"></span>
                 </h5>
                 <button type="button" class="modal-close" data-dismiss="modal" aria-label="Cerrar">
                     <i class="fas fa-times"></i>
@@ -498,43 +496,43 @@
                 <input type="hidden" id="doubleCancelRegistrationId">
 
                 <div class="form-group">
-                    <label>¿Qué deseas hacer?</label>
+                    <label th:text="#{modal.double_cancel.what}">¿Qué deseas hacer?</label>
                     <div class="radio-group">
                         <label class="radio-label">
                             <input type="radio" name="cancelOption" value="full">
                             <span class="radio-custom"></span>
                             <span class="radio-text">
-                                <strong>Cancelar toda la pareja</strong>
-                                <small class="text-muted d-block">Ambos quedan fuera del torneo</small>
+                                <strong th:text="#{modal.double_cancel.full.label}">Cancelar toda la pareja</strong>
+                                <small class="text-muted d-block" th:text="#{modal.double_cancel.full.desc}">Ambos quedan fuera del torneo</small>
                             </span>
                         </label>
                         <label class="radio-label">
                             <input type="radio" name="cancelOption" value="replace" id="cancelOptionReplace">
                             <span class="radio-custom"></span>
                             <span class="radio-text">
-                                <strong>Reemplazarme por otro jugador</strong>
-                                <small class="text-muted d-block">Mi compañero sigue y yo soy reemplazado</small>
+                                <strong th:text="#{modal.double_cancel.replace.label}">Reemplazarme por otro jugador</strong>
+                                <small class="text-muted d-block" th:text="#{modal.double_cancel.replace.desc}">Mi compañero sigue y yo soy reemplazado</small>
                             </span>
                         </label>
                     </div>
                 </div>
 
                 <div class="form-group" id="replacePlayerFields" style="display: none;">
-                    <label>Datos del nuevo jugador</label>
+                    <label th:text="#{modal.double_cancel.replace.fields}">Datos del nuevo jugador</label>
                     <input type="text" class="form-control mb-2" id="replaceFirstName"
-                           placeholder="Nombre">
+                           th:placeholder="#{modal.double_cancel.replace.nombre.placeholder}">
                     <input type="text" class="form-control mb-2" id="replaceLastName"
-                           placeholder="Apellido">
+                           th:placeholder="#{modal.double_cancel.replace.apellido.placeholder}">
                     <input type="tel" class="form-control mb-2" id="replacePhone"
-                           placeholder="Teléfono">
+                           th:placeholder="#{modal.double_cancel.replace.telefono.placeholder}">
                     <input type="email" class="form-control" id="replaceEmail"
-                           placeholder="Email (opcional)">
+                           th:placeholder="#{modal.double_cancel.replace.email.placeholder}">
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-outline" id="doubleCancelCancelBtn">Volver</button>
+                <button type="button" class="btn btn-outline" id="doubleCancelCancelBtn" th:text="#{modal.double_cancel.btn.back}">Volver</button>
                 <button type="button" class="btn btn-danger" id="doubleCancelConfirmBtn">
-                    <i class="fas fa-times-circle"></i> Confirmar
+                    <i class="fas fa-times-circle"></i> <span th:text="#{modal.double_cancel.btn.confirm}">Confirmar</span>
                 </button>
             </div>
         </div>
@@ -543,6 +541,8 @@
 
 <!-- Datos de torneos para JavaScript -->
 <script th:src="@{/js/logger.js}"></script>
+<script th:src="${'/js/i18n/messages-' + #locale.language + '.js'}"></script>
+<script th:src="@{/js/i18n/t.js}"></script>
 <script th:inline="javascript">
     /*<![CDATA[*/
     var tournamentData = /*[(${tournamentsJson})]*/ [];
