@@ -51,6 +51,8 @@ public class RegistroRequestDto {
 
     private Nivel nivelJugador;
 
+    private String preferredLocale = "es";
+
     private String recaptchaToken;
 
     public boolean passwordsMatch() {

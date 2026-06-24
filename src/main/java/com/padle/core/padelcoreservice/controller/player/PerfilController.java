@@ -48,6 +48,7 @@ public class PerfilController {
             // ДОБАВЛЕНО: поле для Telegram ника
             @RequestParam(required = false) String telegramUsername,
             @RequestParam(required = false) String nivelJugador,
+            @RequestParam(required = false) String preferredLocale,
             @RequestParam(required = false) String currentPassword,
             @RequestParam(required = false) String newPassword,
             @RequestParam(required = false) String confirmPassword,
@@ -92,6 +93,14 @@ public class PerfilController {
                     ? Nivel.valueOf(nivelJugador) : null;
             if (nivelParsed != player.getNivelJugador()) {
                 player.setNivelJugador(nivelParsed);
+                actualizado = true;
+            }
+
+            // Idioma preferido
+            if (preferredLocale != null && !preferredLocale.isBlank()
+                    && java.util.Set.of("es", "ru", "en").contains(preferredLocale)
+                    && !preferredLocale.equals(player.getPreferredLocale())) {
+                player.setPreferredLocale(preferredLocale);
                 actualizado = true;
             }
 

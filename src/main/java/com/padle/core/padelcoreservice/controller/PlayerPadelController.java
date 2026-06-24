@@ -25,6 +25,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 @Slf4j
 @Controller
@@ -118,6 +120,9 @@ public class PlayerPadelController {
             return "redirect:/players/registro";
         }
 
+        // Определяем язык браузера и сохраняем в профиль
+        request.setPreferredLocale(resolvePreferredLocale(httpRequest));
+
         try {
             // 1. Регистрируем игрока
             PlayerResponseDto jugadorRegistrado = playerService.registrarJugador(request);
@@ -172,6 +177,12 @@ public class PlayerPadelController {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
+    }
+
+    private String resolvePreferredLocale(HttpServletRequest httpRequest) {
+        Locale locale = httpRequest.getLocale();
+        String lang = locale != null ? locale.getLanguage() : "es";
+        return Set.of("es", "ru", "en").contains(lang) ? lang : "es";
     }
 
     @PostMapping("/api/registro")

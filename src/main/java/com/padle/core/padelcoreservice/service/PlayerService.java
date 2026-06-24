@@ -104,7 +104,8 @@ public class PlayerService {
         try {
             emailService.sendWelcomeEmail(
                     updatedPlayer.getEmail(),
-                    updatedPlayer.getNombre()
+                    updatedPlayer.getNombre(),
+                    updatedPlayer.getLocale()
             );
         } catch (Exception e) {
             log.error("❌ Error al enviar email de bienvenida: {}", e.getMessage());

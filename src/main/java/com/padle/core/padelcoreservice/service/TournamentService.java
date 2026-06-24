@@ -336,7 +336,8 @@ public class TournamentService {
                     dateStr,
                     timeStr,
                     clubName,
-                    waitlistPosition
+                    waitlistPosition,
+                    player.getLocale()
             );
             log.info("Waitlist notification email sent to {}", player.getEmail());
         } catch (Exception e) {
@@ -468,7 +469,8 @@ public class TournamentService {
                     dateStr,
                     timeStr,
                     clubName,
-                    tournamentUrl
+                    tournamentUrl,
+                    player.getLocale()
             );
             log.info("Waitlist auto-confirm email sent to {}", player.getEmail());
         } catch (Exception e) {
@@ -481,7 +483,8 @@ public class TournamentService {
             emailService.sendNoSpotsLeftEmail(
                     player.getEmail(),
                     player.getNombre(),
-                    tournament.getNombre()
+                    tournament.getNombre(),
+                    player.getLocale()
             );
             log.info("No spots left email sent to {}", player.getEmail());
         } catch (Exception e) {
@@ -501,7 +504,8 @@ public class TournamentService {
                     tournament.getNombre(),
                     dateStr,
                     timeStr,
-                    clubName
+                    clubName,
+                    player.getLocale()
             );
             log.info("Tournament confirmation email sent to {}", player.getEmail());
         } catch (Exception e) {

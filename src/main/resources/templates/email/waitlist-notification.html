@@ -123,54 +123,52 @@
 
     <div class="content">
         <div class="greeting">
-            ¡Hola, <span th:text="${playerName}">Jugador</span>!
+            <span th:text="#{email.common.greeting.prefix}">¡Hola </span><span th:text="${playerName}">Jugador</span><span th:text="#{email.common.greeting.suffix}">!</span>
         </div>
 
         <div class="message">
-            Has sido agregado a la <strong>lista de espera</strong> para el torneo:
+            <span th:utext="#{email.waitlist.text}">Has sido agregado a la <strong>lista de espera</strong> para el torneo:</span>
         </div>
 
         <div class="info-box">
             <div class="info-item">
-                <span class="info-label">Torneo:</span>
+                <span class="info-label" th:text="#{email.waitlist.label.tournament}">Torneo:</span>
                 <span class="info-value" th:text="${tournamentName}">Torneo de Pádel</span>
             </div>
             <div class="info-item">
-                <span class="info-label">Club:</span>
+                <span class="info-label" th:text="#{email.waitlist.label.club}">Club:</span>
                 <span class="info-value" th:text="${clubName}">Club de Pádel</span>
             </div>
             <div class="info-item">
-                <span class="info-label">Fecha:</span>
+                <span class="info-label" th:text="#{email.waitlist.label.date}">Fecha:</span>
                 <span class="info-value" th:text="${tournamentDate}">15/04/2026</span>
             </div>
             <div class="info-item">
-                <span class="info-label">Hora:</span>
+                <span class="info-label" th:text="#{email.waitlist.label.time}">Hora:</span>
                 <span class="info-value" th:text="${tournamentTime}">10:00</span>
             </div>
         </div>
 
         <div style="text-align: center; margin: 30px 0;">
             <div class="position-badge">
-                Posición <span th:text="${waitlistPosition}">1</span>
+                <span th:text="#{email.waitlist.position(${waitlistPosition})}">Posición 1</span>
             </div>
-            <p style="color: #4a5568; margin-top: 10px;">en la lista de espera</p>
+            <p style="color: #4a5568; margin-top: 10px;" th:text="#{email.waitlist.position_sub}">en la lista de espera</p>
         </div>
 
         <div class="note">
-            <i>📋 ¿Cómo funciona?</i>
+            <i th:text="#{email.waitlist.how_it_works}">📋 ¿Cómo funciona?</i>
             <p style="margin-top: 10px;">
-                Si algún jugador confirmado cancela su participación, se liberará un lugar
-                y te llegará una invitación automática por email. Tendrás 5 minutos para confirmar
-                tu participación antes de que pase al siguiente en la lista.
+                <span th:text="#{email.waitlist.explanation}">Si algún jugador confirmado cancela, se liberará un lugar.</span>
             </p>
             <p style="margin-top: 10px; margin-bottom: 0;">
-                Puedes ver tu posición actual en cualquier momento desde tu <a th:href="${baseUrl + '/players/dashboard'}" style="color: #FF6B35;">dashboard</a>.
+                <span th:text="#{email.waitlist.dashboard_text}">Puedes ver tu posición actual en cualquier momento desde tu</span> <a th:href="${baseUrl + '/players/dashboard'}" style="color: #FF6B35;" th:text="#{email.waitlist.dashboard_link}">dashboard</a>.
             </p>
         </div>
 
         <div class="message" style="margin-top: 25px; text-align: center;">
             <p style="color: #718096;">
-                ¡No te desanimes! Muchos jugadores suelen liberar lugares cerca de la fecha del torneo.
+                <span th:text="#{email.waitlist.encouragement}">¡No te desanimes!</span>
             </p>
         </div>
     </div>
@@ -179,9 +177,7 @@
         <div style="margin-bottom: 10px;">
             <span>🏓 1-Padel - La plataforma de torneos de pádel</span>
         </div>
-        <div>
-            © <span th:text="${year}">2026</span> 1-Padel. Todos los derechos reservados.
-        </div>
+        <div th:text="#{email.footer.rights(${year})}">© 2026 1-Padel. Todos los derechos reservados.</div>
         <div style="margin-top: 10px;">
             <a th:href="${baseUrl}">1-padel.com</a> |
             <a href="mailto:soporte@1-padel.com">soporte@1-padel.com</a>

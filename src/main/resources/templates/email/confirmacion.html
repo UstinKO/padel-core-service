@@ -130,25 +130,24 @@
         <!-- ⚠️ IMPORTANTE: Usamos URL absoluta para email -->
         <img src="https://1-padel.com/images/1.svg" alt="1-Padel Logo" class="logo" width="60" height="60">
         <h2>1-PADEL</h2>
-        <p>Tu plataforma de torneos</p>
+        <p th:text="#{email.common.tagline}">Tu plataforma de torneos</p>
     </div>
 
     <div class="content">
         <div class="greeting">
-            ¡Hola <strong th:text="${nombre}">Jugador</strong>!
+            <span th:text="#{email.common.greeting.prefix}">¡Hola </span><strong th:text="${nombre}">Jugador</strong><span th:text="#{email.common.greeting.suffix}">!</span>
         </div>
 
         <div class="message-box">
             <p style="color: #2D2D2D; line-height: 1.6; margin: 0;">
-                Gracias por registrarte en <strong>1-Padel</strong>. Para completar tu registro
-                y empezar a disfrutar de todos los torneos, confirma tu dirección de email:
+                <span th:text="#{email.confirmacion.text}">Gracias por registrarte en 1-Padel. Para completar tu registro, confirma tu dirección de email:</span>
             </p>
         </div>
 
         <!-- Botón principal -->
         <div style="text-align: center;">
             <a th:href="${confirmUrl}" class="button">
-                ✅ Confirmar mi cuenta
+                <span th:text="#{email.confirmacion.btn}">✅ Confirmar mi cuenta</span>
             </a>
         </div>
 
@@ -156,22 +155,22 @@
         <div class="info-box">
             <p style="margin: 0 0 8px 0;">
                 <span style="font-size: 20px;">⏰</span>
-                <strong>¿Qué pasa después?</strong>
+                <strong th:text="#{email.confirmacion.what_next.title}">¿Qué pasa después?</strong>
             </p>
             <p style="margin: 0; font-size: 14px; color: #4B5563;">
-                Una vez confirmado tu email, podrás inscribirte en torneos, ver tu ranking y conectar con otros jugadores.
+                <span th:text="#{email.confirmacion.what_next.text}">Una vez confirmado tu email, podrás inscribirte en torneos, ver tu ranking y conectar con otros jugadores.</span>
             </p>
         </div>
 
         <!-- Válido por 24 horas -->
         <div class="note" style="text-align: center; margin: 16px 0;">
             <span style="font-size: 20px;">⌛</span>
-            <span>Este enlace es válido por <strong>24 horas</strong></span>
+            <span th:text="#{email.confirmacion.expiry}">Este enlace es válido por 24 horas</span>
         </div>
 
         <!-- Si el botón no funciona -->
         <div class="note" style="text-align: center; background: #FFF4F0; padding: 12px; border-radius: 8px;">
-            <p style="margin: 0 0 4px 0; font-size: 13px;">¿El botón no funciona?</p>
+            <p style="margin: 0 0 4px 0; font-size: 13px;" th:text="#{email.confirmacion.btn_fallback}">¿El botón no funciona?</p>
             <p style="margin: 0; font-size: 12px; word-break: break-all;">
                 <a th:href="${confirmUrl}" style="color: #FF6B35;" th:text="${confirmUrl}">https://1-padel.com/confirmar?token=...</a>
             </p>
@@ -180,21 +179,19 @@
 
     <!-- Footer -->
     <div class="footer">
-        <p style="margin: 0 0 8px 0;">
-            © <span th:text="${year}">2026</span> 1-Padel. Todos los derechos reservados.
-        </p>
+        <p style="margin: 0 0 8px 0;" th:text="#{email.footer.rights(${year})}">© 2026 1-Padel. Todos los derechos reservados.</p>
 
         <!-- Enlaces legales -->
         <div class="footer-links">
-            <a th:href="${terminosUrl}">Términos</a>
-            <a th:href="${privacidadUrl}">Privacidad</a>
-            <a th:href="${contactoUrl}">Contacto</a>
+            <a th:href="${terminosUrl}" th:text="#{email.footer.terms}">Términos</a>
+            <a th:href="${privacidadUrl}" th:text="#{email.footer.privacy}">Privacidad</a>
+            <a th:href="${contactoUrl}" th:text="#{email.footer.contact}">Contacto</a>
         </div>
 
         <!-- Desuscripción -->
         <div class="unsubscribe">
-            ¿No quieres recibir más correos?
-            <a th:href="${unsubscribeUrl}">Cancela tu suscripción</a>
+            <span th:text="#{email.footer.unsubscribe.text}">¿No quieres recibir más correos?</span>
+            <a th:href="${unsubscribeUrl}" th:text="#{email.footer.unsubscribe.link}">Cancela tu suscripción</a>
         </div>
     </div>
 </div>

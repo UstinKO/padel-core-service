@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -22,7 +23,7 @@ public class TournamentNotificationService {
 
     public void sendPartnerInvitationEmail(String partnerEmail, String partnerName,
                                            String mainPlayerName, TournamentDto tournament,
-                                           RegistrationStatus status, int position) {
+                                           RegistrationStatus status, int position, Locale locale) {
         try {
             String dateStr = tournament.getFechaInicio().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
             String timeStr = tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm"));
@@ -35,7 +36,8 @@ public class TournamentNotificationService {
                     tournament.getNombre(),
                     dateStr,
                     timeStr,
-                    clubName
+                    clubName,
+                    locale
             );
 
             log.info("Tournament confirmation email sent to partner: {}", partnerEmail);
@@ -46,7 +48,7 @@ public class TournamentNotificationService {
     }
 
     public void sendNewPartnerInvitation(String email, String partnerName, String mainPlayerName,
-                                         TournamentDto tournament, String completionUrl, int expiryHours) {
+                                         TournamentDto tournament, String completionUrl, int expiryHours, Locale locale) {
         try {
             // Получаем данные о турнире
             String dateStr = tournament.getFechaInicio().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
@@ -62,7 +64,8 @@ public class TournamentNotificationService {
                     timeStr,        // ← передаем время
                     clubName,       // ← передаем название клуба
                     completionUrl,
-                    expiryHours
+                    expiryHours,
+                    locale
             );
         } catch (Exception e) {
             log.error("Error sending new partner invitation email: {}", e.getMessage());
@@ -71,7 +74,7 @@ public class TournamentNotificationService {
 
     public void sendConfirmationToMainPlayer(String mainPlayerEmail, String mainPlayerName,
                                              String partnerFullName, TournamentDto tournament,
-                                             RegistrationStatus status, int position) {
+                                             RegistrationStatus status, int position, Locale locale) {
         try {
             String dateStr = tournament.getFechaInicio().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
             String timeStr = tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm"));
@@ -84,7 +87,8 @@ public class TournamentNotificationService {
                     tournament.getNombre(),
                     dateStr,
                     timeStr,
-                    clubName
+                    clubName,
+                    locale
             );
 
             log.info("Tournament confirmation email sent to main player: {}", mainPlayerEmail);
@@ -96,7 +100,7 @@ public class TournamentNotificationService {
 
     public void sendMainPlayerNotification(String mainPlayerEmail, String mainPlayerName,
                                            String partnerName, TournamentDto tournament,
-                                           RegistrationStatus status, int position) {
+                                           RegistrationStatus status, int position, Locale locale) {
         try {
             String dateStr = tournament.getFechaInicio().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
             String timeStr = tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm"));
@@ -109,7 +113,8 @@ public class TournamentNotificationService {
                         tournament.getNombre(),
                         dateStr,
                         timeStr,
-                        clubName
+                        clubName,
+                        locale
                 );
             } else {
                 emailService.sendWaitlistNotificationEmail(
@@ -119,7 +124,8 @@ public class TournamentNotificationService {
                         dateStr,
                         timeStr,
                         clubName,
-                        position
+                        position,
+                        locale
                 );
             }
         } catch (Exception e) {
@@ -141,7 +147,8 @@ public class TournamentNotificationService {
                     tournament.getNombre(),
                     dateStr,
                     timeStr,
-                    clubName
+                    clubName,
+                    mainReg.getPlayer().getLocale()
             );
 
             // Партнеру
@@ -151,7 +158,8 @@ public class TournamentNotificationService {
                     tournament.getNombre(),
                     dateStr,
                     timeStr,
-                    clubName
+                    clubName,
+                    partnerReg.getPlayer().getLocale()
             );
 
             log.info("Pair confirmation emails sent to both players");

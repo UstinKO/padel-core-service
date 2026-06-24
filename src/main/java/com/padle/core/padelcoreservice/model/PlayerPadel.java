@@ -12,7 +12,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Locale;
 import java.util.Objects;
+import java.util.Set;
 
 @Entity
 @Table(name = "player_padel_db")
@@ -88,6 +90,9 @@ public class PlayerPadel implements UserDetails {
     @Column(name = "nivel_jugador", length = 20)
     private Nivel nivelJugador;
 
+    @Column(name = "preferred_locale", length = 5)
+    private String preferredLocale = "es";
+
     // ========== Реализация UserDetails ==========
 
     @Override
@@ -159,5 +164,12 @@ public class PlayerPadel implements UserDetails {
         boolean hasPhone = telefono != null && !telefono.isBlank();
         boolean hasTelegram = telegramUsername != null && !telegramUsername.isBlank();
         return hasPhone || hasTelegram;
+    }
+
+    public Locale getLocale() {
+        String lang = preferredLocale != null ? preferredLocale : "es";
+        return Set.of("es", "ru", "en").contains(lang)
+                ? Locale.forLanguageTag(lang)
+                : Locale.forLanguageTag("es");
     }
 }

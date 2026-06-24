@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.39-add-preferred-locale
+      author: i18n
+      changes:
+        - addColumn:
+            tableName: player_padel_db
+            columns:
+              - column:
+                  name: preferred_locale
+                  type: VARCHAR(5)
+                  defaultValue: 'es'
+                  constraints:
+                    nullable: false

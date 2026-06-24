@@ -61,7 +61,7 @@ public class PasswordResetService {
         tokenRepository.save(resetToken);
 
         String resetUrl = baseUrl + "/recuperar-password?token=" + token;
-        emailService.sendPasswordResetEmail(player.getEmail(), player.getNombre(), resetUrl);
+        emailService.sendPasswordResetEmail(player.getEmail(), player.getNombre(), resetUrl, player.getLocale());
 
         log.info("Email de restablecimiento enviado a: {}", email);
         return true;

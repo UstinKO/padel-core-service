@@ -158,20 +158,18 @@
     <div class="header">
         <img src="https://1-padel.com/images/1.svg" alt="1-Padel Logo" class="logo" width="60" height="60">
         <h2>1-PADEL</h2>
-        <p>¡Buenas noticias!</p>
+        <p th:text="#{email.vacancy.header_sub}">¡Buenas noticias!</p>
     </div>
 
     <div class="content">
         <div class="greeting">
-            Hola, <strong th:text="${playerName}">Jugador</strong>!
+            <span th:text="#{email.common.greeting.prefix}">¡Hola </span><strong th:text="${playerName}">Jugador</strong><span th:text="#{email.common.greeting.suffix}">!</span>
         </div>
 
         <div class="success-box">
-            <h3>🎉 ¡Estás en el torneo!</h3>
+            <h3 th:text="#{email.vacancy.title}">🎉 ¡Estás en el torneo!</h3>
             <p>
-                Has sido confirmado automáticamente en el torneo
-                <span class="tournament-name" th:text="${tournamentName}">Torneo Ejemplo</span>.
-                Ya eres parte del torneo principal. ¡Te esperamos!
+                <span th:text="#{email.vacancy.text(${tournamentName})}">Has sido confirmado automáticamente en el torneo. Ya eres parte del torneo principal.</span>
             </p>
         </div>
 
@@ -183,38 +181,36 @@
 
         <div style="text-align: center;">
             <a th:href="${tournamentUrl}" class="button">
-                🏆 Ver el torneo
+                <span th:text="#{email.vacancy.btn}">🏆 Ver el torneo</span>
             </a>
         </div>
 
         <div style="background: #F8F9FA; padding: 15px; border-radius: 8px; text-align: center; margin-top: 25px;">
             <p style="margin: 0; color: #2D2D2D;">
                 <span style="font-size: 20px;">🎾</span>
-                ¡Nos vemos en la cancha!
+                <span th:text="#{email.vacancy.see_you}">🎾 ¡Nos vemos en la cancha!</span>
             </p>
         </div>
     </div>
 
     <div class="footer">
-        <p style="margin: 0 0 8px 0;">
-            © <span th:text="${year}">2026</span> 1-Padel. Todos los derechos reservados.
-        </p>
+        <p style="margin: 0 0 8px 0;" th:text="#{email.footer.rights(${year})}">© 2026 1-Padel. Todos los derechos reservados.</p>
 
         <div class="social-links">
-            <a href="https://instagram.com/1padel" class="social-link">📱 Instagram</a>
-            <a href="https://facebook.com/1padel" class="social-link">📘 Facebook</a>
-            <a href="https://twitter.com/1padel" class="social-link">🐦 Twitter</a>
+            <a href="https://instagram.com/1padel" class="social-link" th:text="#{email.footer.social.instagram}">Instagram</a>
+            <a href="https://facebook.com/1padel" class="social-link" th:text="#{email.footer.social.facebook}">Facebook</a>
+            <a href="https://twitter.com/1padel" class="social-link" th:text="#{email.footer.social.twitter}">Twitter</a>
         </div>
 
         <div class="footer-links">
-            <a th:href="${terminosUrl}">Términos</a>
-            <a th:href="${privacidadUrl}">Privacidad</a>
-            <a th:href="${contactoUrl}">Contacto</a>
+            <a th:href="${terminosUrl}" th:text="#{email.footer.terms}">Términos</a>
+            <a th:href="${privacidadUrl}" th:text="#{email.footer.privacy}">Privacidad</a>
+            <a th:href="${contactoUrl}" th:text="#{email.footer.contact}">Contacto</a>
         </div>
 
         <div class="unsubscribe">
-            ¿No quieres recibir más correos?
-            <a th:href="${unsubscribeUrl}">Cancela tu suscripción</a>
+            <span th:text="#{email.footer.unsubscribe.text}">¿No quieres recibir más correos?</span>
+            <a th:href="${unsubscribeUrl}" th:text="#{email.footer.unsubscribe.link}">Cancela tu suscripción</a>
         </div>
     </div>
 </div>

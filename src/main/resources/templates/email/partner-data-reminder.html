@@ -24,34 +24,26 @@
 <div style="padding: 20px 0;">
 <div class="container">
     <div class="header">
-        <h1>⏰ Recordatorio: agrega tu compañero</h1>
+        <h1 th:text="#{email.partner_reminder.header}">⏰ Recordatorio: agrega tu compañero</h1>
     </div>
     <div class="content">
-        <div class="greeting" th:text="'¡Hola, ' + ${playerName} + '!'">¡Hola, Juan!</div>
-        <div class="message">
-            Te inscribiste en el torneo <strong th:text="${tournamentName}">Torneo Dobles</strong>
-            sin compañero. El torneo es en <strong>menos de 48 horas</strong>.
-        </div>
+        <div class="greeting" th:text="#{email.common.greeting(${playerName})}">¡Hola, Juan!</div>
+        <div class="message" th:text="#{email.partner_reminder.text(${tournamentName})}">Te inscribiste en el torneo sin compañero. El torneo es en menos de 48 horas.</div>
 
-        <div class="warning-box">
-            ⚠️ <strong>Importante:</strong> tenés hasta <strong th:text="${deadline}">las 10:00 del 14 de julio</strong>
-            para agregar los datos de tu compañero. Si no lo hacés, tu inscripción podría ser eliminada.
-        </div>
+        <div class="warning-box" th:text="#{email.partner_reminder.warning(${deadline})}">⚠️ Importante: tenés hasta la fecha límite para agregar los datos de tu compañero.</div>
 
         <div class="info-box">
-            <div class="label">Torneo</div>
+            <div class="label" th:text="#{email.partner_reminder.label.tournament}">Torneo</div>
             <div class="value" th:text="${tournamentName}">Torneo Dobles Masculino</div>
-            <div class="label">Fecha</div>
+            <div class="label" th:text="#{email.partner_reminder.label.date}">Fecha</div>
             <div class="value" th:text="${tournamentDate}">15 de julio de 2025, 10:00</div>
-            <div class="label">Club</div>
+            <div class="label" th:text="#{email.partner_reminder.label.club}">Club</div>
             <div class="value" th:text="${clubName}">Club Padel Central</div>
         </div>
 
-        <p class="message">
-            Podés agregar a tu compañero desde la página del torneo o desde tu panel de jugador.
-        </p>
+        <p class="message" th:text="#{email.partner_reminder.add_text}">Podés agregar a tu compañero desde la página del torneo.</p>
 
-        <a th:href="${tournamentUrl}" class="btn">Agregar compañero ahora</a>
+        <a th:href="${tournamentUrl}" class="btn" th:text="#{email.partner_reminder.btn}">Agregar compañero ahora</a>
     </div>
     <div class="footer">
         1-Padel &copy; <span th:text="${year}">2025</span>

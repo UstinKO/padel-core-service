@@ -69,6 +69,7 @@ public class OAuth2UserManagementService {
                     .provider(provider)
                     .oauth2User(true)
                     .passwordChangedAt(LocalDateTime.now())
+                    .preferredLocale("es")
                     .build();
 
             return playerRepository.save(newPlayer);
