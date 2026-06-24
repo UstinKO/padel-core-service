@@ -151,35 +151,35 @@
         <div class="success-icon">🎾</div>
 
         <div class="greeting">
-            ¡Hola, <span th:text="${playerName}">Jugador</span>!
+            <span th:text="#{email.common.greeting.prefix}">¡Hola </span><span th:text="${playerName}">Jugador</span><span th:text="#{email.common.greeting.suffix}">!</span>
         </div>
 
         <div class="message">
-            <strong>¡Tu inscripción ha sido confirmada!</strong> Ya estás en la lista de participantes del torneo.
+            <strong th:text="#{email.tournament_confirm.confirmed}">¡Tu inscripción ha sido confirmada!</strong>
         </div>
 
         <div class="info-box">
-            <h3 style="margin-top: 0; color: #2d3748;">Detalles del torneo</h3>
+            <h3 style="margin-top: 0; color: #2d3748;" th:text="#{email.tournament_confirm.details_title}">Detalles del torneo</h3>
             <div class="info-item">
-                <span class="info-label">Torneo:</span>
+                <span class="info-label" th:text="#{email.tournament_confirm.label.tournament}">Torneo:</span>
                 <span class="info-value" th:text="${tournamentName}">Torneo de Pádel</span>
             </div>
             <div class="info-item">
-                <span class="info-label">Club:</span>
+                <span class="info-label" th:text="#{email.tournament_confirm.label.club}">Club:</span>
                 <span class="info-value" th:text="${clubName}">Club de Pádel</span>
             </div>
             <div class="info-item">
-                <span class="info-label">Fecha:</span>
+                <span class="info-label" th:text="#{email.tournament_confirm.label.date}">Fecha:</span>
                 <span class="info-value" th:text="${tournamentDate}">15/04/2026</span>
             </div>
             <div class="info-item">
-                <span class="info-label">Hora:</span>
+                <span class="info-label" th:text="#{email.tournament_confirm.label.time}">Hora:</span>
                 <span class="info-value" th:text="${tournamentTime}">10:00</span>
             </div>
         </div>
 
         <div class="calendar-info">
-            <i>📅</i> <strong>Agenda en tu calendario:</strong> No olvides reservar la fecha. Te esperamos puntual.
+            <span th:text="#{email.tournament_confirm.calendar_note}">📅 Agenda en tu calendario.</span>
         </div>
 
         <!-- QR Placeholder (para futuro) -->
@@ -192,14 +192,13 @@
 
         <div style="text-align: center;">
             <a th:href="${baseUrl + '/players/dashboard'}" class="button">
-                Ver mis torneos
+                <span th:text="#{email.tournament_confirm.btn}">Ver mis torneos</span>
             </a>
         </div>
 
         <div style="margin-top: 30px; padding: 15px; background-color: #fef9e7; border-radius: 8px; border-left: 4px solid #fbbf24;">
             <p style="margin: 0; color: #92400e; font-size: 14px;">
-                <i>📌 Recuerda:</i> Puedes cancelar tu participación hasta 24 horas antes del inicio del torneo
-                desde tu dashboard. Si no puedes asistir, cancela a tiempo para que otro jugador pueda ocupar tu lugar.
+                <span th:text="#{email.tournament_confirm.reminder}">📌 Recuerda: Puedes cancelar tu participación hasta 24 horas antes.</span>
             </p>
         </div>
     </div>
@@ -208,9 +207,7 @@
         <div style="margin-bottom: 10px;">
             <span>🏓 1-Padel - La plataforma de torneos de pádel</span>
         </div>
-        <div>
-            © <span th:text="${year}">2026</span> 1-Padel. Todos los derechos reservados.
-        </div>
+        <div th:text="#{email.footer.rights(${year})}">© 2026 1-Padel. Todos los derechos reservados.</div>
         <div style="margin-top: 10px;">
             <a th:href="${baseUrl}">1-padel.com</a> |
             <a href="mailto:soporte@1-padel.com">soporte@1-padel.com</a>

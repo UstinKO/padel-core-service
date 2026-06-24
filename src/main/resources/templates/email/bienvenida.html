@@ -165,63 +165,63 @@
     </div>
 
     <!-- Título -->
-    <h1>🎾 ¡Bienvenido a 1-Padel!</h1>
+    <h1 th:text="#{email.bienvenida.title}">🎾 ¡Bienvenido a 1-Padel!</h1>
 
     <!-- Saludo personalizado -->
-    <p class="greeting" th:text="'Hola ' + ${nombre} + '!'">Hola Jugador!</p>
+    <p class="greeting" th:text="#{email.common.greeting(${nombre})}">Hola Jugador!</p>
 
     <!-- Mensaje de confirmación -->
-    <p style="text-align: center; color: #2D2D2D;">Tu email ha sido confirmado exitosamente. Ya puedes disfrutar de todas las funcionalidades:</p>
+    <p style="text-align: center; color: #2D2D2D;" th:text="#{email.bienvenida.confirmed}">Tu email ha sido confirmado exitosamente.</p>
 
     <!-- Lista de características -->
     <div class="feature-list">
         <div class="feature-item">
             <span class="feature-icon">✅</span>
-            <span class="feature-text">Inscribirte en torneos de tu nivel</span>
+            <span class="feature-text" th:text="#{email.bienvenida.feature.tournaments}">Inscribirte en torneos de tu nivel</span>
         </div>
         <div class="feature-item">
             <span class="feature-icon">✅</span>
-            <span class="feature-text">Ver tu ranking y progreso</span>
+            <span class="feature-text" th:text="#{email.bienvenida.feature.ranking}">Ver tu ranking y progreso</span>
         </div>
         <div class="feature-item">
             <span class="feature-icon">✅</span>
-            <span class="feature-text">Conectar con otros jugadores</span>
+            <span class="feature-text" th:text="#{email.bienvenida.feature.connect}">Conectar con otros jugadores</span>
         </div>
         <div class="feature-item">
             <span class="feature-icon">✅</span>
-            <span class="feature-text">Participar en el King of Court</span>
+            <span class="feature-text" th:text="#{email.bienvenida.feature.koc}">Participar en el King of Court</span>
         </div>
     </div>
 
     <!-- Botón CTA -->
     <div style="text-align: center;">
         <a th:href="${dashboardUrl}" class="button">
-            🚀 Ir al Dashboard
+            <span th:text="#{email.bienvenida.btn}">🚀 Ir al Dashboard</span>
         </a>
     </div>
 
     <!-- Footer -->
     <div class="footer">
-        <p>© <span th:text="${year}">2026</span> 1-Padel. Todos los derechos reservados.</p>
+        <p th:text="#{email.footer.rights(${year})}">© 2026 1-Padel. Todos los derechos reservados.</p>
 
         <!-- Redes sociales -->
         <div class="social-links">
-            <a href="https://instagram.com/1padel" class="social-link">Instagram</a>
-            <a href="https://facebook.com/1padel" class="social-link">Facebook</a>
-            <a href="https://twitter.com/1padel" class="social-link">Twitter</a>
+            <a href="https://instagram.com/1padel" class="social-link" th:text="#{email.footer.social.instagram}">Instagram</a>
+            <a href="https://facebook.com/1padel" class="social-link" th:text="#{email.footer.social.facebook}">Facebook</a>
+            <a href="https://twitter.com/1padel" class="social-link" th:text="#{email.footer.social.twitter}">Twitter</a>
         </div>
 
         <!-- Enlaces legales -->
         <div class="footer-links">
-            <a th:href="${terminosUrl}">Términos</a>
-            <a th:href="${privacidadUrl}">Privacidad</a>
-            <a th:href="${contactoUrl}">Contacto</a>
+            <a th:href="${terminosUrl}" th:text="#{email.footer.terms}">Términos</a>
+            <a th:href="${privacidadUrl}" th:text="#{email.footer.privacy}">Privacidad</a>
+            <a th:href="${contactoUrl}" th:text="#{email.footer.contact}">Contacto</a>
         </div>
 
         <!-- Enlace para desuscribirse (requerido por ley) -->
         <div class="unsubscribe">
-            ¿No quieres recibir más correos?
-            <a th:href="${unsubscribeUrl}">Cancela tu suscripción</a>
+            <span th:text="#{email.footer.unsubscribe.text}">¿No quieres recibir más correos?</span>
+            <a th:href="${unsubscribeUrl}" th:text="#{email.footer.unsubscribe.link}">Cancela tu suscripción</a>
         </div>
     </div>
 </div>

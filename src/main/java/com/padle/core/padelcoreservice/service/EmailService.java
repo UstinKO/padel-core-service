@@ -13,6 +13,8 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
+import java.util.Locale;
+import org.springframework.context.MessageSource;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 
 @Slf4j
@@ -23,6 +25,7 @@ public class EmailService {
     private final JavaMailSender mailSender;
     private final SpringTemplateEngine templateEngine;
     private final EmailMetricsService emailMetricsService;  // ← ДОБАВЛЕНО
+    private final MessageSource messageSource;
 
     @Value("${app.email.from:noreply@padelcore.com}")
     private String fromEmail;
@@ -48,7 +51,8 @@ public class EmailService {
     public void sendConfirmationEmail(
             @MetricTag("recipient") String to,
             @MetricTag("playerName") String nombre,
-            String codigo) {
+            String codigo,
+            Locale locale) {
 
         // Регистрируем попытку
         emailMetricsService.recordEmailAttempt("CONFIRMATION");
@@ -63,7 +67,7 @@ public class EmailService {
         try {
             log.info("📧 Отправка письма подтверждения на: {}", to);
 
-            Context context = new Context();
+            Context context = new Context(locale);
             context.setVariable("nombre", nombre);
             context.setVariable("confirmUrl",
                     String.format("%s/players/confirmar-email?codigo=%s", baseUrl, codigo));
@@ -71,7 +75,7 @@ public class EmailService {
 
             String htmlContent = templateEngine.process("email/confirmacion", context);
 
-            sendHtmlEmail(to, "Confirma tu email en Padel Core", htmlContent);
+            sendHtmlEmail(to, messageSource.getMessage("email.confirmacion.subject", null, locale), htmlContent);
 
             emailMetricsService.recordEmailSent("CONFIRMATION");  // ← ДОБАВЛЕНО
             log.info("✅ Письмо подтверждения успешно отправлено на: {}", to);
@@ -101,7 +105,8 @@ public class EmailService {
             String tournamentName,
             String tournamentDate,
             String tournamentTime,
-            String clubName) {
+            String clubName,
+            Locale locale) {
 
         emailMetricsService.recordEmailAttempt("PARTNER_INVITATION");
 
@@ -114,7 +119,7 @@ public class EmailService {
         try {
             log.info("📧 Enviando invitación a compañero (registrado) a: {}", to);
 
-            Context context = new Context();
+            Context context = new Context(locale);
             context.setVariable("partnerName", partnerName);
             context.setVariable("mainPlayerName", mainPlayerName);
             context.setVariable("tournamentName", tournamentName);
@@ -126,7 +131,7 @@ public class EmailService {
 
             String htmlContent = templateEngine.process("email/partner-invitation", context);
 
-            sendHtmlEmail(to, "🎾 Te han inscrito en un torneo de dobles - 1-Padel", htmlContent);
+            sendHtmlEmail(to, messageSource.getMessage("email.partner_invitation.subject", new Object[]{tournamentName}, locale), htmlContent);
 
             emailMetricsService.recordEmailSent("PARTNER_INVITATION");
             log.info("✅ Invitación a compañero enviada a: {}", to);
@@ -157,7 +162,8 @@ public class EmailService {
             String tournamentTime,
             String clubName,
             String completionUrl,
-            int expiryHours) {
+            int expiryHours,
+            Locale locale) {
 
         emailMetricsService.recordEmailAttempt("NEW_PARTNER_INVITATION");
 
@@ -170,7 +176,7 @@ public class EmailService {
         try {
             log.info("📧 Enviando invitación a nuevo compañero a: {}", to);
 
-            Context context = new Context();
+            Context context = new Context(locale);
             context.setVariable("partnerName", partnerName);
             context.setVariable("mainPlayerName", mainPlayerName);
             context.setVariable("tournamentName", tournamentName);
@@ -184,7 +190,7 @@ public class EmailService {
 
             String htmlContent = templateEngine.process("email/new-partner-invitation", context);
 
-            sendHtmlEmail(to, "🎾 Te han invitado a jugar un torneo de dobles - 1-Padel", htmlContent);
+            sendHtmlEmail(to, messageSource.getMessage("email.partner_invitation.subject", new Object[]{tournamentName}, locale), htmlContent);
 
             emailMetricsService.recordEmailSent("NEW_PARTNER_INVITATION");
             log.info("✅ Invitación a nuevo compañero enviada a: {}", to);
@@ -213,7 +219,8 @@ public class EmailService {
             String tournamentName,
             String tournamentDate,
             String tournamentTime,
-            String clubName) {
+            String clubName,
+            Locale locale) {
 
         emailMetricsService.recordEmailAttempt("PAIR_CONFIRMATION");
 
@@ -226,7 +233,7 @@ public class EmailService {
         try {
             log.info("📧 Enviando confirmación de pareja a: {}", to);
 
-            Context context = new Context();
+            Context context = new Context(locale);
             context.setVariable("playerName", playerName);
             context.setVariable("partnerName", partnerName);
             context.setVariable("tournamentName", tournamentName);
@@ -238,7 +245,7 @@ public class EmailService {
 
             String htmlContent = templateEngine.process("email/pair-confirmation", context);
 
-            sendHtmlEmail(to, "🎾 ¡Pareja confirmada para el torneo! - 1-Padel", htmlContent);
+            sendHtmlEmail(to, messageSource.getMessage("email.tournament_confirm.subject", new Object[]{tournamentName}, locale), htmlContent);
 
             emailMetricsService.recordEmailSent("PAIR_CONFIRMATION");
             log.info("✅ Confirmación de pareja enviada a: {}", to);
@@ -254,7 +261,7 @@ public class EmailService {
      */
     @Timed(name = "email.send.time", tags = {"service=email", "type=welcome"})
     @TrackErrors(name = "email.send.errors", tags = {"service=email", "type=welcome"})
-    public void sendWelcomeEmail(@MetricTag("recipient") String to, @MetricTag("playerName") String nombre) {
+    public void sendWelcomeEmail(@MetricTag("recipient") String to, @MetricTag("playerName") String nombre, Locale locale) {
         emailMetricsService.recordEmailAttempt("WELCOME");
 
         if (emailMetricsService.isDailyLimitReached(dailyEmailLimit)) {
@@ -266,7 +273,7 @@ public class EmailService {
         try {
             log.info("📧 Отправка приветственного письма на: {}", to);
 
-            Context context = new Context();
+            Context context = new Context(locale);
             context.setVariable("nombre", nombre);
             context.setVariable("baseUrl", baseUrl);
             context.setVariable("dashboardUrl", baseUrl + "/players/dashboard");
@@ -274,7 +281,7 @@ public class EmailService {
 
             String htmlContent = templateEngine.process("email/bienvenida", context);
 
-            sendHtmlEmail(to, "¡Bienvenido a Padel Core!", htmlContent);
+            sendHtmlEmail(to, messageSource.getMessage("email.bienvenida.subject", null, locale), htmlContent);
 
             emailMetricsService.recordEmailSent("WELCOME");
             log.info("✅ Приветственное письмо успешно отправлено на: {}", to);
@@ -297,7 +304,8 @@ public class EmailService {
             String tournamentDate,
             String tournamentTime,
             String clubName,
-            String tournamentUrl) {
+            String tournamentUrl,
+            Locale locale) {
 
         emailMetricsService.recordEmailAttempt("WAITLIST_AUTO_CONFIRM");
 
@@ -310,7 +318,7 @@ public class EmailService {
         try {
             log.info("📧 Отправка уведомления об авто-подтверждении из листа ожидания на: {}", to);
 
-            Context context = new Context();
+            Context context = new Context(locale);
             context.setVariable("playerName", playerName);
             context.setVariable("tournamentName", tournamentName);
             context.setVariable("tournamentDate", tournamentDate);
@@ -321,7 +329,7 @@ public class EmailService {
 
             String htmlContent = templateEngine.process("email/vacancy-invitation", context);
 
-            sendHtmlEmail(to, "🎾 ¡Fuiste confirmado en el torneo!", htmlContent);
+            sendHtmlEmail(to, messageSource.getMessage("email.vacancy.subject", new Object[]{tournamentName}, locale), htmlContent);
 
             emailMetricsService.recordEmailSent("WAITLIST_AUTO_CONFIRM");
             log.info("✅ Уведомление об авто-подтверждении отправлено на: {}", to);
@@ -340,7 +348,8 @@ public class EmailService {
     public void sendNoSpotsLeftEmail(
             @MetricTag("recipient") String to,
             @MetricTag("playerName") String playerName,
-            String tournamentName) {
+            String tournamentName,
+            Locale locale) {
 
         emailMetricsService.recordEmailAttempt("NO_SPOTS_LEFT");
 
@@ -353,14 +362,14 @@ public class EmailService {
         try {
             log.info("📧 Отправка письма о занятых местах на: {}", to);
 
-            Context context = new Context();
+            Context context = new Context(locale);
             context.setVariable("playerName", playerName);
             context.setVariable("tournamentName", tournamentName);
             context.setVariable("year", java.time.Year.now().getValue());
 
             String htmlContent = templateEngine.process("email/no-spots-left", context);
 
-            sendHtmlEmail(to, "😢 No hay más lugares disponibles", htmlContent);
+            sendHtmlEmail(to, messageSource.getMessage("email.no_spots.subject", new Object[]{tournamentName}, locale), htmlContent);
 
             emailMetricsService.recordEmailSent("NO_SPOTS_LEFT");
             log.info("✅ Письмо о занятых местах отправлено на: {}", to);
@@ -382,7 +391,8 @@ public class EmailService {
             String tournamentName,
             String tournamentDate,
             String tournamentTime,
-            String clubName) {
+            String clubName,
+            Locale locale) {
 
         emailMetricsService.recordEmailAttempt("REGISTRATION_CONFIRMATION");
 
@@ -395,7 +405,7 @@ public class EmailService {
         try {
             log.info("📧 Отправка подтверждения регистрации на: {}", to);
 
-            Context context = new Context();
+            Context context = new Context(locale);
             context.setVariable("playerName", playerName);
             context.setVariable("tournamentName", tournamentName);
             context.setVariable("tournamentDate", tournamentDate);
@@ -405,7 +415,7 @@ public class EmailService {
 
             String htmlContent = templateEngine.process("email/tournament-confirmation", context);
 
-            sendHtmlEmail(to, "✅ Tu participación ha sido confirmada", htmlContent);
+            sendHtmlEmail(to, messageSource.getMessage("email.tournament_confirm.subject", new Object[]{tournamentName}, locale), htmlContent);
 
             emailMetricsService.recordEmailSent("REGISTRATION_CONFIRMATION");
             log.info("✅ Подтверждение регистрации отправлено на: {}", to);
@@ -424,7 +434,8 @@ public class EmailService {
     public void sendPasswordResetEmail(
             @MetricTag("recipient") String to,
             @MetricTag("playerName") String nombre,
-            String resetUrl) {
+            String resetUrl,
+            Locale locale) {
 
         emailMetricsService.recordEmailAttempt("PASSWORD_RESET");
 
@@ -437,14 +448,14 @@ public class EmailService {
         try {
             log.info("📧 Enviando email de recuperación de contraseña a: {}", to);
 
-            Context context = new Context();
+            Context context = new Context(locale);
             context.setVariable("nombre", nombre);
             context.setVariable("resetUrl", resetUrl);
             context.setVariable("year", java.time.Year.now().getValue());
 
             String htmlContent = templateEngine.process("email/recuperar-password", context);
 
-            sendHtmlEmail(to, "🔐 Recuperación de contraseña - 1-Padel", htmlContent);
+            sendHtmlEmail(to, messageSource.getMessage("email.password_reset.subject", null, locale), htmlContent);
 
             emailMetricsService.recordEmailSent("PASSWORD_RESET");
             log.info("✅ Email de recuperación enviado a: {}", to);
@@ -467,7 +478,8 @@ public class EmailService {
             String tournamentDate,
             String tournamentTime,
             String clubName,
-            int waitlistPosition) {
+            int waitlistPosition,
+            Locale locale) {
 
         emailMetricsService.recordEmailAttempt("WAITLIST_NOTIFICATION");
 
@@ -480,7 +492,7 @@ public class EmailService {
         try {
             log.info("📧 Отправка уведомления о добавлении в лист ожидания на: {}", to);
 
-            Context context = new Context();
+            Context context = new Context(locale);
             context.setVariable("playerName", playerName);
             context.setVariable("tournamentName", tournamentName);
             context.setVariable("tournamentDate", tournamentDate);
@@ -492,7 +504,7 @@ public class EmailService {
 
             String htmlContent = templateEngine.process("email/waitlist-notification", context);
 
-            sendHtmlEmail(to, "📋 Has sido agregado a la lista de espera", htmlContent);
+            sendHtmlEmail(to, messageSource.getMessage("email.waitlist.subject", new Object[]{tournamentName}, locale), htmlContent);
 
             emailMetricsService.recordEmailSent("WAITLIST_NOTIFICATION");
             log.info("✅ Уведомление о листе ожидания отправлено на: {}", to);
@@ -514,7 +526,8 @@ public class EmailService {
             String tournamentName,
             String tournamentDate,
             String tournamentTime,
-            String clubName) {
+            String clubName,
+            Locale locale) {
 
         emailMetricsService.recordEmailAttempt("TOURNAMENT_CONFIRMATION");
 
@@ -527,7 +540,7 @@ public class EmailService {
         try {
             log.info("📧 Enviando confirmación de inscripción a torneo a: {}", to);
 
-            Context context = new Context();
+            Context context = new Context(locale);
             context.setVariable("playerName", playerName);
             context.setVariable("tournamentName", tournamentName);
             context.setVariable("tournamentDate", tournamentDate);
@@ -538,7 +551,7 @@ public class EmailService {
 
             String htmlContent = templateEngine.process("email/tournament-confirmation", context);
 
-            sendHtmlEmail(to, "🎾 ¡Inscripción confirmada! - 1-Padel", htmlContent);
+            sendHtmlEmail(to, messageSource.getMessage("email.tournament_confirm.subject", new Object[]{tournamentName}, locale), htmlContent);
 
             emailMetricsService.recordEmailSent("TOURNAMENT_CONFIRMATION");
             log.info("✅ Confirmación de torneo enviada a: {}", to);
@@ -601,7 +614,8 @@ public class EmailService {
             @MetricTag("playerName") String playerName,
             String tournamentName,
             String tournamentDate,
-            String tournamentUrl) {
+            String tournamentUrl,
+            Locale locale) {
 
         emailMetricsService.recordEmailAttempt("LOOKING_FOR_PARTNER_NOTIFICATION");
         if (emailMetricsService.isDailyLimitReached(dailyEmailLimit)) {
@@ -610,7 +624,7 @@ public class EmailService {
             return;
         }
         try {
-            Context context = new Context();
+            Context context = new Context(locale);
             context.setVariable("playerName", playerName);
             context.setVariable("tournamentName", tournamentName);
             context.setVariable("tournamentDate", tournamentDate);
@@ -618,7 +632,7 @@ public class EmailService {
             context.setVariable("year", java.time.Year.now().getValue());
 
             String html = templateEngine.process("email/looking-for-partner-notification", context);
-            String subject = "🔍 Nuevo jugador busca compañero — " + tournamentName;
+            String subject = messageSource.getMessage("email.looking_partner.subject", new Object[]{tournamentName}, locale);
             sendHtmlEmail(to, subject, html);
 
             emailMetricsService.recordEmailSent("LOOKING_FOR_PARTNER_NOTIFICATION");
@@ -638,7 +652,8 @@ public class EmailService {
             String tournamentDate,
             String clubName,
             String deadline,
-            String tournamentUrl) {
+            String tournamentUrl,
+            Locale locale) {
 
         emailMetricsService.recordEmailAttempt("PARTNER_DATA_REMINDER");
         if (emailMetricsService.isDailyLimitReached(dailyEmailLimit)) {
@@ -647,7 +662,7 @@ public class EmailService {
             return;
         }
         try {
-            Context context = new Context();
+            Context context = new Context(locale);
             context.setVariable("playerName", playerName);
             context.setVariable("tournamentName", tournamentName);
             context.setVariable("tournamentDate", tournamentDate);
@@ -657,7 +672,7 @@ public class EmailService {
             context.setVariable("year", java.time.Year.now().getValue());
 
             String html = templateEngine.process("email/partner-data-reminder", context);
-            String subject = "⏰ Recordatorio: agrega tu compañero — " + tournamentName;
+            String subject = messageSource.getMessage("email.partner_reminder.subject", new Object[]{tournamentName}, locale);
             sendHtmlEmail(to, subject, html);
 
             emailMetricsService.recordEmailSent("PARTNER_DATA_REMINDER");
@@ -674,7 +689,8 @@ public class EmailService {
             String proposerName,
             String tournamentName,
             String tournamentDate,
-            String acceptUrl) {
+            String acceptUrl,
+            Locale locale) {
 
         emailMetricsService.recordEmailAttempt("PAIR_PROPOSAL");
         if (emailMetricsService.isDailyLimitReached(dailyEmailLimit)) {
@@ -683,7 +699,7 @@ public class EmailService {
             return;
         }
         try {
-            Context context = new Context();
+            Context context = new Context(locale);
             context.setVariable("targetPlayerName", targetPlayerName);
             context.setVariable("proposerName", proposerName);
             context.setVariable("tournamentName", tournamentName);
@@ -691,7 +707,7 @@ public class EmailService {
             context.setVariable("acceptUrl", acceptUrl);
 
             String html = templateEngine.process("email/pair-proposal", context);
-            String subject = "🎾 " + proposerName + " quiere ser tu compañero — " + tournamentName;
+            String subject = messageSource.getMessage("email.pair_proposal.subject", new Object[]{proposerName, tournamentName}, locale);
             sendHtmlEmail(to, subject, html);
 
             emailMetricsService.recordEmailSent("PAIR_PROPOSAL");

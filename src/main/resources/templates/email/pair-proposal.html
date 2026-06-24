@@ -26,30 +26,27 @@
 <body>
 <div class="container">
     <div class="header">
-        <h1>¡Propuesta de pareja!</h1>
-        <p>Alguien quiere jugar contigo en 1-Padel</p>
+        <h1 th:text="#{email.pair_proposal.header}">¡Propuesta de pareja!</h1>
+        <p th:text="#{email.pair_proposal.header_sub}">Alguien quiere jugar contigo en 1-Padel</p>
     </div>
     <div class="content">
-        <p>Hola <strong th:text="${targetPlayerName}">Jugador</strong>,</p>
-        <p>
-            <strong th:text="${proposerName}">Otro jugador</strong> te propone formar pareja
-            para el siguiente torneo:
-        </p>
+        <p><span th:text="#{email.common.greeting.prefix}">¡Hola </span><strong th:text="${targetPlayerName}">Jugador</strong><span th:text="#{email.common.greeting.suffix}">!</span></p>
+        <p><span th:text="#{email.pair_proposal.text(${proposerName})}">... te propone formar pareja para el siguiente torneo:</span></p>
         <div class="highlight-box">
             <p><strong th:text="${tournamentName}">Torneo</strong></p>
             <p style="margin-top:6px; color:#666;" th:text="${tournamentDate}"></p>
         </div>
-        <p>Si aceptas, ambos quedarán <strong>confirmados</strong> como pareja en el torneo.</p>
+        <p th:text="#{email.pair_proposal.confirmed_text}">Si aceptas, ambos quedarán confirmados como pareja en el torneo.</p>
         <div style="text-align:center; margin: 28px 0 16px;">
-            <a th:href="${acceptUrl}" class="btn">✅ Aceptar propuesta</a>
+            <a th:href="${acceptUrl}" class="btn" th:text="#{email.pair_proposal.btn}">✅ Aceptar propuesta</a>
         </div>
         <p class="expiry-note" style="text-align:center;">
-            Esta propuesta expira en 48 horas. Si no aceptas, tu inscripción individual continúa activa.
+            <span th:text="#{email.pair_proposal.expiry}">Esta propuesta expira en 48 horas.</span>
         </p>
     </div>
     <div class="footer">
         <p>1-Padel &mdash; Gestión de Torneos</p>
-        <p>Si no esperabas este mensaje, ignóralo.</p>
+        <p th:text="#{email.pair_proposal.ignore}">Si no esperabas este mensaje, ignóralo.</p>
     </div>
 </div>
 </body>

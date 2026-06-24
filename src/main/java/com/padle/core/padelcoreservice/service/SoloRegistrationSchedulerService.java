@@ -63,7 +63,8 @@ public class SoloRegistrationSchedulerService {
                         reg.getTournament().getFechaInicio().format(DATE_FMT),
                         clubName,
                         deadline,
-                        tournamentUrl
+                        tournamentUrl,
+                        reg.getPlayer().getLocale()
                 );
 
                 reg.setSoloReminderSent(true);

@@ -21,29 +21,23 @@
 <div style="padding: 20px 0;">
 <div class="container">
     <div class="header">
-        <h1>🔍 Nuevo jugador busca compañero</h1>
+        <h1 th:text="#{email.looking_partner.header}">🔍 Nuevo jugador busca compañero</h1>
     </div>
     <div class="content">
-        <div class="greeting" th:text="'¡Hola, ' + ${playerName} + '!'">¡Hola, Juan!</div>
-        <div class="message">
-            Hay un nuevo jugador que también está buscando compañero para el torneo
-            <strong th:text="${tournamentName}">Torneo Dobles</strong>
-            (<span th:text="${tournamentDate}">15 de julio</span>).
-        </div>
+        <div class="greeting" th:text="#{email.common.greeting(${playerName})}">¡Hola, Juan!</div>
+        <div class="message" th:text="#{email.looking_partner.text(${tournamentName}, ${tournamentDate})}">Hay un nuevo jugador que también está buscando compañero.</div>
 
         <div class="info-box">
-            <i>📋</i> Ingresá a la página del torneo para ver el listado de jugadores que buscan pareja y coordinar con ellos directamente.
+            <span th:text="#{email.looking_partner.info}">📋 Ingresá a la página del torneo.</span>
         </div>
 
-        <p class="message">
-            Una vez que acuerden, pueden inscribirse juntos como pareja desde la misma página.
-        </p>
+        <p class="message" th:text="#{email.looking_partner.text2}">Una vez que acuerden, pueden inscribirse juntos como pareja desde la misma página.</p>
 
-        <a th:href="${tournamentUrl}" class="btn">Ver página del torneo</a>
+        <a th:href="${tournamentUrl}" class="btn" th:text="#{email.looking_partner.btn}">Ver página del torneo</a>
     </div>
     <div class="footer">
         1-Padel &copy; <span th:text="${year}">2025</span> &mdash;
-        Recibís este email porque estás buscando compañero para este torneo.
+        <span th:text="#{email.looking_partner.footer}">Recibís este email porque estás buscando compañero para este torneo.</span>
     </div>
 </div>
 </div>

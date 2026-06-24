@@ -26,57 +26,54 @@
 <body>
 <div class="container">
     <div class="header">
-        <h1>🎾 ¡Has sido inscrito en un torneo!</h1>
+        <h1 th:text="#{email.partner_invitation.header}">🎾 ¡Has sido inscrito en un torneo!</h1>
     </div>
     <div class="content">
-        <div class="status-badge">
-            ✓ INSCRIPCIÓN CONFIRMADA
-        </div>
+        <div class="status-badge" th:text="#{email.partner_invitation.badge}">✓ INSCRIPCIÓN CONFIRMADA</div>
 
-        <p>Hola <strong th:text="${partnerName}">Juan</strong>,</p>
-        <p><strong th:text="${mainPlayerName}">Carlos Pérez</strong> te ha inscrito como su compañero en el siguiente torneo. <span style="color: #28a745; font-weight: 600;">¡Ya estás registrado!</span></p>
+        <p><span th:text="#{email.common.greeting.prefix}">¡Hola </span><strong th:text="${partnerName}">Juan</strong><span th:text="#{email.common.greeting.suffix}">!</span></p>
+        <p><strong th:text="${mainPlayerName}">Carlos Pérez</strong> <span th:text="#{email.partner_invitation.greeting_text(${mainPlayerName})}">te ha inscrito como su compañero en el siguiente torneo. ¡Ya estás registrado!</span></p>
 
         <div class="info-box">
             <h2 th:text="${tournamentName}">Torneo Open de Madrid</h2>
             <p><strong>📅 Fecha:</strong> <span th:text="${tournamentDate}">15/03/2026</span></p>
             <p><strong>⏰ Hora:</strong> <span th:text="${tournamentTime}">10:00</span></p>
             <p><strong>📍 Club:</strong> <span th:text="${clubName}">Padel Indoor Madrid</span></p>
-            <p><strong>🎯 Posición:</strong> <span th:text="${position}">15</span> <span th:if="${isWaitlist}" style="color: #dc3545;">(lista de espera)</span></p>
+            <p><strong>🎯 Posición:</strong> <span th:text="${position}">15</span> <span th:if="${isWaitlist}" style="color: #dc3545;" th:text="#{email.partner_invitation.waitlist}">(lista de espera)</span></p>
         </div>
 
         <div class="note">
-            <strong>✅ Tu participación está confirmada en el torneo.</strong>
-            <p style="margin: 10px 0 0 0;">Solo necesitas registrarte en nuestra plataforma para recibir notificaciones y acceder a toda la información.</p>
+            <strong th:text="#{email.partner_invitation.confirmed_text}">✅ Tu participación está confirmada en el torneo.</strong>
+            <p style="margin: 10px 0 0 0;" th:text="#{email.partner_invitation.register_hint}">Solo necesitas registrarte en nuestra plataforma.</p>
         </div>
 
-        <p style="margin-top: 25px;"><strong>📝 Regístrate en 1-Padel para:</strong></p>
+        <p style="margin-top: 25px;"><strong th:text="#{email.partner_invitation.register_title}">📝 Regístrate en 1-Padel para:</strong></p>
         <ul style="color: #495057; line-height: 1.6;">
-            <li>Recibir recordatorios del torneo</li>
-            <li>Ver el bracket y resultados en tiempo real</li>
-            <li>Recibir notificaciones de cambios</li>
-            <li>Acceder a tu historial de torneos</li>
+            <li th:text="#{email.partner_invitation.feature.reminders}">Recibir recordatorios del torneo</li>
+            <li th:text="#{email.partner_invitation.feature.bracket}">Ver el bracket y resultados en tiempo real</li>
+            <li th:text="#{email.partner_invitation.feature.notifications}">Recibir notificaciones de cambios</li>
+            <li th:text="#{email.partner_invitation.feature.history}">Acceder a tu historial de torneos</li>
         </ul>
 
         <div style="text-align: center; margin: 30px 0;">
             <a th:href="@{${baseUrl} + '/players/registro'}" class="button">
-                📝 Registrarse en 1-Padel
+                <span th:text="#{email.partner_invitation.btn}">📝 Registrarse en 1-Padel</span>
             </a>
         </div>
 
         <p style="text-align: center; color: #6c757d;">
-            ¿Ya tienes cuenta? <a th:href="@{${baseUrl} + '/login'}" style="color: #FF6B35;">Inicia sesión aquí</a>
+            <span th:text="#{email.partner_invitation.have_account}">¿Ya tienes cuenta?</span> <a th:href="@{${baseUrl} + '/login'}" style="color: #FF6B35;" th:text="#{email.partner_invitation.login}">Inicia sesión aquí</a>
         </p>
 
         <div class="warning-note">
-            <strong>⚠️ Importante:</strong> El enlace de registro expirará en <strong th:text="${expiryHours}">48</strong> horas.
-            Regístrate pronto para asegurar tu lugar en la plataforma.
+            <span th:text="#{email.partner_invitation.expiry(${expiryHours})}">⚠️ El enlace expira en 48 horas.</span>
         </div>
 
-        <p style="margin-top: 30px;">¡Te esperamos en la pista! 🎾</p>
+        <p style="margin-top: 30px;" th:text="#{email.partner_invitation.see_you}">¡Te esperamos en la pista! 🎾</p>
     </div>
     <div class="footer">
-        <p>© <span th:text="${year}">2026</span> 1-Padel. Todos los derechos reservados.</p>
-        <p style="font-size: 12px;">Este es un mensaje automático, por favor no respondas a este correo.</p>
+        <p th:text="#{email.footer.rights(${year})}">© 2026 1-Padel. Todos los derechos reservados.</p>
+        <p style="font-size: 12px;" th:text="#{email.footer.auto}">Este es un mensaje automático, por favor no respondas a este correo.</p>
     </div>
 </div>
 </body>

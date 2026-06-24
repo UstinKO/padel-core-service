@@ -1520,11 +1520,11 @@ public class AmericanoService {
             if (status == RegistrationStatus.CONFIRMED) {
                 emailService.sendTournamentConfirmationEmail(
                         player.getEmail(), player.getNombre(), tournament.getNombre(),
-                        dateStr, timeStr, clubName);
+                        dateStr, timeStr, clubName, player.getLocale());
             } else {
                 emailService.sendWaitlistNotificationEmail(
                         player.getEmail(), player.getNombre(), tournament.getNombre(),
-                        dateStr, timeStr, clubName, position);
+                        dateStr, timeStr, clubName, position, player.getLocale());
             }
         } catch (Exception e) {
             log.error("Error sending registration notification: {}", e.getMessage());
@@ -1537,7 +1537,7 @@ public class AmericanoService {
                     player.getEmail(), player.getNombre(), tournament.getNombre(),
                     tournament.getFechaInicio().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
                     tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm")),
-                    getClubName(tournament.getClubId()));
+                    getClubName(tournament.getClubId()), player.getLocale());
         } catch (Exception e) {
             log.error("Error sending waitlist confirmation: {}", e.getMessage());
         }

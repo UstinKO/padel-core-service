@@ -31,6 +31,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 @Service
@@ -283,7 +284,8 @@ public class DoubleTournamentRegistrationService {
                 mainPlayer.getNombre() + " " + mainPlayer.getApellido(),
                 tournamentDto,
                 status,
-                position
+                position,
+                partner.getLocale()
         );
 
         notificationService.sendConfirmationToMainPlayer(
@@ -292,7 +294,8 @@ public class DoubleTournamentRegistrationService {
                 partner.getNombre() + " " + partner.getApellido(),
                 tournamentDto,
                 status,
-                position
+                position,
+                mainPlayer.getLocale()
         );
 
         return savedMainRegistration;
@@ -348,7 +351,8 @@ public class DoubleTournamentRegistrationService {
                     mainPlayer.getNombre() + " " + mainPlayer.getApellido(),
                     tournamentDto,
                     completionUrl,
-                    TOKEN_EXPIRY_HOURS
+                    TOKEN_EXPIRY_HOURS,
+                    mainPlayer.getLocale()
             );
         }
 
@@ -358,7 +362,8 @@ public class DoubleTournamentRegistrationService {
                 partnerDto.getNombre() + " " + partnerDto.getApellido(),
                 tournamentDto,
                 pairStatus,
-                position
+                position,
+                mainPlayer.getLocale()
         );
 
         return registration;
@@ -511,7 +516,8 @@ public class DoubleTournamentRegistrationService {
             emailService.sendConfirmationEmail(
                     partner.getEmail(),
                     partner.getNombre(),
-                    partner.getCodigoConfirmacion()
+                    partner.getCodigoConfirmacion(),
+                    partner.getLocale()
             );
         } catch (Exception e) {
             log.error("Error sending confirmation email: {}", e.getMessage());
@@ -673,7 +679,8 @@ public class DoubleTournamentRegistrationService {
                     remainingPartner.getNombre() + " " + remainingPartner.getApellido(),
                     tournamentDto,
                     oldPlayerReg.getStatus(),
-                    oldPlayerReg.getPosition()
+                    oldPlayerReg.getPosition(),
+                    newPlayer.getLocale()
             );
 
         }  else {
@@ -710,7 +717,8 @@ public class DoubleTournamentRegistrationService {
                         remainingPartner.getNombre() + " " + remainingPartner.getApellido(),
                         tournamentDto,
                         completionUrl,
-                        TOKEN_EXPIRY_HOURS
+                        TOKEN_EXPIRY_HOURS,
+                        remainingPartner.getLocale()
                 );
             }
 
@@ -819,7 +827,8 @@ public class DoubleTournamentRegistrationService {
                         searcher.getPlayer().getNombreCompleto(),
                         tournament.getNombre(),
                         dateStr,
-                        tournamentUrl
+                        tournamentUrl,
+                        searcher.getPlayer().getLocale()
                 );
             }
         }
@@ -910,7 +919,8 @@ public class DoubleTournamentRegistrationService {
                     tournament.getNombre(),
                     dateStr,
                     timeStr,
-                    null
+                    null,
+                    partner.getLocale()
             );
             emailService.sendTournamentConfirmationEmail(
                     mainPlayer.getEmail(),
@@ -918,7 +928,8 @@ public class DoubleTournamentRegistrationService {
                     tournament.getNombre(),
                     dateStr,
                     timeStr,
-                    null
+                    null,
+                    mainPlayer.getLocale()
             );
 
             log.info("Solo→pair converted: tournamentId={}, mainPlayerId={}, partnerId={}",
@@ -957,7 +968,8 @@ public class DoubleTournamentRegistrationService {
                         timeStr,
                         null,
                         completionUrl,
-                        TOKEN_EXPIRY_HOURS
+                        TOKEN_EXPIRY_HOURS,
+                        mainPlayer.getLocale()
                 );
             }
 
@@ -1039,7 +1051,8 @@ public class DoubleTournamentRegistrationService {
                 tournament.getNombre(),
                 dateStr,
                 token,
-                String.valueOf(proposerReg.getId())
+                String.valueOf(proposerReg.getId()),
+                target.getPlayer().getPreferredLocale()
         };
     }
 
@@ -1056,11 +1069,14 @@ public class DoubleTournamentRegistrationService {
         String token            = emailData[5];
         String proposerRegId    = emailData[6];
 
+        String targetLocale     = emailData.length > 7 ? emailData[7] : "es";
+
         String acceptUrl = baseUrl + "/double-registration/accept-pair?token=" + token;
         log.info("Pair proposal token saved. Accept URL (for local testing): {}", acceptUrl);
 
         // Шаг 2: отправить email вне транзакции (если SMTP недоступен — токен уже в БД)
-        emailService.sendPairProposalEmail(targetEmail, targetName, proposerName, tournamentName, dateStr, acceptUrl);
+        emailService.sendPairProposalEmail(targetEmail, targetName, proposerName, tournamentName, dateStr, acceptUrl,
+                java.util.Locale.forLanguageTag(targetLocale));
 
         log.info("Pair proposal complete: tournamentId={}, proposerRegId={}, targetRegId={}",
                 tournamentId, proposerRegId, targetRegistrationId);
