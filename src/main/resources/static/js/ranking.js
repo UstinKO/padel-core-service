@@ -109,9 +109,9 @@ class RankingPage {
     }
 
     getTendenciaIcon(tendencia) {
-        if (tendencia === 'up') return '<i class="fas fa-arrow-up"></i> Subiendo';
-        if (tendencia === 'down') return '<i class="fas fa-arrow-down"></i> Bajando';
-        return '<i class="fas fa-minus"></i> Estable';
+        if (tendencia === 'up') return `<i class="fas fa-arrow-up"></i> ${t('ranking.trend.up')}`;
+        if (tendencia === 'down') return `<i class="fas fa-arrow-down"></i> ${t('ranking.trend.down')}`;
+        return `<i class="fas fa-minus"></i> ${t('ranking.trend.stable')}`;
     }
 
     hideLoading() {

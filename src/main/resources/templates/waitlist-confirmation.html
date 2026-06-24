@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta name="app-profile" th:content="${@environment.getActiveProfiles().length > 0
         ? @environment.getActiveProfiles()[0]
@@ -18,7 +18,7 @@
     <meta property="og:url" content="https://1-padel.com/waitlist/confirm">
     <meta name="twitter:card" content="summary_large_image">
 
-    <title>Confirmación | 1-Padel</title>
+    <title th:text="#{waitlist.title}">Confirmación | 1-Padel</title>
 
     <!-- Favicon con nuevo logo -->
     <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
@@ -48,7 +48,7 @@
             <div class="navbar-user">
                 <a href="/torneos" class="btn btn-outline-sm">
                     <i class="fas fa-trophy"></i>
-                    Ver torneos
+                    <span th:text="#{waitlist.btn.torneos}">Ver torneos</span>
                 </a>
             </div>
         </nav>
@@ -63,12 +63,12 @@
                 <div class="confirmation-icon success">
                     <i class="fas fa-check-circle"></i>
                 </div>
-                <h1 class="confirmation-title">¡Confirmado!</h1>
+                <h1 class="confirmation-title" th:text="#{waitlist.success.heading}">¡Confirmado!</h1>
                 <p class="confirmation-message" th:text="${message}">Tu participación ha sido confirmada.</p>
                 <div class="confirmation-actions">
                     <a href="/" class="btn btn-primary">
                         <i class="fas fa-home"></i>
-                        Volver al inicio
+                        <span th:text="#{waitlist.success.btn}">Volver al inicio</span>
                     </a>
                 </div>
             </div>
@@ -78,12 +78,12 @@
                 <div class="confirmation-icon warning">
                     <i class="fas fa-exclamation-triangle"></i>
                 </div>
-                <h1 class="confirmation-title">Lo sentimos</h1>
+                <h1 class="confirmation-title" th:text="#{waitlist.warning.heading}">Lo sentimos</h1>
                 <p class="confirmation-message" th:text="${message}">Alguien más ocupó tu lugar.</p>
                 <div class="confirmation-actions">
                     <a href="/torneos" class="btn btn-primary">
                         <i class="fas fa-search"></i>
-                        Ver otros torneos
+                        <span th:text="#{waitlist.warning.btn}">Ver otros torneos</span>
                     </a>
                 </div>
             </div>
@@ -93,12 +93,12 @@
                 <div class="confirmation-icon error">
                     <i class="fas fa-times-circle"></i>
                 </div>
-                <h1 class="confirmation-title">Error</h1>
+                <h1 class="confirmation-title" th:text="#{waitlist.error.heading}">Error</h1>
                 <p class="confirmation-message" th:text="${message}">Ha ocurrido un error.</p>
                 <div class="confirmation-actions">
                     <a href="/" class="btn btn-primary">
                         <i class="fas fa-home"></i>
-                        Volver al inicio
+                        <span th:text="#{waitlist.error.btn}">Volver al inicio</span>
                     </a>
                 </div>
             </div>
@@ -108,12 +108,12 @@
                 <div class="confirmation-icon warning">
                     <i class="fas fa-question-circle"></i>
                 </div>
-                <h1 class="confirmation-title">Página no encontrada</h1>
-                <p class="confirmation-message">La página que buscas no existe o ha expirado.</p>
+                <h1 class="confirmation-title" th:text="#{waitlist.notfound.heading}">Página no encontrada</h1>
+                <p class="confirmation-message" th:text="#{waitlist.notfound.msg}">La página que buscas no existe o ha expirado.</p>
                 <div class="confirmation-actions">
                     <a href="/" class="btn btn-primary">
                         <i class="fas fa-home"></i>
-                        Volver al inicio
+                        <span th:text="#{waitlist.notfound.btn}">Volver al inicio</span>
                     </a>
                 </div>
             </div>
@@ -125,8 +125,8 @@
 <footer class="footer" style="padding: 1rem 0; background: transparent;">
     <div class="container">
         <div class="footer-bottom" style="justify-content: center; text-align: center; border-top: none;">
-            <div class="footer-copyright">
-                <i class="far fa-copyright"></i> 2026 1-Padel. Todos los derechos reservados.
+            <div class="footer-copyright" th:text="#{footer.copyright}">
+                © 2026 1-Padel. Todos los derechos reservados.
             </div>
         </div>
     </div>
@@ -134,6 +134,8 @@
 
 <!-- Datos para JavaScript -->
 <script th:src="@{/js/logger.js}"></script>
+<script th:src="${'/js/i18n/messages-' + #locale.language + '.js'}"></script>
+<script th:src="@{/js/i18n/t.js}"></script>
 <script th:inline="javascript">
     /*<![CDATA[*/
     var notificationType = /*[(${type})]*/ 'success';

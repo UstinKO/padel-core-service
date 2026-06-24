@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
     <meta name="robots" content="noindex">
-    <title th:text="${isBlocked} ? 'Acceso bloqueado | 1-Padel' : 'Demasiados intentos | 1-Padel'">
+    <title th:text="${isBlocked} ? #{rate_limit.title.blocked} : #{rate_limit.title.limit}">
         Demasiados intentos | 1-Padel
     </title>
 
@@ -50,15 +50,13 @@
 
                 <!-- Título -->
                 <h2 class="auth-card-title"
-                    th:text="${isBlocked} ? 'Acceso bloqueado temporalmente' : 'Demasiados intentos'">
+                    th:text="${isBlocked} ? #{rate_limit.heading.blocked} : #{rate_limit.heading.limit}">
                     Demasiados intentos
                 </h2>
 
                 <!-- Descripción -->
                 <p style="color: var(--color-text-light); margin: 0.75rem 0 1.75rem; line-height: 1.6;"
-                   th:text="${isBlocked}
-                       ? 'Tu dirección IP ha sido bloqueada por actividad sospechosa. Por favor, espera 15 minutos antes de intentarlo de nuevo.'
-                       : 'Has superado el límite de solicitudes permitidas. Espera un momento y vuelve a intentarlo.'">
+                   th:text="${isBlocked} ? #{rate_limit.desc.blocked} : #{rate_limit.desc.limit}">
                 </p>
 
                 <!-- Cuenta regresiva -->
@@ -68,7 +66,8 @@
                      th:style="${isBlocked}
                          ? 'background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.15); padding: 1.25rem 1.5rem; border-radius: var(--border-radius-lg); margin-bottom: 1.75rem;'
                          : 'background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.2); padding: 1.25rem 1.5rem; border-radius: var(--border-radius-lg); margin-bottom: 1.75rem;'">
-                    <p style="font-size: 0.85rem; color: var(--color-text-light); margin-bottom: 0.5rem;">
+                    <p style="font-size: 0.85rem; color: var(--color-text-light); margin-bottom: 0.5rem;"
+                       th:text="#{rate_limit.countdown.label}">
                         Podrás intentarlo de nuevo en
                     </p>
                     <div id="countdown-display"
@@ -84,7 +83,8 @@
                             background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2);
                             border-radius: var(--border-radius-lg); margin-bottom: 1.75rem;">
                     <i class="fas fa-check-circle" style="font-size: 2rem; color: var(--color-success);"></i>
-                    <p style="color: var(--color-success); font-weight: 600; margin-top: 0.5rem; margin-bottom: 0;">
+                    <p style="color: var(--color-success); font-weight: 600; margin-top: 0.5rem; margin-bottom: 0;"
+                       th:text="#{rate_limit.ready}">
                         ¡Ya puedes intentarlo de nuevo!
                     </p>
                 </div>
@@ -92,10 +92,10 @@
                 <!-- Botones -->
                 <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
                     <a href="javascript:history.back()" class="btn btn-primary">
-                        <i class="fas fa-redo"></i> Intentar de nuevo
+                        <i class="fas fa-redo"></i> <span th:text="#{rate_limit.btn.retry}">Intentar de nuevo</span>
                     </a>
                     <a href="/" class="btn btn-outline">
-                        <i class="fas fa-home"></i> Inicio
+                        <i class="fas fa-home"></i> <span th:text="#{rate_limit.btn.home}">Inicio</span>
                     </a>
                 </div>
 
@@ -104,7 +104,7 @@
             <div style="text-align: center; margin-top: 1.5rem; color: var(--color-text-light);">
                 <small>
                     <i class="fas fa-shield-alt"></i>
-                    Esta protección evita el abuso automatizado del sistema
+                    <span th:text="#{rate_limit.footer.note}">Esta protección evita el abuso automatizado del sistema</span>
                 </small>
             </div>
         </div>
@@ -114,8 +114,8 @@
 <footer class="footer" style="padding: 1rem 0;">
     <div class="container">
         <div class="footer-bottom" style="justify-content: center; text-align: center; border-top: none;">
-            <div class="footer-copyright">
-                <i class="far fa-copyright"></i> 2026 1-Padel. Todos los derechos reservados.
+            <div class="footer-copyright" th:text="#{footer.copyright}">
+                © 2026 1-Padel. Todos los derechos reservados.
             </div>
         </div>
     </div>

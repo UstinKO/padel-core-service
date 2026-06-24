@@ -18,20 +18,19 @@ const ContactCheck = (() => {
                 <div style="display:flex; align-items:center; gap:.75rem; margin-bottom:1rem;">
                     <i class="fas fa-address-book" style="font-size:1.4rem; color:#FF6B35;"></i>
                     <h3 style="margin:0; font-size:1.1rem; color:#1e293b;">
-                        Datos de contacto requeridos
+                        ${t('contact.modal.title')}
                     </h3>
                 </div>
 
                 <p style="color:#64748b; font-size:.9rem; margin:0 0 1.25rem;">
-                    Para inscribirte en <strong id="ccTournamentName">este torneo</strong>
-                    necesitamos un dato de contacto. Completa al menos uno:
+                    <span id="ccTournamentName"></span>
                 </p>
 
                 <div style="margin-bottom:1rem;">
                     <label style="display:block; font-size:.85rem; font-weight:600;
                                   color:#1e293b; margin-bottom:.35rem;">
                         <i class="fab fa-whatsapp" style="color:#25D366;"></i>
-                        WhatsApp
+                        ${t('contact.field.whatsapp')}
                     </label>
                     <input id="ccPhone" type="tel"
                            placeholder="+549 11 1234-5678"
@@ -39,7 +38,7 @@ const ContactCheck = (() => {
                                   border-radius:8px; font-size:.95rem; box-sizing:border-box;">
                     <span id="ccPhoneError"
                           style="display:none; color:#ef4444; font-size:.78rem; margin-top:.25rem;">
-                        Ingresa un número válido con código de país (ej. +549...)
+                        ${t('contact.error.phone')}
                     </span>
                 </div>
 
@@ -47,7 +46,7 @@ const ContactCheck = (() => {
                     <label style="display:block; font-size:.85rem; font-weight:600;
                                   color:#1e293b; margin-bottom:.35rem;">
                         <i class="fab fa-telegram" style="color:#2CA5E0;"></i>
-                        Telegram (usuario)
+                        ${t('contact.field.telegram')}
                     </label>
                     <input id="ccTelegram" type="text"
                            placeholder="@tu_usuario"
@@ -55,7 +54,7 @@ const ContactCheck = (() => {
                                   border-radius:8px; font-size:.95rem; box-sizing:border-box;">
                     <span id="ccTgError"
                           style="display:none; color:#ef4444; font-size:.78rem; margin-top:.25rem;">
-                        El usuario de Telegram debe comenzar con @
+                        ${t('contact.error.telegram')}
                     </span>
                 </div>
 
@@ -70,14 +69,14 @@ const ContactCheck = (() => {
                             style="padding:.55rem 1.1rem; border:1px solid #e2e8f0;
                                    border-radius:8px; background:#fff; cursor:pointer;
                                    font-size:.9rem; color:#64748b;">
-                        Cancelar
+                        ${t('contact.btn.cancel')}
                     </button>
                     <button id="ccSaveBtn"
                             style="padding:.55rem 1.25rem; border:none; border-radius:8px;
                                    background:#FF6B35; color:#fff; cursor:pointer;
                                    font-size:.9rem; font-weight:600; display:flex;
                                    align-items:center; gap:.5rem;">
-                        <i class="fas fa-save"></i> Guardar e inscribirse
+                        <i class="fas fa-save"></i> ${t('contact.btn.save')}
                     </button>
                 </div>
             </div>
@@ -135,7 +134,7 @@ const ContactCheck = (() => {
             pendingTournamentId = tournamentId;
             pendingTournamentName = tournamentName;
 
-            document.getElementById('ccTournamentName').textContent = tournamentName;
+            document.getElementById('ccTournamentName').innerHTML = t('contact.modal.desc', `<strong>${tournamentName}</strong>`);
             document.getElementById('contactCheckModal').style.display = 'flex';
 
             if (data.telefono) document.getElementById('ccPhone').value = data.telefono;
@@ -156,7 +155,7 @@ const ContactCheck = (() => {
                 document.getElementById('ccGlobalError').style.display = 'none';
 
                 if (!phone && !telegram) {
-                    showGlobalError('Por favor, ingresa al menos un dato de contacto.');
+                    showGlobalError(t('contact.error.empty'));
                     return;
                 }
 
@@ -171,7 +170,7 @@ const ContactCheck = (() => {
                 }
 
                 newSaveBtn.disabled = true;
-                newSaveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+                newSaveBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('contact.saving')}`;
 
                 try {
                     const patchRes = await fetch('/api/players/me/contact', {
@@ -186,9 +185,9 @@ const ContactCheck = (() => {
                     const patchData = await patchRes.json();
 
                     if (!patchData.success) {
-                        showGlobalError(patchData.message || 'Error al guardar');
+                        showGlobalError(patchData.message || t('contact.error.save'));
                         newSaveBtn.disabled = false;
-                        newSaveBtn.innerHTML = '<i class="fas fa-save"></i> Guardar e inscribirse';
+                        newSaveBtn.innerHTML = `<i class="fas fa-save"></i> ${t('contact.btn.save')}`;
                         return;
                     }
 
@@ -202,9 +201,9 @@ const ContactCheck = (() => {
 
                 } catch (err) {
                     console.error('Error saving contact:', err);
-                    showGlobalError('Error de conexión. Inténtalo de nuevo.');
+                    showGlobalError(t('contact.error.connection'));
                     newSaveBtn.disabled = false;
-                    newSaveBtn.innerHTML = '<i class="fas fa-save"></i> Guardar e inscribirse';
+                    newSaveBtn.innerHTML = `<i class="fas fa-save"></i> ${t('contact.btn.save')}`;
                 }
             });
 

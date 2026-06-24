@@ -87,41 +87,43 @@ document.addEventListener('DOMContentLoaded', function() {
     const displayMaps = {
         nivel: {
             // Новые уровни
-            'SUMA_15': 'Suma 15+',
-            'SUMA_13': 'Suma 13+',
-            'D7': 'D7',
-            'D8': 'D8',
-            'D7_D8': 'D7/D8',
-            'D6': 'D6',
-            'C7_C6': 'C7/C6',
+            'SUMA_15': t('enum.nivel.suma15'),
+            'SUMA_13': t('enum.nivel.suma13'),
+            'D7': t('enum.nivel.d7'),
+            'D8': t('enum.nivel.d8'),
+            'D7_D8': t('enum.nivel.d7_d8'),
+            'D6': t('enum.nivel.d6'),
+            'C7_C6': t('enum.nivel.c7_c6'),
             // Существующие уровни
-            'C9': 'C9 (Principiante)',
-            'C8': 'C8 (Intermedio)',
-            'C7': 'C7 (Avanzado)',
-            'C6': 'C6 (Profesional)',
-            'C5': 'C5 (Élite)',
-            'PRINCIPIANTES': 'Principiante'
+            'C9': t('enum.nivel.c9'),
+            'C8': t('enum.nivel.c8'),
+            'C7': t('enum.nivel.c7'),
+            'C6': t('enum.nivel.c6'),
+            'C5': t('enum.nivel.c5'),
+            'PRINCIPIANTES': t('enum.nivel.principiantes')
         },
         tipo: {
-            'KING_OF_COURT': 'King of Court',
-            'AMERICANA': 'Americana'
+            'KING_OF_COURT':    t('enum.tipo.koc'),
+            'AMERICANO':        t('enum.tipo.americana'),
+            'AMERICANO_TEAMS':  t('enum.tipo.americano_teams'),
+            'CANCHA_ABIERTA':   t('enum.tipo.cancha_abierta')
         },
         estado: {
-            'REGISTRO_ABIERTO': 'Inscripción abierta',
-            'PUBLICADO': 'Próximamente',
-            'BORRADOR': 'Borrador',
-            'CERRADO': 'Cerrado',
-            'FINALIZADO': 'Finalizado',
-            'CANCELADO': 'Cancelado'
+            'REGISTRO_ABIERTO': t('enum.estado.open'),
+            'PUBLICADO': t('enum.estado.published'),
+            'BORRADOR': t('enum.estado.draft'),
+            'CERRADO': t('enum.estado.closed'),
+            'FINALIZADO': t('enum.estado.finished'),
+            'CANCELADO': t('enum.estado.cancelled')
         },
         genero: {
-            'MASCULINO': 'Masculino',
-            'FEMENINO': 'Femenino',
-            'MIXTO': 'Mixto'
+            'MASCULINO': t('enum.genero.m'),
+            'FEMENINO': t('enum.genero.f'),
+            'MIXTO': t('enum.genero.mix')
         },
         modalidad: {
-            'INDIVIDUAL': 'Individual',
-            'DOBLES': 'Dobles'
+            'INDIVIDUAL': t('enum.modalidad.individual'),
+            'DOBLES': t('enum.modalidad.doubles')
         }
     };
 
@@ -188,7 +190,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (modalidadSelect) modalidadSelect.value = 'todos';
         if (myTournamentsCheckbox) myTournamentsCheckbox.checked = false;
         if (filtersPanel) filtersPanel.style.display = 'none';
-        if (toggleFilters) toggleFilters.innerHTML = '<i class="fas fa-sliders-h"></i> Filtrar';
+        if (toggleFilters) toggleFilters.innerHTML = `<i class="fas fa-sliders-h"></i> ${t('filter.toggle.open')}`;
         // Рендер
         filteredTournaments = getTabBaseList();
         renderTournaments();
@@ -203,8 +205,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const isHidden = filtersPanel.style.display === 'none' || filtersPanel.style.display === '';
             filtersPanel.style.display = isHidden ? 'block' : 'none';
             toggleFilters.innerHTML = isHidden ?
-                '<i class="fas fa-times"></i> Cerrar filtros' :
-                '<i class="fas fa-sliders-h"></i> Filtrar';
+                `<i class="fas fa-times"></i> ${t('filter.toggle.close')}` :
+                `<i class="fas fa-sliders-h"></i> ${t('filter.toggle.open')}`;
         });
     }
 
@@ -320,16 +322,16 @@ document.addEventListener('DOMContentLoaded', function() {
             const text   = document.getElementById('emptyStateText');
             const hint   = document.getElementById('emptyStateHint');
             if (currentTab === 'mis') {
-                if (title) title.textContent = 'No estás inscrito en ningún torneo';
-                if (text)  text.textContent  = 'Aquí aparecerán tus torneos próximos cuando te inscribas.';
-                if (hint)  { hint.innerHTML = 'Ve a la pestaña <a href="#" onclick="switchTab(\'todos\');return false;">Todos</a> para ver torneos disponibles.'; hint.style.display = ''; }
+                if (title) title.textContent = t('dashboard.empty.my');
+                if (text)  text.textContent  = t('dashboard.empty.my.desc');
+                if (hint)  { hint.innerHTML = t('dashboard.empty.my.hint', `<a href="#" onclick="switchTab('todos');return false;">${t('dashboard.tab.all')}</a>`); hint.style.display = ''; }
             } else if (currentTab === 'historial') {
-                if (title) title.textContent = 'Sin historial de torneos';
-                if (text)  text.textContent  = 'Aquí aparecerán los torneos en los que ya hayas participado.';
+                if (title) title.textContent = t('dashboard.empty.history');
+                if (text)  text.textContent  = t('dashboard.empty.history.desc');
                 if (hint)  hint.style.display = 'none';
             } else {
-                if (title) title.textContent = 'No hay torneos';
-                if (text)  text.textContent  = 'No se encontraron torneos con los filtros seleccionados.';
+                if (title) title.textContent = t('dashboard.empty.all');
+                if (text)  text.textContent  = t('dashboard.empty.all.desc');
                 if (hint)  hint.style.display = 'none';
             }
             if (noTournamentsMessage) noTournamentsMessage.style.display = 'block';
@@ -379,11 +381,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             showConfirmModal(
-                'Confirmar inscripción',
-                `¿Deseas inscribirte en el torneo "${tournamentName}"?`,
+                t('dashboard.confirm.register.title'),
+                t('dashboard.confirm.register.msg', tournamentName),
                 async () => {
                     button.disabled = true;
-                    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+                    button.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('common.processing')}`;
 
                     try {
                         const response = await fetch(`/players/tournaments/${tournamentId}/register`, {
@@ -394,20 +396,21 @@ document.addEventListener('DOMContentLoaded', function() {
                         const data = await response.json();
 
                         if (data.success) {
-                            showResultModal('success', data.message);
+                            const msg = data.status === 'CONFIRMED' ? t('details.success.confirmed') : t('details.success.waitlist_added');
+                            showResultModal('success', msg);
                             myTournamentIds.add(parseInt(tournamentId));
                             updateTabCounts();
                             applyFiltersFunction();
                         } else {
-                            showResultModal('error', 'Error: ' + data.message);
+                            showResultModal('error', data.message || t('details.error.process'));
                             button.disabled = false;
-                            button.innerHTML = '<i class="fas fa-plus-circle"></i> Registrarse';
+                            button.innerHTML = `<i class="fas fa-plus-circle"></i> ${t('dashboard.card.btn.register')}`;
                         }
                     } catch (error) {
                         console.error('Error registering:', error);
-                        showResultModal('error', 'Error al procesar la solicitud');
+                        showResultModal('error', t('details.error.process'));
                         button.disabled = false;
-                        button.innerHTML = '<i class="fas fa-plus-circle"></i> Registrarse';
+                        button.innerHTML = `<i class="fas fa-plus-circle"></i> ${t('dashboard.card.btn.register')}`;
                     }
                 }
             );
@@ -471,7 +474,7 @@ document.addEventListener('DOMContentLoaded', function() {
         dashSearchResults.innerHTML = '';
         if (!players.length) {
             dashSearchResults.innerHTML =
-                '<li style="padding:.6rem 1rem; color:#9ca3af; font-size:.9rem;">No se encontraron jugadores</li>';
+                `<li style="padding:.6rem 1rem; color:#9ca3af; font-size:.9rem;">${t('details.search.no_results')}</li>`;
         } else {
             players.forEach(p => {
                 const li = document.createElement('li');
@@ -554,19 +557,19 @@ document.addEventListener('DOMContentLoaded', function() {
             if (withPartnerSection) withPartnerSection.style.display = '';
             if (searchSection)      searchSection.style.display      = 'none';
             if (addLaterSection)    addLaterSection.style.display     = 'none';
-            if (submitBtnText) submitBtnText.textContent = 'Registrar pareja';
+            if (submitBtnText) submitBtnText.textContent = t('details.mode.register_pair');
             modeWithPartner && modeWithPartner.classList.add('mode-btn--active');
         } else if (mode === 'SEARCH') {
             if (withPartnerSection) withPartnerSection.style.display = 'none';
             if (searchSection)      searchSection.style.display      = '';
             if (addLaterSection)    addLaterSection.style.display     = 'none';
-            if (submitBtnText) submitBtnText.textContent = 'Buscar compañero';
+            if (submitBtnText) submitBtnText.textContent = t('details.mode.search');
             modeSearch && modeSearch.classList.add('mode-btn--active');
         } else if (mode === 'ADD_LATER') {
             if (withPartnerSection) withPartnerSection.style.display = 'none';
             if (searchSection)      searchSection.style.display      = 'none';
             if (addLaterSection)    addLaterSection.style.display     = '';
-            if (submitBtnText) submitBtnText.textContent = 'Inscribirme sin compañero';
+            if (submitBtnText) submitBtnText.textContent = t('details.mode.later');
             modeLater && modeLater.classList.add('mode-btn--active');
         }
     };
@@ -617,7 +620,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const submitBtn = document.getElementById('submitPartnerBtn');
         if (submitBtn) {
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+            submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('common.processing')}`;
         }
 
         const closePartnerModal = () => {
@@ -630,7 +633,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const resetBtn = () => {
             if (submitBtn) {
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> <span id="submitPartnerBtnText">Registrar pareja</span>';
+                submitBtn.innerHTML = `<i class="fas fa-check-circle"></i> <span id="submitPartnerBtnText">${t('details.mode.register_pair')}</span>`;
             }
         };
 
@@ -651,10 +654,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     closePartnerModal();
                     myTournamentIds.add(parseInt(tournamentId));
                     updateTabCounts();
-                    showResultModal('success', data.message || '¡Registro completado!');
+                    showResultModal('success', t('details.success.pair_complete'));
                     applyFiltersFunction();
                 } else {
-                    showResultModal('error', data.message || 'Error al procesar la solicitud');
+                    showResultModal('error', data.message || t('details.error.process'));
                     resetBtn();
                 }
                 return;
@@ -668,13 +671,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (!existingUserId) {
                 if (!firstName || !lastName) {
-                    showResultModal('error', 'Por favor ingresa el nombre y apellido del compañero');
+                    showResultModal('error', t('dashboard.error.partner_name'));
                     resetBtn();
                     return;
                 }
                 const phoneRegex = /^\+?[0-9\s\-\(\)]{8,20}$/;
                 if (!phone || !phoneRegex.test(phone)) {
-                    showResultModal('error', 'Por favor ingresa un teléfono válido o selecciona un compañero del buscador');
+                    showResultModal('error', t('dashboard.error.partner_contact'));
                     resetBtn();
                     return;
                 }
@@ -704,12 +707,12 @@ document.addEventListener('DOMContentLoaded', function() {
             closePartnerModal();
             myTournamentIds.add(parseInt(tournamentId));
             updateTabCounts();
-            showResultModal('success', '¡Registro completado! Se ha enviado un email a tu compañero.');
+            showResultModal('success', t('dashboard.success.pair_registered'));
             applyFiltersFunction();
 
         } catch (error) {
             console.error('Error:', error);
-            showResultModal('error', error.message || 'Error al procesar la solicitud');
+            showResultModal('error', error.message || t('details.error.process'));
             resetBtn();
         }
     }
@@ -819,13 +822,13 @@ document.addEventListener('DOMContentLoaded', function() {
             if (selfOption) {
                 selfOption.style.opacity = '0.5';
                 selfOption.style.pointerEvents = 'none';
-                selfOption.title = 'No disponible: tu compañero no está registrado en el sistema';
+                selfOption.title = t('dashboard.partner.not_available');
             }
 
             if (replaceOption) {
                 replaceOption.style.opacity = '0.5';
                 replaceOption.style.pointerEvents = 'none';
-                replaceOption.title = 'No disponible: tu compañero no está registrado en el sistema';
+                replaceOption.title = t('dashboard.partner.not_available');
             }
 
             if (fullOption) {
@@ -837,7 +840,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Показываем сообщение
             const messageDiv = document.createElement('div');
             messageDiv.className = 'alert alert-warning partner-not-registered-message';
-            messageDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Tu compañero no está registrado en el sistema. Solo puedes cancelar toda la pareja.';
+            messageDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${t('dashboard.partner.not_registered')}`;
 
             // Добавляем сообщение в модальное окно
             const modalBody = modal.querySelector('.modal-body');
@@ -958,7 +961,7 @@ document.addEventListener('DOMContentLoaded', function() {
     async function handleDoubleCancellation(tournamentId) {
         const cancelOptionElement = document.querySelector('input[name="cancelOption"]:checked');
         if (!cancelOptionElement) {
-            showResultModal('error', 'Por favor selecciona una opción');
+            showResultModal('error', t('dashboard.error.select_option'));
             return;
         }
 
@@ -969,7 +972,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const button = document.querySelector(`.btn-cancel[data-tournament-id="${tournamentId}"]`);
         if (button) {
             button.disabled = true;
-            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+            button.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('common.processing')}`;
         }
 
         try {
@@ -986,10 +989,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 };
 
                 if (!replaceData.firstName || !replaceData.lastName || !replaceData.phone) {
-                    showResultModal('error', 'Por favor completa los datos del nuevo jugador');
+                    showResultModal('error', t('dashboard.error.complete_player'));
                     if (button) {
                         button.disabled = false;
-                        button.innerHTML = '<i class="fas fa-times-circle"></i> Cancelar';
+                        button.innerHTML = `<i class="fas fa-times-circle"></i> ${t('common.cancel')}`;
                     }
                     return;
                 }
@@ -1015,25 +1018,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 // Показываем сообщение об успехе
-                showResultModal('success', data.message);
+                const cancelMsg = cancelOption === 'self' ? t('dashboard.success.cancel_self')
+                    : cancelOption === 'replace' ? t('dashboard.success.cancel_replace')
+                    : t('dashboard.success.cancel_full');
+                showResultModal('success', cancelMsg);
 
                 // ИСПРАВЛЕНО: Принудительная перезагрузка страницы через 1 секунду
                 setTimeout(() => {
                     window.location.reload();
                 }, 1000);
             } else {
-                showResultModal('error', 'Error: ' + data.message);
+                showResultModal('error', data.message || t('details.error.process'));
                 if (button) {
                     button.disabled = false;
-                    button.innerHTML = '<i class="fas fa-times-circle"></i> Cancelar';
+                    button.innerHTML = `<i class="fas fa-times-circle"></i> ${t('common.cancel')}`;
                 }
             }
         } catch (error) {
             console.error('Error cancelling:', error);
-            showResultModal('error', 'Error al procesar la solicitud');
+            showResultModal('error', t('details.error.process'));
             if (button) {
                 button.disabled = false;
-                button.innerHTML = '<i class="fas fa-times-circle"></i> Cancelar';
+                button.innerHTML = `<i class="fas fa-times-circle"></i> ${t('common.cancel')}`;
             }
         }
     }
@@ -1046,7 +1052,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const isMyTournament = myTournamentIds.has(tournament.id);
         const myTournamentBadge = isMyTournament ?
-            '<span class="my-tournament-badge"><i class="fas fa-check-circle"></i> Inscrito</span>' : '';
+            `<span class="my-tournament-badge"><i class="fas fa-check-circle"></i> ${t('dashboard.card.inscrito')}</span>` : '';
 
         // Форматируем дату
         const fechaArray = tournament.fechaInicio;
@@ -1062,7 +1068,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Определяем статус регистрации
         const registrationText = tournament.inscritosActuales >= tournament.cupoMax ?
-            'Lista de espera' : 'Registrarse';
+            t('dashboard.card.btn.waitlist') : t('dashboard.card.btn.register');
 
         // Получаем отображаемые тексты
         const generoDisplay = displayMaps.genero[tournament.generoFormato] || tournament.generoFormato || 'N/A';
@@ -1070,7 +1076,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const tipoDisplay = displayMaps.tipo[tournament.tipo] || tournament.tipo || 'N/A';
 
         // Определяем текст для количества участников
-        const participantsText = tournament.modalidad === 'DOBLES' ? 'cupos' : 'jugadores';
+        const participantsText = tournament.modalidad === 'DOBLES' ? t('card.capacity.spots') : t('card.capacity.players');
 
         // Формируем адрес клуба, если он есть
         const clubAddress = tournament.clubDireccion ?
@@ -1092,7 +1098,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="torneo-info-item">
                     <i class="fas fa-map-marker-alt"></i>
                     <div class="club-info">
-                        <span class="club-name">${escapeHtml(tournament.clubNombre || 'Club por definir')}</span>
+                        <span class="club-name">${escapeHtml(tournament.clubNombre || t('card.club.unknown'))}</span>
                         ${clubAddress}
                     </div>
                 </div>
@@ -1112,7 +1118,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="torneo-footer">
                 ${isTournamentStarted(tournament) ? `
     <span class="btn btn-small" style="background:#e9ecef; color:#6c757d; cursor:default; pointer-events:none;">
-        <i class="fas fa-lock"></i> Torneo iniciado
+        <i class="fas fa-lock"></i> ${t('dashboard.card.torneo_iniciado')}
     </span>
 ` : !isMyTournament ? `
     <button class="btn btn-primary btn-small btn-register"
@@ -1125,11 +1131,11 @@ document.addEventListener('DOMContentLoaded', function() {
     <button class="btn btn-outline btn-small btn-cancel"
             data-tournament-id="${tournament.id}"
             data-tournament-name="${escapeHtml(tournament.nombre)}">
-        <i class="fas fa-times-circle"></i> Cancelar
+        <i class="fas fa-times-circle"></i> ${t('common.cancel')}
     </button>
 `}
     <a href="/torneo/${tournament.id}" class="btn btn-outline btn-small">
-        <i class="fas fa-info-circle"></i> Detalles
+        <i class="fas fa-info-circle"></i> ${t('card.btn.details')}
     </a>
             </div>
         </div>
@@ -1210,11 +1216,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Для одиночных - простое подтверждение
         showConfirmModal(
-            'Cancelar inscripción',
-            `¿Estás seguro de cancelar tu inscripción en "${tournamentName}"?`,
+            t('details.btn.cancel_registration'),
+            t('dashboard.confirm.cancel', tournamentName),
             async () => {
                 button.disabled = true;
-                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+                button.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('common.processing')}`;
 
                 try {
                     const response = await fetch(`/players/tournaments/${tournamentId}/cancel`, {
@@ -1227,22 +1233,22 @@ document.addEventListener('DOMContentLoaded', function() {
                     const data = await response.json();
 
                     if (data.success) {
-                        showResultModal('success', data.message);
+                        showResultModal('success', t('details.success.cancelled'));
 
                         // ИСПРАВЛЕНО: Принудительная перезагрузка страницы через 1 секунду
                         setTimeout(() => {
                             window.location.reload();
                         }, 1000);
                     } else {
-                        showResultModal('error', 'Error: ' + data.message);
+                        showResultModal('error', data.message || t('details.error.process'));
                         button.disabled = false;
-                        button.innerHTML = '<i class="fas fa-times-circle"></i> Cancelar';
+                        button.innerHTML = `<i class="fas fa-times-circle"></i> ${t('common.cancel')}`;
                     }
                 } catch (error) {
                     console.error('Error cancelling:', error);
-                    showResultModal('error', 'Error al procesar la solicitud');
+                    showResultModal('error', t('details.error.process'));
                     button.disabled = false;
-                    button.innerHTML = '<i class="fas fa-times-circle"></i> Cancelar';
+                    button.innerHTML = `<i class="fas fa-times-circle"></i> ${t('common.cancel')}`;
                 }
             }
         );

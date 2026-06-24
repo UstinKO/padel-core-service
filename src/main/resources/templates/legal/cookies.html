@@ -6,7 +6,7 @@
         : 'default'}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Política de Cookies | 1-Padel</title>
+    <title th:text="#{legal.cookies.page.title}">Política de Cookies | 1-Padel</title>
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
@@ -31,10 +31,10 @@
             </a>
             <div class="navbar-auth">
                 <a href="/login" class="btn btn-outline-sm">
-                    <i class="fas fa-sign-in-alt"></i> Iniciar sesión
+                    <i class="fas fa-sign-in-alt"></i> <span th:text="#{nav.login}">Iniciar sesión</span>
                 </a>
                 <a href="/players/registro" class="btn btn-primary-sm">
-                    <i class="fas fa-user-plus"></i> Registrarse
+                    <i class="fas fa-user-plus"></i> <span th:text="#{nav.register}">Registrarse</span>
                 </a>
             </div>
         </nav>
@@ -44,105 +44,269 @@
 <main class="legal-main">
     <div class="container">
         <div class="legal-card">
-            <h1 class="legal-title">Política de Cookies</h1>
-            <p class="legal-date">Última actualización: 15 de marzo de 2026</p>
 
-            <div class="legal-content">
-                <section>
-                    <h2>1. ¿Qué son las cookies?</h2>
-                    <p>Las cookies son pequeños archivos de texto que los sitios web colocan en tu dispositivo para almacenar información sobre tus preferencias, mejorar tu experiencia de navegación y proporcionar servicios personalizados. Son una parte esencial de cómo funciona internet y ayudan a hacer tu experiencia más eficiente.</p>
-                </section>
+            <div th:switch="${#locale.language}">
 
-                <section>
-                    <h2>2. Tipos de cookies que utilizamos</h2>
+                <!-- ── RUSSIAN ── -->
+                <div th:case="'ru'">
+                    <h1 class="legal-title">Политика использования cookie</h1>
+                    <p class="legal-date">Последнее обновление: 15 марта 2026</p>
+                    <div class="legal-content">
+                        <section>
+                            <h2>1. Что такое cookie?</h2>
+                            <p>Cookie — это небольшие текстовые файлы, которые веб-сайты размещают на вашем устройстве для хранения информации о ваших предпочтениях, улучшения работы в браузере и предоставления персонализированных сервисов. Они являются неотъемлемой частью работы интернета и помогают сделать ваш опыт более эффективным.</p>
+                        </section>
+                        <section>
+                            <h2>2. Типы cookie, которые мы используем</h2>
+                            <h3>2.1 Необходимые cookie</h3>
+                            <p>Эти cookie необходимы для базовой работы сайта. Они позволяют вам перемещаться по сайту и использовать его основные функции, например, доступ к защищённым разделам. Без них сайт не может работать корректно.</p>
+                            <p>Примеры использования:</p>
+                            <ul>
+                                <li>Поддержание вашей сессии</li>
+                                <li>Запоминание настроек входа</li>
+                                <li>Защита от мошеннических действий</li>
+                                <li>Управление корзиной покупок (при наличии)</li>
+                            </ul>
+                            <h3>2.2 Аналитические и производительные cookie</h3>
+                            <p>Эти cookie позволяют нам подсчитывать посещения и источники трафика для измерения и улучшения производительности сайта. Они помогают нам понять, какие страницы наиболее и наименее популярны, и как посетители перемещаются по сайту.</p>
+                            <p>Мы используем:</p>
+                            <ul>
+                                <li><strong>Google Analytics:</strong> для анализа поведения пользователей и улучшения опыта</li>
+                                <li><strong>Агрегированные данные:</strong> вся собираемая информация является анонимной и используется только для улучшения сервиса</li>
+                            </ul>
+                            <h3>2.3 Функциональные cookie</h3>
+                            <p>Эти cookie позволяют сайту запоминать сделанные вами выборы (например, имя пользователя, язык или регион) и предоставлять расширенные персонализированные функции.</p>
+                            <h3>2.4 Маркетинговые и рекламные cookie</h3>
+                            <p>Эти cookie могут устанавливаться на нашем сайте нашими рекламными партнёрами. Они могут использоваться для создания профиля ваших интересов и показа релевантной рекламы на других сайтах.</p>
+                        </section>
+                        <section>
+                            <h2>3. Cookie третьих сторон</h2>
+                            <p>На некоторых страницах мы можем использовать сторонние сервисы, которые устанавливают собственные cookie. К ним относятся:</p>
+                            <ul>
+                                <li><strong>Google:</strong> для аутентификации и аналитики</li>
+                                <li><strong>Facebook:</strong> для социальной аутентификации (при наличии)</li>
+                                <li><strong>Платёжные системы:</strong> для обработки безопасных транзакций</li>
+                            </ul>
+                            <p>Мы не контролируем эти cookie и рекомендуем ознакомиться с политиками конфиденциальности соответствующих третьих сторон.</p>
+                        </section>
+                        <section>
+                            <h2>4. Управление cookie</h2>
+                            <p>Вы можете управлять настройками cookie несколькими способами:</p>
+                            <h3>4.1 Через наш баннер</h3>
+                            <p>При первом посещении нашего сайта мы показываем баннер, позволяющий принять, отклонить или настроить ваши предпочтения по cookie.</p>
+                            <h3>4.2 Через настройки браузера</h3>
+                            <p>Большинство браузеров позволяют:</p>
+                            <ul>
+                                <li>Просматривать имеющиеся cookie и удалять их по отдельности</li>
+                                <li>Блокировать сторонние cookie</li>
+                                <li>Блокировать cookie с определённых сайтов</li>
+                                <li>Блокировать все cookie</li>
+                                <li>Удалять все cookie при закрытии браузера</li>
+                            </ul>
+                            <p>Инструкции по настройке cookie в популярных браузерах:</p>
+                            <ul>
+                                <li><a href="https://support.google.com/chrome/answer/95647" target="_blank">Google Chrome</a></li>
+                                <li><a href="https://support.mozilla.org/es/kb/habilitar-y-deshabilitar-cookies-sitios-web-rastrear-preferencias" target="_blank">Mozilla Firefox</a></li>
+                                <li><a href="https://support.apple.com/es-es/guide/safari/sfri11471/mac" target="_blank">Safari</a></li>
+                                <li><a href="https://support.microsoft.com/es-es/windows/eliminar-y-administrar-cookies-168dab11-0753-043d-7c16-ede5947fc64d" target="_blank">Microsoft Edge</a></li>
+                            </ul>
+                        </section>
+                        <section>
+                            <h2>5. Правовая основа</h2>
+                            <p>Мы используем cookie на основании:</p>
+                            <ul>
+                                <li><strong>Согласие:</strong> для аналитических и маркетинговых cookie</li>
+                                <li><strong>Законный интерес:</strong> для cookie, необходимых для работы сайта</li>
+                            </ul>
+                            <p>Вы можете отозвать своё согласие в любое время, изменив настройки браузера.</p>
+                        </section>
+                        <section>
+                            <h2>6. Обновления политики</h2>
+                            <p>Мы можем периодически обновлять настоящую Политику cookie в связи с изменениями в используемых нами cookie или по иным операционным, правовым или регуляторным причинам. Рекомендуем регулярно просматривать эту страницу, чтобы быть в курсе изменений.</p>
+                        </section>
+                        <section>
+                            <h2>7. Контакт</h2>
+                            <p>Если у вас есть вопросы по нашей Политике cookie, свяжитесь с нами:</p>
+                            <p>Email: <a href="mailto:privacidad@1-padel.com">privacidad@1-padel.com</a></p>
+                        </section>
+                    </div>
+                </div>
 
-                    <h3>2.1 Cookies necesarias</h3>
-                    <p>Estas cookies son esenciales para el funcionamiento básico del sitio. Te permiten navegar por el sitio y utilizar sus funciones esenciales, como acceder a áreas seguras. Sin estas cookies, el sitio no puede funcionar correctamente.</p>
-                    <p>Ejemplos de uso:</p>
-                    <ul>
-                        <li>Mantener tu sesión iniciada</li>
-                        <li>Recordar tus preferencias de inicio de sesión</li>
-                        <li>Proteger contra actividades fraudulentas</li>
-                        <li>Gestionar el carrito de compras (si aplica)</li>
-                    </ul>
+                <!-- ── ENGLISH ── -->
+                <div th:case="'en'">
+                    <h1 class="legal-title">Cookie Policy</h1>
+                    <p class="legal-date">Last updated: March 15, 2026</p>
+                    <div class="legal-content">
+                        <section>
+                            <h2>1. What are cookies?</h2>
+                            <p>Cookies are small text files that websites place on your device to store information about your preferences, improve your browsing experience and provide personalised services. They are an essential part of how the internet works and help make your experience more efficient.</p>
+                        </section>
+                        <section>
+                            <h2>2. Types of cookies we use</h2>
+                            <h3>2.1 Necessary cookies</h3>
+                            <p>These cookies are essential for the basic functioning of the site. They allow you to navigate the site and use its essential features, such as accessing secure areas. Without these cookies, the site cannot function correctly.</p>
+                            <p>Examples of use:</p>
+                            <ul>
+                                <li>Keeping your session active</li>
+                                <li>Remembering your login preferences</li>
+                                <li>Protecting against fraudulent activity</li>
+                                <li>Managing the shopping cart (where applicable)</li>
+                            </ul>
+                            <h3>2.2 Analytics and performance cookies</h3>
+                            <p>These cookies allow us to count visits and traffic sources so we can measure and improve the performance of our site. They help us know which pages are most and least popular, and how visitors move around the site.</p>
+                            <p>We use:</p>
+                            <ul>
+                                <li><strong>Google Analytics:</strong> to analyse user behaviour and improve the experience</li>
+                                <li><strong>Aggregated data:</strong> all collected information is anonymous and used only to improve the service</li>
+                            </ul>
+                            <h3>2.3 Functionality cookies</h3>
+                            <p>These cookies allow the site to remember choices you have made (such as your username, language or region) and provide enhanced and more personal features.</p>
+                            <h3>2.4 Marketing and advertising cookies</h3>
+                            <p>These cookies may be set through our site by our advertising partners. They may be used by those companies to build a profile of your interests and show you relevant ads on other sites.</p>
+                        </section>
+                        <section>
+                            <h2>3. Third-party cookies</h2>
+                            <p>On some pages, we may use third-party services that may set their own cookies. These third parties include:</p>
+                            <ul>
+                                <li><strong>Google:</strong> for authentication and analytics</li>
+                                <li><strong>Facebook:</strong> for social authentication (where available)</li>
+                                <li><strong>Payment processors:</strong> to manage secure transactions</li>
+                            </ul>
+                            <p>We have no control over these cookies, and we recommend reviewing the privacy policies of these third parties for more information.</p>
+                        </section>
+                        <section>
+                            <h2>4. Cookie management</h2>
+                            <p>You can manage your cookie preferences in several ways:</p>
+                            <h3>4.1 Through our banner</h3>
+                            <p>When you first visit our site, we display a banner that allows you to accept, reject or customise your cookie preferences.</p>
+                            <h3>4.2 Through browser settings</h3>
+                            <p>Most browsers allow you to:</p>
+                            <ul>
+                                <li>View what cookies you have and delete them individually</li>
+                                <li>Block third-party cookies</li>
+                                <li>Block cookies from specific sites</li>
+                                <li>Block all cookies</li>
+                                <li>Delete all cookies when closing the browser</li>
+                            </ul>
+                            <p>Links to cookie settings guides for popular browsers:</p>
+                            <ul>
+                                <li><a href="https://support.google.com/chrome/answer/95647" target="_blank">Google Chrome</a></li>
+                                <li><a href="https://support.mozilla.org/es/kb/habilitar-y-deshabilitar-cookies-sitios-web-rastrear-preferencias" target="_blank">Mozilla Firefox</a></li>
+                                <li><a href="https://support.apple.com/es-es/guide/safari/sfri11471/mac" target="_blank">Safari</a></li>
+                                <li><a href="https://support.microsoft.com/es-es/windows/eliminar-y-administrar-cookies-168dab11-0753-043d-7c16-ede5947fc64d" target="_blank">Microsoft Edge</a></li>
+                            </ul>
+                        </section>
+                        <section>
+                            <h2>5. Legal basis</h2>
+                            <p>We use cookies based on:</p>
+                            <ul>
+                                <li><strong>Consent:</strong> for analytics and marketing cookies</li>
+                                <li><strong>Legitimate interest:</strong> for cookies necessary for the functioning of the site</li>
+                            </ul>
+                            <p>You may withdraw your consent at any time by adjusting your browser settings.</p>
+                        </section>
+                        <section>
+                            <h2>6. Policy updates</h2>
+                            <p>We may update this Cookie Policy periodically to reflect changes in the cookies we use or for other operational, legal or regulatory reasons. We recommend reviewing this page regularly to stay informed.</p>
+                        </section>
+                        <section>
+                            <h2>7. Contact</h2>
+                            <p>If you have questions about our Cookie Policy, contact us at:</p>
+                            <p>Email: <a href="mailto:privacidad@1-padel.com">privacidad@1-padel.com</a></p>
+                        </section>
+                    </div>
+                </div>
 
-                    <h3>2.2 Cookies de análisis y rendimiento</h3>
-                    <p>Estas cookies nos permiten contar las visitas y fuentes de tráfico para poder medir y mejorar el rendimiento de nuestro sitio. Nos ayudan a saber qué páginas son las más y menos populares, y cómo los visitantes se mueven por el sitio.</p>
-                    <p>Utilizamos:</p>
-                    <ul>
-                        <li><strong>Google Analytics:</strong> Para analizar el comportamiento de los usuarios y mejorar la experiencia</li>
-                        <li><strong>Información agregada:</strong> Toda la información recopilada es anónima y se utiliza solo para mejorar el servicio</li>
-                    </ul>
+                <!-- ── SPANISH (default) ── -->
+                <div th:case="*">
+                    <h1 class="legal-title">Política de Cookies</h1>
+                    <p class="legal-date">Última actualización: 15 de marzo de 2026</p>
+                    <div class="legal-content">
+                        <section>
+                            <h2>1. ¿Qué son las cookies?</h2>
+                            <p>Las cookies son pequeños archivos de texto que los sitios web colocan en tu dispositivo para almacenar información sobre tus preferencias, mejorar tu experiencia de navegación y proporcionar servicios personalizados. Son una parte esencial de cómo funciona internet y ayudan a hacer tu experiencia más eficiente.</p>
+                        </section>
+                        <section>
+                            <h2>2. Tipos de cookies que utilizamos</h2>
+                            <h3>2.1 Cookies necesarias</h3>
+                            <p>Estas cookies son esenciales para el funcionamiento básico del sitio. Te permiten navegar por el sitio y utilizar sus funciones esenciales, como acceder a áreas seguras. Sin estas cookies, el sitio no puede funcionar correctamente.</p>
+                            <p>Ejemplos de uso:</p>
+                            <ul>
+                                <li>Mantener tu sesión iniciada</li>
+                                <li>Recordar tus preferencias de inicio de sesión</li>
+                                <li>Proteger contra actividades fraudulentas</li>
+                                <li>Gestionar el carrito de compras (si aplica)</li>
+                            </ul>
+                            <h3>2.2 Cookies de análisis y rendimiento</h3>
+                            <p>Estas cookies nos permiten contar las visitas y fuentes de tráfico para poder medir y mejorar el rendimiento de nuestro sitio. Nos ayudan a saber qué páginas son las más y menos populares, y cómo los visitantes se mueven por el sitio.</p>
+                            <p>Utilizamos:</p>
+                            <ul>
+                                <li><strong>Google Analytics:</strong> Para analizar el comportamiento de los usuarios y mejorar la experiencia</li>
+                                <li><strong>Información agregada:</strong> Toda la información recopilada es anónima y se utiliza solo para mejorar el servicio</li>
+                            </ul>
+                            <h3>2.3 Cookies de funcionalidad</h3>
+                            <p>Estas cookies permiten que el sitio recuerde las elecciones que has hecho (como tu nombre de usuario, idioma o región) y proporcionan características mejoradas y más personales.</p>
+                            <h3>2.4 Cookies de marketing y publicidad</h3>
+                            <p>Estas cookies pueden ser establecidas a través de nuestro sitio por nuestros socios publicitarios. Pueden ser utilizadas por esas empresas para crear un perfil de tus intereses y mostrarte anuncios relevantes en otros sitios.</p>
+                        </section>
+                        <section>
+                            <h2>3. Cookies de terceros</h2>
+                            <p>En algunas páginas, podemos utilizar servicios de terceros que pueden establecer sus propias cookies. Estos terceros incluyen:</p>
+                            <ul>
+                                <li><strong>Google:</strong> Para autenticación y análisis</li>
+                                <li><strong>Facebook:</strong> Para autenticación social (cuando esté disponible)</li>
+                                <li><strong>Procesadores de pago:</strong> Para gestionar transacciones seguras</li>
+                            </ul>
+                            <p>No tenemos control sobre estas cookies, y te recomendamos revisar las políticas de privacidad de estos terceros para más información.</p>
+                        </section>
+                        <section>
+                            <h2>4. Gestión de cookies</h2>
+                            <p>Puedes gestionar tus preferencias de cookies de varias maneras:</p>
+                            <h3>4.1 A través de nuestro banner</h3>
+                            <p>Cuando visitas nuestro sitio por primera vez, te mostramos un banner que te permite aceptar, rechazar o personalizar tus preferencias de cookies.</p>
+                            <h3>4.2 A través de la configuración del navegador</h3>
+                            <p>La mayoría de los navegadores te permiten:</p>
+                            <ul>
+                                <li>Ver qué cookies tienes y eliminarlas individualmente</li>
+                                <li>Bloquear cookies de terceros</li>
+                                <li>Bloquear cookies de sitios específicos</li>
+                                <li>Bloquear todas las cookies</li>
+                                <li>Eliminar todas las cookies al cerrar el navegador</li>
+                            </ul>
+                            <p>Enlaces a guías de configuración de cookies para los navegadores más populares:</p>
+                            <ul>
+                                <li><a href="https://support.google.com/chrome/answer/95647" target="_blank">Google Chrome</a></li>
+                                <li><a href="https://support.mozilla.org/es/kb/habilitar-y-deshabilitar-cookies-sitios-web-rastrear-preferencias" target="_blank">Mozilla Firefox</a></li>
+                                <li><a href="https://support.apple.com/es-es/guide/safari/sfri11471/mac" target="_blank">Safari</a></li>
+                                <li><a href="https://support.microsoft.com/es-es/windows/eliminar-y-administrar-cookies-168dab11-0753-043d-7c16-ede5947fc64d" target="_blank">Microsoft Edge</a></li>
+                            </ul>
+                        </section>
+                        <section>
+                            <h2>5. Base legal</h2>
+                            <p>De acuerdo con la normativa española y europea (RGPD), utilizamos cookies basándonos en:</p>
+                            <ul>
+                                <li><strong>Consentimiento:</strong> Para cookies de análisis y marketing</li>
+                                <li><strong>Interés legítimo:</strong> Para cookies necesarias para el funcionamiento del sitio</li>
+                            </ul>
+                            <p>Puedes retirar tu consentimiento en cualquier momento ajustando la configuración de tu navegador.</p>
+                        </section>
+                        <section>
+                            <h2>6. Actualizaciones de la política</h2>
+                            <p>Podemos actualizar esta Política de Cookies periódicamente para reflejar cambios en las cookies que utilizamos o por otros motivos operativos, legales o regulatorios. Te recomendamos revisar esta página regularmente para mantenerte informado.</p>
+                        </section>
+                        <section>
+                            <h2>7. Contacto</h2>
+                            <p>Si tienes preguntas sobre nuestra Política de Cookies, contáctanos en:</p>
+                            <p>Email: <a href="mailto:privacidad@1-padel.com">privacidad@1-padel.com</a></p>
+                        </section>
+                    </div>
+                </div>
 
-                    <h3>2.3 Cookies de funcionalidad</h3>
-                    <p>Estas cookies permiten que el sitio recuerde las elecciones que has hecho (como tu nombre de usuario, idioma o región) y proporcionan características mejoradas y más personales.</p>
-
-                    <h3>2.4 Cookies de marketing y publicidad</h3>
-                    <p>Estas cookies pueden ser establecidas a través de nuestro sitio por nuestros socios publicitarios. Pueden ser utilizadas por esas empresas para crear un perfil de tus intereses y mostrarte anuncios relevantes en otros sitios.</p>
-                </section>
-
-                <section>
-                    <h2>3. Cookies de terceros</h2>
-                    <p>En algunas páginas, podemos utilizar servicios de terceros que pueden establecer sus propias cookies. Estos terceros incluyen:</p>
-                    <ul>
-                        <li><strong>Google:</strong> Para autenticación y análisis</li>
-                        <li><strong>Facebook:</strong> Para autenticación social (cuando esté disponible)</li>
-                        <li><strong>Procesadores de pago:</strong> Para gestionar transacciones seguras</li>
-                    </ul>
-                    <p>No tenemos control sobre estas cookies, y te recomendamos revisar las políticas de privacidad de estos terceros para más información.</p>
-                </section>
-
-                <section>
-                    <h2>4. Gestión de cookies</h2>
-                    <p>Puedes gestionar tus preferencias de cookies de varias maneras:</p>
-
-                    <h3>4.1 A través de nuestro banner</h3>
-                    <p>Cuando visitas nuestro sitio por primera vez, te mostramos un banner que te permite aceptar, rechazar o personalizar tus preferencias de cookies.</p>
-
-                    <h3>4.2 A través de la configuración del navegador</h3>
-                    <p>La mayoría de los navegadores te permiten:</p>
-                    <ul>
-                        <li>Ver qué cookies tienes y eliminarlas individualmente</li>
-                        <li>Bloquear cookies de terceros</li>
-                        <li>Bloquear cookies de sitios específicos</li>
-                        <li>Bloquear todas las cookies</li>
-                        <li>Eliminar todas las cookies al cerrar el navegador</li>
-                    </ul>
-
-                    <p>Enlaces a guías de configuración de cookies para los navegadores más populares:</p>
-                    <ul>
-                        <li><a href="https://support.google.com/chrome/answer/95647" target="_blank">Google Chrome</a></li>
-                        <li><a href="https://support.mozilla.org/es/kb/habilitar-y-deshabilitar-cookies-sitios-web-rastrear-preferencias" target="_blank">Mozilla Firefox</a></li>
-                        <li><a href="https://support.apple.com/es-es/guide/safari/sfri11471/mac" target="_blank">Safari</a></li>
-                        <li><a href="https://support.microsoft.com/es-es/windows/eliminar-y-administrar-cookies-168dab11-0753-043d-7c16-ede5947fc64d" target="_blank">Microsoft Edge</a></li>
-                    </ul>
-                </section>
-
-                <section>
-                    <h2>5. Base legal</h2>
-                    <p>De acuerdo con la normativa española y europea (RGPD), utilizamos cookies basándonos en:</p>
-                    <ul>
-                        <li><strong>Consentimiento:</strong> Para cookies de análisis y marketing</li>
-                        <li><strong>Interés legítimo:</strong> Para cookies necesarias para el funcionamiento del sitio</li>
-                    </ul>
-                    <p>Puedes retirar tu consentimiento en cualquier momento ajustando la configuración de tu navegador.</p>
-                </section>
-
-                <section>
-                    <h2>6. Actualizaciones de la política</h2>
-                    <p>Podemos actualizar esta Política de Cookies periódicamente para reflejar cambios en las cookies que utilizamos o por otros motivos operativos, legales o regulatorios. Te recomendamos revisar esta página regularmente para mantenerte informado.</p>
-                </section>
-
-                <section>
-                    <h2>7. Contacto</h2>
-                    <p>Si tienes preguntas sobre nuestra Política de Cookies, contáctanos en:</p>
-                    <p>Email: <a href="mailto:privacidad@1-padel.com">privacidad@1-padel.com</a></p>
-                </section>
             </div>
 
             <div class="legal-footer">
                 <a href="/" class="btn btn-outline">
-                    <i class="fas fa-arrow-left"></i> Volver al inicio
+                    <i class="fas fa-arrow-left"></i> <span th:text="#{legal.btn.back}">Volver al inicio</span>
                 </a>
             </div>
         </div>
@@ -153,11 +317,13 @@
     <div class="container">
         <div class="footer-bottom">
             <div class="footer-copyright">
-                <i class="far fa-copyright"></i> <span th:text="${year}">2026</span> 1-Padel. Todos los derechos reservados.
+                <i class="far fa-copyright"></i> <span th:text="${year}">2026</span> <span th:text="#{legal.footer.rights}">1-Padel. Todos los derechos reservados.</span>
             </div>
         </div>
     </div>
 </footer>
 <script th:src="@{/js/logger.js}"></script>
+<script th:src="${'/js/i18n/messages-' + #locale.language + '.js'}"></script>
+<script th:src="@{/js/i18n/t.js}"></script>
 </body>
 </html>

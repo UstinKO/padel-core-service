@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta name="app-profile" th:content="${@environment.getActiveProfiles().length > 0
         ? @environment.getActiveProfiles()[0]
         : 'default'}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clubes - 1-Padel</title>
+    <title th:text="#{clubs.list.title}">Clubes - 1-Padel</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
@@ -22,11 +22,11 @@
 
 <main class="main">
     <div class="container">
-        <h1 class="page-title">Nuestros Clubes</h1>
+        <h1 class="page-title" th:text="#{clubs.list.heading}">Nuestros Clubes</h1>
 
         <div th:if="${clubs.empty}" class="empty-state">
             <i class="fas fa-building"></i>
-            <h3>No hay clubes disponibles</h3>
+            <h3 th:text="#{clubs.list.empty}">No hay clubes disponibles</h3>
         </div>
 
         <div th:unless="${clubs.empty}" class="clubs-grid">
@@ -49,7 +49,7 @@
                     </p>
                 </div>
                 <div class="club-footer">
-                    <a th:href="@{'/clubs/' + ${club.id}}" class="btn btn-primary">
+                    <a th:href="@{'/clubs/' + ${club.id}}" class="btn btn-primary" th:text="#{clubs.list.btn.details}">
                         Ver detalles
                     </a>
                 </div>
@@ -60,5 +60,7 @@
 
 <footer th:replace="~{fragments/public-footer :: footer}"></footer>
 <script th:src="@{/js/logger.js}"></script>
+<script th:src="${'/js/i18n/messages-' + #locale.language + '.js'}"></script>
+<script th:src="@{/js/i18n/t.js}"></script>
 </body>
 </html>

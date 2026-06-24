@@ -47,8 +47,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     // IP-адреса, которые полностью обходят rate limiting (разработчики / владелец)
     private static final Set<String> WHITELISTED_IPS = Set.of(
-            //"194.124.210.113",  // разработчик
-            "152.171.139.176"   // владелец приложения
+            "194.124.210.113",  // разработчик
+            "152.171.139.176"  // владелец приложения
     );
 
     // Кэш buckets по ключу "IP:endpoint_type"

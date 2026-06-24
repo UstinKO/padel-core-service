@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta name="app-profile" th:content="${@environment.getActiveProfiles().length > 0
         ? @environment.getActiveProfiles()[0]
@@ -144,14 +144,14 @@
                 <ul class="navbar-nav">
                     <li class="nav-item">
                         <a href="/" class="nav-link">
-                            <i class="fas fa-home"></i> Inicio
+                            <i class="fas fa-home"></i> <span th:text="#{nav.home}">Inicio</span>
                         </a>
                     </li>
                     <li class="nav-item" th:if="${isAuthenticated}">
-                        <a href="/players/dashboard" class="nav-link">Dashboard</a>
+                        <a href="/players/dashboard" class="nav-link" th:text="#{nav.dashboard}">Dashboard</a>
                     </li>
                     <li class="nav-item" th:if="${isAuthenticated}">
-                        <a href="/perfil" class="nav-link">Perfil</a>
+                        <a href="/perfil" class="nav-link" th:text="#{nav.perfil}">Perfil</a>
                     </li>
                 </ul>
 
@@ -164,7 +164,7 @@
                     <form th:action="@{/logout}" method="post" style="display: inline;">
                         <button type="submit" class="btn btn-outline-sm">
                             <i class="fas fa-sign-out-alt"></i>
-                            Salir
+                            <span th:text="#{nav.logout}">Salir</span>
                         </button>
                     </form>
                 </div>
@@ -173,11 +173,11 @@
                 <div class="navbar-user" th:unless="${isAuthenticated}">
                     <a href="/login" class="btn btn-outline-sm">
                         <i class="fas fa-sign-in-alt"></i>
-                        Iniciar sesión
+                        <span th:text="#{nav.login}">Iniciar sesión</span>
                     </a>
                     <a href="/players/registro" class="btn btn-primary-sm">
                         <i class="fas fa-user-plus"></i>
-                        Registrarse
+                        <span th:text="#{nav.register}">Registrarse</span>
                     </a>
                 </div>
             </div>
@@ -190,7 +190,7 @@
         <!-- Кнопка возврата -->
         <div class="back-button-container">
             <a th:href="@{'/torneo/' + ${tournament.id}}" class="btn-outline">
-                <i class="fas fa-arrow-left"></i> Volver a detalles del torneo
+                <i class="fas fa-arrow-left"></i> <span th:text="#{americano.btn.back}">Volver a detalles del torneo</span>
             </a>
         </div>
 
@@ -226,7 +226,7 @@
                     <i class="fas fa-chevron-left"></i>
                 </button>
                 <span class="round-indicator">
-                    Ronda <span id="currentRoundDisplay">1</span> de <span th:text="${rounds.size()}">5</span>
+                    <span th:text="#{americano.round.prefix}">Ronda</span> <span id="currentRoundDisplay">1</span> <span th:text="#{americano.round.of}">de</span> <span th:text="${rounds.size()}">5</span>
                     <span class="round-status-badge" id="currentRoundStatus"></span>
                 </span>
                 <button class="round-btn" id="nextRound">
@@ -246,7 +246,7 @@
                 <div class="round-header">
                     <h3>
                         <i class="fas fa-calendar-week"></i>
-                        Ronda <span th:text="${round.roundNumber}">1</span>
+                        <span th:text="#{americano.round.prefix}">Ronda</span> <span th:text="${round.roundNumber}">1</span>
                     </h3>
                     <span class="round-badge" th:text="${round.status}">En curso</span>
                 </div>
@@ -256,7 +256,7 @@
                      class="bye-section">
                     <div class="bye-section-title">
                         <i class="fas fa-pause-circle"></i>
-                        Descansan en esta ronda
+                        <span th:text="#{americano.bye.title}">Descansan en esta ronda</span>
                         <span style="font-weight:400;color:#b45309;font-size:.8rem"
                               th:text="'(' + ${#lists.size(round.byePlayerNames)} + ' jugador(es))'"></span>
                     </div>
@@ -271,7 +271,7 @@
                     <div th:each="match : ${round.matches}" class="court-card">
                         <div class="court-number">
                             <i class="fas fa-table-tennis"></i>
-                            Cancha <span th:text="${match.courtNumber}">1</span>
+                            <span th:text="#{americano.court.prefix}">Cancha</span> <span th:text="${match.courtNumber}">1</span>
                             <span class="match-tag" th:text="'#' + ${match.matchNumber}">#1</span>
                         </div>
 
@@ -299,10 +299,10 @@
                         </div>
 
                         <div th:if="${match.isCompleted}" class="match-status completed">
-                            <i class="fas fa-check-circle"></i> Finalizado
+                            <i class="fas fa-check-circle"></i> <span th:text="#{americano.match.status.completed}">Finalizado</span>
                         </div>
                         <div th:unless="${match.isCompleted}" class="match-status pending">
-                            <i class="fas fa-hourglass-half"></i> En espera
+                            <i class="fas fa-hourglass-half"></i> <span th:text="#{americano.match.status.pending}">En espera</span>
                         </div>
                     </div>
                 </div>
@@ -312,18 +312,18 @@
         <!-- Ranking Section -->
         <div class="ranking-card">
             <div class="ranking-header">
-                <h3><i class="fas fa-chart-line"></i> Clasificación</h3>
+                <h3><i class="fas fa-chart-line"></i> <span th:text="#{americano.ranking.title}">Clasificación</span></h3>
             </div>
             <div class="ranking-table">
                 <table class="table">
                     <thead>
                     <tr>
-                        <th>#</th>
-                        <th>Jugador</th>
-                        <th>Pts</th>
-                        <th>PJ</th>
-                        <th>V</th>
-                        <th>Dif.</th>
+                        <th th:text="#{americano.table.pos}">#</th>
+                        <th th:text="#{americano.table.player}">Jugador</th>
+                        <th th:text="#{americano.table.pts}">Pts</th>
+                        <th th:text="#{americano.table.pj}">PJ</th>
+                        <th th:text="#{americano.table.wins}">V</th>
+                        <th th:text="#{americano.table.diff}">Dif.</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -370,29 +370,31 @@
             </div>
 
             <div class="footer-links">
-                <h4 class="footer-title">Legal</h4>
+                <h4 class="footer-title" th:text="#{footer.legal}">Legal</h4>
                 <ul class="footer-menu">
-                    <li><a href="/terminos"><i class="fas fa-file-contract"></i> Términos</a></li>
-                    <li><a href="/privacidad"><i class="fas fa-shield-alt"></i> Privacidad</a></li>
-                    <li><a href="/cookies"><i class="fas fa-cookie-bite"></i> Cookies</a></li>
+                    <li><a href="/terminos"><i class="fas fa-file-contract"></i> <span th:text="#{footer.terminos}">Términos</span></a></li>
+                    <li><a href="/privacidad"><i class="fas fa-shield-alt"></i> <span th:text="#{footer.privacidad}">Privacidad</span></a></li>
+                    <li><a href="/cookies"><i class="fas fa-cookie-bite"></i> <span th:text="#{footer.cookies}">Cookies</span></a></li>
                 </ul>
             </div>
         </div>
 
         <div class="footer-bottom">
-            <div class="footer-copyright">
-                <i class="far fa-copyright"></i> 2026 1-Padel. Todos los derechos reservados.
+            <div class="footer-copyright" th:text="#{footer.copyright}">
+                © 2026 1-Padel. Todos los derechos reservados.
             </div>
             <div class="footer-badges">
-                <span class="badge"><i class="fas fa-check-circle"></i> Verificado</span>
-                <span class="badge"><i class="fas fa-shield"></i> SSL Secure</span>
-                <span class="badge"><i class="fas fa-mobile-alt"></i> Responsive</span>
-                <span class="badge"><i class="fas fa-padel"></i> Padel Friendly</span>
+                <span class="badge"><i class="fas fa-check-circle"></i> <span th:text="#{footer.badge.verified}">Verificado</span></span>
+                <span class="badge"><i class="fas fa-shield"></i> <span th:text="#{footer.badge.ssl}">SSL Secure</span></span>
+                <span class="badge"><i class="fas fa-mobile-alt"></i> <span th:text="#{footer.badge.responsive}">Responsive</span></span>
+                <span class="badge"><i class="fas fa-padel"></i> <span th:text="#{footer.badge.padel}">Padel Friendly</span></span>
             </div>
         </div>
     </div>
 </footer>
 <script th:src="@{/js/logger.js}"></script>
+<script th:src="${'/js/i18n/messages-' + #locale.language + '.js'}"></script>
+<script th:src="@{/js/i18n/t.js}"></script>
 <script>
     // Round navigation
     const roundEls = Array.from(document.querySelectorAll('[id^="round-"]'));

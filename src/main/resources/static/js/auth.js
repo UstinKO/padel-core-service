@@ -51,11 +51,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // ── Вспомогательные функции ──────────────────────────────
     function getPasswordErrors(password) {
         const errors = [];
-        if (password.length < 8)           errors.push('mínimo 8 caracteres');
-        if (!password.match(/[a-z]/))       errors.push('al menos una minúscula');
-        if (!password.match(/[A-Z]/))       errors.push('al menos una mayúscula');
-        if (!password.match(/[0-9]/))       errors.push('al menos un número');
-        if (!password.match(/[@#$%^&+=!]/)) errors.push('al menos un carácter especial (@#$%^&+=!)');
+        if (password.length < 8)           errors.push(t('auth.pwd.req.min8'));
+        if (!password.match(/[a-z]/))       errors.push(t('auth.pwd.req.lowercase'));
+        if (!password.match(/[A-Z]/))       errors.push(t('auth.pwd.req.uppercase'));
+        if (!password.match(/[0-9]/))       errors.push(t('auth.pwd.req.number'));
+        if (!password.match(/[@#$%^&+=!]/)) errors.push(t('auth.pwd.req.special'));
         return errors;
     }
 
@@ -77,11 +77,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (confirm === password) {
-            confirmHint.innerHTML = '<span style="color:#10B981;"><i class="fas fa-check-circle"></i> Las contraseñas coinciden</span>';
+            confirmHint.innerHTML = `<span style="color:#10B981;"><i class="fas fa-check-circle"></i> ${t('auth.pwd.match')}</span>`;
             confirmInput.classList.remove('is-invalid');
             confirmInput.classList.add('is-valid');
         } else {
-            confirmHint.innerHTML = '<span style="color:#EF4444;"><i class="fas fa-times-circle"></i> Las contraseñas no coinciden</span>';
+            confirmHint.innerHTML = `<span style="color:#EF4444;"><i class="fas fa-times-circle"></i> ${t('auth.pwd.no_match')}</span>`;
             confirmInput.classList.remove('is-valid');
             confirmInput.classList.add('is-invalid');
         }
@@ -119,19 +119,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     const forbidden = getForbiddenChars(password);
                     if (forbidden.length > 0) {
                         const chars = forbidden
-                            .map(c => `<code style="background:#fee2e2;padding:1px 4px;border-radius:3px;font-size:.85em;">${c === ' ' ? '(espacio)' : c}</code>`)
+                            .map(c => `<code style="background:#fee2e2;padding:1px 4px;border-radius:3px;font-size:.85em;">${c === ' ' ? t('auth.pwd.space_label') : c}</code>`)
                             .join(' ');
-                        passwordHint.innerHTML = `<span style="color:#EF4444;"><i class="fas fa-ban"></i> Caracteres no permitidos: ${chars}</span>`;
+                        passwordHint.innerHTML = `<span style="color:#EF4444;"><i class="fas fa-ban"></i> ${t('auth.pwd.invalid_chars', chars)}</span>`;
                         passwordInput.classList.remove('is-valid');
                         passwordInput.classList.add('is-invalid');
                     } else {
                         const errors = getPasswordErrors(password);
                         if (errors.length === 0) {
-                            passwordHint.innerHTML = '<span style="color:#10B981;"><i class="fas fa-check-circle"></i> Contraseña válida</span>';
+                            passwordHint.innerHTML = `<span style="color:#10B981;"><i class="fas fa-check-circle"></i> ${t('auth.pwd.valid')}</span>`;
                             passwordInput.classList.remove('is-invalid');
                             passwordInput.classList.add('is-valid');
                         } else {
-                            passwordHint.innerHTML = '<span style="color:#EF4444;"><i class="fas fa-exclamation-circle"></i> Falta: ' + errors.join(', ') + '</span>';
+                            passwordHint.innerHTML = `<span style="color:#EF4444;"><i class="fas fa-exclamation-circle"></i> ${t('auth.pwd.missing', errors.join(', '))}</span>`;
                             passwordInput.classList.remove('is-valid');
                             passwordInput.classList.add('is-invalid');
                         }

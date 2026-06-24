@@ -45,40 +45,42 @@ class PadelCoreHome {
 
         this.displayMaps = {
             nivel: {
-                'PRINCIPIANTES': 'Principiante',
-                'C9': 'C9 (Principiante)',
-                'C8': 'C8 (Intermedio)',
-                'C7': 'C7 (Avanzado)',
-                'C6': 'C6 (Profesional)',
-                'C5': 'C5 (Élite)',
-                'C4': 'C4',
-                'D8': 'D8',
-                'D7': 'D7',
-                'D6': 'D6',
-                'SUMA_15': 'Suma 15+',
-                'SUMA_14': 'Suma 14+',
-                'SUMA_13': 'Suma 13+'
+                'PRINCIPIANTES': t('enum.nivel.principiantes'),
+                'C9': t('enum.nivel.c9'),
+                'C8': t('enum.nivel.c8'),
+                'C7': t('enum.nivel.c7'),
+                'C6': t('enum.nivel.c6'),
+                'C5': t('enum.nivel.c5'),
+                'C4': t('enum.nivel.c4'),
+                'D8': t('enum.nivel.d8'),
+                'D7': t('enum.nivel.d7'),
+                'D6': t('enum.nivel.d6'),
+                'SUMA_15': t('enum.nivel.suma15'),
+                'SUMA_14': t('enum.nivel.suma14'),
+                'SUMA_13': t('enum.nivel.suma13')
             },
             tipo: {
-                'KING_OF_COURT': 'King of Court',
-                'AMERICANA': 'Americana'
+                'KING_OF_COURT':    t('enum.tipo.koc'),
+                'AMERICANO':        t('enum.tipo.americana'),
+                'AMERICANO_TEAMS':  t('enum.tipo.americano_teams'),
+                'CANCHA_ABIERTA':   t('enum.tipo.cancha_abierta')
             },
             genero: {
-                'MASCULINO': 'Masculino',
-                'FEMENINO': 'Femenino',
-                'MIXTO': 'Mixto'
+                'MASCULINO': t('enum.genero.m'),
+                'FEMENINO': t('enum.genero.f'),
+                'MIXTO': t('enum.genero.mix')
             },
             estado: {
-                'REGISTRO_ABIERTO': 'Inscripción abierta',
-                'PUBLICADO': 'Próximamente',
-                'BORRADOR': 'Borrador',
-                'CERRADO': 'Cerrado',
-                'FINALIZADO': 'Finalizado',
-                'CANCELADO': 'Cancelado'
+                'REGISTRO_ABIERTO': t('enum.estado.open'),
+                'PUBLICADO': t('enum.estado.published'),
+                'BORRADOR': t('enum.estado.draft'),
+                'CERRADO': t('enum.estado.closed'),
+                'FINALIZADO': t('enum.estado.finished'),
+                'CANCELADO': t('enum.estado.cancelled')
             },
             modalidad: {
-                'INDIVIDUAL': 'Individual',
-                'DOBLES': 'Dobles'
+                'INDIVIDUAL': t('enum.modalidad.individual'),
+                'DOBLES': t('enum.modalidad.doubles')
             }
         };
 
@@ -165,11 +167,11 @@ class PadelCoreHome {
             if (this.filtersForm.classList.contains('collapsed')) {
                 icon.classList.remove('fa-chevron-up');
                 icon.classList.add('fa-chevron-down');
-                if (span) span.textContent = 'Mostrar filtros';
+                if (span) span.textContent = t('filter.toggle.show');
             } else {
                 icon.classList.remove('fa-chevron-down');
                 icon.classList.add('fa-chevron-up');
-                if (span) span.textContent = 'Ocultar filtros';
+                if (span) span.textContent = t('filter.toggle.hide');
             }
         }
     }
@@ -243,11 +245,11 @@ class PadelCoreHome {
 
         const fecha = Array.isArray(tournament.fechaInicio)
             ? `${tournament.fechaInicio[2]}/${tournament.fechaInicio[1]}/${tournament.fechaInicio[0]}`
-            : tournament.fechaInicio || 'Fecha por definir';
+            : tournament.fechaInicio || t('card.date.unknown');
 
         const hora = Array.isArray(tournament.horaInicio)
             ? `${tournament.horaInicio[0]}:${tournament.horaInicio[1].toString().padStart(2, '0')}`
-            : tournament.horaInicio || 'Hora por definir';
+            : tournament.horaInicio || t('card.time.unknown');
 
         const generoDisplay = this.displayMaps.genero[tournament.generoFormato] || tournament.generoFormato || 'N/A';
         const nivelDisplay  = tournament.categoriaNivel || 'N/A';
@@ -278,7 +280,7 @@ class PadelCoreHome {
                 <div class="tournament-info-item">
                     <i class="fas fa-map-marker-alt"></i>
                     <div class="club-info">
-                        <span class="club-name">${this.escapeHtml(tournament.clubNombre || 'Club por definir')}</span>
+                        <span class="club-name">${this.escapeHtml(tournament.clubNombre || t('card.club.unknown'))}</span>
                         ${clubAddress}
                     </div>
                 </div>
@@ -288,7 +290,7 @@ class PadelCoreHome {
                 </div>
                 <div class="tournament-info-item">
                     <i class="fas fa-users"></i>
-                    <span>${tournament.cupoMax || 0} ${tournament.tipo === 'KING_OF_COURT' ? 'jugadores' : 'cupos'}</span>
+                    <span>${tournament.cupoMax || 0} ${tournament.tipo === 'KING_OF_COURT' ? t('card.capacity.players') : t('card.capacity.spots')}</span>
                 </div>
                 <div class="tournament-info-item">
                     <i class="fas fa-tag"></i>
@@ -297,11 +299,11 @@ class PadelCoreHome {
             </div>
             <div class="tournament-footer">
                 <a href="/torneo/${tournament.id}" class="btn btn-outline btn-small">
-                    <i class="fas fa-info-circle"></i> Ver detalles
+                    <i class="fas fa-info-circle"></i> ${t('card.btn.details')}
                 </a>
                 ${started
             ? `<span class="tournament-status" style="color:#6c757d; font-size:.8rem;">
-                           <i class="fas fa-lock"></i> Iniciado
+                           <i class="fas fa-lock"></i> ${t('card.status.started')}
                        </span>`
             : `<span class="tournament-status ${estadoClass}">${estadoDisplay}</span>`
         }

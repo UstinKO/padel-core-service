@@ -63,11 +63,11 @@
             <div id="passwordResetModal" class="modal" style="display: none;">
                 <div class="modal-content" style="max-width: 400px;">
                     <div class="modal-header">
-                        <h3>Recuperar contraseña</h3>
+                        <h3>${t('pwd_reset.modal.title')}</h3>
                         <button type="button" class="modal-close" onclick="hidePasswordResetModal()">&times;</button>
                     </div>
                     <div class="modal-body">
-                        <p>Introduce tu email y te enviaremos instrucciones para recuperar tu contraseña.</p>
+                        <p>${t('pwd_reset.modal.desc')}</p>
                         <form id="passwordResetForm">
                             <div class="form-group">
                                 <label for="resetEmail" class="form-label">
@@ -80,9 +80,9 @@
                         </form>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-outline" onclick="hidePasswordResetModal()">Cancelar</button>
+                        <button type="button" class="btn btn-outline" onclick="hidePasswordResetModal()">${t('pwd_reset.btn.cancel')}</button>
                         <button type="button" class="btn btn-primary" onclick="sendPasswordResetRequest()">
-                            <i class="fas fa-paper-plane"></i> Enviar
+                            <i class="fas fa-paper-plane"></i> ${t('pwd_reset.btn.send')}
                         </button>
                     </div>
                 </div>
@@ -115,13 +115,13 @@
     window.sendPasswordResetRequest = function() {
         const email = document.getElementById('resetEmail').value;
         if (!email) {
-            showResetMessage('Por favor, introduce tu email', 'error');
+            showResetMessage(t('pwd_reset.error.email_empty'), 'error');
             return;
         }
 
         const button = event.target.closest('button');
         const originalText = button.innerHTML;
-        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+        button.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('pwd_reset.sending')}`;
         button.disabled = true;
 
         fetch('/recuperar-password/solicitar', {
@@ -151,7 +151,7 @@
             })
             .catch(error => {
                 console.error('Error:', error);
-                showResetMessage('Error de conexión. Intenta de nuevo más tarde.', 'error');
+                showResetMessage(t('pwd_reset.error.connection'), 'error');
             })
             .finally(() => {
                 button.innerHTML = originalText;
@@ -218,19 +218,19 @@
             <div id="newPasswordModal" class="modal" style="display: none;">
                 <div class="modal-content" style="max-width: 400px;">
                     <div class="modal-header">
-                        <h3>Nueva contraseña</h3>
+                        <h3>${t('pwd_reset.new.title')}</h3>
                         <button type="button" class="modal-close" onclick="hideNewPasswordModal()">&times;</button>
                     </div>
                     <div class="modal-body">
-                        <p>Introduce tu nueva contraseña</p>
+                        <p>${t('pwd_reset.new.desc')}</p>
                         <form id="newPasswordForm">
                             <div class="form-group">
                                 <label for="newPassword" class="form-label">
-                                    <i class="fas fa-lock"></i> Nueva contraseña
+                                    <i class="fas fa-lock"></i> ${t('pwd_reset.new.label')}
                                 </label>
                                 <div class="input-with-icon">
-                                    <input type="password" id="newPassword" name="newPassword" class="form-control" 
-                                           placeholder="Mínimo 6 caracteres" required minlength="6">
+                                    <input type="password" id="newPassword" name="newPassword" class="form-control"
+                                           placeholder="${t('pwd_reset.new.placeholder')}" required minlength="6">
                                     <i class="fas fa-lock input-icon"></i>
                                     <button type="button" class="toggle-password" data-target="newPassword">
                                         <i class="fas fa-eye"></i>
@@ -239,11 +239,11 @@
                             </div>
                             <div class="form-group">
                                 <label for="confirmPassword" class="form-label">
-                                    <i class="fas fa-lock"></i> Confirmar contraseña
+                                    <i class="fas fa-lock"></i> ${t('pwd_reset.confirm.label')}
                                 </label>
                                 <div class="input-with-icon">
-                                    <input type="password" id="confirmPassword" name="confirmPassword" class="form-control" 
-                                           placeholder="Repite tu contraseña" required>
+                                    <input type="password" id="confirmPassword" name="confirmPassword" class="form-control"
+                                           placeholder="${t('pwd_reset.confirm.placeholder')}" required>
                                     <i class="fas fa-lock input-icon"></i>
                                     <button type="button" class="toggle-password" data-target="confirmPassword">
                                         <i class="fas fa-eye"></i>
@@ -254,9 +254,9 @@
                         </form>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-outline" onclick="hideNewPasswordModal()">Cancelar</button>
+                        <button type="button" class="btn btn-outline" onclick="hideNewPasswordModal()">${t('pwd_reset.btn.cancel')}</button>
                         <button type="button" class="btn btn-primary" onclick="sendNewPassword()">
-                            <i class="fas fa-sign-in-alt"></i> Cambiar y entrar
+                            <i class="fas fa-sign-in-alt"></i> ${t('pwd_reset.btn.submit')}
                         </button>
                     </div>
                 </div>
@@ -294,23 +294,23 @@
         const confirmPassword = document.getElementById('confirmPassword').value;
 
         if (!newPassword || !confirmPassword) {
-            showNewPasswordMessage('Por favor, completa todos los campos', 'error');
+            showNewPasswordMessage(t('pwd_reset.error.fields_empty'), 'error');
             return;
         }
 
         if (newPassword.length < 6) {
-            showNewPasswordMessage('La contraseña debe tener al menos 6 caracteres', 'error');
+            showNewPasswordMessage(t('pwd_reset.error.min_length'), 'error');
             return;
         }
 
         if (newPassword !== confirmPassword) {
-            showNewPasswordMessage('Las contraseñas no coinciden', 'error');
+            showNewPasswordMessage(t('pwd_reset.error.no_match'), 'error');
             return;
         }
 
         const button = event.target.closest('button');
         const originalText = button.innerHTML;
-        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+        button.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('pwd_reset.processing')}`;
         button.disabled = true;
 
         fetch('/recuperar-password/confirmar', {
@@ -346,7 +346,7 @@
             })
             .catch(error => {
                 console.error('Error:', error);
-                showNewPasswordMessage('Error de conexión. Intenta de nuevo más tarde.', 'error');
+                showNewPasswordMessage(t('pwd_reset.error.connection'), 'error');
                 button.innerHTML = originalText;
                 button.disabled = false;
             });

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<header th:fragment="header" class="header">
+    <div class="container">
+        <nav class="navbar">
+            <a href="/" class="navbar-brand">
+                <img th:src="@{/images/1.svg}" alt="1-Padel Logo" class="navbar-logo" width="40" height="40">
+                <span class="navbar-brand-text">1-<span class="brand-highlight">PADEL</span></span>
+            </a>
+
+            <button class="navbar-toggler" id="navbarToggler" type="button">
+                <span class="navbar-toggler-icon"></span>
+                <span class="navbar-toggler-icon"></span>
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a href="/" class="nav-link" th:text="#{nav.home}">Inicio</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/torneos" class="nav-link" th:text="#{nav.torneos}">Torneos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/clubs" class="nav-link active" th:text="#{nav.clubs}">Clubes</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/ranking" class="nav-link" th:text="#{nav.ranking}">Ranking</a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+    </div>
+</header>
+</body>
+</html>
