@@ -234,5 +234,81 @@ window.APP_MESSAGES = {
     'koc.admin.init_confirm':     '¿Inicializar torneo King of Court?',
     'koc.admin.init_success':     'Torneo inicializado',
     'koc.admin.error_init':       'Error de inicialización',
-    'koc.admin.error_connection': 'Error de conexión'
+    'koc.admin.error_connection': 'Error de conexión',
+
+    // ── king-of-court.js (admin — additional) ───────────────────────────────
+    'koc.admin.result_updated':     'Resultado actualizado',
+    'koc.admin.next_round':         'Pasando a la siguiente ronda',
+    'koc.admin.youtube_saved':      'Enlace de YouTube guardado',
+    'koc.admin.rollback':           'Ronda cancelada — corrige los resultados de la ronda anterior',
+    'koc.admin.confirm_next_round': '¿Pasar a la siguiente ronda?',
+    'koc.admin.confirm_finish':     '¿Finalizar torneo? No se podrán ingresar más resultados.',
+    'koc.admin.error_fields':       'No todos los campos están completos',
+    'koc.admin.error_same_winners': 'Selecciona dos ganadores diferentes',
+    'koc.admin.error_score':        'El puntaje de los ganadores debe ser mayor que el de los perdedores',
+    'koc.admin.error_court_data':   'No se pudieron cargar los datos de la cancha',
+    'koc.admin.error_losers':       'Error al determinar los perdedores',
+    'koc.admin.error_save':         'Error al guardar',
+    'koc.admin.error_next_round':   'Error al pasar de ronda',
+    'koc.admin.error_finish':       'Error al finalizar el torneo',
+    'koc.admin.error_rollback':     'Error al revertir la ronda',
+    'koc.admin.btn_initialize':     'Inicializar torneo',
+
+    // ── admin.js ─────────────────────────────────────────────────────────────
+    'admin.common.confirm.delete':      '¿Estás seguro de eliminar {0}?',
+    'admin.common.success.deleted':     'Elemento eliminado correctamente',
+    'admin.common.error.delete':        'Error al eliminar',
+    'admin.common.success.status':      'Estado actualizado correctamente',
+    'admin.common.error.status':        'Error al actualizar estado',
+    'admin.common.error.connection':    'Error de conexión',
+
+    // ── admin-americano.js ───────────────────────────────────────────────────
+    'admin.americano.round.started':         'Ronda iniciada',
+    'admin.americano.round.completed':       'Ronda completada',
+    'admin.americano.result.saved':          'Resultado guardado',
+    'admin.americano.error.start_round':     'Error al iniciar ronda',
+    'admin.americano.error.complete_round':  'Error al completar ronda',
+    'admin.americano.error.save_result':     'Error al guardar resultado',
+    'admin.americano.confirm.complete_round':'¿Finalizar esta ronda? Todos los partidos deben estar guardados.',
+    'admin.americano.error.score_sum':       'La suma de puntos debe ser {0}',
+    'admin.americano.status.pending':        'Pendiente',
+    'admin.americano.status.in_progress':    'En curso',
+    'admin.americano.status.completed':      'Completado',
+    'admin.americano.status.cancelled':      'Cancelado',
+
+    // ── payment-management.js ────────────────────────────────────────────────
+    'admin.payments.confirm.save': '¿Guardar los cambios de pagos y asistencia?',
+
+    // ── king-of-court.js (court card / modal JS) ─────────────────────────────
+    'koc.admin.btn.enter_result':       'Ingresar resultado',
+    'koc.admin.modal.result_new':       'Resultado para Cancha {0}',
+    'koc.admin.modal.result_edit':      'Editar resultado — Cancha {0}',
+
+    // ── tournament-double / tournament-playoff (inline JS) ────────────────────
+    'admin.americano.double.confirm.finish':     '¿Finalizar el torneo? La clasificación quedará fijada.',
+    'admin.americano.btn.start_round':           'Iniciar Ronda',
+    'admin.common.btn.save':                     'Guardar',
+    'admin.common.btn.edit':                     'Editar',
+    'admin.americano.double.hint.sum_pts':       'Suma = {0} pts',
+    'admin.tournaments.list.confirm.deactivate': '¿Desactivar este torneo? Los datos se conservarán.',
+    'admin.tournaments.list.confirm.delete':     '¿ELIMINAR PERMANENTEMENTE este torneo? Esta acción no se puede deshacer.',
+    'admin.playoff.confirm.import':              '¿Importar parejas desde las inscripciones confirmadas?',
+
+    // Players search hints
+    'admin.players.search.hint.telegram': 'Búsqueda por Telegram',
+    'admin.players.search.hint.email':    'Búsqueda por email',
+    'admin.players.search.hint.phone':    'Búsqueda por teléfono',
+    'admin.players.search.hint.id':       'Búsqueda por ID',
+    'admin.players.search.hint.all':      'Búsqueda en nombre, email y teléfono',
+
+    // Playoff confirms
+    'admin.playoff.confirm.delete_team':   '¿Eliminar este equipo?',
+    'admin.playoff.confirm.start_qual':    '¿Iniciar calificación?',
+    'admin.playoff.confirm.start_playoff': '¿Iniciar playoff con los mejores equipos?',
+
+    // Round status
+    'enum.round.status.PENDING':    'Pendiente',
+    'enum.round.status.IN_PROGRESS':'En curso',
+    'enum.round.status.COMPLETED':  'Completada',
+    'enum.round.status.CANCELLED':  'Cancelada'
 };

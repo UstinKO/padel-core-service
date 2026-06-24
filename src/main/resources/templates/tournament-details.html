@@ -185,7 +185,8 @@
                             </div>
                             <div class="info-content">
                                 <span class="info-label" th:text="#{tournament.info.duration}">Duración estimada</span>
-                                <span class="info-value" th:text="${tournament.duracion ?: #messages.msg('tournament.info.duration.unknown')}">4 horas</span>
+                                <span class="info-value" th:if="${tournament.duracion}" th:text="${tournament.duracion}">4 horas</span>
+                                <span class="info-value" th:unless="${tournament.duracion}" th:text="#{tournament.info.duration.unknown}">No especificada</span>
                             </div>
                         </div>
 

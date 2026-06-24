@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html lang="es" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta name="app-profile" th:content="${@environment.getActiveProfiles().length > 0
         ? @environment.getActiveProfiles()[0]
         : 'default'}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:if="${tournament.id == null}">Crear Torneo - 1-Padel Admin</title>
-    <title th:unless="${tournament.id == null}">Editar Torneo - 1-Padel Admin</title>
+    <title th:if="${tournament.id == null}" th:text="#{admin.tournaments.form.title.create} + ' - 1-Padel Admin'">Crear Torneo - 1-Padel Admin</title>
+    <title th:unless="${tournament.id == null}" th:text="#{admin.tournaments.form.title.edit} + ' - 1-Padel Admin'">Editar Torneo - 1-Padel Admin</title>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -22,8 +22,7 @@
     <link rel="stylesheet" th:href="@{/css/admin-forms.css}">
 </head>
 <body>
-<!-- ✅ ИСПРАВЛЕНО: Король Корта → Crear Torneo / Editar Torneo -->
-<header th:replace="~{fragments/admin-header :: header(${tournament.id == null} ? 'Crear Torneo' : 'Editar Torneo')}"></header>
+<header th:replace="~{fragments/admin-header :: header(${tournament.id == null} ? #{admin.tournaments.form.title.create} : #{admin.tournaments.form.title.edit})}"></header>
 
 <main class="admin-main">
     <div class="container">
@@ -31,17 +30,17 @@
             <div class="form-header">
                 <h1 th:if="${tournament.id == null}">
                     <i class="fas fa-plus-circle"></i>
-                    Crear Nuevo Torneo
+                    <span th:text="#{admin.tournaments.form.title.new}">Crear Nuevo Torneo</span>
                 </h1>
                 <h1 th:if="${isCopy != null}">
                     <i class="fas fa-copy"></i>
-                    Copiar Torneo: <span th:text="${tournament.nombre}" style="font-size: 1.5rem; color: var(--admin-primary);">Torneo</span>
+                    <span th:text="#{admin.tournaments.form.title.copy}">Copiar Torneo</span>: <span th:text="${tournament.nombre}" style="font-size: 1.5rem; color: var(--admin-primary);">Torneo</span>
                 </h1>
                 <h1 th:unless="${tournament.id == null}">
                     <i class="fas fa-edit"></i>
-                    Editar Torneo
+                    <span th:text="#{admin.tournaments.form.title.edit}">Editar Torneo</span>
                 </h1>
-                <p>Complete los detalles del torneo a continuación</p>
+                <p th:text="#{admin.tournaments.form.subtitle}">Complete los detalles del torneo a continuación</p>
             </div>
 
             <div th:if="${successMessage}" class="alert alert-success">
@@ -66,37 +65,37 @@
                 <div class="form-section">
                     <h2 class="section-title">
                         <i class="fas fa-info-circle"></i>
-                        Información Básica
+                        <span th:text="#{admin.tournaments.form.section.basic_info}">Información Básica</span>
                     </h2>
 
                     <div class="form-grid">
                         <div class="form-group">
-                            <label for="clubId" class="required">Club</label>
+                            <label for="clubId" class="required" th:text="#{admin.tournaments.form.field.club}">Club</label>
                             <select th:field="*{clubId}"
                                     id="clubId"
                                     class="form-control"
                                     th:classappend="${#fields.hasErrors('clubId')} ? 'is-invalid' : ''"
                                     required>
-                                <option value="">Seleccione un club</option>
+                                <option value="" th:text="#{admin.tournaments.form.field.club.select}">Seleccione un club</option>
                                 <option th:each="club : ${clubs}"
                                         th:value="${club.id}"
                                         th:text="${club.nombre}"></option>
                             </select>
                             <div class="invalid-feedback" th:if="${#fields.hasErrors('clubId')}"
-                                 th:errors="*{clubId}">Error en el campo</div>
+                                 th:errors="*{clubId}" th:text="#{admin.tournaments.form.error.field}">Error en el campo</div>
                         </div>
 
                         <div class="form-group">
-                            <label for="nombre" class="required">Nombre del Torneo</label>
+                            <label for="nombre" class="required" th:text="#{admin.tournaments.form.field.name}">Nombre del Torneo</label>
                             <input type="text"
                                    th:field="*{nombre}"
                                    id="nombre"
                                    class="form-control"
                                    th:classappend="${#fields.hasErrors('nombre')} ? 'is-invalid' : ''"
-                                   placeholder="Ej: Torneo Open Verano 2026"
+                                   th:placeholder="#{admin.tournaments.form.field.name.placeholder}"
                                    required>
                             <div class="invalid-feedback" th:if="${#fields.hasErrors('nombre')}"
-                                 th:errors="*{nombre}">Error en el campo</div>
+                                 th:errors="*{nombre}" th:text="#{admin.tournaments.form.error.field}">Error en el campo</div>
                         </div>
                     </div>
                 </div>
@@ -105,12 +104,12 @@
                 <div class="form-section">
                     <h2 class="section-title">
                         <i class="fas fa-calendar-alt"></i>
-                        Fecha y Hora
+                        <span th:text="#{admin.tournaments.form.section.date_time}">Fecha y Hora</span>
                     </h2>
 
                     <div class="form-grid">
                         <div class="form-group">
-                            <label for="fechaInicio" class="required">Fecha de Inicio</label>
+                            <label for="fechaInicio" class="required" th:text="#{admin.tournaments.form.field.date_start}">Fecha de Inicio</label>
                             <input type="date"
                                    th:field="*{fechaInicio}"
                                    id="fechaInicio"
@@ -118,11 +117,11 @@
                                    th:classappend="${#fields.hasErrors('fechaInicio')} ? 'is-invalid' : ''"
                                    required>
                             <div class="invalid-feedback" th:if="${#fields.hasErrors('fechaInicio')}"
-                                 th:errors="*{fechaInicio}">Error en el campo</div>
+                                 th:errors="*{fechaInicio}" th:text="#{admin.tournaments.form.error.field}">Error en el campo</div>
                         </div>
 
                         <div class="form-group">
-                            <label for="horaInicio" class="required">Hora de Inicio</label>
+                            <label for="horaInicio" class="required" th:text="#{admin.tournaments.form.field.time_start}">Hora de Inicio</label>
                             <input type="time"
                                    th:field="*{horaInicio}"
                                    id="horaInicio"
@@ -130,16 +129,16 @@
                                    th:classappend="${#fields.hasErrors('horaInicio')} ? 'is-invalid' : ''"
                                    required>
                             <div class="invalid-feedback" th:if="${#fields.hasErrors('horaInicio')}"
-                                 th:errors="*{horaInicio}">Error en el campo</div>
+                                 th:errors="*{horaInicio}" th:text="#{admin.tournaments.form.error.field}">Error en el campo</div>
                         </div>
 
                         <div class="form-group">
-                            <label for="duracion">Duración Estimada</label>
+                            <label for="duracion" th:text="#{admin.tournaments.form.field.duration}">Duración Estimada</label>
                             <input type="text"
                                    th:field="*{duracion}"
                                    id="duracion"
                                    class="form-control"
-                                   placeholder="Ej: 4 horas, 2 días">
+                                   th:placeholder="#{admin.tournaments.form.field.duration.placeholder}">
                         </div>
                     </div>
                 </div>
@@ -148,76 +147,76 @@
                 <div class="form-section">
                     <h2 class="section-title">
                         <i class="fas fa-cog"></i>
-                        Configuración del Torneo
+                        <span th:text="#{admin.tournaments.form.section.config}">Configuración del Torneo</span>
                     </h2>
 
                     <div class="form-grid">
                         <div class="form-group">
-                            <label for="generoFormato" class="required">Formato de Género</label>
+                            <label for="generoFormato" class="required" th:text="#{admin.tournaments.form.field.gender}">Formato de Género</label>
                             <select th:field="*{generoFormato}"
                                     id="generoFormato"
                                     class="form-control"
                                     th:classappend="${#fields.hasErrors('generoFormato')} ? 'is-invalid' : ''"
                                     required>
-                                <option value="">Seleccione formato</option>
+                                <option value="" th:text="#{admin.tournaments.form.field.gender.select}">Seleccione formato</option>
                                 <option th:each="formato : ${genderFormats}"
                                         th:value="${formato}"
                                         th:text="${formato.value}"></option>
                             </select>
                             <div class="invalid-feedback" th:if="${#fields.hasErrors('generoFormato')}"
-                                 th:errors="*{generoFormato}">Error en el campo</div>
+                                 th:errors="*{generoFormato}" th:text="#{admin.tournaments.form.error.field}">Error en el campo</div>
                         </div>
 
                         <div class="form-group">
-                            <label for="categoriaNivel" class="required">Categoría / Nivel</label>
+                            <label for="categoriaNivel" class="required" th:text="#{admin.tournaments.form.field.level}">Categoría / Nivel</label>
                             <select th:field="*{categoriaNivel}"
                                     id="categoriaNivel"
                                     class="form-control"
                                     th:classappend="${#fields.hasErrors('categoriaNivel')} ? 'is-invalid' : ''"
                                     required>
-                                <option value="">Seleccione nivel</option>
+                                <option value="" th:text="#{admin.tournaments.form.field.level.select}">Seleccione nivel</option>
                                 <option th:each="nivel : ${niveles}"
                                         th:value="${nivel}"
                                         th:text="${nivel.display}"></option>
                             </select>
                             <div class="invalid-feedback" th:if="${#fields.hasErrors('categoriaNivel')}"
-                                 th:errors="*{categoriaNivel}">Error en el campo</div>
+                                 th:errors="*{categoriaNivel}" th:text="#{admin.tournaments.form.error.field}">Error en el campo</div>
                         </div>
 
                         <div class="form-group">
-                            <label for="tipo" class="required">Tipo de Torneo</label>
+                            <label for="tipo" class="required" th:text="#{admin.tournaments.form.field.type}">Tipo de Torneo</label>
                             <select th:field="*{tipo}"
                                     id="tipo"
                                     class="form-control"
                                     th:classappend="${#fields.hasErrors('tipo')} ? 'is-invalid' : ''"
                                     onchange="onTipoChange(this)"
                                     required>
-                                <option value="">Seleccione tipo</option>
-                                <option value="KING_OF_COURT">Rey de Cancha</option>
-                                <option value="AMERICANO">Americano (Individual)</option>
-                                <option value="AMERICANO_TEAMS">Americano Parejas (Calificación + Playoff)</option>
-                                <option value="CANCHA_ABIERTA">Cancha Abierta</option>
+                                <option value="" th:text="#{admin.tournaments.form.field.type.select}">Seleccione tipo</option>
+                                <option value="KING_OF_COURT" th:text="#{admin.tournaments.form.field.type.koc}">Rey de Cancha</option>
+                                <option value="AMERICANO" th:text="#{admin.tournaments.form.field.type.americano}">Americano (Individual)</option>
+                                <option value="AMERICANO_TEAMS" th:text="#{admin.tournaments.form.field.type.americano_teams}">Americano Parejas (Calificación + Playoff)</option>
+                                <option value="CANCHA_ABIERTA" th:text="#{admin.tournaments.form.field.type.cancha_abierta}">Cancha Abierta</option>
                             </select>
                             <div id="tipoHint" style="font-size:.8rem;margin-top:.35rem;color:#64748b"></div>
                             <div class="invalid-feedback" th:if="${#fields.hasErrors('tipo')}"
-                                 th:errors="*{tipo}">Error en el campo</div>
+                                 th:errors="*{tipo}" th:text="#{admin.tournaments.form.error.field}">Error en el campo</div>
                         </div>
 
                         <!-- Modalidad — скрывается для AMERICANO_TEAMS (всегда Dobles) -->
                         <div class="form-group" id="modalidadGroup">
-                            <label for="modalidad" class="required">Modalidad de Juego</label>
+                            <label for="modalidad" class="required" th:text="#{admin.tournaments.form.field.modality}">Modalidad de Juego</label>
                             <select th:field="*{modalidad}"
                                     id="modalidad"
                                     class="form-control"
                                     th:classappend="${#fields.hasErrors('modalidad')} ? 'is-invalid' : ''"
                                     required>
-                                <option value="">Seleccione modalidad</option>
+                                <option value="" th:text="#{admin.tournaments.form.field.modality.select}">Seleccione modalidad</option>
                                 <option th:each="modalidad : ${modalidades}"
                                         th:value="${modalidad}"
                                         th:text="${modalidad.nombre}"></option>
                             </select>
                             <div class="invalid-feedback" th:if="${#fields.hasErrors('modalidad')}"
-                                 th:errors="*{modalidad}">Error en el campo</div>
+                                 th:errors="*{modalidad}" th:text="#{admin.tournaments.form.error.field}">Error en el campo</div>
                         </div>
                     </div>
                 </div>
@@ -226,12 +225,12 @@
                 <div class="form-section">
                     <h2 class="section-title">
                         <i class="fas fa-users"></i>
-                        Capacidad y Precio
+                        <span th:text="#{admin.tournaments.form.section.capacity_price}">Capacidad y Precio</span>
                     </h2>
 
                     <div class="form-grid">
                         <div class="form-group">
-                            <label for="cupoMax" class="required">Cupo Máximo</label>
+                            <label for="cupoMax" class="required" th:text="#{admin.tournaments.form.field.capacity}">Cupo Máximo</label>
                             <input type="number"
                                    th:field="*{cupoMax}"
                                    id="cupoMax"
@@ -241,11 +240,11 @@
                                    max="64"
                                    required>
                             <div class="invalid-feedback" th:if="${#fields.hasErrors('cupoMax')}"
-                                 th:errors="*{cupoMax}">Error en el campo</div>
+                                 th:errors="*{cupoMax}" th:text="#{admin.tournaments.form.error.field}">Error en el campo</div>
                         </div>
 
                         <div class="form-group">
-                            <label for="precio" class="required">Precio</label>
+                            <label for="precio" class="required" th:text="#{admin.tournaments.form.field.price}">Precio</label>
                             <input type="number"
                                    th:field="*{precio}"
                                    id="precio"
@@ -255,18 +254,18 @@
                                    min="0"
                                    required>
                             <div class="invalid-feedback" th:if="${#fields.hasErrors('precio')}"
-                                 th:errors="*{precio}">Error en el campo</div>
+                                 th:errors="*{precio}" th:text="#{admin.tournaments.form.error.field}">Error en el campo</div>
                         </div>
 
                         <div class="form-group">
-                            <label for="moneda">Moneda</label>
+                            <label for="moneda" th:text="#{admin.tournaments.form.field.currency}">Moneda</label>
                             <select th:field="*{moneda}"
                                     id="moneda"
                                     class="form-control">
-                                <option value="ARS">ARS (Peso Argentino)</option>
-                                <option value="USD">USD (Dólar)</option>
-                                <option value="USDT">USDT (Tether)</option>
-                                <option value="EUR">EUR (Euro)</option>
+                                <option value="ARS" th:text="#{admin.tournaments.form.field.currency.ars}">ARS (Peso Argentino)</option>
+                                <option value="USD" th:text="#{admin.tournaments.form.field.currency.usd}">USD (Dólar)</option>
+                                <option value="USDT" th:text="#{admin.tournaments.form.field.currency.usdt}">USDT (Tether)</option>
+                                <option value="EUR" th:text="#{admin.tournaments.form.field.currency.eur}">EUR (Euro)</option>
                             </select>
                         </div>
                     </div>
@@ -276,24 +275,24 @@
                 <div class="form-section">
                     <h2 class="section-title">
                         <i class="fas fa-clock"></i>
-                        Estado y Fechas Límite
+                        <span th:text="#{admin.tournaments.form.section.status_deadlines}">Estado y Fechas Límite</span>
                     </h2>
 
                     <div class="form-grid">
                         <div class="form-group">
-                            <label for="estado" class="required">Estado del Torneo</label>
+                            <label for="estado" class="required" th:text="#{admin.tournaments.form.field.status}">Estado del Torneo</label>
                             <select th:field="*{estado}"
                                     id="estado"
                                     class="form-control"
                                     required>
                                 <option th:each="status : ${tournamentStatuses}"
                                         th:value="${status}"
-                                        th:text="${status.value}"></option>
+                                        th:text="#{__${'enum.estado.' + status.name()}__}"></option>
                             </select>
                         </div>
 
                         <div class="form-group">
-                            <label for="deadlineCancelacion">Fecha Límite de Cancelación</label>
+                            <label for="deadlineCancelacion" th:text="#{admin.tournaments.form.field.deadline}">Fecha Límite de Cancelación</label>
                             <input type="datetime-local"
                                    th:field="*{deadlineCancelacion}"
                                    id="deadlineCancelacion"
@@ -306,49 +305,49 @@
                 <div class="form-section">
                     <h2 class="section-title">
                         <i class="fas fa-info-circle"></i>
-                        Información Adicional
+                        <span th:text="#{admin.tournaments.form.section.additional_info}">Información Adicional</span>
                     </h2>
 
                     <div class="form-group">
-                        <label for="infoDetallada">Descripción Detallada</label>
+                        <label for="infoDetallada" th:text="#{admin.tournaments.form.field.description}">Descripción Detallada</label>
                         <textarea th:field="*{infoDetallada}"
                                   id="infoDetallada"
                                   class="form-control"
                                   rows="5"
-                                  placeholder="Información adicional sobre el torneo..."></textarea>
+                                  th:placeholder="#{admin.tournaments.form.field.description.placeholder}"></textarea>
                     </div>
 
                     <div class="form-group">
-                        <label for="contactoOrganizador" class="required">Contacto del Organizador</label>
+                        <label for="contactoOrganizador" class="required" th:text="#{admin.tournaments.form.field.contact}">Contacto del Organizador</label>
                         <input type="text"
                                th:field="*{contactoOrganizador}"
                                id="contactoOrganizador"
                                class="form-control"
                                th:classappend="${#fields.hasErrors('contactoOrganizador')} ? 'is-invalid' : ''"
-                               placeholder="Ej: Juan Pérez - 123456789"
+                               th:placeholder="#{admin.tournaments.form.field.contact.placeholder}"
                                required>
                         <div class="invalid-feedback" th:if="${#fields.hasErrors('contactoOrganizador')}"
-                             th:errors="*{contactoOrganizador}">Error en el campo</div>
+                             th:errors="*{contactoOrganizador}" th:text="#{admin.tournaments.form.error.field}">Error en el campo</div>
                     </div>
 
                     <div class="form-group">
-                        <label for="faqUrl">URL de Preguntas Frecuentes</label>
+                        <label for="faqUrl" th:text="#{admin.tournaments.form.field.faq}">URL de Preguntas Frecuentes</label>
                         <input type="url"
                                th:field="*{faqUrl}"
                                id="faqUrl"
                                class="form-control"
-                               placeholder="https://ejemplo.com/faq">
+                               th:placeholder="#{admin.tournaments.form.field.faq.placeholder}">
                     </div>
                 </div>
 
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-save"></i>
-                        <span th:text="${tournament.id == null} ? 'Crear Torneo' : 'Guardar Cambios'"></span>
+                        <span th:text="${tournament.id == null} ? #{admin.tournaments.form.btn.create} : #{admin.tournaments.form.btn.save}">Crear Torneo</span>
                     </button>
                     <a href="/admin/tournaments" class="btn btn-outline">
                         <i class="fas fa-times"></i>
-                        Cancelar
+                        <span th:text="#{admin.common.btn.cancel}">Cancelar</span>
                     </a>
                 </div>
             </form>

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html lang="es" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>Gestión de Clubes - 1-Padel Admin</title>
+    <title th:text="#{admin.clubs.list.title} + ' - 1-Padel Admin'">Gestión de Clubes - 1-Padel Admin</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
@@ -13,16 +13,16 @@
     <link rel="stylesheet" th:href="@{/css/admin.css}">
 </head>
 <body>
-<header th:replace="~{fragments/admin-header :: header('Gestión de Clubes')}"></header>
+<header th:replace="~{fragments/admin-header :: header(#{admin.clubs.list.title})}"></header>
 
 <main class="admin-main">
     <div class="container">
         <div class="admin-header">
             <h1 class="admin-title">
                 <i class="fas fa-building"></i>
-                Gestión de Clubes
+                <span th:text="#{admin.clubs.list.title}">Gestión de Clubes</span>
             </h1>
-            <p class="admin-subtitle">Administración de clubes 1-Padel</p>
+            <p class="admin-subtitle" th:text="#{admin.clubs.list.subtitle}">Administración de clubes 1-Padel</p>
         </div>
 
         <div th:if="${successMessage}" class="alert alert-success">
@@ -38,7 +38,7 @@
         <div class="admin-actions" th:unless="${isAdminRole}">
             <a href="/admin/clubs/new" class="btn btn-primary">
                 <i class="fas fa-plus-circle"></i>
-                Nuevo Club
+                <span th:text="#{admin.clubs.list.btn.new}">Nuevo Club</span>
             </a>
         </div>
 
@@ -52,7 +52,7 @@
                     </div>
                     <span class="status-badge"
                           th:classappend="${club.isActive} ? 'badge-success' : 'badge-warning'"
-                          th:text="${club.isActive} ? 'Activo' : 'Inactivo'">Activo</span>
+                          th:text="${club.isActive} ? #{admin.common.status.active} : #{admin.common.status.inactive}">Activo</span>
                 </div>
                 <div class="club-card-body">
                     <div class="club-info-item">
@@ -86,7 +86,7 @@
                             <button type="submit" class="btn btn-outline btn-sm"
                                     th:classappend="${club.isActive} ? '' : 'btn-success'">
                                 <i th:class="${club.isActive} ? 'fas fa-ban' : 'fas fa-check-circle'"></i>
-                                <span th:text="${club.isActive} ? 'Desactivar' : 'Activar'"></span>
+                                <span th:text="${club.isActive} ? #{admin.common.btn.deactivate} : #{admin.common.btn.activate}"></span>
                             </button>
                         </form>
                     </th:block>
@@ -99,13 +99,13 @@
             <table class="admin-table">
                 <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>Nombre</th>
-                    <th>Ciudad/Zona</th>
-                    <th>Teléfono</th>
-                    <th>Email</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
+                    <th th:text="#{admin.common.col.id}">ID</th>
+                    <th th:text="#{admin.common.col.name}">Nombre</th>
+                    <th th:text="#{admin.clubs.list.col.city}">Ciudad/Zona</th>
+                    <th th:text="#{admin.common.col.phone}">Teléfono</th>
+                    <th th:text="#{admin.common.col.email}">Email</th>
+                    <th th:text="#{admin.common.col.status}">Estado</th>
+                    <th th:text="#{admin.common.col.actions}">Acciones</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -118,7 +118,7 @@
                     <td>
                         <span class="status-badge"
                               th:classappend="${club.isActive} ? 'badge-success' : 'badge-warning'"
-                              th:text="${club.isActive} ? 'Activo' : 'Inactivo'">Activo</span>
+                              th:text="${club.isActive} ? #{admin.common.status.active} : #{admin.common.status.inactive}">Activo</span>
                     </td>
                     <td>
                         <div class="action-buttons">
@@ -152,11 +152,11 @@
                     <td colspan="7" class="empty-state-cell">
                         <div class="admin-empty">
                             <i class="fas fa-building"></i>
-                            <h3>No hay clubes</h3>
-                            <p>Comienza creando tu primer club</p>
+                            <h3 th:text="#{admin.clubs.list.empty.title}">No hay clubes</h3>
+                            <p th:text="#{admin.clubs.list.empty.text}">Comienza creando tu primer club</p>
                             <a href="/admin/clubs/new" class="btn btn-primary">
                                 <i class="fas fa-plus-circle"></i>
-                                Crear Club
+                                <span th:text="#{admin.clubs.list.btn.create}">Crear Club</span>
                             </a>
                         </div>
                     </td>

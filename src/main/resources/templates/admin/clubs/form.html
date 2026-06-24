@@ -1,10 +1,9 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html lang="es" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:if="${club.id == null}">Crear Club - 1-Padel Admin</title>
-    <title th:unless="${club.id == null}">Editar Club - 1-Padel Admin</title>
+    <title th:text="${club.id == null} ? #{admin.clubs.form.title.create} + ' - 1-Padel Admin' : #{admin.clubs.form.title.edit} + ' - 1-Padel Admin'">Crear Club - 1-Padel Admin</title>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -19,8 +18,7 @@
     <link rel="stylesheet" th:href="@{/css/admin-forms.css}">
 </head>
 <body>
-<!-- ✅ ИСПРАВЛЕНО: Управление клубами → Crear Club / Editar Club -->
-<header th:replace="~{fragments/admin-header :: header(${club.id == null} ? 'Crear Club' : 'Editar Club')}"></header>
+<header th:replace="~{fragments/admin-header :: header(${club.id == null} ? #{admin.clubs.form.title.create} : #{admin.clubs.form.title.edit})}"></header>
 
 <main class="admin-main">
     <div class="container">
@@ -28,13 +26,13 @@
             <div class="form-header">
                 <h1 th:if="${club.id == null}">
                     <i class="fas fa-plus-circle"></i>
-                    Crear Nuevo Club
+                    <span th:text="#{admin.clubs.form.title.create}">Crear Nuevo Club</span>
                 </h1>
                 <h1 th:unless="${club.id == null}">
                     <i class="fas fa-edit"></i>
-                    Editar Club
+                    <span th:text="#{admin.clubs.form.title.edit}">Editar Club</span>
                 </h1>
-                <p>Complete los detalles del club a continuación</p>
+                <p th:text="#{admin.clubs.form.subtitle}">Complete los detalles del club a continuación</p>
             </div>
 
             <div th:if="${errorMessage}" class="alert alert-danger">
@@ -54,39 +52,39 @@
                 <div class="form-section">
                     <h2 class="section-title">
                         <i class="fas fa-info-circle"></i>
-                        Información Básica
+                        <span th:text="#{admin.clubs.form.section.basic}">Información Básica</span>
                     </h2>
 
                     <div class="form-grid">
                         <div class="form-group">
-                            <label for="nombre" class="required">Nombre del Club</label>
+                            <label for="nombre" class="required" th:text="#{admin.clubs.form.field.name}">Nombre del Club</label>
                             <input type="text"
                                    th:field="*{nombre}"
                                    id="nombre"
                                    class="form-control"
                                    th:classappend="${#fields.hasErrors('nombre')} ? 'is-invalid' : ''"
-                                   placeholder="Ej: Padel Indoor Madrid"
+                                   th:placeholder="#{admin.clubs.form.placeholder.name}"
                                    required>
                             <div class="invalid-feedback" th:if="${#fields.hasErrors('nombre')}"
                                  th:errors="*{nombre}">Error en el campo</div>
                         </div>
 
                         <div class="form-group">
-                            <label for="zonaCiudad">Ciudad / Zona</label>
+                            <label for="zonaCiudad" th:text="#{admin.clubs.form.field.city_zone}">Ciudad / Zona</label>
                             <input type="text"
                                    th:field="*{zonaCiudad}"
                                    id="zonaCiudad"
                                    class="form-control"
-                                   placeholder="Ej: Madrid Centro">
+                                   th:placeholder="#{admin.clubs.form.placeholder.city_zone}">
                         </div>
 
                         <div class="form-group">
-                            <label for="direccion">Dirección</label>
+                            <label for="direccion" th:text="#{admin.clubs.form.field.address}">Dirección</label>
                             <input type="text"
                                    th:field="*{direccion}"
                                    id="direccion"
                                    class="form-control"
-                                   placeholder="Ej: Calle de la Princesa 25">
+                                   th:placeholder="#{admin.clubs.form.placeholder.address}">
                         </div>
                     </div>
                 </div>
@@ -95,26 +93,26 @@
                 <div class="form-section">
                     <h2 class="section-title">
                         <i class="fas fa-phone-alt"></i>
-                        Contacto
+                        <span th:text="#{admin.clubs.form.section.contact}">Contacto</span>
                     </h2>
 
                     <div class="form-grid">
                         <div class="form-group">
-                            <label for="telefonoContacto">Teléfono</label>
+                            <label for="telefonoContacto" th:text="#{admin.clubs.form.field.phone}">Teléfono</label>
                             <input type="text"
                                    th:field="*{telefonoContacto}"
                                    id="telefonoContacto"
                                    class="form-control"
-                                   placeholder="Ej: +34 912 345 678">
+                                   th:placeholder="#{admin.clubs.form.placeholder.phone}">
                         </div>
 
                         <div class="form-group">
-                            <label for="emailContacto">Email</label>
+                            <label for="emailContacto" th:text="#{admin.clubs.form.field.email}">Email</label>
                             <input type="email"
                                    th:field="*{emailContacto}"
                                    id="emailContacto"
                                    class="form-control"
-                                   placeholder="Ej: info@club.com">
+                                   th:placeholder="#{admin.clubs.form.placeholder.email}">
                         </div>
                     </div>
                 </div>
@@ -123,35 +121,35 @@
                 <div class="form-section">
                     <h2 class="section-title">
                         <i class="fas fa-link"></i>
-                        Enlaces
+                        <span th:text="#{admin.clubs.form.section.links}">Enlaces</span>
                     </h2>
 
                     <div class="form-grid">
                         <div class="form-group">
-                            <label for="websiteUrl">Sitio Web</label>
+                            <label for="websiteUrl" th:text="#{admin.clubs.form.field.website}">Sitio Web</label>
                             <input type="url"
                                    th:field="*{websiteUrl}"
                                    id="websiteUrl"
                                    class="form-control"
-                                   placeholder="Ej: https://www.club.com">
+                                   th:placeholder="#{admin.clubs.form.placeholder.website}">
                         </div>
 
                         <div class="form-group">
-                            <label for="mapaUrl">URL del Mapa</label>
+                            <label for="mapaUrl" th:text="#{admin.clubs.form.field.map}">URL del Mapa</label>
                             <input type="url"
                                    th:field="*{mapaUrl}"
                                    id="mapaUrl"
                                    class="form-control"
-                                   placeholder="Ej: https://goo.gl/maps/...">
+                                   th:placeholder="#{admin.clubs.form.placeholder.map}">
                         </div>
 
                         <div class="form-group">
-                            <label for="logoUrl">URL del Logo</label>
+                            <label for="logoUrl" th:text="#{admin.clubs.form.field.logo}">URL del Logo</label>
                             <input type="url"
                                    th:field="*{logoUrl}"
                                    id="logoUrl"
                                    class="form-control"
-                                   placeholder="Ej: /images/clubs/logo.png">
+                                   th:placeholder="#{admin.clubs.form.placeholder.logo}">
                         </div>
                     </div>
                 </div>
@@ -160,7 +158,7 @@
                 <div class="form-section">
                     <h2 class="section-title">
                         <i class="fas fa-align-left"></i>
-                        Descripción
+                        <span th:text="#{admin.clubs.form.section.description}">Descripción</span>
                     </h2>
 
                     <div class="form-group">
@@ -168,18 +166,19 @@
                                   id="descripcion"
                                   class="form-control"
                                   rows="5"
-                                  placeholder="Descripción del club..."></textarea>
+                                  th:placeholder="#{admin.clubs.form.placeholder.description}"></textarea>
                     </div>
                 </div>
 
                 <div class="form-actions">
-                    <button type="submit" class="btn btn-primary" id="submitBtn">
+                    <button type="submit" class="btn btn-primary" id="submitBtn"
+                            th:data-saving="#{admin.clubs.form.saving}">
                         <i class="fas fa-save"></i>
-                        <span th:text="${club.id == null} ? 'Crear Club' : 'Guardar Cambios'"></span>
+                        <span th:text="${club.id == null} ? #{admin.clubs.form.btn.create} : #{admin.clubs.form.btn.save}"></span>
                     </button>
                     <a href="/admin/clubs" class="btn btn-outline">
                         <i class="fas fa-times"></i>
-                        Cancelar
+                        <span th:text="#{admin.clubs.form.btn.cancel}">Cancelar</span>
                     </a>
                 </div>
             </form>
@@ -200,7 +199,7 @@
         if (form) {
             form.addEventListener('submit', function() {
                 submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + (submitBtn.dataset.saving || 'Guardando...');
             });
         }
     });

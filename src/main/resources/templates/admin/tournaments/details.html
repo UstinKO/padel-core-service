@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html lang="es" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta name="app-profile" th:content="${@environment.getActiveProfiles().length > 0
         ? @environment.getActiveProfiles()[0]
@@ -316,7 +316,7 @@
     </style>
 </head>
 <body>
-<header th:replace="~{fragments/admin-header :: header('Detalles del Torneo')}"></header>
+<header th:replace="~{fragments/admin-header :: header(#{admin.tournaments.details.header})}"></header>
 
 <main class="admin-main">
     <div class="container">
@@ -336,11 +336,11 @@
             <div class="tournament-title-section">
                 <h1 th:text="${tournament.nombre}">Torneo Open de Padel 2026</h1>
                 <div class="tournament-badges">
-                    <span class="badge" th:text="${tournament.generoFormato}">Masculino</span>
-                    <span class="badge badge-level" th:text="${tournament.categoriaNivel}">C7 - Avanzado</span>
-                    <span class="badge badge-type" th:text="${tournament.tipo}">Parejas</span>
+                    <span class="badge" th:text="#{__${'enum.genero.' + tournament.generoFormato.name()}__}">Mixto</span>
+                    <span class="badge badge-level" th:text="${tournament.categoriaNivel}">C7</span>
+                    <span class="badge badge-type" th:text="#{__${'enum.tipo.' + tournament.tipo.name()}__}">Americano</span>
                     <span class="badge badge-status"
-                          th:text="${tournament.estado}"
+                          th:text="#{__${'enum.estado.' + tournament.estado.name()}__}"
                           th:classappend="'badge-' + ${tournament.estado.toString().toLowerCase()}">
                         Abierto
                     </span>
@@ -348,7 +348,7 @@
             </div>
             <div class="tournament-price">
                 <span class="price-value" th:text="${tournament.precio} + ' ' + ${tournament.moneda}">50 ARS</span>
-                <span class="price-label">por persona</span>
+                <span class="price-label" th:text="#{admin.tournaments.details.price_per_person}">por persona</span>
             </div>
         </div>
 
@@ -368,14 +368,15 @@
                                 ? '/tournaments/team-playoff/' + tournament.id
                             : '/torneo/' + tournament.id
                     }">
-                <i class="fas fa-share-alt"></i> Compartir
+                <i class="fas fa-share-alt"></i>
+                <span th:text="#{admin.tournaments.details.btn.share}">Compartir</span>
             </button>
 
             <!-- Редактирование — недоступно для ADMIN -->
             <a th:unless="${isAdminRole}"
                th:href="@{'/admin/tournaments/' + ${tournament.id} + '/edit'}" class="btn btn-primary">
                 <i class="fas fa-edit"></i>
-                Editar Torneo
+                <span th:text="#{admin.tournaments.details.btn.edit}">Editar Torneo</span>
             </a>
 
             <!-- Кнопки изменения статуса (Publicar — только для владельцев, не ADMIN) -->
@@ -385,7 +386,8 @@
                 <input type="hidden" name="status" value="PUBLICADO">
                 <button type="submit" class="btn btn-outline"
                         th:classappend="${tournament.estado.name() == 'PUBLICADO'} ? 'active' : ''">
-                    <i class="fas fa-upload"></i> Publicar
+                    <i class="fas fa-upload"></i>
+                    <span th:text="#{admin.tournaments.details.btn.publish}">Publicar</span>
                 </button>
             </form>
 
@@ -394,7 +396,8 @@
                 <input type="hidden" name="status" value="REGISTRO_ABIERTO">
                 <button type="submit" class="btn btn-outline"
                         th:classappend="${tournament.estado.name() == 'REGISTRO_ABIERTO'} ? 'active' : ''">
-                    <i class="fas fa-door-open"></i> Abrir
+                    <i class="fas fa-door-open"></i>
+                    <span th:text="#{admin.tournaments.details.btn.open}">Abrir</span>
                 </button>
             </form>
 
@@ -403,7 +406,8 @@
                 <input type="hidden" name="status" value="CERRADO">
                 <button type="submit" class="btn btn-outline"
                         th:classappend="${tournament.estado.name() == 'CERRADO'} ? 'active' : ''">
-                    <i class="fas fa-door-closed"></i> Cerrar
+                    <i class="fas fa-door-closed"></i>
+                    <span th:text="#{admin.tournaments.details.btn.close}">Cerrar</span>
                 </button>
             </form>
 
@@ -412,7 +416,8 @@
                 <input type="hidden" name="status" value="FINALIZADO">
                 <button type="submit" class="btn btn-outline"
                         th:classappend="${tournament.estado.name() == 'FINALIZADO'} ? 'active' : ''">
-                    <i class="fas fa-flag-checkered"></i> Finalizar
+                    <i class="fas fa-flag-checkered"></i>
+                    <span th:text="#{admin.tournaments.details.btn.finish}">Finalizar</span>
                 </button>
             </form>
 
@@ -421,7 +426,8 @@
                   th:action="@{'/admin/tournaments/' + ${tournament.id} + '/deactivate'}"
                   method="post" style="display: inline-block;">
                 <button type="submit" class="btn btn-warning">
-                    <i class="fas fa-ban"></i> Desactivar
+                    <i class="fas fa-ban"></i>
+                    <span th:text="#{admin.tournaments.details.btn.deactivate}">Desactivar</span>
                 </button>
             </form>
         </div>
@@ -431,7 +437,8 @@
             <form th:action="@{'/admin/tournaments/' + ${tournament.id} + '/delete'}"
                   method="post" style="display: inline-block;">
                 <button type="submit" class="btn btn-danger">
-                    <i class="fas fa-trash-alt"></i> Eliminar Permanentemente
+                    <i class="fas fa-trash-alt"></i>
+                    <span th:text="#{admin.tournaments.details.btn.delete}">Eliminar Permanentemente</span>
                 </button>
             </form>
         </div>
@@ -444,7 +451,7 @@
                 <div class="info-card">
                     <h2 class="info-card-title">
                         <i class="fas fa-info-circle"></i>
-                        Información del Torneo
+                        <span th:text="#{admin.tournaments.details.info.title}">Información del Torneo</span>
                     </h2>
 
                     <div class="info-grid">
@@ -453,7 +460,7 @@
                                 <i class="fas fa-calendar-alt"></i>
                             </div>
                             <div class="info-content">
-                                <span class="info-label">Fecha de inicio</span>
+                                <span class="info-label" th:text="#{admin.tournaments.details.info.date}">Fecha de inicio</span>
                                 <span class="info-value" th:text="${#temporals.format(tournament.fechaInicio, 'dd/MM/yyyy')} + ' - ' + ${#temporals.format(tournament.horaInicio, 'HH:mm')}">
                                     15/03/2026 - 10:00
                                 </span>
@@ -465,8 +472,9 @@
                                 <i class="fas fa-clock"></i>
                             </div>
                             <div class="info-content">
-                                <span class="info-label">Duración</span>
-                                <span class="info-value" th:text="${tournament.duracion ?: 'No especificada'}">4 horas</span>
+                                <span class="info-label" th:text="#{admin.tournaments.details.info.duration}">Duración</span>
+                                <span class="info-value" th:if="${tournament.duracion}" th:text="${tournament.duracion}">4 horas</span>
+                                <span class="info-value" th:unless="${tournament.duracion}" th:text="#{admin.tournaments.details.info.duration.none}">No especificada</span>
                             </div>
                         </div>
 
@@ -475,7 +483,7 @@
                                 <i class="fas fa-map-marker-alt"></i>
                             </div>
                             <div class="info-content">
-                                <span class="info-label">Club</span>
+                                <span class="info-label" th:text="#{admin.tournaments.details.info.club}">Club</span>
                                 <span class="info-value" th:text="${tournament.clubNombre}">Club Padel Center</span>
                             </div>
                         </div>
@@ -485,7 +493,7 @@
                                 <i class="fas fa-calendar-times"></i>
                             </div>
                             <div class="info-content">
-                                <span class="info-label">Cancelación hasta</span>
+                                <span class="info-label" th:text="#{admin.tournaments.details.info.cancel_deadline}">Cancelación hasta</span>
                                 <span class="info-value" th:text="${#temporals.format(tournament.deadlineCancelacion, 'dd/MM/yyyy HH:mm')}">
                                     10/03/2026 23:59
                                 </span>
@@ -498,7 +506,7 @@
                 <div class="info-card" th:if="${tournament.infoDetallada}">
                     <h2 class="info-card-title">
                         <i class="fas fa-align-left"></i>
-                        Descripción
+                        <span th:text="#{admin.tournaments.details.info.description}">Descripción</span>
                     </h2>
                     <!-- ИСПРАВЛЕНО: используем простой текст с CSS -->
                     <div class="tournament-description" style="white-space: pre-line;" th:text="${tournament.infoDetallada}">
@@ -510,7 +518,7 @@
                 <div class="info-card">
                     <h2 class="info-card-title">
                         <i class="fas fa-phone-alt"></i>
-                        Contacto del Organizador
+                        <span th:text="#{admin.tournaments.details.info.contact}">Contacto del Organizador</span>
                     </h2>
                     <div class="contact-info">
                         <p th:if="${tournament.contactoOrganizador}">
@@ -523,7 +531,7 @@
                                 <span th:text="${tournament.contactoOrganizador}">Juan Pérez - 123456789</span>
                             </a>
                         </p>
-                        <p th:unless="${tournament.contactoOrganizador}">No disponible</p>
+                        <p th:unless="${tournament.contactoOrganizador}" th:text="#{admin.tournaments.details.info.contact.unavailable}">No disponible</p>
                     </div>
                 </div>
 
@@ -531,11 +539,12 @@
                 <div class="info-card" th:if="${tournament.faqUrl}">
                     <h2 class="info-card-title">
                         <i class="fas fa-question-circle"></i>
-                        Preguntas Frecuentes
+                        <span th:text="#{admin.tournaments.details.info.faq}">Preguntas Frecuentes</span>
                     </h2>
                     <div class="tournament-faq">
                         <a th:href="${tournament.faqUrl}" target="_blank" class="faq-link">
-                            <i class="fas fa-external-link-alt"></i> Ver preguntas frecuentes
+                            <i class="fas fa-external-link-alt"></i>
+                            <span th:text="#{admin.tournaments.details.info.faq.link}">Ver preguntas frecuentes</span>
                         </a>
                     </div>
                 </div>
@@ -547,17 +556,17 @@
                 <div class="registration-card">
                     <h3 class="registration-title">
                         <i class="fas fa-users"></i>
-                        Inscripciones
+                        <span th:text="#{admin.tournaments.details.sidebar.inscriptions}">Inscripciones</span>
                     </h3>
 
                     <div class="availability-info">
                         <div class="spots-available" th:classappend="${tournament.disponibles > 0} ? 'spots-good' : 'spots-full'">
                             <span class="spots-number" th:text="${tournament.disponibles}">8</span>
-                            <span class="spots-text" th:text="${tournament.disponibles == 1} ? 'lugar disponible' : 'cupos disponibles'">cupos disponibles</span>
+                            <span class="spots-text" th:text="${tournament.disponibles == 1} ? #{admin.tournaments.details.sidebar.spot_available} : #{admin.tournaments.details.sidebar.spots_available}">cupos disponibles</span>
                         </div>
                         <div class="waitlist-info" th:if="${tournament.waitlistCount > 0}">
                             <i class="fas fa-clock"></i>
-                            <span th:text="${tournament.waitlistCount} + ' personas en lista de espera'">5 personas en lista de espera</span>
+                            <span th:text="${tournament.waitlistCount} + ' ' + #{admin.tournaments.details.sidebar.waitlist}">5 personas en lista de espera</span>
                         </div>
                     </div>
 
@@ -571,7 +580,8 @@
                                   text-decoration:none;font-weight:500;transition:background .15s;"
                            onmouseover="this.style.background='var(--admin-light,#f8fafc)'"
                            onmouseout="this.style.background='transparent'">
-                            <i class="fas fa-table"></i> Ver inscripciones ↓
+                            <i class="fas fa-table"></i>
+                            <span th:text="#{admin.tournaments.details.sidebar.view_inscriptions}">Ver inscripciones ↓</span>
                         </a>
                     </div>
                 </div>
@@ -579,21 +589,24 @@
                 <!-- Блок платежей -->
                 <div class="admin-card payment-card">
                     <div class="admin-card-header">
-                        <h2><i class="fas fa-credit-card"></i> Pagos y Asistencia</h2>
+                        <h2>
+                            <i class="fas fa-credit-card"></i>
+                            <span th:text="#{admin.tournaments.details.sidebar.payments}">Pagos y Asistencia</span>
+                        </h2>
                     </div>
                     <div class="admin-card-body">
                         <!-- Статистика платежей -->
                         <div class="payment-stats-grid" th:if="${payments != null}">
                             <div class="payment-stat-item">
-                                <span class="stat-label">Total Pagado:</span>
+                                <span class="stat-label" th:text="#{admin.tournaments.details.stat.total_paid}">Total Pagado:</span>
                                 <span class="stat-value" th:text="'$ ' + ${#numbers.formatDecimal(totalPaid, 0, 'COMMA', 2, 'POINT')}">$ 0.00</span>
                             </div>
                             <div class="payment-stat-item">
-                                <span class="stat-label">Pagados:</span>
+                                <span class="stat-label" th:text="#{admin.tournaments.details.stat.paid}">Pagados:</span>
                                 <span class="stat-value" th:text="${paidCount} + '/' + ${tournament.inscritosActuales}">0/0</span>
                             </div>
                             <div class="payment-stat-item">
-                                <span class="stat-label">Asistieron:</span>
+                                <span class="stat-label" th:text="#{admin.tournaments.details.stat.attended}">Asistieron:</span>
                                 <span class="stat-value" th:text="${attendedCount} + '/' + ${tournament.inscritosActuales}">0/0</span>
                             </div>
                         </div>
@@ -602,13 +615,17 @@
                         <div class="payment-actions">
                             <a th:href="@{'/admin/tournaments/' + ${tournament.id} + '/payments'}"
                                class="btn btn-primary btn-block">
-                                <i class="fas fa-money-bill-wave"></i> Gestionar Pagos
+                                <i class="fas fa-money-bill-wave"></i>
+                                <span th:text="#{admin.tournaments.details.sidebar.btn.manage_payments}">Gestionar Pagos</span>
                             </a>
                         </div>
 
                         <!-- Быстрый список должников -->
                         <div class="debtors-list" th:if="${debtorsCount > 0}">
-                            <h4>Pendientes de Pago <span class="badge" th:text="${debtorsCount}">0</span></h4>
+                            <h4>
+                                <span th:text="#{admin.tournaments.details.sidebar.debtors}">Pendientes de Pago</span>
+                                <span class="badge" th:text="${debtorsCount}">0</span>
+                            </h4>
                             <div class="debtors-items">
                                 <div class="debtor-item" th:each="debtor : ${debtors}" th:if="${debtorStat.index < 3}">
                                     <div class="debtor-info">
@@ -620,7 +637,8 @@
                             </div>
                             <a th:href="@{'/admin/tournaments/' + ${tournament.id} + '/payments'}"
                                class="view-all-link" th:if="${debtorsCount > 3}">
-                                Ver todos (<span th:text="${debtorsCount}">5</span>)
+                                <span th:text="#{admin.tournaments.details.sidebar.view_all}">Ver todos</span>
+                                (<span th:text="${debtorsCount}">5</span>)
                             </a>
                         </div>
                     </div>
@@ -635,11 +653,13 @@
                         <!-- Если турнир уже запущен -->
                         <div th:if="${kingOfCourtActive != null and kingOfCourtActive}">
                             <div class="alert alert-success">
-                                <i class="fas fa-check-circle"></i> ¡Torneo ya iniciado!
+                                <i class="fas fa-check-circle"></i>
+                                <span th:text="#{admin.tournaments.details.koc.already_started}">¡Torneo ya iniciado!</span>
                             </div>
                             <a th:href="@{'/admin/tournaments/king-of-court/' + ${kingOfCourtId}}"
                                class="btn btn-primary btn-block">
-                                <i class="fas fa-arrow-right"></i> Ir a gestión
+                                <i class="fas fa-arrow-right"></i>
+                                <span th:text="#{admin.tournaments.details.koc.go_to_management}">Ir a gestión</span>
                             </a>
                         </div>
 
@@ -649,7 +669,7 @@
                             <div th:if="${tournament.inscritosActuales < 4}"
                                  class="alert alert-warning" style="margin-bottom: 15px;">
                                 <i class="fas fa-exclamation-triangle"></i>
-                                <span th:text="'No se puede iniciar: Se necesitan al menos 4 jugadores confirmados (actualmente ' + ${tournament.inscritosActuales} + ')'">
+                                <span th:text="#{admin.tournaments.details.koc.min_players} + ' (' + #{admin.common.currently} + ' ' + ${tournament.inscritosActuales} + ')'">
                                     No se puede iniciar
                                 </span>
                             </div>
@@ -659,7 +679,7 @@
                                 <input type="hidden" name="tournamentId" th:value="${tournament.id}">
 
                                 <div class="form-group">
-                                    <label for="maxCourts">Número de canchas</label>
+                                    <label for="maxCourts" th:text="#{admin.tournaments.details.koc.courts_count}">Número de canchas</label>
                                     <input type="number" id="maxCourts" name="maxCourts"
                                            class="form-control"
                                            th:value="${(tournament.inscritosActuales + 3) / 4}"
@@ -667,7 +687,7 @@
                                 </div>
 
                                 <div class="form-group">
-                                    <label for="calibrationRounds">Rondas de calibración</label>
+                                    <label for="calibrationRounds" th:text="#{admin.tournaments.details.koc.calibration_rounds}">Rondas de calibración</label>
                                     <input type="number" id="calibrationRounds" name="calibrationRounds"
                                            class="form-control" value="3" min="1" max="10" required>
                                 </div>
@@ -686,7 +706,8 @@
                                 <!-- Кнопка запуска -->
                                 <button type="submit" class="btn btn-primary btn-block"
                                         th:disabled="${tournament.inscritosActuales < 4}">
-                                    <i class="fas fa-play"></i> Iniciar King of Court
+                                    <i class="fas fa-play"></i>
+                                    <span th:text="#{admin.tournaments.details.koc.start}">Iniciar King of Court</span>
                                 </button>
                             </form>
                         </div>
@@ -701,7 +722,10 @@
                 <div th:if="${tournament.tipo.name() == 'AMERICANO' and tournament.modalidad.name() == 'INDIVIDUAL'}"
                      class="admin-card americano-card">
                     <div class="admin-card-header">
-                        <h2><i class="fas fa-trophy" style="color: #FF6B35;"></i> Torneo Americano</h2>
+                        <h2>
+                            <i class="fas fa-trophy" style="color: #FF6B35;"></i>
+                            <span th:text="#{admin.tournaments.details.americano.title}">Torneo Americano</span>
+                        </h2>
                     </div>
                     <div class="admin-card-body">
 
@@ -722,16 +746,20 @@
 
                             <div class="alert alert-success">
                                 <i class="fas fa-check-circle"></i>
-                                Torneo inicializado &middot; <strong th:text="${activePlayers}">0</strong> jugadores activos
+                                <span th:text="#{admin.tournaments.details.americano.initialized}">Torneo inicializado</span>
+                                &middot; <strong th:text="${activePlayers}">0</strong>
+                                <span th:text="#{admin.tournaments.details.americano.active_players}">jugadores activos</span>
                             </div>
 
                             <a th:href="@{'/tournaments/americano/admin/' + ${tournament.id}}"
                                class="btn btn-primary btn-block">
-                                <i class="fas fa-arrow-right"></i> Ir al torneo en curso
+                                <i class="fas fa-arrow-right"></i>
+                                <span th:text="#{admin.tournaments.details.americano.go_to_tournament}">Ir al torneo en curso</span>
                             </a>
                             <a th:href="@{'/tournaments/americano/' + ${tournament.id} + '/ranking'}"
                                class="btn btn-outline btn-block">
-                                <i class="fas fa-chart-bar"></i> Ver clasificación
+                                <i class="fas fa-chart-bar"></i>
+                                <span th:text="#{admin.tournaments.details.americano.view_ranking}">Ver clasificación</span>
                             </a>
                         </div>
 
@@ -758,34 +786,36 @@
 
                                 <!-- Блок расчётных параметров -->
                                 <div class="calc-info-box">
-                                    <h4><i class="fas fa-calculator"></i> Parámetros calculados</h4>
+                                    <h4>
+                                        <i class="fas fa-calculator"></i>
+                                        <span th:text="#{admin.tournaments.details.americano.params_title}">Parámetros calculados</span>
+                                    </h4>
                                     <div class="calc-grid">
-                                        <span class="lbl">Jugadores confirmados:</span>
+                                        <span class="lbl" th:text="#{admin.tournaments.details.americano.confirmed_players}">Jugadores confirmados:</span>
                                         <span class="val" th:text="${N}">16</span>
 
-                                        <span class="lbl">Canchas sugeridas:</span>
+                                        <span class="lbl" th:text="#{admin.tournaments.details.americano.suggested_courts}">Canchas sugeridas:</span>
                                         <span class="val">
                                             <span th:text="${sugCourts}">2</span>
-                                            <span class="hint">(puedes cambiar)</span>
+                                            <span class="hint">(<span th:text="#{admin.tournaments.details.americano.can_change}">puedes cambiar</span>)</span>
                                         </span>
 
-                                        <span class="lbl">Rondas sugeridas:</span>
+                                        <span class="lbl" th:text="#{admin.tournaments.details.americano.suggested_rounds}">Rondas sugeridas:</span>
                                         <span class="val">
                                             <span th:text="${sugRounds}">5</span>
-                                            <span class="hint">(puedes cambiar)</span>
+                                            <span class="hint">(<span th:text="#{admin.tournaments.details.americano.can_change}">puedes cambiar</span>)</span>
                                         </span>
 
-                                        <span class="lbl">Jugadores por ronda:</span>
+                                        <span class="lbl" th:text="#{admin.tournaments.details.americano.players_per_round}">Jugadores por ronda:</span>
                                         <span class="val" th:text="${ppr} + ' de ' + ${N}">8 de 10</span>
 
-                                        <span class="lbl">Bye por ronda:</span>
-                                        <span class="val"
-                                              th:style="${byeN > 0} ? 'color:#f59e0b' : 'color:#10b981'"
-                                              th:text="${byeN > 0 ? byeN + ' (se distribuyen equitativamente)' : 'Ninguno'}">
-                                            0
+                                        <span class="lbl" th:text="#{admin.tournaments.details.americano.bye}">Bye por ronda:</span>
+                                        <span class="val" th:style="${byeN > 0} ? 'color:#f59e0b' : 'color:#10b981'">
+                                            <th:block th:if="${byeN > 0}"><span th:text="${byeN}"></span> (<span th:text="#{admin.tournaments.details.americano.bye_distributed}"></span>)</th:block>
+                                            <th:block th:unless="${byeN > 0}" th:text="#{admin.tournaments.details.americano.bye_none}"></th:block>
                                         </span>
 
-                                        <span class="lbl">Formato esperado:</span>
+                                        <span class="lbl" th:text="#{admin.tournaments.details.americano.expected_format}">Formato esperado:</span>
                                         <span class="val">
                                             <span th:if="${fullOk}" class="format-badge full">
                                                 <i class="fas fa-star"></i> Full Americano
@@ -796,7 +826,6 @@
                                         </span>
                                     </div>
                                 </div>
-
                                 <!-- Форма инициализации -->
                                 <form th:action="@{'/tournaments/americano/admin/' + ${tournament.id} + '/initialize'}"
                                       method="post" id="americanoForm">
@@ -805,16 +834,17 @@
                                     <!-- п.8 ТЗ: Режим генерации (Auto / Full / Flex) -->
                                     <div class="form-group">
                                         <label for="generationMode">
-                                            <i class="fas fa-cog"></i> Modo de generación
+                                            <i class="fas fa-cog"></i>
+                                            <span th:text="#{admin.tournaments.details.americano.generation_mode}">Modo de generación</span>
                                         </label>
                                         <select id="generationMode" name="generationMode" class="form-control" required>
-                                            <option value="AUTO" selected>Auto (Full si posible, Flex si no)</option>
+                                            <option value="AUTO" selected th:text="#{admin.tournaments.details.teams.option.auto}">Auto (Full si posible, Flex si no)</option>
                                             <option value="FULL"
                                                     th:disabled="${!fullOk}"
                                                     th:text="${fullOk} ? 'Full Americano — cada par juega juntos 1 vez' : 'Full Americano — imposible con estos parámetros'">
                                                 Full
                                             </option>
-                                            <option value="FLEX">Flex Americano — máxima variedad</option>
+                                            <option value="FLEX" th:text="#{admin.tournaments.details.teams.option.flex}">Flex Americano — máxima variedad</option>
                                         </select>
                                         <small class="form-text text-muted">
                                             <strong>Full</strong>: cada par juega juntos exactamente 1 vez, sin repeticiones.
@@ -825,16 +855,17 @@
                                     <!-- п.2 ТЗ: Лимит очков (15 / 21 / 24 / 32 / 40) -->
                                     <div class="form-group">
                                         <label for="pointsPerMatch">
-                                            <i class="fas fa-bullseye"></i> Límite de puntos por partido
+                                            <i class="fas fa-bullseye"></i>
+                                            <span th:text="#{admin.tournaments.details.americano.points_limit}">Límite de puntos por partido</span>
                                         </label>
                                         <select id="pointsPerMatch" name="pointsPerMatch" class="form-control" required>
-                                            <option value="15">15 puntos</option>
-                                            <option value="21">21 puntos</option>
-                                            <option value="24">24 puntos (recomendado)</option>
-                                            <option value="32" selected>32 puntos (clásico)</option>
-                                            <option value="40">40 puntos (largo)</option>
+                                            <option value="15" th:text="#{admin.americano.points.15}">15 puntos</option>
+                                            <option value="21" th:text="#{admin.americano.points.21}">21 puntos</option>
+                                            <option value="24" th:text="#{admin.americano.points.24}">24 puntos (recomendado)</option>
+                                            <option value="32" selected th:text="#{admin.americano.points.32}">32 puntos (clásico)</option>
+                                            <option value="40" th:text="#{admin.americano.points.40}">40 puntos (largo)</option>
                                         </select>
-                                        <small class="form-text text-muted">
+                                        <small class="form-text text-muted" th:text="#{admin.americano.points.hint}">
                                             Suma de ambos equipos = este límite (ej. 8:7 si límite es 15).
                                         </small>
                                     </div>
@@ -842,7 +873,8 @@
                                     <!-- Количество кортов -->
                                     <div class="form-group">
                                         <label for="courts">
-                                            <i class="fas fa-table-tennis"></i> Número de canchas
+                                            <i class="fas fa-table-tennis"></i>
+                                            <span th:text="#{admin.tournaments.details.americano.courts}">Número de canchas</span>
                                         </label>
                                         <input type="number" id="courts" name="courts"
                                                class="form-control"
@@ -850,34 +882,37 @@
                                                min="1" max="10" required
                                                oninput="recalcBye(this.value)">
                                         <small class="form-text text-muted" id="courtsHint"
-                                               th:text="'Jugadores por ronda: ' + ${ppr} + ' · Bye: ' + ${byeN}"></small>
+                                               th:text="#{admin.tournaments.details.americano.players_per_round} + ': ' + ${ppr} + ' · Bye: ' + ${byeN}"></small>
                                     </div>
 
                                     <!-- Количество раундов -->
                                     <div class="form-group">
                                         <label for="totalRounds">
-                                            <i class="fas fa-redo-alt"></i> Número de rondas
+                                            <i class="fas fa-redo-alt"></i>
+                                            <span th:text="#{admin.tournaments.details.americano.rounds}">Número de rondas</span>
                                         </label>
                                         <input type="number" id="totalRounds" name="totalRounds"
                                                class="form-control"
                                                th:value="${sugRounds}"
                                                min="1" max="30" required>
                                         <small class="form-text text-muted">
-                                            Recomendado mínimo:
-                                            <strong th:text="${N - 1}">7</strong> rondas para diversidad de parejas.
+                                            <span th:text="#{admin.tournaments.details.americano.rounds_recommended_min}">Recomendado mínimo:</span>
+                                            <strong th:text="${N - 1}">7</strong>
+                                            <span th:text="#{admin.tournaments.details.americano.rounds_pairs_diversity}">rondas para diversidad de parejas.</span>
                                         </small>
                                     </div>
 
                                     <!-- п.5 ТЗ: Тип рейтинга -->
                                     <div class="form-group">
                                         <label for="rankingType">
-                                            <i class="fas fa-trophy"></i> Criterio de clasificación
+                                            <i class="fas fa-trophy"></i>
+                                            <span th:text="#{admin.tournaments.details.americano.ranking_criteria}">Criterio de clasificación</span>
                                         </label>
                                         <select id="rankingType" name="rankingType" class="form-control">
-                                            <option value="score" selected>
+                                            <option value="score" selected th:text="#{admin.tournaments.details.americano.ranking.by_score}">
                                                 Por puntos (puntos → victorias → diferencia → menos derrotas)
                                             </option>
-                                            <option value="wins">
+                                            <option value="wins" th:text="#{admin.tournaments.details.americano.ranking.by_wins}">
                                                 Por victorias (victorias → puntos → diferencia → menos derrotas)
                                             </option>
                                         </select>
@@ -888,13 +923,15 @@
                                         <button type="button" class="btn btn-outline"
                                                 onclick="previewRounds()"
                                                 th:disabled="${tournament.inscritosActuales < 4}">
-                                            <i class="fas fa-eye"></i> Previsualizar
+                                            <i class="fas fa-eye"></i>
+                                            <span th:text="#{admin.tournaments.details.americano.btn.preview}">Previsualizar</span>
                                         </button>
                                         <button type="submit" class="btn btn-primary"
                                                 id="btnIniciarTorneo"
                                                 th:disabled="${tournament.inscritosActuales < 4 or tournament.estado.name() != 'CERRADO'}"
                                                 onclick="return confirmAndLock(this)">
-                                            <i class="fas fa-play"></i> Iniciar Torneo
+                                            <i class="fas fa-play"></i>
+                                            <span th:text="#{admin.tournaments.details.americano.btn.start}">Iniciar Torneo</span>
                                         </button>
                                     </div>
                                 </form>
@@ -914,7 +951,10 @@
                 <div th:if="${tournament.tipo.name() == 'AMERICANO' and tournament.modalidad.name() == 'DOBLES'}"
                      class="admin-card americano-card">
                     <div class="admin-card-header">
-                        <h2><i class="fas fa-users" style="color:#FF6B35;"></i> Americano Parejas</h2>
+                        <h2>
+                            <i class="fas fa-users" style="color:#FF6B35;"></i>
+                            <span th:text="#{admin.tournaments.details.americano.pairs_title}">Americano Parejas</span>
+                        </h2>
                     </div>
                     <div class="admin-card-body">
 
@@ -926,13 +966,15 @@
                             </div>
                             <div class="alert alert-success">
                                 <i class="fas fa-check-circle"></i>
-                                Torneo inicializado &middot;
+                                <span th:text="#{admin.tournaments.details.americano.initialized}">Torneo inicializado</span>
+                                &middot;
                                 <strong th:text="${teamAmericanoRanking != null ? teamAmericanoRanking.totalTeams : 0}">0</strong>
-                                parejas activas
+                                <span th:text="#{admin.tournaments.details.americano.active_teams}">parejas activas</span>
                             </div>
                             <a th:href="@{'/tournaments/team-americano/admin/' + ${tournament.id}}"
                                class="btn btn-primary btn-block">
-                                <i class="fas fa-arrow-right"></i> Ir al torneo Round Robin
+                                <i class="fas fa-arrow-right"></i>
+                                <span th:text="#{admin.tournaments.details.americano.go_to_rr}">Ir al torneo Round Robin</span>
                             </a>
                         </div>
 
@@ -942,9 +984,8 @@
                             <div class="alert alert-info" style="font-size:.85rem;margin-bottom:1rem">
                                 <i class="fas fa-info-circle" style="flex-shrink:0"></i>
                                 <span class="alert-text">
-                                    <strong>Formato Americano Parejas</strong>: cada equipo juega
-                                    <strong>2 partidos de calificación</strong> (1 set, resultado en games:
-                                    ej. 6:4). Los mejores equipos pasan al <strong>playoff eliminatorio</strong>.
+                                    <strong th:text="#{admin.tournaments.details.americano.double.format_title}">Formato Americano Parejas</strong>
+                                    <span th:text="#{admin.tournaments.details.americano.double.format_detail}">: cada equipo juega 2 partidos de calificación (1 set, resultado en games: ej. 6:4). Los mejores equipos pasan al playoff eliminatorio.</span>
                                 </span>
                             </div>
 
@@ -952,13 +993,14 @@
                             <div th:if="${isPlayoffQualStarted == true}" class="initialized-nav">
                                 <div class="alert alert-success">
                                     <i class="fas fa-check-circle"></i>
-                                    <strong th:text="${playoffTeamsCount}">0</strong> equipos &middot;
-                                    <span th:if="${isPlayoffStarted == true}">Playoff en curso</span>
-                                    <span th:unless="${isPlayoffStarted == true}">Calificación en curso</span>
+                                    <strong th:text="${playoffTeamsCount}">0</strong> <span th:text="#{admin.tournaments.details.teams.teams_count_label}">equipos</span> &middot;
+                                    <span th:if="${isPlayoffStarted == true}" th:text="#{admin.tournaments.details.teams.status.playoff}">Playoff en curso</span>
+                                    <span th:unless="${isPlayoffStarted == true}" th:text="#{admin.tournaments.details.teams.status.qualification}">Calificación en curso</span>
                                 </div>
                                 <a th:href="@{'/tournaments/team-playoff/admin/' + ${tournament.id}}"
                                    class="btn btn-primary btn-block">
-                                    <i class="fas fa-arrow-right"></i> Ir al panel del torneo
+                                    <i class="fas fa-arrow-right"></i>
+                                    <span th:text="#{admin.tournaments.details.americano.go_to_panel}">Ir al panel del torneo</span>
                                 </a>
                             </div>
 
@@ -967,21 +1009,24 @@
 
                                 <!-- Параметры команд -->
                                 <div class="calc-info-box">
-                                    <h4><i class="fas fa-calculator"></i> Estado de inscripción</h4>
+                                    <h4>
+                                        <i class="fas fa-calculator"></i>
+                                        <span th:text="#{admin.tournaments.details.americano.enrollment_status}">Estado de inscripción</span>
+                                    </h4>
                                     <div class="calc-grid">
-                                        <span class="lbl">Inscriptos confirmados:</span>
+                                        <span class="lbl" th:text="#{admin.tournaments.details.americano.confirmed_total}">Inscriptos confirmados:</span>
                                         <span class="val" th:text="${tournament.inscritosActuales}">0</span>
 
-                                        <span class="lbl">Parejas inscritas:</span>
+                                        <span class="lbl" th:text="#{admin.tournaments.details.americano.pairs_enrolled}">Parejas inscritas:</span>
                                         <span class="val" th:text="${tournament.inscritosActuales / 2}">0</span>
 
-                                        <span class="lbl">Equipos cargados (manual):</span>
+                                        <span class="lbl" th:text="#{admin.tournaments.details.americano.teams_manual}">Equipos cargados (manual):</span>
                                         <span class="val" th:text="${playoffTeamsCount}">0</span>
 
                                         <span style="grid-column:1/-1;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;color:#6c757d;font-size:.875rem">
-                                            Formato:
+                                            <span th:text="#{admin.tournaments.details.teams.format_label}">Formato:</span>
                                             <span class="format-badge full">
-                                                <i class="fas fa-list-ol"></i> Calificación (2 partidos) + Playoff
+                                                <i class="fas fa-list-ol"></i> <span th:text="#{admin.tournaments.details.teams.qual_format_text}">Calificación (2 partidos) + Playoff</span>
                                             </span>
                                         </span>
                                     </div>
@@ -989,8 +1034,8 @@
 
                                 <!-- Шаг 1: Импорт из регистраций -->
                                 <div style="margin-bottom:1rem">
-                                    <strong style="font-size:.875rem;color:#1e293b">Paso 1 — Cargar equipos</strong>
-                                    <p style="font-size:.82rem;color:#64748b;margin:.25rem 0 .5rem">
+                                    <strong style="font-size:.875rem;color:#1e293b" th:text="#{admin.tournaments.details.americano.step1}">Paso 1 — Cargar equipos</strong>
+                                    <p style="font-size:.82rem;color:#64748b;margin:.25rem 0 .5rem" th:text="#{admin.tournaments.details.americano.step1_desc}">
                                         Importa las parejas ya inscritas, o dirígete al panel para agregarlas manualmente.
                                     </p>
                                     <div style="display:flex;gap:.5rem;flex-wrap:wrap">
@@ -998,29 +1043,32 @@
                                               method="post">
                                             <button type="submit" class="btn btn-outline"
                                                     th:disabled="${tournament.inscritosActuales < 2}">
-                                                <i class="fas fa-download"></i> Importar parejas inscritas
+                                                <i class="fas fa-download"></i>
+                                                <span th:text="#{admin.tournaments.details.americano.import_pairs}">Importar parejas inscritas</span>
                                                 (<span th:text="${tournament.inscritosActuales / 2}">0</span>)
                                             </button>
                                         </form>
                                         <a th:href="@{'/tournaments/team-playoff/admin/' + ${tournament.id}}"
                                            class="btn btn-outline">
-                                            <i class="fas fa-user-plus"></i> Agregar manualmente
+                                            <i class="fas fa-user-plus"></i>
+                                            <span th:text="#{admin.tournaments.details.americano.add_manual}">Agregar manualmente</span>
                                         </a>
                                     </div>
                                 </div>
 
                                 <!-- Шаг 2: Запуск квалификации -->
                                 <div style="margin-bottom:.75rem">
-                                    <strong style="font-size:.875rem;color:#1e293b">Paso 2 — Iniciar calificación</strong>
+                                    <strong style="font-size:.875rem;color:#1e293b" th:text="#{admin.tournaments.details.americano.step2}">Paso 2 — Iniciar calificación</strong>
                                     <p style="font-size:.82rem;color:#64748b;margin:.25rem 0 .5rem">
-                                        Se necesitan <strong>mínimo 4 equipos</strong> cargados.
+                                        <span th:utext="#{admin.tournaments.details.teams.min_teams}">Se necesitan <strong>mínimo 4 equipos</strong> cargados.</span>
                                         Actualmente: <strong th:text="${playoffTeamsCount}">0</strong>.
                                     </p>
                                     <a th:href="@{'/tournaments/team-playoff/admin/' + ${tournament.id}}"
                                        class="btn btn-primary"
                                        th:classappend="${playoffTeamsCount < 4} ? 'disabled' : ''"
                                        th:attr="aria-disabled=${playoffTeamsCount < 4}">
-                                        <i class="fas fa-play"></i> Ir al panel e iniciar
+                                        <i class="fas fa-play"></i>
+                                        <span th:text="#{admin.tournaments.details.americano.go_panel_start}">Ir al panel e iniciar</span>
                                     </a>
                                 </div>
 
@@ -1037,16 +1085,20 @@
                 <div th:if="${tournament.tipo.name() == 'AMERICANO_TEAMS'}"
                      class="admin-card americano-card">
                     <div class="admin-card-header">
-                        <h2><i class="fas fa-trophy" style="color:#FF6B35;"></i> Americano Parejas</h2>
+                        <h2>
+                            <i class="fas fa-trophy" style="color:#FF6B35;"></i>
+                            <span th:text="#{admin.tournaments.details.americano.pairs_title}">Americano Parejas</span>
+                        </h2>
                     </div>
                     <div class="admin-card-body">
 
                         <div class="alert alert-info" style="margin-bottom:1rem;font-size:.85rem">
                             <i class="fas fa-info-circle" style="flex-shrink:0"></i>
                             <span class="alert-text">
-                                <strong>Calificación</strong> (2 partidos por equipo, puntuación en games: 6:4)
-                                + <strong>Playoff eliminatorio</strong>.
-                                Los equipos se agregan manualmente o importando inscriptos.
+                                <strong th:text="#{admin.tournaments.details.teams.format_qual_label}">Calificación</strong>
+                                <span th:text="#{admin.tournaments.details.teams.format_qual_detail}">(2 partidos por equipo, puntuación en games: 6:4)</span>
+                                + <strong th:text="#{admin.tournaments.details.teams.format_playoff_label}">Playoff eliminatorio</strong>.
+                                <span th:text="#{admin.tournaments.details.teams.format_desc_suffix}">Los equipos se agregan manualmente o importando inscriptos.</span>
                             </span>
                         </div>
 
@@ -1054,31 +1106,36 @@
                         <div th:if="${isPlayoffQualStarted == true}" class="initialized-nav">
                             <div class="alert alert-success">
                                 <i class="fas fa-check-circle"></i>
-                                <strong th:text="${playoffTeamsCount}">0</strong> equipos &middot;
-                                <span th:if="${isPlayoffStarted == true}">Playoff en curso</span>
-                                <span th:unless="${isPlayoffStarted == true}">Calificación en curso</span>
+                                <strong th:text="${playoffTeamsCount}">0</strong> <span th:text="#{admin.tournaments.details.teams.teams_count_label}">equipos</span> &middot;
+                                <span th:if="${isPlayoffStarted == true}" th:text="#{admin.tournaments.details.teams.status.playoff}">Playoff en curso</span>
+                                <span th:unless="${isPlayoffStarted == true}" th:text="#{admin.tournaments.details.teams.status.qualification}">Calificación en curso</span>
                             </div>
                             <a th:href="@{'/tournaments/team-playoff/admin/' + ${tournament.id}}"
                                class="btn btn-primary btn-block">
-                                <i class="fas fa-arrow-right"></i> Ir al panel del torneo
+                                <i class="fas fa-arrow-right"></i>
+                                <span th:text="#{admin.tournaments.details.americano.go_to_panel}">Ir al panel del torneo</span>
                             </a>
                         </div>
 
                         <!-- Ещё не запущен -->
                         <div th:unless="${isPlayoffQualStarted == true}">
                             <div class="calc-info-box">
-                                <h4><i class="fas fa-users"></i> Estado de equipos</h4>
+                                <h4>
+                                    <i class="fas fa-users"></i>
+                                    <span th:text="#{admin.tournaments.details.americano.teams_status}">Estado de equipos</span>
+                                </h4>
                                 <div class="calc-grid">
-                                    <span class="lbl">Equipos cargados:</span>
+                                    <span class="lbl" th:text="#{admin.tournaments.details.americano.teams_loaded}">Equipos cargados:</span>
                                     <span class="val" th:text="${playoffTeamsCount}">0</span>
-                                    <span class="lbl">Mínimo requerido:</span>
-                                    <span class="val">4 equipos</span>
+                                    <span class="lbl" th:text="#{admin.tournaments.details.americano.min_required}">Mínimo requerido:</span>
+                                    <span class="val" th:text="#{admin.tournaments.details.americano.min_4_teams}">4 equipos</span>
                                 </div>
                             </div>
 
                             <a th:href="@{'/tournaments/team-playoff/admin/' + ${tournament.id}}"
                                class="btn btn-primary btn-block" style="margin-top:1rem">
-                                <i class="fas fa-cogs"></i> Gestionar equipos e iniciar torneo
+                                <i class="fas fa-cogs"></i>
+                                <span th:text="#{admin.tournaments.details.americano.manage_teams}">Gestionar equipos e iniciar torneo</span>
                             </a>
                         </div>
 
@@ -1103,21 +1160,21 @@
                 <div class="reg-table-header">
                     <h3>
                         <i class="fas fa-check-circle" style="color:#10b981;"></i>
-                        Inscripciones
+                        <span th:text="#{admin.tournaments.details.table.inscriptions}">Inscripciones</span>
                         <!-- DOBLES: пары = confirmedRegs/2 из cupoMax/2 -->
                         <span class="reg-badge-count"
                               th:if="${tournament.modalidad.name() == 'DOBLES'}"
                               th:text="${confirmedRegs.size() / 2}"></span>
                         <span th:if="${tournament.modalidad.name() == 'DOBLES'}"
                               style="font-size:.78rem;font-weight:400;color:#64748b;margin-left:.25rem;"
-                              th:text="'/ ' + ${effectiveCupoMax / 2} + ' parejas'"></span>
+                              th:text="'/ ' + ${effectiveCupoMax / 2} + ' ' + #{admin.tournaments.details.pairs_label}"></span>
                         <!-- INDIVIDUAL: показываем игроков -->
                         <span class="reg-badge-count"
                               th:unless="${tournament.modalidad.name() == 'DOBLES'}"
                               th:text="${confirmedRegs.size() > effectiveCupoMax ? effectiveCupoMax : confirmedRegs.size()}"></span>
                         <span th:unless="${tournament.modalidad.name() == 'DOBLES'}"
                               style="font-size:.78rem;font-weight:400;color:#64748b;margin-left:.25rem;"
-                              th:text="'/ ' + ${effectiveCupoMax} + ' cupos'"></span>
+                              th:text="'/ ' + ${effectiveCupoMax} + ' ' + #{admin.tournaments.details.cupos_label}"></span>
                     </h3>
                 </div>
                 <div style="overflow-x:auto;">
@@ -1125,18 +1182,18 @@
                         <thead>
                             <tr>
                                 <th style="width:48px;">#</th>
-                                <th>Jugador</th>
-                                <th th:if="${tournament.modalidad.name() == 'DOBLES'}">Pareja</th>
-                                <th th:if="${tournament.modalidad.name() == 'DOBLES'}">Contacto pareja</th>
-                                <th th:unless="${tournament.modalidad.name() == 'DOBLES'}">Posición</th>
-                                <th th:unless="${tournament.modalidad.name() == 'DOBLES'}">Contacto</th>
-                                <th style="width:90px;">Acciones</th>
+                                <th th:text="#{admin.tournaments.details.col.player}">Jugador</th>
+                                <th th:if="${tournament.modalidad.name() == 'DOBLES'}" th:text="#{admin.tournaments.details.col.pair}">Pareja</th>
+                                <th th:if="${tournament.modalidad.name() == 'DOBLES'}" th:text="#{admin.tournaments.details.col.pair_contact}">Contacto pareja</th>
+                                <th th:unless="${tournament.modalidad.name() == 'DOBLES'}" th:text="#{admin.tournaments.details.col.position}">Posición</th>
+                                <th th:unless="${tournament.modalidad.name() == 'DOBLES'}" th:text="#{admin.tournaments.details.col.contact}">Contacto</th>
+                                <th style="width:90px;" th:text="#{admin.tournaments.details.col.actions}">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr th:if="${#lists.isEmpty(confirmedRegs)}">
                                 <td th:colspan="${tournament.modalidad.name() == 'DOBLES' ? 5 : 6}"
-                                    class="reg-empty-cell">No hay participantes confirmados</td>
+                                    class="reg-empty-cell" th:text="#{admin.tournaments.details.empty.no_confirmed}">No hay participantes confirmados</td>
                             </tr>
                             <tr th:each="reg, iterStat : ${confirmedRegs}"
                                 th:if="${iterStat.index < effectiveCupoMax}">
@@ -1210,12 +1267,12 @@
                                                          data-player-id=${reg.playerId},
                                                          data-player-name=${reg.playerNombre}"
                                                 onclick="moveToWaitlist(this)"
-                                                title="Mover a lista de espera">
+                                                th:title="#{admin.tournaments.details.action.move_to_waitlist}">
                                             <i class="fas fa-arrow-down"></i>
                                         </button>
                                         <a th:href="@{'/admin/players/' + ${reg.playerId}}"
                                            class="btn-icon"
-                                           title="Ver detalles del jugador">
+                                           th:title="#{admin.tournaments.details.action.view_player}">
                                             <i class="fas fa-external-link-alt"></i>
                                         </a>
                                     </div>
@@ -1231,7 +1288,7 @@
                 <div class="reg-table-header">
                     <h3>
                         <i class="fas fa-clock" style="color:#f59e0b;"></i>
-                        Reserva
+                        <span th:text="#{admin.tournaments.details.table.reserve}">Reserva</span>
                         <span class="reg-badge-count" style="background:#f59e0b;"
                               th:text="${confirmedRegs.size() - effectiveCupoMax}"></span>
                     </h3>
@@ -1241,9 +1298,9 @@
                         <thead>
                             <tr>
                                 <th style="width:48px;">#</th>
-                                <th>Jugador</th>
-                                <th>Posición</th>
-                                <th style="width:70px;">Acciones</th>
+                                <th th:text="#{admin.tournaments.details.col.player}">Jugador</th>
+                                <th th:text="#{admin.tournaments.details.col.position}">Posición</th>
+                                <th style="width:70px;" th:text="#{admin.tournaments.details.col.actions}">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1265,7 +1322,7 @@
                                 <td>
                                     <a th:href="@{'/admin/players/' + ${reg.playerId}}"
                                        class="btn-icon"
-                                       title="Ver detalles del jugador">
+                                       th:title="#{admin.tournaments.details.action.view_player}">
                                         <i class="fas fa-external-link-alt"></i>
                                     </a>
                                 </td>
@@ -1280,7 +1337,7 @@
                 <div class="reg-table-header">
                     <h3>
                         <i class="fas fa-envelope" style="color:#6366f1;"></i>
-                        Invitación pendiente
+                        <span th:text="#{admin.tournaments.details.table.pending_invite}">Invitación pendiente</span>
                         <span class="reg-badge-count" style="background:#6366f1;"
                               th:text="${#lists.size(invitedRegs)}"></span>
                     </h3>
@@ -1290,9 +1347,9 @@
                         <thead>
                             <tr>
                                 <th style="width:48px;">#</th>
-                                <th>Jugador</th>
-                                <th>Invitando a</th>
-                                <th style="width:70px;">Acciones</th>
+                                <th th:text="#{admin.tournaments.details.col.player}">Jugador</th>
+                                <th th:text="#{admin.tournaments.details.col.inviting}">Invitando a</th>
+                                <th style="width:70px;" th:text="#{admin.tournaments.details.col.actions}">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1315,7 +1372,7 @@
                                 <td>
                                     <a th:href="@{'/admin/players/' + ${reg.playerId}}"
                                        class="btn-icon"
-                                       title="Ver detalles del jugador">
+                                       th:title="#{admin.tournaments.details.action.view_player}">
                                         <i class="fas fa-external-link-alt"></i>
                                     </a>
                                 </td>
@@ -1333,7 +1390,7 @@
             <div class="reg-table-header" style="display:flex; align-items:center; justify-content:space-between;">
                 <h3>
                     <i class="fas fa-user" style="color:#3b82f6;"></i>
-                    Inscripciones sin pareja
+                    <span th:text="#{admin.tournaments.details.table.solo}">Inscripciones sin pareja</span>
                     <span class="reg-badge-count" style="background:#3b82f6;"
                           th:text="${#lists.size(soloRegs)}"></span>
                 </h3>
@@ -1341,7 +1398,8 @@
                         th:if="${#lists.size(soloRegs) >= 2}"
                         onclick="openPairModal()"
                         style="font-size:.82rem; padding:.35rem .9rem;">
-                    <i class="fas fa-handshake"></i> Emparejar
+                    <i class="fas fa-handshake"></i>
+                    <span th:text="#{admin.tournaments.details.btn.pair}">Emparejar</span>
                 </button>
             </div>
             <div style="overflow-x:auto;">
@@ -1349,10 +1407,10 @@
                     <thead>
                         <tr>
                             <th style="width:48px;">#</th>
-                            <th>Jugador</th>
-                            <th>Escenario</th>
-                            <th>Fecha inscripción</th>
-                            <th style="width:70px;">Acciones</th>
+                            <th th:text="#{admin.tournaments.details.col.player}">Jugador</th>
+                            <th th:text="#{admin.tournaments.details.col.scenario}">Escenario</th>
+                            <th th:text="#{admin.tournaments.details.col.date_registered}">Fecha inscripción</th>
+                            <th style="width:70px;" th:text="#{admin.tournaments.details.col.actions}">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1379,7 +1437,7 @@
                                 th:text="${#temporals.format(reg.registrationDate, 'dd/MM/yyyy HH:mm')}"></td>
                             <td>
                                 <a th:href="@{'/admin/players/' + ${reg.playerId}}"
-                                   class="btn-icon" title="Ver jugador">
+                                   class="btn-icon" th:title="#{admin.tournaments.details.action.view_player_short}">
                                     <i class="fas fa-external-link-alt"></i>
                                 </a>
                             </td>
@@ -1395,19 +1453,20 @@
             <div style="background:#fff; border-radius:14px; padding:28px; max-width:460px;
                         width:90%; box-shadow:0 20px 60px rgba(0,0,0,.25);">
                 <h3 style="margin:0 0 16px; font-size:1.1rem; color:#1e293b;">
-                    <i class="fas fa-handshake" style="color:#FF6B35;"></i> Emparejar jugadores
+                    <i class="fas fa-handshake" style="color:#FF6B35;"></i>
+                    <span th:text="#{admin.tournaments.details.modal.pair_title}">Emparejar jugadores</span>
                 </h3>
-                <p style="color:#64748b; font-size:.88rem; margin-bottom:16px;">
+                <p style="color:#64748b; font-size:.88rem; margin-bottom:16px;" th:text="#{admin.tournaments.details.modal.pair_desc}">
                     Seleccioná dos jugadores sin pareja para confirmarlos como pareja en el torneo.
                 </p>
                 <div style="margin-bottom:12px;">
-                    <label style="font-size:.85rem; font-weight:600; color:#374151; display:block; margin-bottom:4px;">Jugador 1</label>
+                    <label style="font-size:.85rem; font-weight:600; color:#374151; display:block; margin-bottom:4px;" th:text="#{admin.tournaments.details.modal.player1}">Jugador 1</label>
                     <select id="pairSelect1" style="width:100%; padding:.5rem; border:1px solid #e2e8f0; border-radius:8px; font-size:.9rem;">
                         <option value="">— Seleccionar —</option>
                     </select>
                 </div>
                 <div style="margin-bottom:20px;">
-                    <label style="font-size:.85rem; font-weight:600; color:#374151; display:block; margin-bottom:4px;">Jugador 2</label>
+                    <label style="font-size:.85rem; font-weight:600; color:#374151; display:block; margin-bottom:4px;" th:text="#{admin.tournaments.details.modal.player2}">Jugador 2</label>
                     <select id="pairSelect2" style="width:100%; padding:.5rem; border:1px solid #e2e8f0; border-radius:8px; font-size:.9rem;">
                         <option value="">— Seleccionar —</option>
                     </select>
@@ -1415,12 +1474,14 @@
                 <div id="pairModalError" style="display:none; background:#fee2e2; color:#991b1b; border-radius:8px; padding:.5rem .8rem; font-size:.85rem; margin-bottom:12px;"></div>
                 <div style="display:flex; gap:.75rem; justify-content:flex-end;">
                     <button onclick="closePairModal()"
-                            style="padding:.5rem 1.1rem; border:1px solid #e2e8f0; border-radius:8px; background:#fff; cursor:pointer; color:#64748b;">
+                            style="padding:.5rem 1.1rem; border:1px solid #e2e8f0; border-radius:8px; background:#fff; cursor:pointer; color:#64748b;"
+                            th:text="#{admin.common.btn.cancel}">
                         Cancelar
                     </button>
                     <button id="pairConfirmBtn" onclick="confirmAdminPair()"
                             style="padding:.5rem 1.2rem; border:none; border-radius:8px; background:#FF6B35; color:#fff; font-weight:600; cursor:pointer;">
-                        <i class="fas fa-handshake"></i> Confirmar pareja
+                        <i class="fas fa-handshake"></i>
+                        <span th:text="#{admin.tournaments.details.modal.confirm_pair}">Confirmar pareja</span>
                     </button>
                 </div>
             </div>
@@ -1500,7 +1561,7 @@
             <div class="reg-table-header">
                 <h3>
                     <i class="fas fa-hourglass-half" style="color:#94a3b8;"></i>
-                    Lista de Espera
+                    <span th:text="#{admin.tournaments.details.table.waitlist}">Lista de Espera</span>
                     <span class="reg-badge-count" style="background:#94a3b8;"
                           th:text="${tournament.waitlistCount}"></span>
                 </h3>
@@ -1510,9 +1571,9 @@
                     <thead>
                         <tr>
                             <th style="width:48px;">#</th>
-                            <th>Jugador</th>
-                            <th>Posición en espera</th>
-                            <th style="width:90px;">Acciones</th>
+                            <th th:text="#{admin.tournaments.details.col.player}">Jugador</th>
+                            <th th:text="#{admin.tournaments.details.col.wait_position}">Posición en espera</th>
+                            <th style="width:90px;" th:text="#{admin.tournaments.details.col.actions}">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1540,12 +1601,12 @@
                                                      data-player-id=${reg.playerId},
                                                      data-player-name=${reg.playerNombre}"
                                             onclick="moveToMain(this)"
-                                            title="Mover al torneo principal">
+                                            th:title="#{admin.tournaments.details.action.move_to_main}">
                                         <i class="fas fa-arrow-up"></i>
                                     </button>
                                     <a th:href="@{'/admin/players/' + ${reg.playerId}}"
                                        class="btn-icon"
-                                       title="Ver detalles del jugador">
+                                       th:title="#{admin.tournaments.details.action.view_player}">
                                         <i class="fas fa-external-link-alt"></i>
                                     </a>
                                 </div>

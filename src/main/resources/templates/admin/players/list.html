@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html lang="es" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta name="app-profile" th:content="${@environment.getActiveProfiles().length > 0
         ? @environment.getActiveProfiles()[0]
@@ -7,7 +7,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
     <meta name="description" content="Administración de Jugadores - 1-Padel">
-    <title>Gestión de Jugadores - 1-Padel Admin</title>
+    <title th:text="#{admin.players.list.title} + ' - 1-Padel Admin'">Gestión de Jugadores - 1-Padel Admin</title>
 
     <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -25,16 +25,16 @@
     <link rel="stylesheet" th:href="@{/css/admin.css}">
 </head>
 <body>
-<header th:replace="~{fragments/admin-header :: header('Gestión de Jugadores')}"></header>
+<header th:replace="~{fragments/admin-header :: header(#{admin.players.list.title})}"></header>
 
 <main class="admin-main">
     <div class="container">
         <div class="admin-header">
             <h1 class="admin-title">
                 <i class="fas fa-users"></i>
-                Gestión de Jugadores
+                <span th:text="#{admin.players.list.title}">Gestión de Jugadores</span>
             </h1>
-            <p class="admin-subtitle">Administra todos los jugadores de la plataforma</p>
+            <p class="admin-subtitle" th:text="#{admin.players.list.subtitle}">Administra todos los jugadores de la plataforma</p>
         </div>
 
         <!-- Mensajes de éxito/error -->
@@ -55,7 +55,7 @@
                     <i class="fas fa-users"></i>
                 </div>
                 <div class="stat-content">
-                    <h3 class="stat-label">Total Jugadores</h3>
+                    <h3 class="stat-label" th:text="#{admin.players.list.stat.total}">Total Jugadores</h3>
                     <p class="stat-value" th:text="${totalPlayers}">0</p>
                 </div>
             </div>
@@ -64,7 +64,7 @@
                     <i class="fas fa-check-circle"></i>
                 </div>
                 <div class="stat-content">
-                    <h3 class="stat-label">Email Confirmado</h3>
+                    <h3 class="stat-label" th:text="#{admin.players.list.stat.email_confirmed}">Email Confirmado</h3>
                     <p class="stat-value" th:text="${confirmedPlayers}">0</p>
                 </div>
             </div>
@@ -76,7 +76,7 @@
                 <i class="fas fa-search" style="position:absolute; left:.85rem; top:50%; transform:translateY(-50%);
                    color:#94a3b8; font-size:.95rem; pointer-events:none;"></i>
                 <input type="text" id="playerSearch" autocomplete="off"
-                       placeholder="Buscar por nombre, email, teléfono, @telegram o ID..."
+                       th:placeholder="#{admin.players.list.search.placeholder}"
                        style="width:100%; padding:.65rem .85rem .65rem 2.4rem; border:1px solid #e2e8f0;
                               border-radius:10px; font-size:.95rem; color:#1e293b; background:#f8fafc;
                               outline:none; box-sizing:border-box; transition:border-color .2s;"
@@ -89,11 +89,11 @@
         <!-- Карточки игроков для мобильных -->
         <div class="players-cards" id="playersMobileView">
             <div th:each="player : ${players}" th:if="${not #lists.isEmpty(players)}" class="player-card"
-                 th:attr="data-id=${player.id},
-                          data-name=${#strings.toLowerCase(player.nombreCompleto)},
-                          data-email=${#strings.toLowerCase(player.email)},
-                          data-phone=${player.telefono ?: ''},
-                          data-telegram=${player.telegramUsername ?: ''}">
+                 th:data-id="${player.id}"
+                 th:data-name="${#strings.toLowerCase(player.nombreCompleto)}"
+                 th:data-email="${#strings.toLowerCase(player.email)}"
+                 th:data-phone="${player.telefono ?: ''}"
+                 th:data-telegram="${player.telegramUsername ?: ''}">
                 <div class="player-card-header">
                     <div class="player-avatar">
                         <i class="fas fa-user-circle"></i>
@@ -107,7 +107,7 @@
                 <div class="player-card-body">
                     <div class="player-detail-item">
                         <i class="fas fa-phone"></i>
-                        <span th:text="${player.telefono ?: 'Teléfono no especificado'}">123456789</span>
+                        <span th:text="${player.telefono} ?: #{admin.common.not_specified}">123456789</span>
                     </div>
                     <div class="player-detail-item">
                         <i class="fas fa-calendar-alt"></i>
@@ -116,7 +116,7 @@
                     <div class="player-detail-item">
                         <i class="fas fa-envelope"></i>
                         <span class="status-badge" th:classappend="${player.emailConfirmado} ? 'badge-success' : 'badge-warning'"
-                              th:text="${player.emailConfirmado} ? 'Email Confirmado' : 'Email Pendiente'">
+                              th:text="${player.emailConfirmado} ? #{admin.players.list.status.email_confirmed} : #{admin.players.list.status.email_pending}">
                             Confirmado
                         </span>
                     </div>
@@ -125,7 +125,7 @@
                 <div class="player-card-footer">
                     <div class="player-status">
                         <span class="status-badge" th:classappend="${player.activo} ? 'badge-success' : 'badge-warning'"
-                              th:text="${player.activo} ? 'Activo' : 'Inactivo'">
+                              th:text="${player.activo} ? #{admin.common.status.active} : #{admin.common.status.inactive}">
                             Activo
                         </span>
                     </div>
@@ -150,23 +150,23 @@
             <table class="admin-table">
                 <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>Nombre</th>
-                    <th>Email</th>
-                    <th>Teléfono</th>
-                    <th>Registro</th>
-                    <th>Email Confirmado</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
+                    <th th:text="#{admin.common.col.id}">ID</th>
+                    <th th:text="#{admin.common.col.name}">Nombre</th>
+                    <th th:text="#{admin.common.col.email}">Email</th>
+                    <th th:text="#{admin.common.col.phone}">Teléfono</th>
+                    <th th:text="#{admin.common.col.registered}">Registro</th>
+                    <th th:text="#{admin.players.list.col.email_confirmed}">Email Confirmado</th>
+                    <th th:text="#{admin.common.col.status}">Estado</th>
+                    <th th:text="#{admin.common.col.actions}">Acciones</th>
                 </tr>
                 </thead>
                 <tbody>
                 <tr th:each="player : ${players}" th:if="${not #lists.isEmpty(players)}"
-                    th:attr="data-id=${player.id},
-                             data-name=${#strings.toLowerCase(player.nombreCompleto)},
-                             data-email=${#strings.toLowerCase(player.email)},
-                             data-phone=${player.telefono ?: ''},
-                             data-telegram=${player.telegramUsername ?: ''}">
+                    th:data-id="${player.id}"
+                    th:data-name="${#strings.toLowerCase(player.nombreCompleto)}"
+                    th:data-email="${#strings.toLowerCase(player.email)}"
+                    th:data-phone="${player.telefono ?: ''}"
+                    th:data-telegram="${player.telegramUsername ?: ''}">
                     <td th:text="${player.id}">1</td>
                     <td>
                         <strong th:text="${player.nombreCompleto}">Juan Pérez</strong>
@@ -182,7 +182,7 @@
                     </td>
                     <td>
                         <span class="status-badge" th:classappend="${player.activo} ? 'badge-success' : 'badge-warning'"
-                              th:text="${player.activo} ? 'Activo' : 'Inactivo'">
+                              th:text="${player.activo} ? #{admin.common.status.active} : #{admin.common.status.inactive}">
                             Activo
                         </span>
                     </td>
@@ -230,20 +230,21 @@
     const rows  = document.querySelectorAll('#playersTableView tbody tr[data-id]');
     const cards = document.querySelectorAll('#playersMobileView .player-card[data-id]');
 
-    // Определяем тип запроса только для однозначных случаев
     function detectType(q) {
         if (!q) return null;
-        if (q.startsWith('@'))  return 'telegram';  // @username
-        if (q.startsWith('+'))  return 'phone';     // +54...
-        if (q.includes('@'))    return 'email';     // содержит @ → email
-        return 'all';                               // всё остальное — по всем полям
+        if (q.startsWith('@'))  return 'telegram';
+        if (q.startsWith('+'))  return 'phone';
+        if (q.includes('@'))    return 'email';
+        if (/^\d+$/.test(q))   return 'id';
+        return 'all';
     }
 
     const labels = {
-        telegram: '✈️ Búsqueda por Telegram',
-        email:    '📧 Búsqueda por email',
-        phone:    '📞 Búsqueda por teléfono',
-        all:      '🔍 Búsqueda en nombre, email y teléfono',
+        telegram: '✈️ ' + t('admin.players.search.hint.telegram'),
+        email:    '📧 ' + t('admin.players.search.hint.email'),
+        phone:    '📞 ' + t('admin.players.search.hint.phone'),
+        id:       '🔢 ' + t('admin.players.search.hint.id'),
+        all:      '🔍 ' + t('admin.players.search.hint.all'),
     };
 
     function v(el, key) { return (el.dataset[key] || '').toLowerCase(); }
@@ -253,6 +254,7 @@
             case 'telegram': return v(el,'telegram').includes(q.slice(1));
             case 'email':    return v(el,'email').includes(q);
             case 'phone':    return v(el,'phone').replace(/\D/g,'').includes(q.replace(/\D/g,''));
+            case 'id':       return v(el,'id') === q;
             case 'all':      return v(el,'name').includes(q)
                                  || v(el,'email').includes(q)
                                  || v(el,'phone').replace(/\D/g,'').includes(q.replace(/\D/g,''));

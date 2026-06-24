@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html lang="es" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta name="app-profile" th:content="${@environment.getActiveProfiles().length > 0
         ? @environment.getActiveProfiles()[0]
@@ -25,7 +25,7 @@
     <link rel="stylesheet" th:href="@{/css/king-of-court.css}">
 </head>
 <body>
-<header th:replace="~{fragments/admin-header :: header('King of Court')}"></header>
+<header th:replace="~{fragments/admin-header :: header(#{admin.koc.title})}"></header>
 
 <main class="admin-main">
     <div class="container">
@@ -47,13 +47,13 @@
                 <span th:text="${tournament.nombre}">Torneo</span>
             </h1>
             <div class="admin-subtitle">
-                <span class="badge" th:text="'Ronda ' + ${kingTournament.currentRound}">Ronda 1</span>
+                <span class="badge" th:text="#{admin.koc.round.label} + ' ' + ${kingTournament.currentRound}">Ronda 1</span>
                 <span class="badge badge-level"
-                      th:text="${kingTournament.currentRound <= kingTournament.calibrationRounds} ? 'Calibración' : 'Bonus'"
+                      th:text="${kingTournament.currentRound <= kingTournament.calibrationRounds} ? #{admin.koc.round.calibration} : #{admin.koc.round.bonus}"
                       th:classappend="${kingTournament.currentRound <= kingTournament.calibrationRounds} ? 'badge-warning' : 'badge-success'">
                         Calibración
                     </span>
-                <span class="badge" th:text="${kingTournament.isFinished} ? 'Finalizado' : 'Activo'"
+                <span class="badge" th:text="${kingTournament.isFinished} ? #{admin.koc.status.finished} : #{admin.koc.status.active}"
                       th:classappend="${kingTournament.isFinished} ? 'badge-danger' : 'badge-success'">
                         Activo
                     </span>
@@ -63,15 +63,16 @@
         <!-- Enlace de YouTube (solo para admin) -->
         <div class="admin-card" th:if="${admin}">
             <div class="admin-card-header">
-                <h2><i class="fab fa-youtube" style="color: #ff0000;"></i> Transmisión en vivo</h2>
+                <h2><i class="fab fa-youtube" style="color: #ff0000;"></i> <span th:text="#{admin.koc.section.youtube}">Transmisión en vivo</span></h2>
             </div>
             <div class="admin-card-body">
                 <div class="youtube-link-form" style="display: flex; gap: 1rem;">
                     <input type="text" id="youtubeLink" class="form-control"
+                           th:placeholder="#{admin.koc.youtube.placeholder}"
                            placeholder="Ingrese el enlace de YouTube"
                            th:value="${kingTournament.youtubeLink}">
                     <button class="btn btn-primary" onclick="window.kingOfCourt?.saveYoutubeLink()">
-                        <i class="fas fa-save"></i> Guardar
+                        <i class="fas fa-save"></i> <span th:text="#{admin.koc.youtube.save}">Guardar</span>
                     </button>
                 </div>
             </div>
@@ -80,15 +81,15 @@
         <!-- Información de torneo finalizado -->
         <div th:if="${kingTournament.isFinished}" class="admin-card" style="text-align: center; padding: 2rem;">
             <i class="fas fa-trophy" style="font-size: 4rem; color: #fbbf24; margin-bottom: 1rem;"></i>
-            <h2>¡Torneo finalizado!</h2>
-            <p>La clasificación final está disponible a continuación</p>
+            <h2 th:text="#{admin.koc.finished.title}">¡Torneo finalizado!</h2>
+            <p th:text="#{admin.koc.finished.text}">La clasificación final está disponible a continuación</p>
         </div>
 
         <!-- Grid de canchas -->
         <div class="admin-card">
             <div class="admin-card-header">
-                <h2><i class="fas fa-map-marked-alt"></i> Canchas</h2>
-                <span class="badge" th:text="${state.allResultsIn} ? 'Todos los resultados ingresados' : 'Esperando resultados'"
+                <h2><i class="fas fa-map-marked-alt"></i> <span th:text="#{admin.koc.section.courts}">Canchas</span></h2>
+                <span class="badge" th:text="${state.allResultsIn} ? #{admin.koc.badge.results_in} : #{admin.koc.badge.waiting}"
                       th:classappend="${state.allResultsIn} ? 'badge-success' : 'badge-warning'">
                     </span>
             </div>
@@ -104,7 +105,7 @@
             <!-- Ranking en vivo -->
             <div class="admin-card">
                 <div class="admin-card-header">
-                    <h2><i class="fas fa-chart-line"></i> Clasificación en vivo</h2>
+                    <h2><i class="fas fa-chart-line"></i> <span th:text="#{admin.koc.section.ranking}">Clasificación en vivo</span></h2>
                     <a href="#" onclick="window.kingOfCourt?.loadData()" class="btn-icon" title="Actualizar">
                         <i class="fas fa-sync-alt"></i>
                     </a>
@@ -114,11 +115,11 @@
                         <thead>
                         <tr>
                             <th>#</th>
-                            <th>Jugador</th>
-                            <th>Puntos</th>
-                            <th>Bonos</th>
-                            <th>Juegos</th>
-                            <th>V/D</th>
+                            <th th:text="#{admin.koc.col.player}">Jugador</th>
+                            <th th:text="#{admin.koc.col.points}">Puntos</th>
+                            <th th:text="#{admin.koc.col.bonuses}">Bonos</th>
+                            <th th:text="#{admin.koc.col.games}">Juegos</th>
+                            <th th:text="#{admin.koc.col.wins_losses}">V/D</th>
                         </tr>
                         </thead>
                         <tbody id="leaderboard">
@@ -131,7 +132,7 @@
             <!-- Historial de partidos -->
             <div class="admin-card">
                 <div class="admin-card-header">
-                    <h2><i class="fas fa-history"></i> Historial de partidos</h2>
+                    <h2><i class="fas fa-history"></i> <span th:text="#{admin.koc.section.history}">Historial de partidos</span></h2>
                 </div>
                 <div class="admin-card-body">
                     <ul id="matchHistory" class="history-list" style="list-style: none; padding: 0; margin: 0; max-height: 400px; overflow-y: auto;">
@@ -146,7 +147,7 @@
             <button onclick="shareAdminTournament()"
                     class="btn btn-outline"
                     style="display:flex; align-items:center; gap:.5rem;">
-                <i class="fas fa-share-alt"></i> Compartir torneo
+                <i class="fas fa-share-alt"></i> <span th:text="#{admin.koc.btn.share}">Compartir torneo</span>
             </button>
         </div>
 
@@ -156,19 +157,19 @@
 
             <!-- Следующий раунд — показывается JS когда все результаты введены -->
             <button id="nextRoundBtn" class="btn btn-primary" style="display: none;">
-                <i class="fas fa-forward"></i> Iniciar siguiente ronda
+                <i class="fas fa-forward"></i> <span th:text="#{admin.koc.btn.next_round_start}">Iniciar siguiente ronda</span>
             </button>
 
             <!-- Откатить раунд — показывается JS когда currentRound > 1 -->
             <button id="rollbackRoundBtn" class="btn btn-warning" style="display: none;"
                     onclick="window.kingOfCourt?.rollbackRound()">
-                <i class="fas fa-undo"></i> Cancelar último avance
+                <i class="fas fa-undo"></i> <span th:text="#{admin.koc.btn.rollback_round}">Cancelar último avance</span>
             </button>
 
             <!-- Завершить турнир -->
             <button id="endTournamentBtn" class="btn btn-danger" style="display: none;"
                     onclick="window.kingOfCourt?.endTournament()">
-                <i class="fas fa-flag-checkered"></i> Finalizar torneo
+                <i class="fas fa-flag-checkered"></i> <span th:text="#{admin.koc.btn.end}">Finalizar torneo</span>
             </button>
         </div>
 
@@ -182,7 +183,7 @@
                         class="btn btn-outline"
                         style="border-color:#dc2626; color:#dc2626; gap:.5rem; display:flex; align-items:center;"
                         onclick="confirmReset()">
-                    <i class="fas fa-redo-alt"></i> Reiniciar torneo
+                    <i class="fas fa-redo-alt"></i> <span th:text="#{admin.koc.btn.reset}">Reiniciar torneo</span>
                 </button>
             </form>
         </div>
@@ -190,7 +191,7 @@
         <!-- Botón de volver (si está finalizado) -->
         <div class="admin-actions" style="justify-content: center; margin-top: 2rem;" th:if="${kingTournament.isFinished}">
             <a th:href="@{'/admin/tournaments/' + ${tournament.id}}" class="btn btn-primary">
-                <i class="fas fa-arrow-left"></i> Volver al torneo
+                <i class="fas fa-arrow-left"></i> <span th:text="#{admin.koc.btn.back}">Volver al torneo</span>
             </a>
         </div>
     </div>
