@@ -3,11 +3,14 @@ package com.padle.core.padelcoreservice.controller.view.americano;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
 import com.padle.core.padelcoreservice.dto.americano.*;
+import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import com.padle.core.padelcoreservice.service.americano.AmericanoService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -107,13 +110,14 @@ public class AmericanoViewController {
     }
 
     @PostMapping("/{tournamentId}/register")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
     public String registerForTournament(
             @PathVariable Long tournamentId,
             @RequestParam Long playerId,
-            RedirectAttributes redirectAttributes) {
+            RedirectAttributes redirectAttributes, @AuthenticationPrincipal Owner currentOwner) {
 
         try {
-            TournamentRegistrationDto registration = americanoService.registerForAmericano(tournamentId, playerId);
+            TournamentRegistrationDto registration = americanoService.registerForAmericano(tournamentId, playerId, currentOwner);
 
             String status = registration.getStatus().name();
             if ("CONFIRMED".equals(status)) {
@@ -130,14 +134,15 @@ public class AmericanoViewController {
     }
 
     @PostMapping("/{tournamentId}/cancel")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
     public String cancelRegistration(
             @PathVariable Long tournamentId,
             @RequestParam Long playerId,
             @RequestParam(required = false) String reason,
-            RedirectAttributes redirectAttributes) {
+            RedirectAttributes redirectAttributes, @AuthenticationPrincipal Owner currentOwner) {
 
         try {
-            americanoService.cancelRegistration(tournamentId, playerId, reason);
+            americanoService.cancelRegistration(tournamentId, playerId, reason, currentOwner);
             redirectAttributes.addFlashAttribute("success", "Registro cancelado correctamente");
         } catch (Exception e) {
             log.error("Error cancelling registration: {}", e.getMessage());
@@ -208,7 +213,7 @@ public class AmericanoViewController {
             @PathVariable Long tournamentId,
             @ModelAttribute AmericanoConfigDto config,
             Model model,
-            RedirectAttributes redirectAttributes) {
+            RedirectAttributes redirectAttributes, @AuthenticationPrincipal Owner currentOwner) {
 
         try {
             TournamentDto tournament = tournamentService.getActiveTournamentById(tournamentId)
@@ -219,7 +224,7 @@ public class AmericanoViewController {
             model.addAttribute("isInitialized", isInitialized);
             // ──────────────────────────────────────────────────────────────────
 
-            List<AmericanoRoundDto> previewRounds = americanoService.previewRounds(tournamentId, config);
+            List<AmericanoRoundDto> previewRounds = americanoService.previewRounds(tournamentId, config, currentOwner);
 
             int totalMatches = 0;
             for (AmericanoRoundDto round : previewRounds) {
@@ -279,10 +284,10 @@ public class AmericanoViewController {
     @PostMapping("/rounds/{roundId}/start")
     public String startRound(
             @PathVariable Long roundId,
-            RedirectAttributes redirectAttributes) {
+            RedirectAttributes redirectAttributes, @AuthenticationPrincipal Owner currentOwner) {
 
         try {
-            AmericanoRoundDto round = americanoService.startRound(roundId);
+            AmericanoRoundDto round = americanoService.startRound(roundId, currentOwner);
             redirectAttributes.addFlashAttribute("success", "Ronda " + round.getRoundNumber() + " iniciada");
         } catch (Exception e) {
             log.error("Error starting round: {}", e.getMessage());
@@ -295,10 +300,10 @@ public class AmericanoViewController {
     @PostMapping("/rounds/{roundId}/complete")
     public String completeRound(
             @PathVariable Long roundId,
-            RedirectAttributes redirectAttributes) {
+            RedirectAttributes redirectAttributes, @AuthenticationPrincipal Owner currentOwner) {
 
         try {
-            AmericanoRoundDto round = americanoService.completeRound(roundId);
+            AmericanoRoundDto round = americanoService.completeRound(roundId, currentOwner);
             redirectAttributes.addFlashAttribute("success", "Ronda " + round.getRoundNumber() + " completada");
         } catch (Exception e) {
             log.error("Error completing round: {}", e.getMessage());
@@ -348,11 +353,11 @@ public class AmericanoViewController {
     public String submitMatchResult(
             @PathVariable Long matchId,
             @ModelAttribute AmericanoMatchResultDto resultDto,
-            RedirectAttributes redirectAttributes) {
+            RedirectAttributes redirectAttributes, @AuthenticationPrincipal Owner currentOwner) {
 
         try {
             resultDto.setMatchId(matchId);
-            AmericanoMatchDto match = americanoService.submitMatchResult(resultDto);
+            AmericanoMatchDto match = americanoService.submitMatchResult(resultDto, currentOwner);
             redirectAttributes.addFlashAttribute("success", "Resultado guardado correctamente");
             return "redirect:/tournaments/americano/matches/" + matchId;
         } catch (Exception e) {
@@ -417,7 +422,7 @@ public class AmericanoViewController {
             @PathVariable Long tournamentId,
             @PathVariable Long playerId,
             @RequestParam(required = false) String reason,
-            RedirectAttributes redirectAttributes) {
+            RedirectAttributes redirectAttributes, @AuthenticationPrincipal  Owner currentOwner) {
 
         try {
             AmericanoDropoutDto dropoutDto = AmericanoDropoutDto.builder()
@@ -425,7 +430,7 @@ public class AmericanoViewController {
                     .reason(reason)
                     .build();
 
-            americanoService.dropOutPlayer(tournamentId, dropoutDto);
+            americanoService.dropOutPlayer(tournamentId, dropoutDto, currentOwner);
             redirectAttributes.addFlashAttribute("success", "Jugador marcado como abandonado");
         } catch (Exception e) {
             log.error("Error dropping out player: {}", e.getMessage());
@@ -442,7 +447,7 @@ public class AmericanoViewController {
             @PathVariable Long tournamentId,
             @RequestParam(required = false, defaultValue = "score") String sortBy,
             @RequestParam(required = false, defaultValue = "false") boolean ascending,
-            RedirectAttributes redirectAttributes) {
+            RedirectAttributes redirectAttributes, @AuthenticationPrincipal Owner currentOwner) {
 
         try {
             RankingCriteria criteria = RankingCriteria.builder()
@@ -450,7 +455,7 @@ public class AmericanoViewController {
                     .ascending(ascending)
                     .build();
 
-            AmericanoRankingDto ranking = americanoService.finishTournament(tournamentId, criteria);
+            AmericanoRankingDto ranking = americanoService.finishTournament(tournamentId, criteria, currentOwner);
 
             String winner = ranking.getRanking().get(0).getPlayerName() + " " +
                     ranking.getRanking().get(0).getPlayerLastName();
