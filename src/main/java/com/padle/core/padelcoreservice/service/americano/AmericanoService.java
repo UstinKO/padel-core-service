@@ -23,6 +23,7 @@ import com.padle.core.padelcoreservice.service.PlayerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -876,11 +877,16 @@ public class AmericanoService {
     // ═══════════════════════════════════════════════════════════════════════
 
     @Transactional(readOnly = true)
-    public List<AmericanoRoundDto> previewRounds(Long tournamentId, AmericanoConfigDto config) {
+    public List<AmericanoRoundDto> previewRounds(Long tournamentId, AmericanoConfigDto config, Owner currentOwner) {
         log.info("Previewing rounds tournament={} config={}", tournamentId, config);
 
         Tournament tournament = tournamentRepository.findById(tournamentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tournament not found"));
+
+        boolean isOrganizerOnly = currentOwner.getRole().equals(OwnerRole.ORGANIZER);
+        if (isOrganizerOnly && !currentOwner.getId().equals(tournament.getOwnerId())) {
+            throw new AccessDeniedException("No tienes permiso para previsualizar rondas");
+        }
 
         List<AmericanoPlayer> players = americanoPlayerRepository
                 .findByTournamentIdAndStatus(tournamentId, AmericanoPlayerStatus.ACTIVE);
@@ -1038,9 +1044,14 @@ public class AmericanoService {
     // ═══════════════════════════════════════════════════════════════════════
 
     @Transactional
-    public AmericanoRoundDto startRound(Long roundId) {
+    public AmericanoRoundDto startRound(Long roundId, Owner currentOwner) {
         AmericanoRound round = americanoRoundRepository.findById(roundId)
                 .orElseThrow(() -> new ResourceNotFoundException("Round not found"));
+
+        boolean isOrganizerOnly = currentOwner.getRole().equals(OwnerRole.ORGANIZER);
+        if (isOrganizerOnly && !currentOwner.getId().equals(round.getTournament().getOwnerId())) {
+            throw new AccessDeniedException("No tienes permiso para iniciar esta ronda");
+        }
 
         if (round.getStatus() != AmericanoRoundStatus.PENDING) {
             throw new InvalidStateException(
@@ -1055,9 +1066,14 @@ public class AmericanoService {
     }
 
     @Transactional
-    public AmericanoRoundDto completeRound(Long roundId) {
+    public AmericanoRoundDto completeRound(Long roundId, Owner currentOwner) {
         AmericanoRound round = americanoRoundRepository.findById(roundId)
                 .orElseThrow(() -> new ResourceNotFoundException("Round not found"));
+
+        boolean isOrganizerOnly = currentOwner.getRole().equals(OwnerRole.ORGANIZER);
+        if (isOrganizerOnly && !currentOwner.getId().equals(round.getTournament().getOwnerId())) {
+            throw new AccessDeniedException("No tienes permiso para finalizar esta ronda");
+        }
 
         if (round.getStatus() != AmericanoRoundStatus.IN_PROGRESS) {
             throw new InvalidStateException(
@@ -1085,11 +1101,16 @@ public class AmericanoService {
     // ═══════════════════════════════════════════════════════════════════════
 
     @Transactional
-    public AmericanoMatchDto submitMatchResult(AmericanoMatchResultDto resultDto) {
+    public AmericanoMatchDto submitMatchResult(AmericanoMatchResultDto resultDto, Owner currentOwner) {
         log.info("Submitting match result matchId={}", resultDto.getMatchId());
 
         AmericanoMatch match = americanoMatchRepository.findById(resultDto.getMatchId())
                 .orElseThrow(() -> new ResourceNotFoundException("Match not found"));
+
+        boolean isOrganizerOnly = currentOwner.getRole().equals(OwnerRole.ORGANIZER);
+        if (isOrganizerOnly && !currentOwner.getId().equals(match.getTournament().getOwnerId())) {
+            throw new AccessDeniedException("No tienes permiso para enviar el resultado del partido");
+        }
 
         if (match.getStatus() == AmericanoRoundStatus.PENDING) {
             throw new InvalidStateException(
@@ -1118,7 +1139,7 @@ public class AmericanoService {
         applyAllPlayerStats(match);
 
         // Автозавершение раунда если все матчи сыграны
-        tryAutoCompleteRound(match.getRound().getId());
+        tryAutoCompleteRound(match.getRound().getId(), currentOwner);
 
         return americanoMapper.toDto(saved);
     }
@@ -1175,13 +1196,13 @@ public class AmericanoService {
      * Автоматически завершает раунд, если все матчи сыграны.
      * Защита от повторного вызова: проверяем статус раунда.
      */
-    private void tryAutoCompleteRound(Long roundId) {
+    private void tryAutoCompleteRound(Long roundId, Owner currentOwner) {
         americanoRoundRepository.findById(roundId)
                 .filter(r -> r.getStatus() == AmericanoRoundStatus.IN_PROGRESS)
                 .ifPresent(round -> {
                     int completed = americanoMatchRepository.countCompletedMatchesInRound(roundId);
                     if (completed == round.getMatches().size()) {
-                        completeRound(roundId);
+                        completeRound(roundId, currentOwner);
                     }
                 });
     }
@@ -1255,12 +1276,17 @@ public class AmericanoService {
     // ═══════════════════════════════════════════════════════════════════════
 
     @Transactional
-    public void dropOutPlayer(Long tournamentId, AmericanoDropoutDto dropoutDto) {
+    public void dropOutPlayer(Long tournamentId, AmericanoDropoutDto dropoutDto, Owner currentOwner) {
         log.info("Player {} dropping out from tournament {}", dropoutDto.getPlayerId(), tournamentId);
 
         AmericanoPlayer ap = americanoPlayerRepository
                 .findByTournamentIdAndPlayerId(tournamentId, dropoutDto.getPlayerId())
                 .orElseThrow(() -> new ResourceNotFoundException("Player not found in tournament"));
+
+        boolean isOrganizerOnly = currentOwner.getRole().equals(OwnerRole.ORGANIZER);
+        if (isOrganizerOnly && !currentOwner.getId().equals(ap.getTournament().getOwnerId())) {
+            throw new AccessDeniedException("No tienes permiso para retirar a este jugador del torneo");
+        }
 
         if (ap.getStatus() != AmericanoPlayerStatus.ACTIVE) {
             throw new InvalidStateException("Player is already not active");
@@ -1475,11 +1501,16 @@ public class AmericanoService {
     // ═══════════════════════════════════════════════════════════════════════
 
     @Transactional
-    public AmericanoRankingDto finishTournament(Long tournamentId, RankingCriteria criteria) {
+    public AmericanoRankingDto finishTournament(Long tournamentId, RankingCriteria criteria, Owner currentOwner) {
         log.info("Finishing Americano tournament={}", tournamentId);
 
         Tournament tournament = tournamentRepository.findById(tournamentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tournament not found"));
+
+        boolean isOrganizerOnly = currentOwner.getRole().equals(OwnerRole.ORGANIZER);
+        if (isOrganizerOnly && !currentOwner.getId().equals(tournament.getOwnerId())) {
+            throw new AccessDeniedException("No tienes permiso para terminar este torneo");
+        }
 
         int total = americanoRoundRepository.findMaxRoundNumber(tournamentId).orElse(0);
         int completed = americanoRoundRepository.countCompletedRounds(tournamentId);
@@ -1567,9 +1598,14 @@ public class AmericanoService {
     }
 
     @Transactional
-    public void updateRoundPointsLimit(Long roundId, int newLimit) {
+    public void updateRoundPointsLimit(Long roundId, int newLimit, Owner currentOwner) {
         AmericanoRound round = americanoRoundRepository.findById(roundId)
                 .orElseThrow(() -> new ResourceNotFoundException("Round not found"));
+
+        boolean isOrganizerOnly = currentOwner.getRole().equals(OwnerRole.ORGANIZER);
+        if (isOrganizerOnly && !currentOwner.getId().equals(round.getTournament().getOwnerId())) {
+            throw new AccessDeniedException("No tienes permiso para actualizar el límite de puntos");
+        }
 
         // Проверяем, есть ли уже завершенные матчи в этом раунде
         boolean hasCompleted = round.getMatches().stream().anyMatch(AmericanoMatch::isCompleted);

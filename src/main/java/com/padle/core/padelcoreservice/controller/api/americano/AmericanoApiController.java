@@ -88,16 +88,16 @@ public class AmericanoApiController {
 
     @PostMapping("/rounds/{roundId}/start")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'ORGANIZER')")
-    public ResponseEntity<AmericanoRoundDto> startRound(@PathVariable Long roundId) {
+    public ResponseEntity<AmericanoRoundDto> startRound(@PathVariable Long roundId, @AuthenticationPrincipal Owner currentOwner) {
         log.info("API: Start round {}", roundId);
-        return ResponseEntity.ok(americanoService.startRound(roundId));
+        return ResponseEntity.ok(americanoService.startRound(roundId, currentOwner));
     }
 
     @PostMapping("/rounds/{roundId}/complete")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'ORGANIZER')")
-    public ResponseEntity<AmericanoRoundDto> completeRound(@PathVariable Long roundId) {
+    public ResponseEntity<AmericanoRoundDto> completeRound(@PathVariable Long roundId, @AuthenticationPrincipal Owner currentOwner) {
         log.info("API: Complete round {}", roundId);
-        return ResponseEntity.ok(americanoService.completeRound(roundId));
+        return ResponseEntity.ok(americanoService.completeRound(roundId, currentOwner));
     }
 
     // ==================== МАТЧИ ====================
@@ -121,10 +121,10 @@ public class AmericanoApiController {
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'ORGANIZER')")
     public ResponseEntity<AmericanoMatchDto> submitMatchResult(
             @PathVariable Long matchId,
-            @Valid @RequestBody AmericanoMatchResultDto resultDto) {
+            @Valid @RequestBody AmericanoMatchResultDto resultDto, @AuthenticationPrincipal Owner currentOwner) {
         resultDto.setMatchId(matchId);
         log.info("API: Submit result for match {}", matchId);
-        return ResponseEntity.ok(americanoService.submitMatchResult(resultDto));
+        return ResponseEntity.ok(americanoService.submitMatchResult(resultDto, currentOwner));
     }
 
     @GetMapping("/{tournamentId}/players/{playerId}/matches")
@@ -178,11 +178,11 @@ public class AmericanoApiController {
     public ResponseEntity<Void> dropOutPlayer(
             @PathVariable Long tournamentId,
             @PathVariable Long playerId,
-            @Valid @RequestBody AmericanoDropoutDto dropoutDto) {
+            @Valid @RequestBody AmericanoDropoutDto dropoutDto, @AuthenticationPrincipal Owner currentOwner) {
 
         dropoutDto.setPlayerId(playerId);
         log.info("API: Player {} drops out from tournament {}", playerId, tournamentId);
-        americanoService.dropOutPlayer(tournamentId, dropoutDto);
+        americanoService.dropOutPlayer(tournamentId, dropoutDto, currentOwner);
         return ResponseEntity.ok().build();
     }
 
@@ -193,7 +193,7 @@ public class AmericanoApiController {
     public ResponseEntity<AmericanoRankingDto> finishTournament(
             @PathVariable Long tournamentId,
             @RequestParam(defaultValue = "score") String sortBy,
-            @RequestParam(defaultValue = "false") boolean ascending) {
+            @RequestParam(defaultValue = "false") boolean ascending, @AuthenticationPrincipal Owner currentOwner) {
 
         log.info("API: Finish Americano tournament {} with criteria: sortBy={}, ascending={}",
                 tournamentId, sortBy, ascending);
@@ -203,7 +203,7 @@ public class AmericanoApiController {
                 .ascending(ascending)
                 .build();
 
-        return ResponseEntity.ok(americanoService.finishTournament(tournamentId, criteria));
+        return ResponseEntity.ok(americanoService.finishTournament(tournamentId, criteria, currentOwner));
     }
 
     // ==================== ДОПОЛНИТЕЛЬНЫЕ МЕТОДЫ ====================
@@ -212,18 +212,18 @@ public class AmericanoApiController {
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'ORGANIZER')")
     public ResponseEntity<List<AmericanoRoundDto>> previewRounds(
             @PathVariable Long tournamentId,
-            @Valid @RequestBody AmericanoConfigDto config) {
+            @Valid @RequestBody AmericanoConfigDto config, @AuthenticationPrincipal Owner currentOwner) {
 
         log.info("API: Preview rounds for tournament {} with config: {}", tournamentId, config);
         // Можно добавить метод для предпросмотра без сохранения в БД
-        return ResponseEntity.ok(americanoService.previewRounds(tournamentId, config));
+        return ResponseEntity.ok(americanoService.previewRounds(tournamentId, config, currentOwner));
     }
 
     @PutMapping("/rounds/{roundId}/points-limit")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'ORGANIZER')")
     public ResponseEntity<?> updateRoundPointsLimit(
             @PathVariable Long roundId,
-            @RequestBody Map<String, Integer> request) {
+            @RequestBody Map<String, Integer> request, @AuthenticationPrincipal Owner currentOwner) {
 
         Integer newLimit = request.get("pointsPerMatch");
         if (newLimit == null || (newLimit != 15 && newLimit != 21 && newLimit != 24 && newLimit != 32 && newLimit != 40)) {
@@ -231,7 +231,7 @@ public class AmericanoApiController {
         }
 
         try {
-            americanoService.updateRoundPointsLimit(roundId, newLimit);
+            americanoService.updateRoundPointsLimit(roundId, newLimit, currentOwner);
             return ResponseEntity.ok().build();
         } catch (InvalidStateException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
