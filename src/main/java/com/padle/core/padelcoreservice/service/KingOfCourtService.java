@@ -43,7 +43,7 @@ public class KingOfCourtService {
         Tournament tournament = tournamentRepository.findById(tournamentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tournament not found with ID: " + tournamentId));
 
-        if (!currentOwner.isSuperAdmin()) {
+        if (!currentOwner.isSuperAdmin() && !currentOwner.isAdminRole()) {
             Long ownerId = tournament.getOwnerId();
             if (ownerId == null || !ownerId.equals(currentOwner.getId())) {
                 throw new AccessDeniedException("You don't have permission to initialize this tournament");
