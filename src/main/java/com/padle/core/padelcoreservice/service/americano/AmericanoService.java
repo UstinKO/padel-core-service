@@ -23,7 +23,6 @@ import com.padle.core.padelcoreservice.service.PlayerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -63,11 +62,9 @@ public class AmericanoService {
         Tournament tournament = tournamentRepository.findById(tournamentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tournament not found"));
 
-        if (!currentOwner.isSuperAdmin()) {
-            Long ownerId = currentOwner.getId();
-            if (ownerId == null || !ownerId.equals(playerId)) {
-                throw new AccessDeniedException("You don't have permission to register this player");
-            }
+        boolean isOrganizerOnly = currentOwner.getRole().equals(OwnerRole.ORGANIZER);
+        if (isOrganizerOnly && !currentOwner.getId().equals(tournament.getOwnerId())) {
+            throw new AccessDeniedException("No tienes permiso para registrar este jugador");
         }
 
         validateTournamentForRegistration(tournament);
@@ -187,11 +184,9 @@ public class AmericanoService {
                 .findByTournamentIdAndPlayerId(tournamentId, playerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Registro no encontrado"));
 
-        if (!currentOwner.isSuperAdmin()) {
-            Long ownerId = currentOwner.getId();
-            if (ownerId == null || !ownerId.equals(playerId)) {
-                throw new AccessDeniedException("You don't have permission to register this player");
-            }
+        boolean isOrganizerOnly = currentOwner.getRole().equals(OwnerRole.ORGANIZER);
+        if (isOrganizerOnly && !currentOwner.getId().equals(registration.getTournament().getOwnerId())) {
+            throw new AccessDeniedException("No tienes permiso para cancelar este registro");
         }
 
         if (!registration.getIsActive()) {

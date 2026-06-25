@@ -3,22 +3,14 @@ package com.padle.core.padelcoreservice.controller.api.americano;
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
 import com.padle.core.padelcoreservice.dto.americano.*;
 import com.padle.core.padelcoreservice.exception.InvalidStateException;
-import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
 import com.padle.core.padelcoreservice.model.Owner;
-import com.padle.core.padelcoreservice.model.americano.AmericanoMatch;
-import com.padle.core.padelcoreservice.model.americano.AmericanoRound;
-import com.padle.core.padelcoreservice.repository.americano.AmericanoRoundRepository;
 import com.padle.core.padelcoreservice.service.americano.AmericanoService;
-import com.padle.core.padelcoreservice.service.TournamentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.Hibernate;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -36,7 +28,7 @@ public class AmericanoApiController {
     // ==================== РЕГИСТРАЦИЯ ====================
 
     @PostMapping("/{tournamentId}/register/{playerId}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'ORGANIZER')")
     public ResponseEntity<TournamentRegistrationDto> registerForAmericano(
             @PathVariable Long tournamentId,
             @PathVariable Long playerId, @AuthenticationPrincipal Owner currentOwner) {
@@ -45,7 +37,7 @@ public class AmericanoApiController {
     }
 
     @DeleteMapping("/{tournamentId}/cancel/{playerId}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'ORGANIZER')")
     public ResponseEntity<Void> cancelRegistration(
             @PathVariable Long tournamentId,
             @PathVariable Long playerId,
@@ -95,14 +87,14 @@ public class AmericanoApiController {
     }
 
     @PostMapping("/rounds/{roundId}/start")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'ORGANIZER')")
     public ResponseEntity<AmericanoRoundDto> startRound(@PathVariable Long roundId) {
         log.info("API: Start round {}", roundId);
         return ResponseEntity.ok(americanoService.startRound(roundId));
     }
 
     @PostMapping("/rounds/{roundId}/complete")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'ORGANIZER')")
     public ResponseEntity<AmericanoRoundDto> completeRound(@PathVariable Long roundId) {
         log.info("API: Complete round {}", roundId);
         return ResponseEntity.ok(americanoService.completeRound(roundId));
@@ -126,7 +118,7 @@ public class AmericanoApiController {
     }
 
     @PostMapping("/matches/{matchId}/result")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'ORGANIZER')")
     public ResponseEntity<AmericanoMatchDto> submitMatchResult(
             @PathVariable Long matchId,
             @Valid @RequestBody AmericanoMatchResultDto resultDto) {
@@ -182,7 +174,7 @@ public class AmericanoApiController {
     // ==================== УПРАВЛЕНИЕ ИГРОКАМИ ====================
 
     @PostMapping("/{tournamentId}/players/{playerId}/dropout")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'ORGANIZER')")
     public ResponseEntity<Void> dropOutPlayer(
             @PathVariable Long tournamentId,
             @PathVariable Long playerId,
@@ -197,7 +189,7 @@ public class AmericanoApiController {
     // ==================== ЗАВЕРШЕНИЕ ТУРНИРА ====================
 
     @PostMapping("/{tournamentId}/finish")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'ORGANIZER')")
     public ResponseEntity<AmericanoRankingDto> finishTournament(
             @PathVariable Long tournamentId,
             @RequestParam(defaultValue = "score") String sortBy,
@@ -217,7 +209,7 @@ public class AmericanoApiController {
     // ==================== ДОПОЛНИТЕЛЬНЫЕ МЕТОДЫ ====================
 
     @GetMapping("/{tournamentId}/preview-rounds")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'ORGANIZER')")
     public ResponseEntity<List<AmericanoRoundDto>> previewRounds(
             @PathVariable Long tournamentId,
             @Valid @RequestBody AmericanoConfigDto config) {
@@ -228,7 +220,7 @@ public class AmericanoApiController {
     }
 
     @PutMapping("/rounds/{roundId}/points-limit")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'ORGANIZER')")
     public ResponseEntity<?> updateRoundPointsLimit(
             @PathVariable Long roundId,
             @RequestBody Map<String, Integer> request) {
