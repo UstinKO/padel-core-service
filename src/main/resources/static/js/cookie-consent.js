@@ -115,40 +115,28 @@
         showCookieBanner();
     };
 
+    function dismissBanner() {
+        const banner = document.getElementById('cookieConsentBanner');
+        if (banner) {
+            banner.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => banner.remove(), 300);
+        }
+    }
+
     // Принять все cookies
     window.acceptCookies = function() {
-        fetch('/api/cookies/accept', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
-            .then(() => {
-                const banner = document.getElementById('cookieConsentBanner');
-                if (banner) {
-                    banner.style.animation = 'slideOut 0.3s ease';
-                    setTimeout(() => banner.remove(), 300);
-                }
-                console.log('Cookies aceptadas');
+        fetch('/api/cookies/accept', { method: 'POST' })
+            .then(response => {
+                if (response.ok) dismissBanner();
             })
             .catch(error => console.error('Error:', error));
     };
 
     // Отклонить все cookies
     window.rejectCookies = function() {
-        fetch('/api/cookies/reject', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
-            .then(() => {
-                const banner = document.getElementById('cookieConsentBanner');
-                if (banner) {
-                    banner.style.animation = 'slideOut 0.3s ease';
-                    setTimeout(() => banner.remove(), 300);
-                }
-                console.log('Cookies rechazadas');
+        fetch('/api/cookies/reject', { method: 'POST' })
+            .then(response => {
+                if (response.ok) dismissBanner();
             })
             .catch(error => console.error('Error:', error));
     };
@@ -158,19 +146,9 @@
         const analytics = document.getElementById('analyticsCookies')?.checked || false;
         const marketing = document.getElementById('marketingCookies')?.checked || false;
 
-        fetch(`/api/cookies/customize?analytics=${analytics}&marketing=${marketing}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
-            .then(() => {
-                const banner = document.getElementById('cookieConsentBanner');
-                if (banner) {
-                    banner.style.animation = 'slideOut 0.3s ease';
-                    setTimeout(() => banner.remove(), 300);
-                }
-                console.log('Configuración de cookies guardada');
+        fetch(`/api/cookies/customize?analytics=${analytics}&marketing=${marketing}`, { method: 'POST' })
+            .then(response => {
+                if (response.ok) dismissBanner();
             })
             .catch(error => console.error('Error:', error));
     };

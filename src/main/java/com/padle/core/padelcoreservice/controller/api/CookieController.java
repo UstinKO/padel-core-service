@@ -22,7 +22,7 @@ public class CookieController {
         cookie.setMaxAge(365 * 24 * 60 * 60); // 1 año
         cookie.setPath("/");
         cookie.setHttpOnly(false);
-        cookie.setSecure(false); // В продакшене должно быть true при HTTPS
+        cookie.setSecure(true);
         response.addCookie(cookie);
 
         return ResponseEntity.ok().build();
@@ -37,7 +37,7 @@ public class CookieController {
         cookie.setMaxAge(365 * 24 * 60 * 60); // 1 año
         cookie.setPath("/");
         cookie.setHttpOnly(false);
-        cookie.setSecure(false); // В продакшене должно быть true при HTTPS
+        cookie.setSecure(true);
         response.addCookie(cookie);
 
         return ResponseEntity.ok().build();
