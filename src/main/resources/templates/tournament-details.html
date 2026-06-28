@@ -260,13 +260,17 @@
                 </div>
 
                 <!-- FAQ -->
-                <div class="info-card" th:if="${tournament.faqUrl}">
+                <div class="info-card">
                     <h2 class="info-card-title">
                         <i class="fas fa-question-circle"></i>
                         <span th:text="#{tournament.faq.title}">Preguntas Frecuentes</span>
                     </h2>
                     <div class="tournament-faq">
-                        <a th:href="${tournament.faqUrl}" target="_blank" rel="noopener noreferrer" class="faq-link">
+                        <a th:with="url=${#strings.isEmpty(#strings.trim(tournament.faqUrl ?: '')) ? '#faq' : #strings.trim(tournament.faqUrl)}"
+                           th:href="${#strings.startsWith(url, '#') ? '/' + url : url}"
+                           th:target="${#strings.startsWith(url, 'http') ? '_blank' : '_self'}"
+                           th:rel="${#strings.startsWith(url, 'http') ? 'noopener noreferrer' : null}"
+                           class="faq-link">
                             <i class="fas fa-external-link-alt"></i>
                             <span th:text="#{tournament.faq.link}">Ver preguntas frecuentes</span>
                         </a>

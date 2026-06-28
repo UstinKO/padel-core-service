@@ -607,6 +607,7 @@ public class TournamentService {
         }
 
         Tournament tournament = tournamentMapper.toEntity(tournamentDto);
+        tournament.setFaqUrl(normalizeFaqUrl(tournamentDto.getFaqUrl()));
         tournament.setCreatedBy(createdBy);
         tournament.setOwnerId(createdBy);  // ← ДОБАВИТЬ ЭТУ СТРОКУ
         tournament.setIsActive(true);
@@ -1047,8 +1048,14 @@ public class TournamentService {
         existing.setDeadlineCancelacion(dto.getDeadlineCancelacion());
         existing.setInfoDetallada(dto.getInfoDetallada());
         existing.setContactoOrganizador(dto.getContactoOrganizador());
-        existing.setFaqUrl(dto.getFaqUrl());
+        existing.setFaqUrl(normalizeFaqUrl(dto.getFaqUrl()));
         existing.setEstado(dto.getEstado());
+    }
+
+    private String normalizeFaqUrl(String url) {
+        if (url == null || url.isBlank()) return url;
+        if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("/") || url.startsWith("#")) return url;
+        return "https://" + url;
     }
 
     // Для публичного доступа (например, через API) - только активные
