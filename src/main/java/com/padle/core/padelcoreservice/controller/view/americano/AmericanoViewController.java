@@ -376,7 +376,7 @@ public class AmericanoViewController {
             @RequestParam(required = false, defaultValue = "false") boolean ascending,
             Model model) {
 
-        TournamentDto tournament = tournamentService.getActiveTournamentById(tournamentId)
+        TournamentDto tournament = tournamentService.getTournamentDtoById(tournamentId)
                 .orElseThrow(() -> new IllegalArgumentException("Torneo no encontrado"));
 
         RankingCriteria criteria = RankingCriteria.builder()
@@ -402,7 +402,7 @@ public class AmericanoViewController {
             @PathVariable Long playerId,
             Model model) {
 
-        TournamentDto tournament = tournamentService.getActiveTournamentById(tournamentId)
+        TournamentDto tournament = tournamentService.getTournamentDtoById(tournamentId)
                 .orElseThrow(() -> new IllegalArgumentException("Torneo no encontrado"));
 
         AmericanoPlayerDto playerStats = americanoService.getPlayerStats(tournamentId, playerId);
