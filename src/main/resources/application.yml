@@ -198,6 +198,12 @@ disposable-email-domains:
       enabled: false
       host:
       port:
+  # Домены-исключения: легитимные privacy email-сервисы (не одноразовые)
+  allowed-domains:
+    - addy.io
+    - anonaddy.com
+    - simplelogin.com
+    - simplelogin.io
 
 recaptcha:
   site-key: ${SITE_KEY_V2}
