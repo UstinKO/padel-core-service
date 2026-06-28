@@ -93,7 +93,8 @@ public class SecurityConfig {
                                 "/double-registration/complete",
                                 "/double-registration/accept-pair",
                                 "/ws/**",
-                                "/test/telegram/**"
+                                "/test/telegram/**",
+                                "/api/cookies/**"
                         ).permitAll()
                         .requestMatchers("/players/dashboard").authenticated()
                         .requestMatchers("/players/lista").authenticated()
