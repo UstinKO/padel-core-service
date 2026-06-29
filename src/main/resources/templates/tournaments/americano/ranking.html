@@ -56,6 +56,7 @@
         .sort-links { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: 1rem; }
         .sort-link { display: inline-flex; align-items: center; gap: .35rem; padding: .35rem .75rem; border-radius: 20px; font-size: .8rem; text-decoration: none; border: 1px solid #e2e8f0; color: #64748b; background: #fff; transition: all .2s; }
         .sort-link:hover, .sort-link.active { background: #1e293b; color: #fff; border-color: #1e293b; }
+        .verified-me{color:#1d9bf0;font-size:.85em;margin-left:.3rem;vertical-align:middle}
     </style>
 </head>
 <body>
@@ -164,7 +165,7 @@
                     <tr th:each="player : ${ranking.ranking}">
                         <td th:text="${player.position}">1</td>
                         <td>
-                            <span th:text="${player.playerName} + ' ' + ${player.playerLastName}"></span>
+                            <span th:text="${player.playerName} + ' ' + ${player.playerLastName}"></span><i th:if="${player.playerId == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i>
                             <span th:if="${player.position == 1}" class="crown-icon"><i class="fas fa-crown"></i></span>
                         </td>
                         <td class="points" th:text="${player.totalScore}">120</td>
