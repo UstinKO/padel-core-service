@@ -203,50 +203,58 @@ public class TournamentService {
             // ИСПРАВЛЕНО: если регистрация неактивна (отменена) - реактивируем
             log.info("Reactivating cancelled registration with id: {}, old status: {}",
                     reg.getId(), reg.getStatus());
+
+            // ВАЖНО: определяем статус ДО мутации сущности.
+            // reg.setIsActive(true) помечает entity dirty, и JPA (FlushMode.AUTO)
+            // сбрасывает её в БД перед следующим запросом — тогда countActiveRegistrations
+            // считает самого регистрирующегося игрока, получает cupoMax и ошибочно
+            // отправляет его в waitlist при наличии свободного места.
+            long confirmedCount = registrationRepository.countByTournamentIdAndStatus(
+                    tournamentId, RegistrationStatus.CONFIRMED);
+            long confirmedPairsCount = tournament.getModalidad() == Modalidad.DOBLES
+                    ? registrationRepository.countUniquePairs(tournamentId)
+                    : 0;
+            long spotsOccupied = tournament.getModalidad() == Modalidad.DOBLES
+                    ? confirmedPairsCount
+                    : confirmedCount;
+
+            RegistrationStatus newStatus;
+            Integer newPosition = null;
+            Integer newWaitlistPosition = null;
+
+            if (spotsOccupied < tournament.getCupoMax()) {
+                newStatus = RegistrationStatus.CONFIRMED;
+                newPosition = (int) confirmedCount + 1;
+                log.info("Player {} will be re-confirmed for tournament {} at position {}",
+                        playerId, tournamentId, newPosition);
+            } else {
+                newWaitlistPosition = registrationRepository.findMaxWaitlistPosition(tournamentId)
+                        .orElse(0) + 1;
+                newStatus = RegistrationStatus.WAITLIST;
+                log.info("Player {} will be added to waitlist for tournament {} at position {}",
+                        playerId, tournamentId, newWaitlistPosition);
+            }
+
+            // Теперь мутируем сущность и сохраняем
             // Bug #3 fix: сбрасываем счётчик попыток приглашений при реактивации,
             // иначе игрок с 2 попытками сразу получит CANCELLED вместо нового приглашения
             reg.setInvitationAttempts(0);
-
             reg.setIsActive(true);
             reg.setRegistrationDate(LocalDateTime.now());
             reg.setCancellationDate(null);
             reg.setCancellationReason(null);
-
-            // Получаем количество занятых мест с учетом модальности
-            long occupiedSpots;
-            if (tournament.getModalidad() == Modalidad.DOBLES) {
-                occupiedSpots = registrationRepository.countUniquePairs(tournamentId);
-            } else {
-                occupiedSpots = registrationRepository.countActiveRegistrations(tournamentId);
-            }
-
-            long confirmedCount = registrationRepository.countByTournamentIdAndStatus(
-                    tournamentId, RegistrationStatus.CONFIRMED);
-
-            // Определяем статус регистрации
-            if (occupiedSpots < tournament.getCupoMax()) {
-                reg.setStatus(RegistrationStatus.CONFIRMED);
-                reg.setPosition((int) confirmedCount + 1);
-                reg.setWaitlistPosition(null);
-                log.info("Player {} re-confirmed for tournament {}", playerId, tournamentId);
-
-                // Отправляем email о подтверждении
-                sendConfirmationEmail(player, tournament);
-
-            } else {
-                int waitlistPosition = registrationRepository.findMaxWaitlistPosition(tournamentId)
-                        .orElse(0) + 1;
-                reg.setStatus(RegistrationStatus.WAITLIST);
-                reg.setWaitlistPosition(waitlistPosition);
-                reg.setPosition(null);
-                log.info("Player {} added to waitlist for tournament {} at position {}",
-                        playerId, tournamentId, waitlistPosition);
-
-                // Отправляем email о добавлении в лист ожидания
-                sendWaitlistNotification(player, tournament, waitlistPosition);
-            }
+            reg.setStatus(newStatus);
+            reg.setPosition(newPosition);
+            reg.setWaitlistPosition(newWaitlistPosition);
 
             TournamentRegistration updatedRegistration = registrationRepository.save(reg);
+
+            if (newStatus == RegistrationStatus.CONFIRMED) {
+                sendConfirmationEmail(player, tournament);
+            } else {
+                sendWaitlistNotification(player, tournament, newWaitlistPosition);
+            }
+
             return registrationMapper.toDto(updatedRegistration);
         }
 
