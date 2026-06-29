@@ -98,7 +98,6 @@
         <appender-ref ref="ERROR_FILE"/>
         <appender-ref ref="JSON_FILE"/>
         <appender-ref ref="LOKI"/>
-        <appender-ref ref="TELEGRAM"/>
     </logger>
 
     <!-- Логгер для ошибок (дублирует ERROR_FILE) -->
@@ -129,7 +128,6 @@
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="FILE"/>
             <appender-ref ref="ERROR_FILE"/>
-            <appender-ref ref="TELEGRAM"/>
         </logger>
         <logger name="org.springframework.security" level="DEBUG"/>
         <logger name="org.springframework.web" level="DEBUG"/>
@@ -228,7 +226,6 @@
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="FILE"/>
         <appender-ref ref="ERROR_FILE"/>
-        <appender-ref ref="TELEGRAM"/>
     </root>
 
     <!-- ========== ДОПОЛНИТЕЛЬНЫЕ НАСТРОЙКИ ========== -->
