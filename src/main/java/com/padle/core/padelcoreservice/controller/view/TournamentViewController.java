@@ -8,6 +8,7 @@ import com.padle.core.padelcoreservice.dto.americano.AmericanoRoundDto;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.TournamentKingOfCourt;
 import com.padle.core.padelcoreservice.model.enums.AmericanoRoundStatus;
+import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
 import com.padle.core.padelcoreservice.repository.TournamentKingOfCourtRepository;
 import com.padle.core.padelcoreservice.service.KingOfCourtService;
@@ -32,6 +33,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Controller
@@ -67,6 +69,30 @@ public class TournamentViewController {
             List<TournamentRegistrationDto> registrations =
                     tournamentService.getRegistrationsByTournament(id);
             model.addAttribute("registrations", registrations);
+
+            // Pre-filtered lists для последовательной нумерации в шаблоне:
+            // stat.count в th:each считает ВСЕ элементы, включая скрытые через th:if —
+            // поэтому передаём уже отфильтрованные списки.
+            List<TournamentRegistrationDto> confirmedRegistrations = registrations.stream()
+                    .filter(r -> r.getStatus() == RegistrationStatus.CONFIRMED)
+                    .collect(Collectors.toList());
+
+            // Для Team Americano Parejas: все активные пары, даже без партнёра
+            List<TournamentRegistrationDto> activeDoubleRegistrations = registrations.stream()
+                    .filter(r -> Boolean.TRUE.equals(r.getIsDoubleRegistration()) &&
+                                 (r.getStatus() == RegistrationStatus.CONFIRMED ||
+                                  r.getStatus() == RegistrationStatus.PARTNER_INVITED ||
+                                  r.getStatus() == RegistrationStatus.PAIR_REGISTERED))
+                    .collect(Collectors.toList());
+
+            // Для обычного DOBLES: только пары с обоими игроками
+            List<TournamentRegistrationDto> confirmedPairsRegistrations = activeDoubleRegistrations.stream()
+                    .filter(r -> r.getPartnerNombre() != null)
+                    .collect(Collectors.toList());
+
+            model.addAttribute("confirmedRegistrations", confirmedRegistrations);
+            model.addAttribute("activeDoubleRegistrations", activeDoubleRegistrations);
+            model.addAttribute("confirmedPairsRegistrations", confirmedPairsRegistrations);
 
             // Логируем для отладки
             for (TournamentRegistrationDto reg : registrations) {

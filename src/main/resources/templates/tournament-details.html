@@ -416,8 +416,7 @@
                                 </tr>
                                 </thead>
                                 <tbody>
-                                <th:block th:each="reg, stat : ${registrations}"
-                                          th:if="${reg.status.name() == 'CONFIRMED'}">
+                                <th:block th:each="reg, stat : ${confirmedRegistrations}">
                                     <tr th:style="${stat.odd} ? 'background:#fafafa;' : ''">
                                         <td style="padding:.55rem .75rem; color:#adb5bd; font-size:.85rem;"
                                             th:text="${stat.count}">1</td>
@@ -457,9 +456,7 @@
                                     <tbody>
                                     <!-- AMERICANO PAREJAS: показываем ВСЕХ зарегистрированных, даже без партнёра -->
                                     <th:block th:if="${isTeamPlayoffFormat == true}">
-                                        <th:block th:each="reg, stat : ${registrations}"
-                                                  th:if="${reg.isDoubleRegistration == true
-                                                           and (reg.status.name() == 'CONFIRMED' or reg.status.name() == 'PARTNER_INVITED' or reg.status.name() == 'PAIR_REGISTERED')}">
+                                        <th:block th:each="reg, stat : ${activeDoubleRegistrations}">
                                             <tr th:style="${stat.odd} ? '' : 'background:#fafafa;'">
                                                 <td style="padding:.6rem .75rem; color:#adb5bd; font-size:.85rem;"
                                                     th:text="${stat.count}">1</td>
@@ -498,10 +495,7 @@
                                     </th:block>
                                     <!-- Обычный DOBLES: зарегистрированные пары -->
                                     <th:block th:unless="${isTeamPlayoffFormat == true}">
-                                        <th:block th:each="reg, stat : ${registrations}"
-                                                  th:if="${reg.isDoubleRegistration == true
-                                                           and (reg.status.name() == 'CONFIRMED' or reg.status.name() == 'PARTNER_INVITED' or reg.status.name() == 'PAIR_REGISTERED')
-                                                           and reg.partnerNombre != null}">
+                                        <th:block th:each="reg, stat : ${confirmedPairsRegistrations}">
                                             <tr th:style="${stat.count % 2 == 0} ? 'background:#fafafa;' : ''">
                                                 <td style="padding:.6rem .75rem; color:#adb5bd; font-size:.85rem;"
                                                     th:text="${stat.count}">1</td>
