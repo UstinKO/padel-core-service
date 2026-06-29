@@ -4,7 +4,9 @@ import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
 import com.padle.core.padelcoreservice.dto.americano.*;
 import com.padle.core.padelcoreservice.model.Owner;
+import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.service.TournamentService;
+import com.padle.core.padelcoreservice.util.SecurityUtils;
 import com.padle.core.padelcoreservice.service.americano.AmericanoService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -373,6 +375,7 @@ public class AmericanoViewController {
             @PathVariable Long tournamentId,
             @RequestParam(required = false, defaultValue = "score") String sortBy,
             @RequestParam(required = false, defaultValue = "false") boolean ascending,
+            Authentication authentication,
             Model model) {
 
         TournamentDto tournament = tournamentService.getTournamentDtoById(tournamentId)
@@ -385,10 +388,14 @@ public class AmericanoViewController {
 
         AmericanoRankingDto ranking = americanoService.getRankingWithDetails(tournamentId, criteria);
 
+        PlayerPadel currentPlayer =
+                SecurityUtils.extractPlayer(authentication != null ? authentication.getPrincipal() : null);
+
         model.addAttribute("tournament", tournament);
         model.addAttribute("ranking", ranking);
         model.addAttribute("sortBy", sortBy);
         model.addAttribute("ascending", ascending);
+        model.addAttribute("currentPlayerId", currentPlayer != null ? currentPlayer.getId() : null);
 
         return "tournaments/americano/ranking";
     }
