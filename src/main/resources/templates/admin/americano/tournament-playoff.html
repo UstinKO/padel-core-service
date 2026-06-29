@@ -52,8 +52,9 @@
         .save-btn{background:#FF6B35;color:#fff;border:none;border-radius:6px;padding:.3rem .6rem;cursor:pointer;font-size:.78rem;font-weight:600}
         .save-btn:hover{background:#c94a1a}
         .score-display{font-size:1.1rem;font-weight:700;display:flex;align-items:center;gap:.3rem}
-        .s1{color:#10b981}
-        .s2{color:#ef4444}
+        .score-win{color:#10b981}
+        .score-lose{color:#ef4444}
+        .score-draw{color:#f59e0b}
         .edit-btn{background:none;border:1px solid #e2e8f0;border-radius:6px;padding:.2rem .4rem;cursor:pointer;font-size:.72rem;color:#64748b;margin-top:.2rem}
         .edit-btn:hover{background:#f8fafc}
         .playoff-stage-label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:.2rem .5rem;border-radius:10px;background:#fef3c7;color:#92400e}
@@ -416,9 +417,11 @@
                                     <div class="vs-block">
                                         <!-- Результат введён -->
                                         <div th:if="${match.isCompleted}" class="score-display">
-                                            <span class="s1" th:text="${match.team1Games}">6</span>
+                                            <span th:class="${match.team1Games > match.team2Games ? 'score-win' : (match.team1Games < match.team2Games ? 'score-lose' : 'score-draw')}"
+                                                  th:text="${match.team1Games}">6</span>
                                             <span class="vs-badge">:</span>
-                                            <span class="s2" th:text="${match.team2Games}">4</span>
+                                            <span th:class="${match.team2Games > match.team1Games ? 'score-win' : (match.team2Games < match.team1Games ? 'score-lose' : 'score-draw')}"
+                                                  th:text="${match.team2Games}">4</span>
                                         </div>
                                         <button th:if="${match.isCompleted}" class="edit-btn"
                                                 th:attr="data-match-id=${match.id},data-g1=${match.team1Games},data-g2=${match.team2Games}"
@@ -514,9 +517,11 @@
 
                             <div class="vs-block">
                                 <div th:if="${match.isCompleted}" class="score-display">
-                                    <span class="s1" th:text="${match.team1Games}">6</span>
+                                    <span th:class="${match.team1Games > match.team2Games ? 'score-win' : (match.team1Games < match.team2Games ? 'score-lose' : 'score-draw')}"
+                                          th:text="${match.team1Games}">6</span>
                                     <span class="vs-badge">:</span>
-                                    <span class="s2" th:text="${match.team2Games}">4</span>
+                                    <span th:class="${match.team2Games > match.team1Games ? 'score-win' : (match.team2Games < match.team1Games ? 'score-lose' : 'score-draw')}"
+                                          th:text="${match.team2Games}">4</span>
                                 </div>
                                 <div th:unless="${match.isCompleted or match.team1Player1Name == null or match.team2Player1Name == null}"
                                      class="score-form">
@@ -614,10 +619,11 @@
                 lsClear('qg1-' + matchId);
                 lsClear('qg2-' + matchId);
                 const vs = card.querySelector('.vs-block');
+                const sc = (a, b) => a > b ? 'score-win' : a < b ? 'score-lose' : 'score-draw';
                 vs.innerHTML = `<div class="score-display">
-                    <span class="s1">${g1}</span>
+                    <span class="${sc(g1, g2)}">${g1}</span>
                     <span class="vs-badge">:</span>
-                    <span class="s2">${g2}</span>
+                    <span class="${sc(g2, g1)}">${g2}</span>
                 </div>
                 <button class="edit-btn" data-match-id="${matchId}" data-g1="${g1}" data-g2="${g2}"
                         onclick="showQualEdit(this)"><i class="fas fa-edit"></i> editar</button>`;
