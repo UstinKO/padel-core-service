@@ -57,9 +57,9 @@
         /* Score display */
         .score-display{display:flex;flex-direction:column;align-items:center;gap:.3rem}
         .score-numbers{display:flex;align-items:center;gap:.4rem;font-size:1.1rem;font-weight:700}
-        .score-numbers .s1{color:#10b981}
-        .score-numbers .s2{color:#ef4444}
-        .score-numbers.draw .s1,.score-numbers.draw .s2{color:#f59e0b}
+        .score-win{color:#10b981}
+        .score-lose{color:#ef4444}
+        .score-draw{color:#f59e0b}
         .edit-score-btn{background:none;border:1px solid #e2e8f0;border-radius:6px;padding:.25rem .5rem;cursor:pointer;font-size:.75rem;color:#64748b;transition:all .2s}
         .edit-score-btn:hover{background:#f8fafc;border-color:#94a3b8}
 
@@ -313,12 +313,12 @@
                                 <div class="vs-center">
                                     <!-- Результат сыгранного матча -->
                                     <div th:if="${match.isCompleted}" class="score-display">
-                                        <div th:with="draw=${match.team1Score == match.team2Score}"
-                                             th:classappend="${draw}?'draw':''"
-                                             class="score-numbers">
-                                            <span class="s1" th:text="${match.team1Score}">0</span>
+                                        <div class="score-numbers">
+                                            <span th:class="${match.team1Score > match.team2Score ? 'score-win' : (match.team1Score < match.team2Score ? 'score-lose' : 'score-draw')}"
+                                                  th:text="${match.team1Score}">0</span>
                                             <span class="vs-badge">:</span>
-                                            <span class="s2" th:text="${match.team2Score}">0</span>
+                                            <span th:class="${match.team2Score > match.team1Score ? 'score-win' : (match.team2Score < match.team1Score ? 'score-lose' : 'score-draw')}"
+                                                  th:text="${match.team2Score}">0</span>
                                         </div>
                                         <button class="edit-score-btn"
                                                 th:attr="data-match-id=${match.id},data-points=${round.pointsPerMatch}"
@@ -646,15 +646,15 @@
         if (!matchCard) return;
 
         const vsCenter = matchCard.querySelector('.vs-center');
-        const isDraw = match.team1Score === match.team2Score;
+        const sc = (a, b) => a > b ? 'score-win' : a < b ? 'score-lose' : 'score-draw';
 
         // Обновляем отображение результата
         vsCenter.innerHTML = `
         <div class="score-display">
-            <div class="score-numbers ${isDraw ? 'draw' : ''}">
-                <span class="s1">${match.team1Score}</span>
+            <div class="score-numbers">
+                <span class="${sc(match.team1Score, match.team2Score)}">${match.team1Score}</span>
                 <span class="vs-badge">:</span>
-                <span class="s2">${match.team2Score}</span>
+                <span class="${sc(match.team2Score, match.team1Score)}">${match.team2Score}</span>
             </div>
             <button class="edit-score-btn"
                     data-match-id="${match.id}"
