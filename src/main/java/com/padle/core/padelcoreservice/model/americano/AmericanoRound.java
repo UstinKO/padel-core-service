@@ -60,6 +60,7 @@ public class AmericanoRound {
     private TournamentPhase phase;
 
     @OneToMany(mappedBy = "round", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OrderBy("courtNumber ASC")
     @Builder.Default
     private List<AmericanoMatch> matches = new ArrayList<>();
 
