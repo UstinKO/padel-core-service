@@ -62,6 +62,7 @@ public class TeamPlayoffViewController {
         model.addAttribute("playoffStarted", playoffStarted);
         model.addAttribute("isAuthenticated", auth != null);
         model.addAttribute("player", player);
+        model.addAttribute("currentPlayerId", player != null ? player.getId() : null);
 
         if (qualStarted) {
             TeamAmericanoRankingDto ranking = playoffService.getQualRanking(tournamentId);
@@ -333,18 +334,22 @@ public class TeamPlayoffViewController {
 
         // Игроки
         if (m.getTeam1Player1() != null) {
+            dto.setTeam1Player1Id(m.getTeam1Player1().getId());
             dto.setTeam1Player1Name(
                     m.getTeam1Player1().getNombre() + " " + m.getTeam1Player1().getApellido());
         }
         if (m.getTeam1Player2() != null) {
+            dto.setTeam1Player2Id(m.getTeam1Player2().getId());
             dto.setTeam1Player2Name(
                     m.getTeam1Player2().getNombre() + " " + m.getTeam1Player2().getApellido());
         }
         if (m.getTeam2Player1() != null) {
+            dto.setTeam2Player1Id(m.getTeam2Player1().getId());
             dto.setTeam2Player1Name(
                     m.getTeam2Player1().getNombre() + " " + m.getTeam2Player1().getApellido());
         }
         if (m.getTeam2Player2() != null) {
+            dto.setTeam2Player2Id(m.getTeam2Player2().getId());
             dto.setTeam2Player2Name(
                     m.getTeam2Player2().getNombre() + " " + m.getTeam2Player2().getApellido());
         }

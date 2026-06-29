@@ -41,6 +41,7 @@
         .score-display .score-win{color:#10b981}
         .score-display .score-lose{color:#ef4444}
         .score-display .score-draw{color:#f59e0b}
+        .verified-me{color:#1d9bf0;font-size:.85em;margin-left:.3rem;vertical-align:middle}
         .round-header{display:flex;justify-content:space-between;align-items:center;padding:1rem 1.5rem;background:#f8fafc;border-bottom:1px solid #e2e8f0}
         .round-header h3{margin:0;font-size:1rem;font-weight:600;display:flex;align-items:center;gap:.5rem;color:#1e293b}
         .round-badge{padding:.25rem .75rem;border-radius:20px;font-size:.75rem;font-weight:600;background:#f1f5f9;color:#475569}
@@ -215,10 +216,8 @@
                                 <!-- Pareja A -->
                                 <div class="team-left">
                                     <span class="team-label" th:text="#{team_americano.team.pair_a}">Pareja A</span>
-                                    <span class="player-name" th:text="${match.team1Player1Name}">J1</span>
-                                    <span class="player-name"
-                                          th:if="${match.team1Player2Name != null and !match.team1Player2Name.isEmpty()}"
-                                          th:text="${match.team1Player2Name}">J2</span>
+                                    <div style="display:flex;align-items:center"><span class="player-name" th:text="${match.team1Player1Name}">J1</span><i th:if="${match.team1Player1Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i></div>
+                                    <div th:if="${match.team1Player2Name != null and !match.team1Player2Name.isEmpty()}" style="display:flex;align-items:center"><span class="player-name" th:text="${match.team1Player2Name}">J2</span><i th:if="${match.team1Player2Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i></div>
                                 </div>
 
                                 <!-- Score -->
@@ -236,10 +235,8 @@
                                 <!-- Pareja B -->
                                 <div class="team-right">
                                     <span class="team-label" th:text="#{team_americano.team.pair_b}">Pareja B</span>
-                                    <span class="player-name" th:text="${match.team2Player1Name}">J3</span>
-                                    <span class="player-name"
-                                          th:if="${match.team2Player2Name != null and !match.team2Player2Name.isEmpty()}"
-                                          th:text="${match.team2Player2Name}">J4</span>
+                                    <div style="display:flex;align-items:center;justify-content:flex-end"><span class="player-name" th:text="${match.team2Player1Name}">J3</span><i th:if="${match.team2Player1Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i></div>
+                                    <div th:if="${match.team2Player2Name != null and !match.team2Player2Name.isEmpty()}" style="display:flex;align-items:center;justify-content:flex-end"><span class="player-name" th:text="${match.team2Player2Name}">J4</span><i th:if="${match.team2Player2Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i></div>
                                 </div>
                             </div>
 
@@ -281,9 +278,7 @@
                                 </span>
                             </td>
                             <td>
-                                <span style="font-weight:500" th:text="${team.displayName}">
-                                    Jugador 1 / Jugador 2
-                                </span>
+                                <span th:text="${team.player1Name}">Jugador 1</span><i th:if="${team.player1Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i><span style="color:#adb5bd;margin:0 .25rem">/</span><span th:text="${team.player2Name}">Jugador 2</span><i th:if="${team.player2Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i>
                             </td>
                             <td class="points" th:text="${team.totalScore}">0</td>
                             <td th:text="${team.matchesPlayed}">0</td>

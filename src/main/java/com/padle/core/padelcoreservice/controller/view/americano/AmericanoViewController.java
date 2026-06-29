@@ -51,14 +51,13 @@ public class AmericanoViewController {
         model.addAttribute("sortBy", sortBy);
         model.addAttribute("ascending", ascending);
 
-        // ДОБАВИТЬ: передаем информацию об авторизованном игроке
         model.addAttribute("isAuthenticated", authentication != null);
+        com.padle.core.padelcoreservice.model.PlayerPadel currentPlayer = null;
         if (authentication != null && authentication.getPrincipal() instanceof com.padle.core.padelcoreservice.model.PlayerPadel) {
-            model.addAttribute("player", (com.padle.core.padelcoreservice.model.PlayerPadel) authentication.getPrincipal());
-        } else if (authentication != null && authentication.getPrincipal() instanceof com.padle.core.padelcoreservice.model.Owner) {
-            // Если это владелец клуба, тоже показываем как авторизованного
-            model.addAttribute("player", null);
+            currentPlayer = (com.padle.core.padelcoreservice.model.PlayerPadel) authentication.getPrincipal();
         }
+        model.addAttribute("player", currentPlayer);
+        model.addAttribute("currentPlayerId", currentPlayer != null ? currentPlayer.getId() : null);
 
         if (isInitialized) {
             RankingCriteria criteria = RankingCriteria.builder()

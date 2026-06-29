@@ -139,9 +139,15 @@ class KingOfCourtViewer {
                 </div>
             `;
         } else if (court.teams && court.teams.length > 0) {
+            const meId = window.tournamentData?.currentPlayerId;
             content += '<div class="court-teams">';
             court.teams.forEach(team => {
-                const teamPlayers = team.players.map(p => p.name).join(' & ');
+                const teamPlayers = team.players.map(p => {
+                    const isMe = meId && p.id === meId;
+                    return isMe
+                        ? `${p.name}<i class="fas fa-circle-check" style="color:#1d9bf0;font-size:.85em;margin-left:.3rem;vertical-align:middle"></i>`
+                        : p.name;
+                }).join(' & ');
                 content += `
                     <div class="team">
                         <span class="team-number">${t('koc.viewer.team')} ${team.teamNumber}</span>
@@ -168,15 +174,18 @@ class KingOfCourtViewer {
             return;
         }
 
+        const meId = window.tournamentData?.currentPlayerId;
         ranking.forEach(player => {
+            const isMe = meId && player.playerId === meId;
             const row = document.createElement('tr');
+            const badgeHtml = isMe ? '<i class="fas fa-circle-check" style="color:#1d9bf0;font-size:.85em;margin-left:.3rem;vertical-align:middle"></i>' : '';
             row.innerHTML = `
                 <td><strong>#${player.rank || '-'}</strong></td>
                 <td>
-                    <a href="#" class="view-history-btn" 
+                    <a href="#" class="view-history-btn"
                        data-player-id="${player.playerId || ''}"
                        data-player-name="${player.playerName || ''}">
-                        ${player.playerName || t('koc.viewer.unknown_player')}
+                        ${player.playerName || t('koc.viewer.unknown_player')}${badgeHtml}
                     </a>
                 </td>
                 <td><strong>${player.totalPoints || 0}</strong></td>

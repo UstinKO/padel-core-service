@@ -34,6 +34,9 @@
     <!-- Custom Styles -->
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" th:href="@{/css/tournament-details.css}">
+    <style>
+        .verified-me{color:#1d9bf0;font-size:.85em;margin-left:.3rem;vertical-align:middle}
+    </style>
 </head>
 <body>
 <!-- Header -->
@@ -424,6 +427,8 @@
                                             <i class="fas fa-user-circle" style="color:#FF6B35; margin-right:.4rem;"></i>
                                             <th:block th:text="${reg.playerNombre}">Juan</th:block>
                                             <th:block th:text="${' ' + (reg.playerApellido ?: '')}">Pérez</th:block>
+                                            <i th:if="${reg.playerId == currentUserPlayerId and currentUserPlayerId != null}"
+                                               class="fas fa-circle-check verified-me"></i>
                                         </td>
                                     </tr>
                                 </th:block>
@@ -465,7 +470,7 @@
                                                         <i class="fas fa-user-circle" style="color:#FF6B35; margin-right:.4rem;"></i>
                                                         <th:block th:text="${reg.playerNombre}">Juan</th:block>
                                                         <th:block th:text="${' ' + (reg.playerApellido ?: '')}">Pérez</th:block>
-                                                    </span>
+                                                    </span><i th:if="${reg.playerId == currentUserPlayerId and currentUserPlayerId != null}" class="fas fa-circle-check verified-me"></i>
                                                 </td>
                                                 <td style="padding:.6rem .25rem; text-align:center; color:#adb5bd; font-size:.8rem;">
                                                     <i class="fas fa-plus"></i>
@@ -476,7 +481,7 @@
                                                             <i class="fas fa-user-circle" style="color:#FF6B35; margin-right:.4rem;"></i>
                                                             <th:block th:text="${reg.partnerNombre}">Ana</th:block>
                                                             <th:block th:text="${' ' + (reg.partnerApellido ?: '')}">García</th:block>
-                                                        </span>
+                                                        </span><i th:if="${reg.partnerId == currentUserPlayerId and currentUserPlayerId != null}" class="fas fa-circle-check verified-me"></i>
                                                     </th:block>
                                                     <th:block th:if="${reg.partnerNombre != null and reg.status.name() == 'PARTNER_INVITED'}">
                                                         <span style="color:#f59e0b; font-size:.875rem; font-style:italic;">
@@ -484,7 +489,7 @@
                                                             <th:block th:text="${reg.partnerNombre}">Ana</th:block>
                                                             <th:block th:text="${' ' + (reg.partnerApellido ?: '')}">García</th:block>
                                                             <small style="display:block; margin-top:.15rem; color:#adb5bd;" th:text="#{tournament.partner.invited}">(invitación enviada)</small>
-                                                        </span>
+                                                        </span><i th:if="${reg.partnerId == currentUserPlayerId and currentUserPlayerId != null}" class="fas fa-circle-check verified-me"></i>
                                                     </th:block>
                                                     <th:block th:if="${reg.partnerNombre == null}">
                                                         <span style="color:#adb5bd; font-style:italic; font-size:.85rem;" th:text="#{tournament.partner.none}">sin pareja asignada</span>
@@ -504,7 +509,7 @@
                                                         <i class="fas fa-user-circle" style="color:#FF6B35; margin-right:.4rem;"></i>
                                                         <th:block th:text="${reg.playerNombre}">Juan</th:block>
                                                         <th:block th:text="${' ' + (reg.playerApellido ?: '')}">Pérez</th:block>
-                                                    </span>
+                                                    </span><i th:if="${reg.playerId == currentUserPlayerId and currentUserPlayerId != null}" class="fas fa-circle-check verified-me"></i>
                                                 </td>
                                                 <td style="padding:.6rem .25rem; text-align:center; color:#adb5bd; font-size:.8rem;">
                                                     <i class="fas fa-plus"></i>
@@ -515,7 +520,7 @@
                                                             <i class="fas fa-user-circle" style="color:#FF6B35; margin-right:.4rem;"></i>
                                                             <th:block th:text="${reg.partnerNombre}">Ana</th:block>
                                                             <th:block th:text="${' ' + (reg.partnerApellido ?: '')}">García</th:block>
-                                                        </span>
+                                                        </span><i th:if="${reg.partnerId == currentUserPlayerId and currentUserPlayerId != null}" class="fas fa-circle-check verified-me"></i>
                                                     </th:block>
                                                     <th:block th:if="${reg.status.name() == 'PARTNER_INVITED'}">
                                                         <span style="color:#f59e0b; font-size:.875rem; font-style:italic;">
@@ -523,7 +528,7 @@
                                                             <th:block th:text="${reg.partnerNombre}">Ana</th:block>
                                                             <th:block th:text="${' ' + (reg.partnerApellido ?: '')}">García</th:block>
                                                             <small style="display:block; margin-top:.15rem; color:#adb5bd;" th:text="#{tournament.partner.invited}">(invitación enviada)</small>
-                                                        </span>
+                                                        </span><i th:if="${reg.partnerId == currentUserPlayerId and currentUserPlayerId != null}" class="fas fa-circle-check verified-me"></i>
                                                     </th:block>
                                                 </td>
                                             </tr>
@@ -539,7 +544,7 @@
                                                     <i class="fas fa-user-circle" style="color:#FF6B35; margin-right:.4rem;"></i>
                                                     <th:block th:text="${reg.playerNombre}">Juan</th:block>
                                                     <th:block th:text="${' ' + (reg.playerApellido ?: '')}">Pérez</th:block>
-                                                </span>
+                                                </span><i th:if="${reg.playerId == currentUserPlayerId and currentUserPlayerId != null}" class="fas fa-circle-check verified-me"></i>
                                             </td>
                                             <td style="padding:.6rem .25rem; text-align:center; color:#d1d5db; font-size:.8rem;">
                                                 <i class="fas fa-plus"></i>
