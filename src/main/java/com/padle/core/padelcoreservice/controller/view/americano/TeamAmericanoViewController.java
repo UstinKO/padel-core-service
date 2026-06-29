@@ -10,10 +10,12 @@ import com.padle.core.padelcoreservice.exception.InvalidStateException;
 import com.padle.core.padelcoreservice.model.enums.AmericanoRoundStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.model.americano.AmericanoMatch;
+import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import com.padle.core.padelcoreservice.service.americano.TeamAmericanoService;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoRoundRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoMatchRepository;
+import com.padle.core.padelcoreservice.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -55,9 +57,14 @@ public class TeamAmericanoViewController {
 
         boolean isInitialized = teamAmericanoService.isInitialized(tournamentId);
 
+        PlayerPadel player = SecurityUtils.extractPlayer(
+                authentication != null ? authentication.getPrincipal() : null);
+
         model.addAttribute("tournament", tournament);
         model.addAttribute("isInitialized", isInitialized);
         model.addAttribute("isAuthenticated", authentication != null);
+        model.addAttribute("player", player);
+        model.addAttribute("currentPlayerId", player != null ? player.getId() : null);
 
         if (isInitialized) {
             TeamAmericanoRankingDto ranking = teamAmericanoService.getRanking(tournamentId);
@@ -373,19 +380,23 @@ public class TeamAmericanoViewController {
 
         // Команда 1
         if (m.getTeam1Player1() != null) {
+            dto.setTeam1Player1Id(m.getTeam1Player1().getId());
             dto.setTeam1Player1Name(
                     m.getTeam1Player1().getNombre() + " " + m.getTeam1Player1().getApellido());
         }
         if (m.getTeam1Player2() != null) {
+            dto.setTeam1Player2Id(m.getTeam1Player2().getId());
             dto.setTeam1Player2Name(
                     m.getTeam1Player2().getNombre() + " " + m.getTeam1Player2().getApellido());
         }
         // Команда 2
         if (m.getTeam2Player1() != null) {
+            dto.setTeam2Player1Id(m.getTeam2Player1().getId());
             dto.setTeam2Player1Name(
                     m.getTeam2Player1().getNombre() + " " + m.getTeam2Player1().getApellido());
         }
         if (m.getTeam2Player2() != null) {
+            dto.setTeam2Player2Id(m.getTeam2Player2().getId());
             dto.setTeam2Player2Name(
                     m.getTeam2Player2().getNombre() + " " + m.getTeam2Player2().getApellido());
         }

@@ -56,6 +56,9 @@
         .tournament-banner h1{margin:0 0 .5rem;font-size:1.5rem;font-weight:700}
         .tournament-meta{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.5rem}
         .meta-badge{background:rgba(255,255,255,.15);padding:.25rem .6rem;border-radius:8px;font-size:.8rem}
+        .score-win{color:#10b981;font-weight:700}
+        .score-lose{color:#ef4444;font-weight:700}
+        .verified-me{color:#1d9bf0;font-size:.85em;margin-left:.3rem;vertical-align:middle}
     </style>
 </head>
 <body>
@@ -141,7 +144,7 @@
                     </td>
                     <td>
                         <div class="pair-names">
-                            <span class="p1" th:text="${team.displayName}">Jugador 1 / 2</span>
+                            <span class="p1" th:text="${team.player1Name}">Jugador 1</span><i th:if="${team.player1Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i><span style="color:#adb5bd;margin:0 .25rem">/</span><span class="p1" th:text="${team.player2Name}">Jugador 2</span><i th:if="${team.player2Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i>
                         </div>
                     </td>
                     <td class="positive" th:text="${team.setsWon}">0</td>
@@ -188,22 +191,22 @@
                     </div>
                     <div class="match-body">
                         <div class="team-left">
-                            <div class="team-name" th:text="${match.team1Player1Name}">Jugador 1</div>
-                            <div class="team-sub" th:if="${match.team1Player2Name != null}"
-                                 th:text="${match.team1Player2Name}">Jugador 2</div>
+                            <div class="team-name"><span th:text="${match.team1Player1Name}">Jugador 1</span><i th:if="${match.team1Player1Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i></div>
+                            <div class="team-sub" th:if="${match.team1Player2Name != null}"><span th:text="${match.team1Player2Name}">Jugador 2</span><i th:if="${match.team1Player2Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i></div>
                         </div>
                         <div class="vs-block">
                             <div th:if="${match.isCompleted}" class="score-display">
-                                <span class="s1" th:text="${match.team1Games}">6</span>
+                                <span th:class="${match.team1Games > match.team2Games ? 'score-win' : (match.team1Games < match.team2Games ? 'score-lose' : 'score-draw')}"
+                                      th:text="${match.team1Games}">6</span>
                                 <span class="vs-badge">:</span>
-                                <span class="s2" th:text="${match.team2Games}">4</span>
+                                <span th:class="${match.team2Games > match.team1Games ? 'score-win' : (match.team2Games < match.team1Games ? 'score-lose' : 'score-draw')}"
+                                      th:text="${match.team2Games}">4</span>
                             </div>
                             <span th:unless="${match.isCompleted}" class="vs-badge">VS</span>
                         </div>
                         <div class="team-right">
-                            <div class="team-name" th:text="${match.team2Player1Name}">Jugador 3</div>
-                            <div class="team-sub" th:if="${match.team2Player2Name != null}"
-                                 th:text="${match.team2Player2Name}">Jugador 4</div>
+                            <div class="team-name"><span th:text="${match.team2Player1Name}">Jugador 3</span><i th:if="${match.team2Player1Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i></div>
+                            <div class="team-sub" th:if="${match.team2Player2Name != null}"><span th:text="${match.team2Player2Name}">Jugador 4</span><i th:if="${match.team2Player2Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i></div>
                         </div>
                     </div>
                 </div>
@@ -226,25 +229,23 @@
                 </div>
                 <div class="match-body">
                     <div class="team-left">
-                        <div th:if="${match.team1Player1Name != null}" class="team-name"
-                             th:text="${match.team1Player1Name}">TBD</div>
-                        <div th:if="${match.team1Player2Name != null}" class="team-sub"
-                             th:text="${match.team1Player2Name}">TBD</div>
+                        <div th:if="${match.team1Player1Name != null}" class="team-name"><span th:text="${match.team1Player1Name}">TBD</span><i th:if="${match.team1Player1Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i></div>
+                        <div th:if="${match.team1Player2Name != null}" class="team-sub"><span th:text="${match.team1Player2Name}">TBD</span><i th:if="${match.team1Player2Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i></div>
                         <div th:if="${match.team1Player1Name == null}" class="tbd">TBD</div>
                     </div>
                     <div class="vs-block">
                         <div th:if="${match.isCompleted}" class="score-display">
-                            <span class="s1" th:text="${match.team1Games}">6</span>
+                            <span th:class="${match.team1Games > match.team2Games ? 'score-win' : (match.team1Games < match.team2Games ? 'score-lose' : 'score-draw')}"
+                                  th:text="${match.team1Games}">6</span>
                             <span class="vs-badge">:</span>
-                            <span class="s2" th:text="${match.team2Games}">4</span>
+                            <span th:class="${match.team2Games > match.team1Games ? 'score-win' : (match.team2Games < match.team1Games ? 'score-lose' : 'score-draw')}"
+                                  th:text="${match.team2Games}">4</span>
                         </div>
                         <span th:unless="${match.isCompleted}" class="vs-badge">VS</span>
                     </div>
                     <div class="team-right">
-                        <div th:if="${match.team2Player1Name != null}" class="team-name"
-                             th:text="${match.team2Player1Name}">TBD</div>
-                        <div th:if="${match.team2Player2Name != null}" class="team-sub"
-                             th:text="${match.team2Player2Name}">TBD</div>
+                        <div th:if="${match.team2Player1Name != null}" class="team-name"><span th:text="${match.team2Player1Name}">TBD</span><i th:if="${match.team2Player1Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i></div>
+                        <div th:if="${match.team2Player2Name != null}" class="team-sub"><span th:text="${match.team2Player2Name}">TBD</span><i th:if="${match.team2Player2Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i></div>
                         <div th:if="${match.team2Player1Name == null}" class="tbd">TBD</div>
                     </div>
                 </div>

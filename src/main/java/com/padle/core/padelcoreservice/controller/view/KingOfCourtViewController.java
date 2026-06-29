@@ -1,11 +1,14 @@
 package com.padle.core.padelcoreservice.controller.view;
 
 import com.padle.core.padelcoreservice.dto.KingOfCourtStateDTO;
+import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.TournamentKingOfCourt;
 import com.padle.core.padelcoreservice.repository.TournamentKingOfCourtRepository;
 import com.padle.core.padelcoreservice.service.KingOfCourtService;
+import com.padle.core.padelcoreservice.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,7 +26,8 @@ public class KingOfCourtViewController {
 
     // URL вида /tournaments/king-of-court/{kingId} — по ID записи TournamentKingOfCourt
     @GetMapping("/tournaments/king-of-court/{kingId}")
-    public String viewKingOfCourtByKingId(@PathVariable Long kingId, Model model) {
+    public String viewKingOfCourtByKingId(@PathVariable Long kingId, Model model,
+                                           Authentication authentication) {
         TournamentKingOfCourt king = kingRepository.findById(kingId).orElse(null);
         if (king == null) {
             return "redirect:/?error=not-found";
@@ -31,17 +35,22 @@ public class KingOfCourtViewController {
 
         KingOfCourtStateDTO viewData = kingOfCourtService.getCurrentState(king.getId());
 
+        PlayerPadel player = SecurityUtils.extractPlayer(
+                authentication != null ? authentication.getPrincipal() : null);
+
         model.addAttribute("kingData", viewData);
         model.addAttribute("tournamentId", king.getTournament().getId());
         model.addAttribute("tournamentName", king.getTournament().getNombre());
         model.addAttribute("isViewer", true);
+        model.addAttribute("currentPlayerId", player != null ? player.getId() : null);
 
         return "king-of-court-view";
     }
 
     // URL вида /torneo/{tournamentId}/king-of-court — по ID родительского турнира
     @GetMapping("/torneo/{tournamentId}/king-of-court")
-    public String viewKingOfCourt(@PathVariable Long tournamentId, Model model) {
+    public String viewKingOfCourt(@PathVariable Long tournamentId, Model model,
+                                  Authentication authentication) {
 
         // Сначала ищем активный турнир
         List<TournamentKingOfCourt> kings =
@@ -62,10 +71,14 @@ public class KingOfCourtViewController {
         TournamentKingOfCourt king = kings.get(0);
         KingOfCourtStateDTO viewData = kingOfCourtService.getCurrentState(king.getId());
 
+        PlayerPadel player = SecurityUtils.extractPlayer(
+                authentication != null ? authentication.getPrincipal() : null);
+
         model.addAttribute("kingData", viewData);
         model.addAttribute("tournamentId", tournamentId);
         model.addAttribute("tournamentName", king.getTournament().getNombre());
         model.addAttribute("isViewer", true);
+        model.addAttribute("currentPlayerId", player != null ? player.getId() : null);
 
         return "king-of-court-view";
     }

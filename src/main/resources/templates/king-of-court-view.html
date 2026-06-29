@@ -191,7 +191,8 @@
         maxCourts: [[${kingData.maxCourts}]],
         isAdmin: false,
         isFinished: [[${kingData.isFinished}]],
-        youtubeLink: [[${kingData.youtubeLink}]]
+        youtubeLink: [[${kingData.youtubeLink}]],
+        currentPlayerId: [[${currentPlayerId}]]
     };
     /*]]>*/
 </script>
@@ -218,16 +219,19 @@
             const tbody = document.getElementById('finalLeaderboard');
             if (!tbody || !data.ranking?.length) return;
 
-            tbody.innerHTML = data.ranking.map(p => `
-                <tr>
+            const meId = window.tournamentData?.currentPlayerId;
+            tbody.innerHTML = data.ranking.map(p => {
+                const isMe = meId && p.playerId === meId;
+                const badgeHtml = isMe ? '<i class="fas fa-circle-check" style="color:#1d9bf0;font-size:.85em;margin-left:.3rem;vertical-align:middle"></i>' : '';
+                return `<tr>
                     <td><strong>#${p.rank || ''}</strong></td>
-                    <td>${p.playerName || ''}</td>
+                    <td>${p.playerName || ''}${badgeHtml}</td>
                     <td><strong>${p.totalPoints || 0}</strong></td>
                     <td>+${p.bonusPoints || 0}</td>
                     <td>${p.gamesPlayed || 0}</td>
                     <td>${p.wins || 0}/${p.losses || 0}</td>
-                </tr>
-            `).join('');
+                </tr>`;
+            }).join('');
         } catch (e) {
             console.error('Error loading final results:', e);
         }
