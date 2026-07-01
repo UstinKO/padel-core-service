@@ -1,18 +1,17 @@
 package com.padle.core.padelcoreservice.service;
 
 import com.padle.core.padelcoreservice.dto.OwnerDto;
+import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
 import com.padle.core.padelcoreservice.mapper.OwnerMapper;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.enums.OwnerRole;
 import com.padle.core.padelcoreservice.repository.OwnerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -22,12 +21,18 @@ public class OwnerService {
 
     private final OwnerRepository ownerRepository;
     private final OwnerMapper ownerMapper;
-    private final PasswordEncoder passwordEncoder;
 
     @Transactional(readOnly = true)
-    public Optional<OwnerDto> getOwnerById(Long id) {
-        return ownerRepository.findById(id)
-                .map(ownerMapper::toDto);
+    public OwnerDto getOwnerById(Long id, Owner currentOwner) {
+        Owner owner = ownerRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Owner not found with id: " + id));
+
+        if (currentOwner.isSuperAdmin()) {
+        } else if (currentOwner.getRole() == OwnerRole.ORGANIZER && currentOwner.getId().equals(owner.getId())) {
+        } else {
+            throw new AccessDeniedException("No tienes permiso para ver este perfil");
+        }
+
+        return ownerMapper.toDto(owner);
     }
 
     @Transactional(readOnly = true)
@@ -38,14 +43,22 @@ public class OwnerService {
 
     // Метод для обновления данных владельца (для будущей админки)
     @Transactional
-    public OwnerDto updateOwner(Long id, OwnerDto ownerDto) {
+    public OwnerDto updateOwner(Long id, OwnerDto ownerDto, Owner currentOwner) {
         Owner owner = ownerRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Owner not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Owner not found with id: " + id));
 
-        owner.setFirstName(ownerDto.getFirstName());
-        owner.setLastName(ownerDto.getLastName());
-        owner.setPhone(ownerDto.getPhone());
-        owner.setIsActive(ownerDto.getIsActive());
+        if (currentOwner.isSuperAdmin()) {
+            owner.setFirstName(ownerDto.getFirstName());
+            owner.setLastName(ownerDto.getLastName());
+            owner.setPhone(ownerDto.getPhone());
+            owner.setIsActive(ownerDto.getIsActive());
+        } else if (currentOwner.getRole() == OwnerRole.ORGANIZER && currentOwner.getId().equals(owner.getId())) {
+            owner.setFirstName(ownerDto.getFirstName());
+            owner.setLastName(ownerDto.getLastName());
+            owner.setPhone(ownerDto.getPhone());
+        } else {
+            throw new AccessDeniedException("No tienes permiso para editar este perfil");
+        }
 
         Owner updatedOwner = ownerRepository.save(owner);
         log.info("Updated owner with id: {}", id);
