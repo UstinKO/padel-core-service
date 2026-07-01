@@ -40,3 +40,5 @@ application-*.yml
 .claude/
 qodana.yaml
 docs/
+
+src/main/java/com/padle/core/padelcoreservice/util/PasswordGenerator.java
