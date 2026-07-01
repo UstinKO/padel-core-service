@@ -295,10 +295,15 @@ class TorneosPage {
                         </div>
                     </div>
                     <div class="torneo-footer">
-                        <a href="/torneo/${tournament.id}" class="btn btn-primary btn-small">
+                        <a href="/torneo/${tournament.id}" class="btn btn-outline btn-small">
                             <i class="fas fa-info-circle"></i> ${t('card.btn.details')}
                         </a>
-                        <span class="torneo-status ${estadoClass}">${estadoTexto}</span>
+                        ${tournament.estado === 'REGISTRO_ABIERTO'
+                            ? `<a href="/torneo/${tournament.id}" class="btn btn-primary btn-small">
+                                   <i class="fas fa-plus-circle"></i> ${t('dashboard.card.btn.register')}
+                               </a>`
+                            : `<span class="torneo-status ${estadoClass}">${estadoTexto}</span>`
+                        }
                     </div>
                 </div>
             </div>

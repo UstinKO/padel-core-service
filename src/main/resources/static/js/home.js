@@ -305,7 +305,11 @@ class PadelCoreHome {
             ? `<span class="tournament-status" style="color:#6c757d; font-size:.8rem;">
                            <i class="fas fa-lock"></i> ${t('card.status.started')}
                        </span>`
-            : `<span class="tournament-status ${estadoClass}">${estadoDisplay}</span>`
+            : tournament.estado === 'REGISTRO_ABIERTO'
+                ? `<a href="/torneo/${tournament.id}" class="btn btn-primary btn-small">
+                           <i class="fas fa-plus-circle"></i> ${t('dashboard.card.btn.register')}
+                       </a>`
+                : `<span class="tournament-status ${estadoClass}">${estadoDisplay}</span>`
         }
             </div>
         </div>
