@@ -15,6 +15,9 @@ logs/
 .project
 .classpath
 
+# macOS
+.DS_Store
+
 # Build
 target/
 build/

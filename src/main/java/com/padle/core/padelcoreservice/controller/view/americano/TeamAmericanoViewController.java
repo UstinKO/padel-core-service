@@ -52,7 +52,7 @@ public class TeamAmericanoViewController {
                                  Model model,
                                  Authentication authentication) {
 
-        TournamentDto tournament = tournamentService.getActiveTournamentById(tournamentId)
+        TournamentDto tournament = tournamentService.getTournamentDtoById(tournamentId)
                 .orElseThrow(() -> new IllegalArgumentException("Torneo no encontrado"));
 
         boolean isInitialized = teamAmericanoService.isInitialized(tournamentId);
@@ -82,7 +82,7 @@ public class TeamAmericanoViewController {
     @GetMapping("/{tournamentId}/ranking")
     public String viewRanking(@PathVariable Long tournamentId, Model model) {
 
-        TournamentDto tournament = tournamentService.getActiveTournamentById(tournamentId)
+        TournamentDto tournament = tournamentService.getTournamentDtoById(tournamentId)
                 .orElseThrow(() -> new IllegalArgumentException("Torneo no encontrado"));
 
         TeamAmericanoRankingDto ranking = teamAmericanoService.getRanking(tournamentId);

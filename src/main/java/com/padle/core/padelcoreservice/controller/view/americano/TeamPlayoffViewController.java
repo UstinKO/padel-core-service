@@ -49,7 +49,7 @@ public class TeamPlayoffViewController {
                              Model model,
                              Authentication auth) {
 
-        TournamentDto tournament = tournamentService.getActiveTournamentById(tournamentId)
+        TournamentDto tournament = tournamentService.getTournamentDtoById(tournamentId)
                 .orElseThrow(() -> new IllegalArgumentException("Torneo no encontrado"));
 
         boolean qualStarted = playoffService.isQualificationStarted(tournamentId);
