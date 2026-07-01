@@ -246,19 +246,6 @@
                         </select>
                     </div>
 
-                    <!-- ЧЕКБОКС: Мои турниры -->
-                    <div class="filter-group checkbox-group">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="myTournamentsOnly" class="filter-checkbox">
-                            <span class="checkbox-custom"></span>
-                            <span class="checkbox-text">
-                                <i class="fas fa-calendar-check"></i>
-                                <span th:text="#{dashboard.filter.my_only}">Mis torneos</span>
-                                <span class="my-tournaments-count" id="myTournamentsCount">(0)</span>
-                            </span>
-                        </label>
-                    </div>
-
                     <div class="filter-actions">
                         <button class="btn btn-primary" id="applyDashboardFilters">
                             <i class="fas fa-check"></i> <span th:text="#{dashboard.filter.apply}">Aplicar</span>
@@ -546,6 +533,7 @@
 <script th:inline="javascript">
     /*<![CDATA[*/
     var tournamentData = /*[(${tournamentsJson})]*/ [];
+    var historicalData = /*[(${historicalJson})]*/ [];
     var myTournamentIds = /*[(${myTournamentIdsJson})]*/ [];
     console.log('🏆 Tournament data loaded:', tournamentData.length, 'torneos');
     console.log('📋 My tournament IDs:', myTournamentIds.length, 'IDs:', myTournamentIds);

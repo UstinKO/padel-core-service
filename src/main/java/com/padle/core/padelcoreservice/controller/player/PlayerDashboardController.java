@@ -63,6 +63,9 @@ public class PlayerDashboardController {
             // Получаем турниры, открытые для регистрации
             List<TournamentDto> upcomingTournaments = tournamentService.getVisibleTournamentsForPlayer();
 
+            // Получаем турниры, в которых игрок уже участвовал (завершённые/закрытые)
+            List<TournamentDto> historicalTournaments = tournamentService.getHistoricalTournamentsByPlayer(player.getId());
+
             // Получаем ID турниров, на которые игрок уже зарегистрирован
             List<Long> myTournamentIds = tournamentService.getActiveRegistrationsByPlayer(player.getId())
                     .stream()
@@ -79,12 +82,15 @@ public class PlayerDashboardController {
             // Передаем данные турниров в JSON для JavaScript
             try {
                 String tournamentsJson = objectMapper.writeValueAsString(upcomingTournaments);
+                String historicalJson = objectMapper.writeValueAsString(historicalTournaments);
                 String myTournamentIdsJson = objectMapper.writeValueAsString(myTournamentIds);
                 model.addAttribute("tournamentsJson", tournamentsJson);
+                model.addAttribute("historicalJson", historicalJson);
                 model.addAttribute("myTournamentIdsJson", myTournamentIdsJson);
             } catch (Exception e) {
                 log.error("Error converting to JSON", e);
                 model.addAttribute("tournamentsJson", "[]");
+                model.addAttribute("historicalJson", "[]");
                 model.addAttribute("myTournamentIdsJson", "[]");
             }
 

@@ -135,8 +135,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const generoSelect = document.getElementById('dashboardGenero');
     const nivelSelect = document.getElementById('dashboardNivel');
     const tipoSelect = document.getElementById('dashboardTipo');
-    const myTournamentsCheckbox = document.getElementById('myTournamentsOnly');
-    const myTournamentsCount = document.getElementById('myTournamentsCount');
     const torneosGrid = document.getElementById('dashboardTorneosGrid');
     const visibleCount = document.getElementById('visibleCount');
     const totalCount = document.getElementById('totalCount');
@@ -146,6 +144,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Данные турниров
     const tournaments = window.tournamentData || [];
+    const historicalTournaments = window.historicalData || [];
     const myTournamentIds = new Set(window.myTournamentIds || []);
 
     console.log('🏆 Турниров загружено:', tournaments.length);
@@ -159,22 +158,22 @@ document.addEventListener('DOMContentLoaded', function() {
             case 'mis':
                 return tournaments.filter(t => myTournamentIds.has(t.id) && !isTournamentStarted(t));
             case 'historial':
-                return tournaments.filter(t => myTournamentIds.has(t.id) && isTournamentStarted(t));
+                return [...historicalTournaments];
             case 'todos':
             default:
-                return [...tournaments];
+                return tournaments.filter(t => !isTournamentStarted(t) && !myTournamentIds.has(t.id));
         }
     }
 
     function updateTabCounts() {
         const misList    = tournaments.filter(t => myTournamentIds.has(t.id) && !isTournamentStarted(t));
-        const histList   = tournaments.filter(t => myTournamentIds.has(t.id) && isTournamentStarted(t));
+        const todosList  = tournaments.filter(t => !isTournamentStarted(t) && !myTournamentIds.has(t.id));
         const countMis   = document.getElementById('countMis');
         const countTodos = document.getElementById('countTodos');
         const countHist  = document.getElementById('countHistorial');
         if (countMis)   countMis.textContent   = misList.length;
-        if (countTodos) countTodos.textContent  = tournaments.length;
-        if (countHist)  countHist.textContent   = histList.length;
+        if (countTodos) countTodos.textContent  = todosList.length;
+        if (countHist)  countHist.textContent   = historicalTournaments.length;
     }
 
     window.switchTab = function(tab) {
@@ -188,7 +187,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (nivelSelect) nivelSelect.value = 'todos';
         if (tipoSelect) tipoSelect.value = 'todos';
         if (modalidadSelect) modalidadSelect.value = 'todos';
-        if (myTournamentsCheckbox) myTournamentsCheckbox.checked = false;
         if (filtersPanel) filtersPanel.style.display = 'none';
         if (toggleFilters) toggleFilters.innerHTML = `<i class="fas fa-sliders-h"></i> ${t('filter.toggle.open')}`;
         // Рендер
@@ -222,7 +220,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (nivelSelect) nivelSelect.value = 'todos';
             if (tipoSelect) tipoSelect.value = 'todos';
             if (modalidadSelect) modalidadSelect.value = 'todos';
-            if (myTournamentsCheckbox) myTournamentsCheckbox.checked = false;
             applyFiltersFunction();
         });
     }
@@ -233,8 +230,7 @@ document.addEventListener('DOMContentLoaded', function() {
             genero: generoSelect ? generoSelect.value : 'todos',
             nivel: nivelSelect ? nivelSelect.value : 'todos',
             tipo: tipoSelect ? tipoSelect.value : 'todos',
-            modalidad: modalidadSelect ? modalidadSelect.value : 'todos',
-            myTournamentsOnly: myTournamentsCheckbox ? myTournamentsCheckbox.checked : false
+            modalidad: modalidadSelect ? modalidadSelect.value : 'todos'
         };
 
         console.log('🔍 Применяем фильтры:', filters);
@@ -285,11 +281,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
 
-            // Фильтр "Мои турниры" (актуален только на вкладке "Todos")
-            if (filters.myTournamentsOnly && !myTournamentIds.has(tournament.id)) {
-                return false;
-            }
-
             return true;
         });
 
@@ -313,7 +304,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Обновляем счетчики
         if (visibleCount) visibleCount.textContent = filteredTournaments.length;
-        if (totalCount) totalCount.textContent = tournaments.length;
+        if (totalCount) totalCount.textContent = getTabBaseList().length;
 
         if (filteredTournaments.length === 0) {
             torneosGrid.innerHTML = '';

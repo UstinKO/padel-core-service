@@ -127,6 +127,21 @@ public class TournamentService {
     @Transactional(readOnly = true)
     public List<TournamentDto> getVisibleTournamentsForPlayer() {
         return tournamentRepository.findByIsActiveTrue().stream()
+                .filter(t -> t.getEstado() == TournamentStatus.REGISTRO_ABIERTO
+                        || t.getEstado() == TournamentStatus.PUBLICADO)
+                .map(this::mapToDtoWithDetails)
+                .sorted(Comparator.comparing(TournamentDto::getFechaInicio)
+                        .thenComparing(TournamentDto::getHoraInicio))
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<TournamentDto> getHistoricalTournamentsByPlayer(Long playerId) {
+        return registrationRepository.findActiveRegistrationsByPlayerId(playerId).stream()
+                .map(TournamentRegistration::getTournament)
+                .filter(t -> t.getEstado() == TournamentStatus.CERRADO
+                        || t.getEstado() == TournamentStatus.FINALIZADO
+                        || t.getEstado() == TournamentStatus.CANCELADO)
                 .map(this::mapToDtoWithDetails)
                 .sorted(Comparator.comparing(TournamentDto::getFechaInicio)
                         .thenComparing(TournamentDto::getHoraInicio))
