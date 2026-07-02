@@ -142,23 +142,36 @@ public class TournamentService {
         return dtos;
     }
 
+    /**
+     * Результат для дашборда игрока: исторические турниры + id турниров с активной регистрацией.
+     * Оба списка строятся из одного запроса регистраций — см. #178.
+     */
+    public record PlayerDashboardTournaments(List<TournamentDto> historical, List<Long> activeTournamentIds) {}
+
     @Timed(
             name = "tournament.dashboard.historical.time",
-            description = "Time taken to fetch historical tournaments for player dashboard",
+            description = "Time taken to fetch historical + active-registration tournaments for player dashboard",
             tags = {"service=tournament", "operation=dashboardHistorical"}
     )
     @Transactional(readOnly = true)
-    public List<TournamentDto> getHistoricalTournamentsByPlayer(Long playerId) {
-        List<Tournament> historical = registrationRepository.findActiveRegistrationsByPlayerId(playerId).stream()
+    public PlayerDashboardTournaments getHistoricalAndActiveTournamentsByPlayer(Long playerId) {
+        List<TournamentRegistration> registrations = registrationRepository.findActiveRegistrationsByPlayerId(playerId);
+
+        List<Tournament> historicalTournaments = registrations.stream()
                 .map(TournamentRegistration::getTournament)
                 .filter(t -> t.getEstado() == TournamentStatus.CERRADO
                         || t.getEstado() == TournamentStatus.FINALIZADO
                         || t.getEstado() == TournamentStatus.CANCELADO)
                 .collect(Collectors.toList());
-        List<TournamentDto> dtos = mapToDtoWithDetails(historical);
-        dtos.sort(Comparator.comparing(TournamentDto::getFechaInicio)
+        List<TournamentDto> historicalDtos = mapToDtoWithDetails(historicalTournaments);
+        historicalDtos.sort(Comparator.comparing(TournamentDto::getFechaInicio)
                 .thenComparing(TournamentDto::getHoraInicio));
-        return dtos;
+
+        List<Long> activeTournamentIds = registrations.stream()
+                .map(r -> r.getTournament().getId())
+                .collect(Collectors.toList());
+
+        return new PlayerDashboardTournaments(historicalDtos, activeTournamentIds);
     }
 
     // ==================== Методы для регистрации ====================
