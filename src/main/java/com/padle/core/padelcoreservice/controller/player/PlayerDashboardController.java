@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.controller.player;
 
+import com.padle.core.padelcoreservice.annotation.Timed;
 import com.padle.core.padelcoreservice.dto.PartnerRegistrationDto;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
@@ -37,6 +38,11 @@ public class PlayerDashboardController {
     private final DoubleTournamentRegistrationService doubleTournamentRegistrationService;
     private final PlayerRepository playerRepository;
 
+    @Timed(
+            name = "player.dashboard.time",
+            description = "Time taken to render player dashboard",
+            tags = {"service=player", "operation=dashboard"}
+    )
     @GetMapping("/dashboard")
     public String dashboard(Model model, @AuthenticationPrincipal Object principal) {
         log.info("Accessing dashboard with principal type: {}",

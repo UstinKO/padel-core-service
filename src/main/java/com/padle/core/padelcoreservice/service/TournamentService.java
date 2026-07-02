@@ -625,6 +625,11 @@ public class TournamentService {
                 .collect(Collectors.toList());
     }
 
+    @Timed(
+            name = "tournament.registrations.active.time",
+            description = "Time taken to fetch active registrations for a player",
+            tags = {"service=tournament", "operation=activeRegistrations"}
+    )
     public List<TournamentRegistrationDto> getActiveRegistrationsByPlayer(Long playerId) {
         return registrationRepository.findActiveRegistrationsByPlayerId(playerId).stream()
                 .map(registrationMapper::toDto)

@@ -686,6 +686,11 @@ public class KingOfCourtService {
     /**
      * Получение текущего состояния турнира
      */
+    @Timed(
+            name = "kingofcourt.state.time",
+            description = "Time taken to fetch full King of Court state (rounds, history, courts, ranking)",
+            tags = {"service=kingofcourt", "operation=state"}
+    )
     public KingOfCourtStateDTO getCurrentState(Long kingTournamentId) {
         TournamentKingOfCourt king = kingRepository.findById(kingTournamentId)
                 .orElseThrow(() -> new ResourceNotFoundException("King tournament not found"));
