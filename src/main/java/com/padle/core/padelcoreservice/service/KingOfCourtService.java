@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.padelcoreservice.annotation.Timed;
 import com.padle.core.padelcoreservice.dto.*;
 import com.padle.core.padelcoreservice.exception.InvalidStateException;
 import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
@@ -696,14 +697,7 @@ public class KingOfCourtService {
         KingOfCourtStateDTO state = kingOfCourtMapper.toStateDTO(king, currentRound);
 
         // Получаем рейтинг
-        List<KingOfCourtPlayerStats> ranking = statsRepository.findRanking(kingTournamentId);
-        List<PlayerStatsDTO> rankingDTOs = new ArrayList<>();
-        for (int i = 0; i < ranking.size(); i++) {
-            PlayerStatsDTO dto = kingOfCourtMapper.toPlayerStatsDTO(ranking.get(i));
-            dto.setRank(i + 1);
-            rankingDTOs.add(dto);
-        }
-        state.setRanking(rankingDTOs);
+        state.setRanking(getRanking(kingTournamentId));
 
         // Получаем историю матчей (только завершенные раунды)
         List<MatchHistoryDTO> history = new ArrayList<>();
@@ -739,6 +733,25 @@ public class KingOfCourtService {
         }
 
         return state;
+    }
+
+    /**
+     * Лёгкое получение рейтинга — без полного состояния турнира (раунды, история матчей, корты).
+     */
+    @Timed(
+            name = "kingofcourt.ranking.time",
+            description = "Time taken to fetch King of Court ranking",
+            tags = {"service=kingofcourt", "operation=ranking"}
+    )
+    public List<PlayerStatsDTO> getRanking(Long kingTournamentId) {
+        List<KingOfCourtPlayerStats> ranking = statsRepository.findRanking(kingTournamentId);
+        List<PlayerStatsDTO> rankingDTOs = new ArrayList<>();
+        for (int i = 0; i < ranking.size(); i++) {
+            PlayerStatsDTO dto = kingOfCourtMapper.toPlayerStatsDTO(ranking.get(i));
+            dto.setRank(i + 1);
+            rankingDTOs.add(dto);
+        }
+        return rankingDTOs;
     }
 
     /**
