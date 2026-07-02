@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
 import java.util.Locale;
@@ -48,6 +49,7 @@ public class EmailService {
             name = "email.send.errors",
             tags = {"service=email", "type=confirmation"}
     )
+    @Async
     public void sendConfirmationEmail(
             @MetricTag("recipient") String to,
             @MetricTag("playerName") String nombre,
@@ -98,6 +100,7 @@ public class EmailService {
             name = "email.send.errors",
             tags = {"service=email", "type=partner_invitation"}
     )
+    @Async
     public void sendPartnerInvitationEmail(
             @MetricTag("recipient") String to,
             @MetricTag("partnerName") String partnerName,
@@ -153,6 +156,7 @@ public class EmailService {
             name = "email.send.errors",
             tags = {"service=email", "type=new_partner_invitation"}
     )
+    @Async
     public void sendNewPartnerInvitationEmail(
             @MetricTag("recipient") String to,
             @MetricTag("partnerName") String partnerName,
@@ -212,6 +216,7 @@ public class EmailService {
             name = "email.send.errors",
             tags = {"service=email", "type=pair_confirmation"}
     )
+    @Async
     public void sendPairConfirmationEmail(
             @MetricTag("recipient") String to,
             @MetricTag("playerName") String playerName,
@@ -261,6 +266,7 @@ public class EmailService {
      */
     @Timed(name = "email.send.time", tags = {"service=email", "type=welcome"})
     @TrackErrors(name = "email.send.errors", tags = {"service=email", "type=welcome"})
+    @Async
     public void sendWelcomeEmail(@MetricTag("recipient") String to, @MetricTag("playerName") String nombre, Locale locale) {
         emailMetricsService.recordEmailAttempt("WELCOME");
 
@@ -297,6 +303,7 @@ public class EmailService {
      */
     @Timed(name = "email.send.time", tags = {"service=email", "type=waitlist_auto_confirm"})
     @TrackErrors(name = "email.send.errors", tags = {"service=email", "type=waitlist_auto_confirm"})
+    @Async
     public void sendWaitlistAutoConfirmEmail(
             @MetricTag("recipient") String to,
             @MetricTag("playerName") String playerName,
@@ -345,6 +352,7 @@ public class EmailService {
      */
     @Timed(name = "email.send.time", tags = {"service=email", "type=no_spots_left"})
     @TrackErrors(name = "email.send.errors", tags = {"service=email", "type=no_spots_left"})
+    @Async
     public void sendNoSpotsLeftEmail(
             @MetricTag("recipient") String to,
             @MetricTag("playerName") String playerName,
@@ -385,6 +393,7 @@ public class EmailService {
      */
     @Timed(name = "email.send.time", tags = {"service=email", "type=registration_confirmation"})
     @TrackErrors(name = "email.send.errors", tags = {"service=email", "type=registration_confirmation"})
+    @Async
     public void sendRegistrationConfirmationEmail(
             @MetricTag("recipient") String to,
             @MetricTag("playerName") String playerName,
@@ -431,6 +440,7 @@ public class EmailService {
      */
     @Timed(name = "email.send.time", tags = {"service=email", "type=password_reset"})
     @TrackErrors(name = "email.send.errors", tags = {"service=email", "type=password_reset"})
+    @Async
     public void sendPasswordResetEmail(
             @MetricTag("recipient") String to,
             @MetricTag("playerName") String nombre,
@@ -471,6 +481,7 @@ public class EmailService {
      */
     @Timed(name = "email.send.time", tags = {"service=email", "type=waitlist_notification"})
     @TrackErrors(name = "email.send.errors", tags = {"service=email", "type=waitlist_notification"})
+    @Async
     public void sendWaitlistNotificationEmail(
             @MetricTag("recipient") String to,
             @MetricTag("playerName") String playerName,
@@ -520,6 +531,7 @@ public class EmailService {
      */
     @Timed(name = "email.send.time", tags = {"service=email", "type=tournament_confirmation"})
     @TrackErrors(name = "email.send.errors", tags = {"service=email", "type=tournament_confirmation"})
+    @Async
     public void sendTournamentConfirmationEmail(
             @MetricTag("recipient") String to,
             @MetricTag("playerName") String playerName,
@@ -564,6 +576,7 @@ public class EmailService {
 
     @Timed(name = "email.send.time", tags = {"service=email", "type=admin_solo_registration"})
     @TrackErrors(name = "email.send.errors", tags = {"service=email", "type=admin_solo_registration"})
+    @Async
     public void sendAdminSoloRegistrationNotification(
             String adminEmail,
             String playerName,
@@ -609,6 +622,7 @@ public class EmailService {
 
     @Timed(name = "email.send.time", tags = {"service=email", "type=looking_for_partner_notification"})
     @TrackErrors(name = "email.send.errors", tags = {"service=email", "type=looking_for_partner_notification"})
+    @Async
     public void sendLookingForPartnerNotification(
             @MetricTag("recipient") String to,
             @MetricTag("playerName") String playerName,
@@ -645,6 +659,7 @@ public class EmailService {
 
     @Timed(name = "email.send.time", tags = {"service=email", "type=partner_data_reminder"})
     @TrackErrors(name = "email.send.errors", tags = {"service=email", "type=partner_data_reminder"})
+    @Async
     public void sendPartnerDataReminder(
             @MetricTag("recipient") String to,
             @MetricTag("playerName") String playerName,
@@ -683,6 +698,7 @@ public class EmailService {
         }
     }
 
+    @Async
     public void sendPairProposalEmail(
             String to,
             String targetPlayerName,
