@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.service.americano;
 
+import com.padle.core.padelcoreservice.annotation.Timed;
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
 import com.padle.core.padelcoreservice.dto.americano.*;
 import com.padle.core.padelcoreservice.exception.InvalidStateException;
@@ -250,6 +251,11 @@ public class AmericanoService {
     // ИНИЦИАЛИЗАЦИЯ ТУРНИРА
     // ═══════════════════════════════════════════════════════════════════════
 
+    @Timed(
+            name = "americano.initialize.time",
+            description = "Time taken to initialize Americano tournament (generate players/rounds/matches)",
+            tags = {"service=americano", "operation=initialize"}
+    )
     @Transactional
     public void initializeAmericanoTournament(Long tournamentId, AmericanoConfigDto config) {
         log.info("Initializing Americano tournament={} config={}", tournamentId, config);

@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.controller.admin;
 
+import com.padle.core.padelcoreservice.annotation.Timed;
 import com.padle.core.padelcoreservice.dto.MatchDto;
 import com.padle.core.padelcoreservice.dto.PlayerResponseDto;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
@@ -185,6 +186,11 @@ public class AdminController {
         return "admin/tournaments/form";
     }
 
+    @Timed(
+            name = "admin.tournament.details.time",
+            description = "Time taken to load admin tournament details page",
+            tags = {"service=admin", "operation=tournamentDetails"}
+    )
     @GetMapping("/tournaments/{id}")
     public String viewTournament(@PathVariable Long id,
                                  Model model,
