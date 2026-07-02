@@ -83,10 +83,9 @@ public class TournamentService {
             if (!aUpcoming && !bUpcoming) return db.compareTo(da); // оба прошедшие  → DESC (свежее первым)
             return aUpcoming ? -1 : 1;                             // предстоящий перед прошедшим
         };
-        return tournamentRepository.findAll().stream()
-                .map(this::mapToDtoWithDetails)
-                .sorted(byDateFromToday)
-                .collect(Collectors.toList());
+        List<TournamentDto> dtos = mapToDtoWithDetails(tournamentRepository.findAll());
+        dtos.sort(byDateFromToday);
+        return dtos;
     }
 
     public Optional<TournamentDto> getTournamentDtoById(Long id) {
@@ -99,53 +98,67 @@ public class TournamentService {
     }
 
     public List<TournamentDto> getTournamentsByClub(Long clubId) {
-        return tournamentRepository.findByClubId(clubId).stream()
-                .map(this::mapToDtoWithDetails)
-                .collect(Collectors.toList());
+        return mapToDtoWithDetails(tournamentRepository.findByClubId(clubId));
     }
 
+    @Timed(
+            name = "tournament.upcoming.time",
+            description = "Time taken to fetch upcoming tournaments",
+            tags = {"service=tournament", "operation=upcoming"}
+    )
     public List<TournamentDto> getUpcomingTournaments() {
         log.debug("Fetching upcoming active tournaments with REGISTRO_ABIERTO status");
-        return tournamentRepository.findUpcomingActiveTournaments(TournamentStatus.REGISTRO_ABIERTO).stream()
-                .map(this::mapToDtoWithDetails)
-                .collect(Collectors.toList());
+        return mapToDtoWithDetails(tournamentRepository.findUpcomingActiveTournaments(TournamentStatus.REGISTRO_ABIERTO));
     }
 
     public List<TournamentDto> getTournamentsByStatus(TournamentStatus status) {
-        return tournamentRepository.findByEstado(status).stream()
-                .map(this::mapToDtoWithDetails)
-                .collect(Collectors.toList());
+        return mapToDtoWithDetails(tournamentRepository.findByEstado(status));
     }
 
+    @Timed(
+            name = "tournament.search.time",
+            description = "Time taken to search tournaments",
+            tags = {"service=tournament", "operation=search"}
+    )
     public List<TournamentDto> searchTournaments(Long clubId, GenderFormat genero, String nivel,
                                                  TournamentType tipo, TournamentStatus estado) {
-        return tournamentRepository.searchTournaments(clubId, genero, nivel, tipo, estado).stream()
-                .map(this::mapToDtoWithDetails)
-                .collect(Collectors.toList());
+        return mapToDtoWithDetails(tournamentRepository.searchTournaments(clubId, genero, nivel, tipo, estado));
     }
 
+    @Timed(
+            name = "tournament.dashboard.visible.time",
+            description = "Time taken to fetch visible tournaments for player dashboard",
+            tags = {"service=tournament", "operation=dashboardVisible"}
+    )
     @Transactional(readOnly = true)
     public List<TournamentDto> getVisibleTournamentsForPlayer() {
-        return tournamentRepository.findByIsActiveTrue().stream()
+        List<Tournament> visible = tournamentRepository.findByIsActiveTrue().stream()
                 .filter(t -> t.getEstado() == TournamentStatus.REGISTRO_ABIERTO
                         || t.getEstado() == TournamentStatus.PUBLICADO)
-                .map(this::mapToDtoWithDetails)
-                .sorted(Comparator.comparing(TournamentDto::getFechaInicio)
-                        .thenComparing(TournamentDto::getHoraInicio))
                 .collect(Collectors.toList());
+        List<TournamentDto> dtos = mapToDtoWithDetails(visible);
+        dtos.sort(Comparator.comparing(TournamentDto::getFechaInicio)
+                .thenComparing(TournamentDto::getHoraInicio));
+        return dtos;
     }
 
+    @Timed(
+            name = "tournament.dashboard.historical.time",
+            description = "Time taken to fetch historical tournaments for player dashboard",
+            tags = {"service=tournament", "operation=dashboardHistorical"}
+    )
     @Transactional(readOnly = true)
     public List<TournamentDto> getHistoricalTournamentsByPlayer(Long playerId) {
-        return registrationRepository.findActiveRegistrationsByPlayerId(playerId).stream()
+        List<Tournament> historical = registrationRepository.findActiveRegistrationsByPlayerId(playerId).stream()
                 .map(TournamentRegistration::getTournament)
                 .filter(t -> t.getEstado() == TournamentStatus.CERRADO
                         || t.getEstado() == TournamentStatus.FINALIZADO
                         || t.getEstado() == TournamentStatus.CANCELADO)
-                .map(this::mapToDtoWithDetails)
-                .sorted(Comparator.comparing(TournamentDto::getFechaInicio)
-                        .thenComparing(TournamentDto::getHoraInicio))
                 .collect(Collectors.toList());
+        List<TournamentDto> dtos = mapToDtoWithDetails(historical);
+        dtos.sort(Comparator.comparing(TournamentDto::getFechaInicio)
+                .thenComparing(TournamentDto::getHoraInicio));
+        return dtos;
     }
 
     // ==================== Методы для регистрации ====================
@@ -844,9 +857,7 @@ public class TournamentService {
 
     @Transactional(readOnly = true)
     public List<TournamentDto> getRecentTournaments(int limit) {
-        return tournamentRepository.findTopByOrderByCreatedAtDesc(limit).stream()
-                .map(this::mapToDtoWithDetails)
-                .collect(Collectors.toList());
+        return mapToDtoWithDetails(tournamentRepository.findTopByOrderByCreatedAtDesc(limit));
     }
 
     // ==================== Вспомогательные методы ====================
@@ -894,6 +905,53 @@ public class TournamentService {
                 tournament.getId(), tournament.getCupoMax(), confirmedSpots, waitlistCount, disponibles);
 
         return dto;
+    }
+
+    /**
+     * Батч-версия mapToDtoWithDetails для списков: один запрос на клубы + один на счётчики
+     * регистраций вместо N+1 (см. #177). Переиспользует mapToDtoWithBatchedData —
+     * тот же паттерн, что и getActiveTournamentsForHome.
+     */
+    private List<TournamentDto> mapToDtoWithDetails(List<Tournament> tournaments) {
+        if (tournaments.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<Long> ids = tournaments.stream().map(Tournament::getId).collect(Collectors.toList());
+
+        Set<Long> clubIds = tournaments.stream()
+                .map(Tournament::getClubId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        Map<Long, ClubDto> clubsById = clubService.findClubsByIds(clubIds);
+
+        Map<Long, Map<RegistrationStatus, Long>> singlesCounts = new HashMap<>();
+        for (Object[] row : registrationRepository.countStatusesByTournamentIds(
+                ids, List.of(RegistrationStatus.CONFIRMED, RegistrationStatus.WAITLIST))) {
+            Long tid = (Long) row[0];
+            RegistrationStatus status = (RegistrationStatus) row[1];
+            Long count = (Long) row[2];
+            singlesCounts.computeIfAbsent(tid, k -> new HashMap<>()).put(status, count);
+        }
+
+        List<Long> doublesIds = tournaments.stream()
+                .filter(t -> t.getModalidad() == Modalidad.DOBLES)
+                .map(Tournament::getId)
+                .collect(Collectors.toList());
+        Map<Long, Long> confirmedPairsById = new HashMap<>();
+        Map<Long, Long> waitlistPairsById = new HashMap<>();
+        if (!doublesIds.isEmpty()) {
+            for (Object[] row : registrationRepository.countConfirmedPairsByTournamentIds(doublesIds)) {
+                confirmedPairsById.put(((Number) row[0]).longValue(), ((Number) row[1]).longValue());
+            }
+            for (Object[] row : registrationRepository.countWaitlistPairsByTournamentIds(doublesIds)) {
+                waitlistPairsById.put((Long) row[0], (Long) row[1]);
+            }
+        }
+
+        return tournaments.stream()
+                .map(t -> mapToDtoWithBatchedData(t, clubsById, singlesCounts, confirmedPairsById, waitlistPairsById))
+                .collect(Collectors.toList());
     }
 
     @Transactional
@@ -1090,50 +1148,7 @@ public class TournamentService {
 
     @Transactional(readOnly = true)
     public List<TournamentDto> getActiveTournamentsForHome() {
-        List<Tournament> tournaments = tournamentRepository.findActiveForHome();
-        if (tournaments.isEmpty()) {
-            return List.of();
-        }
-
-        List<Long> ids = tournaments.stream().map(Tournament::getId).collect(Collectors.toList());
-
-        // Batch-load clubs in one query
-        Set<Long> clubIds = tournaments.stream()
-                .map(Tournament::getClubId)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
-        Map<Long, ClubDto> clubsById = clubService.findClubsByIds(clubIds);
-
-        // Batch-load registration counts for singles: CONFIRMED + WAITLIST in one query
-        Map<Long, Map<RegistrationStatus, Long>> singlesCounts = new HashMap<>();
-        List<Object[]> statusRows = registrationRepository.countStatusesByTournamentIds(
-                ids, List.of(RegistrationStatus.CONFIRMED, RegistrationStatus.WAITLIST));
-        for (Object[] row : statusRows) {
-            Long tid = (Long) row[0];
-            RegistrationStatus status = (RegistrationStatus) row[1];
-            Long count = (Long) row[2];
-            singlesCounts.computeIfAbsent(tid, k -> new HashMap<>()).put(status, count);
-        }
-
-        // Batch-load confirmed pairs for doubles tournaments
-        List<Long> doublesIds = tournaments.stream()
-                .filter(t -> t.getModalidad() == Modalidad.DOBLES)
-                .map(Tournament::getId)
-                .collect(Collectors.toList());
-        Map<Long, Long> confirmedPairsById = new HashMap<>();
-        Map<Long, Long> waitlistPairsById = new HashMap<>();
-        if (!doublesIds.isEmpty()) {
-            for (Object[] row : registrationRepository.countConfirmedPairsByTournamentIds(doublesIds)) {
-                confirmedPairsById.put(((Number) row[0]).longValue(), ((Number) row[1]).longValue());
-            }
-            for (Object[] row : registrationRepository.countWaitlistPairsByTournamentIds(doublesIds)) {
-                waitlistPairsById.put((Long) row[0], (Long) row[1]);
-            }
-        }
-
-        return tournaments.stream()
-                .map(t -> mapToDtoWithBatchedData(t, clubsById, singlesCounts, confirmedPairsById, waitlistPairsById))
-                .collect(Collectors.toList());
+        return mapToDtoWithDetails(tournamentRepository.findActiveForHome());
     }
 
     private TournamentDto mapToDtoWithBatchedData(
@@ -1173,9 +1188,7 @@ public class TournamentService {
     @Transactional(readOnly = true)
     public List<TournamentDto> getAllActiveTournaments() {
         log.debug("Fetching all active tournaments");
-        return tournamentRepository.findByIsActiveTrue().stream()
-                .map(this::mapToDtoWithDetails)
-                .collect(Collectors.toList());
+        return mapToDtoWithDetails(tournamentRepository.findByIsActiveTrue());
     }
 
     @Transactional(readOnly = true)
@@ -1186,11 +1199,8 @@ public class TournamentService {
 
     public List<TournamentDto> getTournamentsWithActiveBrackets() {
         log.debug("Obteniendo torneos con brackets activos");
-        return tournamentRepository.findByEstadoInAndIsActiveTrue(
-                        List.of(TournamentStatus.REGISTRO_ABIERTO, TournamentStatus.CERRADO)
-                ).stream()
-                .map(this::mapToDtoWithDetails)
-                .collect(Collectors.toList());
+        return mapToDtoWithDetails(tournamentRepository.findByEstadoInAndIsActiveTrue(
+                List.of(TournamentStatus.REGISTRO_ABIERTO, TournamentStatus.CERRADO)));
     }
 
     @Timed(
@@ -1405,9 +1415,7 @@ public class TournamentService {
         if (isSuperAdmin) {
             return getAllTournaments();
         }
-        return tournamentRepository.findByOwnerId(ownerId).stream()
-                .map(this::mapToDtoWithDetails)
-                .collect(Collectors.toList());
+        return mapToDtoWithDetails(tournamentRepository.findByOwnerId(ownerId));
     }
 
     private String resolveClubName(Long clubId) {
