@@ -70,8 +70,7 @@ public class KingOfCourtApiController {
      */
     @GetMapping("/tournaments/{kingId}/ranking")
     public ResponseEntity<List<PlayerStatsDTO>> getRanking(@PathVariable Long kingId) {
-        KingOfCourtStateDTO state = kingOfCourtService.getCurrentState(kingId);
-        return ResponseEntity.ok(state.getRanking());
+        return ResponseEntity.ok(kingOfCourtService.getRanking(kingId));
     }
 
     /**
