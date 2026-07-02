@@ -1329,6 +1329,63 @@
                     </div>
                 </div>
 
+                <!-- ГОСТЕВОЙ ИГРОК — только для одиночных турниров (не DOBLES) -->
+                <div id="guestSingleSection" style="display:none;">
+                    <hr class="my-3">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="text-muted small fw-bold">
+                            <i class="bi bi-person-plus me-1"></i> Или зарегистрировать игрока вручную
+                        </span>
+                        <button class="btn btn-sm btn-outline-success" type="button"
+                                onclick="toggleGuestSingleForm()">
+                            <i class="bi bi-chevron-down" id="guestSingleToggleIcon"></i> Гостевой игрок
+                        </button>
+                    </div>
+                    <div id="guestSingleForm" style="display:none;">
+                        <div class="card border-primary">
+                            <div class="card-header bg-primary text-white py-2 d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-person-fill me-1"></i> Игрок</span>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button type="button" class="btn btn-light active" id="gsBtnDb"
+                                            onclick="switchGuestMode('s','db')">Из базы</button>
+                                    <button type="button" class="btn btn-light" id="gsBtnManual"
+                                            onclick="switchGuestMode('s','manual')">Вручную</button>
+                                </div>
+                            </div>
+                            <div class="card-body py-2">
+                                <!-- Режим "из базы" -->
+                                <div id="gsDbMode">
+                                    <div class="position-relative">
+                                        <input type="text" class="form-control form-control-sm"
+                                               id="gsSearch" placeholder="Поиск по имени или email..."
+                                               oninput="searchGuestPlayer('s', this.value)">
+                                        <div id="gsDropdown" class="dropdown-menu w-100" style="display:none; max-height:160px; overflow-y:auto;"></div>
+                                    </div>
+                                    <div id="gsSelected" class="mt-2" style="display:none;">
+                                        <span class="badge bg-primary p-2" id="gsSelectedName"></span>
+                                        <button class="btn btn-sm btn-link text-danger p-0 ms-1" onclick="clearGuestPlayer('s')">✕</button>
+                                    </div>
+                                    <input type="hidden" id="gsId">
+                                </div>
+                                <!-- Режим "вручную" -->
+                                <div id="gsManualMode" style="display:none;">
+                                    <input type="text" class="form-control form-control-sm mb-2"
+                                           id="guestsNombre" placeholder="Имя *">
+                                    <input type="text" class="form-control form-control-sm mb-2"
+                                           id="guestsApellido" placeholder="Фамилия">
+                                    <input type="text" class="form-control form-control-sm"
+                                           id="guestsTelefono" placeholder="Телефон / Telegram">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-end mt-3">
+                            <button class="btn btn-success" type="button" onclick="registerGuestSingle()">
+                                <i class="bi bi-person-fill-add me-1"></i> Зарегистрировать гостя
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="alert alert-info" id="registrationLimitInfo" style="display: none;">
                     <i class="bi bi-info-circle me-2"></i>
                     Можно зарегистрировать максимум <span id="availableSlots">0</span> игроков
@@ -1951,11 +2008,15 @@
             document.getElementById('guestPairSection').style.display = 'block';
             document.getElementById('guestPairForm').style.display = 'none';
             document.getElementById('guestPairToggleIcon').className = 'bi bi-chevron-down';
+            document.getElementById('guestSingleSection').style.display = 'none';
         } else {
             await loadAvailablePlayers();
             registerBtnElement.innerHTML = '<i class="bi bi-person-plus"></i> Зарегистрировать';
             updateSelectedCount();
             document.getElementById('guestPairSection').style.display = 'none';
+            document.getElementById('guestSingleSection').style.display = 'block';
+            document.getElementById('guestSingleForm').style.display = 'none';
+            document.getElementById('guestSingleToggleIcon').className = 'bi bi-chevron-down';
         }
 
         registerModal.show();
@@ -2361,8 +2422,8 @@
         }
     }
 
-    // Режимы гостевой пары: 'db' или 'manual' для каждого слота
-    const guestMode = { 1: 'db', 2: 'db' };
+    // Режимы гостевой пары/одиночного гостя: 'db' или 'manual' для каждого слота ('s' — одиночный гость)
+    const guestMode = { 1: 'db', 2: 'db', s: 'db' };
     let guestSearchTimeout = {};
 
     function toggleGuestPairForm() {
@@ -2479,6 +2540,57 @@
                 registerModal.hide();
             } else {
                 showToast('error', 'Ошибка', data.message || 'Не удалось зарегистрировать пару');
+            }
+        } catch (e) {
+            showToast('error', 'Ошибка', e.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        }
+    }
+
+    function toggleGuestSingleForm() {
+        const form = document.getElementById('guestSingleForm');
+        const icon = document.getElementById('guestSingleToggleIcon');
+        const visible = form.style.display !== 'none';
+        form.style.display = visible ? 'none' : 'block';
+        icon.className = visible ? 'bi bi-chevron-down' : 'bi bi-chevron-up';
+    }
+
+    async function registerGuestSingle() {
+        const p = buildGuestPlayerPayload('s');
+
+        if (!p) {
+            showToast('error', 'Ошибка', guestMode['s'] === 'db' ? 'Выберите игрока из базы' : 'Введите имя игрока');
+            return;
+        }
+
+        const btn = document.querySelector('#guestSingleForm .btn-success');
+        const originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Регистрация...';
+
+        try {
+            const resp = await fetch(`/test/tournaments/${currentTournamentId}/register-guest-player`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(p)
+            });
+            const data = await resp.json();
+
+            if (data.success) {
+                const label = p.nombre || document.getElementById('gsSelectedName').textContent;
+                showToast('success', 'Готово', `Игрок "${label}" зарегистрирован на позицию ${data.position}`);
+                clearGuestPlayer('s');
+                switchGuestMode('s', 'db');
+                ['guestsNombre', 'guestsApellido', 'guestsTelefono']
+                    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+                document.getElementById('guestSingleForm').style.display = 'none';
+                document.getElementById('guestSingleToggleIcon').className = 'bi bi-chevron-down';
+                await refreshTournamentStats(currentTournamentId);
+                registerModal.hide();
+            } else {
+                showToast('error', 'Ошибка', data.message || 'Не удалось зарегистрировать игрока');
             }
         } catch (e) {
             showToast('error', 'Ошибка', e.message);

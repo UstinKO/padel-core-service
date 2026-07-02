@@ -1438,6 +1438,71 @@ public class TestTournamentController {
     }
 
     /**
+     * Регистрация гостевого игрока на одиночный турнир (игрок не в базе данных)
+     */
+    @PostMapping("/{tournamentId}/register-guest-player")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> registerGuestPlayer(
+            @PathVariable Long tournamentId,
+            @RequestBody Map<String, Object> playerData) {
+
+        log.info("Регистрация гостевого игрока на турнир: {}", tournamentId);
+
+        Map<String, Object> result = new HashMap<>();
+
+        try (Connection conn = dataSource.getConnection()) {
+            TournamentDto tournament = tournamentService.getTournamentDtoById(tournamentId).orElse(null);
+            if (tournament == null) {
+                result.put("success", false);
+                result.put("message", "Турнир не найден");
+                return ResponseEntity.badRequest().body(result);
+            }
+
+            if ("DOBLES".equals(tournament.getModalidad().name())) {
+                result.put("success", false);
+                result.put("message", "Гостевой игрок доступен только для не парных турниров");
+                return ResponseEntity.badRequest().body(result);
+            }
+
+            Map<String, Object> currentStats = getTournamentStats(conn, tournamentId);
+            int confirmed = (int) currentStats.getOrDefault("confirmed", 0);
+            if (confirmed >= tournament.getCupoMax()) {
+                result.put("success", false);
+                result.put("message", "Нет свободных мест в турнире");
+                return ResponseEntity.badRequest().body(result);
+            }
+
+            Long playerId = resolveOrCreateGuestPlayer(conn, playerData);
+            Map<String, Object> regResult = registerPlayer(conn, tournamentId, playerId);
+
+            if (!(boolean) regResult.get("success")) {
+                result.put("success", false);
+                result.put("message", "already_registered".equals(regResult.get("reason"))
+                        ? "Этот игрок уже зарегистрирован в турнире"
+                        : "Не удалось зарегистрировать игрока: " + regResult.get("error"));
+                return ResponseEntity.badRequest().body(result);
+            }
+
+            Map<String, Object> stats = getTournamentStats(conn, tournamentId);
+            result.put("success", true);
+            result.put("message", "Гостевой игрок успешно зарегистрирован");
+            result.put("playerId", playerId);
+            result.put("position", regResult.get("position"));
+            result.put("tournamentStats", stats);
+
+            log.info("Гостевой игрок {} зарегистрирован на турнир {}", playerId, tournamentId);
+
+        } catch (Exception e) {
+            log.error("Ошибка при регистрации гостевого игрока", e);
+            result.put("success", false);
+            result.put("message", "Ошибка: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(result);
+        }
+
+        return ResponseEntity.ok(result);
+    }
+
+    /**
      * Находит игрока по ID или по телефону, либо создаёт нового гостевого игрока
      */
     private Long resolveOrCreateGuestPlayer(Connection conn, Map<String, Object> playerData) throws Exception {
