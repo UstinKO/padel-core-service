@@ -5,22 +5,25 @@ import com.google.common.cache.CacheBuilder;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.Refill;
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.util.Map;
+import java.util.Arrays;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /**
  * Rate limiting filter на основе IP адреса.
@@ -45,14 +48,34 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Slf4j
 public class RateLimitFilter extends OncePerRequestFilter {
 
-    // IP-адреса, которые полностью обходят rate limiting (разработчики / владелец)
-    private static final Set<String> WHITELISTED_IPS = Set.of(
-            "194.124.210.113",  // разработчик
-            "152.171.139.176"  // владелец приложения
-    );
+    // IP-адреса, которые полностью обходят rate limiting (разработчик / владелец / мониторинг).
+    // Тот же список, что в nginx geo $ratelimit_key и CrowdSec whitelist (см. SECURITY.md) —
+    // вынесен в конфигурацию, чтобы не держать его как отдельную константу, которую легко
+    // забыть синхронизировать при добавлении нового доверенного IP.
+    @Value("${app.security.whitelisted-ips:194.124.210.113,152.171.139.176,167.235.34.217}")
+    private String whitelistedIpsProperty;
 
-    // Кэш buckets по ключу "IP:endpoint_type"
-    private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
+    private Set<String> whitelistedIps;
+
+    @PostConstruct
+    private void initWhitelistedIps() {
+        whitelistedIps = Arrays.stream(whitelistedIpsProperty.split(","))
+                .map(String::trim)
+                .filter(ip -> !ip.isEmpty())
+                .collect(Collectors.toSet());
+    }
+
+    // Кэш buckets по ключу "IP:endpoint_type". expireAfterAccess вместо неограниченного
+    // ConcurrentHashMap — иначе при атаке с большим числом уникальных IP карта растёт
+    // без ограничений (DoS-вектор против памяти самого приложения). TTL взят с запасом
+    // от самого длинного окна лимита (1 минута для AUTH/REGISTER/API/GENERAL) — для активных
+    // IP бакет не сбрасывается (expireAfterAccess продлевает жизнь при каждом обращении),
+    // для простаивающих 15+ минут — пересоздаётся с нуля, что эквивалентно тому, что и так
+    // происходило бы естественным пополнением bucket4j-окна.
+    private final Cache<String, Bucket> buckets = CacheBuilder.newBuilder()
+            .expireAfterAccess(15, TimeUnit.MINUTES)
+            .maximumSize(40_000)
+            .build();
 
     // ✅ Кэш для отслеживания ПОДОЗРИТЕЛЬНЫХ регистраций с IP
     // Если с IP пришло 3+ регистрации за 15 минут → блокируем
@@ -79,7 +102,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
         String ip = extractIp(request);
 
-        if (WHITELISTED_IPS.contains(ip)) {
+        if (whitelistedIps.contains(ip)) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -99,7 +122,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
 
         String bucketKey = ip + ":" + limitType.name();
-        Bucket bucket = buckets.computeIfAbsent(bucketKey, k -> createBucket(limitType));
+        Bucket bucket = getOrCreateBucket(bucketKey, limitType);
 
         if (bucket.tryConsume(1)) {
             filterChain.doFilter(request, response);
@@ -185,6 +208,15 @@ public class RateLimitFilter extends OncePerRequestFilter {
             case GENERAL -> Bandwidth.classic(200, Refill.greedy(200, Duration.ofMinutes(1)));
         };
         return Bucket.builder().addLimit(limit).build();
+    }
+
+    private Bucket getOrCreateBucket(String bucketKey, LimitType type) {
+        try {
+            return buckets.get(bucketKey, () -> createBucket(type));
+        } catch (ExecutionException e) {
+            // createBucket() не бросает checked-исключений — сюда попасть невозможно
+            throw new IllegalStateException("Failed to create rate limit bucket for key: " + bucketKey, e);
+        }
     }
 
 
