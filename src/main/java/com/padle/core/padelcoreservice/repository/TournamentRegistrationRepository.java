@@ -71,6 +71,9 @@ public interface TournamentRegistrationRepository extends JpaRepository<Tourname
     List<TournamentRegistration> findByStatusAndInvitationExpiresAtBefore(
             RegistrationStatus status, LocalDateTime expiryTime);
 
+    // Issue #194 — поиск waitlist-приглашения по непредсказуемому токену вместо угадываемого ID
+    Optional<TournamentRegistration> findByWaitlistConfirmationToken(String waitlistConfirmationToken);
+
     List<TournamentRegistration> findByTournamentIdOrderByPositionAscWaitlistPositionAsc(Long tournamentId);
 
     @Query(nativeQuery = true, value =

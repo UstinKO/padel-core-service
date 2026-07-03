@@ -58,6 +58,27 @@
 <main class="confirmation-page">
     <div class="container">
         <div class="confirmation-container">
+            <!-- Pending Case: GET-шаг, без побочных эффектов — только показывает детали и кнопку -->
+            <div th:if="${type == 'pending'}" class="confirmation-card">
+                <div class="confirmation-icon warning">
+                    <i class="fas fa-hourglass-half"></i>
+                </div>
+                <h1 class="confirmation-title" th:text="#{waitlist.pending.heading}">Confirma tu participación</h1>
+                <p class="confirmation-message" th:text="${preview.tournamentName()}">Torneo</p>
+                <ul class="confirmation-details" style="list-style:none; padding:0; text-align:center; color:#6c757d;">
+                    <li><strong th:text="#{waitlist.pending.date_label}">Fecha</strong>: <span th:text="${preview.tournamentDate()}"></span></li>
+                    <li><strong th:text="#{waitlist.pending.time_label}">Hora</strong>: <span th:text="${preview.tournamentTime()}"></span></li>
+                    <li><strong th:text="#{waitlist.pending.club_label}">Club</strong>: <span th:text="${preview.clubName()}"></span></li>
+                </ul>
+                <form method="post" th:action="@{/waitlist/confirm}" class="confirmation-actions">
+                    <input type="hidden" name="token" th:value="${preview.waitlistConfirmationToken()}">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-check"></i>
+                        <span th:text="#{waitlist.pending.btn}">Confirmar participación</span>
+                    </button>
+                </form>
+            </div>
+
             <!-- Success Case -->
             <div th:if="${type == 'success'}" class="confirmation-card">
                 <div class="confirmation-icon success">

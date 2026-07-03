@@ -119,3 +119,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.39-add-preferred-locale.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.40-add-waitlist-confirmation-token.yaml
+      relativeToChangelogFile: true

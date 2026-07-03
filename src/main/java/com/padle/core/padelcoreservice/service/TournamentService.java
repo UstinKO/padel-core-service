@@ -44,6 +44,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -1232,29 +1233,17 @@ public class TournamentService {
             tags = {"operation=waitlistConfirm"}
     )
     @Transactional
-    public boolean confirmFromWaitlist(Long registrationId) {
+    public boolean confirmFromWaitlist(String waitlistConfirmationToken) {
+        TournamentRegistration registration = getInvitedRegistrationByToken(waitlistConfirmationToken);
+        Long registrationId = registration.getId();
         log.info("Confirming registration from waitlist: {}", registrationId);
-
-        TournamentRegistration registration = registrationRepository.findById(registrationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Registration not found"));
-
-        // Проверяем, что это приглашение
-        if (registration.getStatus() != RegistrationStatus.WAITLIST_INVITED) {
-            throw new InvalidStateException("This registration is not invited for confirmation");
-        }
 
         // Проверяем, не истекло ли приглашение
         if (registration.getInvitationExpiresAt().isBefore(LocalDateTime.now())) {
-            // Приглашение истекло - отправляем игрока обратно в конец очереди?
-            // Или удаляем из очереди? Лучше вернуть в конец.
-            registration.setStatus(RegistrationStatus.WAITLIST);
-            registration.setInvitationExpiresAt(null);
-
-            // Перемещаем в конец очереди (обновляем позицию)
+            // Приглашение истекло — отправляем игрока обратно в конец очереди
             Integer maxPosition = registrationRepository.findMaxWaitlistPosition(
                     registration.getTournament().getId()).orElse(0);
-            registration.setWaitlistPosition(maxPosition + 1);
-
+            registration.moveToWaitlist(maxPosition + 1);
             registrationRepository.save(registration);
 
             // Запускаем повторную обработку для следующего в очереди
@@ -1270,9 +1259,12 @@ public class TournamentService {
                 tournament.getId(), RegistrationStatus.CONFIRMED);
 
         if (confirmedCount >= tournament.getCupoMax()) {
-            // Мест больше нет - отменяем ТОЛЬКО это приглашение, остальные пока ждут
+            // Мест больше нет - отменяем ТОЛЬКО это приглашение, остальные пока ждут.
+            // Позицию в очереди намеренно не трогаем (в отличие от истёкшего приглашения) —
+            // игрок не виноват, что кто-то другой успел раньше.
             registration.setStatus(RegistrationStatus.WAITLIST);
             registration.setInvitationExpiresAt(null);
+            registration.setWaitlistConfirmationToken(null);   // токен использован — инвалидируем
             registrationRepository.save(registration);
 
             // Отправляем уведомление этому игроку
@@ -1282,10 +1274,8 @@ public class TournamentService {
         }
 
         // Подтверждаем регистрацию
-        registration.setStatus(RegistrationStatus.CONFIRMED);
+        registration.confirm();
         registration.setPosition((int) confirmedCount + 1);
-        registration.setWaitlistPosition(null);
-        registration.setInvitationExpiresAt(null);
         registrationRepository.save(registration);
 
         log.info("Player {} confirmed from waitlist for tournament {}",
@@ -1300,6 +1290,43 @@ public class TournamentService {
         processWaitlistForTournament(tournament.getId());
 
         return true;
+    }
+
+    /**
+     * Данные для страницы подтверждения приглашения (GET-шаг) — без побочных эффектов,
+     * безопасно для пред-фетча ссылок email-сканерами (issue #194). Реальное подтверждение
+     * происходит только через {@link #confirmFromWaitlist(String)} по явному действию (POST).
+     */
+    public record WaitlistInvitationPreview(
+            String waitlistConfirmationToken,
+            String tournamentName,
+            String tournamentDate,
+            String tournamentTime,
+            String clubName) {}
+
+    @Transactional(readOnly = true)
+    public WaitlistInvitationPreview getWaitlistInvitationPreview(String waitlistConfirmationToken) {
+        TournamentRegistration registration = getInvitedRegistrationByToken(waitlistConfirmationToken);
+        Tournament tournament = registration.getTournament();
+
+        return new WaitlistInvitationPreview(
+                waitlistConfirmationToken,
+                tournament.getNombre(),
+                tournament.getFechaInicio().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm")),
+                resolveClubName(tournament.getClubId())
+        );
+    }
+
+    private TournamentRegistration getInvitedRegistrationByToken(String waitlistConfirmationToken) {
+        TournamentRegistration registration = registrationRepository
+                .findByWaitlistConfirmationToken(waitlistConfirmationToken)
+                .orElseThrow(() -> new ResourceNotFoundException("Registration not found"));
+
+        if (registration.getStatus() != RegistrationStatus.WAITLIST_INVITED) {
+            throw new InvalidStateException("This registration is not invited for confirmation");
+        }
+        return registration;
     }
 
     @Transactional
