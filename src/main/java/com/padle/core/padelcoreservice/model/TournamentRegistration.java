@@ -68,6 +68,10 @@ public class TournamentRegistration {
     @Builder.Default
     private Integer invitationAttempts = 0;
 
+    // Одноразовый непредсказуемый токен для /waitlist/confirm — заменяет угадываемый ID (issue #194)
+    @Column(name = "waitlist_confirmation_token", length = 64)
+    private String waitlistConfirmationToken;
+
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
@@ -162,6 +166,7 @@ public class TournamentRegistration {
         this.waitlistPosition = null;
         this.invitationExpiresAt = null;
         this.notifiedAboutVacancy = null;
+        this.waitlistConfirmationToken = null;   // токен одноразовый — использован
     }
 
     public void moveToWaitlist(int waitlistPosition) {
@@ -170,12 +175,14 @@ public class TournamentRegistration {
         this.position = null;
         this.invitationExpiresAt = null;
         this.notifiedAboutVacancy = false;
+        this.waitlistConfirmationToken = null;   // приглашение истекло/отменено — токен больше не действует
     }
 
-    public void inviteToConfirm(LocalDateTime expiresAt) {
+    public void inviteToConfirm(LocalDateTime expiresAt, String confirmationToken) {
         this.status = RegistrationStatus.WAITLIST_INVITED;
         this.invitationExpiresAt = expiresAt;
         this.notifiedAboutVacancy = true;
+        this.waitlistConfirmationToken = confirmationToken;
     }
 
     public void cancel(String reason) {
