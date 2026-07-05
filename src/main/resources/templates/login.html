@@ -57,7 +57,7 @@
                     </p>
                 </div>
 
-                <form action="/login" method="post" class="auth-form">
+                <form th:action="@{/login}" method="post" class="auth-form">
 
                     <!-- Registro exitoso (ya no se usa, pero por si acaso) -->
                     <div th:if="${param.registered}" class="alert alert-success">
@@ -191,6 +191,7 @@
     </div>
 </footer>
 <script th:src="@{/js/logger.js}"></script>
+<script th:src="@{/js/csrf.js}"></script>
 <script th:src="${'/js/i18n/messages-' + #locale.language + '.js'}"></script>
 <script th:src="@{/js/i18n/t.js}"></script>
 <script th:src="@{/js/notifications.js}"></script>

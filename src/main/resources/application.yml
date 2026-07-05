@@ -112,6 +112,9 @@ server:
   forward-headers-strategy: framework
   servlet:
     context-path: ${SERVER_CONTEXT_PATH:/}
+    session:
+      cookie:
+        same-site: lax
 
 # ------ LOGGING ------
 logging:

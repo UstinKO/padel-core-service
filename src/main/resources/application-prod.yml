@@ -61,6 +61,10 @@ jwt:
 server:
   port: ${SERVER_PORT:8080}
   forward-headers-strategy: framework
+  servlet:
+    session:
+      cookie:
+        secure: true
 
 app:
   base-url: ${APP_BASE_URL}
