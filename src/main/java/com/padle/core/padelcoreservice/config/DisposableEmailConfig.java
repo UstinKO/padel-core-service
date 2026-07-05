@@ -4,23 +4,25 @@ import dev.caceresenzo.disposableemaildomains.DisposableEmailDomains;
 import dev.caceresenzo.disposableemaildomains.checker.HttpChecker;
 import dev.caceresenzo.disposableemaildomains.spring.boot.autoconfigure.DisposableEmailDomainsProperties;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.context.properties.bind.Bindable;
+import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Configuration
 @RequiredArgsConstructor
 public class DisposableEmailConfig {
 
     private final DisposableEmailDomainsProperties properties;
-
-    @Value("${disposable-email-domains.allowed-domains:}")
-    private List<String> allowedDomains;
+    private final Environment environment;
 
     /**
      * Переопределяем бин библиотеки (она использует @ConditionalOnMissingBean),
@@ -54,10 +56,17 @@ public class DisposableEmailConfig {
         }
 
         DisposableEmailDomains delegate = builder.build();
+
+        // @Value не умеет биндить YAML-список (только индексированные ключи
+        // allowed-domains[0], allowed-domains[1]...) — Binder делает это правильно.
+        List<String> allowedDomains = Binder.get(environment)
+                .bind("disposable-email-domains.allowed-domains", Bindable.listOf(String.class))
+                .orElse(List.of());
         Set<String> allowlist = allowedDomains.stream()
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.toSet());
+        log.info("Disposable-email allowlist: {}", allowlist);
 
         return new AllowlistDisposableEmailDomains(delegate, allowlist);
     }
