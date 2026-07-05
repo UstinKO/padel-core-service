@@ -42,3 +42,8 @@ qodana.yaml
 docs/
 
 src/main/java/com/padle/core/padelcoreservice/util/PasswordGenerator.java
+
+# Ops-скрипты для боевого сервера — репозиторий публичный, не публикуем детали
+# инфраструктуры. Уже задеплоены на сервер, их отсутствие в git не влияет на
+# работу приложения.
+scripts/
