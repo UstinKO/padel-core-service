@@ -5,6 +5,10 @@ import com.padle.core.padelcoreservice.security.JwtAuthenticationFilter;
 import com.padle.core.padelcoreservice.security.RateLimitFilter;
 import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2UserService;
 import com.padle.core.padelcoreservice.security.oauth2.OAuth2AuthenticationSuccessHandler;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
@@ -14,17 +18,22 @@ import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfFilter;
+import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.OncePerRequestFilter;
 
+import java.io.IOException;
 import java.util.List;
 
 @Slf4j
@@ -45,7 +54,21 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(AbstractHttpConfigurer::disable)
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        // Дефолтный XorCsrfTokenRequestAttributeHandler маскирует токен (BREACH-защита)
+                        // для форм, рендерящих ${_csrf.token} на сервере. Но JS в csrf.js читает "сырое"
+                        // значение напрямую из cookie XSRF-TOKEN и шлёт его как есть в заголовке — с Xor-
+                        // обработчиком такое сравнение не пройдёт (сервер ждёт маскированное значение).
+                        // Используем немаскирующий обработчик — стандартная рекомендация Spring Security
+                        // для cookie-based CSRF, читаемого через JS.
+                        .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+                        // Bearer JWT (заголовок Authorization) не подвержен CSRF — его нельзя
+                        // выставить форгед cross-site запросом, в отличие от session-cookie.
+                        // Игнорируем такие запросы, чтобы не ломать stateless API-клиентов.
+                        .ignoringRequestMatchers(request -> request.getHeader("Authorization") != null)
+                        .ignoringRequestMatchers("/api/auth/**", "/test/telegram/**")
+                )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/",
@@ -120,6 +143,11 @@ public class SecurityConfig {
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
+                // Spring Security 6 генерирует CSRF-токен лениво: cookie XSRF-TOKEN пишется,
+                // только если токен реально прочитан за время запроса (обычно — рендером
+                // th:action формы). Страницы без форм (чисто JS/fetch) иначе останутся без
+                // cookie. Форсируем чтение токена на каждом запросе.
+                .addFilterAfter(csrfCookieFilter(), CsrfFilter.class)
                 .oauth2Login(oauth2 -> oauth2
                         .loginPage("/login")
                         .userInfoEndpoint(userInfo -> userInfo
@@ -174,6 +202,23 @@ public class SecurityConfig {
                         )
                 )
                 .build();
+    }
+
+    @Bean
+    public OncePerRequestFilter csrfCookieFilter() {
+        return new OncePerRequestFilter() {
+            @Override
+            protected void doFilterInternal(HttpServletRequest request,
+                                             HttpServletResponse response,
+                                             FilterChain filterChain)
+                    throws ServletException, IOException {
+                CsrfToken csrfToken = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
+                if (csrfToken != null) {
+                    csrfToken.getToken();
+                }
+                filterChain.doFilter(request, response);
+            }
+        };
     }
 
     @Bean

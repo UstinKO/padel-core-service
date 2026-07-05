@@ -1653,6 +1653,7 @@
 
 <footer th:replace="~{fragments/admin-footer :: footer}"></footer>
 <script th:src="@{/js/logger.js}"></script>
+<script th:src="@{/js/csrf.js}"></script>
 <script th:src="${'/js/i18n/messages-' + #locale.language + '.js'}"></script>
 <script th:src="@{/js/i18n/t.js}"></script>
 <script th:src="@{/js/admin.js}"></script>
@@ -1686,7 +1687,8 @@
         const fields = {
             tournamentId:   TOURNAMENT_ID,
             pointsPerMatch: document.getElementById('teamPointsPerMatch')?.value || '32',
-            courts:         document.getElementById('teamCourts')?.value         || '2'
+            courts:         document.getElementById('teamCourts')?.value         || '2',
+            _csrf:          window.getCsrfToken ? window.getCsrfToken() : ''
         };
         for (const [n, v] of Object.entries(fields)) {
             const inp = document.createElement('input');
@@ -1718,7 +1720,8 @@
             courts:         document.getElementById('courts')?.value         || '2',
             totalRounds:    document.getElementById('totalRounds')?.value    || '5',
             generationMode: document.getElementById('generationMode')?.value || 'AUTO',
-            rankingType:    document.getElementById('rankingType')?.value    || 'score'
+            rankingType:    document.getElementById('rankingType')?.value    || 'score',
+            _csrf:          window.getCsrfToken ? window.getCsrfToken() : ''
         };
         for (const [n, v] of Object.entries(fields)) {
             const inp = document.createElement('input');

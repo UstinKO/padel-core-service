@@ -87,7 +87,7 @@
                 </div>
 
                 <!-- Registration Form -->
-                <form action="/players/registro" method="post" class="auth-form" id="registroForm">
+                <form th:action="@{/players/registro}" method="post" class="auth-form" id="registroForm">
                     <!-- Rate limit -->
                     <div th:if="${param.error != null and param.error[0] == 'rate-limit'}"
                          style="background:#fff7ed; border-left:4px solid #f59e0b; border-radius:8px;
