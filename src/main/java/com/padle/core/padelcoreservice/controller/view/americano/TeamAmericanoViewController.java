@@ -19,6 +19,7 @@ import com.padle.core.padelcoreservice.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -102,6 +103,7 @@ public class TeamAmericanoViewController {
      * Принимает POST с tournamentId + конфигурацию.
      */
     @PostMapping("/initialize")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
     public String initializeTeamAmericano(@ModelAttribute TeamAmericanoConfigDto config,
                                           @RequestParam Long tournamentId,
                                           RedirectAttributes redirectAttributes) {
@@ -142,6 +144,7 @@ public class TeamAmericanoViewController {
      * Превью Round Robin расписания без сохранения — аналог /americano/{id}/preview-rounds
      */
     @PostMapping("/preview")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
     public String previewRounds(@RequestParam Long tournamentId,
                                 @ModelAttribute TeamAmericanoConfigDto config,
                                 Model model,
@@ -254,6 +257,7 @@ public class TeamAmericanoViewController {
      * Сохранение результата матча (POST).
      */
     @PostMapping("/matches/{matchId}/result")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
     public String submitMatchResult(@PathVariable Long matchId,
                                     @RequestParam int team1Score,
                                     @RequestParam int team2Score,
@@ -279,6 +283,7 @@ public class TeamAmericanoViewController {
     // ══════════════════════════════════════════════════════════════════════
 
     @PostMapping("/admin/{tournamentId}/finish")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
     public String finishTournament(@PathVariable Long tournamentId,
                                    RedirectAttributes redirectAttributes) {
         try {
@@ -303,6 +308,7 @@ public class TeamAmericanoViewController {
      * API: сохранить результат матча (используется из JS без перезагрузки страницы).
      */
     @PostMapping("/api/matches/{matchId}/result")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> submitResultApi(@PathVariable Long matchId,
                                                                @RequestBody Map<String, Integer> body) {

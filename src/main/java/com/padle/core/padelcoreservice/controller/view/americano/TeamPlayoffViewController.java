@@ -20,6 +20,7 @@ import com.padle.core.padelcoreservice.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -123,6 +124,7 @@ public class TeamPlayoffViewController {
     // ══════════════════════════════════════════════════════════════════════
 
     @PostMapping("/admin/{tournamentId}/teams/add")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
     public String addTeam(@PathVariable Long tournamentId,
                           @ModelAttribute TeamPlayoffTeamRequest req,
                           RedirectAttributes ra) {
@@ -137,6 +139,7 @@ public class TeamPlayoffViewController {
     }
 
     @PostMapping("/admin/teams/{teamId}/update")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
     public String updateTeam(@PathVariable Long teamId,
                              @ModelAttribute TeamPlayoffTeamRequest req,
                              @RequestParam Long tournamentId,
@@ -152,6 +155,7 @@ public class TeamPlayoffViewController {
     }
 
     @PostMapping("/admin/teams/{teamId}/delete")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
     public String deleteTeam(@PathVariable Long teamId,
                              @RequestParam Long tournamentId,
                              RedirectAttributes ra) {
@@ -170,6 +174,7 @@ public class TeamPlayoffViewController {
     // ══════════════════════════════════════════════════════════════════════
 
     @PostMapping("/admin/{tournamentId}/import-registrations")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
     public String importRegistrations(@PathVariable Long tournamentId, RedirectAttributes ra) {
         try {
             int count = playoffService.importFromRegistrations(tournamentId);
@@ -182,6 +187,7 @@ public class TeamPlayoffViewController {
     }
 
     @PostMapping("/admin/{tournamentId}/init-qualification")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
     public String initQualification(@PathVariable Long tournamentId,
                                     @RequestParam(defaultValue = "2") int courts,
                                     RedirectAttributes ra) {
@@ -196,6 +202,7 @@ public class TeamPlayoffViewController {
     }
 
     @PostMapping("/admin/{tournamentId}/init-playoff")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
     public String initPlayoff(@PathVariable Long tournamentId, RedirectAttributes ra) {
         try {
             playoffService.initPlayoff(tournamentId);
@@ -212,6 +219,7 @@ public class TeamPlayoffViewController {
     // ══════════════════════════════════════════════════════════════════════
 
     @PostMapping("/admin/qual-matches/{matchId}/result")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
     public String submitQualResult(@PathVariable Long matchId,
                                    @RequestParam int team1Games,
                                    @RequestParam int team2Games,
@@ -230,6 +238,7 @@ public class TeamPlayoffViewController {
     }
 
     @PostMapping("/admin/playoff-matches/{matchId}/result")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
     public String submitPlayoffResult(@PathVariable Long matchId,
                                       @RequestParam int team1Games,
                                       @RequestParam int team2Games,
@@ -252,6 +261,7 @@ public class TeamPlayoffViewController {
     // ══════════════════════════════════════════════════════════════════════
 
     @PostMapping("/api/qual-matches/{matchId}/result")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> submitQualResultApi(
             @PathVariable Long matchId,
@@ -271,6 +281,7 @@ public class TeamPlayoffViewController {
     }
 
     @PostMapping("/api/playoff-matches/{matchId}/result")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> submitPlayoffResultApi(
             @PathVariable Long matchId,
