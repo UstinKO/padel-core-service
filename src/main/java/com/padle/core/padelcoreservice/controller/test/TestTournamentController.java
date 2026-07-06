@@ -223,6 +223,28 @@ public class TestTournamentController {
     }
 
     /**
+     * Статистика всех турниров одним запросом на одном соединении.
+     * Страница test/tournaments раньше дергала /stats по числу карточек параллельно —
+     * это исчерпывало пул HikariCP (см. HikariPool timeout в проде).
+     */
+    @GetMapping("/stats-all")
+    @ResponseBody
+    public ResponseEntity<Map<Long, Map<String, Object>>> getAllStats() {
+        Map<Long, Map<String, Object>> statsMap = new HashMap<>();
+
+        try (Connection conn = dataSource.getConnection()) {
+            List<TournamentDto> tournaments = tournamentService.getAllTournaments();
+            for (TournamentDto tournament : tournaments) {
+                statsMap.put(tournament.getId(), getTournamentStats(conn, tournament.getId()));
+            }
+            return ResponseEntity.ok(statsMap);
+        } catch (Exception e) {
+            log.error("Ошибка при получении статистики всех турниров", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    /**
      * Получение списка всех игроков для регистрации на турнир
      */
     @GetMapping("/available-players")
