@@ -186,6 +186,7 @@ public class AmericanoViewController {
     }
 
     @PostMapping("/{tournamentId}/initialize")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
     public String initializeTournament(
             @PathVariable Long tournamentId,
             @ModelAttribute AmericanoConfigDto config,
@@ -210,6 +211,7 @@ public class AmericanoViewController {
      * если турнир уже запущен.
      */
     @PostMapping("/{tournamentId}/preview-rounds")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
     public String previewRounds(
             @PathVariable Long tournamentId,
             @ModelAttribute AmericanoConfigDto config,
@@ -283,6 +285,7 @@ public class AmericanoViewController {
     }
 
     @PostMapping("/rounds/{roundId}/start")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
     public String startRound(
             @PathVariable Long roundId,
             RedirectAttributes redirectAttributes, @AuthenticationPrincipal Owner currentOwner) {
@@ -299,6 +302,7 @@ public class AmericanoViewController {
     }
 
     @PostMapping("/rounds/{roundId}/complete")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
     public String completeRound(
             @PathVariable Long roundId,
             RedirectAttributes redirectAttributes, @AuthenticationPrincipal Owner currentOwner) {
@@ -351,6 +355,7 @@ public class AmericanoViewController {
     }
 
     @PostMapping("/matches/{matchId}/result")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
     public String submitMatchResult(
             @PathVariable Long matchId,
             @ModelAttribute AmericanoMatchResultDto resultDto,
@@ -424,6 +429,7 @@ public class AmericanoViewController {
     // ==================== УПРАВЛЕНИЕ ИГРОКАМИ ====================
 
     @PostMapping("/{tournamentId}/players/{playerId}/dropout")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
     public String dropOutPlayer(
             @PathVariable Long tournamentId,
             @PathVariable Long playerId,
@@ -449,6 +455,7 @@ public class AmericanoViewController {
     // ==================== ЗАВЕРШЕНИЕ ТУРНИРА ====================
 
     @PostMapping("/{tournamentId}/finish")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
     public String finishTournament(
             @PathVariable Long tournamentId,
             @RequestParam(required = false, defaultValue = "score") String sortBy,
@@ -521,6 +528,7 @@ public class AmericanoViewController {
      *      не показывала ошибку — кнопка просто не работала.
      */
     @PostMapping("/admin/{tournamentId}/initialize")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
     public String initializeAdminTournament(
             @PathVariable Long tournamentId,
             @ModelAttribute AmericanoConfigDto config,
@@ -627,6 +635,7 @@ public class AmericanoViewController {
      * ИСПРАВЛЕНО: если турнир уже инициализирован — редирект без ошибки.
      */
     @PostMapping("/initialize")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
     public String initializeAmericano(
             AmericanoConfigDto config,
             RedirectAttributes redirectAttributes) {

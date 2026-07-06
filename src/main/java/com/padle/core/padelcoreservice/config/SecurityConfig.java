@@ -124,6 +124,9 @@ public class SecurityConfig {
                         .requestMatchers("/players/perfil/**").authenticated()
                         .requestMatchers("/players/mis-torneos").authenticated()
                         .requestMatchers("/admin/**").hasAnyRole("OWNER", "SUPER_ADMIN", "ORGANIZER", "ADMIN")
+                        // Внутренний тестовый инструментарий организатора (JDBC-based, см. CLAUDE.md) —
+                        // доступен только владельцу платформы, не ORGANIZER/ADMIN.
+                        .requestMatchers("/test/tournaments/**").hasRole("SUPER_ADMIN")
                         // Публичные GET-эндпоинты King of Court для страницы зрителей
                         .requestMatchers(org.springframework.http.HttpMethod.GET,
                                 "/api/king-of-court/tournaments/*/state",
