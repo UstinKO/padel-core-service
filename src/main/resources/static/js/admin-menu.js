@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', function() {
             e.stopPropagation();
 
             navbarNav.classList.toggle('show');
+            newToggler.classList.toggle('active');
             console.log('🍔 Admin menu:', navbarNav.classList.contains('show') ? 'abierto' : 'cerrado');
         });
 
@@ -29,6 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
         navbarNav.querySelectorAll('a').forEach(link => {
             link.addEventListener('click', () => {
                 navbarNav.classList.remove('show');
+                newToggler.classList.remove('active');
             });
         });
 
@@ -38,6 +40,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 !navbarNav.contains(e.target) &&
                 !newToggler.contains(e.target)) {
                 navbarNav.classList.remove('show');
+                newToggler.classList.remove('active');
             }
         });
     }
