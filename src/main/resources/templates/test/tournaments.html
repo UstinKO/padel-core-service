@@ -1589,22 +1589,21 @@
         }, 500);
     });
 
-    // Обновление статистики всех турниров
+    // Обновление статистики всех турниров одним запросом
+    // (раньше здесь был Promise.all с отдельным fetch на каждую карточку —
+    // это открывало по соединению с БД на каждый турнир одновременно и исчерпывало пул HikariCP)
     async function refreshAllTournamentsStats() {
         console.log('🔄 Обновление статистики всех турниров...');
-
-        const tournamentCards = document.querySelectorAll('.tournament-card');
-        const promises = [];
-
-        tournamentCards.forEach(card => {
-            const tournamentId = card.dataset.tournamentId;
-            if (tournamentId) {
-                promises.push(refreshTournamentStats(tournamentId));
-            }
-        });
-
-        await Promise.all(promises);
-        console.log('✅ Статистика всех турниров обновлена');
+        try {
+            const response = await fetch('/test/tournaments/stats-all');
+            const statsMap = await response.json();
+            Object.entries(statsMap).forEach(([tournamentId, stats]) => {
+                applyStatsToCard(tournamentId, stats);
+            });
+            console.log('✅ Статистика всех турниров обновлена');
+        } catch (error) {
+            console.error('Ошибка обновления статистики всех турниров:', error);
+        }
     }
 
     window.refreshAll = function() {
@@ -2617,7 +2616,16 @@
         try {
             const response = await fetch(`/test/tournaments/${tournamentId}/stats`);
             const stats = await response.json();
+            applyStatsToCard(tournamentId, stats);
+            return stats;
+        } catch (error) {
+            console.error('Ошибка обновления статистики:', error);
+        }
+    }
 
+    // Применение уже полученной статистики к карточке турнира (без запроса к серверу)
+    function applyStatsToCard(tournamentId, stats) {
+        try {
             // Находим карточку турнира
             const tournamentCard = document.querySelector(`.tournament-card[data-tournament-id="${tournamentId}"]`);
             if (!tournamentCard) return;
@@ -2689,10 +2697,8 @@
                     }
                 }
             }
-
-            return stats;
         } catch (error) {
-            console.error('Ошибка обновления статистики:', error);
+            console.error('Ошибка применения статистики к карточке:', error);
         }
     }
 
