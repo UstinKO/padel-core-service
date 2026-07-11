@@ -1,12 +1,16 @@
 package com.padle.core.padelcoreservice.service;
 
 import com.padle.core.padelcoreservice.dto.ClubDto;
+import com.padle.core.padelcoreservice.exception.InvalidStateException;
 import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
 import com.padle.core.padelcoreservice.mapper.ClubMapper;
 import com.padle.core.padelcoreservice.model.Club;
+import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.repository.ClubRepository;
+import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +28,7 @@ public class ClubService {
 
     private final ClubRepository clubRepository;
     private final ClubMapper clubMapper;
+    private final TournamentRepository tournamentRepository;
 
     // ========== Публичные методы для просмотра ==========
 
@@ -112,42 +117,51 @@ public class ClubService {
     }
 
     @Transactional
-    public Optional<ClubDto> updateClub(Long id, ClubDto clubDto) {
-        return clubRepository.findById(id)
-                .map(existingClub -> {
-                    // Проверяем уникальность имени при изменении
-                    if (!existingClub.getNombre().equals(clubDto.getNombre()) &&
-                            clubRepository.existsByNombre(clubDto.getNombre())) {
-                        throw new RuntimeException("Ya existe un club con el nombre: " + clubDto.getNombre());
-                    }
+    public ClubDto updateClub(Long id, ClubDto clubDto, Owner currentOwner) {
+        Club club = clubRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Club not found with id: " + id));
 
-                    updateClubFields(existingClub, clubDto);
-                    Club updated = clubRepository.save(existingClub);
-                    log.info("Updated club with id: {}", id);
-                    return clubMapper.toDto(updated);
-                });
-    }
-
-    @Transactional
-    public boolean deleteClub(Long id) {
-        return clubRepository.findById(id)
-                .map(club -> {
-                    club.setIsActive(false);
-                    clubRepository.save(club);
-                    log.info("Soft deleted club with id: {}", id);
-                    return true;
-                })
-                .orElse(false);
-    }
-
-    @Transactional
-    public boolean hardDeleteClub(Long id) {
-        if (clubRepository.existsById(id)) {
-            clubRepository.deleteById(id);
-            log.info("Hard deleted club with id: {}", id);
-            return true;
+        if (!club.getNombre().equals(clubDto.getNombre()) &&
+                clubRepository.existsByNombre(clubDto.getNombre())) {
+            throw new RuntimeException("Ya existe un club con el nombre: " + clubDto.getNombre());
         }
-        return false;
+
+        if (!currentOwner.isSuperAdmin()) {
+            throw new AccessDeniedException("No tienes permiso para editar este Club");
+        }
+
+        updateClubFields(club, clubDto);
+        Club updated = clubRepository.save(club);
+        log.info("Updated club with id: {}", id);
+        return clubMapper.toDto(updated);
+    }
+
+    @Transactional
+    public void deleteClub(Long id, Owner currentOwner) {
+        Club club = clubRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Club not found with id: " + id));
+
+        if (!currentOwner.isSuperAdmin()) {
+            throw new AccessDeniedException("No tienes permiso para eliminar este Club");
+        }
+
+        club.setIsActive(false);
+        clubRepository.save(club);
+        log.info("Soft deleted club with id: {}", id);
+    }
+
+    @Transactional
+    public void hardDeleteClub(Long id, Owner currentOwner) {
+
+        Club club = clubRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Club not found with id: " + id));
+
+        if (!currentOwner.isSuperAdmin()) {
+            throw new AccessDeniedException("No tienes permiso para cambiar el estado de los clubes");
+        }
+
+        if (tournamentRepository.existsByClubId(club.getId())) {
+            throw new InvalidStateException("No se puede eliminar el club porque tiene torneos asociados");
+        }
+        clubRepository.deleteById(id);
+        log.info("Hard deleted club with id: {}", id);
     }
 
     @Transactional
