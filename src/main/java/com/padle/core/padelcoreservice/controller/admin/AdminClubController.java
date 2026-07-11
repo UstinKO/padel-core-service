@@ -1,12 +1,14 @@
 package com.padle.core.padelcoreservice.controller.admin;
 
 import com.padle.core.padelcoreservice.dto.ClubDto;
+import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.service.ClubService;
 import com.padle.core.padelcoreservice.service.OwnerService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
@@ -130,8 +132,7 @@ public class AdminClubController {
         }
 
         try {
-            ClubDto updated = clubService.updateClub(id, clubDto)
-                    .orElseThrow(() -> new RuntimeException("Club not found"));
+            ClubDto updated = clubService.updateClub(id, clubDto, owner);
             redirectAttributes.addFlashAttribute("successMessage",
                     "Club '" + updated.getNombre() + "' actualizado exitosamente");
             return "redirect:/admin/clubs/" + updated.getId();
@@ -175,11 +176,12 @@ public class AdminClubController {
         }
         log.info("Soft deleting club: {}", id);
         try {
-            if (clubService.deleteClub(id)) {
-                redirectAttributes.addFlashAttribute("successMessage", "Club desactivado exitosamente");
-            } else {
-                redirectAttributes.addFlashAttribute("errorMessage", "Club no encontrado");
-            }
+            clubService.deleteClub(id, owner);
+            redirectAttributes.addFlashAttribute("successMessage", "Club desactivado exitosamente");
+        } catch (ResourceNotFoundException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Club no encontrado");
+        } catch (AccessDeniedException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "No tienes permiso para eliminar clubes");
         } catch (Exception e) {
             log.error("Error deleting club", e);
             redirectAttributes.addFlashAttribute("errorMessage", "Error al desactivar club: " + e.getMessage());

@@ -17,6 +17,8 @@ public interface TournamentRepository extends JpaRepository<Tournament, Long> {
 
     List<Tournament> findByClubId(Long clubId);
 
+    boolean existsByClubId(Long clubId);
+
     List<Tournament> findByEstado(TournamentStatus estado);
 
     List<Tournament> findByIsActiveTrue();
