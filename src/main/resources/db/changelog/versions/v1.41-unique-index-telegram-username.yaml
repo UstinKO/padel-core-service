@@ -1,0 +1,17 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.41-unique-index-telegram-username
+      author: padel-core
+      comment: >
+        Telegram-юзернейм регистронезависим (@JohnDoe == @johndoe), поэтому уникальность
+        строится по LOWER(telegram_username). Частичный индекс (WHERE ... IS NOT NULL)
+        подчёркивает, что уникальность нужна только для игроков, реально указавших ник.
+      changes:
+        - sql:
+            sql: |
+              CREATE UNIQUE INDEX idx_player_telegram_username_unique
+              ON player_padel_db (LOWER(telegram_username))
+              WHERE telegram_username IS NOT NULL;
+      rollback:
+        - sql:
+            sql: DROP INDEX IF EXISTS idx_player_telegram_username_unique;

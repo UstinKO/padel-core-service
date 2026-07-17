@@ -33,6 +33,8 @@ public interface PlayerRepository extends JpaRepository<PlayerPadel, Long> {
 
     Optional<PlayerPadel> findByTelegramUsername(String telegramUsername);
 
+    boolean existsByTelegramUsernameIgnoreCase(String telegramUsername);
+
     @Query("SELECT p FROM PlayerPadel p WHERE p.activo = true AND p.id != :excludeId " +
            "AND p.id NOT IN (" +
            "  SELECT tr.player.id FROM TournamentRegistration tr " +

@@ -12,6 +12,8 @@ import com.padle.core.padelcoreservice.repository.TournamentRegistrationReposito
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -36,6 +38,7 @@ public class PlayerService {
     private final TournamentRegistrationRepository registrationRepository;
     private final DoubleTournamentRegistrationService doubleTournamentRegistrationService;
     private final TournamentService tournamentService;
+    private final MessageSource messageSource;
 
     @Transactional
     public PlayerResponseDto registrarJugador(RegistroRequestDto request) {
@@ -48,13 +51,20 @@ public class PlayerService {
 
         // Verificar si el email ya existe
         if (playerRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("El email ya está registrado");
+            throw new IllegalArgumentException(duplicateMessage("registro.error.email.duplicate"));
         }
 
         // Verificar si el teléfono ya existe
         if (request.getTelefono() != null && !request.getTelefono().trim().isEmpty()) {
             if (playerRepository.existsByTelefono(request.getTelefono())) {
-                throw new IllegalArgumentException("El teléfono ya está registrado");
+                throw new IllegalArgumentException(duplicateMessage("registro.error.telefono.duplicate"));
+            }
+        }
+
+        // Verificar si el usuario de Telegram ya existe
+        if (request.getTelegramUsername() != null && !request.getTelegramUsername().trim().isEmpty()) {
+            if (playerRepository.existsByTelegramUsernameIgnoreCase(request.getTelegramUsername())) {
+                throw new IllegalArgumentException(duplicateMessage("registro.error.telegram.duplicate"));
             }
         }
 
@@ -76,6 +86,10 @@ public class PlayerService {
         log.info("📧 Email de bienvenida NO enviado (confirmación automática)");
 
         return playerMapper.entityToResponse(savedPlayer);
+    }
+
+    private String duplicateMessage(String key) {
+        return messageSource.getMessage(key, null, LocaleContextHolder.getLocale());
     }
 
     @Transactional
@@ -259,6 +273,11 @@ public class PlayerService {
     @Transactional(readOnly = true)
     public boolean existsByTelefono(String telefono) {
         return playerRepository.existsByTelefono(telefono);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean existsByTelegramUsername(String telegramUsername) {
+        return playerRepository.existsByTelegramUsernameIgnoreCase(telegramUsername);
     }
 
     @Transactional
