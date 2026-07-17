@@ -88,6 +88,14 @@ public class PlayerPadelController {
         if (request.getTelefono() != null && request.getTelefono().trim().isEmpty()) {
             request.setTelefono(null);
         }
+        if (request.getTelegramUsername() != null) {
+            String telegram = request.getTelegramUsername().trim();
+            if (telegram.isEmpty()) {
+                request.setTelegramUsername(null);
+            } else {
+                request.setTelegramUsername(telegram.startsWith("@") ? telegram : "@" + telegram);
+            }
+        }
 
         // Verificar que las contraseñas coinciden
         if (!request.passwordsMatch()) {

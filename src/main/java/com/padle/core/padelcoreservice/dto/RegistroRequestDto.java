@@ -3,6 +3,7 @@ package com.padle.core.padelcoreservice.dto;
 import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.validation.ValidDomain;
 import com.padle.core.padelcoreservice.validation.NoBotPattern;
+import com.padle.core.padelcoreservice.validation.RequiresPhoneOrTelegram;
 import dev.caceresenzo.disposableemaildomains.validation.constraints.NonDisposableEmailDomain;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -17,6 +18,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@RequiresPhoneOrTelegram
 public class RegistroRequestDto {
 
     @NotBlank(message = "El nombre es obligatorio")
@@ -39,8 +41,12 @@ public class RegistroRequestDto {
     private String email;
 
     @Size(max = 20, message = "El teléfono no puede tener más de 20 caracteres")
-    @Pattern(regexp = "^[+]?[0-9\\s-]{8,20}$", message = "Formato de teléfono inválido")
+    @Pattern(regexp = "^$|^[+]?[0-9\\s-]{8,20}$", message = "Formato de teléfono inválido")
     private String telefono;
+
+    @Size(max = 33, message = "El usuario de Telegram no puede tener más de 33 caracteres")
+    @Pattern(regexp = "^$|^@?[A-Za-z][A-Za-z0-9_]{4,31}$", message = "Formato de usuario de Telegram inválido")
+    private String telegramUsername;
 
     @NotBlank(message = "La contraseña es obligatoria")
     @Size(min = 8, max = 100, message = "La contraseña debe tener entre 8 y 100 caracteres")
