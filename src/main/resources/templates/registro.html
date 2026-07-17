@@ -160,7 +160,6 @@
                     <div class="form-group">
                         <label for="telefono" class="form-label">
                             <i class="fas fa-phone"></i> <span th:text="#{registro.field.telefono}">Teléfono</span>
-                            <span style="color: #999; font-weight: 400;" th:text="#{registro.field.telefono.optional}">(opcional)</span>
                         </label>
                         <div class="input-with-icon">
                             <input type="tel" id="telefono" name="telefono"
@@ -169,6 +168,23 @@
                                    th:value="${param.telefono}">
                             <i class="fas fa-phone input-icon"></i>
                         </div>
+                    </div>
+
+                    <!-- Telegram -->
+                    <div class="form-group">
+                        <label for="telegramUsername" class="form-label">
+                            <i class="fab fa-telegram"></i> <span th:text="#{registro.field.telegram}">Telegram</span>
+                        </label>
+                        <div class="input-with-icon">
+                            <input type="text" id="telegramUsername" name="telegramUsername"
+                                   class="form-control"
+                                   th:placeholder="#{registro.field.telegram.placeholder}"
+                                   th:value="${param.telegramUsername}">
+                            <i class="fab fa-telegram input-icon"></i>
+                        </div>
+                        <small class="form-text" th:text="#{registro.field.contact.hint}">
+                            Necesitas indicar al menos uno de los dos (teléfono o Telegram) para poder inscribirte en torneos
+                        </small>
                     </div>
 
                     <!-- Nivel de juego -->
@@ -303,6 +319,14 @@
             // Валидация терминов
             if (!document.getElementById('terminos').checked) {
                 showNotification('Debes aceptar los términos y condiciones', 'warning');
+                return;
+            }
+
+            // Валидация контакта: нужен телефон или Telegram
+            const telefono = document.getElementById('telefono').value.trim();
+            const telegramUsername = document.getElementById('telegramUsername').value.trim();
+            if (!telefono && !telegramUsername) {
+                showNotification('Debes indicar un teléfono o un usuario de Telegram', 'warning');
                 return;
             }
 
