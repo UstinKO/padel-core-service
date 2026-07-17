@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+    Список допустимых уровней ИГРОКА (не путать с Nivel.values() — тот перечисляет
+    категории турниров, их больше и они не все применимы к игроку). Единственное
+    место, где перечисляются эти значения — используется и в /perfil, и в админке,
+    чтобы список не разъезжался при правках.
+-->
+<th:block th:fragment="options(selected)">
+    <option value="" th:selected="${selected == null}" th:text="#{perfil.field.nivel.none}">Sin especificar</option>
+    <option value="C9" th:selected="${selected != null and selected.name() == 'C9'}">C9</option>
+    <option value="C8" th:selected="${selected != null and selected.name() == 'C8'}">C8</option>
+    <option value="C7" th:selected="${selected != null and selected.name() == 'C7'}">C7</option>
+    <option value="C6" th:selected="${selected != null and selected.name() == 'C6'}">C6</option>
+    <option value="C5" th:selected="${selected != null and selected.name() == 'C5'}">C5</option>
+    <option value="D7" th:selected="${selected != null and selected.name() == 'D7'}">D7</option>
+    <option value="D8" th:selected="${selected != null and selected.name() == 'D8'}">D8</option>
+    <option value="D6" th:selected="${selected != null and selected.name() == 'D6'}">D6</option>
+    <option value="C4" th:selected="${selected != null and selected.name() == 'C4'}">C4</option>
+</th:block>
+</body>
+</html>
