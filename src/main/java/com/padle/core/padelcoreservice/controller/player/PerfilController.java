@@ -112,6 +112,12 @@ public class PerfilController {
                     if (!tg.startsWith("@")) {
                         tg = "@" + tg;
                     }
+                    if (!tg.equals(player.getTelegramUsername())
+                            && playerService.existsByTelegramUsername(tg)) {
+                        redirectAttributes.addFlashAttribute("errorMessage",
+                                "Este usuario de Telegram ya está en uso por otro jugador");
+                        return "redirect:/perfil";
+                    }
                     player.setTelegramUsername(tg);
                 } else {
                     player.setTelegramUsername(null);
@@ -154,8 +160,11 @@ public class PerfilController {
 
         } catch (DataIntegrityViolationException e) {
             log.warn("Duplicate phone/contact on perfil update: {}", e.getMessage());
-            redirectAttributes.addFlashAttribute("errorMessage",
-                    "Este número de teléfono ya está en uso por otro jugador");
+            boolean isTelegramConflict = e.getMostSpecificCause().getMessage() != null
+                    && e.getMostSpecificCause().getMessage().contains("idx_player_telegram_username_unique");
+            redirectAttributes.addFlashAttribute("errorMessage", isTelegramConflict
+                    ? "Este usuario de Telegram ya está en uso por otro jugador"
+                    : "Este número de teléfono ya está en uso por otro jugador");
         } catch (Exception e) {
             log.error("Error actualizando perfil: {}", e.getMessage(), e);
             redirectAttributes.addFlashAttribute("errorMessage",

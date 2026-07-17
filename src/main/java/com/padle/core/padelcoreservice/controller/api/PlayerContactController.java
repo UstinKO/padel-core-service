@@ -80,15 +80,25 @@ public class PlayerContactController {
             if (!tg.startsWith("@")) {
                 tg = "@" + tg;
             }
+            if (!tg.equals(player.getTelegramUsername())
+                    && playerService.existsByTelegramUsername(tg)) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("success", false,
+                                "message", "Este usuario de Telegram ya está en uso por otro jugador"));
+            }
             player.setTelegramUsername(tg);
         }
 
         try {
             playerRepository.save(player);
         } catch (DataIntegrityViolationException e) {
+            boolean isTelegramConflict = e.getMostSpecificCause().getMessage() != null
+                    && e.getMostSpecificCause().getMessage().contains("idx_player_telegram_username_unique");
             return ResponseEntity.badRequest()
                     .body(Map.of("success", false,
-                            "message", "Este número de teléfono ya está en uso por otro jugador"));
+                            "message", isTelegramConflict
+                                    ? "Este usuario de Telegram ya está en uso por otro jugador"
+                                    : "Este número de teléfono ya está en uso por otro jugador"));
         }
         log.info("Player {} updated contact: phone={}, telegram={}",
                 player.getId(),

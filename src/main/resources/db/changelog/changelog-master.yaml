@@ -122,3 +122,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.40-add-waitlist-confirmation-token.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.41-unique-index-telegram-username.yaml
+      relativeToChangelogFile: true
