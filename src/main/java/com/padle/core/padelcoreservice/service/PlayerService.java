@@ -6,6 +6,7 @@ import com.padle.core.padelcoreservice.mapper.PlayerMapper;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.TournamentRegistration;
+import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
@@ -206,6 +207,15 @@ public class PlayerService {
         player.setActivo(true);
         playerRepository.save(player);
         log.info("Jugador activado con ID: {}", id);
+    }
+
+    @Transactional
+    public void actualizarNivelJugador(Long id, Nivel nivel) {
+        PlayerPadel player = playerRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Jugador no encontrado con ID: " + id));
+        player.setNivelJugador(nivel);
+        playerRepository.save(player);
+        log.info("Nivel actualizado para jugador con ID: {} -> {}", id, nivel);
     }
 
     @Transactional

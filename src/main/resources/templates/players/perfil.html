@@ -175,16 +175,7 @@
                                 <span th:text="#{perfil.field.nivel}">Nivel de juego</span>
                             </label>
                             <select id="nivelJugador" name="nivelJugador" class="form-control">
-                                <option value="" th:selected="${player.nivelJugador == null}" th:text="#{perfil.field.nivel.none}">Sin especificar</option>
-                                <option value="C9"  th:selected="${player.nivelJugador?.name() == 'C9'}">C9</option>
-                                <option value="C8"  th:selected="${player.nivelJugador?.name() == 'C8'}">C8</option>
-                                <option value="C7"  th:selected="${player.nivelJugador?.name() == 'C7'}">C7</option>
-                                <option value="C6"  th:selected="${player.nivelJugador?.name() == 'C6'}">C6</option>
-                                <option value="C5"  th:selected="${player.nivelJugador?.name() == 'C5'}">C5</option>
-                                <option value="D7"  th:selected="${player.nivelJugador?.name() == 'D7'}">D7</option>
-                                <option value="D8"  th:selected="${player.nivelJugador?.name() == 'D8'}">D8</option>
-                                <option value="D6"  th:selected="${player.nivelJugador?.name() == 'D6'}">D6</option>
-                                <option value="C4"  th:selected="${player.nivelJugador?.name() == 'C4'}">C4</option>
+                                <th:block th:replace="~{fragments/nivel-options :: options(${player.nivelJugador})}"></th:block>
                             </select>
                         </div>
 
