@@ -305,4 +305,13 @@ public interface TournamentRegistrationRepository extends JpaRepository<Tourname
             "AND tr.status IN ('SOLO_ADD_LATER', 'SOLO_SEARCH') " +
             "AND tr.isActive = true")
     List<TournamentRegistration> findActiveSoloByTournamentId(@Param("tournamentId") Long tournamentId);
+
+    // Issue #207 — проверка перед удалением игрока: учитываются ВСЕ регистрации
+    // (включая неактивные/отменённые), а не только текущие активные
+    @Query("SELECT CASE WHEN COUNT(tr) > 0 THEN true ELSE false END FROM TournamentRegistration tr " +
+            "WHERE tr.player.id = :playerId")
+    boolean existsByPlayerId(@Param("playerId") Long playerId);
+
+    @Query("SELECT DISTINCT tr.player.id FROM TournamentRegistration tr")
+    List<Long> findDistinctPlayerIds();
 }

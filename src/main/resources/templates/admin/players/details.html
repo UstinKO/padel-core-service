@@ -174,13 +174,17 @@
         </div>
 
         <!-- Botones de acción -->
-        <div class="player-actions" th:if="${isSuperAdmin}">
-            <form th:action="@{'/admin/players/' + ${player.id} + '/toggle-status'}" method="post" class="action-form">
-                <button type="submit" class="btn" th:classappend="${player.activo} ? 'btn-warning' : 'btn-success'">
-                    <i th:class="${player.activo} ? 'fas fa-ban' : 'fas fa-check-circle'"></i>
-                    <span th:text="${player.activo} ? #{admin.players.details.btn.deactivate} : #{admin.players.details.btn.activate}"></span>
+        <div class="player-actions" th:if="${isSuperAdmin and !hasRegistrations}">
+            <form th:action="@{'/admin/players/' + ${player.id} + '/delete'}" method="post" class="action-form"
+                  onsubmit="return confirm(t('admin.players.list.confirm.delete'))">
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-trash"></i>
+                    <span th:text="#{admin.players.list.btn.delete}"></span>
                 </button>
             </form>
+        </div>
+        <div class="player-actions" th:if="${isSuperAdmin and hasRegistrations}">
+            <p style="color:#94a3b8; font-size:.9rem;" th:text="#{admin.players.details.hint.cannot_delete}"></p>
         </div>
 
         <!-- Torneos del jugador -->

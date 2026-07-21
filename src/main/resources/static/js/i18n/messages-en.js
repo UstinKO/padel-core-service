@@ -300,6 +300,7 @@ window.APP_MESSAGES = {
     'admin.players.search.hint.phone':    'Search by phone',
     'admin.players.search.hint.id':       'Search by ID',
     'admin.players.search.hint.all':      'Search by name, email and phone',
+    'admin.players.list.confirm.delete':  'Delete this player? This action cannot be undone.',
 
     // Playoff confirms
     'admin.playoff.confirm.delete_team':   'Delete this team?',

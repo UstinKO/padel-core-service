@@ -44,6 +44,7 @@ public class AdminPlayerController {
         model.addAttribute("players", players);
         model.addAttribute("totalPlayers", players.size());
         model.addAttribute("isSuperAdmin", owner.isSuperAdmin());
+        model.addAttribute("playersWithRegistrations", playerService.getPlayerIdsWithRegistrations());
 
         return "admin/players/list";
     }
@@ -56,6 +57,7 @@ public class AdminPlayerController {
         model.addAttribute("player", player);
         model.addAttribute("registrations", registrations);
         model.addAttribute("isSuperAdmin", owner.isSuperAdmin());
+        model.addAttribute("hasRegistrations", playerService.hasTournamentRegistrations(id));
 
         return "admin/players/details";
     }
@@ -90,27 +92,31 @@ public class AdminPlayerController {
         return "redirect:/admin/players/" + id;
     }
 
-    @PostMapping("/{id}/toggle-status")
-    public String togglePlayerStatus(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-        log.info("Cambiando estado del jugador: {}", id);
-
-        try {
-            PlayerResponseDto player = playerService.obtenerJugadorPorId(id);
-            if (player.isActivo()) {
-                playerService.desactivarJugador(id);
-                redirectAttributes.addFlashAttribute("successMessage",
-                        "Jugador desactivado correctamente");
-            } else {
-                playerService.activarJugador(id);
-                redirectAttributes.addFlashAttribute("successMessage",
-                        "Jugador activado correctamente");
-            }
-        } catch (Exception e) {
-            log.error("Error cambiando estado del jugador: {}", e.getMessage());
+    @PostMapping("/{id}/delete")
+    public String deletePlayer(@PathVariable Long id,
+                                @AuthenticationPrincipal Owner owner,
+                                RedirectAttributes redirectAttributes) {
+        if (!owner.isSuperAdmin()) {
             redirectAttributes.addFlashAttribute("errorMessage",
-                    "Error al cambiar el estado del jugador");
+                    msg("admin.players.error.no_permission_delete"));
+            return "redirect:/admin/players/" + id;
         }
 
-        return "redirect:/admin/players/" + id;
+        log.info("Eliminando jugador: {}", id);
+
+        try {
+            playerService.eliminarJugador(id);
+            redirectAttributes.addFlashAttribute("successMessage",
+                    msg("admin.players.success.deleted"));
+            return "redirect:/admin/players";
+        } catch (IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/admin/players/" + id;
+        } catch (Exception e) {
+            log.error("Error eliminando al jugador {}: {}", id, e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    msg("admin.players.error.delete_generic"));
+            return "redirect:/admin/players/" + id;
+        }
     }
 }
