@@ -745,6 +745,30 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 });
 
+// Парсит fechaInicio+horaInicio турнира в JS Date. El formato depende del origen:
+// tournamentJson (Jackson) entrega arrays [2026,4,5]/[18,0], window.tournament
+// (Thymeleaf JS-inlining) entrega strings "2026-04-04"/"18:00:00".
+function parseTournamentStart(tournament) {
+    if (!tournament) return null;
+
+    const fechaInicio = tournament.fechaInicio;
+    const horaInicio = tournament.horaInicio;
+
+    if (Array.isArray(fechaInicio) && Array.isArray(horaInicio)) {
+        // Формат массива: [2026, 4, 5] + [18, 0]
+        return new Date(fechaInicio[0], fechaInicio[1] - 1, fechaInicio[2],
+            horaInicio[0], horaInicio[1], 0);
+    }
+    if (typeof fechaInicio === 'string') {
+        // Формат строки: "2026-04-04 18:00:00"
+        if (typeof horaInicio === 'string') {
+            return new Date((fechaInicio + ' ' + horaInicio).replace(' ', 'T'));
+        }
+        return new Date(fechaInicio.replace(' ', 'T'));
+    }
+    return null;
+}
+
 // Функция для проверки, начался ли турнир (аналог той, что в карточке)
 function isTournamentStarted(tournament) {
     if (!tournament) return false;
@@ -755,29 +779,62 @@ function isTournamentStarted(tournament) {
         return true;
     }
 
-    let start = null;
-
-    const fechaInicio = tournament.fechaInicio;
-    const horaInicio = tournament.horaInicio;
-
-    if (Array.isArray(fechaInicio) && Array.isArray(horaInicio)) {
-        // Формат массива: [2026, 4, 5] + [18, 0]
-        start = new Date(fechaInicio[0], fechaInicio[1] - 1, fechaInicio[2],
-            horaInicio[0], horaInicio[1], 0);
-    } else if (typeof fechaInicio === 'string') {
-        // Формат строки: "2026-04-04 18:00:00"
-        if (typeof horaInicio === 'string') {
-            start = new Date((fechaInicio + ' ' + horaInicio).replace(' ', 'T'));
-        } else {
-            start = new Date(fechaInicio.replace(' ', 'T'));
-        }
-    }
-
+    const start = parseTournamentStart(tournament);
     if (!start || isNaN(start.getTime())) return false;
 
     const now = new Date();
     return now > start;
 }
+
+// ===== Añadir a Google Calendar =====
+// "duracion" es texto libre del organizador (ej. "4 horas", "2 días", vacío) — no se
+// puede parsear con certeza. Solo se usa cuando calza con un prefijo numérico + "hora(s)";
+// si no, se usa una duración por defecto y el texto real queda en la descripción del evento.
+function estimateDurationHours(duracion) {
+    const DEFAULT_HOURS = 4;
+    if (!duracion) return DEFAULT_HOURS;
+    const match = String(duracion).trim().match(/^(\d+(?:[.,]\d+)?)\s*h/i);
+    if (!match) return DEFAULT_HOURS;
+    const hours = parseFloat(match[1].replace(',', '.'));
+    return hours > 0 ? hours : DEFAULT_HOURS;
+}
+
+function toGoogleCalendarDateTime(date) {
+    const pad = n => String(n).padStart(2, '0');
+    return date.getFullYear() + pad(date.getMonth() + 1) + pad(date.getDate()) +
+        'T' + pad(date.getHours()) + pad(date.getMinutes()) + '00';
+}
+
+function buildGoogleCalendarUrl(tournament, pageUrl) {
+    const start = parseTournamentStart(tournament);
+    if (!start || isNaN(start.getTime())) return null;
+
+    const end = new Date(start.getTime() + estimateDurationHours(tournament.duracion) * 60 * 60 * 1000);
+    const details = (tournament.duracion ? t('tournament.info.duration') + ': ' + tournament.duracion + '\n' : '') + pageUrl;
+
+    const params = new URLSearchParams({
+        action: 'TEMPLATE',
+        text: tournament.nombre || '',
+        dates: toGoogleCalendarDateTime(start) + '/' + toGoogleCalendarDateTime(end),
+        details: details,
+        location: tournament.clubDireccion || tournament.clubNombre || '',
+        ctz: 'America/Argentina/Buenos_Aires'
+    });
+
+    return 'https://calendar.google.com/calendar/render?' + params.toString();
+}
+
+(function setupAddToCalendarButton() {
+    const btn = document.getElementById('addToCalendarBtn');
+    if (!btn) return;
+
+    const url = buildGoogleCalendarUrl(window.tournament, window.location.href);
+    if (!url) {
+        btn.style.display = 'none';
+        return;
+    }
+    btn.href = url;
+})();
 
 // Затем, в том месте где ищешь registerBtn, добавь блокировку:
 const registerBtn = document.querySelector('.btn-register');

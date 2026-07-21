@@ -151,6 +151,7 @@ window.APP_MESSAGES = {
     'details.btn.cancel_registration':   'Отменить регистрацию',
     'details.status.closed':         'Запись закрыта',
     'details.status.deadline':       'Срок записи истёк',
+    'tournament.info.duration':      'Продолжительность',
     'details.error.process':         'Ошибка при обработке запроса',
     'details.search.no_results':     'Игроки не найдены',
     'details.no_contact.hint':       'Чтобы другие игроки могли связаться с вами, добавьте номер телефона или Telegram в профиле.',

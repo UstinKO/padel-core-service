@@ -249,6 +249,17 @@
                             </div>
                         </div>
                     </div>
+
+                    <div style="margin-top: 1.25rem;">
+                        <a id="addToCalendarBtn" href="#" target="_blank" rel="noopener noreferrer"
+                           style="display:inline-flex; align-items:center; gap:.5rem; padding:.65rem 1.25rem;
+                                  background:#FF6B35; color:#fff; border-radius:8px; text-decoration:none;
+                                  font-weight:600; font-size:.95rem; transition:opacity .2s;"
+                           onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+                            <i class="fas fa-calendar-plus"></i>
+                            <span th:text="#{tournament.info.add_to_calendar}">Añadir a Google Calendar</span>
+                        </a>
+                    </div>
                 </div>
 
                 <!-- Descripción del torneo -->
