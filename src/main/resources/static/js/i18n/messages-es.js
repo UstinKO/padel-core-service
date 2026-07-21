@@ -300,6 +300,7 @@ window.APP_MESSAGES = {
     'admin.players.search.hint.phone':    'Búsqueda por teléfono',
     'admin.players.search.hint.id':       'Búsqueda por ID',
     'admin.players.search.hint.all':      'Búsqueda en nombre, email y teléfono',
+    'admin.players.list.confirm.delete':  '¿Eliminar este jugador? Esta acción no se puede deshacer.',
 
     // Playoff confirms
     'admin.playoff.confirm.delete_team':   '¿Eliminar este equipo?',

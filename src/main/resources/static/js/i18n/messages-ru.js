@@ -300,6 +300,7 @@ window.APP_MESSAGES = {
     'admin.players.search.hint.phone':    'Поиск по телефону',
     'admin.players.search.hint.id':       'Поиск по ID',
     'admin.players.search.hint.all':      'Поиск по имени, email и телефону',
+    'admin.players.list.confirm.delete':  'Удалить этого игрока? Это действие необратимо.',
 
     // Playoff confirms
     'admin.playoff.confirm.delete_team':   'Удалить эту команду?',

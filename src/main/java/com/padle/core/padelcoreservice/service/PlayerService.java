@@ -8,6 +8,7 @@ import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.TournamentRegistration;
 import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
+import com.padle.core.padelcoreservice.repository.PasswordResetTokenRepository;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -22,8 +24,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -38,8 +42,8 @@ public class PlayerService {
     private final EmailService emailService;
     private final TournamentRegistrationRepository registrationRepository;
     private final DoubleTournamentRegistrationService doubleTournamentRegistrationService;
-    private final TournamentService tournamentService;
     private final MessageSource messageSource;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
 
     @Transactional
     public PlayerResponseDto registrarJugador(RegistroRequestDto request) {
@@ -187,26 +191,41 @@ public class PlayerService {
         return playerMapper.entityToResponse(player);
     }
 
-    @Transactional
-    public void desactivarJugador(Long id) {
-        PlayerPadel player = playerRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Jugador no encontrado con ID: " + id));
-        player.setActivo(false);
-        playerRepository.save(player);
-        log.info("Jugador desactivado con ID: {}", id);
-
-        // Отменяем все активные регистрации игрока и освобождаем места в турнирах
-        // Без этого деактивированный игрок продолжал висеть в списке участников
-        tournamentService.cancelAllRegistrationsForPlayer(id);
+    @Transactional(readOnly = true)
+    public boolean hasTournamentRegistrations(Long id) {
+        return registrationRepository.existsByPlayerId(id);
     }
 
+    @Transactional(readOnly = true)
+    public Set<Long> getPlayerIdsWithRegistrations() {
+        return new HashSet<>(registrationRepository.findDistinctPlayerIds());
+    }
+
+    // Разрешено только для игроков без единой регистрации на турнир (issue #207) —
+    // иначе физическое удаление рискует нарушить FK-ограничения других таблиц
     @Transactional
-    public void activarJugador(Long id) {
+    public void eliminarJugador(Long id) {
         PlayerPadel player = playerRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Jugador no encontrado con ID: " + id));
-        player.setActivo(true);
-        playerRepository.save(player);
-        log.info("Jugador activado con ID: {}", id);
+
+        if (registrationRepository.existsByPlayerId(id)) {
+            throw new IllegalStateException(
+                    messageSource.getMessage("admin.players.error.has_registrations", null, LocaleContextHolder.getLocale()));
+        }
+
+        // Токены сброса пароля создаются независимо от регистраций на турниры
+        // и не имеют ON DELETE CASCADE — без явного удаления заблокируют удаление игрока
+        passwordResetTokenRepository.deleteByPlayer(player);
+
+        try {
+            playerRepository.delete(player);
+        } catch (DataIntegrityViolationException e) {
+            log.error("No se pudo eliminar el jugador {} por restricciones de integridad referencial: {}", id, e.getMessage());
+            throw new IllegalStateException(
+                    messageSource.getMessage("admin.players.error.delete_conflict", null, LocaleContextHolder.getLocale()));
+        }
+
+        log.info("Jugador eliminado con ID: {}", id);
     }
 
     @Transactional
