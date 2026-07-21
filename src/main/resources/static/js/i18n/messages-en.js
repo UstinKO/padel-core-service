@@ -151,6 +151,7 @@ window.APP_MESSAGES = {
     'details.btn.cancel_registration':   'Cancel registration',
     'details.status.closed':         'Registration closed',
     'details.status.deadline':       'Registration deadline passed',
+    'tournament.info.duration':      'Estimated duration',
     'details.error.process':         'Error processing request',
     'details.search.no_results':     'No players found',
     'details.no_contact.hint':       'So that other players can contact you, add your phone number or Telegram username in your profile.',
