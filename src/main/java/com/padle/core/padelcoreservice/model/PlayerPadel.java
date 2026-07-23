@@ -166,6 +166,23 @@ public class PlayerPadel implements UserDetails {
         return hasPhone || hasTelegram;
     }
 
+    private static final String GUEST_EMAIL_SUFFIX = "@1padel.guest";
+
+    /**
+     * Гостевой аккаунт — создан администратором за игрока, который сам ещё не
+     * регистрировался (см. TestTournamentController.resolveOrCreateGuestPlayer).
+     * У таких аккаунтов временный email вида guest.<timestamp>@1padel.guest —
+     * единственный признак, по которому в /perfil и в админке разрешается смена
+     * email/выдача временного пароля (issue #217).
+     */
+    public static boolean isGuestEmail(String email) {
+        return email != null && email.endsWith(GUEST_EMAIL_SUFFIX);
+    }
+
+    public boolean isGuestAccount() {
+        return isGuestEmail(email);
+    }
+
     public Locale getLocale() {
         String lang = preferredLocale != null ? preferredLocale : "es";
         return Set.of("es", "ru", "en").contains(lang)

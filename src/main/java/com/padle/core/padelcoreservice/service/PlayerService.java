@@ -22,8 +22,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Base64;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -44,6 +46,8 @@ public class PlayerService {
     private final DoubleTournamentRegistrationService doubleTournamentRegistrationService;
     private final MessageSource messageSource;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
+
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     @Transactional
     public PlayerResponseDto registrarJugador(RegistroRequestDto request) {
@@ -247,6 +251,30 @@ public class PlayerService {
         log.info("Contraseña cambiada para jugador con ID: {}", id);
     }
 
+    // Выдача/перевыпуск временного пароля для гостевого аккаунта (issue #217).
+    // Можно вызывать многократно — каждый раз генерируется новый пароль, старый
+    // перестаёт подходить. Заодно чинит исходный невалидный bcrypt-хэш-заглушку
+    // из TestTournamentController.resolveOrCreateGuestPlayer.
+    @Transactional
+    public String generarCredencialesInvitado(Long id) {
+        PlayerPadel player = playerRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Jugador no encontrado con ID: " + id));
+        if (!player.isGuestAccount()) {
+            throw new IllegalStateException("El jugador no tiene un email de invitado");
+        }
+        String rawPassword = generarPasswordAleatoria();
+        player.setPasswordHash(passwordEncoder.encode(rawPassword));
+        playerRepository.save(player);
+        log.info("Credenciales de invitado regeneradas para jugador con ID: {}", id);
+        return rawPassword;
+    }
+
+    private String generarPasswordAleatoria() {
+        byte[] randomBytes = new byte[32];
+        SECURE_RANDOM.nextBytes(randomBytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
+    }
+
     private String generarCodigoConfirmacion() {
         return UUID.randomUUID().toString().replace("-", "").substring(0, 20);
     }
@@ -302,6 +330,11 @@ public class PlayerService {
     @Transactional(readOnly = true)
     public boolean existsByTelefono(String telefono) {
         return playerRepository.existsByTelefono(telefono);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean existsByEmail(String email) {
+        return playerRepository.existsByEmail(email);
     }
 
     @Transactional(readOnly = true)

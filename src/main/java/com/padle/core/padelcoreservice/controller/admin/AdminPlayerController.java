@@ -3,6 +3,7 @@ package com.padle.core.padelcoreservice.controller.admin;
 import com.padle.core.padelcoreservice.dto.PlayerResponseDto;
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
 import com.padle.core.padelcoreservice.model.Owner;
+import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.service.PlayerService;
 import com.padle.core.padelcoreservice.service.TournamentService;
@@ -10,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -18,9 +21,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/admin/players")
@@ -58,8 +64,47 @@ public class AdminPlayerController {
         model.addAttribute("registrations", registrations);
         model.addAttribute("isSuperAdmin", owner.isSuperAdmin());
         model.addAttribute("hasRegistrations", playerService.hasTournamentRegistrations(id));
+        model.addAttribute("isGuestAccount", PlayerPadel.isGuestEmail(player.getEmail()));
 
         return "admin/players/details";
+    }
+
+    // Выдача/перевыпуск временного пароля гостевого аккаунта (issue #217).
+    // Кнопка на странице и так видна только SUPER_ADMIN + гостевому email,
+    // но бэкенд обязан перепроверить оба условия самостоятельно.
+    @PostMapping("/{id}/guest-credentials")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> generateGuestCredentials(@PathVariable Long id,
+                                                                          @AuthenticationPrincipal Owner owner) {
+        Map<String, Object> result = new HashMap<>();
+
+        if (!owner.isSuperAdmin()) {
+            result.put("success", false);
+            result.put("message", msg("admin.players.details.error.no_permission_level"));
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(result);
+        }
+
+        try {
+            String rawPassword = playerService.generarCredencialesInvitado(id);
+            PlayerResponseDto player = playerService.obtenerJugadorPorId(id);
+            result.put("success", true);
+            result.put("email", player.getEmail());
+            result.put("password", rawPassword);
+            return ResponseEntity.ok(result);
+        } catch (IllegalStateException e) {
+            result.put("success", false);
+            result.put("message", msg("admin.players.details.error.not_guest_account"));
+            return ResponseEntity.badRequest().body(result);
+        } catch (IllegalArgumentException e) {
+            result.put("success", false);
+            result.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(result);
+        } catch (Exception e) {
+            log.error("Error generando credenciales de invitado para jugador {}: {}", id, e.getMessage());
+            result.put("success", false);
+            result.put("message", msg("admin.players.details.error.guest_credentials_failed"));
+            return ResponseEntity.internalServerError().body(result);
+        }
     }
 
     @PostMapping("/{id}/nivel")

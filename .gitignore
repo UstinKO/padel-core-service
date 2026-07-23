@@ -47,3 +47,4 @@ src/main/java/com/padle/core/padelcoreservice/util/PasswordGenerator.java
 # инфраструктуры. Уже задеплоены на сервер, их отсутствие в git не влияет на
 # работу приложения.
 scripts/
+design-screenshots/

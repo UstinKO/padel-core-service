@@ -44,6 +44,7 @@ public class PerfilController {
             @AuthenticationPrincipal Object principal,
             @RequestParam(required = false) String nombre,
             @RequestParam(required = false) String apellido,
+            @RequestParam(required = false) String email,
             @RequestParam(required = false) String telefono,
             // ДОБАВЛЕНО: поле для Telegram ника
             @RequestParam(required = false) String telegramUsername,
@@ -74,6 +75,33 @@ public class PerfilController {
             if (apellido != null && !apellido.isEmpty() && !apellido.equals(player.getApellido())) {
                 player.setApellido(apellido);
                 actualizado = true;
+            }
+
+            // Email — по умолчанию нельзя менять вообще. Единственное исключение (issue #217):
+            // временный гостевой email (@1padel.guest), выданный админом при регистрации игрока
+            // "за него" — тогда игрок может один раз указать свой настоящий email.
+            if (email != null && !email.equals(player.getEmail())) {
+                if (!player.isGuestAccount()) {
+                    redirectAttributes.addFlashAttribute("errorMessage",
+                            "No puedes cambiar tu email");
+                    return "redirect:/perfil";
+                }
+
+                String newEmail = email.trim();
+                if (!newEmail.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
+                    redirectAttributes.addFlashAttribute("errorMessage",
+                            "Formato de email inválido");
+                    return "redirect:/perfil";
+                }
+                if (playerService.existsByEmail(newEmail)) {
+                    redirectAttributes.addFlashAttribute("errorMessage",
+                            "Este email ya está en uso por otro jugador");
+                    return "redirect:/perfil";
+                }
+
+                player.setEmail(newEmail);
+                actualizado = true;
+                log.info("Email de invitado actualizado para jugador ID {}: nuevo email establecido", player.getId());
             }
 
             if (telefono != null && !telefono.equals(player.getTelefono())) {
@@ -159,12 +187,17 @@ public class PerfilController {
             }
 
         } catch (DataIntegrityViolationException e) {
-            log.warn("Duplicate phone/contact on perfil update: {}", e.getMessage());
-            boolean isTelegramConflict = e.getMostSpecificCause().getMessage() != null
-                    && e.getMostSpecificCause().getMessage().contains("idx_player_telegram_username_unique");
-            redirectAttributes.addFlashAttribute("errorMessage", isTelegramConflict
-                    ? "Este usuario de Telegram ya está en uso por otro jugador"
-                    : "Este número de teléfono ya está en uso por otro jugador");
+            log.warn("Duplicate phone/contact/email on perfil update: {}", e.getMessage());
+            String cause = e.getMostSpecificCause().getMessage();
+            String errorMessage;
+            if (cause != null && cause.contains("idx_player_telegram_username_unique")) {
+                errorMessage = "Este usuario de Telegram ya está en uso por otro jugador";
+            } else if (cause != null && cause.contains("idx_player_email")) {
+                errorMessage = "Este email ya está en uso por otro jugador";
+            } else {
+                errorMessage = "Este número de teléfono ya está en uso por otro jugador";
+            }
+            redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
         } catch (Exception e) {
             log.error("Error actualizando perfil: {}", e.getMessage(), e);
             redirectAttributes.addFlashAttribute("errorMessage",
