@@ -2,6 +2,7 @@ package com.padle.core.padelcoreservice.controller;
 
 import com.padle.core.padelcoreservice.dto.AuthRequest;
 import com.padle.core.padelcoreservice.dto.AuthResponse;
+import com.padle.core.padelcoreservice.dto.RefreshTokenRequest;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
 import com.padle.core.padelcoreservice.security.JwtService;
@@ -80,7 +81,7 @@ public class AuthController {
                     .email(player.getEmail())
                     .nombreCompleto(player.getNombreCompleto())
                     .playerId(player.getId())
-                    .expiresIn(86400000L) // 24 horas
+                    .expiresIn(jwtService.getAccessTokenExpirationMs())
                     .build();
 
             log.info("User {} authenticated successfully", player.getEmail());
@@ -93,8 +94,9 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<?> refreshToken(@RequestParam String refreshToken) {
+    public ResponseEntity<?> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
         log.info("Refreshing token");
+        String refreshToken = request.getRefreshToken();
 
         try {
             if (!jwtService.isRefreshToken(refreshToken)) {
@@ -132,7 +134,7 @@ public class AuthController {
                     .email(player.getEmail())
                     .nombreCompleto(player.getNombreCompleto())
                     .playerId(player.getId())
-                    .expiresIn(86400000L)
+                    .expiresIn(jwtService.getAccessTokenExpirationMs())
                     .build();
 
             return ResponseEntity.ok(response);

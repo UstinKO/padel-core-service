@@ -34,7 +34,7 @@ public class PasswordResetService {
      * Запрос на сброс пароля
      */
     @Transactional
-    public boolean requestPasswordReset(String email, String baseUrl) {
+    public boolean requestPasswordReset(String email) {
         log.info("Solicitud de restablecimiento de contraseña para email: {}", email);
 
         PlayerPadel player = playerRepository.findByEmail(email)
