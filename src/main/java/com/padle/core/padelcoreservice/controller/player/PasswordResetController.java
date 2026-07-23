@@ -3,7 +3,6 @@ package com.padle.core.padelcoreservice.controller.player;
 import com.padle.core.padelcoreservice.dto.PasswordResetConfirm;
 import com.padle.core.padelcoreservice.dto.PasswordResetRequest;
 import com.padle.core.padelcoreservice.service.PasswordResetService;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,30 +20,16 @@ public class PasswordResetController {
 
     @PostMapping("/solicitar")
     @ResponseBody
-    public Response solicitarReset(@Valid @RequestBody PasswordResetRequest request,
-                                    HttpServletRequest httpRequest) {
+    public Response solicitarReset(@Valid @RequestBody PasswordResetRequest request) {
         log.info("Solicitud de reset para email: {}", request.getEmail());
 
-        String baseUrl = getBaseUrl(httpRequest);
-        boolean enviado = passwordResetService.requestPasswordReset(request.getEmail(), baseUrl);
+        boolean enviado = passwordResetService.requestPasswordReset(request.getEmail());
 
         if (enviado) {
             return new Response(true, "Si el email existe, recibirás instrucciones para recuperar tu contraseña");
         } else {
             return new Response(false, "Error al procesar la solicitud");
         }
-    }
-
-    private String getBaseUrl(HttpServletRequest request) {
-        String scheme = request.getScheme();
-        String serverName = request.getServerName();
-        int serverPort = request.getServerPort();
-        String contextPath = request.getContextPath();
-
-        String port = (scheme.equals("http") && serverPort == 80) ||
-                      (scheme.equals("https") && serverPort == 443) ? "" : ":" + serverPort;
-
-        return scheme + "://" + serverName + port + contextPath;
     }
 
     /**

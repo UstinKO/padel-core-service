@@ -27,6 +27,12 @@ public class JwtService {
     @Value("${jwt.refresh-expiration}")
     private long refreshExpiration;
 
+    // Используется в AuthResponse.expiresIn — раньше в AuthController было захардкожено
+    // отдельным числом, рассинхронизировано с этим же jwt.expiration (issue #129).
+    public long getAccessTokenExpirationMs() {
+        return jwtExpiration;
+    }
+
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
