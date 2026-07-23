@@ -12,7 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 import java.util.Map;
@@ -48,26 +47,6 @@ public class AmericanoApiController {
     }
 
     // ==================== ИНИЦИАЛИЗАЦИЯ ====================
-
-    @PostMapping("/{tournamentId}/initialize")
-    public String initializeTournament(
-            @PathVariable Long tournamentId,
-            @ModelAttribute AmericanoConfigDto config,
-            RedirectAttributes redirectAttributes) {
-
-        try {
-            americanoService.initializeAmericanoTournament(tournamentId, config);
-            redirectAttributes.addFlashAttribute("success",
-                    "Torneo Americano inicializado correctamente con " + config.getTotalRounds() + " rondas");
-        } catch (Exception e) {
-            log.error("Error initializing Americano tournament: {}", e.getMessage());
-            redirectAttributes.addFlashAttribute("error", "Error al inicializar: " + e.getMessage());
-        }
-
-        return "redirect:/tournaments/americano/" + tournamentId;
-    }
-
-
 
     @GetMapping("/{tournamentId}/initialized")
     public ResponseEntity<Boolean> isInitialized(@PathVariable Long tournamentId) {

@@ -75,12 +75,8 @@ public class PlayerDashboardController {
             List<TournamentDto> historicalTournaments = dashboardTournaments.historical();
             List<Long> myTournamentIds = dashboardTournaments.activeTournamentIds();
 
-            // Получаем статистику игрока (временно заглушки)
             model.addAttribute("player", player);
             model.addAttribute("torneosInscritos", myTournamentIds.size());
-            model.addAttribute("torneosGanados", 0);
-            model.addAttribute("rankingPosition", 42);
-            model.addAttribute("puntosRanking", 1250);
 
             // Передаем данные турниров в JSON для JavaScript
             try {
@@ -267,8 +263,7 @@ public class PlayerDashboardController {
                 }
 
                 // Парсим данные нового игрока
-                ObjectMapper mapper = new ObjectMapper();
-                Map<String, String> newPlayerData = mapper.readValue(replaceData, new com.fasterxml.jackson.core.type.TypeReference<Map<String, String>>(){});
+                Map<String, String> newPlayerData = objectMapper.readValue(replaceData, new com.fasterxml.jackson.core.type.TypeReference<Map<String, String>>(){});
 
                 // Создаем PartnerRegistrationDto из полученных данных
                 PartnerRegistrationDto partnerDto = new PartnerRegistrationDto();
