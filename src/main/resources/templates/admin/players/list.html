@@ -120,6 +120,17 @@
                             Confirmado
                         </span>
                     </div>
+                    <div class="player-detail-item">
+                        <i class="fas fa-chart-line"></i>
+                        <select th:if="${isSuperAdmin}" class="form-control"
+                                style="width:auto; padding:.35rem .5rem; font-size:.85rem;"
+                                th:data-url="@{'/admin/players/' + ${player.id} + '/nivel'}"
+                                onchange="saveNivelInline(this)">
+                            <th:block th:replace="~{fragments/nivel-options :: options(${player.nivelJugador})}"></th:block>
+                        </select>
+                        <span th:unless="${isSuperAdmin}"
+                              th:text="${player.nivelJugador != null} ? ${player.nivelJugador.name()} : #{admin.common.not_specified}">C7</span>
+                    </div>
                 </div>
 
                 <div class="player-card-footer">
@@ -163,6 +174,7 @@
                     <th th:text="#{admin.common.col.registered}">Registro</th>
                     <th th:text="#{admin.players.list.col.email_confirmed}">Email Confirmado</th>
                     <th th:text="#{admin.common.col.status}">Estado</th>
+                    <th th:text="#{admin.players.details.field.level}">Nivel</th>
                     <th th:text="#{admin.common.col.actions}">Acciones</th>
                 </tr>
                 </thead>
@@ -177,7 +189,7 @@
                     <td>
                         <strong th:text="${player.nombreCompleto}">Juan Pérez</strong>
                     </td>
-                    <td th:text="${player.email}">juan@email.com</td>
+                    <td th:text="${player.email}" th:title="${player.email}">juan@email.com</td>
                     <td th:text="${player.telefono ?: '—'}">123456789</td>
                     <td th:text="${#temporals.format(player.fechaRegistro, 'dd/MM/yyyy HH:mm')}">15/03/2026</td>
                     <td>
@@ -191,6 +203,16 @@
                               th:text="${player.activo} ? #{admin.common.status.active} : #{admin.common.status.inactive}">
                             Activo
                         </span>
+                    </td>
+                    <td>
+                        <select th:if="${isSuperAdmin}" class="form-control"
+                                style="width:auto; padding:.35rem .5rem; font-size:.85rem;"
+                                th:data-url="@{'/admin/players/' + ${player.id} + '/nivel'}"
+                                onchange="saveNivelInline(this)">
+                            <th:block th:replace="~{fragments/nivel-options :: options(${player.nivelJugador})}"></th:block>
+                        </select>
+                        <span th:unless="${isSuperAdmin}"
+                              th:text="${player.nivelJugador != null} ? ${player.nivelJugador.name()} : #{admin.common.not_specified}">C7</span>
                     </td>
                     <td>
                         <div class="action-buttons">
@@ -216,7 +238,7 @@
                     </td>
                 </tr>
                 <tr th:unless="${not #lists.isEmpty(players)}">
-                    <td colspan="8" class="empty-state-cell">
+                    <td colspan="9" class="empty-state-cell">
                         <div class="admin-empty">
                             <i class="fas fa-users"></i>
                             <h3>No hay jugadores</h3>
@@ -376,6 +398,51 @@
         }, 250);
     });
 })();
+</script>
+<script th:if="${isSuperAdmin}">
+// Уровень игрока (LFPT-218) сохраняется через fetch без перезагрузки страницы —
+// при сотнях игроков редирект после каждого сохранения сбрасывал прокрутку и
+// поисковый запрос. Десктоп-таблица и мобильная карточка рендерят один и тот же
+// select дважды (data-player-id совпадает), поэтому синхронизируем оба сразу.
+function saveNivelInline(select) {
+    const previousValue = select.dataset.savedValue !== undefined ? select.dataset.savedValue : select.value;
+    const newValue = select.value;
+    select.disabled = true;
+
+    fetch(select.dataset.url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: 'nivel=' + encodeURIComponent(newValue)
+    })
+        .then(r => r.json())
+        .then(data => {
+            select.disabled = false;
+            if (data.success) {
+                select.dataset.savedValue = newValue;
+                document.querySelectorAll('select[data-url="' + select.dataset.url + '"]').forEach(other => {
+                    other.value = newValue;
+                    other.dataset.savedValue = newValue;
+                });
+            } else {
+                select.value = previousValue;
+            }
+            flashNivelFeedback(select, !!data.success);
+        })
+        .catch(() => {
+            select.disabled = false;
+            select.value = previousValue;
+            flashNivelFeedback(select, false);
+        });
+}
+
+function flashNivelFeedback(select, success) {
+    select.style.transition = 'background-color .2s';
+    select.style.backgroundColor = success ? '#dcfce7' : '#fee2e2';
+    setTimeout(() => { select.style.backgroundColor = ''; }, 1000);
+}
 </script>
 </body>
 </html>

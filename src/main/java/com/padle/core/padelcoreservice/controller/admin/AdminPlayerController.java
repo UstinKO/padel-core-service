@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -108,13 +109,23 @@ public class AdminPlayerController {
     }
 
     @PostMapping("/{id}/nivel")
-    public String updatePlayerNivel(@PathVariable Long id,
+    public Object updatePlayerNivel(@PathVariable Long id,
                                      @RequestParam(required = false) String nivel,
+                                     @RequestHeader(value = "X-Requested-With", required = false) String requestedWith,
                                      @AuthenticationPrincipal Owner owner,
                                      RedirectAttributes redirectAttributes) {
+        // Список игроков (LFPT-218) шлёт этот же эндпоинт через fetch с заголовком
+        // X-Requested-With — автосейв без перезагрузки страницы (заказчик проставляет
+        // уровни сотням игроков подряд, редирект каждый раз сбрасывал прокрутку).
+        // Страница деталей игрока продолжает обычный form-submit с редиректом.
+        boolean ajax = "XMLHttpRequest".equals(requestedWith);
+
         if (!owner.isSuperAdmin()) {
-            redirectAttributes.addFlashAttribute("errorMessage",
-                    msg("admin.players.details.error.no_permission_level"));
+            String message = msg("admin.players.details.error.no_permission_level");
+            if (ajax) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("success", false, "message", message));
+            }
+            redirectAttributes.addFlashAttribute("errorMessage", message);
             return "redirect:/admin/players/" + id;
         }
 
@@ -126,12 +137,18 @@ public class AdminPlayerController {
                 throw new IllegalArgumentException("Nivel no aplicable a un jugador: " + nivel);
             }
             playerService.actualizarNivelJugador(id, nivelParsed);
+            if (ajax) {
+                return ResponseEntity.ok(Map.of("success", true));
+            }
             redirectAttributes.addFlashAttribute("successMessage",
                     msg("admin.players.details.success.level_updated"));
         } catch (IllegalArgumentException e) {
             log.error("Error actualizando nivel del jugador {}: {}", id, e.getMessage());
-            redirectAttributes.addFlashAttribute("errorMessage",
-                    msg("admin.players.details.error.invalid_level"));
+            String message = msg("admin.players.details.error.invalid_level");
+            if (ajax) {
+                return ResponseEntity.badRequest().body(Map.of("success", false, "message", message));
+            }
+            redirectAttributes.addFlashAttribute("errorMessage", message);
         }
 
         return "redirect:/admin/players/" + id;
