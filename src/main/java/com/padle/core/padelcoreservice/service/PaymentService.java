@@ -2,6 +2,7 @@ package com.padle.core.padelcoreservice.service;
 
 import com.padle.core.padelcoreservice.dto.PaymentDto;
 import com.padle.core.padelcoreservice.dto.PaymentManagementViewDto;
+import com.padle.core.padelcoreservice.dto.PaymentUpdateDto;
 import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
 import com.padle.core.padelcoreservice.mapper.PaymentMapper;
 import com.padle.core.padelcoreservice.model.Payment;
@@ -297,11 +298,11 @@ public class PaymentService {
 
     @Transactional
     public void savePaymentManagementData(Long tournamentId,
-                                          List<PaymentManagementViewDto> updates,
+                                          List<PaymentUpdateDto> updates,
                                           Long updatedBy) {
         log.info("Saving payment management data for tournament: {}", tournamentId);
 
-        for (PaymentManagementViewDto dto : updates) {
+        for (PaymentUpdateDto dto : updates) {
             TournamentRegistration registration = registrationRepository
                     .findById(dto.getRegistrationId())
                     .orElseThrow(() -> new ResourceNotFoundException(
@@ -309,8 +310,8 @@ public class PaymentService {
 
             // Посещение и подтверждение участия — для основной строки
             if (!dto.isPartnerRow()) {
-                registration.setAttended(dto.getAttended());
-                registration.setParticipationConfirmed(dto.getParticipationConfirmed() != null ? dto.getParticipationConfirmed() : false);
+                registration.setAttended(dto.isAttended());
+                registration.setParticipationConfirmed(dto.isParticipationConfirmed());
                 registrationRepository.save(registration);
 
                 // Если это парная регистрация — синхронизируем attended партнёру (если он в БД)
@@ -325,10 +326,10 @@ public class PaymentService {
                                     && Boolean.TRUE.equals(r.getIsDoubleRegistration())
                                     && registration.getMainPlayerId().equals(r.getMainPlayerId()))
                             .forEach(partnerReg -> {
-                                partnerReg.setAttended(dto.getAttended());
+                                partnerReg.setAttended(dto.isAttended());
                                 registrationRepository.save(partnerReg);
                                 log.debug("Synced attended={} to partner registration {}",
-                                        dto.getAttended(), partnerReg.getId());
+                                        dto.isAttended(), partnerReg.getId());
                             });
                 }
             }

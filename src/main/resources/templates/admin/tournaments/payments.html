@@ -127,16 +127,16 @@
                             th:classappend="${player.partnerRow ? 'partner-row' : ('pm-' + (player.paymentMethod != null ? #strings.toLowerCase(player.paymentMethod.name()) : 'none'))}">
 
                             <input type="hidden"
-                                   th:name="'registrationIds[' + ${iterStat.index} + ']'"
+                                   th:name="'payments[' + ${iterStat.index} + '].registrationId'"
                                    th:value="${player.registrationId}" />
                             <input type="hidden"
-                                   th:name="'paymentIds[' + ${iterStat.index} + ']'"
+                                   th:name="'payments[' + ${iterStat.index} + '].paymentId'"
                                    th:value="${player.paymentId}" />
                             <input type="hidden"
-                                   th:name="'hasPayments[' + ${iterStat.index} + ']'"
+                                   th:name="'payments[' + ${iterStat.index} + '].hasPayment'"
                                    th:value="${player.hasPayment}" />
                             <input type="hidden"
-                                   th:name="'partnerRows[' + ${iterStat.index} + ']'"
+                                   th:name="'payments[' + ${iterStat.index} + '].partnerRow'"
                                    th:value="${player.partnerRow}" />
 
                             <!-- Posición -->
@@ -180,8 +180,8 @@
                             <td class="cell-center">
                                 <div class="checkbox-wrapper" th:if="${!player.partnerRow}">
                                     <input type="checkbox"
-                                           th:name="'participationConfirmed[' + ${iterStat.index} + ']'"
-                                           th:value="${player.registrationId}"
+                                           th:name="'payments[' + ${iterStat.index} + '].participationConfirmed'"
+                                           value="true"
                                            th:checked="${player.participationConfirmed}" />
                                 </div>
                             </td>
@@ -190,8 +190,8 @@
                             <td class="cell-center">
                                 <div class="checkbox-wrapper" th:if="${!player.partnerRow}">
                                     <input type="checkbox"
-                                           th:name="'attended[' + ${iterStat.index} + ']'"
-                                           th:value="${player.registrationId}"
+                                           th:name="'payments[' + ${iterStat.index} + '].attended'"
+                                           value="true"
                                            th:checked="${player.attended}" />
                                 </div>
                             </td>
@@ -199,7 +199,7 @@
                             <!-- Monto -->
                             <td>
                                 <input type="number"
-                                       th:name="'amounts[' + ${iterStat.index} + ']'"
+                                       th:name="'payments[' + ${iterStat.index} + '].amount'"
                                        th:value="${player.amount}"
                                        class="form-control-sm amount-input"
                                        step="0.01"
@@ -209,7 +209,7 @@
 
                             <!-- Moneda -->
                             <td>
-                                <select th:name="'currencies[' + ${iterStat.index} + ']'"
+                                <select th:name="'payments[' + ${iterStat.index} + '].currency'"
                                         class="form-control-sm currency-select">
                                     <option value="ARS" th:selected="${player.currency == 'ARS' or player.currency == null}">ARS</option>
                                     <option value="USD" th:selected="${player.currency == 'USD'}">USD</option>
@@ -220,7 +220,7 @@
 
                             <!-- Estado -->
                             <td>
-                                <select th:name="'paymentStatuses[' + ${iterStat.index} + ']'"
+                                <select th:name="'payments[' + ${iterStat.index} + '].paymentStatus'"
                                         class="form-control-sm status-select">
                                     <option value="">—</option>
                                     <option th:each="status : ${paymentStatuses}"
@@ -233,7 +233,7 @@
 
                             <!-- Método -->
                             <td>
-                                <select th:name="'paymentMethods[' + ${iterStat.index} + ']'"
+                                <select th:name="'payments[' + ${iterStat.index} + '].paymentMethod'"
                                         class="form-control-sm method-select">
                                     <option value="">—</option>
                                     <option th:each="method : ${paymentMethods}"
@@ -247,7 +247,7 @@
                             <!-- ID transacción -->
                             <td>
                                 <input type="text"
-                                       th:name="'transactionIds[' + ${iterStat.index} + ']'"
+                                       th:name="'payments[' + ${iterStat.index} + '].transactionId'"
                                        th:value="${player.transactionId}"
                                        class="form-control-sm"
                                        placeholder="ID" />
@@ -256,7 +256,7 @@
                             <!-- Notas -->
                             <td>
                                 <input type="text"
-                                       th:name="'notes[' + ${iterStat.index} + ']'"
+                                       th:name="'payments[' + ${iterStat.index} + '].notes'"
                                        th:value="${player.notes}"
                                        class="form-control-sm"
                                        placeholder="Notas..." />

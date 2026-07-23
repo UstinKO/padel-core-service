@@ -9,11 +9,11 @@ document.addEventListener('DOMContentLoaded', function() {
     initBurgerMenu();
 
     // ===== АВТОМАТИЧЕСКОЕ ОБНОВЛЕНИЕ СТАТУСА =====
-    const amountInputs = document.querySelectorAll('input[name^="amounts"]');
+    const amountInputs = document.querySelectorAll('input[name$=".amount"]');
     amountInputs.forEach(input => {
         input.addEventListener('input', function() {
             const row = this.closest('tr');
-            const statusSelect = row.querySelector('select[name^="paymentStatuses"]');
+            const statusSelect = row.querySelector('select[name$=".paymentStatus"]');
             if (this.value && parseFloat(this.value) > 0 && !statusSelect.value) {
                 statusSelect.value = 'PAID';
             }
