@@ -2334,6 +2334,17 @@ h1, h2, h3, h4, h5, h6 {
     line-height: 1.6;
 }
 
+.faq-answer p a {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 2px;
+}
+
+.faq-answer p a:hover {
+    color: var(--color-primary-dark);
+}
+
 /* ===== MEDIA QUERIES ===== */
 @media (max-width: 1280px) {
     .container {
