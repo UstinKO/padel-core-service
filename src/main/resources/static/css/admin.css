@@ -432,6 +432,41 @@
     border-bottom: none;
 }
 
+/* Список игроков (LFPT-218): колонка "Уровень" добавила 9-ю колонку —
+   таблица перестала помещаться и колонка "Действия" обрезалась
+   overflow:hidden контейнера. Сжимаем паддинги/шрифт и длинные email
+   только в этой таблице, плюс overflow-x:auto как страховка на узких
+   экранах. */
+#playersTableView {
+    overflow-x: auto;
+}
+
+#playersTableView .admin-table th,
+#playersTableView .admin-table td {
+    padding: 0.65rem 0.75rem;
+    font-size: 0.85rem;
+}
+
+#playersTableView .admin-table th {
+    font-size: 0.7rem;
+}
+
+#playersTableView .admin-table td:nth-child(3) {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#playersTableView .action-buttons {
+    gap: 0.35rem;
+}
+
+#playersTableView .btn-icon {
+    width: 28px;
+    height: 28px;
+}
+
 .admin-table tr:hover td {
     background: var(--admin-light);
 }
