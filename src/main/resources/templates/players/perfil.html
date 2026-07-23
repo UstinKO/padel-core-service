@@ -136,9 +136,10 @@
                                    th:field="*{email}"
                                    class="form-control"
                                    placeholder="tu@email.com"
-                                   readonly
-                                   disabled>
-                            <small class="form-text" th:text="#{perfil.field.email.readonly}">El email no se puede cambiar</small>
+                                   th:readonly="${!player.isGuestAccount()}"
+                                   th:disabled="${!player.isGuestAccount()}">
+                            <small class="form-text" th:unless="${player.isGuestAccount()}" th:text="#{perfil.field.email.readonly}">El email no se puede cambiar</small>
+                            <small class="form-text" th:if="${player.isGuestAccount()}" th:text="#{perfil.field.email.guest_hint}">Este es un email temporal — puedes indicar el tuyo</small>
                         </div>
 
                         <div class="form-group">
