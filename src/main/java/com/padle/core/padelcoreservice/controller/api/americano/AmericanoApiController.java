@@ -185,19 +185,6 @@ public class AmericanoApiController {
         return ResponseEntity.ok(americanoService.finishTournament(tournamentId, criteria, currentOwner));
     }
 
-    // ==================== ДОПОЛНИТЕЛЬНЫЕ МЕТОДЫ ====================
-
-    @GetMapping("/{tournamentId}/preview-rounds")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'ORGANIZER')")
-    public ResponseEntity<List<AmericanoRoundDto>> previewRounds(
-            @PathVariable Long tournamentId,
-            @Valid @RequestBody AmericanoConfigDto config, @AuthenticationPrincipal Owner currentOwner) {
-
-        log.info("API: Preview rounds for tournament {} with config: {}", tournamentId, config);
-        // Можно добавить метод для предпросмотра без сохранения в БД
-        return ResponseEntity.ok(americanoService.previewRounds(tournamentId, config, currentOwner));
-    }
-
     @PutMapping("/rounds/{roundId}/points-limit")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'ORGANIZER')")
     public ResponseEntity<?> updateRoundPointsLimit(
