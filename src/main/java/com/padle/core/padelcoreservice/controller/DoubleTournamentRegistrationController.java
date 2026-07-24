@@ -82,26 +82,19 @@ public class DoubleTournamentRegistrationController {
     }
 
     @PostMapping("/confirm")
-    public ResponseEntity<TournamentRegistrationDto> confirmPartnerRegistration(
-            @RequestParam String token) {
+    public ResponseEntity<?> confirmPartnerRegistration(@RequestParam String token) {
+        try {
+            TournamentRegistrationDto registration = doubleRegistrationService
+                    .confirmPartnerRegistration(token);
+            return ResponseEntity.ok(registration);
 
-        TournamentRegistrationDto registration = doubleRegistrationService
-                .confirmPartnerRegistration(token);
+        } catch (TournamentRegistrationException e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
 
-        return ResponseEntity.ok(registration);
-    }
-
-    @PostMapping("/complete")
-    public ResponseEntity<TournamentRegistrationDto> completePartnerRegistration(
-            @AuthenticationPrincipal Object principal,
-            @RequestParam(required = false) String email) {
-
-        Long partnerId = extractCurrentUserId(principal);
-
-        TournamentRegistrationDto registration = doubleRegistrationService
-                .completePartnerRegistration(partnerId, email);
-
-        return ResponseEntity.ok(registration);
+        } catch (Exception e) {
+            log.error("Error confirming partner registration: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", "Error al confirmar"));
+        }
     }
 
     @PostMapping("/{tournamentId}/register-solo")
