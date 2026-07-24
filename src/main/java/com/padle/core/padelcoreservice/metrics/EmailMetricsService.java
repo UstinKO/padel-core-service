@@ -93,6 +93,17 @@ public class EmailMetricsService {
         return dailyCounter.get();
     }
 
+    // Используется и здесь, и в getEmailStats() — dailyLimit=0 сейчас нигде не выставлен
+    // (дефолт 300), но при ошибке конфигурации целочисленное deление дало бы NaN/Infinity,
+    // а Jackson не умеет сериализовать такие значения в JSON (issue #123).
+    public double getUsagePercentage() {
+        return calculateUsagePercentage(getDailyEmailCount(), dailyLimit);
+    }
+
+    private static double calculateUsagePercentage(int count, int limit) {
+        return limit > 0 ? (count * 100.0) / limit : 0.0;
+    }
+
     private void resetDailyCounterIfNeeded() {
         LocalDate today = LocalDate.now();
         if (!today.equals(currentDate)) {
@@ -107,7 +118,7 @@ public class EmailMetricsService {
         stats.put("dailyCount", dailyCounter.get());
         stats.put("dailyLimit", dailyLimit);
         stats.put("remainingQuota", Math.max(0, dailyLimit - dailyCounter.get()));
-        stats.put("usagePercentage", (dailyCounter.get() * 100.0) / dailyLimit);
+        stats.put("usagePercentage", calculateUsagePercentage(dailyCounter.get(), dailyLimit));
         return stats;
     }
 }
