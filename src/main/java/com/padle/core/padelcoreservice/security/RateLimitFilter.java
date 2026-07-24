@@ -221,7 +221,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
 
 
-    private String extractIp(HttpServletRequest request) {
+    public String extractIp(HttpServletRequest request) {
         // X-Real-IP is set by Nginx to $remote_addr (real IP after Cloudflare real_ip_module).
         // Trusting CF-Connecting-IP directly would allow forgery on non-Cloudflare connections.
         String xRealIp = request.getHeader("X-Real-IP");
