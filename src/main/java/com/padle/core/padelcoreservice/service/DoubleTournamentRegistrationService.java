@@ -473,60 +473,6 @@ public class DoubleTournamentRegistrationService {
     }
 
     @Timed(
-            name = "double.registration.complete.time",
-            description = "Time taken to complete partner registration",
-            tags = {"service=double", "operation=complete"}
-    )
-    @Counted(
-            name = "double.registration.complete.attempts",
-            description = "Partner completion attempts",
-            tags = {"operation=complete"}
-    )
-    @Transactional
-    public TournamentRegistrationDto completePartnerRegistration(Long partnerId, String email) {
-        log.info("Completing partner registration: partnerId={}", partnerId);
-
-        List<TournamentRegistration> pendingRegistrations =
-                registrationRepository.findActiveDoubleRegistrationsByPlayerId(partnerId)
-                        .stream()
-                        .filter(reg -> reg.getStatus() == RegistrationStatus.PENDING_PARTNER)
-                        .toList();
-
-        if (pendingRegistrations.isEmpty()) {
-            throw new TournamentRegistrationException("No hay registro pendiente para este jugador");
-        }
-
-        TournamentRegistration registration = pendingRegistrations.get(0);
-        PlayerPadel partner = registration.getPlayer();
-
-        if (email != null && !email.isEmpty() && !email.equals(partner.getEmail())) {
-            if (playerRepository.existsByEmail(email) && !email.equals(partner.getEmail())) {
-                throw new TournamentRegistrationException("Este email ya está registrado");
-            }
-            partner.setEmail(email);
-            playerRepository.save(partner);
-        }
-
-        if (partner.getCodigoConfirmacion() == null) {
-            partner.setCodigoConfirmacion(generatePartnerToken());
-            playerRepository.save(partner);
-        }
-
-        try {
-            emailService.sendConfirmationEmail(
-                    partner.getEmail(),
-                    partner.getNombre(),
-                    partner.getCodigoConfirmacion(),
-                    partner.getLocale()
-            );
-        } catch (Exception e) {
-            log.error("Error sending confirmation email: {}", e.getMessage());
-        }
-
-        return registrationMapper.toDto(registration);
-    }
-
-    @Timed(
             name = "double.registration.emails.send",
             description = "Send pair confirmation emails",
             tags = {"service=double", "operation=sendEmails"}

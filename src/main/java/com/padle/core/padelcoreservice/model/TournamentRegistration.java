@@ -192,10 +192,6 @@ public class TournamentRegistration {
         this.isActive = false;
     }
 
-    public boolean isPendingPartner() {
-        return status == RegistrationStatus.PENDING_PARTNER;
-    }
-
     public boolean isPartnerInvited() {
         return status == RegistrationStatus.PARTNER_INVITED;
     }
@@ -210,12 +206,6 @@ public class TournamentRegistration {
         this.status = RegistrationStatus.PARTNER_INVITED;
         this.partnerRegistrationToken = token;
         this.partnerTokenExpiry = expiry;
-    }
-
-    public void setPartnerPending() {
-        this.status = RegistrationStatus.PENDING_PARTNER;
-        this.partnerRegistrationToken = null;
-        this.partnerTokenExpiry = null;
     }
 
     public void setPairConfirmed() {
