@@ -1,73 +1,68 @@
 package com.padle.core.padelcoreservice.controller.api;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.Duration;
+
 @Slf4j
 @RestController
 @RequestMapping("/api/cookies")
 public class CookieController {
 
+    private static final Duration CONSENT_MAX_AGE = Duration.ofDays(365);
+
     @PostMapping("/accept")
-    public ResponseEntity<?> acceptCookies(HttpServletResponse response) {
+    public ResponseEntity<?> acceptCookies(HttpServletRequest request, HttpServletResponse response) {
         log.info("Usuario aceptó todas las cookies");
-
-        // Устанавливаем cookie на 1 год
-        jakarta.servlet.http.Cookie cookie = new jakarta.servlet.http.Cookie("cookieConsent", "accepted");
-        cookie.setMaxAge(365 * 24 * 60 * 60); // 1 año
-        cookie.setPath("/");
-        cookie.setHttpOnly(false);
-        cookie.setSecure(true);
-        response.addCookie(cookie);
-
+        addConsentCookie(request, response, "cookieConsent", "accepted");
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/reject")
-    public ResponseEntity<?> rejectCookies(HttpServletResponse response) {
+    public ResponseEntity<?> rejectCookies(HttpServletRequest request, HttpServletResponse response) {
         log.info("Usuario rechazó todas las cookies");
-
-        // Устанавливаем cookie на 1 год
-        jakarta.servlet.http.Cookie cookie = new jakarta.servlet.http.Cookie("cookieConsent", "rejected");
-        cookie.setMaxAge(365 * 24 * 60 * 60); // 1 año
-        cookie.setPath("/");
-        cookie.setHttpOnly(false);
-        cookie.setSecure(true);
-        response.addCookie(cookie);
-
+        addConsentCookie(request, response, "cookieConsent", "rejected");
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/customize")
     public ResponseEntity<?> customizeCookies(@RequestParam(required = false) boolean analytics,
                                               @RequestParam(required = false) boolean marketing,
+                                              HttpServletRequest request,
                                               HttpServletResponse response) {
         log.info("Usuario personalizó cookies - analytics: {}, marketing: {}", analytics, marketing);
 
-        // Сохраняем настройки в cookie
-        jakarta.servlet.http.Cookie cookie = new jakarta.servlet.http.Cookie("cookieConsent", "customized");
-        cookie.setMaxAge(365 * 24 * 60 * 60);
-        cookie.setPath("/");
-        cookie.setHttpOnly(false);
-        response.addCookie(cookie);
-
-        jakarta.servlet.http.Cookie analyticsCookie = new jakarta.servlet.http.Cookie("analyticsConsent", String.valueOf(analytics));
-        analyticsCookie.setMaxAge(365 * 24 * 60 * 60);
-        analyticsCookie.setPath("/");
-        analyticsCookie.setHttpOnly(false);
-        response.addCookie(analyticsCookie);
-
-        jakarta.servlet.http.Cookie marketingCookie = new jakarta.servlet.http.Cookie("marketingConsent", String.valueOf(marketing));
-        marketingCookie.setMaxAge(365 * 24 * 60 * 60);
-        marketingCookie.setPath("/");
-        marketingCookie.setHttpOnly(false);
-        response.addCookie(marketingCookie);
+        addConsentCookie(request, response, "cookieConsent", "customized");
+        addConsentCookie(request, response, "analyticsConsent", String.valueOf(analytics));
+        addConsentCookie(request, response, "marketingConsent", String.valueOf(marketing));
 
         return ResponseEntity.ok().build();
+    }
+
+    // Secure определяется per-request через request.isSecure() (учитывает X-Forwarded-Proto
+    // от Nginx благодаря forward-headers-strategy: framework в application.yml) — server.ssl.enabled
+    // никогда не выставляется в этом деплое (TLS терминируется на Nginx), поэтому статичный флаг
+    // не годится: и не отражал бы прод, и ломал бы cookie на http://localhost в dev.
+    // jakarta.servlet.http.Cookie не поддерживает SameSite нативно — используем Spring
+    // ResponseCookie (issue #123).
+    private void addConsentCookie(HttpServletRequest request, HttpServletResponse response,
+                                   String name, String value) {
+        ResponseCookie cookie = ResponseCookie.from(name, value)
+                .path("/")
+                .maxAge(CONSENT_MAX_AGE)
+                .httpOnly(false)
+                .secure(request.isSecure())
+                .sameSite("Lax")
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 }
