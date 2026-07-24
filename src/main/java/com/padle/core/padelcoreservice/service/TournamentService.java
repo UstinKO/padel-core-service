@@ -345,33 +345,6 @@ public class TournamentService {
         TournamentRegistration savedRegistration = registrationRepository.save(registration);
         return registrationMapper.toDto(savedRegistration);
     }
-
-    // Добавьте этот метод в TournamentService.java
-
-    @Transactional
-    public void updatePlayerContacts(PlayerPadel player) {
-        log.info("Updating player contacts for player id: {}", player.getId());
-
-        // Проверяем, есть ли уже такой телефон у других игроков
-        if (player.getTelefono() != null && !player.getTelefono().isBlank()) {
-            Optional<PlayerPadel> existingByPhone = playerRepository.findByTelefono(player.getTelefono());
-            if (existingByPhone.isPresent() && !existingByPhone.get().getId().equals(player.getId())) {
-                throw new IllegalArgumentException("Ya existe un jugador con ese número de teléfono");
-            }
-        }
-
-        // Проверяем, есть ли уже такой Telegram у других игроков
-        if (player.getTelegramUsername() != null && !player.getTelegramUsername().isBlank()) {
-            Optional<PlayerPadel> existingByTelegram = playerRepository.findByTelegramUsername(player.getTelegramUsername());
-            if (existingByTelegram.isPresent() && !existingByTelegram.get().getId().equals(player.getId())) {
-                throw new IllegalArgumentException("Ya existe un jugador con ese usuario de Telegram");
-            }
-        }
-
-        playerRepository.save(player);
-        log.info("Player contacts updated successfully for player id: {}", player.getId());
-    }
-
     private void sendWaitlistNotification(PlayerPadel player, Tournament tournament, int waitlistPosition) {
         try {
             String dateStr = tournament.getFechaInicio().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));

@@ -90,7 +90,7 @@ public class PlayerContactController {
         }
 
         try {
-            playerRepository.save(player);
+            playerService.save(player);
         } catch (DataIntegrityViolationException e) {
             boolean isTelegramConflict = e.getMostSpecificCause().getMessage() != null
                     && e.getMostSpecificCause().getMessage().contains("idx_player_telegram_username_unique");

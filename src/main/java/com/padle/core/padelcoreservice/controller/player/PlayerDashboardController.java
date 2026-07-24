@@ -10,7 +10,6 @@ import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
 import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2User;
 import com.padle.core.padelcoreservice.service.DoubleTournamentRegistrationService;
-import com.padle.core.padelcoreservice.service.PlayerService;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -322,77 +321,5 @@ public class PlayerDashboardController {
         response.put("hasRegisteredPartner", registration.get().getPartnerId() != null);
 
         return ResponseEntity.ok(response);
-    }
-
-    // Добавьте эти методы в PlayerDashboardController.java
-
-    @PatchMapping("/api/players/me/contact")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> updateContact(
-            @AuthenticationPrincipal Object principal,
-            @RequestBody Map<String, String> contactData) {
-
-        PlayerPadel player = extractPlayerFromPrincipal(principal);
-
-        if (player == null) {
-            return ResponseEntity.status(401).body(Map.of(
-                    "success", false,
-                    "message", "Usuario no autenticado"
-            ));
-        }
-
-        log.info("Updating contact for player {}: {}", player.getId(), contactData);
-
-        try {
-            String telefono = contactData.get("telefono");
-            String telegramUsername = contactData.get("telegramUsername");
-
-            // Обновляем поля
-            if (telefono != null && !telefono.trim().isEmpty()) {
-                player.setTelefono(telefono.trim());
-            }
-            if (telegramUsername != null && !telegramUsername.trim().isEmpty()) {
-                player.setTelegramUsername(telegramUsername.trim());
-            }
-
-            // Сохраняем
-            tournamentService.updatePlayerContacts(player);
-
-            log.info("Contact updated for player {}: phone={}, telegram={}",
-                    player.getId(), player.getTelefono(), player.getTelegramUsername());
-
-            return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "message", "Contacto actualizado correctamente"
-            ));
-
-        } catch (Exception e) {
-            log.error("Error updating contact", e);
-            return ResponseEntity.badRequest().body(Map.of(
-                    "success", false,
-                    "message", "Error al actualizar contacto: " + e.getMessage()
-            ));
-        }
-    }
-
-    @GetMapping("/api/players/me/contact-status")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> getContactStatus(
-            @AuthenticationPrincipal Object principal) {
-
-        PlayerPadel player = extractPlayerFromPrincipal(principal);
-
-        if (player == null) {
-            return ResponseEntity.status(401).body(Map.of(
-                    "success", false,
-                    "message", "Usuario no autenticado"
-            ));
-        }
-
-        return ResponseEntity.ok(Map.of(
-                "hasContact", player.hasValidContact(),
-                "telefono", player.getTelefono(),
-                "telegramUsername", player.getTelegramUsername()
-        ));
     }
 }
