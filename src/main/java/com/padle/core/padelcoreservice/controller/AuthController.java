@@ -3,10 +3,12 @@ package com.padle.core.padelcoreservice.controller;
 import com.padle.core.padelcoreservice.dto.AuthRequest;
 import com.padle.core.padelcoreservice.dto.AuthResponse;
 import com.padle.core.padelcoreservice.dto.RefreshTokenRequest;
+import com.padle.core.padelcoreservice.mapper.OwnerMapper;
+import com.padle.core.padelcoreservice.mapper.PlayerMapper;
+import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
-import com.padle.core.padelcoreservice.repository.PlayerRepository;
+import com.padle.core.padelcoreservice.security.CompositeUserDetailsService;
 import com.padle.core.padelcoreservice.security.JwtService;
-import com.padle.core.padelcoreservice.security.PlayerUserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,8 +20,12 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Optional;
-
+/**
+ * Owner (SUPER_ADMIN/ORGANIZER/ADMIN) и PlayerPadel — оба возможные принципалы
+ * (issue #124): CompositeUserDetailsService уже умеет резолвить оба типа, и
+ * JwtService/JwtAuthenticationFilter уже полностью generic — этот контроллер
+ * был единственным местом, которое смотрело только в PlayerRepository напрямую.
+ */
 @Slf4j
 @RestController
 @RequestMapping("/api/auth")
@@ -27,9 +33,10 @@ import java.util.Optional;
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
-    private final PlayerUserService playerUserService;
+    private final CompositeUserDetailsService compositeUserDetailsService;
     private final JwtService jwtService;
-    private final PlayerRepository playerRepository;
+    private final PlayerMapper playerMapper;
+    private final OwnerMapper ownerMapper;
 
     @PostMapping("/login")
     public ResponseEntity<?> authenticate(@Valid @RequestBody AuthRequest request) {
@@ -45,46 +52,23 @@ public class AuthController {
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
+            // Уже резолвлен CompositeUserDetailsService-ом внутри authenticate() —
+            // повторный поход в репозиторий не нужен.
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-            Optional<PlayerPadel> playerOpt = playerRepository.findByEmail(userDetails.getUsername());
 
-            if (playerOpt.isEmpty()) {
+            if (userDetails instanceof PlayerPadel player) {
+                if (!player.isEmailConfirmado()) {
+                    return ResponseEntity.badRequest().body("Por favor, confirma tu email primero");
+                }
+                if (!player.isActivo()) {
+                    return ResponseEntity.badRequest().body("Tu cuenta está desactivada");
+                }
+            } else if (!(userDetails instanceof Owner)) {
                 return ResponseEntity.badRequest().body("Usuario no encontrado");
             }
 
-            PlayerPadel player = playerOpt.get();
-
-            // Verificar que el email esté confirmado
-            if (!player.isEmailConfirmado()) {
-                return ResponseEntity.badRequest().body("Por favor, confirma tu email primero");
-            }
-
-            // Verificar que el usuario esté activo
-            if (!player.isActivo()) {
-                return ResponseEntity.badRequest().body("Tu cuenta está desactivada");
-            }
-
-            String accessToken = jwtService.generateToken(
-                    userDetails,
-                    player.getId(),
-                    player.getNombreCompleto()
-            );
-
-            String refreshToken = jwtService.generateRefreshToken(
-                    userDetails,
-                    player.getId()
-            );
-
-            AuthResponse response = AuthResponse.builder()
-                    .accessToken(accessToken)
-                    .refreshToken(refreshToken)
-                    .email(player.getEmail())
-                    .nombreCompleto(player.getNombreCompleto())
-                    .playerId(player.getId())
-                    .expiresIn(jwtService.getAccessTokenExpirationMs())
-                    .build();
-
-            log.info("User {} authenticated successfully", player.getEmail());
+            AuthResponse response = buildAuthResponse(userDetails);
+            log.info("User {} authenticated successfully", request.getEmail());
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
@@ -104,40 +88,13 @@ public class AuthController {
             }
 
             String email = jwtService.extractUsername(refreshToken);
-            UserDetails userDetails = playerUserService.loadUserByUsername(email);
+            UserDetails userDetails = compositeUserDetailsService.loadUserByUsername(email);
 
             if (!jwtService.validateToken(refreshToken, userDetails)) {
                 return ResponseEntity.badRequest().body("Token de refresco expirado o inválido");
             }
 
-            Optional<PlayerPadel> playerOpt = playerRepository.findByEmail(email);
-            if (playerOpt.isEmpty()) {
-                return ResponseEntity.badRequest().body("Usuario no encontrado");
-            }
-
-            PlayerPadel player = playerOpt.get();
-
-            String newAccessToken = jwtService.generateToken(
-                    userDetails,
-                    player.getId(),
-                    player.getNombreCompleto()
-            );
-
-            String newRefreshToken = jwtService.generateRefreshToken(
-                    userDetails,
-                    player.getId()
-            );
-
-            AuthResponse response = AuthResponse.builder()
-                    .accessToken(newAccessToken)
-                    .refreshToken(newRefreshToken)
-                    .email(player.getEmail())
-                    .nombreCompleto(player.getNombreCompleto())
-                    .playerId(player.getId())
-                    .expiresIn(jwtService.getAccessTokenExpirationMs())
-                    .build();
-
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(buildAuthResponse(userDetails));
 
         } catch (Exception e) {
             log.error("Token refresh failed: {}", e.getMessage());
@@ -148,20 +105,44 @@ public class AuthController {
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        // authentication.isAuthenticated() всегда true и для AnonymousAuthenticationToken —
+        // проверяем конкретный тип принципала, а не этот флаг (см. issue #122).
+        Object principal = authentication != null ? authentication.getPrincipal() : null;
 
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(401).body("No autenticado");
+        if (principal instanceof PlayerPadel player) {
+            return ResponseEntity.ok(playerMapper.entityToResponse(player));
+        }
+        if (principal instanceof Owner owner) {
+            return ResponseEntity.ok(ownerMapper.toDto(owner));
         }
 
-        String email = authentication.getName();
-        Optional<PlayerPadel> playerOpt = playerRepository.findByEmail(email);
+        return ResponseEntity.status(401).body("No autenticado");
+    }
 
-        if (playerOpt.isEmpty()) {
-            return ResponseEntity.status(404).body("Usuario no encontrado");
+    private AuthResponse buildAuthResponse(UserDetails userDetails) {
+        Long id;
+        String fullName;
+        String email;
+
+        if (userDetails instanceof PlayerPadel player) {
+            id = player.getId();
+            fullName = player.getNombreCompleto();
+            email = player.getEmail();
+        } else if (userDetails instanceof Owner owner) {
+            id = owner.getId();
+            fullName = owner.getFullName();
+            email = owner.getEmail();
+        } else {
+            throw new IllegalStateException("Unknown principal type: " + userDetails.getClass());
         }
 
-        PlayerPadel player = playerOpt.get();
-
-        return ResponseEntity.ok(player);
+        return AuthResponse.builder()
+                .accessToken(jwtService.generateToken(userDetails, id, fullName))
+                .refreshToken(jwtService.generateRefreshToken(userDetails, id))
+                .email(email)
+                .nombreCompleto(fullName)
+                .playerId(id)
+                .expiresIn(jwtService.getAccessTokenExpirationMs())
+                .build();
     }
 }
