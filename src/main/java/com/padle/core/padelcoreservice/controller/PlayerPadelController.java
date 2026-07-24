@@ -60,19 +60,19 @@ public class PlayerPadelController {
             HttpServletRequest httpRequest) {
 
         log.info("Recibida solicitud de registro para: {}", request.getEmail());
+        String ip = rateLimitFilter.extractIp(httpRequest);
 
         // HONEYPOT ПРОВЕРКА ПЕРВЫМ ДЕЛОМ
         if (honeypot != null && !honeypot.isBlank()) {
-            log.warn("🪤 Honeypot triggered! IP: {}, honeypot value: '{}'",
-                    httpRequest.getRemoteAddr(), honeypot);
-            rateLimitFilter.markRegistrationFailed(httpRequest.getRemoteAddr());
+            log.warn("🪤 Honeypot triggered! IP: {}, honeypot value: '{}'", ip, honeypot);
+            rateLimitFilter.markRegistrationFailed(ip);
             return "redirect:/?welcome=true";
         }
 
         // Проверяем reCAPTCHA
         if (!recaptchaService.verify(recaptchaToken)) {
-            log.warn("reCAPTCHA fallida para IP: {}", httpRequest.getRemoteAddr());
-            rateLimitFilter.markRegistrationFailed(httpRequest.getRemoteAddr());
+            log.warn("reCAPTCHA fallida para IP: {}", ip);
+            rateLimitFilter.markRegistrationFailed(ip);
             model.addAttribute("recaptchaSiteKey", recaptchaProperties.getSiteKey());
             model.addAttribute("recaptchaEnabled", recaptchaProperties.isEnabled());
             model.addAttribute("registroRequest", request);
@@ -99,10 +99,8 @@ public class PlayerPadelController {
 
         // Verificar que las contraseñas coinciden
         if (!request.passwordsMatch()) {
-            log.warn("Las contraseñas no coinciden para IP: {}", httpRequest.getRemoteAddr());
-            rateLimitFilter.markRegistrationFailed(httpRequest.getRemoteAddr());
-
-            sleepRandom(2, 5);
+            log.warn("Las contraseñas no coinciden para IP: {}", ip);
+            rateLimitFilter.markRegistrationFailed(ip);
 
             redirectAttributes.addFlashAttribute("errorMessage", "Las contraseñas no coinciden");
             return "redirect:/players/registro";
@@ -110,19 +108,17 @@ public class PlayerPadelController {
 
         // Si hay errores de validación
         if (result.hasErrors()) {
-            log.warn("Errores de validación en el formulario. IP: {}", httpRequest.getRemoteAddr());
+            log.warn("Errores de validación en el formulario. IP: {}", ip);
             result.getAllErrors().forEach(error ->
                     log.warn("Error: {}", error.getDefaultMessage())
             );
 
-            rateLimitFilter.markRegistrationFailed(httpRequest.getRemoteAddr());
+            rateLimitFilter.markRegistrationFailed(ip);
 
             String errorMessage = result.getAllErrors().stream()
                     .map(error -> error.getDefaultMessage())
                     .findFirst()
                     .orElse("Por favor, corrige los errores en el formulario");
-
-            sleepRandom(2, 5);
 
             redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
             return "redirect:/players/registro";
@@ -134,7 +130,7 @@ public class PlayerPadelController {
         try {
             // 1. Регистрируем игрока
             PlayerResponseDto jugadorRegistrado = playerService.registrarJugador(request);
-            log.info("✅ Jugador registrado: {} (IP: {})", jugadorRegistrado.getEmail(), httpRequest.getRemoteAddr());
+            log.info("✅ Jugador registrado: {} (IP: {})", jugadorRegistrado.getEmail(), ip);
 
             // 2. Автоматический вход
             try {
@@ -167,23 +163,12 @@ public class PlayerPadelController {
             return "redirect:/?welcome=true";
 
         } catch (IllegalArgumentException e) {
-            log.error("Error al registrar jugador: {} (IP: {})", e.getMessage(), httpRequest.getRemoteAddr());
+            log.error("Error al registrar jugador: {} (IP: {})", e.getMessage(), ip);
 
-            rateLimitFilter.markRegistrationFailed(httpRequest.getRemoteAddr());
-
-            sleepRandom(2, 5);
+            rateLimitFilter.markRegistrationFailed(ip);
 
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
             return "redirect:/players/registro";
-        }
-    }
-
-    private void sleepRandom(int minSeconds, int maxSeconds) {
-        try {
-            long delay = minSeconds * 1000L + (long) (Math.random() * (maxSeconds - minSeconds) * 1000L);
-            Thread.sleep(delay);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
         }
     }
 
@@ -199,9 +184,11 @@ public class PlayerPadelController {
             @Valid @RequestBody RegistroRequestDto request,
             HttpServletRequest httpRequest) {
 
+        String ip = rateLimitFilter.extractIp(httpRequest);
+
         if (!recaptchaService.verify(request.getRecaptchaToken())) {
-            log.warn("reCAPTCHA fallida (API) para IP: {}", httpRequest.getRemoteAddr());
-            rateLimitFilter.markRegistrationFailed(httpRequest.getRemoteAddr());
+            log.warn("reCAPTCHA fallida (API) para IP: {}", ip);
+            rateLimitFilter.markRegistrationFailed(ip);
             return ResponseEntity.badRequest()
                     .body("Verificación de seguridad fallida. Por favor intenta de nuevo.");
         }
@@ -214,7 +201,7 @@ public class PlayerPadelController {
             PlayerResponseDto jugadorRegistrado = playerService.registrarJugador(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(jugadorRegistrado);
         } catch (IllegalArgumentException e) {
-            rateLimitFilter.markRegistrationFailed(httpRequest.getRemoteAddr());
+            rateLimitFilter.markRegistrationFailed(ip);
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
