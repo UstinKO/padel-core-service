@@ -17,7 +17,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -175,10 +177,9 @@ public class PlayerService {
 
     // ✅ Resto de métodos sin cambios...
     @Transactional(readOnly = true)
-    public List<PlayerResponseDto> obtenerTodosJugadores() {
-        return playerRepository.findAll().stream()
-                .map(playerMapper::entityToResponse)
-                .collect(Collectors.toList());
+    public Page<PlayerResponseDto> obtenerTodosJugadores(Pageable pageable) {
+        return playerRepository.findAll(pageable)
+                .map(playerMapper::entityToResponse);
     }
 
     @Transactional(readOnly = true)

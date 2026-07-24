@@ -12,8 +12,11 @@ import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -24,7 +27,6 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
@@ -208,13 +210,14 @@ public class PlayerPadelController {
 
     @GetMapping("/api")
     @ResponseBody
-    public ResponseEntity<List<PlayerResponseDto>> obtenerTodosJugadoresApi() {
-        List<PlayerResponseDto> jugadores = playerService.obtenerTodosJugadores();
-        return ResponseEntity.ok(jugadores);
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    public ResponseEntity<Page<PlayerResponseDto>> obtenerTodosJugadoresApi(Pageable pageable) {
+        return ResponseEntity.ok(playerService.obtenerTodosJugadores(pageable));
     }
 
     @GetMapping("/api/{id}")
     @ResponseBody
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
     public ResponseEntity<?> obtenerJugadorPorIdApi(@PathVariable Long id) {
         try {
             PlayerResponseDto jugador = playerService.obtenerJugadorPorId(id);
