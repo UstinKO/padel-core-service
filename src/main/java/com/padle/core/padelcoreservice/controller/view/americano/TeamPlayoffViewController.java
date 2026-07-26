@@ -260,6 +260,27 @@ public class TeamPlayoffViewController {
     // REST API
     // ══════════════════════════════════════════════════════════════════════
 
+    @PostMapping("/api/{tournamentId}/qual-matches")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> createQualMatchApi(
+            @PathVariable Long tournamentId,
+            @RequestBody Map<String, Object> body) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            Long team1Id = Long.valueOf(String.valueOf(body.get("team1Id")));
+            Long team2Id = Long.valueOf(String.valueOf(body.get("team2Id")));
+            int courtNumber = Integer.parseInt(String.valueOf(body.get("courtNumber")));
+            AmericanoMatch match = playoffService.createQualificationMatch(tournamentId, team1Id, team2Id, courtNumber);
+            result.put("success", true);
+            result.put("match", toMatchDto(match));
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", e.getMessage());
+        }
+        return ResponseEntity.ok(result);
+    }
+
     @PostMapping("/api/qual-matches/{matchId}/result")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
     @ResponseBody
