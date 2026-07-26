@@ -1,6 +1,7 @@
 package com.padle.core.padelcoreservice.controller.view.americano;
 
 import com.padle.core.padelcoreservice.dto.TournamentDto;
+import com.padle.core.padelcoreservice.dto.americano.AmericanoMatchSuggestionDto;
 import com.padle.core.padelcoreservice.dto.americano.AmericanoRoundDto;
 import com.padle.core.padelcoreservice.dto.americano.AmericanoTeamDto;
 import com.padle.core.padelcoreservice.dto.americano.TeamAmericanoRankingDto;
@@ -28,6 +29,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -329,9 +331,9 @@ public class TeamPlayoffViewController {
     }
 
     /**
-     * Доска кортов: статус каждого корта (свободен/занят + текущий матч) и пул команд,
-     * доступных для назначения прямо сейчас. suggestedNextMatch — заглушка,
-     * реальный подбор соперника появится в T5 (второй тур) / T7 (общий матчинг-движок).
+     * Доска кортов: статус каждого корта (свободен/занят + текущий матч), пул команд,
+     * доступных для назначения прямо сейчас, и предложенные пары 2-го тура квалификации
+     * (победитель-к-победителю/проигравший-к-проигравшему, T5) — по одной на свободный корт.
      */
     @GetMapping("/api/{tournamentId}/court-board")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
@@ -341,6 +343,8 @@ public class TeamPlayoffViewController {
         Map<Integer, AmericanoMatch> matchByCourt = playoffService.getActiveMatches(tournamentId).stream()
                 .filter(m -> m.getCourtNumber() != null)
                 .collect(Collectors.toMap(AmericanoMatch::getCourtNumber, m -> m, (a, b) -> a));
+        Iterator<AmericanoMatchSuggestionDto> suggestions =
+                playoffService.suggestSecondRoundPairings(tournamentId).iterator();
 
         List<Map<String, Object>> courts = new ArrayList<>();
         for (int courtNumber = 1; courtNumber <= courtsCount; courtNumber++) {
@@ -349,7 +353,7 @@ public class TeamPlayoffViewController {
             court.put("courtNumber", courtNumber);
             court.put("occupied", match != null);
             court.put("currentMatch", match != null ? playoffService.toMatchDto(match) : null);
-            court.put("suggestedNextMatch", null);
+            court.put("suggestedNextMatch", match == null && suggestions.hasNext() ? suggestions.next() : null);
             courts.add(court);
         }
 
