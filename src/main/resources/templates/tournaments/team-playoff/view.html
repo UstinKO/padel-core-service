@@ -127,12 +127,16 @@
                 <thead>
                 <tr>
                     <th th:text="#{team_playoff.table.pos}">#</th>
+                    <th th:text="#{team_playoff.table.status}" th:title="#{team_playoff.table.status_title}">Estado</th>
                     <th th:text="#{team_playoff.table.pair}">Pareja</th>
+                    <th th:text="#{team_playoff.table.m1}" th:title="#{team_playoff.table.m1_title}">P1</th>
+                    <th th:text="#{team_playoff.table.m2}" th:title="#{team_playoff.table.m2_title}">P2</th>
                     <th th:text="#{team_playoff.table.sg}" th:title="#{team_playoff.table.sg}">SG</th>
                     <th th:text="#{team_playoff.table.sp}" th:title="#{team_playoff.table.sp}">SP</th>
                     <th th:text="#{team_playoff.table.gg}" th:title="#{team_playoff.table.gg}">GG</th>
                     <th th:text="#{team_playoff.table.gp}" th:title="#{team_playoff.table.gp}">GP</th>
                     <th th:text="#{team_playoff.table.dif_s}" th:title="#{team_playoff.table.dif_s}">Dif.S</th>
+                    <th th:text="#{team_playoff.table.dif_g}" th:title="#{team_playoff.table.dif_g}">Dif.G</th>
                     <th th:text="#{team_playoff.table.pj}" th:title="#{team_playoff.table.pj}">PJ</th>
                 </tr>
                 </thead>
@@ -142,17 +146,24 @@
                         <span th:text="${team.currentPosition}"
                               th:class="${team.currentPosition == 1 ? 'pos-1' : (team.currentPosition == 2 ? 'pos-2' : (team.currentPosition == 3 ? 'pos-3' : ''))}">1</span>
                     </td>
+                    <td th:text="${team.qualStatus == 'TWO_WINS' ? '🟢' : (team.qualStatus == 'TWO_LOSSES' ? '🔴' : (team.qualStatus == 'SPLIT' ? '🟡' : '⏳'))}">⏳</td>
                     <td>
                         <div class="pair-names">
                             <span class="p1" th:text="${team.player1Name}">Jugador 1</span><i th:if="${team.player1Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i><span style="color:#adb5bd;margin:0 .25rem">/</span><span class="p1" th:text="${team.player2Name}">Jugador 2</span><i th:if="${team.player2Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i>
                         </div>
                     </td>
+                    <td class="tbd" th:unless="${team.match1GamesWon != null}">—</td>
+                    <td th:if="${team.match1GamesWon != null}" th:text="${team.match1GamesWon} + ':' + ${team.match1GamesLost}">6:4</td>
+                    <td class="tbd" th:unless="${team.match2GamesWon != null}">—</td>
+                    <td th:if="${team.match2GamesWon != null}" th:text="${team.match2GamesWon} + ':' + ${team.match2GamesLost}">6:4</td>
                     <td class="positive" th:text="${team.setsWon}">0</td>
                     <td class="negative" th:text="${team.setsLost}">0</td>
                     <td class="positive" th:text="${team.gamesWon}">0</td>
                     <td class="negative" th:text="${team.gamesLost}">0</td>
                     <td th:classappend="${team.setDifference > 0 ? 'positive' : (team.setDifference < 0 ? 'negative' : 'neutral')}"
                         th:text="${(team.setDifference > 0 ? '+' : '') + team.setDifference}">0</td>
+                    <td th:classappend="${team.gameDifference > 0 ? 'positive' : (team.gameDifference < 0 ? 'negative' : 'neutral')}"
+                        th:text="${(team.gameDifference > 0 ? '+' : '') + team.gameDifference}">0</td>
                     <td th:text="${team.matchesPlayed}">0</td>
                 </tr>
                 </tbody>

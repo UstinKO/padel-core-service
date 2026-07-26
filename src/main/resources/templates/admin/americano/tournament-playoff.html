@@ -336,7 +336,10 @@
                         <thead>
                         <tr>
                             <th>#</th>
+                            <th th:text="#{admin.playoff.col.status}" th:title="#{admin.playoff.col.status_title}">Estado</th>
                             <th th:text="#{admin.playoff.col.pair}">Pareja</th>
+                            <th th:text="#{admin.playoff.col.m1}" th:title="#{admin.playoff.col.m1_title}">P1</th>
+                            <th th:text="#{admin.playoff.col.m2}" th:title="#{admin.playoff.col.m2_title}">P2</th>
                             <th th:text="#{admin.playoff.col.sets_won}">Sets G</th>
                             <th th:text="#{admin.playoff.col.sets_lost}">Sets P</th>
                             <th th:text="#{admin.playoff.col.games_won}">Games G</th>
@@ -352,11 +355,16 @@
                                 <span th:text="${team.currentPosition}"
                                       th:class="${team.currentPosition == 1 ? 'pos-1' : (team.currentPosition == 2 ? 'pos-2' : (team.currentPosition == 3 ? 'pos-3' : ''))}">1</span>
                             </td>
+                            <td th:text="${team.qualStatus == 'TWO_WINS' ? '🟢' : (team.qualStatus == 'TWO_LOSSES' ? '🔴' : (team.qualStatus == 'SPLIT' ? '🟡' : '⏳'))}">⏳</td>
                             <td>
                                 <div class="pair-names">
                                     <span class="p1" th:text="${team.displayName}">Jugador 1 / 2</span>
                                 </div>
                             </td>
+                            <td class="tbd" th:unless="${team.match1GamesWon != null}">—</td>
+                            <td th:if="${team.match1GamesWon != null}" th:text="${team.match1GamesWon} + ':' + ${team.match1GamesLost}">6:4</td>
+                            <td class="tbd" th:unless="${team.match2GamesWon != null}">—</td>
+                            <td th:if="${team.match2GamesWon != null}" th:text="${team.match2GamesWon} + ':' + ${team.match2GamesLost}">6:4</td>
                             <td class="positive" th:text="${team.setsWon}">0</td>
                             <td class="negative" th:text="${team.setsLost}">0</td>
                             <td class="positive" th:text="${team.gamesWon}">0</td>
@@ -791,6 +799,8 @@
             const tbody = document.getElementById('qualRankingTbody');
             if (!tbody) return;
             tbody.innerHTML = '';
+            const statusEmoji = s => s === 'TWO_WINS' ? '🟢' : s === 'TWO_LOSSES' ? '🔴' : s === 'SPLIT' ? '🟡' : '⏳';
+            const matchCell = (won, lost) => (won === null || won === undefined) ? '<span class="tbd">—</span>' : `${won}:${lost}`;
             data.ranking.forEach(t => {
                 const posClass = t.currentPosition <= 3 ? 'pos-' + t.currentPosition : '';
                 const setDiff  = t.setDifference  > 0 ? '+' + t.setDifference  : t.setDifference;
@@ -798,7 +808,10 @@
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                 <td><span class="${posClass}">${t.currentPosition}</span></td>
+                <td>${statusEmoji(t.qualStatus)}</td>
                 <td><div class="pair-names"><span class="p1">${t.displayName || ''}</span></div></td>
+                <td>${matchCell(t.match1GamesWon, t.match1GamesLost)}</td>
+                <td>${matchCell(t.match2GamesWon, t.match2GamesLost)}</td>
                 <td class="positive">${t.setsWon}</td>
                 <td class="negative">${t.setsLost}</td>
                 <td class="positive">${t.gamesWon}</td>

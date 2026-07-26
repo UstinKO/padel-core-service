@@ -350,6 +350,7 @@ public class TeamPlayoffService {
                 .map(t -> {
                     AmericanoTeamDto dto = toDto(t);
                     dto.setCurrentPosition(pos.getAndIncrement());
+                    applyQualBreakdown(dto, tournamentId, t.getId());
                     return dto;
                 })
                 .collect(Collectors.toList());
@@ -632,6 +633,48 @@ public class TeamPlayoffService {
                     roundRepository.save(r);
                     log.info("Qualification phase auto-completed for tournament {}", tournamentId);
                 });
+    }
+
+    /**
+     * Разбивка по матчам для квалификационной таблицы (ТЗ §28): геймы В/П отдельно
+     * по 1-му и 2-му сыгранным матчам, плюс статус 2-0/1-1/0-2 (§6/§30).
+     */
+    private void applyQualBreakdown(AmericanoTeamDto dto, Long tournamentId, Long teamId) {
+        List<AmericanoMatch> completed = getTeamQualMatches(tournamentId, teamId).stream()
+                .filter(AmericanoMatch::isCompleted)
+                .sorted(Comparator.comparing(AmericanoMatch::getMatchNumber))
+                .toList();
+
+        if (!completed.isEmpty()) {
+            int[] m1 = gamesForAndAgainst(completed.get(0), teamId);
+            dto.setMatch1GamesWon(m1[0]);
+            dto.setMatch1GamesLost(m1[1]);
+        }
+        if (completed.size() > 1) {
+            int[] m2 = gamesForAndAgainst(completed.get(1), teamId);
+            dto.setMatch2GamesWon(m2[0]);
+            dto.setMatch2GamesLost(m2[1]);
+        }
+
+        dto.setQualStatus(qualStatusFor(dto.getMatchesPlayed(), dto.getMatchesWon(), dto.getMatchesLost()));
+    }
+
+    private int[] gamesForAndAgainst(AmericanoMatch match, Long teamId) {
+        boolean isTeam1 = teamId.equals(match.getTeam1Id());
+        int forGames = nullToZero(isTeam1 ? match.getTeam1Games() : match.getTeam2Games());
+        int againstGames = nullToZero(isTeam1 ? match.getTeam2Games() : match.getTeam1Games());
+        return new int[]{forGames, againstGames};
+    }
+
+    private int nullToZero(Integer value) {
+        return value != null ? value : 0;
+    }
+
+    private String qualStatusFor(int played, int won, int lost) {
+        if (played < 2) return "PENDING";
+        if (won == 2) return "TWO_WINS";
+        if (lost == 2) return "TWO_LOSSES";
+        return "SPLIT";
     }
 
     // ═══════════════════════════════════════════════════════════════════════
