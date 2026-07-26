@@ -1,7 +1,6 @@
 package com.padle.core.padelcoreservice.controller.view.americano;
 
 import com.padle.core.padelcoreservice.dto.TournamentDto;
-import com.padle.core.padelcoreservice.dto.americano.AmericanoMatchDto;
 import com.padle.core.padelcoreservice.dto.americano.AmericanoRoundDto;
 import com.padle.core.padelcoreservice.dto.americano.AmericanoTeamDto;
 import com.padle.core.padelcoreservice.dto.americano.TeamAmericanoRankingDto;
@@ -78,7 +77,7 @@ public class TeamPlayoffViewController {
         if (playoffStarted) {
             List<AmericanoMatch> playoffMatches = playoffService.getPlayoffMatches(tournamentId);
             model.addAttribute("playoffMatches", playoffMatches.stream()
-                    .map(this::toMatchDto).toList());
+                    .map(playoffService::toMatchDto).toList());
         }
 
         return "tournaments/team-playoff/view";
@@ -114,7 +113,7 @@ public class TeamPlayoffViewController {
         if (playoffStarted) {
             List<AmericanoMatch> playoffMatches = playoffService.getPlayoffMatches(tournamentId);
             model.addAttribute("playoffMatches", playoffMatches.stream()
-                    .map(this::toMatchDto).toList());
+                    .map(playoffService::toMatchDto).toList());
             List<AmericanoRound> playoffRounds = playoffService.getPlayoffRounds(tournamentId);
             model.addAttribute("playoffRounds", buildRoundDtos(playoffRounds));
         }
@@ -276,7 +275,7 @@ public class TeamPlayoffViewController {
             int courtNumber = Integer.parseInt(String.valueOf(body.get("courtNumber")));
             AmericanoMatch match = playoffService.createQualificationMatch(tournamentId, team1Id, team2Id, courtNumber);
             result.put("success", true);
-            result.put("match", toMatchDto(match));
+            result.put("match", playoffService.toMatchDto(match));
         } catch (Exception e) {
             result.put("success", false);
             result.put("message", e.getMessage());
@@ -349,7 +348,7 @@ public class TeamPlayoffViewController {
             Map<String, Object> court = new LinkedHashMap<>();
             court.put("courtNumber", courtNumber);
             court.put("occupied", match != null);
-            court.put("currentMatch", match != null ? toMatchDto(match) : null);
+            court.put("currentMatch", match != null ? playoffService.toMatchDto(match) : null);
             court.put("suggestedNextMatch", null);
             courts.add(court);
         }
@@ -381,52 +380,9 @@ public class TeamPlayoffViewController {
             dto.setTotalMatches(matches.size());
             dto.setCompletedMatches(
                     (int) matches.stream().filter(AmericanoMatch::isCompleted).count());
-            dto.setMatches(matches.stream().map(this::toMatchDto).toList());
+            dto.setMatches(matches.stream().map(playoffService::toMatchDto).toList());
             return dto;
         }).toList();
     }
 
-    private AmericanoMatchDto toMatchDto(AmericanoMatch m) {
-        AmericanoMatchDto dto = new AmericanoMatchDto();
-        dto.setId(m.getId());
-        dto.setMatchNumber(m.getMatchNumber());
-        dto.setCourtNumber(m.getCourtNumber());
-        dto.setStatus(AmericanoRoundStatus.valueOf(m.getStatus().name()));
-        dto.setIsCompleted(m.isCompleted());
-        dto.setTeam1Score(m.getTeam1Score());
-        dto.setTeam2Score(m.getTeam2Score());
-        dto.setNote(m.getNote());
-        dto.setTournamentId(m.getTournament().getId());
-
-        // Игроки
-        if (m.getTeam1Player1() != null) {
-            dto.setTeam1Player1Id(m.getTeam1Player1().getId());
-            dto.setTeam1Player1Name(
-                    m.getTeam1Player1().getNombre() + " " + m.getTeam1Player1().getApellido());
-        }
-        if (m.getTeam1Player2() != null) {
-            dto.setTeam1Player2Id(m.getTeam1Player2().getId());
-            dto.setTeam1Player2Name(
-                    m.getTeam1Player2().getNombre() + " " + m.getTeam1Player2().getApellido());
-        }
-        if (m.getTeam2Player1() != null) {
-            dto.setTeam2Player1Id(m.getTeam2Player1().getId());
-            dto.setTeam2Player1Name(
-                    m.getTeam2Player1().getNombre() + " " + m.getTeam2Player1().getApellido());
-        }
-        if (m.getTeam2Player2() != null) {
-            dto.setTeam2Player2Id(m.getTeam2Player2().getId());
-            dto.setTeam2Player2Name(
-                    m.getTeam2Player2().getNombre() + " " + m.getTeam2Player2().getApellido());
-        }
-
-        // Геймы (для AMERICANO_TEAMS)
-        dto.setTeam1Games(m.getTeam1Games());
-        dto.setTeam2Games(m.getTeam2Games());
-        if (m.getPlayoffStage() != null) {
-            dto.setPlayoffStage(m.getPlayoffStage().name());
-        }
-
-        return dto;
-    }
 }
