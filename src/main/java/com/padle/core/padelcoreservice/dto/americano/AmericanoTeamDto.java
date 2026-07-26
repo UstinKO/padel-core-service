@@ -48,6 +48,15 @@ public class AmericanoTeamDto {
     private Integer setDifference;
     private Integer gameDifference;
 
+    // Разбивка по квалификационным матчам (ТЗ §28) — заполняется только в getQualRanking()
+    private Integer match1GamesWon;
+    private Integer match1GamesLost;
+    private Integer match2GamesWon;
+    private Integer match2GamesLost;
+
+    /** TWO_WINS / SPLIT / TWO_LOSSES / PENDING (ещё не сыграны оба квалификационных матча) — ТЗ §6/§30 */
+    private String qualStatus;
+
     // Данные регистрации (AMERICANO_TEAMS)
     private String registrationSource;
     private Boolean hasPaid;
