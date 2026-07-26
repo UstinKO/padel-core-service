@@ -285,6 +285,48 @@ public class TeamPlayoffViewController {
         return ResponseEntity.ok(result);
     }
 
+    /** Меняет корт ещё не завершённого матча (T11 — ручное управление координатором). */
+    @PostMapping("/api/matches/{matchId}/court")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> changeMatchCourtApi(
+            @PathVariable Long matchId,
+            @RequestBody Map<String, Object> body) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            int courtNumber = Integer.parseInt(String.valueOf(body.get("courtNumber")));
+            AmericanoMatch match = playoffService.changeMatchCourt(matchId, courtNumber);
+            result.put("success", true);
+            result.put("match", playoffService.toMatchDto(match));
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", e.getMessage());
+        }
+        return ResponseEntity.ok(result);
+    }
+
+    /** Заменяет команду в паре ещё не завершённого матча (T11). slot=1|2. Реванш не блокирует, только предупреждает. */
+    @PostMapping("/api/matches/{matchId}/team")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> changeMatchTeamApi(
+            @PathVariable Long matchId,
+            @RequestBody Map<String, Object> body) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            int slot = Integer.parseInt(String.valueOf(body.get("slot")));
+            Long teamId = Long.valueOf(String.valueOf(body.get("teamId")));
+            TeamPlayoffService.MatchTeamChangeResult changeResult = playoffService.changeMatchTeam(matchId, slot, teamId);
+            result.put("success", true);
+            result.put("match", playoffService.toMatchDto(changeResult.match()));
+            result.put("warning", changeResult.warning());
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", e.getMessage());
+        }
+        return ResponseEntity.ok(result);
+    }
+
     @PostMapping("/api/qual-matches/{matchId}/result")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
     @ResponseBody

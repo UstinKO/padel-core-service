@@ -79,10 +79,24 @@
         .round-content{padding:1rem 1.5rem}
         .info-pill{display:inline-flex;align-items:center;gap:.3rem;padding:.25rem .6rem;border-radius:10px;font-size:.78rem;font-weight:600;background:#f1f5f9;color:#475569}
         .tbd{color:#94a3b8;font-style:italic}
+        .court-board-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:.75rem;padding:1rem 1.5rem}
+        .court-card{border:1px solid #e2e8f0;border-radius:10px;padding:.75rem;background:#fff}
+        .court-card.free{background:#f0fdf4;border-color:#bbf7d0}
+        .court-card-header{display:flex;justify-content:space-between;align-items:center;font-size:.82rem;font-weight:700;color:#1e293b;margin-bottom:.5rem}
+        .court-card-match{font-size:.82rem;color:#1e293b;line-height:1.5}
+        .court-card-match .vs-mini{color:#94a3b8;font-size:.72rem;font-weight:700;margin:.15rem 0}
+        .icon-btn{background:none;border:none;cursor:pointer;color:#94a3b8;font-size:.78rem;padding:.15rem .3rem}
+        .icon-btn:hover{color:#FF6B35}
+        .inline-edit{display:none;gap:.35rem;align-items:center;margin-top:.4rem;background:#f8fafc;padding:.4rem;border-radius:6px}
+        .inline-edit.open{display:flex}
+        .inline-edit select{flex:1;border:1px solid #e2e8f0;border-radius:6px;padding:.25rem .4rem;font-size:.78rem}
+        .toast-box{position:fixed;bottom:1rem;right:1rem;z-index:1000;display:flex;flex-direction:column;gap:.5rem}
+        .toast{background:#fef9c3;border:1px solid #fcd34d;color:#78350f;padding:.6rem .9rem;border-radius:8px;font-size:.82rem;box-shadow:0 4px 12px rgba(0,0,0,.1);max-width:320px}
     </style>
 </head>
 <body>
 <header th:replace="~{fragments/admin-header :: header(#{admin.playoff.title})}"></header>
+<div id="toastBox" class="toast-box"></div>
 
 <main class="admin-main">
     <div class="container">
@@ -379,6 +393,15 @@
                     </table>
                 </div>
 
+                <!-- Доска кортов: статус каждого корта в реальном времени (T2/T3) -->
+                <div style="border-bottom:1px solid #e2e8f0">
+                    <h4 style="margin:1rem 1.5rem 0;font-size:.9rem;color:#1e293b">
+                        <i class="fas fa-border-all" style="color:#FF6B35"></i>
+                        <span th:text="#{admin.playoff.board.title}">Tablero de canchas</span>
+                    </h4>
+                    <div id="courtBoardGrid" class="court-board-grid"></div>
+                </div>
+
                 <!-- Новый матч: координатор выбирает 2 свободные команды и корт вручную -->
                 <div class="round-content" style="border-bottom:1px solid #e2e8f0">
                     <h4 style="margin:0 0 .75rem;font-size:.9rem;color:#1e293b">
@@ -439,8 +462,16 @@
                                     <span>
                                         <span th:text="#{admin.playoff.label.court}">Cancha</span>
                                         <span th:text="${match.courtNumber}">1</span>
+                                        <button th:unless="${match.isCompleted}" type="button" class="icon-btn"
+                                                th:onclick="'toggleCourtEdit(' + ${match.id} + ')'" title="Cambiar cancha">
+                                            <i class="fas fa-exchange-alt"></i>
+                                        </button>
                                     </span>
                                     <span style="font-size:.75rem;color:#94a3b8" th:text="${match.note}">Equipo A vs B</span>
+                                </div>
+                                <div th:unless="${match.isCompleted}" th:id="'court-edit-' + ${match.id}" class="inline-edit" style="margin:0 1rem">
+                                    <select></select>
+                                    <button type="button" class="save-btn" th:onclick="'submitCourtChange(' + ${match.id} + ')'">OK</button>
                                 </div>
 
                                 <div class="match-body">
@@ -448,6 +479,14 @@
                                         <div class="team-name" th:text="${match.team1Player1Name}">Jugador 1</div>
                                         <div class="team-sub" th:if="${match.team1Player2Name != null}"
                                              th:text="${match.team1Player2Name}">Jugador 2</div>
+                                        <button th:unless="${match.isCompleted}" type="button" class="icon-btn"
+                                                th:onclick="'toggleTeamEdit(' + ${match.id} + ', 1)'" title="Cambiar equipo">
+                                            <i class="fas fa-exchange-alt"></i>
+                                        </button>
+                                        <div th:unless="${match.isCompleted}" th:id="'team-edit-' + ${match.id} + '-1'" class="inline-edit">
+                                            <select></select>
+                                            <button type="button" class="save-btn" th:onclick="'submitTeamChange(' + ${match.id} + ', 1)'">OK</button>
+                                        </div>
                                     </div>
 
                                     <div class="vs-block">
@@ -483,6 +522,14 @@
                                         <div class="team-name" th:text="${match.team2Player1Name}">Jugador 3</div>
                                         <div class="team-sub" th:if="${match.team2Player2Name != null}"
                                              th:text="${match.team2Player2Name}">Jugador 4</div>
+                                        <button th:unless="${match.isCompleted}" type="button" class="icon-btn"
+                                                th:onclick="'toggleTeamEdit(' + ${match.id} + ', 2)'" title="Cambiar equipo">
+                                            <i class="fas fa-exchange-alt"></i>
+                                        </button>
+                                        <div th:unless="${match.isCompleted}" th:id="'team-edit-' + ${match.id} + '-2'" class="inline-edit">
+                                            <select></select>
+                                            <button type="button" class="save-btn" th:onclick="'submitTeamChange(' + ${match.id} + ', 2)'">OK</button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -536,9 +583,17 @@
                             <span>
                                 <span th:text="#{admin.playoff.label.court}">Cancha</span>
                                 <span th:text="${match.courtNumber}">1</span>
+                                <button th:unless="${match.isCompleted}" type="button" class="icon-btn"
+                                        th:onclick="'toggleCourtEdit(' + ${match.id} + ')'" title="Cambiar cancha">
+                                    <i class="fas fa-exchange-alt"></i>
+                                </button>
                             </span>
                             <span th:if="${match.playoffStage != null}" class="playoff-stage-label"
                                   th:text="${match.playoffStage}">SEMI_FINAL</span>
+                        </div>
+                        <div th:unless="${match.isCompleted}" th:id="'court-edit-' + ${match.id}" class="inline-edit" style="margin:0 1rem">
+                            <select></select>
+                            <button type="button" class="save-btn" th:onclick="'submitCourtChange(' + ${match.id} + ')'">OK</button>
                         </div>
 
                         <div class="match-body">
@@ -549,6 +604,14 @@
                                      th:text="${match.team1Player2Name}">TBD</div>
                                 <div th:if="${match.team1Player1Name == null}" class="tbd"
                                      th:text="#{admin.playoff.bracket.tbd}">TBD</div>
+                                <button th:unless="${match.isCompleted}" type="button" class="icon-btn"
+                                        th:onclick="'toggleTeamEdit(' + ${match.id} + ', 1)'" title="Cambiar equipo">
+                                    <i class="fas fa-exchange-alt"></i>
+                                </button>
+                                <div th:unless="${match.isCompleted}" th:id="'team-edit-' + ${match.id} + '-1'" class="inline-edit">
+                                    <select></select>
+                                    <button type="button" class="save-btn" th:onclick="'submitTeamChange(' + ${match.id} + ', 1)'">OK</button>
+                                </div>
                             </div>
 
                             <div class="vs-block">
@@ -559,6 +622,12 @@
                                     <span th:class="${match.team2Games > match.team1Games ? 'score-win' : (match.team2Games < match.team1Games ? 'score-lose' : 'score-draw')}"
                                           th:text="${match.team2Games}">4</span>
                                 </div>
+                                <button th:if="${match.isCompleted}" class="edit-btn"
+                                        th:attr="data-match-id=${match.id},data-g1=${match.team1Games},data-g2=${match.team2Games}"
+                                        onclick="showPlayoffEdit(this)">
+                                    <i class="fas fa-edit"></i>
+                                    <span th:text="#{admin.americano.btn.edit_score}">editar</span>
+                                </button>
                                 <div th:unless="${match.isCompleted or match.team1Player1Name == null or match.team2Player1Name == null}"
                                      class="score-form">
                                     <input type="number" class="score-inp" th:id="'pg1-' + ${match.id}"
@@ -570,7 +639,7 @@
                                             th:attr="data-match-id=${match.id},data-tid=${tournament.id}"
                                             onclick="submitPlayoffScore(this)">OK</button>
                                 </div>
-                                <span th:if="${match.team1Player1Name == null or match.team2Player1Name == null}"
+                                <span th:if="${not match.isCompleted and (match.team1Player1Name == null or match.team2Player1Name == null)}"
                                       class="tbd" th:text="#{admin.playoff.tbd}">Esperando...</span>
                             </div>
 
@@ -581,6 +650,14 @@
                                      th:text="${match.team2Player2Name}">TBD</div>
                                 <div th:if="${match.team2Player1Name == null}" class="tbd"
                                      th:text="#{admin.playoff.bracket.tbd}">TBD</div>
+                                <button th:unless="${match.isCompleted}" type="button" class="icon-btn"
+                                        th:onclick="'toggleTeamEdit(' + ${match.id} + ', 2)'" title="Cambiar equipo">
+                                    <i class="fas fa-exchange-alt"></i>
+                                </button>
+                                <div th:unless="${match.isCompleted}" th:id="'team-edit-' + ${match.id} + '-2'" class="inline-edit">
+                                    <select></select>
+                                    <button type="button" class="save-btn" th:onclick="'submitTeamChange(' + ${match.id} + ', 2)'">OK</button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -601,6 +678,8 @@
     const MSG_NO_COURTS = /*[[#{admin.playoff.qual.new_match.no_courts}]]*/ '';
     const MSG_SUGGESTED = /*[[#{admin.playoff.qual.new_match.suggested}]]*/ '';
     const MSG_USE = /*[[#{admin.playoff.qual.new_match.use}]]*/ '';
+    const MSG_FREE = /*[[#{admin.playoff.board.free}]]*/ '';
+    const MSG_NO_SUGGESTION = /*[[#{admin.playoff.board.no_suggestion}]]*/ '';
     new TeamPlayoffRealtime(TOURNAMENT_ID);
 
     // ─── localStorage backup для незакрытых счётов ────────────────────────
@@ -675,6 +754,57 @@
         }
 
         renderSuggestions(data.courts || []);
+        renderCourtBoardGrid(data.courts || []);
+    }
+
+    // ── Доска кортов (T11): статус каждого корта прямо сейчас ───────────
+    function renderCourtBoardGrid(courts) {
+        const grid = document.getElementById('courtBoardGrid');
+        if (!grid) return;
+
+        grid.innerHTML = courts.map(c => {
+            if (c.occupied && c.currentMatch) {
+                const m = c.currentMatch;
+                const t1 = (m.team1Player1Name || 'TBD') + (m.team1Player2Name ? ' / ' + m.team1Player2Name : '');
+                const t2 = (m.team2Player1Name || 'TBD') + (m.team2Player2Name ? ' / ' + m.team2Player2Name : '');
+                const stage = m.playoffStage ? m.playoffStage : 'Calificación';
+                return `<div class="court-card">
+                    <div class="court-card-header">
+                        <span>Cancha ${c.courtNumber}</span>
+                        <span class="info-pill">${stage}</span>
+                    </div>
+                    <div class="court-card-match">
+                        <div>${t1}</div>
+                        <div class="vs-mini">VS</div>
+                        <div>${t2}</div>
+                    </div>
+                </div>`;
+            }
+            const s = c.suggestedNextMatch;
+            return `<div class="court-card free">
+                <div class="court-card-header">
+                    <span>Cancha ${c.courtNumber}</span>
+                    <span class="info-pill" style="background:#dcfce7;color:#166534">${MSG_FREE}</span>
+                </div>
+                ${s
+                    ? `<div style="font-size:.78rem;color:#64748b">${MSG_SUGGESTED}:</div>
+                       <div style="font-size:.82rem;margin:.2rem 0">${s.team1.displayName} — ${s.team2.displayName}</div>
+                       <button type="button" class="btn-sm" style="background:#dbeafe;color:#1e3a8a"
+                               onclick="useSuggestion(${s.team1.id}, ${s.team2.id}, ${c.courtNumber})">${MSG_USE}</button>`
+                    : `<div class="tbd" style="font-size:.78rem">${MSG_NO_SUGGESTION}</div>`}
+            </div>`;
+        }).join('');
+    }
+
+    // ── Уведомления (не блокируют, в отличие от alert()) ────────────────
+    function showToast(message) {
+        const box = document.getElementById('toastBox');
+        if (!box || !message) return;
+        const el = document.createElement('div');
+        el.className = 'toast';
+        el.textContent = message;
+        box.appendChild(el);
+        setTimeout(() => el.remove(), 6000);
     }
 
     // Предложенные системой пары 2-го тура (T5) — по одной на свободный корт, координатор может принять или проигнорировать
@@ -854,6 +984,101 @@
             }
         })
         .catch(() => { btn.disabled = false; btn.textContent = 'OK'; });
+    }
+
+    function showPlayoffEdit(btn) {
+        const matchId = btn.dataset.matchId;
+        const g1 = btn.dataset.g1 || '6';
+        const g2 = btn.dataset.g2 || '4';
+        const vs = document.getElementById('pmatch-' + matchId)?.querySelector('.vs-block');
+        if (!vs) return;
+        vs.innerHTML = `<div class="score-form">
+            <input type="number" class="score-inp" id="pg1-${matchId}" value="${g1}" min="0" max="7">
+            <span class="vs-badge">VS</span>
+            <input type="number" class="score-inp" id="pg2-${matchId}" value="${g2}" min="0" max="7">
+            <button class="save-btn" data-match-id="${matchId}" data-tid="${TOURNAMENT_ID}"
+                    onclick="submitPlayoffScore(this)">OK</button>
+        </div>`;
+    }
+
+    // ── Ручное управление (T11): смена корта / замена команды ───────────
+    function toggleCourtEdit(matchId) {
+        const box = document.getElementById('court-edit-' + matchId);
+        if (!box) return;
+        const opening = !box.classList.contains('open');
+        box.classList.toggle('open', opening);
+        if (opening) {
+            fetch('/tournaments/team-playoff/api/' + TOURNAMENT_ID + '/court-board')
+                .then(r => r.json())
+                .then(data => {
+                    const free = (data.courts || []).filter(c => !c.occupied).map(c => c.courtNumber);
+                    const sel = box.querySelector('select');
+                    sel.innerHTML = free.map(c => `<option value="${c}">Cancha ${c}</option>`).join('')
+                        || '<option value="">—</option>';
+                })
+                .catch(() => {});
+        }
+    }
+
+    function submitCourtChange(matchId) {
+        const box = document.getElementById('court-edit-' + matchId);
+        const courtNumber = box?.querySelector('select')?.value;
+        if (!courtNumber) return;
+
+        fetch('/tournaments/team-playoff/api/matches/' + matchId + '/court', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({courtNumber: Number(courtNumber)})
+        })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    showToast(data.message || 'Error');
+                }
+            })
+            .catch(() => showToast('Error de red'));
+    }
+
+    function toggleTeamEdit(matchId, slot) {
+        const box = document.getElementById('team-edit-' + matchId + '-' + slot);
+        if (!box) return;
+        const opening = !box.classList.contains('open');
+        box.classList.toggle('open', opening);
+        if (opening) {
+            fetch('/tournaments/team-playoff/api/' + TOURNAMENT_ID + '/court-board')
+                .then(r => r.json())
+                .then(data => {
+                    const teams = data.availableTeams || [];
+                    const sel = box.querySelector('select');
+                    sel.innerHTML = teams.map(t => `<option value="${t.id}">${t.displayName}</option>`).join('')
+                        || '<option value="">—</option>';
+                })
+                .catch(() => {});
+        }
+    }
+
+    function submitTeamChange(matchId, slot) {
+        const box = document.getElementById('team-edit-' + matchId + '-' + slot);
+        const teamId = box?.querySelector('select')?.value;
+        if (!teamId) return;
+
+        fetch('/tournaments/team-playoff/api/matches/' + matchId + '/team', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({slot: slot, teamId: Number(teamId)})
+        })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.warning) showToast(data.warning);
+                    location.reload();
+                } else {
+                    showToast(data.message || 'Error');
+                }
+            })
+            .catch(() => showToast('Error de red'));
     }
 </script>
 <script th:src="@{/js/share-panel.js}"></script>
