@@ -95,6 +95,10 @@ public class WebSocketService {
         sendTeamPlayoffMessage(tournamentId, "TEAM_ADVANCED", matchData);
     }
 
+    public void notifyTeamPlayoffTournamentFinished(Long tournamentId, Object finishedData) {
+        sendTeamPlayoffMessage(tournamentId, "TOURNAMENT_FINISHED", finishedData);
+    }
+
     private void sendTeamPlayoffMessage(Long tournamentId, String type, Object data) {
         WebSocketMessage message = WebSocketMessage.builder()
                 .type(type)
