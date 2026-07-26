@@ -4,6 +4,7 @@ import com.padle.core.padelcoreservice.dto.americano.AmericanoMatchDto;
 import com.padle.core.padelcoreservice.dto.americano.AmericanoMatchSuggestionDto;
 import com.padle.core.padelcoreservice.dto.americano.AmericanoTeamDto;
 import com.padle.core.padelcoreservice.dto.americano.TeamAmericanoRankingDto;
+import com.padle.core.padelcoreservice.dto.americano.TeamPlayoffFinishedDto;
 import com.padle.core.padelcoreservice.dto.americano.TeamPlayoffTeamRequest;
 import com.padle.core.padelcoreservice.exception.InvalidStateException;
 import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
@@ -818,7 +819,12 @@ public class TeamPlayoffService {
         if (stage == null) return;
 
         PlayoffStage nextStage = nextStage(stage);
-        if (nextStage == null) return; // FINAL — дальше сетки нет
+        if (nextStage == null) {
+            if (stage == PlayoffStage.FINAL) {
+                finishTournament(match);
+            }
+            return;
+        }
 
         List<AmericanoMatch> stageMatches = matchRepository.findByTournamentIdAndPlayoffStage(
                 match.getTournament().getId(), stage);
@@ -835,10 +841,44 @@ public class TeamPlayoffService {
         seedNextPlayoffStage(match.getTournament(), winners, nextStage);
     }
 
+    /**
+     * Финал завершён (ТЗ §16): определяет чемпиона и 2-е место (currentPosition 1/2 — то же поле,
+     * что уже используется для итоговых мест в TeamAmericanoService.updateTeamPositions),
+     * переводит турнир в статус FINALIZADO.
+     */
+    private void finishTournament(AmericanoMatch finalMatch) {
+        AmericanoTeam champion = winnerOf(finalMatch);
+        AmericanoTeam runnerUp = loserOf(finalMatch);
+        if (champion == null || runnerUp == null) return;
+
+        champion.setCurrentPosition(1);
+        runnerUp.setCurrentPosition(2);
+        teamRepository.save(champion);
+        teamRepository.save(runnerUp);
+
+        Tournament tournament = finalMatch.getTournament();
+        tournament.setEstado(TournamentStatus.FINALIZADO);
+        tournamentRepository.save(tournament);
+
+        log.info("Tournament {} finished: champion={}, runner-up={}",
+                tournament.getId(), champion.getDisplayName(), runnerUp.getDisplayName());
+        webSocketService.notifyTeamPlayoffTournamentFinished(tournament.getId(),
+                TeamPlayoffFinishedDto.builder()
+                        .champion(toDto(champion))
+                        .runnerUp(toDto(runnerUp))
+                        .build());
+    }
+
     private AmericanoTeam winnerOf(AmericanoMatch m) {
         if (m.getTeam1Games() == null || m.getTeam2Games() == null) return null;
         Long winnerId = m.getTeam1Games() > m.getTeam2Games() ? m.getTeam1Id() : m.getTeam2Id();
         return winnerId == null ? null : teamRepository.findById(winnerId).orElse(null);
+    }
+
+    private AmericanoTeam loserOf(AmericanoMatch m) {
+        if (m.getTeam1Games() == null || m.getTeam2Games() == null) return null;
+        Long loserId = m.getTeam1Games() > m.getTeam2Games() ? m.getTeam2Id() : m.getTeam1Id();
+        return loserId == null ? null : teamRepository.findById(loserId).orElse(null);
     }
 
     /** Считает пары через движок и заполняет уже существующие TBD-матчи следующей стадии (созданы в createTbdPlayoffRounds). */
