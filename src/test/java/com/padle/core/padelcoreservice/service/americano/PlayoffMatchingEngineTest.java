@@ -10,6 +10,7 @@ import java.util.stream.Stream;
 import static com.padle.core.padelcoreservice.service.americano.PlayoffMatchingEngine.Candidate;
 import static com.padle.core.padelcoreservice.service.americano.PlayoffMatchingEngine.MatchingResult;
 import static com.padle.core.padelcoreservice.service.americano.PlayoffMatchingEngine.Pairing;
+import static com.padle.core.padelcoreservice.service.americano.PlayoffMatchingEngine.PriorityOrder;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -55,7 +56,8 @@ class PlayoffMatchingEngineTest {
      * ТЗ §11/§12 (полуфинал): команда 1 и команда 3 обе имеют серию из 3 побед подряд и должны
      * быть разведены по разным полуфиналам. Команда 3 уже играла против команды 6 в квалификации.
      * Ожидаемый результат из примера ТЗ: "Полуфинал 1: Команда 3 — Команда 7;
-     * Полуфинал 2: Команда 1 — Команда 6".
+     * Полуфинал 2: Команда 1 — Команда 6". Полуфинал считается через STRENGTH_FIRST (§12),
+     * а не SEED_FIRST (§53), которым формируется четвертьфинал (T8).
      */
     @Test
     void semiFinalStyle_matchesExactExampleFromSpec() {
@@ -70,12 +72,44 @@ class PlayoffMatchingEngineTest {
                 6L, Set.of(3L)
         );
 
-        MatchingResult result = engine.match(candidates, priorOpponents);
+        MatchingResult result = engine.match(candidates, priorOpponents, PriorityOrder.STRENGTH_FIRST);
 
         assertThat(result.allConstraintsSatisfied()).isTrue();
         assertThat(result.pairings()).containsExactlyInAnyOrder(
                 new Pairing(1L, 6L),
                 new Pairing(3L, 7L));
+    }
+
+    /**
+     * Демонстрирует, зачем вообще нужен STRENGTH_FIRST: посевное отклонение может быть
+     * оптимальным именно у пары, где есть реванш — SEED_FIRST (общий плей-офф, §53) его выберет,
+     * пожертвовав анти-реваншем ради посева. STRENGTH_FIRST (полуфинал, §12) поступает наоборот —
+     * жертвует посевом, но реванша избегает, раз есть полностью корректная альтернатива.
+     */
+    @Test
+    void strengthFirst_prefersAvoidingRematchOverOptimalSeeding_unlikeSeedFirst() {
+        List<Candidate> candidates = List.of(
+                new Candidate(1L, 1, 5), // сильнейшая серия побед
+                new Candidate(2L, 2, 1),
+                new Candidate(3L, 3, 1),
+                new Candidate(4L, 4, 5)  // сильнейшая серия побед
+        );
+        Map<Long, Set<Long>> priorOpponents = Map.of(
+                2L, Set.of(4L),
+                4L, Set.of(2L)
+        );
+
+        MatchingResult seedFirst = engine.match(candidates, priorOpponents, PriorityOrder.SEED_FIRST);
+        assertThat(seedFirst.allConstraintsSatisfied())
+                .as("SEED_FIRST жертвует анти-реваншем ради оптимального посева")
+                .isFalse();
+        assertThat(pairedTogether(seedFirst, 2L, 4L)).isTrue();
+
+        MatchingResult strengthFirst = engine.match(candidates, priorOpponents, PriorityOrder.STRENGTH_FIRST);
+        assertThat(strengthFirst.allConstraintsSatisfied()).isTrue();
+        assertThat(strengthFirst.pairings()).containsExactlyInAnyOrder(
+                new Pairing(1L, 2L),
+                new Pairing(3L, 4L));
     }
 
     @Test

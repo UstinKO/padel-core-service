@@ -325,8 +325,8 @@ public class TeamPlayoffService {
         matchRepository.save(match);
         webSocketService.notifyTeamPlayoffMatchCompleted(match.getTournament().getId(), toMatchDto(match));
 
-        // Прогрессируем победителя в следующий раунд
-        advancePlayoffWinner(match);
+        // Как только все матчи текущей стадии сыграны — формируем пары следующей стадии
+        tryFormNextPlayoffStage(match);
 
         tryAutoCompleteRound(match.getRound().getId());
 
@@ -807,70 +807,91 @@ public class TeamPlayoffService {
         }
     }
 
-    private void advancePlayoffWinner(AmericanoMatch match) {
-        if (match.getPlayoffStage() == null || match.getPlayoffStage() == PlayoffStage.FINAL) {
-            return;
+    /**
+     * Как только все матчи текущей стадии плей-офф завершены, формирует пары следующей стадии
+     * через {@link PlayoffMatchingEngine} (T9) — вместо жёсткого слота "победитель матча N
+     * идёт в матч N/2" пары считаются заново по посеву/сериям побед/истории встреч всех
+     * победителей стадии разом, как только становится известен последний из них.
+     */
+    private void tryFormNextPlayoffStage(AmericanoMatch match) {
+        PlayoffStage stage = match.getPlayoffStage();
+        if (stage == null) return;
+
+        PlayoffStage nextStage = nextStage(stage);
+        if (nextStage == null) return; // FINAL — дальше сетки нет
+
+        List<AmericanoMatch> stageMatches = matchRepository.findByTournamentIdAndPlayoffStage(
+                match.getTournament().getId(), stage);
+        if (stageMatches.stream().anyMatch(m -> !m.isCompleted())) {
+            return; // ждём остальные матчи этой стадии
         }
 
-        PlayoffStage nextStage = nextStage(match.getPlayoffStage());
-        if (nextStage == null) return;
+        List<AmericanoTeam> winners = stageMatches.stream()
+                .map(this::winnerOf)
+                .filter(Objects::nonNull)
+                .toList();
+        if (winners.size() < 2) return;
 
-        Long winnerId = match.getTeam1Games() > match.getTeam2Games()
-                ? match.getTeam1Id()
-                : match.getTeam2Id();
-
-        if (winnerId == null) return;
-
-        AmericanoTeam winner = teamRepository.findById(winnerId).orElse(null);
-        if (winner == null) return;
-
-        // Найти следующий матч плей-офф в следующей стадии
-        List<AmericanoMatch> nextMatches = matchRepository.findByTournamentIdAndPlayoffStage(
-                match.getTournament().getId(), nextStage);
-
-        // matchNumber в текущей стадии определяет, в какой матч и слот идёт победитель
-        int currentMatchNum = match.getMatchNumber(); // 1-based
-        int nextMatchNum = (currentMatchNum + 1) / 2;
-        boolean isTeam1Slot = (currentMatchNum % 2 == 1);
-
-        nextMatches.stream()
-                .filter(m -> m.getMatchNumber() == nextMatchNum)
-                .findFirst()
-                .ifPresent(nextMatch -> {
-                    if (isTeam1Slot) {
-                        nextMatch.setTeam1Id(winnerId);
-                        nextMatch.setTeam1Player1(winner.getPlayer1());
-                        nextMatch.setTeam1Player2(winner.getPlayer2());
-                    } else {
-                        nextMatch.setTeam2Id(winnerId);
-                        nextMatch.setTeam2Player1(winner.getPlayer1());
-                        nextMatch.setTeam2Player2(winner.getPlayer2());
-                    }
-                    if (nextMatch.getTeam1Id() != null && nextMatch.getTeam2Id() != null) {
-                        nextMatch.setStatus(AmericanoRoundStatus.IN_PROGRESS);
-                        nextMatch.setNote(
-                                (nextMatch.getTeam1Id() != null
-                                        ? teamDisplayName(nextMatch.getTeam1Id()) : "TBD")
-                                + " vs "
-                                + (nextMatch.getTeam2Id() != null
-                                        ? teamDisplayName(nextMatch.getTeam2Id()) : "TBD"));
-                        // Стартуем раунд если он ещё pending
-                        AmericanoRound nextRound = nextMatch.getRound();
-                        if (nextRound.getStatus() == AmericanoRoundStatus.PENDING) {
-                            nextRound.setStatus(AmericanoRoundStatus.IN_PROGRESS);
-                            roundRepository.save(nextRound);
-                        }
-                    }
-                    AmericanoMatch savedNextMatch = matchRepository.save(nextMatch);
-                    webSocketService.notifyTeamPlayoffTeamAdvanced(
-                            match.getTournament().getId(), toMatchDto(savedNextMatch));
-                });
+        seedNextPlayoffStage(match.getTournament(), winners, nextStage);
     }
 
-    private String teamDisplayName(Long teamId) {
-        return teamRepository.findById(teamId)
-                .map(AmericanoTeam::getDisplayName)
-                .orElse("TBD");
+    private AmericanoTeam winnerOf(AmericanoMatch m) {
+        if (m.getTeam1Games() == null || m.getTeam2Games() == null) return null;
+        Long winnerId = m.getTeam1Games() > m.getTeam2Games() ? m.getTeam1Id() : m.getTeam2Id();
+        return winnerId == null ? null : teamRepository.findById(winnerId).orElse(null);
+    }
+
+    /** Считает пары через движок и заполняет уже существующие TBD-матчи следующей стадии (созданы в createTbdPlayoffRounds). */
+    private void seedNextPlayoffStage(Tournament tournament, List<AmericanoTeam> winners, PlayoffStage nextStage) {
+        Map<Long, Integer> seedByTeamId = new HashMap<>();
+        List<AmericanoTeam> ranked = teamRepository.findPlayoffRankingByTournamentId(tournament.getId());
+        for (int i = 0; i < ranked.size(); i++) {
+            seedByTeamId.put(ranked.get(i).getId(), i + 1);
+        }
+
+        List<PlayoffMatchingEngine.Candidate> candidates = winners.stream()
+                .map(t -> new PlayoffMatchingEngine.Candidate(
+                        t.getId(), seedByTeamId.getOrDefault(t.getId(), Integer.MAX_VALUE), t.getMatchesWon()))
+                .toList();
+
+        // ТЗ §12: для полуфинала (и далее) разведение сильнейших и анти-реванш важнее посева —
+        // не тот порядок приоритетов, что при первичном посеве QF из квалификации (§17/§53).
+        PlayoffMatchingEngine.MatchingResult result = matchingEngine.match(
+                candidates, buildPriorOpponentsMap(tournament.getId()), PlayoffMatchingEngine.PriorityOrder.STRENGTH_FIRST);
+        if (!result.allConstraintsSatisfied()) {
+            log.warn("Playoff seeding for tournament {} stage {}: {}", tournament.getId(), nextStage, result.warning());
+        }
+
+        Map<Long, AmericanoTeam> teamById = winners.stream()
+                .collect(Collectors.toMap(AmericanoTeam::getId, t -> t));
+        List<AmericanoMatch> nextMatches = matchRepository.findByTournamentIdAndPlayoffStage(
+                tournament.getId(), nextStage);
+        List<PlayoffMatchingEngine.Pairing> pairings = result.pairings();
+
+        for (int i = 0; i < pairings.size() && i < nextMatches.size(); i++) {
+            PlayoffMatchingEngine.Pairing pairing = pairings.get(i);
+            AmericanoMatch nextMatch = nextMatches.get(i);
+            AmericanoTeam t1 = teamById.get(pairing.team1Id());
+            AmericanoTeam t2 = teamById.get(pairing.team2Id());
+
+            nextMatch.setTeam1Id(t1.getId());
+            nextMatch.setTeam1Player1(t1.getPlayer1());
+            nextMatch.setTeam1Player2(t1.getPlayer2());
+            nextMatch.setTeam2Id(t2.getId());
+            nextMatch.setTeam2Player1(t2.getPlayer1());
+            nextMatch.setTeam2Player2(t2.getPlayer2());
+            nextMatch.setStatus(AmericanoRoundStatus.IN_PROGRESS);
+            nextMatch.setNote(t1.getDisplayName() + " vs " + t2.getDisplayName());
+
+            AmericanoRound nextRound = nextMatch.getRound();
+            if (nextRound.getStatus() == AmericanoRoundStatus.PENDING) {
+                nextRound.setStatus(AmericanoRoundStatus.IN_PROGRESS);
+                roundRepository.save(nextRound);
+            }
+
+            AmericanoMatch savedNextMatch = matchRepository.save(nextMatch);
+            webSocketService.notifyTeamPlayoffTeamAdvanced(tournament.getId(), toMatchDto(savedNextMatch));
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════════════

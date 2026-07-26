@@ -13,16 +13,12 @@ import java.util.stream.Collectors;
  * Универсальный движок подбора соперников для стадий плей-офф (QF/SF/1-8-финал) —
  * не привязан к конкретной стадии, переиспользуется T8 (четвертьфинал) и T9 (полуфинал).
  * <p>
- * Перебирает все варианты разбиения кандидатов на пары (§: "перебрать комбинации
- * и выбрать лучшую") и выбирает лучший по строгим приоритетам ТЗ §11/§53:
- * <ol>
- *     <li>сильные команды получают преимущество по посеву — пары максимально
- *         "сильный против слабого" (по полю {@code seed}, меньше = сильнее);</li>
- *     <li>сильнейшие команды (по {@code winStreak}) разводятся по разным парам;</li>
- *     <li>повторные встречи исключаются, если это возможно;</li>
- *     <li>если не все условия выполнимы одновременно — выбирается наименее
- *         "плохой" доступный вариант, координатору возвращается предупреждение (ТЗ §12).</li>
- * </ol>
+ * Перебирает все варианты разбиения кандидатов на пары ("перебрать комбинации
+ * и выбрать лучшую") и выбирает лучший по строгим приоритетам ТЗ. Порядок приоритетов
+ * не универсален для всех стадий — ТЗ §53/§11 (плей-офф в целом, используется T8 для QF)
+ * ставит посев выше разведения сильнейших, а §12 (специально про полуфинал, T9) — наоборот,
+ * разведение сильнейших и анти-реванш важнее посева. См. {@link PriorityOrder}.
+ * <p>
  * Приоритеты сравниваются лексикографически — более высокий приоритет никогда
  * не приносится в жертву ради более низкого.
  */
@@ -38,11 +34,25 @@ public class PlayoffMatchingEngine {
     public record MatchingResult(List<Pairing> pairings, boolean allConstraintsSatisfied, String warning) {
     }
 
+    public enum PriorityOrder {
+        /** ТЗ §53/§11: посев ("сильный слабому") → разведение сильнейших → анти-реванш. Используется для QF (T8). */
+        SEED_FIRST,
+        /** ТЗ §12: разведение сильнейших → анти-реванш → посев — специфичный порядок для полуфинала (T9). */
+        STRENGTH_FIRST
+    }
+
+    /** Эквивалентно {@code match(candidates, priorOpponents, PriorityOrder.SEED_FIRST)} — приоритеты общего плей-офф (§53/§11). */
+    public MatchingResult match(List<Candidate> candidates, Map<Long, Set<Long>> priorOpponents) {
+        return match(candidates, priorOpponents, PriorityOrder.SEED_FIRST);
+    }
+
     /**
      * @param candidates      команды, которые нужно разбить на пары (чётное количество)
      * @param priorOpponents  история встреч: teamId -> множество teamId, с которыми команда уже играла
+     * @param priorityOrder   в каком порядке сравнивать критерии — общий плей-офф (QF) или полуфинал
      */
-    public MatchingResult match(List<Candidate> candidates, Map<Long, Set<Long>> priorOpponents) {
+    public MatchingResult match(List<Candidate> candidates, Map<Long, Set<Long>> priorOpponents,
+                                 PriorityOrder priorityOrder) {
         if (candidates.size() % 2 != 0) {
             throw new IllegalArgumentException(
                     "Matching requires an even number of candidates, got " + candidates.size());
@@ -60,17 +70,28 @@ public class PlayoffMatchingEngine {
         enumerateMatchings(new ArrayList<>(candidates), new ArrayList<>(), allMatchings);
 
         List<Pairing> best = null;
-        int[] bestCost = null;
+        int[] bestRawCost = null;
+        int[] bestOrderedCost = null;
         for (List<Pairing> matching : allMatchings) {
-            int[] cost = costOf(matching, byId, strongGroup, idealSeedDistance, priorOpponents);
-            if (bestCost == null || compareCost(cost, bestCost) < 0) {
-                bestCost = cost;
+            int[] rawCost = costOf(matching, byId, strongGroup, idealSeedDistance, priorOpponents);
+            int[] orderedCost = applyPriorityOrder(rawCost, priorityOrder);
+            if (bestOrderedCost == null || compareCost(orderedCost, bestOrderedCost) < 0) {
+                bestOrderedCost = orderedCost;
+                bestRawCost = rawCost;
                 best = matching;
             }
         }
 
-        boolean allSatisfied = bestCost[1] == 0 && bestCost[2] == 0;
-        return new MatchingResult(best, allSatisfied, allSatisfied ? null : buildWarning(bestCost));
+        boolean allSatisfied = bestRawCost[1] == 0 && bestRawCost[2] == 0;
+        return new MatchingResult(best, allSatisfied, allSatisfied ? null : buildWarning(bestRawCost));
+    }
+
+    /** Переставляет [посев, разведение, реванш] под нужный порядок приоритетов, не меняя сами значения. */
+    private int[] applyPriorityOrder(int[] rawCost, PriorityOrder order) {
+        return switch (order) {
+            case SEED_FIRST -> rawCost; // [посев, разведение, реванш]
+            case STRENGTH_FIRST -> new int[]{rawCost[1], rawCost[2], rawCost[0]}; // [разведение, реванш, посев]
+        };
     }
 
     /** Рекурсивно перечисляет все варианты разбиения на пары: фиксируем первого кандидата и перебираем его партнёра. */
