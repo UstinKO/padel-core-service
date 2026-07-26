@@ -371,6 +371,44 @@ public class TeamPlayoffService {
     }
 
     // ═══════════════════════════════════════════════════════════════════════
+    // ДОСКА КОРТОВ (court board) — court-driven распределение
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Число кортов, сконфигурированное для турнира — берётся из раунда квалификации,
+     * если он уже создан (см. {@link #initQualification}), иначе используется значение по умолчанию.
+     */
+    public int getConfiguredCourts(Long tournamentId) {
+        return roundRepository.findByTournamentIdAndPhase(tournamentId, TournamentPhase.QUALIFICATION)
+                .stream()
+                .findFirst()
+                .map(AmericanoRound::getCourts)
+                .orElse(DEFAULT_COURTS);
+    }
+
+    /** Все матчи турнира, которые сейчас идут (любой фазы) — используется для определения занятости кортов. */
+    public List<AmericanoMatch> getActiveMatches(Long tournamentId) {
+        return matchRepository.findByTournamentIdOrderByRoundIdAscMatchNumberAsc(tournamentId)
+                .stream()
+                .filter(AmericanoMatch::isInProgress)
+                .toList();
+    }
+
+    /**
+     * Команды, доступные для назначения на корт прямо сейчас: активны, оплатили, отметились присутствующими,
+     * не заняты в другом матче и не выбрали лимит в 2 квалификационных матча.
+     */
+    public List<AmericanoTeamDto> getAvailableTeamsForQualification(Long tournamentId) {
+        return teamRepository.findByTournamentIdAndStatus(tournamentId, AmericanoPlayerStatus.ACTIVE)
+                .stream()
+                .filter(t -> Boolean.TRUE.equals(t.getHasPaid()))
+                .filter(t -> Boolean.TRUE.equals(t.getAttended()))
+                .filter(t -> hasQualificationCapacity(tournamentId, t.getId()))
+                .map(this::toDto)
+                .toList();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
     // ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ — КВАЛИФИКАЦИЯ (court-driven)
     // ═══════════════════════════════════════════════════════════════════════
 
@@ -407,12 +445,16 @@ public class TeamPlayoffService {
         return team;
     }
 
-    private void validateTeamAvailableForQualification(Long tournamentId, AmericanoTeam team) {
-        List<AmericanoMatch> teamQualMatches = matchRepository
+    private List<AmericanoMatch> getTeamQualMatches(Long tournamentId, Long teamId) {
+        return matchRepository
                 .findByTournamentIdAndPhase(tournamentId, TournamentPhase.QUALIFICATION)
                 .stream()
-                .filter(m -> team.getId().equals(m.getTeam1Id()) || team.getId().equals(m.getTeam2Id()))
+                .filter(m -> teamId.equals(m.getTeam1Id()) || teamId.equals(m.getTeam2Id()))
                 .toList();
+    }
+
+    private void validateTeamAvailableForQualification(Long tournamentId, AmericanoTeam team) {
+        List<AmericanoMatch> teamQualMatches = getTeamQualMatches(tournamentId, team.getId());
 
         if (teamQualMatches.stream().anyMatch(AmericanoMatch::isInProgress)) {
             throw new InvalidStateException("El equipo " + team.getDisplayName() + " ya está jugando otro partido");
@@ -423,13 +465,23 @@ public class TeamPlayoffService {
         }
     }
 
+    /** Команда ещё может сыграть квалификационный матч: не занята сейчас и не отыграла лимит в 2 матча. */
+    private boolean hasQualificationCapacity(Long tournamentId, Long teamId) {
+        List<AmericanoMatch> teamQualMatches = getTeamQualMatches(tournamentId, teamId);
+        boolean busy = teamQualMatches.stream().anyMatch(AmericanoMatch::isInProgress);
+        return !busy && teamQualMatches.size() < 2;
+    }
+
     private void validateCourtFree(Long tournamentId, int courtNumber) {
-        boolean occupied = matchRepository.findByTournamentIdOrderByRoundIdAscMatchNumberAsc(tournamentId)
-                .stream()
-                .anyMatch(m -> m.isInProgress() && Objects.equals(m.getCourtNumber(), courtNumber));
-        if (occupied) {
+        if (isCourtOccupied(tournamentId, courtNumber)) {
             throw new InvalidStateException("La cancha " + courtNumber + " está ocupada");
         }
+    }
+
+    private boolean isCourtOccupied(Long tournamentId, int courtNumber) {
+        return matchRepository.findByTournamentIdOrderByRoundIdAscMatchNumberAsc(tournamentId)
+                .stream()
+                .anyMatch(m -> m.isInProgress() && Objects.equals(m.getCourtNumber(), courtNumber));
     }
 
     private int nextMatchNumber(Long roundId) {
