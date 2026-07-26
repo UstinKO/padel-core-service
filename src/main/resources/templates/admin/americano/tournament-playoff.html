@@ -396,6 +396,7 @@
                         </button>
                     </div>
                     <p id="newMatchHint" style="margin:.5rem 0 0;font-size:.8rem;color:#94a3b8"></p>
+                    <div id="newMatchSuggestions" style="margin-top:.5rem;display:flex;flex-direction:column;gap:.35rem"></div>
                 </div>
 
                 <!-- Раунды квалификации -->
@@ -590,6 +591,8 @@
     const TOURNAMENT_ID = /*[[${tournament.id}]]*/ 0;
     const MSG_NO_TEAMS = /*[[#{admin.playoff.qual.new_match.no_teams}]]*/ '';
     const MSG_NO_COURTS = /*[[#{admin.playoff.qual.new_match.no_courts}]]*/ '';
+    const MSG_SUGGESTED = /*[[#{admin.playoff.qual.new_match.suggested}]]*/ '';
+    const MSG_USE = /*[[#{admin.playoff.qual.new_match.use}]]*/ '';
     new TeamPlayoffRealtime(TOURNAMENT_ID);
 
     // ─── localStorage backup для незакрытых счётов ────────────────────────
@@ -662,6 +665,35 @@
                 : freeCourts.length === 0 ? MSG_NO_COURTS
                 : '';
         }
+
+        renderSuggestions(data.courts || []);
+    }
+
+    // Предложенные системой пары 2-го тура (T5) — по одной на свободный корт, координатор может принять или проигнорировать
+    function renderSuggestions(courts) {
+        const box = document.getElementById('newMatchSuggestions');
+        if (!box) return;
+
+        box.innerHTML = courts
+            .filter(c => !c.occupied && c.suggestedNextMatch)
+            .map(c => {
+                const s = c.suggestedNextMatch;
+                return `<div style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;color:#475569">
+                    <span class="info-pill">${MSG_SUGGESTED}: ${s.team1.displayName} — ${s.team2.displayName} (${c.courtNumber})</span>
+                    <button type="button" class="btn-sm" style="background:#dbeafe;color:#1e3a8a"
+                            onclick="useSuggestion(${s.team1.id}, ${s.team2.id}, ${c.courtNumber})">${MSG_USE}</button>
+                </div>`;
+            })
+            .join('');
+    }
+
+    function useSuggestion(team1Id, team2Id, courtNumber) {
+        const t1Sel = document.getElementById('newMatchTeam1');
+        const t2Sel = document.getElementById('newMatchTeam2');
+        const courtSel = document.getElementById('newMatchCourt');
+        if (t1Sel) t1Sel.value = team1Id;
+        if (t2Sel) t2Sel.value = team2Id;
+        if (courtSel) courtSel.value = courtNumber;
     }
 
     function createQualMatch() {

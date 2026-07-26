@@ -1,6 +1,7 @@
 package com.padle.core.padelcoreservice.service.americano;
 
 import com.padle.core.padelcoreservice.dto.americano.AmericanoMatchDto;
+import com.padle.core.padelcoreservice.dto.americano.AmericanoMatchSuggestionDto;
 import com.padle.core.padelcoreservice.dto.americano.AmericanoTeamDto;
 import com.padle.core.padelcoreservice.dto.americano.TeamAmericanoRankingDto;
 import com.padle.core.padelcoreservice.dto.americano.TeamPlayoffTeamRequest;
@@ -412,6 +413,87 @@ public class TeamPlayoffService {
                 .filter(t -> hasQualificationCapacity(tournamentId, t.getId()))
                 .map(this::toDto)
                 .toList();
+    }
+
+    /**
+     * Предлагает сопернику для 2-го тура квалификации команде, только что завершившей 1-й матч:
+     * тот же результат (победа/поражение), ещё не сыгравший 2-й матч и не занятый прямо сейчас (ТЗ §5).
+     * Ничего не создаёт — координатор подтверждает или назначает другую пару вручную (см. T4/T11).
+     */
+    public Optional<AmericanoTeamDto> suggestSecondRoundOpponent(Long tournamentId, Long teamId) {
+        List<AmericanoTeam> waiting = teamsAwaitingSecondQualMatch(tournamentId);
+        boolean isWaiting = waiting.stream().anyMatch(t -> t.getId().equals(teamId));
+        if (!isWaiting) {
+            return Optional.empty();
+        }
+
+        boolean won = wonFirstQualMatch(tournamentId, teamId);
+        return waiting.stream()
+                .filter(candidate -> !candidate.getId().equals(teamId))
+                .filter(candidate -> wonFirstQualMatch(tournamentId, candidate.getId()) == won)
+                .findFirst()
+                .map(this::toDto);
+    }
+
+    /**
+     * Жадно формирует пары 2-го тура для всех команд, ожидающих соперника прямо сейчас —
+     * каждая команда попадает не более чем в одно предложение за вызов.
+     * Используется доской кортов (T2), чтобы не предлагать одну и ту же команду на два корта сразу.
+     */
+    public List<AmericanoMatchSuggestionDto> suggestSecondRoundPairings(Long tournamentId) {
+        List<AmericanoTeam> waiting = teamsAwaitingSecondQualMatch(tournamentId);
+        List<AmericanoMatchSuggestionDto> suggestions = new ArrayList<>();
+        Set<Long> used = new HashSet<>();
+
+        for (AmericanoTeam team : waiting) {
+            if (used.contains(team.getId())) continue;
+            boolean won = wonFirstQualMatch(tournamentId, team.getId());
+
+            for (AmericanoTeam candidate : waiting) {
+                if (candidate.getId().equals(team.getId()) || used.contains(candidate.getId())) continue;
+                if (wonFirstQualMatch(tournamentId, candidate.getId()) == won) {
+                    suggestions.add(AmericanoMatchSuggestionDto.builder()
+                            .team1(toDto(team))
+                            .team2(toDto(candidate))
+                            .build());
+                    used.add(team.getId());
+                    used.add(candidate.getId());
+                    break;
+                }
+            }
+        }
+        return suggestions;
+    }
+
+    /** Активные команды, сыгравшие ровно 1 квалификационный матч и сейчас не занятые другим матчем. */
+    private List<AmericanoTeam> teamsAwaitingSecondQualMatch(Long tournamentId) {
+        return teamRepository.findByTournamentIdAndStatus(tournamentId, AmericanoPlayerStatus.ACTIVE)
+                .stream()
+                .filter(t -> {
+                    List<AmericanoMatch> matches = getTeamQualMatches(tournamentId, t.getId());
+                    boolean busy = matches.stream().anyMatch(AmericanoMatch::isInProgress);
+                    long completedCount = matches.stream().filter(AmericanoMatch::isCompleted).count();
+                    return !busy && completedCount == 1;
+                })
+                .toList();
+    }
+
+    /** Команда, ожидающая 2-й матч, обязательно имеет ровно один завершённый — берём его результат. */
+    private boolean wonFirstQualMatch(Long tournamentId, Long teamId) {
+        AmericanoMatch firstMatch = getTeamQualMatches(tournamentId, teamId).stream()
+                .filter(AmericanoMatch::isCompleted)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException(
+                        "Team " + teamId + " expected to have exactly 1 completed qual match"));
+        return isMatchWinner(firstMatch, teamId);
+    }
+
+    private boolean isMatchWinner(AmericanoMatch match, Long teamId) {
+        if (match.getTeam1Games() == null || match.getTeam2Games() == null) return false;
+        boolean isTeam1 = teamId.equals(match.getTeam1Id());
+        return isTeam1
+                ? match.getTeam1Games() > match.getTeam2Games()
+                : match.getTeam2Games() > match.getTeam1Games();
     }
 
     // ═══════════════════════════════════════════════════════════════════════
