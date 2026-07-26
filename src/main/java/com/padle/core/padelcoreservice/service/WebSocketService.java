@@ -99,6 +99,10 @@ public class WebSocketService {
         sendTeamPlayoffMessage(tournamentId, "TOURNAMENT_FINISHED", finishedData);
     }
 
+    public void notifyTeamPlayoffMatchUpdated(Long tournamentId, Object matchData) {
+        sendTeamPlayoffMessage(tournamentId, "MATCH_UPDATED", matchData);
+    }
+
     private void sendTeamPlayoffMessage(Long tournamentId, String type, Object data) {
         WebSocketMessage message = WebSocketMessage.builder()
                 .type(type)

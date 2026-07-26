@@ -468,6 +468,92 @@ public class TeamPlayoffService {
         return suggestions;
     }
 
+    public record MatchTeamChangeResult(AmericanoMatch match, String warning) {
+    }
+
+    /**
+     * Меняет корт ещё не завершённого матча — координатор может в любой момент переназначить
+     * корт вручную, автоматическое назначение остаётся лишь рекомендацией (ТЗ §8/§37).
+     */
+    @Transactional
+    public AmericanoMatch changeMatchCourt(Long matchId, int newCourtNumber) {
+        AmericanoMatch match = matchRepository.findById(matchId)
+                .orElseThrow(() -> new ResourceNotFoundException("Match not found: " + matchId));
+        if (match.isCompleted()) {
+            throw new InvalidStateException("No se puede cambiar la cancha de un partido ya finalizado");
+        }
+        Long tournamentId = match.getTournament().getId();
+
+        boolean occupiedByAnother = matchRepository.findByTournamentIdOrderByRoundIdAscMatchNumberAsc(tournamentId)
+                .stream()
+                .anyMatch(m -> !m.getId().equals(matchId) && m.isInProgress()
+                        && Objects.equals(m.getCourtNumber(), newCourtNumber));
+        if (occupiedByAnother) {
+            throw new InvalidStateException("La cancha " + newCourtNumber + " está ocupada");
+        }
+
+        match.setCourtNumber(newCourtNumber);
+        AmericanoMatch saved = matchRepository.save(match);
+        webSocketService.notifyTeamPlayoffMatchUpdated(tournamentId, toMatchDto(saved));
+        return saved;
+    }
+
+    /**
+     * Заменяет команду в паре ещё не завершённого матча — координатор может заменить любого
+     * соперника вручную (ТЗ §8/§37). Не блокирует повторную встречу, только предупреждает —
+     * автоматические рекомендации не должны ограничивать координатора.
+     */
+    @Transactional
+    public MatchTeamChangeResult changeMatchTeam(Long matchId, int slot, Long newTeamId) {
+        if (slot != 1 && slot != 2) {
+            throw new InvalidStateException("Slot inválido: " + slot);
+        }
+        AmericanoMatch match = matchRepository.findById(matchId)
+                .orElseThrow(() -> new ResourceNotFoundException("Match not found: " + matchId));
+        if (match.isCompleted()) {
+            throw new InvalidStateException("No se puede cambiar el equipo de un partido ya finalizado");
+        }
+        Long tournamentId = match.getTournament().getId();
+        AmericanoTeam newTeam = getActiveTeam(newTeamId);
+
+        Long otherTeamId = slot == 1 ? match.getTeam2Id() : match.getTeam1Id();
+        if (newTeamId.equals(otherTeamId)) {
+            throw new InvalidStateException("Un equipo no puede jugar contra sí mismo");
+        }
+
+        boolean busyElsewhere = matchRepository.findByTournamentIdOrderByRoundIdAscMatchNumberAsc(tournamentId)
+                .stream()
+                .anyMatch(m -> !m.getId().equals(matchId) && m.isInProgress()
+                        && (newTeamId.equals(m.getTeam1Id()) || newTeamId.equals(m.getTeam2Id())));
+        if (busyElsewhere) {
+            throw new InvalidStateException("El equipo " + newTeam.getDisplayName() + " ya está jugando otro partido");
+        }
+
+        String warning = null;
+        if (otherTeamId != null && buildPriorOpponentsMap(tournamentId)
+                .getOrDefault(newTeamId, Set.of()).contains(otherTeamId)) {
+            warning = "Estos equipos ya jugaron entre sí anteriormente.";
+        }
+
+        if (slot == 1) {
+            match.setTeam1Id(newTeam.getId());
+            match.setTeam1Player1(newTeam.getPlayer1());
+            match.setTeam1Player2(newTeam.getPlayer2());
+        } else {
+            match.setTeam2Id(newTeam.getId());
+            match.setTeam2Player1(newTeam.getPlayer1());
+            match.setTeam2Player2(newTeam.getPlayer2());
+        }
+
+        AmericanoTeam t1 = teamRepository.findById(match.getTeam1Id()).orElse(null);
+        AmericanoTeam t2 = teamRepository.findById(match.getTeam2Id()).orElse(null);
+        match.setNote((t1 != null ? t1.getDisplayName() : "TBD") + " vs " + (t2 != null ? t2.getDisplayName() : "TBD"));
+
+        AmericanoMatch saved = matchRepository.save(match);
+        webSocketService.notifyTeamPlayoffMatchUpdated(tournamentId, toMatchDto(saved));
+        return new MatchTeamChangeResult(saved, warning);
+    }
+
     /** Активные команды, сыгравшие ровно 1 квалификационный матч и сейчас не занятые другим матчем. */
     private List<AmericanoTeam> teamsAwaitingSecondQualMatch(Long tournamentId) {
         return teamRepository.findByTournamentIdAndStatus(tournamentId, AmericanoPlayerStatus.ACTIVE)
