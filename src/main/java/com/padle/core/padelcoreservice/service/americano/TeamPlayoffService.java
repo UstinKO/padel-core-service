@@ -48,6 +48,7 @@ public class TeamPlayoffService {
     private final PlayerRepository playerRepository;
     private final TournamentRegistrationRepository registrationRepository;
     private final WebSocketService webSocketService;
+    private final PlayoffMatchingEngine matchingEngine;
 
     // ═══════════════════════════════════════════════════════════════════════
     // УПРАВЛЕНИЕ КОМАНДАМИ
@@ -685,12 +686,7 @@ public class TeamPlayoffService {
                                      List<AmericanoTeam> seeded,
                                      PlayoffStage stage,
                                      int startRoundNumber) {
-        // Стандартная сетка: 1 vs N, 2 vs N-1, 3 vs N-2, ...
-        int n = seeded.size();
-        List<long[]> pairs = new ArrayList<>();
-        for (int i = 0; i < n / 2; i++) {
-            pairs.add(new long[]{seeded.get(i).getId(), seeded.get(n - 1 - i).getId()});
-        }
+        List<PlayoffMatchingEngine.Pairing> pairs = seedPlayoffPairs(tournament.getId(), seeded);
 
         AmericanoRound round = AmericanoRound.builder()
                 .tournament(tournament)
@@ -707,8 +703,8 @@ public class TeamPlayoffService {
 
         List<AmericanoMatch> matches = new ArrayList<>();
         for (int i = 0; i < pairs.size(); i++) {
-            long t1id = pairs.get(i)[0];
-            long t2id = pairs.get(i)[1];
+            long t1id = pairs.get(i).team1Id();
+            long t2id = pairs.get(i).team2Id();
             AmericanoTeam t1 = teamRepository.findById(t1id).orElseThrow();
             AmericanoTeam t2 = teamRepository.findById(t2id).orElseThrow();
 
@@ -738,6 +734,41 @@ public class TeamPlayoffService {
         if (nextStage != null && pairs.size() > 1) {
             createTbdPlayoffRounds(tournament, nextStage, startRoundNumber + 1, pairs.size() / 2);
         }
+    }
+
+    /**
+     * Строит пары четвертьфинала через {@link PlayoffMatchingEngine} (ТЗ §17: 2-0 против 0-2,
+     * 1-1 между собой, повторные встречи исключаются по возможности). {@code seeded} уже
+     * отсортирован по квалификационному рейтингу — позиция в списке становится посевом,
+     * matchesWon (0/1/2) — сигналом "силы" для разведения лучших команд по разным парам.
+     */
+    private List<PlayoffMatchingEngine.Pairing> seedPlayoffPairs(Long tournamentId, List<AmericanoTeam> seeded) {
+        List<PlayoffMatchingEngine.Candidate> candidates = new ArrayList<>();
+        for (int i = 0; i < seeded.size(); i++) {
+            AmericanoTeam t = seeded.get(i);
+            candidates.add(new PlayoffMatchingEngine.Candidate(t.getId(), i + 1, t.getMatchesWon()));
+        }
+
+        PlayoffMatchingEngine.MatchingResult result =
+                matchingEngine.match(candidates, buildPriorOpponentsMap(tournamentId));
+
+        if (!result.allConstraintsSatisfied()) {
+            log.warn("Playoff seeding for tournament {}: {}", tournamentId, result.warning());
+        }
+        return result.pairings();
+    }
+
+    /** История встреч по всем сыгранным матчам турнира (любая фаза) — для анти-реванш проверки движка подбора соперников. */
+    private Map<Long, Set<Long>> buildPriorOpponentsMap(Long tournamentId) {
+        Map<Long, Set<Long>> opponents = new HashMap<>();
+        matchRepository.findByTournamentIdOrderByRoundIdAscMatchNumberAsc(tournamentId).stream()
+                .filter(AmericanoMatch::isCompleted)
+                .filter(m -> m.getTeam1Id() != null && m.getTeam2Id() != null)
+                .forEach(m -> {
+                    opponents.computeIfAbsent(m.getTeam1Id(), k -> new HashSet<>()).add(m.getTeam2Id());
+                    opponents.computeIfAbsent(m.getTeam2Id(), k -> new HashSet<>()).add(m.getTeam1Id());
+                });
+        return opponents;
     }
 
     private void createTbdPlayoffRounds(Tournament tournament, PlayoffStage stage,
