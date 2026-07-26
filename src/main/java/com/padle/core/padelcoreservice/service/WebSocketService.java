@@ -78,4 +78,32 @@ public class WebSocketService {
         messagingTemplate.convertAndSend("/topic/tournament/" + kingId, message);
         log.info("WebSocket notification sent for state update: kingId={}", kingId);
     }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // TEAM PLAYOFF (квалификация + плей-офф, /topic/team-playoff/{tournamentId})
+    // ═══════════════════════════════════════════════════════════════════════
+
+    public void notifyTeamPlayoffMatchCreated(Long tournamentId, Object matchData) {
+        sendTeamPlayoffMessage(tournamentId, "MATCH_CREATED", matchData);
+    }
+
+    public void notifyTeamPlayoffMatchCompleted(Long tournamentId, Object matchData) {
+        sendTeamPlayoffMessage(tournamentId, "MATCH_COMPLETED", matchData);
+    }
+
+    public void notifyTeamPlayoffTeamAdvanced(Long tournamentId, Object matchData) {
+        sendTeamPlayoffMessage(tournamentId, "TEAM_ADVANCED", matchData);
+    }
+
+    private void sendTeamPlayoffMessage(Long tournamentId, String type, Object data) {
+        WebSocketMessage message = WebSocketMessage.builder()
+                .type(type)
+                .tournamentId(tournamentId)
+                .data(data)
+                .timestamp(LocalDateTime.now().format(FORMATTER))
+                .build();
+
+        messagingTemplate.convertAndSend("/topic/team-playoff/" + tournamentId, message);
+        log.info("WebSocket notification sent for team-playoff: tournamentId={}, type={}", tournamentId, type);
+    }
 }

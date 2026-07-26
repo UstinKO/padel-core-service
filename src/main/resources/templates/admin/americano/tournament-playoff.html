@@ -556,8 +556,12 @@
 </main>
 
 <script th:src="@{/js/csrf.js}"></script>
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+<script th:src="@{/js/team-playoff-realtime.js}"></script>
 <script th:inline="javascript">
     const TOURNAMENT_ID = /*[[${tournament.id}]]*/ 0;
+    new TeamPlayoffRealtime(TOURNAMENT_ID);
 
     // ─── localStorage backup для незакрытых счётов ────────────────────────
     function lsKey(inputId) { return 'padel_t' + TOURNAMENT_ID + '_' + inputId; }

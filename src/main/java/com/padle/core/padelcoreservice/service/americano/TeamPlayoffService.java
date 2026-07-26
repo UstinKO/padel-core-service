@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.service.americano;
 
+import com.padle.core.padelcoreservice.dto.americano.AmericanoMatchDto;
 import com.padle.core.padelcoreservice.dto.americano.AmericanoTeamDto;
 import com.padle.core.padelcoreservice.dto.americano.TeamAmericanoRankingDto;
 import com.padle.core.padelcoreservice.dto.americano.TeamPlayoffTeamRequest;
@@ -18,6 +19,7 @@ import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoMatchRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoRoundRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoTeamRepository;
+import com.padle.core.padelcoreservice.service.WebSocketService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -44,6 +46,7 @@ public class TeamPlayoffService {
     private final AmericanoMatchRepository matchRepository;
     private final PlayerRepository playerRepository;
     private final TournamentRegistrationRepository registrationRepository;
+    private final WebSocketService webSocketService;
 
     // ═══════════════════════════════════════════════════════════════════════
     // УПРАВЛЕНИЕ КОМАНДАМИ
@@ -218,6 +221,7 @@ public class TeamPlayoffService {
         AmericanoMatch saved = matchRepository.save(buildQualMatch(t1, t2, round, tournament, matchNumber, courtNumber));
         log.info("Qualification match created: {} vs {} on court {}",
                 t1.getDisplayName(), t2.getDisplayName(), courtNumber);
+        webSocketService.notifyTeamPlayoffMatchCreated(tournamentId, toMatchDto(saved));
         return saved;
     }
 
@@ -252,6 +256,7 @@ public class TeamPlayoffService {
 
         applySetStats(match);
         tryAutoCompleteQualification(match.getTournament().getId());
+        webSocketService.notifyTeamPlayoffMatchCompleted(match.getTournament().getId(), toMatchDto(match));
 
         return match;
     }
@@ -316,6 +321,7 @@ public class TeamPlayoffService {
         match.setTeam2Score(team2Games > team1Games ? 1 : 0);
         match.setStatus(AmericanoRoundStatus.COMPLETED);
         matchRepository.save(match);
+        webSocketService.notifyTeamPlayoffMatchCompleted(match.getTournament().getId(), toMatchDto(match));
 
         // Прогрессируем победителя в следующий раунд
         advancePlayoffWinner(match);
@@ -699,7 +705,9 @@ public class TeamPlayoffService {
                             roundRepository.save(nextRound);
                         }
                     }
-                    matchRepository.save(nextMatch);
+                    AmericanoMatch savedNextMatch = matchRepository.save(nextMatch);
+                    webSocketService.notifyTeamPlayoffTeamAdvanced(
+                            match.getTournament().getId(), toMatchDto(savedNextMatch));
                 });
     }
 
@@ -928,6 +936,52 @@ public class TeamPlayoffService {
         dto.setHasPaid(t.getHasPaid());
         dto.setAttended(t.getAttended());
         dto.setAdminComment(t.getAdminComment());
+
+        return dto;
+    }
+
+    /**
+     * Перенесено из TeamPlayoffViewController — нужно и контроллеру (рендер страниц),
+     * и сервису (сериализация payload'а для WebSocket-уведомлений).
+     */
+    public AmericanoMatchDto toMatchDto(AmericanoMatch m) {
+        AmericanoMatchDto dto = new AmericanoMatchDto();
+        dto.setId(m.getId());
+        dto.setMatchNumber(m.getMatchNumber());
+        dto.setCourtNumber(m.getCourtNumber());
+        dto.setStatus(AmericanoRoundStatus.valueOf(m.getStatus().name()));
+        dto.setIsCompleted(m.isCompleted());
+        dto.setTeam1Score(m.getTeam1Score());
+        dto.setTeam2Score(m.getTeam2Score());
+        dto.setNote(m.getNote());
+        dto.setTournamentId(m.getTournament().getId());
+
+        if (m.getTeam1Player1() != null) {
+            dto.setTeam1Player1Id(m.getTeam1Player1().getId());
+            dto.setTeam1Player1Name(
+                    m.getTeam1Player1().getNombre() + " " + m.getTeam1Player1().getApellido());
+        }
+        if (m.getTeam1Player2() != null) {
+            dto.setTeam1Player2Id(m.getTeam1Player2().getId());
+            dto.setTeam1Player2Name(
+                    m.getTeam1Player2().getNombre() + " " + m.getTeam1Player2().getApellido());
+        }
+        if (m.getTeam2Player1() != null) {
+            dto.setTeam2Player1Id(m.getTeam2Player1().getId());
+            dto.setTeam2Player1Name(
+                    m.getTeam2Player1().getNombre() + " " + m.getTeam2Player1().getApellido());
+        }
+        if (m.getTeam2Player2() != null) {
+            dto.setTeam2Player2Id(m.getTeam2Player2().getId());
+            dto.setTeam2Player2Name(
+                    m.getTeam2Player2().getNombre() + " " + m.getTeam2Player2().getApellido());
+        }
+
+        dto.setTeam1Games(m.getTeam1Games());
+        dto.setTeam2Games(m.getTeam2Games());
+        if (m.getPlayoffStage() != null) {
+            dto.setPlayoffStage(m.getPlayoffStage().name());
+        }
 
         return dto;
     }
