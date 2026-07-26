@@ -23,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -33,6 +34,9 @@ import java.util.stream.Stream;
 @Slf4j
 @Transactional(readOnly = true)
 public class TeamPlayoffService {
+
+    /** Совпадает с DEFAULT в колонке americano_rounds_db.courts (v1.23) — используется, когда раунд создаётся лениво без явного числа кортов. */
+    private static final int DEFAULT_COURTS = 2;
 
     private final TournamentRepository tournamentRepository;
     private final AmericanoTeamRepository teamRepository;
@@ -164,17 +168,15 @@ public class TeamPlayoffService {
     // ═══════════════════════════════════════════════════════════════════════
 
     /**
-     * Создаёт 2 квалификационных раунда — каждая команда играет ровно 2 матча.
-     * Использует circle method: берём первые 2 тура из Round Robin.
+     * Отмечает фазу квалификации как готовую к старту.
+     * Раунд квалификации — единый логический контейнер фазы (не пакет матчей):
+     * матчи добавляются в него по одному, по мере готовности команд (см. {@link #createQualificationMatch}).
+     * Идемпотентна — повторный вызов не ошибка, а no-op на уже созданном раунде.
      */
     @Transactional
-    public void initQualification(Long tournamentId, int courts) {
+    public AmericanoRound initQualification(Long tournamentId, int courts) {
         Tournament tournament = getTournament(tournamentId);
         validateTournamentType(tournament);
-
-        if (isQualificationStarted(tournamentId)) {
-            throw new InvalidStateException("La calificación ya fue inicializada");
-        }
 
         List<AmericanoTeam> teams = teamRepository.findByTournamentIdAndStatus(
                 tournamentId, AmericanoPlayerStatus.ACTIVE);
@@ -184,33 +186,39 @@ public class TeamPlayoffService {
                     "Se necesitan al menos 4 equipos para la calificación. Actuales: " + teams.size());
         }
 
-        // Генерируем 2 квалификационных тура (каждая команда играет ровно 2 матча)
-        List<List<long[]>> tours = circleMethodTours(teams, 2);
+        AmericanoRound round = getOrCreateQualificationRound(tournament, courts);
+        log.info("Qualification phase ready: {} teams, round #{}", teams.size(), round.getId());
+        return round;
+    }
 
-        int roundNumber = 1;
-        for (List<long[]> tourPairs : tours) {
-            // Распределяем по раундам с учётом кортов
-            List<List<long[]>> roundSlots = distributeIntoRounds(tourPairs, teams.size(), courts);
-            for (List<long[]> slot : roundSlots) {
-                AmericanoRound round = AmericanoRound.builder()
-                        .tournament(tournament)
-                        .roundNumber(roundNumber++)
-                        .status(AmericanoRoundStatus.IN_PROGRESS)
-                        .pointsPerMatch(1)
-                        .isDoubles(true)
-                        .courts(Math.min(slot.size(), courts))
-                        .phase(TournamentPhase.QUALIFICATION)
-                        .note("Calificación R" + (roundNumber - 1))
-                        .build();
+    /**
+     * Точечное создание квалификационного матча координатором.
+     * Не требует предварительной инициализации раунда — раунд фазы создаётся лениво при первом обращении.
+     * Корт и соперников выбирает координатор; система только проверяет базовую доступность.
+     */
+    @Transactional
+    public AmericanoMatch createQualificationMatch(Long tournamentId, Long team1Id, Long team2Id, int courtNumber) {
+        Tournament tournament = getTournament(tournamentId);
+        validateTournamentType(tournament);
 
-                AmericanoRound savedRound = roundRepository.save(round);
-                List<AmericanoMatch> matches = buildMatchesFromSlot(slot, teams, savedRound, tournament);
-                matchRepository.saveAll(matches);
-                savedRound.setMatches(matches);
-            }
+        if (team1Id.equals(team2Id)) {
+            throw new InvalidStateException("Un equipo no puede jugar contra sí mismo");
         }
 
-        log.info("Qualification initialized: {} teams, {} rounds", teams.size(), roundNumber - 1);
+        AmericanoTeam t1 = getActiveTeam(team1Id);
+        AmericanoTeam t2 = getActiveTeam(team2Id);
+
+        validateTeamAvailableForQualification(tournamentId, t1);
+        validateTeamAvailableForQualification(tournamentId, t2);
+        validateCourtFree(tournamentId, courtNumber);
+
+        AmericanoRound round = getOrCreateQualificationRound(tournament, null);
+        int matchNumber = nextMatchNumber(round.getId());
+
+        AmericanoMatch saved = matchRepository.save(buildQualMatch(t1, t2, round, tournament, matchNumber, courtNumber));
+        log.info("Qualification match created: {} vs {} on court {}",
+                t1.getDisplayName(), t2.getDisplayName(), courtNumber);
+        return saved;
     }
 
     /**
@@ -243,7 +251,7 @@ public class TeamPlayoffService {
         matchRepository.save(match);
 
         applySetStats(match);
-        tryAutoCompleteRound(match.getRound().getId());
+        tryAutoCompleteQualification(match.getTournament().getId());
 
         return match;
     }
@@ -363,100 +371,127 @@ public class TeamPlayoffService {
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ — РАСПИСАНИЕ
+    // ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ — КВАЛИФИКАЦИЯ (court-driven)
     // ═══════════════════════════════════════════════════════════════════════
 
     /**
-     * Генерирует первые `numTours` туров Round Robin (circle method).
-     * Каждый тур — список пар [idxA, idxB].
+     * Раунд квалификации — один на турнир, создаётся лениво при первом обращении
+     * и растёт по мере добавления матчей (не пакетная генерация).
      */
-    private List<List<long[]>> circleMethodTours(List<AmericanoTeam> teams, int numTours) {
-        int T = teams.size();
-        int n = (T % 2 == 0) ? T : T + 1;
-        int[] circle = new int[n];
-        for (int i = 0; i < n; i++) circle[i] = i;
-
-        List<List<long[]>> tours = new ArrayList<>();
-        int tours_to_gen = Math.min(numTours, n - 1);
-
-        for (int tour = 0; tour < tours_to_gen; tour++) {
-            List<long[]> tourPairs = new ArrayList<>();
-            for (int i = 0; i < n / 2; i++) {
-                int a = circle[i];
-                int b = circle[n - 1 - i];
-                if (a < T && b < T) {
-                    tourPairs.add(new long[]{a, b});
-                }
-            }
-            if (!tourPairs.isEmpty()) {
-                tours.add(tourPairs);
-            }
-            // Вращаем
-            int last = circle[n - 1];
-            System.arraycopy(circle, 1, circle, 2, n - 2);
-            circle[1] = last;
+    private AmericanoRound getOrCreateQualificationRound(Tournament tournament, Integer courts) {
+        List<AmericanoRound> existing = roundRepository.findByTournamentIdAndPhase(
+                tournament.getId(), TournamentPhase.QUALIFICATION);
+        if (!existing.isEmpty()) {
+            return existing.get(0);
         }
 
-        return tours;
+        AmericanoRound round = AmericanoRound.builder()
+                .tournament(tournament)
+                .roundNumber(1)
+                .status(AmericanoRoundStatus.IN_PROGRESS)
+                .pointsPerMatch(1)
+                .isDoubles(true)
+                .courts(courts != null ? courts : DEFAULT_COURTS)
+                .phase(TournamentPhase.QUALIFICATION)
+                .note("Calificación")
+                .build();
+        return roundRepository.save(round);
     }
 
-    private List<List<long[]>> distributeIntoRounds(List<long[]> pairs, int teamCount, int courts) {
-        List<List<long[]>> rounds = new ArrayList<>();
-        List<long[]> remaining = new ArrayList<>(pairs);
-
-        while (!remaining.isEmpty()) {
-            List<long[]> slot = new ArrayList<>();
-            Set<Long> busy = new HashSet<>();
-
-            Iterator<long[]> it = remaining.iterator();
-            while (it.hasNext() && slot.size() < courts) {
-                long[] pair = it.next();
-                if (!busy.contains(pair[0]) && !busy.contains(pair[1])) {
-                    slot.add(pair);
-                    busy.add(pair[0]);
-                    busy.add(pair[1]);
-                    it.remove();
-                }
-            }
-
-            if (!slot.isEmpty()) {
-                rounds.add(slot);
-            } else {
-                log.error("Infinite loop guard: {} pairs left unscheduled", remaining.size());
-                break;
-            }
+    private AmericanoTeam getActiveTeam(Long teamId) {
+        AmericanoTeam team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new ResourceNotFoundException("Team not found: " + teamId));
+        if (team.getStatus() != AmericanoPlayerStatus.ACTIVE) {
+            throw new InvalidStateException("El equipo no está activo: " + team.getDisplayName());
         }
-
-        return rounds;
+        return team;
     }
 
-    private List<AmericanoMatch> buildMatchesFromSlot(List<long[]> slot,
-                                                       List<AmericanoTeam> teams,
-                                                       AmericanoRound round,
-                                                       Tournament tournament) {
-        List<AmericanoMatch> matches = new ArrayList<>();
-        for (int c = 0; c < slot.size(); c++) {
-            long[] pair = slot.get(c);
-            AmericanoTeam t1 = teams.get((int) pair[0]);
-            AmericanoTeam t2 = teams.get((int) pair[1]);
+    private void validateTeamAvailableForQualification(Long tournamentId, AmericanoTeam team) {
+        List<AmericanoMatch> teamQualMatches = matchRepository
+                .findByTournamentIdAndPhase(tournamentId, TournamentPhase.QUALIFICATION)
+                .stream()
+                .filter(m -> team.getId().equals(m.getTeam1Id()) || team.getId().equals(m.getTeam2Id()))
+                .toList();
 
-            matches.add(AmericanoMatch.builder()
-                    .round(round)
-                    .tournament(tournament)
-                    .matchNumber(c + 1)
-                    .team1Id(t1.getId())
-                    .team2Id(t2.getId())
-                    .team1Player1(t1.getPlayer1())
-                    .team1Player2(t1.getPlayer2())
-                    .team2Player1(t2.getPlayer1())
-                    .team2Player2(t2.getPlayer2())
-                    .isDoubles(true)
-                    .status(AmericanoRoundStatus.IN_PROGRESS)
-                    .courtNumber(c + 1)
-                    .note(t1.getDisplayName() + " vs " + t2.getDisplayName())
-                    .build());
+        if (teamQualMatches.stream().anyMatch(AmericanoMatch::isInProgress)) {
+            throw new InvalidStateException("El equipo " + team.getDisplayName() + " ya está jugando otro partido");
         }
-        return matches;
+        if (teamQualMatches.size() >= 2) {
+            throw new InvalidStateException(
+                    "El equipo " + team.getDisplayName() + " ya completó sus 2 partidos de calificación");
+        }
+    }
+
+    private void validateCourtFree(Long tournamentId, int courtNumber) {
+        boolean occupied = matchRepository.findByTournamentIdOrderByRoundIdAscMatchNumberAsc(tournamentId)
+                .stream()
+                .anyMatch(m -> m.isInProgress() && Objects.equals(m.getCourtNumber(), courtNumber));
+        if (occupied) {
+            throw new InvalidStateException("La cancha " + courtNumber + " está ocupada");
+        }
+    }
+
+    private int nextMatchNumber(Long roundId) {
+        return matchRepository.findByRoundId(roundId).stream()
+                .mapToInt(AmericanoMatch::getMatchNumber)
+                .max()
+                .orElse(0) + 1;
+    }
+
+    private AmericanoMatch buildQualMatch(AmericanoTeam t1, AmericanoTeam t2, AmericanoRound round,
+                                           Tournament tournament, int matchNumber, int courtNumber) {
+        return AmericanoMatch.builder()
+                .round(round)
+                .tournament(tournament)
+                .matchNumber(matchNumber)
+                .team1Id(t1.getId())
+                .team2Id(t2.getId())
+                .team1Player1(t1.getPlayer1())
+                .team1Player2(t1.getPlayer2())
+                .team2Player1(t2.getPlayer1())
+                .team2Player2(t2.getPlayer2())
+                .isDoubles(true)
+                .status(AmericanoRoundStatus.IN_PROGRESS)
+                .startedAt(LocalDateTime.now())
+                .courtNumber(courtNumber)
+                .note(t1.getDisplayName() + " vs " + t2.getDisplayName())
+                .build();
+    }
+
+    /**
+     * В court-driven модели раунд квалификации пополняется матчами постепенно,
+     * поэтому завершение фазы определяется не по набору матчей раунда на момент проверки,
+     * а по тому, что каждая активная команда сыграла ровно 2 квалификационных матча.
+     */
+    private void tryAutoCompleteQualification(Long tournamentId) {
+        List<AmericanoTeam> activeTeams = teamRepository.findByTournamentIdAndStatus(
+                tournamentId, AmericanoPlayerStatus.ACTIVE);
+        if (activeTeams.isEmpty()) return;
+
+        List<AmericanoMatch> completedQualMatches = matchRepository
+                .findByTournamentIdAndPhase(tournamentId, TournamentPhase.QUALIFICATION)
+                .stream()
+                .filter(AmericanoMatch::isCompleted)
+                .toList();
+
+        Map<Long, Long> completedByTeam = Stream.concat(
+                        completedQualMatches.stream().map(AmericanoMatch::getTeam1Id),
+                        completedQualMatches.stream().map(AmericanoMatch::getTeam2Id))
+                .collect(Collectors.groupingBy(id -> id, Collectors.counting()));
+
+        boolean allDone = activeTeams.stream()
+                .allMatch(t -> completedByTeam.getOrDefault(t.getId(), 0L) >= 2);
+        if (!allDone) return;
+
+        roundRepository.findByTournamentIdAndPhase(tournamentId, TournamentPhase.QUALIFICATION)
+                .stream()
+                .filter(r -> r.getStatus() == AmericanoRoundStatus.IN_PROGRESS)
+                .forEach(r -> {
+                    r.complete();
+                    roundRepository.save(r);
+                    log.info("Qualification phase auto-completed for tournament {}", tournamentId);
+                });
     }
 
     // ═══════════════════════════════════════════════════════════════════════
