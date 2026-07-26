@@ -371,6 +371,33 @@
                     </table>
                 </div>
 
+                <!-- Новый матч: координатор выбирает 2 свободные команды и корт вручную -->
+                <div class="round-content" style="border-bottom:1px solid #e2e8f0">
+                    <h4 style="margin:0 0 .75rem;font-size:.9rem;color:#1e293b">
+                        <i class="fas fa-table-tennis" style="color:#FF6B35"></i>
+                        <span th:text="#{admin.playoff.qual.new_match.title}">Nuevo partido</span>
+                    </h4>
+                    <div style="display:flex;gap:.75rem;align-items:flex-end;flex-wrap:wrap">
+                        <div class="form-group" style="min-width:220px">
+                            <label th:text="#{admin.playoff.qual.new_match.team1}">Equipo 1</label>
+                            <select id="newMatchTeam1" class="form-control"></select>
+                        </div>
+                        <div class="form-group" style="min-width:220px">
+                            <label th:text="#{admin.playoff.qual.new_match.team2}">Equipo 2</label>
+                            <select id="newMatchTeam2" class="form-control"></select>
+                        </div>
+                        <div class="form-group" style="width:130px">
+                            <label th:text="#{admin.playoff.qual.new_match.court}">Cancha</label>
+                            <select id="newMatchCourt" class="form-control"></select>
+                        </div>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="createQualMatch()">
+                            <i class="fas fa-play"></i>
+                            <span th:text="#{admin.playoff.qual.new_match.submit}">Crear partido</span>
+                        </button>
+                    </div>
+                    <p id="newMatchHint" style="margin:.5rem 0 0;font-size:.8rem;color:#94a3b8"></p>
+                </div>
+
                 <!-- Раунды квалификации -->
                 <div th:if="${not #lists.isEmpty(qualRounds)}">
                     <div class="rounds-tabs" id="qualTabs">
@@ -561,6 +588,8 @@
 <script th:src="@{/js/team-playoff-realtime.js}"></script>
 <script th:inline="javascript">
     const TOURNAMENT_ID = /*[[${tournament.id}]]*/ 0;
+    const MSG_NO_TEAMS = /*[[#{admin.playoff.qual.new_match.no_teams}]]*/ '';
+    const MSG_NO_COURTS = /*[[#{admin.playoff.qual.new_match.no_courts}]]*/ '';
     new TeamPlayoffRealtime(TOURNAMENT_ID);
 
     // ─── localStorage backup для незакрытых счётов ────────────────────────
@@ -596,7 +625,75 @@
     document.addEventListener('DOMContentLoaded', () => {
         if (qRounds.length > 0) qRounds[0].style.display = 'block';
         lsRestore();
+        refreshCourtBoard();
     });
+
+    // ── Новый матч квалификации: координатор сам выбирает 2 команды и корт ──
+    function refreshCourtBoard() {
+        if (!document.getElementById('newMatchTeam1')) return;
+        fetch('/tournaments/team-playoff/api/' + TOURNAMENT_ID + '/court-board')
+            .then(r => r.json())
+            .then(renderCourtBoard)
+            .catch(() => {});
+    }
+
+    function renderCourtBoard(data) {
+        const t1Sel = document.getElementById('newMatchTeam1');
+        const t2Sel = document.getElementById('newMatchTeam2');
+        const courtSel = document.getElementById('newMatchCourt');
+        const hint = document.getElementById('newMatchHint');
+        if (!t1Sel || !t2Sel || !courtSel) return;
+
+        const teams = data.availableTeams || [];
+        const prevT1 = t1Sel.value, prevT2 = t2Sel.value, prevCourt = courtSel.value;
+
+        const teamOpts = teams.map(t => `<option value="${t.id}">${t.displayName}</option>`).join('');
+        t1Sel.innerHTML = teamOpts;
+        t2Sel.innerHTML = teamOpts;
+        if (teams.some(t => String(t.id) === prevT1)) t1Sel.value = prevT1;
+        if (teams.some(t => String(t.id) === prevT2)) t2Sel.value = prevT2;
+
+        const freeCourts = (data.courts || []).filter(c => !c.occupied).map(c => c.courtNumber);
+        courtSel.innerHTML = freeCourts.map(c => `<option value="${c}">${c}</option>`).join('');
+        if (freeCourts.some(c => String(c) === prevCourt)) courtSel.value = prevCourt;
+
+        if (hint) {
+            hint.textContent = teams.length < 2 ? MSG_NO_TEAMS
+                : freeCourts.length === 0 ? MSG_NO_COURTS
+                : '';
+        }
+    }
+
+    function createQualMatch() {
+        const team1Id = document.getElementById('newMatchTeam1')?.value;
+        const team2Id = document.getElementById('newMatchTeam2')?.value;
+        const courtNumber = document.getElementById('newMatchCourt')?.value;
+
+        if (!team1Id || !team2Id) { alert(MSG_NO_TEAMS); return; }
+        if (team1Id === team2Id) { alert('Selecciona dos equipos diferentes.'); return; }
+        if (!courtNumber) { alert(MSG_NO_COURTS); return; }
+
+        fetch('/tournaments/team-playoff/api/' + TOURNAMENT_ID + '/qual-matches', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                team1Id: Number(team1Id),
+                team2Id: Number(team2Id),
+                courtNumber: Number(courtNumber)
+            })
+        })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.message || 'Error');
+                }
+            })
+            .catch(() => alert('Error de red'));
+    }
+
+    window.addEventListener('team-playoff-update', refreshCourtBoard);
 
     // ── Сохранение результата квалификации ────────────────────────────
     function submitQualScore(btn) {
