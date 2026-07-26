@@ -27,9 +27,12 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/tournaments/team-playoff")
@@ -324,6 +327,37 @@ public class TeamPlayoffViewController {
     @ResponseBody
     public ResponseEntity<TeamAmericanoRankingDto> getRankingApi(@PathVariable Long tournamentId) {
         return ResponseEntity.ok(playoffService.getQualRanking(tournamentId));
+    }
+
+    /**
+     * Доска кортов: статус каждого корта (свободен/занят + текущий матч) и пул команд,
+     * доступных для назначения прямо сейчас. suggestedNextMatch — заглушка,
+     * реальный подбор соперника появится в T5 (второй тур) / T7 (общий матчинг-движок).
+     */
+    @GetMapping("/api/{tournamentId}/court-board")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getCourtBoard(@PathVariable Long tournamentId) {
+        int courtsCount = playoffService.getConfiguredCourts(tournamentId);
+        Map<Integer, AmericanoMatch> matchByCourt = playoffService.getActiveMatches(tournamentId).stream()
+                .filter(m -> m.getCourtNumber() != null)
+                .collect(Collectors.toMap(AmericanoMatch::getCourtNumber, m -> m, (a, b) -> a));
+
+        List<Map<String, Object>> courts = new ArrayList<>();
+        for (int courtNumber = 1; courtNumber <= courtsCount; courtNumber++) {
+            AmericanoMatch match = matchByCourt.get(courtNumber);
+            Map<String, Object> court = new LinkedHashMap<>();
+            court.put("courtNumber", courtNumber);
+            court.put("occupied", match != null);
+            court.put("currentMatch", match != null ? toMatchDto(match) : null);
+            court.put("suggestedNextMatch", null);
+            courts.add(court);
+        }
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("courts", courts);
+        result.put("availableTeams", playoffService.getAvailableTeamsForQualification(tournamentId));
+        return ResponseEntity.ok(result);
     }
 
     // ══════════════════════════════════════════════════════════════════════
