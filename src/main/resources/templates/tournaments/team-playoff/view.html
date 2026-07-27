@@ -59,6 +59,16 @@
         .score-win{color:#10b981;font-weight:700}
         .score-lose{color:#ef4444;font-weight:700}
         .verified-me{color:#1d9bf0;font-size:.85em;margin-left:.3rem;vertical-align:middle}
+        .status-pill{display:inline-flex;align-items:center;gap:.25rem;padding:.2rem .55rem;border-radius:20px;font-size:.75rem;font-weight:700;white-space:nowrap}
+        .status-pill.playing{background:#dbeafe;color:#1e3a8a}
+        .status-pill.waiting{background:#f1f5f9;color:#64748b}
+        .status-pill.advanced{background:#dcfce7;color:#166534}
+        .status-pill.eliminated{background:#fee2e2;color:#991b1b}
+        .status-pill.champion{background:#fef3c7;color:#92400e}
+        .status-pill.runner-up{background:#e2e8f0;color:#475569}
+        .bracket{display:flex;gap:1.5rem;overflow-x:auto;padding:1.25rem 1.5rem}
+        .bracket-col{flex:0 0 250px;display:flex;flex-direction:column;justify-content:space-around;gap:1rem}
+        .bracket-col-title{font-size:.78rem;font-weight:700;text-align:center;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:.25rem}
     </style>
 </head>
 <body>
@@ -129,6 +139,7 @@
                     <th th:text="#{team_playoff.table.pos}">#</th>
                     <th th:text="#{team_playoff.table.status}" th:title="#{team_playoff.table.status_title}">Estado</th>
                     <th th:text="#{team_playoff.table.pair}">Pareja</th>
+                    <th th:text="#{team_playoff.table.tstatus}" th:title="#{team_playoff.table.tstatus_title}">Situación</th>
                     <th th:text="#{team_playoff.table.m1}" th:title="#{team_playoff.table.m1_title}">P1</th>
                     <th th:text="#{team_playoff.table.m2}" th:title="#{team_playoff.table.m2_title}">P2</th>
                     <th th:text="#{team_playoff.table.sg}" th:title="#{team_playoff.table.sg}">SG</th>
@@ -151,6 +162,14 @@
                         <div class="pair-names">
                             <span class="p1" th:text="${team.player1Name}">Jugador 1</span><i th:if="${team.player1Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i><span style="color:#adb5bd;margin:0 .25rem">/</span><span class="p1" th:text="${team.player2Name}">Jugador 2</span><i th:if="${team.player2Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i>
                         </div>
+                    </td>
+                    <td th:switch="${team.tournamentStatus}">
+                        <span th:case="'PLAYING'" class="status-pill playing">🎾 <span th:text="#{team_playoff.status.playing}">Jugando</span></span>
+                        <span th:case="'ADVANCED'" class="status-pill advanced">⬆ <span th:text="#{team_playoff.status.advanced}">Avanzó</span></span>
+                        <span th:case="'ELIMINATED'" class="status-pill eliminated">✕ <span th:text="#{team_playoff.status.eliminated}">Eliminado</span></span>
+                        <span th:case="'CHAMPION'" class="status-pill champion">🏆 <span th:text="#{team_playoff.status.champion}">Campeón</span></span>
+                        <span th:case="'RUNNER_UP'" class="status-pill runner-up">🥈 <span th:text="#{team_playoff.status.runner_up}">Subcampeón</span></span>
+                        <span th:case="*" class="status-pill waiting">⏳ <span th:text="#{team_playoff.status.waiting}">Esperando</span></span>
                     </td>
                     <td class="tbd" th:unless="${team.match1GamesWon != null}">—</td>
                     <td th:if="${team.match1GamesWon != null}" th:text="${team.match1GamesWon} + ':' + ${team.match1GamesLost}">6:4</td>
@@ -225,39 +244,48 @@
         </div>
     </div>
 
-    <!-- ══ ПЛЕЙ-ОФФ ══ -->
+    <!-- ══ ПЛЕЙ-ОФФ: дерево QF → SF → Final ══ -->
     <div th:if="${playoffStarted}" class="section-card">
         <div class="section-header">
             <h3><i class="fas fa-trophy"></i> <span th:text="#{team_playoff.playoff.title}">Playoff</span></h3>
         </div>
 
-        <div class="round-content">
-            <div th:each="match : ${playoffMatches}" class="match-card">
-                <div class="match-header">
-                    <span>Cancha <span th:text="${match.courtNumber}">1</span></span>
-                    <span th:if="${match.playoffStage != null}" class="playoff-stage-label"
-                          th:text="${match.playoffStage}">SEMI_FINAL</span>
+        <div class="bracket">
+            <div th:each="round : ${playoffRounds}" class="bracket-col">
+                <div class="bracket-col-title" th:switch="${round.note}">
+                    <span th:case="'ROUND_OF_16'" th:text="#{team_playoff.stage.round_of_16}">1/8 Final</span>
+                    <span th:case="'QUARTER_FINAL'" th:text="#{team_playoff.stage.quarter_final}">Cuartos</span>
+                    <span th:case="'SEMI_FINAL'" th:text="#{team_playoff.stage.semi_final}">Semifinal</span>
+                    <span th:case="'FINAL'" th:text="#{team_playoff.stage.final}">Final</span>
+                    <span th:case="*" th:text="${round.note}">Etapa</span>
                 </div>
-                <div class="match-body">
-                    <div class="team-left">
-                        <div th:if="${match.team1Player1Name != null}" class="team-name"><span th:text="${match.team1Player1Name}">TBD</span><i th:if="${match.team1Player1Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i></div>
-                        <div th:if="${match.team1Player2Name != null}" class="team-sub"><span th:text="${match.team1Player2Name}">TBD</span><i th:if="${match.team1Player2Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i></div>
-                        <div th:if="${match.team1Player1Name == null}" class="tbd">TBD</div>
+
+                <div th:each="match : ${round.matches}" class="match-card">
+                    <div class="match-header">
+                        <span>Cancha <span th:text="${match.courtNumber}">1</span></span>
+                        <span th:if="${match.isCompleted}" class="info-pill"><i class="fas fa-check"></i></span>
                     </div>
-                    <div class="vs-block">
-                        <div th:if="${match.isCompleted}" class="score-display">
-                            <span th:class="${match.team1Games > match.team2Games ? 'score-win' : (match.team1Games < match.team2Games ? 'score-lose' : 'score-draw')}"
-                                  th:text="${match.team1Games}">6</span>
-                            <span class="vs-badge">:</span>
-                            <span th:class="${match.team2Games > match.team1Games ? 'score-win' : (match.team2Games < match.team1Games ? 'score-lose' : 'score-draw')}"
-                                  th:text="${match.team2Games}">4</span>
+                    <div class="match-body">
+                        <div class="team-left">
+                            <div th:if="${match.team1Player1Name != null}" class="team-name"><span th:text="${match.team1Player1Name}">TBD</span><i th:if="${match.team1Player1Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i></div>
+                            <div th:if="${match.team1Player2Name != null}" class="team-sub"><span th:text="${match.team1Player2Name}">TBD</span><i th:if="${match.team1Player2Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i></div>
+                            <div th:if="${match.team1Player1Name == null}" class="tbd" th:text="#{team_playoff.bracket.tbd}">TBD</div>
                         </div>
-                        <span th:unless="${match.isCompleted}" class="vs-badge">VS</span>
-                    </div>
-                    <div class="team-right">
-                        <div th:if="${match.team2Player1Name != null}" class="team-name"><span th:text="${match.team2Player1Name}">TBD</span><i th:if="${match.team2Player1Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i></div>
-                        <div th:if="${match.team2Player2Name != null}" class="team-sub"><span th:text="${match.team2Player2Name}">TBD</span><i th:if="${match.team2Player2Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i></div>
-                        <div th:if="${match.team2Player1Name == null}" class="tbd">TBD</div>
+                        <div class="vs-block">
+                            <div th:if="${match.isCompleted}" class="score-display">
+                                <span th:class="${match.team1Games > match.team2Games ? 'score-win' : (match.team1Games < match.team2Games ? 'score-lose' : 'score-draw')}"
+                                      th:text="${match.team1Games}">6</span>
+                                <span class="vs-badge">:</span>
+                                <span th:class="${match.team2Games > match.team1Games ? 'score-win' : (match.team2Games < match.team1Games ? 'score-lose' : 'score-draw')}"
+                                      th:text="${match.team2Games}">4</span>
+                            </div>
+                            <span th:unless="${match.isCompleted}" class="vs-badge">VS</span>
+                        </div>
+                        <div class="team-right">
+                            <div th:if="${match.team2Player1Name != null}" class="team-name"><span th:text="${match.team2Player1Name}">TBD</span><i th:if="${match.team2Player1Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i></div>
+                            <div th:if="${match.team2Player2Name != null}" class="team-sub"><span th:text="${match.team2Player2Name}">TBD</span><i th:if="${match.team2Player2Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i></div>
+                            <div th:if="${match.team2Player1Name == null}" class="tbd" th:text="#{team_playoff.bracket.tbd}">TBD</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -274,6 +302,12 @@
 <script th:src="@{/js/team-playoff-realtime.js}"></script>
 <script th:inline="javascript">
     new TeamPlayoffRealtime([[${tournament.id}]]);
+
+    let reloadTimer = null;
+    window.addEventListener('team-playoff-update', () => {
+        clearTimeout(reloadTimer);
+        reloadTimer = setTimeout(() => window.location.reload(), 1500);
+    });
 </script>
 <script>
     const qRounds = Array.from(document.querySelectorAll('[id^="qround-"]'));

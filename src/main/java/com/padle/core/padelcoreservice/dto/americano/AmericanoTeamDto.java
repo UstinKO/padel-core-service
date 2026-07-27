@@ -57,6 +57,9 @@ public class AmericanoTeamDto {
     /** TWO_WINS / SPLIT / TWO_LOSSES / PENDING (ещё не сыграны оба квалификационных матча) — ТЗ §6/§30 */
     private String qualStatus;
 
+    /** PLAYING / WAITING / ADVANCED / ELIMINATED / CHAMPION / RUNNER_UP — текущее положение в турнире (ТЗ §12) */
+    private String tournamentStatus;
+
     // Данные регистрации (AMERICANO_TEAMS)
     private String registrationSource;
     private Boolean hasPaid;

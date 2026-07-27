@@ -351,6 +351,7 @@ public class TeamPlayoffService {
         List<AmericanoTeamDto> ranking = teams.stream()
                 .map(t -> {
                     AmericanoTeamDto dto = toDto(t);
+                    applyTournamentStatus(dto, tournamentId, t);
                     dto.setCurrentPosition(pos.getAndIncrement());
                     applyQualBreakdown(dto, tournamentId, t.getId());
                     return dto;
@@ -745,6 +746,45 @@ public class TeamPlayoffService {
         }
 
         dto.setQualStatus(qualStatusFor(dto.getMatchesPlayed(), dto.getMatchesWon(), dto.getMatchesLost()));
+    }
+
+    /**
+     * Текущее положение команды в турнире для публичной страницы (ТЗ §12): играет прямо сейчас,
+     * ждёт следующего матча, вышла в следующий этап плей-офф, выбыла, или уже чемпион/финалист.
+     * "Ожидает" и "только что завершила матч" — одно и то же видимое состояние (между матчами).
+     */
+    private void applyTournamentStatus(AmericanoTeamDto dto, Long tournamentId, AmericanoTeam team) {
+        if (Integer.valueOf(1).equals(team.getCurrentPosition())) {
+            dto.setTournamentStatus("CHAMPION");
+            return;
+        }
+        if (Integer.valueOf(2).equals(team.getCurrentPosition())) {
+            dto.setTournamentStatus("RUNNER_UP");
+            return;
+        }
+
+        List<AmericanoMatch> teamMatches = matchRepository.findByTournamentIdOrderByRoundIdAscMatchNumberAsc(tournamentId)
+                .stream()
+                .filter(m -> team.getId().equals(m.getTeam1Id()) || team.getId().equals(m.getTeam2Id()))
+                .toList();
+
+        if (teamMatches.stream().anyMatch(AmericanoMatch::isInProgress)) {
+            dto.setTournamentStatus("PLAYING");
+            return;
+        }
+
+        List<AmericanoMatch> playoffMatches = teamMatches.stream()
+                .filter(m -> m.getPlayoffStage() != null)
+                .toList();
+        if (!playoffMatches.isEmpty()) {
+            AmericanoMatch lastPlayoffMatch = playoffMatches.get(playoffMatches.size() - 1);
+            if (lastPlayoffMatch.isCompleted()) {
+                dto.setTournamentStatus(isMatchWinner(lastPlayoffMatch, team.getId()) ? "ADVANCED" : "ELIMINATED");
+                return;
+            }
+        }
+
+        dto.setTournamentStatus("WAITING");
     }
 
     private int[] gamesForAndAgainst(AmericanoMatch match, Long teamId) {
