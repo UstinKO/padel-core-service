@@ -286,23 +286,195 @@ public class TeamPlayoffService {
         }
 
         List<AmericanoTeam> ranked = teamRepository.findPlayoffRankingByTournamentId(tournamentId);
-        int n = largestPowerOf2(ranked.size());
+        int total = ranked.size();
+        int qualRounds = roundRepository.findMaxRoundNumber(tournamentId).orElse(0);
+        int roundNumber = qualRounds + 1;
 
+        // ТЗ §4 (T13): для 9-15 команд часть проходит в 1/4 напрямую, остальные — через play-in
+        // (1/8 финала). 8 и 16 команд — точные степени двойки, укладываются в старую схему ниже.
+        if (total > PlayoffFormat.MIN_TEAMS_WITH_TABLE && total < PlayoffFormat.MAX_TEAMS_WITH_TABLE) {
+            initPlayoffWithPlayIn(tournament, ranked, roundNumber);
+            return;
+        }
+
+        int n = largestPowerOf2(total);
         if (n < 2) {
             throw new InvalidStateException("Se necesitan al menos 2 equipos para el playoff");
         }
 
         List<AmericanoTeam> seeded = ranked.subList(0, n);
-        log.info("Playoff: {} teams seeded (top {} of {})", n, n, ranked.size());
-
-        int qualRounds = roundRepository.findMaxRoundNumber(tournamentId).orElse(0);
-        int roundNumber = qualRounds + 1;
+        log.info("Playoff: {} teams seeded (top {} of {})", n, n, total);
 
         // Определяем стадию первого раунда
         PlayoffStage firstStage = playoffStageFor(n);
 
         // Создаём все матчи плей-офф (BYE-матчи тоже, с TBD)
         createPlayoffRound(tournament, seeded, firstStage, roundNumber);
+    }
+
+    /**
+     * Плей-офф для 9-15 команд (T13, ТЗ §4/§32-36): часть команд проходит в четвертьфинал
+     * напрямую по итогам квалификации, остальные сначала играют 1/8 финала (play-in) — каждый
+     * play-in матч сразу привязан к конкретному свободному слоту четвертьфинала
+     * (nextMatchId/nextMatchSlot вместо ожидания всей стадии, как в {@link #tryFormNextPlayoffStage}).
+     * Четвертьфинал всегда даёт ровно 8 слотов: direct + playInTeams/2 == 8.
+     */
+    private void initPlayoffWithPlayIn(Tournament tournament, List<AmericanoTeam> ranked, int roundNumber) {
+        Long tournamentId = tournament.getId();
+        int total = ranked.size();
+        int direct = PlayoffFormat.directToQuarterFinal(total);
+        List<AmericanoTeam> directTeams = ranked.subList(0, direct);
+        List<AmericanoTeam> playInTeams = ranked.subList(direct, total);
+
+        log.info("Playoff con play-in (T13): {} equipos, {} directo a 1/4, {} en 1/8 ({} partidos)",
+                total, direct, playInTeams.size(), playInTeams.size() / 2);
+
+        // 8 виртуальных посевных слотов: 1..direct — реальные команды, остальные — TBD (победитель 1/8).
+        AmericanoTeam[] slotTeam = new AmericanoTeam[9]; // индексы 1..8
+        for (int i = 0; i < direct; i++) {
+            slotTeam[i + 1] = directTeams.get(i);
+        }
+        warnAboutDirectPairRematches(tournamentId, slotTeam, direct);
+
+        AmericanoRound qfRound = AmericanoRound.builder()
+                .tournament(tournament)
+                .roundNumber(roundNumber + 1)
+                .status(AmericanoRoundStatus.PENDING)
+                .pointsPerMatch(1)
+                .isDoubles(true)
+                .courts(4)
+                .phase(TournamentPhase.PLAYOFF)
+                .note(PlayoffStage.QUARTER_FINAL.name())
+                .build();
+        qfRound = roundRepository.save(qfRound);
+
+        // ТЗ §35: базовая модель посева — 1-е место с 8-м, 2-е с 7-м, 3-е с 6-м, 4-е с 5-м.
+        int[][] crossing = {{1, 8}, {2, 7}, {3, 6}, {4, 5}};
+        Map<Integer, AmericanoMatch> qfMatchBySlot = new HashMap<>();
+        Map<Integer, Integer> qfSlotNumBySlot = new HashMap<>();
+        List<AmericanoMatch> qfMatches = new ArrayList<>();
+
+        for (int i = 0; i < crossing.length; i++) {
+            int seedA = crossing[i][0];
+            int seedB = crossing[i][1];
+            AmericanoTeam a = slotTeam[seedA];
+            AmericanoTeam b = slotTeam[seedB];
+            boolean bothKnown = a != null && b != null;
+
+            AmericanoMatch match = AmericanoMatch.builder()
+                    .round(qfRound)
+                    .tournament(tournament)
+                    .matchNumber(i + 1)
+                    .isDoubles(true)
+                    .status(bothKnown ? AmericanoRoundStatus.IN_PROGRESS : AmericanoRoundStatus.PENDING)
+                    .courtNumber(i + 1)
+                    .playoffStage(PlayoffStage.QUARTER_FINAL)
+                    .note((a != null ? a.getDisplayName() : "TBD — Ganador 1/8")
+                            + " vs " + (b != null ? b.getDisplayName() : "TBD — Ganador 1/8"))
+                    .build();
+            if (a != null) {
+                match.setTeam1Id(a.getId());
+                match.setTeam1Player1(a.getPlayer1());
+                match.setTeam1Player2(a.getPlayer2());
+            }
+            if (b != null) {
+                match.setTeam2Id(b.getId());
+                match.setTeam2Player1(b.getPlayer1());
+                match.setTeam2Player2(b.getPlayer2());
+            }
+            qfMatches.add(match);
+            qfMatchBySlot.put(seedA, match);
+            qfSlotNumBySlot.put(seedA, 1);
+            qfMatchBySlot.put(seedB, match);
+            qfSlotNumBySlot.put(seedB, 2);
+        }
+        matchRepository.saveAll(qfMatches);
+        if (qfMatches.stream().anyMatch(AmericanoMatch::isInProgress)) {
+            qfRound.setStatus(AmericanoRoundStatus.IN_PROGRESS);
+            roundRepository.save(qfRound);
+        }
+
+        // Play-in (1/8 финала): пары — тем же движком, что и обычный QF-посев (анти-реванш, посев).
+        // Победитель каждой пары привязывается к конкретному QF-слоту: сильнейшая play-in-команда
+        // получает лучший из оставшихся слотов (ТЗ §35).
+        List<PlayoffMatchingEngine.Pairing> playInPairings = seedPlayoffPairs(tournamentId, playInTeams);
+        Map<Long, Integer> localSeedById = new HashMap<>();
+        for (int i = 0; i < playInTeams.size(); i++) {
+            localSeedById.put(playInTeams.get(i).getId(), i + 1);
+        }
+        List<PlayoffMatchingEngine.Pairing> orderedPairings = playInPairings.stream()
+                .sorted(Comparator.comparingInt(p ->
+                        Math.min(localSeedById.get(p.team1Id()), localSeedById.get(p.team2Id()))))
+                .toList();
+
+        AmericanoRound playInRound = AmericanoRound.builder()
+                .tournament(tournament)
+                .roundNumber(roundNumber)
+                .status(AmericanoRoundStatus.IN_PROGRESS)
+                .pointsPerMatch(1)
+                .isDoubles(true)
+                .courts(orderedPairings.size())
+                .phase(TournamentPhase.PLAYOFF)
+                .note(PlayoffStage.ROUND_OF_16.name())
+                .build();
+        playInRound = roundRepository.save(playInRound);
+
+        List<AmericanoMatch> playInMatches = new ArrayList<>();
+        for (int i = 0; i < orderedPairings.size(); i++) {
+            PlayoffMatchingEngine.Pairing pairing = orderedPairings.get(i);
+            AmericanoTeam t1 = teamRepository.findById(pairing.team1Id()).orElseThrow();
+            AmericanoTeam t2 = teamRepository.findById(pairing.team2Id()).orElseThrow();
+
+            int targetSeed = direct + 1 + i;
+            AmericanoMatch targetQfMatch = qfMatchBySlot.get(targetSeed);
+            int targetSlot = qfSlotNumBySlot.get(targetSeed);
+
+            playInMatches.add(AmericanoMatch.builder()
+                    .round(playInRound)
+                    .tournament(tournament)
+                    .matchNumber(i + 1)
+                    .team1Id(t1.getId())
+                    .team2Id(t2.getId())
+                    .team1Player1(t1.getPlayer1())
+                    .team1Player2(t1.getPlayer2())
+                    .team2Player1(t2.getPlayer1())
+                    .team2Player2(t2.getPlayer2())
+                    .isDoubles(true)
+                    .status(AmericanoRoundStatus.IN_PROGRESS)
+                    .courtNumber(i + 1)
+                    .playoffStage(PlayoffStage.ROUND_OF_16)
+                    .priority(true)
+                    .nextMatchId(targetQfMatch.getId())
+                    .nextMatchSlot(targetSlot)
+                    .note(t1.getDisplayName() + " vs " + t2.getDisplayName())
+                    .build());
+        }
+        matchRepository.saveAll(playInMatches);
+
+        // Полуфинал и финал — полностью TBD, как и в обычной схеме; заполняются движком после QF
+        // (см. tryFormNextPlayoffStage/seedNextPlayoffStage — эта часть цепочки не меняется).
+        createTbdPlayoffRounds(tournament, PlayoffStage.SEMI_FINAL, roundNumber + 2, 2);
+    }
+
+    /**
+     * ТЗ §36: предупреждает координатора, если пара из двух напрямую прошедших команд
+     * (оба слота известны сразу при посеве QF) уже встречалась в квалификации. В отличие от
+     * play-in-пар и переходов QF→SF/SF→Final, эти пары фиксируются сразу при посеве и не
+     * пересчитываются движком подбора соперников — координатор может вручную поменять команду
+     * в матче ({@link #changeMatchTeam}), если предупреждение того требует.
+     */
+    private void warnAboutDirectPairRematches(Long tournamentId, AmericanoTeam[] slotTeam, int direct) {
+        Map<Long, Set<Long>> priorOpponents = buildPriorOpponentsMap(tournamentId);
+        int[][] crossing = {{1, 8}, {2, 7}, {3, 6}, {4, 5}};
+        for (int[] pair : crossing) {
+            if (pair[0] > direct || pair[1] > direct) continue;
+            AmericanoTeam a = slotTeam[pair[0]];
+            AmericanoTeam b = slotTeam[pair[1]];
+            if (priorOpponents.getOrDefault(a.getId(), Set.of()).contains(b.getId())) {
+                log.warn("Playoff QF seeding for tournament {}: direct pair {} vs {} already played in qualification",
+                        tournamentId, a.getDisplayName(), b.getDisplayName());
+            }
+        }
     }
 
     /**
@@ -326,12 +498,61 @@ public class TeamPlayoffService {
         matchRepository.save(match);
         webSocketService.notifyTeamPlayoffMatchCompleted(match.getTournament().getId(), toMatchDto(match));
 
-        // Как только все матчи текущей стадии сыграны — формируем пары следующей стадии
-        tryFormNextPlayoffStage(match);
+        if (match.getNextMatchId() != null) {
+            // Play-in матч (T13): слот в четвертьфинале уже зафиксирован при посеве — не ждём
+            // остальные play-in матчи (ТЗ §33).
+            advanceToLinkedSlot(match);
+        } else {
+            // Как только все матчи текущей стадии сыграны — формируем пары следующей стадии
+            tryFormNextPlayoffStage(match);
+        }
 
         tryAutoCompleteRound(match.getRound().getId());
 
         return match;
+    }
+
+    /**
+     * Play-in-матч (T13) завершён — переносит победителя в заранее привязанный слот
+     * четвертьфинала (nextMatchId/nextMatchSlot), не дожидаясь остальных play-in матчей
+     * (ТЗ §33: "переносит его в последний свободный слот четвертьфинала").
+     */
+    private void advanceToLinkedSlot(AmericanoMatch playInMatch) {
+        AmericanoTeam winner = winnerOf(playInMatch);
+        if (winner == null) return;
+
+        AmericanoMatch nextMatch = matchRepository.findById(playInMatch.getNextMatchId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Match not found: " + playInMatch.getNextMatchId()));
+
+        if (playInMatch.getNextMatchSlot() == 1) {
+            nextMatch.setTeam1Id(winner.getId());
+            nextMatch.setTeam1Player1(winner.getPlayer1());
+            nextMatch.setTeam1Player2(winner.getPlayer2());
+        } else {
+            nextMatch.setTeam2Id(winner.getId());
+            nextMatch.setTeam2Player1(winner.getPlayer1());
+            nextMatch.setTeam2Player2(winner.getPlayer2());
+        }
+
+        AmericanoTeam t1 = nextMatch.getTeam1Id() != null
+                ? teamRepository.findById(nextMatch.getTeam1Id()).orElse(null) : null;
+        AmericanoTeam t2 = nextMatch.getTeam2Id() != null
+                ? teamRepository.findById(nextMatch.getTeam2Id()).orElse(null) : null;
+        nextMatch.setNote((t1 != null ? t1.getDisplayName() : "TBD — Ganador 1/8")
+                + " vs " + (t2 != null ? t2.getDisplayName() : "TBD — Ganador 1/8"));
+
+        if (t1 != null && t2 != null) {
+            nextMatch.setStatus(AmericanoRoundStatus.IN_PROGRESS);
+            AmericanoRound round = nextMatch.getRound();
+            if (round.getStatus() == AmericanoRoundStatus.PENDING) {
+                round.setStatus(AmericanoRoundStatus.IN_PROGRESS);
+                roundRepository.save(round);
+            }
+        }
+
+        AmericanoMatch saved = matchRepository.save(nextMatch);
+        webSocketService.notifyTeamPlayoffTeamAdvanced(playInMatch.getTournament().getId(), toMatchDto(saved));
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -1325,6 +1546,7 @@ public class TeamPlayoffService {
         if (m.getPlayoffStage() != null) {
             dto.setPlayoffStage(m.getPlayoffStage().name());
         }
+        dto.setPriority(Boolean.TRUE.equals(m.getPriority()));
 
         return dto;
     }
