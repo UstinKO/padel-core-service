@@ -560,6 +560,10 @@ public class TeamPlayoffService {
      */
     private void trySwapToAvoidRematch(AmericanoMatch nextMatch, int waitingSlot, Long waitingTeamId, AmericanoTeam winner) {
         Map<Long, Set<Long>> priorOpponents = buildPriorOpponentsMap(nextMatch.getTournament().getId());
+        AmericanoTeam waiting = teamRepository.findById(waitingTeamId).orElseThrow();
+        if (!priorOpponents.getOrDefault(waitingTeamId, Set.of()).contains(winner.getId())) {
+            return; // не рематч — вариант 1 остаётся в силе
+        }
 
         List<AmericanoMatch> siblings = matchRepository.findByTournamentIdAndPlayoffStage(
                         nextMatch.getTournament().getId(), PlayoffStage.QUARTER_FINAL)
@@ -578,10 +582,12 @@ public class TeamPlayoffService {
         Optional<Long> swapCandidateId = PlayoffRematchSwap.findSwap(
                 waitingTeamId, winner.getId(), siblingPairs, priorOpponents);
         if (swapCandidateId.isEmpty()) {
+            // ТЗ §1/§36: исключение неизбежно — ни один обмен не убирает рематч, оставляем как есть.
+            log.warn("Playoff QF seeding (T16, ТЗ §36): {} vs {} es una revancha inevitable con el ganador de 1/8 — no se encontró un intercambio válido",
+                    waiting.getDisplayName(), winner.getDisplayName());
             return;
         }
 
-        AmericanoTeam waiting = teamRepository.findById(waitingTeamId).orElseThrow();
         AmericanoTeam candidate = teamRepository.findById(swapCandidateId.get()).orElseThrow();
         AmericanoMatch sibling = siblingByPairKey.get(swapCandidateId.get());
         int candidateSlot = swapCandidateId.get().equals(sibling.getTeam1Id()) ? 1 : 2;
@@ -710,7 +716,7 @@ public class TeamPlayoffService {
         List<Long> losers = waiting.stream()
                 .filter(t -> !wonFirstQualMatch(tournamentId, t.getId())).map(AmericanoTeam::getId).toList();
 
-        return QualificationPairing.pairSecondRound(winners, losers).stream()
+        return QualificationPairing.pairSecondRound(winners, losers, buildPriorOpponentsMap(tournamentId)).stream()
                 .filter(p -> p.team1Id().equals(teamId) || p.team2Id().equals(teamId))
                 .findFirst()
                 .map(p -> p.team1Id().equals(teamId) ? p.team2Id() : p.team1Id())
@@ -751,7 +757,13 @@ public class TeamPlayoffService {
                 .filter(t -> !used.contains(t.getId()))
                 .filter(t -> !wonFirstQualMatch(tournamentId, t.getId())).map(AmericanoTeam::getId).toList();
 
-        for (QualificationPairing.Pairing p : QualificationPairing.pairSecondRound(winners, losers)) {
+        Map<Long, Set<Long>> priorOpponents = buildPriorOpponentsMap(tournamentId);
+        for (QualificationPairing.Pairing p : QualificationPairing.pairSecondRound(winners, losers, priorOpponents)) {
+            if (priorOpponents.getOrDefault(p.team1Id(), Set.of()).contains(p.team2Id())) {
+                // ТЗ §1: "исключения допускаются только когда распределение невозможно" — здесь именно так.
+                log.warn("Qualification round 2 pairing for tournament {}: {} vs {} already played each other — no rematch-free alternative was found",
+                        tournamentId, byId.get(p.team1Id()).getDisplayName(), byId.get(p.team2Id()).getDisplayName());
+            }
             suggestions.add(AmericanoMatchSuggestionDto.builder()
                     .team1(toDto(byId.get(p.team1Id())))
                     .team2(toDto(byId.get(p.team2Id())))
