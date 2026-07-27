@@ -516,33 +516,29 @@ public class TeamPlayoffService {
      * Play-in-матч (T13) завершён — переносит победителя в заранее привязанный слот
      * четвертьфинала (nextMatchId/nextMatchSlot), не дожидаясь остальных play-in матчей
      * (ТЗ §33: "переносит его в последний свободный слот четвертьфинала").
+     * Перед этим проверяет (T16, ТЗ §36/§41), не рематч ли это с ожидающей командой —
+     * и если да, пытается обменять её местами с другой уже укомплектованной парой QF.
      */
     private void advanceToLinkedSlot(AmericanoMatch playInMatch) {
         AmericanoTeam winner = winnerOf(playInMatch);
         if (winner == null) return;
 
+        Long tournamentId = playInMatch.getTournament().getId();
         AmericanoMatch nextMatch = matchRepository.findById(playInMatch.getNextMatchId())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Match not found: " + playInMatch.getNextMatchId()));
 
-        if (playInMatch.getNextMatchSlot() == 1) {
-            nextMatch.setTeam1Id(winner.getId());
-            nextMatch.setTeam1Player1(winner.getPlayer1());
-            nextMatch.setTeam1Player2(winner.getPlayer2());
-        } else {
-            nextMatch.setTeam2Id(winner.getId());
-            nextMatch.setTeam2Player1(winner.getPlayer1());
-            nextMatch.setTeam2Player2(winner.getPlayer2());
+        int winnerSlot = playInMatch.getNextMatchSlot();
+        int waitingSlot = winnerSlot == 1 ? 2 : 1;
+        Long waitingTeamId = waitingSlot == 1 ? nextMatch.getTeam1Id() : nextMatch.getTeam2Id();
+        if (waitingTeamId != null) {
+            trySwapToAvoidRematch(nextMatch, waitingSlot, waitingTeamId, winner);
         }
 
-        AmericanoTeam t1 = nextMatch.getTeam1Id() != null
-                ? teamRepository.findById(nextMatch.getTeam1Id()).orElse(null) : null;
-        AmericanoTeam t2 = nextMatch.getTeam2Id() != null
-                ? teamRepository.findById(nextMatch.getTeam2Id()).orElse(null) : null;
-        nextMatch.setNote((t1 != null ? t1.getDisplayName() : "TBD — Ganador 1/8")
-                + " vs " + (t2 != null ? t2.getDisplayName() : "TBD — Ganador 1/8"));
+        setMatchSlot(nextMatch, winnerSlot, winner);
+        nextMatch.setNote(buildMatchNote(nextMatch, "TBD — Ganador 1/8"));
 
-        if (t1 != null && t2 != null) {
+        if (nextMatch.getTeam1Id() != null && nextMatch.getTeam2Id() != null) {
             nextMatch.setStatus(AmericanoRoundStatus.IN_PROGRESS);
             AmericanoRound round = nextMatch.getRound();
             if (round.getStatus() == AmericanoRoundStatus.PENDING) {
@@ -552,7 +548,52 @@ public class TeamPlayoffService {
         }
 
         AmericanoMatch saved = matchRepository.save(nextMatch);
-        webSocketService.notifyTeamPlayoffTeamAdvanced(playInMatch.getTournament().getId(), toMatchDto(saved));
+        webSocketService.notifyTeamPlayoffTeamAdvanced(tournamentId, toMatchDto(saved));
+    }
+
+    /**
+     * ТЗ §36/§41 (T16): если "ожидающая" команда уже играла против только что определившегося
+     * победителя play-in, ищет среди уже укомплектованных пар четвертьфинала такую, с которой
+     * можно поменяться местами без повторных встреч (вариант 2: "1-е место играет против 7-го,
+     * 2-е ожидает победителя 1/8"). Мутирует {@code nextMatch} на месте (слот waitingSlot),
+     * сохраняет "соседний" матч самостоятельно — сам {@code nextMatch} сохраняет вызывающий код.
+     */
+    private void trySwapToAvoidRematch(AmericanoMatch nextMatch, int waitingSlot, Long waitingTeamId, AmericanoTeam winner) {
+        Map<Long, Set<Long>> priorOpponents = buildPriorOpponentsMap(nextMatch.getTournament().getId());
+
+        List<AmericanoMatch> siblings = matchRepository.findByTournamentIdAndPlayoffStage(
+                        nextMatch.getTournament().getId(), PlayoffStage.QUARTER_FINAL)
+                .stream()
+                .filter(m -> !m.getId().equals(nextMatch.getId()))
+                .filter(m -> m.getTeam1Id() != null && m.getTeam2Id() != null && !m.isCompleted())
+                .toList();
+        Map<Long, AmericanoMatch> siblingByPairKey = new HashMap<>();
+        List<long[]> siblingPairs = new ArrayList<>();
+        for (AmericanoMatch sibling : siblings) {
+            siblingPairs.add(new long[]{sibling.getTeam1Id(), sibling.getTeam2Id()});
+            siblingByPairKey.put(sibling.getTeam1Id(), sibling);
+            siblingByPairKey.put(sibling.getTeam2Id(), sibling);
+        }
+
+        Optional<Long> swapCandidateId = PlayoffRematchSwap.findSwap(
+                waitingTeamId, winner.getId(), siblingPairs, priorOpponents);
+        if (swapCandidateId.isEmpty()) {
+            return;
+        }
+
+        AmericanoTeam waiting = teamRepository.findById(waitingTeamId).orElseThrow();
+        AmericanoTeam candidate = teamRepository.findById(swapCandidateId.get()).orElseThrow();
+        AmericanoMatch sibling = siblingByPairKey.get(swapCandidateId.get());
+        int candidateSlot = swapCandidateId.get().equals(sibling.getTeam1Id()) ? 1 : 2;
+
+        setMatchSlot(nextMatch, waitingSlot, candidate);
+        setMatchSlot(sibling, candidateSlot, waiting);
+        sibling.setNote(buildMatchNote(sibling, "TBD"));
+        AmericanoMatch savedSibling = matchRepository.save(sibling);
+        webSocketService.notifyTeamPlayoffMatchUpdated(nextMatch.getTournament().getId(), toMatchDto(savedSibling));
+
+        log.info("Playoff QF swap (T16, ТЗ §36): {} <-> {} para evitar revancha con el ganador de 1/8 {}",
+                waiting.getDisplayName(), candidate.getDisplayName(), winner.getDisplayName());
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -801,23 +842,30 @@ public class TeamPlayoffService {
             warning = "Estos equipos ya jugaron entre sí anteriormente.";
         }
 
-        if (slot == 1) {
-            match.setTeam1Id(newTeam.getId());
-            match.setTeam1Player1(newTeam.getPlayer1());
-            match.setTeam1Player2(newTeam.getPlayer2());
-        } else {
-            match.setTeam2Id(newTeam.getId());
-            match.setTeam2Player1(newTeam.getPlayer1());
-            match.setTeam2Player2(newTeam.getPlayer2());
-        }
-
-        AmericanoTeam t1 = teamRepository.findById(match.getTeam1Id()).orElse(null);
-        AmericanoTeam t2 = teamRepository.findById(match.getTeam2Id()).orElse(null);
-        match.setNote((t1 != null ? t1.getDisplayName() : "TBD") + " vs " + (t2 != null ? t2.getDisplayName() : "TBD"));
+        setMatchSlot(match, slot, newTeam);
+        match.setNote(buildMatchNote(match, "TBD"));
 
         AmericanoMatch saved = matchRepository.save(match);
         webSocketService.notifyTeamPlayoffMatchUpdated(tournamentId, toMatchDto(saved));
         return new MatchTeamChangeResult(saved, warning);
+    }
+
+    private void setMatchSlot(AmericanoMatch match, int slot, AmericanoTeam team) {
+        if (slot == 1) {
+            match.setTeam1Id(team.getId());
+            match.setTeam1Player1(team.getPlayer1());
+            match.setTeam1Player2(team.getPlayer2());
+        } else {
+            match.setTeam2Id(team.getId());
+            match.setTeam2Player1(team.getPlayer1());
+            match.setTeam2Player2(team.getPlayer2());
+        }
+    }
+
+    private String buildMatchNote(AmericanoMatch match, String tbdLabel) {
+        AmericanoTeam t1 = match.getTeam1Id() != null ? teamRepository.findById(match.getTeam1Id()).orElse(null) : null;
+        AmericanoTeam t2 = match.getTeam2Id() != null ? teamRepository.findById(match.getTeam2Id()).orElse(null) : null;
+        return (t1 != null ? t1.getDisplayName() : tbdLabel) + " vs " + (t2 != null ? t2.getDisplayName() : tbdLabel);
     }
 
     /** Активные команды, сыгравшие ровно 1 квалификационный матч и сейчас не занятые другим матчем. */
