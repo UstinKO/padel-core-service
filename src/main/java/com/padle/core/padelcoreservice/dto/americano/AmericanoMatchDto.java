@@ -54,4 +54,7 @@ public class AmericanoMatchDto {
     private String playoffStage;
     private Long team1Id;
     private Long team2Id;
+
+    /** Play-in (T13, ТЗ §32): матч желательно запустить как можно раньше. */
+    private Boolean priority;
 }

@@ -125,3 +125,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.41-unique-index-telegram-username.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.42-add-playin-match-fields.yaml
+      relativeToChangelogFile: true

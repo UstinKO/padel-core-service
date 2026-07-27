@@ -1,0 +1,35 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.42-add-playin-match-fields
+      author: padel-core
+      comment: >
+        Team Playoff 9-16 команд (T13, ТЗ §4): поля для стадии play-in (1/8 финала) —
+        приоритетная пометка матча и ссылка на слот четвертьфинала, куда должен попасть победитель.
+
+      changes:
+        - addColumn:
+            tableName: americano_matches_db
+            columns:
+              - column:
+                  name: priority
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: next_match_id
+                  type: BIGINT
+              - column:
+                  name: next_match_slot
+                  type: INT
+
+      rollback:
+        - dropColumn:
+            tableName: americano_matches_db
+            columnName: priority
+        - dropColumn:
+            tableName: americano_matches_db
+            columnName: next_match_id
+        - dropColumn:
+            tableName: americano_matches_db
+            columnName: next_match_slot

@@ -94,6 +94,22 @@ public class AmericanoMatch {
     @Column(name = "team2_games")
     private Integer team2Games;
 
+    /** Матч 1/8 финала (play-in, T13) желательно запустить как можно раньше — ТЗ §32. */
+    @Column(name = "priority", nullable = false)
+    @Builder.Default
+    private Boolean priority = false;
+
+    /**
+     * Play-in-матч (T13): id и слот (1|2) четвертьфинального матча, куда сразу после этого матча
+     * должен попасть победитель — в отличие от QF→SF/SF→Final, слот фиксирован заранее (ТЗ §33/§34),
+     * а не пересчитывается движком подбора соперников после завершения всей стадии.
+     */
+    @Column(name = "next_match_id")
+    private Long nextMatchId;
+
+    @Column(name = "next_match_slot")
+    private Integer nextMatchSlot;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
