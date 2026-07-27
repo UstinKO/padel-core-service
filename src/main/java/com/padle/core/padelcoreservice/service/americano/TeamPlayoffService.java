@@ -643,44 +643,48 @@ public class TeamPlayoffService {
     /**
      * Предлагает сопернику для 2-го тура квалификации команде, только что завершившей 1-й матч:
      * тот же результат (победа/поражение), ещё не сыгравший 2-й матч и не занятый прямо сейчас (ТЗ §5).
-     * При нечётном числе команд (T14, ТЗ §20-25) правило переопределяется:
-     * победитель приоритетно встречается с "дополнительной" командой (§22/§23), а если для команды
-     * не нашлось партнёра с тем же результатом — берётся любая другая, ожидающая 2-й матч (§25).
+     * При нечётном числе команд (T14, ТЗ §20-25) правило переопределяется: победитель приоритетно
+     * встречается с "дополнительной" командой (§22/§23). Иначе — через {@link QualificationPairing}
+     * (T15, Итоговое ТЗ §2): если для команды не нашлось партнёра с тем же результатом, победители
+     * и проигравшие пересчитываются батчем, чтобы два "хвостовых" исключения не сводились друг с другом.
      * Ничего не создаёт — координатор подтверждает или назначает другую пару вручную (см. T4/T11).
      */
     public Optional<AmericanoTeamDto> suggestSecondRoundOpponent(Long tournamentId, Long teamId) {
         List<AmericanoTeam> waiting = teamsAwaitingSecondQualMatch(tournamentId);
-        boolean isWaiting = waiting.stream().anyMatch(t -> t.getId().equals(teamId));
-        if (!isWaiting) {
+        Map<Long, AmericanoTeam> byId = waiting.stream()
+                .collect(Collectors.toMap(AmericanoTeam::getId, t -> t));
+        if (!byId.containsKey(teamId)) {
             return Optional.empty();
         }
 
-        boolean won = wonFirstQualMatch(tournamentId, teamId);
-
-        if (won) {
+        if (wonFirstQualMatch(tournamentId, teamId)) {
             Optional<AmericanoTeam> extra = extraTeam(tournamentId);
             if (extra.isPresent()) {
                 return extra.map(this::toDto);
             }
         }
 
-        return waiting.stream()
-                .filter(candidate -> !candidate.getId().equals(teamId))
-                .filter(candidate -> wonFirstQualMatch(tournamentId, candidate.getId()) == won)
+        List<Long> winners = waiting.stream()
+                .filter(t -> wonFirstQualMatch(tournamentId, t.getId())).map(AmericanoTeam::getId).toList();
+        List<Long> losers = waiting.stream()
+                .filter(t -> !wonFirstQualMatch(tournamentId, t.getId())).map(AmericanoTeam::getId).toList();
+
+        return QualificationPairing.pairSecondRound(winners, losers).stream()
+                .filter(p -> p.team1Id().equals(teamId) || p.team2Id().equals(teamId))
                 .findFirst()
-                .or(() -> waiting.stream() // ТЗ §25: партнёра с тем же результатом нет — берём любого доступного
-                        .filter(candidate -> !candidate.getId().equals(teamId))
-                        .findFirst())
+                .map(p -> p.team1Id().equals(teamId) ? p.team2Id() : p.team1Id())
+                .map(byId::get)
                 .map(this::toDto);
     }
 
     /**
-     * Жадно формирует пары 2-го тура для всех команд, ожидающих соперника прямо сейчас —
-     * каждая команда попадает не более чем в одно предложение за вызов.
+     * Формирует пары 2-го тура для всех команд, ожидающих соперника прямо сейчас.
      * Используется доской кортов (T2), чтобы не предлагать одну и ту же команду на два корта сразу.
      */
     public List<AmericanoMatchSuggestionDto> suggestSecondRoundPairings(Long tournamentId) {
         List<AmericanoTeam> waiting = teamsAwaitingSecondQualMatch(tournamentId);
+        Map<Long, AmericanoTeam> byId = waiting.stream()
+                .collect(Collectors.toMap(AmericanoTeam::getId, t -> t));
         List<AmericanoMatchSuggestionDto> suggestions = new ArrayList<>();
         Set<Long> used = new HashSet<>();
 
@@ -688,7 +692,6 @@ public class TeamPlayoffService {
         // ожидающий 2-й матч, приоритетно встречается с дополнительной командой — вне очереди
         // и максимально быстро, а не по общему правилу "победитель к победителю".
         extraTeam(tournamentId).ifPresent(extra -> waiting.stream()
-                .filter(t -> !used.contains(t.getId()))
                 .filter(t -> wonFirstQualMatch(tournamentId, t.getId()))
                 .findFirst()
                 .ifPresent(winner -> {
@@ -698,30 +701,20 @@ public class TeamPlayoffService {
                             .priority(true)
                             .build());
                     used.add(winner.getId());
-                    used.add(extra.getId());
                 }));
 
-        for (AmericanoTeam team : waiting) {
-            if (used.contains(team.getId())) continue;
-            boolean won = wonFirstQualMatch(tournamentId, team.getId());
+        List<Long> winners = waiting.stream()
+                .filter(t -> !used.contains(t.getId()))
+                .filter(t -> wonFirstQualMatch(tournamentId, t.getId())).map(AmericanoTeam::getId).toList();
+        List<Long> losers = waiting.stream()
+                .filter(t -> !used.contains(t.getId()))
+                .filter(t -> !wonFirstQualMatch(tournamentId, t.getId())).map(AmericanoTeam::getId).toList();
 
-            AmericanoTeam partner = waiting.stream()
-                    .filter(candidate -> !candidate.getId().equals(team.getId()) && !used.contains(candidate.getId()))
-                    .filter(candidate -> wonFirstQualMatch(tournamentId, candidate.getId()) == won)
-                    .findFirst()
-                    .or(() -> waiting.stream() // ТЗ §25: без партнёра с тем же результатом — любой доступный
-                            .filter(candidate -> !candidate.getId().equals(team.getId()) && !used.contains(candidate.getId()))
-                            .findFirst())
-                    .orElse(null);
-
-            if (partner != null) {
-                suggestions.add(AmericanoMatchSuggestionDto.builder()
-                        .team1(toDto(team))
-                        .team2(toDto(partner))
-                        .build());
-                used.add(team.getId());
-                used.add(partner.getId());
-            }
+        for (QualificationPairing.Pairing p : QualificationPairing.pairSecondRound(winners, losers)) {
+            suggestions.add(AmericanoMatchSuggestionDto.builder()
+                    .team1(toDto(byId.get(p.team1Id())))
+                    .team2(toDto(byId.get(p.team2Id())))
+                    .build());
         }
         return suggestions;
     }
