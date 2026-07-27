@@ -680,6 +680,7 @@
     const MSG_USE = /*[[#{admin.playoff.qual.new_match.use}]]*/ '';
     const MSG_FREE = /*[[#{admin.playoff.board.free}]]*/ '';
     const MSG_NO_SUGGESTION = /*[[#{admin.playoff.board.no_suggestion}]]*/ '';
+    const MSG_PRIORITY = /*[[#{admin.playoff.qual.new_match.priority}]]*/ '';
     new TeamPlayoffRealtime(TOURNAMENT_ID);
 
     // ─── localStorage backup для незакрытых счётов ────────────────────────
@@ -787,7 +788,7 @@
                     <span class="info-pill" style="background:#dcfce7;color:#166534">${MSG_FREE}</span>
                 </div>
                 ${s
-                    ? `<div style="font-size:.78rem;color:#64748b">${MSG_SUGGESTED}:</div>
+                    ? `<div style="font-size:.78rem;color:#64748b">${MSG_SUGGESTED}:${s.priority ? ` <span style="color:#b45309;font-weight:700">⚡ ${MSG_PRIORITY}</span>` : ''}</div>
                        <div style="font-size:.82rem;margin:.2rem 0">${s.team1.displayName} — ${s.team2.displayName}</div>
                        <button type="button" class="btn-sm" style="background:#dbeafe;color:#1e3a8a"
                                onclick="useSuggestion(${s.team1.id}, ${s.team2.id}, ${c.courtNumber})">${MSG_USE}</button>`
@@ -818,6 +819,7 @@
                 const s = c.suggestedNextMatch;
                 return `<div style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;color:#475569">
                     <span class="info-pill">${MSG_SUGGESTED}: ${s.team1.displayName} — ${s.team2.displayName} (${c.courtNumber})</span>
+                    ${s.priority ? `<span class="info-pill" style="background:#fef3c7;color:#b45309">⚡ ${MSG_PRIORITY}</span>` : ''}
                     <button type="button" class="btn-sm" style="background:#dbeafe;color:#1e3a8a"
                             onclick="useSuggestion(${s.team1.id}, ${s.team2.id}, ${c.courtNumber})">${MSG_USE}</button>
                 </div>`;
