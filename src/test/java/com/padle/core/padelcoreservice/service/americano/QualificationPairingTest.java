@@ -3,6 +3,7 @@ package com.padle.core.padelcoreservice.service.americano;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -28,7 +29,7 @@ class QualificationPairingTest {
         List<Long> winners = List.of(1L, 2L, 3L, 4L, 5L);
         List<Long> losers = List.of(6L, 7L, 8L, 9L, 10L);
 
-        List<Pairing> pairs = pairSecondRound(winners, losers);
+        List<Pairing> pairs = pairSecondRound(winners, losers, Map.of());
 
         assertThat(pairs).hasSize(5);
         assertThat(teamsIn(pairs)).containsExactlyInAnyOrder(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L);
@@ -47,7 +48,7 @@ class QualificationPairingTest {
         List<Long> winners = List.of(1L, 2L, 3L, 4L, 5L, 6L, 7L);
         List<Long> losers = List.of(8L, 9L, 10L, 11L, 12L, 13L, 14L);
 
-        List<Pairing> pairs = pairSecondRound(winners, losers);
+        List<Pairing> pairs = pairSecondRound(winners, losers, Map.of());
 
         assertThat(pairs).hasSize(7);
         assertThat(teamsIn(pairs)).hasSize(14);
@@ -65,7 +66,7 @@ class QualificationPairingTest {
         List<Long> winners = List.of(1L, 2L, 3L, 4L);
         List<Long> losers = List.of(5L, 6L, 7L, 8L);
 
-        List<Pairing> pairs = pairSecondRound(winners, losers);
+        List<Pairing> pairs = pairSecondRound(winners, losers, Map.of());
 
         assertThat(pairs).hasSize(4);
         boolean anyCross = pairs.stream()
@@ -78,7 +79,7 @@ class QualificationPairingTest {
         List<Long> winners = List.of(1L);
         List<Long> losers = List.of(2L);
 
-        List<Pairing> pairs = pairSecondRound(winners, losers);
+        List<Pairing> pairs = pairSecondRound(winners, losers, Map.of());
 
         assertThat(pairs).containsExactly(new Pairing(1L, 2L));
     }
@@ -88,9 +89,33 @@ class QualificationPairingTest {
         List<Long> winners = List.of(1L, 2L, 3L);
         List<Long> losers = List.of();
 
-        List<Pairing> pairs = pairSecondRound(winners, losers);
+        List<Pairing> pairs = pairSecondRound(winners, losers, Map.of());
 
         assertThat(pairs).hasSize(1);
         assertThat(teamsIn(pairs)).containsExactlyInAnyOrder(1L, 2L);
+    }
+
+    /**
+     * T17 обнаружил: если "украсть" партнёра у первой попавшейся чистой пары не глядя на историю,
+     * освободившаяся команда может случайно повторить своего соперника по 1-му туру. Здесь пара
+     * (1,2) не годится ни в каком порядке (и 1, и 2 уже играли с "хвостом" 10) — алгоритм должен
+     * пропустить её и забрать партнёра у пары (3,4), которая не создаёт повторов.
+     */
+    @Test
+    void skipsUnsafePair_whenItWouldRecreateAQualificationRematch() {
+        List<Long> winners = List.of(1L, 2L, 3L, 4L, 5L);
+        List<Long> losers = List.of(6L, 7L, 8L, 9L, 10L);
+        Map<Long, Set<Long>> priorOpponents = Map.of(
+                1L, Set.of(10L),
+                2L, Set.of(10L),
+                10L, Set.of(1L, 2L)
+        );
+
+        List<Pairing> pairs = pairSecondRound(winners, losers, priorOpponents);
+
+        assertThat(pairs).contains(new Pairing(1L, 2L)); // пара (1,2) осталась нетронутой
+        assertThat(pairs).noneMatch(p ->
+                (p.team1Id().equals(1L) || p.team1Id().equals(2L)) && p.team2Id().equals(10L)
+                        || (p.team2Id().equals(1L) || p.team2Id().equals(2L)) && p.team1Id().equals(10L));
     }
 }
