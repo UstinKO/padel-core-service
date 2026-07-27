@@ -77,9 +77,8 @@ public class TeamPlayoffViewController {
         }
 
         if (playoffStarted) {
-            List<AmericanoMatch> playoffMatches = playoffService.getPlayoffMatches(tournamentId);
-            model.addAttribute("playoffMatches", playoffMatches.stream()
-                    .map(playoffService::toMatchDto).toList());
+            List<AmericanoRound> playoffRounds = playoffService.getPlayoffRounds(tournamentId);
+            model.addAttribute("playoffRounds", buildRoundDtos(playoffRounds));
         }
 
         return "tournaments/team-playoff/view";
