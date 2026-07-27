@@ -17,4 +17,7 @@ import lombok.NoArgsConstructor;
 public class AmericanoMatchSuggestionDto {
     private AmericanoTeamDto team1;
     private AmericanoTeamDto team2;
+
+    /** ТЗ §22: при нечётном числе команд матч "победитель — дополнительная команда" желательно запустить как можно раньше. */
+    private boolean priority;
 }

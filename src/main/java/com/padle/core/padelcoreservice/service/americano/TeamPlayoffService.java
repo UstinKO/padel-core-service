@@ -643,6 +643,9 @@ public class TeamPlayoffService {
     /**
      * Предлагает сопернику для 2-го тура квалификации команде, только что завершившей 1-й матч:
      * тот же результат (победа/поражение), ещё не сыгравший 2-й матч и не занятый прямо сейчас (ТЗ §5).
+     * При нечётном числе команд (T14, ТЗ §20-25) правило переопределяется:
+     * победитель приоритетно встречается с "дополнительной" командой (§22/§23), а если для команды
+     * не нашлось партнёра с тем же результатом — берётся любая другая, ожидающая 2-й матч (§25).
      * Ничего не создаёт — координатор подтверждает или назначает другую пару вручную (см. T4/T11).
      */
     public Optional<AmericanoTeamDto> suggestSecondRoundOpponent(Long tournamentId, Long teamId) {
@@ -653,10 +656,21 @@ public class TeamPlayoffService {
         }
 
         boolean won = wonFirstQualMatch(tournamentId, teamId);
+
+        if (won) {
+            Optional<AmericanoTeam> extra = extraTeam(tournamentId);
+            if (extra.isPresent()) {
+                return extra.map(this::toDto);
+            }
+        }
+
         return waiting.stream()
                 .filter(candidate -> !candidate.getId().equals(teamId))
                 .filter(candidate -> wonFirstQualMatch(tournamentId, candidate.getId()) == won)
                 .findFirst()
+                .or(() -> waiting.stream() // ТЗ §25: партнёра с тем же результатом нет — берём любого доступного
+                        .filter(candidate -> !candidate.getId().equals(teamId))
+                        .findFirst())
                 .map(this::toDto);
     }
 
@@ -670,24 +684,61 @@ public class TeamPlayoffService {
         List<AmericanoMatchSuggestionDto> suggestions = new ArrayList<>();
         Set<Long> used = new HashSet<>();
 
+        // ТЗ §22/§23 (T14): при нечётном остатке "нетронутых" команд первый же победитель,
+        // ожидающий 2-й матч, приоритетно встречается с дополнительной командой — вне очереди
+        // и максимально быстро, а не по общему правилу "победитель к победителю".
+        extraTeam(tournamentId).ifPresent(extra -> waiting.stream()
+                .filter(t -> !used.contains(t.getId()))
+                .filter(t -> wonFirstQualMatch(tournamentId, t.getId()))
+                .findFirst()
+                .ifPresent(winner -> {
+                    suggestions.add(AmericanoMatchSuggestionDto.builder()
+                            .team1(toDto(winner))
+                            .team2(toDto(extra))
+                            .priority(true)
+                            .build());
+                    used.add(winner.getId());
+                    used.add(extra.getId());
+                }));
+
         for (AmericanoTeam team : waiting) {
             if (used.contains(team.getId())) continue;
             boolean won = wonFirstQualMatch(tournamentId, team.getId());
 
-            for (AmericanoTeam candidate : waiting) {
-                if (candidate.getId().equals(team.getId()) || used.contains(candidate.getId())) continue;
-                if (wonFirstQualMatch(tournamentId, candidate.getId()) == won) {
-                    suggestions.add(AmericanoMatchSuggestionDto.builder()
-                            .team1(toDto(team))
-                            .team2(toDto(candidate))
-                            .build());
-                    used.add(team.getId());
-                    used.add(candidate.getId());
-                    break;
-                }
+            AmericanoTeam partner = waiting.stream()
+                    .filter(candidate -> !candidate.getId().equals(team.getId()) && !used.contains(candidate.getId()))
+                    .filter(candidate -> wonFirstQualMatch(tournamentId, candidate.getId()) == won)
+                    .findFirst()
+                    .or(() -> waiting.stream() // ТЗ §25: без партнёра с тем же результатом — любой доступный
+                            .filter(candidate -> !candidate.getId().equals(team.getId()) && !used.contains(candidate.getId()))
+                            .findFirst())
+                    .orElse(null);
+
+            if (partner != null) {
+                suggestions.add(AmericanoMatchSuggestionDto.builder()
+                        .team1(toDto(team))
+                        .team2(toDto(partner))
+                        .build());
+                used.add(team.getId());
+                used.add(partner.getId());
             }
         }
         return suggestions;
+    }
+
+    /**
+     * "Дополнительная" команда при нечётном числе участников (ТЗ §20-23): активна, ещё не сыграла
+     * и не начала ни одного квалификационного матча. Ровно одна — если нетронутых команд несколько
+     * (координатор ещё не назначил всем первые матчи), правило пока не применяется: которая из них
+     * окажется "дополнительной", определится позже, по факту (ТЗ §21 — это не конкретный номер команды).
+     */
+    private Optional<AmericanoTeam> extraTeam(Long tournamentId) {
+        List<AmericanoTeam> untouched = teamRepository.findByTournamentIdAndStatus(
+                        tournamentId, AmericanoPlayerStatus.ACTIVE)
+                .stream()
+                .filter(t -> getTeamQualMatches(tournamentId, t.getId()).isEmpty())
+                .toList();
+        return untouched.size() == 1 ? Optional.of(untouched.get(0)) : Optional.empty();
     }
 
     public record MatchTeamChangeResult(AmericanoMatch match, String warning) {
