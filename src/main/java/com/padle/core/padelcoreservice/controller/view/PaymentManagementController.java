@@ -5,8 +5,10 @@ import com.padle.core.padelcoreservice.dto.PaymentUpdateDto;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.enums.PaymentMethod;
 import com.padle.core.padelcoreservice.model.enums.PaymentStatus;
+import com.padle.core.padelcoreservice.model.enums.TournamentType;
 import com.padle.core.padelcoreservice.service.PaymentService;
 import com.padle.core.padelcoreservice.service.TournamentService;
+import com.padle.core.padelcoreservice.service.americano.TeamPlayoffService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +31,7 @@ public class PaymentManagementController {
 
     private final TournamentService tournamentService;
     private final PaymentService paymentService;
+    private final TeamPlayoffService teamPlayoffService;
 
     @GetMapping("/{tournamentId}/payments")
     public String paymentManagementPage(@PathVariable Long tournamentId, Model model) {
@@ -38,6 +41,9 @@ public class PaymentManagementController {
                 .orElseThrow(() -> new RuntimeException("Tournament not found"));
 
         List<PaymentManagementViewDto> players = paymentService.getPaymentManagementData(tournamentId);
+        if (tournament.getTipo() == TournamentType.AMERICANO_TEAMS) {
+            markTeamPlayoffEligibility(tournamentId, players);
+        }
 
         model.addAttribute("tournament", tournament);
         model.addAttribute("players", players);
@@ -45,6 +51,51 @@ public class PaymentManagementController {
         model.addAttribute("paymentStatuses", PaymentStatus.values());
 
         return "admin/tournaments/payments";
+    }
+
+    @PostMapping("/{tournamentId}/payments/add-team")
+    public String saveAndAddTeam(@PathVariable Long tournamentId,
+                                  @ModelAttribute PaymentUpdateForm form,
+                                  @RequestParam Long registrationId,
+                                  @AuthenticationPrincipal Owner owner,
+                                  RedirectAttributes redirectAttributes) {
+        log.info("Adding team from registration {} for tournament {}", registrationId, tournamentId);
+
+        try {
+            // T18: сначала сохраняем всё, что координатор проставил на странице (в т.ч. только что
+            // отмеченную оплату этой пары), и только потом добавляем пару в турнир — теми же значениями.
+            List<PaymentUpdateDto> updates = parsePaymentUpdates(form.getPayments());
+            paymentService.savePaymentManagementData(tournamentId, updates, owner.getId());
+
+            PaymentUpdateDto row = updates.stream()
+                    .filter(u -> registrationId.equals(u.getRegistrationId()) && !u.isPartnerRow())
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("Registro no encontrado en el formulario: " + registrationId));
+
+            boolean hasPaid = row.getPaymentStatus() == PaymentStatus.PAID;
+            teamPlayoffService.addTeamFromRegistration(tournamentId, registrationId, hasPaid, row.isAttended());
+            redirectAttributes.addFlashAttribute("successMessage", "Pagos guardados y equipo agregado al torneo");
+        } catch (Exception e) {
+            log.error("Error adding team from registration {} for tournament {}", registrationId, tournamentId, e);
+            redirectAttributes.addFlashAttribute("errorMessage", "Error al agregar equipo: " + e.getMessage());
+        }
+
+        return "redirect:/admin/tournaments/" + tournamentId + "/payments";
+    }
+
+    /**
+     * T18: для AMERICANO_TEAMS помечает, у каких пар уже можно (или уже нельзя, потому что готово)
+     * показать кнопку "Добавить команду" на странице оплат — только главная строка парной
+     * регистрации, ещё не добавленная как AmericanoTeam.
+     */
+    private void markTeamPlayoffEligibility(Long tournamentId, List<PaymentManagementViewDto> players) {
+        players.stream()
+                .filter(p -> p.isMainRow() && !p.isPartnerRow() && p.isDoubleRegistration())
+                .forEach(p -> {
+                    boolean already = teamPlayoffService.isRegisteredAsTeam(tournamentId, p.getPlayerId());
+                    p.setCanAddToTeamPlayoff(!already);
+                    p.setAlreadyInTeamPlayoff(already);
+                });
     }
 
     @PostMapping("/{tournamentId}/payments/save")

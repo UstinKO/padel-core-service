@@ -222,6 +222,38 @@ tr.partner-row:hover { background-color: #ede9fe !important; }
     flex-shrink: 0;
 }
 
+/* T18: Team Playoff — добавить пару в турнир прямо со страницы оплат */
+.btn-add-team {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.15rem 0.5rem;
+    background: #16a34a;
+    color: #fff;
+    border: none;
+    border-radius: 9999px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    cursor: pointer;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+.btn-add-team:hover { background: #15803d; }
+
+.badge-in-tournament {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.15rem 0.5rem;
+    background: #dcfce7;
+    color: #166534;
+    border-radius: 9999px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
 .position-badge {
     background: #e2e8f0;
     padding: 0.1rem 0.4rem;

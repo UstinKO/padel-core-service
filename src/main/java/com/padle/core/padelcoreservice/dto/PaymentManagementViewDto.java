@@ -40,4 +40,15 @@ public class PaymentManagementViewDto {
 
     // Служебное поле для группировки пар при нормализации позиций (не выводится в шаблоне)
     private Long pairGroupId;
+
+    /** Строка главного игрока пары (не партнёра в БД) — T18: определяет, куда класть кнопку "Добавить команду". */
+    private boolean isMainRow;
+
+    /** Парная регистрация (в отличие от одиночной "ищу пару") — T18: только парные можно добавить как AmericanoTeam. */
+    private boolean isDoubleRegistration;
+
+    // ── T18: добавление пары в Team Playoff прямо со страницы оплат ──
+    // Заполняются контроллером поверх generic-данных PaymentService только для AMERICANO_TEAMS.
+    private boolean canAddToTeamPlayoff;
+    private boolean alreadyInTeamPlayoff;
 }

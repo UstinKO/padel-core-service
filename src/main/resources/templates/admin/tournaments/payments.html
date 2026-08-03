@@ -173,6 +173,22 @@
                                        th:text="${player.partnerPhone}">
                                     </a>
                                     <span th:if="${player.partnerRow}" class="companion-badge">+</span>
+
+                                    <!-- T18: Team Playoff — добавить пару в турнир прямо со страницы оплат -->
+                                    <button type="submit" th:if="${player.canAddToTeamPlayoff}"
+                                            th:formaction="@{'/admin/tournaments/' + ${tournament.id} + '/payments/add-team'}"
+                                            formmethod="post"
+                                            name="registrationId" th:value="${player.registrationId}"
+                                            class="btn-add-team"
+                                            th:title="#{admin.payments.btn.add_team_title}">
+                                        <i class="fas fa-user-plus"></i>
+                                        <span th:text="#{admin.payments.btn.add_team}">Agregar equipo</span>
+                                    </button>
+                                    <span th:if="${player.alreadyInTeamPlayoff}" class="badge-in-tournament"
+                                          th:title="#{admin.payments.badge.in_tournament_title}">
+                                        <i class="fas fa-check-circle"></i>
+                                        <span th:text="#{admin.payments.badge.in_tournament}">En el torneo</span>
+                                    </span>
                                 </div>
                             </td>
 

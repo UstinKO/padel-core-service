@@ -209,6 +209,8 @@ public class PaymentService {
                     dto.setAttended(reg.getAttended() != null ? reg.getAttended() : false);
                     dto.setParticipationConfirmed(reg.getParticipationConfirmed() != null ? reg.getParticipationConfirmed() : false);
                     dto.setPartnerRow(false);
+                    dto.setMainRow(isMainPlayer);
+                    dto.setDoubleRegistration(isDouble);
 
                     // Платёж — без маркера PARTNER_PAYMENT (у каждого своя запись)
                     payments.stream()

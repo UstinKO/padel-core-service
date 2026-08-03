@@ -1492,33 +1492,81 @@ public class TeamPlayoffService {
                     .filter(r -> !r.getPlayer().getId().equals(mainPlayerId))
                     .findFirst().orElse(null);
 
-            PlayerPadel player2 = partnerReg != null ? partnerReg.getPlayer()
-                    : mainReg.getPartner();
-            String p2Name = player2 == null ? buildPartnerName(mainReg) : null;
-            String p2Phone = player2 == null ? mainReg.getPartnerPhone() : null;
-
-            int nextNum = teamRepository.findMaxTeamNumber(tournamentId).orElse(0) + 1;
-
-            AmericanoTeam team = AmericanoTeam.builder()
-                    .tournament(tournament)
-                    .player1(mainReg.getPlayer())
-                    .player2(player2)
-                    .player2Name(p2Name)
-                    .player2Phone(p2Phone)
-                    .teamNumber(nextNum)
-                    .currentPosition(0)
-                    .status(AmericanoPlayerStatus.ACTIVE)
-                    .registrationSource(RegistrationSource.WEBSITE)
-                    .hasPaid(false)
-                    .attended(false)
-                    .build();
-
-            teamRepository.save(team);
+            // Массовый импорт исторически не переносит статус оплаты/присутствия (T18: для
+            // точечного добавления одной пары со страницы оплат используется addTeamFromRegistration).
+            teamRepository.save(buildTeamFromPair(tournament, mainReg, partnerReg, false, false));
             imported++;
         }
 
         log.info("Imported {} teams from registrations for tournament {}", imported, tournamentId);
         return imported;
+    }
+
+    /** Уже зарегистрирована ли пара с этим главным игроком как AmericanoTeam (T18, страница оплат). */
+    public boolean isRegisteredAsTeam(Long tournamentId, Long mainPlayerId) {
+        return teamRepository.existsByTournamentIdAndPlayer1Id(tournamentId, mainPlayerId);
+    }
+
+    /**
+     * Точечный аналог {@link #importFromRegistrations} для ОДНОЙ конкретной пары (T18): заказчик
+     * отмечает оплату/присутствие на странице оплат и нажимает "Добавить команду" — в отличие от
+     * массового импорта, оплата/присутствие переносятся в AmericanoTeam как есть, а не сбрасываются.
+     */
+    @Transactional
+    public AmericanoTeam addTeamFromRegistration(Long tournamentId, Long registrationId,
+                                                  boolean hasPaid, boolean attended) {
+        Tournament tournament = getTournament(tournamentId);
+        validateTournamentType(tournament);
+
+        TournamentRegistration mainReg = registrationRepository.findById(registrationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Registration not found: " + registrationId));
+
+        if (!Boolean.TRUE.equals(mainReg.getIsDoubleRegistration())) {
+            throw new InvalidStateException("La inscripción no es una pareja");
+        }
+        if (mainReg.getStatus() != RegistrationStatus.CONFIRMED
+                && mainReg.getStatus() != RegistrationStatus.PARTNER_INVITED
+                && mainReg.getStatus() != RegistrationStatus.PAIR_REGISTERED) {
+            throw new InvalidStateException("La inscripción no está confirmada");
+        }
+
+        Long mainPlayerId = mainReg.getPlayer().getId();
+        if (teamRepository.existsByTournamentIdAndPlayer1Id(tournamentId, mainPlayerId)) {
+            throw new InvalidStateException("Este equipo ya fue agregado al torneo");
+        }
+
+        TournamentRegistration partnerReg = registrationRepository
+                .findByTournamentIdOrderByPositionAscWaitlistPositionAsc(tournamentId)
+                .stream()
+                .filter(r -> mainPlayerId.equals(r.getMainPlayerId()) && !r.getPlayer().getId().equals(mainPlayerId))
+                .findFirst().orElse(null);
+
+        AmericanoTeam team = teamRepository.save(buildTeamFromPair(tournament, mainReg, partnerReg, hasPaid, attended));
+        log.info("Team added from registration {} for tournament {}: {}", registrationId, tournamentId, team.getDisplayName());
+        return team;
+    }
+
+    private AmericanoTeam buildTeamFromPair(Tournament tournament, TournamentRegistration mainReg,
+                                             TournamentRegistration partnerReg, boolean hasPaid, boolean attended) {
+        PlayerPadel player2 = partnerReg != null ? partnerReg.getPlayer() : mainReg.getPartner();
+        String p2Name = player2 == null ? buildPartnerName(mainReg) : null;
+        String p2Phone = player2 == null ? mainReg.getPartnerPhone() : null;
+
+        int nextNum = teamRepository.findMaxTeamNumber(tournament.getId()).orElse(0) + 1;
+
+        return AmericanoTeam.builder()
+                .tournament(tournament)
+                .player1(mainReg.getPlayer())
+                .player2(player2)
+                .player2Name(p2Name)
+                .player2Phone(p2Phone)
+                .teamNumber(nextNum)
+                .currentPosition(0)
+                .status(AmericanoPlayerStatus.ACTIVE)
+                .registrationSource(RegistrationSource.WEBSITE)
+                .hasPaid(hasPaid)
+                .attended(attended)
+                .build();
     }
 
     private String buildPartnerName(TournamentRegistration reg) {
