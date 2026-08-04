@@ -145,6 +145,19 @@
                         <a th:href="@{'/admin/players/' + ${player.id}}" class="btn-icon" title="Ver detalles">
                             <i class="fas fa-eye"></i>
                         </a>
+                        <!-- Приглашение на турнир (#273): Telegram если есть ник, иначе WhatsApp по телефону -->
+                        <a th:if="${player.telegramUsername != null and !player.telegramUsername.isEmpty()}"
+                           th:href="'https://t.me/' + ${#strings.replace(player.telegramUsername, '@', '')}"
+                           target="_blank" rel="noopener noreferrer"
+                           class="btn-icon" th:title="#{admin.players.list.btn.invite}">
+                            <i class="fab fa-telegram"></i>
+                        </a>
+                        <a th:if="${(player.telegramUsername == null or player.telegramUsername.isEmpty()) and player.telefono != null and !player.telefono.isEmpty()}"
+                           th:href="'https://wa.me/' + ${player.telefono.replaceAll('[^0-9]', '')}"
+                           target="_blank" rel="noopener noreferrer"
+                           class="btn-icon" th:title="#{admin.players.list.btn.invite}">
+                            <i class="fab fa-whatsapp"></i>
+                        </a>
                         <button type="button" class="btn-icon"
                                 th:if="${isSuperAdmin and T(com.padle.core.padelcoreservice.model.PlayerPadel).isGuestEmail(player.email)}"
                                 th:title="#{admin.players.details.btn.guest_credentials}"
@@ -220,6 +233,19 @@
                         <div class="action-buttons">
                             <a th:href="@{'/admin/players/' + ${player.id}}" class="btn-icon" title="Ver detalles">
                                 <i class="fas fa-eye"></i>
+                            </a>
+                            <!-- Приглашение на турнир (#273): Telegram если есть ник, иначе WhatsApp по телефону -->
+                            <a th:if="${player.telegramUsername != null and !player.telegramUsername.isEmpty()}"
+                               th:href="'https://t.me/' + ${#strings.replace(player.telegramUsername, '@', '')}"
+                               target="_blank" rel="noopener noreferrer"
+                               class="btn-icon" th:title="#{admin.players.list.btn.invite}">
+                                <i class="fab fa-telegram"></i>
+                            </a>
+                            <a th:if="${(player.telegramUsername == null or player.telegramUsername.isEmpty()) and player.telefono != null and !player.telefono.isEmpty()}"
+                               th:href="'https://wa.me/' + ${player.telefono.replaceAll('[^0-9]', '')}"
+                               target="_blank" rel="noopener noreferrer"
+                               class="btn-icon" th:title="#{admin.players.list.btn.invite}">
+                                <i class="fab fa-whatsapp"></i>
                             </a>
                             <button type="button" class="btn-icon"
                                     th:if="${isSuperAdmin and T(com.padle.core.padelcoreservice.model.PlayerPadel).isGuestEmail(player.email)}"

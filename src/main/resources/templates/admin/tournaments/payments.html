@@ -160,14 +160,14 @@
                                     </a>
                                     <!-- Телефон если нет Telegram -->
                                     <a th:if="${!player.partnerRow and (player.telegramUsername == null or player.telegramUsername.isEmpty()) and player.playerPhone != null and !player.playerPhone.isEmpty()}"
-                                       th:href="'https://wa.me/' + ${#strings.replace(player.playerPhone, '+', '')}"
+                                       th:href="'https://wa.me/' + ${player.playerPhone.replaceAll('[^0-9]', '')}"
                                        target="_blank" rel="noopener noreferrer"
                                        class="contact-link wa-link"
                                        th:text="${player.playerPhone}">
                                     </a>
                                     <!-- Телефон партнёра -->
                                     <a th:if="${player.partnerRow and player.partnerPhone != null and !player.partnerPhone.isEmpty()}"
-                                       th:href="'https://wa.me/' + ${#strings.replace(player.partnerPhone, '+', '')}"
+                                       th:href="'https://wa.me/' + ${player.partnerPhone.replaceAll('[^0-9]', '')}"
                                        target="_blank" rel="noopener noreferrer"
                                        class="contact-link wa-link"
                                        th:text="${player.partnerPhone}">
