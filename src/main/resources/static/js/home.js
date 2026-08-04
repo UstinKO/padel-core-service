@@ -52,6 +52,7 @@ class PadelCoreHome {
                 'C6': t('enum.nivel.c6'),
                 'C5': t('enum.nivel.c5'),
                 'C4': t('enum.nivel.c4'),
+                'D9': t('enum.nivel.d9'),
                 'D8': t('enum.nivel.d8'),
                 'D7': t('enum.nivel.d7'),
                 'D6': t('enum.nivel.d6'),
@@ -188,7 +189,7 @@ class PadelCoreHome {
             if (nivel !== 'todos') {
                 const nivelMap = {
                     'SUMA_15': 'SUMA_15', 'SUMA_13': 'SUMA_13',
-                    'D7': 'D7', 'D8': 'D8', 'D7_D8': 'D7_D8',
+                    'D9': 'D9', 'D7': 'D7', 'D8': 'D8', 'D7_D8': 'D7_D8',
                     'D6': 'D6', 'C7_C6': 'C7_C6',
                     'C9': 'C9', 'C8': 'C8', 'C7': 'C7',
                     'C6': 'C6', 'C5': 'C5', 'C4': 'C4',

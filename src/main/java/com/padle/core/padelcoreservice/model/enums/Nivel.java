@@ -18,6 +18,7 @@ public enum Nivel {
     // Новые уровни по просьбе заказчика
     SUMA_15("15+"),
     SUMA_13("13+"),
+    D9("D9"),
     D7("D7"),
     D8("D8"),
     D7_D8("D7/D8"),
@@ -42,7 +43,7 @@ public enum Nivel {
     // Уровни, реально применимые к игроку (players/perfil.html, admin/players/details.html).
     // Остальные значения Nivel — категории турниров (составные/комбинированные), их
     // нельзя присваивать игроку напрямую — согласовано с заказчиком (см. issue #206).
-    private static final Set<Nivel> PLAYER_LEVELS = EnumSet.of(C9, C8, C7, C6, C5, D7, D8, D6, C4);
+    private static final Set<Nivel> PLAYER_LEVELS = EnumSet.of(C9, C8, C7, C6, C5, D9, D7, D8, D6, C4);
 
     public static boolean isPlayerLevel(Nivel nivel) {
         return nivel != null && PLAYER_LEVELS.contains(nivel);
