@@ -187,9 +187,12 @@ public class TeamPlayoffService {
         List<AmericanoTeam> teams = teamRepository.findByTournamentIdAndStatus(
                 tournamentId, AmericanoPlayerStatus.ACTIVE);
 
-        if (teams.size() < 4) {
+        // Команды приходят не одновременно — court-driven модель (T1) уже умеет вести отдельные
+        // матчи без ожидания "раунда" целиком, поэтому порог снижен до минимально возможной пары
+        // команд (T18/#271), а не до полного набора для четвертьфинала.
+        if (teams.size() < 2) {
             throw new InvalidStateException(
-                    "Se necesitan al menos 4 equipos para la calificación. Actuales: " + teams.size());
+                    "Se necesitan al menos 2 equipos para la calificación. Actuales: " + teams.size());
         }
 
         AmericanoRound round = getOrCreateQualificationRound(tournament, courts);
@@ -1505,6 +1508,31 @@ public class TeamPlayoffService {
     /** Уже зарегистрирована ли пара с этим главным игроком как AmericanoTeam (T18, страница оплат). */
     public boolean isRegisteredAsTeam(Long tournamentId, Long mainPlayerId) {
         return teamRepository.existsByTournamentIdAndPlayer1Id(tournamentId, mainPlayerId);
+    }
+
+    /**
+     * T18/#271: если пара уже была добавлена в AmericanoTeam (кнопкой на странице оплат или
+     * вручную), сама команда никак не связана с TournamentRegistration/Payment — изменение
+     * оплаты/присутствия на странице оплат ПОСЛЕ добавления никак на неё не влияло. Вызывается
+     * из PaymentService.savePaymentManagementData на каждое сохранение формы; если команда ещё
+     * не добавлена — тихий no-op (findByTournamentIdAndPlayer1Id ничего не найдёт).
+     */
+    @Transactional
+    public void syncPaymentStatusForRegistration(Long tournamentId, Long registrationId,
+                                                  boolean hasPaid, boolean attended) {
+        TournamentRegistration reg = registrationRepository.findById(registrationId).orElse(null);
+        if (reg == null || !Boolean.TRUE.equals(reg.getIsDoubleRegistration())) {
+            return;
+        }
+        Long mainPlayerId = reg.getMainPlayerId() != null ? reg.getMainPlayerId() : reg.getPlayer().getId();
+        if (!reg.getPlayer().getId().equals(mainPlayerId)) {
+            return; // регистрация партнёра, а не главного игрока — команда привязана к player1 (главному)
+        }
+        teamRepository.findByTournamentIdAndPlayer1Id(tournamentId, mainPlayerId).ifPresent(team -> {
+            team.setHasPaid(hasPaid);
+            team.setAttended(attended);
+            teamRepository.save(team);
+        });
     }
 
     /**

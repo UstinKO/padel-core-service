@@ -326,17 +326,17 @@
                     <input type="number" name="courts" value="2" min="1" max="10"
                            style="width:60px;border:1px solid #e2e8f0;border-radius:6px;padding:.3rem .5rem;text-align:center">
                     <button type="submit" class="btn btn-primary"
-                            th:disabled="${#lists.size(teams) < 4}"
+                            th:disabled="${#lists.size(teams) < 2}"
                             onclick="return confirm(t('admin.playoff.confirm.start_qual'))">
                         <i class="fas fa-play"></i>
                         <span th:text="#{admin.playoff.btn.start_qual}">Iniciar calificación</span>
                     </button>
                 </form>
-                <div th:if="${#lists.size(teams) < 4}"
+                <div th:if="${#lists.size(teams) < 2}"
                      style="margin-top:.75rem;font-size:.82rem;color:#94a3b8">
                     <i class="fas fa-info-circle"></i>
                     <span th:text="#{admin.playoff.qual.need_more}">Faltan</span>
-                    <strong th:text="${4 - #lists.size(teams)}">4</strong>
+                    <strong th:text="${2 - #lists.size(teams)}">2</strong>
                     <span th:text="#{admin.playoff.qual.need_more_suffix}">equipos más.</span>
                 </div>
             </div>
