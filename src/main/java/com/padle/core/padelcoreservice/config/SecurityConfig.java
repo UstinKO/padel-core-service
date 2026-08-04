@@ -1,6 +1,7 @@
 package com.padle.core.padelcoreservice.config;
 
 import com.padle.core.padelcoreservice.security.CompositeUserDetailsService;
+import com.padle.core.padelcoreservice.security.CustomAccessDeniedHandler;
 import com.padle.core.padelcoreservice.security.JwtAuthenticationFilter;
 import com.padle.core.padelcoreservice.security.RateLimitFilter;
 import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2UserService;
@@ -49,6 +50,7 @@ public class SecurityConfig {
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
     private final RateLimitFilter rateLimitFilter;
+    private final CustomAccessDeniedHandler customAccessDeniedHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -107,6 +109,7 @@ public class SecurityConfig {
                                 "/players/confirmar-email/**",
                                 "/error",
                                 "/error/rate-limit",
+                                "/error/403",
                                 "/recuperar-password/solicitar",
                                 "/recuperar-password/confirmar",
                                 "/recuperar-password",
@@ -140,6 +143,9 @@ public class SecurityConfig {
                         ).permitAll()
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().authenticated()
+                )
+                .exceptionHandling(ex -> ex
+                        .accessDeniedHandler(customAccessDeniedHandler)
                 )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)

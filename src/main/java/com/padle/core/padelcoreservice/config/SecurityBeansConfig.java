@@ -42,7 +42,7 @@ public class SecurityBeansConfig {
 
     @Bean
     public OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler() {
-        return new OAuth2AuthenticationSuccessHandler(jwtService);
+        return new OAuth2AuthenticationSuccessHandler();
     }
 
     @Bean
