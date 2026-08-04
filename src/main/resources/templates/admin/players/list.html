@@ -70,20 +70,20 @@
             </div>
         </div>
 
-        <!-- Поиск игроков -->
-        <div style="margin: 1.25rem 0 1.5rem;">
-            <div style="position: relative; max-width: 480px;">
-                <i class="fas fa-search" style="position:absolute; left:.85rem; top:50%; transform:translateY(-50%);
-                   color:#94a3b8; font-size:.95rem; pointer-events:none;"></i>
-                <input type="text" id="playerSearch" autocomplete="off"
-                       th:placeholder="#{admin.players.list.search.placeholder}"
-                       style="width:100%; padding:.65rem .85rem .65rem 2.4rem; border:1px solid #e2e8f0;
-                              border-radius:10px; font-size:.95rem; color:#1e293b; background:#f8fafc;
-                              outline:none; box-sizing:border-box; transition:border-color .2s;"
-                       onfocus="this.style.borderColor='#FF6B35'; this.style.background='#fff';"
-                       onblur="this.style.borderColor='#e2e8f0'; this.style.background='#f8fafc';">
+        <!-- Поиск игроков + фильтр по уровню (#272) -->
+        <div style="margin: 1.25rem 0 1.5rem; display:flex; gap:.75rem; flex-wrap:wrap; align-items:flex-start;">
+            <div style="flex:1 1 260px; max-width:480px;">
+                <div class="input-with-icon">
+                    <i class="fas fa-search input-icon"></i>
+                    <input type="text" id="playerSearch" autocomplete="off" class="form-control"
+                           th:placeholder="#{admin.players.list.search.placeholder}">
+                </div>
+                <p id="searchHint" style="margin:.4rem 0 0 .25rem; font-size:.8rem; color:#94a3b8;"></p>
             </div>
-            <p id="searchHint" style="margin:.4rem 0 0 .25rem; font-size:.8rem; color:#94a3b8;"></p>
+            <select id="nivelFilter" class="form-control" style="width:auto; min-width:180px;">
+                <option value="__all__" selected="selected" th:text="#{admin.players.list.filter.nivel.all}">Todos los niveles</option>
+                <th:block th:replace="~{fragments/nivel-options :: options(null)}"></th:block>
+            </select>
         </div>
 
         <!-- Карточки игроков для мобильных -->
@@ -93,7 +93,8 @@
                  th:data-name="${#strings.toLowerCase(player.nombreCompleto)}"
                  th:data-email="${#strings.toLowerCase(player.email)}"
                  th:data-phone="${player.telefono ?: ''}"
-                 th:data-telegram="${player.telegramUsername ?: ''}">
+                 th:data-telegram="${player.telegramUsername ?: ''}"
+                 th:data-nivel="${player.nivelJugador != null ? player.nivelJugador.name() : ''}">
                 <div class="player-card-header">
                     <div class="player-avatar">
                         <i class="fas fa-user-circle"></i>
@@ -184,7 +185,8 @@
                     th:data-name="${#strings.toLowerCase(player.nombreCompleto)}"
                     th:data-email="${#strings.toLowerCase(player.email)}"
                     th:data-phone="${player.telefono ?: ''}"
-                    th:data-telegram="${player.telegramUsername ?: ''}">
+                    th:data-telegram="${player.telegramUsername ?: ''}"
+                    th:data-nivel="${player.nivelJugador != null ? player.nivelJugador.name() : ''}">
                     <td th:text="${player.id}">1</td>
                     <td>
                         <strong th:text="${player.nombreCompleto}">Juan Pérez</strong>
@@ -349,6 +351,10 @@
 (function () {
     const input = document.getElementById('playerSearch');
     const hint  = document.getElementById('searchHint');
+    const nivelFilter = document.getElementById('nivelFilter');
+    // fragments/nivel-options помечает th:selected свою опцию "" (Sin especificar) при selected==null
+    // (см. вызов options(null) выше) — из двух отмеченных selected опций форсируем нужный дефолт.
+    nivelFilter.value = '__all__';
     const rows  = document.querySelectorAll('#playersTableView tbody tr[data-id]');
     const cards = document.querySelectorAll('#playersMobileView .player-card[data-id]');
 
@@ -371,32 +377,50 @@
 
     function v(el, key) { return (el.dataset[key] || '').toLowerCase(); }
 
-    function matches(el, q, type) {
+    function matchesSearch(el, q, type) {
+        // digits пустая строка для запроса без цифр ("Petr") — includes('') всегда true,
+        // поэтому phone-сравнение подключаем только когда в запросе реально есть цифры.
+        const digits = q.replace(/\D/g,'');
         switch (type) {
             case 'telegram': return v(el,'telegram').includes(q.slice(1));
             case 'email':    return v(el,'email').includes(q);
-            case 'phone':    return v(el,'phone').replace(/\D/g,'').includes(q.replace(/\D/g,''));
+            case 'phone':    return digits !== '' && v(el,'phone').replace(/\D/g,'').includes(digits);
             case 'id':       return v(el,'id') === q;
             case 'all':      return v(el,'name').includes(q)
                                  || v(el,'email').includes(q)
-                                 || v(el,'phone').replace(/\D/g,'').includes(q.replace(/\D/g,''));
+                                 || (digits !== '' && v(el,'phone').replace(/\D/g,'').includes(digits));
         }
         return true;
+    }
+
+    // '__all__' — сброс фильтра, value="" у select соответствует "Sin especificar"
+    // (nivelJugador == null), тем же значением помечены игроки без уровня в data-nivel.
+    function matchesNivel(el, nivel) {
+        return nivel === '__all__' || v(el, 'nivel') === nivel.toLowerCase();
+    }
+
+    function applyFilters() {
+        const q     = input.value.trim().toLowerCase();
+        const type  = detectType(q);
+        const nivel = nivelFilter.value;
+
+        hint.textContent = (q && type) ? labels[type] : '';
+
+        function visible(el) {
+            return (!q || matchesSearch(el, q, type)) && matchesNivel(el, nivel);
+        }
+
+        rows.forEach(row   => { row.style.display  = visible(row)  ? '' : 'none'; });
+        cards.forEach(card => { card.style.display = visible(card) ? '' : 'none'; });
     }
 
     let timer;
     input.addEventListener('input', function () {
         clearTimeout(timer);
-        timer = setTimeout(function () {
-            const q    = input.value.trim().toLowerCase();
-            const type = detectType(q);
-
-            hint.textContent = (q && type) ? labels[type] : '';
-
-            rows.forEach(row   => { row.style.display  = (!q || matches(row,  q, type)) ? '' : 'none'; });
-            cards.forEach(card => { card.style.display = (!q || matches(card, q, type)) ? '' : 'none'; });
-        }, 250);
+        timer = setTimeout(applyFilters, 250);
     });
+
+    nivelFilter.addEventListener('change', applyFilters);
 })();
 </script>
 <script th:if="${isSuperAdmin}">
