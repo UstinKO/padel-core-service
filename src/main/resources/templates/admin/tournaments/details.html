@@ -1254,7 +1254,7 @@
                                     </a>
                                     <!-- WhatsApp (если нет Telegram) -->
                                     <a th:if="${(reg.partnerTelegram == null or reg.partnerTelegram.isEmpty()) and reg.partnerPhone != null and !reg.partnerPhone.isEmpty()}"
-                                       th:href="'https://wa.me/' + ${#strings.replace(reg.partnerPhone, '+', '')}"
+                                       th:href="'https://wa.me/' + ${reg.partnerPhone.replaceAll('[^0-9]', '')}"
                                        class="reg-wa-link"
                                        target="_blank" rel="noopener noreferrer">
                                         <i class="fab fa-whatsapp"></i>
@@ -1278,7 +1278,7 @@
                                         <span th:text="${reg.playerTelegram}"></span>
                                     </a>
                                     <a th:if="${(reg.playerTelegram == null or reg.playerTelegram.isEmpty()) and reg.playerPhone != null and !reg.playerPhone.isEmpty()}"
-                                       th:href="'https://wa.me/' + ${#strings.replace(reg.playerPhone, '+', '')}"
+                                       th:href="'https://wa.me/' + ${reg.playerPhone.replaceAll('[^0-9]', '')}"
                                        class="reg-wa-link"
                                        target="_blank" rel="noopener noreferrer">
                                         <i class="fab fa-whatsapp"></i>
