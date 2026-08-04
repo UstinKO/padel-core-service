@@ -111,6 +111,22 @@ class TeamPlayoffEndToEndTest {
         assertChampionAndRunnerUpDetermined(tournamentId);
     }
 
+    /**
+     * #271: команды приходят не одновременно — квалификация должна стартовать всего от 2 команд,
+     * не дожидаясь полного набора на четвертьфинал. Плей-офф здесь намеренно не проверяется —
+     * он по-прежнему требует достаточного числа команд и стартует отдельной кнопкой позже.
+     */
+    @ParameterizedTest(name = "{0} equipos (solo calificación)")
+    @ValueSource(ints = {2, 3})
+    void qualificationStartsWithFewerThanFourTeams(int teamCount) {
+        Long tournamentId = createTournament(teamCount);
+        List<AmericanoTeam> teams = createTeams(tournamentId, teamCount);
+
+        runQualification(tournamentId, teams);
+
+        assertEachTeamPlayedExactlyTwoQualMatches(tournamentId, teams);
+    }
+
     // ═══════════════════════════════════════════════════════════════════════
     // SETUP
     // ═══════════════════════════════════════════════════════════════════════

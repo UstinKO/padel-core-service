@@ -12,6 +12,7 @@ import com.padle.core.padelcoreservice.model.enums.PaymentStatus;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import com.padle.core.padelcoreservice.repository.PaymentRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
+import com.padle.core.padelcoreservice.service.americano.TeamPlayoffService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,7 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final TournamentRegistrationRepository registrationRepository;
     private final PaymentMapper paymentMapper;
+    private final TeamPlayoffService teamPlayoffService;
 
     // ==================== Базовые методы ====================
 
@@ -429,6 +431,14 @@ public class PaymentService {
                 paymentRepository.save(payment);
                 log.info("Created payment for registration {} (partnerRow={})",
                         dto.getRegistrationId(), dto.isPartnerRow());
+            }
+
+            // T18/#271: если по этой регистрации уже есть AmericanoTeam (Team Playoff), синхронизируем
+            // её hasPaid/attended с только что сохранённым статусом — иначе команда, добавленная в
+            // турнир ДО того, как на этой странице отметили оплату, навсегда останется неотмеченной.
+            if (!dto.isPartnerRow()) {
+                teamPlayoffService.syncPaymentStatusForRegistration(tournamentId, dto.getRegistrationId(),
+                        dto.getPaymentStatus() == PaymentStatus.PAID, dto.isAttended());
             }
         }
     }

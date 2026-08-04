@@ -241,7 +241,7 @@
                                     <option value="">—</option>
                                     <option th:each="status : ${paymentStatuses}"
                                             th:value="${status.name()}"
-                                            th:text="${status.displayName}"
+                                            th:text="#{__${'enum.paymentStatus.' + status.name()}__}"
                                             th:selected="${player.paymentStatus != null and player.paymentStatus.name() == status.name()}">
                                     </option>
                                 </select>
@@ -254,7 +254,7 @@
                                     <option value="">—</option>
                                     <option th:each="method : ${paymentMethods}"
                                             th:value="${method.name()}"
-                                            th:text="${method.displayName}"
+                                            th:text="#{__${'enum.paymentMethod.' + method.name()}__}"
                                             th:selected="${player.paymentMethod != null and player.paymentMethod.name() == method.name()}">
                                     </option>
                                 </select>
