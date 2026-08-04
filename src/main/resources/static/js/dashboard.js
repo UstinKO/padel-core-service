@@ -89,6 +89,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Новые уровни
             'SUMA_15': t('enum.nivel.suma15'),
             'SUMA_13': t('enum.nivel.suma13'),
+            'D9': t('enum.nivel.d9'),
             'D7': t('enum.nivel.d7'),
             'D8': t('enum.nivel.d8'),
             'D7_D8': t('enum.nivel.d7_d8'),
@@ -254,6 +255,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     'C6': 'C6',
                     'C5': 'C5',
                     'C4': 'C4',
+                    'D9': 'D9',
                     'D8': 'D8',
                     'D7': 'D7',
                     'D6': 'D6',

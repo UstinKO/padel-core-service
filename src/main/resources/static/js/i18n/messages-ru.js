@@ -106,6 +106,7 @@ window.APP_MESSAGES = {
     'enum.nivel.c6':     'C6 (Профессионал)',
     'enum.nivel.c5':     'C5 (Элита)',
     'enum.nivel.c4':     'C4',
+    'enum.nivel.d9':     'D9',
     'enum.nivel.d8':     'D8',
     'enum.nivel.d7':     'D7',
     'enum.nivel.d6':     'D6',
