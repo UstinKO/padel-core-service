@@ -132,6 +132,21 @@ public class HomeController {
         return "error/rate-limit";
     }
 
+    // #278: дружелюбная страница вместо Whitelabel Error Page — на неё редиректит
+    // CustomAccessDeniedHandler для всех 403, кроме отдельно обработанного случая
+    // GET /admin/tournaments/{id} у авторизованного не-админа (тот редиректит на
+    // публичную страницу турнира напрямую, минуя эту страницу).
+    @GetMapping("/error/403")
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public String accessDeniedPage(Model model) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAuthenticated = authentication != null &&
+                authentication.isAuthenticated() &&
+                !authentication.getName().equals("anonymousUser");
+        model.addAttribute("isAuthenticated", isAuthenticated);
+        return "error/403";
+    }
+
     private boolean isOwner(Authentication authentication) {
         if (authentication == null) return false;
         Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
