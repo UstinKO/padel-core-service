@@ -41,6 +41,15 @@ import java.util.stream.Collectors;
  *   — при счётчике >= 5 за 15 минут IP получает статус BLOCKED (1 запрос / 15 мин)
  *   — счётчик сбрасывается автоматически через 15 минут
  *
+ * #292: до этого фикса эскалация до BLOCKED работала только для REGISTER — атака
+ * на /login могла держать IP под постоянным давлением (получая 429 на каждый лишний
+ * запрос) сколь угодно долго, никогда не улетая в hard-block. Для AUTH — отдельный
+ * счётчик (suspiciousAuth), увеличивается не на каждый запрос (как у REGISTER —
+ * там это осознанно, регистрация сама по себе редкое действие), а только на
+ * реальное превышение лимита (иначе легитимный пользователь, пару раз ошибившийся
+ * паролем или переключившийся между формой и Google OAuth, рисковал бы словить
+ * блокировку на ровном месте) — см. ветку bucket.tryConsume(1) в doFilterInternal.
+ *
  * Статические ресурсы (/css/, /js/, /images/, /webjars/, favicon, robots.txt)
  * не учитываются в лимитах.
  */
@@ -80,6 +89,13 @@ public class RateLimitFilter extends OncePerRequestFilter {
     // ✅ Кэш для отслеживания ПОДОЗРИТЕЛЬНЫХ регистраций с IP
     // Если с IP пришло 3+ регистрации за 15 минут → блокируем
     private final Cache<String, Integer> suspiciousRegistrations = CacheBuilder.newBuilder()
+            .expireAfterWrite(15, TimeUnit.MINUTES)
+            .maximumSize(10000)
+            .build();
+
+    // #292: аналогичный счётчик для AUTH (/login, /api/auth/**, /oauth2/**) — растёт только
+    // на реальное превышение лимита (не на каждый запрос, см. Javadoc класса).
+    private final Cache<String, Integer> suspiciousAuth = CacheBuilder.newBuilder()
             .expireAfterWrite(15, TimeUnit.MINUTES)
             .maximumSize(10000)
             .build();
@@ -129,6 +145,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
         } else {
             log.warn("Rate limit exceeded: ip={}, path={}, type={}", ip, path, limitType);
             BLOCKED_TODAY.incrementAndGet();
+            if (limitType == LimitType.AUTH) {
+                incrementSuspiciousAuthCounter(ip);
+            }
             sendRateLimitResponse(request, response, limitType);
         }
     }
@@ -143,9 +162,14 @@ public class RateLimitFilter extends OncePerRequestFilter {
             return null;
         }
 
-        // Проверяем — не заблокирован ли IP по подозрительной активности
+        // Проверяем — не заблокирован ли IP по подозрительной активности.
+        // #292: пока IP в статусе BLOCKED, эта ветка отрабатывает на КАЖДЫЙ его запрос —
+        // при активной атаке это может быть по несколько раз в секунду в течение всех
+        // 15 минут блокировки. WARN здесь уже отгремел один раз в момент самой эскалации
+        // (см. incrementSuspiciousCounter/incrementSuspiciousAuthCounter) — дальше это
+        // не новая информация, а просто подтверждение уже принятого решения.
         if (isBlocked(ip)) {
-            log.warn("IP bloqueado por actividad sospechosa: {}", ip);
+            log.debug("IP bloqueado por actividad sospechosa: {}", ip);
             return LimitType.BLOCKED;
         }
 
@@ -174,17 +198,32 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     // ✅ Проверка — заблокирован ли IP
     private boolean isBlocked(String ip) {
-        Integer count = suspiciousRegistrations.getIfPresent(ip);
-        return count != null && count >= 5;  // 5+ регистраций за 15 мин → блокировка
+        Integer registerCount = suspiciousRegistrations.getIfPresent(ip);
+        if (registerCount != null && registerCount >= 5) {  // 5+ регистраций за 15 мин → блокировка
+            return true;
+        }
+        Integer authCount = suspiciousAuth.getIfPresent(ip);
+        return authCount != null && authCount >= 5;  // #292: 5+ превышений лимита AUTH за 15 мин
     }
 
     // ✅ Увеличиваем счётчик при КАЖДОМ запросе на регистрацию
     private void incrementSuspiciousCounter(String ip) {
-        Integer count = suspiciousRegistrations.getIfPresent(ip);
-        if (count == null) {
-            suspiciousRegistrations.put(ip, 1);
-        } else {
-            suspiciousRegistrations.put(ip, count + 1);
+        Integer existing = suspiciousRegistrations.getIfPresent(ip);
+        int newCount = (existing == null ? 0 : existing) + 1;
+        suspiciousRegistrations.put(ip, newCount);
+        if (newCount == 5) {
+            // #292: WARN один раз, ровно в момент эскалации в BLOCKED — не на каждый запрос
+            log.warn("IP {} escalado a BLOCKED por actividad sospechosa (REGISTER, {} intentos en 15 min)", ip, newCount);
+        }
+    }
+
+    // #292: увеличиваем только когда AUTH-бакет реально исчерпан (см. вызов в doFilterInternal)
+    private void incrementSuspiciousAuthCounter(String ip) {
+        Integer existing = suspiciousAuth.getIfPresent(ip);
+        int newCount = (existing == null ? 0 : existing) + 1;
+        suspiciousAuth.put(ip, newCount);
+        if (newCount == 5) {
+            log.warn("IP {} escalado a BLOCKED por actividad sospechosa (AUTH, {} excesos de límite en 15 min)", ip, newCount);
         }
     }
 
