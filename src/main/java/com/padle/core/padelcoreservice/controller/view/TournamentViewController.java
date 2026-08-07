@@ -19,8 +19,10 @@ import com.padle.core.padelcoreservice.service.americano.TeamPlayoffService;
 import com.padle.core.padelcoreservice.util.SecurityUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -50,7 +52,8 @@ public class TournamentViewController {
     @GetMapping("/{id}")
     public String viewTournament(@PathVariable Long id,
                                  Model model,
-                                 @AuthenticationPrincipal Object principal) {
+                                 @AuthenticationPrincipal Object principal,
+                                 HttpServletResponse response) {
         log.info("Viewing tournament details for id: {}", id);
 
         try {
@@ -59,8 +62,15 @@ public class TournamentViewController {
             Optional<TournamentDto> tournamentOpt = tournamentService.getActiveTournamentById(id);
 
             if (tournamentOpt.isEmpty()) {
-                log.warn("Active tournament not found with id: {}", id);
-                return "redirect:/?error=tournament_not_found";
+                // #286: чаще всего это боты/старые ссылки на уже завершённые и деактивированные
+                // турниры (подтверждено по прод-логам) — не инцидент, INFO вместо WARN, чтобы не
+                // шуметь в Telegram-алертах (тот же класс проблемы, что и CSRF-шум в #284).
+                // 404 вместо редиректа — стандартная SEO-практика для ушедшего контента,
+                // со временем снижает частоту повторных заходов ботов на мёртвую ссылку.
+                log.info("Active tournament not found with id: {}", id);
+                response.setStatus(HttpStatus.NOT_FOUND.value());
+                model.addAttribute("isAuthenticated", principal != null);
+                return "error/tournament-not-found";
             }
 
             TournamentDto tournament = tournamentOpt.get();
