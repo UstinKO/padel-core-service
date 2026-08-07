@@ -227,7 +227,7 @@ public class DoubleTournamentRegistrationService {
         log.info("Registering with existing partner: partnerId={}", partner.getId());
 
         // ЕДИНСТВЕННАЯ ПРОВЕРКА: не зарегистрирован ли партнер в ЭТОМ же турнире
-        checkPlayerNotRegisteredInThisTournament(tournamentDto.getId(), partner.getId());
+        checkPlayerNotRegisteredInThisTournament(tournamentDto.getId(), partner.getId(), true);
 
         // Удаляем старую отменённую запись партнера, если она есть
         registrationRepository.findByTournamentIdAndPlayerIdAndIsActiveFalse(tournamentDto.getId(), partner.getId())
@@ -590,7 +590,7 @@ public class DoubleTournamentRegistrationService {
             log.info("New player already exists: {}", newPlayer.getId());
 
             // Проверяем, не зарегистрирован ли он уже на этот турнир
-            checkPlayerNotRegisteredInThisTournament(tournamentDto.getId(), newPlayer.getId());
+            checkPlayerNotRegisteredInThisTournament(tournamentDto.getId(), newPlayer.getId(), true);
 
             // Создаем регистрацию для нового игрока
             newRegistration = TournamentRegistration.builder()
@@ -678,14 +678,25 @@ public class DoubleTournamentRegistrationService {
     }
 
     /**
-     * ЕДИНСТВЕННАЯ ПРОВЕРКА: не зарегистрирован ли игрок в ЭТОМ турнире
+     * ЕДИНСТВЕННАЯ ПРОВЕРКА: не зарегистрирован ли игрок в ЭТОМ турнире.
+     *
+     * #290: раньше сообщение было одинаковым независимо от того, о ком речь — сам заявитель
+     * или партнёр, которого он пытается добавить. Игрок, регистрирующий партнёра, читал
+     * "Ya estás registrado" (=ты уже зарегистрирован) и логично думал, что это про него самого,
+     * хотя на самом деле уже зарегистрирован был партнёр — сбивало с толку в реальном инциденте.
      */
     private void checkPlayerNotRegisteredInThisTournament(Long tournamentId, Long playerId) {
+        checkPlayerNotRegisteredInThisTournament(tournamentId, playerId, false);
+    }
+
+    private void checkPlayerNotRegisteredInThisTournament(Long tournamentId, Long playerId, boolean isPartner) {
         Optional<TournamentRegistration> existingReg =
                 registrationRepository.findByTournamentIdAndPlayerId(tournamentId, playerId);
 
         if (existingReg.isPresent() && existingReg.get().getIsActive()) {
-            throw new TournamentRegistrationException("Ya estás registrado en este torneo");
+            throw new TournamentRegistrationException(isPartner
+                    ? "Tu compañero ya está registrado en este torneo"
+                    : "Ya estás registrado en este torneo");
         }
     }
 
@@ -824,7 +835,7 @@ public class DoubleTournamentRegistrationService {
         if (existingPartnerOpt.isPresent()) {
             PlayerPadel partner = existingPartnerOpt.get();
 
-            checkPlayerNotRegisteredInThisTournament(tournamentId, partner.getId());
+            checkPlayerNotRegisteredInThisTournament(tournamentId, partner.getId(), true);
             registrationRepository.findByTournamentIdAndPlayerIdAndIsActiveFalse(tournamentId, partner.getId())
                     .ifPresent(registrationRepository::delete);
             registrationRepository.flush();
