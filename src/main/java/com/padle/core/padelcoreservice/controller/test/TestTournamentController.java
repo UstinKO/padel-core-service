@@ -13,6 +13,7 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -649,12 +650,14 @@ public class TestTournamentController {
                 return ResponseEntity.badRequest().body(result);
             }
 
-            // Проверяем, не зарегистрированы ли уже эти игроки
+            // Проверяем, не зарегистрированы ли уже эти игроки (#282: только среди активных
+            // регистраций — is_active=false значит игрок ранее отменился, это не должно
+            // блокировать повторную регистрацию)
             List<String> alreadyRegistered = new ArrayList<>();
             for (Long playerId : playerIds) {
                 String checkSql = "SELECT p.nombre, p.apellido FROM tournament_registrations_db r " +
                         "JOIN player_padel_db p ON p.id = r.player_id " +
-                        "WHERE r.tournament_id = ? AND r.player_id = ?";
+                        "WHERE r.tournament_id = ? AND r.player_id = ? AND r.is_active = true";
                 try (PreparedStatement checkPs = conn.prepareStatement(checkSql)) {
                     checkPs.setLong(1, tournamentId);
                     checkPs.setLong(2, playerId);
@@ -669,6 +672,12 @@ public class TestTournamentController {
                 result.put("success", false);
                 result.put("message", "Следующие игроки уже зарегистрированы: " + String.join(", ", alreadyRegistered));
                 return ResponseEntity.badRequest().body(result);
+            }
+
+            // Удаляем неактивные (отменённые) записи этих игроков по этому турниру —
+            // иначе INSERT ниже упадёт на уникальном ограничении uk_tournament_player
+            for (Long playerId : playerIds) {
+                deleteStaleInactiveRegistration(conn, tournamentId, playerId);
             }
 
             // Получаем следующий position
@@ -1377,9 +1386,10 @@ public class TestTournamentController {
                 if (idObj != null) {
                     long existingId = ((Number) idObj).longValue();
                     if (existingId > 0) {
+                        // #282: только среди активных — is_active=false значит игрок ранее отменился
                         String checkSql = "SELECT p.nombre, p.apellido FROM tournament_registrations_db r " +
                                 "JOIN player_padel_db p ON p.id = r.player_id " +
-                                "WHERE r.tournament_id=? AND r.player_id=?";
+                                "WHERE r.tournament_id=? AND r.player_id=? AND r.is_active = true";
                         try (PreparedStatement ps = conn.prepareStatement(checkSql)) {
                             ps.setLong(1, tournamentId);
                             ps.setLong(2, existingId);
@@ -1398,11 +1408,12 @@ public class TestTournamentController {
             Long player1Id = resolveOrCreateGuestPlayer(conn, p1Data);
             Long player2Id = resolveOrCreateGuestPlayer(conn, p2Data);
 
-            // Финальная проверка — на случай если resolveOrCreate вернул уже зарегистрированного игрока (например по телефону)
+            // Финальная проверка — на случай если resolveOrCreate вернул уже зарегистрированного игрока
+            // (например по телефону); #282: только среди активных, как и выше
             for (Long pid : List.of(player1Id, player2Id)) {
                 String checkSql = "SELECT p.nombre, p.apellido FROM tournament_registrations_db r " +
                         "JOIN player_padel_db p ON p.id = r.player_id " +
-                        "WHERE r.tournament_id=? AND r.player_id=?";
+                        "WHERE r.tournament_id=? AND r.player_id=? AND r.is_active = true";
                 try (PreparedStatement ps = conn.prepareStatement(checkSql)) {
                     ps.setLong(1, tournamentId);
                     ps.setLong(2, pid);
@@ -1414,6 +1425,12 @@ public class TestTournamentController {
                         return ResponseEntity.badRequest().body(result);
                     }
                 }
+            }
+
+            // Удаляем неактивные (отменённые) записи — иначе INSERT ниже упадёт на
+            // уникальном ограничении uk_tournament_player
+            for (Long pid : List.of(player1Id, player2Id)) {
+                deleteStaleInactiveRegistration(conn, tournamentId, pid);
             }
 
             String maxPosSql = "SELECT COALESCE(MAX(position), 0) FROM tournament_registrations_db WHERE tournament_id=?";
@@ -1637,12 +1654,12 @@ public class TestTournamentController {
                 return ResponseEntity.badRequest().body(result);
             }
 
-            // Проверяем, не зарегистрированы ли уже эти игроки
+            // Проверяем, не зарегистрированы ли уже эти игроки (#282: только среди активных)
             List<String> alreadyRegistered = new ArrayList<>();
             for (Long playerId : playerIds) {
                 String checkSql = "SELECT p.nombre, p.apellido FROM tournament_registrations_db r " +
                         "JOIN player_padel_db p ON p.id = r.player_id " +
-                        "WHERE r.tournament_id = ? AND r.player_id = ?";
+                        "WHERE r.tournament_id = ? AND r.player_id = ? AND r.is_active = true";
                 try (PreparedStatement checkPs = conn.prepareStatement(checkSql)) {
                     checkPs.setLong(1, tournamentId);
                     checkPs.setLong(2, playerId);
@@ -1657,6 +1674,12 @@ public class TestTournamentController {
                 result.put("success", false);
                 result.put("message", "Следующие игроки уже зарегистрированы: " + String.join(", ", alreadyRegistered));
                 return ResponseEntity.badRequest().body(result);
+            }
+
+            // Удаляем неактивные (отменённые) записи этих игроков — иначе INSERT ниже
+            // упадёт на уникальном ограничении uk_tournament_player
+            for (Long playerId : playerIds) {
+                deleteStaleInactiveRegistration(conn, tournamentId, playerId);
             }
 
             // Получаем следующий position
@@ -1759,6 +1782,24 @@ public class TestTournamentController {
 
 
     /**
+     * #282: игрок мог ранее отменить регистрацию на этот турнир — запись остаётся в
+     * tournament_registrations_db с is_active=false (soft-cancel, см. TournamentRegistration.cancel()).
+     * Проверки "уже зарегистрирован" в этом контроллере должны игнорировать такие строки
+     * (см. is_active=true в getTournamentPlayers()), а перед повторной вставкой — удалить
+     * неактивную запись, иначе INSERT упадёт на уникальном ограничении uk_tournament_player
+     * (tournament_id, player_id).
+     */
+    private void deleteStaleInactiveRegistration(Connection conn, Long tournamentId, Long playerId) throws SQLException {
+        String sql = "DELETE FROM tournament_registrations_db " +
+                "WHERE tournament_id = ? AND player_id = ? AND is_active = false";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, tournamentId);
+            ps.setLong(2, playerId);
+            ps.executeUpdate();
+        }
+    }
+
+    /**
      * Прямая SQL-регистрация игрока (как в твоем PS1 скрипте)
      */
     private Map<String, Object> registerPlayer(Connection conn, Long tournamentId, Long playerId) {
@@ -1766,9 +1807,10 @@ public class TestTournamentController {
         result.put("playerId", playerId);
 
         try {
-            // Проверяем, не зарегистрирован ли уже
+            // Проверяем, не зарегистрирован ли уже (#282: только среди активных — is_active=false
+            // означает отменённую ранее регистрацию, которая не должна блокировать повторную)
             String checkSql = "SELECT COUNT(*) FROM tournament_registrations_db " +
-                    "WHERE tournament_id = ? AND player_id = ?";
+                    "WHERE tournament_id = ? AND player_id = ? AND is_active = true";
 
             try (PreparedStatement checkPs = conn.prepareStatement(checkSql)) {
                 checkPs.setLong(1, tournamentId);
@@ -1782,6 +1824,8 @@ public class TestTournamentController {
                     return result;
                 }
             }
+
+            deleteStaleInactiveRegistration(conn, tournamentId, playerId);
 
             // Получаем следующий position (как в твоем PS1 скрипте)
             String maxPosSql = "SELECT COALESCE(MAX(position), 0) FROM tournament_registrations_db " +
