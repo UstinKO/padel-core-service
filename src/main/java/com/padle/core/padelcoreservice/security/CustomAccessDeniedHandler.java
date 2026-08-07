@@ -8,6 +8,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.csrf.CsrfException;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -23,6 +24,14 @@ import java.util.regex.Pattern;
  * прод-инцидента (см. issue) это почти всегда значит, что человеку прислали админскую
  * ссылку вместо публичной. Вместо страницы с ошибкой сразу редиректим на публичную
  * страницу турнира (/torneo/{id} — универсальный роут, рендерит любой тип турнира).
+ *
+ * Issue #284: CsrfException (и подклассы) в Spring Security наследуются от
+ * AccessDeniedException, поэтому все CSRF-отказы тоже шли через этот хендлер и
+ * логировались на WARN — а WARN из com.padle.core в prod-профиле уходит в Telegram
+ * (logback-spring.xml). В основном это либо боты/сканеры, шлющие POST /login без
+ * токена вообще, либо (до фикса в этом же issue) SockJS-фоллбэк на /ws/**, у которого
+ * просто не было прав послать X-XSRF-TOKEN. Ни то ни другое не инцидент для дежурного —
+ * такие отказы логируем на DEBUG, а не WARN.
  */
 @Slf4j
 @Component
@@ -34,7 +43,11 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
     public void handle(HttpServletRequest request, HttpServletResponse response,
                         AccessDeniedException accessDeniedException) throws IOException {
         String path = request.getRequestURI();
-        log.warn("Access denied: {} {} ({})", request.getMethod(), path, accessDeniedException.getMessage());
+        if (accessDeniedException instanceof CsrfException) {
+            log.debug("Access denied (CSRF): {} {} ({})", request.getMethod(), path, accessDeniedException.getMessage());
+        } else {
+            log.warn("Access denied: {} {} ({})", request.getMethod(), path, accessDeniedException.getMessage());
+        }
 
         if (path.startsWith("/api/")) {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);

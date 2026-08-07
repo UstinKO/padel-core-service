@@ -69,7 +69,11 @@ public class SecurityConfig {
                         // выставить форгед cross-site запросом, в отличие от session-cookie.
                         // Игнорируем такие запросы, чтобы не ломать stateless API-клиентов.
                         .ignoringRequestMatchers(request -> request.getHeader("Authorization") != null)
-                        .ignoringRequestMatchers("/api/auth/**", "/test/telegram/**")
+                        // #284: SockJS-фоллбэк транспорты (xhr/xhr_streaming — для клиентов без
+                        // нативного WebSocket) шлют служебные POST без X-XSRF-TOKEN — это не fetch,
+                        // csrf.js их не видит. Канал только для broadcast сервер→клиент (нет ни одного
+                        // @MessageMapping), все мутации идут через отдельные CSRF-защищённые /api/**.
+                        .ignoringRequestMatchers("/api/auth/**", "/test/telegram/**", "/ws/**")
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
