@@ -128,3 +128,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.42-add-playin-match-fields.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.43-add-nivel-d9.yaml
+      relativeToChangelogFile: true
