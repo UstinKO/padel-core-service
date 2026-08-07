@@ -3,6 +3,8 @@ package com.padle.core.padelcoreservice.controller.view.americano;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
 import com.padle.core.padelcoreservice.dto.americano.*;
+import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
+import com.padle.core.padelcoreservice.exception.TournamentRegistrationException;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.service.TournamentService;
@@ -145,6 +147,12 @@ public class AmericanoViewController {
         try {
             americanoService.cancelRegistration(tournamentId, playerId, reason, currentOwner);
             redirectAttributes.addFlashAttribute("success", "Registro cancelado correctamente");
+        } catch (TournamentRegistrationException | ResourceNotFoundException e) {
+            // #294: штатный отказ по бизнес-правилу (уже отменено, парная регистрация и т.п.) —
+            // не системная ошибка, INFO вместо ERROR
+            log.info("Cancellation rejected for player {} on tournament {}: {}",
+                    playerId, tournamentId, e.getMessage());
+            redirectAttributes.addFlashAttribute("error", "Error al cancelar: " + e.getMessage());
         } catch (Exception e) {
             log.error("Error cancelling registration: {}", e.getMessage());
             redirectAttributes.addFlashAttribute("error", "Error al cancelar: " + e.getMessage());
