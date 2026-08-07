@@ -4,6 +4,7 @@ import com.padle.core.padelcoreservice.annotation.Timed;
 import com.padle.core.padelcoreservice.dto.PartnerRegistrationDto;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
+import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
 import com.padle.core.padelcoreservice.exception.TournamentRegistrationException;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
@@ -175,6 +176,16 @@ public class PlayerDashboardController {
             response.put("message", "Inscripción cancelada exitosamente");
 
             return ResponseEntity.ok(response);
+        } catch (TournamentRegistrationException | ResourceNotFoundException e) {
+            // #294: штатный отказ по бизнес-правилу (дедлайн отмены прошёл, уже отменено,
+            // регистрация не найдена) — не системная ошибка, INFO вместо ERROR, чтобы не
+            // засорять Telegram-алерты обычным пользовательским флоу.
+            log.info("Cancellation rejected for player {} on tournament {}: {}",
+                    player.getId(), tournamentId, e.getMessage());
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         } catch (Exception e) {
             log.error("Error cancelling registration", e);
             Map<String, Object> response = new HashMap<>();
