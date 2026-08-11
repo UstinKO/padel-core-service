@@ -308,6 +308,7 @@ window.APP_MESSAGES = {
     'admin.playoff.confirm.delete_team':   '¿Eliminar este equipo?',
     'admin.playoff.confirm.start_qual':    '¿Iniciar calificación?',
     'admin.playoff.confirm.start_playoff': '¿Iniciar playoff con los mejores equipos?',
+    'admin.playoff.confirm.regenerate':    '¿Reformar el playoff? Se perderán los pares actuales (no hay resultados jugados aún).',
 
     // Round status
     'enum.round.status.PENDING':    'Pendiente',

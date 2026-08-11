@@ -72,8 +72,10 @@ public class TeamPlayoffViewController {
         if (qualStarted) {
             TeamAmericanoRankingDto ranking = playoffService.getQualRanking(tournamentId);
             List<AmericanoRound> qualRounds = playoffService.getQualRounds(tournamentId);
+            List<AmericanoRoundDto> qualRoundDtos = buildRoundDtos(qualRounds);
+            applyQualMatchOrdinals(tournamentId, qualRoundDtos);
             model.addAttribute("ranking", ranking);
-            model.addAttribute("qualRounds", buildRoundDtos(qualRounds));
+            model.addAttribute("qualRounds", qualRoundDtos);
         }
 
         if (playoffStarted) {
@@ -107,8 +109,10 @@ public class TeamPlayoffViewController {
         if (qualStarted) {
             TeamAmericanoRankingDto ranking = playoffService.getQualRanking(tournamentId);
             List<AmericanoRound> qualRounds = playoffService.getQualRounds(tournamentId);
+            List<AmericanoRoundDto> qualRoundDtos = buildRoundDtos(qualRounds);
+            applyQualMatchOrdinals(tournamentId, qualRoundDtos);
             model.addAttribute("ranking", ranking);
-            model.addAttribute("qualRounds", buildRoundDtos(qualRounds));
+            model.addAttribute("qualRounds", qualRoundDtos);
         }
 
         if (playoffStarted) {
@@ -212,6 +216,20 @@ public class TeamPlayoffViewController {
             ra.addFlashAttribute("success", "Playoff inicializado");
         } catch (Exception e) {
             log.error("Error init playoff {}: {}", tournamentId, e.getMessage());
+            ra.addFlashAttribute("error", "Error: " + e.getMessage());
+        }
+        return "redirect:/tournaments/team-playoff/admin/" + tournamentId;
+    }
+
+    /** Issue #298 п.2: пересобрать плей-офф после правки результата квалификации. */
+    @PostMapping("/admin/{tournamentId}/regenerate-playoff")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    public String regeneratePlayoff(@PathVariable Long tournamentId, RedirectAttributes ra) {
+        try {
+            playoffService.regeneratePlayoff(tournamentId);
+            ra.addFlashAttribute("success", "Playoff reformado correctamente");
+        } catch (Exception e) {
+            log.error("Error regenerating playoff {}: {}", tournamentId, e.getMessage());
             ra.addFlashAttribute("error", "Error: " + e.getMessage());
         }
         return "redirect:/tournaments/team-playoff/admin/" + tournamentId;
@@ -326,6 +344,38 @@ public class TeamPlayoffViewController {
         return ResponseEntity.ok(result);
     }
 
+    /** Issue #298 п.3: команды-кандидаты для обмена с указанным слотом матча плей-офф (соседние матчи той же стадии). */
+    @GetMapping("/api/matches/{matchId}/swap-candidates")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    @ResponseBody
+    public ResponseEntity<List<TeamPlayoffService.PlayoffSwapCandidate>> getPlayoffSwapCandidates(
+            @PathVariable Long matchId) {
+        return ResponseEntity.ok(playoffService.getPlayoffSwapCandidates(matchId));
+    }
+
+    /** Issue #298 п.3: меняет местами команды в двух ещё не завершённых матчах плей-офф. slot=1|2 в каждом. */
+    @PostMapping("/api/matches/{matchId}/swap-team")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> swapMatchTeamApi(
+            @PathVariable Long matchId,
+            @RequestBody Map<String, Object> body) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            int slot = Integer.parseInt(String.valueOf(body.get("slot")));
+            Long otherMatchId = Long.valueOf(String.valueOf(body.get("otherMatchId")));
+            int otherSlot = Integer.parseInt(String.valueOf(body.get("otherSlot")));
+            TeamPlayoffService.MatchTeamChangeResult swapResult =
+                    playoffService.swapMatchTeams(matchId, slot, otherMatchId, otherSlot);
+            result.put("success", true);
+            result.put("warning", swapResult.warning());
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", e.getMessage());
+        }
+        return ResponseEntity.ok(result);
+    }
+
     @PostMapping("/api/qual-matches/{matchId}/result")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
     @ResponseBody
@@ -428,6 +478,18 @@ public class TeamPlayoffViewController {
             dto.setMatches(matches.stream().map(playoffService::toMatchDto).toList());
             return dto;
         }).toList();
+    }
+
+    /** Issue #298 п.1: проставляет "1-й"/"2-й" квалификационный матч команды на уже собранные round dto. */
+    private void applyQualMatchOrdinals(Long tournamentId, List<AmericanoRoundDto> qualRoundDtos) {
+        Map<Long, int[]> ordinals = playoffService.computeQualMatchOrdinals(tournamentId);
+        qualRoundDtos.forEach(round -> round.getMatches().forEach(match -> {
+            int[] o = ordinals.get(match.getId());
+            if (o != null) {
+                match.setTeam1MatchOrdinal(o[0] > 0 ? o[0] : null);
+                match.setTeam2MatchOrdinal(o[1] > 0 ? o[1] : null);
+            }
+        }));
     }
 
 }

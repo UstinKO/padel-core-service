@@ -308,6 +308,7 @@ window.APP_MESSAGES = {
     'admin.playoff.confirm.delete_team':   'Удалить эту команду?',
     'admin.playoff.confirm.start_qual':    'Начать квалификацию?',
     'admin.playoff.confirm.start_playoff': 'Начать плей-офф с лучшими командами?',
+    'admin.playoff.confirm.regenerate':    'Переформировать плей-офф? Текущие пары будут удалены (сыгранных результатов ещё нет).',
 
     // Round status
     'enum.round.status.PENDING':    'Ожидает',
