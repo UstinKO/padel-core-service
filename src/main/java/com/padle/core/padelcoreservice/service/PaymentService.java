@@ -312,30 +312,17 @@ public class PaymentService {
                     .orElseThrow(() -> new ResourceNotFoundException(
                             "Registration not found: " + dto.getRegistrationId()));
 
-            // Посещение и подтверждение участия — для основной строки
+            // Посещение и подтверждение участия — для основной строки.
+            // Партнёр, зарегистрированный в БД, всегда присутствует в этом же updates своей
+            // отдельной строкой (getPaymentManagementData отдаёт по dto на каждую активную
+            // TournamentRegistration) — раньше здесь ещё и принудительно копировалось attended
+            // на partnerReg, и при обработке следующей по списку строки партнёра его же
+            // собственное (несовпадающее) значение затирало то, что админ только что отметил
+            // (issue #296). Доверяем значению из каждой строки формы независимо, без sync.
             if (!dto.isPartnerRow()) {
                 registration.setAttended(dto.isAttended());
                 registration.setParticipationConfirmed(dto.isParticipationConfirmed());
                 registrationRepository.save(registration);
-
-                // Если это парная регистрация — синхронизируем attended партнёру (если он в БД)
-                if (Boolean.TRUE.equals(registration.getIsDoubleRegistration())
-                        && registration.getMainPlayerId() != null) {
-                    registrationRepository
-                            .findByTournamentIdOrderByPositionAscWaitlistPositionAsc(
-                                    registration.getTournament().getId())
-                            .stream()
-                            .filter(r -> r.getIsActive()
-                                    && !r.getId().equals(registration.getId())
-                                    && Boolean.TRUE.equals(r.getIsDoubleRegistration())
-                                    && registration.getMainPlayerId().equals(r.getMainPlayerId()))
-                            .forEach(partnerReg -> {
-                                partnerReg.setAttended(dto.isAttended());
-                                registrationRepository.save(partnerReg);
-                                log.debug("Synced attended={} to partner registration {}",
-                                        dto.isAttended(), partnerReg.getId());
-                            });
-                }
             }
 
             // Для партнёра добавляем маркер в notes
