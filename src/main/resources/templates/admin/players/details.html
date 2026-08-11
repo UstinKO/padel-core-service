@@ -97,8 +97,8 @@
                         </div>
                         <div class="info-row" th:unless="${isSuperAdmin}">
                             <span class="info-label" th:text="#{admin.players.details.field.level} + ':'">Nivel de juego:</span>
-                            <span class="info-value" th:if="${player.nivelJugador != null}" th:text="${player.nivelJugador.name()}">Intermedio</span>
-                            <span class="info-value" th:unless="${player.nivelJugador != null}" style="color:#adb5bd;" th:text="#{admin.players.details.not_specified}">No especificado</span>
+                            <span class="info-value" th:if="${player.nivelJugador != null and player.nivelJugador.name() != 'SIN_ESPECIFICAR'}" th:text="${player.nivelJugador.name()}">Intermedio</span>
+                            <span class="info-value" th:unless="${player.nivelJugador != null and player.nivelJugador.name() != 'SIN_ESPECIFICAR'}" style="color:#adb5bd;" th:text="#{admin.players.details.not_specified}">No especificado</span>
                         </div>
                         <div class="info-row" th:if="${isSuperAdmin}">
                             <span class="info-label" th:text="#{admin.players.details.field.level} + ':'">Nivel de juego:</span>
