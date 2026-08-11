@@ -7,6 +7,7 @@ import com.padle.core.padelcoreservice.validation.RequiresPhoneOrTelegram;
 import dev.caceresenzo.disposableemaildomains.validation.constraints.NonDisposableEmailDomain;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -55,6 +56,7 @@ public class RegistroRequestDto {
     @NotBlank(message = "La confirmación de contraseña es obligatoria")
     private String confirmPassword;
 
+    @NotNull(message = "El nivel de juego es obligatorio")
     private Nivel nivelJugador;
 
     private String preferredLocale = "es";

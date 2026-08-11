@@ -86,8 +86,11 @@ public class PlayerPadel implements UserDetails {
     @Column(name = "password_changed_at")
     private LocalDateTime passwordChangedAt;
 
+    // issue #82: NOT NULL с DEFAULT 'SIN_ESPECIFICAR' (миграция v1.44) — ddl-auto=none,
+    // так что nullable=false тут не меняет схему сам по себе, только документирует её
+    // реальное состояние в БД.
     @Enumerated(EnumType.STRING)
-    @Column(name = "nivel_jugador", length = 20)
+    @Column(name = "nivel_jugador", length = 20, nullable = false)
     private Nivel nivelJugador;
 
     @Column(name = "preferred_locale", length = 5)

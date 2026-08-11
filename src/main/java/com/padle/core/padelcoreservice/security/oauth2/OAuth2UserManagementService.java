@@ -1,6 +1,7 @@
 package com.padle.core.padelcoreservice.security.oauth2;
 
 import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -70,6 +71,10 @@ public class OAuth2UserManagementService {
                     .oauth2User(true)
                     .passwordChangedAt(LocalDateTime.now())
                     .preferredLocale("es")
+                    // issue #82: nivel_jugador es NOT NULL — el login con Google no pregunta
+                    // el nivel, así que no hay valor real que poner acá todavía (el jugador
+                    // lo completa después en /perfil).
+                    .nivelJugador(Nivel.SIN_ESPECIFICAR)
                     .build();
 
             return playerRepository.save(newPlayer);

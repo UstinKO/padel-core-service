@@ -13,6 +13,7 @@ import com.padle.core.padelcoreservice.model.americano.AmericanoMatch;
 import com.padle.core.padelcoreservice.model.americano.AmericanoTeam;
 import com.padle.core.padelcoreservice.model.enums.GenderFormat;
 import com.padle.core.padelcoreservice.model.enums.Modalidad;
+import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.model.enums.PlayoffStage;
 import com.padle.core.padelcoreservice.model.enums.TournamentPhase;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
@@ -187,6 +188,7 @@ class TeamPlayoffEndToEndTest {
                 .emailConfirmado(true)
                 .oauth2User(false)
                 .preferredLocale("es")
+                .nivelJugador(Nivel.C9)
                 .build());
     }
 

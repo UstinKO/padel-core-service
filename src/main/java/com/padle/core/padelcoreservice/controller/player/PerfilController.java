@@ -116,9 +116,28 @@ public class PerfilController {
                 actualizado = true;
             }
 
-            // Nivel de juego
-            Nivel nivelParsed = (nivelJugador != null && !nivelJugador.isBlank())
-                    ? Nivel.valueOf(nivelJugador) : null;
+            // Nivel de juego — issue #82: obligatorio también al editar el perfil, no solo
+            // al registrarse. El formulario ya no ofrece "Sin especificar" como opción
+            // (fragments/nivel-options.html :: options(selected, allowEmpty=false)), pero
+            // igual se valida en el servidor por si el request llega sin pasar por el form.
+            if (nivelJugador == null || nivelJugador.isBlank()) {
+                redirectAttributes.addFlashAttribute("errorMessage",
+                        "El nivel de juego es obligatorio");
+                return "redirect:/perfil";
+            }
+            Nivel nivelParsed;
+            try {
+                nivelParsed = Nivel.valueOf(nivelJugador);
+            } catch (IllegalArgumentException e) {
+                redirectAttributes.addFlashAttribute("errorMessage",
+                        "Nivel de juego inválido");
+                return "redirect:/perfil";
+            }
+            if (!Nivel.isPlayerLevel(nivelParsed)) {
+                redirectAttributes.addFlashAttribute("errorMessage",
+                        "Nivel de juego inválido");
+                return "redirect:/perfil";
+            }
             if (nivelParsed != player.getNivelJugador()) {
                 player.setNivelJugador(nivelParsed);
                 actualizado = true;

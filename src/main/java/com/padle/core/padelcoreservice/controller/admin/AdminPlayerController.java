@@ -132,8 +132,11 @@ public class AdminPlayerController {
         log.info("Actualizando nivel del jugador {} a: {}", id, nivel);
 
         try {
-            Nivel nivelParsed = (nivel != null && !nivel.isBlank()) ? Nivel.valueOf(nivel) : null;
-            if (nivelParsed != null && !Nivel.isPlayerLevel(nivelParsed)) {
+            // issue #82: nivel_jugador es NOT NULL en la base desde v1.44 — el admin sigue
+            // pudiendo "vaciar" el nivel de un jugador (corrección de datos), pero ahora eso
+            // significa asignar el sentinel SIN_ESPECIFICAR en vez de un NULL real.
+            Nivel nivelParsed = (nivel != null && !nivel.isBlank()) ? Nivel.valueOf(nivel) : Nivel.SIN_ESPECIFICAR;
+            if (!Nivel.isPlayerLevel(nivelParsed) && nivelParsed != Nivel.SIN_ESPECIFICAR) {
                 throw new IllegalArgumentException("Nivel no aplicable a un jugador: " + nivel);
             }
             playerService.actualizarNivelJugador(id, nivelParsed);
