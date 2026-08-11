@@ -1,6 +1,5 @@
 package com.padle.core.padelcoreservice.config;
 
-import com.padle.core.padelcoreservice.security.CompositeUserDetailsService;
 import com.padle.core.padelcoreservice.security.CustomAccessDeniedHandler;
 import com.padle.core.padelcoreservice.security.JwtAuthenticationFilter;
 import com.padle.core.padelcoreservice.security.RateLimitFilter;
@@ -24,6 +23,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfFilter;
@@ -46,11 +46,11 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final CompositeUserDetailsService compositeUserDetailsService;
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
     private final RateLimitFilter rateLimitFilter;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
+    private final RememberMeServices rememberMeServices;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -186,11 +186,11 @@ public class SecurityConfig {
                         .clearAuthentication(true)
                         .permitAll()
                 )
-                .rememberMe(remember -> remember
-                        .key("uniqueAndSecret")
-                        .tokenValiditySeconds(86400)
-                        .userDetailsService(compositeUserDetailsService)
-                )
+                // Общий бин RememberMeServices (SecurityBeansConfig) — тот же экземпляр
+                // явно вызывает OAuth2AuthenticationSuccessHandler после Google-логина
+                // (issue #297), поэтому remember-me кука одинаково валидна что после формы,
+                // что после OAuth2.
+                .rememberMe(remember -> remember.rememberMeServices(rememberMeServices))
                 .headers(headers -> headers
                         // Запрет встраивания в iframe (защита от clickjacking)
                         .frameOptions(HeadersConfigurer.FrameOptionsConfig::deny)
