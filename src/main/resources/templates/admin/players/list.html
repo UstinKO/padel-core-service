@@ -94,7 +94,7 @@
                  th:data-email="${#strings.toLowerCase(player.email)}"
                  th:data-phone="${player.telefono ?: ''}"
                  th:data-telegram="${player.telegramUsername ?: ''}"
-                 th:data-nivel="${player.nivelJugador != null ? player.nivelJugador.name() : ''}">
+                 th:data-nivel="${player.nivelJugador != null and player.nivelJugador.name() != 'SIN_ESPECIFICAR' ? player.nivelJugador.name() : ''}">
                 <div class="player-card-header">
                     <div class="player-avatar">
                         <i class="fas fa-user-circle"></i>
@@ -130,7 +130,7 @@
                             <th:block th:replace="~{fragments/nivel-options :: options(${player.nivelJugador}, true)}"></th:block>
                         </select>
                         <span th:unless="${isSuperAdmin}"
-                              th:text="${player.nivelJugador != null} ? ${player.nivelJugador.name()} : #{admin.common.not_specified}">C7</span>
+                              th:text="${player.nivelJugador != null and player.nivelJugador.name() != 'SIN_ESPECIFICAR'} ? ${player.nivelJugador.name()} : #{admin.common.not_specified}">C7</span>
                     </div>
                 </div>
 
@@ -199,7 +199,7 @@
                     th:data-email="${#strings.toLowerCase(player.email)}"
                     th:data-phone="${player.telefono ?: ''}"
                     th:data-telegram="${player.telegramUsername ?: ''}"
-                    th:data-nivel="${player.nivelJugador != null ? player.nivelJugador.name() : ''}">
+                    th:data-nivel="${player.nivelJugador != null and player.nivelJugador.name() != 'SIN_ESPECIFICAR' ? player.nivelJugador.name() : ''}">
                     <td th:text="${player.id}">1</td>
                     <td>
                         <strong th:text="${player.nombreCompleto}">Juan Pérez</strong>
@@ -227,7 +227,7 @@
                             <th:block th:replace="~{fragments/nivel-options :: options(${player.nivelJugador}, true)}"></th:block>
                         </select>
                         <span th:unless="${isSuperAdmin}"
-                              th:text="${player.nivelJugador != null} ? ${player.nivelJugador.name()} : #{admin.common.not_specified}">C7</span>
+                              th:text="${player.nivelJugador != null and player.nivelJugador.name() != 'SIN_ESPECIFICAR'} ? ${player.nivelJugador.name()} : #{admin.common.not_specified}">C7</span>
                     </td>
                     <td>
                         <div class="action-buttons">
@@ -420,7 +420,10 @@
     }
 
     // '__all__' — сброс фильтра, value="" у select соответствует "Sin especificar"
-    // (nivelJugador == null), тем же значением помечены игроки без уровня в data-nivel.
+    // (issue #304: с LFPT-82 это Nivel.SIN_ESPECIFICAR, не null — data-nivel для таких
+    // игроков теперь тоже пустая строка благодаря явной проверке на 'SIN_ESPECIFICAR'
+    // в разметке th:data-nivel выше, а не проверке != null, поэтому сравнение здесь
+    // по-прежнему работает как есть).
     function matchesNivel(el, nivel) {
         return nivel === '__all__' || v(el, 'nivel') === nivel.toLowerCase();
     }
