@@ -191,10 +191,9 @@
                     <div class="form-group">
                         <label for="nivelJugador" class="form-label">
                             <i class="fas fa-chart-line"></i> <span th:text="#{registro.field.nivel}">Nivel de juego</span>
-                            <span style="color: #999; font-weight: 400;" th:text="#{registro.field.nivel.optional}">(opcional)</span>
                         </label>
                         <div class="input-with-icon">
-                            <select id="nivelJugador" name="nivelJugador" class="form-control">
+                            <select id="nivelJugador" name="nivelJugador" class="form-control" required>
                                 <option value="" th:text="#{registro.field.nivel.select}">Selecciona tu nivel</option>
                                 <option value="C9">C9</option>
                                 <option value="C8">C8</option>

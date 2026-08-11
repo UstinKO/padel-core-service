@@ -6,9 +6,19 @@
     категории турниров, их больше и они не все применимы к игроку). Единственное
     место, где перечисляются эти значения — используется и в /perfil, и в админке,
     чтобы список не разъезжался при правках.
+
+    allowEmpty (issue #82) — все вызовы должны передавать оба аргумента явно: Thymeleaf
+    не подставляет значение по умолчанию, если вызов указывает меньше позиционных
+    параметров, чем объявлено в сигнатуре фрагмента (падает с TemplateProcessingException
+    "Fragment selection does not correctly match"). В админке уровень игрока по-прежнему
+    можно сбросить на "Sin especificar" (allowEmpty=true — исправление ошибочно проставленных
+    данных). В /perfil (self-service) поле обязательное — вызывающая сторона передаёт
+    allowEmpty=false, чтобы этой опции не было в выборе игрока вообще.
 -->
-<th:block th:fragment="options(selected)">
-    <option value="" th:selected="${selected == null}" th:text="#{perfil.field.nivel.none}">Sin especificar</option>
+<th:block th:fragment="options(selected, allowEmpty)">
+    <option th:if="${allowEmpty}" value=""
+            th:selected="${selected == null or selected.name() == 'SIN_ESPECIFICAR'}"
+            th:text="#{perfil.field.nivel.none}">Sin especificar</option>
     <option value="C9" th:selected="${selected != null and selected.name() == 'C9'}">C9</option>
     <option value="C8" th:selected="${selected != null and selected.name() == 'C8'}">C8</option>
     <option value="C7" th:selected="${selected != null and selected.name() == 'C7'}">C7</option>

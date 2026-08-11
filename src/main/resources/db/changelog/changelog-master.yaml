@@ -131,3 +131,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.43-add-nivel-d9.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.44-nivel-jugador-not-null.yaml
+      relativeToChangelogFile: true

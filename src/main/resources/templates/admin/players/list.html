@@ -82,7 +82,7 @@
             </div>
             <select id="nivelFilter" class="form-control" style="width:auto; min-width:180px;">
                 <option value="__all__" selected="selected" th:text="#{admin.players.list.filter.nivel.all}">Todos los niveles</option>
-                <th:block th:replace="~{fragments/nivel-options :: options(null)}"></th:block>
+                <th:block th:replace="~{fragments/nivel-options :: options(null, true)}"></th:block>
             </select>
         </div>
 
@@ -127,7 +127,7 @@
                                 style="width:auto; padding:.35rem .5rem; font-size:.85rem;"
                                 th:data-url="@{'/admin/players/' + ${player.id} + '/nivel'}"
                                 onchange="saveNivelInline(this)">
-                            <th:block th:replace="~{fragments/nivel-options :: options(${player.nivelJugador})}"></th:block>
+                            <th:block th:replace="~{fragments/nivel-options :: options(${player.nivelJugador}, true)}"></th:block>
                         </select>
                         <span th:unless="${isSuperAdmin}"
                               th:text="${player.nivelJugador != null} ? ${player.nivelJugador.name()} : #{admin.common.not_specified}">C7</span>
@@ -224,7 +224,7 @@
                                 style="width:auto; padding:.35rem .5rem; font-size:.85rem;"
                                 th:data-url="@{'/admin/players/' + ${player.id} + '/nivel'}"
                                 onchange="saveNivelInline(this)">
-                            <th:block th:replace="~{fragments/nivel-options :: options(${player.nivelJugador})}"></th:block>
+                            <th:block th:replace="~{fragments/nivel-options :: options(${player.nivelJugador}, true)}"></th:block>
                         </select>
                         <span th:unless="${isSuperAdmin}"
                               th:text="${player.nivelJugador != null} ? ${player.nivelJugador.name()} : #{admin.common.not_specified}">C7</span>

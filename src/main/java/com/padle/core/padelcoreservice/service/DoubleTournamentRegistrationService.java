@@ -14,6 +14,7 @@ import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.TournamentRegistration;
 import com.padle.core.padelcoreservice.model.enums.Modalidad;
+import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
@@ -410,6 +411,9 @@ public class DoubleTournamentRegistrationService {
                 .email(registration.getPartnerEmail())
                 .activo(true)
                 .emailConfirmado(false)
+                // issue #82: nivel_jugador es NOT NULL — el partner se crea a partir de datos
+                // de contacto de la invitación, no hay nivel real que asignarle todavía.
+                .nivelJugador(Nivel.SIN_ESPECIFICAR)
                 .build();
 
         PlayerPadel savedPartner = playerRepository.save(newPartner);

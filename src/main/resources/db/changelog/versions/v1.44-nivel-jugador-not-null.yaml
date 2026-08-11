@@ -1,0 +1,37 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.44-nivel-jugador-not-null
+      author: padel-core
+      comment: >
+        LFPT-82: nivel_jugador se vuelve obligatorio. En prod había 40 jugadores con
+        nivel_jugador NULL (registrados antes de existir el campo, o vía Google OAuth2,
+        que no lo pregunta) — se les asigna el sentinel SIN_ESPECIFICAR (no un nivel real
+        como C9, para no inventar un dato que no tenemos). La columna queda con
+        DEFAULT 'SIN_ESPECIFICAR' para los inserts SQL crudos que omiten la columna
+        (TestTournamentController); los inserts vía JPA/Hibernate (registro OAuth2,
+        alta de partner de pareja) fueron actualizados en código para setear el
+        sentinel explícitamente, porque Hibernate manda NULL explícito y no depende
+        del DEFAULT de la columna.
+      changes:
+        - sql:
+            sql: |
+              UPDATE player_padel_db SET nivel_jugador = 'SIN_ESPECIFICAR' WHERE nivel_jugador IS NULL;
+        - addDefaultValue:
+            tableName: player_padel_db
+            columnName: nivel_jugador
+            defaultValue: SIN_ESPECIFICAR
+        - addNotNullConstraint:
+            tableName: player_padel_db
+            columnName: nivel_jugador
+            columnDataType: VARCHAR(20)
+      rollback:
+        - dropNotNullConstraint:
+            tableName: player_padel_db
+            columnName: nivel_jugador
+            columnDataType: VARCHAR(20)
+        - dropDefaultValue:
+            tableName: player_padel_db
+            columnName: nivel_jugador
+        - sql:
+            sql: |
+              UPDATE player_padel_db SET nivel_jugador = NULL WHERE nivel_jugador = 'SIN_ESPECIFICAR';
