@@ -55,6 +55,10 @@ public class AmericanoMatchDto {
     private Long team1Id;
     private Long team2Id;
 
+    /** Issue #298 п.1: "1-й"/"2-й" квалификационный матч для каждой из двух команд (не сквозной matchNumber раунда). */
+    private Integer team1MatchOrdinal;
+    private Integer team2MatchOrdinal;
+
     /** Play-in (T13, ТЗ §32): матч желательно запустить как можно раньше. */
     private Boolean priority;
 }

@@ -479,6 +479,9 @@
                                         <div class="team-name" th:text="${match.team1Player1Name}">Jugador 1</div>
                                         <div class="team-sub" th:if="${match.team1Player2Name != null}"
                                              th:text="${match.team1Player2Name}">Jugador 2</div>
+                                        <span th:if="${match.team1MatchOrdinal != null}" class="info-pill"
+                                              style="font-size:.65rem;padding:.1rem .4rem"
+                                              th:text="${match.team1MatchOrdinal == 1} ? #{admin.playoff.col.m1} : #{admin.playoff.col.m2}">P1</span>
                                         <button th:unless="${match.isCompleted}" type="button" class="icon-btn"
                                                 th:onclick="'toggleTeamEdit(' + ${match.id} + ', 1)'" title="Cambiar equipo">
                                             <i class="fas fa-exchange-alt"></i>
@@ -522,6 +525,9 @@
                                         <div class="team-name" th:text="${match.team2Player1Name}">Jugador 3</div>
                                         <div class="team-sub" th:if="${match.team2Player2Name != null}"
                                              th:text="${match.team2Player2Name}">Jugador 4</div>
+                                        <span th:if="${match.team2MatchOrdinal != null}" class="info-pill"
+                                              style="font-size:.65rem;padding:.1rem .4rem"
+                                              th:text="${match.team2MatchOrdinal == 1} ? #{admin.playoff.col.m1} : #{admin.playoff.col.m2}">P1</span>
                                         <button th:unless="${match.isCompleted}" type="button" class="icon-btn"
                                                 th:onclick="'toggleTeamEdit(' + ${match.id} + ', 2)'" title="Cambiar equipo">
                                             <i class="fas fa-exchange-alt"></i>
@@ -566,6 +572,14 @@
                     <i class="fas fa-trophy"></i>
                     <span th:text="#{admin.playoff.section.playoff}">Playoff</span>
                 </h3>
+                <form th:action="@{'/tournaments/team-playoff/admin/' + ${tournament.id} + '/regenerate-playoff'}"
+                      method="post" style="display:inline">
+                    <button type="submit" class="btn btn-outline btn-sm"
+                            onclick="return confirm(t('admin.playoff.confirm.regenerate'))">
+                        <i class="fas fa-sync-alt"></i>
+                        <span th:text="#{admin.playoff.btn.regenerate}">Reformar Playoff</span>
+                    </button>
+                </form>
             </div>
 
             <div class="round-content">
@@ -604,13 +618,13 @@
                                      th:text="${match.team1Player2Name}">TBD</div>
                                 <div th:if="${match.team1Player1Name == null}" class="tbd"
                                      th:text="#{admin.playoff.bracket.tbd}">TBD</div>
-                                <button th:unless="${match.isCompleted}" type="button" class="icon-btn"
-                                        th:onclick="'toggleTeamEdit(' + ${match.id} + ', 1)'" title="Cambiar equipo">
+                                <button th:if="${not match.isCompleted and match.team1Player1Name != null}" type="button" class="icon-btn"
+                                        th:onclick="'togglePlayoffSwap(' + ${match.id} + ', 1)'" title="Intercambiar equipo">
                                     <i class="fas fa-exchange-alt"></i>
                                 </button>
                                 <div th:unless="${match.isCompleted}" th:id="'team-edit-' + ${match.id} + '-1'" class="inline-edit">
                                     <select></select>
-                                    <button type="button" class="save-btn" th:onclick="'submitTeamChange(' + ${match.id} + ', 1)'">OK</button>
+                                    <button type="button" class="save-btn" th:onclick="'submitPlayoffSwap(' + ${match.id} + ', 1)'">OK</button>
                                 </div>
                             </div>
 
@@ -650,13 +664,13 @@
                                      th:text="${match.team2Player2Name}">TBD</div>
                                 <div th:if="${match.team2Player1Name == null}" class="tbd"
                                      th:text="#{admin.playoff.bracket.tbd}">TBD</div>
-                                <button th:unless="${match.isCompleted}" type="button" class="icon-btn"
-                                        th:onclick="'toggleTeamEdit(' + ${match.id} + ', 2)'" title="Cambiar equipo">
+                                <button th:if="${not match.isCompleted and match.team2Player1Name != null}" type="button" class="icon-btn"
+                                        th:onclick="'togglePlayoffSwap(' + ${match.id} + ', 2)'" title="Intercambiar equipo">
                                     <i class="fas fa-exchange-alt"></i>
                                 </button>
                                 <div th:unless="${match.isCompleted}" th:id="'team-edit-' + ${match.id} + '-2'" class="inline-edit">
                                     <select></select>
-                                    <button type="button" class="save-btn" th:onclick="'submitTeamChange(' + ${match.id} + ', 2)'">OK</button>
+                                    <button type="button" class="save-btn" th:onclick="'submitPlayoffSwap(' + ${match.id} + ', 2)'">OK</button>
                                 </div>
                             </div>
                         </div>
@@ -1070,6 +1084,50 @@
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({slot: slot, teamId: Number(teamId)})
+        })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.warning) showToast(data.warning);
+                    location.reload();
+                } else {
+                    showToast(data.message || 'Error');
+                }
+            })
+            .catch(() => showToast('Error de red'));
+    }
+
+    // ── Intercambio de equipos en playoff (issue #298 п.3): a diferencia de la calificación,
+    // en playoff no hay un pool de equipos "libres" — todos ya están asignados a un partido,
+    // así que la única forma de reordenar parejas ya sembradas es intercambiarlas entre sí. ──
+    function togglePlayoffSwap(matchId, slot) {
+        const box = document.getElementById('team-edit-' + matchId + '-' + slot);
+        if (!box) return;
+        const opening = !box.classList.contains('open');
+        box.classList.toggle('open', opening);
+        if (opening) {
+            fetch('/tournaments/team-playoff/api/matches/' + matchId + '/swap-candidates')
+                .then(r => r.json())
+                .then(candidates => {
+                    const sel = box.querySelector('select');
+                    sel.innerHTML = candidates.map(c =>
+                        `<option value="${c.matchId}:${c.slot}">${c.teamDisplayName}</option>`
+                    ).join('') || '<option value="">—</option>';
+                })
+                .catch(() => {});
+        }
+    }
+
+    function submitPlayoffSwap(matchId, slot) {
+        const box = document.getElementById('team-edit-' + matchId + '-' + slot);
+        const val = box?.querySelector('select')?.value;
+        if (!val) return;
+        const [otherMatchId, otherSlot] = val.split(':');
+
+        fetch('/tournaments/team-playoff/api/matches/' + matchId + '/swap-team', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({slot: slot, otherMatchId: Number(otherMatchId), otherSlot: Number(otherSlot)})
         })
             .then(r => r.json())
             .then(data => {

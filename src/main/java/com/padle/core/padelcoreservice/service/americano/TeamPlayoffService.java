@@ -316,6 +316,43 @@ public class TeamPlayoffService {
     }
 
     /**
+     * Issue #298 п.2: пересобирает плей-офф заново поверх актуального квалификационного
+     * рейтинга. Нужно, потому что {@link #submitQualResult} (исправление уже сохранённого
+     * результата квалификации) никак не трогает уже созданные PLAYOFF-матчи — если координатор
+     * исправил ошибку в счёте ПОСЛЕ того, как плей-офф уже сформирован, сетка остаётся
+     * построена по старым, неверным посевным местам. Доступно, только пока ни один матч
+     * плей-офф ещё не завершён — иначе пришлось бы стирать реально сыгранный результат, а не
+     * просто ещё не начатую пару.
+     */
+    @Transactional
+    public void regeneratePlayoff(Long tournamentId) {
+        Tournament tournament = getTournament(tournamentId);
+        validateTournamentType(tournament);
+
+        if (!isPlayoffStarted(tournamentId)) {
+            throw new InvalidStateException("El playoff aún no fue inicializado");
+        }
+
+        List<AmericanoMatch> playoffMatches = matchRepository
+                .findByTournamentIdAndPhase(tournamentId, TournamentPhase.PLAYOFF);
+        if (playoffMatches.stream().anyMatch(AmericanoMatch::isCompleted)) {
+            throw new InvalidStateException(
+                    "No se puede reformar el playoff: ya hay partidos de playoff finalizados. "
+                            + "Esto evitaría perder resultados ya jugados.");
+        }
+
+        List<AmericanoRound> playoffRounds = roundRepository
+                .findByTournamentIdAndPhase(tournamentId, TournamentPhase.PLAYOFF);
+
+        matchRepository.deleteAll(playoffMatches);
+        roundRepository.deleteAll(playoffRounds);
+        log.info("Playoff regenerated for tournament {}: removed {} rounds / {} matches, re-seeding",
+                tournamentId, playoffRounds.size(), playoffMatches.size());
+
+        initPlayoff(tournamentId);
+    }
+
+    /**
      * Плей-офф для 9-15 команд (T13, ТЗ §4/§32-36): часть команд проходит в четвертьфинал
      * напрямую по итогам квалификации, остальные сначала играют 1/8 финала (play-in) — каждый
      * play-in матч сразу привязан к конкретному свободному слоту четвертьфинала
@@ -644,6 +681,54 @@ public class TeamPlayoffService {
         return roundRepository.findByTournamentIdAndPhase(tournamentId, TournamentPhase.QUALIFICATION);
     }
 
+    /**
+     * Issue #298 п.1: "1-й"/"2-й" квалификационный матч отдельно для каждой из двух команд
+     * конкретного матча — в отличие от {@link AmericanoMatch#getMatchNumber()} (сквозной номер
+     * матча в рамках раунда, общий для всех команд), это нужно, чтобы в карточке ввода счёта
+     * было видно, какой это по счёту матч именно для игрока/пары, а не только для раунда в целом.
+     * Считается по всем квал.матчам турнира разом (не только завершённым, в отличие от
+     * {@link #applyQualBreakdown} — тот нужен только для итоговой таблицы рейтинга).
+     * Возвращает matchId -> [ordinal команды 1, ordinal команды 2] (0, если слот не занят).
+     */
+    public Map<Long, int[]> computeQualMatchOrdinals(Long tournamentId) {
+        List<AmericanoMatch> qualMatches = matchRepository
+                .findByTournamentIdAndPhase(tournamentId, TournamentPhase.QUALIFICATION);
+
+        Map<Long, List<AmericanoMatch>> matchesByTeam = new HashMap<>();
+        for (AmericanoMatch m : qualMatches) {
+            if (m.getTeam1Id() != null) {
+                matchesByTeam.computeIfAbsent(m.getTeam1Id(), k -> new ArrayList<>()).add(m);
+            }
+            if (m.getTeam2Id() != null) {
+                matchesByTeam.computeIfAbsent(m.getTeam2Id(), k -> new ArrayList<>()).add(m);
+            }
+        }
+
+        Map<Long, Map<Long, Integer>> ordinalByTeamThenMatch = new HashMap<>();
+        matchesByTeam.forEach((teamId, matches) -> {
+            List<AmericanoMatch> sorted = matches.stream()
+                    .sorted(Comparator.comparing(AmericanoMatch::getMatchNumber))
+                    .toList();
+            Map<Long, Integer> ordinals = new HashMap<>();
+            for (int i = 0; i < sorted.size(); i++) {
+                ordinals.put(sorted.get(i).getId(), i + 1);
+            }
+            ordinalByTeamThenMatch.put(teamId, ordinals);
+        });
+
+        Map<Long, int[]> result = new HashMap<>();
+        for (AmericanoMatch m : qualMatches) {
+            int ordinal1 = m.getTeam1Id() != null
+                    ? ordinalByTeamThenMatch.getOrDefault(m.getTeam1Id(), Map.of()).getOrDefault(m.getId(), 0)
+                    : 0;
+            int ordinal2 = m.getTeam2Id() != null
+                    ? ordinalByTeamThenMatch.getOrDefault(m.getTeam2Id(), Map.of()).getOrDefault(m.getId(), 0)
+                    : 0;
+            result.put(m.getId(), new int[]{ordinal1, ordinal2});
+        }
+        return result;
+    }
+
     public List<AmericanoRound> getPlayoffRounds(Long tournamentId) {
         return roundRepository.findByTournamentIdAndPhase(tournamentId, TournamentPhase.PLAYOFF);
     }
@@ -863,6 +948,111 @@ public class TeamPlayoffService {
         AmericanoMatch saved = matchRepository.save(match);
         webSocketService.notifyTeamPlayoffMatchUpdated(tournamentId, toMatchDto(saved));
         return new MatchTeamChangeResult(saved, warning);
+    }
+
+    public record PlayoffSwapCandidate(Long matchId, int slot, Long teamId, String teamDisplayName) {
+    }
+
+    /**
+     * Issue #298 п.3: команды, с которыми можно поменять местами указанный слот матча плей-офф —
+     * другой слот из ДРУГОГО ещё не завершённого матча той же стадии. В плей-офф, в отличие от
+     * квалификации, нет отдельного "свободного" пула команд (все посеянные команды сразу
+     * расставлены по парам) — поэтому единственный осмысленный кандидат на замену это команда
+     * из соседнего матча, а не список через {@link #getAvailableTeamsForQualification}.
+     */
+    public List<PlayoffSwapCandidate> getPlayoffSwapCandidates(Long matchId) {
+        AmericanoMatch match = matchRepository.findById(matchId)
+                .orElseThrow(() -> new ResourceNotFoundException("Match not found: " + matchId));
+        if (match.getPlayoffStage() == null) {
+            return List.of();
+        }
+
+        List<PlayoffSwapCandidate> candidates = new ArrayList<>();
+        matchRepository.findByTournamentIdAndPlayoffStage(match.getTournament().getId(), match.getPlayoffStage())
+                .stream()
+                .filter(m -> !m.getId().equals(matchId))
+                .filter(m -> !m.isCompleted())
+                .forEach(m -> {
+                    if (m.getTeam1Id() != null) {
+                        candidates.add(new PlayoffSwapCandidate(
+                                m.getId(), 1, m.getTeam1Id(), teamDisplayName(m.getTeam1Id())));
+                    }
+                    if (m.getTeam2Id() != null) {
+                        candidates.add(new PlayoffSwapCandidate(
+                                m.getId(), 2, m.getTeam2Id(), teamDisplayName(m.getTeam2Id())));
+                    }
+                });
+        return candidates;
+    }
+
+    private String teamDisplayName(Long teamId) {
+        return teamRepository.findById(teamId).map(AmericanoTeam::getDisplayName).orElse("—");
+    }
+
+    /**
+     * Issue #298 п.3: взаимно меняет местами команды в двух ещё не завершённых матчах плей-офф —
+     * в отличие от {@link #changeMatchTeam} (замена из "свободного" пула), здесь обе команды уже
+     * заняты каждая в своём матче, и одиночная замена всегда упёрлась бы в проверку "команда уже
+     * играет другой матч". Обмен — единственная операция, которая физически может переставить
+     * местами уже посеянные пары без потери какой-либо из команд.
+     */
+    @Transactional
+    public MatchTeamChangeResult swapMatchTeams(Long matchAId, int slotA, Long matchBId, int slotB) {
+        if (slotA != 1 && slotA != 2) {
+            throw new InvalidStateException("Slot inválido: " + slotA);
+        }
+        if (slotB != 1 && slotB != 2) {
+            throw new InvalidStateException("Slot inválido: " + slotB);
+        }
+        if (matchAId.equals(matchBId)) {
+            throw new InvalidStateException("Elegí dos partidos distintos para intercambiar equipos");
+        }
+
+        AmericanoMatch matchA = matchRepository.findById(matchAId)
+                .orElseThrow(() -> new ResourceNotFoundException("Match not found: " + matchAId));
+        AmericanoMatch matchB = matchRepository.findById(matchBId)
+                .orElseThrow(() -> new ResourceNotFoundException("Match not found: " + matchBId));
+        if (!matchA.getTournament().getId().equals(matchB.getTournament().getId())) {
+            throw new InvalidStateException("Los partidos pertenecen a torneos distintos");
+        }
+        if (matchA.isCompleted() || matchB.isCompleted()) {
+            throw new InvalidStateException("No se puede cambiar el equipo de un partido ya finalizado");
+        }
+
+        Long teamAId = slotA == 1 ? matchA.getTeam1Id() : matchA.getTeam2Id();
+        Long teamBId = slotB == 1 ? matchB.getTeam1Id() : matchB.getTeam2Id();
+        if (teamAId == null || teamBId == null) {
+            throw new InvalidStateException("Ambos equipos deben estar definidos para intercambiarlos");
+        }
+
+        Long matchAOtherTeamId = slotA == 1 ? matchA.getTeam2Id() : matchA.getTeam1Id();
+        Long matchBOtherTeamId = slotB == 1 ? matchB.getTeam2Id() : matchB.getTeam1Id();
+        if (teamBId.equals(matchAOtherTeamId) || teamAId.equals(matchBOtherTeamId)) {
+            throw new InvalidStateException("Un equipo no puede jugar contra sí mismo");
+        }
+
+        AmericanoTeam teamA = getActiveTeam(teamAId);
+        AmericanoTeam teamB = getActiveTeam(teamBId);
+        Long tournamentId = matchA.getTournament().getId();
+
+        String warning = null;
+        Map<Long, Set<Long>> priorOpponents = buildPriorOpponentsMap(tournamentId);
+        if ((matchAOtherTeamId != null && priorOpponents.getOrDefault(teamBId, Set.of()).contains(matchAOtherTeamId))
+                || (matchBOtherTeamId != null && priorOpponents.getOrDefault(teamAId, Set.of()).contains(matchBOtherTeamId))) {
+            warning = "Estos equipos ya jugaron entre sí anteriormente.";
+        }
+
+        setMatchSlot(matchA, slotA, teamB);
+        matchA.setNote(buildMatchNote(matchA, "TBD"));
+        setMatchSlot(matchB, slotB, teamA);
+        matchB.setNote(buildMatchNote(matchB, "TBD"));
+
+        AmericanoMatch savedA = matchRepository.save(matchA);
+        AmericanoMatch savedB = matchRepository.save(matchB);
+        webSocketService.notifyTeamPlayoffMatchUpdated(tournamentId, toMatchDto(savedA));
+        webSocketService.notifyTeamPlayoffMatchUpdated(tournamentId, toMatchDto(savedB));
+
+        return new MatchTeamChangeResult(savedA, warning);
     }
 
     private void setMatchSlot(AmericanoMatch match, int slot, AmericanoTeam team) {
