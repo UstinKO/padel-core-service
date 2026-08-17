@@ -775,6 +775,43 @@ public class TeamPlayoffService {
                 .toList();
     }
 
+    public record QualificationTeamGroups(
+            List<AmericanoTeamDto> notPlayedFirstMatch,
+            List<AmericanoTeamDto> awaitingSecondMatch,
+            List<AmericanoTeamDto> qualificationDone) {
+    }
+
+    /**
+     * Те же команды, что и {@link #getAvailableTeamsForQualification}, но разбитые на 3 визуальные
+     * группы для координатора (LFPT-306): ещё не сыгравшие ни одного матча (высший приоритет),
+     * ожидающие 2-й матч (для них на DTO уже заполнены {@code matchesWon}/{@code matchesLost} —
+     * итог 1-го матча) и завершившие оба квалификационных матча (только для информации, не для выбора).
+     */
+    public QualificationTeamGroups getQualificationTeamGroups(Long tournamentId) {
+        List<AmericanoTeamDto> notPlayed = teamsWithoutQualMatch(tournamentId).stream()
+                .filter(t -> Boolean.TRUE.equals(t.getHasPaid()))
+                .filter(t -> Boolean.TRUE.equals(t.getAttended()))
+                .map(this::toDto)
+                .toList();
+
+        List<AmericanoTeamDto> awaitingSecond = teamsAwaitingSecondQualMatch(tournamentId).stream()
+                .filter(t -> Boolean.TRUE.equals(t.getHasPaid()))
+                .filter(t -> Boolean.TRUE.equals(t.getAttended()))
+                .sorted(Comparator.comparing(AmericanoTeam::getTeamNumber))
+                .map(this::toDto)
+                .toList();
+
+        List<AmericanoTeamDto> done = teamRepository.findByTournamentIdAndStatus(tournamentId, AmericanoPlayerStatus.ACTIVE)
+                .stream()
+                .filter(t -> getTeamQualMatches(tournamentId, t.getId()).stream()
+                        .filter(AmericanoMatch::isCompleted).count() >= 2)
+                .sorted(Comparator.comparing(AmericanoTeam::getTeamNumber))
+                .map(this::toDto)
+                .toList();
+
+        return new QualificationTeamGroups(notPlayed, awaitingSecond, done);
+    }
+
     /**
      * Предлагает сопернику для 2-го тура квалификации команде, только что завершившей 1-й матч:
      * тот же результат (победа/поражение), ещё не сыгравший 2-й матч и не занятый прямо сейчас (ТЗ §5).
@@ -813,30 +850,55 @@ public class TeamPlayoffService {
     }
 
     /**
-     * Формирует пары 2-го тура для всех команд, ожидающих соперника прямо сейчас.
+     * Формирует пары для всех команд, ожидающих соперника прямо сейчас.
      * Используется доской кортов (T2), чтобы не предлагать одну и ту же команду на два корта сразу.
+     * <p>
+     * LFPT-306: приоритет команд, ещё не сыгравших ни одного матча, абсолютный — пока таких команд
+     * ≥2, W-W/L-L предложения для 2-го тура квалификации не формируются вовсе (ТЗ фидбека: "0 матчей →
+     * сначала дать первый матч всем командам"). Если после разбивки на пары остаётся ровно 1 такая
+     * команда — включается уже существующее правило "дополнительной" команды (ТЗ §22/§23, T14).
+     * Только когда команд без единого матча не осталось — обычные W-W/L-L предложения 2-го тура.
      */
     public List<AmericanoMatchSuggestionDto> suggestSecondRoundPairings(Long tournamentId) {
+        List<AmericanoMatchSuggestionDto> suggestions = new ArrayList<>();
+
+        List<AmericanoTeam> zeroMatchTeams = teamsWithoutQualMatch(tournamentId);
+        for (int i = 0; i + 1 < zeroMatchTeams.size(); i += 2) {
+            suggestions.add(AmericanoMatchSuggestionDto.builder()
+                    .team1(toDto(zeroMatchTeams.get(i)))
+                    .team2(toDto(zeroMatchTeams.get(i + 1)))
+                    .firstMatch(true)
+                    .build());
+        }
+        Optional<AmericanoTeam> extra = zeroMatchTeams.size() % 2 == 1
+                ? Optional.of(zeroMatchTeams.get(zeroMatchTeams.size() - 1))
+                : Optional.empty();
+
         List<AmericanoTeam> waiting = teamsAwaitingSecondQualMatch(tournamentId);
         Map<Long, AmericanoTeam> byId = waiting.stream()
                 .collect(Collectors.toMap(AmericanoTeam::getId, t -> t));
-        List<AmericanoMatchSuggestionDto> suggestions = new ArrayList<>();
         Set<Long> used = new HashSet<>();
 
         // ТЗ §22/§23 (T14): при нечётном остатке "нетронутых" команд первый же победитель,
         // ожидающий 2-й матч, приоритетно встречается с дополнительной командой — вне очереди
         // и максимально быстро, а не по общему правилу "победитель к победителю".
-        extraTeam(tournamentId).ifPresent(extra -> waiting.stream()
+        extra.ifPresent(e -> waiting.stream()
                 .filter(t -> wonFirstQualMatch(tournamentId, t.getId()))
                 .findFirst()
                 .ifPresent(winner -> {
                     suggestions.add(AmericanoMatchSuggestionDto.builder()
                             .team1(toDto(winner))
-                            .team2(toDto(extra))
+                            .team2(toDto(e))
                             .priority(true)
                             .build());
                     used.add(winner.getId());
                 }));
+
+        // LFPT-306: пока есть ≥2 команды без единого матча, они уже полностью покрыли предложения
+        // выше (по парам) — W-W/L-L для остальных команд, ожидающих 2-й матч, придётся подождать.
+        if (zeroMatchTeams.size() > 1) {
+            return suggestions;
+        }
 
         List<Long> winners = waiting.stream()
                 .filter(t -> !used.contains(t.getId()))
@@ -861,17 +923,25 @@ public class TeamPlayoffService {
     }
 
     /**
+     * Активные команды, ещё не начавшие ни одного квалификационного матча — по возрастанию
+     * {@code teamNumber} для предсказуемого, воспроизводимого порядка распределения (LFPT-306).
+     */
+    private List<AmericanoTeam> teamsWithoutQualMatch(Long tournamentId) {
+        return teamRepository.findByTournamentIdAndStatus(tournamentId, AmericanoPlayerStatus.ACTIVE)
+                .stream()
+                .filter(t -> getTeamQualMatches(tournamentId, t.getId()).isEmpty())
+                .sorted(Comparator.comparing(AmericanoTeam::getTeamNumber))
+                .toList();
+    }
+
+    /**
      * "Дополнительная" команда при нечётном числе участников (ТЗ §20-23): активна, ещё не сыграла
      * и не начала ни одного квалификационного матча. Ровно одна — если нетронутых команд несколько
      * (координатор ещё не назначил всем первые матчи), правило пока не применяется: которая из них
      * окажется "дополнительной", определится позже, по факту (ТЗ §21 — это не конкретный номер команды).
      */
     private Optional<AmericanoTeam> extraTeam(Long tournamentId) {
-        List<AmericanoTeam> untouched = teamRepository.findByTournamentIdAndStatus(
-                        tournamentId, AmericanoPlayerStatus.ACTIVE)
-                .stream()
-                .filter(t -> getTeamQualMatches(tournamentId, t.getId()).isEmpty())
-                .toList();
+        List<AmericanoTeam> untouched = teamsWithoutQualMatch(tournamentId);
         return untouched.size() == 1 ? Optional.of(untouched.get(0)) : Optional.empty();
     }
 
