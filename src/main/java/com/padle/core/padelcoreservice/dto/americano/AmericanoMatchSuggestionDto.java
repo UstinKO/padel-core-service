@@ -20,4 +20,7 @@ public class AmericanoMatchSuggestionDto {
 
     /** ТЗ §22: при нечётном числе команд матч "победитель — дополнительная команда" желательно запустить как можно раньше. */
     private boolean priority;
+
+    /** LFPT-306: пара из двух команд без единого сыгранного матча (1-й матч), а не W-W/L-L пара 2-го тура. */
+    private boolean firstMatch;
 }

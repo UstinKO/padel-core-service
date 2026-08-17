@@ -451,6 +451,7 @@ public class TeamPlayoffViewController {
         Map<String, Object> result = new HashMap<>();
         result.put("courts", courts);
         result.put("availableTeams", playoffService.getAvailableTeamsForQualification(tournamentId));
+        result.put("teamGroups", playoffService.getQualificationTeamGroups(tournamentId));
         return ResponseEntity.ok(result);
     }
 
