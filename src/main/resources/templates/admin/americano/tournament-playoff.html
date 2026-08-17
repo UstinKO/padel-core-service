@@ -477,7 +477,8 @@
 
                                 <div class="match-body">
                                     <div class="team-left">
-                                        <div class="team-name" th:text="${match.team1Player1Name}">Jugador 1</div>
+                                        <div class="team-name"
+                                             th:text="${match.team1Number != null ? '№' + match.team1Number + ' ' + match.team1Player1Name : match.team1Player1Name}">Jugador 1</div>
                                         <div class="team-sub" th:if="${match.team1Player2Name != null}"
                                              th:text="${match.team1Player2Name}">Jugador 2</div>
                                         <span th:if="${match.team1MatchOrdinal != null}" class="info-pill"
@@ -523,7 +524,8 @@
                                     </div>
 
                                     <div class="team-right">
-                                        <div class="team-name" th:text="${match.team2Player1Name}">Jugador 3</div>
+                                        <div class="team-name"
+                                             th:text="${match.team2Number != null ? '№' + match.team2Number + ' ' + match.team2Player1Name : match.team2Player1Name}">Jugador 3</div>
                                         <div class="team-sub" th:if="${match.team2Player2Name != null}"
                                              th:text="${match.team2Player2Name}">Jugador 4</div>
                                         <span th:if="${match.team2MatchOrdinal != null}" class="info-pill"
@@ -614,7 +616,7 @@
                         <div class="match-body">
                             <div class="team-left">
                                 <div th:if="${match.team1Player1Name != null}" class="team-name"
-                                     th:text="${match.team1Player1Name}">TBD</div>
+                                     th:text="${match.team1Number != null ? '№' + match.team1Number + ' ' + match.team1Player1Name : match.team1Player1Name}">TBD</div>
                                 <div th:if="${match.team1Player2Name != null}" class="team-sub"
                                      th:text="${match.team1Player2Name}">TBD</div>
                                 <div th:if="${match.team1Player1Name == null}" class="tbd"
@@ -660,7 +662,7 @@
 
                             <div class="team-right">
                                 <div th:if="${match.team2Player1Name != null}" class="team-name"
-                                     th:text="${match.team2Player1Name}">TBD</div>
+                                     th:text="${match.team2Number != null ? '№' + match.team2Number + ' ' + match.team2Player1Name : match.team2Player1Name}">TBD</div>
                                 <div th:if="${match.team2Player2Name != null}" class="team-sub"
                                      th:text="${match.team2Player2Name}">TBD</div>
                                 <div th:if="${match.team2Player1Name == null}" class="tbd"
@@ -818,8 +820,8 @@
         grid.innerHTML = courts.map(c => {
             if (c.occupied && c.currentMatch) {
                 const m = c.currentMatch;
-                const t1 = (m.team1Player1Name || 'TBD') + (m.team1Player2Name ? ' / ' + m.team1Player2Name : '');
-                const t2 = (m.team2Player1Name || 'TBD') + (m.team2Player2Name ? ' / ' + m.team2Player2Name : '');
+                const t1 = (m.team1Number ? '№' + m.team1Number + ' ' : '') + (m.team1Player1Name || 'TBD') + (m.team1Player2Name ? ' / ' + m.team1Player2Name : '');
+                const t2 = (m.team2Number ? '№' + m.team2Number + ' ' : '') + (m.team2Player1Name || 'TBD') + (m.team2Player2Name ? ' / ' + m.team2Player2Name : '');
                 const stage = m.playoffStage ? m.playoffStage : 'Calificación';
                 return `<div class="court-card">
                     <div class="court-card-header">

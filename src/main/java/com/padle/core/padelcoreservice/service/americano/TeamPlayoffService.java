@@ -1894,6 +1894,16 @@ public class TeamPlayoffService {
         }
     }
 
+    /**
+     * LFPT-307: номер команды — постоянный идентификатор для координатора, не должен меняться
+     * при пересортировке по результатам квалификации (в отличие от {@code currentPosition}/места).
+     * Префикс добавляется только здесь, в Team Playoff DTO-маппинге — {@link AmericanoTeam#getDisplayName()}
+     * общий с Team Americano (round-robin, {@code TeamAmericanoService}), трогать его нельзя.
+     */
+    private String formatTeamDisplayName(AmericanoTeam t) {
+        return "№" + t.getTeamNumber() + " " + t.getDisplayName();
+    }
+
     public AmericanoTeamDto toDto(AmericanoTeam t) {
         AmericanoTeamDto dto = new AmericanoTeamDto();
         dto.setId(t.getId());
@@ -1901,7 +1911,7 @@ public class TeamPlayoffService {
         dto.setTeamNumber(t.getTeamNumber());
         dto.setCurrentPosition(t.getCurrentPosition());
         dto.setStatus(t.getStatus().name());
-        dto.setDisplayName(t.getDisplayName());
+        dto.setDisplayName(formatTeamDisplayName(t));
 
         if (t.getPlayer1() != null) {
             dto.setPlayer1Id(t.getPlayer1().getId());
@@ -1987,6 +1997,14 @@ public class TeamPlayoffService {
             dto.setPlayoffStage(m.getPlayoffStage().name());
         }
         dto.setPriority(Boolean.TRUE.equals(m.getPriority()));
+
+        // LFPT-307: номер команды нужен на карточке матча (квалификация, 1/8, 1/4, полуфинал, финал).
+        if (m.getTeam1Id() != null) {
+            teamRepository.findById(m.getTeam1Id()).ifPresent(t -> dto.setTeam1Number(t.getTeamNumber()));
+        }
+        if (m.getTeam2Id() != null) {
+            teamRepository.findById(m.getTeam2Id()).ifPresent(t -> dto.setTeam2Number(t.getTeamNumber()));
+        }
 
         return dto;
     }

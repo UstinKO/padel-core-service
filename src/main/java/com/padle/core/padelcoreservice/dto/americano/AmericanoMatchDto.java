@@ -55,6 +55,10 @@ public class AmericanoMatchDto {
     private Long team1Id;
     private Long team2Id;
 
+    /** LFPT-307: постоянный номер команды (не путать с местом/посевом) — виден на всех стадиях турнира. */
+    private Integer team1Number;
+    private Integer team2Number;
+
     /** Issue #298 п.1: "1-й"/"2-й" квалификационный матч для каждой из двух команд (не сквозной matchNumber раунда). */
     private Integer team1MatchOrdinal;
     private Integer team2MatchOrdinal;
