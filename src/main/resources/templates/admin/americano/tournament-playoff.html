@@ -87,6 +87,8 @@
         .court-card-match .vs-mini{color:#94a3b8;font-size:.72rem;font-weight:700;margin:.15rem 0}
         .icon-btn{background:none;border:none;cursor:pointer;color:#94a3b8;font-size:.78rem;padding:.15rem .3rem}
         .icon-btn:hover{color:#FF6B35}
+        .icon-toggle-btn{background:none;border:none;cursor:pointer;padding:0;line-height:1;font-size:inherit}
+        .icon-toggle-btn:hover{opacity:.7}
         .inline-edit{display:none;gap:.35rem;align-items:center;margin-top:.4rem;background:#f8fafc;padding:.4rem;border-radius:6px}
         .inline-edit.open{display:flex}
         .inline-edit select{flex:1;border:1px solid #e2e8f0;border-radius:6px;padding:.25rem .4rem;font-size:.78rem}
@@ -257,12 +259,26 @@
                             <span th:if="${team.registrationSource == null}" class="tbd">—</span>
                         </td>
                         <td>
-                            <i th:if="${team.hasPaid}" class="fas fa-check-circle" style="color:#10b981"></i>
-                            <i th:unless="${team.hasPaid}" class="fas fa-times-circle" style="color:#e2e8f0"></i>
+                            <form th:action="@{'/tournaments/team-playoff/admin/teams/' + ${team.id} + '/update'}"
+                                  method="post" style="display:inline">
+                                <input type="hidden" name="tournamentId" th:value="${tournament.id}">
+                                <input type="hidden" name="hasPaid" th:value="${!team.hasPaid}">
+                                <button type="submit" class="icon-toggle-btn" th:title="#{admin.playoff.col.paid_title}">
+                                    <i th:if="${team.hasPaid}" class="fas fa-check-circle" style="color:#10b981"></i>
+                                    <i th:unless="${team.hasPaid}" class="fas fa-times-circle" style="color:#e2e8f0"></i>
+                                </button>
+                            </form>
                         </td>
                         <td>
-                            <i th:if="${team.attended}" class="fas fa-check-circle" style="color:#10b981"></i>
-                            <i th:unless="${team.attended}" class="fas fa-times-circle" style="color:#e2e8f0"></i>
+                            <form th:action="@{'/tournaments/team-playoff/admin/teams/' + ${team.id} + '/update'}"
+                                  method="post" style="display:inline">
+                                <input type="hidden" name="tournamentId" th:value="${tournament.id}">
+                                <input type="hidden" name="attended" th:value="${!team.attended}">
+                                <button type="submit" class="icon-toggle-btn" th:title="#{admin.playoff.col.attended_title}">
+                                    <i th:if="${team.attended}" class="fas fa-check-circle" style="color:#10b981"></i>
+                                    <i th:unless="${team.attended}" class="fas fa-times-circle" style="color:#e2e8f0"></i>
+                                </button>
+                            </form>
                         </td>
                         <td style="font-size:.8rem;color:#64748b" th:text="${team.adminComment}">—</td>
                         <td th:if="${qualStarted}">
