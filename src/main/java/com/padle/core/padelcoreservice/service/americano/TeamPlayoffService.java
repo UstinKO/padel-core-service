@@ -157,6 +157,7 @@ public class TeamPlayoffService {
     public List<AmericanoTeamDto> getTeamDtos(Long tournamentId) {
         return teamRepository.findByTournamentId(tournamentId)
                 .stream()
+                .sorted(Comparator.comparing(AmericanoTeam::getTeamNumber))
                 .map(this::toDto)
                 .collect(Collectors.toList());
     }
@@ -762,14 +763,14 @@ public class TeamPlayoffService {
     }
 
     /**
-     * Команды, доступные для назначения на корт прямо сейчас: активны, оплатили, отметились присутствующими,
-     * не заняты в другом матче и не выбрали лимит в 2 квалификационных матча.
+     * Команды, доступные для назначения на корт прямо сейчас: активны, отметились присутствующими
+     * (LFPT-310 — оплата на доступность больше не влияет), не заняты в другом матче и не выбрали
+     * лимит в 2 квалификационных матча.
      */
     public List<AmericanoTeamDto> getAvailableTeamsForQualification(Long tournamentId) {
         return teamRepository.findByTournamentIdAndStatus(tournamentId, AmericanoPlayerStatus.ACTIVE)
                 .stream()
-                .filter(t -> Boolean.TRUE.equals(t.getHasPaid()))
-                .filter(t -> Boolean.TRUE.equals(t.getAttended()))
+                .filter(this::isAttended)
                 .filter(t -> hasQualificationCapacity(tournamentId, t.getId()))
                 .map(this::toDto)
                 .toList();
@@ -789,14 +790,10 @@ public class TeamPlayoffService {
      */
     public QualificationTeamGroups getQualificationTeamGroups(Long tournamentId) {
         List<AmericanoTeamDto> notPlayed = teamsWithoutQualMatch(tournamentId).stream()
-                .filter(t -> Boolean.TRUE.equals(t.getHasPaid()))
-                .filter(t -> Boolean.TRUE.equals(t.getAttended()))
                 .map(this::toDto)
                 .toList();
 
         List<AmericanoTeamDto> awaitingSecond = teamsAwaitingSecondQualMatch(tournamentId).stream()
-                .filter(t -> Boolean.TRUE.equals(t.getHasPaid()))
-                .filter(t -> Boolean.TRUE.equals(t.getAttended()))
                 .sorted(Comparator.comparing(AmericanoTeam::getTeamNumber))
                 .map(this::toDto)
                 .toList();
@@ -929,6 +926,7 @@ public class TeamPlayoffService {
     private List<AmericanoTeam> teamsWithoutQualMatch(Long tournamentId) {
         return teamRepository.findByTournamentIdAndStatus(tournamentId, AmericanoPlayerStatus.ACTIVE)
                 .stream()
+                .filter(this::isAttended)
                 .filter(t -> getTeamQualMatches(tournamentId, t.getId()).isEmpty())
                 .sorted(Comparator.comparing(AmericanoTeam::getTeamNumber))
                 .toList();
@@ -1143,10 +1141,11 @@ public class TeamPlayoffService {
         return (t1 != null ? t1.getDisplayName() : tbdLabel) + " vs " + (t2 != null ? t2.getDisplayName() : tbdLabel);
     }
 
-    /** Активные команды, сыгравшие ровно 1 квалификационный матч и сейчас не занятые другим матчем. */
+    /** Активные, отметившиеся присутствующими команды, сыгравшие ровно 1 квалификационный матч и сейчас не занятые другим матчем. */
     private List<AmericanoTeam> teamsAwaitingSecondQualMatch(Long tournamentId) {
         return teamRepository.findByTournamentIdAndStatus(tournamentId, AmericanoPlayerStatus.ACTIVE)
                 .stream()
+                .filter(this::isAttended)
                 .filter(t -> {
                     List<AmericanoMatch> matches = getTeamQualMatches(tournamentId, t.getId());
                     boolean busy = matches.stream().anyMatch(AmericanoMatch::isInProgress);
@@ -1220,6 +1219,11 @@ public class TeamPlayoffService {
     }
 
     private void validateTeamAvailableForQualification(Long tournamentId, AmericanoTeam team) {
+        if (!isAttended(team)) {
+            throw new InvalidStateException(
+                    "El equipo " + team.getDisplayName() + " no está marcado como presente");
+        }
+
         List<AmericanoMatch> teamQualMatches = getTeamQualMatches(tournamentId, team.getId());
 
         if (teamQualMatches.stream().anyMatch(AmericanoMatch::isInProgress)) {
@@ -1236,6 +1240,15 @@ public class TeamPlayoffService {
         List<AmericanoMatch> teamQualMatches = getTeamQualMatches(tournamentId, teamId);
         boolean busy = teamQualMatches.stream().anyMatch(AmericanoMatch::isInProgress);
         return !busy && teamQualMatches.size() < 2;
+    }
+
+    /**
+     * LFPT-310: единственное условие "команда может играть матч прямо сейчас" — явка (attended).
+     * Оплата (hasPaid) осталась информационным полем в таблице команд и на доступность не влияет —
+     * координатор отмечает/снимает эту галочку прямо в день турнира по факту присутствия.
+     */
+    private boolean isAttended(AmericanoTeam t) {
+        return Boolean.TRUE.equals(t.getAttended());
     }
 
     private void validateCourtFree(Long tournamentId, int courtNumber) {
