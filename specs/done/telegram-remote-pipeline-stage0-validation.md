@@ -1,7 +1,7 @@
 # LFPT-323 — Этап 0: валидация облачного окружения routines
 
 ## Статус
-done — среда пригодна для Developer/Tester, с тремя обязательными поправками к плану (см. "Итог" в конце файла).
+done — смержено и задеплоено, [PR #325](https://github.com/UstinKO/padel-core-service/pull/325), деплой подтверждён успешным. Среда пригодна для Developer/Tester, с тремя обязательными поправками к плану (см. "Итог" в конце файла).
 
 ## Источник
 Часть плана [telegram-remote-pipeline.md](telegram-remote-pipeline.md), Этап 0 (блокирующий). Issue: https://github.com/UstinKO/padel-core-service/issues/323
