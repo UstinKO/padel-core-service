@@ -496,6 +496,11 @@ public class AmericanoViewController {
 
     // ==================== АДМИНСКИЕ МЕТОДЫ ====================
 
+    /**
+     * LFPT-314: маршрут мёртвый в UI (нет ни одной ссылки на него), поэтому вместо
+     * несуществующего шаблона admin/americano/initialize — редирект на уже рабочую
+     * страницу деталей турнира с формой конфигурации/инициализации/предпросмотра.
+     */
     @GetMapping("/admin/{tournamentId}/preview")
     public String showAdminPreviewForm(
             @PathVariable Long tournamentId,
@@ -512,18 +517,10 @@ public class AmericanoViewController {
 
         if (americanoService.isInitialized(tournamentId)) {
             redirectAttributes.addFlashAttribute("info", "El torneo ya está inicializado");
-            return "redirect:/admin/tournaments/americano/" + tournamentId;
+            return "redirect:/tournaments/americano/admin/" + tournamentId;
         }
 
-        model.addAttribute("tournament", tournament);
-        model.addAttribute("config", AmericanoConfigDto.builder()
-                .pointsPerMatch(32)
-                .courts(2)
-                .totalRounds(5)
-                .shuffleAlgorithm("balanced")
-                .build());
-
-        return "admin/americano/initialize";
+        return "redirect:/admin/tournaments/" + tournamentId;
     }
 
     /**
