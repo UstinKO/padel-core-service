@@ -1,7 +1,7 @@
 # LFPT-314: Устранение падения на мёртвом роуте предпросмотра инициализации Americano
 
 ## Статус
-approved
+done — смержено в master, [PR #315](https://github.com/UstinKO/padel-core-service/pull/315)
 
 ## Источник
 `specs/requests/LFPT-314-americano-preview-crash.md`. GitHub issue: https://github.com/UstinKO/padel-core-service/issues/314. Баг уже был задокументирован в `.claude/CLAUDE.md` (раздел "Americano Admin Pages", блок "Известный баг").
