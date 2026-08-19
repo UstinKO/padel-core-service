@@ -1,7 +1,7 @@
 # LFPT-316: Устранение падения на мёртвом роуте GET /tournaments/americano/{id}/initialize
 
 ## Статус
-approved
+done — смержено и задеплоено, [PR #321](https://github.com/UstinKO/padel-core-service/pull/321), деплой подтверждён (`Deploy to Production` conclusion=success + живая проверка `/actuator/health` → 200 на проде)
 
 ## Источник
 GitHub issue напрямую (без клиентского запроса в `specs/requests/`, задача техническая, от архитектора): https://github.com/UstinKO/padel-core-service/issues/316. Найдено при анализе спеки [LFPT-314](../done/LFPT-314-americano-preview-dead-route.md) (тот же контроллер, тот же паттерн бага — несуществующий Thymeleaf-шаблон вместо рабочей страницы), которая уже смержена в master (PR #315).
