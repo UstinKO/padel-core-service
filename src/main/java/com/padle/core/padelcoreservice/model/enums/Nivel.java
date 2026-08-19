@@ -16,6 +16,7 @@ public enum Nivel {
     PRINCIPIANTES("Principiante"),
 
     // Новые уровни по просьбе заказчика
+    SUMA_16("16+"),
     SUMA_15("15+"),
     SUMA_13("13+"),
     D9("D9"),
