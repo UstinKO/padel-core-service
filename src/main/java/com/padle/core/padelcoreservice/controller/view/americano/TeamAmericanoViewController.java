@@ -132,7 +132,7 @@ public class TeamAmericanoViewController {
 
         } catch (Exception e) {
             log.error("Error initializing Team Americano {}: {}", tournamentId, e.getMessage(), e);
-            redirectAttributes.addFlashAttribute("error", "Error al inicializar: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "Error al inicializar: " + e.getMessage());
             return "redirect:/admin/tournaments/" + tournamentId;
         }
 
@@ -177,7 +177,7 @@ public class TeamAmericanoViewController {
 
         } catch (Exception e) {
             log.error("Error previewing Team Americano rounds {}: {}", tournamentId, e.getMessage());
-            redirectAttributes.addFlashAttribute("error",
+            redirectAttributes.addFlashAttribute("errorMessage",
                     "Error al previsualizar: " + e.getMessage());
             return "redirect:/admin/tournaments/" + tournamentId;
         }
