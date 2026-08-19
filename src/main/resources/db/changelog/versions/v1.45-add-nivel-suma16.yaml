@@ -1,0 +1,35 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.45-add-nivel-suma16
+      author: padel-core
+      changes:
+        - sql:
+            sql: |
+              -- Добавляем значение SUMA_16 в check constraint (enum Nivel, LFPT-0312)
+              ALTER TABLE tournaments_db
+                DROP CONSTRAINT IF EXISTS tournaments_db_categoria_nivel_check;
+
+              ALTER TABLE tournaments_db
+                ADD CONSTRAINT tournaments_db_categoria_nivel_check
+                CHECK (categoria_nivel IN (
+                  'C9', 'C8', 'C7', 'C6', 'C5', 'PRINCIPIANTES',
+                  'SUMA_16', 'SUMA_15', 'SUMA_13',
+                  'D9', 'D7', 'D8', 'D7_D8', 'D6', 'C7_C6',
+                  'C4', 'SUMA_14',
+                  'TODOS'
+                ));
+      rollback:
+        - sql:
+            sql: |
+              ALTER TABLE tournaments_db
+                DROP CONSTRAINT IF EXISTS tournaments_db_categoria_nivel_check;
+
+              ALTER TABLE tournaments_db
+                ADD CONSTRAINT tournaments_db_categoria_nivel_check
+                CHECK (categoria_nivel IN (
+                  'C9', 'C8', 'C7', 'C6', 'C5', 'PRINCIPIANTES',
+                  'SUMA_15', 'SUMA_13',
+                  'D9', 'D7', 'D8', 'D7_D8', 'D6', 'C7_C6',
+                  'C4', 'SUMA_14',
+                  'TODOS'
+                ));

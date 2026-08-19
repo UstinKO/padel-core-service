@@ -134,3 +134,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.44-nivel-jugador-not-null.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.45-add-nivel-suma16.yaml
+      relativeToChangelogFile: true
