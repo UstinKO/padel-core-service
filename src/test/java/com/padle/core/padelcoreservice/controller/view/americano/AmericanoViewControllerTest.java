@@ -84,15 +84,20 @@ class AmericanoViewControllerTest {
                 .isEqualTo("El torneo ya está inicializado");
     }
 
+    /**
+     * LFPT-317: admin/tournaments/details.html (целевая страница редиректа) читает
+     * только errorMessage/successMessage — flash-атрибут "error" на ней невидим.
+     * До фикса контроллер слал именно "error" сюда.
+     */
     @Test
-    void wrongTournamentType_regressionUnchanged() {
+    void wrongTournamentType_redirectsWithErrorMessageAttribute() {
         when(tournamentService.getActiveTournamentById(TOURNAMENT_ID))
                 .thenReturn(Optional.of(tournamentDto(TournamentType.KING_OF_COURT)));
 
         String view = controller.showAdminPreviewForm(TOURNAMENT_ID, model, redirectAttributes);
 
         assertThat(view).isEqualTo("redirect:/admin/tournaments/" + TOURNAMENT_ID);
-        assertThat(redirectAttributes.getFlashAttributes().get("error"))
+        assertThat(redirectAttributes.getFlashAttributes().get("errorMessage"))
                 .isEqualTo("Este torneo no es de tipo Americano");
     }
 

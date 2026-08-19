@@ -169,6 +169,11 @@
             </div>
         </div>
 
+        <!-- Flash -->
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+        <div th:if="${error}"   class="alert alert-danger"  th:text="${error}"></div>
+        <div th:if="${info}"    class="alert alert-info"    th:text="${info}"></div>
+
         <!-- Баннер формата (п.15, 16 ТЗ) -->
         <div th:if="${ranking != null and ranking.formatType != null}">
             <div th:if="${ranking.formatType.name() == 'FULL'}" class="format-banner full">

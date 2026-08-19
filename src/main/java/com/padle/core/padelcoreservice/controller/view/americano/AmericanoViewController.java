@@ -510,7 +510,7 @@ public class AmericanoViewController {
                 .orElseThrow(() -> new IllegalArgumentException("Torneo no encontrado"));
 
         if (tournament.getTipo() != com.padle.core.padelcoreservice.model.enums.TournamentType.AMERICANO) {
-            redirectAttributes.addFlashAttribute("error", "Este torneo no es de tipo Americano");
+            redirectAttributes.addFlashAttribute("errorMessage", "Este torneo no es de tipo Americano");
             return "redirect:/admin/tournaments/" + tournamentId;
         }
 
@@ -674,7 +674,7 @@ public class AmericanoViewController {
                     "Torneo Americano inicializado correctamente con " + config.getTotalRounds() + " rondas");
         } catch (Exception e) {
             log.error("Error initializing Americano tournament: {}", e.getMessage(), e);
-            redirectAttributes.addFlashAttribute("error", "Error al inicializar: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "Error al inicializar: " + e.getMessage());
             return "redirect:/admin/tournaments/" + tournamentId;
         }
 
