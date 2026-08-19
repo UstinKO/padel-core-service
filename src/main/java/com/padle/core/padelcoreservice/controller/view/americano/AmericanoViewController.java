@@ -163,6 +163,13 @@ public class AmericanoViewController {
 
     // ==================== ИНИЦИАЛИЗАЦИЯ ====================
 
+    /**
+     * LFPT-316: рама неинициализированного турнира раньше рендерила несуществующий
+     * шаблон tournaments/americano/initialize (TemplateInputException). Роут технически
+     * публичный, но реально достижим не только прямым набором URL — catch-блок
+     * previewRounds редиректит сюда при ошибке предпросмотра. Редирект на уже рабочую
+     * страницу деталей турнира с формой конфигурации/инициализации, по аналогии с LFPT-314.
+     */
     @GetMapping("/{tournamentId}/initialize")
     public String showInitializeForm(
             @PathVariable Long tournamentId,
@@ -182,15 +189,7 @@ public class AmericanoViewController {
             return "redirect:/tournaments/americano/" + tournamentId;
         }
 
-        model.addAttribute("tournament", tournament);
-        model.addAttribute("config", AmericanoConfigDto.builder()
-                .pointsPerMatch(32)
-                .courts(2)
-                .totalRounds(5)
-                .shuffleAlgorithm("balanced")
-                .build());
-
-        return "tournaments/americano/initialize";
+        return "redirect:/admin/tournaments/" + tournamentId;
     }
 
     @PostMapping("/{tournamentId}/initialize")
