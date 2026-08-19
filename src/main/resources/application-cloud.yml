@@ -1,0 +1,51 @@
+spring:
+  datasource:
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  # Локальный SMTP без реального сервера — не пытаемся достучаться до внешнего
+  # хоста, которого в облачной песочнице всё равно нет (её сеть блокирует
+  # внешний трафик кроме явного allowlist). Письма не отправляются, ошибка
+  # глушится существующим catch-блоком в EmailService — как и в dev-профиле.
+  mail:
+    host: localhost
+    port: 1025
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+            required: false
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:cloud-placeholder}
+            client-secret: ${GOOGLE_CLIENT_SECRET:cloud-placeholder}
+
+  thymeleaf:
+    cache: false
+
+recaptcha:
+  site-key: ${SITE_KEY_V2:cloud-placeholder}
+  secret-key: ${SECRET_KEY_V2:cloud-placeholder}
+  enabled: false
+
+telegram:
+  enabled: false
+
+# Без этого /actuator/health вечно 503 в облачной песочнице: MailHealthIndicator
+# пытается достучаться до реального SMTP-хоста и виснет на таймауте — сеть
+# песочницы блокирует внешний трафик, это не флуктуация, а постоянное состояние
+# (см. specs/features/telegram-remote-pipeline-stage0-validation.md, раунд 2).
+management:
+  health:
+    mail:
+      enabled: false
+
+logging:
+  level:
+    com.padle.core: INFO

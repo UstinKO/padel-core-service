@@ -36,8 +36,17 @@ build/
 application-*.yml
 !application.yml
 !application-prod.yml
+!application-cloud.yml
 
-.claude/
+# .claude/ теперь публикуется (нужно облачным Claude Code routines — они
+# клонируют репозиторий с GitHub, локального копирования файлов не будет).
+# Чувствительное и личное/машинно-специфичное — под явным игнором:
+.claude/SECURITY.md
+.claude/THREATS.md
+.claude/settings.local.json
+.claude/worktrees/
+.claude/scheduled_tasks.lock
+
 qodana.yaml
 docs/
 
