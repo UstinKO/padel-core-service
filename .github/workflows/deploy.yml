@@ -112,7 +112,11 @@ jobs:
 
             # Перезапускаем приложение
             echo "🔄 Restarting application..."
-            docker compose up -d --no-deps padel-app
+            if ! docker compose up -d --no-deps padel-app; then
+              echo "❌ Failed to restart application container!"
+              rollback
+              exit 1
+            fi
 
             # Ждем запуска (60 секунд)
             echo "⏳ Waiting for application to start (60 seconds)..."
@@ -261,6 +265,6 @@ jobs:
           echo "🔗 Commit: ${{ github.sha }}"
           echo "🌍 Server: ${{ secrets.SERVER_HOST }}"
           echo "=================================="
-          echo "⚠️ Automatic rollback was performed"
-          echo "Please check the logs above for details"
+          echo "⚠️ Check the 'Deploy to server' step logs above for '🔄 Rolling back to previous version' to see whether an automatic rollback actually ran and whether it succeeded — it does not always run on every failure path."
+          echo "⚠️ Verify the actual production state directly (docker ps / current_version.txt / actuator/health on the server) before assuming anything about which version is running."
           exit 1
