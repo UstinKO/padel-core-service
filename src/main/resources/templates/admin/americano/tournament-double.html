@@ -117,6 +117,11 @@
             </div>
         </div>
 
+        <!-- Flash -->
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+        <div th:if="${error}"   class="alert alert-danger"  th:text="${error}"></div>
+        <div th:if="${info}"    class="alert alert-info"    th:text="${info}"></div>
+
         <!-- Team Americano banner -->
         <div class="team-americano-banner">
             <span class="badge-pill"><i class="fas fa-users"></i> Team Americano</span>
