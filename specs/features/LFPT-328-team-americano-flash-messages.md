@@ -65,7 +65,7 @@ CSS-классы `.alert`, `.alert-success`, `.alert-danger`, `.alert-info` уж
 - [ ] `TeamAmericanoViewController.submitMatchResult` при успешном сохранении результата: `success`-сообщение "Resultado guardado correctamente" видно на странице `/tournaments/team-americano/admin/{tournamentId}` после редиректа (было невидимо).
 - [ ] `TeamAmericanoViewController.submitMatchResult` для матча, у которого результат уже есть: `info`-сообщение "Este partido ya tiene resultado" видно на той же странице после редиректа (было невидимо).
 - [ ] Модельный атрибут `error`, выставленный на этой странице, рендерится как `alert alert-danger` (проверяется рендерингом шаблона с этим атрибутом).
-- [ ] Обычный GET страницы `/tournaments/team-americano/admin/{tournamentId}` без предшествующего редиректа: ни один из трёх блоков не отображается, остальная страница (заголовок, баннер Team Americano, раунды, таблица) рендерится как раньше — регрессия отсутствует.
+- [ ] Обычный GET страницы `/tournaments/team-americano/admin/{tournamentId}` без предшествующего редиректа: ни один из трёх блоков не отображается, остальная страница рендерится ровно так же, как до правки — регрессия отсутствует (см. оговорку про предсуществующий обрыв рендеринга ниже).
 - [ ] Существующее поведение flash на `admin/americano/tournament.html` (LFPT-317) и `admin/americano/tournament-playoff.html` не затронуто — эти шаблоны не менялись.
 - [ ] `./mvnw verify` — зелёный.
 
@@ -73,6 +73,24 @@ CSS-классы `.alert`, `.alert-success`, `.alert-danger`, `.alert-info` уж
 - Несколько flash-атрибутов одновременно: блоки не эксклюзивны (три независимых `th:if`), при одновременно выставленных `success` и `info` отобразятся оба. Безопасно, дополнительной логики не требует — так же устроено в `tournament.html`.
 - Flash-атрибут отсутствует (обычный GET) — все `th:if` корректно skip'ают блок, разметка страницы не меняется.
 - Пустая строка в flash-атрибуте: Thymeleaf трактует пустую строку как false в `th:if`, блок не отобразится. Контроллер пустых сообщений не шлёт.
+
+## Находки при верификации (вне скоупа, заведены отдельными issue)
+
+Обе найдены при живом прогоне на этой же странице, обе **предсуществующие** (воспроизводятся на `master` без правки этой задачи), обе намеренно НЕ чинятся здесь.
+
+### 1. Страница обрывается на середине рендеринга (SpEL parse error) — блокирует пользу от этой правки
+`tournament-double.html:291` (на `master` — строка 286) содержит невалидное выражение: message-expression `#{...}` вложен внутрь `${...}`:
+
+```
+th:text="${ranking != null ? ranking.completedRounds + '/' + ranking.totalRounds + ' ' + #{admin.americano.label.rounds_completed} : ''}"
+```
+
+Thymeleaf падает с `SpelParseException: EL1043E: Unexpected token. Expected 'identifier' but was 'lcurly({)'`, ответ обрывается прямо в этом месте (HTTP 200, но HTML без закрывающего `</html>`, размер ~35 КБ). Блок не под `th:if` — обрывается **любой** запрос к `/tournaments/team-americano/admin/{id}`. Введено в LFPT-123 (i18n, merge `74138d7`, 2026-07-24). Единственное вхождение такого паттерна во всех шаблонах проекта.
+
+Практическое следствие для LFPT-328: flash-блок находится **выше** точки обрыва и в HTTP-ответе присутствует корректно (проверено), но headless-Chromium на оборванном chunked-ответе (`net::ERR_INCOMPLETE_CHUNKED_ENCODING`) отбрасывает хвост документа и показывает только шапку админки — то есть до починки этого бага пользователь flash-сообщений всё равно не увидит. Правка LFPT-328 необходима, но сама по себе недостаточна.
+
+### 2. `GET /tournaments/team-americano/matches/{matchId}/result` → HTTP 500
+`TeamAmericanoViewController.showResultForm` возвращает шаблон `admin/americano/match-result`, которого не существует (`TemplateInputException`). В каталоге `templates/admin/americano/` есть только `preview-double-rounds.html`, `preview-rounds.html`, `tournament-double.html`, `tournament-playoff.html`, `tournament.html`. Тот же класс бага, что LFPT-314/316. Ветка "матч уже завершён" (редирект с `info`) при этом работает — падает только ветка показа самой формы.
 
 ## Открытые вопросы
 Нет открытых бизнес-вопросов — правка чисто техническая, точное повторение уже принятого и смердженного решения LFPT-317 для соседней страницы.
