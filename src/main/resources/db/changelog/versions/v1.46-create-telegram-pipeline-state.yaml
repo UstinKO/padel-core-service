@@ -1,0 +1,48 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.46-create-telegram-pipeline-state
+      author: padel-core
+      comment: Create telegram_pipeline_state_db table for the Telegram SDD-pipeline kill-switch
+      changes:
+        - createTable:
+            tableName: telegram_pipeline_state_db
+            remarks: "Единственная строка — состояние 'приостановлен/активен' конвейера, управляемого через Telegram"
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_telegram_pipeline_state
+                  remarks: "Уникальный идентификатор"
+              - column:
+                  name: paused
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+                  remarks: "true — конвейер приостановлен, relay игнорирует новые сообщения"
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+                  remarks: "Когда состояние менялось в последний раз"
+              - column:
+                  name: updated_by
+                  type: VARCHAR(255)
+                  remarks: "Email/логин администратора, переключившего состояние в последний раз"
+        - insert:
+            tableName: telegram_pipeline_state_db
+            columns:
+              - column:
+                  name: id
+                  valueNumeric: 1
+              - column:
+                  name: paused
+                  valueBoolean: false
+      rollback:
+        - dropTable:
+            tableName: telegram_pipeline_state_db

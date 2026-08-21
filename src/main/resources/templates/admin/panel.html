@@ -226,6 +226,14 @@
                     <span style="font-size: 0.8rem; margin-left: 0.5rem; opacity: 0.7;">(beta)</span>
                 </a>
             </div>
+
+            <!-- РУБИЛЬНИК TELEGRAM-КОНВЕЙЕРА -->
+            <div th:if="${isSuperAdmin}" style="margin-left: 1rem; display: inline-block;">
+                <a href="/admin/telegram-pipeline" class="btn btn-outline">
+                    <i class="fab fa-telegram"></i>
+                    <span th:text="#{admin.common.btn.telegram_pipeline}">Pipeline de Telegram</span>
+                </a>
+            </div>
         </div>
     </div>
 </main>

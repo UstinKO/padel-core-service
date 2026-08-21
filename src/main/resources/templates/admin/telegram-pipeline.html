@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+    <title th:text="#{admin.telegram_pipeline.title} + ' - 1-Padel Admin'">Pipeline de Telegram - 1-Padel Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
+    <link rel="alternate icon" th:href="@{/images/favicon.ico}">
+    <link rel="apple-touch-icon" th:href="@{/images/apple-touch-icon.png}">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+<header th:replace="~{fragments/admin-header :: header(#{admin.telegram_pipeline.title})}"></header>
+
+<main class="admin-main">
+    <div class="container">
+        <div class="admin-header">
+            <h1 class="admin-title">
+                <i class="fab fa-telegram"></i>
+                <span th:text="#{admin.telegram_pipeline.title}">Pipeline de Telegram</span>
+            </h1>
+            <p class="admin-subtitle" th:text="#{admin.telegram_pipeline.subtitle}">Control del conveyor de desarrollo activado por Telegram</p>
+        </div>
+
+        <div th:if="${successMessage}" class="alert alert-success">
+            <i class="fas fa-check-circle"></i>
+            <span th:text="${successMessage}">Operación exitosa</span>
+        </div>
+        <div th:if="${errorMessage}" class="alert alert-danger">
+            <i class="fas fa-exclamation-circle"></i>
+            <span th:text="${errorMessage}">Error en la operación</span>
+        </div>
+
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h2 th:text="#{admin.telegram_pipeline.title}">Pipeline de Telegram</h2>
+            </div>
+            <div class="admin-card-body">
+                <p th:if="${!paused}" class="alert alert-success" style="margin-bottom: 1.5rem;">
+                    <i class="fas fa-circle-check"></i>
+                    <span th:text="#{admin.telegram_pipeline.status_active}">Активен</span>
+                </p>
+                <p th:if="${paused}" class="alert alert-danger" style="margin-bottom: 1.5rem;">
+                    <i class="fas fa-circle-pause"></i>
+                    <span th:text="#{admin.telegram_pipeline.status_paused}">Приостановлен</span>
+                </p>
+
+                <form th:action="@{/admin/telegram-pipeline/toggle}" method="post">
+                    <button th:if="${!paused}" type="submit" class="btn btn-danger"
+                            th:attr="onclick=|return confirm('${#messages.msg('admin.telegram_pipeline.confirm_pause')}')|">
+                        <i class="fas fa-hand"></i>
+                        <span th:text="#{admin.telegram_pipeline.btn_pause}">Pausar pipeline</span>
+                    </button>
+                    <button th:if="${paused}" type="submit" class="btn btn-primary"
+                            th:attr="onclick=|return confirm('${#messages.msg('admin.telegram_pipeline.confirm_resume')}')|">
+                        <i class="fas fa-play"></i>
+                        <span th:text="#{admin.telegram_pipeline.btn_resume}">Reanudar pipeline</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/admin-footer :: footer}"></footer>
+<script th:src="@{/js/csrf.js}"></script>
+</body>
+</html>
