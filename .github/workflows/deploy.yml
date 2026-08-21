@@ -259,6 +259,41 @@ jobs:
           echo "🌍 Server: ${{ secrets.SERVER_HOST }}"
           echo "=================================="
 
+      - name: Notify AI pipeline (spec archival)
+        if: success()
+        continue-on-error: true
+        env:
+          ROUTINE_ID: ${{ secrets.ROUTINE_ID }}
+          ROUTINE_TOKEN: ${{ secrets.ROUTINE_TOKEN }}
+        run: |
+          if [ -z "$ROUTINE_ID" ] || [ -z "$ROUTINE_TOKEN" ]; then
+            echo "ℹ️ ROUTINE_ID/ROUTINE_TOKEN не заданы как секреты — пропускаю уведомление роутины (не блокирует деплой)."
+            exit 0
+          fi
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          COMMIT_MSG=$(git log -1 --format=%s "${{ github.sha }}")
+          TEXT=$(python3 -c "
+          import json, sys
+          text = (
+              '[отправитель: architect]\n'
+              'Деплой коммита ${{ github.sha }} прошёл успешно (run: ' + '$RUN_URL' + ').\n'
+              'Сообщение коммита: ' + '''$COMMIT_MSG''' + '\n\n'
+              'Если этому коммиту соответствует спека в specs/features/, ещё не перенесённая '
+              'в specs/done/ — перенеси её туда по правилам Шага 7 develop-feature.md '
+              '(архивация только через отдельную ветку+PR, никогда напрямую в master; '
+              'если весь диф лежит в specs/** — можешь сразу смержить сам по правилу §9 GIT_WORKFLOW.md). '
+              'Если подходящей ещё не заархивированной спеки нет (деплой без фичи, чисто техническая правка '
+              'и т.п.) — ничего не делай, не выдумывай задачу и не пиши в Telegram.'
+          )
+          print(json.dumps({'text': text}))
+          ")
+          curl -s -X POST "https://api.anthropic.com/v1/claude_code/routines/${ROUTINE_ID}/fire" \
+            -H "Authorization: Bearer ${ROUTINE_TOKEN}" \
+            -H "anthropic-version: 2023-06-01" \
+            -H "anthropic-beta: experimental-cc-routine-2026-04-01" \
+            -H "Content-Type: application/json" \
+            -d "$TEXT"
+
       - name: Notify failure
         if: failure()
         run: |
