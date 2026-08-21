@@ -1,7 +1,7 @@
 # LFPT-343: Публичный доступ к странице King of Court по прямой ссылке
 
 ## Статус
-approved
+done — смержено в master, [PR #345](https://github.com/UstinKO/padel-core-service/pull/345)
 
 ## Источник
 [GitHub issue #343](https://github.com/UstinKO/padel-core-service/issues/343) — клиентский репорт через Telegram (архитектор), 2026-08-21.
