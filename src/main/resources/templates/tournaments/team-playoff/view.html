@@ -199,11 +199,11 @@
         <div class="rounds-tabs">
             <button th:each="r, stat : ${qualRounds}"
                     th:id="'qtab-' + ${stat.index}"
-                    th:text="'R' + ${r.roundNumber}"
+                    th:text="#{americano.round.prefix} + ' ' + ${r.roundNumber}"
                     th:attr="data-idx=${stat.index}"
                     th:classappend="${(stat.index == 0 ? ' active' : '') + (r.status.name() == 'COMPLETED' ? ' completed' : '')}"
                     class="round-tab"
-                    onclick="switchQualRound(this)">R1</button>
+                    onclick="switchQualRound(this)">Round 1</button>
         </div>
 
         <div class="round-content">

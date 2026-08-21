@@ -1465,10 +1465,13 @@ public class TeamPlayoffService {
     }
 
     /**
-     * Строит пары четвертьфинала через {@link PlayoffMatchingEngine} (ТЗ §17: 2-0 против 0-2,
+     * Строит пары четвертьфинала/play-in через {@link PlayoffMatchingEngine} (ТЗ §17: 2-0 против 0-2,
      * 1-1 между собой, повторные встречи исключаются по возможности). {@code seeded} уже
      * отсортирован по квалификационному рейтингу — позиция в списке становится посевом,
      * matchesWon (0/1/2) — сигналом "силы" для разведения лучших команд по разным парам.
+     * LFPT-348: приоритет {@code REMATCH_FIRST} — анти-реванш важнее сохранения группы по
+     * результату, группа важнее посева (в отличие от {@link #seedNextPlayoffStage}, где
+     * анти-реванш и разведение сильнейших важнее посева, но нет понятия "группы по результату").
      */
     private List<PlayoffMatchingEngine.Pairing> seedPlayoffPairs(Long tournamentId, List<AmericanoTeam> seeded) {
         List<PlayoffMatchingEngine.Candidate> candidates = new ArrayList<>();
@@ -1477,8 +1480,8 @@ public class TeamPlayoffService {
             candidates.add(new PlayoffMatchingEngine.Candidate(t.getId(), i + 1, t.getMatchesWon()));
         }
 
-        PlayoffMatchingEngine.MatchingResult result =
-                matchingEngine.match(candidates, buildPriorOpponentsMap(tournamentId));
+        PlayoffMatchingEngine.MatchingResult result = matchingEngine.match(
+                candidates, buildPriorOpponentsMap(tournamentId), PlayoffMatchingEngine.PriorityOrder.REMATCH_FIRST);
 
         if (!result.allConstraintsSatisfied()) {
             log.warn("Playoff seeding for tournament {}: {}", tournamentId, result.warning());
@@ -1853,7 +1856,7 @@ public class TeamPlayoffService {
         String p2Name = player2 == null ? buildPartnerName(mainReg) : null;
         String p2Phone = player2 == null ? mainReg.getPartnerPhone() : null;
 
-        int nextNum = teamRepository.findMaxTeamNumber(tournament.getId()).orElse(0) + 1;
+        int nextNum = resolveTeamNumberFromRegistration(tournament.getId(), mainReg);
 
         return AmericanoTeam.builder()
                 .tournament(tournament)
@@ -1868,6 +1871,25 @@ public class TeamPlayoffService {
                 .hasPaid(hasPaid)
                 .attended(attended)
                 .build();
+    }
+
+    /**
+     * LFPT-348: номер команды должен совпадать с "Posición" пары на странице оплат
+     * ({@link TournamentRegistration#getPosition()}) — не с порядком, в котором координатор
+     * нажимает "Agregar equipo". Откатывается к прежнему поведению (следующий свободный по
+     * счётчику), если позиция регистрации не задана или уже занята другой командой этого
+     * турнира (смешение ручного {@link #addTeam} с {@link #addTeamFromRegistration}/
+     * {@link #importFromRegistrations} в одном турнире).
+     */
+    private int resolveTeamNumberFromRegistration(Long tournamentId, TournamentRegistration mainReg) {
+        Integer position = mainReg.getPosition();
+        if (position != null && !teamRepository.existsByTournamentIdAndTeamNumber(tournamentId, position)) {
+            return position;
+        }
+        if (position != null) {
+            log.warn("Team number {} for tournament {} already taken — falling back to next free number", position, tournamentId);
+        }
+        return teamRepository.findMaxTeamNumber(tournamentId).orElse(0) + 1;
     }
 
     private String buildPartnerName(TournamentRegistration reg) {

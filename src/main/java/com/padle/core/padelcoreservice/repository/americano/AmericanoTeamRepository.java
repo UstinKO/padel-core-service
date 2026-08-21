@@ -38,4 +38,6 @@ public interface AmericanoTeamRepository extends JpaRepository<AmericanoTeam, Lo
 
     @Query("SELECT MAX(t.teamNumber) FROM AmericanoTeam t WHERE t.tournament.id = :tournamentId")
     Optional<Integer> findMaxTeamNumber(@Param("tournamentId") Long tournamentId);
+
+    boolean existsByTournamentIdAndTeamNumber(Long tournamentId, Integer teamNumber);
 }
