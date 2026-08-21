@@ -89,6 +89,7 @@ public class SecurityConfig {
                                 "/tournaments/team-americano/*",
                                 "/tournaments/team-americano/*/ranking",
                                 "/tournaments/team-playoff/*",
+                                "/tournaments/king-of-court/*",
                                 "/waitlist/**",
                                 "/login",
                                 "/players/registro",
