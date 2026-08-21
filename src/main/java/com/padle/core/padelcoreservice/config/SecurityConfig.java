@@ -140,7 +140,8 @@ public class SecurityConfig {
                                 "/api/king-of-court/tournaments/*/ranking",
                                 "/api/king-of-court/tournaments/*/players/*/history",
                                 "/api/king-of-court/ping",
-                                "/api/tournaments/double/*/looking-for-partner"
+                                "/api/tournaments/double/*/looking-for-partner",
+                                "/api/internal/telegram-pipeline/status"
                         ).permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.POST,
                                 "/api/tournaments/double/accept-pair"
