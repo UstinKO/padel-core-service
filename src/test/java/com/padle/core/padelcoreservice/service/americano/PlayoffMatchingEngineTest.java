@@ -112,6 +112,45 @@ class PlayoffMatchingEngineTest {
                 new Pairing(3L, 4L));
     }
 
+    /**
+     * LFPT-348: приоритет организатора для посева четвертьфинала/play-in сразу из квалификации —
+     * анти-реванш важнее и разведения сильнейших, и посева. Команда A (seed 1) уже играла
+     * И с C, И с D — любая пара без повтора неизбежно сводит A и B (обе с максимальной серией
+     * побед) вместе, жертвуя и разведением сильнейших, и оптимальным посевом. SEED_FIRST и
+     * STRENGTH_FIRST в этой ситуации реванш всё-таки допускают (у них он не на первом месте).
+     */
+    @Test
+    void rematchFirst_prefersAvoidingRematchOverStreakSeparationAndSeeding_unlikeOtherOrders() {
+        List<Candidate> candidates = List.of(
+                new Candidate(1L, 1, 5), // A — сильнейшая серия побед
+                new Candidate(2L, 2, 5), // B — сильнейшая серия побед
+                new Candidate(3L, 3, 1), // C
+                new Candidate(4L, 4, 1)  // D
+        );
+        Map<Long, Set<Long>> priorOpponents = Map.of(
+                1L, Set.of(3L, 4L),
+                3L, Set.of(1L),
+                4L, Set.of(1L)
+        );
+
+        MatchingResult seedFirst = engine.match(candidates, priorOpponents, PriorityOrder.SEED_FIRST);
+        assertThat(pairedTogether(seedFirst, 1L, 2L))
+                .as("SEED_FIRST не готова свести A и B ради анти-реванша")
+                .isFalse();
+
+        MatchingResult strengthFirst = engine.match(candidates, priorOpponents, PriorityOrder.STRENGTH_FIRST);
+        assertThat(pairedTogether(strengthFirst, 1L, 2L))
+                .as("STRENGTH_FIRST тоже не разводит A и B ради анти-реванша — здесь допускает повтор")
+                .isFalse();
+
+        MatchingResult rematchFirst = engine.match(candidates, priorOpponents, PriorityOrder.REMATCH_FIRST);
+        assertThat(rematchFirst.pairings()).containsExactlyInAnyOrder(
+                new Pairing(1L, 2L), new Pairing(3L, 4L));
+        assertThat(rematchFirst.allConstraintsSatisfied())
+                .as("рематч исключён полностью ценой разведения сильнейших")
+                .isFalse();
+    }
+
     @Test
     void neverPairsTheTwoStrongestSeedsTogether_whenNoOtherConstraintsApply() {
         // Для 4 кандидатов пары (min,max)+(2й,3й) и (min,3й)+(2й,max) математически

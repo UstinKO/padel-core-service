@@ -1,6 +1,7 @@
 package com.padle.core.padelcoreservice.controller.view.americano;
 
 import com.padle.core.padelcoreservice.dto.TournamentDto;
+import com.padle.core.padelcoreservice.dto.americano.AmericanoMatchDto;
 import com.padle.core.padelcoreservice.dto.americano.AmericanoMatchSuggestionDto;
 import com.padle.core.padelcoreservice.dto.americano.AmericanoRoundDto;
 import com.padle.core.padelcoreservice.dto.americano.AmericanoTeamDto;
@@ -28,11 +29,13 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 @Controller
@@ -75,7 +78,7 @@ public class TeamPlayoffViewController {
             List<AmericanoRoundDto> qualRoundDtos = buildRoundDtos(qualRounds);
             applyQualMatchOrdinals(tournamentId, qualRoundDtos);
             model.addAttribute("ranking", ranking);
-            model.addAttribute("qualRounds", qualRoundDtos);
+            model.addAttribute("qualRounds", splitQualificationWaves(qualRoundDtos));
         }
 
         if (playoffStarted) {
@@ -112,7 +115,7 @@ public class TeamPlayoffViewController {
             List<AmericanoRoundDto> qualRoundDtos = buildRoundDtos(qualRounds);
             applyQualMatchOrdinals(tournamentId, qualRoundDtos);
             model.addAttribute("ranking", ranking);
-            model.addAttribute("qualRounds", qualRoundDtos);
+            model.addAttribute("qualRounds", splitQualificationWaves(qualRoundDtos));
         }
 
         if (playoffStarted) {
@@ -491,6 +494,53 @@ public class TeamPlayoffViewController {
                 match.setTeam2MatchOrdinal(o[1] > 0 ? o[1] : null);
             }
         }));
+    }
+
+    /**
+     * LFPT-348: квалификация Team Playoff технически — единый round-контейнер
+     * ({@link TeamPlayoffService#getOrCreateQualificationRound}), где вперемешку лежат 1-й и
+     * 2-й квалификационный матч каждой команды. Разбивает его на до 2 визуальных "волн" по уже
+     * вычисленным {@code team1MatchOrdinal}/{@code team2MatchOrdinal} (см. {@link #applyQualMatchOrdinals},
+     * должен быть вызван раньше) и сортирует матчи внутри волны по номеру корта. "Пограничный"
+     * матч нечётного случая (T14 — ordinal команд отличается, "дополнительная" команда играет
+     * против соперника, для которого это уже 2-й матч) относится к {@code max(ordinal1, ordinal2)} —
+     * ко 2-й волне, раз для соперника она уже фактически идёт.
+     */
+    List<AmericanoRoundDto> splitQualificationWaves(List<AmericanoRoundDto> qualRoundDtos) {
+        if (qualRoundDtos.isEmpty()) {
+            return qualRoundDtos;
+        }
+        AmericanoRoundDto container = qualRoundDtos.get(0);
+        Map<Integer, List<AmericanoMatchDto>> byWave = new TreeMap<>();
+        for (AmericanoMatchDto match : container.getMatches()) {
+            int ordinal1 = match.getTeam1MatchOrdinal() != null ? match.getTeam1MatchOrdinal() : 1;
+            int ordinal2 = match.getTeam2MatchOrdinal() != null ? match.getTeam2MatchOrdinal() : 1;
+            int wave = Math.max(ordinal1, ordinal2);
+            byWave.computeIfAbsent(wave, k -> new ArrayList<>()).add(match);
+        }
+
+        List<AmericanoRoundDto> waves = new ArrayList<>();
+        byWave.forEach((waveNumber, matches) -> {
+            List<AmericanoMatchDto> sorted = matches.stream()
+                    .sorted(Comparator.comparing(AmericanoMatchDto::getCourtNumber,
+                            Comparator.nullsLast(Comparator.naturalOrder())))
+                    .toList();
+            waves.add(AmericanoRoundDto.builder()
+                    .id(container.getId())
+                    .tournamentId(container.getTournamentId())
+                    .roundNumber(waveNumber)
+                    .status(container.getStatus())
+                    .courts(container.getCourts())
+                    .pointsPerMatch(container.getPointsPerMatch())
+                    .note(container.getNote())
+                    .startedAt(container.getStartedAt())
+                    .completedAt(container.getCompletedAt())
+                    .totalMatches(sorted.size())
+                    .completedMatches((int) sorted.stream().filter(m -> Boolean.TRUE.equals(m.getIsCompleted())).count())
+                    .matches(sorted)
+                    .build());
+        });
+        return waves;
     }
 
 }

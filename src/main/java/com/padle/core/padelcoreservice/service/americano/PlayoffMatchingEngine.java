@@ -38,7 +38,13 @@ public class PlayoffMatchingEngine {
         /** ТЗ §53/§11: посев ("сильный слабому") → разведение сильнейших → анти-реванш. Используется для QF (T8). */
         SEED_FIRST,
         /** ТЗ §12: разведение сильнейших → анти-реванш → посев — специфичный порядок для полуфинала (T9). */
-        STRENGTH_FIRST
+        STRENGTH_FIRST,
+        /**
+         * LFPT-348: анти-реванш → разведение групп по результату квалификации (2-0/1-1/0-2) → посев —
+         * порядок приоритетов организатора для посева четвертьфинала/play-in сразу из квалификации
+         * (в отличие от {@link #SEED_FIRST}, где посев важнее анти-реванша).
+         */
+        REMATCH_FIRST
     }
 
     /** Эквивалентно {@code match(candidates, priorOpponents, PriorityOrder.SEED_FIRST)} — приоритеты общего плей-офф (§53/§11). */
@@ -91,6 +97,7 @@ public class PlayoffMatchingEngine {
         return switch (order) {
             case SEED_FIRST -> rawCost; // [посев, разведение, реванш]
             case STRENGTH_FIRST -> new int[]{rawCost[1], rawCost[2], rawCost[0]}; // [разведение, реванш, посев]
+            case REMATCH_FIRST -> new int[]{rawCost[2], rawCost[1], rawCost[0]}; // [реванш, разведение, посев]
         };
     }
 
