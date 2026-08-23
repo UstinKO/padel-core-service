@@ -103,7 +103,7 @@ public class TeamAmericanoViewController {
      * Принимает POST с tournamentId + конфигурацию.
      */
     @PostMapping("/initialize")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
     public String initializeTeamAmericano(@ModelAttribute TeamAmericanoConfigDto config,
                                           @RequestParam Long tournamentId,
                                           RedirectAttributes redirectAttributes) {
@@ -144,7 +144,7 @@ public class TeamAmericanoViewController {
      * Превью Round Robin расписания без сохранения — аналог /americano/{id}/preview-rounds
      */
     @PostMapping("/preview")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
     public String previewRounds(@RequestParam Long tournamentId,
                                 @ModelAttribute TeamAmericanoConfigDto config,
                                 Model model,
@@ -257,7 +257,7 @@ public class TeamAmericanoViewController {
      * Сохранение результата матча (POST).
      */
     @PostMapping("/matches/{matchId}/result")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
     public String submitMatchResult(@PathVariable Long matchId,
                                     @RequestParam int team1Score,
                                     @RequestParam int team2Score,
@@ -283,7 +283,7 @@ public class TeamAmericanoViewController {
     // ══════════════════════════════════════════════════════════════════════
 
     @PostMapping("/admin/{tournamentId}/finish")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
     public String finishTournament(@PathVariable Long tournamentId,
                                    RedirectAttributes redirectAttributes) {
         try {
@@ -308,7 +308,7 @@ public class TeamAmericanoViewController {
      * API: сохранить результат матча (используется из JS без перезагрузки страницы).
      */
     @PostMapping("/api/matches/{matchId}/result")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> submitResultApi(@PathVariable Long matchId,
                                                                @RequestBody Map<String, Integer> body) {

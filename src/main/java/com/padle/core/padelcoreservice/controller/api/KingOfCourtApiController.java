@@ -167,7 +167,7 @@ public class KingOfCourtApiController {
      * DEBUG: Проверка игроков в турнире (исправлено)
      */
     @GetMapping("/debug/tournaments/{kingId}/check-players")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
     public ResponseEntity<DebugInfo> debugCheckPlayers(@PathVariable Long kingId) {
         log.info("DEBUG: Checking players for King of Court: {}", kingId);
 
