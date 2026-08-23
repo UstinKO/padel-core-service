@@ -32,6 +32,8 @@ public interface AmericanoTeamRepository extends JpaRepository<AmericanoTeam, Lo
 
     boolean existsByTournamentIdAndPlayer1Id(Long tournamentId, Long player1Id);
 
+    boolean existsByTournamentIdAndPlayer2Id(Long tournamentId, Long player2Id);
+
     @Query("SELECT t FROM AmericanoTeam t WHERE t.tournament.id = :tournamentId " +
             "ORDER BY t.setsWon DESC, (t.gamesWon - t.gamesLost) DESC, t.gamesWon DESC")
     List<AmericanoTeam> findPlayoffRankingByTournamentId(@Param("tournamentId") Long tournamentId);

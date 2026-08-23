@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -286,14 +287,17 @@ public class PaymentService {
                     }
                 });
 
-        // Нормализация позиций: устраняет дубли из-за тестовых данных или race conditions.
-        // Группируем по pairGroupId и присваиваем последовательные номера пар.
-        java.util.Map<Long, Integer> groupToPos = new java.util.LinkedHashMap<>();
-        int[] nextPos = {1};
+        // Нормализация позиций (LFPT-357): устраняет дубли из-за тестовых данных или race
+        // conditions. Общая с TeamPlayoffService.resolveTeamNumberFromRegistration логика
+        // (см. RegistrationPairPositions) — гарантирует, что teamNumber команды совпадает
+        // с тем, что координатор реально видит здесь в колонке "Posición".
+        Map<Long, Integer> groupToPos = RegistrationPairPositions.computeDisplayedPositions(registrations);
         for (PaymentManagementViewDto dto : result) {
             if (dto.getPairGroupId() != null) {
-                int displayPos = groupToPos.computeIfAbsent(dto.getPairGroupId(), k -> nextPos[0]++);
-                dto.setPosition(displayPos);
+                Integer displayPos = groupToPos.get(dto.getPairGroupId());
+                if (displayPos != null) {
+                    dto.setPosition(displayPos);
+                }
             }
         }
 
