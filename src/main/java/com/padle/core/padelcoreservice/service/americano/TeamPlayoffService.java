@@ -21,6 +21,7 @@ import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoMatchRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoRoundRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoTeamRepository;
+import com.padle.core.padelcoreservice.service.RegistrationPairPositions;
 import com.padle.core.padelcoreservice.service.WebSocketService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -67,14 +68,19 @@ public class TeamPlayoffService {
         PlayerPadel player1 = playerRepository.findById(req.getPlayer1Id())
                 .orElseThrow(() -> new ResourceNotFoundException("Player1 not found: " + req.getPlayer1Id()));
 
-        if (teamRepository.existsByTournamentIdAndPlayer1Id(tournamentId, req.getPlayer1Id())) {
-            throw new InvalidStateException("El jugador ya está registrado como titular en este torneo");
+        if (isPlayerAlreadyOnActiveTeam(tournamentId, req.getPlayer1Id())) {
+            throw new InvalidStateException("El jugador ya está registrado en otro equipo de este torneo");
         }
 
         PlayerPadel player2 = null;
         if (req.getPlayer2Id() != null) {
             player2 = playerRepository.findById(req.getPlayer2Id())
                     .orElseThrow(() -> new ResourceNotFoundException("Player2 not found: " + req.getPlayer2Id()));
+            // LFPT-357: la comprobación anterior sólo cubría player1 — un jugador ya emparejado
+            // como player2 en otro equipo podía quedar duplicado en dos equipos activos a la vez.
+            if (isPlayerAlreadyOnActiveTeam(tournamentId, req.getPlayer2Id())) {
+                throw new InvalidStateException("El compañero ya está registrado en otro equipo de este torneo");
+            }
         }
 
         int nextNum = teamRepository.findMaxTeamNumber(tournamentId).orElse(0) + 1;
@@ -1765,11 +1771,22 @@ public class TeamPlayoffService {
                     .findFirst().orElse(null);
 
             if (mainReg == null) continue;
-            if (teamRepository.existsByTournamentIdAndPlayer1Id(tournamentId, mainPlayerId)) continue;
+            if (isPlayerAlreadyOnActiveTeam(tournamentId, mainPlayerId)) continue;
 
             TournamentRegistration partnerReg = group.stream()
                     .filter(r -> !r.getPlayer().getId().equals(mainPlayerId))
                     .findFirst().orElse(null);
+
+            // LFPT-357: la misma pareja física puede volver a aparecer con los roles invertidos
+            // (p. ej. tras cancelar y volver a registrarse) — comprobar también al compañero
+            // antes de crear un segundo equipo duplicado.
+            Long partnerId = partnerReg != null ? partnerReg.getPlayer().getId()
+                    : (mainReg.getPartner() != null ? mainReg.getPartner().getId() : null);
+            if (isPlayerAlreadyOnActiveTeam(tournamentId, partnerId)) {
+                log.warn("Skipping import of pair (main player {}) for tournament {}: partner {} already on another team",
+                        mainPlayerId, tournamentId, partnerId);
+                continue;
+            }
 
             // Массовый импорт исторически не переносит статус оплаты/присутствия (T18: для
             // точечного добавления одной пары со страницы оплат используется addTeamFromRegistration).
@@ -1835,7 +1852,7 @@ public class TeamPlayoffService {
         }
 
         Long mainPlayerId = mainReg.getPlayer().getId();
-        if (teamRepository.existsByTournamentIdAndPlayer1Id(tournamentId, mainPlayerId)) {
+        if (isPlayerAlreadyOnActiveTeam(tournamentId, mainPlayerId)) {
             throw new InvalidStateException("Este equipo ya fue agregado al torneo");
         }
 
@@ -1844,6 +1861,15 @@ public class TeamPlayoffService {
                 .stream()
                 .filter(r -> mainPlayerId.equals(r.getMainPlayerId()) && !r.getPlayer().getId().equals(mainPlayerId))
                 .findFirst().orElse(null);
+
+        // LFPT-357: comprobar también al compañero — la verificación de arriba sólo cubre al
+        // jugador principal, y una pareja reinscrita con los roles invertidos podría duplicarse
+        // si el compañero de esta inscripción ya es player1/player2 de otro equipo.
+        Long partnerId = partnerReg != null ? partnerReg.getPlayer().getId()
+                : (mainReg.getPartner() != null ? mainReg.getPartner().getId() : null);
+        if (isPlayerAlreadyOnActiveTeam(tournamentId, partnerId)) {
+            throw new InvalidStateException("El compañero ya fue agregado a otro equipo de este torneo");
+        }
 
         AmericanoTeam team = teamRepository.save(buildTeamFromPair(tournament, mainReg, partnerReg, hasPaid, attended));
         log.info("Team added from registration {} for tournament {}: {}", registrationId, tournamentId, team.getDisplayName());
@@ -1874,15 +1900,21 @@ public class TeamPlayoffService {
     }
 
     /**
-     * LFPT-348: номер команды должен совпадать с "Posición" пары на странице оплат
-     * ({@link TournamentRegistration#getPosition()}) — не с порядком, в котором координатор
-     * нажимает "Agregar equipo". Откатывается к прежнему поведению (следующий свободный по
-     * счётчику), если позиция регистрации не задана или уже занята другой командой этого
-     * турнира (смешение ручного {@link #addTeam} с {@link #addTeamFromRegistration}/
-     * {@link #importFromRegistrations} в одном турнире).
+     * LFPT-348/LFPT-357: номер команды должен совпадать с "Posición" пары на странице оплат —
+     * не с сырым {@link TournamentRegistration#getPosition()} (может содержать дубли/пропуски
+     * из-за отменённых и повторно созданных регистраций), а с тем же нормализованным номером,
+     * который координатор реально видит там ({@link RegistrationPairPositions}, общий с
+     * {@code PaymentService.getPaymentManagementData}). Откатывается к прежнему поведению
+     * (следующий свободный по счётчику), если у пары нет нормализованной позиции (регистрация
+     * не в статусе, который показывается на странице оплат) или вычисленный номер уже занят
+     * другой командой этого турнира (смешение ручного {@link #addTeam} с
+     * {@link #addTeamFromRegistration}/{@link #importFromRegistrations} в одном турнире).
      */
     private int resolveTeamNumberFromRegistration(Long tournamentId, TournamentRegistration mainReg) {
-        Integer position = mainReg.getPosition();
+        List<TournamentRegistration> ordered = registrationRepository
+                .findByTournamentIdOrderByPositionAscWaitlistPositionAsc(tournamentId);
+        Integer position = RegistrationPairPositions.computeDisplayedPositions(ordered)
+                .get(RegistrationPairPositions.pairGroupId(mainReg));
         if (position != null && !teamRepository.existsByTournamentIdAndTeamNumber(tournamentId, position)) {
             return position;
         }
@@ -1890,6 +1922,20 @@ public class TeamPlayoffService {
             log.warn("Team number {} for tournament {} already taken — falling back to next free number", position, tournamentId);
         }
         return teamRepository.findMaxTeamNumber(tournamentId).orElse(0) + 1;
+    }
+
+    /**
+     * LFPT-357: un jugador no debería estar simultáneamente en dos equipos activos del mismo
+     * torneo — antes sólo se comprobaba {@code player1Id}, lo que dejaba pasar el caso en que
+     * la misma pareja física se reinscribe con los roles principal/compañero invertidos (p. ej.
+     * tras cancelar y volver a registrar la pareja) y termina duplicada en dos equipos.
+     */
+    private boolean isPlayerAlreadyOnActiveTeam(Long tournamentId, Long playerId) {
+        if (playerId == null) {
+            return false;
+        }
+        return teamRepository.existsByTournamentIdAndPlayer1Id(tournamentId, playerId)
+                || teamRepository.existsByTournamentIdAndPlayer2Id(tournamentId, playerId);
     }
 
     private String buildPartnerName(TournamentRegistration reg) {

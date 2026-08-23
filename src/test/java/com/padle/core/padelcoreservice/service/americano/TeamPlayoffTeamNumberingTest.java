@@ -29,10 +29,12 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * LFPT-348: номер команды ({@link AmericanoTeam#getTeamNumber()}), под которым пара
- * отображается на всех стадиях турнира, должен совпадать с позицией пары на странице оплат
- * ({@link TournamentRegistration#getPosition()}) — не с порядком, в котором координатор
- * нажимает "Agregar equipo" на этой странице.
+ * LFPT-348/LFPT-357: номер команды ({@link AmericanoTeam#getTeamNumber()}), под которым пара
+ * отображается на всех стадиях турнира, должен совпадать с позицией пары, реально показанной
+ * на странице оплат ({@code PaymentService.getPaymentManagementData}) — это НЕ обязательно
+ * сырое значение {@link TournamentRegistration#getPosition()} (страница оплат нормализует его,
+ * устраняя дубли/пропуски — LFPT-357), и уж точно не порядок, в котором координатор нажимает
+ * "Agregar equipo".
  */
 @SpringBootTest
 @TestPropertySource(properties = {
@@ -57,7 +59,12 @@ class TeamPlayoffTeamNumberingTest {
     @Autowired
     private TournamentRegistrationRepository registrationRepository;
 
-    /** Воспроизводит сценарий из фидбека организатора: пара №5 добавлена в турнир раньше пары №1 и №2. */
+    /**
+     * Воспроизводит сценарий из фидбека организатора: пара с "Posición" 5 добавлена в турнир
+     * раньше пар с "Posición" 1 и 2 — но т.к. в турнире всего 3 подтверждённые пары (позиции
+     * 1, 2 и 5 — разрыв между 2 и 5 типичен после отменённых/повторных регистраций, LFPT-357),
+     * реально показанная на странице оплат "Posición" для пары №5 — 3-я по счёту, не "5".
+     */
     @Test
     void teamNumber_matchesRegistrationPosition_regardlessOfAddOrder() {
         Long tournamentId = createTournament();
@@ -70,15 +77,61 @@ class TeamPlayoffTeamNumberingTest {
         AmericanoTeam team1 = playoffService.addTeamFromRegistration(tournamentId, reg1.getId(), true, true);
         AmericanoTeam team2 = playoffService.addTeamFromRegistration(tournamentId, reg2.getId(), true, true);
 
-        assertThat(team5.getTeamNumber()).isEqualTo(5);
         assertThat(team1.getTeamNumber()).isEqualTo(1);
         assertThat(team2.getTeamNumber()).isEqualTo(2);
+        assertThat(team5.getTeamNumber()).isEqualTo(3);
+    }
+
+    /**
+     * LFPT-357: dos parejas confirmadas con el MISMO {@code position} en bruto (p. ej. tras
+     * cancelar y volver a registrarse sin que se reordenaran las posiciones) — la normalización
+     * compartida con la página de pagos les asigna números distintos y consecutivos, no el mismo
+     * número duplicado.
+     */
+    @Test
+    void teamNumber_deduplicatesRawPositionCollisions() {
+        Long tournamentId = createTournament();
+
+        TournamentRegistration regA = createDoubleRegistration(tournamentId, 1);
+        TournamentRegistration regB = createDoubleRegistration(tournamentId, 1);
+
+        AmericanoTeam teamA = playoffService.addTeamFromRegistration(tournamentId, regA.getId(), true, true);
+        AmericanoTeam teamB = playoffService.addTeamFromRegistration(tournamentId, regB.getId(), true, true);
+
+        assertThat(teamA.getTeamNumber()).isNotEqualTo(teamB.getTeamNumber());
+        assertThat(teamA.getTeamNumber()).isIn(1, 2);
+        assertThat(teamB.getTeamNumber()).isIn(1, 2);
     }
 
     @Test
     void teamNumber_fallsBackToNextFreeNumber_whenRegistrationHasNoPosition() {
         Long tournamentId = createTournament();
         TournamentRegistration reg = createDoubleRegistration(tournamentId, null);
+
+        AmericanoTeam team = playoffService.addTeamFromRegistration(tournamentId, reg.getId(), true, true);
+
+        assertThat(team.getTeamNumber()).isEqualTo(1);
+    }
+
+    /**
+     * LFPT-357: `addTeamFromRegistration` admite {@code PAIR_REGISTERED} (a diferencia de la
+     * página de pagos, que sólo normaliza {@code CONFIRMED}/{@code PARTNER_INVITED}) — para esa
+     * inscripción no hay posición normalizada, y el fallback al contador debe seguir aplicando
+     * sin lanzar excepción, aunque tenga un `position` en bruto asignado.
+     */
+    @Test
+    void teamNumber_fallsBackToNextFreeNumber_forPairRegisteredStatus() {
+        Long tournamentId = createTournament();
+        TournamentRegistration reg = registrationRepository.save(TournamentRegistration.builder()
+                .tournament(tournamentRepository.findById(tournamentId).orElseThrow())
+                .player(createSoloPlayer(tournamentId))
+                .status(RegistrationStatus.PAIR_REGISTERED)
+                .position(7)
+                .isDoubleRegistration(true)
+                .mainPlayerId(null)
+                .partnerFirstName("Partner")
+                .partnerLastName("PairRegistered")
+                .build());
 
         AmericanoTeam team = playoffService.addTeamFromRegistration(tournamentId, reg.getId(), true, true);
 
