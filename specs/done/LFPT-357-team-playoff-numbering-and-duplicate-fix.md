@@ -1,7 +1,7 @@
 # LFPT-357: Team Playoff — корректная нумерация команд + защита от дубля пары в двух командах
 
 ## Статус
-approved
+done — PR #358, деплой подтверждён успешным (run https://github.com/UstinKO/padel-core-service/actions/runs/32646447993, commit d0ec89d)
 
 ## Источник
 GitHub issue [#357](https://github.com/UstinKO/padel-core-service/issues/357) — заведён конвейером напрямую по фидбеку заказчика (Telegram, роль `architect`, скриншот страницы `/admin/tournaments/80/payments`). Прямого клиентского файла `specs/requests/` нет — вход соответствует варианту 3 из `.claude/commands/develop-feature.md` (issue с готовой технической постановкой).
