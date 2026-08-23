@@ -134,7 +134,7 @@ public class TeamPlayoffViewController {
     // ══════════════════════════════════════════════════════════════════════
 
     @PostMapping("/admin/{tournamentId}/teams/add")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
     public String addTeam(@PathVariable Long tournamentId,
                           @ModelAttribute TeamPlayoffTeamRequest req,
                           RedirectAttributes ra) {
@@ -149,7 +149,7 @@ public class TeamPlayoffViewController {
     }
 
     @PostMapping("/admin/teams/{teamId}/update")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
     public String updateTeam(@PathVariable Long teamId,
                              @ModelAttribute TeamPlayoffTeamRequest req,
                              @RequestParam Long tournamentId,
@@ -165,7 +165,7 @@ public class TeamPlayoffViewController {
     }
 
     @PostMapping("/admin/teams/{teamId}/delete")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
     public String deleteTeam(@PathVariable Long teamId,
                              @RequestParam Long tournamentId,
                              RedirectAttributes ra) {
@@ -184,7 +184,7 @@ public class TeamPlayoffViewController {
     // ══════════════════════════════════════════════════════════════════════
 
     @PostMapping("/admin/{tournamentId}/import-registrations")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
     public String importRegistrations(@PathVariable Long tournamentId, RedirectAttributes ra) {
         try {
             int count = playoffService.importFromRegistrations(tournamentId);
@@ -197,7 +197,7 @@ public class TeamPlayoffViewController {
     }
 
     @PostMapping("/admin/{tournamentId}/init-qualification")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
     public String initQualification(@PathVariable Long tournamentId,
                                     @RequestParam(defaultValue = "2") int courts,
                                     RedirectAttributes ra) {
@@ -212,7 +212,7 @@ public class TeamPlayoffViewController {
     }
 
     @PostMapping("/admin/{tournamentId}/init-playoff")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
     public String initPlayoff(@PathVariable Long tournamentId, RedirectAttributes ra) {
         try {
             playoffService.initPlayoff(tournamentId);
@@ -226,7 +226,7 @@ public class TeamPlayoffViewController {
 
     /** Issue #298 п.2: пересобрать плей-офф после правки результата квалификации. */
     @PostMapping("/admin/{tournamentId}/regenerate-playoff")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
     public String regeneratePlayoff(@PathVariable Long tournamentId, RedirectAttributes ra) {
         try {
             playoffService.regeneratePlayoff(tournamentId);
@@ -243,7 +243,7 @@ public class TeamPlayoffViewController {
     // ══════════════════════════════════════════════════════════════════════
 
     @PostMapping("/admin/qual-matches/{matchId}/result")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
     public String submitQualResult(@PathVariable Long matchId,
                                    @RequestParam int team1Games,
                                    @RequestParam int team2Games,
@@ -262,7 +262,7 @@ public class TeamPlayoffViewController {
     }
 
     @PostMapping("/admin/playoff-matches/{matchId}/result")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
     public String submitPlayoffResult(@PathVariable Long matchId,
                                       @RequestParam int team1Games,
                                       @RequestParam int team2Games,
@@ -285,7 +285,7 @@ public class TeamPlayoffViewController {
     // ══════════════════════════════════════════════════════════════════════
 
     @PostMapping("/api/{tournamentId}/qual-matches")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> createQualMatchApi(
             @PathVariable Long tournamentId,
@@ -307,7 +307,7 @@ public class TeamPlayoffViewController {
 
     /** Меняет корт ещё не завершённого матча (T11 — ручное управление координатором). */
     @PostMapping("/api/matches/{matchId}/court")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> changeMatchCourtApi(
             @PathVariable Long matchId,
@@ -327,7 +327,7 @@ public class TeamPlayoffViewController {
 
     /** Заменяет команду в паре ещё не завершённого матча (T11). slot=1|2. Реванш не блокирует, только предупреждает. */
     @PostMapping("/api/matches/{matchId}/team")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> changeMatchTeamApi(
             @PathVariable Long matchId,
@@ -349,7 +349,7 @@ public class TeamPlayoffViewController {
 
     /** Issue #298 п.3: команды-кандидаты для обмена с указанным слотом матча плей-офф (соседние матчи той же стадии). */
     @GetMapping("/api/matches/{matchId}/swap-candidates")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
     @ResponseBody
     public ResponseEntity<List<TeamPlayoffService.PlayoffSwapCandidate>> getPlayoffSwapCandidates(
             @PathVariable Long matchId) {
@@ -358,7 +358,7 @@ public class TeamPlayoffViewController {
 
     /** Issue #298 п.3: меняет местами команды в двух ещё не завершённых матчах плей-офф. slot=1|2 в каждом. */
     @PostMapping("/api/matches/{matchId}/swap-team")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> swapMatchTeamApi(
             @PathVariable Long matchId,
@@ -380,7 +380,7 @@ public class TeamPlayoffViewController {
     }
 
     @PostMapping("/api/qual-matches/{matchId}/result")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> submitQualResultApi(
             @PathVariable Long matchId,
@@ -400,7 +400,7 @@ public class TeamPlayoffViewController {
     }
 
     @PostMapping("/api/playoff-matches/{matchId}/result")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> submitPlayoffResultApi(
             @PathVariable Long matchId,
@@ -430,7 +430,7 @@ public class TeamPlayoffViewController {
      * (победитель-к-победителю/проигравший-к-проигравшему, T5) — по одной на свободный корт.
      */
     @GetMapping("/api/{tournamentId}/court-board")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> getCourtBoard(@PathVariable Long tournamentId) {
         int courtsCount = playoffService.getConfiguredCourts(tournamentId);
