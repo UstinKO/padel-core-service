@@ -113,6 +113,31 @@ class TeamPlayoffTeamNumberingTest {
         assertThat(team.getTeamNumber()).isEqualTo(1);
     }
 
+    /**
+     * LFPT-357: `addTeamFromRegistration` admite {@code PAIR_REGISTERED} (a diferencia de la
+     * página de pagos, que sólo normaliza {@code CONFIRMED}/{@code PARTNER_INVITED}) — para esa
+     * inscripción no hay posición normalizada, y el fallback al contador debe seguir aplicando
+     * sin lanzar excepción, aunque tenga un `position` en bruto asignado.
+     */
+    @Test
+    void teamNumber_fallsBackToNextFreeNumber_forPairRegisteredStatus() {
+        Long tournamentId = createTournament();
+        TournamentRegistration reg = registrationRepository.save(TournamentRegistration.builder()
+                .tournament(tournamentRepository.findById(tournamentId).orElseThrow())
+                .player(createSoloPlayer(tournamentId))
+                .status(RegistrationStatus.PAIR_REGISTERED)
+                .position(7)
+                .isDoubleRegistration(true)
+                .mainPlayerId(null)
+                .partnerFirstName("Partner")
+                .partnerLastName("PairRegistered")
+                .build());
+
+        AmericanoTeam team = playoffService.addTeamFromRegistration(tournamentId, reg.getId(), true, true);
+
+        assertThat(team.getTeamNumber()).isEqualTo(1);
+    }
+
     /** Смешение путей создания команды: ручная команда уже заняла номер 3 — импорт из регистрации с той же позицией не должен на неё покуситься. */
     @Test
     void teamNumber_fallsBackToNextFreeNumber_whenPositionAlreadyTakenByAnotherTeam() {
