@@ -28,6 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -236,6 +237,104 @@ public class TeamPlayoffService {
                 t1.getDisplayName(), t2.getDisplayName(), courtNumber);
         webSocketService.notifyTeamPlayoffMatchCreated(tournamentId, toMatchDto(saved));
         return saved;
+    }
+
+    /**
+     * LFPT-367: pone en cola una pareja de calificación sin cancha asignada — para cuando todas las
+     * canchas están ocupadas pero ya se puede determinar el próximo partido entre dos equipos libres.
+     * A partir de aquí ambos equipos cuentan como ocupados (ver {@link AmericanoMatch#isActive()}),
+     * igual que si ya estuvieran jugando. El orden de la cola es por {@code createdAt} — ver {@link #getQueue}.
+     */
+    @Transactional
+    public AmericanoMatch queueQualificationMatch(Long tournamentId, Long team1Id, Long team2Id) {
+        Tournament tournament = getTournament(tournamentId);
+        validateTournamentType(tournament);
+
+        if (team1Id.equals(team2Id)) {
+            throw new InvalidStateException("Un equipo no puede jugar contra sí mismo");
+        }
+
+        AmericanoTeam t1 = getActiveTeam(team1Id);
+        AmericanoTeam t2 = getActiveTeam(team2Id);
+
+        validateTeamAvailableForQualification(tournamentId, t1);
+        validateTeamAvailableForQualification(tournamentId, t2);
+
+        AmericanoRound round = getOrCreateQualificationRound(tournament, null);
+        int matchNumber = nextMatchNumber(round.getId());
+
+        AmericanoMatch saved = matchRepository.save(buildQueuedQualMatch(t1, t2, round, tournament, matchNumber));
+        log.info("Qualification match queued (LFPT-367, no court yet): {} vs {}",
+                t1.getDisplayName(), t2.getDisplayName());
+        webSocketService.notifyTeamPlayoffMatchCreated(tournamentId, toMatchDto(saved));
+        return saved;
+    }
+
+    /**
+     * LFPT-367: asigna una cancha libre a un partido que estaba en cola — lo pasa a EN_CURSO.
+     * A diferencia de {@link #changeMatchCourt} (cambia la cancha de un partido ya en curso), este
+     * es el único camino válido para que un partido salga de la cola de espera.
+     */
+    @Transactional
+    public AmericanoMatch assignCourtToQueuedMatch(Long matchId, int courtNumber) {
+        AmericanoMatch match = matchRepository.findById(matchId)
+                .orElseThrow(() -> new ResourceNotFoundException("Match not found: " + matchId));
+        if (!match.isQueued()) {
+            throw new InvalidStateException("Este partido no está en la cola de espera");
+        }
+        Long tournamentId = match.getTournament().getId();
+        validateCourtFree(tournamentId, courtNumber);
+
+        match.setCourtNumber(courtNumber);
+        match.setStatus(AmericanoRoundStatus.IN_PROGRESS);
+        match.setStartedAt(LocalDateTime.now());
+        AmericanoMatch saved = matchRepository.save(match);
+        log.info("Queued match {} assigned to court {} (LFPT-367)", matchId, courtNumber);
+        webSocketService.notifyTeamPlayoffMatchUpdated(tournamentId, toMatchDto(saved));
+        return saved;
+    }
+
+    /**
+     * LFPT-367: quita un partido de la cola por completo — ambos equipos vuelven al pool de
+     * disponibles para una nueva pareja. Solo mientras el partido sigue {@code QUEUED}.
+     */
+    @Transactional
+    public void removeFromQueue(Long matchId) {
+        AmericanoMatch match = matchRepository.findById(matchId)
+                .orElseThrow(() -> new ResourceNotFoundException("Match not found: " + matchId));
+        if (!match.isQueued()) {
+            throw new InvalidStateException("Este partido no está en la cola de espera");
+        }
+        Long tournamentId = match.getTournament().getId();
+        matchRepository.delete(match);
+        log.info("Queued match {} removed from queue (LFPT-367)", matchId);
+        webSocketService.notifyTeamPlayoffMatchRemoved(tournamentId, matchId);
+    }
+
+    /**
+     * LFPT-367: partidos de calificación en cola, ordenados por tiempo de espera — el que lleva
+     * más tiempo en cola primero (ТЗ: "la pareja que espera más tiempo va primero"). Aquí y no en
+     * {@link #toMatchDto} porque {@code queuePosition}/{@code waitingMinutes} dependen del orden de
+     * toda la cola, no del partido en sí mismo.
+     */
+    public List<AmericanoMatchDto> getQueue(Long tournamentId) {
+        List<AmericanoMatch> queued = matchRepository
+                .findByTournamentIdAndPhase(tournamentId, TournamentPhase.QUALIFICATION)
+                .stream()
+                .filter(AmericanoMatch::isQueued)
+                .sorted(Comparator.comparing(AmericanoMatch::getCreatedAt))
+                .toList();
+
+        List<AmericanoMatchDto> result = new ArrayList<>();
+        LocalDateTime now = LocalDateTime.now();
+        for (int i = 0; i < queued.size(); i++) {
+            AmericanoMatch m = queued.get(i);
+            AmericanoMatchDto dto = toMatchDto(m);
+            dto.setQueuePosition(i + 1);
+            dto.setWaitingMinutes(Duration.between(m.getCreatedAt(), now).toMinutes());
+            result.add(dto);
+        }
+        return result;
     }
 
     /**
@@ -1004,7 +1103,7 @@ public class TeamPlayoffService {
 
         boolean busyElsewhere = matchRepository.findByTournamentIdOrderByRoundIdAscMatchNumberAsc(tournamentId)
                 .stream()
-                .anyMatch(m -> !m.getId().equals(matchId) && m.isInProgress()
+                .anyMatch(m -> !m.getId().equals(matchId) && m.isActive()
                         && (newTeamId.equals(m.getTeam1Id()) || newTeamId.equals(m.getTeam2Id())));
         if (busyElsewhere) {
             throw new InvalidStateException("El equipo " + newTeam.getDisplayName() + " ya está jugando otro partido");
@@ -1154,7 +1253,7 @@ public class TeamPlayoffService {
                 .filter(this::isAttended)
                 .filter(t -> {
                     List<AmericanoMatch> matches = getTeamQualMatches(tournamentId, t.getId());
-                    boolean busy = matches.stream().anyMatch(AmericanoMatch::isInProgress);
+                    boolean busy = matches.stream().anyMatch(AmericanoMatch::isActive);
                     long completedCount = matches.stream().filter(AmericanoMatch::isCompleted).count();
                     return !busy && completedCount == 1;
                 })
@@ -1232,8 +1331,8 @@ public class TeamPlayoffService {
 
         List<AmericanoMatch> teamQualMatches = getTeamQualMatches(tournamentId, team.getId());
 
-        if (teamQualMatches.stream().anyMatch(AmericanoMatch::isInProgress)) {
-            throw new InvalidStateException("El equipo " + team.getDisplayName() + " ya está jugando otro partido");
+        if (teamQualMatches.stream().anyMatch(AmericanoMatch::isActive)) {
+            throw new InvalidStateException("El equipo " + team.getDisplayName() + " ya está jugando otro partido o está en la cola de espera");
         }
         if (teamQualMatches.size() >= 2) {
             throw new InvalidStateException(
@@ -1241,10 +1340,10 @@ public class TeamPlayoffService {
         }
     }
 
-    /** Команда ещё может сыграть квалификационный матч: не занята сейчас и не отыграла лимит в 2 матча. */
+    /** Команда ещё может сыграть квалификационный матч: не занята сейчас (в игре или в очереди) и не отыграла лимит в 2 матча. */
     private boolean hasQualificationCapacity(Long tournamentId, Long teamId) {
         List<AmericanoMatch> teamQualMatches = getTeamQualMatches(tournamentId, teamId);
-        boolean busy = teamQualMatches.stream().anyMatch(AmericanoMatch::isInProgress);
+        boolean busy = teamQualMatches.stream().anyMatch(AmericanoMatch::isActive);
         return !busy && teamQualMatches.size() < 2;
     }
 
@@ -1292,6 +1391,25 @@ public class TeamPlayoffService {
                 .status(AmericanoRoundStatus.IN_PROGRESS)
                 .startedAt(LocalDateTime.now())
                 .courtNumber(courtNumber)
+                .note(t1.getDisplayName() + " vs " + t2.getDisplayName())
+                .build();
+    }
+
+    /** LFPT-367: как {@link #buildQualMatch}, pero sin cancha/startedAt — status QUEUED en vez de IN_PROGRESS. */
+    private AmericanoMatch buildQueuedQualMatch(AmericanoTeam t1, AmericanoTeam t2, AmericanoRound round,
+                                                 Tournament tournament, int matchNumber) {
+        return AmericanoMatch.builder()
+                .round(round)
+                .tournament(tournament)
+                .matchNumber(matchNumber)
+                .team1Id(t1.getId())
+                .team2Id(t2.getId())
+                .team1Player1(t1.getPlayer1())
+                .team1Player2(t1.getPlayer2())
+                .team2Player1(t2.getPlayer1())
+                .team2Player2(t2.getPlayer2())
+                .isDoubles(true)
+                .status(AmericanoRoundStatus.QUEUED)
                 .note(t1.getDisplayName() + " vs " + t2.getDisplayName())
                 .build();
     }
@@ -1380,6 +1498,12 @@ public class TeamPlayoffService {
             return;
         }
 
+        Optional<AmericanoMatch> queuedMatch = teamMatches.stream().filter(AmericanoMatch::isQueued).findFirst();
+        if (queuedMatch.isPresent()) {
+            applyQueueInfo(dto, tournamentId, team.getId(), queuedMatch.get());
+            return;
+        }
+
         List<AmericanoMatch> playoffMatches = teamMatches.stream()
                 .filter(m -> m.getPlayoffStage() != null)
                 .toList();
@@ -1392,6 +1516,17 @@ public class TeamPlayoffService {
         }
 
         dto.setTournamentStatus("WAITING");
+    }
+
+    /** LFPT-367: posición en la cola y nombre del rival — para el estado público "en cola" (ТЗ §12 extendido). */
+    private void applyQueueInfo(AmericanoTeamDto dto, Long tournamentId, Long teamId, AmericanoMatch queuedMatch) {
+        dto.setTournamentStatus("QUEUED");
+        getQueue(tournamentId).stream()
+                .filter(m -> m.getId().equals(queuedMatch.getId()))
+                .findFirst()
+                .ifPresent(m -> dto.setQueuePosition(m.getQueuePosition()));
+        Long opponentId = teamId.equals(queuedMatch.getTeam1Id()) ? queuedMatch.getTeam2Id() : queuedMatch.getTeam1Id();
+        dto.setQueueOpponentName(teamDisplayName(opponentId));
     }
 
     private int[] gamesForAndAgainst(AmericanoMatch match, Long teamId) {

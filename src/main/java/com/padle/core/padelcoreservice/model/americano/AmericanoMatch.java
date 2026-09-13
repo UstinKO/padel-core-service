@@ -139,6 +139,16 @@ public class AmericanoMatch {
         return status == AmericanoRoundStatus.IN_PROGRESS;
     }
 
+    /** LFPT-367: equipos ya emparejados, esperando cancha libre — sin cancha asignada todavía. */
+    public boolean isQueued() {
+        return status == AmericanoRoundStatus.QUEUED;
+    }
+
+    /** Ocupado en cualquier sentido "el equipo no está libre" — jugando o en cola (LFPT-367). */
+    public boolean isActive() {
+        return isInProgress() || isQueued();
+    }
+
     public String getTeam1DisplayName() {
         if (isDoubles) {
             return (team1Player1 != null ? team1Player1.getNombre() + " " + team1Player1.getApellido() : "?") +

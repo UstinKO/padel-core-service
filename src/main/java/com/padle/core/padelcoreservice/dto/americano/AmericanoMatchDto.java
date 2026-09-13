@@ -65,4 +65,10 @@ public class AmericanoMatchDto {
 
     /** Play-in (T13, ТЗ §32): матч желательно запустить как можно раньше. */
     private Boolean priority;
+
+    /** LFPT-367: позиция в очереди ожидания корта (1 = следующий) — заполняется только в {@code TeamPlayoffService#getQueue}. */
+    private Integer queuePosition;
+
+    /** LFPT-367: сколько минут матч уже ждёт корта — заполняется только в {@code TeamPlayoffService#getQueue}. */
+    private Long waitingMinutes;
 }
