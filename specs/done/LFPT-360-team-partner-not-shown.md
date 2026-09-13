@@ -1,7 +1,7 @@
 # LFPT-360: Второй игрок команды пропадает из отображения матчей, если он не зарегистрирован на сайте
 
 ## Статус
-approved
+done — смержено в [PR #361](https://github.com/UstinKO/padel-core-service/pull/361), деплой подтверждён успешным ([run #245](https://github.com/UstinKO/padel-core-service/actions/runs/34762137953)).
 
 ## Источник
 Клиентский запрос [specs/requests/LFPT-360-team-partner-not-shown.md](../requests/LFPT-360-team-partner-not-shown.md) (жалоба организатора во время реального турнира) + технический разбор в GitHub issue [#360](https://github.com/UstinKO/padel-core-service/issues/360) (создан отдельно на основе того же репорта, скриншот через Telegram-канал поддержки — тот же баг, тот же турнир).
