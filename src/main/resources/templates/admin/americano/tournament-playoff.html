@@ -441,10 +441,23 @@
                             <i class="fas fa-play"></i>
                             <span th:text="#{admin.playoff.qual.new_match.submit}">Crear partido</span>
                         </button>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="addToQueue()">
+                            <i class="fas fa-clock"></i>
+                            <span th:text="#{admin.playoff.qual.new_match.add_to_queue}">Agregar a la cola</span>
+                        </button>
                     </div>
                     <p id="newMatchHint" style="margin:.5rem 0 0;font-size:.8rem;color:#94a3b8"></p>
                     <p id="qualDoneHint" style="margin:.35rem 0 0;font-size:.78rem;color:#94a3b8"></p>
                     <div id="newMatchSuggestions" style="margin-top:.5rem;display:flex;flex-direction:column;gap:.35rem"></div>
+                </div>
+
+                <!-- LFPT-367: cola de espera — parejas ya formadas, sin cancha asignada todavía -->
+                <div style="border-bottom:1px solid #e2e8f0">
+                    <h4 style="margin:1rem 1.5rem 0;font-size:.9rem;color:#1e293b">
+                        <i class="fas fa-clock" style="color:#FF6B35"></i>
+                        <span th:text="#{admin.playoff.queue.title}">Partidos en cola</span>
+                    </h4>
+                    <div id="queueList" style="padding:.75rem 1.5rem;display:flex;flex-direction:column;gap:.6rem"></div>
                 </div>
 
                 <!-- Раунды квалификации -->
@@ -720,6 +733,12 @@
     const MSG_GROUP_DONE = /*[[#{admin.playoff.qual.new_match.group_done}]]*/ '';
     const MSG_WON_FIRST = /*[[#{admin.playoff.qual.new_match.won_first}]]*/ '';
     const MSG_LOST_FIRST = /*[[#{admin.playoff.qual.new_match.lost_first}]]*/ '';
+    const MSG_QUEUE_EMPTY = /*[[#{admin.playoff.queue.empty}]]*/ '';
+    const MSG_QUEUE_WAITING = /*[[#{admin.playoff.queue.waiting}]]*/ '';
+    const MSG_QUEUE_ASSIGN = /*[[#{admin.playoff.queue.assign_court}]]*/ '';
+    const MSG_QUEUE_REMOVE = /*[[#{admin.playoff.queue.remove}]]*/ '';
+    const MSG_QUEUE_REMOVE_CONFIRM = /*[[#{admin.playoff.queue.remove_confirm}]]*/ '';
+    const MSG_QUEUE_NO_COURTS = /*[[#{admin.playoff.qual.new_match.no_courts}]]*/ '';
     new TeamPlayoffRealtime(TOURNAMENT_ID);
 
     // ─── localStorage backup для незакрытых счётов ────────────────────────
@@ -826,6 +845,7 @@
 
         renderSuggestions(data.courts || []);
         renderCourtBoardGrid(data.courts || []);
+        renderQueueList(data.queue || [], data.courts || []);
     }
 
     // ── Доска кортов (T11): статус каждого корта прямо сейчас ───────────
@@ -933,6 +953,123 @@
                 }
             })
             .catch(() => alert('Error de red'));
+    }
+
+    // LFPT-367: igual que createQualMatch(), pero sin cancha — el partido queda en cola de espera.
+    function addToQueue() {
+        const team1Id = document.getElementById('newMatchTeam1')?.value;
+        const team2Id = document.getElementById('newMatchTeam2')?.value;
+
+        if (!team1Id || !team2Id) { alert(MSG_NO_TEAMS); return; }
+        if (team1Id === team2Id) { alert('Selecciona dos equipos diferentes.'); return; }
+
+        fetch('/tournaments/team-playoff/api/' + TOURNAMENT_ID + '/qual-matches/queue', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({team1Id: Number(team1Id), team2Id: Number(team2Id)})
+        })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.message || 'Error');
+                }
+            })
+            .catch(() => alert('Error de red'));
+    }
+
+    // LFPT-367: bloque "Partidos en cola" — ordenado por tiempo de espera, con acciones por fila.
+    function renderQueueList(queue, courts) {
+        const box = document.getElementById('queueList');
+        if (!box) return;
+
+        if (!queue.length) {
+            box.innerHTML = `<p class="tbd" style="margin:0;font-size:.85rem">${MSG_QUEUE_EMPTY}</p>`;
+            return;
+        }
+
+        const freeCourts = (courts || []).filter(c => !c.occupied).map(c => c.courtNumber);
+
+        box.innerHTML = queue.map(m => `
+            <div class="match-card" id="queue-match-${m.id}" style="margin:0">
+                <div class="match-header">
+                    <span class="info-pill">#${m.queuePosition}</span>
+                    <span style="font-size:.75rem;color:#94a3b8">${MSG_QUEUE_WAITING.replace('{0}', m.waitingMinutes)}</span>
+                </div>
+                <div class="match-body">
+                    <div class="team-left">
+                        <div class="team-name">${(m.team1Number ? '№' + m.team1Number + ' ' : '') + (m.team1Player1Name || 'TBD')}</div>
+                        <button type="button" class="icon-btn" onclick="toggleTeamEdit(${m.id}, 1)" title="Cambiar equipo">
+                            <i class="fas fa-exchange-alt"></i>
+                        </button>
+                        <div id="team-edit-${m.id}-1" class="inline-edit">
+                            <select></select>
+                            <button type="button" class="save-btn" onclick="submitTeamChange(${m.id}, 1)">OK</button>
+                        </div>
+                    </div>
+                    <div class="vs-block"><span class="vs-badge">VS</span></div>
+                    <div class="team-right">
+                        <div class="team-name">${(m.team2Number ? '№' + m.team2Number + ' ' : '') + (m.team2Player1Name || 'TBD')}</div>
+                        <button type="button" class="icon-btn" onclick="toggleTeamEdit(${m.id}, 2)" title="Cambiar equipo">
+                            <i class="fas fa-exchange-alt"></i>
+                        </button>
+                        <div id="team-edit-${m.id}-2" class="inline-edit">
+                            <select></select>
+                            <button type="button" class="save-btn" onclick="submitTeamChange(${m.id}, 2)">OK</button>
+                        </div>
+                    </div>
+                </div>
+                <div style="display:flex;gap:.5rem;align-items:center;margin-top:.5rem;flex-wrap:wrap">
+                    <select id="queue-court-${m.id}" class="form-control" style="width:auto">
+                        ${freeCourts.length
+                            ? freeCourts.map(c => `<option value="${c}">Cancha ${c}</option>`).join('')
+                            : `<option value="">—</option>`}
+                    </select>
+                    <button type="button" class="btn btn-primary btn-sm" ${freeCourts.length ? '' : 'disabled'}
+                            onclick="assignCourtFromQueue(${m.id})" title="${freeCourts.length ? '' : MSG_QUEUE_NO_COURTS}">
+                        <i class="fas fa-play"></i> ${MSG_QUEUE_ASSIGN}
+                    </button>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="removeFromQueueAction(${m.id})">
+                        <i class="fas fa-times"></i> ${MSG_QUEUE_REMOVE}
+                    </button>
+                </div>
+            </div>`).join('');
+    }
+
+    function assignCourtFromQueue(matchId) {
+        const courtNumber = document.getElementById('queue-court-' + matchId)?.value;
+        if (!courtNumber) { showToast(MSG_QUEUE_NO_COURTS); return; }
+
+        fetch('/tournaments/team-playoff/api/matches/' + matchId + '/assign-court', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({courtNumber: Number(courtNumber)})
+        })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    showToast(data.message || 'Error');
+                }
+            })
+            .catch(() => showToast('Error de red'));
+    }
+
+    function removeFromQueueAction(matchId) {
+        if (!confirm(MSG_QUEUE_REMOVE_CONFIRM)) return;
+
+        fetch('/tournaments/team-playoff/api/matches/' + matchId + '/queue/remove', {method: 'POST'})
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    refreshCourtBoard();
+                } else {
+                    showToast(data.message || 'Error');
+                }
+            })
+            .catch(() => showToast('Error de red'));
     }
 
     window.addEventListener('team-playoff-update', refreshCourtBoard);

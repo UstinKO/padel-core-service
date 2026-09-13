@@ -305,6 +305,63 @@ public class TeamPlayoffViewController {
         return ResponseEntity.ok(result);
     }
 
+    /** LFPT-367: ставит пару в очередь без назначения корта. */
+    @PostMapping("/api/{tournamentId}/qual-matches/queue")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> queueQualMatchApi(
+            @PathVariable Long tournamentId,
+            @RequestBody Map<String, Object> body) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            Long team1Id = Long.valueOf(String.valueOf(body.get("team1Id")));
+            Long team2Id = Long.valueOf(String.valueOf(body.get("team2Id")));
+            AmericanoMatch match = playoffService.queueQualificationMatch(tournamentId, team1Id, team2Id);
+            result.put("success", true);
+            result.put("match", playoffService.toMatchDto(match));
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", e.getMessage());
+        }
+        return ResponseEntity.ok(result);
+    }
+
+    /** LFPT-367: asigna una cancha libre a un partido de la cola — sale de la cola y pasa a EN_CURSO. */
+    @PostMapping("/api/matches/{matchId}/assign-court")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> assignCourtToQueuedMatchApi(
+            @PathVariable Long matchId,
+            @RequestBody Map<String, Object> body) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            int courtNumber = Integer.parseInt(String.valueOf(body.get("courtNumber")));
+            AmericanoMatch match = playoffService.assignCourtToQueuedMatch(matchId, courtNumber);
+            result.put("success", true);
+            result.put("match", playoffService.toMatchDto(match));
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", e.getMessage());
+        }
+        return ResponseEntity.ok(result);
+    }
+
+    /** LFPT-367: quita un partido de la cola de espera por completo. */
+    @PostMapping("/api/matches/{matchId}/queue/remove")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> removeFromQueueApi(@PathVariable Long matchId) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            playoffService.removeFromQueue(matchId);
+            result.put("success", true);
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", e.getMessage());
+        }
+        return ResponseEntity.ok(result);
+    }
+
     /** Меняет корт ещё не завершённого матча (T11 — ручное управление координатором). */
     @PostMapping("/api/matches/{matchId}/court")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
@@ -455,6 +512,7 @@ public class TeamPlayoffViewController {
         result.put("courts", courts);
         result.put("availableTeams", playoffService.getAvailableTeamsForQualification(tournamentId));
         result.put("teamGroups", playoffService.getQualificationTeamGroups(tournamentId));
+        result.put("queue", playoffService.getQueue(tournamentId));
         return ResponseEntity.ok(result);
     }
 
@@ -464,7 +522,11 @@ public class TeamPlayoffViewController {
 
     private List<AmericanoRoundDto> buildRoundDtos(List<AmericanoRound> rounds) {
         return rounds.stream().map(round -> {
-            List<AmericanoMatch> matches = matchRepository.findByRoundId(round.getId());
+            // LFPT-367: los partidos en cola (sin cancha aún) tienen su propio bloque ("Cola de espera") —
+            // no se listan aquí junto a los partidos ya jugados/en curso de la ronda.
+            List<AmericanoMatch> matches = matchRepository.findByRoundId(round.getId()).stream()
+                    .filter(m -> !m.isQueued())
+                    .toList();
 
             AmericanoRoundDto dto = new AmericanoRoundDto();
             dto.setId(round.getId());

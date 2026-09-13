@@ -57,8 +57,14 @@ public class AmericanoTeamDto {
     /** TWO_WINS / SPLIT / TWO_LOSSES / PENDING (ещё не сыграны оба квалификационных матча) — ТЗ §6/§30 */
     private String qualStatus;
 
-    /** PLAYING / WAITING / ADVANCED / ELIMINATED / CHAMPION / RUNNER_UP — текущее положение в турнире (ТЗ §12) */
+    /** PLAYING / WAITING / QUEUED / ADVANCED / ELIMINATED / CHAMPION / RUNNER_UP — текущее положение в турнире (ТЗ §12) */
     private String tournamentStatus;
+
+    /** LFPT-367: позиция в очереди ожидания корта (1 = следующий) — заполняется только когда tournamentStatus == "QUEUED". */
+    private Integer queuePosition;
+
+    /** LFPT-367: соперник по уже сформированной, но ещё не назначенной на корт паре. */
+    private String queueOpponentName;
 
     // Данные регистрации (AMERICANO_TEAMS)
     private String registrationSource;
