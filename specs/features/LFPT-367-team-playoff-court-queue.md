@@ -5,6 +5,7 @@ approved
 
 ## Источник
 GitHub issue [#367](https://github.com/UstinKO/padel-core-service/issues/367) — прямая техническая постановка от архитектора по итогам клиентского фидбека (Telegram, тема "AI Разработка"), без промежуточного файла-запроса в `specs/requests/`.
+Telegram-сообщение (для reply): 4273
 
 ## Контекст / зачем
 
