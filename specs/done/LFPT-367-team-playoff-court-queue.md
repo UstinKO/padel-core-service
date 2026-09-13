@@ -1,7 +1,7 @@
 # LFPT-367: очередь пар без назначения корта (Team Playoff, квалификация)
 
 ## Статус
-approved
+done — задеплоено в prod, [PR #368](https://github.com/UstinKO/padel-core-service/pull/368), деплой подтверждён успешным ([run 34766411122](https://github.com/UstinKO/padel-core-service/actions/runs/34766411122), commit `f6ff7bd`)
 
 ## Источник
 GitHub issue [#367](https://github.com/UstinKO/padel-core-service/issues/367) — прямая техническая постановка от архитектора по итогам клиентского фидбека (Telegram, тема "AI Разработка"), без промежуточного файла-запроса в `specs/requests/`.
