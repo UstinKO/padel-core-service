@@ -15,6 +15,7 @@ import com.padle.core.padelcoreservice.service.TournamentService;
 import com.padle.core.padelcoreservice.service.americano.TeamAmericanoService;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoRoundRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoMatchRepository;
+import com.padle.core.padelcoreservice.repository.americano.AmericanoTeamRepository;
 import com.padle.core.padelcoreservice.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +41,7 @@ public class TeamAmericanoViewController {
     private final TournamentService tournamentService;
     private final AmericanoRoundRepository roundRepository;
     private final AmericanoMatchRepository matchRepository;
+    private final AmericanoTeamRepository teamRepository;
 
     // ══════════════════════════════════════════════════════════════════════
     // ПУБЛИЧНАЯ СТРАНИЦА ТУРНИРА
@@ -384,6 +386,8 @@ public class TeamAmericanoViewController {
         dto.setTeam2Score(m.getTeam2Score());
         dto.setNote(m.getNote());
 
+        Long tournamentId = m.getTournament().getId();
+
         // Команда 1
         if (m.getTeam1Player1() != null) {
             dto.setTeam1Player1Id(m.getTeam1Player1().getId());
@@ -394,6 +398,11 @@ public class TeamAmericanoViewController {
             dto.setTeam1Player2Id(m.getTeam1Player2().getId());
             dto.setTeam1Player2Name(
                     m.getTeam1Player2().getNombre() + " " + m.getTeam1Player2().getApellido());
+        } else if (m.getTeam1Player1() != null) {
+            // LFPT-360: гостевой (незарегистрированный) второй игрок — имя лежит в AmericanoTeam.player2Name,
+            // FK team1Player2 на матче для него не заполняется.
+            teamRepository.findByTournamentIdAndPlayer1Id(tournamentId, m.getTeam1Player1().getId())
+                    .ifPresent(t -> dto.setTeam1Player2Name(t.getPlayer2Name()));
         }
         // Команда 2
         if (m.getTeam2Player1() != null) {
@@ -405,9 +414,12 @@ public class TeamAmericanoViewController {
             dto.setTeam2Player2Id(m.getTeam2Player2().getId());
             dto.setTeam2Player2Name(
                     m.getTeam2Player2().getNombre() + " " + m.getTeam2Player2().getApellido());
+        } else if (m.getTeam2Player1() != null) {
+            teamRepository.findByTournamentIdAndPlayer1Id(tournamentId, m.getTeam2Player1().getId())
+                    .ifPresent(t -> dto.setTeam2Player2Name(t.getPlayer2Name()));
         }
 
-        dto.setTournamentId(m.getTournament().getId());
+        dto.setTournamentId(tournamentId);
         return dto;
     }
 }

@@ -2056,10 +2056,19 @@ public class TeamPlayoffService {
             dto.setTeam1Player1Name(
                     m.getTeam1Player1().getNombre() + " " + m.getTeam1Player1().getApellido());
         }
+        // LFPT-307: номер команды нужен на карточке матча (квалификация, 1/8, 1/4, полуфинал, финал).
+        // Заодно переиспользуем эту же команду для LFPT-360 (гостевой второй игрок) — не делать два похода в БД.
+        Optional<AmericanoTeam> team1 = m.getTeam1Id() != null ? teamRepository.findById(m.getTeam1Id()) : Optional.empty();
+        Optional<AmericanoTeam> team2 = m.getTeam2Id() != null ? teamRepository.findById(m.getTeam2Id()) : Optional.empty();
+
         if (m.getTeam1Player2() != null) {
             dto.setTeam1Player2Id(m.getTeam1Player2().getId());
             dto.setTeam1Player2Name(
                     m.getTeam1Player2().getNombre() + " " + m.getTeam1Player2().getApellido());
+        } else {
+            // LFPT-360: гостевой (незарегистрированный) второй игрок — имя лежит в AmericanoTeam.player2Name,
+            // FK team1Player2 на матче для него не заполняется.
+            team1.ifPresent(t -> dto.setTeam1Player2Name(t.getPlayer2Name()));
         }
         if (m.getTeam2Player1() != null) {
             dto.setTeam2Player1Id(m.getTeam2Player1().getId());
@@ -2070,6 +2079,8 @@ public class TeamPlayoffService {
             dto.setTeam2Player2Id(m.getTeam2Player2().getId());
             dto.setTeam2Player2Name(
                     m.getTeam2Player2().getNombre() + " " + m.getTeam2Player2().getApellido());
+        } else {
+            team2.ifPresent(t -> dto.setTeam2Player2Name(t.getPlayer2Name()));
         }
 
         dto.setTeam1Games(m.getTeam1Games());
@@ -2079,13 +2090,8 @@ public class TeamPlayoffService {
         }
         dto.setPriority(Boolean.TRUE.equals(m.getPriority()));
 
-        // LFPT-307: номер команды нужен на карточке матча (квалификация, 1/8, 1/4, полуфинал, финал).
-        if (m.getTeam1Id() != null) {
-            teamRepository.findById(m.getTeam1Id()).ifPresent(t -> dto.setTeam1Number(t.getTeamNumber()));
-        }
-        if (m.getTeam2Id() != null) {
-            teamRepository.findById(m.getTeam2Id()).ifPresent(t -> dto.setTeam2Number(t.getTeamNumber()));
-        }
+        team1.ifPresent(t -> dto.setTeam1Number(t.getTeamNumber()));
+        team2.ifPresent(t -> dto.setTeam2Number(t.getTeamNumber()));
 
         return dto;
     }
