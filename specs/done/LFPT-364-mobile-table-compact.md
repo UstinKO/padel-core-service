@@ -1,7 +1,7 @@
 # LFPT-364: Компактные таблицы рейтинга/квалификации на мобильных экранах
 
 ## Статус
-approved
+done — задеплоено в PR #365 (run 34763991403, commit 30a06f3833d31af474a11b28b729be15ab3b2d28)
 
 ## Источник
 GitHub issue [#364](https://github.com/UstinKO/padel-core-service/issues/364), заведён конвейером `/develop-feature` (режим cloud) по прямой технической задаче архитектора, пришедшей через Telegram (скриншот + короткое описание). Прямой вход, `specs/requests/` не создавался.
