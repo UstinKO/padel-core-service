@@ -1,0 +1,37 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.47-add-nivel-categories
+      author: padel-core
+      changes:
+        - sql:
+            sql: |
+              -- LFPT-373: amplía las categorías/niveles de torneo (mujer D9-D4 completo,
+              -- parejas adyacentes masculinas y femeninas completas, mixto Suma 10-16).
+              ALTER TABLE tournaments_db
+                DROP CONSTRAINT IF EXISTS tournaments_db_categoria_nivel_check;
+
+              ALTER TABLE tournaments_db
+                ADD CONSTRAINT tournaments_db_categoria_nivel_check
+                CHECK (categoria_nivel IN (
+                  'C9', 'C8', 'C7', 'C6', 'C5', 'C4',
+                  'C9_C8', 'C8_C7', 'C7_C6', 'C6_C5', 'C5_C4',
+                  'D9', 'D8', 'D7', 'D6', 'D5', 'D4',
+                  'D9_D8', 'D7_D8', 'D7_D6', 'D6_D5', 'D5_D4',
+                  'SUMA_16', 'SUMA_15', 'SUMA_14', 'SUMA_13', 'SUMA_12', 'SUMA_11', 'SUMA_10',
+                  'PRINCIPIANTES', 'TODOS'
+                ));
+      rollback:
+        - sql:
+            sql: |
+              ALTER TABLE tournaments_db
+                DROP CONSTRAINT IF EXISTS tournaments_db_categoria_nivel_check;
+
+              ALTER TABLE tournaments_db
+                ADD CONSTRAINT tournaments_db_categoria_nivel_check
+                CHECK (categoria_nivel IN (
+                  'C9', 'C8', 'C7', 'C6', 'C5', 'PRINCIPIANTES',
+                  'SUMA_16', 'SUMA_15', 'SUMA_13',
+                  'D9', 'D7', 'D8', 'D7_D8', 'D6', 'C7_C6',
+                  'C4', 'SUMA_14',
+                  'TODOS'
+                ));

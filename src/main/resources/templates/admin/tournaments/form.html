@@ -157,6 +157,7 @@
                                     id="generoFormato"
                                     class="form-control"
                                     th:classappend="${#fields.hasErrors('generoFormato')} ? 'is-invalid' : ''"
+                                    onchange="onGeneroChange()"
                                     required>
                                 <option value="" th:text="#{admin.tournaments.form.field.gender.select}">Seleccione formato</option>
                                 <option th:each="formato : ${genderFormats}"
@@ -177,6 +178,7 @@
                                 <option value="" th:text="#{admin.tournaments.form.field.level.select}">Seleccione nivel</option>
                                 <option th:each="nivel : ${niveles}"
                                         th:value="${nivel}"
+                                        th:attr="data-genero=${nivel.generoAplicableNombre}"
                                         th:text="${nivel.display}"></option>
                             </select>
                             <div class="invalid-feedback" th:if="${#fields.hasErrors('categoriaNivel')}"
@@ -362,6 +364,36 @@
 
 <!-- Скрипт для автоматического расчета даты отмены -->
 <script>
+    // LFPT-373: filtra las opciones de "Categoría / Nivel" según el "Formato de Género"
+    // seleccionado. Las opciones sin data-genero (valores legacy, sólo presentes cuando
+    // ya son el valor actual del torneo) se muestran siempre, sin importar el género.
+    function onGeneroChange() {
+        const generoSelect = document.getElementById('generoFormato');
+        const nivelSelect = document.getElementById('categoriaNivel');
+        if (!generoSelect || !nivelSelect) {
+            return;
+        }
+        const genero = generoSelect.value;
+        let selectedStillVisible = false;
+
+        Array.from(nivelSelect.options).forEach(function (opt) {
+            if (!opt.value) {
+                return; // placeholder "Seleccione nivel"
+            }
+            const optGenero = opt.getAttribute('data-genero');
+            const visible = !genero || !optGenero || optGenero === genero;
+            opt.hidden = !visible;
+            opt.disabled = !visible;
+            if (visible && opt.selected) {
+                selectedStillVisible = true;
+            }
+        });
+
+        if (!selectedStillVisible) {
+            nivelSelect.value = '';
+        }
+    }
+
     function onTipoChange(sel) {
         const modalidadGroup = document.getElementById('modalidadGroup');
         const modalidadSelect = document.getElementById('modalidad');
@@ -397,6 +429,8 @@
     document.addEventListener('DOMContentLoaded', function() {
         // Применяем логику для уже выбранного типа (при редактировании)
         onTipoChange(null);
+        // LFPT-373: применяем фильтрацию уровней для уже выбранного пола (при редактировании)
+        onGeneroChange();
 
         const fechaInicio = document.getElementById('fechaInicio');
         const horaInicio = document.getElementById('horaInicio');

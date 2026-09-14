@@ -67,7 +67,9 @@ public class AdminTournamentCopyController {
         model.addAttribute("tournament", newTournament);
         model.addAttribute("clubs", clubService.getAllClubs());
         model.addAttribute("genderFormats", GenderFormat.values());
-        model.addAttribute("niveles", Nivel.values());
+        // LFPT-373: se conserva el valor legacy del torneo original en la copia
+        // (no desaparece del <select>), pero no se ofrecen otros valores legacy.
+        model.addAttribute("niveles", Nivel.forTournamentForm(Nivel.parseOrNull(sourceTournament.getCategoriaNivel())));
         model.addAttribute("tournamentTypes", TournamentType.values());
         model.addAttribute("modalidades", Modalidad.values());
         model.addAttribute("tournamentStatuses", TournamentStatus.values());
