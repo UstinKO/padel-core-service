@@ -1,7 +1,7 @@
 # LFPT-373: Расширить систему уровней/категорий турнира (мужские/женские/mixto)
 
 ## Статус
-approved
+done — задеплоено в prod, [PR #379](https://github.com/UstinKO/padel-core-service/pull/379), деплой подтверждён успешным ([run 34893948938](https://github.com/UstinKO/padel-core-service/actions/runs/34893948938), commit `9a0d41f`)
 
 ## Источник
 [GitHub issue #373](https://github.com/UstinKO/padel-core-service/issues/373) — клиентский запрос (клуб Black Padel, доработка клубных аккаунтов и создания турниров, пункт 2 "Расширить варианты уровней"), заведён архитектором напрямую как issue с технической постановкой, без промежуточного файла `specs/requests/`. Открытые вопросы issue сняты ответом автора в [комментарии](https://github.com/UstinKO/padel-core-service/issues/373#issuecomment-5669829747):
