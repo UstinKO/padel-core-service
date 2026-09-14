@@ -282,6 +282,29 @@
     text-transform: uppercase;
 }
 
+/* LFPT-374: estado de cupos en la tarjeta pública (reemplaza la fracción "X/Y") */
+.torneo-spots-status {
+    font-weight: 600;
+}
+
+.torneo-spots-status--available {
+    color: var(--color-success);
+}
+
+.torneo-spots-status--limited {
+    padding: 0.15rem 0.6rem;
+    border-radius: 2rem;
+    background: rgba(245, 158, 11, 0.15);
+    color: var(--color-warning);
+}
+
+.torneo-spots-status--full {
+    padding: 0.15rem 0.6rem;
+    border-radius: 2rem;
+    background: rgba(239, 68, 68, 0.12);
+    color: var(--color-error);
+}
+
 .status-registro_abierto {
     background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.2));
     color: var(--color-success);

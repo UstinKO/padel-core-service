@@ -139,7 +139,8 @@ public class AdminController {
             redirectAttributes.addFlashAttribute("errorMessage", "No tienes permiso para crear torneos");
             return "redirect:/admin/tournaments";
         }
-        log.info("Creating new tournament: {} by owner: {}", tournamentDto.getNombre(), owner.getEmail());
+        log.info("Creating new tournament: {} / {} by owner: {}",
+                tournamentDto.getGeneroFormato(), tournamentDto.getCategoriaNivel(), owner.getEmail());
 
         if (bindingResult.hasErrors()) {
             log.warn("Validation errors: {}", bindingResult.getAllErrors());

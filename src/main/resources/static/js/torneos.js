@@ -41,6 +41,17 @@ class TorneosPage {
             'MIXTO': t('enum.genero.mix')
         };
 
+        this.modalidadDisplayMap = {
+            'INDIVIDUAL': t('enum.modalidad.individual'),
+            'DOBLES': t('enum.modalidad.doubles')
+        };
+
+        this.spotsStatusDisplayMap = {
+            'available': t('card.spots.available'),
+            'limited': t('card.spots.limited'),
+            'full': t('card.spots.full')
+        };
+
         this.init();
     }
 
@@ -261,6 +272,10 @@ class TorneosPage {
         const nivelDisplay = this.nivelDisplayMap[tournament.categoriaNivel] || tournament.categoriaNivel || 'N/A';
         const tipoDisplay = this.getTipoTexto(tournament.tipo);
         const generoDisplay = this.generoDisplayMap[tournament.generoFormato] || tournament.generoFormato || 'N/A';
+        const modalidadDisplay = this.modalidadDisplayMap[tournament.modalidad] || tournament.modalidad || '';
+        const direccion = tournament.clubDireccion ? this.escapeHtml(tournament.clubDireccion) : '';
+        const spotsStatus = this.getSpotsStatus(tournament);
+        const spotsStatusText = this.spotsStatusDisplayMap[spotsStatus];
 
         const isAuthenticated = typeof window.isAuthenticated !== 'undefined' ? window.isAuthenticated : false;
 
@@ -281,9 +296,18 @@ class TorneosPage {
                             <i class="fas fa-map-marker-alt"></i>
                             <span>${this.escapeHtml(tournament.clubNombre || t('card.club.unknown'))}</span>
                         </div>
+                        ${direccion ? `
+                        <div class="torneo-info-item">
+                            <i class="fas fa-map-pin"></i>
+                            <span>${direccion}</span>
+                        </div>` : ''}
                         <div class="torneo-info-item">
                             <i class="fas fa-trophy"></i>
                             <span>${tipoDisplay}</span>
+                        </div>
+                        <div class="torneo-info-item">
+                            <i class="fas fa-user-friends"></i>
+                            <span>${modalidadDisplay}</span>
                         </div>
                         <div class="torneo-info-item">
                             <i class="fas fa-tag"></i>
@@ -291,7 +315,7 @@ class TorneosPage {
                         </div>
                         <div class="torneo-info-item">
                             <i class="fas fa-user-check"></i>
-                            <span>Inscritos: ${tournament.inscritosActuales || 0}/${tournament.cupoMax || 0}</span>
+                            <span class="torneo-spots-status torneo-spots-status--${spotsStatus}">${spotsStatusText}</span>
                         </div>
                     </div>
                     <div class="torneo-footer">
@@ -312,6 +336,24 @@ class TorneosPage {
 
     getTipoTexto(tipo) {
         return this.tipoDisplayMap[tipo] || tipo;
+    }
+
+    // LFPT-374: estado de cupos en 3 niveles en vez de la fracción "X/Y" —
+    // umbrales acordados: 10 parejas confirmadas (DOBLES) / 15 jugadores (INDIVIDUAL).
+    getSpotsStatus(tournament) {
+        const confirmed = tournament.inscritosActuales || 0;
+        const cupoMax = tournament.cupoMax || 0;
+
+        if (cupoMax > 0 && confirmed >= cupoMax) {
+            return 'full';
+        }
+
+        const threshold = tournament.modalidad === 'DOBLES' ? 10 : 15;
+        if (confirmed >= threshold) {
+            return 'limited';
+        }
+
+        return 'available';
     }
 
     getEstadoTexto(estado) {

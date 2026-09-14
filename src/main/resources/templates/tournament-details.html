@@ -112,6 +112,8 @@
                 <div class="tournament-badges">
                     <span class="badge" th:text="${tournament.generoFormato}">Masculino</span>
                     <span class="badge badge-level" th:text="${tournament.categoriaNivel}">C7 - Avanzado</span>
+                    <span class="badge badge-modalidad"
+                          th:text="${tournament.modalidad.name() == 'DOBLES'} ? #{tournament.modality.doubles} : #{tournament.modality.individual}">Parejas</span>
                     <span class="badge badge-type" th:text="${tournament.tipo}">Cupos</span>
                     <span class="badge badge-status"
                           th:text="${tournament.estado}"
@@ -234,6 +236,16 @@
                             <div class="info-content">
                                 <span class="info-label" th:text="#{tournament.info.club}">Club</span>
                                 <span class="info-value" th:text="${tournament.clubNombre}">Club Padel Center</span>
+                            </div>
+                        </div>
+
+                        <div class="info-item" th:if="${tournament.clubDireccion != null and !#strings.isEmpty(tournament.clubDireccion)}">
+                            <div class="info-icon">
+                                <i class="fas fa-map-pin"></i>
+                            </div>
+                            <div class="info-content">
+                                <span class="info-label" th:text="#{tournament.info.address}">Dirección</span>
+                                <span class="info-value" th:text="${tournament.clubDireccion}">Av. Libertador 1234</span>
                             </div>
                         </div>
 

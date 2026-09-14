@@ -97,6 +97,9 @@ window.APP_MESSAGES = {
     'card.capacity.spots':   'spots',
     'card.btn.details':      'View details',
     'card.status.started':   'Started',
+    'card.spots.available':  'Spots available',
+    'card.spots.limited':    'Last spots',
+    'card.spots.full':       'Sold out',
 
     // Enum display maps
     'enum.nivel.principiantes': 'Beginner',

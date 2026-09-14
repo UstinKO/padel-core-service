@@ -139,4 +139,22 @@ public class Tournament {
     public String getFormattedPrecio() {
         return moneda + " " + precio;
     }
+
+    // LFPT-374: nombre del torneo ya no se ingresa manualmente — se genera a partir
+    // de los campos ya obligatorios generoFormato + categoriaNivel (ej. "Masculino · C6").
+    public static String generateNombre(GenderFormat generoFormato, Nivel categoriaNivel) {
+        String genero = generoFormato != null ? generoFormato.getValue() : null;
+        String nivel = categoriaNivel != null ? categoriaNivel.getDisplay() : null;
+
+        if (genero == null && nivel == null) {
+            return "Torneo";
+        }
+        if (genero == null) {
+            return nivel;
+        }
+        if (nivel == null) {
+            return genero;
+        }
+        return genero + " · " + nivel;
+    }
 }
