@@ -147,7 +147,7 @@ public class AdminController {
             model.addAttribute("genderFormats", Arrays.asList(GenderFormat.values()));
             model.addAttribute("tournamentTypes", Arrays.asList(TournamentType.values()));
             model.addAttribute("tournamentStatuses", Arrays.asList(TournamentStatus.values()));
-            model.addAttribute("niveles", getNiveles());
+            model.addAttribute("niveles", getNiveles(tournamentDto.getCategoriaNivel()));
             model.addAttribute("modalidades", Modalidad.values());
             return "admin/tournaments/form";
         }
@@ -180,7 +180,7 @@ public class AdminController {
         model.addAttribute("genderFormats", Arrays.asList(GenderFormat.values()));
         model.addAttribute("tournamentTypes", Arrays.asList(TournamentType.values()));
         model.addAttribute("tournamentStatuses", Arrays.asList(TournamentStatus.values()));
-        model.addAttribute("niveles", getNiveles());
+        model.addAttribute("niveles", getNiveles(null));
         model.addAttribute("modalidades", Modalidad.values());
 
         return "admin/tournaments/form";
@@ -282,7 +282,7 @@ public class AdminController {
         model.addAttribute("genderFormats", Arrays.asList(GenderFormat.values()));
         model.addAttribute("tournamentTypes", Arrays.asList(TournamentType.values()));
         model.addAttribute("tournamentStatuses", Arrays.asList(TournamentStatus.values()));
-        model.addAttribute("niveles", getNiveles());
+        model.addAttribute("niveles", getNiveles(tournament.getCategoriaNivel()));
         model.addAttribute("modalidades", Modalidad.values());
 
         return "admin/tournaments/form";
@@ -307,7 +307,7 @@ public class AdminController {
             model.addAttribute("genderFormats", Arrays.asList(GenderFormat.values()));
             model.addAttribute("tournamentTypes", Arrays.asList(TournamentType.values()));
             model.addAttribute("tournamentStatuses", Arrays.asList(TournamentStatus.values()));
-            model.addAttribute("niveles", getNiveles());
+            model.addAttribute("niveles", getNiveles(tournamentDto.getCategoriaNivel()));
             return "admin/tournaments/form";
         }
 
@@ -498,7 +498,10 @@ public class AdminController {
         return ResponseEntity.ok(result);
     }
 
-    private List<Nivel> getNiveles() {
-        return Arrays.asList(Nivel.values());
+    // LFPT-373: список уровней для формы турнира — currentValue añade el valor legacy
+    // ya guardado en el torneo (si lo hay) para que no desaparezca del <select> al editar;
+    // null (creación de un torneo nuevo) excluye los valores legacy por completo.
+    private List<Nivel> getNiveles(String currentValue) {
+        return Nivel.forTournamentForm(Nivel.parseOrNull(currentValue));
     }
 }

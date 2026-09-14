@@ -140,3 +140,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.46-create-telegram-pipeline-state.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.47-add-nivel-categories.yaml
+      relativeToChangelogFile: true
