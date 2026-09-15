@@ -1,7 +1,7 @@
 # LFPT-375: Клубные аккаунты — модель данных (Owner↔Club) и новая роль
 
 ## Статус
-approved
+done — задеплоено в prod, [PR #386](https://github.com/UstinKO/padel-core-service/pull/386), деплой подтверждён успешным ([run 34954497525](https://github.com/UstinKO/padel-core-service/actions/runs/34954497525), commit `ca39223`)
 
 ## Источник
 [GitHub issue #375](https://github.com/UstinKO/padel-core-service/issues/375) — прямая техническая постановка от архитектора/пользователя, без промежуточного клиентского запроса. Первая из связанной серии: #376 (изоляция доступа по клубу, зависит от этого issue) и #377 (пилот Black Padel, зависит от обоих).
