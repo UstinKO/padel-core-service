@@ -1,0 +1,17 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.48-add-club-id-to-owner
+      author: padel-core
+      changes:
+        - addColumn:
+            tableName: owners_db
+            columns:
+              - column:
+                  name: club_id
+                  type: BIGINT
+                  constraints:
+                    nullable: true
+      rollback:
+        - dropColumn:
+            tableName: owners_db
+            columnName: club_id
