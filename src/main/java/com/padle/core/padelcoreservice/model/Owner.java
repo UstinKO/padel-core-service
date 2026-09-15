@@ -46,6 +46,11 @@ public class Owner implements UserDetails {
     @Builder.Default
     private OwnerRole role = OwnerRole.ORGANIZER;
 
+    // LFPT-375: клуб, к которому привязан клубный аккаунт (CLUB_ADMIN); NULL — глобальный аккаунт,
+    // сырой Long без FK — тот же паттерн, что Tournament.clubId (см. CLAUDE.md)
+    @Column(name = "club_id")
+    private Long clubId;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
