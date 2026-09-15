@@ -635,6 +635,7 @@ public class TournamentService {
         }
 
         Tournament tournament = tournamentMapper.toEntity(tournamentDto);
+        tournament.setNombre(Tournament.generateNombre(tournament.getGeneroFormato(), tournament.getCategoriaNivel()));
         tournament.setFaqUrl(normalizeFaqUrl(tournamentDto.getFaqUrl()));
         tournament.setCreatedBy(createdBy);
         tournament.setOwnerId(createdBy);  // ← ДОБАВИТЬ ЭТУ СТРОКУ
@@ -1107,12 +1108,14 @@ public class TournamentService {
     }
 
     private void updateTournamentFields(Tournament existing, TournamentDto dto) {
-        existing.setNombre(dto.getNombre());
         existing.setFechaInicio(dto.getFechaInicio());
         existing.setHoraInicio(dto.getHoraInicio());
         existing.setDuracion(dto.getDuracion());
         existing.setGeneroFormato(dto.getGeneroFormato());
         existing.setCategoriaNivel(Nivel.valueOf(dto.getCategoriaNivel()));
+        // LFPT-374: nombre se regenera siempre a partir de generoFormato/categoriaNivel
+        // ya actualizados arriba — ya no se ingresa manualmente en el formulario.
+        existing.setNombre(Tournament.generateNombre(existing.getGeneroFormato(), existing.getCategoriaNivel()));
         existing.setTipo(dto.getTipo());
         existing.setModalidad(dto.getModalidad());
         existing.setCupoMax(dto.getCupoMax());

@@ -97,6 +97,9 @@ window.APP_MESSAGES = {
     'card.capacity.spots':   'мест',
     'card.btn.details':      'Подробнее',
     'card.status.started':   'Начался',
+    'card.spots.available':  'Есть места',
+    'card.spots.limited':    'Последние места',
+    'card.spots.full':       'Мест нет',
 
     // Enum display maps
     'enum.nivel.principiantes': 'Начинающий',
