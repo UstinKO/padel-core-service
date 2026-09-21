@@ -6,6 +6,7 @@ import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.service.BracketService;
 import com.padle.core.padelcoreservice.service.MatchService;
+import com.padle.core.padelcoreservice.service.TournamentAccessService;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +26,7 @@ public class AdminMatchController {
 
     private final MatchService matchService;
     private final BracketService bracketService;
+    private final TournamentAccessService tournamentAccessService;
 
     @PostMapping("/{matchId}")
     public String updateMatchResult(@PathVariable Long tournamentId,
@@ -33,6 +35,7 @@ public class AdminMatchController {
                                     @AuthenticationPrincipal Owner owner,
                                     RedirectAttributes redirectAttributes) {
         log.info("Actualizando resultado del partido: {}", matchId);
+        tournamentAccessService.assertCanManageTournament(owner, tournamentId);
 
         try {
             matchService.updateMatchResult(matchId, matchDto);
@@ -59,6 +62,7 @@ public class AdminMatchController {
                                   @AuthenticationPrincipal Owner owner,
                                   RedirectAttributes redirectAttributes) {
         log.info("Generando bracket para torneo: {}", tournamentId);
+        tournamentAccessService.assertCanManageTournament(owner, tournamentId);
 
         try {
             bracketService.generateInitialBracket(tournamentId, playerIds);

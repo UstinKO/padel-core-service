@@ -131,7 +131,7 @@ public class SecurityConfig {
                         .requestMatchers("/players/lista").authenticated()
                         .requestMatchers("/players/perfil/**").authenticated()
                         .requestMatchers("/players/mis-torneos").authenticated()
-                        .requestMatchers("/admin/**").hasAnyRole("OWNER", "SUPER_ADMIN", "ORGANIZER", "ADMIN")
+                        .requestMatchers("/admin/**").hasAnyRole("OWNER", "SUPER_ADMIN", "ORGANIZER", "ADMIN", "CLUB_ADMIN")
                         // Внутренний тестовый инструментарий организатора (JDBC-based, см. CLAUDE.md) —
                         // доступен только владельцу платформы, не ORGANIZER/ADMIN.
                         .requestMatchers("/test/tournaments/**").hasRole("SUPER_ADMIN")
@@ -278,7 +278,8 @@ public class SecurityConfig {
                     .anyMatch(auth -> auth.getAuthority().equals("ROLE_OWNER") ||
                             auth.getAuthority().equals("ROLE_SUPER_ADMIN") ||
                             auth.getAuthority().equals("ROLE_ORGANIZER") ||
-                            auth.getAuthority().equals("ROLE_ADMIN"));
+                            auth.getAuthority().equals("ROLE_ADMIN") ||
+                            auth.getAuthority().equals("ROLE_CLUB_ADMIN"));
 
             if (isAdmin) {
                 targetUrl = "/admin";

@@ -30,6 +30,7 @@ public class AmericanoViewController {
 
     private final AmericanoService americanoService;
     private final TournamentService tournamentService;
+    private final com.padle.core.padelcoreservice.service.TournamentAccessService tournamentAccessService;
 
     // ==================== ОСНОВНАЯ СТРАНИЦА ====================
 
@@ -113,7 +114,7 @@ public class AmericanoViewController {
     }
 
     @PostMapping("/{tournamentId}/register")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     public String registerForTournament(
             @PathVariable Long tournamentId,
             @RequestParam Long playerId,
@@ -137,7 +138,7 @@ public class AmericanoViewController {
     }
 
     @PostMapping("/{tournamentId}/cancel")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     public String cancelRegistration(
             @PathVariable Long tournamentId,
             @RequestParam Long playerId,
@@ -193,14 +194,14 @@ public class AmericanoViewController {
     }
 
     @PostMapping("/{tournamentId}/initialize")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     public String initializeTournament(
             @PathVariable Long tournamentId,
             @ModelAttribute AmericanoConfigDto config,
-            RedirectAttributes redirectAttributes) {
+            RedirectAttributes redirectAttributes, @AuthenticationPrincipal Owner currentOwner) {
 
         try {
-            americanoService.initializeAmericanoTournament(tournamentId, config);
+            americanoService.initializeAmericanoTournament(tournamentId, config, currentOwner);
             redirectAttributes.addFlashAttribute("success",
                     "Torneo Americano inicializado correctamente con " + config.getTotalRounds() + " rondas");
         } catch (Exception e) {
@@ -218,7 +219,7 @@ public class AmericanoViewController {
      * если турнир уже запущен.
      */
     @PostMapping("/{tournamentId}/preview-rounds")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     public String previewRounds(
             @PathVariable Long tournamentId,
             @ModelAttribute AmericanoConfigDto config,
@@ -292,7 +293,7 @@ public class AmericanoViewController {
     }
 
     @PostMapping("/rounds/{roundId}/start")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     public String startRound(
             @PathVariable Long roundId,
             RedirectAttributes redirectAttributes, @AuthenticationPrincipal Owner currentOwner) {
@@ -309,7 +310,7 @@ public class AmericanoViewController {
     }
 
     @PostMapping("/rounds/{roundId}/complete")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     public String completeRound(
             @PathVariable Long roundId,
             RedirectAttributes redirectAttributes, @AuthenticationPrincipal Owner currentOwner) {
@@ -362,7 +363,7 @@ public class AmericanoViewController {
     }
 
     @PostMapping("/matches/{matchId}/result")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     public String submitMatchResult(
             @PathVariable Long matchId,
             @ModelAttribute AmericanoMatchResultDto resultDto,
@@ -436,7 +437,7 @@ public class AmericanoViewController {
     // ==================== УПРАВЛЕНИЕ ИГРОКАМИ ====================
 
     @PostMapping("/{tournamentId}/players/{playerId}/dropout")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     public String dropOutPlayer(
             @PathVariable Long tournamentId,
             @PathVariable Long playerId,
@@ -462,7 +463,7 @@ public class AmericanoViewController {
     // ==================== ЗАВЕРШЕНИЕ ТУРНИРА ====================
 
     @PostMapping("/{tournamentId}/finish")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     public String finishTournament(
             @PathVariable Long tournamentId,
             @RequestParam(required = false, defaultValue = "score") String sortBy,
@@ -532,11 +533,11 @@ public class AmericanoViewController {
      *      не показывала ошибку — кнопка просто не работала.
      */
     @PostMapping("/admin/{tournamentId}/initialize")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     public String initializeAdminTournament(
             @PathVariable Long tournamentId,
             @ModelAttribute AmericanoConfigDto config,
-            RedirectAttributes redirectAttributes) {
+            RedirectAttributes redirectAttributes, @AuthenticationPrincipal Owner currentOwner) {
 
         // Если уже инициализирован — просто переходим на страницу управления
         if (americanoService.isInitialized(tournamentId)) {
@@ -547,6 +548,11 @@ public class AmericanoViewController {
         try {
             log.info("=== INITIALIZING AMERICANO TOURNAMENT (from preview) ===");
             log.info("tournamentId: {}, config: {}", tournamentId, config);
+
+            // LFPT-376: проверяем права до любого побочного эффекта (закрытие регистрации ниже
+            // меняет состояние турнира ещё до того, как initializeAmericanoTournament успел бы
+            // отказать неавторизованному пользователю).
+            tournamentAccessService.assertCanManageTournament(currentOwner, tournamentId);
 
             // ── ИСПРАВЛЕНО: закрываем регистрацию если статус не CERRADO ──────
             // Сервис требует CERRADO, иначе бросает InvalidStateException.
@@ -563,7 +569,7 @@ public class AmericanoViewController {
             }
             // ──────────────────────────────────────────────────────────────────
 
-            americanoService.initializeAmericanoTournament(tournamentId, config);
+            americanoService.initializeAmericanoTournament(tournamentId, config, currentOwner);
 
             log.info("Tournament {} initialized successfully — rounds: {}, activePlayers: {}",
                     tournamentId,
@@ -588,7 +594,13 @@ public class AmericanoViewController {
             @PathVariable Long tournamentId,
             @RequestParam(required = false, defaultValue = "score") String sortBy,
             @RequestParam(required = false, defaultValue = "false") boolean ascending,
-            Model model) {
+            Model model, @AuthenticationPrincipal Owner currentOwner) {
+        // LFPT-376: страница не имеет отдельного ролевого гейта (исторически открыта любому
+        // аутентифицированному пользователю, не только Owner) — проверяем клубную изоляцию
+        // только когда принципал реально Owner.
+        if (currentOwner != null) {
+            tournamentAccessService.assertCanManageTournament(currentOwner, tournamentId);
+        }
 
         TournamentDto tournament = tournamentService.getActiveTournamentById(tournamentId)
                 .orElseThrow(() -> new IllegalArgumentException("Torneo no encontrado"));
@@ -639,10 +651,10 @@ public class AmericanoViewController {
      * ИСПРАВЛЕНО: если турнир уже инициализирован — редирект без ошибки.
      */
     @PostMapping("/initialize")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     public String initializeAmericano(
             AmericanoConfigDto config,
-            RedirectAttributes redirectAttributes) {
+            RedirectAttributes redirectAttributes, @AuthenticationPrincipal Owner currentOwner) {
 
         Long tournamentId = config.getTournamentId();
 
@@ -652,6 +664,9 @@ public class AmericanoViewController {
             return "redirect:/tournaments/americano/admin/" + tournamentId;
         }
         // ──────────────────────────────────────────────────────────────────
+
+        // LFPT-376: проверяем права до побочного эффекта закрытия регистрации ниже.
+        tournamentAccessService.assertCanManageTournament(currentOwner, tournamentId);
 
         try {
             log.info("=== INITIALIZE AMERICANO FROM ADMIN === tournamentId: {}, config: {}",
@@ -668,7 +683,7 @@ public class AmericanoViewController {
                         null);
             }
 
-            americanoService.initializeAmericanoTournament(tournamentId, config);
+            americanoService.initializeAmericanoTournament(tournamentId, config, currentOwner);
 
             redirectAttributes.addFlashAttribute("success",
                     "Torneo Americano inicializado correctamente con " + config.getTotalRounds() + " rondas");

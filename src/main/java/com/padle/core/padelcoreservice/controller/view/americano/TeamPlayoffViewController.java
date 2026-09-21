@@ -8,6 +8,7 @@ import com.padle.core.padelcoreservice.dto.americano.AmericanoTeamDto;
 import com.padle.core.padelcoreservice.dto.americano.TeamAmericanoRankingDto;
 import com.padle.core.padelcoreservice.dto.americano.TeamPlayoffTeamRequest;
 import com.padle.core.padelcoreservice.exception.InvalidStateException;
+import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.americano.AmericanoMatch;
 import com.padle.core.padelcoreservice.model.americano.AmericanoRound;
@@ -15,6 +16,7 @@ import com.padle.core.padelcoreservice.model.americano.AmericanoTeam;
 import com.padle.core.padelcoreservice.model.enums.AmericanoRoundStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentPhase;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoMatchRepository;
+import com.padle.core.padelcoreservice.service.TournamentAccessService;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import com.padle.core.padelcoreservice.service.americano.TeamPlayoffService;
 import com.padle.core.padelcoreservice.util.SecurityUtils;
@@ -23,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -47,6 +50,7 @@ public class TeamPlayoffViewController {
     private final TeamPlayoffService playoffService;
     private final TournamentService tournamentService;
     private final AmericanoMatchRepository matchRepository;
+    private final TournamentAccessService tournamentAccessService;
 
     // ══════════════════════════════════════════════════════════════════════
     // ПУБЛИЧНАЯ СТРАНИЦА
@@ -94,7 +98,14 @@ public class TeamPlayoffViewController {
     // ══════════════════════════════════════════════════════════════════════
 
     @GetMapping("/admin/{tournamentId}")
-    public String viewAdmin(@PathVariable Long tournamentId, Model model) {
+    public String viewAdmin(@PathVariable Long tournamentId, Model model,
+                            @AuthenticationPrincipal Owner owner) {
+        // LFPT-376: страница не имеет отдельного ролевого гейта (эндпоинт исторически открыт
+        // любому аутентифицированному пользователю — не только Owner) — проверяем клубную
+        // изоляцию только когда принципал реально Owner, не трогая остальное поведение.
+        if (owner != null) {
+            tournamentAccessService.assertCanManageTournament(owner, tournamentId);
+        }
 
         TournamentDto tournament = tournamentService.getActiveTournamentById(tournamentId)
                 .orElseThrow(() -> new IllegalArgumentException("Torneo no encontrado"));
@@ -134,10 +145,12 @@ public class TeamPlayoffViewController {
     // ══════════════════════════════════════════════════════════════════════
 
     @PostMapping("/admin/{tournamentId}/teams/add")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     public String addTeam(@PathVariable Long tournamentId,
                           @ModelAttribute TeamPlayoffTeamRequest req,
-                          RedirectAttributes ra) {
+                          RedirectAttributes ra,
+                          @AuthenticationPrincipal Owner currentOwner) {
+        tournamentAccessService.assertCanManageTournament(currentOwner, tournamentId);
         try {
             playoffService.addTeam(tournamentId, req);
             ra.addFlashAttribute("success", "Equipo agregado correctamente");
@@ -149,11 +162,13 @@ public class TeamPlayoffViewController {
     }
 
     @PostMapping("/admin/teams/{teamId}/update")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     public String updateTeam(@PathVariable Long teamId,
                              @ModelAttribute TeamPlayoffTeamRequest req,
                              @RequestParam Long tournamentId,
-                             RedirectAttributes ra) {
+                             RedirectAttributes ra,
+                             @AuthenticationPrincipal Owner currentOwner) {
+        tournamentAccessService.assertCanManageAmericanoTeam(currentOwner, teamId);
         try {
             playoffService.updateTeam(teamId, req);
             ra.addFlashAttribute("success", "Equipo actualizado correctamente");
@@ -165,10 +180,12 @@ public class TeamPlayoffViewController {
     }
 
     @PostMapping("/admin/teams/{teamId}/delete")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     public String deleteTeam(@PathVariable Long teamId,
                              @RequestParam Long tournamentId,
-                             RedirectAttributes ra) {
+                             RedirectAttributes ra,
+                             @AuthenticationPrincipal Owner currentOwner) {
+        tournamentAccessService.assertCanManageAmericanoTeam(currentOwner, teamId);
         try {
             playoffService.removeTeam(teamId);
             ra.addFlashAttribute("success", "Equipo eliminado");
@@ -184,8 +201,10 @@ public class TeamPlayoffViewController {
     // ══════════════════════════════════════════════════════════════════════
 
     @PostMapping("/admin/{tournamentId}/import-registrations")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
-    public String importRegistrations(@PathVariable Long tournamentId, RedirectAttributes ra) {
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
+    public String importRegistrations(@PathVariable Long tournamentId, RedirectAttributes ra,
+                                      @AuthenticationPrincipal Owner currentOwner) {
+        tournamentAccessService.assertCanManageTournament(currentOwner, tournamentId);
         try {
             int count = playoffService.importFromRegistrations(tournamentId);
             ra.addFlashAttribute("success", "Se importaron " + count + " equipos desde las inscripciones");
@@ -197,10 +216,12 @@ public class TeamPlayoffViewController {
     }
 
     @PostMapping("/admin/{tournamentId}/init-qualification")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     public String initQualification(@PathVariable Long tournamentId,
                                     @RequestParam(defaultValue = "2") int courts,
-                                    RedirectAttributes ra) {
+                                    RedirectAttributes ra,
+                                    @AuthenticationPrincipal Owner currentOwner) {
+        tournamentAccessService.assertCanManageTournament(currentOwner, tournamentId);
         try {
             playoffService.initQualification(tournamentId, courts);
             ra.addFlashAttribute("success", "Fase de calificación inicializada");
@@ -212,8 +233,10 @@ public class TeamPlayoffViewController {
     }
 
     @PostMapping("/admin/{tournamentId}/init-playoff")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
-    public String initPlayoff(@PathVariable Long tournamentId, RedirectAttributes ra) {
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
+    public String initPlayoff(@PathVariable Long tournamentId, RedirectAttributes ra,
+                              @AuthenticationPrincipal Owner currentOwner) {
+        tournamentAccessService.assertCanManageTournament(currentOwner, tournamentId);
         try {
             playoffService.initPlayoff(tournamentId);
             ra.addFlashAttribute("success", "Playoff inicializado");
@@ -226,8 +249,10 @@ public class TeamPlayoffViewController {
 
     /** Issue #298 п.2: пересобрать плей-офф после правки результата квалификации. */
     @PostMapping("/admin/{tournamentId}/regenerate-playoff")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
-    public String regeneratePlayoff(@PathVariable Long tournamentId, RedirectAttributes ra) {
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
+    public String regeneratePlayoff(@PathVariable Long tournamentId, RedirectAttributes ra,
+                                    @AuthenticationPrincipal Owner currentOwner) {
+        tournamentAccessService.assertCanManageTournament(currentOwner, tournamentId);
         try {
             playoffService.regeneratePlayoff(tournamentId);
             ra.addFlashAttribute("success", "Playoff reformado correctamente");
@@ -243,12 +268,14 @@ public class TeamPlayoffViewController {
     // ══════════════════════════════════════════════════════════════════════
 
     @PostMapping("/admin/qual-matches/{matchId}/result")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     public String submitQualResult(@PathVariable Long matchId,
                                    @RequestParam int team1Games,
                                    @RequestParam int team2Games,
                                    @RequestParam Long tournamentId,
-                                   RedirectAttributes ra) {
+                                   RedirectAttributes ra,
+                                   @AuthenticationPrincipal Owner currentOwner) {
+        tournamentAccessService.assertCanManageAmericanoMatch(currentOwner, matchId);
         try {
             playoffService.submitQualResult(matchId, team1Games, team2Games);
             ra.addFlashAttribute("success", "Resultado guardado");
@@ -262,12 +289,14 @@ public class TeamPlayoffViewController {
     }
 
     @PostMapping("/admin/playoff-matches/{matchId}/result")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     public String submitPlayoffResult(@PathVariable Long matchId,
                                       @RequestParam int team1Games,
                                       @RequestParam int team2Games,
                                       @RequestParam Long tournamentId,
-                                      RedirectAttributes ra) {
+                                      RedirectAttributes ra,
+                                      @AuthenticationPrincipal Owner currentOwner) {
+        tournamentAccessService.assertCanManageAmericanoMatch(currentOwner, matchId);
         try {
             playoffService.submitPlayoffResult(matchId, team1Games, team2Games);
             ra.addFlashAttribute("success", "Resultado guardado");
@@ -285,12 +314,14 @@ public class TeamPlayoffViewController {
     // ══════════════════════════════════════════════════════════════════════
 
     @PostMapping("/api/{tournamentId}/qual-matches")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> createQualMatchApi(
             @PathVariable Long tournamentId,
-            @RequestBody Map<String, Object> body) {
+            @RequestBody Map<String, Object> body,
+            @AuthenticationPrincipal Owner currentOwner) {
         Map<String, Object> result = new HashMap<>();
+        tournamentAccessService.assertCanManageTournament(currentOwner, tournamentId);
         try {
             Long team1Id = Long.valueOf(String.valueOf(body.get("team1Id")));
             Long team2Id = Long.valueOf(String.valueOf(body.get("team2Id")));
@@ -307,12 +338,14 @@ public class TeamPlayoffViewController {
 
     /** LFPT-367: ставит пару в очередь без назначения корта. */
     @PostMapping("/api/{tournamentId}/qual-matches/queue")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> queueQualMatchApi(
             @PathVariable Long tournamentId,
-            @RequestBody Map<String, Object> body) {
+            @RequestBody Map<String, Object> body,
+            @AuthenticationPrincipal Owner currentOwner) {
         Map<String, Object> result = new HashMap<>();
+        tournamentAccessService.assertCanManageTournament(currentOwner, tournamentId);
         try {
             Long team1Id = Long.valueOf(String.valueOf(body.get("team1Id")));
             Long team2Id = Long.valueOf(String.valueOf(body.get("team2Id")));
@@ -328,12 +361,14 @@ public class TeamPlayoffViewController {
 
     /** LFPT-367: asigna una cancha libre a un partido de la cola — sale de la cola y pasa a EN_CURSO. */
     @PostMapping("/api/matches/{matchId}/assign-court")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> assignCourtToQueuedMatchApi(
             @PathVariable Long matchId,
-            @RequestBody Map<String, Object> body) {
+            @RequestBody Map<String, Object> body,
+            @AuthenticationPrincipal Owner currentOwner) {
         Map<String, Object> result = new HashMap<>();
+        tournamentAccessService.assertCanManageAmericanoMatch(currentOwner, matchId);
         try {
             int courtNumber = Integer.parseInt(String.valueOf(body.get("courtNumber")));
             AmericanoMatch match = playoffService.assignCourtToQueuedMatch(matchId, courtNumber);
@@ -348,10 +383,12 @@ public class TeamPlayoffViewController {
 
     /** LFPT-367: quita un partido de la cola de espera por completo. */
     @PostMapping("/api/matches/{matchId}/queue/remove")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> removeFromQueueApi(@PathVariable Long matchId) {
+    public ResponseEntity<Map<String, Object>> removeFromQueueApi(@PathVariable Long matchId,
+                                                                    @AuthenticationPrincipal Owner currentOwner) {
         Map<String, Object> result = new HashMap<>();
+        tournamentAccessService.assertCanManageAmericanoMatch(currentOwner, matchId);
         try {
             playoffService.removeFromQueue(matchId);
             result.put("success", true);
@@ -364,12 +401,14 @@ public class TeamPlayoffViewController {
 
     /** Меняет корт ещё не завершённого матча (T11 — ручное управление координатором). */
     @PostMapping("/api/matches/{matchId}/court")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> changeMatchCourtApi(
             @PathVariable Long matchId,
-            @RequestBody Map<String, Object> body) {
+            @RequestBody Map<String, Object> body,
+            @AuthenticationPrincipal Owner currentOwner) {
         Map<String, Object> result = new HashMap<>();
+        tournamentAccessService.assertCanManageAmericanoMatch(currentOwner, matchId);
         try {
             int courtNumber = Integer.parseInt(String.valueOf(body.get("courtNumber")));
             AmericanoMatch match = playoffService.changeMatchCourt(matchId, courtNumber);
@@ -384,12 +423,14 @@ public class TeamPlayoffViewController {
 
     /** Заменяет команду в паре ещё не завершённого матча (T11). slot=1|2. Реванш не блокирует, только предупреждает. */
     @PostMapping("/api/matches/{matchId}/team")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> changeMatchTeamApi(
             @PathVariable Long matchId,
-            @RequestBody Map<String, Object> body) {
+            @RequestBody Map<String, Object> body,
+            @AuthenticationPrincipal Owner currentOwner) {
         Map<String, Object> result = new HashMap<>();
+        tournamentAccessService.assertCanManageAmericanoMatch(currentOwner, matchId);
         try {
             int slot = Integer.parseInt(String.valueOf(body.get("slot")));
             Long teamId = Long.valueOf(String.valueOf(body.get("teamId")));
@@ -406,21 +447,24 @@ public class TeamPlayoffViewController {
 
     /** Issue #298 п.3: команды-кандидаты для обмена с указанным слотом матча плей-офф (соседние матчи той же стадии). */
     @GetMapping("/api/matches/{matchId}/swap-candidates")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     @ResponseBody
     public ResponseEntity<List<TeamPlayoffService.PlayoffSwapCandidate>> getPlayoffSwapCandidates(
-            @PathVariable Long matchId) {
+            @PathVariable Long matchId, @AuthenticationPrincipal Owner currentOwner) {
+        tournamentAccessService.assertCanManageAmericanoMatch(currentOwner, matchId);
         return ResponseEntity.ok(playoffService.getPlayoffSwapCandidates(matchId));
     }
 
     /** Issue #298 п.3: меняет местами команды в двух ещё не завершённых матчах плей-офф. slot=1|2 в каждом. */
     @PostMapping("/api/matches/{matchId}/swap-team")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> swapMatchTeamApi(
             @PathVariable Long matchId,
-            @RequestBody Map<String, Object> body) {
+            @RequestBody Map<String, Object> body,
+            @AuthenticationPrincipal Owner currentOwner) {
         Map<String, Object> result = new HashMap<>();
+        tournamentAccessService.assertCanManageAmericanoMatch(currentOwner, matchId);
         try {
             int slot = Integer.parseInt(String.valueOf(body.get("slot")));
             Long otherMatchId = Long.valueOf(String.valueOf(body.get("otherMatchId")));
@@ -437,12 +481,14 @@ public class TeamPlayoffViewController {
     }
 
     @PostMapping("/api/qual-matches/{matchId}/result")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> submitQualResultApi(
             @PathVariable Long matchId,
-            @RequestBody Map<String, Integer> body) {
+            @RequestBody Map<String, Integer> body,
+            @AuthenticationPrincipal Owner currentOwner) {
         Map<String, Object> result = new HashMap<>();
+        tournamentAccessService.assertCanManageAmericanoMatch(currentOwner, matchId);
         try {
             int g1 = body.getOrDefault("team1Games", 0);
             int g2 = body.getOrDefault("team2Games", 0);
@@ -457,12 +503,14 @@ public class TeamPlayoffViewController {
     }
 
     @PostMapping("/api/playoff-matches/{matchId}/result")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> submitPlayoffResultApi(
             @PathVariable Long matchId,
-            @RequestBody Map<String, Integer> body) {
+            @RequestBody Map<String, Integer> body,
+            @AuthenticationPrincipal Owner currentOwner) {
         Map<String, Object> result = new HashMap<>();
+        tournamentAccessService.assertCanManageAmericanoMatch(currentOwner, matchId);
         try {
             int g1 = body.getOrDefault("team1Games", 0);
             int g2 = body.getOrDefault("team2Games", 0);
@@ -487,9 +535,11 @@ public class TeamPlayoffViewController {
      * (победитель-к-победителю/проигравший-к-проигравшему, T5) — по одной на свободный корт.
      */
     @GetMapping("/api/{tournamentId}/court-board")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> getCourtBoard(@PathVariable Long tournamentId) {
+    public ResponseEntity<Map<String, Object>> getCourtBoard(@PathVariable Long tournamentId,
+                                                               @AuthenticationPrincipal Owner currentOwner) {
+        tournamentAccessService.assertCanManageTournament(currentOwner, tournamentId);
         int courtsCount = playoffService.getConfiguredCourts(tournamentId);
         Map<Integer, AmericanoMatch> matchByCourt = playoffService.getActiveMatches(tournamentId).stream()
                 .filter(m -> m.getCourtNumber() != null)

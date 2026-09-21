@@ -11,6 +11,7 @@ import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
 import com.padle.core.padelcoreservice.exception.TournamentRegistrationException;
 import com.padle.core.padelcoreservice.mapper.TournamentMapper;
 import com.padle.core.padelcoreservice.mapper.TournamentRegistrationMapper;
+import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.TournamentKingOfCourt;
@@ -61,6 +62,7 @@ public class TournamentService {
     private final PlayerRepository playerRepository;
     private final TournamentKingOfCourtRepository tournamentKingOfCourtRepository;
     private final EmailService emailService;
+    private final TournamentAccessService tournamentAccessService;
 
     // Добавляем репозитории Americano
     private final AmericanoPlayerRepository americanoPlayerRepository;
@@ -689,13 +691,11 @@ public class TournamentService {
 //    }
 
     @Transactional
-    public Optional<TournamentDto> updateTournament(Long id, TournamentDto tournamentDto, Long ownerId, boolean isSuperAdmin) {
+    public Optional<TournamentDto> updateTournament(Long id, TournamentDto tournamentDto, Owner owner) {
         return tournamentRepository.findById(id)
                 .map(existingTournament -> {
-                    // Проверка прав
-                    if (!isSuperAdmin && !existingTournament.getOwnerId().equals(ownerId)) {
-                        throw new SecurityException("No tienes permiso para editar este torneo");
-                    }
+                    // Проверка прав (владелец турнира либо клубный админ того же клуба, либо SUPER_ADMIN/ADMIN)
+                    tournamentAccessService.assertCanManage(owner, existingTournament);
 
                     if (existingTournament.getEstado() == TournamentStatus.FINALIZADO ||
                             existingTournament.getEstado() == TournamentStatus.CANCELADO) {
@@ -713,7 +713,7 @@ public class TournamentService {
                     }
 
                     Tournament updated = tournamentRepository.save(existingTournament);
-                    log.info("Updated tournament with id: {} by owner: {}", id, ownerId);
+                    log.info("Updated tournament with id: {} by owner: {}", id, owner.getId());
                     return mapToDtoWithDetails(updated);
                 });
     }
@@ -731,13 +731,11 @@ public class TournamentService {
     }
 
     @Transactional
-    public Optional<TournamentDto> updateTournamentStatus(Long id, TournamentStatus newStatus, Long updatedBy, Long ownerId, boolean isSuperAdmin) {
+    public Optional<TournamentDto> updateTournamentStatus(Long id, TournamentStatus newStatus, Long updatedBy, Owner owner) {
         return tournamentRepository.findById(id)
                 .map(tournament -> {
-                    // Проверка прав
-                    if (!isSuperAdmin && !tournament.getOwnerId().equals(ownerId)) {
-                        throw new SecurityException("No tienes permiso para modificar este torneo");
-                    }
+                    // Проверка прав (владелец турнира либо клубный админ того же клуба, либо SUPER_ADMIN/ADMIN)
+                    tournamentAccessService.assertCanManage(owner, tournament);
                     validateStatusTransition(tournament.getEstado(), newStatus);
                     tournament.setEstado(newStatus);
                     Tournament updated = tournamentRepository.save(tournament);

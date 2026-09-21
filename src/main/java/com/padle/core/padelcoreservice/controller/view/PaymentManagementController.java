@@ -7,6 +7,7 @@ import com.padle.core.padelcoreservice.model.enums.PaymentMethod;
 import com.padle.core.padelcoreservice.model.enums.PaymentStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
 import com.padle.core.padelcoreservice.service.PaymentService;
+import com.padle.core.padelcoreservice.service.TournamentAccessService;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import com.padle.core.padelcoreservice.service.americano.TeamPlayoffService;
 import lombok.Data;
@@ -32,10 +33,13 @@ public class PaymentManagementController {
     private final TournamentService tournamentService;
     private final PaymentService paymentService;
     private final TeamPlayoffService teamPlayoffService;
+    private final TournamentAccessService tournamentAccessService;
 
     @GetMapping("/{tournamentId}/payments")
-    public String paymentManagementPage(@PathVariable Long tournamentId, Model model) {
+    public String paymentManagementPage(@PathVariable Long tournamentId, Model model,
+                                        @AuthenticationPrincipal Owner owner) {
         log.info("Opening payment management page for tournament: {}", tournamentId);
+        tournamentAccessService.assertCanManageTournament(owner, tournamentId);
 
         var tournament = tournamentService.getTournamentDtoById(tournamentId)
                 .orElseThrow(() -> new RuntimeException("Tournament not found"));
@@ -60,6 +64,7 @@ public class PaymentManagementController {
                                   @AuthenticationPrincipal Owner owner,
                                   RedirectAttributes redirectAttributes) {
         log.info("Adding team from registration {} for tournament {}", registrationId, tournamentId);
+        tournamentAccessService.assertCanManageTournament(owner, tournamentId);
 
         try {
             // T18: сначала сохраняем всё, что координатор проставил на странице (в т.ч. только что
@@ -104,6 +109,7 @@ public class PaymentManagementController {
                                @AuthenticationPrincipal Owner owner,
                                RedirectAttributes redirectAttributes) {
         log.info("Saving payment data for tournament: {}", tournamentId);
+        tournamentAccessService.assertCanManageTournament(owner, tournamentId);
 
         try {
             List<PaymentUpdateDto> updates = parsePaymentUpdates(form.getPayments());

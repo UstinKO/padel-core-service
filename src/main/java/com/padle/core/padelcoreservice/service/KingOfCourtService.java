@@ -11,7 +11,6 @@ import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +33,7 @@ public class KingOfCourtService {
     private final PlayerRepository playerRepository;
     private final KingOfCourtMapper kingOfCourtMapper;
     private final WebSocketService webSocketService;
+    private final TournamentAccessService tournamentAccessService;
 
     /**
      * Инициализация турнира "Король Корта"
@@ -44,12 +44,7 @@ public class KingOfCourtService {
         Tournament tournament = tournamentRepository.findById(tournamentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tournament not found with ID: " + tournamentId));
 
-        if (!currentOwner.isSuperAdmin() && !currentOwner.isAdminRole()) {
-            Long ownerId = tournament.getOwnerId();
-            if (ownerId == null || !ownerId.equals(currentOwner.getId())) {
-                throw new AccessDeniedException("You don't have permission to initialize this tournament");
-            }
-        }
+        tournamentAccessService.assertCanManage(currentOwner, tournament);
 
         // Проверяем, есть ли уже активный турнир
         if (kingRepository.existsActiveByTournamentId(tournamentId)) {

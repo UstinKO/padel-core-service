@@ -120,6 +120,10 @@ public class Owner implements UserDetails {
         return role == OwnerRole.ADMIN;
     }
 
+    public boolean isClubAdmin() {
+        return role == OwnerRole.CLUB_ADMIN;
+    }
+
     public boolean canViewAllTournaments() {
         return role == OwnerRole.SUPER_ADMIN || role == OwnerRole.ADMIN;
     }

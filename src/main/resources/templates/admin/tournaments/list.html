@@ -56,6 +56,22 @@
             </a>
         </div>
 
+        <!-- LFPT-376: фильтр по клубу — виден только SUPER_ADMIN (у CLUB_ADMIN выбирать нечего) -->
+        <form th:if="${isSuperAdmin}" method="get" th:action="@{/admin/tournaments}" class="admin-actions">
+            <label for="clubIdFilter" th:text="#{admin.tournaments.list.filter.club.label}">Filtrar por club</label>
+            <select id="clubIdFilter" name="clubId" onchange="this.form.submit()">
+                <option value="" th:selected="${selectedClubId == null}"
+                        th:text="#{admin.tournaments.list.filter.club.all}">Todos los clubes</option>
+                <option th:each="club : ${clubs}" th:value="${club.id}"
+                        th:selected="${selectedClubId != null and selectedClubId == club.id}"
+                        th:text="${club.nombre}">Club</option>
+            </select>
+            <noscript>
+                <button type="submit" class="btn btn-secondary"
+                        th:text="#{admin.tournaments.list.filter.club.apply}">Filtrar</button>
+            </noscript>
+        </form>
+
         <!-- Карточки турниров для мобильных -->
         <div class="tournaments-cards" id="tournamentsMobileView">
             <div th:each="item : ${tournaments}" th:if="${not #lists.isEmpty(tournaments)}" class="tournament-card">

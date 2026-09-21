@@ -17,6 +17,8 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.List;
+
 @Controller
 @RequestMapping("/admin/clubs")
 @RequiredArgsConstructor
@@ -29,7 +31,14 @@ public class AdminClubController {
     @GetMapping
     public String listClubs(Model model, @AuthenticationPrincipal Owner owner) {
         log.info("Listing all clubs for admin");
-        model.addAttribute("clubs", clubService.getAllClubsForAdmin());
+        // LFPT-376: клубный админ видит только свой клуб
+        if (owner.isClubAdmin()) {
+            model.addAttribute("clubs", owner.getClubId() == null
+                    ? List.of()
+                    : List.of(clubService.getClubByIdForAdmin(owner.getClubId())));
+        } else {
+            model.addAttribute("clubs", clubService.getAllClubsForAdmin());
+        }
         model.addAttribute("isSuperAdmin", owner.isSuperAdmin());
         model.addAttribute("isAdminRole", owner.isAdminRole());
         return "admin/clubs/list";
@@ -47,12 +56,15 @@ public class AdminClubController {
         return "admin/clubs/form";
     }
 
-    // Просмотр — доступен всем
+    // Просмотр — доступен всем ролям в /admin/**, кроме CLUB_ADMIN, ограниченного своим клубом
     @GetMapping("/{id}")
     public String viewClub(@PathVariable Long id, Model model,
                            @AuthenticationPrincipal Owner owner,
                            RedirectAttributes redirectAttributes) {
         log.info("Viewing club details: {}", id);
+        if (owner.isClubAdmin() && !id.equals(owner.getClubId())) {
+            throw new AccessDeniedException("No tienes permiso para ver este club");
+        }
         try {
             model.addAttribute("club", clubService.getClubByIdForAdmin(id));
             model.addAttribute("isSuperAdmin", owner.isSuperAdmin());
