@@ -1,7 +1,7 @@
 # LFPT-376: Клубные аккаунты — изоляция доступа по клубу (backend + UI)
 
 ## Статус
-approved
+done — деплой подтверждён успешным (commit `352ec223b0f09a8da7a88ddd7b0ced93c50322bf`, PR [#390](https://github.com/UstinKO/padel-core-service/pull/390), run: https://github.com/UstinKO/padel-core-service/actions/runs/35640226024)
 
 ## Источник
 [GitHub issue #376](https://github.com/UstinKO/padel-core-service/issues/376) — прямая техническая постановка от архитектора/пользователя, без промежуточного клиентского запроса. Вторая часть серии клубных аккаунтов: зависит от [#375](https://github.com/UstinKO/padel-core-service/issues/375) (модель данных `Owner.clubId` + роль `CLUB_ADMIN`, done, `specs/done/LFPT-375-club-account-data-model.md`); после этого issue — #377 (пилот Black Padel).
