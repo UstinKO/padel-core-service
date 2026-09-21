@@ -2,9 +2,11 @@ package com.padle.core.padelcoreservice.service;
 
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.model.Club;
+import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.enums.GenderFormat;
 import com.padle.core.padelcoreservice.model.enums.Modalidad;
 import com.padle.core.padelcoreservice.model.enums.Nivel;
+import com.padle.core.padelcoreservice.model.enums.OwnerRole;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
 import com.padle.core.padelcoreservice.repository.ClubRepository;
 import org.junit.jupiter.api.Test;
@@ -61,8 +63,9 @@ class TournamentNombreGenerationTest {
         assertThat(created.getNombre()).isEqualTo("Femenino · D7");
 
         TournamentDto updateDto = buildDto(clubId, GenderFormat.FEMENINO, Nivel.D5);
+        Owner superAdmin = Owner.builder().id(1L).role(OwnerRole.SUPER_ADMIN).build();
         TournamentDto updated = tournamentService
-                .updateTournament(created.getId(), updateDto, 1L, true)
+                .updateTournament(created.getId(), updateDto, superAdmin)
                 .orElseThrow();
 
         assertThat(updated.getNombre()).isEqualTo("Femenino · D5");

@@ -3,6 +3,7 @@ package com.padle.core.padelcoreservice.controller.view.americano;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
+import com.padle.core.padelcoreservice.service.TournamentAccessService;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import com.padle.core.padelcoreservice.service.americano.AmericanoService;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,6 +37,9 @@ class AmericanoViewControllerTest {
     @Mock
     private TournamentService tournamentService;
 
+    @Mock
+    private TournamentAccessService tournamentAccessService;
+
     private AmericanoViewController controller;
 
     private Model model;
@@ -46,7 +50,7 @@ class AmericanoViewControllerTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        controller = new AmericanoViewController(americanoService, tournamentService);
+        controller = new AmericanoViewController(americanoService, tournamentService, tournamentAccessService);
         model = new ExtendedModelMap();
         redirectAttributes = new RedirectAttributesModelMap();
     }
