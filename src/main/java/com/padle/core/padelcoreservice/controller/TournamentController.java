@@ -5,6 +5,7 @@ import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.enums.GenderFormat;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
+import com.padle.core.padelcoreservice.service.TournamentAccessService;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +24,7 @@ import java.util.List;
 public class TournamentController {
 
     private final TournamentService tournamentService;
+    private final TournamentAccessService tournamentAccessService;
 
     @GetMapping
     public ResponseEntity<List<TournamentDto>> getAllTournaments() {
@@ -75,7 +77,7 @@ public class TournamentController {
                                                           @Valid @RequestBody TournamentDto tournamentDto,
                                                           Authentication authentication) {
         Owner owner = extractOwner(authentication);
-        return tournamentService.updateTournament(id, tournamentDto, owner.getId(), owner.isSuperAdmin())
+        return tournamentService.updateTournament(id, tournamentDto, owner)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -86,7 +88,7 @@ public class TournamentController {
                                                                 @RequestParam TournamentStatus status,
                                                                 Authentication authentication) {
         Owner owner = extractOwner(authentication);
-        return tournamentService.updateTournamentStatus(id, status, owner.getId(), owner.getId(), owner.isSuperAdmin())
+        return tournamentService.updateTournamentStatus(id, status, owner.getId(), owner)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -98,13 +100,7 @@ public class TournamentController {
         Owner owner = extractOwner(authentication);
 
         // Проверяем права на удаление
-        if (!owner.isSuperAdmin()) {
-            TournamentDto tournament = tournamentService.getTournamentDtoById(id)
-                    .orElseThrow(() -> new RuntimeException("Tournament not found"));
-            if (!tournament.getOwnerId().equals(owner.getId())) {
-                throw new SecurityException("No tienes permiso para eliminar este torneo");
-            }
-        }
+        tournamentAccessService.assertCanManageTournament(owner, id);
 
         if (tournamentService.deleteTournament(id)) {
             return ResponseEntity.noContent().build();

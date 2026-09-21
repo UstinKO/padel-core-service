@@ -7,6 +7,7 @@ import com.padle.core.padelcoreservice.model.TournamentKingOfCourt;
 import com.padle.core.padelcoreservice.repository.TournamentKingOfCourtRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import com.padle.core.padelcoreservice.service.KingOfCourtService;
+import com.padle.core.padelcoreservice.service.TournamentAccessService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -23,13 +24,16 @@ public class AdminKingOfCourtController {
 
     private final KingOfCourtService kingOfCourtService;
     private final TournamentKingOfCourtRepository kingRepository;
+    private final TournamentAccessService tournamentAccessService;
 
     /**
      * Страница управления турниром Король Корта
      */
     @GetMapping("/{kingId}")
-    public String viewTournament(@PathVariable Long kingId, Model model) {
+    public String viewTournament(@PathVariable Long kingId, Model model,
+                                 @AuthenticationPrincipal Owner owner) {
         log.info("Viewing King of Court tournament: {}", kingId);
+        tournamentAccessService.assertCanManageKing(owner, kingId);
 
         TournamentKingOfCourt kingTournament = kingRepository.findById(kingId)
                 .orElseThrow(() -> new RuntimeException("King tournament not found"));
@@ -76,7 +80,9 @@ public class AdminKingOfCourtController {
      */
     @PostMapping("/{kingId}/finish")
     public String finishTournament(@PathVariable Long kingId,
-                                   RedirectAttributes redirectAttributes) {
+                                   RedirectAttributes redirectAttributes,
+                                   @AuthenticationPrincipal Owner owner) {
+        tournamentAccessService.assertCanManageKing(owner, kingId);
         try {
             TournamentKingOfCourt kingTournament = kingRepository.findById(kingId)
                     .orElseThrow(() -> new RuntimeException("King tournament not found"));
@@ -103,7 +109,9 @@ public class AdminKingOfCourtController {
     @PostMapping("/{kingId}/youtube")
     public String updateYoutubeLink(@PathVariable Long kingId,
                                     @RequestParam String youtubeLink,
-                                    RedirectAttributes redirectAttributes) {
+                                    RedirectAttributes redirectAttributes,
+                                    @AuthenticationPrincipal Owner owner) {
+        tournamentAccessService.assertCanManageKing(owner, kingId);
         try {
             kingOfCourtService.updateYoutubeLink(kingId, youtubeLink);
 
@@ -123,8 +131,10 @@ public class AdminKingOfCourtController {
      */
     @PostMapping("/{kingId}/reset")
     public String resetTournament(@PathVariable Long kingId,
-                                  RedirectAttributes redirectAttributes) {
+                                  RedirectAttributes redirectAttributes,
+                                  @AuthenticationPrincipal Owner owner) {
         log.info("Admin requested full reset of King of Court tournament: {}", kingId);
+        tournamentAccessService.assertCanManageKing(owner, kingId);
         try {
             Long tournamentId = kingOfCourtService.resetTournament(kingId);
             redirectAttributes.addFlashAttribute("successMessage",
@@ -143,7 +153,9 @@ public class AdminKingOfCourtController {
      */
     @PostMapping("/{kingId}/next-round")
     public String nextRound(@PathVariable Long kingId,
-                            RedirectAttributes redirectAttributes) {
+                            RedirectAttributes redirectAttributes,
+                            @AuthenticationPrincipal Owner owner) {
+        tournamentAccessService.assertCanManageKing(owner, kingId);
         try {
             kingOfCourtService.nextRound(kingId);
 

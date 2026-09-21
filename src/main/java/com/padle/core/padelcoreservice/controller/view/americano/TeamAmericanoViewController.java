@@ -10,7 +10,9 @@ import com.padle.core.padelcoreservice.exception.InvalidStateException;
 import com.padle.core.padelcoreservice.model.enums.AmericanoRoundStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.model.americano.AmericanoMatch;
+import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.padelcoreservice.service.TournamentAccessService;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import com.padle.core.padelcoreservice.service.americano.TeamAmericanoService;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoRoundRepository;
@@ -22,6 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -42,6 +45,7 @@ public class TeamAmericanoViewController {
     private final AmericanoRoundRepository roundRepository;
     private final AmericanoMatchRepository matchRepository;
     private final AmericanoTeamRepository teamRepository;
+    private final TournamentAccessService tournamentAccessService;
 
     // ══════════════════════════════════════════════════════════════════════
     // ПУБЛИЧНАЯ СТРАНИЦА ТУРНИРА
@@ -105,15 +109,18 @@ public class TeamAmericanoViewController {
      * Принимает POST с tournamentId + конфигурацию.
      */
     @PostMapping("/initialize")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     public String initializeTeamAmericano(@ModelAttribute TeamAmericanoConfigDto config,
                                           @RequestParam Long tournamentId,
-                                          RedirectAttributes redirectAttributes) {
+                                          RedirectAttributes redirectAttributes,
+                                          @AuthenticationPrincipal Owner currentOwner) {
 
         if (teamAmericanoService.isInitialized(tournamentId)) {
             log.info("Team Americano {} already initialized, redirecting", tournamentId);
             return "redirect:/tournaments/team-americano/admin/" + tournamentId;
         }
+
+        tournamentAccessService.assertCanManageTournament(currentOwner, tournamentId);
 
         try {
             log.info("Initializing Team Americano tournamentId={} courts={} points={}",
@@ -146,11 +153,13 @@ public class TeamAmericanoViewController {
      * Превью Round Robin расписания без сохранения — аналог /americano/{id}/preview-rounds
      */
     @PostMapping("/preview")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     public String previewRounds(@RequestParam Long tournamentId,
                                 @ModelAttribute TeamAmericanoConfigDto config,
                                 Model model,
-                                RedirectAttributes redirectAttributes) {
+                                RedirectAttributes redirectAttributes,
+                                @AuthenticationPrincipal Owner currentOwner) {
+        tournamentAccessService.assertCanManageTournament(currentOwner, tournamentId);
         try {
             TournamentDto tournament = tournamentService.getActiveTournamentById(tournamentId)
                     .orElseThrow(() -> new IllegalArgumentException("Torneo no encontrado"));
@@ -191,7 +200,13 @@ public class TeamAmericanoViewController {
 
     @GetMapping("/admin/{tournamentId}")
     public String viewAdminTournament(@PathVariable Long tournamentId,
-                                      Model model) {
+                                      Model model, @AuthenticationPrincipal Owner currentOwner) {
+        // LFPT-376: страница не имеет отдельного ролевого гейта (исторически открыта любому
+        // аутентифицированному пользователю, не только Owner) — проверяем клубную изоляцию
+        // только когда принципал реально Owner.
+        if (currentOwner != null) {
+            tournamentAccessService.assertCanManageTournament(currentOwner, tournamentId);
+        }
 
         TournamentDto tournament = tournamentService.getActiveTournamentById(tournamentId)
                 .orElseThrow(() -> new IllegalArgumentException("Torneo no encontrado"));
@@ -259,11 +274,13 @@ public class TeamAmericanoViewController {
      * Сохранение результата матча (POST).
      */
     @PostMapping("/matches/{matchId}/result")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     public String submitMatchResult(@PathVariable Long matchId,
                                     @RequestParam int team1Score,
                                     @RequestParam int team2Score,
-                                    RedirectAttributes redirectAttributes) {
+                                    RedirectAttributes redirectAttributes,
+                                    @AuthenticationPrincipal Owner currentOwner) {
+        tournamentAccessService.assertCanManageAmericanoMatch(currentOwner, matchId);
 
         try {
             AmericanoMatch match = teamAmericanoService.submitMatchResult(matchId, team1Score, team2Score);
@@ -285,9 +302,11 @@ public class TeamAmericanoViewController {
     // ══════════════════════════════════════════════════════════════════════
 
     @PostMapping("/admin/{tournamentId}/finish")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     public String finishTournament(@PathVariable Long tournamentId,
-                                   RedirectAttributes redirectAttributes) {
+                                   RedirectAttributes redirectAttributes,
+                                   @AuthenticationPrincipal Owner currentOwner) {
+        tournamentAccessService.assertCanManageTournament(currentOwner, tournamentId);
         try {
             TeamAmericanoRankingDto ranking = teamAmericanoService.finishTournament(tournamentId);
             String winner = ranking.getRanking().isEmpty()
@@ -310,11 +329,13 @@ public class TeamAmericanoViewController {
      * API: сохранить результат матча (используется из JS без перезагрузки страницы).
      */
     @PostMapping("/api/matches/{matchId}/result")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> submitResultApi(@PathVariable Long matchId,
-                                                               @RequestBody Map<String, Integer> body) {
+                                                               @RequestBody Map<String, Integer> body,
+                                                               @AuthenticationPrincipal Owner currentOwner) {
         Map<String, Object> result = new HashMap<>();
+        tournamentAccessService.assertCanManageAmericanoMatch(currentOwner, matchId);
         try {
             int t1 = body.getOrDefault("team1Score", 0);
             int t2 = body.getOrDefault("team2Score", 0);

@@ -25,6 +25,13 @@ public interface TournamentRegistrationRepository extends JpaRepository<Tourname
 
     List<TournamentRegistration> findByTournamentIdAndStatus(Long tournamentId, RegistrationStatus status);
 
+    // LFPT-376: "игрок клуба" для CLUB_ADMIN — есть хотя бы одна регистрация (любого статуса)
+    // на турнир этого клуба; см. spec Edge cases.
+    @Query("SELECT DISTINCT tr.player.id FROM TournamentRegistration tr WHERE tr.tournament.clubId = :clubId")
+    List<Long> findDistinctPlayerIdsByTournamentClubId(@Param("clubId") Long clubId);
+
+    boolean existsByTournamentClubIdAndPlayerId(Long clubId, Long playerId);
+
     // Bug #4 fix: добавлен фильтр isActive = true, чтобы исключить "мусорные" отменённые
     // записи с некорректными статусами (возможны после миграции данных между серверами).
     // Без этого фильтра confirmedSpots в processWaitlistForTournament мог быть завышен,

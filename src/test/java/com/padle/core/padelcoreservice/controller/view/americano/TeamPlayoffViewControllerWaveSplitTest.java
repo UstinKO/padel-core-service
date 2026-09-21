@@ -16,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class TeamPlayoffViewControllerWaveSplitTest {
 
-    private final TeamPlayoffViewController controller = new TeamPlayoffViewController(null, null, null);
+    private final TeamPlayoffViewController controller = new TeamPlayoffViewController(null, null, null, null);
 
     @Test
     void splitsMatchesIntoTwoWaves_sortedByCourtWithinEachWave() {

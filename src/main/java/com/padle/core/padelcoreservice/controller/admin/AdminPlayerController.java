@@ -5,6 +5,7 @@ import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.enums.Nivel;
+import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
 import com.padle.core.padelcoreservice.service.PlayerService;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +14,7 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -26,8 +28,11 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/admin/players")
@@ -37,6 +42,7 @@ public class AdminPlayerController {
 
     private final PlayerService playerService;
     private final TournamentService tournamentService;
+    private final TournamentRegistrationRepository tournamentRegistrationRepository;
     private final MessageSource messageSource;
 
     private String msg(String key) {
@@ -48,6 +54,15 @@ public class AdminPlayerController {
         log.info("Listando todos los jugadores para administrador");
 
         List<PlayerResponseDto> players = playerService.getAllPlayers();
+        if (owner.isClubAdmin()) {
+            // LFPT-376: клубный админ видит только игроков с регистрацией на турнир своего клуба
+            Set<Long> clubPlayerIds = owner.getClubId() == null
+                    ? Set.of()
+                    : new HashSet<>(tournamentRegistrationRepository.findDistinctPlayerIdsByTournamentClubId(owner.getClubId()));
+            players = players.stream()
+                    .filter(p -> clubPlayerIds.contains(p.getId()))
+                    .collect(Collectors.toList());
+        }
         model.addAttribute("players", players);
         model.addAttribute("totalPlayers", players.size());
         model.addAttribute("isSuperAdmin", owner.isSuperAdmin());
@@ -58,6 +73,11 @@ public class AdminPlayerController {
 
     @GetMapping("/{id}")
     public String viewPlayer(@PathVariable Long id, Model model, @AuthenticationPrincipal Owner owner) {
+        if (owner.isClubAdmin() && (owner.getClubId() == null
+                || !tournamentRegistrationRepository.existsByTournamentClubIdAndPlayerId(owner.getClubId(), id))) {
+            throw new AccessDeniedException("No tienes permiso para ver este jugador");
+        }
+
         PlayerResponseDto player = playerService.obtenerJugadorPorId(id);
         List<TournamentRegistrationDto> registrations = tournamentService.getActiveRegistrationsByPlayer(id);
 
