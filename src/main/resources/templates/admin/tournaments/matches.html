@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta name="app-profile" th:content="${@environment.getActiveProfiles().length > 0
+        ? @environment.getActiveProfiles()[0]
+        : 'default'}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${tournament.nombre} + ' - ' + #{admin.tournaments.matches.title} + ' | 1-Padel'">Partidos</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+
+    <style>
+        .matches-round { margin-bottom: 2rem; }
+        .matches-round h3 {
+            display: flex; align-items: center; gap: .5rem;
+            font-size: 1rem; margin-bottom: 1rem; color: var(--admin-dark, #1e293b);
+        }
+        .matches-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+        .match-card {
+            background: #fff;
+            border: 1px solid var(--admin-border, #e2e8f0);
+            border-radius: 10px;
+            padding: 1rem;
+        }
+        .match-card.finalizado { border-color: #6ee7b7; background: #f0fdf9; }
+        .match-players { display: flex; flex-direction: column; gap: .4rem; margin-bottom: .75rem; }
+        .match-player { display: flex; justify-content: space-between; align-items: center; font-size: .9rem; }
+        .match-player.ganador { font-weight: 700; color: #065f46; }
+        .match-player .pending { color: var(--admin-gray, #64748b); font-style: italic; }
+        .match-status { font-size: .72rem; padding: .15rem .5rem; border-radius: 10px; background: #f1f5f9; color: #64748b; }
+        .match-status.FINALIZADO { background: #d1fae5; color: #065f46; }
+        .match-status.EN_CURSO { background: #dbeafe; color: #1d4ed8; }
+        .result-form { margin-top: .75rem; border-top: 1px dashed var(--admin-border, #e2e8f0); padding-top: .75rem; }
+        .sets-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: .4rem; margin-bottom: .6rem; }
+        .sets-grid .set-col { text-align: center; }
+        .sets-grid label { display: block; font-size: .68rem; color: #64748b; margin-bottom: .2rem; }
+        .sets-grid input { width: 100%; text-align: center; padding: .3rem; border: 1px solid var(--admin-border, #e2e8f0); border-radius: 6px; }
+        .result-string { font-size: .85rem; color: #065f46; margin-bottom: .5rem; }
+        .generate-players-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: .5rem;
+            margin: 1rem 0;
+        }
+        .generate-players-list label {
+            display: flex; align-items: center; gap: .5rem;
+            padding: .5rem .75rem; border: 1px solid var(--admin-border, #e2e8f0); border-radius: 8px;
+            cursor: pointer; font-size: .875rem;
+        }
+        .selected-count { font-size: .85rem; color: #64748b; margin-bottom: .75rem; }
+    </style>
+</head>
+<body>
+<header th:replace="~{fragments/admin-header :: header(#{admin.tournaments.matches.title})}"></header>
+
+<main class="admin-main">
+    <div class="container">
+        <div th:if="${successMessage}" class="alert alert-success">
+            <i class="fas fa-check-circle"></i>
+            <span th:text="${successMessage}">Operación exitosa</span>
+        </div>
+        <div th:if="${errorMessage}" class="alert alert-danger">
+            <i class="fas fa-exclamation-circle"></i>
+            <span th:text="${errorMessage}">Error en la operación</span>
+        </div>
+
+        <div class="tournament-header-compact">
+            <h1 th:text="${tournament.nombre}">Torneo</h1>
+            <a th:href="@{'/admin/tournaments/' + ${tournament.id}}" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i>
+                <span th:text="#{admin.tournaments.matches.back}">Volver al torneo</span>
+            </a>
+        </div>
+
+        <!-- ═══════════ Сетка ещё не сгенерирована ═══════════ -->
+        <div th:if="${bracket == null or #lists.isEmpty(bracket)}" class="admin-card">
+            <div class="admin-card-header">
+                <h2><i class="fas fa-sitemap"></i> <span th:text="#{admin.tournaments.matches.generate.title}">Generar bracket</span></h2>
+            </div>
+            <div class="admin-card-body">
+                <div th:if="${confirmedRegistrations == null or confirmedRegistrations.size() < 2}" class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span th:text="#{admin.tournaments.matches.generate.not_enough_players}">
+                        Se necesitan al menos 2 jugadores confirmados para generar el bracket.
+                    </span>
+                </div>
+
+                <form th:if="${confirmedRegistrations != null and confirmedRegistrations.size() >= 2}"
+                      id="generateBracketForm"
+                      th:action="@{'/admin/tournaments/' + ${tournament.id} + '/matches/generate'}"
+                      method="post">
+
+                    <p class="selected-count" th:text="#{admin.tournaments.matches.generate.select_players}">
+                        Seleccioná los jugadores que participarán del bracket (número par):
+                    </p>
+
+                    <div class="generate-players-list">
+                        <label th:each="reg : ${confirmedRegistrations}">
+                            <input type="checkbox" name="playerIds" class="generate-player-checkbox" th:value="${reg.playerId}">
+                            <span th:text="${reg.playerNombre} + ' ' + (${reg.playerApellido} ?: '')">Jugador</span>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-play"></i>
+                        <span th:text="#{admin.tournaments.matches.generate.submit}">Generar bracket</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ═══════════ Сетка сгенерирована — раунды и матчи ═══════════ -->
+        <div th:if="${bracket != null and not #lists.isEmpty(bracket)}">
+            <div th:each="round, roundStat : ${bracket}" class="matches-round">
+                <h3>
+                    <i class="fas fa-layer-group"></i>
+                    <span th:text="#{admin.tournaments.matches.round} + ' ' + ${roundStat.count}">Ronda 1</span>
+                </h3>
+
+                <div class="matches-grid">
+                    <div th:each="match : ${round}"
+                         class="match-card"
+                         th:classappend="${match.isFinalizado == true} ? 'finalizado' : ''">
+
+                        <div class="match-players">
+                            <div class="match-player" th:classappend="${match.ganadorId != null and match.ganadorId == match.player1Id} ? 'ganador' : ''">
+                                <span th:if="${match.player1Id != null}" th:text="${match.player1NombreCompleto}">Jugador 1</span>
+                                <span th:unless="${match.player1Id != null}" class="pending" th:text="#{admin.tournaments.matches.pending_player}">Esperando ganador</span>
+                            </div>
+                            <div class="match-player" th:classappend="${match.ganadorId != null and match.ganadorId == match.player2Id} ? 'ganador' : ''">
+                                <span th:if="${match.player2Id != null}" th:text="${match.player2NombreCompleto}">Jugador 2</span>
+                                <span th:unless="${match.player2Id != null}" class="pending" th:text="#{admin.tournaments.matches.pending_player}">Esperando ganador</span>
+                            </div>
+                        </div>
+
+                        <span class="match-status" th:classappend="${match.estado}" th:text="#{__${'enum.matchStatus.' + match.estado}__}">PROGRAMADO</span>
+
+                        <div th:if="${match.isFinalizado == true}" class="result-string" th:text="${match.resultadoString}">6-3, 6-4</div>
+
+                        <form th:if="${match.player1Id != null and match.player2Id != null}"
+                              class="result-form match-result-form"
+                              th:action="@{'/admin/tournaments/' + ${tournament.id} + '/matches/' + ${match.id}}"
+                              method="post"
+                              th:data-player1-id="${match.player1Id}"
+                              th:data-player2-id="${match.player2Id}">
+
+                            <input type="hidden" name="ganadorId" class="ganador-id-field" value="">
+
+                            <div class="sets-grid">
+                                <div class="set-col">
+                                    <label th:text="#{admin.tournaments.matches.set} + ' 1'">Set 1</label>
+                                    <input type="number" name="set1Equipo1" min="0" max="99" th:value="${match.set1Equipo1}">
+                                    <input type="number" name="set1Equipo2" min="0" max="99" th:value="${match.set1Equipo2}">
+                                </div>
+                                <div class="set-col">
+                                    <label th:text="#{admin.tournaments.matches.set} + ' 2'">Set 2</label>
+                                    <input type="number" name="set2Equipo1" min="0" max="99" th:value="${match.set2Equipo1}">
+                                    <input type="number" name="set2Equipo2" min="0" max="99" th:value="${match.set2Equipo2}">
+                                </div>
+                                <div class="set-col">
+                                    <label th:text="#{admin.tournaments.matches.set} + ' 3'">Set 3</label>
+                                    <input type="number" name="set3Equipo1" min="0" max="99" th:value="${match.set3Equipo1}">
+                                    <input type="number" name="set3Equipo2" min="0" max="99" th:value="${match.set3Equipo2}">
+                                </div>
+                                <div class="set-col">
+                                    <label th:text="#{admin.tournaments.matches.super_set}">Super</label>
+                                    <input type="number" name="superSetEquipo1" min="0" max="99" th:value="${match.superSetEquipo1}">
+                                    <input type="number" name="superSetEquipo2" min="0" max="99" th:value="${match.superSetEquipo2}">
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-outline" style="width:100%; justify-content:center;">
+                                <i class="fas fa-save"></i>
+                                <span th:text="#{admin.tournaments.matches.save_result}">Guardar resultado</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script th:inline="javascript">
+    // Генерация: блокируем отправку с нечётным числом выбранных игроков —
+    // BracketService.generateInitialBracket молча теряет последнего через
+    // целочисленное деление (numPlayers / 2), см. LFPT-394.
+    (function () {
+        var form = document.getElementById('generateBracketForm');
+        if (!form) return;
+        form.addEventListener('submit', function (e) {
+            var checked = form.querySelectorAll('.generate-player-checkbox:checked').length;
+            if (checked < 2 || checked % 2 !== 0) {
+                e.preventDefault();
+                alert(/*[[#{admin.tournaments.matches.generate.even_required}]]*/ 'Seleccioná un número par de jugadores (mínimo 2).');
+            }
+        });
+    })();
+
+    // Ввод результата: победитель высчитывается из сетов по тем же правилам,
+    // что MatchService.determinarGanador (больше выигранных сетов среди
+    // set1/set2/set3/superSet побеждает; при ничьей победитель не выставляется) —
+    // AdminMatchController.updateMatchResult продвигает победителя в следующий
+    // раунд по ganadorId из отправленной формы, а не по пересчитанному на сервере
+    // результату, см. LFPT-394.
+    document.querySelectorAll('.match-result-form').forEach(function (form) {
+        form.addEventListener('submit', function () {
+            var player1Id = form.getAttribute('data-player1-id');
+            var player2Id = form.getAttribute('data-player2-id');
+            var pairs = [
+                ['set1Equipo1', 'set1Equipo2'],
+                ['set2Equipo1', 'set2Equipo2'],
+                ['set3Equipo1', 'set3Equipo2'],
+                ['superSetEquipo1', 'superSetEquipo2']
+            ];
+            var wins1 = 0, wins2 = 0;
+            pairs.forEach(function (pair) {
+                var v1 = form.querySelector('[name="' + pair[0] + '"]').value;
+                var v2 = form.querySelector('[name="' + pair[1] + '"]').value;
+                if (v1 !== '' && v2 !== '') {
+                    v1 = parseInt(v1, 10);
+                    v2 = parseInt(v2, 10);
+                    if (v1 > v2) wins1++;
+                    else if (v2 > v1) wins2++;
+                }
+            });
+            var ganadorField = form.querySelector('.ganador-id-field');
+            if (wins1 > wins2) ganadorField.value = player1Id;
+            else if (wins2 > wins1) ganadorField.value = player2Id;
+            else ganadorField.value = '';
+        });
+    });
+</script>
+</body>
+</html>

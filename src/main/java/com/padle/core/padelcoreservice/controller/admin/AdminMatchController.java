@@ -3,7 +3,9 @@ package com.padle.core.padelcoreservice.controller.admin;
 import com.padle.core.padelcoreservice.dto.BracketMatchDto;
 import com.padle.core.padelcoreservice.dto.MatchDto;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
+import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
 import com.padle.core.padelcoreservice.model.Owner;
+import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import com.padle.core.padelcoreservice.service.BracketService;
 import com.padle.core.padelcoreservice.service.MatchService;
 import com.padle.core.padelcoreservice.service.TournamentAccessService;
@@ -26,7 +28,34 @@ public class AdminMatchController {
 
     private final MatchService matchService;
     private final BracketService bracketService;
+    private final TournamentService tournamentService;
     private final TournamentAccessService tournamentAccessService;
+
+    @GetMapping
+    public String viewMatches(@PathVariable Long tournamentId,
+                              Model model,
+                              @AuthenticationPrincipal Owner owner) {
+        log.info("Viendo partidos del torneo: {}", tournamentId);
+        tournamentAccessService.assertCanManageTournament(owner, tournamentId);
+
+        TournamentDto tournament = tournamentService.getTournamentDtoById(tournamentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Torneo no encontrado con ID: " + tournamentId));
+
+        List<List<BracketMatchDto>> bracket = bracketService.getTournamentBracket(tournamentId);
+
+        model.addAttribute("tournament", tournament);
+        model.addAttribute("bracket", bracket);
+
+        if (bracket.isEmpty()) {
+            List<com.padle.core.padelcoreservice.dto.TournamentRegistrationDto> confirmedRegistrations =
+                    tournamentService.getRegistrationsByTournament(tournamentId).stream()
+                            .filter(r -> r.getStatus() == RegistrationStatus.CONFIRMED)
+                            .toList();
+            model.addAttribute("confirmedRegistrations", confirmedRegistrations);
+        }
+
+        return "admin/tournaments/matches";
+    }
 
     @PostMapping("/{matchId}")
     public String updateMatchResult(@PathVariable Long tournamentId,
