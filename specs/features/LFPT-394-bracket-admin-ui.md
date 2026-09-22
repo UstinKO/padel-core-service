@@ -5,6 +5,7 @@ approved
 
 ## Источник
 GitHub issue [#394](https://github.com/UstinKO/padel-core-service/issues/394) (прямой технический вход, роль `architect`) — `specs/requests/` не создавался, постановка уже техническая.
+Telegram-сообщение (для reply): 4456
 
 ## Контекст / зачем
 Формат "Открытый Корт" (`TournamentType.CANCHA_ABIERTA`, `BracketService`) можно создать и укомплектовать участниками, но довести до результатов через админку невозможно: на странице деталей турнира нет ни кнопки генерации сетки, ни ссылки на управление матчами, а прямой переход на `GET /admin/tournaments/{id}/matches` (на который редиректят существующие `POST .../generate` и `POST .../{matchId}`) падает `404 NoResourceFoundException` — такого `@GetMapping` не существует ни в одном контроллере. В отличие от Americano и King of Court, у Bracket-формата никогда не было своего admin-шаблона.
