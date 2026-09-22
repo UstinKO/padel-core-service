@@ -1,7 +1,7 @@
 # LFPT-393: `CLUB_ADMIN` может создавать новые клубы через `POST /admin/clubs`
 
 ## Статус
-approved
+done — деплой подтверждён успешным (commit `85aea9872e7b9abc8bfd7c8b7e10dcff8f119ddb`, PR [#395](https://github.com/UstinKO/padel-core-service/pull/395), run: https://github.com/UstinKO/padel-core-service/actions/runs/35712738920)
 
 ## Источник
 [GitHub issue #393](https://github.com/UstinKO/padel-core-service/issues/393) — прямая техническая постановка от архитектора/пользователя (QA-находка по итогам пилота Black Padel, issue #377), без промежуточного клиентского запроса.
