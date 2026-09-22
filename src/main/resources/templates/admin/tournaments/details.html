@@ -724,6 +724,20 @@
                     </div>
                 </div>
 
+                <!-- Секция Cancha Abierta (Bracket) -->
+                <div th:if="${tournament.tipo.name() == 'CANCHA_ABIERTA'}" class="admin-card king-card">
+                    <div class="admin-card-header">
+                        <h2><i class="fas fa-sitemap"></i> <span th:text="#{admin.tournaments.details.bracket.title}">Cancha Abierta</span></h2>
+                    </div>
+                    <div class="admin-card-body">
+                        <a th:href="@{'/admin/tournaments/' + ${tournament.id} + '/matches'}"
+                           class="btn btn-primary btn-block">
+                            <i class="fas fa-arrow-right"></i>
+                            <span th:text="#{admin.tournaments.details.bracket.manage}">Gestionar partidos</span>
+                        </a>
+                    </div>
+                </div>
+
                 <!-- ═══════════════════════════════════════════════════════
                      AMERICANO INDIVIDUAL
                      Изменено только содержимое этого блока.
