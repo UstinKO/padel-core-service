@@ -1,7 +1,7 @@
 # LFPT-394: Admin-UI для генерации и просмотра сетки Bracket-турниров (CANCHA_ABIERTA)
 
 ## Статус
-approved
+done — задеплоено в prod, [PR #399](https://github.com/UstinKO/padel-core-service/pull/399), деплой подтверждён успешным ([run 35745950161](https://github.com/UstinKO/padel-core-service/actions/runs/35745950161), commit `0c9ad7d1402f60f27eaeee905c919dc042ceb1bd`)
 
 ## Источник
 GitHub issue [#394](https://github.com/UstinKO/padel-core-service/issues/394) (прямой технический вход, роль `architect`) — `specs/requests/` не создавался, постановка уже техническая.
