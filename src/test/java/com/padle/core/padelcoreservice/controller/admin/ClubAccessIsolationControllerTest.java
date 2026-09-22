@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.controller.admin;
 
+import com.padle.core.padelcoreservice.dto.ClubDto;
 import com.padle.core.padelcoreservice.dto.MatchDto;
 import com.padle.core.padelcoreservice.model.Club;
 import com.padle.core.padelcoreservice.model.Owner;
@@ -23,6 +24,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.ui.Model;
+import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 
@@ -41,6 +43,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * TournamentAccessService напрямую) действительно вызывают проверку владения на потоках,
  * где её раньше не было вообще (турнир/регистрация, оплаты, bracket-матч), и что CLUB_ADMIN
  * своего клуба по-прежнему может выполнять те же действия (регресс).
+ *
+ * LFPT-393: дополнительно проверяет, что CLUB_ADMIN не может создавать новые клубы
+ * (AdminClubController.newClubForm/createClub) — SUPER_ADMIN-only регресс.
  */
 @SpringBootTest
 @TestPropertySource(properties = {
@@ -60,6 +65,8 @@ class ClubAccessIsolationControllerTest {
     private PaymentManagementController paymentManagementController;
     @Autowired
     private AdminMatchController adminMatchController;
+    @Autowired
+    private AdminClubController adminClubController;
     @Autowired
     private TournamentRepository tournamentRepository;
     @Autowired
@@ -133,6 +140,63 @@ class ClubAccessIsolationControllerTest {
         String view = adminMatchController.updateMatchResult(tournamentId, 999_999L, matchDto, clubAdminA, ownRa);
         assertThat(view).isEqualTo("redirect:/admin/tournaments/" + tournamentId + "/matches");
         assertThat(ownRa.getFlashAttributes().get("errorMessage")).isNotNull();
+    }
+
+    @Test
+    void newClubForm_clubAdmin_esRechazado_ySuperAdminFunciona() {
+        Club club = createClub();
+        Owner clubAdmin = createOwner(club.getId());
+        Owner superAdmin = createSuperAdmin();
+
+        Model clubAdminModel = new ExtendedModelMap();
+        RedirectAttributes clubAdminRa = new RedirectAttributesModelMap();
+        String clubAdminView = adminClubController.newClubForm(clubAdminModel, clubAdmin, clubAdminRa);
+        assertThat(clubAdminView).isEqualTo("redirect:/admin/clubs");
+        assertThat(clubAdminRa.getFlashAttributes().get("errorMessage")).isNotNull();
+
+        Model superAdminModel = new ExtendedModelMap();
+        RedirectAttributes superAdminRa = new RedirectAttributesModelMap();
+        String superAdminView = adminClubController.newClubForm(superAdminModel, superAdmin, superAdminRa);
+        assertThat(superAdminView).isEqualTo("admin/clubs/form");
+    }
+
+    @Test
+    void createClub_clubAdmin_esRechazado_noCreaClub_ySuperAdminFunciona() {
+        Club club = createClub();
+        Owner clubAdmin = createOwner(club.getId());
+        Owner superAdmin = createSuperAdmin();
+        long clubCountBefore = clubRepository.count();
+
+        ClubDto clubAdminAttempt = ClubDto.builder().nombre("LFPT393-Hacker Club " + UUID.randomUUID()).build();
+        RedirectAttributes clubAdminRa = new RedirectAttributesModelMap();
+        String clubAdminView = adminClubController.createClub(
+                clubAdminAttempt, new BeanPropertyBindingResult(clubAdminAttempt, "club"), clubAdmin, clubAdminRa);
+        assertThat(clubAdminView).isEqualTo("redirect:/admin/clubs");
+        assertThat(clubAdminRa.getFlashAttributes().get("errorMessage")).isNotNull();
+        assertThat(clubRepository.count())
+                .as("CLUB_ADMIN не должен создавать клубы")
+                .isEqualTo(clubCountBefore);
+
+        ClubDto superAdminAttempt = ClubDto.builder().nombre("LFPT393-Real Club " + UUID.randomUUID()).build();
+        RedirectAttributes superAdminRa = new RedirectAttributesModelMap();
+        String superAdminView = adminClubController.createClub(
+                superAdminAttempt, new BeanPropertyBindingResult(superAdminAttempt, "club"), superAdmin, superAdminRa);
+        assertThat(superAdminView).startsWith("redirect:/admin/clubs/");
+        assertThat(clubRepository.count())
+                .as("SUPER_ADMIN по-прежнему может создавать клубы (регресс)")
+                .isEqualTo(clubCountBefore + 1);
+    }
+
+    private Owner createSuperAdmin() {
+        String suffix = "LFPT393-" + UUID.randomUUID();
+        return ownerRepository.save(Owner.builder()
+                .email(suffix + "@example.com")
+                .password("irrelevant-hash")
+                .firstName("Test")
+                .lastName("SuperAdmin")
+                .role(OwnerRole.SUPER_ADMIN)
+                .isActive(true)
+                .build());
     }
 
     private Club createClub() {
