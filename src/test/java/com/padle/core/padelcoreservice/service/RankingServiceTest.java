@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.padelcoreservice.dto.MatchDto;
 import com.padle.core.padelcoreservice.dto.RankingDto;
 import com.padle.core.padelcoreservice.model.Club;
 import com.padle.core.padelcoreservice.model.Match;
@@ -7,6 +8,7 @@ import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.Ranking;
 import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.enums.GenderFormat;
+import com.padle.core.padelcoreservice.model.enums.MatchStatus;
 import com.padle.core.padelcoreservice.model.enums.MatchType;
 import com.padle.core.padelcoreservice.model.enums.Modalidad;
 import com.padle.core.padelcoreservice.model.enums.Nivel;
@@ -50,6 +52,8 @@ class RankingServiceTest {
 
     @Autowired
     private RankingService rankingService;
+    @Autowired
+    private MatchService matchService;
     @Autowired
     private RankingRepository rankingRepository;
     @Autowired
@@ -101,6 +105,39 @@ class RankingServiceTest {
         assertThat(ranking.getRachasMaxima()).isZero();
     }
 
+    @Test
+    void updateMatchResult_jugadoresSinRankingPrevio_flujoCompletoNoFalla() {
+        // Reproduce el escenario end-to-end del issue: MatchService.updateMatchResult
+        // (el mismo camino que POST /admin/tournaments/{id}/matches/{matchId}, LFPT-394)
+        // para dos jugadores que todavía no tienen fila en ranking_db.
+        PlayerPadel winner = createPlayer();
+        PlayerPadel loser = createPlayer();
+        Match match = createMatch(winner.getId(), loser.getId());
+
+        MatchDto resultDto = MatchDto.builder()
+                .set1Equipo1(6)
+                .set1Equipo2(2)
+                .set2Equipo1(6)
+                .set2Equipo2(3)
+                .build();
+
+        assertThatCode(() -> matchService.updateMatchResult(match.getId(), resultDto))
+                .doesNotThrowAnyException();
+
+        Match persisted = matchRepository.findById(match.getId()).orElseThrow();
+        assertThat(persisted.getEstado()).isEqualTo(MatchStatus.FINALIZADO);
+        assertThat(persisted.getGanadorId()).isEqualTo(winner.getId());
+
+        Ranking winnerRanking = rankingRepository.findByPlayerId(winner.getId()).orElseThrow();
+        Ranking loserRanking = rankingRepository.findByPlayerId(loser.getId()).orElseThrow();
+        assertThat(winnerRanking.getRachasActual()).isZero();
+        assertThat(winnerRanking.getRachasMaxima()).isZero();
+        assertThat(winnerRanking.getPartidosGanados()).isEqualTo(1);
+        assertThat(loserRanking.getRachasActual()).isZero();
+        assertThat(loserRanking.getRachasMaxima()).isZero();
+        assertThat(loserRanking.getPartidosPerdidos()).isEqualTo(1);
+    }
+
     private PlayerPadel createPlayer() {
         String suffix = "LFPT398-" + UUID.randomUUID();
         return playerRepository.save(PlayerPadel.builder()
@@ -117,6 +154,10 @@ class RankingServiceTest {
     }
 
     private Match createMatch() {
+        return createMatch(null, null);
+    }
+
+    private Match createMatch(Long player1Id, Long player2Id) {
         Club club = clubRepository.save(Club.builder()
                 .nombre("Club " + UUID.randomUUID())
                 .isActive(true)
@@ -141,6 +182,8 @@ class RankingServiceTest {
                 .ronda(1)
                 .partidoNumero(1)
                 .tipo(MatchType.INDIVIDUAL)
+                .player1Id(player1Id)
+                .player2Id(player2Id)
                 .build());
     }
 }
