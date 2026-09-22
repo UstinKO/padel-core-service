@@ -34,8 +34,8 @@
             <span th:text="${errorMessage}">Error en la operación</span>
         </div>
 
-        <!-- Кнопка создания — недоступна для ADMIN -->
-        <div class="admin-actions" th:unless="${isAdminRole}">
+        <!-- Кнопка создания — только SUPER_ADMIN (LFPT-393) -->
+        <div class="admin-actions" th:if="${isSuperAdmin}">
             <a href="/admin/clubs/new" class="btn btn-primary">
                 <i class="fas fa-plus-circle"></i>
                 <span th:text="#{admin.clubs.list.btn.new}">Nuevo Club</span>
@@ -154,7 +154,7 @@
                             <i class="fas fa-building"></i>
                             <h3 th:text="#{admin.clubs.list.empty.title}">No hay clubes</h3>
                             <p th:text="#{admin.clubs.list.empty.text}">Comienza creando tu primer club</p>
-                            <a href="/admin/clubs/new" class="btn btn-primary">
+                            <a href="/admin/clubs/new" class="btn btn-primary" th:if="${isSuperAdmin}">
                                 <i class="fas fa-plus-circle"></i>
                                 <span th:text="#{admin.clubs.list.btn.create}">Crear Club</span>
                             </a>
