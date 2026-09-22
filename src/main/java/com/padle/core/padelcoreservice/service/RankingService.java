@@ -73,6 +73,8 @@ public class RankingService {
                 .setsGanados(0)
                 .setsPerdidos(0)
                 .nivelActual("C9") // Nivel inicial
+                .rachasActual(0)
+                .rachasMaxima(0)
                 .build();
 
         Ranking saved = rankingRepository.save(ranking);
@@ -260,6 +262,8 @@ public class RankingService {
                 .setsGanados(0)
                 .setsPerdidos(0)
                 .nivelActual("C9")
+                .rachasActual(0)
+                .rachasMaxima(0)
                 .build();
         return rankingRepository.save(ranking);
     }

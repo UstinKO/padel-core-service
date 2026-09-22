@@ -96,7 +96,7 @@ public class Ranking {
     }
 
     public void calcularMejorPosicion() {
-        if (mejorPosicion == null || posicionActual < mejorPosicion) {
+        if (posicionActual != null && (mejorPosicion == null || posicionActual < mejorPosicion)) {
             setMejorPosicion(posicionActual);
         }
     }
