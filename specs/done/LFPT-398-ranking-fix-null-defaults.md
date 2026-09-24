@@ -1,7 +1,7 @@
 # LFPT-398: RankingService падает при первом результате матча для игрока без строки в ranking_db
 
 ## Статус
-approved
+done — деплой подтверждён успешным (commit `f2fb51d131ca511b442b187b2fa90d77fdf6266f`, PR [#401](https://github.com/UstinKO/padel-core-service/pull/401), run: https://github.com/UstinKO/padel-core-service/actions/runs/36023648799)
 
 ## Источник
 [GitHub issue #398](https://github.com/UstinKO/padel-core-service/issues/398) — прямая техническая постановка от архитектора/пользователя, без промежуточного клиентского запроса.
