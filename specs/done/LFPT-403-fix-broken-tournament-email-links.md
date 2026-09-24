@@ -1,7 +1,7 @@
 # LFPT-403: Исправить неверный URL турнира в письмах игрокам
 
 ## Статус
-approved
+done — деплой подтверждён успешным (commit `e9e425e5b5fde60c0420df8727ea53df14e802ab`, PR [#404](https://github.com/UstinKO/padel-core-service/pull/404), run: https://github.com/UstinKO/padel-core-service/actions/runs/36024466299)
 
 ## Источник
 GitHub issue [#403](https://github.com/UstinKO/padel-core-service/issues/403), заведён напрямую конвейером `/develop-feature` (роль Architect) по сообщению из Telegram-темы "AI Разработка" (`[отправитель: architect]`, `telegram_launch_message_id: 4553`): "Там пришло письмо на почту. В нем есть кнопочка 🏆 Посмотреть турнир. Она куда то не туда редериктится и не открыветс сайт". Прямая техническая постановка, `specs/requests/` не создавался.
