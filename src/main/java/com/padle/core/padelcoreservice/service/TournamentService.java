@@ -485,7 +485,7 @@ public class TournamentService {
             String dateStr = tournament.getFechaInicio().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
             String timeStr = tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm"));
             String clubName = resolveClubName(tournament.getClubId());
-            String tournamentUrl = String.format("%s/tournaments/%d", baseUrl, tournament.getId());
+            String tournamentUrl = String.format("%s/torneo/%d", baseUrl, tournament.getId());
 
             emailService.sendWaitlistAutoConfirmEmail(
                     player.getEmail(),
