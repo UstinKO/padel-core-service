@@ -49,7 +49,7 @@ public class SoloRegistrationSchedulerService {
         int sent = 0;
         for (TournamentRegistration reg : candidates) {
             try {
-                String tournamentUrl = baseUrl + "/tournaments/" + reg.getTournament().getId();
+                String tournamentUrl = baseUrl + "/torneo/" + reg.getTournament().getId();
                 String clubName = resolveClubName(reg.getTournament().getClubId());
 
                 // Дедлайн — за 24h до начала турнира

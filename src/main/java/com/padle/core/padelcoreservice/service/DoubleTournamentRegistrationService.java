@@ -775,7 +775,7 @@ public class DoubleTournamentRegistrationService {
 
         // Если игрок ищет партнёра — уведомляем остальных «ищущих» на этот турнир
         if (status == RegistrationStatus.SOLO_SEARCH) {
-            String tournamentUrl = baseUrl + "/tournaments/" + tournamentId;
+            String tournamentUrl = baseUrl + "/torneo/" + tournamentId;
             List<TournamentRegistration> existingSearchers =
                     registrationRepository.findLookingForPartnerByTournamentId(tournamentId)
                             .stream()
