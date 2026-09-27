@@ -1,7 +1,7 @@
 # LFPT-407: Мобильная адаптация таблицы квалификации Team Playoff в админке
 
 ## Статус
-approved
+done — деплой подтверждён успешным (commit `243488e374ebfb7fe4d399eeadc6a3fc0e6c9a8f`, PR [#409](https://github.com/UstinKO/padel-core-service/pull/409), run: https://github.com/UstinKO/padel-core-service/actions/runs/36340137389)
 
 ## Источник
 [GitHub issue #407](https://github.com/UstinKO/padel-core-service/issues/407) — клиентский запрос через Telegram (организатор, во время реального турнира), оформлен как `specs/requests/LFPT-407-admin-qualification-table-mobile.md`.
