@@ -106,6 +106,24 @@
         .inline-edit select{flex:1;border:1px solid #e2e8f0;border-radius:6px;padding:.25rem .4rem;font-size:.78rem}
         .toast-box{position:fixed;bottom:1rem;right:1rem;z-index:1000;display:flex;flex-direction:column;gap:.5rem}
         .toast{background:#fef9c3;border:1px solid #fcd34d;color:#78350f;padding:.6rem .9rem;border-radius:8px;font-size:.82rem;box-shadow:0 4px 12px rgba(0,0,0,.1);max-width:320px}
+        /* LFPT-415: заголовок колонки раунда квалификации — виден только на десктопе, где табы скрыты */
+        .qual-round-col-title{display:none}
+        /* LFPT-415: M2-бейдж (команда играет свой 2-й, решающий матч квалификации) — акцентный, чтобы отличаться от нейтрального M1 */
+        .info-pill.m2-badge{background:#fef3c7;color:#b45309}
+        /* LFPT-415: десктоп — обе волны квалификации видны одновременно в колонках, без табов */
+        @media (min-width: 769px) {
+            #qualRoundsSection .rounds-tabs{display:none}
+            #qualRoundsSection .round-content{display:grid;grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));gap:1rem;align-items:start;max-width:1400px}
+            #qualRoundsSection .round-content > div[id^="qround-"]{display:block !important}
+            #qualRoundsSection .qual-round-col-title{display:block;font-size:.85rem;font-weight:700;color:#1e293b;margin-bottom:.5rem}
+            #qualRoundsSection .match-card{margin-bottom:.5rem}
+            #qualRoundsSection .match-header{padding:.4rem .75rem;font-size:.76rem}
+            #qualRoundsSection .match-body{padding:.55rem .75rem;gap:.4rem}
+            #qualRoundsSection .team-name{font-size:.82rem}
+            #qualRoundsSection .team-sub{font-size:.7rem}
+            #qualRoundsSection .score-display{font-size:.95rem}
+            #qualRoundsSection .score-inp{width:40px;padding:.2rem}
+        }
     </style>
 </head>
 <body>
@@ -473,7 +491,9 @@
                 </div>
 
                 <!-- Раунды квалификации -->
-                <div th:if="${not #lists.isEmpty(qualRounds)}">
+                <!-- LFPT-415: id нужен, чтобы scope-нуть десктопный двухколоночный CSS именно на эту секцию,
+                     не задев одноимённый класс .round-content в разделе Playoff ниже -->
+                <div th:if="${not #lists.isEmpty(qualRounds)}" id="qualRoundsSection">
                     <div class="rounds-tabs" id="qualTabs">
                         <button th:each="r, stat : ${qualRounds}"
                                 th:id="'qtab-' + ${stat.index}"
@@ -489,6 +509,9 @@
                              th:id="'qround-' + ${iterStat.index}"
                              th:data-round-id="${round.id}"
                              style="display:none">
+                            <!-- LFPT-415: подпись раунда для десктопного двухколоночного режима, где табы скрыты -->
+                            <div class="qual-round-col-title"
+                                 th:text="#{americano.round.prefix} + ' ' + ${round.roundNumber}">Ronda 1</div>
                             <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.75rem;flex-wrap:wrap">
                                 <span class="info-pill" th:text="${round.status}">EN CURSO</span>
                                 <span class="info-pill"
@@ -523,6 +546,7 @@
                                         <div class="team-sub" th:if="${match.team1Player2Name != null}"
                                              th:text="${match.team1Player2Name}">Jugador 2</div>
                                         <span th:if="${match.team1MatchOrdinal != null}" class="info-pill"
+                                              th:classappend="${match.team1MatchOrdinal == 2} ? 'm2-badge' : ''"
                                               style="font-size:.65rem;padding:.1rem .4rem"
                                               th:text="${match.team1MatchOrdinal == 1} ? #{admin.playoff.col.m1} : #{admin.playoff.col.m2}">P1</span>
                                         <button th:unless="${match.isCompleted}" type="button" class="icon-btn"
@@ -570,6 +594,7 @@
                                         <div class="team-sub" th:if="${match.team2Player2Name != null}"
                                              th:text="${match.team2Player2Name}">Jugador 4</div>
                                         <span th:if="${match.team2MatchOrdinal != null}" class="info-pill"
+                                              th:classappend="${match.team2MatchOrdinal == 2} ? 'm2-badge' : ''"
                                               style="font-size:.65rem;padding:.1rem .4rem"
                                               th:text="${match.team2MatchOrdinal == 1} ? #{admin.playoff.col.m1} : #{admin.playoff.col.m2}">P1</span>
                                         <button th:unless="${match.isCompleted}" type="button" class="icon-btn"
