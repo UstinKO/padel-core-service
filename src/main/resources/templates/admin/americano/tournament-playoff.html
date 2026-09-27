@@ -90,6 +90,23 @@
         .round-tab.completed.active{background:#4f46e5;color:#fff}
         .round-content{padding:1rem 1.5rem}
         .info-pill{display:inline-flex;align-items:center;gap:.3rem;padding:.25rem .6rem;border-radius:10px;font-size:.78rem;font-weight:600;background:#f1f5f9;color:#475569}
+        .wave-title{display:none;margin:0 0 .5rem;font-size:.9rem;font-weight:700;color:#1e293b}
+        .badge-m1{background:#dbeafe;color:#1d4ed8}
+        .badge-m2{background:#ede9fe;color:#6d28d9}
+        /* LFPT-415: десктоп — обе волны квалификации (M1/M2) видны одновременно в две колонки,
+           заскоуплено по #qualRoundContent, а не по .round-content, чтобы не задеть "Nuevo partido"
+           и раздел Playoff, которые используют тот же класс для отступов. */
+        @media (min-width: 1025px) {
+            #qualTabs{display:none}
+            #qualRoundContent{display:grid;grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));gap:1.25rem;align-items:start}
+            #qualRoundContent .qual-wave{display:block !important}
+            #qualRoundContent .wave-title{display:block}
+            #qualRoundContent .match-card{margin-bottom:.6rem}
+            #qualRoundContent .match-header{padding:.4rem .75rem;font-size:.78rem}
+            #qualRoundContent .match-body{padding:.6rem .75rem;gap:.4rem}
+            #qualRoundContent .team-name{font-size:.82rem}
+            #qualRoundContent .team-sub{font-size:.7rem}
+        }
         .tbd{color:#94a3b8;font-style:italic}
         .court-board-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:.75rem;padding:1rem 1.5rem}
         .court-card{border:1px solid #e2e8f0;border-radius:10px;padding:.75rem;background:#fff}
@@ -484,11 +501,13 @@
                                 onclick="switchQualRound(this)">Round 1</button>
                     </div>
 
-                    <div class="round-content">
+                    <div class="round-content" id="qualRoundContent">
                         <div th:each="round, iterStat : ${qualRounds}"
                              th:id="'qround-' + ${iterStat.index}"
                              th:data-round-id="${round.id}"
+                             class="qual-wave"
                              style="display:none">
+                            <h4 class="wave-title" th:text="#{americano.round.prefix} + ' ' + ${round.roundNumber}">Ronda 1</h4>
                             <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.75rem;flex-wrap:wrap">
                                 <span class="info-pill" th:text="${round.status}">EN CURSO</span>
                                 <span class="info-pill"
@@ -523,6 +542,7 @@
                                         <div class="team-sub" th:if="${match.team1Player2Name != null}"
                                              th:text="${match.team1Player2Name}">Jugador 2</div>
                                         <span th:if="${match.team1MatchOrdinal != null}" class="info-pill"
+                                              th:classappend="${match.team1MatchOrdinal == 1} ? 'badge-m1' : 'badge-m2'"
                                               style="font-size:.65rem;padding:.1rem .4rem"
                                               th:text="${match.team1MatchOrdinal == 1} ? #{admin.playoff.col.m1} : #{admin.playoff.col.m2}">P1</span>
                                         <button th:unless="${match.isCompleted}" type="button" class="icon-btn"
@@ -570,6 +590,7 @@
                                         <div class="team-sub" th:if="${match.team2Player2Name != null}"
                                              th:text="${match.team2Player2Name}">Jugador 4</div>
                                         <span th:if="${match.team2MatchOrdinal != null}" class="info-pill"
+                                              th:classappend="${match.team2MatchOrdinal == 1} ? 'badge-m1' : 'badge-m2'"
                                               style="font-size:.65rem;padding:.1rem .4rem"
                                               th:text="${match.team2MatchOrdinal == 1} ? #{admin.playoff.col.m1} : #{admin.playoff.col.m2}">P1</span>
                                         <button th:unless="${match.isCompleted}" type="button" class="icon-btn"
