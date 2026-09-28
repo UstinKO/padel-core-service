@@ -1,7 +1,7 @@
 # LFPT-389: Адаптивная турнирная сетка Team Playoff (десктоп-масштаб, pinch-zoom на мобильном, экспорт в PNG)
 
 ## Статус
-approved
+done — деплой подтверждён успешным (commit `42bcc39926524af6151eeb063965da03e58564de`, PR [#418](https://github.com/UstinKO/padel-core-service/pull/418), run: https://github.com/UstinKO/padel-core-service/actions/runs/36383850145)
 
 ## Источник
 Прямая техническая постановка от архитектора/пользователя — [issue #389](https://github.com/UstinKO/padel-core-service/issues/389). Клиентское ТЗ (Telegram, тема "AI Разработка", переслано от Evgeny_754) практически дословно совпадает с телом issue — отдельный `specs/requests/` не заводился (Вход 3 `develop-feature.md`: готовый технический issue от архитектора/пользователя, не от внешнего заказчика напрямую).
