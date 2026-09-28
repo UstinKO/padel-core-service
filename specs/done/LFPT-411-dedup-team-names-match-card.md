@@ -1,7 +1,7 @@
 # LFPT-411: убрать дублирование названий команд в шапке карточки матча квалификации Team Playoff
 
 ## Статус
-approved
+done — деплой подтверждён успешным (commit `c06c73d0a4e67341fad5e20b2d8f6cfc07bf409c`, PR [#412](https://github.com/UstinKO/padel-core-service/pull/412), run: https://github.com/UstinKO/padel-core-service/actions/runs/36384263795)
 
 ## Источник
 Клиентский запрос [specs/requests/LFPT-411-dedup-team-names-match-card.md](../requests/LFPT-411-dedup-team-names-match-card.md), issue [#411](https://github.com/UstinKO/padel-core-service/issues/411).
