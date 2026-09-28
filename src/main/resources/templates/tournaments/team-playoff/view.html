@@ -77,9 +77,31 @@
         .status-pill.eliminated{background:#fee2e2;color:#991b1b}
         .status-pill.champion{background:#fef3c7;color:#92400e}
         .status-pill.runner-up{background:#e2e8f0;color:#475569}
-        .bracket{display:flex;gap:1.5rem;overflow-x:auto;padding:1.25rem 1.5rem}
+        .bracket{display:flex;gap:1.5rem;padding:1.25rem 1.5rem}
         .bracket-col{flex:0 0 250px;display:flex;flex-direction:column;justify-content:space-around;gap:1rem}
         .bracket-col-title{font-size:.78rem;font-weight:700;text-align:center;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:.25rem}
+        .bracket-controls{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;padding:0 1.5rem 1rem}
+        .bracket-controls .zoom-group{display:flex;align-items:center;gap:.25rem;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden}
+        .bracket-btn{border:none;background:#fff;color:#475569;font-size:.85rem;font-weight:600;padding:.4rem .7rem;cursor:pointer;line-height:1}
+        .bracket-btn:hover{background:#f1f5f9}
+        .bracket-btn.zoom-pct{min-width:3.6rem;border-left:1px solid #e2e8f0;border-right:1px solid #e2e8f0}
+        .bracket-btn-outline{border:1px solid #e2e8f0;border-radius:8px;background:#fff;color:#475569}
+        .bracket-btn-outline:hover{background:#f1f5f9}
+        .bracket-btn-download{border:none;border-radius:8px;background:#FF6B35;color:#fff;padding:.45rem .9rem;font-size:.85rem;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:.4rem}
+        .bracket-btn-download:hover{background:#e85f2e}
+        .bracket-viewport{overflow:hidden;position:relative;touch-action:none;-webkit-user-select:none;user-select:none;background:#f8fafc;border-radius:8px;margin:0 1.5rem 1.25rem}
+        .bracket-viewport.grabbable{cursor:grab}
+        .bracket-viewport.grabbing{cursor:grabbing}
+        .bracket-stage{transform-origin:0 0;will-change:transform;display:inline-block}
+        @media (max-width: 768px) {
+            .bracket-viewport{height:65vh;margin:0 1rem 1.25rem}
+        }
+        .bracket-export-header{position:absolute;left:-10000px;top:0;display:inline-flex;flex-direction:column;background:#fff;font-family:'Inter',sans-serif}
+        .bracket-export-meta{display:flex;align-items:center;gap:1rem;padding:1.5rem 1.5rem 1.25rem;border-bottom:2px solid #1e293b}
+        .bracket-export-meta img{flex-shrink:0}
+        .bracket-export-meta .name{font-size:1.5rem;font-weight:800;color:#1e293b;margin:0 0 .35rem}
+        .bracket-export-meta .badges{display:flex;gap:.6rem;flex-wrap:wrap;font-size:.9rem;color:#475569}
+        .bracket-export-meta .badges span{background:#f1f5f9;padding:.2rem .6rem;border-radius:8px}
     </style>
 </head>
 <body>
@@ -267,47 +289,82 @@
             <h3><i class="fas fa-trophy"></i> <span th:text="#{team_playoff.playoff.title}">Playoff</span></h3>
         </div>
 
-        <div class="bracket">
-            <div th:each="round : ${playoffRounds}" class="bracket-col">
-                <div class="bracket-col-title" th:switch="${round.note}">
-                    <span th:case="'ROUND_OF_16'" th:text="#{team_playoff.stage.round_of_16}">1/8 Final</span>
-                    <span th:case="'QUARTER_FINAL'" th:text="#{team_playoff.stage.quarter_final}">Cuartos</span>
-                    <span th:case="'SEMI_FINAL'" th:text="#{team_playoff.stage.semi_final}">Semifinal</span>
-                    <span th:case="'FINAL'" th:text="#{team_playoff.stage.final}">Final</span>
-                    <span th:case="*" th:text="${round.note}">Etapa</span>
-                </div>
+        <div class="bracket-controls">
+            <div class="zoom-group">
+                <button type="button" id="bracketZoomOut" class="bracket-btn" th:title="#{team_playoff.bracket.zoom_out}">−</button>
+                <button type="button" id="bracketZoomReset" class="bracket-btn zoom-pct" th:title="#{team_playoff.bracket.zoom_reset}">100%</button>
+                <button type="button" id="bracketZoomIn" class="bracket-btn" th:title="#{team_playoff.bracket.zoom_in}">+</button>
+            </div>
+            <button type="button" id="bracketFitScreen" class="bracket-btn bracket-btn-outline">
+                <i class="fas fa-compress"></i> <span th:text="#{team_playoff.bracket.fit_screen}">Ajustar a pantalla</span>
+            </button>
+            <button type="button" id="bracketDownload" class="bracket-btn-download">
+                <i class="fas fa-download"></i> <span th:text="#{team_playoff.bracket.download}">Descargar cuadro</span>
+            </button>
+        </div>
 
-                <div th:each="match : ${round.matches}" class="match-card">
-                    <div class="match-header">
-                        <span>Cancha <span th:text="${match.courtNumber}">1</span></span>
-                        <span th:if="${match.isCompleted}" class="info-pill"><i class="fas fa-check"></i></span>
-                        <span th:if="${!match.isCompleted and match.priority}" class="info-pill" th:title="#{team_playoff.bracket.priority_title}">⚡ <span th:text="#{team_playoff.bracket.priority}">Prioridad</span></span>
-                    </div>
-                    <div class="match-body">
-                        <div class="team-left">
-                            <div th:if="${match.team1Player1Name != null}" class="team-name"><span th:if="${match.team1Number != null}" style="color:#94a3b8;margin-right:.25rem" th:text="'№' + ${match.team1Number}">№1</span><span th:text="${match.team1Player1Name}">TBD</span><i th:if="${match.team1Player1Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i></div>
-                            <div th:if="${match.team1Player2Name != null}" class="team-sub"><span th:text="${match.team1Player2Name}">TBD</span><i th:if="${match.team1Player2Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i></div>
-                            <div th:if="${match.team1Player1Name == null}" class="tbd" th:text="#{team_playoff.bracket.tbd}">TBD</div>
+        <div id="bracketViewport" class="bracket-viewport">
+            <div id="bracketStage" class="bracket-stage">
+                <div class="bracket" id="bracketContent">
+                    <div th:each="round : ${playoffRounds}" class="bracket-col">
+                        <div class="bracket-col-title" th:switch="${round.note}">
+                            <span th:case="'ROUND_OF_16'" th:text="#{team_playoff.stage.round_of_16}">1/8 Final</span>
+                            <span th:case="'QUARTER_FINAL'" th:text="#{team_playoff.stage.quarter_final}">Cuartos</span>
+                            <span th:case="'SEMI_FINAL'" th:text="#{team_playoff.stage.semi_final}">Semifinal</span>
+                            <span th:case="'FINAL'" th:text="#{team_playoff.stage.final}">Final</span>
+                            <span th:case="*" th:text="${round.note}">Etapa</span>
                         </div>
-                        <div class="vs-block">
-                            <div th:if="${match.isCompleted}" class="score-display">
-                                <span th:class="${match.team1Games > match.team2Games ? 'score-win' : (match.team1Games < match.team2Games ? 'score-lose' : 'score-draw')}"
-                                      th:text="${match.team1Games}">6</span>
-                                <span class="vs-badge">:</span>
-                                <span th:class="${match.team2Games > match.team1Games ? 'score-win' : (match.team2Games < match.team1Games ? 'score-lose' : 'score-draw')}"
-                                      th:text="${match.team2Games}">4</span>
+
+                        <div th:each="match : ${round.matches}" class="match-card">
+                            <div class="match-header">
+                                <span>Cancha <span th:text="${match.courtNumber}">1</span></span>
+                                <span th:if="${match.isCompleted}" class="info-pill"><i class="fas fa-check"></i></span>
+                                <span th:if="${!match.isCompleted and match.priority}" class="info-pill" th:title="#{team_playoff.bracket.priority_title}">⚡ <span th:text="#{team_playoff.bracket.priority}">Prioridad</span></span>
                             </div>
-                            <span th:unless="${match.isCompleted}" class="vs-badge">VS</span>
-                        </div>
-                        <div class="team-right">
-                            <div th:if="${match.team2Player1Name != null}" class="team-name"><span th:if="${match.team2Number != null}" style="color:#94a3b8;margin-right:.25rem" th:text="'№' + ${match.team2Number}">№1</span><span th:text="${match.team2Player1Name}">TBD</span><i th:if="${match.team2Player1Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i></div>
-                            <div th:if="${match.team2Player2Name != null}" class="team-sub"><span th:text="${match.team2Player2Name}">TBD</span><i th:if="${match.team2Player2Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i></div>
-                            <div th:if="${match.team2Player1Name == null}" class="tbd" th:text="#{team_playoff.bracket.tbd}">TBD</div>
+                            <div class="match-body">
+                                <div class="team-left">
+                                    <div th:if="${match.team1Player1Name != null}" class="team-name"><span th:if="${match.team1Number != null}" style="color:#94a3b8;margin-right:.25rem" th:text="'№' + ${match.team1Number}">№1</span><span th:text="${match.team1Player1Name}">TBD</span><i th:if="${match.team1Player1Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i></div>
+                                    <div th:if="${match.team1Player2Name != null}" class="team-sub"><span th:text="${match.team1Player2Name}">TBD</span><i th:if="${match.team1Player2Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i></div>
+                                    <div th:if="${match.team1Player1Name == null}" class="tbd" th:text="#{team_playoff.bracket.tbd}">TBD</div>
+                                </div>
+                                <div class="vs-block">
+                                    <div th:if="${match.isCompleted}" class="score-display">
+                                        <span th:class="${match.team1Games > match.team2Games ? 'score-win' : (match.team1Games < match.team2Games ? 'score-lose' : 'score-draw')}"
+                                              th:text="${match.team1Games}">6</span>
+                                        <span class="vs-badge">:</span>
+                                        <span th:class="${match.team2Games > match.team1Games ? 'score-win' : (match.team2Games < match.team1Games ? 'score-lose' : 'score-draw')}"
+                                              th:text="${match.team2Games}">4</span>
+                                    </div>
+                                    <span th:unless="${match.isCompleted}" class="vs-badge">VS</span>
+                                </div>
+                                <div class="team-right">
+                                    <div th:if="${match.team2Player1Name != null}" class="team-name"><span th:if="${match.team2Number != null}" style="color:#94a3b8;margin-right:.25rem" th:text="'№' + ${match.team2Number}">№1</span><span th:text="${match.team2Player1Name}">TBD</span><i th:if="${match.team2Player1Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i></div>
+                                    <div th:if="${match.team2Player2Name != null}" class="team-sub"><span th:text="${match.team2Player2Name}">TBD</span><i th:if="${match.team2Player2Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i></div>
+                                    <div th:if="${match.team2Player1Name == null}" class="tbd" th:text="#{team_playoff.bracket.tbd}">TBD</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Скрытая шапка для экспорта сетки в PNG (LFPT-389) — не показывается визуально, только для SnapDOM -->
+    <div id="bracketExportHeader" class="bracket-export-header">
+        <div class="bracket-export-meta">
+            <img th:src="@{/images/1.svg}" alt="1-Padel" width="56" height="56">
+            <div>
+                <p class="name" th:text="${tournament.nombre}">Torneo</p>
+                <div class="badges">
+                    <span th:if="${tournament.generoFormato}" th:text="${tournament.generoFormato}">Mixto</span>
+                    <span th:if="${tournament.categoriaNivel}" th:text="${tournament.categoriaNivel}">C7</span>
+                    <span th:if="${tournament.fechaInicio}" th:text="${#temporals.format(tournament.fechaInicio, 'dd.MM.yyyy')}">01.01.2026</span>
+                    <span th:if="${tournament.clubNombre}" th:text="${tournament.clubNombre}">Club</span>
+                </div>
+            </div>
+        </div>
+        <div id="bracketExportSlot"></div>
     </div>
 
 </main>
@@ -317,8 +374,13 @@
 <script th:src="@{/js/i18n/t.js}"></script>
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@zumer/snapdom@3.1.1/dist/snapdom.js"></script>
+<script th:src="@{/js/bracket-zoom-export.js}"></script>
 <script th:src="@{/js/team-playoff-realtime.js}"></script>
 <script th:inline="javascript">
+    if (window.BracketZoomExport) {
+        BracketZoomExport.init({ tournamentId: [[${tournament.id}]] });
+    }
     new TeamPlayoffRealtime([[${tournament.id}]]);
 
     let reloadTimer = null;
