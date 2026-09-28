@@ -73,7 +73,7 @@ public class SecurityConfig {
                         // нативного WebSocket) шлют служебные POST без X-XSRF-TOKEN — это не fetch,
                         // csrf.js их не видит. Канал только для broadcast сервер→клиент (нет ни одного
                         // @MessageMapping), все мутации идут через отдельные CSRF-защищённые /api/**.
-                        .ignoringRequestMatchers("/api/auth/**", "/test/telegram/**", "/ws/**")
+                        .ignoringRequestMatchers("/api/auth/**", "/ws/**")
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
@@ -124,7 +124,6 @@ public class SecurityConfig {
                                 "/double-registration/complete",
                                 "/double-registration/accept-pair",
                                 "/ws/**",
-                                "/test/telegram/**",
                                 "/api/cookies/**"
                         ).permitAll()
                         .requestMatchers("/players/dashboard").authenticated()
@@ -135,6 +134,9 @@ public class SecurityConfig {
                         // Внутренний тестовый инструментарий организатора (JDBC-based, см. CLAUDE.md) —
                         // доступен только владельцу платформы, не ORGANIZER/ADMIN.
                         .requestMatchers("/test/tournaments/**").hasRole("SUPER_ADMIN")
+                        // LFPT-0423: ручная проверка Telegram-интеграции шлёт сообщения в рабочую группу
+                        // и напоминания игрокам — только SUPER_ADMIN, под CSRF, как любая мутация.
+                        .requestMatchers("/test/telegram/**").hasRole("SUPER_ADMIN")
                         // Публичные GET-эндпоинты King of Court для страницы зрителей
                         .requestMatchers(org.springframework.http.HttpMethod.GET,
                                 "/api/king-of-court/tournaments/*/state",
