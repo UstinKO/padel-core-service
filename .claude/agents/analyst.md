@@ -12,7 +12,7 @@ tools: Read, Grep, Glob, Write, Edit, Bash
 
 ## Задача
 
-Превратить клиентский запрос в полную техническую фиче-спеку `specs/features/LFPT-XXX-<slug>.md` по шаблону `specs/features/_template.md`.
+Превратить клиентский запрос в полную техническую фиче-спеку `specs/features/LFPT-XXX-<slug>.md` по шаблону `specs/features/_template.md`. Спека (включая заголовок) пишется **на русском** (`GIT_WORKFLOW.md` §1.5); заголовок спеки совпадает с заголовком issue.
 
 ## Обязательные шаги
 
