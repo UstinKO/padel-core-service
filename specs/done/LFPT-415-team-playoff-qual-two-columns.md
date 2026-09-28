@@ -1,7 +1,7 @@
 # LFPT-415: Team Playoff admin — два раунда квалификации в две колонки на десктопе + заметнее M1/M2
 
 ## Статус
-approved
+done — деплой подтверждён успешным (commit `b86e1a8da8b7c5f9298fc3472376dc353a9477a6`, PR [#416](https://github.com/UstinKO/padel-core-service/pull/416), run: https://github.com/UstinKO/padel-core-service/actions/runs/36385212871)
 
 ## Источник
 [GitHub issue #415](https://github.com/UstinKO/padel-core-service/issues/415) — клиентский запрос через Telegram (организатор, переслано от Evgeny_754), оформлен как `specs/requests/LFPT-415-team-playoff-qual-two-columns.md`.
