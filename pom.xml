@@ -214,6 +214,13 @@
             </exclusions>
         </dependency>
 
+        <!-- MockMvc-проверки правил доступа через реальную цепочку фильтров (user(), csrf()) -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- Явно добавляем безопасную версию AssertJ -->
         <dependency>
             <groupId>org.assertj</groupId>
