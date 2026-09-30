@@ -735,6 +735,47 @@ public class EmailService {
     }
 
     /**
+     * LFPT-437: email-напоминание за 5ч до начала парного турнира.
+     * Текст письма фиксирован на испанском по требованию заказчика (не переводится через i18n),
+     * как и у существующих Telegram-напоминаний в TelegramReminderScheduler.
+     */
+    @Timed(name = "email.send.time", tags = {"service=email", "type=pair_tournament_reminder"})
+    @TrackErrors(name = "email.send.errors", tags = {"service=email", "type=pair_tournament_reminder"})
+    @Async
+    public void sendPairTournamentReminderEmail(
+            @MetricTag("recipient") String to,
+            @MetricTag("playerName") String playerName,
+            String clubName,
+            String direccion,
+            String hora) {
+
+        emailMetricsService.recordEmailAttempt("PAIR_TOURNAMENT_REMINDER");
+        if (emailMetricsService.isDailyLimitReached(dailyEmailLimit)) {
+            log.warn("Daily email limit reached, skipping pair tournament reminder to: {}", to);
+            emailMetricsService.recordEmailRejected("PAIR_TOURNAMENT_REMINDER", "DAILY_LIMIT");
+            return;
+        }
+        try {
+            Context context = new Context(new Locale("es"));
+            context.setVariable("playerName", playerName);
+            context.setVariable("clubName", clubName);
+            context.setVariable("direccion", direccion);
+            context.setVariable("hora", hora);
+            context.setVariable("year", java.time.Year.now().getValue());
+
+            String html = templateEngine.process("email/pair-tournament-reminder", context);
+            String subject = "🎾 Recordatorio: tu torneo de pádel es hoy a las " + hora + " hs";
+            sendHtmlEmail(to, subject, html);
+
+            emailMetricsService.recordEmailSent("PAIR_TOURNAMENT_REMINDER");
+            log.info("✅ Pair tournament reminder sent to: {}", to);
+        } catch (Exception e) {
+            emailMetricsService.recordEmailError("PAIR_TOURNAMENT_REMINDER", e.getClass().getSimpleName());
+            log.error("❌ Error sending pair tournament reminder to {}: {}", to, e.getMessage(), e);
+        }
+    }
+
+    /**
      * Универсальный метод для отправки HTML писем (БЕЗ ИЗМЕНЕНИЙ)
      */
     private void sendHtmlEmail(String to, String subject, String htmlContent) throws MessagingException {
