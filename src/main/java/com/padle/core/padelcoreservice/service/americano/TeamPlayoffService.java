@@ -1510,7 +1510,12 @@ public class TeamPlayoffService {
         if (!playoffMatches.isEmpty()) {
             AmericanoMatch lastPlayoffMatch = playoffMatches.get(playoffMatches.size() - 1);
             if (lastPlayoffMatch.isCompleted()) {
-                dto.setTournamentStatus(isMatchWinner(lastPlayoffMatch, team.getId()) ? "ADVANCED" : "ELIMINATED");
+                if (isMatchWinner(lastPlayoffMatch, team.getId())) {
+                    dto.setTournamentStatus("ADVANCED");
+                } else {
+                    dto.setTournamentStatus("ELIMINATED");
+                    dto.setEliminatedStage(lastPlayoffMatch.getPlayoffStage().name());
+                }
                 return;
             }
         }

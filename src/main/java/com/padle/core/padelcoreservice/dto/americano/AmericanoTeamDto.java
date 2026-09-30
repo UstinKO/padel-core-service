@@ -66,6 +66,9 @@ public class AmericanoTeamDto {
     /** LFPT-367: соперник по уже сформированной, но ещё не назначенной на корт паре. */
     private String queueOpponentName;
 
+    /** LFPT-0388: этап плей-офф (имя {@link com.padle.core.padelcoreservice.model.enums.PlayoffStage}), на котором команда выбыла — заполняется только когда tournamentStatus == "ELIMINATED". */
+    private String eliminatedStage;
+
     // Данные регистрации (AMERICANO_TEAMS)
     private String registrationSource;
     private Boolean hasPaid;

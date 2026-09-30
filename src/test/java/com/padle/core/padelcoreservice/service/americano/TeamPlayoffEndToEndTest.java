@@ -110,6 +110,7 @@ class TeamPlayoffEndToEndTest {
         playThroughPlayoff(tournamentId);
         assertNoUnexplainedRematchesInPlayoff(tournamentId);
         assertChampionAndRunnerUpDetermined(tournamentId);
+        assertEliminatedTeamsExposeCorrectStage(tournamentId, teams);
     }
 
     /**
@@ -334,6 +335,43 @@ class TeamPlayoffEndToEndTest {
 
         Tournament tournament = tournamentRepository.findById(tournamentId).orElseThrow();
         assertThat(tournament.getEstado()).isEqualTo(TournamentStatus.FINALIZADO);
+    }
+
+    /**
+     * LFPT-0388: колонка «Ситуация» показывает не просто общий статус «Выбыла», а этап плей-офф,
+     * на котором команда закончила турнир — проверяет, что {@code eliminatedStage} в DTO совпадает
+     * с этапом последнего сыгранного командой матча плей-офф и является реальным довфинальным этапом.
+     */
+    private void assertEliminatedTeamsExposeCorrectStage(Long tournamentId, List<AmericanoTeam> teams) {
+        List<AmericanoTeamDto> ranking = playoffService.getQualRanking(tournamentId).getRanking();
+        List<AmericanoMatch> playoffMatches = matchRepository.findByTournamentIdOrderByRoundIdAscMatchNumberAsc(tournamentId)
+                .stream()
+                .filter(m -> m.getPlayoffStage() != null)
+                .toList();
+
+        boolean anyEliminated = false;
+        for (AmericanoTeam team : teams) {
+            AmericanoTeamDto dto = ranking.stream()
+                    .filter(t -> t.getId().equals(team.getId()))
+                    .findFirst().orElseThrow();
+            if (!"ELIMINATED".equals(dto.getTournamentStatus())) {
+                continue;
+            }
+            anyEliminated = true;
+
+            List<AmericanoMatch> teamPlayoffMatches = playoffMatches.stream()
+                    .filter(m -> team.getId().equals(m.getTeam1Id()) || team.getId().equals(m.getTeam2Id()))
+                    .toList();
+            AmericanoMatch lastMatch = teamPlayoffMatches.get(teamPlayoffMatches.size() - 1);
+
+            assertThat(dto.getEliminatedStage())
+                    .as("eliminatedStage for team %d matches its last playoff match stage", team.getId())
+                    .isEqualTo(lastMatch.getPlayoffStage().name());
+            assertThat(dto.getEliminatedStage())
+                    .as("eliminatedStage for team %d is a real pre-final playoff stage", team.getId())
+                    .isIn("ROUND_OF_16", "QUARTER_FINAL", "SEMI_FINAL");
+        }
+        assertThat(anyEliminated).as("at least one team was eliminated in this bracket size").isTrue();
     }
 
     // ═══════════════════════════════════════════════════════════════════════
