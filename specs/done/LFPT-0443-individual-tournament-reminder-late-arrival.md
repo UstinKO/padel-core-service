@@ -1,7 +1,7 @@
 # LFPT-0443: Feature email-напоминание за 5 часов для индивидуальных турниров + логика опоздания (−10 очков) + отдельный сценарий Cancha Abierta
 
 ## Статус
-approved
+done (PR #446)
 
 ## Источник
 GitHub issue [#443](https://github.com/UstinKO/padel-core-service/issues/443), написанный напрямую по клиентскому запросу — исходный запрос сохранён в [specs/requests/LFPT-0443-individual-reminder-late-arrival.md](../requests/LFPT-0443-individual-reminder-late-arrival.md) (пришёл в Telegram, `[отправитель: customer]`).
