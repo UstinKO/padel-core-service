@@ -313,6 +313,57 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Окно подтверждения успешной ИНДИВИДУАЛЬНОЙ регистрации (status=CONFIRMED),
+    // отдельно от showResultModal - не закрывается по таймеру, т.к. текст длиннее.
+    function showRegistrationConfirmModal(tournamentType) {
+        const modal = document.getElementById('registrationConfirmModal');
+        const body = document.getElementById('registrationConfirmModalBody');
+        if (!modal || !body) return;
+
+        const isCanchaAbierta = tournamentType === 'CANCHA_ABIERTA';
+
+        let rulesHtml;
+        if (isCanchaAbierta) {
+            rulesHtml = `
+                <p class="reg-confirm-subtitle">${t('regConfirm.cancha.subtitle')}</p>
+                <div class="reg-confirm-info-box">
+                    <p>${t('regConfirm.cancha.rule1')}</p>
+                    <p>${t('regConfirm.cancha.rule2')}</p>
+                </div>`;
+        } else {
+            rulesHtml = `
+                <p class="reg-confirm-subtitle">${t('regConfirm.individual.subtitle')}</p>
+                <div class="reg-confirm-info-box">
+                    <div class="reg-confirm-info-box__title">
+                        <i class="fas fa-info-circle"></i> ${t('regConfirm.individual.rulesTitle')}
+                    </div>
+                    <ul class="reg-confirm-rules">
+                        <li>${t('regConfirm.individual.rule1')}</li>
+                        <li>${t('regConfirm.individual.rule2')}</li>
+                        <li>${t('regConfirm.individual.rule3')}</li>
+                        <li>${t('regConfirm.individual.rule4')}</li>
+                        <li>${t('regConfirm.individual.rule5')}</li>
+                    </ul>
+                </div>`;
+        }
+
+        body.innerHTML = `
+            <i class="fas fa-check-circle" style="color: #28a745; font-size: 3rem;"></i>
+            <h4 class="reg-confirm-title">${t('regConfirm.title')}</h4>
+            ${rulesHtml}
+        `;
+
+        modal.classList.add('show');
+    }
+
+    const registrationConfirmModalOkBtn = document.getElementById('registrationConfirmModalOkBtn');
+    if (registrationConfirmModalOkBtn) {
+        registrationConfirmModalOkBtn.textContent = t('regConfirm.btn.ok');
+        registrationConfirmModalOkBtn.addEventListener('click', function() {
+            window.location.reload();
+        });
+    }
+
     // ===== КНОПКИ РЕГИСТРАЦИИ =====
     const registerBtn = document.querySelector('.btn-register');
     const cancelBtn = document.querySelector('.btn-cancel');
@@ -370,8 +421,11 @@ document.addEventListener('DOMContentLoaded', function() {
                             const data = await response.json();
 
                             if (data.success) {
-                                const msg = data.status === 'CONFIRMED' ? t('details.success.confirmed') : t('details.success.waitlist_added');
-                                showResultModal('success', t('details.success.registered'), msg);
+                                if (data.status === 'CONFIRMED') {
+                                    showRegistrationConfirmModal(window.tournament?.tipo);
+                                } else {
+                                    showResultModal('success', t('details.success.registered'), t('details.success.waitlist_added'));
+                                }
                             } else {
                                 btn.disabled = false;
                                 btn.innerHTML = window.tournament?.inscritosActuales >= window.tournament?.cupoMax ?
