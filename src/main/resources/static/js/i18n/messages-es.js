@@ -179,6 +179,20 @@ window.APP_MESSAGES = {
     'details.success.solo_search':   'Te agregamos a la lista de jugadores que buscan compañero',
     'details.success.solo_later':    'Inscripción registrada. Recordá agregar tu compañero antes del torneo',
 
+    // ── registration confirm modal (tournament-details.js, dashboard.js) ────
+    'regConfirm.title':                    '¡Inscripción confirmada!',
+    'regConfirm.btn.ok':                   'Entendido',
+    'regConfirm.individual.subtitle':      'Ya estás inscripto en el torneo.',
+    'regConfirm.individual.rulesTitle':    'Información importante',
+    'regConfirm.individual.rule1':         '<strong>Cancelación.</strong> Podés cancelar tu participación sin cargo hasta 24 horas antes del inicio del torneo.',
+    'regConfirm.individual.rule2':         '<strong>Si cancelás después de ese plazo,</strong> deberás abonar el valor total de la inscripción, ya que las canchas ya están reservadas.',
+    'regConfirm.individual.rule3':         '<strong>Reintegro posible.</strong> Si conseguimos otro jugador que ocupe tu lugar y abone la inscripción, no tendrás que pagar o se realizará el reintegro correspondiente.',
+    'regConfirm.individual.rule4':         '<strong>Llegá antes.</strong> Te pedimos llegar 15 minutos antes del inicio del torneo.',
+    'regConfirm.individual.rule5':         '<strong>Llegada tarde.</strong> Si llegás tarde, comenzarás el torneo con −10 puntos.',
+    'regConfirm.cancha.subtitle':          'Ya estás inscripto en la Cancha Abierta.',
+    'regConfirm.cancha.rule1':             '<strong>Llegá antes.</strong> Te pedimos llegar aproximadamente 15 minutos antes del inicio.',
+    'regConfirm.cancha.rule2':             '<strong>Si finalmente no podés venir,</strong> por favor avisá al organizador con anticipación, para que podamos liberar tu lugar para otro jugador.',
+
     // ── share-panel.js ──────────────────────────────────────────────────────
     'share.title':            'Compartir torneo',
     'share.btn.copy':         'Copiar',

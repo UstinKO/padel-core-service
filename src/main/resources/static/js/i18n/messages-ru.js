@@ -179,6 +179,20 @@ window.APP_MESSAGES = {
     'details.success.solo_search':   'Вы добавлены в список игроков, ищущих партнёра',
     'details.success.solo_later':    'Регистрация принята. Не забудьте добавить партнёра до начала турнира',
 
+    // ── registration confirm modal (tournament-details.js, dashboard.js) ────
+    'regConfirm.title':                    'Регистрация подтверждена!',
+    'regConfirm.btn.ok':                   'Понятно',
+    'regConfirm.individual.subtitle':      'Вы успешно записались на турнир.',
+    'regConfirm.individual.rulesTitle':    'Важно знать',
+    'regConfirm.individual.rule1':         '<strong>Отмена участия.</strong> Вы можете отменить регистрацию без оплаты не позднее чем за 24 часа до начала турнира.',
+    'regConfirm.individual.rule2':         '<strong>При отмене менее чем за 24 часа</strong> участие оплачивается полностью, так как корты уже забронированы и подлежат оплате клубу.',
+    'regConfirm.individual.rule3':         '<strong>Возврат возможен.</strong> Если найдём другого игрока, который займёт ваше место и полностью оплатит участие, оплата с вас не взимается или возвращается.',
+    'regConfirm.individual.rule4':         '<strong>Приезжайте заранее.</strong> Просим прибыть за 15 минут до начала турнира.',
+    'regConfirm.individual.rule5':         '<strong>Опоздание.</strong> Если вы приходите позже начала турнира, вы начинаете турнир со стартовым результатом −10 очков.',
+    'regConfirm.cancha.subtitle':          'Вы записались на Cancha Abierta.',
+    'regConfirm.cancha.rule1':             '<strong>Приезжайте заранее.</strong> Просим прибыть примерно за 15 минут до начала.',
+    'regConfirm.cancha.rule2':             '<strong>Если не сможете прийти,</strong> пожалуйста, заранее сообщите организатору, чтобы освободившееся место смог занять другой игрок.',
+
     // ── share-panel.js ──────────────────────────────────────────────────────
     'share.title':            'Поделиться турниром',
     'share.btn.copy':         'Копировать',
