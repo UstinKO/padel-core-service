@@ -146,3 +146,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.48-add-club-id-to-owner.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.49-add-pair-reminder-sent-at-to-tournament.yaml
+      relativeToChangelogFile: true
