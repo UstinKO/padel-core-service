@@ -1,7 +1,7 @@
 # LFPT-0388: Team Playoff — этап выбывания в колонке «Ситуация» вместо общего «Выбыла»
 
 ## Статус
-approved
+done (PR #434)
 
 ## Источник
 [GitHub issue #388](https://github.com/UstinKO/padel-core-service/issues/388) (заведён напрямую по клиентскому фидбеку в Telegram-теме "AI Разработка"). Клиентский запрос — `specs/requests/LFPT-0388-team-playoff-elimination-stage.md`.
