@@ -464,6 +464,35 @@ public class AdminController {
         return ResponseEntity.ok(result);
     }
 
+    @PostMapping("/tournaments/{tournamentId}/players/{playerId}/late-arrival")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> setLateArrival(
+            @PathVariable Long tournamentId,
+            @PathVariable Long playerId,
+            @RequestParam boolean lateArrival,
+            @AuthenticationPrincipal Owner owner) {
+
+        Map<String, Object> result = new HashMap<>();
+        log.info("Setting lateArrival={} for player {} in tournament {} by owner: {}",
+                lateArrival, playerId, tournamentId, owner.getEmail());
+
+        try {
+            // ADMIN/SUPER_ADMIN управляют составом любого турнира; CLUB_ADMIN — своего клуба
+            tournamentAccessService.assertCanManageTournament(owner, tournamentId);
+            tournamentService.setLateArrival(tournamentId, playerId, lateArrival);
+            result.put("success", true);
+        } catch (SecurityException | AccessDeniedException e) {
+            result.put("success", false);
+            result.put("message", e.getMessage());
+        } catch (Exception e) {
+            log.error("Error setting late arrival", e);
+            result.put("success", false);
+            result.put("message", e.getMessage());
+        }
+
+        return ResponseEntity.ok(result);
+    }
+
     @PostMapping("/tournaments/{tournamentId}/pair-solo")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> pairSoloPlayers(

@@ -149,3 +149,9 @@ databaseChangeLog:
   - include:
       file: versions/v1.49-add-pair-reminder-sent-at-to-tournament.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.50-add-start-reminder-sent-at-to-tournament.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: versions/v1.51-add-late-arrival-to-registration.yaml
+      relativeToChangelogFile: true

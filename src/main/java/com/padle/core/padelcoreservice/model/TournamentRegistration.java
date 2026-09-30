@@ -131,6 +131,12 @@ public class TournamentRegistration {
     @Column(name = "pair_proposer_reg_id")
     private Long pairProposerRegId;
 
+    // LFPT-443: игрок опоздал к началу индивидуального турнира (AMERICANO/KING_OF_COURT) —
+    // применяется штраф −10 к его текущему результату в этом турнире (см. TournamentService.setLateArrival).
+    @Column(name = "late_arrival", nullable = false)
+    @Builder.Default
+    private Boolean lateArrival = false;
+
     // Хелпер-метод для получения последнего платежа
     public Optional<Payment> getLatestPayment() {
         return payments.stream()

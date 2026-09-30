@@ -776,6 +776,88 @@ public class EmailService {
     }
 
     /**
+     * LFPT-443: email-напоминание за 5ч до начала индивидуального турнира (AMERICANO, KING_OF_COURT).
+     * Текст письма фиксирован на испанском по требованию заказчика (не переводится через i18n),
+     * как и у email/pair-tournament-reminder.html (LFPT-437).
+     */
+    @Timed(name = "email.send.time", tags = {"service=email", "type=individual_tournament_reminder"})
+    @TrackErrors(name = "email.send.errors", tags = {"service=email", "type=individual_tournament_reminder"})
+    @Async
+    public void sendIndividualTournamentReminderEmail(
+            @MetricTag("recipient") String to,
+            @MetricTag("playerName") String playerName,
+            String clubName,
+            String direccion,
+            String hora) {
+
+        emailMetricsService.recordEmailAttempt("INDIVIDUAL_TOURNAMENT_REMINDER");
+        if (emailMetricsService.isDailyLimitReached(dailyEmailLimit)) {
+            log.warn("Daily email limit reached, skipping individual tournament reminder to: {}", to);
+            emailMetricsService.recordEmailRejected("INDIVIDUAL_TOURNAMENT_REMINDER", "DAILY_LIMIT");
+            return;
+        }
+        try {
+            Context context = new Context(new Locale("es"));
+            context.setVariable("playerName", playerName);
+            context.setVariable("clubName", clubName);
+            context.setVariable("direccion", direccion);
+            context.setVariable("hora", hora);
+            context.setVariable("year", java.time.Year.now().getValue());
+
+            String html = templateEngine.process("email/individual-tournament-reminder", context);
+            String subject = "🎾 Recordatorio: tu torneo de pádel es hoy a las " + hora + " hs";
+            sendHtmlEmail(to, subject, html);
+
+            emailMetricsService.recordEmailSent("INDIVIDUAL_TOURNAMENT_REMINDER");
+            log.info("✅ Individual tournament reminder sent to: {}", to);
+        } catch (Exception e) {
+            emailMetricsService.recordEmailError("INDIVIDUAL_TOURNAMENT_REMINDER", e.getClass().getSimpleName());
+            log.error("❌ Error sending individual tournament reminder to {}: {}", to, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * LFPT-443: email-напоминание за 5ч до начала Cancha Abierta — без упоминания штрафа
+     * за опоздание (в отличие от sendIndividualTournamentReminderEmail), т.к. Cancha Abierta
+     * не является «индивидуальным турниром» в смысле этой задачи, несмотря на индивидуальную регистрацию.
+     */
+    @Timed(name = "email.send.time", tags = {"service=email", "type=cancha_abierta_reminder"})
+    @TrackErrors(name = "email.send.errors", tags = {"service=email", "type=cancha_abierta_reminder"})
+    @Async
+    public void sendCanchaAbiertaReminderEmail(
+            @MetricTag("recipient") String to,
+            @MetricTag("playerName") String playerName,
+            String clubName,
+            String direccion,
+            String hora) {
+
+        emailMetricsService.recordEmailAttempt("CANCHA_ABIERTA_REMINDER");
+        if (emailMetricsService.isDailyLimitReached(dailyEmailLimit)) {
+            log.warn("Daily email limit reached, skipping Cancha Abierta reminder to: {}", to);
+            emailMetricsService.recordEmailRejected("CANCHA_ABIERTA_REMINDER", "DAILY_LIMIT");
+            return;
+        }
+        try {
+            Context context = new Context(new Locale("es"));
+            context.setVariable("playerName", playerName);
+            context.setVariable("clubName", clubName);
+            context.setVariable("direccion", direccion);
+            context.setVariable("hora", hora);
+            context.setVariable("year", java.time.Year.now().getValue());
+
+            String html = templateEngine.process("email/cancha-abierta-reminder", context);
+            String subject = "🎾 Recordatorio: Cancha Abierta hoy a las " + hora + " hs";
+            sendHtmlEmail(to, subject, html);
+
+            emailMetricsService.recordEmailSent("CANCHA_ABIERTA_REMINDER");
+            log.info("✅ Cancha Abierta reminder sent to: {}", to);
+        } catch (Exception e) {
+            emailMetricsService.recordEmailError("CANCHA_ABIERTA_REMINDER", e.getClass().getSimpleName());
+            log.error("❌ Error sending Cancha Abierta reminder to {}: {}", to, e.getMessage(), e);
+        }
+    }
+
+    /**
      * Универсальный метод для отправки HTML писем (БЕЗ ИЗМЕНЕНИЙ)
      */
     private void sendHtmlEmail(String to, String subject, String htmlContent) throws MessagingException {

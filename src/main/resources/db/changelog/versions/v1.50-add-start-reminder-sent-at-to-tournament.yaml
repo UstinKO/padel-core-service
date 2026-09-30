@@ -1,0 +1,17 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.50-add-start-reminder-sent-at-to-tournament
+      author: padel-core
+      changes:
+        - addColumn:
+            tableName: tournaments_db
+            columns:
+              - column:
+                  name: start_reminder_sent_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: true
+      rollback:
+        - dropColumn:
+            tableName: tournaments_db
+            columnName: start_reminder_sent_at
