@@ -1,7 +1,7 @@
 # LFPT-0448: Всплывающее окно подтверждения регистрации — отдельный текст для индивидуального турнира и Cancha Abierta
 
 ## Статус
-approved
+done — PR #449, деплой подтверждён
 
 ## Источник
 `specs/requests/LFPT-0448-registration-confirmation-popup.md` (клиентский запрос через Telegram, `telegram_launch_message_id: 4694`, роль отправителя — customer). Issue: [#448](https://github.com/UstinKO/padel-core-service/issues/448).
