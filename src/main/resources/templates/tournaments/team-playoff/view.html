@@ -205,7 +205,9 @@
                             <span th:unless="${team.queuePosition == 1}" th:text="#{team_playoff.status.queued_position(${team.queuePosition})}">En cola (posición 2)</span>
                         </span>
                         <span th:case="'ADVANCED'" class="status-pill advanced">⬆ <span th:text="#{team_playoff.status.advanced}">Avanzó</span></span>
-                        <span th:case="'ELIMINATED'" class="status-pill eliminated">✕ <span th:text="#{team_playoff.status.eliminated}">Eliminado</span></span>
+                        <span th:case="'ELIMINATED'" class="status-pill eliminated">
+                            ✕ <span th:switch="${team.eliminatedStage}"><span th:case="'ROUND_OF_16'" th:text="#{team_playoff.status.eliminated_round_of_16}">Eliminada en 1/8</span><span th:case="'QUARTER_FINAL'" th:text="#{team_playoff.status.eliminated_quarter_final}">Eliminada en 1/4</span><span th:case="'SEMI_FINAL'" th:text="#{team_playoff.status.eliminated_semi_final}">Eliminada en 1/2</span><span th:case="*" th:text="#{team_playoff.status.eliminated}">Eliminado</span></span>
+                        </span>
                         <span th:case="'CHAMPION'" class="status-pill champion">🏆 <span th:text="#{team_playoff.status.champion}">Campeón</span></span>
                         <span th:case="'RUNNER_UP'" class="status-pill runner-up">🥈 <span th:text="#{team_playoff.status.runner_up}">Subcampeón</span></span>
                         <span th:case="*" class="status-pill waiting">⏳ <span th:text="#{team_playoff.status.waiting}">Esperando</span></span>
