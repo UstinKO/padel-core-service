@@ -101,6 +101,14 @@ window.APP_MESSAGES = {
     'card.spots.limited':    'Последние места',
     'card.spots.full':       'Мест нет',
 
+    // ── home.js: карточка турнира на главной странице (LFPT-0435) ───────────
+    'card.spots.completos':       'Мест нет',
+    'card.modalidad.individual':  'Индивидуальное участие',
+    'card.modalidad.doubles':     'Парное участие',
+    'card.btn.more_info':         'Подробнее',
+    'card.btn.register_now':      'Записаться',
+    'card.btn.register_waitlist': 'Записаться в резерв',
+
     // Enum display maps
     'enum.nivel.principiantes': 'Начинающий',
     'enum.nivel.c9':     'C9 (Начинающий)',

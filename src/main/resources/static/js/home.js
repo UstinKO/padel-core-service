@@ -239,6 +239,20 @@ class PadelCoreHome {
         });
     }
 
+    // Статус заполненности турнира по порогам 70%/100% (LFPT-0435) — не путать
+    // с абсолютными порогами getSpotsStatus() в torneos.js (10 пар/15 игроков,
+    // LFPT-374): разные страницы, разная, осознанно выбранная формула.
+    getSpotsStatus(tournament) {
+        const cupoMax = tournament.cupoMax || 0;
+        const inscritos = tournament.inscritosActuales || 0;
+        if (cupoMax <= 0) return 'available';
+
+        const fillRatio = inscritos / cupoMax;
+        if (fillRatio >= 1) return 'full';
+        if (fillRatio >= 0.7) return 'limited';
+        return 'available';
+    }
+
     createTournamentCard(tournament) {
         const card = document.createElement('div');
         card.className = 'tournament-card';
@@ -257,10 +271,20 @@ class PadelCoreHome {
         const tipoDisplay   = this.displayMaps.tipo[tournament.tipo] || tournament.tipo || 'N/A';
         const estadoDisplay = this.displayMaps.estado[tournament.estado] || tournament.estado || '';
         const estadoClass   = tournament.estado ? `status-${tournament.estado.toLowerCase()}` : '';
+        const modalidadDisplay = tournament.modalidad === 'DOBLES'
+            ? t('card.modalidad.doubles')
+            : t('card.modalidad.individual');
         const isAuthenticated = typeof window.isAuthenticated !== 'undefined' ? window.isAuthenticated : false;
 
         // ── НОВАЯ ПРОВЕРКА: начался ли турнир ──────────────────────
         const started = isTournamentStarted(tournament);
+
+        const spotsStatus = this.getSpotsStatus(tournament);
+        const spotsStatusText = {
+            available: t('card.spots.available'),
+            limited: t('card.spots.limited'),
+            full: t('card.spots.completos')
+        }[spotsStatus];
 
         const clubAddress = tournament.clubDireccion
             ? `<span class="club-address">${this.escapeHtml(tournament.clubDireccion)}</span>`
@@ -272,7 +296,8 @@ class PadelCoreHome {
             <span class="tournament-badge tournament-badge-level">${nivelDisplay}</span>
         </div>
         <div class="tournament-card-body">
-            <h3 class="tournament-title">${this.escapeHtml(tournament.nombre || '')}</h3>
+            <h3 class="tournament-title">${tipoDisplay}</h3>
+            <p class="tournament-modalidad">${modalidadDisplay}</p>
             <div class="tournament-info">
                 <div class="tournament-info-item">
                     <i class="fas fa-calendar-alt"></i>
@@ -285,31 +310,26 @@ class PadelCoreHome {
                         ${clubAddress}
                     </div>
                 </div>
-                <div class="tournament-info-item">
-                    <i class="fas fa-trophy"></i>
-                    <span>${tipoDisplay}</span>
-                </div>
-                <div class="tournament-info-item">
-                    <i class="fas fa-users"></i>
-                    <span>${tournament.cupoMax || 0} ${tournament.tipo === 'KING_OF_COURT' ? t('card.capacity.players') : t('card.capacity.spots')}</span>
-                </div>
-                <div class="tournament-info-item">
-                    <i class="fas fa-tag"></i>
-                    <span>${tournament.precio || 0} ${tournament.moneda || ''}</span>
-                </div>
+            </div>
+            <div class="tournament-spots tournament-spots--${spotsStatus}">
+                <span class="tournament-spots-dot"></span>${spotsStatusText}
             </div>
             <div class="tournament-footer">
                 <a href="/torneo/${tournament.id}" class="btn btn-outline btn-small">
-                    <i class="fas fa-info-circle"></i> ${t('card.btn.details')}
+                    <i class="fas fa-info-circle"></i> ${t('card.btn.more_info')}
                 </a>
                 ${started
             ? `<span class="tournament-status" style="color:#6c757d; font-size:.8rem;">
                            <i class="fas fa-lock"></i> ${t('card.status.started')}
                        </span>`
             : tournament.estado === 'REGISTRO_ABIERTO'
-                ? `<a href="/torneo/${tournament.id}" class="btn btn-primary btn-small">
-                           <i class="fas fa-plus-circle"></i> ${t('dashboard.card.btn.register')}
-                       </a>`
+                ? spotsStatus === 'full'
+                    ? `<a href="/torneo/${tournament.id}" class="btn btn-waitlist btn-small">
+                               <i class="fas fa-clock"></i> ${t('card.btn.register_waitlist')}
+                           </a>`
+                    : `<a href="/torneo/${tournament.id}" class="btn btn-primary btn-small">
+                               <i class="fas fa-plus-circle"></i> ${t('card.btn.register_now')}
+                           </a>`
                 : `<span class="tournament-status ${estadoClass}">${estadoDisplay}</span>`
         }
             </div>

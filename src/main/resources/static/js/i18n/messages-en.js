@@ -101,6 +101,14 @@ window.APP_MESSAGES = {
     'card.spots.limited':    'Last spots',
     'card.spots.full':       'Sold out',
 
+    // ── home.js: tournament card on the home page (LFPT-0435) ───────────────
+    'card.spots.completos':       'Fully booked',
+    'card.modalidad.individual':  'Individual participation',
+    'card.modalidad.doubles':     'Doubles participation',
+    'card.btn.more_info':         'More information',
+    'card.btn.register_now':      'Register',
+    'card.btn.register_waitlist': 'Register (waitlist)',
+
     // Enum display maps
     'enum.nivel.principiantes': 'Beginner',
     'enum.nivel.c9':     'C9 (Beginner)',

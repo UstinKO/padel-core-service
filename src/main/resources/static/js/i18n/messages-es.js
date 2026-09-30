@@ -101,6 +101,14 @@ window.APP_MESSAGES = {
     'card.spots.limited':    'Últimos cupos',
     'card.spots.full':       'Sin cupos',
 
+    // ── home.js: tarjeta de torneo en la página principal (LFPT-0435) ───────
+    'card.spots.completos':       'Cupos completos',
+    'card.modalidad.individual':  'Participación individual',
+    'card.modalidad.doubles':     'Participación en pareja',
+    'card.btn.more_info':         'Más información',
+    'card.btn.register_now':      'Inscribirse',
+    'card.btn.register_waitlist': 'Inscribirse en reserva',
+
     // Enum display maps
     'enum.nivel.principiantes': 'Principiante',
     'enum.nivel.c9':     'C9 (Principiante)',
