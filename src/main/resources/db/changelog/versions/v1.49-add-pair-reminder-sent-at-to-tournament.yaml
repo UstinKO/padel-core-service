@@ -1,0 +1,17 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.49-add-pair-reminder-sent-at-to-tournament
+      author: padel-core
+      changes:
+        - addColumn:
+            tableName: tournaments_db
+            columns:
+              - column:
+                  name: pair_reminder_sent_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: true
+      rollback:
+        - dropColumn:
+            tableName: tournaments_db
+            columnName: pair_reminder_sent_at
