@@ -109,6 +109,12 @@ public class Tournament {
     @Column(name = "owner_id")
     private Long ownerId;
 
+    // LFPT-437: момент отправки email-напоминания за 5ч до старта парного турнира.
+    // NULL — ещё не отправлено; не-NULL — отправлено (или обработано без CONFIRMED-игроков),
+    // повторная отправка не выполняется даже после редактирования турнира.
+    @Column(name = "pair_reminder_sent_at")
+    private LocalDateTime pairReminderSentAt;
+
     // Связь с регистрациями
     @OneToMany(mappedBy = "tournament", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
