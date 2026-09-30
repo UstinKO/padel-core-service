@@ -1,7 +1,7 @@
 # LFPT-0435: Feature карточки турниров на главной — переработка по макету (статус мест вместо цены/лимита)
 
 ## Статус
-approved
+done (PR #436, деплой подтверждён)
 
 ## Источник
 `specs/requests/LFPT-0435-home-tournament-cards-redesign.md` (Telegram, отправитель — customer). Issue: https://github.com/UstinKO/padel-core-service/issues/435
