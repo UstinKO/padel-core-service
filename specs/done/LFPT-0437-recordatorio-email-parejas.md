@@ -1,7 +1,7 @@
 # LFPT-0437: Feature автоматическое email-напоминание за 5 часов до начала парного турнира
 
 ## Статус
-approved
+done (PR #439, деплой подтверждён)
 
 ## Источник
 Клиентский запрос: [specs/requests/LFPT-0437-recordatorio-email-parejas.md](../requests/LFPT-0437-recordatorio-email-parejas.md). Issue: [#437](https://github.com/UstinKO/padel-core-service/issues/437).
