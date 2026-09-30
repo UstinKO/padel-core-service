@@ -12,11 +12,14 @@ import com.padle.core.padelcoreservice.exception.TournamentRegistrationException
 import com.padle.core.padelcoreservice.mapper.TournamentMapper;
 import com.padle.core.padelcoreservice.mapper.TournamentRegistrationMapper;
 import com.padle.core.padelcoreservice.model.Owner;
+import com.padle.core.padelcoreservice.model.KingOfCourtPlayerStats;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.TournamentKingOfCourt;
 import com.padle.core.padelcoreservice.model.TournamentRegistration;
+import com.padle.core.padelcoreservice.model.americano.AmericanoPlayer;
 import com.padle.core.padelcoreservice.model.enums.*;
+import com.padle.core.padelcoreservice.repository.KingOfCourtPlayerStatsRepository;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
 import com.padle.core.padelcoreservice.repository.TournamentKingOfCourtRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
@@ -69,6 +72,7 @@ public class TournamentService {
     private final AmericanoRoundRepository americanoRoundRepository;
     private final AmericanoMatchRepository americanoMatchRepository;
     private final AmericanoTeamRepository americanoTeamRepository;
+    private final KingOfCourtPlayerStatsRepository kingOfCourtPlayerStatsRepository;
 
     @Value("${app.base-url:http://localhost:8080}")
     private String baseUrl;
@@ -1382,6 +1386,61 @@ public class TournamentService {
         // Нормализуем позиции CONFIRMED-игроков и пересчитываем лист ожидания
         reorderPositions(tournamentId);
         reorderWaitlist(tournamentId);
+    }
+
+    /**
+     * LFPT-443: отмечает/снимает опоздание игрока в индивидуальном турнире (AMERICANO/KING_OF_COURT).
+     * Применяет/возвращает штраф −10 к текущему результату игрока в этом турнире.
+     * Идемпотентно — повторный вызов с тем же значением lateArrival не меняет результат повторно.
+     */
+    @Transactional
+    public void setLateArrival(Long tournamentId, Long playerId, boolean lateArrival) {
+        Tournament tournament = tournamentRepository.findById(tournamentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tournament not found"));
+
+        if (tournament.getTipo() != TournamentType.AMERICANO && tournament.getTipo() != TournamentType.KING_OF_COURT) {
+            throw new InvalidStateException(
+                    "El registro de llegada tarde solo está disponible para torneos individuales (Americano / Rey de Cancha)");
+        }
+
+        TournamentRegistration registration = registrationRepository
+                .findByTournamentIdAndPlayerId(tournamentId, playerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Registration not found"));
+
+        if (Boolean.TRUE.equals(registration.getLateArrival()) == lateArrival) {
+            return; // уже в нужном состоянии — не применяем штраф повторно
+        }
+
+        int delta = lateArrival ? -10 : 10;
+
+        if (tournament.getTipo() == TournamentType.AMERICANO) {
+            AmericanoPlayer americanoPlayer = americanoPlayerRepository
+                    .findByTournamentIdAndPlayerId(tournamentId, playerId)
+                    .orElseThrow(() -> new InvalidStateException(
+                            "El torneo Americano aún no fue inicializado para este jugador"));
+            americanoPlayer.setTotalScore(americanoPlayer.getTotalScore() + delta);
+            americanoPlayerRepository.save(americanoPlayer);
+        } else {
+            TournamentKingOfCourt king = tournamentKingOfCourtRepository
+                    .findAllByTournamentIdAndIsActiveTrue(tournamentId)
+                    .stream().findFirst()
+                    .orElseThrow(() -> new InvalidStateException(
+                            "El torneo Rey de Cancha aún no fue inicializado"));
+            PlayerPadel player = playerRepository.findById(playerId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Player not found"));
+            KingOfCourtPlayerStats stats = kingOfCourtPlayerStatsRepository
+                    .findByTournamentKingAndPlayer(king, player)
+                    .orElseThrow(() -> new InvalidStateException(
+                            "El torneo Rey de Cancha aún no fue inicializado para este jugador"));
+            stats.setTotalPoints(stats.getTotalPoints() + delta);
+            kingOfCourtPlayerStatsRepository.save(stats);
+        }
+
+        registration.setLateArrival(lateArrival);
+        registrationRepository.save(registration);
+
+        log.info("Jugador {} marcado como lateArrival={} en torneo {} (delta={})",
+                playerId, lateArrival, tournamentId, delta);
     }
 
     private void reorderPositions(Long tournamentId) {

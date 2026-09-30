@@ -115,6 +115,12 @@ public class Tournament {
     @Column(name = "pair_reminder_sent_at")
     private LocalDateTime pairReminderSentAt;
 
+    // LFPT-443: момент отправки email-напоминания за 5ч до старта индивидуального турнира
+    // (AMERICANO, KING_OF_COURT) либо Cancha Abierta. Общее поле для обоих писем —
+    // на турнир приходится ровно один tipo, коллизий нет. Та же семантика, что у pairReminderSentAt.
+    @Column(name = "start_reminder_sent_at")
+    private LocalDateTime startReminderSentAt;
+
     // Связь с регистрациями
     @OneToMany(mappedBy = "tournament", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default

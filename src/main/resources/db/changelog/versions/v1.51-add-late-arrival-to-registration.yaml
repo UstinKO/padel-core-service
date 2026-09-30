@@ -1,0 +1,18 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.51-add-late-arrival-to-registration
+      author: padel-core
+      changes:
+        - addColumn:
+            tableName: tournament_registrations_db
+            columns:
+              - column:
+                  name: late_arrival
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+      rollback:
+        - dropColumn:
+            tableName: tournament_registrations_db
+            columnName: late_arrival
