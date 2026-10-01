@@ -84,20 +84,14 @@ public class TeamAmericanoViewController {
     }
 
     /**
-     * Страница рейтинга команд (публичная).
+     * LFPT-0424: отдельной страницы рейтинга нет — рейтинг команд показывается на странице
+     * турнира (блок ranking-card в tournaments/team-americano/view.html). Вместо
+     * несуществующего шаблона tournaments/team-americano/ranking — редирект туда же.
+     * Существование турнира здесь не проверяется: это делает целевой роут /{tournamentId}.
      */
     @GetMapping("/{tournamentId}/ranking")
-    public String viewRanking(@PathVariable Long tournamentId, Model model) {
-
-        TournamentDto tournament = tournamentService.getTournamentDtoById(tournamentId)
-                .orElseThrow(() -> new IllegalArgumentException("Torneo no encontrado"));
-
-        TeamAmericanoRankingDto ranking = teamAmericanoService.getRanking(tournamentId);
-
-        model.addAttribute("tournament", tournament);
-        model.addAttribute("ranking", ranking);
-
-        return "tournaments/team-americano/ranking";
+    public String viewRanking(@PathVariable Long tournamentId) {
+        return "redirect:/tournaments/team-americano/" + tournamentId;
     }
 
     // ══════════════════════════════════════════════════════════════════════
