@@ -1,7 +1,7 @@
 # LFPT-0424: Fix ошибка 500 на странице рейтинга Team Americano — редирект на страницу турнира
 
 ## Статус
-approved
+done — PR #433, деплой подтверждён
 
 ## Источник
 GitHub issue: https://github.com/UstinKO/padel-core-service/issues/424. Клиентского запроса в `specs/requests/` нет — спека написана напрямую по issue. Находка из анализа фронта: `docs/frontend-react/contract/findings.md`, F-01.
