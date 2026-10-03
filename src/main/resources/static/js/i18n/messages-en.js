@@ -334,6 +334,7 @@ window.APP_MESSAGES = {
     'admin.playoff.confirm.delete_team':   'Delete this team?',
     'admin.playoff.confirm.start_qual':    'Start qualification?',
     'admin.playoff.confirm.start_playoff': 'Start playoff with the best teams?',
+    'admin.playoff.confirm.start_playoff_partial': 'Create the playoff with the current results? Undetermined pairs will be filled in later.',
     'admin.playoff.confirm.regenerate':    'Regenerate the playoff? Current pairs will be discarded (no results have been played yet).',
 
     // Round status

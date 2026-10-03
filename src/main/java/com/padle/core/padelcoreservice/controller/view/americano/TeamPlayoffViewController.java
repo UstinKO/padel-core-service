@@ -127,6 +127,9 @@ public class TeamPlayoffViewController {
             applyQualMatchOrdinals(tournamentId, qualRoundDtos);
             model.addAttribute("ranking", ranking);
             model.addAttribute("qualRounds", splitQualificationWaves(qualRoundDtos));
+            // LFPT-465: доступность кнопки "Начать плей-офф" до полного завершения
+            // квалификации — см. TeamPlayoffService.canInitPlayoff.
+            model.addAttribute("canInitPlayoff", !playoffStarted && playoffService.canInitPlayoff(tournamentId));
         }
 
         if (playoffStarted) {

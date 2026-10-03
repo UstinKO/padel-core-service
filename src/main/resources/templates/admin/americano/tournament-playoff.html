@@ -607,7 +607,7 @@
                     </div>
                 </div>
 
-                <!-- Инициализация плей-офф -->
+                <!-- Инициализация плей-офф: квалификация полностью завершена -->
                 <div th:if="${ranking != null and ranking.finished and not playoffStarted}"
                      style="padding:1rem 1.5rem;background:#fef9c3;border-top:1px solid #fcd34d">
                     <p style="margin:0 0 .75rem;font-size:.9rem;color:#78350f">
@@ -619,6 +619,24 @@
                           method="post" style="display:inline">
                         <button type="submit" class="btn btn-primary"
                                 onclick="return confirm(t('admin.playoff.confirm.start_playoff'))">
+                            <i class="fas fa-trophy"></i>
+                            <span th:text="#{admin.playoff.btn.start_playoff}">Iniciar Playoff</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- LFPT-465: инициализация плей-офф заранее — квалификация ещё не завершена,
+                     но уже достаточно команд определилось (8/16 команд, без play-in) -->
+                <div th:if="${ranking != null and not ranking.finished and canInitPlayoff and not playoffStarted}"
+                     style="padding:1rem 1.5rem;background:#fef9c3;border-top:1px solid #fcd34d">
+                    <p style="margin:0 0 .75rem;font-size:.9rem;color:#78350f">
+                        <i class="fas fa-flag-checkered"></i>
+                        <span th:text="#{admin.playoff.qual.partial_hint}">La calificación aún no terminó, pero ya hay equipos definidos. Puedes crear el cuadro ahora — las posiciones restantes se completarán automáticamente.</span>
+                    </p>
+                    <form th:action="@{'/tournaments/team-playoff/admin/' + ${tournament.id} + '/init-playoff'}"
+                          method="post" style="display:inline">
+                        <button type="submit" class="btn btn-primary"
+                                onclick="return confirm(t('admin.playoff.confirm.start_playoff_partial'))">
                             <i class="fas fa-trophy"></i>
                             <span th:text="#{admin.playoff.btn.start_playoff}">Iniciar Playoff</span>
                         </button>
