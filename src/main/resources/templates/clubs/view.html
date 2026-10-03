@@ -16,6 +16,7 @@
     <link rel="apple-touch-icon" th:href="@{/images/apple-touch-icon.png}">
 
     <link rel="stylesheet" th:href="@{/css/style.css}">
+    <th:block th:replace="~{fragments/analytics :: ga4}"></th:block>
 </head>
 <body>
 <header th:replace="~{fragments/public-header :: header}"></header>

@@ -208,11 +208,11 @@ public class SecurityConfig {
                         .contentSecurityPolicy(csp -> csp
                                 .policyDirectives(
                                         "default-src 'self'; " +
-                                                "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://www.google.com https://www.gstatic.com https://cdn.jsdelivr.net; " +
+                                                "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://www.google.com https://www.gstatic.com https://cdn.jsdelivr.net https://www.googletagmanager.com; " +
                                                 "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://cdn.jsdelivr.net; " +
                                                 "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; " +
                                                 "img-src 'self' data: https:; " +
-                                                "connect-src 'self' https://www.google.com; " +
+                                                "connect-src 'self' https://www.google.com https://www.googletagmanager.com https://www.google-analytics.com https://*.google-analytics.com; " +
                                                 "frame-src https://www.google.com; " +
                                                 "frame-ancestors 'none';"
                                 )

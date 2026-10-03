@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head></head>
+<body>
+<!-- Google Analytics 4 (Consent Mode). Единственное место с кодом тега — подключается
+     через th:replace в <head> нужных страниц (LFPT-0468). Используется th:block, а не
+     th:fragment на самом <script>, чтобы оба script-тега попадали в вызывающую страницу
+     одним включением (тот же приём, что и в fragments/admin-header.html). -->
+<th:block th:fragment="ga4" th:with="ga4Id=${@environment.getProperty('app.analytics.ga4-id')}">
+    <script th:src="${'https://www.googletagmanager.com/gtag/js?id=' + ga4Id}" async></script>
+    <script th:inline="javascript">
+        (function () {
+            function getCookie(name) {
+                var match = document.cookie.match('(?:^|; )' + name + '=([^;]*)');
+                return match ? decodeURIComponent(match[1]) : null;
+            }
+
+            // Согласие по умолчанию — запрещено, пока явно не разрешено через cookie-consent.js
+            // (Google Consent Mode): страница без принятого выбора не создаёт _ga/_gid.
+            var cookieConsent = getCookie('cookieConsent');
+            var analyticsConsent = getCookie('analyticsConsent');
+            var analyticsGranted = cookieConsent === 'accepted'
+                || (cookieConsent === 'customized' && analyticsConsent === 'true');
+
+            window.dataLayer = window.dataLayer || [];
+            window.gtag = window.gtag || function () { dataLayer.push(arguments); };
+
+            gtag('consent', 'default', {
+                'analytics_storage': analyticsGranted ? 'granted' : 'denied',
+                'ad_storage': 'denied',
+                'ad_user_data': 'denied',
+                'ad_personalization': 'denied'
+            });
+
+            // Токены подтверждения (приглашение в пару, лист ожидания, сброс пароля) приходят
+            // в query-параметрах на нескольких публичных страницах (accept-pair, waitlist-
+            // confirmation, редирект с /recuperar-password на index) — вырезаем их из того,
+            // что уходит в GA, не трогая реальный URL в адресной строке (issue #468).
+            var SENSITIVE_PARAMS = ['token', 'codigo'];
+            var url = new URL(window.location.href);
+            SENSITIVE_PARAMS.forEach(function (param) { url.searchParams.delete(param); });
+
+            gtag('js', new Date());
+            gtag('config', /*[[${ga4Id}]]*/ 'G-XXXXXXXXXX', {
+                'page_location': url.toString(),
+                'page_path': url.pathname + url.search
+            });
+        })();
+    </script>
+</th:block>
+</body>
+</html>
