@@ -736,8 +736,9 @@ public class EmailService {
 
     /**
      * LFPT-437: email-напоминание за 5ч до начала парного турнира.
-     * Текст письма фиксирован на испанском по требованию заказчика (не переводится через i18n),
-     * как и у существующих Telegram-напоминаний в TelegramReminderScheduler.
+     * Текст письма (приветствие, адрес, время, предупреждение об опоздании) фиксирован на испанском
+     * по требованию заказчика, как и у существующих Telegram-напоминаний в TelegramReminderScheduler —
+     * локализуется только кнопка-ссылка на турнир (LFPT-460), по предпочитаемому языку игрока.
      */
     @Timed(name = "email.send.time", tags = {"service=email", "type=pair_tournament_reminder"})
     @TrackErrors(name = "email.send.errors", tags = {"service=email", "type=pair_tournament_reminder"})
@@ -747,7 +748,9 @@ public class EmailService {
             @MetricTag("playerName") String playerName,
             String clubName,
             String direccion,
-            String hora) {
+            String hora,
+            Long tournamentId,
+            Locale locale) {
 
         emailMetricsService.recordEmailAttempt("PAIR_TOURNAMENT_REMINDER");
         if (emailMetricsService.isDailyLimitReached(dailyEmailLimit)) {
@@ -756,11 +759,12 @@ public class EmailService {
             return;
         }
         try {
-            Context context = new Context(new Locale("es"));
+            Context context = new Context(locale);
             context.setVariable("playerName", playerName);
             context.setVariable("clubName", clubName);
             context.setVariable("direccion", direccion);
             context.setVariable("hora", hora);
+            context.setVariable("eventUrl", baseUrl + "/torneo/" + tournamentId);
             context.setVariable("year", java.time.Year.now().getValue());
 
             String html = templateEngine.process("email/pair-tournament-reminder", context);
@@ -777,8 +781,9 @@ public class EmailService {
 
     /**
      * LFPT-443: email-напоминание за 5ч до начала индивидуального турнира (AMERICANO, KING_OF_COURT).
-     * Текст письма фиксирован на испанском по требованию заказчика (не переводится через i18n),
-     * как и у email/pair-tournament-reminder.html (LFPT-437).
+     * Текст письма (приветствие, адрес, время, штраф за опоздание) фиксирован на испанском по
+     * требованию заказчика (LFPT-437/443) — локализуется только кнопка-ссылка на турнир (LFPT-460),
+     * по предпочитаемому языку игрока (`PlayerPadel.getLocale()`).
      */
     @Timed(name = "email.send.time", tags = {"service=email", "type=individual_tournament_reminder"})
     @TrackErrors(name = "email.send.errors", tags = {"service=email", "type=individual_tournament_reminder"})
@@ -788,7 +793,9 @@ public class EmailService {
             @MetricTag("playerName") String playerName,
             String clubName,
             String direccion,
-            String hora) {
+            String hora,
+            Long tournamentId,
+            Locale locale) {
 
         emailMetricsService.recordEmailAttempt("INDIVIDUAL_TOURNAMENT_REMINDER");
         if (emailMetricsService.isDailyLimitReached(dailyEmailLimit)) {
@@ -797,11 +804,12 @@ public class EmailService {
             return;
         }
         try {
-            Context context = new Context(new Locale("es"));
+            Context context = new Context(locale);
             context.setVariable("playerName", playerName);
             context.setVariable("clubName", clubName);
             context.setVariable("direccion", direccion);
             context.setVariable("hora", hora);
+            context.setVariable("eventUrl", baseUrl + "/torneo/" + tournamentId);
             context.setVariable("year", java.time.Year.now().getValue());
 
             String html = templateEngine.process("email/individual-tournament-reminder", context);
@@ -829,7 +837,9 @@ public class EmailService {
             @MetricTag("playerName") String playerName,
             String clubName,
             String direccion,
-            String hora) {
+            String hora,
+            Long tournamentId,
+            Locale locale) {
 
         emailMetricsService.recordEmailAttempt("CANCHA_ABIERTA_REMINDER");
         if (emailMetricsService.isDailyLimitReached(dailyEmailLimit)) {
@@ -838,11 +848,12 @@ public class EmailService {
             return;
         }
         try {
-            Context context = new Context(new Locale("es"));
+            Context context = new Context(locale);
             context.setVariable("playerName", playerName);
             context.setVariable("clubName", clubName);
             context.setVariable("direccion", direccion);
             context.setVariable("hora", hora);
+            context.setVariable("eventUrl", baseUrl + "/torneo/" + tournamentId);
             context.setVariable("year", java.time.Year.now().getValue());
 
             String html = templateEngine.process("email/cancha-abierta-reminder", context);

@@ -81,12 +81,33 @@ class PairTournamentReminderSchedulerTest {
         context.setVariable("clubName", "Club Padel Central");
         context.setVariable("direccion", "Av. Siempre Viva 742");
         context.setVariable("hora", "18:30");
+        context.setVariable("eventUrl", "https://1-padel.com/torneo/42");
         context.setVariable("year", 2026);
 
         String html = templateEngine.process("email/pair-tournament-reminder", context);
 
         assertThat(html).contains("Club Padel Central", "Av. Siempre Viva 742", "18:30",
-                "Les pedimos llegar 15 minutos antes", "avisale a tu compañero");
+                "Les pedimos llegar 15 minutos antes", "avisale a tu compañero",
+                "https://1-padel.com/torneo/42", "Ver evento", "Seguí el torneo en vivo");
+    }
+
+    @Test
+    void plantillaDeEmail_botonSeLocalizaSegunIdiomaDelJugador() {
+        Context context = new Context(new java.util.Locale("ru"));
+        context.setVariable("playerName", "Ivan");
+        context.setVariable("clubName", "Club Padel Central");
+        context.setVariable("direccion", "Av. Siempre Viva 742");
+        context.setVariable("hora", "18:30");
+        context.setVariable("eventUrl", "https://1-padel.com/torneo/42");
+        context.setVariable("year", 2026);
+
+        String html = templateEngine.process("email/pair-tournament-reminder", context);
+
+        assertThat(html).contains("Открыть мероприятие", "Следите за турниром в реальном времени",
+                "https://1-padel.com/torneo/42")
+                // Текст самого письма (приветствие, адрес, предупреждение) остаётся испанским (LFPT-437/443) —
+                // LFPT-460 локализует только кнопку-ссылку.
+                .contains("Les pedimos llegar 15 minutos antes");
     }
 
     @Test

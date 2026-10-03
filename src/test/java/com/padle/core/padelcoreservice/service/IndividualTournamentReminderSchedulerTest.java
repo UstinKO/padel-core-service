@@ -165,12 +165,33 @@ class IndividualTournamentReminderSchedulerTest {
         context.setVariable("clubName", "Club Padel Central");
         context.setVariable("direccion", "Av. Siempre Viva 742");
         context.setVariable("hora", "18:30");
+        context.setVariable("eventUrl", "https://1-padel.com/torneo/42");
         context.setVariable("year", 2026);
 
         String html = templateEngine.process("email/individual-tournament-reminder", context);
 
         assertThat(html).contains("Club Padel Central", "Av. Siempre Viva 742", "18:30",
-                "Te pedimos llegar 15 minutos antes", "−10 puntos");
+                "Te pedimos llegar 15 minutos antes", "−10 puntos",
+                "https://1-padel.com/torneo/42", "Ver evento", "Seguí el torneo en vivo");
+    }
+
+    @Test
+    void plantillaIndividual_botonSeLocalizaSegunIdiomaDelJugador() {
+        Context context = new Context(new java.util.Locale("en"));
+        context.setVariable("playerName", "John");
+        context.setVariable("clubName", "Club Padel Central");
+        context.setVariable("direccion", "Av. Siempre Viva 742");
+        context.setVariable("hora", "18:30");
+        context.setVariable("eventUrl", "https://1-padel.com/torneo/42");
+        context.setVariable("year", 2026);
+
+        String html = templateEngine.process("email/individual-tournament-reminder", context);
+
+        assertThat(html).contains("View event", "Follow the tournament live",
+                        "https://1-padel.com/torneo/42")
+                // Текст самого письма остаётся испанским (LFPT-437/443) — LFPT-460 локализует
+                // только кнопку-ссылку.
+                .contains("Te pedimos llegar 15 minutos antes");
     }
 
     @Test
@@ -180,13 +201,33 @@ class IndividualTournamentReminderSchedulerTest {
         context.setVariable("clubName", "Club Padel Central");
         context.setVariable("direccion", "Av. Siempre Viva 742");
         context.setVariable("hora", "18:30");
+        context.setVariable("eventUrl", "https://1-padel.com/torneo/42");
         context.setVariable("year", 2026);
 
         String html = templateEngine.process("email/cancha-abierta-reminder", context);
 
         assertThat(html).contains("Club Padel Central", "Av. Siempre Viva 742", "18:30",
-                "avisá al organizador");
+                "avisá al organizador", "https://1-padel.com/torneo/42", "Ver evento", "Ver información del evento");
         assertThat(html).doesNotContain("puntos", "penaliza");
+    }
+
+    @Test
+    void plantillaCanchaAbierta_botonSeLocalizaSegunIdiomaDelJugador_sinBloqueDeLiveInfo() {
+        Context context = new Context(new java.util.Locale("ru"));
+        context.setVariable("playerName", "Ivan");
+        context.setVariable("clubName", "Club Padel Central");
+        context.setVariable("direccion", "Av. Siempre Viva 742");
+        context.setVariable("hora", "18:30");
+        context.setVariable("eventUrl", "https://1-padel.com/torneo/42");
+        context.setVariable("year", 2026);
+
+        String html = templateEngine.process("email/cancha-abierta-reminder", context);
+
+        assertThat(html).contains("Открыть мероприятие", "Посмотреть информацию о мероприятии",
+                "https://1-padel.com/torneo/42");
+        // Cancha Abierta не предоставляет live-информацию по сетке/рейтингу (LFPT-460) — у этого
+        // шаблона нет блока live-info вообще, в отличие от individual/pair.
+        assertThat(html).doesNotContain("Следите за турниром в реальном времени");
     }
 
     private Club createClub() {
