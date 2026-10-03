@@ -104,10 +104,12 @@ public class IndividualTournamentReminderScheduler {
             }
             if (canchaAbierta) {
                 emailService.sendCanchaAbiertaReminderEmail(
-                        email, registration.getPlayer().getNombre(), clubName, direccion, hora);
+                        email, registration.getPlayer().getNombre(), clubName, direccion, hora,
+                        tournament.getId(), registration.getPlayer().getLocale());
             } else {
                 emailService.sendIndividualTournamentReminderEmail(
-                        email, registration.getPlayer().getNombre(), clubName, direccion, hora);
+                        email, registration.getPlayer().getNombre(), clubName, direccion, hora,
+                        tournament.getId(), registration.getPlayer().getLocale());
             }
             sent++;
         }

@@ -101,7 +101,9 @@ public class PairTournamentReminderScheduler {
                     registration.getPlayer().getNombre(),
                     clubName,
                     direccion,
-                    hora);
+                    hora,
+                    tournament.getId(),
+                    registration.getPlayer().getLocale());
             sent++;
         }
         log.info("Напоминание для турнира {}: письмо отправлено {} из {} подтверждённых игроков",
