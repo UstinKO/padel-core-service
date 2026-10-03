@@ -130,6 +130,7 @@ window.APP_MESSAGES = {
     'enum.tipo.americana':        'Americano',
     'enum.tipo.americano_teams':  'Team Americano',
     'enum.tipo.cancha_abierta':   'Open Court',
+    'enum.tipo.padel_clinic':     'Padel Clinic',
     'enum.genero.m':   'Male',
     'enum.genero.f':   'Female',
     'enum.genero.mix': 'Mixed',
