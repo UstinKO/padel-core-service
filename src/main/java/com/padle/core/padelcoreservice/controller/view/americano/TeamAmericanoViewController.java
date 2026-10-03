@@ -139,7 +139,7 @@ public class TeamAmericanoViewController {
             return "redirect:/admin/tournaments/" + tournamentId;
         }
 
-        return "redirect:/tournaments/americano/admin/" + tournamentId;
+        return "redirect:/tournaments/team-americano/admin/" + tournamentId;
     }
 
     /**
@@ -312,7 +312,7 @@ public class TeamAmericanoViewController {
             log.error("Error finishing Team Americano {}: {}", tournamentId, e.getMessage());
             redirectAttributes.addFlashAttribute("error", "Error al finalizar: " + e.getMessage());
         }
-        return "redirect:/tournaments/americano/admin/" + tournamentId;
+        return "redirect:/tournaments/team-americano/admin/" + tournamentId;
     }
 
     // ══════════════════════════════════════════════════════════════════════
