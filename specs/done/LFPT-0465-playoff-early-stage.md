@@ -1,7 +1,7 @@
 # LFPT-0465: Feature раннее формирование первого этапа плей-офф Team Playoff — не ждать завершения квалификации
 
 ## Статус
-approved
+done — PR #466, деплой подтверждён (run 37152417108)
 
 ## Источник
 Клиентский запрос `specs/requests/LFPT-0465-playoff-early-stage.md` (Telegram, тема "AI Разработка", переслано от Evgeny_754) → issue [#465](https://github.com/UstinKO/padel-core-service/issues/465).
