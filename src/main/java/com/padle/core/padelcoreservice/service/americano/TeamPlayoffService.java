@@ -177,6 +177,37 @@ public class TeamPlayoffService {
         return !roundRepository.findByTournamentIdAndPhase(tournamentId, TournamentPhase.PLAYOFF).isEmpty();
     }
 
+    /**
+     * LFPT-465: можно ли уже вызвать {@link #initPlayoff}, не дожидаясь, пока ВСЕ команды
+     * закончат квалификацию. Разрешено только когда число команд — точная степень двойки
+     * (8/16, без play-in): граница "кто идёт напрямую в 1/4, а кто — в play-in" для 9-15 команд
+     * зависит от итогового рейтинга и может измениться, пока квалификация не закончена — создать
+     * её заранее означает риск пересборки уже созданных матчей, что запрещено (см. спеку, "Вне
+     * скоупа"). Для степени двойки такой границы нет — какая стадия будет первой, зависит только
+     * от общего числа команд, а не от итогового рейтинга.
+     */
+    public boolean canInitPlayoff(Long tournamentId) {
+        if (isPlayoffStarted(tournamentId) || !isQualificationStarted(tournamentId)) {
+            return false;
+        }
+        List<AmericanoTeam> ranked = teamRepository.findPlayoffRankingByTournamentId(tournamentId);
+        int total = ranked.size();
+        if (total < 2) {
+            return false;
+        }
+        if (largestPowerOf2(total) != total) {
+            return isQualificationDone(tournamentId);
+        }
+        long settled = ranked.stream().filter(this::isSettled).count();
+        return settled >= 2;
+    }
+
+    /** Команда отыграла оба квалификационных матча — её группа (2-0/1-1/0-2) окончательно известна. */
+    private boolean isSettled(AmericanoTeam team) {
+        Integer played = team.getMatchesPlayed();
+        return played != null && played >= 2;
+    }
+
     // ═══════════════════════════════════════════════════════════════════════
     // КВАЛИФИКАЦИЯ
     // ═══════════════════════════════════════════════════════════════════════
@@ -390,8 +421,8 @@ public class TeamPlayoffService {
             throw new InvalidStateException("El playoff ya fue inicializado");
         }
 
-        if (!isQualificationDone(tournamentId)) {
-            throw new InvalidStateException("La calificación no está completamente finalizada");
+        if (!canInitPlayoff(tournamentId)) {
+            throw new InvalidStateException("Aún no hay suficientes equipos clasificados para iniciar el playoff");
         }
 
         List<AmericanoTeam> ranked = teamRepository.findPlayoffRankingByTournamentId(tournamentId);
@@ -1447,6 +1478,69 @@ public class TeamPlayoffService {
                     roundRepository.save(r);
                     log.info("Qualification phase auto-completed for tournament {}", tournamentId);
                 });
+
+        if (isPlayoffStarted(tournamentId)) {
+            backfillFirstPlayoffStage(tournamentId);
+        }
+    }
+
+    /**
+     * LFPT-465: квалификация только что полностью завершилась (все команды сыграли оба
+     * матча) — если первый этап плей-офф уже был создан раньше срока (см. {@link #createPlayoffRound}),
+     * в нём могут остаться TBD-слоты (команды, которые на момент создания этапа ещё не
+     * "определились"). Теперь все команды турнира определились, поэтому можно рассадить
+     * оставшихся (тех, кто ещё не попал ни в один матч этого этапа) по свободным слотам —
+     * тем же движком посева, что и при обычном создании. Уже заполненные (реальные) матчи
+     * этапа не трогаются.
+     */
+    private void backfillFirstPlayoffStage(Long tournamentId) {
+        List<AmericanoMatch> pendingSlots = matchRepository
+                .findByTournamentIdAndPhase(tournamentId, TournamentPhase.PLAYOFF)
+                .stream()
+                .filter(m -> m.getRound().getStatus() == AmericanoRoundStatus.IN_PROGRESS)
+                .filter(m -> m.getTeam1Id() == null || m.getTeam2Id() == null)
+                .sorted(Comparator.comparing(AmericanoMatch::getCourtNumber))
+                .toList();
+        if (pendingSlots.isEmpty()) {
+            return;
+        }
+
+        PlayoffStage stage = pendingSlots.get(0).getPlayoffStage();
+        Set<Long> alreadySeeded = matchRepository.findByTournamentIdAndPlayoffStage(tournamentId, stage)
+                .stream()
+                .flatMap(m -> Stream.of(m.getTeam1Id(), m.getTeam2Id()))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        List<AmericanoTeam> unseeded = teamRepository.findPlayoffRankingByTournamentId(tournamentId)
+                .stream()
+                .filter(t -> !alreadySeeded.contains(t.getId()))
+                .toList();
+        if (unseeded.size() < 2) {
+            log.warn("Playoff backfill for tournament {}: {} pending slots but {} unseeded teams",
+                    tournamentId, pendingSlots.size(), unseeded.size());
+            return;
+        }
+
+        List<PlayoffMatchingEngine.Pairing> pairs = seedPlayoffPairs(tournamentId, unseeded);
+        int filled = Math.min(pairs.size(), pendingSlots.size());
+        for (int i = 0; i < filled; i++) {
+            AmericanoMatch slot = pendingSlots.get(i);
+            AmericanoTeam t1 = teamRepository.findById(pairs.get(i).team1Id()).orElseThrow();
+            AmericanoTeam t2 = teamRepository.findById(pairs.get(i).team2Id()).orElseThrow();
+
+            slot.setTeam1Id(t1.getId());
+            slot.setTeam2Id(t2.getId());
+            slot.setTeam1Player1(t1.getPlayer1());
+            slot.setTeam1Player2(t1.getPlayer2());
+            slot.setTeam2Player1(t2.getPlayer1());
+            slot.setTeam2Player2(t2.getPlayer2());
+            slot.setStatus(AmericanoRoundStatus.IN_PROGRESS);
+            slot.setNote(t1.getDisplayName() + " vs " + t2.getDisplayName());
+            matchRepository.save(slot);
+        }
+        log.info("Playoff backfill for tournament {}: filled {}/{} pending slots of stage {}",
+                tournamentId, filled, pendingSlots.size(), stage);
     }
 
     /**
@@ -1560,7 +1654,21 @@ public class TeamPlayoffService {
                                      List<AmericanoTeam> seeded,
                                      PlayoffStage stage,
                                      int startRoundNumber) {
-        List<PlayoffMatchingEngine.Pairing> pairs = seedPlayoffPairs(tournament.getId(), seeded);
+        // LFPT-465: если вызвано до полного завершения квалификации (canInitPlayoff допускает
+        // это только для степени двойки команд, см. canInitPlayoff), часть команд ещё не
+        // "определилась" (не отыграла оба квалификационных матча) — такие команды не участвуют
+        // в посеве сейчас, их позиции становятся TBD-заглушками и дозаполняются позже
+        // (см. backfillFirstPlayoffStage). Когда квалификация уже полностью завершена, pending
+        // пуст и поведение не отличается от прежнего.
+        List<AmericanoTeam> settled = new ArrayList<>(seeded.stream().filter(this::isSettled).toList());
+        List<AmericanoTeam> pending = new ArrayList<>(seeded.stream().filter(t -> !isSettled(t)).toList());
+        if (settled.size() % 2 != 0) {
+            pending.add(settled.remove(settled.size() - 1));
+        }
+
+        List<PlayoffMatchingEngine.Pairing> pairs = settled.isEmpty()
+                ? List.of() : seedPlayoffPairs(tournament.getId(), settled);
+        int totalSlots = seeded.size() / 2;
 
         AmericanoRound round = AmericanoRound.builder()
                 .tournament(tournament)
@@ -1568,7 +1676,7 @@ public class TeamPlayoffService {
                 .status(AmericanoRoundStatus.IN_PROGRESS)
                 .pointsPerMatch(1)
                 .isDoubles(true)
-                .courts(pairs.size())
+                .courts(totalSlots)
                 .phase(TournamentPhase.PLAYOFF)
                 .note(stage.name())
                 .build();
@@ -1599,14 +1707,28 @@ public class TeamPlayoffService {
                     .note(t1.getDisplayName() + " vs " + t2.getDisplayName())
                     .build());
         }
+        for (int i = pairs.size(); i < totalSlots; i++) {
+            matches.add(AmericanoMatch.builder()
+                    .round(savedRound)
+                    .tournament(tournament)
+                    .matchNumber(i + 1)
+                    .isDoubles(true)
+                    .status(AmericanoRoundStatus.PENDING)
+                    .courtNumber(i + 1)
+                    .playoffStage(stage)
+                    .note("TBD vs TBD")
+                    .build());
+        }
 
         matchRepository.saveAll(matches);
         savedRound.setMatches(matches);
 
-        // Создаём следующие раунды с TBD командами (если нужно)
+        // Создаём следующие раунды с TBD командами (если нужно) — по полному размеру стадии
+        // (totalSlots), а не по числу уже реально заполненных пар (pairs.size()), иначе цепочка
+        // следующих стадий получилась бы короче, чем нужно, при частичном посеве (LFPT-465).
         PlayoffStage nextStage = nextStage(stage);
-        if (nextStage != null && pairs.size() > 1) {
-            createTbdPlayoffRounds(tournament, nextStage, startRoundNumber + 1, pairs.size() / 2);
+        if (nextStage != null && totalSlots > 1) {
+            createTbdPlayoffRounds(tournament, nextStage, startRoundNumber + 1, totalSlots / 2);
         }
     }
 
