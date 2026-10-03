@@ -4,7 +4,8 @@ public enum TournamentType {
     KING_OF_COURT("Rey de Cancha"),
     AMERICANO("Americano"),
     AMERICANO_TEAMS("Americano Equipos"),
-    CANCHA_ABIERTA("Cancha Abierta");
+    CANCHA_ABIERTA("Cancha Abierta"),
+    PADEL_CLINIC("Clínica de Pádel");
 
     private final String value;
 
