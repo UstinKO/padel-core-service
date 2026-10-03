@@ -114,7 +114,7 @@
                     <span class="badge badge-level" th:text="${tournament.categoriaNivel}">C7 - Avanzado</span>
                     <span class="badge badge-modalidad"
                           th:text="${tournament.modalidad.name() == 'DOBLES'} ? #{tournament.modality.doubles} : #{tournament.modality.individual}">Parejas</span>
-                    <span class="badge badge-type" th:text="${tournament.tipo}">Cupos</span>
+                    <span class="badge badge-type" th:text="#{__${'enum.tipo.' + tournament.tipo.name()}__}">Cupos</span>
                     <span class="badge badge-status"
                           th:text="${tournament.estado}"
                           th:classappend="'badge-' + ${tournament.estado.toString().toLowerCase()}">

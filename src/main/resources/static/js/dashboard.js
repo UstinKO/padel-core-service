@@ -107,7 +107,8 @@ document.addEventListener('DOMContentLoaded', function() {
             'KING_OF_COURT':    t('enum.tipo.koc'),
             'AMERICANO':        t('enum.tipo.americana'),
             'AMERICANO_TEAMS':  t('enum.tipo.americano_teams'),
-            'CANCHA_ABIERTA':   t('enum.tipo.cancha_abierta')
+            'CANCHA_ABIERTA':   t('enum.tipo.cancha_abierta'),
+            'PADEL_CLINIC':     t('enum.tipo.padel_clinic')
         },
         estado: {
             'REGISTRO_ABIERTO': t('enum.estado.open'),
