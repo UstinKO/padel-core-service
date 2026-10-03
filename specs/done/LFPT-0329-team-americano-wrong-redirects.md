@@ -1,7 +1,7 @@
 # LFPT-0329: Редиректы Team Americano ведут на админку обычного Americano
 
 ## Статус
-testing — правка и автотест в ветке `feature/LFPT-0329`, ручная проверка Tester-агентом пройдена 2026-10-02 (все критерии приёмки), PR ещё не открыт.
+done — PR #452, деплой подтверждён (run 37107653305)
 
 ## Источник
 [GitHub issue #329](https://github.com/UstinKO/padel-core-service/issues/329) — прямая техническая постановка, без клиентского запроса. Найдено при верификации [PR #327](https://github.com/UstinKO/padel-core-service/pull/327) (LFPT-317) и повторно отмечено во «Вне скоупа» спеки [LFPT-328](../done/LFPT-328-team-americano-flash-messages.md).
