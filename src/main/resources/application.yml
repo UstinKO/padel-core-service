@@ -147,6 +147,8 @@ logging:
 app:
   base-url: ${APP_BASE_URL:http://localhost:8080}
   admin-email: ${ADMIN_EMAIL:eugene.g.work@gmail.com}
+  analytics:
+    ga4-id: ${GA4_MEASUREMENT_ID:G-X5G4N3ND26}
   demo:
     auto-confirm-email: ${AUTO_CONFIRM_EMAIL:false}
   email:

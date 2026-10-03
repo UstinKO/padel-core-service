@@ -30,6 +30,7 @@
     <link rel="stylesheet" th:href="@{/css/registro.css}">
 
     <script th:if="${recaptchaEnabled}" src="https://www.google.com/recaptcha/api.js?hl=es" async defer></script>
+    <th:block th:replace="~{fragments/analytics :: ga4}"></th:block>
 </head>
 <body class="auth-page-simple">
 <!-- Header con nuevo logo y botón de login -->
