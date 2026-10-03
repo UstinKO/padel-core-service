@@ -1,7 +1,7 @@
 # LFPT-0456: Feature новый тип турнира «Тренировка + игра» (Clínica de pádel) — добавить TournamentType.PADEL_CLINIC
 
 ## Статус
-approved
+done — PR #458, деплой подтверждён (run 37132955441)
 
 ## Источник
 `specs/requests/LFPT-0456-padel-clinic-event-type.md` (клиентский запрос через Telegram, тема "AI Разработка"), issue [#456](https://github.com/UstinKO/padel-core-service/issues/456).
