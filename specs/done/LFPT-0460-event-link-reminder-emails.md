@@ -1,7 +1,7 @@
 # LFPT-0460: Feature ссылка на мероприятие в email-напоминаниях за 5 часов — кнопка «Открыть мероприятие»
 
 ## Статус
-approved
+done — PR #461, деплой подтверждён (run 37133413763)
 
 ## Источник
 Клиентский запрос через Telegram (тема "AI Разработка", отправитель — customer) — `specs/requests/LFPT-0460-event-link-reminder-emails.md`. Issue — [#460](https://github.com/UstinKO/padel-core-service/issues/460).
