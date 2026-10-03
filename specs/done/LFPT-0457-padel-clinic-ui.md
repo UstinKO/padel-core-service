@@ -1,7 +1,7 @@
 # LFPT-0457: Feature новый тип турнира «Тренировка + игра» в форме создания, на карточках и странице турнира — локализация ES/RU/EN
 
 ## Статус
-approved
+done — PR #459, деплой подтверждён (run 37133181489)
 
 ## Источник
 `specs/requests/LFPT-0456-padel-clinic-event-type.md` (клиентский запрос через Telegram, тема "AI Разработка"), issue [#457](https://github.com/UstinKO/padel-core-service/issues/457). Зависит от [#456](https://github.com/UstinKO/padel-core-service/issues/456) (`TournamentType.PADEL_CLINIC`, бэкенд).
