@@ -78,6 +78,49 @@
 .stat-item.stat-danger  .stat-value { color: #dc2626; }
 .stat-item.stat-money   .stat-value { color: #0369a1; }
 
+/* Разбивка по способу оплаты — компактные группы по валюте */
+.payment-breakdown {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.4rem 0.75rem;
+    background: #f1f5f9;
+    border-radius: 0.4rem;
+    margin-bottom: 0.4rem;
+    border: 1px solid #cbd5e1;
+    font-size: 0.78rem;
+}
+
+.breakdown-title {
+    font-weight: 600;
+    color: #475569;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
+}
+
+.breakdown-currency {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.15rem 0.5rem;
+    background: #f0f9ff;
+    border-radius: 20px;
+    border: 1px solid #bae6fd;
+}
+
+.breakdown-currency-total {
+    color: #0369a1;
+    font-weight: 700;
+}
+
+.breakdown-method {
+    color: #374151;
+    font-weight: 500;
+}
+
 /* Легенда — одна строка под статами */
 .payment-legend {
     display: flex;
