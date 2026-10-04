@@ -92,6 +92,22 @@
                 </div>
             </div>
 
+            <!-- Разбивка суммы по способу оплаты (LFPT-0476) -->
+            <div class="payment-breakdown" th:if="${paymentBreakdown != null and not #lists.isEmpty(paymentBreakdown)}">
+                <span class="breakdown-title" th:text="#{admin.payments.breakdown.title}">Desglose por método de pago</span>
+                <div class="breakdown-currency" th:each="breakdown : ${paymentBreakdown}">
+                    <span class="breakdown-currency-total">
+                        <strong th:text="${breakdown.currency}">ARS</strong>
+                        <span th:text="'— ' + #{admin.payments.breakdown.total} + ': ' + ${breakdown.total} + ' ' + ${breakdown.currency}">— total: 0</span>
+                    </span>
+                    <span class="breakdown-method" th:each="m : ${breakdown.byMethod}">
+                        <span th:if="${m.method != null}" th:text="#{__${'enum.paymentMethod.' + m.method.name()}__}">Método</span>
+                        <span th:unless="${m.method != null}" th:text="#{admin.payments.breakdown.no_method}">Sin método</span>
+                        <span th:text="': ' + ${m.amount} + ' ' + ${breakdown.currency}">: 0</span>
+                    </span>
+                </div>
+            </div>
+
             <!-- Легенда цветов -->
             <div class="payment-legend">
                 <span class="legend-title" th:text="#{admin.payments.legend.title}">Color por método:</span>
