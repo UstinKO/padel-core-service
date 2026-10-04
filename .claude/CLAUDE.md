@@ -70,6 +70,7 @@ docker compose up -d
 | `GET /waitlist/confirm` | `waitlist-confirmation.html` | `WaitlistController` |
 | `GET /double-registration/complete` | — (redirect) | `PartnerRegistrationController` |
 | `GET /double-registration/accept-pair` | — (redirect) | `PartnerRegistrationController` |
+| `GET /oct-tg`, `/oct-wa`, `/oct-ig` | — (redirect) | `MarketingRedirectController` — короткие ссылки на `1-padel.com/?utm_...` для октябрьского календаря (LFPT-0472) |
 
 ### Player Area (`ROLE_PLAYER`)
 

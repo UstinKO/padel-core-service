@@ -124,7 +124,11 @@ public class SecurityConfig {
                                 "/double-registration/complete",
                                 "/double-registration/accept-pair",
                                 "/ws/**",
-                                "/api/cookies/**"
+                                "/api/cookies/**",
+                                // LFPT-0472: короткие маркетинговые ссылки октябрьского календаря
+                                "/oct-tg",
+                                "/oct-wa",
+                                "/oct-ig"
                         ).permitAll()
                         .requestMatchers("/players/dashboard").authenticated()
                         .requestMatchers("/players/lista").authenticated()
