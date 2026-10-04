@@ -123,11 +123,22 @@
         }
     }
 
+    // Обновляет Google Consent Mode сразу после выбора пользователя, без
+    // перезагрузки страницы (gtag уже загружен — см. fragments/analytics.html, LFPT-0468).
+    function updateAnalyticsConsent(granted) {
+        if (typeof window.gtag === 'function') {
+            window.gtag('consent', 'update', { 'analytics_storage': granted ? 'granted' : 'denied' });
+        }
+    }
+
     // Принять все cookies
     window.acceptCookies = function() {
         fetch('/api/cookies/accept', { method: 'POST' })
             .then(response => {
-                if (response.ok) dismissBanner();
+                if (response.ok) {
+                    updateAnalyticsConsent(true);
+                    dismissBanner();
+                }
             })
             .catch(error => console.error('Error:', error));
     };
@@ -136,7 +147,10 @@
     window.rejectCookies = function() {
         fetch('/api/cookies/reject', { method: 'POST' })
             .then(response => {
-                if (response.ok) dismissBanner();
+                if (response.ok) {
+                    updateAnalyticsConsent(false);
+                    dismissBanner();
+                }
             })
             .catch(error => console.error('Error:', error));
     };
@@ -148,7 +162,10 @@
 
         fetch(`/api/cookies/customize?analytics=${analytics}&marketing=${marketing}`, { method: 'POST' })
             .then(response => {
-                if (response.ok) dismissBanner();
+                if (response.ok) {
+                    updateAnalyticsConsent(analytics);
+                    dismissBanner();
+                }
             })
             .catch(error => console.error('Error:', error));
     };
