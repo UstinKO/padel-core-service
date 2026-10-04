@@ -1,7 +1,7 @@
 # LFPT-0468: Feature подключение Google Analytics 4 на сайте 1-padel.com
 
 ## Статус
-approved
+done — PR #470, деплой подтверждён (run 37197974503)
 
 ## Источник
 `specs/requests/LFPT-0468-google-analytics.md` (Telegram, пересылка от Evgeny_754, telegram_launch_message_id: 4760) → issue [#468](https://github.com/UstinKO/padel-core-service/issues/468).
