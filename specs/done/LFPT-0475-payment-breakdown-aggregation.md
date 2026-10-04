@@ -1,7 +1,7 @@
 # LFPT-0475: Feature агрегация суммы оплат по способу оплаты для страницы платежей турнира (бэкенд)
 
 ## Статус
-approved
+done — реализовано в PR #478, деплой подтверждён (run 37230805541)
 
 ## Источник
 `specs/requests/LFPT-0475-payment-method-breakdown.md` (клиентский запрос через Telegram, тема "AI Разработка"), issue [#475](https://github.com/UstinKO/padel-core-service/issues/475).
