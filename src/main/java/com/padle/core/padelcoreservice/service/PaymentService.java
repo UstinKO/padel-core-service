@@ -1,7 +1,9 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.padelcoreservice.dto.CurrencyPaymentBreakdownDto;
 import com.padle.core.padelcoreservice.dto.PaymentDto;
 import com.padle.core.padelcoreservice.dto.PaymentManagementViewDto;
+import com.padle.core.padelcoreservice.dto.PaymentMethodAmountDto;
 import com.padle.core.padelcoreservice.dto.PaymentUpdateDto;
 import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
 import com.padle.core.padelcoreservice.mapper.PaymentMapper;
@@ -21,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -302,6 +305,47 @@ public class PaymentService {
         }
 
         return result;
+    }
+
+    // ==================== Разбивка по способу оплаты (LFPT-0475) ====================
+
+    /**
+     * Агрегирует суммы оплаченных (PAID) платежей по валюте и способу оплаты — для
+     * детализации общей суммы на странице платежей турнира (LFPT-0476). Строки-партнёры
+     * (partnerRow) не исключаются: партнёр-гость ссылается на отдельную запись Payment
+     * (маркер PARTNER_PAYMENT в notes), а не на тот же платёж основного игрока — оба
+     * платежа независимы и оба учитываются. paymentMethod == null (PAID без выбранного
+     * способа) попадает в результат отдельной группой с method == null, а не теряется.
+     */
+    public List<CurrencyPaymentBreakdownDto> getPaymentMethodBreakdown(List<PaymentManagementViewDto> players) {
+        Map<String, Map<PaymentMethod, BigDecimal>> byCurrencyAndMethod = new LinkedHashMap<>();
+
+        for (PaymentManagementViewDto player : players) {
+            if (player.getPaymentStatus() != PaymentStatus.PAID) {
+                continue;
+            }
+            BigDecimal amount = player.getAmount();
+            if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+                continue;
+            }
+            String currency = player.getCurrency() != null ? player.getCurrency() : "ARS";
+
+            byCurrencyAndMethod
+                    .computeIfAbsent(currency, c -> new LinkedHashMap<>())
+                    .merge(player.getPaymentMethod(), amount, BigDecimal::add);
+        }
+
+        return byCurrencyAndMethod.entrySet().stream()
+                .map(entry -> {
+                    List<PaymentMethodAmountDto> byMethod = entry.getValue().entrySet().stream()
+                            .map(e -> new PaymentMethodAmountDto(e.getKey(), e.getValue()))
+                            .toList();
+                    BigDecimal total = byMethod.stream()
+                            .map(PaymentMethodAmountDto::getAmount)
+                            .reduce(BigDecimal.ZERO, BigDecimal::add);
+                    return new CurrencyPaymentBreakdownDto(entry.getKey(), total, byMethod);
+                })
+                .toList();
     }
 
     @Transactional

@@ -53,6 +53,8 @@ public class PaymentManagementController {
         model.addAttribute("players", players);
         model.addAttribute("paymentMethods", PaymentMethod.values());
         model.addAttribute("paymentStatuses", PaymentStatus.values());
+        // LFPT-0475: детализация суммы по способу оплаты — используется LFPT-0476
+        model.addAttribute("paymentBreakdown", paymentService.getPaymentMethodBreakdown(players));
 
         return "admin/tournaments/payments";
     }
