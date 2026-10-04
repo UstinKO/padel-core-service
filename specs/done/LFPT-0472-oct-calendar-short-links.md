@@ -1,7 +1,7 @@
 # LFPT-0472: Feature короткие ссылки для октябрьского календаря — редиректы /oct-tg, /oct-wa, /oct-ig с сохранением UTM-меток
 
 ## Статус
-approved
+done — реализовано в PR #473, деплой подтверждён (run 37203696210)
 
 ## Источник
 Клиентский запрос [specs/requests/LFPT-0472-oct-calendar-short-links.md](../requests/LFPT-0472-oct-calendar-short-links.md), issue [#472](https://github.com/UstinKO/padel-core-service/issues/472).
