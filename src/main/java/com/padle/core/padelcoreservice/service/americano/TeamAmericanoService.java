@@ -13,6 +13,7 @@ import com.padle.core.padelcoreservice.model.americano.AmericanoTeam;
 import com.padle.core.padelcoreservice.model.enums.AmericanoPlayerStatus;
 import com.padle.core.padelcoreservice.model.enums.AmericanoRoundStatus;
 import com.padle.core.padelcoreservice.model.enums.Modalidad;
+import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
@@ -668,7 +669,7 @@ public class TeamAmericanoService {
             dto.setPlayer1Name(t.getPlayer1().getNombre() + " " + t.getPlayer1().getApellido());
             dto.setPlayer1Email(t.getPlayer1().getEmail());
             dto.setPlayer1Phone(t.getPlayer1().getTelefono());
-            dto.setPlayer1Nivel(t.getPlayer1().getNivelJugador());
+            dto.setPlayer1Nivel(Nivel.orNullIfSinEspecificar(t.getPlayer1().getNivelJugador()));
         }
 
         if (t.getPlayer2() != null) {
@@ -676,7 +677,7 @@ public class TeamAmericanoService {
             dto.setPlayer2Name(t.getPlayer2().getNombre() + " " + t.getPlayer2().getApellido());
             dto.setPlayer2Email(t.getPlayer2().getEmail());
             dto.setPlayer2Phone(t.getPlayer2().getTelefono());
-            dto.setPlayer2Nivel(t.getPlayer2().getNivelJugador());
+            dto.setPlayer2Nivel(Nivel.orNullIfSinEspecificar(t.getPlayer2().getNivelJugador()));
         } else {
             dto.setPlayer2Name(t.getPlayer2Name());
             dto.setPlayer2Phone(t.getPlayer2Phone());

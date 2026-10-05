@@ -597,7 +597,7 @@ public class TournamentService {
                                         dto.setPartnerApellido(partner.getApellido());
                                         dto.setPartnerPhone(partner.getTelefono());
                                         dto.setPartnerTelegram(partner.getTelegramUsername());
-                                        dto.setPartnerNivel(partner.getNivelJugador());
+                                        dto.setPartnerNivel(Nivel.orNullIfSinEspecificar(partner.getNivelJugador()));
                                     });
                         }
                     }

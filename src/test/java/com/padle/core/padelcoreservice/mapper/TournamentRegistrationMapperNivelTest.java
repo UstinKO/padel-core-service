@@ -37,8 +37,10 @@ class TournamentRegistrationMapperNivelTest {
 
     @Test
     void toDto_jugadorSinNivel_playerNivelEsNull() {
+        // PlayerPadel.nivelJugador es NOT NULL en BD (issue #82) — "sin especificar" se
+        // codifica como Nivel.SIN_ESPECIFICAR, no como null de Java.
         PlayerPadel player = PlayerPadel.builder().id(1L).nombre("Juan").apellido("Perez")
-                .nivelJugador(null).build();
+                .nivelJugador(Nivel.SIN_ESPECIFICAR).build();
         TournamentRegistration registration = TournamentRegistration.builder()
                 .id(10L)
                 .tournament(Tournament.builder().id(100L).build())

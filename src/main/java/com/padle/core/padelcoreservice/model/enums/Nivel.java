@@ -129,4 +129,13 @@ public enum Nivel {
     public static boolean isPlayerLevel(Nivel nivel) {
         return nivel != null && PLAYER_LEVELS.contains(nivel);
     }
+
+    // LFPT-483: PlayerPadel.nivelJugador — NOT NULL в БД (issue #82, миграция v1.44),
+    // "уровень не указан" кодируется значением SIN_ESPECIFICAR, а не Java null. Там, где
+    // уровень игрока опционально показывается наружу (публичные списки участников), это
+    // значение нужно привести к null — тот же критерий, что уже применяют
+    // admin/players/list.html (th:data-nivel, не-SuperAdmin span) при отображении уровня.
+    public static Nivel orNullIfSinEspecificar(Nivel nivel) {
+        return nivel == SIN_ESPECIFICAR ? null : nivel;
+    }
 }

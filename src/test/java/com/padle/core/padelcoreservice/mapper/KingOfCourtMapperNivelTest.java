@@ -32,8 +32,9 @@ class KingOfCourtMapperNivelTest {
 
     @Test
     void toPlayerStatsDTO_jugadorSinNivel_playerNivelEsNull() {
+        // PlayerPadel.nivelJugador es NOT NULL en BD — "sin especificar" es SIN_ESPECIFICAR.
         PlayerPadel player = PlayerPadel.builder().id(1L).nombre("Juan").apellido("Perez")
-                .nivelJugador(null).build();
+                .nivelJugador(Nivel.SIN_ESPECIFICAR).build();
         KingOfCourtPlayerStats stats = new KingOfCourtPlayerStats();
         stats.setPlayer(player);
         stats.setTotalPoints(10);

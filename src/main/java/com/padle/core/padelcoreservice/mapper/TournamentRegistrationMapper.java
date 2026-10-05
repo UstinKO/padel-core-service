@@ -17,7 +17,7 @@ public interface TournamentRegistrationMapper {
     @Mapping(source = "player.email", target = "playerEmail")
     @Mapping(source = "player.telefono", target = "playerPhone")
     @Mapping(source = "player.telegramUsername", target = "playerTelegram")
-    @Mapping(source = "player.nivelJugador", target = "playerNivel")
+    @Mapping(target = "playerNivel", expression = "java(com.padle.core.padelcoreservice.model.enums.Nivel.orNullIfSinEspecificar(registration.getPlayer().getNivelJugador()))")
     @Mapping(source = "tournament.id", target = "tournamentId")
     @Mapping(source = "tournament.nombre", target = "tournamentNombre")
     @Mapping(source = "partner.id", target = "partnerId")
@@ -35,7 +35,8 @@ public interface TournamentRegistrationMapper {
 
     default com.padle.core.padelcoreservice.model.enums.Nivel getPartnerNivel(TournamentRegistration registration) {
         if (registration.getPartner() != null) {
-            return registration.getPartner().getNivelJugador();
+            return com.padle.core.padelcoreservice.model.enums.Nivel.orNullIfSinEspecificar(
+                    registration.getPartner().getNivelJugador());
         }
         return null;
     }

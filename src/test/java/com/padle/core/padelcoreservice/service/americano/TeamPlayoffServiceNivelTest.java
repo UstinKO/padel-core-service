@@ -56,6 +56,27 @@ class TeamPlayoffServiceNivelTest {
     }
 
     @Test
+    void toDto_jugadorConNivelSinEspecificar_player1NivelEsNull() {
+        // PlayerPadel.nivelJugador es NOT NULL en BD — "sin especificar" es SIN_ESPECIFICAR.
+        PlayerPadel player1 = PlayerPadel.builder().id(1L).nombre("Juan").apellido("Perez")
+                .nivelJugador(Nivel.SIN_ESPECIFICAR).build();
+        PlayerPadel player2 = PlayerPadel.builder().id(2L).nombre("Ana").apellido("Gomez")
+                .nivelJugador(Nivel.D7).build();
+        AmericanoTeam team = AmericanoTeam.builder()
+                .id(1L)
+                .tournament(Tournament.builder().id(100L).build())
+                .teamNumber(1)
+                .player1(player1)
+                .player2(player2)
+                .build();
+
+        AmericanoTeamDto dto = service.toDto(team);
+
+        assertThat(dto.getPlayer1Nivel()).isNull();
+        assertThat(dto.getPlayer2Nivel()).isEqualTo(Nivel.D7);
+    }
+
+    @Test
     void toDto_jugadorGuestSinPerfil_player2NivelEsNull() {
         PlayerPadel player1 = PlayerPadel.builder().id(1L).nombre("Juan").apellido("Perez")
                 .nivelJugador(Nivel.C6).build();

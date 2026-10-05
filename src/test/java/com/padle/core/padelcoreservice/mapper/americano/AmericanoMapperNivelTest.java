@@ -37,8 +37,9 @@ class AmericanoMapperNivelTest {
 
     @Test
     void toRankingDto_jugadorSinNivel_playerNivelEsNull() {
+        // PlayerPadel.nivelJugador es NOT NULL en BD — "sin especificar" es SIN_ESPECIFICAR.
         PlayerPadel player = PlayerPadel.builder().id(1L).nombre("Juan").apellido("Perez")
-                .nivelJugador(null).build();
+                .nivelJugador(Nivel.SIN_ESPECIFICAR).build();
         AmericanoPlayer americanoPlayer = AmericanoPlayer.builder()
                 .id(5L)
                 .tournament(Tournament.builder().id(100L).build())
