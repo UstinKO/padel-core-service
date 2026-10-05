@@ -173,6 +173,7 @@
                     <th th:text="#{team_playoff.table.pos}">#</th>
                     <th th:text="#{team_playoff.table.status}" th:title="#{team_playoff.table.status_title}">Estado</th>
                     <th th:text="#{team_playoff.table.pair}">Pareja</th>
+                    <th th:if="${tournament.mostrarNivel}" th:text="#{team_playoff.table.level}">Nivel</th>
                     <th th:text="#{team_playoff.table.tstatus}" th:title="#{team_playoff.table.tstatus_title}">Situación</th>
                     <th th:text="#{team_playoff.table.m1}" th:title="#{team_playoff.table.m1_title}">P1</th>
                     <th th:text="#{team_playoff.table.m2}" th:title="#{team_playoff.table.m2_title}">P2</th>
@@ -197,6 +198,8 @@
                             <span th:if="${team.teamNumber != null}" style="color:#94a3b8;margin-right:.25rem" th:text="'№' + ${team.teamNumber}">№1</span><span class="p1" th:text="${team.player1Name}">Jugador 1</span><i th:if="${team.player1Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i><span style="color:#adb5bd;margin:0 .25rem">/</span><span class="p1" th:text="${team.player2Name}">Jugador 2</span><i th:if="${team.player2Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i>
                         </div>
                     </td>
+                    <td th:if="${tournament.mostrarNivel}"
+                        th:text="${(team.player1Nivel != null ? team.player1Nivel.display : '—') + ' / ' + (team.player2Nivel != null ? team.player2Nivel.display : '—')}">—</td>
                     <td th:switch="${team.tournamentStatus}">
                         <span th:case="'PLAYING'" class="status-pill playing">🎾 <span th:text="#{team_playoff.status.playing}">Jugando</span></span>
                         <span th:case="'QUEUED'" class="status-pill queued"

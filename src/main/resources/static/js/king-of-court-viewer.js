@@ -169,8 +169,10 @@ class KingOfCourtViewer {
 
         this.leaderboard.innerHTML = '';
 
+        const mostrarNivel = window.tournamentData?.mostrarNivel;
+
         if (ranking.length === 0) {
-            this.leaderboard.innerHTML = `<tr><td colspan="6" class="text-center">${t('koc.viewer.no_data')}</td></tr>`;
+            this.leaderboard.innerHTML = `<tr><td colspan="${mostrarNivel ? 7 : 6}" class="text-center">${t('koc.viewer.no_data')}</td></tr>`;
             return;
         }
 
@@ -179,6 +181,7 @@ class KingOfCourtViewer {
             const isMe = meId && player.playerId === meId;
             const row = document.createElement('tr');
             const badgeHtml = isMe ? '<i class="fas fa-circle-check" style="color:#1d9bf0;font-size:.85em;margin-left:.3rem;vertical-align:middle"></i>' : '';
+            const nivelCell = mostrarNivel ? `<td>${player.playerNivel || '—'}</td>` : '';
             row.innerHTML = `
                 <td><strong>#${player.rank || '-'}</strong></td>
                 <td>
@@ -188,6 +191,7 @@ class KingOfCourtViewer {
                         ${player.playerName || t('koc.viewer.unknown_player')}${badgeHtml}
                     </a>
                 </td>
+                ${nivelCell}
                 <td><strong>${player.totalPoints || 0}</strong></td>
                 <td><span class="bonus-points">+${player.bonusPoints || 0}</span></td>
                 <td>${player.gamesPlayed || 0}</td>

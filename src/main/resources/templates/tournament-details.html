@@ -440,6 +440,7 @@
                                 <tr style="border-bottom:2px solid #e9ecef;">
                                     <th style="padding:.6rem .75rem; text-align:left; color:#6c757d; font-weight:600; width:3rem;">#</th>
                                     <th style="padding:.6rem .75rem; text-align:left; color:#6c757d; font-weight:600;" th:text="#{tournament.table.player}">Jugador</th>
+                                    <th th:if="${tournament.mostrarNivel}" style="padding:.6rem .75rem; text-align:left; color:#6c757d; font-weight:600;" th:text="#{tournament.table.level}">Nivel</th>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -454,6 +455,8 @@
                                             <i th:if="${reg.playerId == currentUserPlayerId and currentUserPlayerId != null}"
                                                class="fas fa-circle-check verified-me"></i>
                                         </td>
+                                        <td th:if="${tournament.mostrarNivel}" style="padding:.55rem .75rem; color:#495057;"
+                                            th:text="${reg.playerNivel != null ? reg.playerNivel.display : '—'}">—</td>
                                     </tr>
                                 </th:block>
                                 </tbody>
@@ -480,6 +483,7 @@
                                         <th style="padding:.6rem .75rem; text-align:left; color:#6c757d; font-weight:600;" th:text="#{tournament.table.player1}">Jugador 1</th>
                                         <th style="padding:.6rem .25rem; text-align:center; color:#6c757d; font-weight:600; width:2rem;"></th>
                                         <th style="padding:.6rem .75rem; text-align:left; color:#6c757d; font-weight:600;" th:text="#{tournament.table.player2}">Jugador 2</th>
+                                        <th th:if="${tournament.mostrarNivel}" style="padding:.6rem .75rem; text-align:left; color:#6c757d; font-weight:600;" th:text="#{tournament.table.level}">Nivel</th>
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -519,6 +523,8 @@
                                                         <span style="color:#adb5bd; font-style:italic; font-size:.85rem;" th:text="#{tournament.partner.none}">sin pareja asignada</span>
                                                     </th:block>
                                                 </td>
+                                                <td th:if="${tournament.mostrarNivel}" style="padding:.6rem .75rem; color:#495057;"
+                                                    th:text="${(reg.playerNivel != null ? reg.playerNivel.display : '—') + ' / ' + (reg.partnerNivel != null ? reg.partnerNivel.display : '—')}">—</td>
                                             </tr>
                                         </th:block>
                                     </th:block>
@@ -555,6 +561,8 @@
                                                         </span><i th:if="${reg.partnerId == currentUserPlayerId and currentUserPlayerId != null}" class="fas fa-circle-check verified-me"></i>
                                                     </th:block>
                                                 </td>
+                                                <td th:if="${tournament.mostrarNivel}" style="padding:.6rem .75rem; color:#495057;"
+                                                    th:text="${(reg.playerNivel != null ? reg.playerNivel.display : '—') + ' / ' + (reg.partnerNivel != null ? reg.partnerNivel.display : '—')}">—</td>
                                             </tr>
                                         </th:block>
                                     </th:block>
@@ -588,6 +596,8 @@
                                                     </button>
                                                 </th:block>
                                             </td>
+                                            <td th:if="${tournament.mostrarNivel}" style="padding:.6rem .75rem; color:#495057;"
+                                                th:text="${reg.playerNivel != null ? reg.playerNivel.display : '—'} + ' / —'">—</td>
                                         </tr>
                                     </th:block>
                                     </tbody>

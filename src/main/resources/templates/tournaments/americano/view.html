@@ -335,6 +335,7 @@
                     <tr>
                         <th th:text="#{americano.table.pos}">#</th>
                         <th th:text="#{americano.table.player}">Jugador</th>
+                        <th th:if="${tournament.mostrarNivel}" th:text="#{americano.table.level}">Nivel</th>
                         <th th:text="#{americano.table.pts}">Pts</th>
                         <th th:text="#{americano.table.pj}">PJ</th>
                         <th th:text="#{americano.table.wins}">V</th>
@@ -348,6 +349,7 @@
                             <span th:text="${player.playerName} + ' ' + ${player.playerLastName}"></span><i th:if="${player.playerId == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i>
                             <span th:if="${player.position == 1}" class="crown-icon"><i class="fas fa-crown"></i></span>
                         </td>
+                        <td th:if="${tournament.mostrarNivel}" th:text="${player.playerNivel != null ? player.playerNivel.display : '—'}">—</td>
                         <td class="points" th:text="${player.totalScore}">120</td>
                         <td th:text="${player.matchesPlayed}">8</td>
                         <td th:text="${player.matchesWon}">6</td>

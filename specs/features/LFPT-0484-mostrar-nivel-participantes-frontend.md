@@ -32,7 +32,7 @@ Telegram-сообщение (для reply): 4829
 4. **King of Court — передача флага в шаблон/JS**: `KingOfCourtViewController` сейчас не передаёт `tournament`/`mostrarNivel` в модель вообще (ни по одному из двух GET-маршрутов) — добавить `model.addAttribute("mostrarNivel", king.getTournament().getMostrarNivel())` в оба метода и прокинуть в `window.tournamentData.mostrarNivel` (инлайн-скрипт в `king-of-court-view.html`), так как там же рендерится заголовок/колонки обеих таблиц рейтинга и JS читает тот же флаг для живой таблицы.
 
 ### Нефункциональные
-- i18n: новые строки — подпись чекбокса в форме (`admin.tournaments.form.field.mostrar_nivel`) и заголовки колонок (`tournament.table.level`, `koc.table.level`, `americano.table.level`, `team_americano.table.level`, `team_playoff.table.level`) — во все три файла (`messages_es/ru/en.properties`) и JS-эквивалент (`static/js/i18n/messages-{es,ru,en}.js`) для `koc.table.level` — используется и в `king-of-court-viewer.js`, который формирует `<thead>`/`<td>` не через Thymeleaf. `—` не локализуется (см. п.3 выше).
+- i18n: новые строки — подпись чекбокса в форме (`admin.tournaments.form.field.mostrar_nivel`) и заголовки колонок (`tournament.table.level`, `koc.table.level`, `americano.table.level`, `team_americano.table.level`, `team_playoff.table.level`) — во все три файла (`messages_es/ru/en.properties`). Заголовки таблиц King of Court (включая live-таблицу) рендерятся через Thymeleaf в `king-of-court-view.html`, а не в `king-of-court-viewer.js` (JS только дописывает значения ячеек `<td>`) — отдельный JS i18n-ключ не требуется. `—` не локализуется (см. п.3 выше).
 - Безопасность: новых точек входа данных от пользователя нет (флаг уже принимается существующей формой/эндпоинтами, см. #483).
 - Производительность: не требуется (данные уровня уже в существующих DTO, без доп. запросов).
 
@@ -58,7 +58,7 @@ Telegram-сообщение (для reply): 4829
 - `src/main/resources/templates/tournaments/team-americano/view.html` — колонка в таблице рейтинга пар.
 - `src/main/resources/templates/tournaments/team-playoff/view.html` — колонка в таблице квалификации.
 - `src/main/java/com/padle/core/padelcoreservice/controller/view/KingOfCourtViewController.java` — передача флага в модель.
-- `src/main/resources/i18n/messages_{es,ru,en}.properties`, `src/main/resources/static/js/i18n/messages-{es,ru,en}.js` — новые ключи.
+- `src/main/resources/i18n/messages_{es,ru,en}.properties` — новые ключи.
 
 ## Технические решения (на усмотрение реализующего, см. `GIT_WORKFLOW.md` §3)
 
