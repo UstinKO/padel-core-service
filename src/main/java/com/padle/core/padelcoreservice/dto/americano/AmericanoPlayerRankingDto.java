@@ -16,6 +16,9 @@ public class AmericanoPlayerRankingDto {
     private Long playerId;
     private String playerName;
     private String playerLastName;
+    // LFPT-483: уровень игрока из профиля — для опционального отображения
+    // в публичном списке участников (Tournament.mostrarNivel), null если не указан.
+    private com.padle.core.padelcoreservice.model.enums.Nivel playerNivel;
 
     // Полная статистика для итоговой таблицы (п. 4 ТЗ)
     private Integer matchesPlayed;

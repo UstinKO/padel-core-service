@@ -81,6 +81,7 @@ public interface AmericanoMapper {
     @Mapping(source = "player.id",       target = "playerId")
     @Mapping(source = "player.nombre",   target = "playerName")
     @Mapping(source = "player.apellido", target = "playerLastName")
+    @Mapping(target = "playerNivel", expression = "java(com.padle.core.padelcoreservice.model.enums.Nivel.orNullIfSinEspecificar(player.getPlayer().getNivelJugador()))")
     @Mapping(target = "pointDifference", expression = "java(player.getPointDifference())")
     // position проставляется вручную в сервисе после сортировки
     @Mapping(target = "position", ignore = true)

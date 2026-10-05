@@ -597,6 +597,7 @@ public class TournamentService {
                                         dto.setPartnerApellido(partner.getApellido());
                                         dto.setPartnerPhone(partner.getTelefono());
                                         dto.setPartnerTelegram(partner.getTelegramUsername());
+                                        dto.setPartnerNivel(Nivel.orNullIfSinEspecificar(partner.getNivelJugador()));
                                     });
                         }
                     }
@@ -646,6 +647,7 @@ public class TournamentService {
         tournament.setCreatedBy(createdBy);
         tournament.setOwnerId(createdBy);  // ← ДОБАВИТЬ ЭТУ СТРОКУ
         tournament.setIsActive(true);
+        tournament.setMostrarNivel(Boolean.TRUE.equals(tournamentDto.getMostrarNivel()));
 
         if (tournament.getEstado() == null) {
             tournament.setEstado(TournamentStatus.REGISTRO_ABIERTO);
@@ -1128,6 +1130,7 @@ public class TournamentService {
         existing.setContactoOrganizador(dto.getContactoOrganizador());
         existing.setFaqUrl(normalizeFaqUrl(dto.getFaqUrl()));
         existing.setEstado(dto.getEstado());
+        existing.setMostrarNivel(Boolean.TRUE.equals(dto.getMostrarNivel()));
     }
 
     private String normalizeFaqUrl(String url) {

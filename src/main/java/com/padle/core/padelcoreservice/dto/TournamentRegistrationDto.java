@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.dto;
 
+import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import lombok.Data;
 
@@ -16,6 +17,9 @@ public class TournamentRegistrationDto {
     private String playerEmail;
     private String playerPhone;
     private String playerTelegram;
+    // LFPT-483: уровень игрока/партнёра из профиля — для опционального отображения
+    // в публичном списке участников (Tournament.mostrarNivel), null если не указан.
+    private Nivel playerNivel;
     private LocalDateTime registrationDate;
     private RegistrationStatus status;
     private Integer position;
@@ -36,6 +40,7 @@ public class TournamentRegistrationDto {
     private String partnerEmail;
     private String partnerPhone;
     private String partnerTelegram;
+    private Nivel partnerNivel;
     private Boolean partnerRegistered;
     private String partnerRegistrationToken;
     private LocalDateTime partnerTokenExpiry;
