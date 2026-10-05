@@ -668,6 +668,7 @@ public class TeamAmericanoService {
             dto.setPlayer1Name(t.getPlayer1().getNombre() + " " + t.getPlayer1().getApellido());
             dto.setPlayer1Email(t.getPlayer1().getEmail());
             dto.setPlayer1Phone(t.getPlayer1().getTelefono());
+            dto.setPlayer1Nivel(t.getPlayer1().getNivelJugador());
         }
 
         if (t.getPlayer2() != null) {
@@ -675,6 +676,7 @@ public class TeamAmericanoService {
             dto.setPlayer2Name(t.getPlayer2().getNombre() + " " + t.getPlayer2().getApellido());
             dto.setPlayer2Email(t.getPlayer2().getEmail());
             dto.setPlayer2Phone(t.getPlayer2().getTelefono());
+            dto.setPlayer2Nivel(t.getPlayer2().getNivelJugador());
         } else {
             dto.setPlayer2Name(t.getPlayer2Name());
             dto.setPlayer2Phone(t.getPlayer2Phone());

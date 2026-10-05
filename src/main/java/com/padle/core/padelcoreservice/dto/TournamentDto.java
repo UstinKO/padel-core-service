@@ -44,6 +44,7 @@ public class TournamentDto {
     private LocalDateTime updatedAt;
     private Long createdBy;
     private Boolean isActive;
+    private Boolean mostrarNivel;
 
     // Поля для статистики
     private Integer inscritosActuales;

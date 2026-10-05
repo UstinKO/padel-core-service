@@ -121,6 +121,13 @@ public class Tournament {
     @Column(name = "start_reminder_sent_at")
     private LocalDateTime startReminderSentAt;
 
+    // LFPT-483: показывать ли уровень игрока (PlayerPadel.nivelJugador) рядом с каждым
+    // участником в публичном списке зарегистрированных — обратимый эксперимент на уровне
+    // конкретного турнира, по умолчанию выключено. UI-чекбокс — LFPT-484.
+    @Column(name = "mostrar_nivel", nullable = false)
+    @Builder.Default
+    private Boolean mostrarNivel = false;
+
     // Связь с регистрациями
     @OneToMany(mappedBy = "tournament", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default

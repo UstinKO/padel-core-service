@@ -56,6 +56,7 @@ public interface KingOfCourtMapper {
 
     @Mapping(target = "playerId", source = "stats.player.id")
     @Mapping(target = "playerName", source = "stats.player.nombreCompleto")
+    @Mapping(target = "playerNivel", source = "stats.player.nivelJugador")
     @Mapping(target = "totalPoints", source = "stats.totalPoints")
     @Mapping(target = "bonusPoints", source = "stats.bonusPoints")
     @Mapping(target = "gamesPlayed", source = "stats.gamesPlayed")
