@@ -328,6 +328,15 @@
                                class="form-control"
                                th:placeholder="#{admin.tournaments.form.field.faq.placeholder}">
                     </div>
+
+                    <!-- LFPT-484: experimento reversible — por defecto desmarcado -->
+                    <div class="form-group" style="display:flex; align-items:center; gap:.5rem;">
+                        <input type="checkbox"
+                               th:field="*{mostrarNivel}"
+                               id="mostrarNivel"
+                               style="width:1.1rem; height:1.1rem; margin:0;">
+                        <label for="mostrarNivel" style="margin:0;" th:text="#{admin.tournaments.form.field.mostrar_nivel}">Mostrar nivel de los participantes en el listado</label>
+                    </div>
                 </div>
 
                 <div class="form-actions">

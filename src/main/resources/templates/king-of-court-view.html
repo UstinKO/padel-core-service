@@ -99,6 +99,7 @@
                     <tr>
                         <th>#</th>
                         <th th:text="#{koc.table.player}">Jugador</th>
+                        <th th:if="${mostrarNivel}" th:text="#{koc.table.level}">Nivel</th>
                         <th th:text="#{koc.table.points}">Puntos</th>
                         <th th:text="#{koc.table.bonus}">Bonos</th>
                         <th th:text="#{koc.table.games}">Juegos</th>
@@ -138,6 +139,7 @@
                         <tr>
                             <th>#</th>
                             <th th:text="#{koc.table.player}">Jugador</th>
+                            <th th:if="${mostrarNivel}" th:text="#{koc.table.level}">Nivel</th>
                             <th th:text="#{koc.table.points}">Puntos</th>
                             <th th:text="#{koc.table.bonus}">Bonos</th>
                             <th th:text="#{koc.table.games}">Juegos</th>
@@ -193,7 +195,8 @@
         isAdmin: false,
         isFinished: [[${kingData.isFinished}]],
         youtubeLink: [[${kingData.youtubeLink}]],
-        currentPlayerId: [[${currentPlayerId}]]
+        currentPlayerId: [[${currentPlayerId}]],
+        mostrarNivel: [[${mostrarNivel}]]
     };
     /*]]>*/
 </script>
@@ -221,12 +224,15 @@
             if (!tbody || !data.ranking?.length) return;
 
             const meId = window.tournamentData?.currentPlayerId;
+            const mostrarNivel = window.tournamentData?.mostrarNivel;
             tbody.innerHTML = data.ranking.map(p => {
                 const isMe = meId && p.playerId === meId;
                 const badgeHtml = isMe ? '<i class="fas fa-circle-check" style="color:#1d9bf0;font-size:.85em;margin-left:.3rem;vertical-align:middle"></i>' : '';
+                const nivelCell = mostrarNivel ? `<td>${p.playerNivel || '—'}</td>` : '';
                 return `<tr>
                     <td><strong>#${p.rank || ''}</strong></td>
                     <td>${p.playerName || ''}${badgeHtml}</td>
+                    ${nivelCell}
                     <td><strong>${p.totalPoints || 0}</strong></td>
                     <td>+${p.bonusPoints || 0}</td>
                     <td>${p.gamesPlayed || 0}</td>
