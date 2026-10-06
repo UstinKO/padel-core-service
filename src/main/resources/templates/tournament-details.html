@@ -109,13 +109,12 @@
         <!-- Cabecera del torneo -->
         <div class="tournament-header">
             <div class="tournament-title-section">
-                <h1 th:text="${tournament.nombre}">Torneo Open de Padel 2026</h1>
+                <h1 th:text="#{__${'enum.tipo.' + tournament.tipo.name()}__}">Cancha Abierta</h1>
                 <div class="tournament-badges">
                     <span class="badge" th:text="${tournament.generoFormato}">Masculino</span>
                     <span class="badge badge-level" th:text="${tournament.categoriaNivel}">C7 - Avanzado</span>
                     <span class="badge badge-modalidad"
                           th:text="${tournament.modalidad.name() == 'DOBLES'} ? #{tournament.modality.doubles} : #{tournament.modality.individual}">Parejas</span>
-                    <span class="badge badge-type" th:text="#{__${'enum.tipo.' + tournament.tipo.name()}__}">Cupos</span>
                     <span class="badge badge-status"
                           th:text="${tournament.estado}"
                           th:classappend="'badge-' + ${tournament.estado.toString().toLowerCase()}">
@@ -1115,7 +1114,7 @@
 <script>
     (function() {
         const url  = window.location.href;
-        const name = document.querySelector('h1') ? document.querySelector('h1').textContent.trim() : 'Torneo 1-Padel';
+        const name = (tournament && tournament.nombre) ? tournament.nombre : 'Torneo 1-Padel';
         const text = `🎾 ¡Te invito a este torneo de pádel!\n*${name}*\n${url}`;
 
         const wa = document.getElementById('shareWhatsapp');
