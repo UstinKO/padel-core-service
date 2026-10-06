@@ -49,7 +49,7 @@ Telegram-сообщение (для reply): 4862
 - `src/main/resources/templates/tournament-details.html`:
   - Блок `.tournament-title-section` (сейчас строки ~111-124): `<h1>` — переведённый тип турнира вместо `tournament.nombre`; из `.tournament-badges` убирается плашка `badge-type` (дублировала бы заголовок), остаются пол/уровень/формат участия/статус.
   - Инлайн-скрипт формирования ссылок шаринга (сейчас строка ~1118): источник текста — `tournament.nombre` (уже доступная JS-переменная) вместо `document.querySelector('h1').textContent`.
-- `src/main/resources/static/css/tournament-details.css`: правило `.tournament-badges .badge-type` (строка ~1552) становится мёртвым после удаления соответствующего `<span>` из шаблона — убрать вместе с правкой шаблона, чтобы не копить неиспользуемый CSS.
+- `src/main/resources/static/css/tournament-details.css`: **не трогается.** Правило `.badge-type`/`.tournament-badges .badge-type` не становится мёртвым — этот же файл CSS подключён не только в `tournament-details.html`, но и в `admin/tournaments/details.html`, где плашка `badge-type` по-прежнему используется (строка 341 того шаблона) для отображения типа турнира в бэкофисе. Удалять правило нельзя, это сломало бы стили на отдельной, не затрагиваемой этой задачей странице.
 
 ## Критерии приёмки
 - [ ] На `/torneo/{id}` главный `<h1>` показывает переведённое название типа турнира (а не пол/уровень) — проверено минимум для 2 разных `tipo` (например, `CANCHA_ABIERTA` и `KING_OF_COURT`).
