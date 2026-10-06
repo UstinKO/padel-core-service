@@ -16,10 +16,12 @@ public class MarketingRedirectController {
     private static final Map<String, String> SHORT_LINK_TARGETS = Map.of(
             "/oct-tg", "https://1-padel.com/?utm_source=telegram&utm_medium=social&utm_campaign=calendar_october",
             "/oct-wa", "https://1-padel.com/?utm_source=whatsapp&utm_medium=message&utm_campaign=calendar_october",
-            "/oct-ig", "https://1-padel.com/?utm_source=instagram&utm_medium=social&utm_campaign=calendar_october"
+            "/oct-ig", "https://1-padel.com/?utm_source=instagram&utm_medium=social&utm_campaign=calendar_october",
+            // LFPT-0489: короткая ссылка для профиля Instagram ("ссылка в био")
+            "/ig-bio", "https://1-padel.com/?utm_source=instagram&utm_medium=social&utm_campaign=instagram_profile"
     );
 
-    @GetMapping({"/oct-tg", "/oct-wa", "/oct-ig"})
+    @GetMapping({"/oct-tg", "/oct-wa", "/oct-ig", "/ig-bio"})
     public String redirectShortLink(HttpServletRequest request) {
         String target = SHORT_LINK_TARGETS.get(request.getServletPath());
         log.info("Marketing short link redirect: {} -> {}", request.getServletPath(), target);

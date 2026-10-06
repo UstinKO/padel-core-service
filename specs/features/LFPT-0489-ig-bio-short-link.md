@@ -58,7 +58,7 @@ Telegram-сообщение (для reply): 4845
 
 ### Документация
 
-`.claude/CLAUDE.md`, раздел "Public Pages" — добавить строку про `/ig-bio` в навигационную карту (обновляется на диске рабочей директории; `.claude/` в `.gitignore`, в git-diff PR не попадёт — синхронизация вне этого PR).
+`.claude/CLAUDE.md`, раздел "Public Pages" — добавить строку про `/ig-bio` в навигационную карту. `CLAUDE.md` отслеживается git (не в `.gitignore`, в отличие от `SECURITY.md`/`THREATS.md`/`settings.local.json`) — правка идёт в этом же PR обычным коммитом.
 
 ## Критерии приёмки
 
