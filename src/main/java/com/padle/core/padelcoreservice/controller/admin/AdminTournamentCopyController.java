@@ -59,6 +59,7 @@ public class AdminTournamentCopyController {
         newTournament.setInfoDetallada(sourceTournament.getInfoDetallada());
         newTournament.setContactoOrganizador(sourceTournament.getContactoOrganizador());
         newTournament.setFaqUrl(sourceTournament.getFaqUrl());
+        newTournament.setVisibilidad(sourceTournament.getVisibilidad());
 
         // Устанавливаем статус по умолчанию для нового турнира
         newTournament.setEstado(TournamentStatus.REGISTRO_ABIERTO);
@@ -73,6 +74,7 @@ public class AdminTournamentCopyController {
         model.addAttribute("tournamentTypes", TournamentType.values());
         model.addAttribute("modalidades", Modalidad.values());
         model.addAttribute("tournamentStatuses", TournamentStatus.values());
+        model.addAttribute("visibilidades", TournamentVisibility.values());
 
         // Добавляем флаг, что это копирование (для отображения в заголовке)
         model.addAttribute("isCopy", true);

@@ -169,6 +169,7 @@ public class AdminController {
             model.addAttribute("tournamentStatuses", Arrays.asList(TournamentStatus.values()));
             model.addAttribute("niveles", getNiveles(tournamentDto.getCategoriaNivel()));
             model.addAttribute("modalidades", Modalidad.values());
+            model.addAttribute("visibilidades", TournamentVisibility.values());
             return "admin/tournaments/form";
         }
 
@@ -202,6 +203,7 @@ public class AdminController {
         model.addAttribute("tournamentStatuses", Arrays.asList(TournamentStatus.values()));
         model.addAttribute("niveles", getNiveles(null));
         model.addAttribute("modalidades", Modalidad.values());
+        model.addAttribute("visibilidades", TournamentVisibility.values());
 
         return "admin/tournaments/form";
     }
@@ -297,6 +299,7 @@ public class AdminController {
         model.addAttribute("tournamentStatuses", Arrays.asList(TournamentStatus.values()));
         model.addAttribute("niveles", getNiveles(tournament.getCategoriaNivel()));
         model.addAttribute("modalidades", Modalidad.values());
+        model.addAttribute("visibilidades", TournamentVisibility.values());
 
         return "admin/tournaments/form";
     }

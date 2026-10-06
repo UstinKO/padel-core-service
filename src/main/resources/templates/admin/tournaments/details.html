@@ -344,6 +344,10 @@
                           th:classappend="'badge-' + ${tournament.estado.toString().toLowerCase()}">
                         Abierto
                     </span>
+                    <span class="badge badge-visibility"
+                          th:text="#{__${'enum.visibilidad.' + tournament.visibilidad.name()}__}">
+                        Público
+                    </span>
                 </div>
             </div>
             <div class="tournament-price">
