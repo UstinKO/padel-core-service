@@ -76,6 +76,11 @@
     color: #4527a0;
 }
 
+.badge-visibility {
+    background: #fce7f3;
+    color: #9d174d;
+}
+
 .badge-status {
     background: #fff3e0;
     color: #e65100;
@@ -1551,6 +1556,7 @@ textarea.form-control {
 .tournament-badges .badge-modalidad { background: #ede7f6; color: #4527a0; }
 .tournament-badges .badge-type   { background: #e8f5e9; color: #1b5e20; }
 .tournament-badges .badge-status { background: #fff3e0; color: #e65100; }
+.tournament-badges .badge-visibility { background: #fce7f3; color: #9d174d; }
 .tournament-badges .badge-status.badge-borrador         { background: #e9ecef; color: #495057; }
 .tournament-badges .badge-status.badge-publicado        { background: #e3f2fd; color: #0d47a1; }
 .tournament-badges .badge-status.badge-registro_abierto { background: #e8f5e9; color: #1b5e20; }

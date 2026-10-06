@@ -337,6 +337,18 @@
                                style="width:1.1rem; height:1.1rem; margin:0;">
                         <label for="mostrarNivel" style="margin:0;" th:text="#{admin.tournaments.form.field.mostrar_nivel}">Mostrar nivel de los participantes en el listado</label>
                     </div>
+
+                    <!-- LFPT-492: acceso público / solo por enlace -->
+                    <div class="form-group">
+                        <label for="visibilidad" th:text="#{admin.tournaments.form.field.visibility}">Modo de acceso</label>
+                        <select th:field="*{visibilidad}"
+                                id="visibilidad"
+                                class="form-control">
+                            <option th:each="v : ${visibilidades}"
+                                    th:value="${v}"
+                                    th:text="#{__${'enum.visibilidad.' + v.name()}__}"></option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="form-actions">
