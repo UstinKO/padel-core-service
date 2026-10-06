@@ -128,7 +128,9 @@ public class SecurityConfig {
                                 // LFPT-0472: короткие маркетинговые ссылки октябрьского календаря
                                 "/oct-tg",
                                 "/oct-wa",
-                                "/oct-ig"
+                                "/oct-ig",
+                                // LFPT-0489: короткая ссылка для профиля Instagram
+                                "/ig-bio"
                         ).permitAll()
                         .requestMatchers("/players/dashboard").authenticated()
                         .requestMatchers("/players/lista").authenticated()

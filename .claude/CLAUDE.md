@@ -71,6 +71,7 @@ docker compose up -d
 | `GET /double-registration/complete` | — (redirect) | `PartnerRegistrationController` |
 | `GET /double-registration/accept-pair` | — (redirect) | `PartnerRegistrationController` |
 | `GET /oct-tg`, `/oct-wa`, `/oct-ig` | — (redirect) | `MarketingRedirectController` — короткие ссылки на `1-padel.com/?utm_...` для октябрьского календаря (LFPT-0472) |
+| `GET /ig-bio` | — (redirect) | `MarketingRedirectController` — короткая ссылка на `1-padel.com/?utm_...` для профиля Instagram (LFPT-0489) |
 
 ### Player Area (`ROLE_PLAYER`)
 
