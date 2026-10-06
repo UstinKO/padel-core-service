@@ -5,6 +5,7 @@ import com.padle.core.padelcoreservice.model.enums.Modalidad;
 import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
+import com.padle.core.padelcoreservice.model.enums.TournamentVisibility;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -127,6 +128,15 @@ public class Tournament {
     @Column(name = "mostrar_nivel", nullable = false)
     @Builder.Default
     private Boolean mostrarNivel = false;
+
+    // LFPT-491: видимость турнира — PUBLICO (попадает в публичные списки/расписание) или
+    // SOLO_POR_ENLACE (закрытое мероприятие: не в списках/навигации, доступно только по
+    // прямой ссылке /torneo/{id}). Enum, а не boolean — задел под будущий третий режим
+    // «по приглашению» без новой миграции.
+    @Enumerated(EnumType.STRING)
+    @Column(name = "visibilidad", nullable = false, length = 30)
+    @Builder.Default
+    private TournamentVisibility visibilidad = TournamentVisibility.PUBLICO;
 
     // Связь с регистрациями
     @OneToMany(mappedBy = "tournament", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

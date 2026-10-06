@@ -158,3 +158,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.52-add-mostrar-nivel-to-tournament.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.53-add-visibilidad-to-tournament.yaml
+      relativeToChangelogFile: true

@@ -28,7 +28,7 @@ public class TournamentController {
 
     @GetMapping
     public ResponseEntity<List<TournamentDto>> getAllTournaments() {
-        return ResponseEntity.ok(tournamentService.getAllTournaments());
+        return ResponseEntity.ok(tournamentService.getAllPublicTournaments());
     }
 
     @GetMapping("/upcoming")
@@ -45,7 +45,7 @@ public class TournamentController {
 
     @GetMapping("/club/{clubId}")
     public ResponseEntity<List<TournamentDto>> getTournamentsByClub(@PathVariable Long clubId) {
-        return ResponseEntity.ok(tournamentService.getTournamentsByClub(clubId));
+        return ResponseEntity.ok(tournamentService.getPublicTournamentsByClub(clubId));
     }
 
     @GetMapping("/status/{status}")
