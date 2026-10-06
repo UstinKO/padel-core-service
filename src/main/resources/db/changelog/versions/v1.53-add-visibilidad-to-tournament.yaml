@@ -1,0 +1,18 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.53-add-visibilidad-to-tournament
+      author: padel-core
+      changes:
+        - addColumn:
+            tableName: tournaments_db
+            columns:
+              - column:
+                  name: visibilidad
+                  type: VARCHAR(30)
+                  defaultValue: PUBLICO
+                  constraints:
+                    nullable: false
+      rollback:
+        - dropColumn:
+            tableName: tournaments_db
+            columnName: visibilidad

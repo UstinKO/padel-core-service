@@ -95,6 +95,25 @@ public class TournamentService {
         return dtos;
     }
 
+    /**
+     * LFPT-491: турниры SOLO_POR_ENLACE не должны попадать в публичные списки/расписание/
+     * поиск, но доступ по id (прямая ссылка) не фильтруется — см. getActiveTournamentById и т.п.
+     */
+    private List<TournamentDto> filterPublicOnly(List<TournamentDto> dtos) {
+        return dtos.stream()
+                .filter(dto -> dto.getVisibilidad() != TournamentVisibility.SOLO_POR_ENLACE)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Публичная версия getAllTournaments() — для GET /api/tournaments (без авторизации).
+     * getAllTournaments() сам не фильтруется, т.к. переиспользуется админкой
+     * (AdminController, getTournamentsForOwner) и TestTournamentController.
+     */
+    public List<TournamentDto> getAllPublicTournaments() {
+        return filterPublicOnly(getAllTournaments());
+    }
+
     public Optional<TournamentDto> getTournamentDtoById(Long id) {
         return tournamentRepository.findById(id)
                 .map(this::mapToDtoWithDetails);
@@ -108,6 +127,14 @@ public class TournamentService {
         return mapToDtoWithDetails(tournamentRepository.findByClubId(clubId));
     }
 
+    /**
+     * Публичная версия getTournamentsByClub() — для GET /api/tournaments/club/{clubId}.
+     * getTournamentsByClub() сам не фильтруется, т.к. переиспользуется админкой (AdminController).
+     */
+    public List<TournamentDto> getPublicTournamentsByClub(Long clubId) {
+        return filterPublicOnly(getTournamentsByClub(clubId));
+    }
+
     @Timed(
             name = "tournament.upcoming.time",
             description = "Time taken to fetch upcoming tournaments",
@@ -115,11 +142,12 @@ public class TournamentService {
     )
     public List<TournamentDto> getUpcomingTournaments() {
         log.debug("Fetching upcoming active tournaments with REGISTRO_ABIERTO status");
-        return mapToDtoWithDetails(tournamentRepository.findUpcomingActiveTournaments(TournamentStatus.REGISTRO_ABIERTO));
+        return filterPublicOnly(mapToDtoWithDetails(
+                tournamentRepository.findUpcomingActiveTournaments(TournamentStatus.REGISTRO_ABIERTO)));
     }
 
     public List<TournamentDto> getTournamentsByStatus(TournamentStatus status) {
-        return mapToDtoWithDetails(tournamentRepository.findByEstado(status));
+        return filterPublicOnly(mapToDtoWithDetails(tournamentRepository.findByEstado(status)));
     }
 
     @Timed(
@@ -129,7 +157,8 @@ public class TournamentService {
     )
     public List<TournamentDto> searchTournaments(Long clubId, GenderFormat genero, String nivel,
                                                  TournamentType tipo, TournamentStatus estado) {
-        return mapToDtoWithDetails(tournamentRepository.searchTournaments(clubId, genero, nivel, tipo, estado));
+        return filterPublicOnly(mapToDtoWithDetails(
+                tournamentRepository.searchTournaments(clubId, genero, nivel, tipo, estado)));
     }
 
     @Timed(
@@ -143,7 +172,7 @@ public class TournamentService {
                 .filter(t -> t.getEstado() == TournamentStatus.REGISTRO_ABIERTO
                         || t.getEstado() == TournamentStatus.PUBLICADO)
                 .collect(Collectors.toList());
-        List<TournamentDto> dtos = mapToDtoWithDetails(visible);
+        List<TournamentDto> dtos = filterPublicOnly(mapToDtoWithDetails(visible));
         dtos.sort(Comparator.comparing(TournamentDto::getFechaInicio)
                 .thenComparing(TournamentDto::getHoraInicio));
         return dtos;
@@ -648,6 +677,8 @@ public class TournamentService {
         tournament.setOwnerId(createdBy);  // ← ДОБАВИТЬ ЭТУ СТРОКУ
         tournament.setIsActive(true);
         tournament.setMostrarNivel(Boolean.TRUE.equals(tournamentDto.getMostrarNivel()));
+        tournament.setVisibilidad(tournamentDto.getVisibilidad() != null
+                ? tournamentDto.getVisibilidad() : TournamentVisibility.PUBLICO);
 
         if (tournament.getEstado() == null) {
             tournament.setEstado(TournamentStatus.REGISTRO_ABIERTO);
@@ -1131,6 +1162,7 @@ public class TournamentService {
         existing.setFaqUrl(normalizeFaqUrl(dto.getFaqUrl()));
         existing.setEstado(dto.getEstado());
         existing.setMostrarNivel(Boolean.TRUE.equals(dto.getMostrarNivel()));
+        existing.setVisibilidad(dto.getVisibilidad() != null ? dto.getVisibilidad() : TournamentVisibility.PUBLICO);
     }
 
     private String normalizeFaqUrl(String url) {
@@ -1148,7 +1180,7 @@ public class TournamentService {
 
     @Transactional(readOnly = true)
     public List<TournamentDto> getActiveTournamentsForHome() {
-        return mapToDtoWithDetails(tournamentRepository.findActiveForHome());
+        return filterPublicOnly(mapToDtoWithDetails(tournamentRepository.findActiveForHome()));
     }
 
     private TournamentDto mapToDtoWithBatchedData(
@@ -1188,7 +1220,7 @@ public class TournamentService {
     @Transactional(readOnly = true)
     public List<TournamentDto> getAllActiveTournaments() {
         log.debug("Fetching all active tournaments");
-        return mapToDtoWithDetails(tournamentRepository.findByIsActiveTrue());
+        return filterPublicOnly(mapToDtoWithDetails(tournamentRepository.findByIsActiveTrue()));
     }
 
     @Transactional(readOnly = true)
