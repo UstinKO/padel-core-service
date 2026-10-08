@@ -61,6 +61,7 @@ public class PasswordResetService {
         tokenRepository.save(resetToken);
 
         String resetUrl = baseUrl + "/recuperar-password?token=" + token;
+        log.info("Reset URL generado para playerId={}: {}", player.getId(), resetUrl);
         emailService.sendPasswordResetEmail(player.getEmail(), player.getNombre(), resetUrl, player.getLocale());
 
         log.info("Email de restablecimiento enviado a: {}", email);
@@ -71,9 +72,23 @@ public class PasswordResetService {
      * Проверка валидности токена
      */
     public boolean validateToken(String token) {
-        return tokenRepository.findByToken(token)
-                .map(t -> !t.isUsed() && !t.isExpired())
-                .orElse(false);
+        PasswordResetToken resetToken = tokenRepository.findByToken(token).orElse(null);
+
+        if (resetToken == null) {
+            log.warn("Token de recuperación no encontrado: {}", maskToken(token));
+            return false;
+        }
+        if (resetToken.isUsed()) {
+            log.warn("Token de recuperación ya utilizado: {}, playerId={}",
+                    maskToken(token), resetToken.getPlayer().getId());
+            return false;
+        }
+        if (resetToken.isExpired()) {
+            log.warn("Token de recuperación expirado: {}, playerId={}, expiryDate={}",
+                    maskToken(token), resetToken.getPlayer().getId(), resetToken.getExpiryDate());
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -91,8 +106,18 @@ public class PasswordResetService {
         PasswordResetToken resetToken = tokenRepository.findByToken(confirmDto.getToken())
                 .orElse(null);
 
-        if (resetToken == null || resetToken.isUsed() || resetToken.isExpired()) {
-            log.warn("Token inválido, usado o expirado");
+        if (resetToken == null) {
+            log.warn("Intento de restablecimiento con token no encontrado: {}", maskToken(confirmDto.getToken()));
+            return false;
+        }
+        if (resetToken.isUsed()) {
+            log.warn("Intento de restablecimiento con token ya utilizado: {}, playerId={}",
+                    maskToken(confirmDto.getToken()), resetToken.getPlayer().getId());
+            return false;
+        }
+        if (resetToken.isExpired()) {
+            log.warn("Intento de restablecimiento con token expirado: {}, playerId={}, expiryDate={}",
+                    maskToken(confirmDto.getToken()), resetToken.getPlayer().getId(), resetToken.getExpiryDate());
             return false;
         }
 
@@ -115,5 +140,16 @@ public class PasswordResetService {
     public void cleanExpiredTokens() {
         tokenRepository.deleteAllExpiredOrUsed(LocalDateTime.now());
         log.info("Tokens expirados eliminados");
+    }
+
+    /**
+     * Токен — одноразовый секрет для сброса пароля: в логах показываем только
+     * первые символы, чтобы диагностировать проблему без раскрытия всего значения.
+     */
+    public static String maskToken(String token) {
+        if (token == null) {
+            return "null";
+        }
+        return token.length() > 8 ? token.substring(0, 8) + "..." : "***";
     }
 }

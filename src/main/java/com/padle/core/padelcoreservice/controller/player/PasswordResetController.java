@@ -7,7 +7,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -36,14 +35,15 @@ public class PasswordResetController {
      * Этот метод обрабатывает GET запросы на /recuperar-password?token=...
      */
     @GetMapping
-    public String mostrarFormularioNuevoPassword(@RequestParam String token, Model model) {
-        log.info("Mostrando formulario para nuevo password con token: {}", token);
+    public String mostrarFormularioNuevoPassword(@RequestParam String token) {
+        log.info("Mostrando formulario para nuevo password con token: {}", PasswordResetService.maskToken(token));
 
         boolean tokenValido = passwordResetService.validateToken(token);
 
         if (!tokenValido) {
-            model.addAttribute("error", "El enlace de recuperación ha expirado o ya ha sido utilizado");
-            return "error";
+            // LFPT-0499: antes se devolvía la view "error", que no existe
+            // (templates/error.html no existe a nivel raíz) — TemplateInputException, 500.
+            return "redirect:/login?error=reset_expired";
         }
 
         // Перенаправляем на главную с токеном в URL, JS подхватит и покажет модальное окно
