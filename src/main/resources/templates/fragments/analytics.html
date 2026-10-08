@@ -48,5 +48,45 @@
         })();
     </script>
 </th:block>
+<!-- Microsoft Clarity (LFPT-0497). В отличие от GA4 выше, скрипт clarity.ms
+     не вставляется в DOM вообще, пока нет явного согласия пользователя —
+     у Clarity нет документированного эквивалента Google Consent Mode
+     "грузим, но default denied" без настройки в стороннем кабинете Clarity,
+     к которому у конвейера нет доступа (см. спеку, находка 3). -->
+<th:block th:fragment="clarity" th:with="clarityId=${@environment.getProperty('app.analytics.clarity-id')}">
+    <script th:inline="javascript">
+        (function () {
+            function getCookie(name) {
+                var match = document.cookie.match('(?:^|; )' + name + '=([^;]*)');
+                return match ? decodeURIComponent(match[1]) : null;
+            }
+
+            var clarityId = /*[[${clarityId}]]*/ 'XXXXXXXXXX';
+
+            window.initClarity = function () {
+                if (window._clarityLoaded) {
+                    return;
+                }
+                window._clarityLoaded = true;
+                (function (c, l, a, r, i, t, y) {
+                    c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments); };
+                    t = l.createElement(r); t.async = 1; t.src = 'https://www.clarity.ms/tag/' + i;
+                    y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
+                })(window, document, 'clarity', 'script', clarityId);
+            };
+
+            function analyticsConsentGranted() {
+                var cookieConsent = getCookie('cookieConsent');
+                var analyticsConsent = getCookie('analyticsConsent');
+                return cookieConsent === 'accepted'
+                    || (cookieConsent === 'customized' && analyticsConsent === 'true');
+            }
+
+            if (analyticsConsentGranted()) {
+                window.initClarity();
+            }
+        })();
+    </script>
+</th:block>
 </body>
 </html>

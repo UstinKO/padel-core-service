@@ -55,8 +55,9 @@
         #resultMsg.error   { background: #fee2e2; color: #991b1b; }
     </style>
     <th:block th:replace="~{fragments/analytics :: ga4}"></th:block>
+    <th:block th:replace="~{fragments/analytics :: clarity}"></th:block>
 </head>
-<body>
+<body data-clarity-mask="true">
 <div class="accept-pair-container">
     <div class="accept-pair-icon">🎾</div>
     <div class="accept-pair-title" th:text="#{accept_pair.heading}">Confirmar pareja</div>
