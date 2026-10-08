@@ -125,9 +125,24 @@
 
     // Обновляет Google Consent Mode сразу после выбора пользователя, без
     // перезагрузки страницы (gtag уже загружен — см. fragments/analytics.html, LFPT-0468).
+    // Дополнительно управляет Microsoft Clarity (LFPT-0497): в отличие от gtag, скрипт
+    // clarity.ms до этого момента мог вообще не быть вставлен в DOM (см. fragments/analytics.html
+    // :: clarity) — initClarity() вставляет его при первом granted; clarity('consent', false)
+    // просто фиксирует отказ, если скрипт уже успел загрузиться на этой странице ранее.
     function updateAnalyticsConsent(granted) {
         if (typeof window.gtag === 'function') {
             window.gtag('consent', 'update', { 'analytics_storage': granted ? 'granted' : 'denied' });
+        }
+
+        if (granted) {
+            if (typeof window.initClarity === 'function') {
+                window.initClarity();
+            }
+            if (typeof window.clarity === 'function') {
+                window.clarity('consent');
+            }
+        } else if (typeof window.clarity === 'function') {
+            window.clarity('consent', false);
         }
     }
 

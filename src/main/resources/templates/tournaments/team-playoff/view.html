@@ -104,8 +104,9 @@
         .bracket-export-meta .badges span{background:#f1f5f9;padding:.2rem .6rem;border-radius:8px}
     </style>
     <th:block th:replace="~{fragments/analytics :: ga4}"></th:block>
+    <th:block th:replace="~{fragments/analytics :: clarity}"></th:block>
 </head>
-<body>
+<body data-clarity-mask="true">
 <header class="header">
     <div class="container">
         <nav class="navbar">

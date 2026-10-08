@@ -19,8 +19,9 @@
     <link rel="stylesheet" th:href="@{/css/admin.css}">
     <link rel="stylesheet" th:href="@{/css/king-of-court.css}">
     <th:block th:replace="~{fragments/analytics :: ga4}"></th:block>
+    <th:block th:replace="~{fragments/analytics :: clarity}"></th:block>
 </head>
-<body>
+<body data-clarity-mask="true">
 <header class="header">
     <div class="container">
         <nav class="navbar">

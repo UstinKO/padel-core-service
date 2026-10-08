@@ -35,8 +35,9 @@
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" th:href="@{/css/cookie-consent.css}">
     <th:block th:replace="~{fragments/analytics :: ga4}"></th:block>
+    <th:block th:replace="~{fragments/analytics :: clarity}"></th:block>
 </head>
-<body>
+<body data-clarity-mask="true">
 <!-- Header dinámico según autenticación -->
 <header class="header">
     <div class="container">

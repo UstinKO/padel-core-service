@@ -59,8 +59,9 @@
         .verified-me{color:#1d9bf0;font-size:.85em;margin-left:.3rem;vertical-align:middle}
     </style>
     <th:block th:replace="~{fragments/analytics :: ga4}"></th:block>
+    <th:block th:replace="~{fragments/analytics :: clarity}"></th:block>
 </head>
-<body>
+<body data-clarity-mask="true">
 <header class="header">
     <div class="container" style="max-width:1200px">
         <nav class="navbar">
