@@ -287,8 +287,8 @@
         <div class="ranking-card" style="margin-top:2rem">
             <div class="ranking-header">
                 <h3><i class="fas fa-trophy"></i> <span th:text="#{admin.americano.title.ranking_pairs}">Clasificación de Parejas</span></h3>
-                <span style="font-size:.8rem;opacity:.75"
-                      th:text="${ranking != null ? ranking.completedRounds + '/' + ranking.totalRounds + ' ' + #{admin.americano.label.rounds_completed} : ''}"></span>
+                <span th:if="${ranking != null}" style="font-size:.8rem;opacity:.75"
+                      th:text="|${ranking.completedRounds}/${ranking.totalRounds} #{admin.americano.label.rounds_completed}|"></span>
             </div>
             <div style="overflow-x:auto">
                 <table class="table">
