@@ -1,7 +1,9 @@
 # LFPT-0518: Feature Telegram-алерты об ошибках — структурированные поля вместо текста, уровни серьёзности, этапы восстановления пароля
 
 ## Статус
-approved
+done
+
+Смержено: [PR #519](https://github.com/UstinKO/padel-core-service/pull/519) (closes #518). Задеплоено успешно — [Deploy to Production #285](https://github.com/UstinKO/padel-core-service/actions/runs/37949541930) (commit `36d2d19`).
 
 ## Источник
 Клиентский запрос [specs/requests/LFPT-0518-telegram-alerts-redesign.md](../requests/LFPT-0518-telegram-alerts-redesign.md) (Telegram, customer, telegram_launch_message_id: 4931, переслано от Evgeny_754) → issue [#518](https://github.com/UstinKO/padel-core-service/issues/518).
