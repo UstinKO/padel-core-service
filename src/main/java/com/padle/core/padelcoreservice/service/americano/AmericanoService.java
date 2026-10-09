@@ -602,7 +602,7 @@ public class AmericanoService {
         if (currentRound == 1) {
             Collections.shuffle(indices);
             List<Integer> result = indices.subList(0, playersPerRound);
-            log.info("Round {}: selected {} players: {}", currentRound, result.size(),
+            log.debug("Раунд {}: выбрано игроков {}: {}", currentRound, result.size(),
                     result.stream().map(i -> players.get(i).getPlayer().getNombre()).collect(Collectors.joining(", ")));
             return result;
         }
@@ -653,7 +653,7 @@ public class AmericanoService {
             result.add(indices.get(index));
         }
 
-        log.info("Round {}: selected {} players: {}", currentRound, result.size(),
+        log.debug("Раунд {}: выбрано игроков {}: {}", currentRound, result.size(),
                 result.stream().map(i -> players.get(i).getPlayer().getNombre()).collect(Collectors.joining(", ")));
 
         return result;
@@ -1031,7 +1031,7 @@ public class AmericanoService {
 
                     dto.setByePlayerNames(byeNames);
 
-                    log.info("Round {}: {} players playing, {} players resting",
+                    log.debug("Раунд {}: играют {}, отдыхают {}",
                             round.getRoundNumber(), playingIds.size(), byeNames.size());
 
                     return dto;
@@ -1400,49 +1400,24 @@ public class AmericanoService {
      */
     private List<String> calcByePlayerNames(Long roundId, List<AmericanoPlayer> allPlayers) {
         List<AmericanoMatch> matches = americanoMatchRepository.findByRoundId(roundId);
-
-        log.info("=== calcByePlayerNames for roundId: {} ===", roundId);
-        log.info("Matches count: {}", matches.size());
-
         if (matches.isEmpty()) {
-            log.warn("No matches found for roundId: {}", roundId);
-            return allPlayers.stream()
-                    .map(ap -> ap.getPlayer().getNombre() + " " + ap.getPlayer().getApellido())
-                    .collect(Collectors.toList());
+            log.warn("В раунде {} нет матчей — все игроки считаются отдыхающими", roundId);
         }
 
-        // Выводим первые 3 матча для проверки
-        matches.stream().limit(3).forEach(m -> {
-            log.info("Match {}: players - {}/{}, {}/{}",
-                    m.getId(),
-                    m.getTeam1Player1() != null ? m.getTeam1Player1().getId() : "null",
-                    m.getTeam1Player2() != null ? m.getTeam1Player2().getId() : "null",
-                    m.getTeam2Player1() != null ? m.getTeam2Player1().getId() : "null",
-                    m.getTeam2Player2() != null ? m.getTeam2Player2().getId() : "null"
-            );
-        });
-
-        // Собираем ID всех игроков участвующих в матчах этого раунда
         Set<Long> playingIds = matches.stream()
-                .flatMap(m -> Stream.of(
-                        m.getTeam1Player1() != null ? m.getTeam1Player1().getId() : null,
-                        m.getTeam1Player2() != null ? m.getTeam1Player2().getId() : null,
-                        m.getTeam2Player1() != null ? m.getTeam2Player1().getId() : null,
-                        m.getTeam2Player2() != null ? m.getTeam2Player2().getId() : null
-                ))
+                .flatMap(m -> Stream.of(m.getTeam1Player1(), m.getTeam1Player2(), m.getTeam2Player1(), m.getTeam2Player2()))
                 .filter(Objects::nonNull)
+                .map(PlayerPadel::getId)
                 .collect(Collectors.toSet());
 
-        log.info("Playing IDs for round {}: {}", roundId, playingIds);
-
-        // Игроки не участвующие ни в одном матче → bye
         List<String> byePlayers = allPlayers.stream()
                 .filter(ap -> !playingIds.contains(ap.getPlayer().getId()))
                 .map(ap -> ap.getPlayer().getNombre() + " " + ap.getPlayer().getApellido())
-                .collect(Collectors.toList());
+                .toList();
 
-        log.info("Bye players for round {}: {}", roundId, byePlayers);
-
+        // LFPT-0525: вызывается на каждый раунд при каждом просмотре страницы турнира — только DEBUG
+        log.debug("Раунд {}: матчей {}, играют {}, отдыхают {}",
+                roundId, matches.size(), playingIds.size(), byePlayers.size());
         return byePlayers;
     }
 
