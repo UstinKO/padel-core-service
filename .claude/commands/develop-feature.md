@@ -125,7 +125,7 @@ gh issue comment $N -R $R --body "🤖 pipeline-claim LFPT-$N run=$RUN
 ```bash
 git worktree add ../padel-core-service-worktrees/LFPT-XXX -b feature/LFPT-XXX master
 mkdir -p ../padel-core-service-worktrees/LFPT-XXX/.claude/agents ../padel-core-service-worktrees/LFPT-XXX/.claude/commands
-cp .claude/CLAUDE.md .claude/GIT_WORKFLOW.md .claude/CODE_REVIEW.md .claude/SECURITY.md .claude/THREATS.md .claude/settings.json .claude/settings.local.json ../padel-core-service-worktrees/LFPT-XXX/.claude/
+cp .claude/CLAUDE.md .claude/GIT_WORKFLOW.md .claude/CODE_REVIEW.md .claude/CODE_STYLE.md .claude/SECURITY.md .claude/THREATS.md .claude/settings.json .claude/settings.local.json ../padel-core-service-worktrees/LFPT-XXX/.claude/
 cp .claude/agents/*.md ../padel-core-service-worktrees/LFPT-XXX/.claude/agents/
 cp .claude/commands/develop-feature.md ../padel-core-service-worktrees/LFPT-XXX/.claude/commands/
 ```
@@ -154,7 +154,8 @@ cp .claude/commands/develop-feature.md ../padel-core-service-worktrees/LFPT-XXX/
 
 Прочитай отчёт тестировщика. Сверь **сам**, пункт за пунктом, таблицу критериев приёмки из отчёта с разделом "Критерии приёмки" спеки — не доверяй вердикту тестировщика вслепую, это последний рубеж перед PR.
 
-- Если есть хоть один fail или расхождение со спекой — вернись к Шагу 2 с конкретным списком, что нужно исправить (передай это Developer). Не зацикливайся бесконечно: после 2 неудачных попыток исправления — останови конвейер и опиши пользователю, в чём затык, вместо третьей попытки вслепую.
+- Прочитай diff ветки (`git diff master...HEAD -- src/`) и сверь со стилем [CODE_STYLE.md §10](../CODE_STYLE.md). Нарушения стиля в новом/изменённом коде (`orElse(null)`, `catch (Exception)`, `Map<String, Object>` как DTO, циклы-аккумуляторы, комментарии на испанском, хардкод строк) — такой же повод вернуть на доработку, как fail критерия приёмки.
+- Если есть хоть один fail, расхождение со спекой или нарушение стиля — вернись к Шагу 2 с конкретным списком, что нужно исправить (передай это Developer). Не зацикливайся бесконечно: после 2 неудачных попыток исправления — останови конвейер и опиши пользователю, в чём затык, вместо третьей попытки вслепую.
 - Если всё сходится — иди дальше.
 
 ## Шаг 5 — PR
