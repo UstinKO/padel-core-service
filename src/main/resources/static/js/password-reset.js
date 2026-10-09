@@ -100,6 +100,9 @@
         });
     }
 
+    // Expuesta globalmente para el botón del alert de enlace caducado en login.html
+    window.showPasswordResetModal = showPasswordResetModal;
+
     /**
      * Oculta el modal de solicitud
      */

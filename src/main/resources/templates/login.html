@@ -98,8 +98,22 @@
                         </div>
                     </div>
 
+                    <!-- Ссылка сброса пароля устарела/использована -->
+                    <div th:if="${param.error != null and param.error[0] == 'reset_expired'}"
+                         style="background:#fff7ed; border-left:4px solid #f59e0b; border-radius:8px;
+                                color:#92400e; padding:1rem 1.25rem; display:flex;
+                                gap:.75rem; align-items:flex-start; margin-bottom:.5rem;">
+                        <i class="fas fa-link-slash" style="color:#f59e0b; font-size:1.25rem; flex-shrink:0; margin-top:.1rem;"></i>
+                        <div>
+                            <strong style="display:block; margin-bottom:.25rem;" th:text="#{login.alert.reset_expired.title}">Enlace caducado</strong>
+                            <span th:text="#{login.alert.reset_expired.msg}">El enlace para restablecer tu contraseña caducó o ya fue utilizado. Solicita uno nuevo para volver a establecer tu contraseña.</span>
+                            <button type="button" class="btn btn-outline" style="margin-top:.5rem;" onclick="showPasswordResetModal()"
+                                    th:text="#{login.alert.reset_expired.btn}">Solicitar nueva</button>
+                        </div>
+                    </div>
+
                     <!-- Credenciales incorrectas (cualquier otro error excepto los anteriores) -->
-                    <div th:if="${param.error != null and param.error[0] != 'not_confirmed' and param.error[0] != 'rate-limit'}"
+                    <div th:if="${param.error != null and param.error[0] != 'not_confirmed' and param.error[0] != 'rate-limit' and param.error[0] != 'reset_expired'}"
                          class="alert alert-error">
                         <i class="fas fa-exclamation-circle"></i>
                         <span th:text="#{login.alert.error}">Email o contraseña incorrectos</span>
