@@ -1,0 +1,25 @@
+databaseChangeLog:
+  # LFPT-402: mejor_posicion — лучшая (наименьшая, с 1) позиция игрока. NULL = «позиции ещё нет»:
+  # новый рейтинг создаётся без позиции, Ranking.calcularMejorPosicion() заменяет NULL первой
+  # посчитанной позицией. DEFAULT 0 из v1.12 противоречил этой модели: 0 меньше любой позиции и
+  # навсегда «замораживал» лучшую позицию. Задуманный в v1.12 NOT NULL не применялся ни на одной БД
+  # (changeset v1.12-update-existing-ranking-mejor-posicion везде MARK_RAN) и не нужен.
+  - changeSet:
+      id: v1.54-ranking-mejor-posicion-drop-default
+      author: padel-core
+      changes:
+        - sql:
+            comment: "0 не бывает реальной позицией (нумерация с 1) — это значение DEFAULT, а не данные"
+            sql: UPDATE ranking_db SET mejor_posicion = NULL WHERE mejor_posicion = 0;
+        - dropDefaultValue:
+            tableName: ranking_db
+            columnName: mejor_posicion
+        - setColumnRemarks:
+            tableName: ranking_db
+            columnName: mejor_posicion
+            remarks: "Лучшая позиция игрока (с 1); NULL — позиции ещё нет"
+      rollback:
+        - addDefaultValue:
+            tableName: ranking_db
+            columnName: mejor_posicion
+            defaultValueNumeric: 0
