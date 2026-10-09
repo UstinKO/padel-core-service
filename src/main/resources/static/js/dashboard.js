@@ -380,6 +380,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 async () => {
                     button.disabled = true;
                     button.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('common.processing')}`;
+                    window.trackTournamentRegistrationStart?.(tournamentId);
 
                     try {
                         const response = await fetch(`/players/tournaments/${tournamentId}/register`, {
@@ -390,6 +391,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         const data = await response.json();
 
                         if (data.success) {
+                            window.trackTournamentRegistrationComplete?.(tournamentId, data.status);
                             if (data.status === 'CONFIRMED') {
                                 showRegistrationConfirmModal(tournament?.tipo);
                             } else {
@@ -619,6 +621,7 @@ document.addEventListener('DOMContentLoaded', function() {
             submitBtn.disabled = true;
             submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('common.processing')}`;
         }
+        window.trackTournamentRegistrationStart?.(tournamentId);
 
         const closePartnerModal = () => {
             const modal = document.getElementById('partnerModal');
@@ -648,6 +651,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const data = await response.json();
 
                 if (response.ok) {
+                    window.trackTournamentRegistrationComplete?.(tournamentId, mode);
                     closePartnerModal();
                     myTournamentIds.add(parseInt(tournamentId));
                     updateTabCounts();
@@ -701,6 +705,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const data = await response.json();
+            window.trackTournamentRegistrationComplete?.(tournamentId, data.status);
             closePartnerModal();
             myTournamentIds.add(parseInt(tournamentId));
             updateTabCounts();

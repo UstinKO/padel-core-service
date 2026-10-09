@@ -411,6 +411,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         const btn = newRegisterBtn;
                         btn.disabled = true;
                         btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('details.processing')}`;
+                        window.trackTournamentRegistrationStart?.(tournamentId);
 
                         try {
                             const response = await fetch(`/players/tournaments/${tournamentId}/register`, {
@@ -421,6 +422,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             const data = await response.json();
 
                             if (data.success) {
+                                window.trackTournamentRegistrationComplete?.(tournamentId, data.status);
                                 if (data.status === 'CONFIRMED') {
                                     showRegistrationConfirmModal(window.tournament?.tipo);
                                 } else {
@@ -482,6 +484,7 @@ document.addEventListener('DOMContentLoaded', function() {
         submitPartnerBtn.disabled = true;
         submitPartnerBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('details.processing')}`;
         hideInfoMessage();
+        window.trackTournamentRegistrationStart?.(tournamentId);
 
         try {
             // Соло-регистрация (SEARCH или ADD_LATER)
@@ -497,6 +500,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const data = await response.json();
 
                 if (response.ok) {
+                    window.trackTournamentRegistrationComplete?.(tournamentId, mode);
                     closeModal();
                     loadLookingForPartner(tournamentId);
                     const soloMsg = mode === 'SEARCH' ? t('details.success.solo_search') : t('details.success.solo_later');
@@ -550,6 +554,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
 
             if (response.ok) {
+                window.trackTournamentRegistrationComplete?.(tournamentId, data.status);
                 closeModal();
                 let message = '';
                 if (data.status === 'PARTNER_INVITED') message = t('details.success.partner_invited');

@@ -55,6 +55,7 @@
         #resultMsg.error   { background: #fee2e2; color: #991b1b; }
     </style>
     <th:block th:replace="~{fragments/analytics :: ga4}"></th:block>
+    <th:block th:replace="~{fragments/analytics :: cookie-consent}"></th:block>
     <th:block th:replace="~{fragments/analytics :: clarity}"></th:block>
 </head>
 <body data-clarity-mask="true">
@@ -74,7 +75,7 @@
     <div id="resultMsg"></div>
 </div>
 
-<script th:src="@{/js/csrf.js}"></script>
+<script th:src="@{/js/registration-tracking.js}"></script>
 <script>
     document.getElementById('acceptBtn').addEventListener('click', async function () {
         const btn = this;
@@ -96,6 +97,7 @@
             const msg = document.getElementById('resultMsg');
             msg.style.display = 'block';
             if (data.success) {
+                window.trackTournamentRegistrationComplete?.(null, 'CONFIRMED');
                 msg.className = 'success';
                 msg.textContent = txtSuccess;
                 btn.textContent = txtConfirmed;

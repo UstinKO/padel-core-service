@@ -38,6 +38,7 @@
         .verified-me{color:#1d9bf0;font-size:.85em;margin-left:.3rem;vertical-align:middle}
     </style>
     <th:block th:replace="~{fragments/analytics :: ga4}"></th:block>
+    <th:block th:replace="~{fragments/analytics :: cookie-consent}"></th:block>
     <th:block th:replace="~{fragments/analytics :: clarity}"></th:block>
 </head>
 <body data-clarity-mask="true">
@@ -1092,7 +1093,7 @@
 
 <!-- Script adicional -->
 <script th:src="@{/js/logger.js}"></script>
-<script th:src="@{/js/csrf.js}"></script>
+<script th:src="@{/js/registration-tracking.js}"></script>
 <script th:src="${'/js/i18n/messages-' + #locale.language + '.js'}"></script>
 <script th:src="@{/js/i18n/t.js}"></script>
 <script th:src="@{/js/contact-check.js}"></script>
