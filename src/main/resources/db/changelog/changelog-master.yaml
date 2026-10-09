@@ -161,3 +161,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.53-add-visibilidad-to-tournament.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.54-ranking-mejor-posicion-drop-default.yaml
+      relativeToChangelogFile: true
