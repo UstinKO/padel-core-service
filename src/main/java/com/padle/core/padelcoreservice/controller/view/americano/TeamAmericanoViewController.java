@@ -33,6 +33,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Controller
 @RequestMapping("/tournaments/team-americano")
@@ -238,30 +239,21 @@ public class TeamAmericanoViewController {
     // ══════════════════════════════════════════════════════════════════════
 
     /**
-     * Страница ввода результата конкретного матча.
+     * Бывшая страница ввода результата: шаблона нет, счёт вводится инлайн на админке. Редиректит на админку турнира (LFPT-0335)
      */
     @GetMapping("/matches/{matchId}/result")
     public String showResultForm(@PathVariable Long matchId,
-                                 Model model,
                                  RedirectAttributes redirectAttributes) {
 
-        AmericanoMatch match = matchRepository.findById(matchId)
-                .orElseThrow(() -> new IllegalArgumentException("Match not found"));
-
-        if (match.isCompleted()) {
-            redirectAttributes.addFlashAttribute("info", "Este partido ya tiene resultado");
-            return "redirect:/tournaments/team-americano/admin/"
-                    + match.getTournament().getId();
+        Optional<AmericanoMatch> match = matchRepository.findById(matchId);
+        if (match.isEmpty()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Partido no encontrado");
+            return "redirect:/admin/tournaments";
         }
-
-        TournamentDto tournament = tournamentService.getActiveTournamentById(
-                match.getTournament().getId()).orElseThrow();
-
-        model.addAttribute("tournament", tournament);
-        model.addAttribute("match", match);
-        model.addAttribute("pointsPerMatch", match.getRound().getPointsPerMatch());
-
-        return "admin/americano/match-result";
+        if (match.get().isCompleted()) {
+            redirectAttributes.addFlashAttribute("info", "Este partido ya tiene resultado");
+        }
+        return "redirect:/tournaments/team-americano/admin/" + match.get().getTournament().getId();
     }
 
     /**
@@ -274,21 +266,26 @@ public class TeamAmericanoViewController {
                                     @RequestParam int team2Score,
                                     RedirectAttributes redirectAttributes,
                                     @AuthenticationPrincipal Owner currentOwner) {
+        Optional<AmericanoMatch> match = matchRepository.findById(matchId);
+        if (match.isEmpty()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Partido no encontrado");
+            return "redirect:/admin/tournaments";
+        }
         tournamentAccessService.assertCanManageAmericanoMatch(currentOwner, matchId);
 
+        String adminUrl = "redirect:/tournaments/team-americano/admin/"
+                + match.get().getTournament().getId();
+
         try {
-            AmericanoMatch match = teamAmericanoService.submitMatchResult(matchId, team1Score, team2Score);
+            teamAmericanoService.submitMatchResult(matchId, team1Score, team2Score);
             redirectAttributes.addFlashAttribute("success", "Resultado guardado correctamente");
-            return "redirect:/tournaments/team-americano/admin/"
-                    + match.getTournament().getId();
         } catch (InvalidStateException e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
-            return "redirect:/tournaments/team-americano/matches/" + matchId + "/result";
         } catch (Exception e) {
             log.error("Error submitting match result matchId={}: {}", matchId, e.getMessage());
             redirectAttributes.addFlashAttribute("error", "Error al guardar: " + e.getMessage());
-            return "redirect:/tournaments/team-americano/matches/" + matchId + "/result";
         }
+        return adminUrl;
     }
 
     // ══════════════════════════════════════════════════════════════════════
