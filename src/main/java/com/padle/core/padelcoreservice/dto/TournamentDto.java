@@ -9,6 +9,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -26,7 +27,11 @@ public class TournamentDto {
     private String clubNombre;
     private String clubDireccion;
     private String nombre;
+    // LFPT-384: форматы HTML5 date/time/datetime-local — иначе th:field выводит значение
+    // в формате локали ("12/1/26", "10:00 AM"), и браузер молча блокирует сабмит формы
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate fechaInicio;
+    @DateTimeFormat(pattern = "HH:mm")
     private LocalTime horaInicio;
     private String duracion;
     private GenderFormat generoFormato;
@@ -37,6 +42,7 @@ public class TournamentDto {
     private BigDecimal precio;
     private String moneda;
     private TournamentStatus estado;
+    @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm")
     private LocalDateTime deadlineCancelacion;
     private String infoDetallada;
     private String contactoOrganizador;
