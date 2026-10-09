@@ -477,7 +477,7 @@ Email Prometheus-метрики: `email_daily`, `email_daily_limit`, `email_sent
 
 ## Deployment
 
-Push в `master` запускает `.github/workflows/deploy.yml`: сборка JAR → SCP на сервер в `/opt/padel-app/temp/` → пересборка Docker-образа (`docker compose build --no-cache padel-app`) → перезапуск контейнера → health-check `/actuator/health`. При неудаче — автоматический rollback из `app.jar.backup`. На сервере запущен полный `docker-compose.yml` стек.
+Push в `master` запускает `.github/workflows/deploy.yml`: сборка JAR → SCP на сервер в `/opt/padel-app/temp/` → пересборка Docker-образа (`docker compose build --no-cache padel-app`) → перезапуск контейнера → health-check: опрос `/actuator/health/readiness` каждые 5 с до 5 минут, успех — только HTTP 200 (не grep логов — LFPT-331; readiness, а не общий `/actuator/health`, чтобы недоступный SMTP не откатывал деплой), упавший/перезапускающийся контейнер — откат сразу. При неудаче — автоматический rollback из `app.jar.backup`. На сервере запущен полный `docker-compose.yml` стек.
 
 ### Серверный стек (production, `75.119.140.175`)
 

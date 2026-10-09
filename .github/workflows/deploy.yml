@@ -122,69 +122,46 @@ jobs:
               exit 1
             fi
 
-            # Ждем запуска (60 секунд)
-            echo "⏳ Waiting for application to start (60 seconds)..."
-            sleep 60
-
-            # Проверяем, запустился ли контейнер
-            if ! docker ps | grep -q padel-core-app; then
-              echo "❌ Application container failed to start!"
-              echo "📋 Container logs:"
-              docker compose logs padel-app --tail=50
-              rollback
-              exit 1
-            fi
-
-            # Проверяем логи на наличие признаков успешного запуска
-            echo "🔍 Checking application logs for successful startup..."
-            if docker compose logs padel-app --tail=50 | grep -q "Started PadelCoreServiceApplication"; then
-              echo "✅ Application started successfully!"
-            else
-              echo "⚠️ Application started but may not be fully ready, continuing health check..."
-            fi
-
-            # Проверяем health endpoint (максимум 60 попыток по 10 секунд)
-            echo "🏥 Checking health endpoint (will wait up to 10 minutes)..."
-            HEALTH_CHECK="failed"
+            # LFPT-331: здоровье проверяется только реальным ответом readiness-пробы.
+            # Раньше критерием был grep "Started PadelCoreServiceApplication" в docker logs --tail=N:
+            # при шумном логе строка выталкивалась из окна и здоровый деплой откатывался, а упавшее
+            # после старта приложение считалось здоровым. readiness, а не общий /actuator/health —
+            # чтобы недоступность SMTP (компонент mail) не откатывала рабочее приложение.
+            DEPLOY_STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+            READINESS_URL="http://localhost:8080/actuator/health/readiness"
             MAX_ATTEMPTS=60
-            START_TIME=$(date +%s)
-            
+            POLL_INTERVAL=5
+            HEALTHY="false"
+
+            echo "🏥 Waiting for readiness ($READINESS_URL, up to $((MAX_ATTEMPTS * POLL_INTERVAL))s)..."
             for i in $(seq 1 $MAX_ATTEMPTS); do
-              echo "⏳ Health check attempt $i/$MAX_ATTEMPTS..."
-            
-              if docker compose logs padel-app --tail=20 | grep -q "Started PadelCoreServiceApplication"; then
-                echo "✅ Application startup detected in logs!"
-                sleep 5
+              CONTAINER_STATE=$(docker inspect -f '{{.State.Status}} {{.RestartCount}}' padel-core-app 2>/dev/null || echo "missing 0")
+              if [ "${CONTAINER_STATE%% *}" != "running" ] || [ "${CONTAINER_STATE##* }" != "0" ]; then
+                echo "❌ Application container is not running steadily (state/restarts: $CONTAINER_STATE)"
                 break
               fi
-            
-              HEALTH_CHECK=$(docker compose exec padel-app curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health 2>/dev/null || echo "failed")
-            
-              if [ "$HEALTH_CHECK" = "200" ]; then
-                echo "✅ Health check passed!"
+
+              HTTP_CODE=$(docker compose exec -T padel-app curl -s -o /dev/null -w "%{http_code}" "$READINESS_URL" 2>/dev/null || true)
+              if [ "$HTTP_CODE" = "200" ]; then
+                HEALTHY="true"
+                echo "✅ Readiness 200 on attempt $i/$MAX_ATTEMPTS"
                 break
               fi
-            
-              if [ $i -lt $MAX_ATTEMPTS ]; then
-                ELAPSED=$(( $(date +%s) - START_TIME ))
-                REMAINING=$(( (MAX_ATTEMPTS - i) * 10 ))
-                echo "⏳ Waiting 10 seconds before next attempt... ($REMAINING seconds remaining, total elapsed: ${ELAPSED}s)"
-                sleep 10
-              fi
+
+              echo "⏳ Attempt $i/$MAX_ATTEMPTS: readiness=${HTTP_CODE:-no response}"
+              sleep $POLL_INTERVAL
             done
 
-            # Финальная проверка
-            if [ "$HEALTH_CHECK" != "200" ]; then
-              if docker compose logs padel-app --tail=50 | grep -q "Started PadelCoreServiceApplication"; then
-                echo "⚠️ Health check failed but application appears to be running!"
-                echo "✅ Continuing deployment (application is running)"
-              else
-                echo "❌ Health check failed and application is not running!"
-                echo "📋 Application logs:"
-                docker compose logs padel-app --tail=50
-                rollback
-                exit 1
-              fi
+            if [ "$HEALTHY" != "true" ]; then
+              echo "❌ Application is not ready — rolling back"
+              echo "📋 Errors since deploy start:"
+              docker compose logs padel-app --since "$DEPLOY_STARTED_AT" 2>/dev/null \
+                | grep -vE '\|-(INFO|WARN) in ' \
+                | grep -E "ERROR|Exception|Caused by|APPLICATION FAILED" | head -n 60 || true
+              echo "📋 Last application log lines:"
+              docker compose logs padel-app --since "$DEPLOY_STARTED_AT" --tail=60 || true
+              rollback
+              exit 1
             fi
 
             # Если всё хорошо, обновляем current_version
@@ -216,8 +193,9 @@ jobs:
             
             cd /opt/padel-app
             
-            if docker ps | grep -q padel-core-app; then
-              echo "✅ Container is running"
+            HTTP_CODE=$(docker compose exec -T padel-app curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health/readiness 2>/dev/null || true)
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "✅ Readiness 200"
               echo "📋 Current version:"
               cat /opt/padel-app/current_version.txt 2>/dev/null || echo "Unknown"
               echo "📋 Container status:"
@@ -225,7 +203,7 @@ jobs:
               echo "📋 Last 20 lines of logs:"
               docker compose logs padel-app --tail=20
             else
-              echo "❌ Container is not running!"
+              echo "❌ Readiness check failed: ${HTTP_CODE:-no response}"
               docker compose ps
               docker compose logs padel-app --tail=50
               exit 1
