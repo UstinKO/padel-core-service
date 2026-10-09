@@ -82,35 +82,14 @@ public class AmericanoViewController {
 
     // ==================== РЕГИСТРАЦИЯ ====================
 
+    /**
+     * LFPT-330: шаблона tournaments/americano/register нет (TemplateInputException → 500).
+     * Из UI роут не используется — игрок записывается на Americano со страницы турнира
+     * /torneo/{id} через общий POST /players/tournaments/{id}/register. Редиректим туда.
+     */
     @GetMapping("/{tournamentId}/register")
-    public String showRegisterForm(
-            @PathVariable Long tournamentId,
-            Model model,
-            RedirectAttributes redirectAttributes,
-            Authentication authentication) {
-
-        if (authentication == null) {
-            return "redirect:/login";
-        }
-
-        TournamentDto tournament = tournamentService.getActiveTournamentById(tournamentId)
-                .orElseThrow(() -> new IllegalArgumentException("Torneo no encontrado"));
-
-        if (tournament.getTipo() != com.padle.core.padelcoreservice.model.enums.TournamentType.AMERICANO) {
-            redirectAttributes.addFlashAttribute("error", "Este no es un torneo de tipo Americano");
-            return "redirect:/tournaments/" + tournamentId;
-        }
-
-        if (americanoService.isInitialized(tournamentId)) {
-            redirectAttributes.addFlashAttribute("error", "El torneo ya ha comenzado. No es posible registrarse.");
-            return "redirect:/tournaments/americano/" + tournamentId;
-        }
-
-        model.addAttribute("tournament", tournament);
-        model.addAttribute("playerId",
-                ((com.padle.core.padelcoreservice.model.PlayerPadel) authentication.getPrincipal()).getId());
-
-        return "tournaments/americano/register";
+    public String showRegisterForm(@PathVariable Long tournamentId) {
+        return "redirect:/torneo/" + tournamentId;
     }
 
     @PostMapping("/{tournamentId}/register")
@@ -258,38 +237,20 @@ public class AmericanoViewController {
 
     // ==================== РАУНДЫ ====================
 
+    /**
+     * LFPT-330: отдельных страниц раунда/матча нет (шаблонов rounds/round/match/match-result
+     * не существует) — раунды и ввод результатов живут на странице турнира и в админке
+     * через /api/tournaments/americano/**. GET-роуты ниже из UI не используются, но достижимы
+     * прямым URL и как цель редиректа POST start/complete/result — ведём на страницу турнира.
+     */
     @GetMapping("/{tournamentId}/rounds")
-    public String viewRounds(
-            @PathVariable Long tournamentId,
-            Model model) {
-
-        TournamentDto tournament = tournamentService.getActiveTournamentById(tournamentId)
-                .orElseThrow(() -> new IllegalArgumentException("Torneo no encontrado"));
-
-        List<AmericanoRoundDto> rounds = americanoService.getRounds(tournamentId);
-
-        model.addAttribute("tournament", tournament);
-        model.addAttribute("rounds", rounds);
-
-        return "tournaments/americano/rounds";
+    public String viewRounds(@PathVariable Long tournamentId) {
+        return redirectToTournament(tournamentId);
     }
 
     @GetMapping("/rounds/{roundId}")
-    public String viewRound(
-            @PathVariable Long roundId,
-            Model model) {
-
-        AmericanoRoundDto round = americanoService.getRound(roundId);
-        TournamentDto tournament = tournamentService.getActiveTournamentById(round.getTournamentId())
-                .orElseThrow(() -> new IllegalArgumentException("Torneo no encontrado"));
-
-        List<AmericanoMatchDto> matches = americanoService.getMatchesByRound(roundId);
-
-        model.addAttribute("tournament", tournament);
-        model.addAttribute("round", round);
-        model.addAttribute("matches", matches);
-
-        return "tournaments/americano/round";
+    public String viewRound(@PathVariable Long roundId) {
+        return redirectToTournament(americanoService.getRound(roundId).getTournamentId());
     }
 
     @PostMapping("/rounds/{roundId}/start")
@@ -329,37 +290,13 @@ public class AmericanoViewController {
     // ==================== МАТЧИ ====================
 
     @GetMapping("/matches/{matchId}")
-    public String viewMatch(
-            @PathVariable Long matchId,
-            Model model) {
-
-        AmericanoMatchDto match = americanoService.getMatch(matchId);
-        TournamentDto tournament = tournamentService.getActiveTournamentById(match.getTournamentId())
-                .orElseThrow(() -> new IllegalArgumentException("Torneo no encontrado"));
-
-        model.addAttribute("tournament", tournament);
-        model.addAttribute("match", match);
-
-        return "tournaments/americano/match";
+    public String viewMatch(@PathVariable Long matchId) {
+        return redirectToTournament(americanoService.getMatch(matchId).getTournamentId());
     }
 
     @GetMapping("/matches/{matchId}/result")
-    public String showResultForm(
-            @PathVariable Long matchId,
-            Model model,
-            RedirectAttributes redirectAttributes) {
-
-        AmericanoMatchDto match = americanoService.getMatch(matchId);
-
-        if (match.getIsCompleted()) {
-            redirectAttributes.addFlashAttribute("info", "Este partido ya tiene resultado");
-            return "redirect:/tournaments/americano/matches/" + matchId;
-        }
-
-        model.addAttribute("match", match);
-        model.addAttribute("resultDto", new AmericanoMatchResultDto());
-
-        return "tournaments/americano/match-result";
+    public String showResultForm(@PathVariable Long matchId) {
+        return redirectToTournament(americanoService.getMatch(matchId).getTournamentId());
     }
 
     @PostMapping("/matches/{matchId}/result")
@@ -415,23 +352,13 @@ public class AmericanoViewController {
 
     // ==================== СТАТИСТИКА ИГРОКА ====================
 
+    /**
+     * LFPT-330: шаблона player-stats нет, из UI роут не используется. Статистика игроков
+     * турнира — на странице рейтинга.
+     */
     @GetMapping("/{tournamentId}/players/{playerId}")
-    public String viewPlayerStats(
-            @PathVariable Long tournamentId,
-            @PathVariable Long playerId,
-            Model model) {
-
-        TournamentDto tournament = tournamentService.getTournamentDtoById(tournamentId)
-                .orElseThrow(() -> new IllegalArgumentException("Torneo no encontrado"));
-
-        AmericanoPlayerDto playerStats = americanoService.getPlayerStats(tournamentId, playerId);
-        List<AmericanoMatchDto> matches = americanoService.getPlayerMatches(tournamentId, playerId);
-
-        model.addAttribute("tournament", tournament);
-        model.addAttribute("playerStats", playerStats);
-        model.addAttribute("matches", matches);
-
-        return "tournaments/americano/player-stats";
+    public String viewPlayerStats(@PathVariable Long tournamentId, @PathVariable Long playerId) {
+        return "redirect:/tournaments/americano/" + tournamentId + "/ranking";
     }
 
     // ==================== УПРАВЛЕНИЕ ИГРОКАМИ ====================
@@ -694,5 +621,9 @@ public class AmericanoViewController {
         }
 
         return "redirect:/tournaments/americano/admin/" + tournamentId;
+    }
+
+    private static String redirectToTournament(Long tournamentId) {
+        return "redirect:/tournaments/americano/" + tournamentId;
     }
 }
