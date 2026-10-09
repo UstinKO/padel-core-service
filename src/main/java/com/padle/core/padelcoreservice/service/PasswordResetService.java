@@ -1,6 +1,8 @@
 package com.padle.core.padelcoreservice.service;
 
 import com.padle.core.padelcoreservice.dto.PasswordResetConfirm;
+import com.padle.core.padelcoreservice.logging.AlertSeverity;
+import com.padle.core.padelcoreservice.logging.StructuredAlert;
 import com.padle.core.padelcoreservice.model.PasswordResetToken;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.repository.PasswordResetTokenRepository;
@@ -42,7 +44,13 @@ public class PasswordResetService {
 
         // Всегда возвращаем true, даже если email не найден (безопасность)
         if (player == null) {
-            log.warn("Intento de restablecimiento para email no registrado: {}", email);
+            // LFPT-0518: email — на info (виден в файловых логах/Loki, там он маскируется
+            // %mask-паттерном, см. logging/MaskingConverter), в Telegram-алерт не попадает —
+            // только безопасный статус этапа, без PII.
+            log.info("Intento de restablecimiento para email no registrado: {}", email);
+            StructuredAlert.of(AlertSeverity.USER_VALIDATION_ERROR, "Ошибка восстановления пароля", "PASSWORD_RESET_REQUEST")
+                    .field("Result", "email_not_found")
+                    .warn(log);
             return true;
         }
 
@@ -75,20 +83,36 @@ public class PasswordResetService {
         PasswordResetToken resetToken = tokenRepository.findByToken(token).orElse(null);
 
         if (resetToken == null) {
-            log.warn("Token de recuperación no encontrado: {}", maskToken(token));
+            log.info("Token de recuperación no encontrado: {}", maskToken(token));
+            alertTokenInvalid("invalid", null);
             return false;
         }
         if (resetToken.isUsed()) {
-            log.warn("Token de recuperación ya utilizado: {}, playerId={}",
+            log.info("Token de recuperación ya utilizado: {}, playerId={}",
                     maskToken(token), resetToken.getPlayer().getId());
+            alertTokenInvalid("already_used", resetToken.getPlayer().getId());
             return false;
         }
         if (resetToken.isExpired()) {
-            log.warn("Token de recuperación expirado: {}, playerId={}, expiryDate={}",
+            log.info("Token de recuperación expirado: {}, playerId={}, expiryDate={}",
                     maskToken(token), resetToken.getPlayer().getId(), resetToken.getExpiryDate());
+            alertTokenInvalid("expired", resetToken.getPlayer().getId());
             return false;
         }
         return true;
+    }
+
+    /**
+     * LFPT-0518: событие PASSWORD_RESET_TOKEN_INVALID для Telegram-алерта — только статус
+     * токена (valid/expired/already_used/invalid), без самого токена и без ссылки (это
+     * одноразовый секрет для сброса пароля). Подробности с замаскированным токеном — отдельно
+     * на info, в файловых логах/Loki (см. вызовы выше и в resetPassword).
+     */
+    private void alertTokenInvalid(String tokenStatus, Long playerId) {
+        StructuredAlert.of(AlertSeverity.USER_VALIDATION_ERROR, "Ошибка восстановления пароля", "PASSWORD_RESET_TOKEN_INVALID")
+                .field("Token status", tokenStatus)
+                .field("User ID", playerId)
+                .warn(log);
     }
 
     /**
@@ -107,17 +131,20 @@ public class PasswordResetService {
                 .orElse(null);
 
         if (resetToken == null) {
-            log.warn("Intento de restablecimiento con token no encontrado: {}", maskToken(confirmDto.getToken()));
+            log.info("Intento de restablecimiento con token no encontrado: {}", maskToken(confirmDto.getToken()));
+            alertTokenInvalid("invalid", null);
             return false;
         }
         if (resetToken.isUsed()) {
-            log.warn("Intento de restablecimiento con token ya utilizado: {}, playerId={}",
+            log.info("Intento de restablecimiento con token ya utilizado: {}, playerId={}",
                     maskToken(confirmDto.getToken()), resetToken.getPlayer().getId());
+            alertTokenInvalid("already_used", resetToken.getPlayer().getId());
             return false;
         }
         if (resetToken.isExpired()) {
-            log.warn("Intento de restablecimiento con token expirado: {}, playerId={}, expiryDate={}",
+            log.info("Intento de restablecimiento con token expirado: {}, playerId={}, expiryDate={}",
                     maskToken(confirmDto.getToken()), resetToken.getPlayer().getId(), resetToken.getExpiryDate());
+            alertTokenInvalid("expired", resetToken.getPlayer().getId());
             return false;
         }
 

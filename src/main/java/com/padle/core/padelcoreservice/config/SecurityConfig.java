@@ -3,6 +3,7 @@ package com.padle.core.padelcoreservice.config;
 import com.padle.core.padelcoreservice.security.CustomAccessDeniedHandler;
 import com.padle.core.padelcoreservice.security.JwtAuthenticationFilter;
 import com.padle.core.padelcoreservice.security.RateLimitFilter;
+import com.padle.core.padelcoreservice.security.RequestIdFilter;
 import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2UserService;
 import com.padle.core.padelcoreservice.security.oauth2.OAuth2AuthenticationSuccessHandler;
 import jakarta.servlet.FilterChain;
@@ -49,6 +50,7 @@ public class SecurityConfig {
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
     private final RateLimitFilter rateLimitFilter;
+    private final RequestIdFilter requestIdFilter;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
     private final RememberMeServices rememberMeServices;
 
@@ -166,6 +168,10 @@ public class SecurityConfig {
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
+                // LFPT-0518: requestId должен быть в MDC уже на этапе rate-limit предупреждений —
+                // регистрируем после rateLimitFilter (чтобы его позиция в реестре уже была известна),
+                // но "before", чтобы RequestIdFilter реально выполнялся раньше по цепочке.
+                .addFilterBefore(requestIdFilter, RateLimitFilter.class)
                 // Spring Security 6 генерирует CSRF-токен лениво: cookie XSRF-TOKEN пишется,
                 // только если токен реально прочитан за время запроса (обычно — рендером
                 // th:action формы). Страницы без форм (чисто JS/fetch) иначе останутся без

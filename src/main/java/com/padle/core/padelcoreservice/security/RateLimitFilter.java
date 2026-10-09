@@ -2,6 +2,8 @@ package com.padle.core.padelcoreservice.security;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.padle.core.padelcoreservice.logging.AlertSeverity;
+import com.padle.core.padelcoreservice.logging.StructuredAlert;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.Refill;
@@ -143,7 +145,11 @@ public class RateLimitFilter extends OncePerRequestFilter {
         if (bucket.tryConsume(1)) {
             filterChain.doFilter(request, response);
         } else {
-            log.warn("Rate limit exceeded: ip={}, path={}, type={}", ip, path, limitType);
+            StructuredAlert.of(AlertSeverity.SECURITY_WARNING, "Превышен лимит запросов", "RATE_LIMIT_EXCEEDED")
+                    .field("IP", ip)
+                    .field("Endpoint", request.getMethod() + " " + path)
+                    .field("Limit type", limitType)
+                    .warn(log);
             BLOCKED_TODAY.incrementAndGet();
             if (limitType == LimitType.AUTH) {
                 incrementSuspiciousAuthCounter(ip);
@@ -213,7 +219,11 @@ public class RateLimitFilter extends OncePerRequestFilter {
         suspiciousRegistrations.put(ip, newCount);
         if (newCount == 5) {
             // #292: WARN один раз, ровно в момент эскалации в BLOCKED — не на каждый запрос
-            log.warn("IP {} escalado a BLOCKED por actividad sospechosa (REGISTER, {} intentos en 15 min)", ip, newCount);
+            StructuredAlert.of(AlertSeverity.SECURITY_WARNING, "IP заблокирован за подозрительную активность", "SUSPICIOUS_ACTIVITY_BLOCKED")
+                    .field("IP", ip)
+                    .field("Reason", "REGISTER")
+                    .field("Attempts", newCount)
+                    .warn(log);
         }
     }
 
@@ -223,16 +233,24 @@ public class RateLimitFilter extends OncePerRequestFilter {
         int newCount = (existing == null ? 0 : existing) + 1;
         suspiciousAuth.put(ip, newCount);
         if (newCount == 5) {
-            log.warn("IP {} escalado a BLOCKED por actividad sospechosa (AUTH, {} excesos de límite en 15 min)", ip, newCount);
+            StructuredAlert.of(AlertSeverity.SECURITY_WARNING, "IP заблокирован за подозрительную активность", "SUSPICIOUS_ACTIVITY_BLOCKED")
+                    .field("IP", ip)
+                    .field("Reason", "AUTH")
+                    .field("Attempts", newCount)
+                    .warn(log);
         }
     }
 
     // ✅ Публичный метод для ручного увеличения счётчика (из контроллера)
     public void markRegistrationFailed(String ip) {
         Integer count = suspiciousRegistrations.getIfPresent(ip);
-        suspiciousRegistrations.put(ip, count != null ? count + 2 : 2);  // +2 за фейл
-        log.warn("Failed registration from IP: {}, total suspicious: {}",
-                ip, suspiciousRegistrations.getIfPresent(ip));
+        int total = count != null ? count + 2 : 2;  // +2 за фейл
+        suspiciousRegistrations.put(ip, total);
+        StructuredAlert.of(AlertSeverity.SECURITY_WARNING, "IP заблокирован за подозрительную активность", "SUSPICIOUS_ACTIVITY_BLOCKED")
+                .field("IP", ip)
+                .field("Reason", "FAILED_REGISTRATION")
+                .field("Attempts", total)
+                .warn(log);
     }
 
 

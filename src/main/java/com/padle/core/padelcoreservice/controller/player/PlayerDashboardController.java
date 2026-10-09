@@ -4,8 +4,11 @@ import com.padle.core.padelcoreservice.annotation.Timed;
 import com.padle.core.padelcoreservice.dto.PartnerRegistrationDto;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
+import com.padle.core.padelcoreservice.exception.InvalidStateException;
 import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
 import com.padle.core.padelcoreservice.exception.TournamentRegistrationException;
+import com.padle.core.padelcoreservice.logging.AlertSeverity;
+import com.padle.core.padelcoreservice.logging.StructuredAlert;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
@@ -13,6 +16,7 @@ import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2User;
 import com.padle.core.padelcoreservice.service.DoubleTournamentRegistrationService;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -104,7 +108,8 @@ public class PlayerDashboardController {
     @PostMapping("/tournaments/{tournamentId}/register")
     @ResponseBody
     public ResponseEntity<?> registerForTournament(@PathVariable Long tournamentId,
-                                                   @AuthenticationPrincipal Object principal) {
+                                                   @AuthenticationPrincipal Object principal,
+                                                   HttpServletRequest request) {
         PlayerPadel player = extractPlayerFromPrincipal(principal);
 
         if (player == null) {
@@ -139,7 +144,27 @@ public class PlayerDashboardController {
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            log.error("Error registering for tournament", e);
+            // LFPT-0518: TournamentRegistrationException/InvalidStateException/ResourceNotFoundException —
+            // ожидаемые бизнес-исключения TournamentService (повторная регистрация, турнир закрыт и т.п.),
+            // не баг приложения. Полная централизация через GlobalExceptionHandler — вне скоупа этой
+            // задачи (изменила бы HTTP-статус/формат ответа); здесь только классификация для алерта.
+            boolean isBusinessError = isBusinessRegistrationError(e);
+            AlertSeverity severity = isBusinessError
+                    ? AlertSeverity.USER_VALIDATION_ERROR
+                    : AlertSeverity.APPLICATION_ERROR;
+
+            StructuredAlert alert = StructuredAlert.of(severity, "Ошибка регистрации на турнир", "TOURNAMENT_REGISTRATION")
+                    .field("Tournament ID", tournamentId)
+                    .field("User ID", player.getId())
+                    .field("Endpoint", request.getMethod() + " " + request.getRequestURI())
+                    .field("HTTP", 400)
+                    .field("Error", e.getMessage());
+            if (isBusinessError) {
+                alert.warn(log);
+            } else {
+                alert.error(log, e);
+            }
+
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
             response.put("message", e.getMessage());
@@ -193,6 +218,17 @@ public class PlayerDashboardController {
             response.put("message", e.getMessage());
             return ResponseEntity.badRequest().body(response);
         }
+    }
+
+    /**
+     * LFPT-0518: известные бизнес-исключения TournamentService (повторная регистрация,
+     * турнир закрыт/недоступен и т.п.) — ожидаемая ошибка пользователя/бизнес-правила,
+     * не баг приложения (см. классификацию серьёзности Telegram-алерта выше).
+     */
+    static boolean isBusinessRegistrationError(Exception e) {
+        return e instanceof TournamentRegistrationException
+                || e instanceof InvalidStateException
+                || e instanceof ResourceNotFoundException;
     }
 
     /**

@@ -1,5 +1,7 @@
 package com.padle.core.padelcoreservice.security;
 
+import com.padle.core.padelcoreservice.logging.AlertSeverity;
+import com.padle.core.padelcoreservice.logging.StructuredAlert;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -46,7 +48,10 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
         if (accessDeniedException instanceof CsrfException) {
             log.debug("Access denied (CSRF): {} {} ({})", request.getMethod(), path, accessDeniedException.getMessage());
         } else {
-            log.warn("Access denied: {} {} ({})", request.getMethod(), path, accessDeniedException.getMessage());
+            StructuredAlert.of(AlertSeverity.SECURITY_WARNING, "Отказ в доступе", "ACCESS_DENIED")
+                    .field("Endpoint", request.getMethod() + " " + path)
+                    .field("Error", accessDeniedException.getMessage())
+                    .warn(log);
         }
 
         if (path.startsWith("/api/")) {
