@@ -428,6 +428,7 @@ public class AmericanoViewController {
      * несуществующего шаблона admin/americano/initialize — редирект на уже рабочую
      * страницу деталей турнира с формой конфигурации/инициализации/предпросмотра.
      */
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     @GetMapping("/admin/{tournamentId}/preview")
     public String showAdminPreviewForm(
             @PathVariable Long tournamentId,
@@ -516,18 +517,14 @@ public class AmericanoViewController {
     /**
      * Страница управления запущенным турниром.
      */
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     @GetMapping("/admin/{tournamentId}")
     public String viewAdminTournament(
             @PathVariable Long tournamentId,
             @RequestParam(required = false, defaultValue = "score") String sortBy,
             @RequestParam(required = false, defaultValue = "false") boolean ascending,
             Model model, @AuthenticationPrincipal Owner currentOwner) {
-        // LFPT-376: страница не имеет отдельного ролевого гейта (исторически открыта любому
-        // аутентифицированному пользователю, не только Owner) — проверяем клубную изоляцию
-        // только когда принципал реально Owner.
-        if (currentOwner != null) {
-            tournamentAccessService.assertCanManageTournament(currentOwner, tournamentId);
-        }
+        tournamentAccessService.assertCanManageTournament(currentOwner, tournamentId);
 
         TournamentDto tournament = tournamentService.getActiveTournamentById(tournamentId)
                 .orElseThrow(() -> new IllegalArgumentException("Torneo no encontrado"));

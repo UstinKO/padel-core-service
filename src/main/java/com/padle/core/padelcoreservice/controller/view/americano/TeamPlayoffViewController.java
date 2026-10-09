@@ -97,15 +97,11 @@ public class TeamPlayoffViewController {
     // ADMIN — ГЛАВНАЯ СТРАНИЦА УПРАВЛЕНИЯ
     // ══════════════════════════════════════════════════════════════════════
 
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     @GetMapping("/admin/{tournamentId}")
     public String viewAdmin(@PathVariable Long tournamentId, Model model,
                             @AuthenticationPrincipal Owner owner) {
-        // LFPT-376: страница не имеет отдельного ролевого гейта (эндпоинт исторически открыт
-        // любому аутентифицированному пользователю — не только Owner) — проверяем клубную
-        // изоляцию только когда принципал реально Owner, не трогая остальное поведение.
-        if (owner != null) {
-            tournamentAccessService.assertCanManageTournament(owner, tournamentId);
-        }
+        tournamentAccessService.assertCanManageTournament(owner, tournamentId);
 
         TournamentDto tournament = tournamentService.getActiveTournamentById(tournamentId)
                 .orElseThrow(() -> new IllegalArgumentException("Torneo no encontrado"));
