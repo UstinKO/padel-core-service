@@ -44,6 +44,7 @@
         }
     </style>
     <th:block th:replace="~{fragments/analytics :: ga4}"></th:block>
+    <th:block th:replace="~{fragments/analytics :: cookie-consent}"></th:block>
 </head>
 <body>
 <!-- Header con navegación para usuarios autenticados -->
@@ -545,7 +546,7 @@
 
 <!-- Datos de torneos para JavaScript -->
 <script th:src="@{/js/logger.js}"></script>
-<script th:src="@{/js/csrf.js}"></script>
+<script th:src="@{/js/registration-tracking.js}"></script>
 <script th:src="${'/js/i18n/messages-' + #locale.language + '.js'}"></script>
 <script th:src="@{/js/i18n/t.js}"></script>
 <script th:inline="javascript">

@@ -33,8 +33,8 @@
 
     <!-- Custom Styles -->
     <link rel="stylesheet" th:href="@{/css/style.css}">
-    <link rel="stylesheet" th:href="@{/css/cookie-consent.css}">
     <th:block th:replace="~{fragments/analytics :: ga4}"></th:block>
+    <th:block th:replace="~{fragments/analytics :: cookie-consent}"></th:block>
     <th:block th:replace="~{fragments/analytics :: clarity}"></th:block>
 </head>
 <body data-clarity-mask="true">
@@ -588,7 +588,6 @@
 
 <!-- Данные турниров для JavaScript (без изменений) -->
 <script th:src="@{/js/logger.js}"></script>
-<script th:src="@{/js/csrf.js}"></script>
 <script th:src="${'/js/i18n/messages-' + #locale.language + '.js'}"></script>
 <script th:src="@{/js/i18n/t.js}"></script>
 <script th:inline="javascript">
@@ -615,6 +614,5 @@
 <script th:src="@{/js/main.js}"></script>
 <script th:src="@{/js/home.js}"></script>
 <script th:src="@{/js/password-reset.js}"></script>
-<script th:src="@{/js/cookie-consent.js}"></script>
 </body>
 </html>
