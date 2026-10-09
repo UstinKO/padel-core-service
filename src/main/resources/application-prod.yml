@@ -68,6 +68,11 @@ server:
 
 app:
   base-url: ${APP_BASE_URL}
+  # LFPT-0521: боевые ID — только в прод-профиле; application.yml (база, все
+  # остальные профили) не задаёт дефолт, чтобы dev/cloud/test не слали данные сюда.
+  analytics:
+    ga4-id: ${GA4_MEASUREMENT_ID:G-X5G4N3ND26}
+    clarity-id: ${CLARITY_PROJECT_ID:yu4n92bsuy}
   email:
     from: ${EMAIL_FROM}
     sender-name: ${EMAIL_SENDER_NAME}

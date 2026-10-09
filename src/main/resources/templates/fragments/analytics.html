@@ -6,7 +6,8 @@
      через th:replace в <head> нужных страниц (LFPT-0468). Используется th:block, а не
      th:fragment на самом <script>, чтобы оба script-тега попадали в вызывающую страницу
      одним включением (тот же приём, что и в fragments/admin-header.html). -->
-<th:block th:fragment="ga4" th:with="ga4Id=${@environment.getProperty('app.analytics.ga4-id')}">
+<th:block th:fragment="ga4" th:if="${not #strings.isEmpty(@environment.getProperty('app.analytics.ga4-id'))}"
+          th:with="ga4Id=${@environment.getProperty('app.analytics.ga4-id')}">
     <script th:src="${'https://www.googletagmanager.com/gtag/js?id=' + ga4Id}" async></script>
     <script th:inline="javascript">
         (function () {
@@ -70,7 +71,8 @@
      у Clarity нет документированного эквивалента Google Consent Mode
      "грузим, но default denied" без настройки в стороннем кабинете Clarity,
      к которому у конвейера нет доступа (см. спеку, находка 3). -->
-<th:block th:fragment="clarity" th:with="clarityId=${@environment.getProperty('app.analytics.clarity-id')}">
+<th:block th:fragment="clarity" th:if="${not #strings.isEmpty(@environment.getProperty('app.analytics.clarity-id'))}"
+          th:with="clarityId=${@environment.getProperty('app.analytics.clarity-id')}">
     <script th:inline="javascript">
         (function () {
             function getCookie(name) {

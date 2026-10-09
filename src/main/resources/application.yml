@@ -147,9 +147,11 @@ logging:
 app:
   base-url: ${APP_BASE_URL:http://localhost:8080}
   admin-email: ${ADMIN_EMAIL:eugene.g.work@gmail.com}
+  # Без ID по умолчанию здесь (LFPT-0521) — иначе каждый dev/cloud/test запуск
+  # шлёт данные в боевой GA4/Clarity. Реальные ID — только в application-prod.yml.
   analytics:
-    ga4-id: ${GA4_MEASUREMENT_ID:G-X5G4N3ND26}
-    clarity-id: ${CLARITY_PROJECT_ID:yu4n92bsuy}
+    ga4-id: ${GA4_MEASUREMENT_ID:}
+    clarity-id: ${CLARITY_PROJECT_ID:}
   demo:
     auto-confirm-email: ${AUTO_CONFIRM_EMAIL:false}
   email:
