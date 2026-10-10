@@ -61,10 +61,29 @@ public class AdminController {
 
         long totalPlayers = playerService.contarJugadoresActivos();
         long totalOwners = ownerService.getTotalActiveOwners();
-        long totalTournaments = tournamentService.getTotalActiveTournaments();
-        long totalWaitlist = tournamentService.getTotalWaitlistCount();
 
-        List<TournamentDto> recentTournaments = tournamentService.getRecentTournaments(5);
+        // LFPT-0546: CLUB_ADMIN видит статистику только своего клуба, а не всей платформы;
+        // totalPlayers/totalOwners — без изменений (вне скоупа этой задачи, см. спеку).
+        boolean isClubAdmin = owner.isClubAdmin();
+        Long ownerClubId = owner.getClubId();
+
+        long totalTournaments;
+        long totalWaitlist;
+        List<TournamentDto> recentTournaments;
+        if (isClubAdmin && ownerClubId != null) {
+            totalTournaments = tournamentService.getTotalActiveTournamentsForClub(ownerClubId);
+            totalWaitlist = tournamentService.getTotalWaitlistCountForClub(ownerClubId);
+            recentTournaments = tournamentService.getRecentTournamentsForClub(ownerClubId, 5);
+        } else if (isClubAdmin) {
+            // CLUB_ADMIN без привязанного клуба — не должно происходить в норме, но не падаем.
+            totalTournaments = 0;
+            totalWaitlist = 0;
+            recentTournaments = List.of();
+        } else {
+            totalTournaments = tournamentService.getTotalActiveTournaments();
+            totalWaitlist = tournamentService.getTotalWaitlistCount();
+            recentTournaments = tournamentService.getRecentTournaments(5);
+        }
 
         // Добавляем флаг isOwner для каждого турнира в отдельный список
         List<Map<String, Object>> recentTournamentsWithFlags = recentTournaments.stream()
