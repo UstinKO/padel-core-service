@@ -4,6 +4,8 @@
 approved
 
 ## Источник
+Telegram-сообщение (для reply): 4992
+
 Клиентский запрос [specs/requests/LFPT-0546-club-admin-dashboard.md](../requests/LFPT-0546-club-admin-dashboard.md) (Telegram, пересланное сообщение от Evgeny_754, `telegram_launch_message_id: 4992`). GitHub issue [#546](https://github.com/UstinKO/padel-core-service/issues/546).
 
 Разбито на бэкенд/фронтенд (`GIT_WORKFLOW.md` §1.4) — эта спека покрывает бэкенд. Зависимая фронтенд-задача — [#547](https://github.com/UstinKO/padel-core-service/issues/547) (скрытие карточки «Администраторы»).
