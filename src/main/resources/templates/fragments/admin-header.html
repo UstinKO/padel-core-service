@@ -48,6 +48,17 @@
 
                     <!-- Приветствие и выход -->
                     <div class="navbar-menu">
+                        <div class="lang-switcher" role="group" th:aria-label="#{admin.nav.language}">
+                            <button type="button" class="lang-switcher-option"
+                                    th:classappend="${#locale.language == 'es'} ? ' active'"
+                                    data-lang="es">ES</button>
+                            <button type="button" class="lang-switcher-option"
+                                    th:classappend="${#locale.language == 'en'} ? ' active'"
+                                    data-lang="en">EN</button>
+                            <button type="button" class="lang-switcher-option"
+                                    th:classappend="${#locale.language == 'ru'} ? ' active'"
+                                    data-lang="ru">RU</button>
+                        </div>
                         <span class="user-greeting" th:text="#{admin.nav.greeting}">Hola, Admin!</span>
                         <form th:action="@{/logout}" method="post" style="display: inline;">
                             <button type="submit" class="btn btn-outline">
@@ -64,6 +75,7 @@
     <script th:src="${'/js/i18n/messages-' + #locale.language + '.js'}"></script>
     <script th:src="@{/js/i18n/t.js}"></script>
     <script th:src="@{/js/admin-menu.js}"></script>
+    <script th:src="@{/js/lang-switcher.js}"></script>
 </th:block>
 </body>
 </html>
