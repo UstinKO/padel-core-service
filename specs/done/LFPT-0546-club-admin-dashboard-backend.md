@@ -1,7 +1,9 @@
 # LFPT-0546: Feature клубная учётная запись — фильтрация статистики главной панели по клубу (бэкенд)
 
 ## Статус
-approved
+done
+
+Задеплоено успешно: PR [#548](https://github.com/UstinKO/padel-core-service/pull/548), `Deploy to Production` run [#38266970406](https://github.com/UstinKO/padel-core-service/actions/runs/38266970406) — `conclusion: success`.
 
 ## Источник
 Telegram-сообщение (для reply): 4992
