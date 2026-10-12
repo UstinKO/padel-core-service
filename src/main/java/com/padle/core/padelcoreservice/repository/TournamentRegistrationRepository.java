@@ -67,6 +67,12 @@ public interface TournamentRegistrationRepository extends JpaRepository<Tourname
     @Query("SELECT COUNT(tr) FROM TournamentRegistration tr WHERE tr.status = 'WAITLIST' AND tr.isActive = true")
     long countTotalWaitlist();
 
+    // LFPT-0546: клубная статистика главной админ-панели — CLUB_ADMIN видит только лист
+    // ожидания турниров своего клуба.
+    @Query("SELECT COUNT(tr) FROM TournamentRegistration tr " +
+            "WHERE tr.status = 'WAITLIST' AND tr.isActive = true AND tr.tournament.clubId = :clubId")
+    long countTotalWaitlistByClub(@Param("clubId") Long clubId);
+
     @Query("SELECT COUNT(tr) FROM TournamentRegistration tr WHERE tr.player.id = :playerId AND tr.status = :status")
     long countByPlayerIdAndStatus(@Param("playerId") Long playerId, @Param("status") RegistrationStatus status);
 

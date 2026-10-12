@@ -888,6 +888,18 @@ public class TournamentService {
         return mapToDtoWithDetails(tournamentRepository.findTopByOrderByCreatedAtDesc(limit));
     }
 
+    // LFPT-0546: клубная статистика главной админ-панели (AdminController) — CLUB_ADMIN
+    // видит только свой клуб, не всю платформу.
+    @Transactional(readOnly = true)
+    public long getTotalActiveTournamentsForClub(Long clubId) {
+        return tournamentRepository.countByClubIdAndIsActiveTrue(clubId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<TournamentDto> getRecentTournamentsForClub(Long clubId, int limit) {
+        return mapToDtoWithDetails(tournamentRepository.findTopByClubIdOrderByCreatedAtDesc(clubId, limit));
+    }
+
     // ==================== Вспомогательные методы ====================
 
     private TournamentDto mapToDtoWithDetails(Tournament tournament) {
@@ -1227,6 +1239,12 @@ public class TournamentService {
     public long getTotalWaitlistCount() {
         log.debug("Obteniendo total de jugadores en lista de espera");
         return registrationRepository.countTotalWaitlist();
+    }
+
+    // LFPT-0546: клубная статистика главной админ-панели — лист ожидания только своего клуба.
+    @Transactional(readOnly = true)
+    public long getTotalWaitlistCountForClub(Long clubId) {
+        return registrationRepository.countTotalWaitlistByClub(clubId);
     }
 
     public List<TournamentDto> getTournamentsWithActiveBrackets() {
