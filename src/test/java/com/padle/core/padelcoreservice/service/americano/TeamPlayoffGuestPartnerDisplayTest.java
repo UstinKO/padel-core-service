@@ -1,20 +1,23 @@
 package com.padle.core.padelcoreservice.service.americano;
 
 import com.padle.core.padelcoreservice.dto.americano.AmericanoMatchDto;
-import com.padle.core.padelcoreservice.dto.americano.TeamPlayoffTeamRequest;
+import com.padle.core.padelcoreservice.dto.americano.TeamPlayoffAddTeamRequest;
 import com.padle.core.padelcoreservice.model.Club;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.americano.AmericanoMatch;
 import com.padle.core.padelcoreservice.model.americano.AmericanoTeam;
+import com.padle.core.padelcoreservice.model.enums.AmericanoPlayerStatus;
 import com.padle.core.padelcoreservice.model.enums.GenderFormat;
 import com.padle.core.padelcoreservice.model.enums.Modalidad;
 import com.padle.core.padelcoreservice.model.enums.Nivel;
+import com.padle.core.padelcoreservice.model.enums.RegistrationSource;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
 import com.padle.core.padelcoreservice.repository.ClubRepository;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
+import com.padle.core.padelcoreservice.repository.americano.AmericanoTeamRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -53,24 +56,38 @@ class TeamPlayoffGuestPartnerDisplayTest {
     private ClubRepository clubRepository;
     @Autowired
     private PlayerRepository playerRepository;
+    @Autowired
+    private AmericanoTeamRepository teamRepository;
 
     @Test
     void toMatchDto_showsGuestPartnerName_whenSecondPlayerHasNoAccount() {
         Long tournamentId = createTournament();
 
+        // LFPT-0561: «Добавить команду» через playoffService.addTeam больше не допускает
+        // второго игрока только текстом — теперь для обоих игроков всегда ищется/создаётся
+        // настоящий PlayerPadel. Сценарий AmericanoTeam с текстовым player2 (без аккаунта)
+        // остаётся реальным (например, команда, импортированная из парной регистрации с сайта,
+        // чей партнёр так и не подтвердил аккаунт — см. TeamPlayoffService.buildTeamFromPair),
+        // поэтому здесь он строится напрямую, минуя addTeam, чтобы не потерять покрытие
+        // логики отображения, которую проверяет этот тест.
         PlayerPadel registeredCaptain = createPlayer(tournamentId, "Registered", "Captain");
-        TeamPlayoffTeamRequest guestTeamReq = new TeamPlayoffTeamRequest();
-        guestTeamReq.setPlayer1Id(registeredCaptain.getId());
-        guestTeamReq.setPlayer2Name("Invitado SinCuenta");
-        guestTeamReq.setPlayer2Phone("+5491100000000");
-        guestTeamReq.setRegistrationSource("ADMIN_MANUAL");
-        guestTeamReq.setHasPaid(true);
-        guestTeamReq.setAttended(true);
-        AmericanoTeam guestTeam = playoffService.addTeam(tournamentId, guestTeamReq);
+        Tournament tournament = tournamentRepository.findById(tournamentId).orElseThrow();
+        AmericanoTeam guestTeam = teamRepository.save(AmericanoTeam.builder()
+                .tournament(tournament)
+                .player1(registeredCaptain)
+                .player2Name("Invitado SinCuenta")
+                .player2Phone("+5491100000000")
+                .teamNumber(1)
+                .currentPosition(0)
+                .status(AmericanoPlayerStatus.ACTIVE)
+                .registrationSource(RegistrationSource.ADMIN_MANUAL)
+                .hasPaid(true)
+                .attended(true)
+                .build());
 
         PlayerPadel opponent1 = createPlayer(tournamentId, "Opponent", "One");
         PlayerPadel opponent2 = createPlayer(tournamentId, "Opponent", "Two");
-        TeamPlayoffTeamRequest fullTeamReq = new TeamPlayoffTeamRequest();
+        TeamPlayoffAddTeamRequest fullTeamReq = new TeamPlayoffAddTeamRequest();
         fullTeamReq.setPlayer1Id(opponent1.getId());
         fullTeamReq.setPlayer2Id(opponent2.getId());
         fullTeamReq.setRegistrationSource("ADMIN_MANUAL");

@@ -1,13 +1,16 @@
 package com.padle.core.padelcoreservice.controller.view.americano;
 
+import com.padle.core.padelcoreservice.dto.PlayerResponseDto;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.dto.americano.AmericanoMatchDto;
 import com.padle.core.padelcoreservice.dto.americano.AmericanoMatchSuggestionDto;
 import com.padle.core.padelcoreservice.dto.americano.AmericanoRoundDto;
 import com.padle.core.padelcoreservice.dto.americano.AmericanoTeamDto;
 import com.padle.core.padelcoreservice.dto.americano.TeamAmericanoRankingDto;
+import com.padle.core.padelcoreservice.dto.americano.TeamPlayoffAddTeamRequest;
 import com.padle.core.padelcoreservice.dto.americano.TeamPlayoffTeamRequest;
 import com.padle.core.padelcoreservice.exception.InvalidStateException;
+import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.americano.AmericanoMatch;
@@ -16,6 +19,7 @@ import com.padle.core.padelcoreservice.model.americano.AmericanoTeam;
 import com.padle.core.padelcoreservice.model.enums.AmericanoRoundStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentPhase;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoMatchRepository;
+import com.padle.core.padelcoreservice.service.PlayerService;
 import com.padle.core.padelcoreservice.service.TournamentAccessService;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import com.padle.core.padelcoreservice.service.americano.TeamPlayoffService;
@@ -51,6 +55,7 @@ public class TeamPlayoffViewController {
     private final TournamentService tournamentService;
     private final AmericanoMatchRepository matchRepository;
     private final TournamentAccessService tournamentAccessService;
+    private final PlayerService playerService;
 
     // ══════════════════════════════════════════════════════════════════════
     // ПУБЛИЧНАЯ СТРАНИЦА
@@ -146,18 +151,35 @@ public class TeamPlayoffViewController {
     @PostMapping("/admin/{tournamentId}/teams/add")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     public String addTeam(@PathVariable Long tournamentId,
-                          @ModelAttribute TeamPlayoffTeamRequest req,
+                          @ModelAttribute TeamPlayoffAddTeamRequest req,
                           RedirectAttributes ra,
                           @AuthenticationPrincipal Owner currentOwner) {
         tournamentAccessService.assertCanManageTournament(currentOwner, tournamentId);
         try {
             playoffService.addTeam(tournamentId, req);
             ra.addFlashAttribute("success", "Equipo agregado correctamente");
-        } catch (Exception e) {
+        } catch (InvalidStateException | ResourceNotFoundException e) {
             log.error("Error adding team to {}: {}", tournamentId, e.getMessage());
             ra.addFlashAttribute("error", "Error al agregar equipo: " + e.getMessage());
         }
         return "redirect:/tournaments/team-playoff/admin/" + tournamentId;
+    }
+
+    /**
+     * LFPT-0561: поиск активных игроков (имя/фамилия/телефон/email) для формы «Добавить
+     * команду» — заменяет ручной ввод {@code player1Id}/{@code player2Id} автодополнением.
+     */
+    @GetMapping("/admin/{tournamentId}/players/search")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
+    @ResponseBody
+    public List<PlayerResponseDto> searchPlayers(@PathVariable Long tournamentId,
+                                                  @RequestParam String query,
+                                                  @AuthenticationPrincipal Owner currentOwner) {
+        tournamentAccessService.assertCanManageTournament(currentOwner, tournamentId);
+        if (query == null || query.trim().length() < 2) {
+            return List.of();
+        }
+        return playerService.searchActivePlayers(query.trim());
     }
 
     @PostMapping("/admin/teams/{teamId}/update")

@@ -47,4 +47,16 @@ public interface PlayerRepository extends JpaRepository<PlayerPadel, Long> {
                                               @Param("tournamentId") Long tournamentId,
                                               @Param("excludeId") Long excludeId,
                                               Pageable pageable);
+
+    // LFPT-0561: поиск активных игроков по имени/фамилии/телефону/email для формы
+    // «Добавить команду» Team Playoff — в отличие от searchPartnerCandidates, не исключает
+    // игроков с уже активной регистрацией на турнир (и не требует tournamentId), а также ищет
+    // по телефону — это критерий, который клиент явно запросил.
+    @Query("SELECT p FROM PlayerPadel p WHERE p.activo = true " +
+           "AND (LOWER(p.nombre) LIKE LOWER(CONCAT('%', :query, '%')) " +
+           "  OR LOWER(p.apellido) LIKE LOWER(CONCAT('%', :query, '%')) " +
+           "  OR LOWER(p.email) LIKE LOWER(CONCAT('%', :query, '%')) " +
+           "  OR p.telefono LIKE CONCAT('%', :query, '%')) " +
+           "ORDER BY p.nombre, p.apellido")
+    List<PlayerPadel> searchActivePlayers(@Param("query") String query, Pageable pageable);
 }

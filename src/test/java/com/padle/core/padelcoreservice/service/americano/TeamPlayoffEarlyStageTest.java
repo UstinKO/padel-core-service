@@ -1,6 +1,6 @@
 package com.padle.core.padelcoreservice.service.americano;
 
-import com.padle.core.padelcoreservice.dto.americano.TeamPlayoffTeamRequest;
+import com.padle.core.padelcoreservice.dto.americano.TeamPlayoffAddTeamRequest;
 import com.padle.core.padelcoreservice.model.Club;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.Tournament;
@@ -190,7 +190,7 @@ class TeamPlayoffEarlyStageTest {
             PlayerPadel p1 = createPlayer(tournamentId, i, 1);
             PlayerPadel p2 = createPlayer(tournamentId, i, 2);
 
-            TeamPlayoffTeamRequest req = new TeamPlayoffTeamRequest();
+            TeamPlayoffAddTeamRequest req = new TeamPlayoffAddTeamRequest();
             req.setPlayer1Id(p1.getId());
             req.setPlayer2Id(p2.getId());
             req.setRegistrationSource("ADMIN_MANUAL");
