@@ -323,6 +323,51 @@ public class PlayerService {
                 .collect(Collectors.toList());
     }
 
+    // LFPT-0561: поиск для формы «Добавить команду» Team Playoff — см.
+    // PlayerRepository.searchActivePlayers.
+    @Transactional(readOnly = true)
+    public List<PlayerResponseDto> searchActivePlayers(String query) {
+        return playerRepository.searchActivePlayers(query, PageRequest.of(0, 20))
+                .stream()
+                .map(playerMapper::entityToResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * LFPT-0561: находит игрока по телефону (среди активных) либо создаёт нового «гостевого»
+     * (тот же паттерн email, что в TestTournamentController.resolveOrCreateGuestPlayer /
+     * PlayerPadel.isGuestEmail, но с корректно захэшированным паролем — см.
+     * OAuth2UserManagementService.createOrUpdateUser). Не создаёт дубль профиля, если телефон
+     * уже принадлежит активному игроку (явное требование клиента).
+     */
+    @Transactional
+    public PlayerPadel resolverJugadorPorTelefonoOCrearInvitado(String nombre, String apellido, String telefono) {
+        return playerRepository.findByTelefono(telefono)
+                .filter(PlayerPadel::isActivo)
+                .orElseGet(() -> crearJugadorInvitado(nombre, apellido, telefono));
+    }
+
+    private PlayerPadel crearJugadorInvitado(String nombre, String apellido, String telefono) {
+        String email = "guest." + UUID.randomUUID() + "@1padel.guest";
+        PlayerPadel player = PlayerPadel.builder()
+                .nombre(nombre)
+                .apellido(apellido)
+                .telefono(telefono)
+                .email(email)
+                .passwordHash(passwordEncoder.encode(generarPasswordAleatoria()))
+                .emailConfirmado(true)
+                .activo(true)
+                .preferredLocale("es")
+                // issue #82: nivel_jugador es NOT NULL — un jugador agregado por el coordinador
+                // en el formulario "Agregar equipo" no indica su nivel ahí, igual que el alta
+                // vía OAuth2 (ver OAuth2UserManagementService.createOrUpdateUser).
+                .nivelJugador(Nivel.SIN_ESPECIFICAR)
+                .build();
+        PlayerPadel saved = playerRepository.save(player);
+        log.info("Jugador invitado creado al agregar equipo manualmente: ID={}", saved.getId());
+        return saved;
+    }
+
     @Transactional(readOnly = true)
     public Optional<PlayerPadel> findByTelefono(String telefono) {
         return playerRepository.findByTelefono(telefono);

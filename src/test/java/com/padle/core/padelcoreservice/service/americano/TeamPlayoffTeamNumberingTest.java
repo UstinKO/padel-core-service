@@ -5,9 +5,11 @@ import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.TournamentRegistration;
 import com.padle.core.padelcoreservice.model.americano.AmericanoTeam;
+import com.padle.core.padelcoreservice.model.enums.AmericanoPlayerStatus;
 import com.padle.core.padelcoreservice.model.enums.GenderFormat;
 import com.padle.core.padelcoreservice.model.enums.Modalidad;
 import com.padle.core.padelcoreservice.model.enums.Nivel;
+import com.padle.core.padelcoreservice.model.enums.RegistrationSource;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
@@ -15,6 +17,7 @@ import com.padle.core.padelcoreservice.repository.ClubRepository;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
+import com.padle.core.padelcoreservice.repository.americano.AmericanoTeamRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -58,6 +61,8 @@ class TeamPlayoffTeamNumberingTest {
     private PlayerRepository playerRepository;
     @Autowired
     private TournamentRegistrationRepository registrationRepository;
+    @Autowired
+    private AmericanoTeamRepository teamRepository;
 
     /**
      * Воспроизводит сценарий из фидбека организатора: пара с "Posición" 5 добавлена в турнир
@@ -143,11 +148,23 @@ class TeamPlayoffTeamNumberingTest {
     void teamNumber_fallsBackToNextFreeNumber_whenPositionAlreadyTakenByAnotherTeam() {
         Long tournamentId = createTournament();
 
-        com.padle.core.padelcoreservice.dto.americano.TeamPlayoffTeamRequest manualReq =
-                new com.padle.core.padelcoreservice.dto.americano.TeamPlayoffTeamRequest();
-        manualReq.setPlayer1Id(createSoloPlayer(tournamentId).getId());
-        manualReq.setPlayer2Name("Manual Partner");
-        AmericanoTeam manualTeam = playoffService.addTeam(tournamentId, manualReq);
+        // LFPT-0561: playoffService.addTeam больше не присваивает номер команды сырым
+        // счётчиком — теперь создаёт пару TournamentRegistration и проходит через тот же
+        // resolveTeamNumberFromRegistration, что и addTeamFromRegistration. Сценарий,
+        // который проверяет этот тест (команда уже занимает номер 1 путём, не связанным
+        // с какой-либо регистрацией), симулируется вставкой команды прямо через репозиторий.
+        Tournament tournament = tournamentRepository.findById(tournamentId).orElseThrow();
+        AmericanoTeam manualTeam = teamRepository.save(AmericanoTeam.builder()
+                .tournament(tournament)
+                .player1(createSoloPlayer(tournamentId))
+                .player2Name("Manual Partner")
+                .teamNumber(1)
+                .currentPosition(0)
+                .status(AmericanoPlayerStatus.ACTIVE)
+                .registrationSource(RegistrationSource.ADMIN_MANUAL)
+                .hasPaid(true)
+                .attended(true)
+                .build());
         assertThat(manualTeam.getTeamNumber()).isEqualTo(1);
 
         TournamentRegistration reg = createDoubleRegistration(tournamentId, 1);

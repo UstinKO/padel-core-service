@@ -5,6 +5,7 @@ import com.padle.core.padelcoreservice.dto.americano.AmericanoMatchSuggestionDto
 import com.padle.core.padelcoreservice.dto.americano.AmericanoTeamDto;
 import com.padle.core.padelcoreservice.dto.americano.TeamAmericanoRankingDto;
 import com.padle.core.padelcoreservice.dto.americano.TeamPlayoffFinishedDto;
+import com.padle.core.padelcoreservice.dto.americano.TeamPlayoffAddTeamRequest;
 import com.padle.core.padelcoreservice.dto.americano.TeamPlayoffTeamRequest;
 import com.padle.core.padelcoreservice.exception.InvalidStateException;
 import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
@@ -21,6 +22,7 @@ import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoMatchRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoRoundRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoTeamRepository;
+import com.padle.core.padelcoreservice.service.PlayerService;
 import com.padle.core.padelcoreservice.service.RegistrationPairPositions;
 import com.padle.core.padelcoreservice.service.WebSocketService;
 import lombok.RequiredArgsConstructor;
@@ -49,6 +51,7 @@ public class TeamPlayoffService {
     private final AmericanoRoundRepository roundRepository;
     private final AmericanoMatchRepository matchRepository;
     private final PlayerRepository playerRepository;
+    private final PlayerService playerService;
     private final TournamentRegistrationRepository registrationRepository;
     private final WebSocketService webSocketService;
     private final PlayoffMatchingEngine matchingEngine;
@@ -57,53 +60,119 @@ public class TeamPlayoffService {
     // УПРАВЛЕНИЕ КОМАНДАМИ
     // ═══════════════════════════════════════════════════════════════════════
 
+    /**
+     * LFPT-0561: ручное добавление команды через поиск игрока вместо обязательного ID — в
+     * отличие от прежней версии, оба игрока теперь допускают либо существующий {@code id}
+     * (найденный через {@code GET .../players/search}), либо данные для создания нового, с
+     * дедупом по телефону ({@link PlayerService#resolverJugadorPorTelefonoOCrearInvitado}).
+     * Вместо прямого создания {@link AmericanoTeam} сначала строится пара
+     * {@link TournamentRegistration} (как обычная парная регистрация с сайта), и переиспользуется
+     * {@link #addTeamFromRegistration} — так команда становится видна на странице «Оплаты и
+     * посещаемость» (которая читает только {@code TournamentRegistration}), как просит клиент.
+     */
     @Transactional
-    public AmericanoTeam addTeam(Long tournamentId, TeamPlayoffTeamRequest req) {
+    public AmericanoTeam addTeam(Long tournamentId, TeamPlayoffAddTeamRequest req) {
         Tournament tournament = getTournament(tournamentId);
         validateTournamentType(tournament);
 
-        if (req.getPlayer1Id() == null) {
-            throw new InvalidStateException("Player 1 es obligatorio");
+        PlayerPadel player1 = resolvePlayerForNewTeam(req.getPlayer1Id(), req.getPlayer1Nombre(),
+                req.getPlayer1Apellido(), req.getPlayer1Telefono(), "Jugador 1");
+        PlayerPadel player2 = resolvePlayerForNewTeam(req.getPlayer2Id(), req.getPlayer2Nombre(),
+                req.getPlayer2Apellido(), req.getPlayer2Telefono(), "Jugador 2");
+
+        if (player1.getId().equals(player2.getId())) {
+            throw new InvalidStateException("Jugador 1 y Jugador 2 no pueden ser la misma persona");
         }
-
-        PlayerPadel player1 = playerRepository.findById(req.getPlayer1Id())
-                .orElseThrow(() -> new ResourceNotFoundException("Player1 not found: " + req.getPlayer1Id()));
-
-        if (isPlayerAlreadyOnActiveTeam(tournamentId, req.getPlayer1Id())) {
+        if (isPlayerAlreadyOnActiveTeam(tournamentId, player1.getId())) {
             throw new InvalidStateException("El jugador ya está registrado en otro equipo de este torneo");
         }
-
-        PlayerPadel player2 = null;
-        if (req.getPlayer2Id() != null) {
-            player2 = playerRepository.findById(req.getPlayer2Id())
-                    .orElseThrow(() -> new ResourceNotFoundException("Player2 not found: " + req.getPlayer2Id()));
-            // LFPT-357: la comprobación anterior sólo cubría player1 — un jugador ya emparejado
-            // como player2 en otro equipo podía quedar duplicado en dos equipos activos a la vez.
-            if (isPlayerAlreadyOnActiveTeam(tournamentId, req.getPlayer2Id())) {
-                throw new InvalidStateException("El compañero ya está registrado en otro equipo de este torneo");
-            }
+        // LFPT-357: la comprobación anterior sólo cubre a player1 — un jugador ya emparejado
+        // como player2 en otro equipo podía quedar duplicado en dos equipos activos a la vez.
+        if (isPlayerAlreadyOnActiveTeam(tournamentId, player2.getId())) {
+            throw new InvalidStateException("El compañero ya está registrado en otro equipo de este torneo");
         }
 
-        int nextNum = teamRepository.findMaxTeamNumber(tournamentId).orElse(0) + 1;
+        TournamentRegistration mainReg = createConfirmedPairRegistration(tournament, player1, player2);
 
-        RegistrationSource source = parseSource(req.getRegistrationSource());
+        AmericanoTeam team = addTeamFromRegistration(tournamentId, mainReg.getId(),
+                Boolean.TRUE.equals(req.getHasPaid()), Boolean.TRUE.equals(req.getAttended()));
 
-        AmericanoTeam team = AmericanoTeam.builder()
-                .tournament(tournament)
-                .player1(player1)
-                .player2(player2)
-                .player2Name(player2 == null ? req.getPlayer2Name() : null)
-                .player2Phone(player2 == null ? req.getPlayer2Phone() : null)
-                .teamNumber(nextNum)
-                .currentPosition(0)
-                .status(AmericanoPlayerStatus.ACTIVE)
-                .registrationSource(source)
-                .hasPaid(Boolean.TRUE.equals(req.getHasPaid()))
-                .attended(Boolean.TRUE.equals(req.getAttended()))
-                .adminComment(req.getAdminComment())
-                .build();
-
+        team.setRegistrationSource(parseSource(req.getRegistrationSource()));
+        team.setAdminComment(req.getAdminComment());
         return teamRepository.save(team);
+    }
+
+    private PlayerPadel resolvePlayerForNewTeam(Long id, String nombre, String apellido, String telefono, String label) {
+        if (id != null) {
+            return playerRepository.findById(id)
+                    .orElseThrow(() -> new ResourceNotFoundException(label + " not found: " + id));
+        }
+        if (isBlank(nombre) || isBlank(apellido) || isBlank(telefono)) {
+            throw new InvalidStateException(label + ": seleccione un jugador existente o complete nombre, apellido y teléfono");
+        }
+        return playerService.resolverJugadorPorTelefonoOCrearInvitado(nombre.trim(), apellido.trim(), telefono.trim());
+    }
+
+    private boolean isBlank(String s) {
+        return s == null || s.isBlank();
+    }
+
+    /**
+     * Создаёт пару {@link TournamentRegistration} (по одной записи на игрока, обе
+     * {@code CONFIRMED}) — как обычная парная регистрация с сайта
+     * ({@code DoubleTournamentRegistrationService.registerWithExistingPartner}), но без
+     * побочных эффектов веб-флоу (не отправляет письма, не проверяет лимит мест/статус турнира —
+     * это ручное добавление координатором, прежний {@code addTeam} их тоже не проверял).
+     */
+    private TournamentRegistration createConfirmedPairRegistration(Tournament tournament,
+                                                                     PlayerPadel player1, PlayerPadel player2) {
+        for (PlayerPadel player : List.of(player1, player2)) {
+            Optional<TournamentRegistration> existing =
+                    registrationRepository.findByTournamentIdAndPlayerId(tournament.getId(), player.getId());
+            if (existing.isPresent() && Boolean.TRUE.equals(existing.get().getIsActive())) {
+                throw new InvalidStateException(
+                        player.getNombreCompleto() + " ya tiene una inscripción activa en este torneo");
+            }
+            registrationRepository.findByTournamentIdAndPlayerIdAndIsActiveFalse(tournament.getId(), player.getId())
+                    .ifPresent(registrationRepository::delete);
+        }
+        registrationRepository.flush();
+
+        int position = (int) registrationRepository.countConfirmedPairs(tournament.getId()) + 1;
+
+        TournamentRegistration partnerRegistration = TournamentRegistration.builder()
+                .tournament(tournament)
+                .player(player2)
+                .partner(player1)
+                .registrationDate(LocalDateTime.now())
+                .isActive(true)
+                .isDoubleRegistration(true)
+                .mainPlayerId(player1.getId())
+                .partnerFirstName(player1.getNombre())
+                .partnerLastName(player1.getApellido())
+                .partnerPhone(player1.getTelefono())
+                .partnerEmail(player1.getEmail())
+                .status(RegistrationStatus.CONFIRMED)
+                .position(position)
+                .build();
+        registrationRepository.save(partnerRegistration);
+
+        TournamentRegistration mainRegistration = TournamentRegistration.builder()
+                .tournament(tournament)
+                .player(player1)
+                .partner(player2)
+                .registrationDate(LocalDateTime.now())
+                .isActive(true)
+                .isDoubleRegistration(true)
+                .mainPlayerId(player1.getId())
+                .partnerFirstName(player2.getNombre())
+                .partnerLastName(player2.getApellido())
+                .partnerPhone(player2.getTelefono())
+                .partnerEmail(player2.getEmail())
+                .status(RegistrationStatus.CONFIRMED)
+                .position(position)
+                .build();
+        return registrationRepository.save(mainRegistration);
     }
 
     @Transactional

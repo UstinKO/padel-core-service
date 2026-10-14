@@ -2,7 +2,7 @@ package com.padle.core.padelcoreservice.service.americano;
 
 import com.padle.core.padelcoreservice.dto.americano.AmericanoMatchDto;
 import com.padle.core.padelcoreservice.dto.americano.AmericanoTeamDto;
-import com.padle.core.padelcoreservice.dto.americano.TeamPlayoffTeamRequest;
+import com.padle.core.padelcoreservice.dto.americano.TeamPlayoffAddTeamRequest;
 import com.padle.core.padelcoreservice.exception.InvalidStateException;
 import com.padle.core.padelcoreservice.model.Club;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
@@ -270,7 +270,7 @@ class TeamPlayoffQueueTest {
         PlayerPadel p1 = createPlayer(tournamentId);
         PlayerPadel p2 = createPlayer(tournamentId);
 
-        TeamPlayoffTeamRequest req = new TeamPlayoffTeamRequest();
+        TeamPlayoffAddTeamRequest req = new TeamPlayoffAddTeamRequest();
         req.setPlayer1Id(p1.getId());
         req.setPlayer2Id(p2.getId());
         req.setRegistrationSource("ADMIN_MANUAL");

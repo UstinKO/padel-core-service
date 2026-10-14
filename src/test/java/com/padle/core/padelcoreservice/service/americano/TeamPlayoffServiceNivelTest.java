@@ -11,6 +11,7 @@ import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoMatchRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoRoundRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoTeamRepository;
+import com.padle.core.padelcoreservice.service.PlayerService;
 import com.padle.core.padelcoreservice.service.WebSocketService;
 import org.junit.jupiter.api.Test;
 
@@ -30,6 +31,7 @@ class TeamPlayoffServiceNivelTest {
             mock(AmericanoRoundRepository.class),
             mock(AmericanoMatchRepository.class),
             mock(PlayerRepository.class),
+            mock(PlayerService.class),
             mock(TournamentRegistrationRepository.class),
             mock(WebSocketService.class),
             mock(PlayoffMatchingEngine.class)

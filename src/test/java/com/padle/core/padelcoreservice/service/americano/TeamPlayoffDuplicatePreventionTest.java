@@ -1,6 +1,6 @@
 package com.padle.core.padelcoreservice.service.americano;
 
-import com.padle.core.padelcoreservice.dto.americano.TeamPlayoffTeamRequest;
+import com.padle.core.padelcoreservice.dto.americano.TeamPlayoffAddTeamRequest;
 import com.padle.core.padelcoreservice.exception.InvalidStateException;
 import com.padle.core.padelcoreservice.model.Club;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
@@ -102,7 +102,7 @@ class TeamPlayoffDuplicatePreventionTest {
         PlayerPadel playerB = createPlayer(tournamentId);
         PlayerPadel playerC = createPlayer(tournamentId);
 
-        TeamPlayoffTeamRequest manualReq = new TeamPlayoffTeamRequest();
+        TeamPlayoffAddTeamRequest manualReq = new TeamPlayoffAddTeamRequest();
         manualReq.setPlayer1Id(playerB.getId());
         manualReq.setPlayer2Id(playerC.getId());
         playoffService.addTeam(tournamentId, manualReq);
@@ -131,12 +131,12 @@ class TeamPlayoffDuplicatePreventionTest {
         PlayerPadel playerB = createPlayer(tournamentId);
         PlayerPadel playerC = createPlayer(tournamentId);
 
-        TeamPlayoffTeamRequest firstReq = new TeamPlayoffTeamRequest();
+        TeamPlayoffAddTeamRequest firstReq = new TeamPlayoffAddTeamRequest();
         firstReq.setPlayer1Id(playerA.getId());
         firstReq.setPlayer2Id(playerB.getId());
         playoffService.addTeam(tournamentId, firstReq);
 
-        TeamPlayoffTeamRequest secondReq = new TeamPlayoffTeamRequest();
+        TeamPlayoffAddTeamRequest secondReq = new TeamPlayoffAddTeamRequest();
         secondReq.setPlayer1Id(playerC.getId());
         secondReq.setPlayer2Id(playerB.getId());
 
