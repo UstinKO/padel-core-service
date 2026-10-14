@@ -192,6 +192,7 @@ public class AdminController {
             model.addAttribute("niveles", getNiveles(tournamentDto.getCategoriaNivel()));
             model.addAttribute("modalidades", Modalidad.values());
             model.addAttribute("visibilidades", TournamentVisibility.values());
+            model.addAttribute("isClubAdmin", owner.isClubAdmin());
             return "admin/tournaments/form";
         }
 
@@ -226,6 +227,8 @@ public class AdminController {
         model.addAttribute("niveles", getNiveles(null));
         model.addAttribute("modalidades", Modalidad.values());
         model.addAttribute("visibilidades", TournamentVisibility.values());
+        // LFPT-0559: клубному аккаунту статус на создании всё равно переопределяется (LFPT-0558) — не показываем поле
+        model.addAttribute("isClubAdmin", owner.isClubAdmin());
 
         return "admin/tournaments/form";
     }

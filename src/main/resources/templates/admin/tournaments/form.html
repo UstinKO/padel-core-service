@@ -271,7 +271,9 @@
                     </h2>
 
                     <div class="form-grid">
-                        <div class="form-group">
+                        <!-- LFPT-0559: скрыто на создании/копировании для клубного аккаунта — статус всё равно
+                             переопределяется на бэкенде (LFPT-0558), поле только создаёт путаницу -->
+                        <div class="form-group" th:if="${tournament.id != null or isClubAdmin != true}">
                             <label for="estado" class="required" th:text="#{admin.tournaments.form.field.status}">Estado del Torneo</label>
                             <select th:field="*{estado}"
                                     id="estado"

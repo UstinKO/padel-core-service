@@ -78,6 +78,8 @@ public class AdminTournamentCopyController {
 
         // Добавляем флаг, что это копирование (для отображения в заголовке)
         model.addAttribute("isCopy", true);
+        // LFPT-0559: клубному аккаунту статус всё равно переопределяется (LFPT-0558) — не показываем поле
+        model.addAttribute("isClubAdmin", owner.isClubAdmin());
 
         // ИСПРАВЛЕНО: правильный путь к шаблону
         return "admin/tournaments/form";
