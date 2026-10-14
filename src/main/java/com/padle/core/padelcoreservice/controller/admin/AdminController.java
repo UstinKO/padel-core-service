@@ -176,8 +176,11 @@ public class AdminController {
 
         // LFPT-376: клубный админ не может привязать турнир к чужому клубу — не доверяем
         // значению из формы, всегда принудительно ставим его собственный clubId.
+        // LFPT-0558: клубному аккаунту не нужно выбирать статус турнира при создании —
+        // всегда «Регистрация открыта», независимо от значения из формы.
         if (owner.isClubAdmin()) {
             tournamentDto.setClubId(owner.getClubId());
+            tournamentDto.setEstado(TournamentStatus.REGISTRO_ABIERTO);
         }
 
         if (bindingResult.hasErrors()) {
