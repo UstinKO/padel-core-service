@@ -96,14 +96,15 @@ jobs:
   # Тот же build, что в PR Check, но на актуальном refs/pull/N/merge: master мог уйти вперёд.
   verify:
     needs: select
-    if: needs.select.outputs.pr != '' && needs.select.outputs.dry != 'true'
+    # Явный !cancelled(): без него verify пропускается вслед за пропущенным deploy-result (предок select).
+    if: ${{ !cancelled() && needs.select.result == 'success' && needs.select.outputs.pr != '' && needs.select.outputs.dry != 'true' }}
     uses: ./.github/workflows/pr-check.yml
     with:
       ref: refs/pull/${{ needs.select.outputs.pr }}/merge
 
   merge:
     needs: [select, verify]
-    if: ${{ !cancelled() && needs.select.outputs.pr != '' && needs.select.outputs.dry != 'true' }}
+    if: ${{ !cancelled() && needs.select.result == 'success' && needs.select.outputs.pr != '' && needs.select.outputs.dry != 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
