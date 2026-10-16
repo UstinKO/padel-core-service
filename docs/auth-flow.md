@@ -290,7 +290,7 @@ Client                          /api/auth/refresh
 | Нет заголовка `Authorization` | Фильтр пропускает запрос, контроллер получает анонимный SecurityContext |
 | Токен истёк | `JwtException` → `SecurityContext` не устанавливается → 403/401 от Spring Security |
 | Токен с невалидной подписью | То же |
-| Передан refresh вместо access | Сигнатура верна, но контроллеры не проверяют `tokenType` — потенциальная уязвимость; нужно добавить проверку в `JwtAuthenticationFilter` |
+| Передан refresh вместо access | `JwtAuthenticationFilter` проверяет `tokenType` (`jwtService.isRefreshToken(jwt)`) — `SecurityContext` не устанавливается, запрос идёт дальше анонимным → 401/403 от Spring Security (закрыто LFPT-0608) |
 | Пользователь деактивирован | `loadUserByUsername` вернёт пользователя, но `isEnabled() = false` → `validateToken = false` → 403 |
 
 ---
