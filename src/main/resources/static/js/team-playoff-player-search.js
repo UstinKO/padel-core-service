@@ -48,6 +48,7 @@ function initTeamPlayoffAddForm(searchUrl, opts, notify) {
             idField.value = '';
             selectedCard.style.display = 'none';
             searchInput.value = '';
+            searchWrap.style.display = 'block';
         }
 
         function renderMessage(cssClass, text) {
