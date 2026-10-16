@@ -152,17 +152,24 @@ public class TeamPlayoffViewController {
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     public String addTeam(@PathVariable Long tournamentId,
                           @ModelAttribute TeamPlayoffAddTeamRequest req,
+                          @RequestParam(required = false) String returnTo,
                           RedirectAttributes ra,
                           @AuthenticationPrincipal Owner currentOwner) {
         tournamentAccessService.assertCanManageTournament(currentOwner, tournamentId);
+        // LFPT-0572: форма «+ Добавить пару вручную» на странице оплат (returnTo=payments) —
+        // та же логика добавления команды, но координатор возвращается на страницу оплат, а не
+        // на страницу Team Playoff; у двух страниц разные имена flash-атрибутов для сообщений.
+        boolean returnToPayments = "payments".equals(returnTo);
         try {
             playoffService.addTeam(tournamentId, req);
-            ra.addFlashAttribute("success", "Equipo agregado correctamente");
+            ra.addFlashAttribute(returnToPayments ? "successMessage" : "success", "Equipo agregado correctamente");
         } catch (InvalidStateException | ResourceNotFoundException e) {
             log.error("Error adding team to {}: {}", tournamentId, e.getMessage());
-            ra.addFlashAttribute("error", "Error al agregar equipo: " + e.getMessage());
+            ra.addFlashAttribute(returnToPayments ? "errorMessage" : "error", "Error al agregar equipo: " + e.getMessage());
         }
-        return "redirect:/tournaments/team-playoff/admin/" + tournamentId;
+        return returnToPayments
+                ? "redirect:/admin/tournaments/" + tournamentId + "/payments"
+                : "redirect:/tournaments/team-playoff/admin/" + tournamentId;
     }
 
     /**
