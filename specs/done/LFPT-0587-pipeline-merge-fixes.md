@@ -1,7 +1,7 @@
 # LFPT-0587: Оркестратор автомержа — verify пропускался, PR с только что поставленной меткой не находился
 
 ## Статус
-approved
+done
 
 ## Источник
 [GitHub issue #587](https://github.com/UstinKO/padel-core-service/issues/587). Найдено при живой проверке LFPT-0579 (PR #583) на PR #584.
