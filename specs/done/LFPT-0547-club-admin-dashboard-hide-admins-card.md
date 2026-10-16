@@ -1,7 +1,7 @@
 # LFPT-0547: Feature клубная учётная запись — скрыть блок «Администраторы» на главной панели (фронтенд)
 
 ## Статус
-approved
+done
 
 ## Источник
 GitHub issue [#547](https://github.com/UstinKO/padel-core-service/issues/547) — техническая постановка от архитектора (прямой вход, `specs/requests/` не нужен). Telegram-сообщение (для reply): 5114.
