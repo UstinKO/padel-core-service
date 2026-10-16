@@ -1,7 +1,7 @@
 # LFPT-0579: Автомерж PR конвейера — оркестратор pipeline-merge в GitHub Actions
 
 ## Статус
-approved
+done
 
 ## Источник
 [GitHub issue #579](https://github.com/UstinKO/padel-core-service/issues/579). Прямая постановка архитектора, клиентского запроса нет. Этап 1 дорожной карты «Автономный конвейер: от Telegram до прода» (локальная `docs/pipeline-autonomy.md`, решения пользователя от 2026-10-16: ревью человеком убирается, ничего не держится на ручном ревью).
