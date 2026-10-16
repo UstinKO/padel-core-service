@@ -373,3 +373,51 @@ select.form-control-sm { cursor: pointer; }
     .action-buttons { flex-direction: column; }
     .action-buttons .btn { width: 100%; justify-content: center; }
 }
+
+/* LFPT-0573: подсказка у отметки явки — иконка-кнопка, видна по наведению/фокусу клавиатурой
+   (чисто CSS) и по тапу на телефоне (JS добавляет/убирает .open, см. payments.html). */
+.info-tip {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #94a3b8;
+    font-size: .85rem;
+    padding: .25rem;
+    position: relative;
+    vertical-align: middle;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5rem;
+    min-height: 1.5rem;
+}
+.info-tip:hover,
+.info-tip:focus {
+    color: #475569;
+    outline: none;
+}
+.info-tip::after {
+    content: attr(data-tip);
+    display: none;
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: max-content;
+    max-width: 240px;
+    white-space: normal;
+    background: #1e293b;
+    color: #fff;
+    font-weight: 400;
+    font-size: .75rem;
+    line-height: 1.4;
+    padding: .5rem .65rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,.15);
+    z-index: 30;
+}
+.info-tip:hover::after,
+.info-tip:focus::after,
+.info-tip.open::after {
+    display: block;
+}

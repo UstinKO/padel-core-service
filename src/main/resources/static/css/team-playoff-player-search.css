@@ -1,0 +1,47 @@
+/* LFPT-0573: форма поиска-или-создания двух игроков команды Team Playoff — изначально была
+   только на странице Team Playoff (LFPT-0561/0562), теперь переиспользуется и на странице
+   «Оплаты и посещаемость» (новая точка входа «+ Добавить пару вручную»). Правила скопированы
+   из tournament-playoff.html (где форма раньше была единственной) и обёрнуты под общий
+   класс-контейнер .team-playoff-add-form, чтобы не конфликтовать с одноимёнными общими
+   классами на странице, где форма встраивается. */
+
+.team-playoff-add-form .add-team-form { padding: 1.25rem 1.5rem; }
+.team-playoff-add-form .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+.team-playoff-add-form .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .75rem; margin-bottom: 1rem; }
+.team-playoff-add-form .form-group label { display: block; font-size: .82rem; font-weight: 600; color: #475569; margin-bottom: .3rem; }
+.team-playoff-add-form .form-control { width: 100%; border: 1px solid #e2e8f0; border-radius: 8px; padding: .5rem .75rem; font-size: .875rem; color: #1e293b; box-sizing: border-box; }
+.team-playoff-add-form .form-control:focus { outline: none; border-color: #FF6B35; box-shadow: 0 0 0 2px rgba(255,107,53,.15); }
+.team-playoff-add-form .btn-row { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: 1rem; }
+
+.team-playoff-add-form .player-slot { position: relative; }
+.team-playoff-add-form .player-search-wrap { position: relative; }
+.team-playoff-add-form .player-search-results {
+    display: none; position: absolute; top: 100%; left: 0; right: 0; z-index: 20; background: #fff;
+    border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 6px 16px rgba(0,0,0,.08);
+    max-height: 220px; overflow-y: auto; margin-top: .25rem;
+}
+.team-playoff-add-form .player-search-results.open { display: block; }
+.team-playoff-add-form .player-result-item { padding: .5rem .75rem; cursor: pointer; font-size: .85rem; border-bottom: 1px solid #f1f5f9; }
+.team-playoff-add-form .player-result-item:last-child { border-bottom: none; }
+.team-playoff-add-form .player-result-item:hover,
+.team-playoff-add-form .player-result-item.active { background: #fff7ed; }
+.team-playoff-add-form .player-result-item .pr-name { font-weight: 600; color: #1e293b; }
+.team-playoff-add-form .player-result-item .pr-contact { font-size: .75rem; color: #64748b; }
+.team-playoff-add-form .player-result-empty,
+.team-playoff-add-form .player-result-error { padding: .5rem .75rem; font-size: .8rem; color: #94a3b8; }
+.team-playoff-add-form .player-selected-card {
+    display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+    background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: .5rem .75rem;
+    font-size: .85rem; color: #166534;
+}
+.team-playoff-add-form .player-clear-btn { background: none; border: none; cursor: pointer; color: #166534; font-size: 1.1rem; line-height: 1; padding: 0 .25rem; }
+.team-playoff-add-form .player-new-fields { display: flex; flex-direction: column; gap: .5rem; margin-top: .5rem; }
+.team-playoff-add-form .player-toggle-mode-btn {
+    background: none; border: none; color: #FF6B35; font-size: .78rem; font-weight: 600;
+    cursor: pointer; padding: .35rem 0; margin-top: .35rem;
+}
+.team-playoff-add-form .player-toggle-mode-btn:hover { text-decoration: underline; }
+
+@media (max-width: 768px) {
+    .team-playoff-add-form .form-row:has(.player-slot) { grid-template-columns: 1fr; }
+}

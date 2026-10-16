@@ -70,9 +70,6 @@
         .edit-btn{background:none;border:1px solid #e2e8f0;border-radius:6px;padding:.2rem .4rem;cursor:pointer;font-size:.72rem;color:#64748b;margin-top:.2rem}
         .edit-btn:hover{background:#f8fafc}
         .playoff-stage-label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:.2rem .5rem;border-radius:10px;background:#fef3c7;color:#92400e}
-        .add-team-form{padding:1.25rem 1.5rem}
-        .form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
-        .form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem;margin-bottom:1rem}
         .form-group label{display:block;font-size:.82rem;font-weight:600;color:#475569;margin-bottom:.3rem}
         .form-control{width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:.5rem .75rem;font-size:.875rem;color:#1e293b;box-sizing:border-box}
         .form-control:focus{outline:none;border-color:#FF6B35;box-shadow:0 0 0 2px rgba(255,107,53,.15)}
@@ -139,28 +136,8 @@
         .inline-edit select{flex:1;border:1px solid #e2e8f0;border-radius:6px;padding:.25rem .4rem;font-size:.78rem}
         .toast-box{position:fixed;bottom:1rem;right:1rem;z-index:1000;display:flex;flex-direction:column;gap:.5rem}
         .toast{background:#fef9c3;border:1px solid #fcd34d;color:#78350f;padding:.6rem .9rem;border-radius:8px;font-size:.82rem;box-shadow:0 4px 12px rgba(0,0,0,.1);max-width:320px}
-        /* LFPT-0562: поиск/создание игрока в форме "Agregar equipo" — вместо числовых ID */
-        .player-slot{position:relative}
-        .player-search-wrap{position:relative}
-        .player-search-results{display:none;position:absolute;top:100%;left:0;right:0;z-index:20;background:#fff;
-            border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 6px 16px rgba(0,0,0,.08);max-height:220px;overflow-y:auto;margin-top:.25rem}
-        .player-search-results.open{display:block}
-        .player-result-item{padding:.5rem .75rem;cursor:pointer;font-size:.85rem;border-bottom:1px solid #f1f5f9}
-        .player-result-item:last-child{border-bottom:none}
-        .player-result-item:hover,.player-result-item.active{background:#fff7ed}
-        .player-result-item .pr-name{font-weight:600;color:#1e293b}
-        .player-result-item .pr-contact{font-size:.75rem;color:#64748b}
-        .player-result-empty,.player-result-error{padding:.5rem .75rem;font-size:.8rem;color:#94a3b8}
-        .player-selected-card{display:flex;align-items:center;justify-content:space-between;gap:.5rem;
-            background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:.5rem .75rem;font-size:.85rem;color:#166534}
-        .player-clear-btn{background:none;border:none;cursor:pointer;color:#166534;font-size:1.1rem;line-height:1;padding:0 .25rem}
-        .player-new-fields{display:flex;flex-direction:column;gap:.5rem;margin-top:.5rem}
-        .player-toggle-mode-btn{background:none;border:none;color:#FF6B35;font-size:.78rem;font-weight:600;
-            cursor:pointer;padding:.35rem 0;margin-top:.35rem}
-        .player-toggle-mode-btn:hover{text-decoration:underline}
-        @media (max-width: 768px) {
-            .form-row:has(.player-slot){grid-template-columns:1fr}
-        }
+        .badge-not-attended{display:inline-flex;align-items:center;gap:.25rem;font-size:.68rem;font-weight:600;
+            color:#b45309;background:#fef3c7;border-radius:8px;padding:.1rem .4rem;margin-left:.35rem;white-space:nowrap}
     </style>
 </head>
 <body>
@@ -253,10 +230,10 @@
                     <div class="prep-step-body">
                         <strong class="prep-step-title" th:text="#{admin.playoff.checklist.step2.title}">2. Agregar equipo manualmente</strong>
                         <p class="prep-step-desc" th:text="#{admin.playoff.checklist.step2.desc}">Úsalo si un equipo no se inscribió en el sitio o llegó justo antes del torneo.</p>
-                        <button type="button" class="btn-sm btn-success" onclick="toggleAddForm()">
+                        <a th:href="@{'/admin/tournaments/' + ${tournament.id} + '/payments'}" class="btn-sm btn-success">
                             <i class="fas fa-plus"></i>
-                            <span th:text="#{admin.playoff.btn.add_team}">Agregar equipo</span>
-                        </button>
+                            <span th:text="#{admin.playoff.link.add_team_payments}">Agregar pareja en la página de pagos</span>
+                        </a>
                     </div>
                 </div>
 
@@ -305,111 +282,10 @@
                     (<span th:text="${#lists.size(teams)}">0</span>)
                 </h3>
                 <div style="display:flex;gap:.5rem;flex-wrap:wrap">
-                    <button class="btn-sm btn-success" onclick="toggleAddForm()">
+                    <a th:href="@{'/admin/tournaments/' + ${tournament.id} + '/payments'}" class="btn-sm btn-success">
                         <i class="fas fa-plus"></i>
-                        <span th:text="#{admin.playoff.btn.add_team}">Agregar equipo</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Форма добавления команды -->
-            <div id="addTeamForm" style="display:none;border-bottom:1px solid #e2e8f0">
-                <div class="add-team-form">
-                    <h4 style="margin:0 0 1rem;font-size:.95rem;color:#1e293b">
-                        <i class="fas fa-user-plus" style="color:#FF6B35"></i>
-                        <span th:text="#{admin.playoff.form.new_team}">Nuevo Equipo</span>
-                    </h4>
-                    <form id="addTeamFormEl" th:action="@{'/tournaments/team-playoff/admin/' + ${tournament.id} + '/teams/add'}"
-                          method="post">
-                        <div class="form-row">
-                            <div class="form-group player-slot" data-slot="1">
-                                <label th:text="#{admin.playoff.form.player1}">Jugador 1 *</label>
-                                <div class="player-search-wrap">
-                                    <input type="text" class="form-control player-search-input"
-                                           th:placeholder="#{admin.playoff.form.search_placeholder}" autocomplete="off">
-                                    <div class="player-search-results"></div>
-                                </div>
-                                <div class="player-selected-card" style="display:none">
-                                    <span class="player-selected-name"></span>
-                                    <button type="button" class="player-clear-btn"
-                                            th:aria-label="#{admin.playoff.form.clear_selection}">&times;</button>
-                                </div>
-                                <div class="player-new-fields" style="display:none">
-                                    <input type="text" name="player1Nombre" class="form-control"
-                                           th:placeholder="#{admin.playoff.form.new_player_nombre}">
-                                    <input type="text" name="player1Apellido" class="form-control"
-                                           th:placeholder="#{admin.playoff.form.new_player_apellido}">
-                                    <input type="text" name="player1Telefono" class="form-control"
-                                           th:placeholder="#{admin.playoff.form.new_player_telefono}">
-                                </div>
-                                <button type="button" class="player-toggle-mode-btn"
-                                        th:data-label-new="#{admin.playoff.form.new_player}"
-                                        th:data-label-search="#{admin.playoff.form.use_existing}"
-                                        th:text="#{admin.playoff.form.new_player}">+ Nuevo jugador</button>
-                                <input type="hidden" name="player1Id" class="player-id-field">
-                            </div>
-                            <div class="form-group player-slot" data-slot="2">
-                                <label th:text="#{admin.playoff.form.player2}">Jugador 2 *</label>
-                                <div class="player-search-wrap">
-                                    <input type="text" class="form-control player-search-input"
-                                           th:placeholder="#{admin.playoff.form.search_placeholder}" autocomplete="off">
-                                    <div class="player-search-results"></div>
-                                </div>
-                                <div class="player-selected-card" style="display:none">
-                                    <span class="player-selected-name"></span>
-                                    <button type="button" class="player-clear-btn"
-                                            th:aria-label="#{admin.playoff.form.clear_selection}">&times;</button>
-                                </div>
-                                <div class="player-new-fields" style="display:none">
-                                    <input type="text" name="player2Nombre" class="form-control"
-                                           th:placeholder="#{admin.playoff.form.new_player_nombre}">
-                                    <input type="text" name="player2Apellido" class="form-control"
-                                           th:placeholder="#{admin.playoff.form.new_player_apellido}">
-                                    <input type="text" name="player2Telefono" class="form-control"
-                                           th:placeholder="#{admin.playoff.form.new_player_telefono}">
-                                </div>
-                                <button type="button" class="player-toggle-mode-btn"
-                                        th:data-label-new="#{admin.playoff.form.new_player}"
-                                        th:data-label-search="#{admin.playoff.form.use_existing}"
-                                        th:text="#{admin.playoff.form.new_player}">+ Nuevo jugador</button>
-                                <input type="hidden" name="player2Id" class="player-id-field">
-                            </div>
-                        </div>
-                        <div class="form-row-3">
-                            <div class="form-group">
-                                <label th:text="#{admin.playoff.form.reg_source}">Origen de registro</label>
-                                <select name="registrationSource" class="form-control">
-                                    <option value="" th:text="#{admin.playoff.form.source_none}">— ninguno —</option>
-                                    <option value="WEBSITE">Web</option>
-                                    <option value="WHATSAPP">WhatsApp</option>
-                                    <option value="WALK_IN">Walk-in</option>
-                                    <option value="ADMIN_MANUAL">Admin manual</option>
-                                </select>
-                            </div>
-                            <div class="form-group" style="display:flex;align-items:center;gap:.5rem;padding-top:1.5rem">
-                                <input type="checkbox" name="hasPaid" value="true" id="hasPaidNew">
-                                <label for="hasPaidNew" style="margin:0;cursor:pointer" th:text="#{admin.playoff.form.paid}">Pagó</label>
-                            </div>
-                            <div class="form-group" style="display:flex;align-items:center;gap:.5rem;padding-top:1.5rem">
-                                <input type="checkbox" name="attended" value="true" id="attendedNew">
-                                <label for="attendedNew" style="margin:0;cursor:pointer" th:text="#{admin.playoff.form.attended}">Asistió</label>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label th:text="#{admin.playoff.form.comment}">Comentario del admin</label>
-                            <input type="text" name="adminComment" class="form-control"
-                                   th:placeholder="#{admin.playoff.form.placeholder.comment}">
-                        </div>
-                        <div class="btn-row">
-                            <button type="submit" class="btn btn-primary btn-sm">
-                                <i class="fas fa-save"></i>
-                                <span th:text="#{admin.playoff.btn.save_team}">Guardar equipo</span>
-                            </button>
-                            <button type="button" class="btn btn-outline btn-sm"
-                                    onclick="toggleAddForm()"
-                                    th:text="#{admin.playoff.btn.cancel_form}">Cancelar</button>
-                        </div>
-                    </form>
+                        <span th:text="#{admin.playoff.link.add_team_payments}">Agregar pareja en la página de pagos</span>
+                    </a>
                 </div>
             </div>
 
@@ -465,6 +341,11 @@
                                     <i th:unless="${team.attended}" class="fas fa-times-circle" style="color:#e2e8f0"></i>
                                 </button>
                             </form>
+                            <span th:unless="${team.attended}" class="badge-not-attended"
+                                  th:title="#{admin.playoff.badge.not_attended_title}">
+                                <i class="fas fa-ban"></i>
+                                <span th:text="#{admin.playoff.badge.not_attended}">No disponible</span>
+                            </span>
                         </td>
                         <td style="font-size:.8rem;color:#64748b" th:text="${team.adminComment}">—</td>
                         <td th:if="${qualStarted}">
@@ -947,9 +828,6 @@
     const MSG_QUEUE_REMOVE = /*[[#{admin.playoff.queue.remove}]]*/ '';
     const MSG_QUEUE_REMOVE_CONFIRM = /*[[#{admin.playoff.queue.remove_confirm}]]*/ '';
     const MSG_QUEUE_NO_COURTS = /*[[#{admin.playoff.qual.new_match.no_courts}]]*/ '';
-    const MSG_PLAYER_NO_RESULTS = /*[[#{admin.playoff.form.no_results}]]*/ '';
-    const MSG_PLAYER_SEARCH_ERROR = /*[[#{admin.playoff.form.search_error}]]*/ '';
-    const MSG_PLAYER_REQUIRED = /*[[#{admin.playoff.form.player_required}]]*/ '';
     new TeamPlayoffRealtime(TOURNAMENT_ID);
 
     // ─── localStorage backup для незакрытых счётов ────────────────────────
@@ -966,11 +844,6 @@
         if (e.target.matches('.score-inp') && e.target.id) lsSave(e.target.id, e.target.value);
     });
     // ─────────────────────────────────────────────────────────────────────
-
-    function toggleAddForm() {
-        const f = document.getElementById('addTeamForm');
-        f.style.display = f.style.display === 'none' ? 'block' : 'none';
-    }
 
     // ── LFPT-0569: чеклист подготовки турнира ───────────────────────────────
     function prepChecklistCollapseKey() { return lsKey('prepChecklistCollapsed'); }
@@ -1001,143 +874,6 @@
         box.classList.toggle('collapsed', collapsed);
     }
     initPrepChecklist();
-
-    // ── LFPT-0562: поиск/создание игрока в форме "Agregar equipo" ───────
-    // Заменяет ручной ввод player1Id/player2Id — для каждого слота команды
-    // либо ищем существующего игрока, либо переключаемся на создание нового.
-    (function initPlayerSlots() {
-        const PLAYER_SEARCH_URL = '/tournaments/team-playoff/admin/' + TOURNAMENT_ID + '/players/search';
-
-        document.querySelectorAll('.player-slot').forEach(function (slot) {
-            const searchWrap = slot.querySelector('.player-search-wrap');
-            const searchInput = slot.querySelector('.player-search-input');
-            const resultsBox = slot.querySelector('.player-search-results');
-            const selectedCard = slot.querySelector('.player-selected-card');
-            const selectedName = slot.querySelector('.player-selected-name');
-            const clearBtn = slot.querySelector('.player-clear-btn');
-            const newFields = slot.querySelector('.player-new-fields');
-            const toggleBtn = slot.querySelector('.player-toggle-mode-btn');
-            const idField = slot.querySelector('.player-id-field');
-            const newInputs = Array.from(newFields.querySelectorAll('input'));
-            let debounceTimer = null;
-
-            function playerLabel(p) {
-                return (p.nombreCompleto || ((p.nombre || '') + ' ' + (p.apellido || ''))).trim();
-            }
-
-            function closeResults() {
-                resultsBox.classList.remove('open');
-                resultsBox.innerHTML = '';
-            }
-
-            function selectPlayer(player) {
-                idField.value = player.id;
-                selectedName.textContent = playerLabel(player);
-                selectedCard.style.display = 'flex';
-                searchWrap.style.display = 'none';
-                closeResults();
-            }
-
-            function clearSelection() {
-                idField.value = '';
-                selectedCard.style.display = 'none';
-                searchInput.value = '';
-                searchWrap.style.display = 'block';
-            }
-
-            function renderMessage(cssClass, text) {
-                resultsBox.innerHTML = '';
-                const row = document.createElement('div');
-                row.className = cssClass;
-                row.textContent = text;
-                resultsBox.appendChild(row);
-                resultsBox.classList.add('open');
-            }
-
-            function renderResults(players) {
-                if (!players.length) {
-                    renderMessage('player-result-empty', MSG_PLAYER_NO_RESULTS);
-                    return;
-                }
-                resultsBox.innerHTML = '';
-                players.forEach(function (p) {
-                    const item = document.createElement('div');
-                    item.className = 'player-result-item';
-                    const name = document.createElement('div');
-                    name.className = 'pr-name';
-                    name.textContent = playerLabel(p);
-                    const contact = document.createElement('div');
-                    contact.className = 'pr-contact';
-                    contact.textContent = p.telefono || p.email || '';
-                    item.appendChild(name);
-                    item.appendChild(contact);
-                    item.addEventListener('mousedown', function (e) {
-                        e.preventDefault();
-                        selectPlayer(p);
-                    });
-                    resultsBox.appendChild(item);
-                });
-                resultsBox.classList.add('open');
-            }
-
-            function doSearch(query) {
-                fetch(PLAYER_SEARCH_URL + '?query=' + encodeURIComponent(query), {headers: {'Accept': 'application/json'}})
-                    .then(function (r) {
-                        if (!r.ok) throw new Error('search failed');
-                        return r.json();
-                    })
-                    .then(renderResults)
-                    .catch(function () {
-                        renderMessage('player-result-error', MSG_PLAYER_SEARCH_ERROR);
-                    });
-            }
-
-            searchInput.addEventListener('input', function () {
-                const query = searchInput.value.trim();
-                clearTimeout(debounceTimer);
-                if (query.length < 2) {
-                    closeResults();
-                    return;
-                }
-                debounceTimer = setTimeout(function () { doSearch(query); }, 300);
-            });
-            searchInput.addEventListener('blur', function () {
-                setTimeout(closeResults, 150);
-            });
-
-            clearBtn.addEventListener('click', clearSelection);
-
-            toggleBtn.addEventListener('click', function () {
-                const showingNewFields = newFields.style.display !== 'none';
-                if (showingNewFields) {
-                    newFields.style.display = 'none';
-                    newInputs.forEach(function (i) { i.value = ''; });
-                    searchWrap.style.display = 'block';
-                    toggleBtn.textContent = toggleBtn.dataset.labelNew;
-                } else {
-                    newFields.style.display = 'flex';
-                    clearSelection();
-                    searchWrap.style.display = 'none';
-                    toggleBtn.textContent = toggleBtn.dataset.labelSearch;
-                }
-            });
-        });
-
-        const addTeamFormEl = document.getElementById('addTeamFormEl');
-        if (!addTeamFormEl) return;
-        addTeamFormEl.addEventListener('submit', function (e) {
-            const incomplete = Array.from(document.querySelectorAll('.player-slot')).some(function (slot) {
-                const idField = slot.querySelector('.player-id-field');
-                if (idField.value) return false;
-                return Array.from(slot.querySelectorAll('.player-new-fields input'))
-                    .some(function (i) { return !i.value.trim(); });
-            });
-            if (incomplete) {
-                e.preventDefault();
-                showToast(MSG_PLAYER_REQUIRED);
-            }
-        });
-    })();
 
     // ── Квалификация: переключение раундов ─────────────────────────────
     const qRounds = Array.from(document.querySelectorAll('[id^="qround-"]'));

@@ -16,6 +16,7 @@
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" th:href="@{/css/admin.css}">
     <link rel="stylesheet" th:href="@{/css/payment-management.css}">
+    <link rel="stylesheet" th:href="@{/css/team-playoff-player-search.css}">
 </head>
 <body>
 <header th:replace="~{fragments/admin-header :: header(#{admin.payments.title})}"></header>
@@ -117,6 +118,120 @@
                 <span class="legend-item legend-card"><i class="fas fa-credit-card"></i> <span th:text="#{admin.payments.legend.card}">Tarjeta</span></span>
             </div>
 
+            <!-- LFPT-0573: добавление пары вручную прямо со страницы оплат (этап 1) — та же форма
+                 поиска-или-создания игрока, что и раньше была только на странице Team Playoff
+                 (LFPT-0561/0562); видна только для форматов, где вообще применим Team Playoff. -->
+            <div class="team-playoff-add-form" th:if="${tournament.tipo != null and tournament.tipo.name() == 'AMERICANO_TEAMS'}"
+                 style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:1.5rem;overflow:hidden">
+                <div style="padding:.85rem 1.5rem;background:#1e293b;color:#fff">
+                    <button type="button" class="btn-sm btn-success" onclick="toggleManualAddTeamForm()">
+                        <i class="fas fa-plus"></i>
+                        <span th:text="#{admin.payments.btn.add_team_manual}">+ Agregar pareja manualmente</span>
+                    </button>
+                </div>
+                <div id="manualAddTeamForm" style="display:none;border-top:1px solid #e2e8f0">
+                    <div class="add-team-form">
+                        <h4 style="margin:0 0 1rem;font-size:.95rem;color:#1e293b">
+                            <i class="fas fa-user-plus" style="color:#FF6B35"></i>
+                            <span th:text="#{admin.playoff.form.new_team}">Nuevo Equipo</span>
+                        </h4>
+                        <form id="manualAddTeamFormEl"
+                              th:action="@{'/tournaments/team-playoff/admin/' + ${tournament.id} + '/teams/add'}"
+                              method="post">
+                            <input type="hidden" name="returnTo" value="payments">
+                            <div class="form-row">
+                                <div class="form-group player-slot" data-slot="1">
+                                    <label th:text="#{admin.playoff.form.player1}">Jugador 1 *</label>
+                                    <div class="player-search-wrap">
+                                        <input type="text" class="form-control player-search-input"
+                                               th:placeholder="#{admin.playoff.form.search_placeholder}" autocomplete="off">
+                                        <div class="player-search-results"></div>
+                                    </div>
+                                    <div class="player-selected-card" style="display:none">
+                                        <span class="player-selected-name"></span>
+                                        <button type="button" class="player-clear-btn"
+                                                th:aria-label="#{admin.playoff.form.clear_selection}">&times;</button>
+                                    </div>
+                                    <div class="player-new-fields" style="display:none">
+                                        <input type="text" name="player1Nombre" class="form-control"
+                                               th:placeholder="#{admin.playoff.form.new_player_nombre}">
+                                        <input type="text" name="player1Apellido" class="form-control"
+                                               th:placeholder="#{admin.playoff.form.new_player_apellido}">
+                                        <input type="text" name="player1Telefono" class="form-control"
+                                               th:placeholder="#{admin.playoff.form.new_player_telefono}">
+                                    </div>
+                                    <button type="button" class="player-toggle-mode-btn"
+                                            th:data-label-new="#{admin.playoff.form.new_player}"
+                                            th:data-label-search="#{admin.playoff.form.use_existing}"
+                                            th:text="#{admin.playoff.form.new_player}">+ Nuevo jugador</button>
+                                    <input type="hidden" name="player1Id" class="player-id-field">
+                                </div>
+                                <div class="form-group player-slot" data-slot="2">
+                                    <label th:text="#{admin.playoff.form.player2}">Jugador 2 *</label>
+                                    <div class="player-search-wrap">
+                                        <input type="text" class="form-control player-search-input"
+                                               th:placeholder="#{admin.playoff.form.search_placeholder}" autocomplete="off">
+                                        <div class="player-search-results"></div>
+                                    </div>
+                                    <div class="player-selected-card" style="display:none">
+                                        <span class="player-selected-name"></span>
+                                        <button type="button" class="player-clear-btn"
+                                                th:aria-label="#{admin.playoff.form.clear_selection}">&times;</button>
+                                    </div>
+                                    <div class="player-new-fields" style="display:none">
+                                        <input type="text" name="player2Nombre" class="form-control"
+                                               th:placeholder="#{admin.playoff.form.new_player_nombre}">
+                                        <input type="text" name="player2Apellido" class="form-control"
+                                               th:placeholder="#{admin.playoff.form.new_player_apellido}">
+                                        <input type="text" name="player2Telefono" class="form-control"
+                                               th:placeholder="#{admin.playoff.form.new_player_telefono}">
+                                    </div>
+                                    <button type="button" class="player-toggle-mode-btn"
+                                            th:data-label-new="#{admin.playoff.form.new_player}"
+                                            th:data-label-search="#{admin.playoff.form.use_existing}"
+                                            th:text="#{admin.playoff.form.new_player}">+ Nuevo jugador</button>
+                                    <input type="hidden" name="player2Id" class="player-id-field">
+                                </div>
+                            </div>
+                            <div class="form-row-3">
+                                <div class="form-group">
+                                    <label th:text="#{admin.playoff.form.reg_source}">Origen de registro</label>
+                                    <select name="registrationSource" class="form-control">
+                                        <option value="" th:text="#{admin.playoff.form.source_none}">— ninguno —</option>
+                                        <option value="WEBSITE">Web</option>
+                                        <option value="WHATSAPP">WhatsApp</option>
+                                        <option value="WALK_IN">Walk-in</option>
+                                        <option value="ADMIN_MANUAL">Admin manual</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="display:flex;align-items:center;gap:.5rem;padding-top:1.5rem">
+                                    <input type="checkbox" name="hasPaid" value="true" id="manualHasPaidNew">
+                                    <label for="manualHasPaidNew" style="margin:0;cursor:pointer" th:text="#{admin.playoff.form.paid}">Pagó</label>
+                                </div>
+                                <div class="form-group" style="display:flex;align-items:center;gap:.5rem;padding-top:1.5rem">
+                                    <input type="checkbox" name="attended" value="true" id="manualAttendedNew">
+                                    <label for="manualAttendedNew" style="margin:0;cursor:pointer" th:text="#{admin.playoff.form.attended}">Asistió</label>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label th:text="#{admin.playoff.form.comment}">Comentario del admin</label>
+                                <input type="text" name="adminComment" class="form-control"
+                                       th:placeholder="#{admin.playoff.form.placeholder.comment}">
+                            </div>
+                            <div class="btn-row">
+                                <button type="submit" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-save"></i>
+                                    <span th:text="#{admin.playoff.btn.save_team}">Guardar equipo</span>
+                                </button>
+                                <button type="button" class="btn btn-outline btn-sm"
+                                        onclick="toggleManualAddTeamForm()"
+                                        th:text="#{admin.playoff.btn.cancel_form}">Cancelar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
             <!-- Форма -->
             <form th:action="@{'/admin/tournaments/' + ${tournament.id} + '/payments/save'}"
                   method="post"
@@ -129,7 +244,15 @@
                             <th>#</th>
                             <th th:text="#{admin.payments.col.contact}">Jugador / Contacto</th>
                             <th th:title="#{admin.payments.col.confirmed_title}"><i class="fas fa-phone-alt"></i></th>
-                            <th th:title="#{admin.payments.col.attended_title}"><i class="fas fa-check-double"></i></th>
+                            <th>
+                                <span th:text="#{admin.payments.attended.label}">Presencia del equipo</span>
+                                <button type="button" class="info-tip" tabindex="0"
+                                        th:aria-label="#{admin.payments.attended.tooltip}"
+                                        th:title="#{admin.payments.attended.tooltip}"
+                                        th:attr="data-tip=#{admin.payments.attended.tooltip}">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                            </th>
                             <th th:text="#{admin.payments.col.amount}">Monto</th>
                             <th th:text="#{admin.payments.col.currency}">Mon.</th>
                             <th th:text="#{admin.common.col.status}">Estado</th>
@@ -324,6 +447,43 @@
 </main>
 
 <footer th:replace="~{fragments/admin-footer :: footer}"></footer>
+<script th:src="@{/js/team-playoff-player-search.js}"></script>
+<script th:inline="javascript">
+    function toggleManualAddTeamForm() {
+        const f = document.getElementById('manualAddTeamForm');
+        f.style.display = f.style.display === 'none' ? 'block' : 'none';
+    }
+
+    // LFPT-0573: та же форма поиска-или-создания игрока, что и на странице Team Playoff
+    // (LFPT-0561/0562) — логика вынесена в общий static/js/team-playoff-player-search.js.
+    (function () {
+        const formEl = document.getElementById('manualAddTeamFormEl');
+        if (!formEl) return;
+        const tournamentId = /*[[${tournament.id}]]*/ 0;
+        initTeamPlayoffAddForm('/tournaments/team-playoff/admin/' + tournamentId + '/players/search', {
+            formEl: formEl,
+            noResults: /*[[#{admin.playoff.form.no_results}]]*/ '',
+            searchError: /*[[#{admin.playoff.form.search_error}]]*/ '',
+            playerRequired: /*[[#{admin.playoff.form.player_required}]]*/ ''
+        }, function (message) { alert(message); });
+    })();
+
+    // LFPT-0573: подсказка у отметки явки — видна по наведению/фокусу (CSS :hover/:focus) и
+    // по нажатию на телефоне (JS-тоггл класса .open, т.к. :focus на кнопке ведёт себя не везде
+    // одинаково в мобильных браузерах); закрывается кликом в любом другом месте страницы.
+    document.querySelectorAll('.info-tip').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            document.querySelectorAll('.info-tip.open').forEach(function (other) {
+                if (other !== btn) other.classList.remove('open');
+            });
+            btn.classList.toggle('open');
+        });
+    });
+    document.addEventListener('click', function () {
+        document.querySelectorAll('.info-tip.open').forEach(function (btn) { btn.classList.remove('open'); });
+    });
+</script>
 <script th:src="@{/js/payment-management.js}"></script>
 </body>
 </html>
