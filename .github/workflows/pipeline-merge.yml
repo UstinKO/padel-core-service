@@ -118,6 +118,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      issues: write          # закрыть связанные issue: мерж от GITHUB_TOKEN их сам не закрывает
       actions: write
     steps:
       - name: Merge and deploy
@@ -150,6 +151,11 @@ jobs:
           fi
 
           gh pr merge "$PR" --squash --match-head-commit "$HEAD_SHA" --subject "${TITLE} (#${PR})"
+
+          # GitHub не закрывает issue по «Closes #N», если PR влит от GITHUB_TOKEN (найдено на пилоте #582).
+          for issue in $(gh pr view "$PR" --json closingIssuesReferences --jq '.closingIssuesReferences[].number'); do
+            gh issue close "$issue" --comment "Реализовано в #${PR} — влит автоматически оркестратором (${RUN_URL})." || true
+          done
 
           if [ "$DEPLOY" = "true" ]; then
             gh workflow run deploy.yml --ref master -f pr="$PR"
