@@ -344,17 +344,15 @@ logging:
 
 ### Actuator endpoints
 
-Открытые эндпоинты (`/actuator/*`):
+Эндпоинты (`/actuator/*`, LFPT-0604):
 
-| Endpoint | Описание |
+| Endpoint | Доступ |
 |---------|----------|
-| `/actuator/health` | Liveness + Readiness (для K8s) |
-| `/actuator/prometheus` | Prometheus scrape endpoint |
-| `/actuator/metrics` | Список всех метрик |
-| `/actuator/info` | Инфо о приложении |
-| `/actuator/loggers` | Управление уровнями логов в runtime |
+| `/actuator/health`, `/actuator/health/{liveness,readiness}` | Анонимно; снаружи через Nginx — тоже (мониторинг, readiness деплоя) |
+| `/actuator/prometheus` | Анонимно, но только изнутри Docker-сети (скрейп Prometheus `padel-app:8080`); снаружи Nginx отдаёт 404 |
+| `/actuator/metrics`, `/actuator/info`, `/actuator/loggers` | Только после логина; в prod не выставлены (`exposure: health,prometheus`) |
 
-`/actuator/**` — публичный (не требует аутентификации), но закрыт на уровне Nginx/UFW в prod.
+Снаружи Nginx пропускает из `/actuator` только `health`, остальное — 404.
 
 ---
 

@@ -110,7 +110,11 @@ public class SecurityConfig {
                                 "/css/**",
                                 "/js/**",
                                 "/images/**",
-                                "/actuator/**",
+                                // LFPT-0604: анонимно — только health (readiness деплоя) и prometheus (скрейп изнутри
+                                // Docker-сети); снаружи Nginx отдаёт из /actuator только health
+                                "/actuator/health",
+                                "/actuator/health/**",
+                                "/actuator/prometheus",
                                 "/favicon.ico",
                                 "/players/confirmar-email",
                                 "/players/confirmar-email/**",
