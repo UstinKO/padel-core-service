@@ -1,7 +1,7 @@
 # LFPT-0598: Оркестратор автомержа — закрывать связанные issue после мержа
 
 ## Статус
-approved
+done
 
 ## Источник
 [GitHub issue #598](https://github.com/UstinKO/padel-core-service/issues/598). Найдено на пилоте #582 (задача Telegram #5114).
