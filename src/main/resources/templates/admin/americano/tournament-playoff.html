@@ -118,6 +118,22 @@
         .icon-btn:hover{color:#FF6B35}
         .icon-toggle-btn{background:none;border:none;cursor:pointer;padding:0;line-height:1;font-size:inherit}
         .icon-toggle-btn:hover{opacity:.7}
+        /* LFPT-0569: чеклист подготовки турнира для координатора */
+        .prep-checklist{border:1px solid #bfdbfe}
+        .prep-checklist-header{cursor:pointer;user-select:none}
+        .prep-checklist-chevron{transition:transform .2s}
+        .prep-checklist.collapsed .prep-checklist-chevron{transform:rotate(-90deg)}
+        .prep-checklist.collapsed .prep-checklist-body{display:none}
+        .prep-checklist-body{padding:1rem 1.5rem;display:grid;gap:1rem}
+        .prep-step{display:flex;gap:.85rem;align-items:flex-start}
+        .prep-step-icon{flex-shrink:0;width:28px;height:28px;border-radius:50%;background:#e2e8f0;color:#475569;
+            display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem}
+        .prep-step.done .prep-step-icon{background:#10b981;color:#fff}
+        .prep-step.done .prep-step-title{color:#64748b;text-decoration:line-through}
+        .prep-step-title{font-size:.9rem;color:#1e293b;display:block;margin-bottom:.2rem}
+        .prep-step-desc{font-size:.82rem;color:#64748b;margin:0 0 .5rem}
+        .prep-step-counter{font-size:.82rem;color:#1e293b;margin:0 0 .5rem}
+        .prep-step-counter strong{color:#FF6B35}
         .inline-edit{display:none;gap:.35rem;align-items:center;margin-top:.4rem;background:#f8fafc;padding:.4rem;border-radius:6px}
         .inline-edit.open{display:flex}
         .inline-edit select{flex:1;border:1px solid #e2e8f0;border-radius:6px;padding:.25rem .4rem;font-size:.78rem}
@@ -181,6 +197,104 @@
         <div th:if="${error}"   class="alert alert-danger"  th:text="${error}"></div>
 
         <!-- ══════════════════════════════════════════════════════════════
+             ЧЕКЛИСТ ПОДГОТОВКИ ТУРНИРА (LFPT-0569) — постоянный пошаговый
+             блок для координатора, который впервые управляет турниром.
+             Переиспользует уже существующие действия (импорт/добавление
+             команды, настройка кортов, старт квалификации), не дублирует
+             их логику — только визуально проводит координатора по порядку.
+        ══════════════════════════════════════════════════════════════ -->
+        <div id="prepChecklist" class="section-card prep-checklist">
+            <div class="section-header prep-checklist-header" onclick="togglePrepChecklist()">
+                <h3>
+                    <i class="fas fa-list-check"></i>
+                    <span th:text="#{admin.playoff.checklist.title}">Preparación del torneo</span>
+                </h3>
+                <div style="display:flex;align-items:center;gap:.75rem">
+                    <span class="info-pill" id="prepChecklistSummary">0/4</span>
+                    <i class="fas fa-chevron-down prep-checklist-chevron"></i>
+                </div>
+            </div>
+            <div class="prep-checklist-body">
+
+                <!-- Шаг 1 — импорт регистраций -->
+                <div class="prep-step" id="prepStep1" th:classappend="${not #lists.isEmpty(teams)} ? 'done'">
+                    <div class="prep-step-icon">
+                        <i th:if="${not #lists.isEmpty(teams)}" class="fas fa-check"></i>
+                        <span th:unless="${not #lists.isEmpty(teams)}">1</span>
+                    </div>
+                    <div class="prep-step-body">
+                        <strong class="prep-step-title" th:text="#{admin.playoff.checklist.step1.title}">1. Importar inscripciones</strong>
+                        <p class="prep-step-desc" th:text="#{admin.playoff.checklist.step1.desc}">Importa las parejas ya inscritas en el sitio al listado de trabajo del torneo.</p>
+                        <p class="prep-step-counter" th:if="${tournament.cupoMax != null and tournament.inscritosActuales != null}">
+                            <span th:text="#{admin.playoff.checklist.step1.registered_prefix}">Inscritas en el sitio:</span>
+                            <strong th:text="${tournament.inscritosActuales} + ' / ' + ${tournament.cupoMax}">15 / 16</strong>
+                            <span th:text="#{admin.playoff.checklist.step1.teams_suffix}">equipos</span>.
+                            <span th:text="#{admin.playoff.checklist.step1.spots_left}">Plazas libres:</span>
+                            <strong th:text="${tournament.disponibles}">1</strong>
+                        </p>
+                        <form th:action="@{'/tournaments/team-playoff/admin/' + ${tournament.id} + '/import-registrations'}"
+                              method="post" style="margin:0">
+                            <button type="submit" class="btn-sm"
+                                    style="background:#dbeafe;color:#1e3a8a"
+                                    onclick="return confirm(t('admin.playoff.confirm.import'))">
+                                <i class="fas fa-file-import"></i>
+                                <span th:text="#{admin.playoff.btn.import}">Importar inscripciones</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Шаг 2 — добавить команду вручную -->
+                <div class="prep-step" id="prepStep2" th:classappend="${not #lists.isEmpty(teams)} ? 'done'">
+                    <div class="prep-step-icon">
+                        <i th:if="${not #lists.isEmpty(teams)}" class="fas fa-check"></i>
+                        <span th:unless="${not #lists.isEmpty(teams)}">2</span>
+                    </div>
+                    <div class="prep-step-body">
+                        <strong class="prep-step-title" th:text="#{admin.playoff.checklist.step2.title}">2. Agregar equipo manualmente</strong>
+                        <p class="prep-step-desc" th:text="#{admin.playoff.checklist.step2.desc}">Úsalo si un equipo no se inscribió en el sitio o llegó justo antes del torneo.</p>
+                        <button type="button" class="btn-sm btn-success" onclick="toggleAddForm()">
+                            <i class="fas fa-plus"></i>
+                            <span th:text="#{admin.playoff.btn.add_team}">Agregar equipo</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Шаг 3 — настроить корты -->
+                <div class="prep-step" id="prepStep3">
+                    <div class="prep-step-icon"><span>3</span></div>
+                    <div class="prep-step-body">
+                        <strong class="prep-step-title" th:text="#{admin.playoff.checklist.step3.title}">3. Configurar canchas</strong>
+                        <p class="prep-step-desc" th:text="#{admin.playoff.checklist.step3.desc}">Indica cuántas canchas del club están disponibles (p. ej. canchas 1–5). Deben coincidir con las canchas reales del club para asignar los partidos correctamente.</p>
+                        <button type="button" class="btn-sm btn-outline" onclick="focusPrepTarget('qualCourtsInput')">
+                            <i class="fas fa-border-all"></i>
+                            <span th:text="#{admin.playoff.checklist.step3.btn}">Ir a configurar canchas</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Шаг 4 — начать квалификацию -->
+                <div class="prep-step" id="prepStep4" th:classappend="${qualStarted} ? 'done'">
+                    <div class="prep-step-icon">
+                        <i th:if="${qualStarted}" class="fas fa-check"></i>
+                        <span th:unless="${qualStarted}">4</span>
+                    </div>
+                    <div class="prep-step-body">
+                        <strong class="prep-step-title" th:text="#{admin.playoff.checklist.step4.title}">4. Iniciar calificación</strong>
+                        <p class="prep-step-desc" th:text="#{admin.playoff.checklist.step4.desc}">Se abrirá la tabla de calificación, el tablero de canchas y la asignación de partidos.</p>
+                        <button type="button" class="btn-sm btn-primary" th:unless="${qualStarted}"
+                                th:disabled="${#lists.size(teams) < 2}"
+                                onclick="focusPrepTarget('startQualBtn')">
+                            <i class="fas fa-play"></i>
+                            <span th:text="#{admin.playoff.checklist.step4.btn}">Ir a iniciar calificación</span>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════════════
              РАЗДЕЛ 1: Команды
         ══════════════════════════════════════════════════════════════ -->
         <div class="section-card">
@@ -191,15 +305,6 @@
                     (<span th:text="${#lists.size(teams)}">0</span>)
                 </h3>
                 <div style="display:flex;gap:.5rem;flex-wrap:wrap">
-                    <form th:action="@{'/tournaments/team-playoff/admin/' + ${tournament.id} + '/import-registrations'}"
-                          method="post" style="margin:0">
-                        <button type="submit" class="btn-sm"
-                                style="background:#dbeafe;color:#1e3a8a"
-                                onclick="return confirm(t('admin.playoff.confirm.import'))">
-                            <i class="fas fa-file-import"></i>
-                            <span th:text="#{admin.playoff.btn.import}">Importar inscripciones</span>
-                        </button>
-                    </form>
                     <button class="btn-sm btn-success" onclick="toggleAddForm()">
                         <i class="fas fa-plus"></i>
                         <span th:text="#{admin.playoff.btn.add_team}">Agregar equipo</span>
@@ -420,9 +525,9 @@
                 <form th:action="@{'/tournaments/team-playoff/admin/' + ${tournament.id} + '/init-qualification'}"
                       method="post" style="display:inline-flex;gap:.75rem;align-items:center">
                     <label style="font-size:.85rem;font-weight:600" th:text="#{admin.playoff.qual.courts_label}">Canchas:</label>
-                    <input type="number" name="courts" value="2" min="1" max="10"
+                    <input type="number" id="qualCourtsInput" name="courts" value="2" min="1" max="10"
                            style="width:60px;border:1px solid #e2e8f0;border-radius:6px;padding:.3rem .5rem;text-align:center">
-                    <button type="submit" class="btn btn-primary"
+                    <button type="submit" id="startQualBtn" class="btn btn-primary"
                             th:disabled="${#lists.size(teams) < 2}"
                             onclick="return confirm(t('admin.playoff.confirm.start_qual'))">
                         <i class="fas fa-play"></i>
@@ -822,6 +927,7 @@
 <script th:src="@{/js/team-playoff-realtime.js}"></script>
 <script th:inline="javascript">
     const TOURNAMENT_ID = /*[[${tournament.id}]]*/ 0;
+    const QUAL_STARTED = /*[[${qualStarted}]]*/ false;
     const MSG_NO_TEAMS = /*[[#{admin.playoff.qual.new_match.no_teams}]]*/ '';
     const MSG_NO_COURTS = /*[[#{admin.playoff.qual.new_match.no_courts}]]*/ '';
     const MSG_SUGGESTED = /*[[#{admin.playoff.qual.new_match.suggested}]]*/ '';
@@ -865,6 +971,36 @@
         const f = document.getElementById('addTeamForm');
         f.style.display = f.style.display === 'none' ? 'block' : 'none';
     }
+
+    // ── LFPT-0569: чеклист подготовки турнира ───────────────────────────────
+    function prepChecklistCollapseKey() { return lsKey('prepChecklistCollapsed'); }
+
+    function togglePrepChecklist() {
+        const box = document.getElementById('prepChecklist');
+        const collapsed = box.classList.toggle('collapsed');
+        try { localStorage.setItem(prepChecklistCollapseKey(), collapsed ? '1' : '0'); } catch (e) {}
+    }
+
+    function focusPrepTarget(targetId) {
+        const el = document.getElementById(targetId);
+        if (!el) return;
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (typeof el.focus === 'function') el.focus();
+    }
+
+    function initPrepChecklist() {
+        const box = document.getElementById('prepChecklist');
+        if (!box) return;
+        const doneCount = box.querySelectorAll('.prep-step.done').length;
+        const summary = document.getElementById('prepChecklistSummary');
+        if (summary) summary.textContent = doneCount + '/4';
+
+        let storedCollapsed = null;
+        try { storedCollapsed = localStorage.getItem(prepChecklistCollapseKey()); } catch (e) {}
+        const collapsed = storedCollapsed !== null ? storedCollapsed === '1' : QUAL_STARTED;
+        box.classList.toggle('collapsed', collapsed);
+    }
+    initPrepChecklist();
 
     // ── LFPT-0562: поиск/создание игрока в форме "Agregar equipo" ───────
     // Заменяет ручной ввод player1Id/player2Id — для каждого слота команды
