@@ -1,7 +1,7 @@
 # LFPT-0497: Feature подключение Microsoft Clarity на сайте 1-padel.com
 
 ## Статус
-approved
+done
 
 ## Источник
 `specs/requests/LFPT-0497-microsoft-clarity.md` (Telegram, пересылка от Evgeny_754, telegram_launch_message_id: 4885) → issue [#497](https://github.com/UstinKO/padel-core-service/issues/497).

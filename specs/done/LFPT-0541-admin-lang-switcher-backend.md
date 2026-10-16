@@ -1,10 +1,10 @@
 # LFPT-0541: Feature механизм ручного переключения языка в админ-панели — cookie-резолвер и override (backend)
 
 ## Статус
-approved
+done
 
 ## Источник
-Клиентский запрос [specs/requests/LFPT-0541-admin-lang-switcher.md](../requests/LFPT-0541-admin-lang-switcher.md) (Telegram, пересланное сообщение от Evgeny_754, `telegram_launch_message_id: 4984`). GitHub issue [#541](https://github.com/UstinKO/padel-core-service/issues/541).
+Клиентский запрос [specs/requests/LFPT-0541-admin-lang-switcher.md](requests/LFPT-0541-admin-lang-switcher.md) (Telegram, пересланное сообщение от Evgeny_754, `telegram_launch_message_id: 4984`). GitHub issue [#541](https://github.com/UstinKO/padel-core-service/issues/541).
 
 Разбито на бэкенд/фронтенд (`GIT_WORKFLOW.md §1.4`) — эта спека покрывает бэкенд. Зависимая фронтенд-задача — [#542](https://github.com/UstinKO/padel-core-service/issues/542) (переключатель в шапке админ-панели).
 

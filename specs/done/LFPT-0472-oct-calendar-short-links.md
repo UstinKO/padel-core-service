@@ -4,7 +4,7 @@
 done — реализовано в PR #473, деплой подтверждён (run 37203696210)
 
 ## Источник
-Клиентский запрос [specs/requests/LFPT-0472-oct-calendar-short-links.md](../requests/LFPT-0472-oct-calendar-short-links.md), issue [#472](https://github.com/UstinKO/padel-core-service/issues/472).
+Клиентский запрос [specs/requests/LFPT-0472-oct-calendar-short-links.md](requests/LFPT-0472-oct-calendar-short-links.md), issue [#472](https://github.com/UstinKO/padel-core-service/issues/472).
 
 Telegram-сообщение (для reply): 4772
 

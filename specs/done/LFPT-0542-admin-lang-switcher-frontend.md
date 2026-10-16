@@ -1,10 +1,10 @@
 # LFPT-0542: Feature компактный переключатель языка ES/EN/RU в шапке админ-панели (frontend)
 
 ## Статус
-approved
+done
 
 ## Источник
-Клиентский запрос [specs/requests/LFPT-0541-admin-lang-switcher.md](../requests/LFPT-0541-admin-lang-switcher.md) (Telegram, пересланное сообщение от Evgeny_754, `telegram_launch_message_id: 4984`). GitHub issue [#542](https://github.com/UstinKO/padel-core-service/issues/542). Зависит от бэкенд-задачи [#541](https://github.com/UstinKO/padel-core-service/issues/541) (cookie-резолвер, `?lang=` override) — спека [LFPT-0541-admin-lang-switcher-backend.md](LFPT-0541-admin-lang-switcher-backend.md).
+Клиентский запрос [specs/requests/LFPT-0541-admin-lang-switcher.md](requests/LFPT-0541-admin-lang-switcher.md) (Telegram, пересланное сообщение от Evgeny_754, `telegram_launch_message_id: 4984`). GitHub issue [#542](https://github.com/UstinKO/padel-core-service/issues/542). Зависит от бэкенд-задачи [#541](https://github.com/UstinKO/padel-core-service/issues/541) (cookie-резолвер, `?lang=` override) — спека [LFPT-0541-admin-lang-switcher-backend.md](LFPT-0541-admin-lang-switcher-backend.md).
 
 ## Контекст / зачем
 Бэкенд (#541) добавляет механизм, который принимает `?lang=es|ru|en`, сохраняет выбор в cookie и отдаёт ему приоритет над `Accept-Language`. Но без UI-элемента в админ-панели этим механизмом физически неоткуда воспользоваться — нужен компактный переключатель в шапке, рядом с приветствием администратора и кнопкой выхода.

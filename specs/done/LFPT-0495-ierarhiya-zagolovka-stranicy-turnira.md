@@ -1,12 +1,12 @@
 # LFPT-0495: Feature иерархия заголовка страницы турнира — тип турнира главным заголовком
 
 ## Статус
-approved
+done
 
 ## Источник
 Telegram-сообщение (для reply): 4862
 
-Клиентский запрос: [specs/requests/LFPT-0495-ierarhiya-zagolovka-stranicy-turnira.md](../requests/LFPT-0495-ierarhiya-zagolovka-stranicy-turnira.md). Issue: [#495](https://github.com/UstinKO/padel-core-service/issues/495).
+Клиентский запрос: [specs/requests/LFPT-0495-ierarhiya-zagolovka-stranicy-turnira.md](requests/LFPT-0495-ierarhiya-zagolovka-stranicy-turnira.md). Issue: [#495](https://github.com/UstinKO/padel-core-service/issues/495).
 
 ## Контекст / зачем
 На публичной странице турнира (`/torneo/{id}`, `tournament-details.html`) главным крупным заголовком (`<h1>`) сейчас выводится `tournament.nombre` — поле, которое с LFPT-374 автогенерируется исключительно из пола и уровня (`Tournament.generateNombre()`, например «Mixto · TODOS»). Сам тип мероприятия (Cancha Abierta / Rey de Cancha / Americano / Americano Equipos / Clínica de Pádel) при этом — лишь одна из пяти вторичных плашек в общем ряду и визуально теряется среди пола, уровня, формата участия и статуса.

@@ -1,7 +1,7 @@
 # LFPT-317: Flash-сообщения error/info не рендерятся на страницах Americano admin
 
 ## Статус
-approved
+done
 
 ## Источник
 [GitHub issue #317](https://github.com/UstinKO/padel-core-service/issues/317) — прямая техническая постановка от архитектора/пользователя, без промежуточного клиентского запроса.

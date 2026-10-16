@@ -1,10 +1,10 @@
 # LFPT-0489: Feature короткая ссылка для Instagram-профиля — /ig-bio с редиректом 302 и UTM-метками
 
 ## Статус
-approved
+done
 
 ## Источник
-Клиентский запрос [specs/requests/LFPT-0489-ig-bio-short-link.md](../requests/LFPT-0489-ig-bio-short-link.md), issue [#489](https://github.com/UstinKO/padel-core-service/issues/489).
+Клиентский запрос [specs/requests/LFPT-0489-ig-bio-short-link.md](requests/LFPT-0489-ig-bio-short-link.md), issue [#489](https://github.com/UstinKO/padel-core-service/issues/489).
 
 Telegram-сообщение (для reply): 4845
 

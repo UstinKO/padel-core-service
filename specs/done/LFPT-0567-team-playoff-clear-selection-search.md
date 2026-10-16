@@ -1,10 +1,10 @@
 # LFPT-0567: Fix форма «Agregar equipo» Team Playoff — кнопка сброса выбора игрока не возвращает поле поиска
 
 ## Статус
-approved
+done
 
 ## Источник
-Клиентский запрос [specs/requests/LFPT-0567-team-playoff-clear-selection-search.md](../requests/LFPT-0567-team-playoff-clear-selection-search.md) (Telegram, `[отправитель: customer]`, `telegram_launch_message_id: 5076`). GitHub issue [#567](https://github.com/UstinKO/padel-core-service/issues/567).
+Клиентский запрос [specs/requests/LFPT-0567-team-playoff-clear-selection-search.md](requests/LFPT-0567-team-playoff-clear-selection-search.md) (Telegram, `[отправитель: customer]`, `telegram_launch_message_id: 5076`). GitHub issue [#567](https://github.com/UstinKO/padel-core-service/issues/567).
 
 Telegram-сообщение (для reply): 5076
 

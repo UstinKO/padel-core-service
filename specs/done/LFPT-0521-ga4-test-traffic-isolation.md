@@ -1,10 +1,10 @@
 # LFPT-0521: Fix утечка тестового трафика в продакшен GA4/Clarity — изолировать Measurement ID от dev/cloud/test окружений
 
 ## Статус
-approved
+done
 
 ## Источник
-[specs/requests/LFPT-0521-ga4-test-traffic-isolation.md](../requests/LFPT-0521-ga4-test-traffic-isolation.md), issue [#521](https://github.com/UstinKO/padel-core-service/issues/521).
+[specs/requests/LFPT-0521-ga4-test-traffic-isolation.md](requests/LFPT-0521-ga4-test-traffic-isolation.md), issue [#521](https://github.com/UstinKO/padel-core-service/issues/521).
 
 Telegram-сообщение (для reply): 4937
 

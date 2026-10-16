@@ -1,10 +1,10 @@
 # LFPT-0522: Feature аналитика регистраций в GA4 — события начала/завершения регистрации, cookie-consent на всех публичных страницах
 
 ## Статус
-approved
+done
 
 ## Источник
-[specs/requests/LFPT-0522-ga4-registration-events.md](../requests/LFPT-0522-ga4-registration-events.md), issue [#522](https://github.com/UstinKO/padel-core-service/issues/522). Поглощает issue [#469](https://github.com/UstinKO/padel-core-service/issues/469).
+[specs/requests/LFPT-0522-ga4-registration-events.md](requests/LFPT-0522-ga4-registration-events.md), issue [#522](https://github.com/UstinKO/padel-core-service/issues/522). Поглощает issue [#469](https://github.com/UstinKO/padel-core-service/issues/469).
 
 Telegram-сообщение (для reply): 4937
 

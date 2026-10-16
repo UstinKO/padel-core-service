@@ -1,10 +1,10 @@
 # LFPT-0573: Feature страница «Оплаты и посещаемость» — добавление пары вручную, подсказки по присутствию (frontend)
 
 ## Статус
-approved
+done
 
 ## Источник
-Клиентский запрос [specs/requests/LFPT-0572-payments-page-manual-team-add.md](../requests/LFPT-0572-payments-page-manual-team-add.md) (Telegram, пересланное сообщение от Evgeny_754, `telegram_launch_message_id: 5097`). GitHub issue [#573](https://github.com/UstinKO/padel-core-service/issues/573). Зависит от бэкенд-задачи [#572](https://github.com/UstinKO/padel-core-service/issues/572) (параметр `returnTo` в `TeamPlayoffViewController.addTeam`) — спека [LFPT-0572-payments-page-manual-team-add-backend.md](LFPT-0572-payments-page-manual-team-add-backend.md).
+Клиентский запрос [specs/requests/LFPT-0572-payments-page-manual-team-add.md](requests/LFPT-0572-payments-page-manual-team-add.md) (Telegram, пересланное сообщение от Evgeny_754, `telegram_launch_message_id: 5097`). GitHub issue [#573](https://github.com/UstinKO/padel-core-service/issues/573). Зависит от бэкенд-задачи [#572](https://github.com/UstinKO/padel-core-service/issues/572) (параметр `returnTo` в `TeamPlayoffViewController.addTeam`) — спека [LFPT-0572-payments-page-manual-team-add-backend.md](LFPT-0572-payments-page-manual-team-add-backend.md).
 
 ## Контекст / зачем
 

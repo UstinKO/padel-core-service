@@ -1,10 +1,10 @@
 # LFPT-0553: Fix текст письма о зачислении в лист ожидания не соответствует реальной логике — убрать упоминание 5-минутного подтверждения
 
 ## Статус
-approved
+done
 
 ## Источник
-[Issue #553](https://github.com/UstinKO/padel-core-service/issues/553) — клиентский запрос [`specs/requests/LFPT-0553-waitlist-email-text-check.md`](../requests/LFPT-0553-waitlist-email-text-check.md) (Telegram, тема "AI Разработка", `[отправитель: customer]`).
+[Issue #553](https://github.com/UstinKO/padel-core-service/issues/553) — клиентский запрос [`specs/requests/LFPT-0553-waitlist-email-text-check.md`](requests/LFPT-0553-waitlist-email-text-check.md) (Telegram, тема "AI Разработка", `[отправитель: customer]`).
 
 Telegram-сообщение (для reply): 5045
 
