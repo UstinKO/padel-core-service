@@ -16,6 +16,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Spec-Driven Development:** проект разрабатывается по спекам, не по интуиции. [specs/MASTER.md](../specs/MASTER.md) — единый источник истины по бизнес-логике продукта (роли, форматы турниров, статусы регистрации, инварианты). Любая новая фича начинается со спеки в `specs/features/LFPT-XXX-*.md` (шаблон — `specs/features/_template.md`), согласованной с MASTER.md, и только потом переходит в код. Клиентские запросы на доработку оформляются в `specs/requests/` по шаблону `specs/requests/_template.md` и перерабатываются в полную фиче-спеку до начала реализации. Перед любой задачей по фиче — сначала прочитать соответствующую спеку и MASTER.md, не додумывать поведение системы. Есть автономный конвейер `/develop-feature` (Analyst → Developer → Tester → Architect, роли в `.claude/agents/`), который проводит фичу от клиентского запроса до PR — см. [.claude/GIT_WORKFLOW.md §8](GIT_WORKFLOW.md) про его права/ограничения.
 
+**Документация `docs/`** (в репозитории с LFPT-0602) — контекст приложения для конвейера и людей: [docs/Home.md](../docs/Home.md) — оглавление; архитектура и деплой (`architecture.md`), БД (`database-architecture.md`), домены и все эндпоинты (`domain-overview.md`, `endpoints/`), аутентификация (`auth-flow.md`), i18n (`i18n/`), переход на React (`frontend-react/`), автономный конвейер (`pipeline-autonomy.md`). Перед задачей в незнакомой области — прочитать соответствующий раздел, но источник истины по бизнес-логике — `specs/MASTER.md`, по поведению — код: если документ расходится с кодом, верить коду и поправить документ в том же PR. Пометки `[SECURITY — закрыто/актуально на <дата>]` в `docs/endpoints/*` — результат сверки с кодом на указанную дату. `docs/infrastructure-security.md` и `docs/telegram-ai-pipeline.md` — приватные (в `.gitignore`), в облачном клоне их нет и не должно быть; IP сервера, доверенные IP, SSH-доступы и идентификаторы роутины в `docs/` и любые публичные файлы не писать.
+
 **Переход на микросервисы:** монолит сейчас готовится к горизонтальному масштабированию (Docker Swarm, 2 реплики/сервис) и последующему выделению сервисов (Payments → Notifications → Bracket → Identity → King of Court → Americano → Tournament-core), с прицелом на мобильные приложения и новые продукты. Полный поэтапный план, известные архитектурные "мины" под несколько реплик и карта связей между доменами — [docs/microservices-migration-plan.md](../docs/microservices-migration-plan.md).
 
 ---
@@ -479,7 +481,7 @@ Email Prometheus-метрики: `email_daily`, `email_daily_limit`, `email_sent
 
 Push в `master` запускает `.github/workflows/deploy.yml`: сборка JAR → SCP на сервер в `/opt/padel-app/temp/` → пересборка Docker-образа (`docker compose build --no-cache padel-app`) → перезапуск контейнера → health-check: опрос `/actuator/health/readiness` каждые 5 с до 5 минут, успех — только HTTP 200 (не grep логов — LFPT-331; readiness, а не общий `/actuator/health`, чтобы недоступный SMTP не откатывал деплой), упавший/перезапускающийся контейнер — откат сразу. При неудаче — автоматический rollback из `app.jar.backup`. На сервере запущен полный `docker-compose.yml` стек.
 
-### Серверный стек (production, `75.119.140.175`)
+### Серверный стек (production; адрес сервера — в приватном `.claude/SECURITY.md`)
 
 ```
 [UFW / iptables]
@@ -496,7 +498,7 @@ Push в `master` запускает `.github/workflows/deploy.yml`: сборка
 
 Все Docker-порты привязаны к `127.0.0.1` (localhost binding) — прямой доступ из интернета закрыт. Подробнее — [.claude/SECURITY.md](.claude/SECURITY.md).
 
-**Доступ для анализа:** при необходимости диагностики (проверить состояние контейнеров, логи, `current_version.txt`, health-check и т.п.) — SSH на сервер напрямую: `ssh root@75.119.140.175`. Для рутинной проверки статуса деплоя предпочтительнее `gh run view <run-id> --log` (шаг "Health check" в `deploy.yml` печатает то же самое, но без SSH) — см. `.claude/commands/develop-feature.md § Шаг 7`. Read-only диагностика по SSH не требует отдельного согласования; любые изменения на сервере — по-прежнему только с отдельным согласованием (см. `GIT_WORKFLOW.md §7`).
+**Доступ для анализа:** при необходимости диагностики (проверить состояние контейнеров, логи, `current_version.txt`, health-check и т.п.) — SSH на сервер напрямую (`ssh root@<адрес сервера>`, адрес — в приватном `.claude/SECURITY.md`, в облачной роутине недоступен и не нужен). Для рутинной проверки статуса деплоя предпочтительнее `gh run view <run-id> --log` (шаг "Health check" в `deploy.yml` печатает то же самое, но без SSH) — см. `.claude/commands/develop-feature.md § Шаг 7`. Read-only диагностика по SSH не требует отдельного согласования; любые изменения на сервере — по-прежнему только с отдельным согласованием (см. `GIT_WORKFLOW.md §7`).
 
 ---
 
