@@ -67,10 +67,13 @@ if [ "$active_deploys" != "0" ]; then
   exit 0
 fi
 
-candidates=$(gh pr list -R "$R" --state open --base master --label pipeline --label pipeline:ready \
-    --limit 100 --json number,createdAt,isDraft,labels |
+# Все открытые PR и фильтр меток в jq: gh pr list --label отдаёт данные с задержкой индекса,
+# и прогон по событию labeled не видел PR с только что поставленной меткой (LFPT-0587).
+candidates=$(gh pr list -R "$R" --state open --base master --limit 200 --json number,createdAt,isDraft,labels |
   jq -r '[ .[] | select(.isDraft | not)
-               | select([.labels[].name] | index("pipeline:conflict") or index("pipeline:deploy-failed") | not) ]
+               | ([.labels[].name]) as $l
+               | select(($l | index("pipeline")) and ($l | index("pipeline:ready")))
+               | select(($l | index("pipeline:conflict")) or ($l | index("pipeline:deploy-failed")) | not) ]
          | sort_by(.createdAt) | .[].number')
 
 if [ -z "$candidates" ]; then
@@ -116,7 +119,7 @@ for pr in $candidates; do
   needs_deploy "$pr" && deploy=true
   base=$(gh api "repos/$R/commits/master" --jq .sha)
 
-  echo "✅ Кандидат: #$pr «$title» (head $head, master $base, деплой: $deploy)"
+  echo "✅ Кандидат: #$pr «${title}» (head $head, master $base, деплой: $deploy)"
   out "pr=$pr"
   out "title=$title"
   out "head_sha=$head"
