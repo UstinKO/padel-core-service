@@ -39,6 +39,8 @@ import static org.assertj.core.api.Assertions.assertThatCode;
  * LFPT-0546: главная админ-панель (GET /admin) для CLUB_ADMIN должна показывать статистику
  * («Активные турниры», «Лист ожидания», «Последние турниры») только своего клуба, а не всей
  * платформы; для остальных ролей поведение не должно измениться (регресс).
+ * LFPT-0566: модель {@code GET /admin} также содержит флаг {@code isClubAdmin} — нужен шаблону
+ * для скрытия карточки «Администраторы» для клубной учётной записи (#547).
  */
 @SpringBootTest
 @TestPropertySource(properties = {
@@ -163,6 +165,67 @@ class AdminPanelClubStatsTest {
         assertThat(model.getAttribute("totalTournaments")).isEqualTo(totalActivosAntes);
     }
 
+    /**
+     * LFPT-0566: flag {@code isClubAdmin} в модели {@code GET /admin}, нужен шаблону для скрытия
+     * карточки «Администраторы» для клубной учётной записи (#547).
+     */
+    @Test
+    void adminPanel_clubAdmin_modeloContieneIsClubAdminTrue() {
+        Owner clubAdmin = createClubAdmin(createClub().getId());
+
+        Model model = new ExtendedModelMap();
+        adminController.adminPanel(model, clubAdmin);
+
+        assertThat(model.getAttribute("isClubAdmin")).isEqualTo(true);
+    }
+
+    @Test
+    void adminPanel_superAdmin_organizer_admin_modeloContieneIsClubAdminFalse() {
+        Model modelSuperAdmin = new ExtendedModelMap();
+        adminController.adminPanel(modelSuperAdmin, createSuperAdmin());
+        assertThat(modelSuperAdmin.getAttribute("isClubAdmin")).isEqualTo(false);
+
+        Model modelOrganizer = new ExtendedModelMap();
+        adminController.adminPanel(modelOrganizer, createOwnerWithRole(OwnerRole.ORGANIZER));
+        assertThat(modelOrganizer.getAttribute("isClubAdmin")).isEqualTo(false);
+
+        Model modelAdmin = new ExtendedModelMap();
+        adminController.adminPanel(modelAdmin, createOwnerWithRole(OwnerRole.ADMIN));
+        assertThat(modelAdmin.getAttribute("isClubAdmin")).isEqualTo(false);
+    }
+
+    @Test
+    void adminPanel_clubAdmin_sinClubId_isClubAdminSigueSiendoTrue() {
+        Owner clubAdminSinClub = createClubAdmin(null);
+
+        Model model = new ExtendedModelMap();
+        adminController.adminPanel(model, clubAdminSinClub);
+
+        assertThat(model.getAttribute("isClubAdmin")).isEqualTo(true);
+    }
+
+    @Test
+    void adminPanel_superAdmin_otrosAtributosDelModeloNoCambian_regresion() {
+        Owner superAdmin = createSuperAdmin();
+
+        Model model = new ExtendedModelMap();
+        adminController.adminPanel(model, superAdmin);
+
+        assertThat(model.getAttribute("adminName")).isNotNull();
+        assertThat(model.getAttribute("totalPlayers")).isNotNull();
+        assertThat(model.getAttribute("totalOwners")).isNotNull();
+        assertThat(model.getAttribute("totalTournaments")).isNotNull();
+        assertThat(model.getAttribute("totalWaitlist")).isNotNull();
+        assertThat(model.getAttribute("recentTournaments")).isNotNull();
+        assertThat(model.getAttribute("recentTournamentsWithFlags")).isNotNull();
+        assertThat(model.getAttribute("recentPlayers")).isNotNull();
+        assertThat(model.getAttribute("matchesInProgress")).isNotNull();
+        assertThat(model.getAttribute("upcomingMatches")).isNotNull();
+        assertThat(model.getAttribute("activeTournaments")).isNotNull();
+        assertThat(model.getAttribute("isSuperAdmin")).isEqualTo(true);
+        assertThat(model.getAttribute("isAdminRole")).isEqualTo(false);
+    }
+
     private Owner createClubAdmin(Long clubId) {
         String suffix = "LFPT0546-" + UUID.randomUUID();
         return ownerRepository.save(Owner.builder()
@@ -177,13 +240,17 @@ class AdminPanelClubStatsTest {
     }
 
     private Owner createSuperAdmin() {
-        String suffix = "LFPT0546-" + UUID.randomUUID();
+        return createOwnerWithRole(OwnerRole.SUPER_ADMIN);
+    }
+
+    private Owner createOwnerWithRole(OwnerRole role) {
+        String suffix = "LFPT0566-" + UUID.randomUUID();
         return ownerRepository.save(Owner.builder()
                 .email(suffix + "@example.com")
                 .password("irrelevant-hash")
                 .firstName("Test")
-                .lastName("SuperAdmin")
-                .role(OwnerRole.SUPER_ADMIN)
+                .lastName(role.name())
+                .role(role)
                 .isActive(true)
                 .build());
     }
