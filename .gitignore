@@ -48,7 +48,10 @@ application-*.yml
 .claude/scheduled_tasks.lock
 
 qodana.yaml
-docs/
+# docs/ публикуется (LFPT-0602) — контекст для автономного конвейера. Приватными остаются
+# детали защиты сервера и доступы (IP, SSH, идентификаторы роутины):
+docs/infrastructure-security.md
+docs/telegram-ai-pipeline.md
 
 src/main/java/com/padle/core/padelcoreservice/util/PasswordGenerator.java
 
