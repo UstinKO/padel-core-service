@@ -1,7 +1,7 @@
 # LFPT-0607: Fix доверенные IP rate limit — только из конфигурации окружения, без значений по умолчанию в коде
 
 ## Статус
-approved
+done
 
 ## Источник
 [Issue #607](https://github.com/UstinKO/padel-core-service/issues/607), найдено при аудите документации (#602).
