@@ -1,0 +1,151 @@
+name: Pipeline Merge
+
+# Оркестратор автомержа PR конвейера (LFPT-0579, docs/pipeline-autonomy.md §4.4).
+# Вливает по одному PR с метками pipeline + pipeline:ready: зелёный PR Check, выполнен Depends-On,
+# повторный build на свежем master → squash-мерж → workflow_dispatch deploy.yml.
+# Мерж и деплой строго последовательны: пока идёт деплой, ничего не вливается.
+# Стоп-кран: открытый issue с меткой pipeline:halt.
+
+on:
+  workflow_run:
+    workflows: ["PR Check", "Deploy to Production"]
+    types: [completed]
+  pull_request:
+    types: [labeled]
+  schedule:
+    - cron: '7,22,37,52 * * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Только показать решение, ничего не менять
+        type: boolean
+        default: false
+
+concurrency:
+  group: pipeline-merge
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  # Деплой PR конвейера упал → PR помечается, автомерж останавливается до решения человека.
+  deploy-result:
+    if: >-
+      github.event_name == 'workflow_run'
+      && github.event.workflow_run.name == 'Deploy to Production'
+      && github.event.workflow_run.conclusion == 'failure'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Mark failed deploy and halt
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TITLE: ${{ github.event.workflow_run.display_title }}
+          DEPLOY_URL: ${{ github.event.workflow_run.html_url }}
+        run: |
+          set -euo pipefail
+          pr=$(sed -nE 's/^Deploy PR #([0-9]+)$/\1/p' <<<"$TITLE")
+          if [ -z "$pr" ]; then
+            echo "Упал деплой не от оркестратора («$TITLE») — автомерж не трогаю."
+            exit 0
+          fi
+          gh pr edit "$pr" --add-label pipeline:deploy-failed
+          gh pr comment "$pr" --body "🤖 pipeline-merge: деплой после мержа упал — ${DEPLOY_URL}. Проверь шаг «Deploy to server» (был ли откат) и состояние прода. Автомерж остановлен."
+          if [ -z "$(gh issue list --state open --label pipeline:halt --json number --jq '.[].number')" ]; then
+            gh issue create --label pipeline:halt \
+              --title "Автомерж остановлен: упал деплой PR #${pr}" \
+              --body "$(printf 'Деплой PR #%s упал: %s\n\nПока этот issue открыт, оркестратор `pipeline-merge.yml` ничего не вливает. Разберись с продом и PR, затем закрой issue — автомерж продолжится.' "$pr" "$DEPLOY_URL")"
+          fi
+
+  select:
+    needs: deploy-result
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: read
+      actions: read
+      checks: read
+    outputs:
+      pr: ${{ steps.pick.outputs.pr }}
+      title: ${{ steps.pick.outputs.title }}
+      head_sha: ${{ steps.pick.outputs.head_sha }}
+      base_sha: ${{ steps.pick.outputs.base_sha }}
+      deploy: ${{ steps.pick.outputs.deploy }}
+      dry: ${{ steps.pick.outputs.dry }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          sparse-checkout: .github/bin
+
+      - name: Pick PR to merge
+        id: pick
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DRY_RUN: ${{ inputs.dry_run == true }}
+          GITHUB_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          echo "dry=${DRY_RUN}" >> "$GITHUB_OUTPUT"
+          .github/bin/pipeline-select.sh
+
+  # Тот же build, что в PR Check, но на актуальном refs/pull/N/merge: master мог уйти вперёд.
+  verify:
+    needs: select
+    if: needs.select.outputs.pr != '' && needs.select.outputs.dry != 'true'
+    uses: ./.github/workflows/pr-check.yml
+    with:
+      ref: refs/pull/${{ needs.select.outputs.pr }}/merge
+
+  merge:
+    needs: [select, verify]
+    if: ${{ !cancelled() && needs.select.outputs.pr != '' && needs.select.outputs.dry != 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    steps:
+      - name: Merge and deploy
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR: ${{ needs.select.outputs.pr }}
+          TITLE: ${{ needs.select.outputs.title }}
+          HEAD_SHA: ${{ needs.select.outputs.head_sha }}
+          BASE_SHA: ${{ needs.select.outputs.base_sha }}
+          DEPLOY: ${{ needs.select.outputs.deploy }}
+          VERIFY: ${{ needs.verify.result }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          next() { gh workflow run pipeline-merge.yml --ref master; }
+
+          if [ "$VERIFY" != "success" ]; then
+            gh pr edit "$PR" --add-label pipeline:conflict
+            gh pr comment "$PR" --body "🤖 pipeline-merge: build на свежем master (\`refs/pull/${PR}/merge\`) не прошёл — ${RUN_URL}. Автомерж для этого PR остановлен (метка \`pipeline:conflict\`)."
+            next
+            exit 0
+          fi
+
+          current=$(gh api "repos/${GH_REPO}/commits/master" --jq .sha)
+          if [ "$current" != "$BASE_SHA" ]; then
+            echo "master сдвинулся (${BASE_SHA::7} → ${current::7}) во время проверки — перепроверю на новом."
+            next
+            exit 0
+          fi
+
+          gh pr merge "$PR" --squash --match-head-commit "$HEAD_SHA" --subject "${TITLE} (#${PR})"
+
+          if [ "$DEPLOY" = "true" ]; then
+            gh workflow run deploy.yml --ref master -f pr="$PR"
+            gh pr comment "$PR" --body "🤖 pipeline-merge: влит автоматически, запущен деплой «Deploy PR #${PR}» — ${GITHUB_SERVER_URL}/${GH_REPO}/actions/workflows/deploy.yml"
+          else
+            gh pr comment "$PR" --body "🤖 pipeline-merge: влит автоматически, деплой не нужен (только specs/.claude/docs)."
+            next
+          fi

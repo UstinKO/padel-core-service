@@ -1,4 +1,8 @@
 name: Deploy to Production
+# При запуске оркестратором автомержа (pipeline-merge.yml, LFPT-0579) в имени прогона — номер PR:
+# по нему оркестратор и движок задач находят деплой конкретного PR. Пустое значение (push)
+# оставляет имя по умолчанию — первую строку сообщения коммита.
+run-name: "${{ inputs.pr && format('Deploy PR #{0}', inputs.pr) || '' }}"
 
 on:
   push:
@@ -8,6 +12,18 @@ on:
       - 'specs/**'
       - '.claude/**'
       - 'docs/**'
+  # Мерж от GITHUB_TOKEN не порождает push-прогон, поэтому оркестратор запускает деплой явно.
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Номер влитого PR, который деплоится
+        required: false
+        type: string
+
+# Деплои строго по одному: следующий ждёт завершения текущего, не отменяя его.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -271,10 +287,10 @@ jobs:
       - name: Archive specs of deployed task
         env:
           GH_TOKEN: ${{ github.token }}
-          COMMIT_MSG: ${{ github.event.head_commit.message }}
         run: |
           set -euo pipefail
-          subject=$(head -n1 <<<"$COMMIT_MSG")
+          # Заголовок задеплоенного коммита — через API: у workflow_dispatch нет head_commit.
+          subject=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}" --jq '.commit.message' | head -n1)
           short_sha="${GITHUB_SHA::7}"
           run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
 
