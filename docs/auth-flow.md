@@ -536,7 +536,7 @@ HTTP `429 Too Many Requests` + `Retry-After: 60`:
 | `/players/registro`, `/api/auth/**` | Публичный |
 | `/recuperar-password/**`, `/double-registration/complete` | Публичный |
 | `/waitlist/confirm`, `/oauth2/**` | Публичный |
-| `/ws/**`, `/actuator/**`, `/swagger-ui/**` | Публичный |
+| `/ws/**`, `/actuator/health/**`, `/actuator/prometheus`, `/swagger-ui/**` | Публичный (prometheus снаружи закрыт Nginx, LFPT-0604) |
 | `/css/**`, `/js/**`, `/images/**` | Публичный |
 | `GET /api/king-of-court/tournaments/*/state` | Публичный |
 | `GET /api/king-of-court/tournaments/*/ranking` | Публичный |
