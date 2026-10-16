@@ -1,7 +1,7 @@
 # LFPT-0566: Feature главная админ-панель — флаг isClubAdmin в модели для клубной учётной записи (бэкенд)
 
 ## Статус
-approved
+done
 
 ## Источник
 GitHub issue [#566](https://github.com/UstinKO/padel-core-service/issues/566) — техническая постановка от архитектора (прямой вход, `specs/requests/` не нужен). Telegram-сообщение (для reply): 5114.
