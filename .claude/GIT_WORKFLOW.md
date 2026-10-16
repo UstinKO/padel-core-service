@@ -154,7 +154,7 @@ Team Americano и Team Playoff — один `TournamentType.AMERICANO_TEAMS`, н
 
 ### Уведомления
 
-Architect сообщает о готовом PR прямо в чате (терминальный режим) или итоговым сообщением в Telegram-тему (режим Telegram, через `sendMessage` с секретами окружения роутины). Использован отдельный бот/токен для конвейера — не путать с игровым Telegram-ботом для игроков (`TelegramService`/`TelegramBotPoller` в `CLAUDE.md`) — разные назначения, разные креды.
+Architect сообщает о готовом PR прямо в чате (терминальный режим). В режиме Telegram роутина в чат не пишет (LFPT-0582): карточку задачи, вопросы, сбои и итог «реализована и влита на прод» ведёт движок задач relay (`scripts/telegram-relay/engine.py`) по следам в GitHub. Использован отдельный бот/токен для конвейера — не путать с игровым Telegram-ботом для игроков (`TelegramService`/`TelegramBotPoller` в `CLAUDE.md`) — разные назначения, разные креды.
 
 ---
 
