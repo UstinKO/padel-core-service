@@ -3,14 +3,20 @@
 #
 # Окружение: GITHUB_REPOSITORY, GH_TOKEN; DRY_RUN=true — ничего не менять (только печать);
 #            GITHUB_RUN_URL — ссылка на текущий прогон для комментариев.
-# Вывод в $GITHUB_OUTPUT (или в stdout вне Actions): pr, title, head_sha, base_sha, deploy.
+# Вывод в $GITHUB_OUTPUT (или в stdout вне Actions): pr, title, head_sha, base_sha, deploy, verify_ref.
 # Пустой pr — вливать нечего.
+# Запускать из полного клона репозитория (нужен для перестройки стека, LFPT-0590).
 #
 # Кандидат — открытый не-draft PR в master с метками pipeline + pipeline:ready,
 # без pipeline:conflict / pipeline:deploy-failed, от старых к новым, у которого:
 #   - успешный check "build" (PR Check) на текущем head-коммите;
 #   - "Depends-On: #M" в описании выполнен: #M влит и (если он менял код) его деплой успешен;
 #   - нет конфликта с master (конфликт → метка pipeline:conflict + комментарий, идём дальше).
+# Перестройка стека (LFPT-0590): фронт-ветка создаётся от бэк-ветки, бэк вливается squash-ом —
+# исходные бэк-коммиты во фронт-ветке дублируют squash-коммит в master и конфликтуют, если фронт
+# правит те же строки. Если #M из Depends-On влит, а его последний коммит ещё в истории PR —
+# переносим на master только фронтовые коммиты: git rebase --onto origin/master <head #M>.
+# Ветку, перестроенную оркестратором (push от GITHUB_TOKEN не запускает PR Check), проверяет verify.
 # Глобально: открытый issue pipeline:halt или незавершённый деплой — ничего не выбираем.
 set -euo pipefail
 
@@ -44,6 +50,27 @@ deploy_succeeded() {
       | sort_by(.createdAt) | last
       | if . == null then "none" elif .status != "completed" then "running" else .conclusion end')
   [ "$conclusion" = "success" ]
+}
+
+BOT_COMMITTER="github-actions[bot]"
+
+# Перестроить ветку PR на свежий master, выбросив коммиты влитого #M. Печатает новый head.
+# В отдельном worktree: переключение веток в текущей папке подменило бы и этот выполняемый скрипт.
+restack() {
+  local pr="$1" branch="$2" head="$3" dep_head="$4" wt rc=0
+  git fetch -q origin master "+refs/heads/${branch}:refs/remotes/origin/${branch}"
+  wt=$(mktemp -d)
+  git worktree add -q --detach "$wt" "$head" >&2
+  if git -C "$wt" -c user.name="$BOT_COMMITTER" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+      rebase -q --onto origin/master "$dep_head" >&2; then
+    git -C "$wt" push -q --force-with-lease="${branch}:${head}" origin "HEAD:refs/heads/${branch}" >&2
+    git -C "$wt" rev-parse HEAD
+  else
+    git -C "$wt" rebase --abort >&2 || true
+    rc=1
+  fi
+  git worktree remove --force "$wt" >&2
+  return "$rc"
 }
 
 mark_conflict() {
@@ -82,21 +109,26 @@ if [ -z "$candidates" ]; then
 fi
 
 for pr in $candidates; do
-  info=$(gh pr view "$pr" -R "$R" --json title,body,headRefOid,mergeable)
+  info=$(gh pr view "$pr" -R "$R" --json title,body,headRefOid,headRefName,mergeable)
   title=$(jq -r .title <<<"$info")
   head=$(jq -r .headRefOid <<<"$info")
+  branch=$(jq -r .headRefName <<<"$info")
   mergeable=$(jq -r .mergeable <<<"$info")
 
-  build=$(gh api "repos/$R/commits/$head/check-runs?per_page=100" |
-    jq -r '[ .check_runs[] | select(.name == "build") ] | sort_by(.started_at) | last | .conclusion // "pending"')
-  if [ "$build" != "success" ]; then
-    echo "  #$pr: PR Check (build) на $head — ${build}, ждём."
-    continue
+  # Ветку, перестроенную оркестратором, PR Check не проверял — её проверит verify.
+  committer=$(gh api "repos/$R/commits/$head" --jq '.commit.committer.name')
+  if [ "$committer" != "$BOT_COMMITTER" ]; then
+    build=$(gh api "repos/$R/commits/$head/check-runs?per_page=100" |
+      jq -r '[ .check_runs[] | select(.name == "build") ] | sort_by(.started_at) | last | .conclusion // "pending"')
+    if [ "$build" != "success" ]; then
+      echo "  #$pr: PR Check (build) на $head — ${build}, ждём."
+      continue
+    fi
   fi
 
   dep=$(jq -r '.body // ""' <<<"$info" | sed -nE 's/^[[:space:]]*Depends-On:[[:space:]]*#([0-9]+).*/\1/p' | head -n1)
   if [ -n "$dep" ]; then
-    dep_info=$(gh pr view "$dep" -R "$R" --json state,mergeCommit)
+    dep_info=$(gh pr view "$dep" -R "$R" --json state,mergeCommit,headRefOid)
     dep_state=$(jq -r .state <<<"$dep_info")
     if [ "$dep_state" != "MERGED" ]; then
       echo "  #$pr: ждёт #$dep (состояние $dep_state)."
@@ -109,11 +141,34 @@ for pr in $candidates; do
     fi
   fi
 
-  case "$mergeable" in
-    MERGEABLE) ;;
-    CONFLICTING) mark_conflict "$pr" "конфликт с master"; continue ;;
-    *) echo "  #$pr: GitHub ещё считает mergeable ($mergeable) — следующий прогон."; continue ;;
-  esac
+  verify_ref="refs/pull/${pr}/merge"
+  restacked=false
+  if [ -n "$dep" ]; then
+    dep_head=$(jq -r .headRefOid <<<"$dep_info")
+    git fetch -q origin "+refs/heads/${branch}:refs/remotes/origin/${branch}"
+    if git cat-file -e "${dep_head}^{commit}" 2>/dev/null && git merge-base --is-ancestor "$dep_head" "$head"; then
+      if [ "$DRY" = "true" ]; then
+        echo "  #$pr: перестроил бы ветку ${branch} на master без коммитов #$dep (dry run)."
+      elif new_head=$(restack "$pr" "$branch" "$head" "$dep_head"); then
+        echo "  #$pr: ветка ${branch} перестроена на master без коммитов #$dep: ${head::7} → ${new_head::7}."
+        gh pr comment "$pr" -R "$R" --body "🤖 pipeline-merge: #$dep влит — ветка перестроена на master без его коммитов (\`${head::7}\` → \`${new_head::7}\`), дальше проверка на свежем master и мерж. ${RUN_URL}" >/dev/null
+        head="$new_head"
+        verify_ref="$new_head"
+        restacked=true
+      else
+        mark_conflict "$pr" "не удалось перенести коммиты PR на master после мержа #$dep (git rebase --onto: конфликт)"
+        continue
+      fi
+    fi
+  fi
+
+  if [ "$restacked" = "false" ]; then
+    case "$mergeable" in
+      MERGEABLE) ;;
+      CONFLICTING) mark_conflict "$pr" "конфликт с master"; continue ;;
+      *) echo "  #$pr: GitHub ещё считает mergeable ($mergeable) — следующий прогон."; continue ;;
+    esac
+  fi
 
   deploy=false
   needs_deploy "$pr" && deploy=true
@@ -125,6 +180,7 @@ for pr in $candidates; do
   out "head_sha=$head"
   out "base_sha=$base"
   out "deploy=$deploy"
+  out "verify_ref=$verify_ref"
   exit 0
 done
 
