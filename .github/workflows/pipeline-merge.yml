@@ -81,7 +81,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: master
           sparse-checkout: .github/bin
 
       - name: Pick PR to merge
