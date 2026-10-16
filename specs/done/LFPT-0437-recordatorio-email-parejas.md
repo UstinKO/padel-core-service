@@ -4,7 +4,7 @@
 done (PR #439, деплой подтверждён)
 
 ## Источник
-Клиентский запрос: [specs/requests/LFPT-0437-recordatorio-email-parejas.md](../requests/LFPT-0437-recordatorio-email-parejas.md). Issue: [#437](https://github.com/UstinKO/padel-core-service/issues/437).
+Клиентский запрос: [specs/requests/LFPT-0437-recordatorio-email-parejas.md](requests/LFPT-0437-recordatorio-email-parejas.md). Issue: [#437](https://github.com/UstinKO/padel-core-service/issues/437).
 
 Telegram-сообщение (для reply): 4666
 

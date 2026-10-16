@@ -1,7 +1,7 @@
 # LFPT-0428: Fix страница входа — сообщение о просроченной ссылке сброса пароля
 
 ## Статус
-approved
+done
 
 ## Источник
 Issue [#428](https://github.com/UstinKO/padel-core-service/issues/428) (прямой технический вход, задача от архитектора/пользователя). Зависит от backend-редиректа из [#425](https://github.com/UstinKO/padel-core-service/issues/425), который закрыт PR [#500](https://github.com/UstinKO/padel-core-service/pull/500) (LFPT-0499) — `GET /recuperar-password?token=...` с невалидным/просроченным/использованным токеном уже редиректит на `/login?error=reset_expired`.

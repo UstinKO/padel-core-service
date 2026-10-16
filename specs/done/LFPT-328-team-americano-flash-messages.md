@@ -1,7 +1,7 @@
 # LFPT-328: Flash-сообщения не рендерятся на странице admin Team Americano
 
 ## Статус
-done — [PR #333](https://github.com/UstinKO/padel-core-service/pull/333) смержен (2026-08-20T15:53:13Z), деплой подтверждён успешным ([run 32388797934](https://github.com/UstinKO/padel-core-service/actions/runs/32388797934), commit `8835593`, conclusion=success). Первая фича, целиком прошедшая через Telegram-конвейер (см. [telegram-remote-pipeline.md](telegram-remote-pipeline.md), Этап 4) — от сообщения в теме "AI Разработка" до PR, без единого захода в терминал.
+done — [PR #333](https://github.com/UstinKO/padel-core-service/pull/333) смержен (2026-08-20T15:53:13Z), деплой подтверждён успешным ([run 32388797934](https://github.com/UstinKO/padel-core-service/actions/runs/32388797934), commit `8835593`, conclusion=success). Первая фича, целиком прошедшая через Telegram-конвейер (см. [telegram-remote-pipeline.md](../features/telegram-remote-pipeline.md), Этап 4) — от сообщения в теме "AI Разработка" до PR, без единого захода в терминал.
 
 ## Источник
 [GitHub issue #328](https://github.com/UstinKO/padel-core-service/issues/328) — прямая техническая постановка от архитектора/пользователя, без промежуточного клиентского запроса. Находка тестировщика при верификации [PR #327](https://github.com/UstinKO/padel-core-service/pull/327) (LFPT-317), явно вынесенная там в раздел "Вне скоупа".

@@ -1,10 +1,10 @@
 # LFPT-0561: Feature поиск и создание игрока в форме «Agregar equipo» Team Playoff — без ID, видимость в оплатах (backend)
 
 ## Статус
-approved
+done
 
 ## Источник
-Клиентский запрос [specs/requests/LFPT-0561-manual-team-add-search.md](../requests/LFPT-0561-manual-team-add-search.md) (Telegram, пересланное сообщение от Evgeny_754, `telegram_launch_message_id: 5060`). GitHub issue [#561](https://github.com/UstinKO/padel-core-service/issues/561).
+Клиентский запрос [specs/requests/LFPT-0561-manual-team-add-search.md](requests/LFPT-0561-manual-team-add-search.md) (Telegram, пересланное сообщение от Evgeny_754, `telegram_launch_message_id: 5060`). GitHub issue [#561](https://github.com/UstinKO/padel-core-service/issues/561).
 
 Разбито на бэкенд/фронтенд (`GIT_WORKFLOW.md §1.4`) — эта спека покрывает бэкенд. Зависимая фронтенд-задача — [#562](https://github.com/UstinKO/padel-core-service/issues/562) (поиск в UI формы «Agregar equipo»), спека [LFPT-0562-manual-team-add-search-frontend.md](LFPT-0562-manual-team-add-search-frontend.md).
 

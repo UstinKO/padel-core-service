@@ -4,7 +4,7 @@
 done — три раунда, финальный успешен. [PR #327](https://github.com/UstinKO/padel-core-service/pull/327) смержен и задеплоен (после ручного `gh run rerun` из-за несвязанного ложного health-check, см. итог). Механика конвейера "spec → код → живое QA → PR" полностью инлайн в облачной роутине — доказанно рабочая.
 
 ## Источник
-Часть плана [telegram-remote-pipeline.md](telegram-remote-pipeline.md) — проверка связки Analyst→Developer→Tester→PR в одной облачной сессии `claude.ai/code/routines`, прежде чем строить Telegram-мост (Этап 2). Без Telegram — запуск вручную через "Run now", как и в Этапе 0.
+Часть плана [telegram-remote-pipeline.md](../features/telegram-remote-pipeline.md) — проверка связки Analyst→Developer→Tester→PR в одной облачной сессии `claude.ai/code/routines`, прежде чем строить Telegram-мост (Этап 2). Без Telegram — запуск вручную через "Run now", как и в Этапе 0.
 
 Фича-цель прогона: issue [#317](https://github.com/UstinKO/padel-core-service/issues/317) — flash-сообщения `error`/`info` не рендерятся на страницах Americano (найдено тестировщиком при верификации PR #315, вынесено в отдельный тикет, ещё не реализовано).
 

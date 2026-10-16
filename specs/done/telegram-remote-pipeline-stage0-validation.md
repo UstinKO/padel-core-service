@@ -4,7 +4,7 @@
 done — смержено и задеплоено, [PR #325](https://github.com/UstinKO/padel-core-service/pull/325), деплой подтверждён успешным. Среда пригодна для Developer/Tester, с тремя обязательными поправками к плану (см. "Итог" в конце файла).
 
 ## Источник
-Часть плана [telegram-remote-pipeline.md](telegram-remote-pipeline.md), Этап 0 (блокирующий). Issue: https://github.com/UstinKO/padel-core-service/issues/323
+Часть плана [telegram-remote-pipeline.md](../features/telegram-remote-pipeline.md), Этап 0 (блокирующий). Issue: https://github.com/UstinKO/padel-core-service/issues/323
 
 Это не обычная фиче-спека (нет кода, нет критериев приёмки в привычном виде) — рабочий документ для конкретного разового прогона-валидации. После получения результата — либо переходим к Этапу 1 (см. родительский план), либо фиксируем, что облачная среда не годится, и рассматриваем план Б (self-hosted вместо Anthropic-managed routine).
 

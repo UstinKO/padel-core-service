@@ -1,10 +1,10 @@
 # LFPT-0492: Feature переключатель видимости турнира в админке и копирование ссылки (frontend)
 
 ## Статус
-approved
+done
 
 ## Источник
-Прямой технический вход — GitHub issue [#492](https://github.com/UstinKO/padel-core-service/issues/492) (отправитель: architect). Зависит от бэкенд-задачи [#491](https://github.com/UstinKO/padel-core-service/issues/491), уже смерженной в `master` (PR [#493](https://github.com/UstinKO/padel-core-service/pull/493), спека [specs/features/LFPT-0491-closed-events-link-only-backend.md](LFPT-0491-closed-events-link-only-backend.md)). Клиентский запрос, из которого выросли обе задачи: [specs/requests/LFPT-0491-closed-events-link-only.md](../requests/LFPT-0491-closed-events-link-only.md).
+Прямой технический вход — GitHub issue [#492](https://github.com/UstinKO/padel-core-service/issues/492) (отправитель: architect). Зависит от бэкенд-задачи [#491](https://github.com/UstinKO/padel-core-service/issues/491), уже смерженной в `master` (PR [#493](https://github.com/UstinKO/padel-core-service/pull/493), спека [specs/features/LFPT-0491-closed-events-link-only-backend.md](LFPT-0491-closed-events-link-only-backend.md)). Клиентский запрос, из которого выросли обе задачи: [specs/requests/LFPT-0491-closed-events-link-only.md](requests/LFPT-0491-closed-events-link-only.md).
 
 ## Контекст / зачем
 Бэкенд (#491) уже добавил турниру поле видимости `visibilidad` (`TournamentVisibility`: `PUBLICO` / `SOLO_POR_ENLACE`) и исключил турниры «только по ссылке» из всех публичных списков. Но в админ-панели нет способа задать этот режим при создании/редактировании турнира, нет индикации текущего режима на странице деталей — без этой задачи бэкендовая фича физически недостижима через UI.

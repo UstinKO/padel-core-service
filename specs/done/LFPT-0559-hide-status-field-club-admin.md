@@ -1,7 +1,7 @@
 # LFPT-0559: Feature форма создания турнира — скрыть выбор статуса для клубного аккаунта (фронтенд)
 
 ## Статус
-approved
+done
 
 ## Источник
 Issue [#559](https://github.com/UstinKO/padel-core-service/issues/559) (прямой технический вход от архитектора, `specs/requests/` не требуется). Зависимая frontend-задача к [#558](https://github.com/UstinKO/padel-core-service/issues/558) (бэкенд, PR [#560](https://github.com/UstinKO/padel-core-service/pull/560), смержен и задеплоен — прогон `Deploy to Production` #302, `conclusion: success`, 2026-10-14T17:23Z).

@@ -4,7 +4,7 @@
 done (PR #446)
 
 ## Источник
-GitHub issue [#443](https://github.com/UstinKO/padel-core-service/issues/443), написанный напрямую по клиентскому запросу — исходный запрос сохранён в [specs/requests/LFPT-0443-individual-reminder-late-arrival.md](../requests/LFPT-0443-individual-reminder-late-arrival.md) (пришёл в Telegram, `[отправитель: customer]`).
+GitHub issue [#443](https://github.com/UstinKO/padel-core-service/issues/443), написанный напрямую по клиентскому запросу — исходный запрос сохранён в [specs/requests/LFPT-0443-individual-reminder-late-arrival.md](requests/LFPT-0443-individual-reminder-late-arrival.md) (пришёл в Telegram, `[отправитель: customer]`).
 
 Telegram-сообщение (для reply): 4687
 

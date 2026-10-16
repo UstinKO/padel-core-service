@@ -1,10 +1,10 @@
 # LFPT-0491: Feature закрытые мероприятия — поле видимости турнира и исключение из публичных списков (backend)
 
 ## Статус
-approved
+done
 
 ## Источник
-Клиентский запрос [specs/requests/LFPT-0491-closed-events-link-only.md](../requests/LFPT-0491-closed-events-link-only.md) (Telegram, пересланное сообщение от Evgeny_754, `telegram_launch_message_id: 4850`). GitHub issue [#491](https://github.com/UstinKO/padel-core-service/issues/491).
+Клиентский запрос [specs/requests/LFPT-0491-closed-events-link-only.md](requests/LFPT-0491-closed-events-link-only.md) (Telegram, пересланное сообщение от Evgeny_754, `telegram_launch_message_id: 4850`). GitHub issue [#491](https://github.com/UstinKO/padel-core-service/issues/491).
 
 Разбито на бэкенд/фронтенд (`GIT_WORKFLOW.md` §1.4) — эта спека покрывает бэкенд. Зависимая фронтенд-задача — [#492](https://github.com/UstinKO/padel-core-service/issues/492) (переключатель в админке, копирование ссылки).
 

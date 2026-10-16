@@ -1,10 +1,10 @@
 # LFPT-0558: Feature создание турнира клубным аккаунтом — статус автоматически «Регистрация открыта» (бэкенд)
 
 ## Статус
-approved
+done
 
 ## Источник
-Клиентский запрос [specs/requests/LFPT-0558-club-tournament-default-status.md](../requests/LFPT-0558-club-tournament-default-status.md), issue [#558](https://github.com/UstinKO/padel-core-service/issues/558).
+Клиентский запрос [specs/requests/LFPT-0558-club-tournament-default-status.md](requests/LFPT-0558-club-tournament-default-status.md), issue [#558](https://github.com/UstinKO/padel-core-service/issues/558).
 
 Telegram-сообщение (для reply): 5055
 

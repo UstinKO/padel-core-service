@@ -6,7 +6,7 @@ done
 Смержено: [PR #500](https://github.com/UstinKO/padel-core-service/pull/500) (closes #425, #499). Задеплоено успешно — [Deploy to Production #283](https://github.com/UstinKO/padel-core-service/actions/runs/37843219745) (commit `ac94ec4`).
 
 ## Источник
-Клиентский запрос [specs/requests/LFPT-0499-password-reset-flow.md](../requests/LFPT-0499-password-reset-flow.md) (Telegram, customer, telegram_launch_message_id: 4910) → issue [#499](https://github.com/UstinKO/padel-core-service/issues/499).
+Клиентский запрос [specs/requests/LFPT-0499-password-reset-flow.md](requests/LFPT-0499-password-reset-flow.md) (Telegram, customer, telegram_launch_message_id: 4910) → issue [#499](https://github.com/UstinKO/padel-core-service/issues/499).
 
 Telegram-сообщение (для reply): 4910
 

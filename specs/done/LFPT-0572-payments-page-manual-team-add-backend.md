@@ -1,10 +1,10 @@
 # LFPT-0572: Feature добавление пары в Team Playoff со страницы оплат — редирект обратно на оплаты (backend)
 
 ## Статус
-approved
+done
 
 ## Источник
-Клиентский запрос [specs/requests/LFPT-0572-payments-page-manual-team-add.md](../requests/LFPT-0572-payments-page-manual-team-add.md) (Telegram, пересланное сообщение от Evgeny_754, `telegram_launch_message_id: 5097`). GitHub issue [#572](https://github.com/UstinKO/padel-core-service/issues/572).
+Клиентский запрос [specs/requests/LFPT-0572-payments-page-manual-team-add.md](requests/LFPT-0572-payments-page-manual-team-add.md) (Telegram, пересланное сообщение от Evgeny_754, `telegram_launch_message_id: 5097`). GitHub issue [#572](https://github.com/UstinKO/padel-core-service/issues/572).
 
 Разбито на бэкенд/фронтенд (`GIT_WORKFLOW.md §1.4`) — эта спека покрывает бэкенд. Зависимая фронтенд-задача — [#573](https://github.com/UstinKO/padel-core-service/issues/573), спека [LFPT-0573-payments-page-manual-team-add-frontend.md](LFPT-0573-payments-page-manual-team-add-frontend.md).
 
