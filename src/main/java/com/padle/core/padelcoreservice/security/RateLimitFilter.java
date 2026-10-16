@@ -63,7 +63,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
     // Тот же список, что в nginx geo $ratelimit_key и CrowdSec whitelist (см. SECURITY.md) —
     // вынесен в конфигурацию, чтобы не держать его как отдельную константу, которую легко
     // забыть синхронизировать при добавлении нового доверенного IP.
-    @Value("${app.security.whitelisted-ips:194.124.210.113,152.171.139.176,167.235.34.217}")
+    @Value("${app.security.whitelisted-ips:}")
     private String whitelistedIpsProperty;
 
     private Set<String> whitelistedIps;
