@@ -10,7 +10,12 @@ on:
   workflow_run:
     workflows: ["PR Check", "Deploy to Production"]
     types: [completed]
-  pull_request:
+  # pull_request_target, а не pull_request: всегда версия оркестратора из master. С pull_request
+  # GitHub берёт workflow из коммитов PR — ветка, созданная до появления оркестратора, его не
+  # запускала (#584), а PR, меняющий этот файл, запускал бы свою непроверенную версию (LFPT-0590).
+  # Код PR здесь не исполняется с правами на запись: select берёт скрипт из master, verify —
+  # сборка без секретов и с правами только на чтение.
+  pull_request_target:
     types: [labeled]
   schedule:
     - cron: '7,22,37,52 * * * *'
@@ -66,7 +71,7 @@ jobs:
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write       # перестройка стека: push в ветку PR (LFPT-0590)
       pull-requests: write
       issues: read
       actions: read
@@ -77,11 +82,14 @@ jobs:
       head_sha: ${{ steps.pick.outputs.head_sha }}
       base_sha: ${{ steps.pick.outputs.base_sha }}
       deploy: ${{ steps.pick.outputs.deploy }}
+      verify_ref: ${{ steps.pick.outputs.verify_ref }}
       dry: ${{ steps.pick.outputs.dry }}
     steps:
+      # Полный клон из master: скрипт выбора всегда из master, история нужна для перестройки стека.
       - uses: actions/checkout@v4
         with:
-          sparse-checkout: .github/bin
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
 
       - name: Pick PR to merge
         id: pick
@@ -93,14 +101,15 @@ jobs:
           echo "dry=${DRY_RUN}" >> "$GITHUB_OUTPUT"
           .github/bin/pipeline-select.sh
 
-  # Тот же build, что в PR Check, но на актуальном refs/pull/N/merge: master мог уйти вперёд.
+  # Тот же build, что в PR Check, но на актуальном master: он мог уйти вперёд.
   verify:
     needs: select
     # Явный !cancelled(): без него verify пропускается вслед за пропущенным deploy-result (предок select).
     if: ${{ !cancelled() && needs.select.result == 'success' && needs.select.outputs.pr != '' && needs.select.outputs.dry != 'true' }}
     uses: ./.github/workflows/pr-check.yml
     with:
-      ref: refs/pull/${{ needs.select.outputs.pr }}/merge
+      # refs/pull/N/merge или, после перестройки стека, новый head ветки (он уже на свежем master).
+      ref: ${{ needs.select.outputs.verify_ref }}
 
   merge:
     needs: [select, verify]
