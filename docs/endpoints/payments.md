@@ -34,36 +34,37 @@
 
 ### Алгоритм
 
-1. Принимает `PaymentFormWrapper` (список параллельных массивов из form inputs).
-2. Итерирует по `registrationIds` — восстанавливает `PaymentManagementViewDto` из разрозненных массивов по индексу.
-3. Определяет `attended` и `participationConfirmed` по наличию `registrationId` в соответствующих списках (чекбоксы в HTML-форме).
-4. Парсит сумму в `BigDecimal`, статусы и методы в enum.
+1. Проверяет доступ к турниру (`TournamentAccessService.assertCanManageTournament`).
+2. Принимает `PaymentUpdateForm` — список строк `payments[i].*` (`PaymentRowForm`, по объекту на строку таблицы).
+3. Парсит сумму в `BigDecimal`, id, статусы и методы в enum; ошибки парсинга логируются с номером строки.
 5. Передаёт в `PaymentService.savePaymentManagementData(tournamentId, updates, ownerId)`.
 
 ### Контракт (form params)
 
+Каждая строка — `payments[i].<поле>`:
+
 | Поле | Тип | Описание |
 |------|-----|----------|
-| `registrationIds` | `List<Long>` | ID регистраций (anchor для остальных полей) |
-| `paymentIds` | `List<String>` | ID существующих платежей (null если нового) |
-| `hasPayments` | `List<String>` | `"true"/"false"` — есть ли платёж |
-| `partnerRows` | `List<String>` | `"true"/"false"` — строка партнёра в парном турнире |
-| `attended` | `List<Long>` | ID регистраций отметивших посещение (чекбоксы) |
-| `participationConfirmed` | `List<Long>` | ID регистраций с подтверждённым участием |
-| `amounts` | `List<String>` | Суммы платежей |
-| `currencies` | `List<String>` | Валюты (ARS, etc.) |
-| `paymentStatuses` | `List<String>` | `PaymentStatus` enum-строки |
-| `paymentMethods` | `List<String>` | `PaymentMethod` enum-строки |
-| `transactionIds` | `List<String>` | Номера транзакций |
-| `notes` | `List<String>` | Заметки |
+| `registrationId` | Long | ID регистрации |
+| `paymentId` | String | ID существующего платежа (пусто — новый) |
+| `hasPayment` | boolean | Есть ли платёж |
+| `partnerRow` | boolean | Строка партнёра в парном турнире |
+| `attended` | boolean | Посетил |
+| `participationConfirmed` | boolean | Участие подтверждено |
+| `amount` | String | Сумма |
+| `currency` | String | Валюта (ARS, …) |
+| `paymentStatus` | String | `PaymentStatus` |
+| `paymentMethod` | String | `PaymentMethod` |
+| `transactionId` | String | Номер транзакции |
+| `notes` | String | Заметки |
 
 **Ответ**: редирект на `/admin/tournaments/{tournamentId}/payments` с flash `successMessage` или `errorMessage`.
 
 ### Замечания (ревью)
 
-> **[DESIGN — сложность]** Форма использует паттерн параллельных массивов — хрупкий и трудно поддерживаемый способ передачи данных. При добавлении нового поля нужно синхронизировать индексы во всей форме и контроллере. Лучше использовать `List<PaymentUpdateDto>` с вложенными объектами (Spring умеет их биндить в Thymeleaf через `th:field`).
+> **[закрыто, сверено с кодом 2026-10-16]** Параллельные массивы заменены списком объектов `PaymentRowForm`.
 
-> **[BUG]** Если `paymentIds`, `paymentStatuses` и другие массивы имеют разную длину с `registrationIds` (возможно при ошибках формы), логика по индексу `i < formWrapper.getXxx().size()` тихо пропустит данные без ошибки.
+> **[закрыто, сверено с кодом 2026-10-16]** Рассинхронизации длин больше нет — каждая строка формы самодостаточна.
 
 > **[MINOR]** `NumberFormatException` при парсинге суммы логируется как warn и тихо игнорируется — платёж сохранится без суммы.
 
@@ -88,16 +89,4 @@
 
 ---
 
-## Эндпоинты из CLAUDE.md (существуют но не в PaymentManagementController)
-
-### GET `/payments/{registrationId}`
-
-По CLAUDE.md рендерит `admin/tournaments/payments.html`. По коду — этот путь не найден в `PaymentManagementController` (здесь пути `/admin/tournaments/{tournamentId}/payments`). Возможно, старый/устаревший маппинг.
-
-### POST `/payments/{registrationId}/checkout`
-
-Аналогично — не найден в исследованных контроллерах. Вероятно, отдельный контроллер оплаты или неработающий эндпоинт.
-
-### Замечания (ревью)
-
-> **[MINOR]** Несоответствие между документацией в CLAUDE.md и фактическими путями. Нужно найти или задокументировать `/payments/{registrationId}` контроллер.
+> Путей `/payments/{registrationId}` и `/payments/{registrationId}/checkout` в коде нет: платёжного шлюза нет, оплаты фиксирует администратор (сверено 2026-10-16).

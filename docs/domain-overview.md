@@ -150,7 +150,9 @@
 |-------|-----|-----|------|----------|
 | `GET` | `/admin/players` | HTML | ADMIN | Список всех игроков с фильтрацией. |
 | `GET` | `/admin/players/{id}` | HTML | ADMIN | Детальный профиль игрока: данные, регистрации, история. |
-| `POST` | `/admin/players/{id}/toggle-status` | Form → redirect | ADMIN | Активация / деактивация аккаунта игрока. |
+| `POST` | `/admin/players/{id}/nivel` | Form → redirect / JSON | SUPER_ADMIN | Задать уровень игрока (`Nivel`; «пусто» = `SIN_ESPECIFICAR`). Со списка игроков — fetch с `X-Requested-With` (автосейв без перезагрузки, LFPT-218). |
+| `POST` | `/admin/players/{id}/guest-credentials` | JSON | SUPER_ADMIN | Выдать/перевыпустить временный пароль гостевого аккаунта (issue #217). |
+| `POST` | `/admin/players/{id}/delete` | Form → redirect | SUPER_ADMIN | Удалить игрока. |
 
 #### Admin: экспорт
 
@@ -317,7 +319,7 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 
 | Метод | URL | Тип | Auth | Описание |
 |-------|-----|-----|------|----------|
-| `GET` | `/waitlist/confirm` | HTML | — | Подтверждение участия по ссылке из email (`?registrationId=...`). Переводит `WAITLIST_INVITED → CONFIRMED`. |
+| `GET` | `/waitlist/confirm` | HTML | — | Страница подтверждения по ссылке из email (`?token=...` — одноразовый `waitlist_confirmation_token`, issue #194). Переводит `WAITLIST_INVITED → CONFIRMED`. |
 
 #### Одиночная регистрация (ROLE_PLAYER)
 
@@ -332,10 +334,22 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 |-------|-----|-----|------|----------|
 | `POST` | `/api/tournaments/double/{tournamentId}/register` | JSON | PLAYER | Зарегистрировать пару. Принимает данные партнёра (зарегистрированного или нет). Отправляет партнёру email с приглашением. |
 | `POST` | `/api/tournaments/double/confirm` | JSON | — | Подтверждение партнёра по токену из email. |
-| `POST` | `/api/tournaments/double/complete` | JSON | PLAYER | Завершение парной регистрации (для зарегистрированных партнёров через форму). |
 | `GET` | `/double-registration/complete` | redirect | — | Точка входа для незарегистрированного партнёра из email-ссылки. Обрабатывает токен и редиректит на главную. |
 | `POST` | `/players/tournaments/{tournamentId}/cancel-double` | JSON | PLAYER | Отмена парной регистрации. Три варианта: `self` (только себя), `full` (всю пару), `replace` (заменить себя другим игроком). |
 | `GET` | `/players/tournaments/{tournamentId}/my-registration` | JSON | PLAYER | Получить детали текущей регистрации (partnerID, partnerName, isPartnerRegistered). |
+
+#### Соло-регистрация на парный турнир (ROLE_PLAYER)
+
+Статусы `SOLO_ADD_LATER` / `SOLO_SEARCH` / `SOLO_EXPIRED`; напоминания и автосведение — `SoloRegistrationSchedulerService`.
+
+| Метод | URL | Тип | Auth | Описание |
+|-------|-----|-----|------|----------|
+| `POST` | `/api/tournaments/double/{tournamentId}/register-solo` | JSON | PLAYER | Записаться без пары: «добавлю партнёра позже» (`SOLO_ADD_LATER`) или «ищу пару» (`SOLO_SEARCH`, с согласием показать контакты). |
+| `POST` | `/api/tournaments/double/{tournamentId}/add-partner` | JSON | PLAYER | Добавить партнёра к своей соло-регистрации. |
+| `GET` | `/api/tournaments/double/{tournamentId}/looking-for-partner` | JSON | — | Игроки турнира, ищущие пару. |
+| `POST` | `/api/tournaments/double/{tournamentId}/propose-pair/{targetRegistrationId}` | JSON | PLAYER | Предложить другому игроку без пары объединиться — письмо `pair-proposal`. |
+| `GET` | `/double-registration/accept-pair` | HTML | — | Страница из письма-предложения (`?token=...`), шаблон `accept-pair.html`. |
+| `POST` | `/api/tournaments/double/accept-pair` | JSON | — | Принять предложение пары по токену. |
 
 #### Admin: управление регистрациями
 
@@ -343,12 +357,14 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 |-------|-----|-----|------|----------|
 | `POST` | `/admin/tournaments/{tournamentId}/move-to-waitlist/{playerId}` | JSON | ADMIN | Переместить игрока из основного состава в лист ожидания вручную. |
 | `POST` | `/admin/tournaments/{tournamentId}/move-to-main/{playerId}` | JSON | ADMIN | Переместить из листа ожидания в основной состав (обходит автоматическую очередь). |
+| `POST` | `/admin/tournaments/{tournamentId}/players/{playerId}/late-arrival` | JSON | ADMIN | Отметить/снять опоздание (`lateArrival`) в AMERICANO/KING_OF_COURT — штраф −10 (LFPT-443). |
+| `POST` | `/admin/tournaments/{tournamentId}/pair-solo` | redirect | ADMIN | Вручную свести в пару две соло-регистрации (`regId1`, `regId2`). |
 
 ---
 
 ## 6. Домен: Payments
 
-**Ответственность:** учёт оплаты участия в турнире. Поддерживает ручной ввод платежей администратором (наличные, перевод) и онлайн-оплату через внешний провайдер. Фиксирует сумму, валюту, метод, транзакцию.
+**Ответственность:** учёт оплаты участия в турнире. Платёжного шлюза нет — платежи фиксирует вручную администратор (наличные, перевод). Фиксирует сумму, валюту, метод, транзакцию.
 
 **Таблицы:** `payments_db`
 
@@ -360,19 +376,13 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 
 ### Эндпоинты Payments
 
-#### Публичная страница
-
-| Метод | URL | Тип | Auth | Описание |
-|-------|-----|-----|------|----------|
-| `GET` | `/payments/{registrationId}` | HTML | — | Страница оплаты для игрока: детали регистрации и форма оплаты. |
-| `POST` | `/payments/{registrationId}/checkout` | redirect | PLAYER | Инициировать онлайн-оплату через провайдера. |
-
 #### Admin UI (SUPER_ADMIN / ORGANIZER)
 
 | Метод | URL | Тип | Описание |
 |-------|-----|-----|----------|
 | `GET` | `/admin/tournaments/{tournamentId}/payments` | HTML | Страница управления оплатами турнира: список всех регистраций, статус оплаты каждого, форма для ручного ввода. |
 | `POST` | `/admin/tournaments/{tournamentId}/payments/save` | Form → redirect | Массовое сохранение платёжных данных: статус, метод, сумма, валюта, transaction ID, посещение, подтверждение участия. |
+| `POST` | `/admin/tournaments/{tournamentId}/payments/add-team` | Form → redirect | Добавить пару (`registrationId`) в командный плей-офф (AMERICANO_TEAMS) прямо со страницы оплат. |
 
 #### Admin: метрики email
 
@@ -467,7 +477,74 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 | `GET` | `/tournaments/team-americano/admin/{tournamentId}` | Управление командным Americano (Round Robin). |
 | `GET` | `/tournaments/team-playoff/admin/{tournamentId}` | Управление плей-офф командного Americano. |
 | `POST` | `/tournaments/americano/{tournamentId}/preview-rounds` | Предпросмотр расстановки раундов до инициализации — только по сабмиту формы, не прямой GET. |
-| `POST` | `/tournaments/team-americano/{tournamentId}/preview-double-rounds` | Предпросмотр командных раундов — та же логика. |
+| `POST` | `/tournaments/team-americano/preview` | Предпросмотр командного Round Robin (`tournamentId` в форме) — та же логика. |
+
+#### Americano — form-роуты `AmericanoViewController`
+
+Инициализация — только через form-POST (REST-эндпоинта `initialize` нет). Write-роуты — роли управления (`SUPER_ADMIN`/`ADMIN`/`ORGANIZER`/`CLUB_ADMIN`) + проверка доступа к клубу турнира.
+
+| Метод | URL | Описание |
+|-------|-----|----------|
+| `POST` | `/tournaments/americano/initialize` | Инициализация из карточки турнира (`tournamentId` в форме); уже инициализирован — редирект без ошибки. |
+| `POST` | `/tournaments/americano/{tournamentId}/initialize` | Инициализация с конфигурацией раундов. |
+| `POST` | `/tournaments/americano/admin/{tournamentId}/initialize` | То же из админ-страницы предпросмотра. |
+| `GET` | `/tournaments/americano/{tournamentId}/initialize` | Не страница: редирект на `/admin/tournaments/{id}` или на турнир (LFPT-316). |
+| `GET` | `/tournaments/americano/admin/{tournamentId}/preview` | Мёртвый роут, редирект (LFPT-314). |
+| `POST` | `/tournaments/americano/{tournamentId}/register` | Записать игрока (`playerId`) администратором; мест нет — лист ожидания. |
+| `POST` | `/tournaments/americano/{tournamentId}/cancel` | Отменить запись игрока. |
+| `POST` | `/tournaments/americano/rounds/{roundId}/start` | Начать раунд. |
+| `POST` | `/tournaments/americano/rounds/{roundId}/complete` | Завершить раунд. |
+| `POST` | `/tournaments/americano/matches/{matchId}/result` | Сохранить результат матча. |
+| `POST` | `/tournaments/americano/{tournamentId}/players/{playerId}/dropout` | Игрок выбыл. |
+| `POST` | `/tournaments/americano/{tournamentId}/finish` | Завершить турнир. |
+| `GET` | `/tournaments/americano/{tournamentId}/ranking` | Страница рейтинга. |
+| `GET` | `/tournaments/americano/{tournamentId}/register` | Шаблона нет — редирект на страницу турнира/рейтинга (LFPT-330). |
+| `GET` | `/tournaments/americano/{tournamentId}/rounds` | Шаблона нет — редирект на страницу турнира/рейтинга (LFPT-330). |
+| `GET` | `/tournaments/americano/rounds/{roundId}` | Шаблона нет — редирект на страницу турнира/рейтинга (LFPT-330). |
+| `GET` | `/tournaments/americano/matches/{matchId}` | Шаблона нет — редирект на страницу турнира/рейтинга (LFPT-330). |
+| `GET` | `/tournaments/americano/matches/{matchId}/result` | Шаблона нет — редирект на страницу турнира/рейтинга (LFPT-330). |
+| `GET` | `/tournaments/americano/{tournamentId}/players/{playerId}` | Шаблона нет — редирект на страницу турнира/рейтинга (LFPT-330). |
+
+#### Team Americano — `TeamAmericanoViewController`
+
+| Метод | URL | Описание |
+|-------|-----|----------|
+| `POST` | `/tournaments/team-americano/initialize` | Инициализация из карточки турнира (`tournamentId` + конфигурация). |
+| `GET` | `/tournaments/team-americano/{tournamentId}/ranking` | Редирект на публичную страницу (блок рейтинга). |
+| `GET` | `/tournaments/team-americano/matches/{matchId}/result` | Шаблона нет — редирект на админку турнира (LFPT-0335). |
+| `POST` | `/tournaments/team-americano/matches/{matchId}/result` | Сохранить результат матча (форма). |
+| `POST` | `/tournaments/team-americano/api/matches/{matchId}/result` | То же, JSON — из JS без перезагрузки. |
+| `GET` | `/tournaments/team-americano/api/{tournamentId}/ranking` | Рейтинг команд, JSON. |
+| `POST` | `/tournaments/team-americano/admin/{tournamentId}/finish` | Завершить турнир. |
+
+#### Командный плей-офф (AMERICANO_TEAMS) — `TeamPlayoffViewController`
+
+Квалификация + плей-офф с play-in. Все `admin/*` и `api/*` write-роуты — роли управления + проверка доступа к клубу турнира.
+
+| Метод | URL | Описание |
+|-------|-----|----------|
+| `POST` | `/tournaments/team-playoff/admin/{tournamentId}/teams/add` | Добавить команду (пару). |
+| `GET` | `/tournaments/team-playoff/admin/{tournamentId}/players/search` | Автодополнение игроков для формы «Добавить команду» (LFPT-0561). |
+| `POST` | `/tournaments/team-playoff/admin/teams/{teamId}/update` | Изменить команду. |
+| `POST` | `/tournaments/team-playoff/admin/teams/{teamId}/delete` | Удалить команду. |
+| `POST` | `/tournaments/team-playoff/admin/{tournamentId}/import-registrations` | Импортировать пары из регистраций турнира. |
+| `POST` | `/tournaments/team-playoff/admin/{tournamentId}/init-qualification` | Сгенерировать квалификацию. |
+| `POST` | `/tournaments/team-playoff/admin/{tournamentId}/init-playoff` | Сгенерировать сетку плей-офф. |
+| `POST` | `/tournaments/team-playoff/admin/{tournamentId}/regenerate-playoff` | Пересобрать плей-офф после правки результата квалификации (issue #298). |
+| `POST` | `/tournaments/team-playoff/admin/qual-matches/{matchId}/result` | Результат матча квалификации (форма). |
+| `POST` | `/tournaments/team-playoff/admin/playoff-matches/{matchId}/result` | Результат матча плей-офф (форма). |
+| `POST` | `/tournaments/team-playoff/api/qual-matches/{matchId}/result` | Результат матча квалификации, JSON. |
+| `POST` | `/tournaments/team-playoff/api/playoff-matches/{matchId}/result` | Результат матча плей-офф, JSON. |
+| `POST` | `/tournaments/team-playoff/api/{tournamentId}/qual-matches` | Создать матч квалификации на корте. |
+| `POST` | `/tournaments/team-playoff/api/{tournamentId}/qual-matches/queue` | Поставить пару в очередь без корта (LFPT-367). |
+| `POST` | `/tournaments/team-playoff/api/matches/{matchId}/assign-court` | Назначить свободный корт матчу из очереди → в игре. |
+| `POST` | `/tournaments/team-playoff/api/matches/{matchId}/queue/remove` | Убрать матч из очереди. |
+| `POST` | `/tournaments/team-playoff/api/matches/{matchId}/court` | Сменить корт незавершённого матча. |
+| `POST` | `/tournaments/team-playoff/api/matches/{matchId}/team` | Заменить команду в слоте незавершённого матча (реванш — только предупреждение). |
+| `GET` | `/tournaments/team-playoff/api/matches/{matchId}/swap-candidates` | Кандидаты на обмен командами (соседние матчи стадии, issue #298). |
+| `POST` | `/tournaments/team-playoff/api/matches/{matchId}/swap-team` | Обменять команды в двух незавершённых матчах плей-офф. |
+| `GET` | `/tournaments/team-playoff/api/{tournamentId}/ranking` | Рейтинг квалификации, JSON. |
+| `GET` | `/tournaments/team-playoff/api/{tournamentId}/court-board` | Доска кортов: занятость, пул команд, предложенные пары 2-го тура. |
 
 #### REST API — регистрация
 
@@ -480,9 +557,7 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 
 | Метод | URL | Auth | Описание |
 |-------|-----|------|----------|
-| `POST` | `/api/tournaments/americano/{tournamentId}/initialize` | ADMIN | Инициализировать Americano: задать количество раундов, формат, очки. Генерирует все раунды и матчи. |
 | `GET` | `/api/tournaments/americano/{tournamentId}/initialized` | — | Проверить, инициализирован ли турнир. |
-| `GET` | `/api/tournaments/americano/{tournamentId}/preview-rounds` | ADMIN | Предпросмотр расстановки раундов без сохранения в БД. |
 
 #### REST API — раунды
 
@@ -546,7 +621,7 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 
 ## 10. Домен: Notifications
 
-**Ответственность:** отправка транзакционных email-писем через SMTP. Не имеет собственных HTTP-эндпоинтов — вызывается внутри других доменов.
+**Ответственность:** транзакционные email через SMTP и Telegram (DM-напоминания игрокам, алерты в рабочую группу — `TelegramService`, `TelegramBotPoller`, `TelegramReminderScheduler`). Своих HTTP-эндпоинтов почти нет — вызывается из других доменов; служебные эндпоинты — в разделе 10a.
 
 **Сервисы:** `EmailService`, `TournamentNotificationService`, `EmailMetricsService`
 
@@ -562,6 +637,13 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 | `waitlist-notification.html` | Попал в лист ожидания |
 | `no-spots-left.html` | Мест нет совсем |
 | `recuperar-password.html` | Ссылка для сброса пароля |
+| `pair-tournament-reminder.html` | Напоминание за 5 ч до старта парного турнира (LFPT-437) |
+| `individual-tournament-reminder.html` | Напоминание за 5 ч до старта AMERICANO / KING_OF_COURT (LFPT-443) |
+| `cancha-abierta-reminder.html` | Напоминание за 5 ч до Cancha Abierta (LFPT-443) |
+| `partner-data-reminder.html` | Соло-регистрация `SOLO_ADD_LATER`: напоминание добавить партнёра |
+| `looking-for-partner-notification.html` | Соло-регистрация: уведомление игрокам, ищущим пару |
+| `pair-proposal.html` | Предложение объединиться в пару (ссылка `/double-registration/accept-pair`) |
+| `admin-solo-registration.html` | Администратору: новая соло-регистрация |
 
 **Метрики Prometheus (Grafana):**
 - `email_daily` / `email_daily_limit` — дневной расход лимита
@@ -576,6 +658,48 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 | `POST` | `/api/cookies/accept` | Принять все cookies. |
 | `POST` | `/api/cookies/reject` | Отклонить необязательные cookies. |
 | `POST` | `/api/cookies/customize` | Сохранить кастомные настройки cookies. |
+
+---
+
+## 10a. Служебные и внутренние эндпоинты
+
+| Метод | URL | Auth | Описание |
+|-------|-----|------|----------|
+| `GET` | `/error/403`, `/error/rate-limit` | — | Страницы ошибок доступа и превышения лимита (`HomeController`). |
+| `GET` | `/oct-tg`, `/oct-wa`, `/oct-ig`, `/ig-bio` | — | Короткие маркетинговые ссылки → `1-padel.com/?utm_...` (LFPT-0472, LFPT-0489). |
+| `GET` | `/admin/telegram-pipeline` | SUPER_ADMIN | Страница выключателя Telegram-входа в конвейер (`telegram_pipeline_state_db`). |
+| `POST` | `/admin/telegram-pipeline/toggle` | SUPER_ADMIN | Поставить конвейер на паузу / снять. |
+| `GET` | `/api/internal/telegram-pipeline/status` | заголовок `X-Internal-Secret` (`pipeline.shared-secret`) | Статус паузы для relay; без сессии. |
+| `POST` | `/test/telegram/ping` | SUPER_ADMIN + CSRF | Telegram (LFPT-0423): Тестовое сообщение в рабочую группу. |
+| `POST` | `/test/telegram/error` | SUPER_ADMIN + CSRF | Telegram (LFPT-0423): Тестовый ERROR-алерт. |
+| `POST` | `/test/telegram/attacks` | SUPER_ADMIN + CSRF | Telegram (LFPT-0423): Тестовый алерт об атаке. |
+| `POST` | `/test/telegram/reminders` | SUPER_ADMIN + CSRF | Telegram (LFPT-0423): Прогнать рассылку напоминаний. |
+| `POST` | `/test/telegram/reminders/force/{tournamentId}` | SUPER_ADMIN + CSRF | Telegram (LFPT-0423): Принудительно отправить напоминание по турниру. |
+| `GET` | `/test/telegram/status` | SUPER_ADMIN + CSRF | Telegram (LFPT-0423): Состояние бота и планировщика. |
+| `GET` | `/test/tournaments` | SUPER_ADMIN | Тестовые данные, JDBC (`TestTournamentController`): Страница `test/tournaments.html`. |
+| `POST` | `/test/tournaments/{tournamentId}/register-test-players` | SUPER_ADMIN | Тестовые данные, JDBC (`TestTournamentController`): Массово записать тестовых игроков. |
+| `POST` | `/test/tournaments/{tournamentId}/clear-test-players` | SUPER_ADMIN | Тестовые данные, JDBC (`TestTournamentController`): Удалить тестовые регистрации турнира. |
+| `POST` | `/test/tournaments/{tournamentId}/register-real-players` | SUPER_ADMIN | Тестовые данные, JDBC (`TestTournamentController`): Записать реальных игроков по ID. |
+| `POST` | `/test/tournaments/{tournamentId}/register-pair` | SUPER_ADMIN | Тестовые данные, JDBC (`TestTournamentController`): Записать пару из базы. |
+| `POST` | `/test/tournaments/{tournamentId}/register-pair-with-players` | SUPER_ADMIN | Тестовые данные, JDBC (`TestTournamentController`): Записать пару, выбранную вручную. |
+| `POST` | `/test/tournaments/{tournamentId}/register-guest-pair` | SUPER_ADMIN | Тестовые данные, JDBC (`TestTournamentController`): Записать пару, где один/оба не в базе. |
+| `POST` | `/test/tournaments/{tournamentId}/register-guest-player` | SUPER_ADMIN | Тестовые данные, JDBC (`TestTournamentController`): Записать гостя на одиночный турнир. |
+| `POST` | `/test/tournaments/{tournamentId}/remove-player/{playerId}` | SUPER_ADMIN | Тестовые данные, JDBC (`TestTournamentController`): Убрать игрока с турнира. |
+| `GET` | `/test/tournaments/{tournamentId}/stats` | SUPER_ADMIN | Тестовые данные, JDBC (`TestTournamentController`): Статистика турнира. |
+| `GET` | `/test/tournaments/{tournamentId}/stats-enhanced` | SUPER_ADMIN | Тестовые данные, JDBC (`TestTournamentController`): Статистика с парами. |
+| `GET` | `/test/tournaments/stats-all` | SUPER_ADMIN | Тестовые данные, JDBC (`TestTournamentController`): Статистика всех турниров одним запросом (вместо N параллельных `/stats`, исчерпывавших пул HikariCP). |
+| `GET` | `/test/tournaments/{tournamentId}/players` | SUPER_ADMIN | Тестовые данные, JDBC (`TestTournamentController`): Записанные игроки, сгруппированные по парам. |
+| `GET` | `/test/tournaments/available-players` | SUPER_ADMIN | Тестовые данные, JDBC (`TestTournamentController`): Игроки, доступные для записи. |
+| `GET` | `/test/tournaments/available-players-for-pairs` | SUPER_ADMIN | Тестовые данные, JDBC (`TestTournamentController`): Игроки для составления пар. |
+| `GET` | `/test/tournaments/available-pairs` | SUPER_ADMIN | Тестовые данные, JDBC (`TestTournamentController`): Уже записанные пары. |
+| `GET` | `/test/tournaments/search-players` | SUPER_ADMIN | Тестовые данные, JDBC (`TestTournamentController`): Поиск по имени/email. |
+| `POST` | `/test/tournaments/create-test-player` | SUPER_ADMIN | Тестовые данные, JDBC (`TestTournamentController`): Создать тестового игрока. |
+| `POST` | `/test/tournaments/create-test-players-bulk` | SUPER_ADMIN | Тестовые данные, JDBC (`TestTournamentController`): Массово создать тестовых игроков. |
+| `POST` | `/test/tournaments/delete-test-players-bulk` | SUPER_ADMIN | Тестовые данные, JDBC (`TestTournamentController`): Удалить тестовых игроков. |
+| `GET` | `/test/tournaments/test-players-count` | SUPER_ADMIN | Тестовые данные, JDBC (`TestTournamentController`): Число тестовых игроков. |
+| `GET` | `/test/tournaments/debug/registrations/{tournamentId}` | SUPER_ADMIN | Тестовые данные, JDBC (`TestTournamentController`): Отладка: регистрации турнира. |
+| `GET` | `/test/tournaments/debug/player-count` | SUPER_ADMIN | Тестовые данные, JDBC (`TestTournamentController`): Отладка: число игроков. |
+| `GET` | `/test/tournaments/debug/first-players` | SUPER_ADMIN | Тестовые данные, JDBC (`TestTournamentController`): Отладка: первые 5 игроков. |
 
 ---
 

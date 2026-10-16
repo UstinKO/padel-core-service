@@ -158,7 +158,7 @@
 
 ### Замечания (ревью)
 
-> **[BUG]** В вызове `TournamentService.updateTournamentStatus()` передаётся `owner.getId()` дважды (2-й и 3-й параметр). Скорее всего второй должен быть `requesterId` или аналогичным — нужно проверить сигнатуру сервисного метода.
+> **[закрыто, сверено с кодом 2026-10-16]** Вызывается перегрузка `updateTournamentStatus(id, status, updatedBy, owner)` — второй `owner.getId()` это `updatedBy`, не дубль.
 
 ---
 
@@ -169,7 +169,7 @@
 ### Алгоритм
 
 1. Если не `SUPER_ADMIN` — проверяет, что `tournament.ownerId == owner.getId()`.
-2. Если нет — выбрасывает `SecurityException` (без `@ExceptionHandler` → 500).
+2. Если нет — выбрасывает `SecurityException` → `GlobalExceptionHandler` отвечает 403 (issue #125).
 3. Вызывает `TournamentService.deleteTournament(id)`.
 
 **Response 204 No Content**: удалён  
@@ -177,7 +177,7 @@
 
 ### Замечания (ревью)
 
-> **[BUG]** При отказе в доступе выбрасывается `SecurityException` (unchecked), которая не обрабатывается глобальным `@ExceptionHandler`. Клиент получит `500 Internal Server Error` вместо `403 Forbidden`.
+> **[закрыто, сверено с кодом 2026-10-16]** `SecurityException` перехватывает `GlobalExceptionHandler` (403).
 
 > **[MINOR]** Дублирование авторизационной логики в контроллере: проверка `owner.getId() == tournament.ownerId` должна быть в сервисе.
 

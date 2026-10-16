@@ -16,7 +16,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Spec-Driven Development:** проект разрабатывается по спекам, не по интуиции. [specs/MASTER.md](../specs/MASTER.md) — единый источник истины по бизнес-логике продукта (роли, форматы турниров, статусы регистрации, инварианты). Любая новая фича начинается со спеки в `specs/features/LFPT-XXX-*.md` (шаблон — `specs/features/_template.md`), согласованной с MASTER.md, и только потом переходит в код. Клиентские запросы на доработку оформляются в `specs/requests/` по шаблону `specs/requests/_template.md` и перерабатываются в полную фиче-спеку до начала реализации. Перед любой задачей по фиче — сначала прочитать соответствующую спеку и MASTER.md, не додумывать поведение системы. Есть автономный конвейер `/develop-feature` (Analyst → Developer → Tester → Architect, роли в `.claude/agents/`), который проводит фичу от клиентского запроса до PR — см. [.claude/GIT_WORKFLOW.md §8](GIT_WORKFLOW.md) про его права/ограничения.
 
-**Документация `docs/`** (в репозитории с LFPT-0602) — контекст приложения для конвейера и людей: [docs/Home.md](../docs/Home.md) — оглавление; архитектура и деплой (`architecture.md`), БД (`database-architecture.md`), домены и все эндпоинты (`domain-overview.md`, `endpoints/`), аутентификация (`auth-flow.md`), i18n (`i18n/`), переход на React (`frontend-react/`), автономный конвейер (`pipeline-autonomy.md`). Перед задачей в незнакомой области — прочитать соответствующий раздел, но источник истины по бизнес-логике — `specs/MASTER.md`, по поведению — код: если документ расходится с кодом, верить коду и поправить документ в том же PR. Пометки `[SECURITY — закрыто/актуально на <дата>]` в `docs/endpoints/*` — результат сверки с кодом на указанную дату. `docs/infrastructure-security.md` и `docs/telegram-ai-pipeline.md` — приватные (в `.gitignore`), в облачном клоне их нет и не должно быть; IP сервера, доверенные IP, SSH-доступы и идентификаторы роутины в `docs/` и любые публичные файлы не писать.
+**Документация `docs/`** (в репозитории с LFPT-0602) — контекст приложения для конвейера и людей: [docs/Home.md](../docs/Home.md) — оглавление; архитектура и деплой (`architecture.md`), БД (`database-architecture.md`), домены и все эндпоинты (`domain-overview.md`, `endpoints/`), аутентификация (`auth-flow.md`), i18n (`i18n/`), переход на React (`frontend-react/`), автономный конвейер (`pipeline-autonomy.md`). Перед задачей в незнакомой области — прочитать соответствующий раздел, но источник истины по бизнес-логике — `specs/MASTER.md`, по поведению — код: если документ расходится с кодом, верить коду и поправить документ в том же PR. Пометки `[SECURITY — закрыто/актуально на <дата>]` и `[закрыто, сверено с кодом <дата>]` в `docs/endpoints/*` — результат сверки с кодом на указанную дату. **Документация обновляется в том же PR, что и код** — карта «что изменил → какой документ» в [docs/Home.md § Как поддерживать актуальность](../docs/Home.md#как-поддерживать-актуальность); механические расхождения (версия схемы, колонки, enum, эндпоинты, классы) проверяет `python3 .github/bin/docs-drift.py`, сверено до 0 на 2026-10-16 (LFPT-0615). `docs/infrastructure-security.md` и `docs/telegram-ai-pipeline.md` — приватные (в `.gitignore`), в облачном клоне их нет и не должно быть; IP сервера, доверенные IP, SSH-доступы и идентификаторы роутины в `docs/` и любые публичные файлы не писать.
 
 **Переход на микросервисы:** монолит сейчас готовится к горизонтальному масштабированию (Docker Swarm, 2 реплики/сервис) и последующему выделению сервисов (Payments → Notifications → Bracket → Identity → King of Court → Americano → Tournament-core), с прицелом на мобильные приложения и новые продукты. Полный поэтапный план, известные архитектурные "мины" под несколько реплик и карта связей между доменами — [docs/microservices-migration-plan.md](../docs/microservices-migration-plan.md).
 
@@ -117,7 +117,7 @@ docker compose up -d
 | `GET /tournaments/team-americano/admin/{tournamentId}` | `admin/americano/tournament-double.html` | Team Americano |
 | `GET /tournaments/team-playoff/admin/{tournamentId}` | `admin/americano/tournament-playoff.html` | Плей-офф |
 | `POST /tournaments/americano/{tournamentId}/preview-rounds` | `admin/americano/preview-rounds.html` | Предпросмотр раундов — только по сабмиту формы конфигурации, прямого GET-URL нет |
-| `POST /tournaments/team-americano/{tournamentId}/preview-double-rounds` | `admin/americano/preview-double-rounds.html` | Предпросмотр командных раундов — та же логика, только по сабмиту формы |
+| `POST /tournaments/team-americano/preview` (`tournamentId` в форме) | `admin/americano/preview-double-rounds.html` | Предпросмотр командных раундов — та же логика, только по сабмиту формы |
 
 **Мёртвый роут (не падает, LFPT-314):** `GET /tournaments/americano/admin/{tournamentId}/preview` не используется нигде в UI (нет ссылок ни в одном шаблоне/JS). Раньше для неинициализированного турнира падал (`TemplateInputException` на несуществующий `admin/americano/initialize`); теперь просто редиректит — на `/admin/tournaments/{tournamentId}`, если турнир не инициализирован, на `/tournaments/americano/admin/{tournamentId}`, если уже инициализирован. Рабочий предпросмотр — через `POST .../preview-rounds` (форма на странице деталей турнира).
 
@@ -206,7 +206,6 @@ docker compose up -d
 |--------|-----|----------|
 | POST | `/{tournamentId}/register/{playerId}` | Регистрация игрока |
 | DELETE | `/{tournamentId}/cancel/{playerId}` | Отмена регистрации |
-| POST | `/{tournamentId}/initialize` | Инициализировать Americano |
 | GET | `/{tournamentId}/initialized` | Проверить инициализацию |
 | GET | `/{tournamentId}/rounds` | Список раундов |
 | GET | `/rounds/{roundId}` | Раунд по ID |
@@ -222,7 +221,6 @@ docker compose up -d
 | GET | `/{tournamentId}/players/count` | Количество игроков |
 | POST | `/{tournamentId}/players/{playerId}/dropout` | Выбыл из турнира |
 | POST | `/{tournamentId}/finish` | Завершить турнир |
-| GET | `/{tournamentId}/preview-rounds` | Предпросмотр раундов |
 | PUT | `/rounds/{roundId}/points-limit` | Обновить лимит очков |
 
 ### Clubs API (`/api/clubs`)
@@ -263,7 +261,9 @@ docker compose up -d
 | POST | `/admin/clubs/{id}/edit` | Обновить клуб |
 | POST | `/admin/clubs/{id}/toggle-status` | Включить/отключить клуб |
 | POST | `/admin/clubs/{id}/delete` | Удалить клуб |
-| POST | `/admin/players/{id}/toggle-status` | Активировать/деактивировать игрока |
+| POST | `/admin/players/{id}/nivel` | Задать уровень игрока (SUPER_ADMIN) |
+| POST | `/admin/players/{id}/guest-credentials` | Временный пароль гостевого аккаунта (SUPER_ADMIN) |
+| POST | `/admin/players/{id}/delete` | Удалить игрока (SUPER_ADMIN) |
 | POST | `/admin/tournaments/king-of-court/start` | Запустить KoC турнир |
 | POST | `/admin/tournaments/king-of-court/{kingId}/finish` | Завершить KoC турнир |
 | POST | `/admin/tournaments/king-of-court/{kingId}/next-round` | Следующий раунд KoC |
@@ -424,6 +424,7 @@ repository/
 | `americano_matches_db` | `AmericanoMatch` | Матчи Americano |
 | `americano_players_db` | `AmericanoPlayer` | Игроки Americano |
 | `americano_teams_db` | `AmericanoTeam` | Команды Team Americano |
+| `telegram_pipeline_state_db` | `TelegramPipelineState` | Выключатель Telegram-входа в конвейер |
 
 ### Database Migrations
 
@@ -443,6 +444,8 @@ repository/
 | `waitlist-notification.html` | Уведомление о попадании в лист ожидания |
 | `no-spots-left.html` | Уведомление что мест нет |
 | `recuperar-password.html` | Ссылка для сброса пароля |
+| `pair-tournament-reminder.html`, `individual-tournament-reminder.html`, `cancha-abierta-reminder.html` | Напоминание за 5 ч до старта турнира |
+| `partner-data-reminder.html`, `looking-for-partner-notification.html`, `pair-proposal.html`, `admin-solo-registration.html` | Соло-регистрация на парный турнир |
 
 ### Observability
 

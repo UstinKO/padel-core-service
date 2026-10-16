@@ -58,4 +58,4 @@
 
 > **[SECURITY — закрыто, сверено с кодом 2026-10-16]** `ORGANIZER` правит только свой профиль, роль через этот эндпоинт не меняется (`OwnerService.updateOwner`). Исходное замечание: `ROLE_ORGANIZER` может обновить данные любого другого `Owner`, включая смену роли на `SUPER_ADMIN`. Критичная дыра. Нужно: `ORGANIZER` может обновлять только `id == currentUser.id`, `SUPER_ADMIN` — любого.
 
-> **[BUG]** `OwnerDto` принимается без `@Valid`, то есть bean validation не применяется.
+> **[закрыто, сверено с кодом 2026-10-16]** `@Valid @RequestBody OwnerDto`.

@@ -23,7 +23,7 @@
 ### POST `/{tournamentId}/register/{playerId}`
 
 **Кто вызывает:** Организатор через UI тест-управления или API.  
-**Аутентификация:** Не указана (`@PreAuthorize` отсутствует).
+**Аутентификация:** `@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")` (сверено с кодом 2026-10-16).
 
 Регистрирует игрока `playerId` на турнир `tournamentId`.
 
@@ -37,7 +37,7 @@
 
 ### DELETE `/{tournamentId}/cancel/{playerId}`
 
-**Аутентификация:** Не указана.
+**Аутентификация:** `@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")` + проверка доступа к клубу турнира.
 
 **Query param:** `reason` (необязательный)
 
@@ -53,28 +53,7 @@
 
 ## ИНИЦИАЛИЗАЦИЯ
 
-### POST `/{tournamentId}/initialize`
-
-**Кто вызывает:** Организатор из формы на странице `/admin/americano/{tournamentId}`.  
-**Аутентификация:** Не указана.  
-**Content-Type:** `application/x-www-form-urlencoded` (`@ModelAttribute`)
-
-### Контракт
-
-**Form params** (через `AmericanoConfigDto`):
-
-| Поле | Тип | По умолчанию | Описание |
-|------|-----|-----------|----------|
-| `pointsPerMatch` | Integer | 32 | Лимит очков тай-брейка |
-| `courts` | Integer | 2 | Количество кортов |
-| `totalRounds` | Integer | 5 | Количество раундов |
-| `generationMode` | AmericanoFormatType | AUTO | AUTO / FULL / FLEX |
-
-> **[BUG]** Этот эндпоинт определён в `@RestController`, но возвращает `String` (redirect) и принимает `@ModelAttribute` — это паттерн MVC-контроллера, не REST. При вызове через AJAX не будет работать корректно (вернёт строку redirect, а не JSON). Нужно либо переместить в отдельный `@Controller`, либо переписать на JSON.
-
-**Ответ**: редирект на `/tournaments/americano/{tournamentId}`
-
----
+Инициализация Americano — только form-POST в `AmericanoViewController` (`/tournaments/americano/initialize` и др., см. `domain-overview.md` § 8); REST-эндпоинта `POST /{tournamentId}/initialize` нет (сверено 2026-10-16).
 
 ### GET `/{tournamentId}/initialized`
 
@@ -117,7 +96,7 @@
 
 ### POST `/rounds/{roundId}/start`
 
-**Аутентификация:** `@PreAuthorize("hasRole('ADMIN') or @securityService.isRoundOrganizer(#roundId)")`
+**Аутентификация:** `@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")` + проверка доступа к клубу турнира.
 
 Запускает раунд, меняет статус на `IN_PROGRESS`.
 
@@ -125,13 +104,13 @@
 
 ### Замечания (ревью)
 
-> **[BUG]** Проверяет `hasRole('ADMIN')`, но в системе нет роли `ADMIN` — есть `ROLE_OWNER`, `ROLE_SUPER_ADMIN`, `ROLE_ORGANIZER`. Первое условие никогда не будет выполнено. Нужно исправить на `hasAnyRole('SUPER_ADMIN','ORGANIZER')`.
+> **[закрыто, сверено с кодом 2026-10-16]** `@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")`; роль `ADMIN` существует (`OwnerRole.ADMIN`, v1.38).
 
 ---
 
 ### POST `/rounds/{roundId}/complete`
 
-**Аутентификация:** Аналогично `/start` — та же проблема с `ADMIN`.
+**Аутентификация:** Аналогично `/start`.
 
 Завершает раунд, меняет статус на `COMPLETED`.
 
@@ -183,7 +162,7 @@
 ### POST `/matches/{matchId}/result`
 
 **Кто вызывает:** Организатор (ввод счёта).  
-**Аутентификация:** Не указана.
+**Аутентификация:** `@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")` + проверка доступа к клубу турнира.
 
 ### Контракт
 
@@ -303,20 +282,9 @@
 
 ## ДОПОЛНИТЕЛЬНЫЕ
 
-### GET `/{tournamentId}/preview-rounds`
-
-**Аутентификация:** `hasRole('ADMIN') or ...`  
-**Request body** `application/json`: `AmericanoConfigDto`
-
-> **[BUG]** `GET` эндпоинт с `@RequestBody` — нестандартно. Многие HTTP-клиенты и прокси не передают тело в GET-запросах. Нужно сменить на `POST` или передавать конфиг через query params.
-
-**Response 200 OK**: `List<AmericanoRoundDto>` — предпросмотр раундов без сохранения в БД
-
----
-
 ### PUT `/rounds/{roundId}/points-limit`
 
-**Аутентификация:** Не указана.
+**Аутентификация:** `@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")` + проверка доступа к клубу турнира.
 
 Изменяет лимит очков в раунде (только до начала раунда).
 

@@ -1,7 +1,7 @@
 # Архитектура базы данных — padel-core-service
 
 > **СУБД:** PostgreSQL 15  
-> **Версия схемы:** v1.41  
+> **Версия схемы:** v1.54  
 > **Миграции:** Liquibase (YAML), файлы в `src/main/resources/db/changelog/versions/`  
 > **ddl-auto:** `none` — схема управляется только через Liquibase
 
@@ -37,6 +37,8 @@
    - [americano_matches_db](#americano_matches_db)
    - [americano_players_db](#americano_players_db)
    - [americano_teams_db](#americano_teams_db)
+8a. [Служебные таблицы](#8a-служебные-таблицы)
+   - [telegram_pipeline_state_db](#telegram_pipeline_state_db)
 9. [Справочник enum-значений](#9-справочник-enum-значений)
 10. [Ключевые бизнес-правила и ограничения](#10-ключевые-бизнес-правила-и-ограничения)
 11. [История миграций](#11-история-миграций)
@@ -45,7 +47,7 @@
 
 ## 1. Обзор доменов
 
-База данных разбита на пять смысловых доменов:
+База данных разбита на смысловые домены:
 
 | Домен | Таблицы | Описание |
 |-------|---------|----------|
@@ -55,6 +57,7 @@
 | **Bracket / Рейтинг** | `matches_db`, `ranking_db` | Матчи плей-офф и накопленный рейтинг игроков |
 | **King of Court** | 7 таблиц (`tournament_king_of_court_db`, `king_of_court_*`, `court_players_db`, `court_teams_db`) | Отдельный формат турнира с поротным перемещением |
 | **Americano** | 4 таблицы `americano_*` | Форматы Americano, Team Americano и плей-офф |
+| **Служебные** | `telegram_pipeline_state_db` | Выключатель Telegram-входа в конвейер |
 
 ---
 
@@ -111,7 +114,8 @@ owners_db ───────────────────────�
 | `apellido` | `VARCHAR(100)` | NOT NULL | — | Фамилия |
 | `email` | `VARCHAR(150)` | NOT NULL | — | Уникальный, используется как логин |
 | `telefono` | `VARCHAR(20)` | NULL | — | Телефон. Для регистрации на турнир нужен `+54` или Telegram |
-| `telegram_username` | `VARCHAR(64)` | NULL | — | Ник в Telegram (без `@`) |
+| `telegram_username` | `VARCHAR(64)` | NULL | — | Ник в Telegram (без `@`), уникальный (v1.41) |
+| `telegram_chat_id` | `BIGINT` | NULL | — | Chat id из `/start` боту — для личных DM-напоминаний |
 | `password_hash` | `VARCHAR(255)` | NOT NULL | — | BCrypt-хэш пароля |
 | `fecha_registro` | `TIMESTAMP` | NOT NULL | now() | Дата создания аккаунта (immutable) |
 | `fecha_actualizacion` | `TIMESTAMP` | NULL | — | Дата последнего обновления |
@@ -122,6 +126,8 @@ owners_db ───────────────────────�
 | `oauth2_user` | `BOOLEAN` | NOT NULL | `false` | `true` — вошёл через Google OAuth2 |
 | `provider` | `VARCHAR(50)` | NULL | — | OAuth2-провайдер (`google`) |
 | `password_changed_at` | `TIMESTAMP` | NULL | — | Момент последней смены пароля |
+| `nivel_jugador` | `VARCHAR(20)` | NOT NULL | `SIN_ESPECIFICAR` | Уровень игрока (enum `Nivel`; NOT NULL с v1.44) |
+| `preferred_locale` | `VARCHAR(5)` | NULL | `es` | Язык писем (`es`/`ru`/`en`) |
 
 **Индексы / ограничения:**
 - `UNIQUE (email)`
@@ -141,11 +147,12 @@ owners_db ───────────────────────�
 | `first_name` | `VARCHAR(255)` | NOT NULL | — | Имя |
 | `last_name` | `VARCHAR(255)` | NOT NULL | — | Фамилия |
 | `phone` | `VARCHAR(255)` | NULL | — | Телефон |
-| `role` | `VARCHAR(30)` | NOT NULL | `ORGANIZER` | Роль: `SUPER_ADMIN` / `ORGANIZER` |
+| `role` | `VARCHAR(30)` | NOT NULL | `ORGANIZER` | Роль (enum `OwnerRole`) |
 | `created_at` | `TIMESTAMP` | NOT NULL | now() | Дата создания |
 | `updated_at` | `TIMESTAMP` | NOT NULL | now() | Дата обновления |
 | `last_login_at` | `TIMESTAMP` | NULL | — | Последний вход |
 | `is_active` | `BOOLEAN` | NOT NULL | `true` | Активен ли аккаунт |
+| `club_id` | `BIGINT` | NULL | — | Клуб `CLUB_ADMIN` (без FK, как `tournaments_db.club_id`); доступ только к турнирам этого клуба (LFPT-375/376) |
 
 **Индексы / ограничения:**
 - `UNIQUE (email)`
@@ -230,6 +237,10 @@ owners_db ───────────────────────�
 | `created_by` | `BIGINT` | NULL | — | ID создателя (owners_db) |
 | `is_active` | `BOOLEAN` | NOT NULL | `true` | Мягкое удаление |
 | `owner_id` | `BIGINT` | NULL | — | ID владельца-организатора |
+| `pair_reminder_sent_at` | `TIMESTAMP` | NULL | — | Когда ушло email-напоминание за 5 ч до старта парного турнира; не NULL — повторно не шлётся (LFPT-437) |
+| `start_reminder_sent_at` | `TIMESTAMP` | NULL | — | То же для индивидуальных форматов (AMERICANO, KING_OF_COURT) и Cancha Abierta (LFPT-443) |
+| `mostrar_nivel` | `BOOLEAN` | NOT NULL | `false` | Показывать уровень игроков в публичном списке участников (LFPT-483) |
+| `visibilidad` | `VARCHAR(30)` | NOT NULL | `PUBLICO` | Видимость (enum `TournamentVisibility`): `SOLO_POR_ENLACE` — нет в списках, доступен по ссылке `/torneo/{id}` |
 
 ---
 
@@ -252,6 +263,7 @@ owners_db ───────────────────────�
 | `notified_about_vacancy` | `BOOLEAN` | NULL | — | Получил ли уведомление об освободившемся месте |
 | `invitation_expires_at` | `TIMESTAMP` | NULL | — | Дедлайн подтверждения приглашения из лейста ожидания (5 мин) |
 | `invitation_attempts` | `INTEGER` | NOT NULL | `0` | Счётчик попыток приглашения (максимум 2, затем CANCELLED) |
+| `waitlist_confirmation_token` | `VARCHAR(64)` | NULL | — | Одноразовый токен ссылки `/waitlist/confirm` вместо угадываемого id (issue #194), индекс |
 | `updated_at` | `TIMESTAMP` | NULL | — | Дата последнего обновления |
 | `is_active` | `BOOLEAN` | NOT NULL | `true` | Мягкое удаление |
 | `attended` | `BOOLEAN` | NOT NULL | `false` | Игрок явился на турнир |
@@ -264,6 +276,10 @@ owners_db ───────────────────────�
 | `partner_email` | `VARCHAR(255)` | NULL | — | Email незарегистрированного партнёра |
 | `partner_registration_token` | `VARCHAR(255)` | NULL | — | Токен подтверждения для второго игрока |
 | `partner_token_expiry` | `TIMESTAMP` | NULL | — | Дата истечения токена партнёра |
+| `share_contacts` | `BOOLEAN` | NOT NULL | `false` | Соло-регистрация: согласие показать контакты другим ищущим пару |
+| `solo_reminder_sent` | `BOOLEAN` | NOT NULL | `false` | Соло-регистрация: напоминание добавить партнёра отправлено |
+| `pair_proposer_reg_id` | `BIGINT` | NULL | — | Регистрация игрока, предложившего объединиться в пару (`SOLO_SEARCH`) |
+| `late_arrival` | `BOOLEAN` | NOT NULL | `false` | Опоздал к началу индивидуального турнира — штраф −10 к результату (LFPT-443) |
 
 **Флоу статусов регистрации:**
 
@@ -279,6 +295,11 @@ owners_db ───────────────────────�
   PENDING_PARTNER      — ожидаем подтверждения зарегистрированного партнёра
   PAIR_REGISTERED      — оба игрока подтверждены
   → CONFIRMED          — после завершения парной регистрации
+
+Соло на парный турнир:
+  SOLO_ADD_LATER       — добавит партнёра позже (напоминание, затем SOLO_EXPIRED)
+  SOLO_SEARCH          — ищет пару через сайт (предложения пары, автосведение)
+  SOLO_EXPIRED         — срок добавления партнёра истёк
 ```
 
 ---
@@ -364,7 +385,7 @@ owners_db ───────────────────────�
 | `nivel_actual` | `VARCHAR(10)` | NULL | — | Текущий уровень игрока |
 | `posicion_actual` | `INTEGER` | NULL | — | Текущая позиция в рейтинге |
 | `posicion_anterior` | `INTEGER` | NULL | — | Позиция в предыдущем расчёте |
-| `mejor_posicion` | `INTEGER` | NULL | — | Лучшая позиция за всё время |
+| `mejor_posicion` | `INTEGER` | NULL | — | Лучшая позиция за всё время; NULL — ещё не было (DEFAULT 0 убран в v1.54) |
 | `rachas_actual` | `INTEGER` | NULL | — | Текущая серия побед |
 | `rachas_maxima` | `INTEGER` | NULL | — | Максимальная серия побед |
 | `created_at` | `TIMESTAMP` | NOT NULL | now() | — |
@@ -561,6 +582,9 @@ tournaments_db
 | `team1_games` | `INTEGER` | NULL | — | Геймы команды 1 (Team Americano сетовый формат) |
 | `team2_games` | `INTEGER` | NULL | — | Геймы команды 2 |
 | `is_doubles` | `BOOLEAN` | NOT NULL | — | Парный матч |
+| `priority` | `BOOLEAN` | NOT NULL | `false` | Play-in (1/8 финала) — запускать как можно раньше |
+| `next_match_id` | `BIGINT` | NULL | — | Play-in: матч четвертьфинала, куда сразу проходит победитель |
+| `next_match_slot` | `INTEGER` | NULL | — | Play-in: слот (1/2) в `next_match_id` |
 | `status` | `VARCHAR(20)` | NOT NULL | `PENDING` | Статус матча |
 | `started_at` | `TIMESTAMP` | NULL | — | — |
 | `completed_at` | `TIMESTAMP` | NULL | — | — |
@@ -642,6 +666,21 @@ tournaments_db
 
 ---
 
+## 8a. Служебные таблицы
+
+### `telegram_pipeline_state_db`
+
+Выключатель Telegram-входа в SDD-конвейер (одна строка, admin-страница `/admin/telegram-pipeline`).
+
+| Колонка | Тип | Nullable | По умолчанию | Описание |
+|---------|-----|----------|--------------|----------|
+| `id` | `BIGINT` | NOT NULL | auto | PK |
+| `paused` | `BOOLEAN` | NOT NULL | `false` | Конвейер на паузе — relay не передаёт сообщения |
+| `updated_at` | `TIMESTAMP` | NOT NULL | now() | Момент последнего переключения |
+| `updated_by` | `VARCHAR(255)` | NULL | — | Кто переключил (email владельца) |
+
+---
+
 ## 9. Справочник enum-значений
 
 ### `TournamentType` — тип турнира
@@ -651,6 +690,7 @@ tournaments_db
 | `AMERICANO` | Americano (одиночный или парный, меняются партнёры) |
 | `AMERICANO_TEAMS` | Team Americano (фиксированные пары, квалификация + плей-офф) |
 | `CANCHA_ABIERTA` | Открытая сетка (bracket) |
+| `PADEL_CLINIC` | Клиника (тренировка), без турнирного движка |
 
 ### `TournamentStatus` — статус турнира
 | Значение | Описание |
@@ -673,6 +713,9 @@ tournaments_db
 | `PENDING_PARTNER` | Парная: ожидание зарегистрированного партнёра |
 | `PARTNER_INVITED` | Парная: незарегистрированный партнёр приглашён |
 | `PAIR_REGISTERED` | Парная: оба игрока подтверждены |
+| `SOLO_ADD_LATER` | Соло на парный турнир: добавит партнёра позже |
+| `SOLO_SEARCH` | Соло на парный турнир: ищет пару через сайт |
+| `SOLO_EXPIRED` | Соло на парный турнир: срок добавления партнёра истёк |
 
 ### `Modalidad` — режим
 | Значение | Описание |
@@ -688,7 +731,15 @@ tournaments_db
 | `MIXTO` | Смешанный |
 
 ### `Nivel` — уровень игроков
-`C9`, `C8`, `C7`, `C6`, `C5`, `C4`, `PRINCIPIANTES`, `D6`, `D7`, `D8`, `D7_D8`, `C7_C6`, `SUMA_13`, `SUMA_14`, `SUMA_15`, `TODOS`
+Значения с привязкой к гендерному формату турнира (`Nivel.genderFormat`):
+
+- мужские (`MASCULINO`): `C9`, `C8`, `C7`, `C6`, `C5`, `C4`, `C9_C8`, `C8_C7`, `C7_C6`, `C6_C5`, `C5_C4`
+- женские (`FEMENINO`): `D9`, `D8`, `D7`, `D6`, `D5`, `D4`, `D9_D8`, `D7_D8`, `D7_D6`, `D6_D5`, `D5_D4`
+- микст, сумма категорий пары (`MIXTO`): `SUMA_16`, `SUMA_15`, `SUMA_14`, `SUMA_13`, `SUMA_12`, `SUMA_11`, `SUMA_10`
+- любой формат: `TODOS`, `PRINCIPIANTES`, `SIN_ESPECIFICAR` (дефолт `player_padel_db.nivel_jugador`)
+
+### `TournamentVisibility` — видимость турнира
+`PUBLICO` (в списках и календаре), `SOLO_POR_ENLACE` (только по прямой ссылке)
 
 ### `MatchStatus` — статус матча (bracket)
 | Значение | Описание |
@@ -715,6 +766,8 @@ tournaments_db
 |----------|-------|
 | `SUPER_ADMIN` | Полные права |
 | `ORGANIZER` | Управление своими турнирами |
+| `ADMIN` | Администратор admin-панели (v1.38, заводится вручную через SQL); в `@PreAuthorize` идёт наравне с `ORGANIZER` |
+| `CLUB_ADMIN` | Клубный администратор: только турниры/регистрации/оплаты/матчи клуба `owners_db.club_id` (LFPT-375/376) |
 
 ---
 
@@ -785,3 +838,16 @@ tournaments_db
 | v1.39 | `v1.39-add-preferred-locale` | Поле `preferred_locale` у игрока (для i18n email) |
 | v1.40 | `v1.40-add-waitlist-confirmation-token` | Токен подтверждения приглашения из листа ожидания |
 | v1.41 | `v1.41-unique-index-telegram-username` | Уникальный индекс на `telegram_username` |
+| v1.42 | `v1.42-add-playin-match-fields` | Play-in в `americano_matches_db`: `priority`, `next_match_id`, `next_match_slot` |
+| v1.43 | `v1.43-add-nivel-d9` | Значение `D9` в `Nivel` (данные) |
+| v1.44 | `v1.44-nivel-jugador-not-null` | `nivel_jugador` NOT NULL, DEFAULT `SIN_ESPECIFICAR` |
+| v1.45 | `v1.45-add-nivel-suma16` | Значение `SUMA_16` в `Nivel` (данные) |
+| v1.46 | `v1.46-create-telegram-pipeline-state` | Таблица `telegram_pipeline_state_db` |
+| v1.47 | `v1.47-add-nivel-categories` | Новые категории `Nivel` (данные) |
+| v1.48 | `v1.48-add-club-id-to-owner` | `owners_db.club_id` для `CLUB_ADMIN` |
+| v1.49 | `v1.49-add-pair-reminder-sent-at-to-tournament` | `tournaments_db.pair_reminder_sent_at` |
+| v1.50 | `v1.50-add-start-reminder-sent-at-to-tournament` | `tournaments_db.start_reminder_sent_at` |
+| v1.51 | `v1.51-add-late-arrival-to-registration` | `tournament_registrations_db.late_arrival` |
+| v1.52 | `v1.52-add-mostrar-nivel-to-tournament` | `tournaments_db.mostrar_nivel` |
+| v1.53 | `v1.53-add-visibilidad-to-tournament` | `tournaments_db.visibilidad` |
+| v1.54 | `v1.54-ranking-mejor-posicion-drop-default` | `ranking_db.mejor_posicion`: убран DEFAULT 0, нули → NULL |

@@ -7,7 +7,7 @@
 
 ## GET `/api/admin/email-stats`
 
-**Аутентификация:** Не указана (`@PreAuthorize` отсутствует).
+**Аутентификация:** `@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")` (сверено с кодом 2026-10-16).
 
 Аннотирован `@Timed` и `@Counted` — метрики времени и числа обращений уходят в Prometheus.
 
@@ -45,7 +45,7 @@
 
 ## GET `/api/admin/email-daily-count`
 
-**Аутентификация:** Не указана.
+**Аутентификация:** `@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")` (сверено с кодом 2026-10-16).
 
 Аннотирован `@Timed`.
 
@@ -65,4 +65,4 @@
 
 > **[SECURITY — закрыто, сверено с кодом 2026-10-16]** `@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ORGANIZER')")`. Исходное замечание: Нет авторизации — аналогично выше.
 
-> **[MINOR]** `usagePercentage` считается как `double` деление: потенциальное `ArithmeticException` если `dailyLimit = 0` (division by zero). Нужна защита.
+> **[закрыто, сверено с кодом 2026-10-16]** `calculateUsagePercentage` возвращает 0 при `limit <= 0`.

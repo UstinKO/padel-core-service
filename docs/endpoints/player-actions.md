@@ -24,15 +24,13 @@
 |---------|-----|----------|
 | `player` | PlayerPadel | Текущий игрок |
 | `torneosInscritos` | int | Кол-во активных регистраций |
-| `torneosGanados` | int | Заглушка: 0 |
-| `rankingPosition` | int | Заглушка: 42 |
-| `puntosRanking` | int | Заглушка: 1250 |
 | `tournamentsJson` | String | JSON-массив турниров для JS |
+| `historicalJson` | String | JSON-массив прошедших турниров игрока для JS |
 | `myTournamentIdsJson` | String | JSON-массив ID турниров игрока для JS |
 
 ### Замечания (ревью)
 
-> **[TECH DEBT]** `torneosGanados`, `rankingPosition`, `puntosRanking` — жёсткие заглушки (0, 42, 1250). Если UI их показывает — пользователи видят фиктивные данные. Нужно либо подключить реальную логику из `RankingService`, либо скрыть с UI.
+> **[закрыто, сверено с кодом 2026-10-16]** Заглушек `torneosGanados`/`rankingPosition`/`puntosRanking` в модели больше нет.
 
 ---
 
@@ -147,7 +145,7 @@
 
 > **[STYLE]** `replaceData` передаётся как строка-JSON в form param, а затем парсится вручную через `ObjectMapper`. Это антипаттерн — нужен отдельный `@RequestBody DTO` или хотя бы структурированный form-объект. Сейчас возможны неочевидные ошибки парсинга без валидации.
 
-> **[MINOR]** Дублирование `new ObjectMapper()` вместо использования инжектированного бина. Может нарушить настройки сериализации.
+> **[закрыто, сверено с кодом 2026-10-16]** Используется инжектированный `ObjectMapper`.
 
 ---
 
@@ -175,15 +173,3 @@
 ```
 
 ---
-
-## PATCH `/players/api/players/me/contact` (дублирует `PlayerContactController`)
-
-**Аутентификация:** `ROLE_PLAYER`.
-
-> **[BUG]** Этот эндпоинт смонтирован по пути `/players/api/players/me/contact` (из-за `@RequestMapping("/players")` + `@PatchMapping("/api/players/me/contact")`), а параллельный `PlayerContactController` отвечает на `/api/players/me/contact`. Фактически работают два контроллера на двух разных путях с похожей логикой, но разными деталями реализации (разная валидация телефона!). Нужна консолидация в один.
-
----
-
-## GET `/players/api/players/me/contact-status` (дублирует `PlayerContactController`)
-
-Аналогичный дубль — смотри `PlayerContactController` и замечание выше.

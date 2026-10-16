@@ -45,25 +45,8 @@
 
 Остаются некритичные замечания (помечены «актуально на 2026-10-16» в файлах): нет отзыва refresh-токенов (auth.md), одноразовые токены в URL (double-registration.md, password-reset.md), `success: false` при внутренней ошибке сброса пароля (password-reset.md), нет валидации ссылки YouTube (king-of-court.md), `httpOnly(false)` у consent-cookie — намеренно (cookies.md).
 
-### Баги (могут влиять на работу)
+### Баги и технический долг
 
-| # | Файл | Проблема |
-|---|------|----------|
-| 1 | auth.md | `POST /login` не работает для `Owner` — ищет только в `PlayerRepository` |
-| 2 | tournaments.md | `PATCH /{id}/status` передаёт `owner.getId()` дважды в один параметр |
-| 3 | tournaments.md | `DELETE /{id}` кидает `SecurityException` → возвращает `500` вместо `403` |
-| 4 | americano.md | `GET /{tournamentId}/preview-rounds` — GET с `@RequestBody` |
-| 5 | double-registration.md | `POST /confirm` без try/catch → `500` при истёкшем токене |
-| 6 | player-actions.md | Дублирующиеся эндпоинты contact в двух контроллерах с разной логикой |
-| 7 | payments.md | Форма параллельных массивов — хрупкая: при рассинхронизации длин тихо теряет данные |
+Сверено с кодом `master` 2026-10-16: все баги исходного аудита исправлены (вход `Owner` через `/api/auth/login` — #124; `SecurityException` → 403 — #125; дубли эндпоинтов контакта удалены; форма оплат — список объектов вместо параллельных массивов; `GET preview-rounds` с телом и REST-`initialize` Americano удалены; `/confirm` парной регистрации обрабатывает ошибки), как и техдолг (заглушки дашборда, `Thread.sleep` в HTTP-потоке, IP за Nginx, refresh-токен в query, base URL сброса пароля из request).
 
-### Технический долг
-
-| # | Файл | Проблема |
-|---|------|----------|
-| 1 | player-actions.md | `torneosGanados=0`, `rankingPosition=42`, `puntosRanking=1250` — жёсткие заглушки |
-| 2 | players-registration.md | `Thread.sleep()` в HTTP-потоке — блокирует рабочий поток Tomcat |
-| 3 | players-registration.md | ~~IP из `getRemoteAddr()` за Nginx всегда = `127.0.0.1`~~ — закрыто: IP берётся из `X-Real-IP` (`RateLimitFilter.extractIp`) |
-| 4 | auth.md | ~~Refresh-токен в query string~~ — закрыто: тело запроса |
-| 5 | password-reset.md | Base URL строится из request вместо конфига → за proxy возвращает localhost |
-| 6 | americano.md | Инициализация с `@ModelAttribute` в `@RestController` — MVC и REST смешаны |
+Остаются пометки `[MINOR]` / `[STYLE]` в отдельных файлах — они не сверялись построчно: перед тем как опираться на такую пометку, проверь код.
