@@ -2,6 +2,14 @@ name: PR Check
 
 on:
   pull_request:
+  # Повторная проверка перед автомержем (LFPT-0579): оркестратор pipeline-merge.yml
+  # прогоняет тот же build на свежем refs/pull/N/merge.
+  workflow_call:
+    inputs:
+      ref:
+        description: Что проверять, например refs/pull/123/merge
+        required: true
+        type: string
 
 jobs:
   build:
@@ -31,6 +39,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || '' }}
 
       - name: Set up Java
         uses: actions/setup-java@v4
