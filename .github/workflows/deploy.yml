@@ -237,41 +237,6 @@ jobs:
           echo "🌍 Server: ${{ secrets.SERVER_HOST }}"
           echo "=================================="
 
-      - name: Notify AI pipeline (spec archival)
-        if: success()
-        continue-on-error: true
-        env:
-          ROUTINE_ID: ${{ secrets.ROUTINE_ID }}
-          ROUTINE_TOKEN: ${{ secrets.ROUTINE_TOKEN }}
-        run: |
-          if [ -z "$ROUTINE_ID" ] || [ -z "$ROUTINE_TOKEN" ]; then
-            echo "ℹ️ ROUTINE_ID/ROUTINE_TOKEN не заданы как секреты — пропускаю уведомление роутины (не блокирует деплой)."
-            exit 0
-          fi
-          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          COMMIT_MSG=$(git log -1 --format=%s "${{ github.sha }}")
-          TEXT=$(python3 -c "
-          import json, sys
-          text = (
-              '[отправитель: architect]\n'
-              'Деплой коммита ${{ github.sha }} прошёл успешно (run: ' + '$RUN_URL' + ').\n'
-              'Сообщение коммита: ' + '''$COMMIT_MSG''' + '\n\n'
-              'Если этому коммиту соответствует спека в specs/features/, ещё не перенесённая '
-              'в specs/done/ — перенеси её туда по правилам Шага 7 develop-feature.md '
-              '(архивация только через отдельную ветку+PR, никогда напрямую в master; '
-              'если весь диф лежит в specs/** — можешь сразу смержить сам по правилу §9 GIT_WORKFLOW.md). '
-              'Если подходящей ещё не заархивированной спеки нет (деплой без фичи, чисто техническая правка '
-              'и т.п.) — ничего не делай, не выдумывай задачу и не пиши в Telegram.'
-          )
-          print(json.dumps({'text': text}))
-          ")
-          curl -s -X POST "https://api.anthropic.com/v1/claude_code/routines/${ROUTINE_ID}/fire" \
-            -H "Authorization: Bearer ${ROUTINE_TOKEN}" \
-            -H "anthropic-version: 2023-06-01" \
-            -H "anthropic-beta: experimental-cc-routine-2026-04-01" \
-            -H "Content-Type: application/json" \
-            -d "$TEXT"
-
       - name: Notify failure
         if: failure()
         run: |
@@ -285,3 +250,63 @@ jobs:
           echo "⚠️ Check the 'Deploy to server' step logs above for '🔄 Rolling back to previous version' to see whether an automatic rollback actually ran and whether it succeeded — it does not always run on every failure path."
           echo "⚠️ Verify the actual production state directly (docker ps / current_version.txt / actuator/health on the server) before assuming anything about which version is running."
           exit 1
+
+  # Архивация спек задеплоенной задачи: specs/features → specs/done, specs/requests → specs/done/requests.
+  # Отдельный job: сбой здесь не значит, что упал деплой, и не красит прогон в failure
+  # (continue-on-error), но виден как упавший job и как ::error:: в сводке прогона.
+  # PR мержится сразу — весь диф в specs/** (§9 GIT_WORKFLOW.md), deploy.yml на него не запускается (paths-ignore).
+  # Требует включённого "Allow GitHub Actions to create and approve pull requests" (Settings → Actions → General).
+  archive-specs:
+    needs: deploy
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+
+      - name: Archive specs of deployed task
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+        run: |
+          set -euo pipefail
+          subject=$(head -n1 <<<"$COMMIT_MSG")
+          short_sha="${GITHUB_SHA::7}"
+          run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+
+          archived=$(.github/bin/archive-specs.sh "$subject")
+          if [ -z "$archived" ]; then
+            echo "ℹ️ Для коммита «${subject}» нечего архивировать."
+            exit 0
+          fi
+          echo "Архивирую:"; echo "$archived"
+
+          git add -A specs
+          if git diff --cached --name-only | grep -v '^specs/'; then
+            echo "::error::Диф архивации вышел за пределы specs/ — PR не создаю."
+            exit 1
+          fi
+
+          branch="docs/archive-specs-${short_sha}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git commit -q -m "docs: архивировать спеки после деплоя ${short_sha}" \
+            -m "Деплой «${subject}» прошёл успешно: ${run_url}"
+          git push -q origin "$branch"
+
+          body=$(printf 'Деплой «%s» (`%s`) прошёл успешно: %s\n\nПеренесено:\n%s\n\nДиф только в `specs/**` — мерж без ревью по §9 `GIT_WORKFLOW.md`.' \
+            "$subject" "$short_sha" "$run_url" "$(sed 's/^/- `/; s/$/`/' <<<"$archived")")
+          pr_url=$(gh pr create --base master --head "$branch" \
+            --title "docs: архивировать спеки после деплоя ${short_sha}" --body "$body")
+          gh pr merge "$pr_url" --squash --delete-branch
+          echo "✅ Спеки заархивированы: ${pr_url}"
+
+      - name: Report archival failure
+        if: failure()
+        run: |
+          echo "::error::Архивация спек после деплоя не удалась — перенеси спеки в specs/done вручную (Шаг 7 develop-feature.md). Сам деплой прошёл успешно."
