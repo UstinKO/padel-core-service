@@ -114,6 +114,7 @@ public class AdminController {
         model.addAttribute("activeTournaments", activeTournaments);
         model.addAttribute("isSuperAdmin", owner.isSuperAdmin());
         model.addAttribute("isAdminRole", owner.isAdminRole());
+        model.addAttribute("isClubAdmin", isClubAdmin);
 
         return "admin/panel";
     }
