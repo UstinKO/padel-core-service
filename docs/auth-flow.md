@@ -269,7 +269,7 @@ Client                          JwtAuthenticationFilter
 Client                          /api/auth/refresh
   │                                   │
   │─── POST /api/auth/refresh ────────►│
-  │    ?refreshToken=eyJ...            │
+  │    body: {"refreshToken": "eyJ..."}│
   │                                    │
   │                    isRefreshToken() → проверяет claim "tokenType" = "refresh"
   │                    validateToken() → проверяет подпись и срок

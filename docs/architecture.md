@@ -229,14 +229,14 @@ hikari:
 - **Только Liquibase** управляет схемой (`ddl-auto = none`).
 - Файлы: `src/main/resources/db/changelog/versions/vX.XX-<description>.yaml`
 - Мастер-файл: `changelog-master.yaml` — порядок include определяет порядок выполнения.
-- Текущая версия: **v1.41**
+- Текущая версия: **v1.54**
 
 **Добавление новой миграции:**
 ```
-1. Создать файл: src/main/resources/db/changelog/versions/v1.42-<описание>.yaml
+1. Создать файл: src/main/resources/db/changelog/versions/v1.55-<описание>.yaml
 2. Добавить в конец changelog-master.yaml:
    - include:
-       file: versions/v1.42-<описание>.yaml
+       file: versions/v1.55-<описание>.yaml
        relativeToChangelogFile: true
 ```
 

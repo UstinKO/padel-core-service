@@ -17,7 +17,7 @@
 ## POST `/api/king-of-court/tournaments/{tournamentId}/initialize`
 
 **Кто вызывает:** Организатор через UI (кнопка "Инициализировать KoC" на странице турнира).  
-**Аутентификация:** Не указана (нет `@PreAuthorize`).
+**Аутентификация:** `@PreAuthorize("hasAnyRole('OWNER', 'SUPER_ADMIN', 'ORGANIZER', 'ADMIN', 'CLUB_ADMIN')")` (сверено с кодом 2026-10-16).
 
 ### Алгоритм
 
@@ -57,7 +57,7 @@
 ## GET `/api/king-of-court/tournaments/{kingId}/state`
 
 **Кто вызывает:** UI (polling или после WebSocket-события).  
-**Аутентификация:** Не указана.
+**Аутентификация:** без `@PreAuthorize` — правила `SecurityConfig` (сверено с кодом 2026-10-16).
 
 ### Контракт
 
@@ -87,7 +87,7 @@
 
 ## GET `/api/king-of-court/tournaments/{kingId}/ranking`
 
-**Аутентификация:** Не указана.
+**Аутентификация:** без `@PreAuthorize` — правила `SecurityConfig` (сверено с кодом 2026-10-16).
 
 Возвращает текущий рейтинг как поле из `KingOfCourtStateDTO.ranking`.
 
@@ -102,7 +102,7 @@
 ## POST `/api/king-of-court/matches/result`
 
 **Кто вызывает:** Организатор (вводит счёт матча).  
-**Аутентификация:** Не указана.
+**Аутентификация:** `@PreAuthorize("hasAnyRole('OWNER', 'SUPER_ADMIN', 'ORGANIZER', 'ADMIN', 'CLUB_ADMIN')")` (сверено с кодом 2026-10-16).
 
 ### Алгоритм
 
@@ -135,7 +135,7 @@
 ## PUT `/api/king-of-court/matches/result/{resultId}`
 
 **Кто вызывает:** Организатор (корректировка счёта).  
-**Аутентификация:** Не указана.
+**Аутентификация:** `@PreAuthorize("hasAnyRole('OWNER', 'SUPER_ADMIN', 'ORGANIZER', 'ADMIN', 'CLUB_ADMIN')")` (сверено с кодом 2026-10-16).
 
 Контракт аналогичен `POST /matches/result`, но обновляет существующую запись по `resultId`.
 
@@ -146,7 +146,7 @@
 ## POST `/api/king-of-court/tournaments/{kingId}/next-round`
 
 **Кто вызывает:** Организатор (переход к следующему раунду).  
-**Аутентификация:** Не указана.
+**Аутентификация:** `@PreAuthorize("hasAnyRole('OWNER', 'SUPER_ADMIN', 'ORGANIZER', 'ADMIN', 'CLUB_ADMIN')")` (сверено с кодом 2026-10-16).
 
 ### Алгоритм
 
@@ -166,7 +166,7 @@
 ## POST `/api/king-of-court/tournaments/{kingId}/rollback`
 
 **Кто вызывает:** Организатор (отмена последнего раунда).  
-**Аутентификация:** Не указана.
+**Аутентификация:** `@PreAuthorize("hasAnyRole('OWNER', 'SUPER_ADMIN', 'ORGANIZER', 'ADMIN', 'CLUB_ADMIN')")` (сверено с кодом 2026-10-16).
 
 ### Алгоритм
 
@@ -186,7 +186,7 @@
 ## POST `/api/king-of-court/tournaments/{kingId}/finish`
 
 **Кто вызывает:** Организатор (завершение турнира).  
-**Аутентификация:** Не указана.
+**Аутентификация:** `@PreAuthorize("hasAnyRole('OWNER', 'SUPER_ADMIN', 'ORGANIZER', 'ADMIN', 'CLUB_ADMIN')")` (сверено с кодом 2026-10-16).
 
 **Response 200 OK**: пустое тело
 
@@ -199,7 +199,7 @@
 ## POST `/api/king-of-court/tournaments/{kingId}/youtube`
 
 **Кто вызывает:** Организатор (добавляет ссылку на стрим).  
-**Аутентификация:** Не указана.
+**Аутентификация:** `@PreAuthorize("hasAnyRole('OWNER', 'SUPER_ADMIN', 'ORGANIZER', 'ADMIN', 'CLUB_ADMIN')")` (сверено с кодом 2026-10-16).
 
 **Query param:** `youtubeLink` — строка URL
 
@@ -213,7 +213,7 @@
 
 ## GET `/api/king-of-court/tournaments/{kingId}/players/{playerId}/history`
 
-**Аутентификация:** Не указана.
+**Аутентификация:** без `@PreAuthorize` — правила `SecurityConfig` (сверено с кодом 2026-10-16).
 
 **Response 200 OK**: `List<MatchHistoryDTO>` — история матчей игрока в данном турнире.
 
@@ -228,7 +228,7 @@ Health check. Возвращает `"pong"`.
 ## GET `/api/king-of-court/debug/tournaments/{kingId}/check-players`
 
 **Назначение:** Отладочный эндпоинт — проверка игроков и статистики.  
-**Аутентификация:** Не указана.
+**Аутентификация:** `@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER')")` (сверено с кодом 2026-10-16).
 
 **Response 200 OK**: `DebugInfo` с полями `state`, `playerStats`, `rawPlayerStats`, `message`.
 

@@ -60,9 +60,9 @@
 
 > **[SECURITY — актуально на 2026-10-16]** Хорошо реализованная защита от email enumeration — всегда возвращает одинаковое сообщение. Но `success: false` при реальной ошибке (например, `EmailService` недоступен) помогает злоумышленнику отличить ошибку от "email не найден". Стоит унифицировать — возвращать всегда `success: true` с одним сообщением.
 
-> **[MINOR]** Нет rate limiting на этот эндпоинт. Можно спамить письмами на любой email из системы. Нужен Bucket4j или похожий ограничитель.
+> **[закрыто, сверено с кодом 2026-10-16]** `/recuperar-password/**` входит в группу REGISTER `RateLimitFilter`.
 
-> **[MINOR]** `baseUrl` строится из `HttpServletRequest` (scheme + serverName + port). За Nginx в Docker это может вернуть `http://localhost:8080` вместо `https://1-padel.com`. Нужно либо брать base URL из конфига (`app.base-url`), либо доверять заголовку `X-Forwarded-Proto` / `X-Forwarded-Host`.
+> **[закрыто, сверено с кодом 2026-10-16]** Ссылка строится из конфигурации `app.base-url` (`PasswordResetService`).
 
 ---
 

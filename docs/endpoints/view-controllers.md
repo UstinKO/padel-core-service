@@ -84,7 +84,7 @@
 | `isRegistered`, `userRegistration`, `isInWaitlist` | `TournamentService.getRegistration()` |
 | `isInitialized`, `activePlayers`, `leaderName`, `totalRounds`, `completedRounds` | `AmericanoService.*` |
 | `isTeamPlayoffFormat`, `isPlayoffQualStarted`, `isPlayoffStarted`, `tournamentTeams` | `TeamPlayoffService.*` |
-| `kingOfCourtActive`, `kingTournament` | `KingOfCourtRepository` + `KingOfCourtService` |
+| `kingOfCourtActive`, `kingTournament` | `TournamentKingOfCourtRepository` + `KingOfCourtService` |
 | `availableSpots` | `tournament.getDisponibles()` |
 | `tournamentJson` | JSON-строка турнира для JS |
 
@@ -252,10 +252,8 @@
 |---------|----------|-----------|
 | `player` | из principal | |
 | `torneosInscritos` | `getActiveRegistrationsByPlayer()` | реальные данные |
-| `torneosGanados` | захардкожено `0` | **заглушка** |
-| `rankingPosition` | захардкожено `42` | **заглушка** |
-| `puntosRanking` | захардкожено `1250` | **заглушка** |
 | `tournamentsJson` | `getVisibleTournamentsForPlayer()` | |
+| `historicalJson` | прошедшие турниры игрока | |
 | `myTournamentIdsJson` | `getActiveRegistrationsByPlayer()` | |
 
 Также этот контроллер содержит REST-методы (`@ResponseBody`):

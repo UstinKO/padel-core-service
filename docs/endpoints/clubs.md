@@ -165,4 +165,4 @@
 
 > **[SECURITY — закрыто, сверено с кодом 2026-10-16]** `@PreAuthorize("hasRole('SUPER_ADMIN')")` + проверка в `ClubService.hardDeleteClub`. Исходное замечание: Жёсткое удаление должно быть доступно только `SUPER_ADMIN`, не любому `OWNER`.
 
-> **[BUG]** Если у клуба есть связанные турниры (`tournaments_db.club_id`), удаление нарушит FK-constraint и вернёт `500`. Нужна проверка перед удалением.
+> **[закрыто, сверено с кодом 2026-10-16]** `ClubService.hardDeleteClub` проверяет `tournamentRepository.existsByClubId` и бросает `InvalidStateException` — клуб с турнирами не удаляется.
