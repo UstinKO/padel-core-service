@@ -270,7 +270,7 @@
 
         <!-- Botón para ver todos los torneos -->
         <div style="text-align: center; margin: 30px 0 20px;">
-            <a href="https://1-padel.com/torneos" class="button">
+            <a th:href="${baseUrl + '/torneos'}" class="button">
                 <span th:text="#{email.no_spots.btn}">🔍 Ver todos los torneos disponibles</span>
             </a>
         </div>

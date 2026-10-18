@@ -538,10 +538,13 @@ public class TournamentService {
 
     private void sendNoSpotsLeftEmail(PlayerPadel player, Tournament tournament) {
         try {
+            String tournamentUrl = String.format("%s/torneo/%d", baseUrl, tournament.getId());
+
             emailService.sendNoSpotsLeftEmail(
                     player.getEmail(),
                     player.getNombre(),
                     tournament.getNombre(),
+                    tournamentUrl,
                     player.getLocale()
             );
             log.info("No spots left email sent to {}", player.getEmail());
