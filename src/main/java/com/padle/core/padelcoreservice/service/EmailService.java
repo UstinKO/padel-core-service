@@ -74,6 +74,7 @@ public class EmailService {
             context.setVariable("confirmUrl",
                     String.format("%s/players/confirmar-email?codigo=%s", baseUrl, codigo));
             context.setVariable("year", java.time.Year.now().getValue());
+            setLegalFooterLinks(context);
 
             String htmlContent = templateEngine.process("email/confirmacion", context);
 
@@ -281,9 +282,9 @@ public class EmailService {
 
             Context context = new Context(locale);
             context.setVariable("nombre", nombre);
-            context.setVariable("baseUrl", baseUrl);
             context.setVariable("dashboardUrl", baseUrl + "/players/dashboard");
             context.setVariable("year", java.time.Year.now().getValue());
+            setLegalFooterLinks(context);
 
             String htmlContent = templateEngine.process("email/bienvenida", context);
 
@@ -333,6 +334,7 @@ public class EmailService {
             context.setVariable("clubName", clubName);
             context.setVariable("tournamentUrl", tournamentUrl);
             context.setVariable("year", java.time.Year.now().getValue());
+            setLegalFooterLinks(context);
 
             String htmlContent = templateEngine.process("email/vacancy-invitation", context);
 
@@ -357,6 +359,7 @@ public class EmailService {
             @MetricTag("recipient") String to,
             @MetricTag("playerName") String playerName,
             String tournamentName,
+            String tournamentUrl,
             Locale locale) {
 
         emailMetricsService.recordEmailAttempt("NO_SPOTS_LEFT");
@@ -373,7 +376,9 @@ public class EmailService {
             Context context = new Context(locale);
             context.setVariable("playerName", playerName);
             context.setVariable("tournamentName", tournamentName);
+            context.setVariable("waitlistUrl", tournamentUrl);
             context.setVariable("year", java.time.Year.now().getValue());
+            setLegalFooterLinks(context);
 
             String htmlContent = templateEngine.process("email/no-spots-left", context);
 
@@ -420,6 +425,7 @@ public class EmailService {
             context.setVariable("tournamentDate", tournamentDate);
             context.setVariable("tournamentTime", tournamentTime);
             context.setVariable("clubName", clubName);
+            context.setVariable("baseUrl", baseUrl);
             context.setVariable("year", java.time.Year.now().getValue());
 
             String htmlContent = templateEngine.process("email/tournament-confirmation", context);
@@ -461,6 +467,7 @@ public class EmailService {
             Context context = new Context(locale);
             context.setVariable("nombre", nombre);
             context.setVariable("resetUrl", resetUrl);
+            context.setVariable("baseUrl", baseUrl);
             context.setVariable("year", java.time.Year.now().getValue());
 
             String htmlContent = templateEngine.process("email/recuperar-password", context);
@@ -866,6 +873,21 @@ public class EmailService {
             emailMetricsService.recordEmailError("CANCHA_ABIERTA_REMINDER", e.getClass().getSimpleName());
             log.error("❌ Error sending Cancha Abierta reminder to {}: {}", to, e.getMessage(), e);
         }
+    }
+
+    /**
+     * LFPT-0618: единая точка формирования ссылок общего футера письма (условия, конфиденциальность,
+     * контакт, отписка) из {@code app.base-url} — чтобы при смене домена не нужно было править
+     * каждый шаблон вручную. Страниц самостоятельной отписки и формы контакта в системе нет —
+     * обе ссылки временно ведут на почту поддержки, как и в остальных шаблонах (recuperar-password,
+     * tournament-confirmation).
+     */
+    private void setLegalFooterLinks(Context context) {
+        context.setVariable("baseUrl", baseUrl);
+        context.setVariable("terminosUrl", baseUrl + "/terminos");
+        context.setVariable("privacidadUrl", baseUrl + "/privacidad");
+        context.setVariable("contactoUrl", "mailto:soporte@1-padel.com");
+        context.setVariable("unsubscribeUrl", "mailto:soporte@1-padel.com");
     }
 
     /**

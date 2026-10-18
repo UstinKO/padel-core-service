@@ -186,7 +186,7 @@ Lombok отрабатывает до MapStruct — обеспечивается 
 | `SITE_KEY` / `SECRET_KEY` | _(из yml)_ | reCAPTCHA v3 |
 | `LOKI_ENABLED` | `false` (dev) / `true` (prod) | Включить отправку логов в Loki |
 | `LOKI_URL` | `http://loki:3100/...` | Адрес Loki |
-| `APP_BASE_URL` | `http://localhost:5173` | Базовый URL для ссылок в письмах |
+| `APP_BASE_URL` | `http://localhost:5173` | Базовый URL для всех пользовательских ссылок на сайт в письмах (`EmailService`/`TournamentService`/`DoubleTournamentRegistrationService` и др. — единая точка, в шаблонах `templates/email/**` домен не хардкодится, LFPT-0618). На проде должен быть публичным доменом сайта (`https://1-padel.com`), а не серверным доменом из раздела «Сервер» ниже — это два разных адреса. |
 
 ### Локальный запуск
 
@@ -589,7 +589,7 @@ GitHub Actions Runner
 | Параметр | Значение |
 |---------|---------|
 | IP | не публикуется (приватная заметка, `.claude/SECURITY.md`) |
-| Домен | `epadel.org` |
+| Домен | `epadel.org` (инфраструктурный — SSH, Grafana, имена сервисных учёток; не публичный домен сайта, см. `APP_BASE_URL` выше) |
 | ОС | Ubuntu 22.04.5 LTS |
 | Docker Compose | `/opt/padel-app/docker-compose.yml` |
 | Резервная копия JAR | `/opt/padel-app/app.jar.backup` |
