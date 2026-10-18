@@ -9,6 +9,7 @@
 | Файл | Описание |
 |------|----------|
 | [auth.md](auth.md) | JWT-аутентификация: login, token refresh, /me |
+| [public-schedule.md](public-schedule.md) | Публичное (анонимное) расписание и детали турнира для мобильного приложения |
 | [players-registration.md](players-registration.md) | Регистрация игроков: web-форма и JSON API |
 | [player-actions.md](player-actions.md) | Действия игрока: дашборд, регистрация/отмена на турнир |
 | [player-contact.md](player-contact.md) | Контактные данные игрока (телефон/Telegram) |
