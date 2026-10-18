@@ -1,10 +1,10 @@
 # LFPT-0618: Fix ссылки в email-уведомлениях на старый домен epadel.org — аудит шаблонов и переход на единый APP_BASE_URL
 
 ## Статус
-approved
+done
 
 ## Источник
-Клиентский запрос [specs/requests/LFPT-0618-ssylki-na-staryy-domen-v-emailah.md](../requests/LFPT-0618-ssylki-na-staryy-domen-v-emailah.md) → issue [#618](https://github.com/UstinKO/padel-core-service/issues/618).
+Клиентский запрос [specs/requests/LFPT-0618-ssylki-na-staryy-domen-v-emailah.md](requests/LFPT-0618-ssylki-na-staryy-domen-v-emailah.md) → issue [#618](https://github.com/UstinKO/padel-core-service/issues/618).
 Telegram-сообщение (для reply): 5175
 
 ## Контекст / зачем
