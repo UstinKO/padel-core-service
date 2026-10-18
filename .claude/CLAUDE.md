@@ -135,6 +135,8 @@ docker compose up -d
 
 ## REST API Endpoints
 
+Публичное (анонимное) расписание для мобильного приложения: `GET /api/public/tournaments` и `GET /api/public/tournaments/{id}` — без входа, отдельный DTO без контактов участников и полей управления; те же правила видимости, что у `/` и `/torneo/{id}`. Контракт — [docs/endpoints/public-schedule.md](../docs/endpoints/public-schedule.md). Остальной `/api/**` (в т.ч. `/api/tournaments/**`) сохраняет авторизацию.
+
 ### Auth API (`/api/auth`)
 
 | Method | URL | Описание |

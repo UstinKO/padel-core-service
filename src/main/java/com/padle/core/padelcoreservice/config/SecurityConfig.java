@@ -156,7 +156,11 @@ public class SecurityConfig {
                                 "/api/king-of-court/tournaments/*/players/*/history",
                                 "/api/king-of-court/ping",
                                 "/api/tournaments/double/*/looking-for-partner",
-                                "/api/internal/telegram-pipeline/status"
+                                "/api/internal/telegram-pipeline/status",
+                                // LFPT-0623: публичное расписание для мобильного приложения —
+                                // анонимное чтение, те же правила видимости, что у /torneo/{id}.
+                                "/api/public/tournaments",
+                                "/api/public/tournaments/*"
                         ).permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.POST,
                                 "/api/tournaments/double/accept-pair"
