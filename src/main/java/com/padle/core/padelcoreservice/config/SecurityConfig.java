@@ -139,7 +139,11 @@ public class SecurityConfig {
                                 "/oct-wa",
                                 "/oct-ig",
                                 // LFPT-0489: короткая ссылка для профиля Instagram
-                                "/ig-bio"
+                                "/ig-bio",
+                                // LFPT-0643: веб-версия клиента 1Padel.App — статика; приватные данные
+                                // клиент берёт из /api/** по Bearer-токену, их авторизация не меняется
+                                "/app",
+                                "/app/**"
                         ).permitAll()
                         .requestMatchers("/players/dashboard").authenticated()
                         .requestMatchers("/players/lista").authenticated()
