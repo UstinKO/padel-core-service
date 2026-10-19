@@ -1,7 +1,7 @@
 # LFPT-0646: Feature сохранение входа в 1Padel.App после перезапуска — персистентный refresh-токен для веб-клиента (Google и почта)
 
 ## Статус
-approved
+done
 
 ## Источник
 `specs/requests/LFPT-0646-sohranenie-vhoda-1padel-app.md`
