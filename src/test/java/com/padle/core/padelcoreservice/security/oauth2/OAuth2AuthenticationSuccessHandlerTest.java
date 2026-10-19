@@ -1,9 +1,11 @@
 package com.padle.core.padelcoreservice.security.oauth2;
 
 import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.padelcoreservice.security.JwtService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -53,7 +55,7 @@ class OAuth2AuthenticationSuccessHandlerTest {
                 new TokenBasedRememberMeServices("test-key", userDetailsService);
 
         OAuth2AuthenticationSuccessHandler handler =
-                new OAuth2AuthenticationSuccessHandler(rememberMeServices);
+                new OAuth2AuthenticationSuccessHandler(rememberMeServices, mock(JwtService.class));
 
         CustomOAuth2User principal = new CustomOAuth2User(mock(org.springframework.security.oauth2.core.user.OAuth2User.class), player);
         Authentication authentication = mock(Authentication.class);
@@ -79,5 +81,64 @@ class OAuth2AuthenticationSuccessHandlerTest {
         assertThat(rememberMeCookie.getValue()).isNotBlank();
         // Кука должна пережить закрытие браузера — положительный maxAge (не session cookie).
         assertThat(rememberMeCookie.getMaxAge()).isGreaterThan(0);
+    }
+
+    /**
+     * LFPT-0637: вход, инициированный клиентом 1Padel.App ({@code ?client=app} на
+     * {@code /oauth2/authorization/google}, перехваченный {@link OAuth2AppLoginOriginFilter}),
+     * должен вернуть браузер в приложение с токенами во fragment URL, а не на /players/dashboard.
+     */
+    @Test
+    void onAuthenticationSuccess_loginDesdeApp_redirigeAAppConTokensEnFragment() throws Exception {
+        PlayerPadel player = PlayerPadel.builder()
+                .id(1L)
+                .nombre("Test")
+                .apellido("Player")
+                .email(PLAYER_EMAIL)
+                .passwordHash(PLAYER_PASSWORD_HASH)
+                .activo(true)
+                .emailConfirmado(true)
+                .build();
+
+        UserDetailsService userDetailsService = username -> {
+            if (PLAYER_EMAIL.equals(username)) {
+                return player;
+            }
+            throw new UsernameNotFoundException(username);
+        };
+        RememberMeServices rememberMeServices =
+                new TokenBasedRememberMeServices("test-key", userDetailsService);
+
+        JwtService jwtService = mock(JwtService.class);
+        when(jwtService.generateToken(player, player.getId(), player.getNombreCompleto())).thenReturn("access-token");
+        when(jwtService.generateRefreshToken(player, player.getId())).thenReturn("refresh-token");
+        when(jwtService.getAccessTokenExpirationMs()).thenReturn(86_400_000L);
+
+        OAuth2AuthenticationSuccessHandler handler =
+                new OAuth2AuthenticationSuccessHandler(rememberMeServices, jwtService);
+
+        CustomOAuth2User principal = new CustomOAuth2User(mock(org.springframework.security.oauth2.core.user.OAuth2User.class), player);
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getPrincipal()).thenReturn(principal);
+        when(authentication.getName()).thenReturn(PLAYER_EMAIL);
+
+        HttpSession session = mock(HttpSession.class);
+        when(session.getAttribute(OAuth2AppLoginOriginFilter.SESSION_ATTR)).thenReturn(Boolean.TRUE);
+
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getParameter(any())).thenReturn(null);
+        when(request.getContextPath()).thenReturn("");
+        when(request.getSession(false)).thenReturn(session);
+
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        // DefaultRedirectStrategy codifica la URL vía encodeRedirectURL() antes de sendRedirect() —
+        // sin este stub, el mock devuelve null y se pierde la URL real en la verificación.
+        when(response.encodeRedirectURL(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        handler.onAuthenticationSuccess(request, response, authentication);
+
+        org.mockito.Mockito.verify(session).removeAttribute(OAuth2AppLoginOriginFilter.SESSION_ATTR);
+        org.mockito.Mockito.verify(response).sendRedirect(
+                "/app/#accessToken=access-token&refreshToken=refresh-token&expiresIn=86400000");
     }
 }

@@ -3,6 +3,8 @@
 **Контроллер:** `AuthController`  
 **Назначение:** JWT-аутентификация для мобильных/SPA клиентов. Веб-форма использует отдельный Spring Security form-login.
 
+Вход через Google для клиента 1Padel.App (`GET /oauth2/authorization/google?client=app`, не часть `AuthController`) — см. [`docs/auth-flow.md` § «Вход из клиента 1Padel.App»](../auth-flow.md#вход-из-клиента-1padelapp-clientapp-lfpt-0637).
+
 ---
 
 ## POST `/api/auth/login`

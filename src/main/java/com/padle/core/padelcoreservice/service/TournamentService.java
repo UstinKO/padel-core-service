@@ -213,6 +213,60 @@ public class TournamentService {
         return new PlayerDashboardTournaments(historicalDtos, activeTournamentIds);
     }
 
+    /**
+     * LFPT-0637: одна запись «Мои мероприятия» — турнир + статус и позиция в листе
+     * ожидания собственной регистрации игрока (не инварианты статуса самого турнира).
+     */
+    public record MyTournamentEntry(TournamentDto tournament, RegistrationStatus registrationStatus,
+                                     Integer waitlistPosition, LocalDateTime registrationDate) {}
+
+    /**
+     * LFPT-0637: обзор «Мои мероприятия» для клиента 1Padel.App — read-only, то же
+     * разбиение турниров по {@link TournamentStatus}, что и в дашборде игрока
+     * ({@link #getHistoricalAndActiveTournamentsByPlayer}), но с сохранением статуса/
+     * позиции в листе ожидания каждой регистрации (дашборду это не требовалось).
+     */
+    public record PlayerTournamentsOverview(List<MyTournamentEntry> upcoming, List<TournamentDto> historical) {}
+
+    @Timed(
+            name = "tournament.my.tournaments.time",
+            description = "Time taken to fetch player's own tournaments overview",
+            tags = {"service=tournament", "operation=myTournaments"}
+    )
+    @Transactional(readOnly = true)
+    public PlayerTournamentsOverview getMyTournamentsOverview(Long playerId) {
+        List<TournamentRegistration> registrations = registrationRepository.findActiveRegistrationsByPlayerId(playerId);
+
+        List<TournamentRegistration> upcomingRegistrations = registrations.stream()
+                .filter(r -> r.getTournament().getEstado() == TournamentStatus.PUBLICADO
+                        || r.getTournament().getEstado() == TournamentStatus.REGISTRO_ABIERTO)
+                .toList();
+        Map<Long, TournamentDto> upcomingDtosByTournamentId = mapToDtoWithDetails(
+                upcomingRegistrations.stream().map(TournamentRegistration::getTournament).toList())
+                .stream()
+                .collect(Collectors.toMap(TournamentDto::getId, dto -> dto));
+        List<MyTournamentEntry> upcoming = upcomingRegistrations.stream()
+                .map(r -> new MyTournamentEntry(
+                        upcomingDtosByTournamentId.get(r.getTournament().getId()),
+                        r.getStatus(),
+                        r.getWaitlistPosition(),
+                        r.getRegistrationDate()))
+                .sorted(Comparator.comparing(e -> e.tournament().getFechaInicio()))
+                .collect(Collectors.toList());
+
+        List<Tournament> historicalTournaments = registrations.stream()
+                .map(TournamentRegistration::getTournament)
+                .filter(t -> t.getEstado() == TournamentStatus.CERRADO
+                        || t.getEstado() == TournamentStatus.FINALIZADO
+                        || t.getEstado() == TournamentStatus.CANCELADO)
+                .collect(Collectors.toList());
+        List<TournamentDto> historicalDtos = mapToDtoWithDetails(historicalTournaments);
+        historicalDtos.sort(Comparator.comparing(TournamentDto::getFechaInicio)
+                .thenComparing(TournamentDto::getHoraInicio));
+
+        return new PlayerTournamentsOverview(upcoming, historicalDtos);
+    }
+
     // ==================== Методы для регистрации ====================
     @Timed(
             name = "tournament.registration.time",

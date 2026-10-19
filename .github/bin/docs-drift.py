@@ -51,7 +51,8 @@ def check_schema_version():
 
 
 # классы фреймворков, на которые ссылаются docs
-EXTERNAL_CLASSES = {"UserDetailsService", "ObjectMapper", "OncePerRequestFilter", "SecurityFilterChain"}
+EXTERNAL_CLASSES = {"UserDetailsService", "ObjectMapper", "OncePerRequestFilter", "SecurityFilterChain",
+                     "OAuth2AuthorizationRequestRedirectFilter"}
 # строки с предложениями рефакторинга называют классы, которых ещё нет
 PROPOSAL = re.compile(r"разделить|переносится|выделить|предлага", re.I)
 

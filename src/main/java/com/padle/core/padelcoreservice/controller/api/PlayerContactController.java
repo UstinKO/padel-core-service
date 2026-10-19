@@ -5,6 +5,7 @@ import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
 import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2User;
 import com.padle.core.padelcoreservice.service.PlayerService;
+import com.padle.core.padelcoreservice.service.TournamentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -24,6 +25,7 @@ public class PlayerContactController {
 
     private final PlayerRepository playerRepository;
     private final PlayerService playerService;
+    private final TournamentService tournamentService;
 
     /**
      * Обновление контактных данных игрока (телефон и/или Telegram).
@@ -143,6 +145,30 @@ public class PlayerContactController {
                 "hasTelegram", player.getTelegramUsername() != null && !player.getTelegramUsername().isBlank(),
                 "telefono", player.getTelefono() != null ? player.getTelefono() : "",
                 "telegramUsername", player.getTelegramUsername() != null ? player.getTelegramUsername() : ""
+        ));
+    }
+
+    /**
+     * LFPT-0637: «Мои мероприятия» для клиента 1Padel.App — read-only: предстоящие
+     * турниры со статусом/позицией в листе ожидания собственной регистрации, и история.
+     * Запись/отмена регистрации по-прежнему только через сайт
+     * ({@code POST /players/tournaments/{id}/register|cancel|cancel-double}).
+     */
+    @GetMapping("/me/tournaments")
+    public ResponseEntity<?> getMyTournaments(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(401).body(Map.of("success", false, "message", "No autenticado"));
+        }
+
+        PlayerPadel player = extractPlayer(authentication.getPrincipal());
+        if (player == null) {
+            return ResponseEntity.status(403).body(Map.of("success", false, "message", "Solo disponible para jugadores"));
+        }
+
+        TournamentService.PlayerTournamentsOverview overview = tournamentService.getMyTournamentsOverview(player.getId());
+        return ResponseEntity.ok(Map.of(
+                "upcoming", overview.upcoming(),
+                "historical", overview.historical()
         ));
     }
 
