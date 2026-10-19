@@ -329,15 +329,29 @@ document.addEventListener('DOMContentLoaded', function() {
         const body = document.getElementById('registrationConfirmModalBody');
         if (!modal || !body) return;
 
-        const isCanchaAbierta = tournamentType === 'CANCHA_ABIERTA';
-
         let rulesHtml;
-        if (isCanchaAbierta) {
+        if (tournamentType === 'CANCHA_ABIERTA') {
             rulesHtml = `
                 <p class="reg-confirm-subtitle">${t('regConfirm.cancha.subtitle')}</p>
                 <div class="reg-confirm-info-box">
                     <p>${t('regConfirm.cancha.rule1')}</p>
                     <p>${t('regConfirm.cancha.rule2')}</p>
+                </div>`;
+        } else if (tournamentType === 'PADEL_CLINIC') {
+            // LFPT-0651: финансовые условия отмены как у индивидуального турнира,
+            // но без штрафа за опоздание — Padel Clinic не соревновательный формат.
+            rulesHtml = `
+                <p class="reg-confirm-subtitle">${t('regConfirm.clinic.subtitle')}</p>
+                <div class="reg-confirm-info-box">
+                    <div class="reg-confirm-info-box__title">
+                        <i class="fas fa-info-circle"></i> ${t('regConfirm.individual.rulesTitle')}
+                    </div>
+                    <ul class="reg-confirm-rules">
+                        <li>${t('regConfirm.clinic.rule1')}</li>
+                        <li>${t('regConfirm.clinic.rule2')}</li>
+                        <li>${t('regConfirm.clinic.rule3')}</li>
+                        <li>${t('regConfirm.clinic.rule4')}</li>
+                    </ul>
                 </div>`;
         } else {
             rulesHtml = `
