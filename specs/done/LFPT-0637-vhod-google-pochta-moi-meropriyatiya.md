@@ -1,7 +1,7 @@
 # LFPT-0637: вход через Google и почту + «Мои мероприятия» для клиента 1Padel.App
 
 ## Статус
-approved
+done
 
 ## Источник
 `specs/requests/LFPT-0637-vhod-google-pochta-moi-meropriyatiya.md`, issue [#637](https://github.com/UstinKO/padel-core-service/issues/637). Pipeline-Task: 5245.
