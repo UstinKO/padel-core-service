@@ -1233,12 +1233,13 @@
                                 <th th:if="${tournament.modalidad.name() == 'DOBLES'}" th:text="#{admin.tournaments.details.col.pair_contact}">Contacto pareja</th>
                                 <th th:unless="${tournament.modalidad.name() == 'DOBLES'}" th:text="#{admin.tournaments.details.col.position}">Posición</th>
                                 <th th:unless="${tournament.modalidad.name() == 'DOBLES'}" th:text="#{admin.tournaments.details.col.contact}">Contacto</th>
+                                <th th:if="${tournament.mostrarNivel}" th:text="#{admin.tournaments.details.col.level}">Nivel</th>
                                 <th style="width:90px;" th:text="#{admin.tournaments.details.col.actions}">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr th:if="${#lists.isEmpty(confirmedRegs)}">
-                                <td th:colspan="${tournament.modalidad.name() == 'DOBLES' ? 5 : 6}"
+                                <td th:colspan="${(tournament.modalidad.name() == 'DOBLES' ? 5 : 6) + (tournament.mostrarNivel ? 1 : 0)}"
                                     class="reg-empty-cell" th:text="#{admin.tournaments.details.empty.no_confirmed}">No hay participantes confirmados</td>
                             </tr>
                             <tr th:each="reg, iterStat : ${confirmedRegs}"
@@ -1305,6 +1306,11 @@
                                     <span th:if="${(reg.playerTelegram == null or reg.playerTelegram.isEmpty()) and (reg.playerPhone == null or reg.playerPhone.isEmpty())}"
                                           style="color:#94a3b8;">—</span>
                                 </td>
+                                <!-- Колонка «Уровень» (LFPT-0628) -->
+                                <td th:if="${tournament.mostrarNivel and tournament.modalidad.name() == 'DOBLES'}"
+                                    th:text="${(reg.playerNivel != null ? reg.playerNivel.display : '—') + ' / ' + (reg.partnerNivel != null ? reg.partnerNivel.display : '—')}"></td>
+                                <td th:if="${tournament.mostrarNivel and tournament.modalidad.name() != 'DOBLES'}"
+                                    th:text="${reg.playerNivel != null ? reg.playerNivel.display : '—'}"></td>
                                 <td>
                                     <div class="reg-action-cell">
                                         <button type="button"
@@ -1346,6 +1352,7 @@
                                 <th style="width:48px;">#</th>
                                 <th th:text="#{admin.tournaments.details.col.player}">Jugador</th>
                                 <th th:text="#{admin.tournaments.details.col.position}">Posición</th>
+                                <th th:if="${tournament.mostrarNivel}" th:text="#{admin.tournaments.details.col.level}">Nivel</th>
                                 <th style="width:70px;" th:text="#{admin.tournaments.details.col.actions}">Acciones</th>
                             </tr>
                         </thead>
@@ -1365,6 +1372,8 @@
                                 <td>
                                     <span style="color:#64748b; font-size:.82rem;" th:text="'#' + ${reg.position}"></span>
                                 </td>
+                                <td th:if="${tournament.mostrarNivel}"
+                                    th:text="${reg.playerNivel != null ? reg.playerNivel.display : '—'}"></td>
                                 <td>
                                     <a th:href="@{'/admin/players/' + ${reg.playerId}}"
                                        class="btn-icon"
@@ -1395,6 +1404,7 @@
                                 <th style="width:48px;">#</th>
                                 <th th:text="#{admin.tournaments.details.col.player}">Jugador</th>
                                 <th th:text="#{admin.tournaments.details.col.inviting}">Invitando a</th>
+                                <th th:if="${tournament.mostrarNivel}" th:text="#{admin.tournaments.details.col.level}">Nivel</th>
                                 <th style="width:70px;" th:text="#{admin.tournaments.details.col.actions}">Acciones</th>
                             </tr>
                         </thead>
@@ -1415,6 +1425,8 @@
                                 <td>
                                     <span th:text="${reg.partnerNombre} + ' ' + (${reg.partnerApellido} ?: '')"></span>
                                 </td>
+                                <td th:if="${tournament.mostrarNivel}"
+                                    th:text="${(reg.playerNivel != null ? reg.playerNivel.display : '—') + ' / ' + (reg.partnerNivel != null ? reg.partnerNivel.display : '—')}"></td>
                                 <td>
                                     <a th:href="@{'/admin/players/' + ${reg.playerId}}"
                                        class="btn-icon"
@@ -1456,6 +1468,7 @@
                             <th th:text="#{admin.tournaments.details.col.player}">Jugador</th>
                             <th th:text="#{admin.tournaments.details.col.scenario}">Escenario</th>
                             <th th:text="#{admin.tournaments.details.col.date_registered}">Fecha inscripción</th>
+                            <th th:if="${tournament.mostrarNivel}" th:text="#{admin.tournaments.details.col.level}">Nivel</th>
                             <th style="width:70px;" th:text="#{admin.tournaments.details.col.actions}">Acciones</th>
                         </tr>
                     </thead>
@@ -1481,6 +1494,8 @@
                             </td>
                             <td style="font-size:.82rem; color:#6b7280;"
                                 th:text="${#temporals.format(reg.registrationDate, 'dd/MM/yyyy HH:mm')}"></td>
+                            <td th:if="${tournament.mostrarNivel}"
+                                th:text="${reg.playerNivel != null ? reg.playerNivel.display : '—'}"></td>
                             <td>
                                 <a th:href="@{'/admin/players/' + ${reg.playerId}}"
                                    class="btn-icon" th:title="#{admin.tournaments.details.action.view_player_short}">
@@ -1619,6 +1634,7 @@
                             <th style="width:48px;">#</th>
                             <th th:text="#{admin.tournaments.details.col.player}">Jugador</th>
                             <th th:text="#{admin.tournaments.details.col.wait_position}">Posición en espera</th>
+                            <th th:if="${tournament.mostrarNivel}" th:text="#{admin.tournaments.details.col.level}">Nivel</th>
                             <th style="width:90px;" th:text="#{admin.tournaments.details.col.actions}">Acciones</th>
                         </tr>
                     </thead>
@@ -1639,6 +1655,8 @@
                                 <span style="color:#64748b; font-size:.82rem;"
                                       th:text="'Espera #' + ${reg.waitlistPosition}"></span>
                             </td>
+                            <td th:if="${tournament.mostrarNivel}"
+                                th:text="${reg.playerNivel != null ? reg.playerNivel.display : '—'}"></td>
                             <td>
                                 <div class="reg-action-cell">
                                     <button type="button"
