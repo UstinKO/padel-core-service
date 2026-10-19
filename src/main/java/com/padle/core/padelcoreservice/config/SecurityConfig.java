@@ -5,6 +5,7 @@ import com.padle.core.padelcoreservice.security.JwtAuthenticationFilter;
 import com.padle.core.padelcoreservice.security.RateLimitFilter;
 import com.padle.core.padelcoreservice.security.RequestIdFilter;
 import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2UserService;
+import com.padle.core.padelcoreservice.security.oauth2.OAuth2AppLoginOriginFilter;
 import com.padle.core.padelcoreservice.security.oauth2.OAuth2AuthenticationSuccessHandler;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -21,6 +22,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -53,6 +55,7 @@ public class SecurityConfig {
     private final RequestIdFilter requestIdFilter;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
     private final RememberMeServices rememberMeServices;
+    private final OAuth2AppLoginOriginFilter oAuth2AppLoginOriginFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -180,6 +183,9 @@ public class SecurityConfig {
                 // регистрируем после rateLimitFilter (чтобы его позиция в реестре уже была известна),
                 // но "before", чтобы RequestIdFilter реально выполнялся раньше по цепочке.
                 .addFilterBefore(requestIdFilter, RateLimitFilter.class)
+                // LFPT-0637: должен успеть записать в сессию признак "вход из 1Padel.App"
+                // до того, как Spring Security перенаправит на Google.
+                .addFilterBefore(oAuth2AppLoginOriginFilter, OAuth2AuthorizationRequestRedirectFilter.class)
                 // Spring Security 6 генерирует CSRF-токен лениво: cookie XSRF-TOKEN пишется,
                 // только если токен реально прочитан за время запроса (обычно — рендером
                 // th:action формы). Страницы без форм (чисто JS/fetch) иначе останутся без

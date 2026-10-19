@@ -156,6 +156,7 @@ docker compose up -d
 | GET | `/players/api/confirmar-email` | Подтверждение email по токену |
 | PATCH | `/api/players/me/contact` | Обновление контакта (телефон / Telegram) |
 | GET | `/api/players/me/contact-status` | Проверка наличия контакта |
+| GET | `/api/players/me/tournaments` | «Мои мероприятия» (LFPT-0637) — предстоящие/история, только просмотр |
 
 ### Tournaments API (`/api/tournaments`)
 

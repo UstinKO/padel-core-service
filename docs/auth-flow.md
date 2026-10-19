@@ -353,6 +353,15 @@ Client                          /api/auth/refresh
 - JWT выдаётся сразу в хедере ответа (`Authorization: Bearer ...`). Браузер его видит, но в cookie не сохраняется — в текущей реализации сессионный cookie тоже устанавливается Spring Security. Фактически после OAuth2 работает **и сессия, и токен**.
 - При ошибке OAuth2 → редирект на `/login?error=oauth2`.
 
+### Вход из клиента 1Padel.App (`?client=app`, LFPT-0637)
+
+Клиент, размещённый на `/app/` (см. issue #638 — пока заблокирована, см. CLAUDE.md), запускает тот же флоу с одним отличием: `GET /oauth2/authorization/google?client=app`.
+
+- `OAuth2AppLoginOriginFilter` (до `OAuth2AuthorizationRequestRedirectFilter`) видит `client=app` на этом конкретном URL и сохраняет флаг в `HttpSession` — **не** принимает произвольный `redirect_uri` от клиента, чтобы не открыть open redirect.
+- `OAuth2AuthenticationSuccessHandler` после успешного входа видит флаг, снимает его и редиректит не на `/players/dashboard`, а на `/app/#accessToken=...&refreshToken=...&expiresIn=...` — токены в **fragment** URL (после `#`), не в query: fragment не уходит на сервер и не попадает в access-логи/`Referer`.
+- Сессия и remember-me cookie выставляются как обычно (общий код для обоих случаев) — веб-вход без `client=app` не меняется.
+- Ошибка OAuth2 для входа из приложения обрабатывается так же, как и для веба (`/login?error=oauth2`) — отдельной обработки на стороне клиента пока нет.
+
 ---
 
 ## 7. Сброс пароля

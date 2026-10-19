@@ -104,6 +104,43 @@
 
 ---
 
+## GET `/api/players/me/tournaments`
+
+**Кто вызывает:** клиент 1Padel.App (LFPT-0637) — «Мои мероприятия», только просмотр.
+**Аутентификация:** `ROLE_PLAYER` (принципал-`Owner` — `403`, не пустой список).
+
+### Алгоритм
+
+1. Извлекает `PlayerPadel` из principal (как и остальные `/api/players/me/**` в этом контроллере).
+2. `TournamentService.getMyTournamentsOverview(playerId)` — то же разбиение по `TournamentStatus`, что и в дашборде игрока (`getHistoricalAndActiveTournamentsByPlayer`): `upcoming` — турниры в `PUBLICADO`/`REGISTRO_ABIERTO`, `historical` — `CERRADO`/`FINALIZADO`/`CANCELADO`. Источник — тот же `findActiveRegistrationsByPlayerId` (фильтр по `isActive`, не по `status`), поэтому отменённые регистрации не попадают ни в один из списков.
+3. Запись/отмена регистрации через этот эндпоинт не делаются — используются существующие `POST /players/tournaments/{id}/register|cancel|cancel-double`.
+
+### Контракт
+
+**Response 200 OK**:
+```json
+{
+  "upcoming": [
+    {
+      "tournament": { "...": "TournamentDto" },
+      "registrationStatus": "CONFIRMED | WAITLIST | ...",
+      "waitlistPosition": 3,
+      "registrationDate": "2026-10-10T12:00:00"
+    }
+  ],
+  "historical": [ { "...": "TournamentDto" } ]
+}
+```
+
+**Response 403 Forbidden** (principal — `Owner`, не игрок):
+```json
+{ "success": false, "message": "Solo disponible para jugadores" }
+```
+
+**Response 401 Unauthorized** — нет аутентификации (как и остальной `/api/**`).
+
+---
+
 ## GET `/api/players/search`
 
 **Auth:** любой аутентифицированный пользователь (`anyRequest().authenticated()`)  

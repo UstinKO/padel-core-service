@@ -1,10 +1,12 @@
 package com.padle.core.padelcoreservice.security.oauth2;
 
 import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.padelcoreservice.security.JwtService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -15,6 +17,8 @@ import org.springframework.security.web.authentication.rememberme.AbstractRememb
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 @Slf4j
 @Component
@@ -22,6 +26,7 @@ import java.io.IOException;
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     private final RememberMeServices rememberMeServices;
+    private final JwtService jwtService;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
@@ -52,7 +57,29 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         };
         rememberMeServices.loginSuccess(requestWithRememberMe, response, authentication);
 
+        // LFPT-0637: вход, инициированный клиентом 1Padel.App (OAuth2AppLoginOriginFilter
+        // проставил флаг в сессию ещё до редиректа на Google) — возвращаем в приложение с
+        // токенами во fragment URL (не в query/path — fragment не уходит на сервер и не
+        // попадает в Referer/access-логи), а не на /players/dashboard.
+        HttpSession session = request.getSession(false);
+        if (session != null && session.getAttribute(OAuth2AppLoginOriginFilter.SESSION_ATTR) != null) {
+            session.removeAttribute(OAuth2AppLoginOriginFilter.SESSION_ATTR);
+
+            String accessToken = jwtService.generateToken(player, player.getId(), player.getNombreCompleto());
+            String refreshToken = jwtService.generateRefreshToken(player, player.getId());
+
+            String redirectUrl = "/app/#accessToken=" + urlEncode(accessToken)
+                    + "&refreshToken=" + urlEncode(refreshToken)
+                    + "&expiresIn=" + jwtService.getAccessTokenExpirationMs();
+            getRedirectStrategy().sendRedirect(request, response, redirectUrl);
+            return;
+        }
+
         // Редиректим на dashboard
         getRedirectStrategy().sendRedirect(request, response, "/players/dashboard");
+    }
+
+    private static String urlEncode(String value) {
+        return URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
 }

@@ -49,7 +49,7 @@ public class SecurityBeansConfig {
 
     @Bean
     public OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler() {
-        return new OAuth2AuthenticationSuccessHandler(rememberMeServices());
+        return new OAuth2AuthenticationSuccessHandler(rememberMeServices(), jwtService);
     }
 
     // #297: общий на форму-логин и Google OAuth2 — единственный источник remember-me
