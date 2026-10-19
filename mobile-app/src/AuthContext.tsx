@@ -3,17 +3,17 @@ import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { AuthError, createAuthClient, parseSessionFragment } from './auth';
 import type { Profile } from './auth';
+import { createNativeSessionStore, createWebSessionStore } from './sessionStore';
 
 const secureKey = 'onepadel.refresh.v1';
 export const secureAuthContext = Platform.OS !== 'web' || (typeof window !== 'undefined' && (window.location.protocol === 'https:' || ['localhost', '127.0.0.1'].includes(window.location.hostname)));
-const store = {
-  async get() { return Platform.OS === 'web' ? null : SecureStore.getItemAsync(secureKey); },
-  async set(token: string | null) {
-    if (Platform.OS === 'web') return; // Браузерные токены только в памяти текущей вкладки.
-    if (token) await SecureStore.setItemAsync(secureKey, token, { keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY });
-    else await SecureStore.deleteItemAsync(secureKey);
-  },
-};
+// Веб: refresh-токен в localStorage переживает закрытие/повторное открытие вкладки (LFPT-0646) —
+// только за гейтом secureAuthContext (HTTPS/localhost), как и сам вход.
+// Native: без изменений, SecureStore.
+const store = Platform.OS === 'web'
+  ? createWebSessionStore(secureAuthContext && typeof window !== 'undefined' ? window.localStorage : null, secureKey)
+  : createNativeSessionStore(SecureStore, secureKey, SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY);
+
 type Auth = { profile: Profile | null; restoring: boolean; restoreError: string | null; googleCode: string | null;
   login: (email: string, password: string) => Promise<void>; google: () => Promise<void>; cancelGoogle: () => void;
   logout: () => Promise<void>; retryRestore: () => Promise<void>; client: ReturnType<typeof createAuthClient> };
