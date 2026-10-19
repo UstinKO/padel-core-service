@@ -63,10 +63,19 @@ document.addEventListener('DOMContentLoaded', function() {
         return isDouble;
     }
 
-    // Закрытие модального окна
+    // Закрытие модального окна — закрываем то окно, внутри которого нажата кнопка,
+    // а не всегда partnerModal (LFPT-0634).
     if (modalClose) {
         modalClose.forEach(btn => {
-            btn.addEventListener('click', closeModal);
+            btn.addEventListener('click', () => {
+                const modal = btn.closest('.modal');
+                if (modal === partnerModal) {
+                    closeModal();
+                } else if (modal) {
+                    modal.classList.remove('show');
+                    modal.style.removeProperty('display');
+                }
+            });
         });
     }
 
@@ -448,7 +457,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                         <i class="fas fa-exclamation-circle"
                                            style="font-size:48px; color:#dc3545; margin-bottom:15px;"></i>
                                         <p style="font-size:16px; margin:0;">${data.message}</p>`;
-                                    resultModal.style.display = 'block';
                                     resultModal.classList.add('show');
                                 }
                             }
