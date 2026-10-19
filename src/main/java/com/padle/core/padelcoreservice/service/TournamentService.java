@@ -31,6 +31,8 @@ import com.padle.core.padelcoreservice.repository.americano.AmericanoTeamReposit
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -73,6 +75,7 @@ public class TournamentService {
     private final AmericanoMatchRepository americanoMatchRepository;
     private final AmericanoTeamRepository americanoTeamRepository;
     private final KingOfCourtPlayerStatsRepository kingOfCourtPlayerStatsRepository;
+    private final MessageSource messageSource;
 
     @Value("${app.base-url:http://localhost:8080}")
     private String baseUrl;
@@ -249,6 +252,12 @@ public class TournamentService {
         }
         // ========== КОНЕЦ ПРОВЕРКИ ==========
 
+        // LFPT-0303: правило "±1 ступень" для самостоятельной регистрации на категорийный
+        // турнир. Не применяется к ручной регистрации через TestTournamentController
+        // (там своя JDBC-логика, этот метод не вызывается).
+        TournamentLevelPolicy.assertEligible(tournament.getTipo(), tournament.getCategoriaNivel(),
+                player.getNivelJugador(), messageSource, LocaleContextHolder.getLocale());
+
         // Проверяем, активен ли турнир
         if (!tournament.getIsActive()) {
             throw new TournamentRegistrationException("Tournament is not active");
@@ -380,6 +389,7 @@ public class TournamentService {
         TournamentRegistration savedRegistration = registrationRepository.save(registration);
         return registrationMapper.toDto(savedRegistration);
     }
+
     private void sendWaitlistNotification(PlayerPadel player, Tournament tournament, int waitlistPosition) {
         try {
             String dateStr = tournament.getFechaInicio().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));

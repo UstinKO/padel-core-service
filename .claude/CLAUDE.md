@@ -513,6 +513,7 @@ Push в `master` запускает `.github/workflows/deploy.yml`: сборка
 - Язык домена смешанный: поля entity на испанском (`nombre`, `fechaInicio`, `modalidad`), комментарии и логи на русском.
 - Язык работы — русский (все разработчики русскоязычные): issue (заголовок и описание), ТЗ в `specs/**`, документация в `docs/**` и `.claude/**`, коммиты и описания PR — на русском. Подробно — [GIT_WORKFLOW.md §1.5](GIT_WORKFLOW.md).
 - `PlayerPadel.hasValidContact()` — регистрация на турнир требует телефон `+54` **или** Telegram username.
+- `TournamentLevelPolicy` (LFPT-0303) — самостоятельная регистрация на турнир с "простой" категорией (`Nivel.isPlayerLevel(categoriaNivel)`, т.е. `C9..C4`/`D9..D6`) требует уровень игрока в пределах ±1 ступени от категории турнира; не применяется к `CANCHA_ABIERTA`/`PADEL_CLINIC`, `TODOS`/`PRINCIPIANTES`/диапазонам/`SUMA_*`. Проверяется в `TournamentService.registerPlayer()` и в точках самостоятельной регистрации `DoubleTournamentRegistrationService` (не в `TestTournamentController` — ручная регистрация организатором не ограничивается).
 - `TestTournamentController` работает напрямую через JDBC (`DataSource`), **не через JPA**. Используется только для внутреннего тестирования организатором.
 - При добавлении новой Liquibase-миграции: создать файл `v1.XX-<description>.yaml` в `versions/` и добавить `include` в конец `changelog-master.yaml`.
 - Таблица регистраций называется `tournament_registrations_db` (не `tournament_registration`).
