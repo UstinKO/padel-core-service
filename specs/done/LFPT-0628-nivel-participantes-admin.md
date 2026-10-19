@@ -1,7 +1,7 @@
 # LFPT-0628: Feature уровень участников в админке турнира — колонка «Уровень» в таблице регистраций
 
 ## Статус
-approved
+done
 
 ## Источник
 GitHub issue [#628](https://github.com/UstinKO/padel-core-service/issues/628). Клиентский запрос — `specs/requests/LFPT-0628-nivel-participantes-admin.md`.
