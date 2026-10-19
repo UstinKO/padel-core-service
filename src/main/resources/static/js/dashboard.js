@@ -400,6 +400,11 @@ document.addEventListener('DOMContentLoaded', function() {
                             myTournamentIds.add(parseInt(tournamentId));
                             updateTabCounts();
                             applyFiltersFunction();
+                        } else if (data.needLevel) {
+                            // LFPT-0632: попап "указать уровень" вместо обычной ошибки
+                            LevelCheck.show(tournamentId);
+                            button.disabled = false;
+                            button.innerHTML = `<i class="fas fa-plus-circle"></i> ${t('dashboard.card.btn.register')}`;
                         } else {
                             showResultModal('error', data.message || t('details.error.process'));
                             button.disabled = false;
@@ -657,6 +662,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     updateTabCounts();
                     showResultModal('success', t('details.success.pair_complete'));
                     applyFiltersFunction();
+                } else if (data.needLevel) {
+                    // LFPT-0632: попап "указать уровень" вместо обычной ошибки
+                    closePartnerModal();
+                    LevelCheck.show(tournamentId);
+                    resetBtn();
                 } else {
                     showResultModal('error', data.message || t('details.error.process'));
                     resetBtn();
@@ -698,13 +708,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(partnerData)
             });
+            const data = await response.json();
 
             if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.message || 'Error en el registro');
+                if (data.needLevel) {
+                    // LFPT-0632: попап "указать уровень" вместо обычной ошибки
+                    closePartnerModal();
+                    LevelCheck.show(tournamentId);
+                    resetBtn();
+                    return;
+                }
+                throw new Error(data.message || 'Error en el registro');
             }
 
-            const data = await response.json();
             window.trackTournamentRegistrationComplete?.(tournamentId, data.status);
             closePartnerModal();
             myTournamentIds.add(parseInt(tournamentId));
