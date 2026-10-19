@@ -179,4 +179,28 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    // ===== LFPT-0632: возврат к незавершённой регистрации после указания уровня =====
+    // Желательное (не обязательное) удобство: если игрок пришёл в профиль из попапа
+    // "Указать уровень" (LevelCheck сохранил tournamentId в sessionStorage) и профиль
+    // только что успешно сохранился — предлагаем вернуться к турниру.
+    // Ключ НЕ удаляется, пока нет successAlert — игрок обычно сначала просто открывает
+    // /perfil (GET, без алерта), и только при следующей загрузке, после сабмита формы,
+    // появляется successMessage; если бы ключ чистился на первой же загрузке, баннер
+    // никогда бы не успел показаться (нашли на реальном прогоне в браузере).
+    try {
+        const pendingTournamentId = sessionStorage.getItem('pendingLevelRegistrationTournamentId');
+        const successAlert = document.querySelector('.alert-success');
+        if (pendingTournamentId && successAlert && typeof t === 'function') {
+            sessionStorage.removeItem('pendingLevelRegistrationTournamentId');
+
+            const banner = document.createElement('div');
+            banner.className = 'alert alert-success';
+            banner.innerHTML = `<i class="fas fa-arrow-circle-left"></i> ${t('level.profile.return_banner')} `
+                + `<a href="/torneo/${pendingTournamentId}">${t('level.profile.return_link')}</a>`;
+            successAlert.insertAdjacentElement('afterend', banner);
+        }
+    } catch (e) {
+        console.warn('No se pudo verificar la inscripción pendiente:', e);
+    }
 });

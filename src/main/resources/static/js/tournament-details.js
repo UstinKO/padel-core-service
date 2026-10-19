@@ -428,6 +428,13 @@ document.addEventListener('DOMContentLoaded', function() {
                                 } else {
                                     showResultModal('success', t('details.success.registered'), t('details.success.waitlist_added'));
                                 }
+                            } else if (data.needLevel) {
+                                // LFPT-0632: попап "указать уровень" вместо обычной ошибки
+                                btn.disabled = false;
+                                btn.innerHTML = window.tournament?.inscritosActuales >= window.tournament?.cupoMax ?
+                                    `<i class="fas fa-clock"></i> ${t('details.btn.waitlist')}` :
+                                    `<i class="fas fa-check-circle"></i> ${t('details.btn.register')}`;
+                                LevelCheck.show(tournamentId);
                             } else {
                                 btn.disabled = false;
                                 btn.innerHTML = window.tournament?.inscritosActuales >= window.tournament?.cupoMax ?
@@ -505,6 +512,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     loadLookingForPartner(tournamentId);
                     const soloMsg = mode === 'SEARCH' ? t('details.success.solo_search') : t('details.success.solo_later');
                     showResultModal('success', t('details.success.ready'), soloMsg);
+                } else if (data.needLevel) {
+                    // LFPT-0632: попап "указать уровень" вместо обычной ошибки
+                    closeModal();
+                    LevelCheck.show(tournamentId);
+                    submitPartnerBtn.disabled = false;
+                    submitPartnerBtn.innerHTML = `<i class="fas fa-check-circle"></i> <span id="submitPartnerBtnText">${t('details.mode.register_pair')}</span>`;
                 } else {
                     showInfoMessage(data.message || t('details.error.process'), 'error');
                     submitPartnerBtn.disabled = false;
@@ -562,6 +575,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 else if (data.status === 'WAITLIST')   message = t('details.success.waitlist_pair');
                 else message = t('details.success.pair_complete');
                 showResultModal('success', t('details.success.registered'), message);
+            } else if (data.needLevel) {
+                // LFPT-0632: попап "указать уровень" вместо обычной ошибки
+                closeModal();
+                LevelCheck.show(tournamentId);
+                submitPartnerBtn.disabled = false;
+                submitPartnerBtn.innerHTML = `<i class="fas fa-check-circle"></i> <span id="submitPartnerBtnText">${t('details.mode.register_pair')}</span>`;
             } else {
                 if (data.message && data.message.includes('Ya estás registrado')) {
                     showResultModal('info', t('details.already_registered'), t('details.already_registered'));

@@ -27,6 +27,14 @@ window.APP_MESSAGES = {
     'contact.error.save':       'Error saving',
     'contact.error.connection': 'Connection error. Please try again.',
 
+    // ── level-check.js (LFPT-0632) ──────────────────────────────────────────
+    'level.modal.title':  'Playing level required',
+    'level.modal.desc':   'To register for this tournament, please set your level in your profile first.',
+    'level.btn.cancel':   'Cancel',
+    'level.btn.go':       'Set level',
+    'level.profile.return_banner': 'You can now return to your pending registration.',
+    'level.profile.return_link':   'Back to tournament',
+
     // ── cookie-consent.js ───────────────────────────────────────────────────
     'cookie.banner.title':           '🍪 Cookie usage',
     'cookie.banner.desc':            'We use our own and third-party cookies to improve your experience on our platform, personalise content and analyse our traffic. You can accept all cookies, reject them or customise your settings.',

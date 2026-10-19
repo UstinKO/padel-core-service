@@ -27,6 +27,14 @@ window.APP_MESSAGES = {
     'contact.error.save':       'Error al guardar',
     'contact.error.connection': 'Error de conexión. Inténtalo de nuevo.',
 
+    // ── level-check.js (LFPT-0632) ──────────────────────────────────────────
+    'level.modal.title':  'Nivel de juego requerido',
+    'level.modal.desc':   'Para inscribirte en este torneo primero tenés que indicar tu nivel en tu perfil.',
+    'level.btn.cancel':   'Cancelar',
+    'level.btn.go':       'Indicar nivel',
+    'level.profile.return_banner': 'Ahora podés volver a tu inscripción pendiente.',
+    'level.profile.return_link':   'Volver al torneo',
+
     // ── cookie-consent.js ───────────────────────────────────────────────────
     'cookie.banner.title':           '🍪 Uso de cookies',
     'cookie.banner.desc':            'Utilizamos cookies propias y de terceros para mejorar tu experiencia en nuestra plataforma, personalizar contenido y analizar nuestro tráfico. Puedes aceptar todas las cookies, rechazarlas o personalizar tu configuración.',
