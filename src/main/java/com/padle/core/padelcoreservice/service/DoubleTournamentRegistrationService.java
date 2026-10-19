@@ -8,6 +8,7 @@ import com.padle.core.padelcoreservice.dto.PartnerRegistrationDto;
 import com.padle.core.padelcoreservice.dto.SoloDoubleRegistrationDto;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
+import com.padle.core.padelcoreservice.exception.PlayerLevelRequiredException;
 import com.padle.core.padelcoreservice.exception.TournamentRegistrationException;
 import com.padle.core.padelcoreservice.mapper.TournamentRegistrationMapper;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
@@ -17,12 +18,15 @@ import com.padle.core.padelcoreservice.model.enums.Modalidad;
 import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
+import com.padle.core.padelcoreservice.model.enums.TournamentType;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,6 +50,7 @@ public class DoubleTournamentRegistrationService {
     private final TournamentNotificationService notificationService;
     private final EmailService emailService;
     private final TournamentRepository tournamentRepository;
+    private final MessageSource messageSource;
 
     @Value("${app.base-url:http://localhost:8080}")
     private String baseUrl;
@@ -90,6 +95,12 @@ public class DoubleTournamentRegistrationService {
         PlayerPadel mainPlayer = playerRepository.findById(mainPlayerId)
                 .orElseThrow(() -> new TournamentRegistrationException("Jugador principal no encontrado"));
 
+        // LFPT-0303: правило "±1 ступень" для самостоятельной регистрации
+        TournamentType tipo = tournamentDto.getTipo();
+        Nivel categoriaNivel = Nivel.parseOrNull(tournamentDto.getCategoriaNivel());
+        TournamentLevelPolicy.assertEligible(tipo, categoriaNivel, mainPlayer.getNivelJugador(),
+                messageSource, LocaleContextHolder.getLocale());
+
         // Проверяем что игрок не указал себя как партнёра
         if (partnerDto.getEmail() != null &&
                 !partnerDto.getEmail().isBlank() &&
@@ -117,6 +128,14 @@ public class DoubleTournamentRegistrationService {
         registrationRepository.flush();
 
         Optional<PlayerPadel> existingPartner = findPartner(partnerDto);
+
+        // LFPT-0303: партнёр с уже существующим аккаунтом подтверждается сразу (см.
+        // registerWithExistingPartner — оба CONFIRMED/WAITLIST без отдельного шага
+        // подтверждения), это тоже момент его самостоятельного согласия на регистрацию.
+        // Партнёр без аккаунта (registerWithNewPartner) создаётся позже с SIN_ESPECIFICAR —
+        // проверить его уровень на этом шаге технически невозможно (вне скоупа, см. спеку).
+        existingPartner.ifPresent(partner -> TournamentLevelPolicy.assertEligible(
+                tipo, categoriaNivel, partner.getNivelJugador(), messageSource, LocaleContextHolder.getLocale()));
 
         // Проверяем свободные места
         checkAvailableSlotsForPair(tournamentDto);
@@ -727,6 +746,10 @@ public class DoubleTournamentRegistrationService {
         PlayerPadel player = playerRepository.findById(playerId)
                 .orElseThrow(() -> new TournamentRegistrationException("Jugador no encontrado"));
 
+        // LFPT-0303: правило "±1 ступень" для самостоятельной регистрации
+        TournamentLevelPolicy.assertEligible(tournament.getTipo(), tournament.getCategoriaNivel(),
+                player.getNivelJugador(), messageSource, LocaleContextHolder.getLocale());
+
         checkPlayerNotRegisteredInThisTournament(tournamentId, playerId);
 
         // Удаляем старую отменённую запись, если есть (иначе INSERT нарушит uk_tournament_player)
@@ -838,6 +861,11 @@ public class DoubleTournamentRegistrationService {
 
         if (existingPartnerOpt.isPresent()) {
             PlayerPadel partner = existingPartnerOpt.get();
+
+            // LFPT-0303: правило "±1 ступень" — партнёр с существующим аккаунтом подтверждается
+            // сразу (CONFIRMED ниже, без отдельного шага), как и в registerForDoubleTournament.
+            TournamentLevelPolicy.assertEligible(tournament.getTipo(), tournament.getCategoriaNivel(),
+                    partner.getNivelJugador(), messageSource, LocaleContextHolder.getLocale());
 
             checkPlayerNotRegisteredInThisTournament(tournamentId, partner.getId(), true);
             registrationRepository.findByTournamentIdAndPlayerIdAndIsActiveFalse(tournamentId, partner.getId())

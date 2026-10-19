@@ -5,6 +5,7 @@ import com.padle.core.padelcoreservice.dto.PartnerRegistrationDto;
 import com.padle.core.padelcoreservice.dto.SoloDoubleRegistrationDto;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
+import com.padle.core.padelcoreservice.exception.PlayerLevelRequiredException;
 import com.padle.core.padelcoreservice.exception.TournamentRegistrationException;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.service.DoubleTournamentRegistrationService;
@@ -61,6 +62,13 @@ public class DoubleTournamentRegistrationController {
             response.put("waitlistPosition", registration.getWaitlistPosition());
 
             return ResponseEntity.ok(response);
+
+        } catch (PlayerLevelRequiredException e) {
+            // LFPT-0303: уровень не указан — needLevel для фронтенд-попапа "Указать уровень"
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            response.put("needLevel", true);
+            return ResponseEntity.badRequest().body(response);
 
         } catch (TournamentRegistrationException e) {
             // Бизнес-ошибки (включая само-регистрацию, уже зарегистрирован и т.д.)
@@ -126,6 +134,12 @@ public class DoubleTournamentRegistrationController {
 
             return ResponseEntity.ok(response);
 
+        } catch (PlayerLevelRequiredException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            response.put("needLevel", true);
+            return ResponseEntity.badRequest().body(response);
+
         } catch (TournamentRegistrationException e) {
             response.put("success", false);
             response.put("message", e.getMessage());
@@ -164,6 +178,12 @@ public class DoubleTournamentRegistrationController {
             response.put("status", registration.getStatus());
 
             return ResponseEntity.ok(response);
+
+        } catch (PlayerLevelRequiredException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            response.put("needLevel", true);
+            return ResponseEntity.badRequest().body(response);
 
         } catch (TournamentRegistrationException e) {
             response.put("success", false);

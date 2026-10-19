@@ -5,6 +5,7 @@ import com.padle.core.padelcoreservice.dto.PartnerRegistrationDto;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
 import com.padle.core.padelcoreservice.exception.InvalidStateException;
+import com.padle.core.padelcoreservice.exception.PlayerLevelRequiredException;
 import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
 import com.padle.core.padelcoreservice.exception.TournamentRegistrationException;
 import com.padle.core.padelcoreservice.logging.AlertSeverity;
@@ -168,6 +169,11 @@ public class PlayerDashboardController {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
             response.put("message", e.getMessage());
+            // LFPT-0303: уровень игрока не указан — по аналогии с needContact выше,
+            // фронтенд-попап "Указать уровень" (отдельная задача) различает этот случай по флагу.
+            if (e instanceof PlayerLevelRequiredException) {
+                response.put("needLevel", true);
+            }
             return ResponseEntity.badRequest().body(response);
         }
     }
