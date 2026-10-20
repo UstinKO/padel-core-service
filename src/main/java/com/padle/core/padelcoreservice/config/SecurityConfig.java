@@ -132,6 +132,9 @@ public class SecurityConfig {
                                 "/login/oauth2/**",
                                 "/double-registration/complete",
                                 "/double-registration/accept-pair",
+                                // LFPT-0668: self-service действия из email для резервной заявки без
+                                // партнёра — токен-based, без логина (как /waitlist/confirm выше).
+                                "/reserva/accion/**",
                                 "/ws/**",
                                 "/api/cookies/**",
                                 // LFPT-0472: короткие маркетинговые ссылки октябрьского календаря

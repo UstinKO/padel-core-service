@@ -164,3 +164,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.54-ranking-mejor-posicion-drop-default.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.55-add-partner-reserve-fields.yaml
+      relativeToChangelogFile: true

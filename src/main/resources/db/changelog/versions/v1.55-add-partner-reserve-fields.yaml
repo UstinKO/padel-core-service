@@ -1,0 +1,41 @@
+databaseChangeLog:
+
+  # LFPT-0668: поддержка перевода SOLO_ADD_LATER-регистраций в резерв (WAITLIST)
+  # вместо тупикового SOLO_EXPIRED — final_reminder_sent защищает от повторной отправки
+  # напоминания за 3ч, partner_action_token — для self-service действий из email
+  # (подтвердить/отменить) без логина, по аналогии с waitlist_confirmation_token.
+  - changeSet:
+      id: v1.55-add-partner-reserve-columns
+      author: padel-core
+      changes:
+        - sql:
+            dbms: postgresql
+            sql: |
+              ALTER TABLE tournament_registrations_db
+                ADD COLUMN IF NOT EXISTS final_reminder_sent BOOLEAN NOT NULL DEFAULT FALSE;
+
+              ALTER TABLE tournament_registrations_db
+                ADD COLUMN IF NOT EXISTS partner_action_token VARCHAR(64);
+
+  - changeSet:
+      id: v1.55-create-partner-action-token-index
+      author: padel-core
+      changes:
+        - sql:
+            dbms: postgresql
+            sql: |
+              CREATE INDEX IF NOT EXISTS idx_reg_partner_action_token
+                ON tournament_registrations_db(partner_action_token);
+
+  - changeSet:
+      id: v1.55-add-partner-reserve-comments
+      author: padel-core
+      changes:
+        - sql:
+            dbms: postgresql
+            sql: |
+              COMMENT ON COLUMN tournament_registrations_db.final_reminder_sent
+                IS 'Отправлено ли повторное напоминание за 3ч до старта (SOLO_ADD_LATER-резерв без партнёра)';
+
+              COMMENT ON COLUMN tournament_registrations_db.partner_action_token
+                IS 'Токен self-service действий из email (подтвердить/отменить) для резервной заявки без партнёра';

@@ -72,6 +72,8 @@ docker compose up -d
 | `GET /waitlist/confirm` | `waitlist-confirmation.html` | `WaitlistController` |
 | `GET /double-registration/complete` | — (redirect) | `PartnerRegistrationController` |
 | `GET /double-registration/accept-pair` | — (redirect) | `PartnerRegistrationController` |
+| `GET /reserva/accion/confirmar` | `waitlist-confirmation.html` | `ReserveActionController` — self-service подтверждение, что резервная заявка без партнёра актуальна (LFPT-0668) |
+| `GET /reserva/accion/cancelar` | `reserve-cancel-confirm.html` | `ReserveActionController` — страница подтверждения отмены резервной заявки без партнёра (LFPT-0668) |
 | `GET /oct-tg`, `/oct-wa`, `/oct-ig` | — (redirect) | `MarketingRedirectController` — короткие ссылки на `1-padel.com/?utm_...` для октябрьского календаря (LFPT-0472) |
 | `GET /ig-bio` | — (redirect) | `MarketingRedirectController` — короткая ссылка на `1-padel.com/?utm_...` для профиля Instagram (LFPT-0489) |
 | `GET /app/` (`/app` → редирект) | `static/app/index.html` (forward) | `MobileAppViewController` — веб-версия клиента 1Padel.App, анонимно; сюда же возвращается Google-вход из приложения (LFPT-0637, LFPT-0643) |
@@ -432,7 +434,7 @@ repository/
 
 ### Database Migrations
 
-Все изменения схемы — YAML-файлы в `src/main/resources/db/changelog/versions/`, подключены через `changelog-master.yaml`. Текущая версия: v1.54. `ddl-auto = none` — только Liquibase. Новые файлы добавлять с инкрементальным номером и регистрировать в `changelog-master.yaml`.
+Все изменения схемы — YAML-файлы в `src/main/resources/db/changelog/versions/`, подключены через `changelog-master.yaml`. Текущая версия: v1.55. `ddl-auto = none` — только Liquibase. Новые файлы добавлять с инкрементальным номером и регистрировать в `changelog-master.yaml`.
 
 ### Email Templates
 
@@ -450,6 +452,8 @@ repository/
 | `recuperar-password.html` | Ссылка для сброса пароля |
 | `pair-tournament-reminder.html`, `individual-tournament-reminder.html`, `cancha-abierta-reminder.html` | Напоминание за 5 ч до старта турнира |
 | `partner-data-reminder.html`, `looking-for-partner-notification.html`, `pair-proposal.html`, `admin-solo-registration.html` | Соло-регистрация на парный турнир |
+| `partner-deadline-reserve.html` | Соло-регистрация (`SOLO_ADD_LATER`) переведена в резерв по дедлайну (старт − 24ч) (LFPT-0668) |
+| `partner-final-reminder.html` | Повторное напоминание за 3ч до старта резервной заявке без партнёра, с действиями добавить/подтвердить/отменить (LFPT-0668) |
 
 ### Observability
 

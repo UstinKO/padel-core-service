@@ -50,6 +50,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -544,14 +545,28 @@ public class TournamentService {
                 tournamentId, tournament.getModalidad(), confirmedSpots, availableSlots);
 
         if (availableSlots > 0) {
-            List<TournamentRegistration> waitlist = registrationRepository
-                    .findByTournamentIdAndStatusOrderByWaitlistPositionAsc(
+            // LFPT-0668: для DOBLES резерв может содержать заявки без партнёра («ожидает
+            // партнёра», SOLO_ADD_LATER, переведённые в WAITLIST по дедлайну) — их нельзя
+            // авто-подтверждать наравне с полностью сформированными парами. Для INDIVIDUAL
+            // партнёра у регистраций нет вовсе, фильтр по нему неприменим.
+            List<TournamentRegistration> waitlist = tournament.getModalidad() == Modalidad.DOBLES
+                    ? registrationRepository.findByTournamentIdAndStatusAndPartnerIsNotNullOrderByWaitlistPositionAsc(
+                            tournamentId, RegistrationStatus.WAITLIST)
+                    : registrationRepository.findByTournamentIdAndStatusOrderByWaitlistPositionAsc(
                             tournamentId, RegistrationStatus.WAITLIST);
 
             log.info("Found {} available slots and {} players in waitlist", availableSlots, waitlist.size());
 
-            for (int i = 0; i < Math.min(availableSlots, waitlist.size()); i++) {
-                autoConfirmFromWaitlist(waitlist.get(i), tournament);
+            // LFPT-0668: для DOBLES availableSlots — это свободные МЕСТА ДЛЯ ПАР (countConfirmedPairs),
+            // а waitlist — отдельные РЯДЫ регистраций (по 2 на пару, с общим waitlistPosition). Старый
+            // код confirм'ил ряды по одному — при availableSlots=1 мог подтвердить только одного игрока
+            // из пары, оставив партнёра в резерве. Подтверждаем пары атомарно, по позиции целиком.
+            if (tournament.getModalidad() == Modalidad.DOBLES) {
+                confirmDoublesPairsFromWaitlist(waitlist, availableSlots, tournament);
+            } else {
+                for (int i = 0; i < Math.min(availableSlots, waitlist.size()); i++) {
+                    autoConfirmFromWaitlist(waitlist.get(i), tournament);
+                }
             }
             if (!waitlist.isEmpty()) {
                 if (tournament.getModalidad() == Modalidad.DOBLES) {
@@ -560,6 +575,43 @@ public class TournamentService {
                     reorderPositions(tournamentId);
                 }
             }
+        }
+    }
+
+    // LFPT-0668: подтверждает полные пары WAITLIST из резерва атомарно (оба ряда сразу), в порядке
+    // waitlistPosition, пока не исчерпаны availableSlots (одна пара = один слот). Ряды с одинаковым
+    // waitlistPosition принадлежат одной паре — так их создают все пути регистрации пары.
+    private void confirmDoublesPairsFromWaitlist(List<TournamentRegistration> waitlist, int availableSlots,
+                                                   Tournament tournament) {
+        Map<Integer, List<TournamentRegistration>> byPosition = new TreeMap<>();
+        for (TournamentRegistration reg : waitlist) {
+            byPosition.computeIfAbsent(reg.getWaitlistPosition(), k -> new ArrayList<>()).add(reg);
+        }
+
+        long confirmedPairs = registrationRepository.countConfirmedPairs(tournament.getId());
+        int pairsConfirmed = 0;
+
+        for (List<TournamentRegistration> pair : byPosition.values()) {
+            if (pairsConfirmed >= availableSlots) {
+                break;
+            }
+            if (pair.size() != 2) {
+                log.warn("Skipping incomplete waitlist pair (size={}) for tournament {}", pair.size(), tournament.getId());
+                continue;
+            }
+
+            int position = (int) confirmedPairs + 1;
+            for (TournamentRegistration reg : pair) {
+                reg.confirm();
+                reg.setPosition(position);
+                registrationRepository.save(reg);
+                sendWaitlistAutoConfirmEmail(reg.getPlayer(), tournament);
+            }
+
+            confirmedPairs++;
+            pairsConfirmed++;
+            log.info("Pair auto-confirmed from waitlist for tournament {}: players {}", tournament.getId(),
+                    pair.stream().map(r -> r.getPlayer().getId()).toList());
         }
     }
 

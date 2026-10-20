@@ -137,6 +137,17 @@ public class TournamentRegistration {
     @Builder.Default
     private Boolean lateArrival = false;
 
+    // LFPT-0668: резервная заявка без партнёра (SOLO_ADD_LATER, переведённая в WAITLIST по дедлайну) —
+    // защита от повторной отправки напоминания за 3ч до старта турнира.
+    @Column(name = "final_reminder_sent", nullable = false)
+    @Builder.Default
+    private Boolean finalReminderSent = false;
+
+    // LFPT-0668: токен self-service действий из email (подтвердить актуальность / отменить участие)
+    // для резервной заявки без партнёра — без логина, по аналогии с waitlistConfirmationToken.
+    @Column(name = "partner_action_token", length = 64)
+    private String partnerActionToken;
+
     // Хелпер-метод для получения последнего платежа
     public Optional<Payment> getLatestPayment() {
         return payments.stream()

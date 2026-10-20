@@ -709,6 +709,92 @@ public class EmailService {
         }
     }
 
+    // LFPT-0668: заявка SOLO_ADD_LATER переведена в резерв по точному дедлайну (старт - 24ч)
+    @Timed(name = "email.send.time", tags = {"service=email", "type=partner_reserve"})
+    @TrackErrors(name = "email.send.errors", tags = {"service=email", "type=partner_reserve"})
+    @Async
+    public void sendPartnerReserveEmail(
+            @MetricTag("recipient") String to,
+            @MetricTag("playerName") String playerName,
+            String tournamentName,
+            String tournamentDate,
+            String timeStr,
+            String clubName,
+            String tournamentUrl,
+            Locale locale) {
+
+        emailMetricsService.recordEmailAttempt("PARTNER_RESERVE");
+        if (emailMetricsService.isDailyLimitReached(dailyEmailLimit)) {
+            log.warn("Daily email limit reached, skipping partner reserve email to: {}", to);
+            emailMetricsService.recordEmailRejected("PARTNER_RESERVE", "DAILY_LIMIT");
+            return;
+        }
+        try {
+            Context context = new Context(locale);
+            context.setVariable("playerName", playerName);
+            context.setVariable("tournamentName", tournamentName);
+            context.setVariable("tournamentDate", tournamentDate);
+            context.setVariable("timeStr", timeStr);
+            context.setVariable("clubName", clubName);
+            context.setVariable("tournamentUrl", tournamentUrl);
+            context.setVariable("year", String.valueOf(java.time.Year.now().getValue()));
+
+            String html = templateEngine.process("email/partner-deadline-reserve", context);
+            String subject = messageSource.getMessage("email.partner_reserve.subject", null, locale);
+            sendHtmlEmail(to, subject, html);
+
+            emailMetricsService.recordEmailSent("PARTNER_RESERVE");
+            log.info("✅ Partner reserve email sent to: {}", to);
+        } catch (Exception e) {
+            emailMetricsService.recordEmailError("PARTNER_RESERVE", e.getClass().getSimpleName());
+            log.error("❌ Error sending partner reserve email to {}: {}", to, e.getMessage(), e);
+        }
+    }
+
+    // LFPT-0668: повторное напоминание за 3ч до старта, партнёр всё ещё не добавлен
+    @Timed(name = "email.send.time", tags = {"service=email", "type=partner_final_reminder"})
+    @TrackErrors(name = "email.send.errors", tags = {"service=email", "type=partner_final_reminder"})
+    @Async
+    public void sendPartnerFinalReminderEmail(
+            @MetricTag("recipient") String to,
+            @MetricTag("playerName") String playerName,
+            String tournamentName,
+            String timeStr,
+            String clubName,
+            String tournamentUrl,
+            String confirmUrl,
+            String declineUrl,
+            Locale locale) {
+
+        emailMetricsService.recordEmailAttempt("PARTNER_FINAL_REMINDER");
+        if (emailMetricsService.isDailyLimitReached(dailyEmailLimit)) {
+            log.warn("Daily email limit reached, skipping partner final reminder to: {}", to);
+            emailMetricsService.recordEmailRejected("PARTNER_FINAL_REMINDER", "DAILY_LIMIT");
+            return;
+        }
+        try {
+            Context context = new Context(locale);
+            context.setVariable("playerName", playerName);
+            context.setVariable("tournamentName", tournamentName);
+            context.setVariable("timeStr", timeStr);
+            context.setVariable("clubName", clubName);
+            context.setVariable("tournamentUrl", tournamentUrl);
+            context.setVariable("confirmUrl", confirmUrl);
+            context.setVariable("declineUrl", declineUrl);
+            context.setVariable("year", String.valueOf(java.time.Year.now().getValue()));
+
+            String html = templateEngine.process("email/partner-final-reminder", context);
+            String subject = messageSource.getMessage("email.partner_final_reminder.subject", null, locale);
+            sendHtmlEmail(to, subject, html);
+
+            emailMetricsService.recordEmailSent("PARTNER_FINAL_REMINDER");
+            log.info("✅ Partner final reminder sent to: {}", to);
+        } catch (Exception e) {
+            emailMetricsService.recordEmailError("PARTNER_FINAL_REMINDER", e.getClass().getSimpleName());
+            log.error("❌ Error sending partner final reminder to {}: {}", to, e.getMessage(), e);
+        }
+    }
+
     @Async
     public void sendPairProposalEmail(
             String to,

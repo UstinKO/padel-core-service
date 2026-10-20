@@ -305,13 +305,35 @@ public interface TournamentRegistrationRepository extends JpaRepository<Tourname
             @Param("from") java.time.LocalDate from,
             @Param("to") java.time.LocalDate to);
 
+    // LFPT-0668: заменяет findSoloAddLaterExpired (сравнивал только календарную дату, не
+    // точное время старта) — кандидаты на перевод в резерв отбираются без фильтра по дате,
+    // точный дедлайн (Tournament.calculateDefaultDeadline()) сравнивается в сервисе.
     @Query("SELECT tr FROM TournamentRegistration tr " +
             "JOIN FETCH tr.tournament t " +
             "JOIN FETCH tr.player p " +
             "WHERE tr.status = 'SOLO_ADD_LATER' " +
+            "AND tr.isActive = true")
+    List<TournamentRegistration> findActiveSoloAddLater();
+
+    // LFPT-0668: резервные заявки без партнёра («ожидает партнёра») — кандидаты на
+    // напоминание за 3ч; точное окно до старта проверяется в сервисе.
+    @Query("SELECT tr FROM TournamentRegistration tr " +
+            "JOIN FETCH tr.tournament t " +
+            "JOIN FETCH tr.player p " +
+            "WHERE tr.status = 'WAITLIST' " +
+            "AND tr.partner IS NULL " +
             "AND tr.isActive = true " +
-            "AND t.fechaInicio < :deadline")
-    List<TournamentRegistration> findSoloAddLaterExpired(@Param("deadline") java.time.LocalDate deadline);
+            "AND tr.finalReminderSent = false")
+    List<TournamentRegistration> findReserveWithoutPartnerPendingFinalReminder();
+
+    // LFPT-0668: self-service действия из email (подтвердить/отменить) по непредсказуемому токену
+    Optional<TournamentRegistration> findByPartnerActionToken(String partnerActionToken);
+
+    // LFPT-0668: та же выборка, что findByTournamentIdAndStatusOrderByWaitlistPositionAsc, но
+    // только полностью сформированные пары — используется при авто-подтверждении из резерва для
+    // DOBLES-турниров, чтобы не подтвердить случайно заявку без партнёра («ожидает партнёра»).
+    List<TournamentRegistration> findByTournamentIdAndStatusAndPartnerIsNotNullOrderByWaitlistPositionAsc(
+            Long tournamentId, RegistrationStatus status);
 
     @Query("SELECT tr FROM TournamentRegistration tr " +
             "WHERE tr.tournament.id = :tournamentId " +

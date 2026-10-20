@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+    <meta name="description" content="1-Padel - Confirmar cancelación de inscripción">
+    <meta name="theme-color" content="#FF6B35">
+    <title th:text="#{reserve.cancel.title}">Cancelar inscripción | 1-Padel</title>
+
+    <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
+    <link rel="alternate icon" th:href="@{/images/favicon.ico}">
+    <link rel="apple-touch-icon" th:href="@{/images/apple-touch-icon.png}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <th:block th:replace="~{fragments/analytics :: ga4}"></th:block>
+    <th:block th:replace="~{fragments/analytics :: cookie-consent}"></th:block>
+    <th:block th:replace="~{fragments/analytics :: clarity}"></th:block>
+</head>
+<body>
+<header class="header">
+    <div class="container">
+        <nav class="navbar">
+            <a href="/" class="navbar-brand">
+                <img th:src="@{/images/1.svg}" alt="1-Padel Logo" class="navbar-logo" width="40" height="40">
+                <span class="navbar-brand-text">1-<span class="brand-highlight">PADEL</span></span>
+            </a>
+        </nav>
+    </div>
+</header>
+
+<main class="confirmation-page">
+    <div class="container">
+        <div class="confirmation-container">
+            <div class="confirmation-card">
+                <div class="confirmation-icon warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h1 class="confirmation-title" th:text="#{reserve.cancel.heading}">¿Confirmás que no vas a participar?</h1>
+                <p class="confirmation-message" th:text="${preview.tournamentName()}">Torneo</p>
+                <ul class="confirmation-details" style="list-style:none; padding:0; text-align:center; color:#6c757d;">
+                    <li><strong th:text="#{reserve.cancel.date_label}">Fecha</strong>: <span th:text="${preview.tournamentDate()}"></span></li>
+                    <li><strong th:text="#{reserve.cancel.club_label}">Club</strong>: <span th:text="${preview.clubName()}"></span></li>
+                </ul>
+                <p class="confirmation-message" th:text="#{reserve.cancel.text}">
+                    Tu inscripción está en la lista de reserva sin compañero. Si confirmás, se cancela definitivamente.
+                </p>
+                <form method="post" th:action="@{/reserva/accion/cancelar}" class="confirmation-actions">
+                    <input type="hidden" name="token" th:value="${token}">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-times"></i>
+                        <span th:text="#{reserve.cancel.btn.confirm}">Sí, cancelar mi inscripción</span>
+                    </button>
+                </form>
+                <div class="confirmation-actions">
+                    <a href="/" class="btn btn-outline-sm">
+                        <span th:text="#{reserve.cancel.btn.back}">No, volver al inicio</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="footer" style="padding: 1rem 0; background: transparent;">
+    <div class="container">
+        <div class="footer-bottom" style="justify-content: center; text-align: center; border-top: none;">
+            <div class="footer-copyright" th:text="#{footer.copyright}">
+                © 2026 1-Padel. Todos los derechos reservados.
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script th:src="@{/js/logger.js}"></script>
+<script th:src="${'/js/i18n/messages-' + #locale.language + '.js'}"></script>
+<script th:src="@{/js/i18n/t.js}"></script>
+<script th:src="@{/js/main.js}"></script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 # Архитектура базы данных — padel-core-service
 
 > **СУБД:** PostgreSQL 15  
-> **Версия схемы:** v1.54  
+> **Версия схемы:** v1.55  
 > **Миграции:** Liquibase (YAML), файлы в `src/main/resources/db/changelog/versions/`  
 > **ddl-auto:** `none` — схема управляется только через Liquibase
 
@@ -280,6 +280,8 @@ owners_db ───────────────────────�
 | `solo_reminder_sent` | `BOOLEAN` | NOT NULL | `false` | Соло-регистрация: напоминание добавить партнёра отправлено |
 | `pair_proposer_reg_id` | `BIGINT` | NULL | — | Регистрация игрока, предложившего объединиться в пару (`SOLO_SEARCH`) |
 | `late_arrival` | `BOOLEAN` | NOT NULL | `false` | Опоздал к началу индивидуального турнира — штраф −10 к результату (LFPT-443) |
+| `final_reminder_sent` | `BOOLEAN` | NOT NULL | `false` | Отправлено повторное напоминание за 3ч до старта (резервная заявка без партнёра) (LFPT-0668) |
+| `partner_action_token` | `VARCHAR(64)` | NULL | — | Токен self-service действий из email (подтвердить/отменить) для резервной заявки без партнёра (LFPT-0668) |
 
 **Флоу статусов регистрации:**
 
@@ -851,3 +853,4 @@ tournaments_db
 | v1.52 | `v1.52-add-mostrar-nivel-to-tournament` | `tournaments_db.mostrar_nivel` |
 | v1.53 | `v1.53-add-visibilidad-to-tournament` | `tournaments_db.visibilidad` |
 | v1.54 | `v1.54-ranking-mejor-posicion-drop-default` | `ranking_db.mejor_posicion`: убран DEFAULT 0, нули → NULL |
+| v1.55 | `v1.55-add-partner-reserve-fields` | `tournament_registrations_db.final_reminder_sent`, `partner_action_token` |
