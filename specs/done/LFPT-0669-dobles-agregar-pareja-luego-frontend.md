@@ -1,10 +1,10 @@
 # LFPT-0669: Feature отображение резерва «ожидает партнёра» / «пара сформирована» и страницы подтверждения из email
 
 ## Статус
-approved
+done
 
 ## Источник
-Клиентский запрос заказчика (Telegram): [specs/requests/LFPT-0668-dobles-agregar-pareja-luego.md](../requests/LFPT-0668-dobles-agregar-pareja-luego.md). Issue: #669. Зависит от бэкенд-спеки [LFPT-0668](LFPT-0668-dobles-agregar-pareja-luego.md) (issue #668, PR #670, `pipeline:ready`).
+Клиентский запрос заказчика (Telegram): [specs/requests/LFPT-0668-dobles-agregar-pareja-luego.md](requests/LFPT-0668-dobles-agregar-pareja-luego.md). Issue: #669. Зависит от бэкенд-спеки [LFPT-0668](LFPT-0668-dobles-agregar-pareja-luego.md) (issue #668, PR #670, `pipeline:ready`).
 
 ## Контекст / зачем
 
