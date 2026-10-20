@@ -1150,6 +1150,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const generoDisplay = displayMaps.genero[tournament.generoFormato] || tournament.generoFormato || 'N/A';
         const nivelDisplay = tournament.categoriaNivel || 'N/A';
         const tipoDisplay = displayMaps.tipo[tournament.tipo] || tournament.tipo || 'N/A';
+        // LFPT-0653: заголовком карточки — формат мероприятия (как на главной странице,
+        // home.js), а не автогенерированное название турнира, дублирующее пол/категорию.
+        const modalidadDisplay = tournament.modalidad === 'DOBLES'
+            ? t('card.modalidad.doubles')
+            : t('card.modalidad.individual');
 
         // Определяем текст для количества участников
         const participantsText = tournament.modalidad === 'DOBLES' ? t('card.capacity.spots') : t('card.capacity.players');
@@ -1164,7 +1169,8 @@ document.addEventListener('DOMContentLoaded', function() {
             <span class="torneo-badge torneo-badge-level">${nivelDisplay}</span>
         </div>
         <div class="torneo-card-body">
-            <h3 class="torneo-title">${escapeHtml(tournament.nombre || '')}</h3>
+            <h3 class="torneo-title">${tipoDisplay}</h3>
+            <p class="tournament-modalidad">${modalidadDisplay}</p>
             ${myTournamentBadge}
             <div class="torneo-info">
                 <div class="torneo-info-item">
@@ -1177,10 +1183,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         <span class="club-name">${escapeHtml(tournament.clubNombre || t('card.club.unknown'))}</span>
                         ${clubAddress}
                     </div>
-                </div>
-                <div class="torneo-info-item">
-                    <i class="fas fa-trophy"></i>
-                    <span>${tipoDisplay}</span>
                 </div>
                 <div class="torneo-info-item">
                     <i class="fas fa-users"></i>
