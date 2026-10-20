@@ -1,10 +1,10 @@
 # LFPT-0653: Карточки мероприятий в личном кабинете игрока — главным заголовком формат
 
 ## Статус
-approved
+done
 
 ## Источник
-Клиентский запрос: [specs/requests/LFPT-0653-dashboard-card-format-heading.md](../requests/LFPT-0653-dashboard-card-format-heading.md). Issue: [#653](https://github.com/UstinKO/padel-core-service/issues/653).
+Клиентский запрос: [specs/requests/LFPT-0653-dashboard-card-format-heading.md](requests/LFPT-0653-dashboard-card-format-heading.md). Issue: [#653](https://github.com/UstinKO/padel-core-service/issues/653).
 
 ## Контекст / зачем
 На главной странице (`/`, `HomeController`) карточки мероприятий уже переработаны в LFPT-0435/LFPT-0495: главный заголовок карточки — формат мероприятия (`TournamentType`), под ним — модальность участия, а пол/категория — только в верхней цветной части. В личном кабинете игрока (`/players/dashboard`, `PlayerDashboardController`) карточки формируются отдельной функцией в `static/js/dashboard.js` (`createTournamentCardElement`) и сохранили старую структуру: заголовком выступает `tournament.nombre` — автогенерированное название турнира (LFPT-374, "Стандартизация карточки турнира"), которое в большинстве случаев текстуально совпадает с «Пол · Категория» (например «Masculino · C7_C6»), т.е. дублирует верхнюю цветную часть, а формат мероприятия (`tournament.tipo`) показан ниже, одной строкой среди прочей информации.
