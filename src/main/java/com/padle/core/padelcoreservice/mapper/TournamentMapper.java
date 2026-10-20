@@ -10,6 +10,7 @@ import org.mapstruct.ReportingPolicy;
 public interface TournamentMapper {
 
     @Mapping(target = "clubNombre", ignore = true) // Игнорируем при маппинге из Entity в DTO, будем заполнять отдельно
+    @Mapping(target = "cancellationDeadlineFormatted", expression = "java(tournament.getFormattedCancellationDeadline())")
     TournamentDto toDto(Tournament tournament);
 
     @Mapping(target = "id", ignore = true)

@@ -44,6 +44,9 @@ public class TournamentDto {
     private TournamentStatus estado;
     @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm")
     private LocalDateTime deadlineCancelacion;
+    // LFPT-0662: дедлайн отмены, который реально проверяет Tournament.canCancelRegistration()
+    // (индивидуальный, если задан, иначе "старт - 24ч"), уже отформатированный для показа игроку.
+    private String cancellationDeadlineFormatted;
     private String infoDetallada;
     private String contactoOrganizador;
     private String faqUrl;

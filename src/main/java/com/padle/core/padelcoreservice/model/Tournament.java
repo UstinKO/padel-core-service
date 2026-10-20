@@ -15,6 +15,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -157,12 +158,23 @@ public class Tournament {
         return startDateTime.minusHours(24);
     }
 
+    // LFPT-0662: единый источник дедлайна отмены — индивидуальный, если задан организатором,
+    // иначе дефолт "старт - 24ч". Используется и проверкой отмены, и всеми уведомлениями игроку,
+    // чтобы текст сообщений не мог расходиться с тем, что реально проверяет canCancelRegistration().
+    public LocalDateTime getEffectiveDeadlineCancelacion() {
+        return deadlineCancelacion != null ? deadlineCancelacion : calculateDefaultDeadline();
+    }
+
+    private static final DateTimeFormatter CANCELLATION_DEADLINE_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+    // LFPT-0662: отформатированный эффективный дедлайн — для показа игроку в email/UI,
+    // тот же формат, что уже использует страница турнира для поля "Fecha límite de cancelación".
+    public String getFormattedCancellationDeadline() {
+        return getEffectiveDeadlineCancelacion().format(CANCELLATION_DEADLINE_FORMAT);
+    }
+
     public boolean canCancelRegistration() {
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime effectiveDeadline = deadlineCancelacion != null
-                ? deadlineCancelacion
-                : calculateDefaultDeadline();
-        return now.isBefore(effectiveDeadline);
+        return LocalDateTime.now().isBefore(getEffectiveDeadlineCancelacion());
     }
 
     public String getFormattedPrecio() {

@@ -909,6 +909,7 @@ public class DoubleTournamentRegistrationService {
                     dateStr,
                     timeStr,
                     null,
+                    tournament.getFormattedCancellationDeadline(),
                     partner.getLocale()
             );
             emailService.sendTournamentConfirmationEmail(
@@ -918,6 +919,7 @@ public class DoubleTournamentRegistrationService {
                     dateStr,
                     timeStr,
                     null,
+                    tournament.getFormattedCancellationDeadline(),
                     mainPlayer.getLocale()
             );
 
