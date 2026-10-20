@@ -5,11 +5,12 @@ import { createIndividualBooking, bookingQuote, cancellationDeadline, isIndividu
 import { bookingCopy } from '../src/bookingCopy.ts';
 
 function fixture() {
-  const state = { event: { id: 42, name: 'Training', type: 'PADEL_CLINIC', modality: 'INDIVIDUAL', gender: 'MASCULINO', level: 'C9_C8', status: 'REGISTRO_ABIERTO', registrationOpen: true, startsAt: new Date(Date.now() + 4 * 86400000).toISOString(), timeZone: 'America/Argentina/Buenos_Aires', club: { id: 1, name: 'Test club' }, price: 43000, currency: 'ARS', available: 1, cancellationDeadline: null }, rows: [], hasContact: true, writes: 0, saves: 0, result: { success: true, status: 'CONFIRMED', waitlistPosition: null } };
+  const state = { event: { id: 42, name: 'Training', type: 'PADEL_CLINIC', modality: 'INDIVIDUAL', gender: 'MASCULINO', level: 'C9_C8', status: 'REGISTRO_ABIERTO', registrationOpen: true, startsAt: new Date(Date.now() + 4 * 86400000).toISOString(), timeZone: 'America/Argentina/Buenos_Aires', club: { id: 1, name: 'Test club' }, price: 43000, currency: 'ARS', available: 1, cancellationDeadline: null }, rows: [], hasContact: true, writes: 0, saves: 0, cancels: 0, result: { success: true, status: 'CONFIRMED', waitlistPosition: null }, cancelResult: { success: true, message: 'cancelled' } };
   const transport = {
     details: async () => ({ ...state.event }), registrations: async () => [...state.rows], contactStatus: async () => ({ hasContact: state.hasContact }),
     saveContact: async () => { state.saves++; state.hasContact = true; return { success: true }; },
     registerIndividual: async () => { state.writes++; return state.result; },
+    cancelIndividual: async () => { state.cancels++; state.rows = []; return state.cancelResult; },
   };
   return { state, transport, client: createIndividualBooking(transport), row: (status = 'CONFIRMED') => ({ event: state.event, active: true, status, waitlistPosition: status === 'WAITLIST' ? 3 : null }) };
 }
@@ -110,6 +111,77 @@ test('contact save accepts either channel, validates both, and does not register
   await assert.rejects(f.client.saveContact({ telefono: 'bad', telegramUsername: '@valid_name' }), { code: 'NEED_CONTACT' });
   await f.client.saveContact({ telegramUsername: '@valid_name' });
   assert.equal((await f.client.load(42)).hasContact, true); assert.equal(f.state.saves, 1); assert.equal(f.state.writes, 0);
+});
+test('cancel sends exactly one POST and clears the active registration', async () => {
+  const f = fixture(); f.state.rows = [f.row('CONFIRMED')];
+  await f.client.cancel(42, bookingQuote(f.state.event));
+  assert.equal(f.state.cancels, 1); assert.equal(f.state.rows.length, 0);
+});
+test('cancel works for a waitlisted registration too', async () => {
+  const f = fixture(); f.state.rows = [f.row('WAITLIST')];
+  await f.client.cancel(42, bookingQuote(f.state.event));
+  assert.equal(f.state.cancels, 1);
+});
+test('cancel without an existing active registration is rejected without a network call', async () => {
+  const f = fixture();
+  await assert.rejects(f.client.cancel(42, bookingQuote(f.state.event)), { code: 'NO_REGISTRATION' });
+  assert.equal(f.state.cancels, 0);
+});
+test('cancel after the deadline is rejected without a network call', async () => {
+  const f = fixture(); f.state.rows = [f.row('CONFIRMED')];
+  f.state.event.cancellationDeadline = new Date(Date.now() - 1000).toISOString();
+  const quote = bookingQuote(f.state.event);
+  await assert.rejects(f.client.cancel(42, quote), { code: 'DEADLINE_PASSED' });
+  assert.equal(f.state.cancels, 0);
+});
+test('a changed event between review and confirmation requires new review before cancelling', async () => {
+  const f = fixture(); f.state.rows = [f.row('CONFIRMED')];
+  const quote = bookingQuote(f.state.event);
+  f.state.event.price = 50000;
+  await assert.rejects(f.client.cancel(42, quote), { code: 'CHANGED' });
+  assert.equal(f.state.cancels, 0);
+});
+test('a non-individual event cannot be cancelled through this flow', async () => {
+  const f = fixture(); f.state.event.modality = 'DOBLES'; f.state.rows = [f.row('CONFIRMED')];
+  await assert.rejects(f.client.cancel(42, bookingQuote(f.state.event)), { code: 'NOT_INDIVIDUAL' });
+  assert.equal(f.state.cancels, 0);
+});
+test('duplicate cancel tap is blocked while a request is in flight', async () => {
+  const f = fixture(); f.state.rows = [f.row('CONFIRMED')]; let respond;
+  f.transport.cancelIndividual = () => { f.state.cancels++; return new Promise(resolve => { respond = resolve; }); };
+  const client = createIndividualBooking(f.transport); const quote = bookingQuote(f.state.event);
+  const first = client.cancel(42, quote);
+  await assert.rejects(client.cancel(42, quote), { code: 'BUSY' });
+  await new Promise(resolve => setImmediate(resolve)); respond(f.state.cancelResult); await first;
+  assert.equal(f.state.cancels, 1);
+});
+test('network loss after the cancellation commits: reconcileCancellation finds it gone, never repeats the request', async () => {
+  const f = fixture(); f.state.rows = [f.row('CONFIRMED')];
+  const quote = bookingQuote(f.state.event);
+  f.transport.cancelIndividual = async () => { f.state.cancels++; f.state.rows = []; throw new AuthError('NETWORK'); };
+  const client = createIndividualBooking(f.transport);
+  await assert.rejects(client.cancel(42, quote), { code: 'UNCERTAIN' });
+  await assert.rejects(client.cancel(42, quote), { code: 'UNCERTAIN' });
+  const resolved = await client.reconcileCancellation(42);
+  assert.equal(resolved.cancelled, true); assert.equal(resolved.uncertain, false); assert.equal(f.state.cancels, 1);
+});
+test('an active registration still present after a timeout does not permit an automatic resend', async () => {
+  const f = fixture(); f.state.rows = [f.row('CONFIRMED')];
+  const quote = bookingQuote(f.state.event);
+  f.transport.cancelIndividual = async () => { f.state.cancels++; throw new AuthError('NETWORK'); };
+  const client = createIndividualBooking(f.transport);
+  await assert.rejects(client.cancel(42, quote), { code: 'UNCERTAIN' });
+  const resolved = await client.reconcileCancellation(42);
+  assert.equal(resolved.cancelled, false); assert.equal(resolved.uncertain, true);
+  await assert.rejects(client.cancel(42, quote), { code: 'UNCERTAIN' }); assert.equal(f.state.cancels, 1);
+});
+test('malformed/unsuccessful cancellation responses are never treated as success', async () => {
+  for (const reply of [{ success: false, message: 'no' }, {}, '<html>login</html>']) {
+    const f = fixture(); f.state.rows = [f.row('CONFIRMED')]; f.state.cancelResult = reply;
+    const quote = bookingQuote(f.state.event);
+    await assert.rejects(f.client.cancel(42, quote), { code: 'UNCERTAIN' });
+    assert.equal(f.client.isUncertain(42), true);
+  }
 });
 test('custom cancellation deadline is kept; default is start minus 24 hours', () => {
   const f = fixture(); assert.equal(Date.parse(f.state.event.startsAt) - Date.parse(cancellationDeadline(f.state.event)), 86400000);

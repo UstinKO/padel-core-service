@@ -28,6 +28,23 @@ test('business flags and rejection text survive JSON 400 and success=false', asy
     await assert.rejects(f.client.registerIndividual(42), error => error.code === 'REJECTED' && error.needLevel && error.detail === 'Set your level');
   }
 });
+test('authenticated cancellation sends one empty POST over HTTPS with no cookies or player ID', async () => {
+  const f = fixture(() => json({ success: true, message: 'Cancelled' })); await f.client.login(player.email, 'test-only-password');
+  await f.client.cancelIndividual(42);
+  const call = f.calls.at(-1); assert.equal(call.url, 'https://1-padel.com/players/tournaments/42/cancel');
+  assert.equal(call.init.method, 'POST'); assert.equal(call.init.body, undefined); assert.equal(call.init.credentials, 'omit');
+  assert.equal(call.init.headers.Authorization, 'Bearer test-access');
+  assert.equal(f.calls.filter(call => call.init.method === 'POST' && call.url.endsWith('/cancel')).length, 1);
+});
+test('cancellation rejection text (deadline passed) survives JSON 400', async () => {
+  const f = fixture(() => json({ success: false, message: 'Cannot cancel registration after deadline' }, 400)); await f.client.login(player.email, 'test-only-password');
+  await assert.rejects(f.client.cancelIndividual(42), error => error.code === 'REJECTED' && error.detail === 'Cannot cancel registration after deadline');
+});
+test('401 on cancellation renews tokens but does not replay the mutation', async () => {
+  const f = fixture(() => json({}, 401)); await f.client.login(player.email, 'test-only-password');
+  await assert.rejects(f.client.cancelIndividual(42), { code: 'REVIEW_REQUIRED' });
+  assert.equal(f.calls.filter(call => call.url.endsWith('/cancel')).length, 1);
+});
 test('401 renews tokens but does not replay a mutation; 403 does not falsely classify player as organizer', async () => {
   for (const status of [401, 403]) {
     const f = fixture(() => json({}, status)); await f.client.login(player.email, 'test-only-password');

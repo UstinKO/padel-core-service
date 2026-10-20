@@ -84,7 +84,7 @@
 
 ## POST `/players/tournaments/{tournamentId}/cancel`
 
-**Кто вызывает:** JavaScript (кнопка отмены регистрации).  
+**Кто вызывает:** JavaScript (кнопка отмены регистрации); клиент 1Padel.App (LFPT-0666) — для индивидуальной отмены записи на King of Court/Americano (INDIVIDUAL)/Padel Clinic/Cancha Abierta, без изменений контракта.  
 **Аутентификация:** `ROLE_PLAYER`.
 
 ### Алгоритм

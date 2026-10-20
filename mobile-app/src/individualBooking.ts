@@ -15,6 +15,7 @@ export type BookingTransport = {
   contactStatus: () => Promise<unknown>;
   saveContact: (value: { telefono?: string; telegramUsername?: string }) => Promise<unknown>;
   registerIndividual: (id: number) => Promise<unknown>;
+  cancelIndividual: (id: number) => Promise<unknown>;
 };
 export function isIndividualEvent(event: PublicTournament) {
   return event.modality === 'INDIVIDUAL' && ['KING_OF_COURT', 'AMERICANO', 'PADEL_CLINIC', 'CANCHA_ABIERTA'].includes(event.type);
@@ -33,6 +34,10 @@ export function parseBookingReceipt(value: unknown, existing = false): BookingRe
   if (!row || typeof row !== 'object' || Array.isArray(row) || row.success !== true || !['CONFIRMED', 'WAITLIST'].includes(String(row.status))) throw new BookingError('UNCERTAIN');
   if (row.waitlistPosition != null && (!Number.isSafeInteger(row.waitlistPosition) || Number(row.waitlistPosition) < 1)) throw new BookingError('UNCERTAIN');
   return { status: row.status as BookingReceipt['status'], waitlistPosition: row.waitlistPosition as number | null ?? null, existing };
+}
+function parseCancellationReceipt(value: unknown) {
+  const row = value as Record<string, unknown> | null;
+  if (!row || typeof row !== 'object' || Array.isArray(row) || row.success !== true) throw new BookingError('UNCERTAIN');
 }
 export function createIndividualBooking(transport: BookingTransport) {
   const sessionVersion = transport.sessionVersion?.();
@@ -70,6 +75,14 @@ export function createIndividualBooking(transport: BookingTransport) {
       // Отсутствие записи после тайм-аута ещё не доказывает, что первый POST не завершится.
       return { snapshot, receipt, uncertain: uncertain.has(id) };
     },
+    // Отмена — зеркало reconcile(): там "запись нашлась" снимает неопределённость,
+    // здесь, наоборот, снимает её именно отсутствие активной записи.
+    async reconcileCancellation(id: number) {
+      const snapshot = await load(id);
+      const active = !!snapshot.registration && ['CONFIRMED', 'WAITLIST'].includes(snapshot.registration.status ?? '');
+      if (!active) uncertain.delete(id);
+      return { snapshot, cancelled: !active, uncertain: uncertain.has(id) };
+    },
     async saveContact(value: { telefono?: string; telegramUsername?: string }) {
       checkAccount();
       const telefono = value.telefono?.trim(); const telegramUsername = value.telegramUsername?.trim();
@@ -92,6 +105,24 @@ export function createIndividualBooking(transport: BookingTransport) {
         if (bookingQuote(snapshot.event) !== quote) throw new BookingError('CHANGED', snapshot);
         checkAccount();
         try { return parseBookingReceipt(await transport.registerIndividual(id)); }
+        catch (error) {
+          if (error instanceof PlayerRequestError || error instanceof AuthError && ['REVIEW_REQUIRED', 'RATE_LIMIT', 'FORBIDDEN', 'SESSION_EXPIRED', 'CANCELLED', 'PLAYER_REQUIRED'].includes(error.code)) throw error;
+          uncertain.add(id); throw new BookingError('UNCERTAIN');
+        }
+      } finally { pending.delete(id); }
+    },
+    async cancel(id: number, quote: string): Promise<void> {
+      if (pending.has(id)) throw new BookingError('BUSY');
+      if (uncertain.has(id)) throw new BookingError('UNCERTAIN');
+      pending.add(id);
+      try {
+        const snapshot = await load(id);
+        if (!isIndividualEvent(snapshot.event)) throw new BookingError('NOT_INDIVIDUAL', snapshot);
+        if (!snapshot.registration || !['CONFIRMED', 'WAITLIST'].includes(snapshot.registration.status ?? '')) throw new BookingError('NO_REGISTRATION', snapshot);
+        if (Date.now() >= Date.parse(cancellationDeadline(snapshot.event))) throw new BookingError('DEADLINE_PASSED', snapshot);
+        if (bookingQuote(snapshot.event) !== quote) throw new BookingError('CHANGED', snapshot);
+        checkAccount();
+        try { parseCancellationReceipt(await transport.cancelIndividual(id)); }
         catch (error) {
           if (error instanceof PlayerRequestError || error instanceof AuthError && ['REVIEW_REQUIRED', 'RATE_LIMIT', 'FORBIDDEN', 'SESSION_EXPIRED', 'CANCELLED', 'PLAYER_REQUIRED'].includes(error.code)) throw error;
           uncertain.add(id); throw new BookingError('UNCERTAIN');
