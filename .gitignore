@@ -57,6 +57,7 @@ src/main/java/com/padle/core/padelcoreservice/util/PasswordGenerator.java
 
 # Ops-скрипты для боевого сервера — репозиторий публичный, не публикуем детали
 # инфраструктуры. Уже задеплоены на сервер, их отсутствие в git не влияет на
-# работу приложения.
-scripts/
+# работу приложения. Якорь на корень (LFPT-0660/LFPT-0647) — без него правило
+# матчило и mobile-app/scripts/, из-за чего build-site.mjs никогда не попадал в git.
+/scripts/
 design-screenshots/

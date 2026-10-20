@@ -7,6 +7,8 @@ import { availableLevels, defaultFilters, filterSchedule } from './filters';
 import type { ScheduleFilters } from './filters';
 import { messages } from './copy';
 import { colors as palette } from './theme';
+import { isIndividualEvent } from './individualBooking';
+import { bookingCopy } from './bookingCopy';
 
 const isFixture = process.env.EXPO_PUBLIC_PREVIEW_MODE === 'fixtures';
 const apiBase = Platform.OS === 'web' ? '' : (process.env.EXPO_PUBLIC_API_BASE_URL || 'https://1-padel.com');
@@ -103,7 +105,7 @@ function Availability({ event, language }: { event: PublicTournament; language: 
   </View>;
 }
 
-export default function PlayerScreen({ language }: { language: Language }) {
+export default function PlayerScreen({ language, onBook }: { language: Language; onBook?: (event: PublicTournament) => void }) {
   const t = messages[language];
   const client = useMemo(() => createScheduleClient({ baseUrl: apiBase }), []);
   const [filters, setFilters] = useState<ScheduleFilters>({ ...defaultFilters });
@@ -253,10 +255,10 @@ export default function PlayerScreen({ language }: { language: Language }) {
       <View style={styles.bookingInner}>
         <View style={styles.bookingRow}>
           <View style={styles.bookingPrice}><Text style={styles.caption}>{t.priceFrom}</Text><Text style={styles.detailPrice}>{eventPrice(selected, language)}</Text></View>
-          <View style={styles.bookingAction}><Action title={selected.registrationOpen ? selected.available > 0 ? t.book : t.waitlist : t.openEvent}
-            disabled={isFixture} onPress={() => openWebsite(selected.websiteUrl)} /></View>
+          <View style={styles.bookingAction}><Action title={selected.registrationOpen ? isIndividualEvent(selected) && onBook ? selected.available > 0 ? bookingCopy[language].openInline : bookingCopy[language].waitInline : selected.available > 0 ? t.book : t.waitlist : t.openEvent}
+            disabled={isFixture} onPress={() => { if (selected.registrationOpen && isIndividualEvent(selected) && onBook) onBook(selected); else void openWebsite(selected.websiteUrl); }} /></View>
         </View>
-        <Text style={styles.bookingNote}>{t.siteNote}</Text>
+        <Text style={styles.bookingNote}>{selected.registrationOpen && isIndividualEvent(selected) && onBook ? bookingCopy[language].inlineNote : t.siteNote}</Text>
       </View>
     </View>}
     <Modal visible={filterVisible} transparent animationType="slide" onRequestClose={() => setFilterVisible(false)}>

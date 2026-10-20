@@ -36,7 +36,7 @@
 
 ## POST `/players/tournaments/{tournamentId}/register`
 
-**Кто вызывает:** JavaScript на дашборде и странице турнира.  
+**Кто вызывает:** JavaScript на дашборде и странице турнира; клиент 1Padel.App (LFPT-0660) — для индивидуальной записи на King of Court/Americano (INDIVIDUAL)/Padel Clinic/Cancha Abierta, без изменений контракта.  
 **Аутентификация:** `ROLE_PLAYER`.  
 **Возвращает:** JSON.
 
