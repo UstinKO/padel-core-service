@@ -29,6 +29,11 @@ export function bookingQuote(event: PublicTournament) {
     event.registrationOpen, event.price, event.currency, event.startsAt, event.timeZone, event.club.id, event.club.name, event.club.address, event.duration, event.description,
     cancellationDeadline(event), event.available > 0]);
 }
+// Отмена — отдельная проверка от записи: кроме данных мероприятия, значим и собственный статус
+// регистрации игрока (WAITLIST ↔ CONFIRMED, смена позиции в листе ожидания) между проверкой и подтверждением.
+export function cancellationQuote(snapshot: Pick<BookingSnapshot, 'event' | 'registration'>) {
+  return JSON.stringify([bookingQuote(snapshot.event), snapshot.registration?.status ?? null, snapshot.registration?.waitlistPosition ?? null]);
+}
 export function parseBookingReceipt(value: unknown, existing = false): BookingReceipt {
   const row = value as Record<string, unknown> | null;
   if (!row || typeof row !== 'object' || Array.isArray(row) || row.success !== true || !['CONFIRMED', 'WAITLIST'].includes(String(row.status))) throw new BookingError('UNCERTAIN');
@@ -120,7 +125,7 @@ export function createIndividualBooking(transport: BookingTransport) {
         if (!isIndividualEvent(snapshot.event)) throw new BookingError('NOT_INDIVIDUAL', snapshot);
         if (!snapshot.registration || !['CONFIRMED', 'WAITLIST'].includes(snapshot.registration.status ?? '')) throw new BookingError('NO_REGISTRATION', snapshot);
         if (Date.now() >= Date.parse(cancellationDeadline(snapshot.event))) throw new BookingError('DEADLINE_PASSED', snapshot);
-        if (bookingQuote(snapshot.event) !== quote) throw new BookingError('CHANGED', snapshot);
+        if (cancellationQuote(snapshot) !== quote) throw new BookingError('CHANGED', snapshot);
         checkAccount();
         try { parseCancellationReceipt(await transport.cancelIndividual(id)); }
         catch (error) {

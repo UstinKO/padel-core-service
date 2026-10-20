@@ -3,7 +3,7 @@ import { ActivityIndicator, Linking, StyleSheet, Text, TouchableOpacity, View } 
 import type { Language } from './schedule';
 import { eventDate } from './schedule';
 import { AuthError, PlayerRequestError } from './auth';
-import { BookingError, bookingQuote, cancellationDeadline, isIndividualEvent } from './individualBooking';
+import { BookingError, cancellationDeadline, cancellationQuote, isIndividualEvent } from './individualBooking';
 import type { BookingSnapshot, createIndividualBooking } from './individualBooking';
 import { bookingCopy } from './bookingCopy';
 import { messages } from './copy';
@@ -96,7 +96,7 @@ export default function CancelBookingPanel({ tournamentId, booking, language, on
       <Button title={busy ? t.cancelling : t.cancelConfirm} disabled={busy || !accepted} onPress={() => {
         if (!snapshot || !accepted) return;
         const started = version.current;
-        void perform(async () => { await booking.cancel(tournamentId, bookingQuote(snapshot.event)); if (started === version.current) setDone(true); });
+        void perform(async () => { await booking.cancel(tournamentId, cancellationQuote(snapshot)); if (started === version.current) setDone(true); });
       }} />
     </View>}
   </View>;
