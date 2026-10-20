@@ -27,6 +27,7 @@ function laboratory(scenario: Scenario, onWrite: () => void) {
       if (scenario === 'Обрыв связи') throw new AuthError('NETWORK');
       return { success: true, status, waitlistPosition: status === 'WAITLIST' ? 3 : null };
     },
+    cancelIndividual: async () => { onWrite(); rows = []; return { success: true }; },
   });
   return { booking, rows: () => [...rows] };
 }

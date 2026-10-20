@@ -225,6 +225,10 @@ export function createAuthClient({ baseUrl = 'https://1-padel.com', fetchImpl = 
       if (!Number.isSafeInteger(tournamentId) || tournamentId < 1) throw new AuthError('UNAVAILABLE');
       return authorized(`/players/tournaments/${tournamentId}/register`, { method: 'POST', business: true });
     },
+    async cancelIndividual(tournamentId: number) {
+      if (!Number.isSafeInteger(tournamentId) || tournamentId < 1) throw new AuthError('UNAVAILABLE');
+      return authorized(`/players/tournaments/${tournamentId}/cancel`, { method: 'POST', business: true });
+    },
     sessionVersion() { return epoch; },
     cancelPending() { epoch++; refreshTask = null; },
     logout: clear,
