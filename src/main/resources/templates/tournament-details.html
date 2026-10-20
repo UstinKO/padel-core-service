@@ -724,7 +724,7 @@
                     <div class="additional-info">
                         <div class="info-note" th:if="${tournament.deadlineCancelacion}">
                             <i class="fas fa-clock"></i>
-                            <span th:text="#{tournament.cancel.hint}">Puedes cancelar hasta 24h antes del torneo</span>
+                            <span th:text="#{tournament.cancel.hint(${#temporals.format(tournament.deadlineCancelacion, 'dd/MM/yyyy HH:mm')})}">Puedes cancelar hasta 24h antes del torneo</span>
                         </div>
                     </div>
                 </div>
