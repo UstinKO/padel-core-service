@@ -201,6 +201,11 @@ window.APP_MESSAGES = {
     'regConfirm.cancha.subtitle':          "You're registered for Cancha Abierta.",
     'regConfirm.cancha.rule1':             '<strong>Arrive early.</strong> Please arrive about 15 minutes before the start.',
     'regConfirm.cancha.rule2':             "<strong>If you can't make it,</strong> please let the organizer know in advance so someone else can take your spot.",
+    'regConfirm.clinic.subtitle':          "You're successfully registered for the training + play session.",
+    'regConfirm.clinic.rule1':             '<strong>Cancelling.</strong> You can cancel free of charge up to 24 hours before the event starts.',
+    'regConfirm.clinic.rule2':             '<strong>If you cancel less than 24 hours before,</strong> the full fee applies, since the courts are already booked.',
+    'regConfirm.clinic.rule3':             "<strong>Refund possible.</strong> If we find another player to take your spot and pay in full, you won't be charged, or you'll be refunded.",
+    'regConfirm.clinic.rule4':             "<strong>Arrive early.</strong> Please arrive 15 minutes before the session starts so you can get ready without rushing.",
 
     // ── share-panel.js ──────────────────────────────────────────────────────
     'share.title':            'Share tournament',

@@ -201,6 +201,11 @@ window.APP_MESSAGES = {
     'regConfirm.cancha.subtitle':          'Ya estás inscripto en la Cancha Abierta.',
     'regConfirm.cancha.rule1':             '<strong>Llegá antes.</strong> Te pedimos llegar aproximadamente 15 minutos antes del inicio.',
     'regConfirm.cancha.rule2':             '<strong>Si finalmente no podés venir,</strong> por favor avisá al organizador con anticipación, para que podamos liberar tu lugar para otro jugador.',
+    'regConfirm.clinic.subtitle':          'Ya estás inscripto en la Clínica de pádel.',
+    'regConfirm.clinic.rule1':             '<strong>Cancelación.</strong> Podés cancelar tu participación sin cargo hasta 24 horas antes del inicio del evento.',
+    'regConfirm.clinic.rule2':             '<strong>Si cancelás con menos de 24 horas de anticipación,</strong> deberás abonar el valor total de la inscripción, ya que las canchas están reservadas y deben ser pagadas al club.',
+    'regConfirm.clinic.rule3':             '<strong>Reintegro posible.</strong> Si conseguimos otro jugador que ocupe tu lugar y abone la inscripción completa, no tendrás que pagar o se realizará el reintegro correspondiente.',
+    'regConfirm.clinic.rule4':             '<strong>Llegá antes.</strong> Te pedimos llegar 15 minutos antes del inicio para que puedas prepararte con tranquilidad.',
 
     // ── share-panel.js ──────────────────────────────────────────────────────
     'share.title':            'Compartir torneo',
