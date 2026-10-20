@@ -89,6 +89,9 @@
         .badge-solo-later   { background: #fef3c7; color: #92400e; padding:.2rem .6rem; border-radius:20px; font-size:.75rem; font-weight:600; }
         .badge-solo-search  { background: #dbeafe; color: #1d4ed8; padding:.2rem .6rem; border-radius:20px; font-size:.75rem; font-weight:600; }
         .badge-solo-expired { background: #fee2e2; color: #991b1b; padding:.2rem .6rem; border-radius:20px; font-size:.75rem; font-weight:600; }
+        /* LFPT-0669: резервные заявки (WAITLIST) без/с партнёром после перевода в резерв */
+        .badge-reserve-pending  { background: #fef3c7; color: #92400e; padding:.2rem .6rem; border-radius:20px; font-size:.75rem; font-weight:600; }
+        .badge-reserve-complete { background: #dcfce7; color: #15803d; padding:.2rem .6rem; border-radius:20px; font-size:.75rem; font-weight:600; }
 
         .waitlist-items {
             max-height: 300px;
@@ -1650,6 +1653,13 @@
                                    th:text="${reg.playerNombre} ?: 'Jugador ' + ${reg.playerId}">
                                     Jugador
                                 </a>
+                                <!-- LFPT-0669: различаем резервную заявку без партнёра от уже сформированной пары -->
+                                <div th:if="${tournament.modalidad.name() == 'DOBLES'}">
+                                    <span th:if="${!reg.partnerRegistered}" class="badge-reserve-pending"
+                                          th:text="#{admin.tournaments.details.waitlist.pending_partner}">⏳ Reserva — esperando compañero</span>
+                                    <span th:if="${reg.partnerRegistered}" class="badge-reserve-complete"
+                                          th:text="#{admin.tournaments.details.waitlist.pair_complete}">✅ Reserva — pareja formada</span>
+                                </div>
                             </td>
                             <td>
                                 <span style="color:#64748b; font-size:.82rem;"
