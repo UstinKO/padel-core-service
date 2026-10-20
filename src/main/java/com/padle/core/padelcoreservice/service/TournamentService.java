@@ -544,8 +544,14 @@ public class TournamentService {
                 tournamentId, tournament.getModalidad(), confirmedSpots, availableSlots);
 
         if (availableSlots > 0) {
-            List<TournamentRegistration> waitlist = registrationRepository
-                    .findByTournamentIdAndStatusOrderByWaitlistPositionAsc(
+            // LFPT-0668: для DOBLES резерв может содержать заявки без партнёра («ожидает
+            // партнёра», SOLO_ADD_LATER, переведённые в WAITLIST по дедлайну) — их нельзя
+            // авто-подтверждать наравне с полностью сформированными парами. Для INDIVIDUAL
+            // партнёра у регистраций нет вовсе, фильтр по нему неприменим.
+            List<TournamentRegistration> waitlist = tournament.getModalidad() == Modalidad.DOBLES
+                    ? registrationRepository.findByTournamentIdAndStatusAndPartnerIsNotNullOrderByWaitlistPositionAsc(
+                            tournamentId, RegistrationStatus.WAITLIST)
+                    : registrationRepository.findByTournamentIdAndStatusOrderByWaitlistPositionAsc(
                             tournamentId, RegistrationStatus.WAITLIST);
 
             log.info("Found {} available slots and {} players in waitlist", availableSlots, waitlist.size());
