@@ -406,6 +406,7 @@ public class EmailService {
             String tournamentDate,
             String tournamentTime,
             String clubName,
+            String cancellationDeadline,
             Locale locale) {
 
         emailMetricsService.recordEmailAttempt("REGISTRATION_CONFIRMATION");
@@ -425,6 +426,7 @@ public class EmailService {
             context.setVariable("tournamentDate", tournamentDate);
             context.setVariable("tournamentTime", tournamentTime);
             context.setVariable("clubName", clubName);
+            context.setVariable("cancellationDeadline", cancellationDeadline);
             context.setVariable("baseUrl", baseUrl);
             context.setVariable("year", java.time.Year.now().getValue());
 
@@ -546,6 +548,7 @@ public class EmailService {
             String tournamentDate,
             String tournamentTime,
             String clubName,
+            String cancellationDeadline,
             Locale locale) {
 
         emailMetricsService.recordEmailAttempt("TOURNAMENT_CONFIRMATION");
@@ -565,6 +568,7 @@ public class EmailService {
             context.setVariable("tournamentDate", tournamentDate);
             context.setVariable("tournamentTime", tournamentTime);
             context.setVariable("clubName", clubName);
+            context.setVariable("cancellationDeadline", cancellationDeadline);
             context.setVariable("baseUrl", baseUrl);
             context.setVariable("year", java.time.Year.now().getValue());
 

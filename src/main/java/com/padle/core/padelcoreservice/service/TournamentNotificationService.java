@@ -37,6 +37,7 @@ public class TournamentNotificationService {
                     dateStr,
                     timeStr,
                     clubName,
+                    tournament.getCancellationDeadlineFormatted(),
                     locale
             );
 
@@ -88,6 +89,7 @@ public class TournamentNotificationService {
                     dateStr,
                     timeStr,
                     clubName,
+                    tournament.getCancellationDeadlineFormatted(),
                     locale
             );
 
@@ -114,6 +116,7 @@ public class TournamentNotificationService {
                         dateStr,
                         timeStr,
                         clubName,
+                        tournament.getCancellationDeadlineFormatted(),
                         locale
                 );
             } else {
@@ -148,6 +151,7 @@ public class TournamentNotificationService {
                     dateStr,
                     timeStr,
                     clubName,
+                    tournament.getFormattedCancellationDeadline(),
                     mainReg.getPlayer().getLocale()
             );
 
@@ -159,6 +163,7 @@ public class TournamentNotificationService {
                     dateStr,
                     timeStr,
                     clubName,
+                    tournament.getFormattedCancellationDeadline(),
                     partnerReg.getPlayer().getLocale()
             );
 

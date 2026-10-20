@@ -26,7 +26,8 @@
 | `precio` | BigDecimal | Взнос |
 | `moneda` | String | Валюта (ARS, etc.) |
 | `estado` | TournamentStatus | BORRADOR / REGISTRO_ABIERTO / EN_CURSO / FINALIZADO / CANCELADO |
-| `deadlineCancelacion` | LocalDateTime | Дедлайн отмены регистрации |
+| `deadlineCancelacion` | LocalDateTime | Дедлайн отмены регистрации, заданный администратором (может быть `null`) |
+| `cancellationDeadlineFormatted` | String | Дедлайн отмены (LFPT-0662): индивидуальный, если задан, иначе "старт − 24ч" — тот же, что реально проверяет `Tournament.canCancelRegistration()`, отформатирован `dd/MM/yyyy HH:mm` |
 | `infoDetallada` | String | Подробное описание |
 | `contactoOrganizador` | String | Контакт организатора |
 | `faqUrl` | String | Ссылка на FAQ |
