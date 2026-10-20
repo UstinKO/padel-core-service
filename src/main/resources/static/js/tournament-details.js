@@ -324,7 +324,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Окно подтверждения успешной ИНДИВИДУАЛЬНОЙ регистрации (status=CONFIRMED),
     // отдельно от showResultModal - не закрывается по таймеру, т.к. текст длиннее.
-    function showRegistrationConfirmModal(tournamentType) {
+    function showRegistrationConfirmModal(tournamentType, cancellationDeadline) {
         const modal = document.getElementById('registrationConfirmModal');
         const body = document.getElementById('registrationConfirmModalBody');
         if (!modal || !body) return;
@@ -347,8 +347,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         <i class="fas fa-info-circle"></i> ${t('regConfirm.individual.rulesTitle')}
                     </div>
                     <ul class="reg-confirm-rules">
-                        <li>${t('regConfirm.clinic.rule1')}</li>
-                        <li>${t('regConfirm.clinic.rule2')}</li>
+                        <li>${t('regConfirm.clinic.rule1', cancellationDeadline)}</li>
+                        <li>${t('regConfirm.clinic.rule2', cancellationDeadline)}</li>
                         <li>${t('regConfirm.clinic.rule3')}</li>
                         <li>${t('regConfirm.clinic.rule4')}</li>
                     </ul>
@@ -361,8 +361,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         <i class="fas fa-info-circle"></i> ${t('regConfirm.individual.rulesTitle')}
                     </div>
                     <ul class="reg-confirm-rules">
-                        <li>${t('regConfirm.individual.rule1')}</li>
-                        <li>${t('regConfirm.individual.rule2')}</li>
+                        <li>${t('regConfirm.individual.rule1', cancellationDeadline)}</li>
+                        <li>${t('regConfirm.individual.rule2', cancellationDeadline)}</li>
                         <li>${t('regConfirm.individual.rule3')}</li>
                         <li>${t('regConfirm.individual.rule4')}</li>
                         <li>${t('regConfirm.individual.rule5')}</li>
@@ -447,7 +447,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             if (data.success) {
                                 window.trackTournamentRegistrationComplete?.(tournamentId, data.status);
                                 if (data.status === 'CONFIRMED') {
-                                    showRegistrationConfirmModal(window.tournament?.tipo);
+                                    showRegistrationConfirmModal(window.tournament?.tipo, window.tournament?.cancellationDeadlineFormatted);
                                 } else {
                                     showResultModal('success', t('details.success.registered'), t('details.success.waitlist_added'));
                                 }
