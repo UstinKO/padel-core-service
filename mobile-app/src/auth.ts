@@ -14,6 +14,17 @@ export class AuthError extends Error {
   code: string;
   constructor(code: string) { super(code); this.name = 'AuthError'; this.code = code; }
 }
+export class PlayerRequestError extends AuthError {
+  detail: string; needContact: boolean; needLevel: boolean;
+  constructor(value: unknown) {
+    super('REJECTED');
+    const data = record(value) ? value : {};
+    this.detail = typeof data.message === 'string' ? data.message.slice(0, 600) : '';
+    this.needContact = data.needContact === true;
+    this.needLevel = data.needLevel === true;
+  }
+}
+type PlayerRequest = { method?: 'GET' | 'POST' | 'PATCH'; body?: unknown; business?: boolean };
 type Store = { get: () => Promise<string | null>; set: (token: string | null) => Promise<void> };
 function record(value: unknown): value is Record<string, unknown> { return !!value && typeof value === 'object' && !Array.isArray(value); }
 function text(value: unknown): value is string { return typeof value === 'string' && value.length > 0; }
@@ -106,11 +117,11 @@ export function createAuthClient({ baseUrl = 'https://1-padel.com', fetchImpl = 
   let writes = Promise.resolve();
   const save = (token: string | null) => { writes = writes.catch(() => {}).then(() => store.set(token)); return writes; };
   // badRequest — во что превращается 400: сервер отвечает им и на неверный пароль, и на негодный refresh.
-  async function raw(path: string, body?: unknown, accessToken?: string, badRequest = 'UNAVAILABLE'): Promise<unknown> {
+  async function raw(path: string, body?: unknown, accessToken?: string, badRequest = 'UNAVAILABLE', options: PlayerRequest = {}): Promise<unknown> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
-      const response = await fetchImpl(base + path, { method: body === undefined ? 'GET' : 'POST',
+      const response = await fetchImpl(base + path, { method: options.method ?? (body === undefined ? 'GET' : 'POST'),
         headers: { Accept: 'application/json', ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) },
         ...(body === undefined ? {} : { body: JSON.stringify(body) }), credentials: 'omit', cache: 'no-store', redirect: 'manual', signal: controller.signal });
       // Без действующего токена сервер не отвечает 401, а редиректит /api/** на /login.
@@ -118,6 +129,8 @@ export function createAuthClient({ baseUrl = 'https://1-padel.com', fetchImpl = 
       if (response.status === 429) throw new AuthError('RATE_LIMIT');
       const isJson = response.headers.get('content-type')?.includes('application/json');
       if (!response.ok) {
+        if (options.business && response.status === 400 && isJson) throw new PlayerRequestError(await response.json());
+        if (options.business && response.status === 403) throw new AuthError('FORBIDDEN');
         if (response.status === 400) {
           const message = isJson ? '' : await response.text().catch(() => '');
           throw new AuthError(badRequest === 'INVALID_CREDENTIALS' && /confirma|desactivada/i.test(message) ? 'ACCOUNT_UNAVAILABLE' : badRequest);
@@ -127,7 +140,9 @@ export function createAuthClient({ baseUrl = 'https://1-padel.com', fetchImpl = 
         throw new AuthError('UNAVAILABLE');
       }
       if (!isJson) throw new AuthError('UNAVAILABLE');
-      return await response.json();
+      const value = await response.json();
+      if (options.business && record(value) && value.success === false) throw new PlayerRequestError(value);
+      return value;
     } catch (error) { if (error instanceof AuthError) throw error; throw new AuthError('NETWORK'); }
     finally { clearTimeout(timer); }
   }
@@ -157,18 +172,21 @@ export function createAuthClient({ baseUrl = 'https://1-padel.com', fetchImpl = 
     }
     return refreshTask;
   }
-  async function authorized(path: string) {
+  async function authorized(path: string, options: PlayerRequest = {}) {
     const started = epoch;
     if (!session || session.expiresAt < Date.now() + 30000) await refresh();
     if (!session || started !== epoch) throw new AuthError('CANCELLED');
     try {
-      const value = await raw(path, undefined, session.accessToken);
+      const value = await raw(path, options.body, session.accessToken, 'UNAVAILABLE', options);
       if (started !== epoch) throw new AuthError('CANCELLED');
       return value;
     } catch (error) {
       if (error instanceof AuthError && ['ACCOUNT_UNAVAILABLE', 'PLAYER_REQUIRED'].includes(error.code) && started === epoch) { await clear(); onExpired(); throw error; }
       if (!(error instanceof AuthError) || error.code !== 'SESSION_EXPIRED' || started !== epoch) throw error;
       await refresh();
+      // После мутации не повторяем POST/PATCH автоматически даже при редиректе/401.
+      // Новый запрос возможен только после сверки своей записи и нового подтверждения.
+      if (options.method && options.method !== 'GET') throw new AuthError('REVIEW_REQUIRED');
       if (!session || started !== epoch) throw new AuthError('CANCELLED');
       try {
         const value = await raw(path, undefined, session.accessToken);
@@ -199,6 +217,15 @@ export function createAuthClient({ baseUrl = 'https://1-padel.com', fetchImpl = 
       return me();
     },
     async registrations() { return parseRegistrations(await authorized('/api/players/me/tournaments'), base); },
+    async contactStatus() { return authorized('/api/players/me/contact-status'); },
+    async saveContact(value: { telefono?: string; telegramUsername?: string }) {
+      return authorized('/api/players/me/contact', { method: 'PATCH', body: value, business: true });
+    },
+    async registerIndividual(tournamentId: number) {
+      if (!Number.isSafeInteger(tournamentId) || tournamentId < 1) throw new AuthError('UNAVAILABLE');
+      return authorized(`/players/tournaments/${tournamentId}/register`, { method: 'POST', business: true });
+    },
+    sessionVersion() { return epoch; },
     cancelPending() { epoch++; refreshTask = null; },
     logout: clear,
   };

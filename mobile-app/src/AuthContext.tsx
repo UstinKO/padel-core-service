@@ -4,6 +4,8 @@ import * as SecureStore from 'expo-secure-store';
 import { AuthError, createAuthClient, parseSessionFragment } from './auth';
 import type { Profile } from './auth';
 import { createNativeSessionStore, createWebSessionStore } from './sessionStore';
+import { createIndividualBooking } from './individualBooking';
+import { createScheduleClient } from './schedule';
 
 const secureKey = 'onepadel.refresh.v1';
 export const secureAuthContext = Platform.OS !== 'web' || (typeof window !== 'undefined' && (window.location.protocol === 'https:' || ['localhost', '127.0.0.1'].includes(window.location.hostname)));
@@ -16,7 +18,7 @@ const store = Platform.OS === 'web'
 
 type Auth = { profile: Profile | null; restoring: boolean; restoreError: string | null; googleCode: string | null;
   login: (email: string, password: string) => Promise<void>; google: () => Promise<void>; cancelGoogle: () => void;
-  logout: () => Promise<void>; retryRestore: () => Promise<void>; client: ReturnType<typeof createAuthClient> };
+  logout: () => Promise<void>; retryRestore: () => Promise<void>; client: ReturnType<typeof createAuthClient>; booking: ReturnType<typeof createIndividualBooking> };
 const Context = createContext<Auth | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -25,6 +27,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [googleCode, setGoogleCode] = useState<string | null>(null);
   const attempt = useRef(0);
   const client = useMemo(() => createAuthClient({ store, baseUrl: Platform.OS === 'web' && typeof window !== 'undefined' && window.location.protocol === 'https:' && ['1-padel.com', 'www.1-padel.com'].includes(window.location.hostname) ? window.location.origin : 'https://1-padel.com', onExpired: () => setProfile(null) }), []);
+  // Отдельная модель записи на каждый аккаунт: неопределённый запрос одного игрока
+  // не должен влиять на другого после выхода и смены аккаунта.
+  const booking = useMemo(() => {
+    const baseUrl = Platform.OS === 'web' && typeof window !== 'undefined' && window.location.protocol === 'https:' && ['1-padel.com', 'www.1-padel.com'].includes(window.location.hostname) ? window.location.origin : 'https://1-padel.com';
+    const schedule = createScheduleClient({ baseUrl });
+    return createIndividualBooking({ ...client, details: id => schedule.details(id, 'es') });
+  }, [client, profile?.id]);
   const retryRestore = useCallback(async () => {
     setRestoring(true); setRestoreError(null);
     try {
@@ -53,6 +62,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     cancelGoogle(); setRestoreError(null); setProfile(await client.login(email, password));
   }
   async function logout() { cancelGoogle(); await client.logout(); setProfile(null); }
-  return <Context.Provider value={{ profile, restoring, restoreError, googleCode, login, google, cancelGoogle, logout, retryRestore, client }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ profile, restoring, restoreError, googleCode, login, google, cancelGoogle, logout, retryRestore, client, booking }}>{children}</Context.Provider>;
 }
 export function useAuth() { const value = useContext(Context); if (!value) throw new Error('AuthProvider required'); return value; }
