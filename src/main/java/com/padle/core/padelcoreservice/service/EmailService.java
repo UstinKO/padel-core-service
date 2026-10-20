@@ -207,62 +207,6 @@ public class EmailService {
     }
 
     /**
-     * Отправка подтверждения регистрации пары
-     */
-    @Timed(
-            name = "email.send.time",
-            tags = {"service=email", "type=pair_confirmation"}
-    )
-    @TrackErrors(
-            name = "email.send.errors",
-            tags = {"service=email", "type=pair_confirmation"}
-    )
-    @Async
-    public void sendPairConfirmationEmail(
-            @MetricTag("recipient") String to,
-            @MetricTag("playerName") String playerName,
-            @MetricTag("partnerName") String partnerName,
-            String tournamentName,
-            String tournamentDate,
-            String tournamentTime,
-            String clubName,
-            Locale locale) {
-
-        emailMetricsService.recordEmailAttempt("PAIR_CONFIRMATION");
-
-        if (emailMetricsService.isDailyLimitReached(dailyEmailLimit)) {
-            log.warn("Daily email limit reached, rejecting pair confirmation to: {}", to);
-            emailMetricsService.recordEmailRejected("PAIR_CONFIRMATION", "DAILY_LIMIT");
-            return;
-        }
-
-        try {
-            log.info("📧 Enviando confirmación de pareja a: {}", to);
-
-            Context context = new Context(locale);
-            context.setVariable("playerName", playerName);
-            context.setVariable("partnerName", partnerName);
-            context.setVariable("tournamentName", tournamentName);
-            context.setVariable("tournamentDate", tournamentDate);
-            context.setVariable("tournamentTime", tournamentTime);
-            context.setVariable("clubName", clubName);
-            context.setVariable("baseUrl", baseUrl);
-            context.setVariable("year", java.time.Year.now().getValue());
-
-            String htmlContent = templateEngine.process("email/pair-confirmation", context);
-
-            sendHtmlEmail(to, messageSource.getMessage("email.tournament_confirm.subject", new Object[]{tournamentName}, locale), htmlContent);
-
-            emailMetricsService.recordEmailSent("PAIR_CONFIRMATION");
-            log.info("✅ Confirmación de pareja enviada a: {}", to);
-
-        } catch (Exception e) {
-            emailMetricsService.recordEmailError("PAIR_CONFIRMATION", e.getClass().getSimpleName());
-            log.error("❌ Error enviando confirmación de pareja a {}: {}", to, e.getMessage(), e);
-        }
-    }
-
-    /**
      * Отправка приветственного письма
      */
     @Timed(name = "email.send.time", tags = {"service=email", "type=welcome"})
