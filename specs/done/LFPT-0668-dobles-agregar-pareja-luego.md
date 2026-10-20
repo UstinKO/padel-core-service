@@ -1,10 +1,10 @@
 # LFPT-0668: Feature доработка «Добавлю партнёра позже» — точный дедлайн, перевод в резерв и email-напоминания
 
 ## Статус
-approved
+done
 
 ## Источник
-Клиентский запрос заказчика (Telegram): [specs/requests/LFPT-0668-dobles-agregar-pareja-luego.md](../requests/LFPT-0668-dobles-agregar-pareja-luego.md). Issue: #668.
+Клиентский запрос заказчика (Telegram): [specs/requests/LFPT-0668-dobles-agregar-pareja-luego.md](requests/LFPT-0668-dobles-agregar-pareja-luego.md). Issue: #668.
 
 Фронтенд-часть (отображение в админке, страницы подтверждения действий из email) — отдельная задача [LFPT-0669](LFPT-0669-dobles-agregar-pareja-luego-frontend.md) (issue #669), ветка от этой.
 
