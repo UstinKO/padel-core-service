@@ -312,6 +312,7 @@ docker compose up -d
 | POST | `/api/cookies/customize` | Настроить cookie |
 | GET | `/api/admin/email-stats` | Статистика отправки email |
 | GET | `/api/admin/email-daily-count` | Количество писем за день |
+| GET | `/api/admin/players/duplicates-audit` | Read-only отчёт о потенциальных дублях игроков (`SUPER_ADMIN`, LFPT-0677) |
 | POST | `/admin/tournaments/{tournamentId}/payments/save` | Зафиксировать платёж вручную (админом) |
 
 ### WebSocket

@@ -391,6 +391,12 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 | `GET` | `/api/admin/email-stats` | ADMIN | Статистика отправки писем по типам (welcome, confirmation, invitation, …). |
 | `GET` | `/api/admin/email-daily-count` | ADMIN | Количество писем за текущий день + лимит. |
 
+#### Admin: аудит дублей игроков (LFPT-0677)
+
+| Метод | URL | Auth | Описание |
+|-------|-----|------|----------|
+| `GET` | `/api/admin/players/duplicates-audit` | SUPER_ADMIN | Read-only отчёт о потенциальных дублях `PlayerPadel` (точные/вероятные совпадения, подозреваемые дубли из флоу приглашения партнёра, разбивка по источнику) — см. [admin-player-audit.md](endpoints/admin-player-audit.md). |
+
 ---
 
 ## 7. Домен: King of Court
