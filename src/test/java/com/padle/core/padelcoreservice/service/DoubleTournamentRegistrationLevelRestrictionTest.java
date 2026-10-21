@@ -117,10 +117,11 @@ class DoubleTournamentRegistrationLevelRestrictionTest {
     }
 
     @Test
-    void companeroSinCuenta_noBloqueaPorNivel_seDiriereAlFlujoDeConfirmacion() {
+    void companeroSinCuenta_noBloqueaPorNivel_seRegistraDeInmediatoConNivelSinEspecificar() {
         // Sin existingUserId y sin email/teléfono coincidente con ningún jugador —
         // findPartner no encuentra cuenta, el nivel del compañero aún no existe (SIN_ESPECIFICAR
-        // se asigna recién en confirmPartnerRegistration) — esta llamada no debe lanzar
+        // se asigna al crear la cuenta en registerWithNewPartner, LFPT-0687: la pareja se
+        // registra de inmediato, sin esperar confirmación) — esta llamada no debe lanzar
         // PlayerLevelRequiredException/level_mismatch por el compañero.
         PartnerRegistrationDto partnerDto = new PartnerRegistrationDto();
         partnerDto.setNombre("Pareja");
@@ -131,6 +132,7 @@ class DoubleTournamentRegistrationLevelRestrictionTest {
         when(playerRepository.findByEmail("nueva-pareja@example.com")).thenReturn(Optional.empty());
         when(playerRepository.findByTelefono("+5492222222222")).thenReturn(Optional.empty());
         when(playerRepository.existsByTelefono("+5492222222222")).thenReturn(false);
+        when(playerRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(registrationRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(registrationMapper.toDto(any())).thenReturn(null);
 

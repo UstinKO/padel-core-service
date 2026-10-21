@@ -1,7 +1,7 @@
 # Архитектура базы данных — padel-core-service
 
 > **СУБД:** PostgreSQL 15  
-> **Версия схемы:** v1.55  
+> **Версия схемы:** v1.56  
 > **Миграции:** Liquibase (YAML), файлы в `src/main/resources/db/changelog/versions/`  
 > **ddl-auto:** `none` — схема управляется только через Liquibase
 
@@ -274,7 +274,8 @@ owners_db ───────────────────────�
 | `partner_last_name` | `VARCHAR(255)` | NULL | — | Фамилия незарегистрированного партнёра |
 | `partner_phone` | `VARCHAR(255)` | NULL | — | Телефон незарегистрированного партнёра |
 | `partner_email` | `VARCHAR(255)` | NULL | — | Email незарегистрированного партнёра |
-| `partner_registration_token` | `VARCHAR(255)` | NULL | — | Токен подтверждения для второго игрока |
+| `partner_telegram` | `VARCHAR(255)` | NULL | — | Telegram-юзернейм незарегистрированного партнёра (LFPT-0687) |
+| `partner_registration_token` | `VARCHAR(255)` | NULL | — | Токен подтверждения для второго игрока — легаси-путь для записей, созданных до LFPT-0687 (с неё пара без аккаунта регистрируется сразу, без ожидания подтверждения) |
 | `partner_token_expiry` | `TIMESTAMP` | NULL | — | Дата истечения токена партнёра |
 | `share_contacts` | `BOOLEAN` | NOT NULL | `false` | Соло-регистрация: согласие показать контакты другим ищущим пару |
 | `solo_reminder_sent` | `BOOLEAN` | NOT NULL | `false` | Соло-регистрация: напоминание добавить партнёра отправлено |
@@ -854,3 +855,4 @@ tournaments_db
 | v1.53 | `v1.53-add-visibilidad-to-tournament` | `tournaments_db.visibilidad` |
 | v1.54 | `v1.54-ranking-mejor-posicion-drop-default` | `ranking_db.mejor_posicion`: убран DEFAULT 0, нули → NULL |
 | v1.55 | `v1.55-add-partner-reserve-fields` | `tournament_registrations_db.final_reminder_sent`, `partner_action_token` |
+| v1.56 | `v1.56-add-partner-telegram` | `tournament_registrations_db.partner_telegram` |

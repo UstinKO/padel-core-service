@@ -275,6 +275,7 @@ public class DoubleTournamentRegistrationService {
                 .partnerLastName(partner.getApellido())
                 .partnerPhone(partner.getTelefono())
                 .partnerEmail(partner.getEmail())
+                .partnerTelegram(partner.getTelegramUsername())
                 .status(status)
                 .position(status == RegistrationStatus.CONFIRMED ? position : null)
                 .waitlistPosition(status == RegistrationStatus.WAITLIST ? position : null)
@@ -293,6 +294,7 @@ public class DoubleTournamentRegistrationService {
                 .partnerLastName(mainPlayer.getApellido())
                 .partnerPhone(mainPlayer.getTelefono())
                 .partnerEmail(mainPlayer.getEmail())
+                .partnerTelegram(mainPlayer.getTelegramUsername())
                 .status(status)
                 .position(status == RegistrationStatus.CONFIRMED ? position : null)
                 .waitlistPosition(status == RegistrationStatus.WAITLIST ? position : null)
@@ -336,62 +338,41 @@ public class DoubleTournamentRegistrationService {
             PlayerPadel mainPlayer,
             PartnerRegistrationDto partnerDto) {
 
-        log.info("Registering with new partner: phone={}", partnerDto.getTelefono());
+        // LFPT-0687: пара, с которой игрок уже договорился сам, регистрируется сразу —
+        // без ожидания email-подтверждения от партнёра или действия координатора. Создаём
+        // аккаунт партнёра немедленно и доверяем дальше тому же коду, что и для уже
+        // существующего партнёра (статус/место по текущей заполненности турнира).
+        log.info("Registering with new partner (instant, no invitation wait): phone={}", partnerDto.getTelefono());
 
-        if (playerRepository.existsByTelefono(partnerDto.getTelefono())) {
+        if (partnerDto.getTelefono() != null && !partnerDto.getTelefono().isBlank()
+                && playerRepository.existsByTelefono(partnerDto.getTelefono())) {
             throw new TournamentRegistrationException(
                     "Este número de teléfono ya está registrado. Pídele a tu compañero que inicie sesión.");
         }
 
-        String token = generatePartnerToken();
+        PlayerPadel savedPartner = playerRepository.save(createPlayerFromPartnerData(partnerDto));
 
-        RegistrationStatus pairStatus = determineRegistrationStatusForPair(tournamentDto);
-        int position = calculatePosition(tournamentDto, pairStatus);
+        return registerWithExistingPartner(tournamentDto, mainPlayer, savedPartner, partnerDto);
+    }
 
-        TournamentRegistration registration = TournamentRegistration.builder()
-                .tournament(Tournament.builder().id(tournamentDto.getId()).build())
-                .player(mainPlayer)
-                .partner(null)
-                .registrationDate(LocalDateTime.now())
-                .isActive(true)
-                .isDoubleRegistration(true)
-                .mainPlayerId(mainPlayer.getId())
-                .partnerFirstName(partnerDto.getNombre())
-                .partnerLastName(partnerDto.getApellido())
-                .partnerPhone(partnerDto.getTelefono())
-                .partnerEmail(partnerDto.getEmail())
-                .status(RegistrationStatus.PARTNER_INVITED)
-                .partnerRegistrationToken(token)
-                .partnerTokenExpiry(LocalDateTime.now().plusHours(TOKEN_EXPIRY_HOURS))
-                .position(pairStatus == RegistrationStatus.CONFIRMED ? position : null)
-                .waitlistPosition(pairStatus == RegistrationStatus.WAITLIST ? position : null)
+    /**
+     * LFPT-0687: создаёт аккаунт партнёра из контактных данных, указанных регистрирующим
+     * игроком — используется и для немедленной регистрации, и (легаси-путь) при подтверждении
+     * по токену в {@link #confirmPartnerRegistration}.
+     */
+    private PlayerPadel createPlayerFromPartnerData(PartnerRegistrationDto partnerDto) {
+        return PlayerPadel.builder()
+                .nombre(partnerDto.getNombre())
+                .apellido(partnerDto.getApellido())
+                .telefono(partnerDto.getTelefono())
+                .email(partnerDto.getEmail())
+                .telegramUsername(partnerDto.getTelegramUsername())
+                .activo(true)
+                .emailConfirmado(false)
+                // issue #82: nivel_jugador es NOT NULL — el partner se crea a partir de datos
+                // de contacto, no hay nivel real que asignarle todavía.
+                .nivelJugador(Nivel.SIN_ESPECIFICAR)
                 .build();
-
-        String completionUrl = String.format("%s/double-registration/complete?token=%s", baseUrl, token);
-
-        if (partnerDto.getEmail() != null && !partnerDto.getEmail().isEmpty()) {
-            notificationService.sendNewPartnerInvitation(
-                    partnerDto.getEmail(),
-                    partnerDto.getNombre(),
-                    mainPlayer.getNombre() + " " + mainPlayer.getApellido(),
-                    tournamentDto,
-                    completionUrl,
-                    TOKEN_EXPIRY_HOURS,
-                    mainPlayer.getLocale()
-            );
-        }
-
-        notificationService.sendMainPlayerNotification(
-                mainPlayer.getEmail(),
-                mainPlayer.getNombre(),
-                partnerDto.getNombre() + " " + partnerDto.getApellido(),
-                tournamentDto,
-                pairStatus,
-                position,
-                mainPlayer.getLocale()
-        );
-
-        return registration;
     }
 
     @Timed(
@@ -433,6 +414,7 @@ public class DoubleTournamentRegistrationService {
                 .apellido(registration.getPartnerLastName())
                 .telefono(registration.getPartnerPhone())
                 .email(registration.getPartnerEmail())
+                .telegramUsername(registration.getPartnerTelegram())
                 .activo(true)
                 .emailConfirmado(false)
                 // issue #82: nivel_jugador es NOT NULL — el partner se crea a partir de datos
@@ -473,6 +455,7 @@ public class DoubleTournamentRegistrationService {
                 .partnerLastName(registration.getPlayer().getApellido())
                 .partnerPhone(registration.getPlayer().getTelefono())
                 .partnerEmail(registration.getPlayer().getEmail())
+                .partnerTelegram(registration.getPlayer().getTelegramUsername())
                 .build();
 
         TournamentRegistration savedPartnerRegistration = registrationRepository.save(partnerRegistration);
@@ -600,94 +583,61 @@ public class DoubleTournamentRegistrationService {
         // Проверяем, существует ли новый игрок в системе
         Optional<PlayerPadel> existingNewPlayer = findPartnerByContact(newPlayerDto);
 
-        TournamentRegistration newRegistration;
-
+        // LFPT-0687: игрок без аккаунта регистрируется сразу же, как и уже существующий —
+        // без ожидания email-подтверждения (см. registerWithNewPartner).
+        PlayerPadel newPlayer;
         if (existingNewPlayer.isPresent()) {
-            // Новый игрок уже зарегистрирован
-            PlayerPadel newPlayer = existingNewPlayer.get();
+            newPlayer = existingNewPlayer.get();
             log.info("New player already exists: {}", newPlayer.getId());
-
-            // Проверяем, не зарегистрирован ли он уже на этот турнир
             checkPlayerNotRegisteredInThisTournament(tournamentDto.getId(), newPlayer.getId(), true);
-
-            // Создаем регистрацию для нового игрока
-            newRegistration = TournamentRegistration.builder()
-                    .tournament(Tournament.builder().id(tournamentDto.getId()).build())
-                    .player(newPlayer)
-                    .partner(remainingPartner)
-                    .registrationDate(LocalDateTime.now())
-                    .isActive(true)
-                    .isDoubleRegistration(true)
-                    .mainPlayerId(oldPlayerReg.getMainPlayerId())
-                    .partnerFirstName(remainingPartner.getNombre())
-                    .partnerLastName(remainingPartner.getApellido())
-                    .partnerPhone(remainingPartner.getTelefono())
-                    .partnerEmail(remainingPartner.getEmail())
-                    .status(oldPlayerReg.getStatus())
-                    .position(oldPlayerReg.getPosition())
-                    .waitlistPosition(oldPlayerReg.getWaitlistPosition())
-                    .build();
-
-            // Обновляем партнера, чтобы он указывал на нового игрока
-            TournamentRegistration partnerReg = registrationRepository
-                    .findByTournamentIdAndPlayerId(tournamentDto.getId(), remainingPartner.getId())
-                    .orElseThrow(() -> new TournamentRegistrationException("Registro del compañero no encontrado"));
-
-            partnerReg.setPartner(newPlayer);
-            registrationRepository.save(partnerReg);
-
-            // Отправляем уведомление новому игроку
-            notificationService.sendPartnerInvitationEmail(
-                    newPlayer.getEmail(),
-                    newPlayer.getNombre(),
-                    remainingPartner.getNombre() + " " + remainingPartner.getApellido(),
-                    tournamentDto,
-                    oldPlayerReg.getStatus(),
-                    oldPlayerReg.getPosition(),
-                    newPlayer.getLocale()
-            );
-
-        }  else {
-            // Новый игрок не зарегистрирован - создаем приглашение
-            log.info("Creating invitation for new partner: {} {}", newPlayerDto.getNombre(), newPlayerDto.getApellido());
-
-            String token = generatePartnerToken();
-
-            // Находим регистрацию оставшегося партнера
-            TournamentRegistration partnerReg = registrationRepository
-                    .findByTournamentIdAndPlayerId(tournamentDto.getId(), remainingPartner.getId())
-                    .orElseThrow(() -> new TournamentRegistrationException("Registro del compañero no encontrado"));
-
-            // Обновляем поля партнера в существующей регистрации (как в registerWithNewPartner)
-            partnerReg.setPartnerFirstName(newPlayerDto.getNombre());
-            partnerReg.setPartnerLastName(newPlayerDto.getApellido());
-            partnerReg.setPartnerPhone(newPlayerDto.getTelefono());
-            partnerReg.setPartnerEmail(newPlayerDto.getEmail());
-            partnerReg.setStatus(RegistrationStatus.PARTNER_INVITED);
-            partnerReg.setPartnerRegistrationToken(token);
-            partnerReg.setPartnerTokenExpiry(LocalDateTime.now().plusHours(TOKEN_EXPIRY_HOURS));
-            partnerReg.setPartner(null); // Партнер пока не зарегистрирован
-
-            // Сохраняем обновленную регистрацию
-            registrationRepository.save(partnerReg);
-
-            // Отправляем приглашение новому игроку
-            String completionUrl = String.format("%s/double-registration/complete?token=%s", baseUrl, token);
-
-            if (newPlayerDto.getEmail() != null && !newPlayerDto.getEmail().isEmpty()) {
-                notificationService.sendNewPartnerInvitation(
-                        newPlayerDto.getEmail(),
-                        newPlayerDto.getNombre(),
-                        remainingPartner.getNombre() + " " + remainingPartner.getApellido(),
-                        tournamentDto,
-                        completionUrl,
-                        TOKEN_EXPIRY_HOURS,
-                        remainingPartner.getLocale()
-                );
+        } else {
+            log.info("Creating new partner account directly (instant, no invitation wait): {} {}",
+                    newPlayerDto.getNombre(), newPlayerDto.getApellido());
+            if (newPlayerDto.getTelefono() != null && !newPlayerDto.getTelefono().isBlank()
+                    && playerRepository.existsByTelefono(newPlayerDto.getTelefono())) {
+                throw new TournamentRegistrationException(
+                        "Este número de teléfono ya está registrado. Pídele a tu compañero que inicie sesión.");
             }
-
-            newRegistration = partnerReg;
+            newPlayer = playerRepository.save(createPlayerFromPartnerData(newPlayerDto));
         }
+
+        // Создаем регистрацию для нового игрока
+        TournamentRegistration newRegistration = TournamentRegistration.builder()
+                .tournament(Tournament.builder().id(tournamentDto.getId()).build())
+                .player(newPlayer)
+                .partner(remainingPartner)
+                .registrationDate(LocalDateTime.now())
+                .isActive(true)
+                .isDoubleRegistration(true)
+                .mainPlayerId(oldPlayerReg.getMainPlayerId())
+                .partnerFirstName(remainingPartner.getNombre())
+                .partnerLastName(remainingPartner.getApellido())
+                .partnerPhone(remainingPartner.getTelefono())
+                .partnerEmail(remainingPartner.getEmail())
+                .partnerTelegram(remainingPartner.getTelegramUsername())
+                .status(oldPlayerReg.getStatus())
+                .position(oldPlayerReg.getPosition())
+                .waitlistPosition(oldPlayerReg.getWaitlistPosition())
+                .build();
+
+        // Обновляем партнера, чтобы он указывал на нового игрока
+        TournamentRegistration partnerReg = registrationRepository
+                .findByTournamentIdAndPlayerId(tournamentDto.getId(), remainingPartner.getId())
+                .orElseThrow(() -> new TournamentRegistrationException("Registro del compañero no encontrado"));
+
+        partnerReg.setPartner(newPlayer);
+        registrationRepository.save(partnerReg);
+
+        // Отправляем уведомление новому игроку
+        notificationService.sendPartnerInvitationEmail(
+                newPlayer.getEmail(),
+                newPlayer.getNombre(),
+                remainingPartner.getNombre() + " " + remainingPartner.getApellido(),
+                tournamentDto,
+                oldPlayerReg.getStatus(),
+                oldPlayerReg.getPosition(),
+                newPlayer.getLocale()
+        );
 
         TournamentRegistration savedRegistration = registrationRepository.save(newRegistration);
         log.info("Player replaced successfully in tournament {}", tournamentDto.getId());
@@ -716,10 +666,6 @@ public class DoubleTournamentRegistrationService {
                     ? "Tu compañero ya está registrado en este torneo"
                     : "Ya estás registrado en este torneo");
         }
-    }
-
-    private String generatePartnerToken() {
-        return "PRT_" + UUID.randomUUID().toString().replace("-", "").substring(0, 20).toUpperCase();
     }
 
     // LFPT-0668: токен self-service действий (подтвердить/отменить) для резервной заявки без партнёра
@@ -908,8 +854,13 @@ public class DoubleTournamentRegistrationService {
 
         Optional<PlayerPadel> existingPartnerOpt = findPartner(partnerDto);
 
+        // LFPT-0687: партнёр без аккаунта регистрируется сразу же, как и уже существующий —
+        // без ожидания email-подтверждения. "Добавлю партнёра позже" сохраняет свои текущие
+        // правила дедлайна/резерва (isPendingSoloAddLater/isReserveWithoutPartner ниже) —
+        // наличие партнёра и попадание пары в основной список или резерв не связаны между собой.
+        PlayerPadel partner;
         if (existingPartnerOpt.isPresent()) {
-            PlayerPadel partner = existingPartnerOpt.get();
+            partner = existingPartnerOpt.get();
 
             // LFPT-0303: правило "±1 ступень" — партнёр с существующим аккаунтом подтверждается
             // сразу (CONFIRMED ниже, без отдельного шага), как и в registerForDoubleTournament.
@@ -920,112 +871,80 @@ public class DoubleTournamentRegistrationService {
             registrationRepository.findByTournamentIdAndPlayerIdAndIsActiveFalse(tournamentId, partner.getId())
                     .ifPresent(registrationRepository::delete);
             registrationRepository.flush();
-
-            soloReg.setIsDoubleRegistration(true);
-            soloReg.setMainPlayerId(playerId);
-            soloReg.setPartner(partner);
-            soloReg.setPartnerFirstName(partner.getNombre());
-            soloReg.setPartnerLastName(partner.getApellido());
-            soloReg.setPartnerPhone(partner.getTelefono());
-            soloReg.setPartnerEmail(partner.getEmail());
-
-            TournamentRegistration.TournamentRegistrationBuilder partnerRegBuilder = TournamentRegistration.builder()
-                    .tournament(tournament)
-                    .player(partner)
-                    .partner(mainPlayer)
-                    .registrationDate(LocalDateTime.now())
-                    .isActive(true)
-                    .isDoubleRegistration(true)
-                    .mainPlayerId(playerId)
-                    .partnerFirstName(mainPlayer.getNombre())
-                    .partnerLastName(mainPlayer.getApellido())
-                    .partnerPhone(mainPlayer.getTelefono())
-                    .partnerEmail(mainPlayer.getEmail());
-
-            String timeStr = tournament.getHoraInicio() != null
-                    ? tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm"))
-                    : "";
-
-            if (isPendingSoloAddLater) {
-                // До дедлайна соло-регистрация уже держит свой слот (countActiveSoloRegistrations) —
-                // добавление партнёра просто завершает уже занятое место, без постановки в очередь.
-                soloReg.setStatus(RegistrationStatus.CONFIRMED);
-                partnerRegBuilder.status(RegistrationStatus.CONFIRMED).position(soloReg.getPosition());
-                registrationRepository.save(soloReg);
-                registrationRepository.save(partnerRegBuilder.build());
-
-                emailService.sendTournamentConfirmationEmail(partner.getEmail(), partner.getNombre(),
-                        tournament.getNombre(), dateStr, timeStr, null,
-                        tournament.getFormattedCancellationDeadline(), partner.getLocale());
-                emailService.sendTournamentConfirmationEmail(mainPlayer.getEmail(), mainPlayer.getNombre(),
-                        tournament.getNombre(), dateStr, timeStr, null,
-                        tournament.getFormattedCancellationDeadline(), mainPlayer.getLocale());
-            } else {
-                // LFPT-0668: после перевода в резерв пара встаёт в конец очереди резерва —
-                // не получает преимущества перед уже готовыми парами, ожидающими места
-                // (сценарий В из спеки). processWaitlistForTournament сам подтвердит пару,
-                // если место свободно и очередь дошла (сценарий А), иначе оставит в резерве (Б/В).
-                int waitlistPosition = registrationRepository.findMaxWaitlistPosition(tournamentId).orElse(0) + 1;
-                soloReg.setStatus(RegistrationStatus.WAITLIST);
-                soloReg.setWaitlistPosition(waitlistPosition);
-                soloReg.setPartnerActionToken(null);
-                partnerRegBuilder.status(RegistrationStatus.WAITLIST).waitlistPosition(waitlistPosition);
-                registrationRepository.save(soloReg);
-                TournamentRegistration savedPartnerReg = registrationRepository.save(partnerRegBuilder.build());
-
-                tournamentService.processWaitlistForTournament(tournamentId);
-
-                TournamentRegistration refreshedMainReg = registrationRepository.findById(soloReg.getId())
-                        .orElse(soloReg);
-                TournamentRegistration refreshedPartnerReg = registrationRepository.findById(savedPartnerReg.getId())
-                        .orElse(savedPartnerReg);
-                notificationService.sendPairConfirmationEmails(refreshedMainReg, refreshedPartnerReg);
-            }
-
-            log.info("Solo→pair converted: tournamentId={}, mainPlayerId={}, partnerId={}",
-                    tournamentId, playerId, partner.getId());
-
         } else {
-            if (partnerDto.getTelefono() != null
+            if (partnerDto.getTelefono() != null && !partnerDto.getTelefono().isBlank()
                     && playerRepository.existsByTelefono(partnerDto.getTelefono())) {
                 throw new TournamentRegistrationException(
                         "Este número de teléfono ya está registrado. Pídele a tu compañero que inicie sesión.");
             }
-
-            String token = generatePartnerToken();
-            soloReg.setIsDoubleRegistration(true);
-            soloReg.setMainPlayerId(playerId);
-            soloReg.setStatus(RegistrationStatus.PARTNER_INVITED);
-            soloReg.setPartnerFirstName(partnerDto.getNombre());
-            soloReg.setPartnerLastName(partnerDto.getApellido());
-            soloReg.setPartnerPhone(partnerDto.getTelefono());
-            soloReg.setPartnerEmail(partnerDto.getEmail());
-            soloReg.setPartnerRegistrationToken(token);
-            soloReg.setPartnerTokenExpiry(LocalDateTime.now().plusHours(TOKEN_EXPIRY_HOURS));
-            registrationRepository.save(soloReg);
-
-            String completionUrl = String.format("%s/double-registration/complete?token=%s", baseUrl, token);
-            String timeStr = tournament.getHoraInicio() != null
-                    ? tournament.getHoraInicio().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"))
-                    : "";
-            if (partnerDto.getEmail() != null && !partnerDto.getEmail().isEmpty()) {
-                emailService.sendNewPartnerInvitationEmail(
-                        partnerDto.getEmail(),
-                        partnerDto.getNombre(),
-                        mainPlayer.getNombre() + " " + mainPlayer.getApellido(),
-                        tournament.getNombre(),
-                        dateStr,
-                        timeStr,
-                        null,
-                        completionUrl,
-                        TOKEN_EXPIRY_HOURS,
-                        mainPlayer.getLocale()
-                );
-            }
-
-            log.info("Solo→partner-invited: tournamentId={}, mainPlayerId={}, partnerEmail={}",
-                    tournamentId, playerId, partnerDto.getEmail());
+            partner = playerRepository.save(createPlayerFromPartnerData(partnerDto));
         }
+
+        soloReg.setIsDoubleRegistration(true);
+        soloReg.setMainPlayerId(playerId);
+        soloReg.setPartner(partner);
+        soloReg.setPartnerFirstName(partner.getNombre());
+        soloReg.setPartnerLastName(partner.getApellido());
+        soloReg.setPartnerPhone(partner.getTelefono());
+        soloReg.setPartnerEmail(partner.getEmail());
+        soloReg.setPartnerTelegram(partner.getTelegramUsername());
+
+        TournamentRegistration.TournamentRegistrationBuilder partnerRegBuilder = TournamentRegistration.builder()
+                .tournament(tournament)
+                .player(partner)
+                .partner(mainPlayer)
+                .registrationDate(LocalDateTime.now())
+                .isActive(true)
+                .isDoubleRegistration(true)
+                .mainPlayerId(playerId)
+                .partnerFirstName(mainPlayer.getNombre())
+                .partnerLastName(mainPlayer.getApellido())
+                .partnerPhone(mainPlayer.getTelefono())
+                .partnerEmail(mainPlayer.getEmail())
+                .partnerTelegram(mainPlayer.getTelegramUsername());
+
+        String timeStr = tournament.getHoraInicio() != null
+                ? tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm"))
+                : "";
+
+        if (isPendingSoloAddLater) {
+            // До дедлайна соло-регистрация уже держит свой слот (countActiveSoloRegistrations) —
+            // добавление партнёра просто завершает уже занятое место, без постановки в очередь.
+            soloReg.setStatus(RegistrationStatus.CONFIRMED);
+            partnerRegBuilder.status(RegistrationStatus.CONFIRMED).position(soloReg.getPosition());
+            registrationRepository.save(soloReg);
+            registrationRepository.save(partnerRegBuilder.build());
+
+            emailService.sendTournamentConfirmationEmail(partner.getEmail(), partner.getNombre(),
+                    tournament.getNombre(), dateStr, timeStr, null,
+                    tournament.getFormattedCancellationDeadline(), partner.getLocale());
+            emailService.sendTournamentConfirmationEmail(mainPlayer.getEmail(), mainPlayer.getNombre(),
+                    tournament.getNombre(), dateStr, timeStr, null,
+                    tournament.getFormattedCancellationDeadline(), mainPlayer.getLocale());
+        } else {
+            // LFPT-0668: после перевода в резерв пара встаёт в конец очереди резерва —
+            // не получает преимущества перед уже готовыми парами, ожидающими места
+            // (сценарий В из спеки). processWaitlistForTournament сам подтвердит пару,
+            // если место свободно и очередь дошла (сценарий А), иначе оставит в резерве (Б/В).
+            int waitlistPosition = registrationRepository.findMaxWaitlistPosition(tournamentId).orElse(0) + 1;
+            soloReg.setStatus(RegistrationStatus.WAITLIST);
+            soloReg.setWaitlistPosition(waitlistPosition);
+            soloReg.setPartnerActionToken(null);
+            partnerRegBuilder.status(RegistrationStatus.WAITLIST).waitlistPosition(waitlistPosition);
+            registrationRepository.save(soloReg);
+            TournamentRegistration savedPartnerReg = registrationRepository.save(partnerRegBuilder.build());
+
+            tournamentService.processWaitlistForTournament(tournamentId);
+
+            TournamentRegistration refreshedMainReg = registrationRepository.findById(soloReg.getId())
+                    .orElse(soloReg);
+            TournamentRegistration refreshedPartnerReg = registrationRepository.findById(savedPartnerReg.getId())
+                    .orElse(savedPartnerReg);
+            notificationService.sendPairConfirmationEmails(refreshedMainReg, refreshedPartnerReg);
+        }
+
+        log.info("Solo→pair converted: tournamentId={}, mainPlayerId={}, partnerId={}",
+                tournamentId, playerId, partner.getId());
 
         return registrationMapper.toDto(soloReg);
     }

@@ -112,6 +112,10 @@ public class TournamentRegistration {
     @Column(name = "partner_email")
     private String partnerEmail;
 
+    // LFPT-0687: контакт партнёра без email — телефон/Telegram вместо email
+    @Column(name = "partner_telegram")
+    private String partnerTelegram;
+
     @Column(name = "partner_registration_token")
     private String partnerRegistrationToken;
 

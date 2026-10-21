@@ -1,0 +1,23 @@
+databaseChangeLog:
+
+  # LFPT-0687: контакт нового (пока не зарегистрированного) партнёра без email —
+  # Telegram как альтернатива телефону, по аналогии с partner_phone/partner_email.
+  - changeSet:
+      id: v1.56-add-partner-telegram-column
+      author: padel-core
+      changes:
+        - sql:
+            dbms: postgresql
+            sql: |
+              ALTER TABLE tournament_registrations_db
+                ADD COLUMN IF NOT EXISTS partner_telegram VARCHAR(255);
+
+  - changeSet:
+      id: v1.56-add-partner-telegram-comment
+      author: padel-core
+      changes:
+        - sql:
+            dbms: postgresql
+            sql: |
+              COMMENT ON COLUMN tournament_registrations_db.partner_telegram
+                IS 'Telegram-юзернейм партнёра, пока он не зарегистрирован как PlayerPadel (аналог partner_phone/partner_email)';
