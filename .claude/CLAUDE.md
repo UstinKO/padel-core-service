@@ -160,6 +160,7 @@ docker compose up -d
 | PATCH | `/api/players/me/contact` | Обновление контакта (телефон / Telegram) |
 | GET | `/api/players/me/contact-status` | Проверка наличия контакта |
 | GET | `/api/players/me/tournaments` | «Мои мероприятия» (LFPT-0637) — предстоящие/история, только просмотр |
+| GET | `/api/players/search` | Поиск партнёра для парной регистрации — по имени/фамилии/email/телефону/Telegram (LFPT-0679) |
 
 ### Tournaments API (`/api/tournaments`)
 
