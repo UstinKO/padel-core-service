@@ -30,12 +30,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -56,6 +59,7 @@ public class DoubleTournamentRegistrationService {
     private final MessageSource messageSource;
     private final TournamentService tournamentService;
     private final ClubRepository clubRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Value("${app.base-url:http://localhost:8080}")
     private String baseUrl;
@@ -64,6 +68,7 @@ public class DoubleTournamentRegistrationService {
     private String adminEmail;
 
     private static final int TOKEN_EXPIRY_HOURS = 48;
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     @Timed(
             name = "double.registration.time",
@@ -361,18 +366,46 @@ public class DoubleTournamentRegistrationService {
      * по токену в {@link #confirmPartnerRegistration}.
      */
     private PlayerPadel createPlayerFromPartnerData(PartnerRegistrationDto partnerDto) {
+        return buildGuestPartnerAccount(partnerDto.getNombre(), partnerDto.getApellido(),
+                partnerDto.getTelefono(), partnerDto.getEmail(), partnerDto.getTelegramUsername());
+    }
+
+    /**
+     * LFPT-0687: email у партнёра теперь не обязателен (контакт — телефон и/или Telegram).
+     * {@code player_padel_db.email}/{@code password_hash} — NOT NULL в БД, поэтому для
+     * партнёра без email генерируем гостевой email (тот же паттерн, что в
+     * {@code PlayerService.crearJugadorInvitado}/{@code TestTournamentController.resolveOrCreateGuestPlayer}
+     * — {@link PlayerPadel#isGuestEmail}) и случайный пароль, который партнёр не узнаёт
+     * (как и остальные гостевые аккаунты — учётка не предназначена для входа).
+     */
+    private PlayerPadel buildGuestPartnerAccount(
+            String nombre, String apellido, String telefono, String email, String telegramUsername) {
+        String resolvedEmail = (email != null && !email.isBlank())
+                ? email
+                : "guest." + UUID.randomUUID() + "@1padel.guest";
+
         return PlayerPadel.builder()
-                .nombre(partnerDto.getNombre())
-                .apellido(partnerDto.getApellido())
-                .telefono(partnerDto.getTelefono())
-                .email(partnerDto.getEmail())
-                .telegramUsername(partnerDto.getTelegramUsername())
+                .nombre(nombre)
+                .apellido(apellido)
+                .telefono(telefono)
+                .email(resolvedEmail)
+                .telegramUsername(telegramUsername)
+                .passwordHash(passwordEncoder.encode(generateGuestPassword()))
                 .activo(true)
                 .emailConfirmado(false)
                 // issue #82: nivel_jugador es NOT NULL — el partner se crea a partir de datos
                 // de contacto, no hay nivel real que asignarle todavía.
                 .nivelJugador(Nivel.SIN_ESPECIFICAR)
+                // preferred_locale es NOT NULL; el builder de Lombok no aplica el inicializador
+                // de campo (solo @Builder.Default lo haría) — sin esto, la inserción falla.
+                .preferredLocale("es")
                 .build();
+    }
+
+    private String generateGuestPassword() {
+        byte[] randomBytes = new byte[32];
+        SECURE_RANDOM.nextBytes(randomBytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
     }
 
     @Timed(
@@ -409,18 +442,9 @@ public class DoubleTournamentRegistrationService {
             throw new TournamentRegistrationException("Este número de teléfono ya está registrado");
         }
 
-        PlayerPadel newPartner = PlayerPadel.builder()
-                .nombre(registration.getPartnerFirstName())
-                .apellido(registration.getPartnerLastName())
-                .telefono(registration.getPartnerPhone())
-                .email(registration.getPartnerEmail())
-                .telegramUsername(registration.getPartnerTelegram())
-                .activo(true)
-                .emailConfirmado(false)
-                // issue #82: nivel_jugador es NOT NULL — el partner se crea a partir de datos
-                // de contacto de la invitación, no hay nivel real que asignarle todavía.
-                .nivelJugador(Nivel.SIN_ESPECIFICAR)
-                .build();
+        PlayerPadel newPartner = buildGuestPartnerAccount(
+                registration.getPartnerFirstName(), registration.getPartnerLastName(),
+                registration.getPartnerPhone(), registration.getPartnerEmail(), registration.getPartnerTelegram());
 
         PlayerPadel savedPartner = playerRepository.save(newPartner);
 

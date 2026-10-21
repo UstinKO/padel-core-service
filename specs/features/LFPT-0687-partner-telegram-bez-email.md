@@ -80,6 +80,7 @@ approved
 - Партнёр без Telegram (`null`/пусто) — не падает, колонка `partner_telegram` остаётся `null`.
 - Существующий партнёр, у которого в профиле *нет* Telegram (`telegramUsername == null`) — координатор видит только телефон, как и сейчас.
 - Регистрация, созданная до этой миграции (старые записи без `partner_telegram`) — читается как `null`, не ломает существующий UI (колонка новая, nullable).
+- **Партнёр без email** (теперь основной сценарий, не редкий): `player_padel_db.email`/`password_hash`/`preferred_locale` — `NOT NULL` в БД. Для партнёра без указанного email аккаунт создаётся с гостевым email (`guest.<uuid>@1padel.guest`, тот же паттерн, что `PlayerService.crearJugadorInvitado`/`TestTournamentController.resolveOrCreateGuestPlayer`, распознаётся как `PlayerPadel.isGuestEmail()`) и случайным паролем — учётка не предназначена для входа. Без этого регистрация без email падала бы с `DataIntegrityViolationException` — найдено и исправлено при реализации (см. `buildGuestPartnerAccount`), легаси-путь `confirmPartnerRegistration` переведён на тот же helper и получил тот же фикс.
 
 ## Открытые вопросы (сняты — ответ заказчика, 2026-10-21)
 

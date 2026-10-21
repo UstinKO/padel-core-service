@@ -23,6 +23,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.MessageSource;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 import java.util.Optional;
@@ -56,6 +57,7 @@ class DoubleTournamentRegistrationNewPartnerInstantTest {
     @Mock private MessageSource messageSource;
     @Mock private TournamentService tournamentService;
     @Mock private ClubRepository clubRepository;
+    @Mock private PasswordEncoder passwordEncoder;
 
     @InjectMocks private DoubleTournamentRegistrationService service;
 

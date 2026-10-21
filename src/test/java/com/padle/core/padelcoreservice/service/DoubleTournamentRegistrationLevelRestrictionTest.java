@@ -21,6 +21,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.MessageSource;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDate;
 import java.util.Locale;
@@ -50,6 +51,7 @@ class DoubleTournamentRegistrationLevelRestrictionTest {
     @Mock private EmailService emailService;
     @Mock private TournamentRepository tournamentRepository;
     @Mock private MessageSource messageSource;
+    @Mock private PasswordEncoder passwordEncoder;
 
     @InjectMocks private DoubleTournamentRegistrationService service;
 
