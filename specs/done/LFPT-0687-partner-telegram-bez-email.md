@@ -1,10 +1,10 @@
 # LFPT-0687: Контакт нового партнёра без email — Telegram вместо email, статус регистрации без авто-приглашения (backend)
 
 ## Статус
-approved
+done
 
 ## Источник
-Клиентский запрос [specs/requests/LFPT-0687-partner-telegram-bez-email.md](../requests/LFPT-0687-partner-telegram-bez-email.md) (Telegram, `telegram_launch_message_id: 5407`, отправитель customer). GitHub issue [#687](https://github.com/UstinKO/padel-core-service/issues/687). Разбито на бэкенд/фронтенд (`GIT_WORKFLOW.md` §1.4) — эта спека покрывает бэкенд. Фронтенд — [#688](https://github.com/UstinKO/padel-core-service/issues/688).
+Клиентский запрос [specs/requests/LFPT-0687-partner-telegram-bez-email.md](requests/LFPT-0687-partner-telegram-bez-email.md) (Telegram, `telegram_launch_message_id: 5407`, отправитель customer). GitHub issue [#687](https://github.com/UstinKO/padel-core-service/issues/687). Разбито на бэкенд/фронтенд (`GIT_WORKFLOW.md` §1.4) — эта спека покрывает бэкенд. Фронтенд — [#688](https://github.com/UstinKO/padel-core-service/issues/688).
 
 ## Контекст / зачем
 
