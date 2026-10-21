@@ -1,7 +1,7 @@
 # LFPT-0680: Feature подсказки существующего партнёра при ручном вводе и расширенный поиск в модалке регистрации пары (frontend)
 
 ## Статус
-approved
+done
 
 ## Источник
 Клиентский запрос [specs/requests/LFPT-0679-poisk-partnera-podskazki.md](requests/LFPT-0679-poisk-partnera-podskazki.md) (Telegram, `telegram_launch_message_id: 5384`, отправитель customer). GitHub issue [#680](https://github.com/UstinKO/padel-core-service/issues/680). Зависит от бэкенд-задачи [#679](https://github.com/UstinKO/padel-core-service/issues/679) / [LFPT-0679-poisk-partnera-backend.md](LFPT-0679-poisk-partnera-backend.md) (расширение `GET /api/players/search` поиском по телефону/Telegram) — уже реализована и закоммичена в базовой ветке `feature/LFPT-0679`, от которой создана эта ветка.
