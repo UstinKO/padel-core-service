@@ -349,4 +349,13 @@ public interface TournamentRegistrationRepository extends JpaRepository<Tourname
 
     @Query("SELECT DISTINCT tr.player.id FROM TournamentRegistration tr")
     List<Long> findDistinctPlayerIds();
+
+    // LFPT-0677: id игроков, чья собственная запись TournamentRegistration создана как
+    // партнёрская сторона приглашения (DoubleTournamentRegistrationService.confirmPartnerRegistration) —
+    // mainPlayerId указывает на инициатора пары, а не на самого игрока.
+    @Query("SELECT DISTINCT tr.player.id FROM TournamentRegistration tr " +
+            "WHERE tr.isDoubleRegistration = true " +
+            "AND tr.mainPlayerId IS NOT NULL " +
+            "AND tr.mainPlayerId <> tr.player.id")
+    List<Long> findPartnerInviteCreatedPlayerIds();
 }

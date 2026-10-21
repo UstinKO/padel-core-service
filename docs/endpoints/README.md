@@ -21,6 +21,7 @@
 | [owners.md](owners.md) | Данные организаторов/владельцев |
 | [payments.md](payments.md) | Управление платежами через форму (admin) |
 | [admin-metrics.md](admin-metrics.md) | Метрики email-рассылок |
+| [admin-player-audit.md](admin-player-audit.md) | Аудит потенциальных дублей игроков (read-only, LFPT-0677) |
 | [cookies.md](cookies.md) | Cookie consent (GDPR) |
 | [password-reset.md](password-reset.md) | Сброс пароля по email |
 | [view-controllers.md](view-controllers.md) | Thymeleaf view-контроллеры — карта для выноса фронтенда в SPA |
