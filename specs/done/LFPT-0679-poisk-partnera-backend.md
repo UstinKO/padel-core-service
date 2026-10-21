@@ -1,7 +1,7 @@
 # LFPT-0679: Feature расширить поиск партнёра (телефон/Telegram) и добавить подсказки при ручном вводе (backend)
 
 ## Статус
-approved
+done
 
 ## Источник
 Клиентский запрос [specs/requests/LFPT-0679-poisk-partnera-podskazki.md](requests/LFPT-0679-poisk-partnera-podskazki.md) (Telegram, `telegram_launch_message_id: 5384`, отправитель customer). GitHub issue [#679](https://github.com/UstinKO/padel-core-service/issues/679). Разбито на бэкенд/фронтенд (`GIT_WORKFLOW.md` §1.4) — эта спека покрывает бэкенд. Фронтенд — [#680](https://github.com/UstinKO/padel-core-service/issues/680), спека [LFPT-0680-poisk-partnera-frontend.md](LFPT-0680-poisk-partnera-frontend.md).
