@@ -317,10 +317,25 @@ public class PlayerService {
     @Transactional(readOnly = true)
     public List<PlayerResponseDto> searchPartnerCandidates(String query, Long tournamentId, Long excludeId) {
         return playerRepository
-                .searchPartnerCandidates(query, tournamentId, excludeId, PageRequest.of(0, 15))
+                .searchPartnerCandidates(query, tournamentId, excludeId,
+                        extractPhoneDigits(query), query.replace("@", ""))
                 .stream()
                 .map(playerMapper::entityToResponse)
                 .collect(Collectors.toList());
+    }
+
+    // LFPT-0679: цифры запроса для поиска по телефону в разных форматах (+54, пробелы, тире,
+    // скобки). Пустая строка (не null — ветка в searchPartnerCandidates сравнивает с ''),
+    // если цифр меньше 4: короткий фрагмент иначе совпал бы с любым телефоном в базе. Если
+    // цифр больше 10 — оставляем только последние 10 (как PlayerDuplicatesAuditService, #677):
+    // сравниваем по "национальному" хвосту номера, чтобы код страны/мобильный префикс не мешал
+    // сопоставить разные форматы одного и того же номера.
+    private static String extractPhoneDigits(String query) {
+        String digits = query.replaceAll("\\D", "");
+        if (digits.length() < 4) {
+            return "";
+        }
+        return digits.length() > 10 ? digits.substring(digits.length() - 10) : digits;
     }
 
     // LFPT-0561: поиск для формы «Добавить команду» Team Playoff — см.
