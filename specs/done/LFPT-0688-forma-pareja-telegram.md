@@ -1,10 +1,10 @@
 # LFPT-0688: Форма парной регистрации: Telegram вместо email, подсказки партнёра у активного поля на мобильном (frontend)
 
 ## Статус
-approved
+done
 
 ## Источник
-Клиентский запрос [specs/requests/LFPT-0687-partner-telegram-bez-email.md](../requests/LFPT-0687-partner-telegram-bez-email.md) (Telegram, `telegram_launch_message_id: 5407`, отправитель customer) — тот же запрос, что и у бэкенд-задачи. GitHub issue [#688](https://github.com/UstinKO/padel-core-service/issues/688). Зависит от бэкенда [#687](https://github.com/UstinKO/padel-core-service/issues/687) (поле `partnerTelegram`, немедленная регистрация без ожидания подтверждения) — реализуется в том же прогоне конвейера, веткой от бэк-ветки.
+Клиентский запрос [specs/requests/LFPT-0687-partner-telegram-bez-email.md](requests/LFPT-0687-partner-telegram-bez-email.md) (Telegram, `telegram_launch_message_id: 5407`, отправитель customer) — тот же запрос, что и у бэкенд-задачи. GitHub issue [#688](https://github.com/UstinKO/padel-core-service/issues/688). Зависит от бэкенда [#687](https://github.com/UstinKO/padel-core-service/issues/687) (поле `partnerTelegram`, немедленная регистрация без ожидания подтверждения) — реализуется в том же прогоне конвейера, веткой от бэк-ветки.
 
 ## Контекст / зачем
 
