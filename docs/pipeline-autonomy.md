@@ -167,12 +167,12 @@ QUEUED → RUNNING → PR_CHECKS → READY → MERGING → DEPLOYING → DONE
 
 ### 4.4. Оркестратор автомержа (`.github/workflows/pipeline-merge.yml`)
 
-- **Триггеры:** `workflow_run` по «PR Check» и «Deploy to Production» (completed), `pull_request: labeled`, `schedule` раз в 15 минут (страховка), `workflow_dispatch`.
+- **Триггеры:** `workflow_run` по «PR Check» (completed), `pull_request_target: labeled, unlabeled` (снятие `pipeline:conflict` после починки — тоже повод влить), `schedule` раз в 15 минут (страховка; GitHub исполняет его редко — 21.10 один прогон из ~22), `workflow_dispatch`. После деплоя PR оркестратор будит сам `deploy.yml` (job `pipeline-next` → `workflow_dispatch` с `deploy_run_id`): `workflow_run` по деплою, запущенному от `GITHUB_TOKEN`, GitHub не порождает — до LFPT-0685 фронт после бэка ждал случайного события больше часа (#5384).
 - **Сериализация:** `concurrency: pipeline-merge` и правило «пока идёт деплой — не мержить». Мерж и деплой строго по одному: следующий PR вливается только после завершения деплоя предыдущего. Это даёт и порядок «бэк → фронт», и отсутствие гонок, ценой ~10 минут на PR.
 - **Выбор PR:** самый старый открытый с `pipeline` + `pipeline:ready`, без `pipeline:conflict`/`pipeline:deploy-failed`; если есть `Depends-On: #M` — #M влит **и** его деплой успешен.
 - **Проверка на свежем master:** pr-check тестировал PR против master на момент своего запуска; с тех пор master мог уйти вперёд (другая задача). Перед мержем — повторный `mvn verify` на `refs/pull/N/merge` (pr-check выносится в переиспользуемый workflow). Упало → `pipeline:conflict` + комментарий; движок перезапускает роутину на починку.
 - **Мерж:** `gh pr merge --squash` с заголовком PR (в нём `LFPT-XXXX` — нужен `archive-specs`), затем `gh workflow run deploy.yml -f pr=N`. PR, затрагивающий только `specs/**`, `.claude/**`, `docs/**`, вливается без деплоя (как `paths-ignore`).
-- **Сбой деплоя:** PR → `pipeline:deploy-failed`, создаётся issue `pipeline:halt` со ссылкой на прогон. Автомерж стоит, пока человек не закроет issue.
+- **Сбой деплоя:** PR → `pipeline:deploy-failed`, создаётся issue `pipeline:halt` со ссылкой на прогон. Автомерж стоит, пока человек не закроет issue. Проверяет job `deploy-result` по `deploy_run_id` из `deploy.yml`: дожидается завершения прогона деплоя и смотрит его итог (до LFPT-0685 он ждал `workflow_run` и не запускался ни разу).
 
 Правки `deploy.yml`: `workflow_dispatch` с входом `pr`, `run-name` с номером PR, `concurrency: deploy-production`, `archive-specs` берёт заголовок коммита из `git log`, а не из `head_commit` (у dispatch его нет).
 
