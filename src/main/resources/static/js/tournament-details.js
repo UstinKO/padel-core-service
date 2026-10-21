@@ -151,6 +151,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const manualSuggestionsList = document.getElementById('manualPartnerSuggestionsList');
     const manualSuggestResults  = { firstName: [], lastName: [], phone: [] };
     let manualSuggestDebounceTimer = null;
+    // LFPT-0688: поле, в которое сейчас вводит пользователь — подсказки позиционируются
+    // рядом с ним (а не одним блоком под всеми полями), чтобы не уходить за экран на мобильном.
+    let manualActiveInput = null;
 
     function clearSelectedPartner() {
         if (selectedPartnerIdInput) selectedPartnerIdInput.value = '';
@@ -167,6 +170,28 @@ document.addEventListener('DOMContentLoaded', function() {
         manualSuggestResults.phone     = [];
         if (manualSuggestionsList) manualSuggestionsList.innerHTML = '';
         if (manualSuggestions) manualSuggestions.style.display = 'none';
+    }
+
+    // Вызывать после того, как содержимое уже отрендерено и блок видим (display:block) —
+    // иначе scrollHeight всегда 0 и расчёт свободного места бессмысленен.
+    function positionManualDropdown() {
+        if (!manualSuggestions || !manualActiveInput) return;
+        const rect = manualActiveInput.getBoundingClientRect();
+        const gap = 4;
+        const actualH = manualSuggestions.scrollHeight;
+        const spaceBelow = window.innerHeight - rect.bottom - gap;
+        const spaceAbove = rect.top - gap;
+
+        manualSuggestions.style.width = rect.width + 'px';
+        manualSuggestions.style.left  = rect.left + 'px';
+
+        if (spaceBelow >= actualH || spaceBelow >= spaceAbove) {
+            manualSuggestions.style.top    = (rect.bottom + gap) + 'px';
+            manualSuggestions.style.bottom = 'auto';
+        } else {
+            manualSuggestions.style.top    = 'auto';
+            manualSuggestions.style.bottom = (window.innerHeight - rect.top + gap) + 'px';
+        }
     }
 
     function renderManualSuggestions() {
@@ -194,6 +219,7 @@ document.addEventListener('DOMContentLoaded', function() {
             manualSuggestionsList.appendChild(li);
         });
         manualSuggestions.style.display = 'block';
+        positionManualDropdown();
     }
 
     async function searchManualField(field, query) {
@@ -227,7 +253,17 @@ document.addEventListener('DOMContentLoaded', function() {
         const input = document.getElementById(id);
         if (!input) return;
         const field = id === 'partnerFirstName' ? 'firstName' : id === 'partnerLastName' ? 'lastName' : 'phone';
-        input.addEventListener('input', () => onManualFieldInput(field, input.value, field === 'phone'));
+        input.addEventListener('input', () => {
+            manualActiveInput = input;
+            onManualFieldInput(field, input.value, field === 'phone');
+        });
+        input.addEventListener('focus', () => {
+            manualActiveInput = input;
+            if (manualSuggestionsList && manualSuggestionsList.children.length) {
+                manualSuggestions.style.display = 'block';
+                positionManualDropdown();
+            }
+        });
     });
 
     function selectPartner(player) {
@@ -236,7 +272,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('selectedPartnerEmail').textContent = player.email;
         document.getElementById('partnerFirstName').value = player.nombre  || '';
         document.getElementById('partnerLastName').value  = player.apellido || '';
-        document.getElementById('partnerEmail').value     = player.email   || '';
+        document.getElementById('partnerTelegram').value  = player.telegramUsername || '';
         document.getElementById('partnerPhone').value     = '';
         selectedPartnerCard.style.display  = 'flex';
         partnerSearchResults.style.display = 'none';
@@ -250,7 +286,7 @@ document.addEventListener('DOMContentLoaded', function() {
             clearSelectedPartner();
             document.getElementById('partnerFirstName').value = '';
             document.getElementById('partnerLastName').value  = '';
-            document.getElementById('partnerEmail').value     = '';
+            document.getElementById('partnerTelegram').value  = '';
             document.getElementById('partnerPhone').value     = '';
         });
     }
@@ -296,6 +332,9 @@ document.addEventListener('DOMContentLoaded', function() {
         partnerModalBody.addEventListener('scroll', () => {
             if (partnerSearchResults.style.display !== 'none') {
                 positionDropdown();
+            }
+            if (manualSuggestions && manualSuggestions.style.display !== 'none') {
+                positionManualDropdown();
             }
         });
     }
@@ -631,7 +670,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const firstName = document.getElementById('partnerFirstName').value.trim();
             const lastName  = document.getElementById('partnerLastName').value.trim();
             const phone     = document.getElementById('partnerPhone').value.trim();
-            const email     = document.getElementById('partnerEmail').value.trim();
+            const telegramUsername = document.getElementById('partnerTelegram').value.trim();
             const existingUserId = document.getElementById('selectedPartnerId').value;
 
             let isValid = true;
@@ -640,10 +679,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!lastName)  { document.getElementById('partnerLastName').classList.add('is-invalid');  isValid = false; }
                 const phoneRegex = /^\+?[0-9\s\-\(\)]{8,20}$/;
                 if (!phone || !phoneRegex.test(phone)) { document.getElementById('partnerPhone').classList.add('is-invalid'); isValid = false; }
-            }
-            if (email) {
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                if (!emailRegex.test(email)) { document.getElementById('partnerEmail').classList.add('is-invalid'); isValid = false; }
             }
 
             if (!isValid) {
@@ -655,7 +690,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const partnerData = {
                 nombre: firstName, apellido: lastName,
-                telefono: phone || null, email: email || null,
+                telefono: phone || null, telegramUsername: telegramUsername || null,
                 isExistingUser: !!existingUserId,
                 existingUserId: existingUserId ? parseInt(existingUserId) : null
             };
