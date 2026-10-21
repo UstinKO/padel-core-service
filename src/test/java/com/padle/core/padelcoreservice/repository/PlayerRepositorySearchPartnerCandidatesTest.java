@@ -1,13 +1,26 @@
 package com.padle.core.padelcoreservice.repository;
 
+import com.padle.core.padelcoreservice.model.Club;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.padelcoreservice.model.Tournament;
+import com.padle.core.padelcoreservice.model.TournamentRegistration;
+import com.padle.core.padelcoreservice.model.enums.GenderFormat;
+import com.padle.core.padelcoreservice.model.enums.Modalidad;
 import com.padle.core.padelcoreservice.model.enums.Nivel;
+import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
+import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
+import com.padle.core.padelcoreservice.model.enums.TournamentType;
+import com.padle.core.padelcoreservice.repository.ClubRepository;
+import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
+import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -32,6 +45,12 @@ class PlayerRepositorySearchPartnerCandidatesTest {
 
     @Autowired
     private PlayerRepository playerRepository;
+    @Autowired
+    private TournamentRepository tournamentRepository;
+    @Autowired
+    private TournamentRegistrationRepository registrationRepository;
+    @Autowired
+    private ClubRepository clubRepository;
 
     // tournamentId, для которого заведомо нет регистраций — ветка "уже зарегистрирован
     // на этот турнир" в проверяемом запросе остаётся пустой и не влияет на результат.
@@ -82,6 +101,48 @@ class PlayerRepositorySearchPartnerCandidatesTest {
         PlayerPadel player = playerRepository.saveAndFlush(buildPlayerWithName("Pedro", apellidoUnico));
 
         assertThat(search(apellidoUnico)).extracting(PlayerPadel::getId).contains(player.getId());
+    }
+
+    @Test
+    void excluyeAlPropioJugadorYAlYaRegistradoEnElTorneo() {
+        String apellidoUnico = "Excluible" + UUID.randomUUID().toString().substring(0, 8);
+        PlayerPadel buscador = playerRepository.saveAndFlush(buildPlayerWithName("Ana", apellidoUnico));
+        PlayerPadel yaRegistrado = playerRepository.saveAndFlush(buildPlayerWithName("Luis", apellidoUnico));
+        PlayerPadel candidatoValido = playerRepository.saveAndFlush(buildPlayerWithName("Marco", apellidoUnico));
+
+        Club club = clubRepository.save(Club.builder()
+                .nombre("Club " + apellidoUnico)
+                .direccion("Av. Test 123")
+                .isActive(true)
+                .build());
+        Tournament tournament = tournamentRepository.save(Tournament.builder()
+                .clubId(club.getId())
+                .nombre("Torneo " + apellidoUnico)
+                .fechaInicio(LocalDateTime.now().plusDays(1).toLocalDate())
+                .horaInicio(LocalDateTime.now().plusDays(1).toLocalTime())
+                .generoFormato(GenderFormat.MIXTO)
+                .categoriaNivel(Nivel.C7)
+                .tipo(TournamentType.AMERICANO)
+                .modalidad(Modalidad.INDIVIDUAL)
+                .cupoMax(8)
+                .precio(BigDecimal.ZERO)
+                .estado(TournamentStatus.REGISTRO_ABIERTO)
+                .contactoOrganizador("test@example.com")
+                .isActive(true)
+                .build());
+        registrationRepository.save(TournamentRegistration.builder()
+                .tournament(tournament)
+                .player(yaRegistrado)
+                .status(RegistrationStatus.CONFIRMED)
+                .build());
+
+        List<PlayerPadel> resultado = playerRepository.searchPartnerCandidates(
+                apellidoUnico, tournament.getId(), buscador.getId(),
+                extractPhoneDigitsForTest(apellidoUnico), apellidoUnico.replace("@", ""));
+
+        assertThat(resultado).extracting(PlayerPadel::getId)
+                .contains(candidatoValido.getId())
+                .doesNotContain(buscador.getId(), yaRegistrado.getId());
     }
 
     private List<PlayerPadel> search(String query) {
