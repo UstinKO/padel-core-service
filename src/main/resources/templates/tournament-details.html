@@ -972,6 +972,17 @@
                                        th:placeholder="#{modal.partner.field.email.placeholder}">
                                 <small class="form-text text-muted" th:text="#{modal.partner.field.email.hint}">Le enviaremos un email si no está registrado</small>
                             </div>
+
+                            <!-- LFPT-0680: подсказки существующих игроков при ручном вводе -->
+                            <div id="manualPartnerSuggestions" style="display:none; margin-bottom:1rem;">
+                                <div style="font-size:.85rem; color:#6b7280; margin-bottom:.4rem;">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span th:text="#{modal.partner.manual.suggestions.title}">Puede que tu compañero ya esté registrado</span>
+                                </div>
+                                <ul id="manualPartnerSuggestionsList"
+                                    style="list-style:none; padding:0; margin:0; border:1px solid #e5e7eb;
+                                           border-radius:8px; overflow:hidden; max-height:200px; overflow-y:auto;"></ul>
+                            </div>
                         </div><!-- /manualPartnerFields -->
                     </div><!-- /withPartnerSection -->
 

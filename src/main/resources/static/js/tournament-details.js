@@ -144,13 +144,91 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const manualFields = document.getElementById('manualPartnerFields');
 
+    // LFPT-0680: подсказки существующих игроков во время ручного ввода партнёра —
+    // поиск независимо по каждому из трёх полей (имя/фамилия/телефон), результаты
+    // объединяются по id. Email/телефон найденных игроков не показываются (приватность).
+    const manualSuggestions     = document.getElementById('manualPartnerSuggestions');
+    const manualSuggestionsList = document.getElementById('manualPartnerSuggestionsList');
+    const manualSuggestResults  = { firstName: [], lastName: [], phone: [] };
+    let manualSuggestDebounceTimer = null;
+
     function clearSelectedPartner() {
         if (selectedPartnerIdInput) selectedPartnerIdInput.value = '';
         if (selectedPartnerCard) selectedPartnerCard.style.display = 'none';
         if (partnerSearch) partnerSearch.value = '';
         if (partnerSearchResults) partnerSearchResults.style.display = 'none';
         if (manualFields) manualFields.style.display = '';
+        clearManualSuggestions();
     }
+
+    function clearManualSuggestions() {
+        manualSuggestResults.firstName = [];
+        manualSuggestResults.lastName  = [];
+        manualSuggestResults.phone     = [];
+        if (manualSuggestionsList) manualSuggestionsList.innerHTML = '';
+        if (manualSuggestions) manualSuggestions.style.display = 'none';
+    }
+
+    function renderManualSuggestions() {
+        if (!manualSuggestions || !manualSuggestionsList) return;
+        const byId = new Map();
+        [...manualSuggestResults.firstName, ...manualSuggestResults.lastName, ...manualSuggestResults.phone]
+            .forEach(p => byId.set(p.id, p));
+        const players = [...byId.values()];
+
+        manualSuggestionsList.innerHTML = '';
+        if (!players.length) {
+            manualSuggestions.style.display = 'none';
+            return;
+        }
+        players.forEach(p => {
+            const li = document.createElement('li');
+            li.style.cssText = 'padding:.6rem 1rem; cursor:pointer; border-bottom:1px solid #f3f4f6;';
+            li.innerHTML = `
+                <div style="font-weight:500;">${p.nombreCompleto}</div>
+                ${p.nivelJugador ? `<div style="font-size:.82rem; color:#6b7280;">${p.nivelJugador}</div>` : ''}
+            `;
+            li.addEventListener('click', () => selectPartner(p));
+            li.addEventListener('mouseover', () => { li.style.background = '#f9fafb'; });
+            li.addEventListener('mouseout', () => { li.style.background = ''; });
+            manualSuggestionsList.appendChild(li);
+        });
+        manualSuggestions.style.display = 'block';
+    }
+
+    async function searchManualField(field, query) {
+        const tournamentId = document.getElementById('modalTournamentId').value;
+        try {
+            const res = await fetch(
+                `/api/players/search?query=${encodeURIComponent(query)}&tournamentId=${tournamentId}`
+            );
+            manualSuggestResults[field] = res.ok ? await res.json() : [];
+        } catch (e) {
+            manualSuggestResults[field] = [];
+        }
+        renderManualSuggestions();
+    }
+
+    function onManualFieldInput(field, value, isPhone) {
+        clearTimeout(manualSuggestDebounceTimer);
+        const query = value.trim();
+        const meetsMinLength = isPhone
+            ? query.replace(/\D/g, '').length >= 4
+            : query.length >= 2;
+        if (!meetsMinLength) {
+            manualSuggestResults[field] = [];
+            renderManualSuggestions();
+            return;
+        }
+        manualSuggestDebounceTimer = setTimeout(() => searchManualField(field, query), 400);
+    }
+
+    ['partnerFirstName', 'partnerLastName', 'partnerPhone'].forEach(id => {
+        const input = document.getElementById(id);
+        if (!input) return;
+        const field = id === 'partnerFirstName' ? 'firstName' : id === 'partnerLastName' ? 'lastName' : 'phone';
+        input.addEventListener('input', () => onManualFieldInput(field, input.value, field === 'phone'));
+    });
 
     function selectPartner(player) {
         selectedPartnerIdInput.value = player.id;
@@ -164,6 +242,7 @@ document.addEventListener('DOMContentLoaded', function() {
         partnerSearchResults.style.display = 'none';
         partnerSearch.value = '';
         if (manualFields) manualFields.style.display = 'none';
+        clearManualSuggestions();
     }
 
     if (clearPartnerBtn) {
