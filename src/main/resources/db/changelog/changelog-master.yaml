@@ -167,3 +167,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.55-add-partner-reserve-fields.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.56-add-partner-telegram.yaml
+      relativeToChangelogFile: true

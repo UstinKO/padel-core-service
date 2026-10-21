@@ -308,7 +308,9 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 **Статусная машина:**
 ```
 Одиночная:     → CONFIRMED | WAITLIST → WAITLIST_INVITED → CONFIRMED | CANCELLED
-Парная:        → PARTNER_INVITED → PENDING_PARTNER → PAIR_REGISTERED → CONFIRMED
+Парная:        → CONFIRMED | WAITLIST (сразу — партнёр, с аккаунтом или без, LFPT-0687)
+Парная (легаси, регистрации до LFPT-0687): → PARTNER_INVITED → WAITLIST | CONFIRMED
+                 (email-подтверждение по ссылке, см. docs/endpoints/double-registration.md)
 ```
 
 ---
