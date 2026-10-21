@@ -165,7 +165,7 @@ class PlayerRepositorySearchPartnerCandidatesTest {
         return PlayerPadel.builder()
                 .nombre("Test")
                 .apellido("Player")
-                .email("search-" + UUID.randomUUID() + "@example.com")
+                .email("search-" + uniqueEmailLocalPart() + "@example.com")
                 .passwordHash("$2a$10$fake")
                 .nivelJugador(Nivel.SIN_ESPECIFICAR)
                 .preferredLocale("es")
@@ -174,6 +174,14 @@ class PlayerRepositorySearchPartnerCandidatesTest {
                 .activo(true)
                 .emailConfirmado(true)
                 .build();
+    }
+
+    // Sin dígitos: el email aleatorio no debe poder coincidir por casualidad con una consulta
+    // corta y puramente numérica (como "88" en buscaPorTelefono_consultaCorta...) — un UUID
+    // crudo sí puede contener esa subcadena por azar, dando un test intermitente que falla por
+    // la rama de email (ya existente, no relacionada con el umbral de teléfono que se prueba).
+    private static String uniqueEmailLocalPart() {
+        return UUID.randomUUID().toString().replaceAll("[0-9-]", "");
     }
 
     private PlayerPadel buildPlayerWithName(String nombre, String apellido) {
