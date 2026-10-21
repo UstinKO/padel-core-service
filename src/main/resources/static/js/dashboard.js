@@ -446,7 +446,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('selectedPartnerEmail').textContent = player.email;
         document.getElementById('partnerFirstName').value = player.nombre  || '';
         document.getElementById('partnerLastName').value  = player.apellido || '';
-        document.getElementById('partnerEmail').value     = player.email   || '';
+        document.getElementById('partnerTelegram').value  = player.telegramUsername || '';
         document.getElementById('partnerPhone').value     = '';
         dashSelectedCard.style.display  = 'flex';
         dashSearchResults.style.display = 'none';
@@ -500,7 +500,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (dashClearBtn) {
         dashClearBtn.addEventListener('click', () => {
             dashClearSelectedPartner();
-            ['partnerFirstName','partnerLastName','partnerEmail','partnerPhone']
+            ['partnerFirstName','partnerLastName','partnerTelegram','partnerPhone']
                 .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
         });
     }
@@ -588,7 +588,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Сбрасываем режим и форму
         dashSetMode('WITH_PARTNER');
-        ['partnerFirstName','partnerLastName','partnerPhone','partnerEmail']
+        ['partnerFirstName','partnerLastName','partnerPhone','partnerTelegram']
             .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
         const shareEl = document.getElementById('shareContactsCheckbox');
         if (shareEl) shareEl.checked = false;
@@ -698,7 +698,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 nombre:         firstName,
                 apellido:       lastName,
                 telefono:       phone || null,
-                email:          document.getElementById('partnerEmail')?.value.trim() || null,
+                telegramUsername: document.getElementById('partnerTelegram')?.value.trim() || null,
                 isExistingUser: !!existingUserId,
                 existingUserId: existingUserId ? parseInt(existingUserId) : null
             };

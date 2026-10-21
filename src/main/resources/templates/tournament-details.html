@@ -967,21 +967,26 @@
                                 <small class="form-text text-muted"><i class="fas fa-info-circle"></i> <span th:text="#{modal.partner.field.telefono.hint}">Requerido si tu compañero no está registrado</span></small>
                             </div>
                             <div class="form-group">
-                                <label for="partnerEmail"><i class="fas fa-envelope"></i> <span th:text="#{modal.partner.field.email}">Email del compañero (opcional)</span></label>
-                                <input type="email" class="form-control" id="partnerEmail"
-                                       th:placeholder="#{modal.partner.field.email.placeholder}">
-                                <small class="form-text text-muted" th:text="#{modal.partner.field.email.hint}">Le enviaremos un email si no está registrado</small>
+                                <label for="partnerTelegram"><i class="fab fa-telegram"></i> <span th:text="#{modal.partner.field.telegram}">Telegram del compañero (opcional)</span></label>
+                                <input type="text" class="form-control" id="partnerTelegram"
+                                       th:placeholder="#{modal.partner.field.telegram.placeholder}">
+                                <small class="form-text text-muted" th:text="#{modal.partner.field.telegram.hint}">El organizador podrá contactarlo por este medio si es necesario</small>
                             </div>
 
-                            <!-- LFPT-0680: подсказки существующих игроков при ручном вводе -->
-                            <div id="manualPartnerSuggestions" style="display:none; margin-bottom:1rem;">
-                                <div style="font-size:.85rem; color:#6b7280; margin-bottom:.4rem;">
+                            <!-- LFPT-0680/LFPT-0688: подсказки существующих игроков при ручном вводе —
+                                 плавающий блок, позиционируется JS-ом рядом с полем, в которое сейчас
+                                 вводит пользователь (как partnerSearchResults), а не одним блоком под
+                                 всеми полями — иначе на мобильном уходит ниже видимой области экрана. -->
+                            <div id="manualPartnerSuggestions"
+                                 style="display:none; position:fixed; z-index:2000; background:#fff;
+                                        border:1px solid #e5e7eb; border-radius:8px; max-height:220px;
+                                        overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,.15); padding:.5rem 0;">
+                                <div style="font-size:.85rem; color:#6b7280; margin:.1rem .75rem .4rem;">
                                     <i class="fas fa-info-circle"></i>
                                     <span th:text="#{modal.partner.manual.suggestions.title}">Puede que tu compañero ya esté registrado</span>
                                 </div>
                                 <ul id="manualPartnerSuggestionsList"
-                                    style="list-style:none; padding:0; margin:0; border:1px solid #e5e7eb;
-                                           border-radius:8px; overflow:hidden; max-height:200px; overflow-y:auto;"></ul>
+                                    style="list-style:none; padding:0; margin:0;"></ul>
                             </div>
                         </div><!-- /manualPartnerFields -->
                     </div><!-- /withPartnerSection -->
