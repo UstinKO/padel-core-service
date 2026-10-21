@@ -267,6 +267,23 @@ jobs:
           echo "⚠️ Verify the actual production state directly (docker ps / current_version.txt / actuator/health on the server) before assuming anything about which version is running."
           exit 1
 
+  # Деплой PR конвейера запускает pipeline-merge.yml через gh workflow run от GITHUB_TOKEN — у такого
+  # прогона GitHub не порождает workflow_run, и оркестратор не узнавал, что деплой закончился: фронт
+  # после бэка ждал случайного события больше часа, а упавший деплой не останавливал автомерж (LFPT-0685).
+  # Будим его явно — workflow_dispatch от GITHUB_TOKEN разрешён. И при успехе, и при сбое.
+  pipeline-next:
+    needs: deploy
+    if: ${{ always() && inputs.pr }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Wake pipeline-merge
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh workflow run pipeline-merge.yml --ref master -f deploy_run_id="${GITHUB_RUN_ID}"
+
   # Архивация спек задеплоенной задачи: specs/features → specs/done, specs/requests → specs/done/requests.
   # Отдельный job: сбой здесь не значит, что упал деплой, и не красит прогон в failure
   # (continue-on-error), но виден как упавший job и как ::error:: в сводке прогона.
