@@ -183,6 +183,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         listEl.style.width = rect.width + 'px';
         listEl.style.left  = rect.left + 'px';
+        // padding/border самого списка (строка padding:.5rem 0 в разметке) входят в его
+        // реальную отрендеренную высоту сверх max-height при стандартном content-box —
+        // border-box делает max-height границей итоговой высоты блока целиком, иначе
+        // доступное место считается верно, а список всё равно вылезает за экран на
+        // величину своих padding/border.
+        listEl.style.boxSizing = 'border-box';
 
         const openBelow = spaceBelow >= Math.min(maxHeightCap, naturalHeight) || spaceBelow >= spaceAbove;
         const availableSpace = openBelow ? spaceBelow : spaceAbove;
