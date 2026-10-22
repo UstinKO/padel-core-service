@@ -1,10 +1,10 @@
 # LFPT-0700: Fix подсказки партнёра при ручном вводе не работают на реальном iPhone — дропдауны ломаются скроллом модалки, подключить поиск по Telegram
 
 ## Статус
-approved
+done
 
 ## Источник
-Клиентский запрос [specs/requests/LFPT-0700-podskazki-partnera-iphone.md](../requests/LFPT-0700-podskazki-partnera-iphone.md), issue [#700](https://github.com/UstinKO/padel-core-service/issues/700). Telegram-сообщение (для reply): 5437. Продолжение [LFPT-0694](https://github.com/UstinKO/padel-core-service/issues/694) (PR #696) после проверки на реальном iPhone — фикс LFPT-0694 расширил модалку и поправил заголовок, но не устранил основную проблему с подсказками ручного ввода.
+Клиентский запрос [specs/requests/LFPT-0700-podskazki-partnera-iphone.md](requests/LFPT-0700-podskazki-partnera-iphone.md), issue [#700](https://github.com/UstinKO/padel-core-service/issues/700). Telegram-сообщение (для reply): 5437. Продолжение [LFPT-0694](https://github.com/UstinKO/padel-core-service/issues/694) (PR #696) после проверки на реальном iPhone — фикс LFPT-0694 расширил модалку и поправил заголовок, но не устранил основную проблему с подсказками ручного ввода.
 
 ## Контекст / зачем
 Заказчик проверил предыдущий фикс (LFPT-0694) на реальном iPhone: модалка расширилась, заголовок больше не переносится посимвольно — это подтверждено и не трогается. Но подсказки «Возможно, ваш партнёр уже зарегистрирован» при ручном вводе имени/фамилии/телефона до сих пор не появляются на реальном iOS Safari, хотя верхний поиск партнёра работает. LFPT-0694 чинил позиционирование по `window.visualViewport.height` вместо `window.innerHeight` — это не могло быть проверено на реальном устройстве (в облачной песочнице нет WebKit), и не устранило реальную причину.
