@@ -144,12 +144,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const manualFields = document.getElementById('manualPartnerFields');
 
-    // LFPT-0680: подсказки существующих игроков во время ручного ввода партнёра —
-    // поиск независимо по каждому из трёх полей (имя/фамилия/телефон), результаты
+    // LFPT-0680/LFPT-0700: подсказки существующих игроков во время ручного ввода партнёра —
+    // поиск независимо по каждому из четырёх полей (имя/фамилия/телефон/Telegram), результаты
     // объединяются по id. Email/телефон найденных игроков не показываются (приватность).
     const manualSuggestions     = document.getElementById('manualPartnerSuggestions');
     const manualSuggestionsList = document.getElementById('manualPartnerSuggestionsList');
-    const manualSuggestResults  = { firstName: [], lastName: [], phone: [] };
+    const manualSuggestResults  = { firstName: [], lastName: [], phone: [], telegram: [] };
     let manualSuggestDebounceTimer = null;
     // LFPT-0688: поле, в которое сейчас вводит пользователь — подсказки позиционируются
     // рядом с ним (а не одним блоком под всеми полями), чтобы не уходить за экран на мобильном.
@@ -159,7 +159,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // уменьшается, когда появляется клавиатура (известная особенность WebKit) — расчёт
     // "места снизу" по window.innerHeight считает доступной область, которую реально
     // перекрывает клавиатура, и позиционирует подсказки вне видимой части экрана. Поля
-    // ручного ввода (partnerFirstName/Last/Phone) расположены ниже в форме, чем основной
+    // ручного ввода (partnerFirstName/Last/Phone/Telegram) расположены ниже в форме, чем основной
     // поиск (partnerSearch), поэтому там это особенно заметно. window.visualViewport.height
     // отражает реально видимую область (учитывает клавиатуру) и поддерживается iOS Safari.
     function viewportHeight() {
@@ -179,6 +179,7 @@ document.addEventListener('DOMContentLoaded', function() {
         manualSuggestResults.firstName = [];
         manualSuggestResults.lastName  = [];
         manualSuggestResults.phone     = [];
+        manualSuggestResults.telegram  = [];
         if (manualSuggestionsList) manualSuggestionsList.innerHTML = '';
         if (manualSuggestions) manualSuggestions.style.display = 'none';
     }
@@ -209,7 +210,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderManualSuggestions() {
         if (!manualSuggestions || !manualSuggestionsList) return;
         const byId = new Map();
-        [...manualSuggestResults.firstName, ...manualSuggestResults.lastName, ...manualSuggestResults.phone]
+        [...manualSuggestResults.firstName, ...manualSuggestResults.lastName,
+         ...manualSuggestResults.phone, ...manualSuggestResults.telegram]
             .forEach(p => byId.set(p.id, p));
         const players = [...byId.values()];
 
@@ -261,10 +263,18 @@ document.addEventListener('DOMContentLoaded', function() {
         manualSuggestDebounceTimer = setTimeout(() => searchManualField(field, query), 400);
     }
 
-    ['partnerFirstName', 'partnerLastName', 'partnerPhone'].forEach(id => {
+    // LFPT-0700: добавлено поле Telegram — поиск кандидатов по нему уже поддерживает
+    // /api/players/search (LFPT-0679), оставалось только подключить сам input.
+    const MANUAL_SUGGEST_FIELDS = {
+        partnerFirstName: 'firstName',
+        partnerLastName:  'lastName',
+        partnerPhone:     'phone',
+        partnerTelegram:  'telegram'
+    };
+
+    Object.entries(MANUAL_SUGGEST_FIELDS).forEach(([id, field]) => {
         const input = document.getElementById(id);
         if (!input) return;
-        const field = id === 'partnerFirstName' ? 'firstName' : id === 'partnerLastName' ? 'lastName' : 'phone';
         input.addEventListener('input', () => {
             manualActiveInput = input;
             onManualFieldInput(field, input.value, field === 'phone');
