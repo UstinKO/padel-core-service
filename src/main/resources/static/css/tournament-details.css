@@ -636,11 +636,16 @@
 }
 
 /* Modal Body */
+/* LFPT-0700: -webkit-overflow-scrolling: touch убран — на iOS Safari создаёт отдельный
+   композитный скролл-слой, который "захватывает" потомков с position:fixed
+   (#partnerSearchResults/#manualPartnerSuggestions): они рендерятся относительно
+   прокручиваемой области .modal-body (со сдвигом на её scrollTop), а не относительно
+   реального вьюпорта, по которому их позиционирует JS. Инерционный скролл overflow:auto
+   на iOS — поведение по умолчанию с iOS 13, свойство для него не нужно. */
 .modal-body {
     padding: 2rem;
     overflow-y: auto;
     flex: 1;
-    -webkit-overflow-scrolling: touch;
 }
 
 /* Modal Footer */
@@ -1128,7 +1133,6 @@ input[type="tel"].form-control {
     .modal-body {
         padding: 1.5rem;
         overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
         max-height: calc(90vh - 140px);
     }
 
