@@ -166,6 +166,37 @@ document.addEventListener('DOMContentLoaded', function() {
         return (window.visualViewport && window.visualViewport.height) || window.innerHeight;
     }
 
+    // LFPT-0703: общая логика позиционирования для partnerSearchResults и
+    // manualPartnerSuggestions (раньше — два почти идентичных блока). Выбирает сторону
+    // (вниз/вверх от активного поля), как и раньше, но дополнительно ограничивает
+    // max-height списка реально доступным местом в выбранную сторону — иначе список
+    // мог отрендериться выше статичного max-height из разметки и выйти за границу
+    // видимой области экрана (воспроизводилось на iPhone при открытой клавиатуре,
+    // когда свободного места и сверху, и снизу от поля меньше статичного предела).
+    function positionFloatingList(anchorEl, listEl, maxHeightCap) {
+        const rect = anchorEl.getBoundingClientRect();
+        const gap = 4;
+        const vh = viewportHeight();
+        const spaceBelow = vh - rect.bottom - gap;
+        const spaceAbove = rect.top - gap;
+        const naturalHeight = listEl.scrollHeight;
+
+        listEl.style.width = rect.width + 'px';
+        listEl.style.left  = rect.left + 'px';
+
+        const openBelow = spaceBelow >= Math.min(maxHeightCap, naturalHeight) || spaceBelow >= spaceAbove;
+        const availableSpace = openBelow ? spaceBelow : spaceAbove;
+
+        if (openBelow) {
+            listEl.style.top    = (rect.bottom + gap) + 'px';
+            listEl.style.bottom = 'auto';
+        } else {
+            listEl.style.top    = 'auto';
+            listEl.style.bottom = (vh - rect.top + gap) + 'px';
+        }
+        listEl.style.maxHeight = Math.max(0, Math.min(maxHeightCap, availableSpace)) + 'px';
+    }
+
     function clearSelectedPartner() {
         if (selectedPartnerIdInput) selectedPartnerIdInput.value = '';
         if (selectedPartnerCard) selectedPartnerCard.style.display = 'none';
@@ -184,27 +215,16 @@ document.addEventListener('DOMContentLoaded', function() {
         if (manualSuggestions) manualSuggestions.style.display = 'none';
     }
 
+    // LFPT-0703: статичный max-height из разметки (tournament-details.html) — верхняя
+    // граница, за пределы которой список не рендерится даже при достатке места;
+    // positionFloatingList дополнительно ограничивает его доступным местом.
+    const MANUAL_SUGGESTIONS_MAX_HEIGHT = 220;
+
     // Вызывать после того, как содержимое уже отрендерено и блок видим (display:block) —
     // иначе scrollHeight всегда 0 и расчёт свободного места бессмысленен.
     function positionManualDropdown() {
         if (!manualSuggestions || !manualActiveInput) return;
-        const rect = manualActiveInput.getBoundingClientRect();
-        const gap = 4;
-        const actualH = manualSuggestions.scrollHeight;
-        const vh = viewportHeight();
-        const spaceBelow = vh - rect.bottom - gap;
-        const spaceAbove = rect.top - gap;
-
-        manualSuggestions.style.width = rect.width + 'px';
-        manualSuggestions.style.left  = rect.left + 'px';
-
-        if (spaceBelow >= actualH || spaceBelow >= spaceAbove) {
-            manualSuggestions.style.top    = (rect.bottom + gap) + 'px';
-            manualSuggestions.style.bottom = 'auto';
-        } else {
-            manualSuggestions.style.top    = 'auto';
-            manualSuggestions.style.bottom = (vh - rect.top + gap) + 'px';
-        }
+        positionFloatingList(manualActiveInput, manualSuggestions, MANUAL_SUGGESTIONS_MAX_HEIGHT);
     }
 
     function renderManualSuggestions() {
@@ -371,24 +391,11 @@ document.addEventListener('DOMContentLoaded', function() {
         window.addEventListener('resize', repositionVisibleDropdowns);
     }
 
+    // LFPT-0703: статичный max-height из разметки tournament-details.html (#partnerSearchResults).
+    const PARTNER_SEARCH_RESULTS_MAX_HEIGHT = 200;
+
     function positionDropdown() {
-        const rect = partnerSearch.getBoundingClientRect();
-        const gap = 4;
-        const maxH = 200;
-        const vh = viewportHeight();
-        const spaceBelow = vh - rect.bottom - gap;
-        const spaceAbove = rect.top - gap;
-
-        partnerSearchResults.style.width = rect.width + 'px';
-        partnerSearchResults.style.left  = rect.left + 'px';
-
-        if (spaceBelow >= Math.min(maxH, 80) || spaceBelow >= spaceAbove) {
-            partnerSearchResults.style.top    = (rect.bottom + gap) + 'px';
-            partnerSearchResults.style.bottom = 'auto';
-        } else {
-            partnerSearchResults.style.top    = 'auto';
-            partnerSearchResults.style.bottom = (vh - rect.top + gap) + 'px';
-        }
+        positionFloatingList(partnerSearch, partnerSearchResults, PARTNER_SEARCH_RESULTS_MAX_HEIGHT);
     }
 
     function renderSearchResults(players) {
