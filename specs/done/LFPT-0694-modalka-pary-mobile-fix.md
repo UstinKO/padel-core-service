@@ -1,7 +1,7 @@
 # LFPT-0694: Модалка регистрации пары на мобильном — подсказки партнёра при ручном вводе и ширина окна (frontend)
 
 ## Статус
-approved
+done
 
 ## Источник
 Клиентский запрос [specs/requests/LFPT-0694-modalka-pary-mobile-fix.md](requests/LFPT-0694-modalka-pary-mobile-fix.md) (Telegram, `telegram_launch_message_id: 5437`, отправитель customer). GitHub issue [#694](https://github.com/UstinKO/padel-core-service/issues/694). Найдено при проверке заказчиком [LFPT-0688](https://github.com/UstinKO/padel-core-service/issues/688) ([PR #691](https://github.com/UstinKO/padel-core-service/pull/691)) на реальном iPhone.
