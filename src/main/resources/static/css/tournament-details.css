@@ -1249,10 +1249,17 @@ input[type="tel"].form-control {
         font-size: 15px;
     }
 
-    /* Для маленьких экранов делаем заголовок компактнее */
+    /* Для маленьких экранов делаем заголовок компактнее.
+       LFPT-0694: раньше #modalTournamentName (фикс. max-width:200px, nowrap+ellipsis)
+       соревновался за ширину в одном ряду flex-контейнера с лейблом "Registrar
+       pareja para" — лейблу оставалось слишком мало места, и он переносился
+       по буквам ("Regis/trar/parej/a/para"), а название турнира обрезалось
+       многоточием. flex-wrap переносит название турнира на свою строку на всю
+       ширину — лейбл не сжимается, название видно целиком (без обрезки). */
     #partnerModalLabel {
         white-space: normal;
         display: flex;
+        flex-wrap: wrap;
         align-items: flex-start;
     }
 
@@ -1260,12 +1267,17 @@ input[type="tel"].form-control {
         margin-top: 2px;
     }
 
-    #modalTournamentName {
-        display: inline-block;
-        max-width: 200px;
-        overflow: hidden;
-        text-overflow: ellipsis;
+    #partnerModalLabel .modal-partner-title-text {
         white-space: nowrap;
+    }
+
+    #modalTournamentName {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        overflow: visible;
+        text-overflow: clip;
+        white-space: normal;
     }
 }
 
@@ -1285,10 +1297,6 @@ input[type="tel"].form-control {
 
     .modal-header .modal-title {
         font-size: 0.95rem;
-    }
-
-    #modalTournamentName {
-        max-width: 150px;
     }
 
     .form-group {
@@ -1392,11 +1400,14 @@ input[type="tel"].form-control {
     display: flex;
 }
 
-.modal-dialog {
-    max-width: 500px;
-    width: 90%;
-    margin: 1.75rem auto;
-}
+/* LFPT-0694: ниже — второй блок правил .modal/.modal-content/.modal-body/...,
+   дублирующий набор выше (строка ~536) с другими значениями; та же специфичность
+   у обоих, этот блок идёт в файле позже, поэтому .modal-content/.modal-body/
+   .modal-footer/.form-group/.form-control отсюда уже побеждают везде на сайте —
+   трогать их означало бы поменять вид всех модалок, а не только эту задачу.
+   Но .modal-dialog отсюда так же побеждал мобильный @media (max-width: 768px)
+   выше (width: 100%), и на телефоне модалка оставалась 90% с пустыми полями
+   по бокам вместо почти полной ширины экрана — только это правило и убрано. */
 
 .modal-content {
     background: #fff;
