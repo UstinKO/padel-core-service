@@ -1,7 +1,7 @@
 # LFPT-0617: Fix мёртвый код EmailService.sendPairConfirmationEmail — удалить метод с несуществующим шаблоном
 
 ## Статус
-approved
+done
 
 ## Источник
 Спека написана напрямую, без клиентского запроса. Issue [#617](https://github.com/UstinKO/padel-core-service/issues/617), найдено при актуализации docs (#615) и при аудите писем в LFPT-0618.
