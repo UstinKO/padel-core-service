@@ -155,6 +155,17 @@ document.addEventListener('DOMContentLoaded', function() {
     // рядом с ним (а не одним блоком под всеми полями), чтобы не уходить за экран на мобильном.
     let manualActiveInput = null;
 
+    // LFPT-0694: на iOS Safari внутри модалки с position:fixed window.innerHeight НЕ
+    // уменьшается, когда появляется клавиатура (известная особенность WebKit) — расчёт
+    // "места снизу" по window.innerHeight считает доступной область, которую реально
+    // перекрывает клавиатура, и позиционирует подсказки вне видимой части экрана. Поля
+    // ручного ввода (partnerFirstName/Last/Phone) расположены ниже в форме, чем основной
+    // поиск (partnerSearch), поэтому там это особенно заметно. window.visualViewport.height
+    // отражает реально видимую область (учитывает клавиатуру) и поддерживается iOS Safari.
+    function viewportHeight() {
+        return (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+    }
+
     function clearSelectedPartner() {
         if (selectedPartnerIdInput) selectedPartnerIdInput.value = '';
         if (selectedPartnerCard) selectedPartnerCard.style.display = 'none';
@@ -179,7 +190,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const rect = manualActiveInput.getBoundingClientRect();
         const gap = 4;
         const actualH = manualSuggestions.scrollHeight;
-        const spaceBelow = window.innerHeight - rect.bottom - gap;
+        const vh = viewportHeight();
+        const spaceBelow = vh - rect.bottom - gap;
         const spaceAbove = rect.top - gap;
 
         manualSuggestions.style.width = rect.width + 'px';
@@ -190,7 +202,7 @@ document.addEventListener('DOMContentLoaded', function() {
             manualSuggestions.style.bottom = 'auto';
         } else {
             manualSuggestions.style.top    = 'auto';
-            manualSuggestions.style.bottom = (window.innerHeight - rect.top + gap) + 'px';
+            manualSuggestions.style.bottom = (vh - rect.top + gap) + 'px';
         }
     }
 
@@ -328,22 +340,33 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Пересчитываем позицию при скролле модала
     const partnerModalBody = document.querySelector('#partnerModal .modal-body');
+    function repositionVisibleDropdowns() {
+        if (partnerSearchResults.style.display !== 'none') {
+            positionDropdown();
+        }
+        if (manualSuggestions && manualSuggestions.style.display !== 'none') {
+            positionManualDropdown();
+        }
+    }
     if (partnerModalBody) {
-        partnerModalBody.addEventListener('scroll', () => {
-            if (partnerSearchResults.style.display !== 'none') {
-                positionDropdown();
-            }
-            if (manualSuggestions && manualSuggestions.style.display !== 'none') {
-                positionManualDropdown();
-            }
-        });
+        partnerModalBody.addEventListener('scroll', repositionVisibleDropdowns);
+    }
+    // LFPT-0694: открытие/закрытие мобильной клавиатуры меняет visualViewport.height,
+    // не всегда сопровождаясь событием resize на window — пересчитываем позицию и там,
+    // и там, чтобы подсказки не оставались позиционированными под уже невидимой (из-за
+    // клавиатуры) частью экрана.
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', repositionVisibleDropdowns);
+    } else {
+        window.addEventListener('resize', repositionVisibleDropdowns);
     }
 
     function positionDropdown() {
         const rect = partnerSearch.getBoundingClientRect();
         const gap = 4;
         const maxH = 200;
-        const spaceBelow = window.innerHeight - rect.bottom - gap;
+        const vh = viewportHeight();
+        const spaceBelow = vh - rect.bottom - gap;
         const spaceAbove = rect.top - gap;
 
         partnerSearchResults.style.width = rect.width + 'px';
@@ -354,7 +377,7 @@ document.addEventListener('DOMContentLoaded', function() {
             partnerSearchResults.style.bottom = 'auto';
         } else {
             partnerSearchResults.style.top    = 'auto';
-            partnerSearchResults.style.bottom = (window.innerHeight - rect.top + gap) + 'px';
+            partnerSearchResults.style.bottom = (vh - rect.top + gap) + 'px';
         }
     }
 
