@@ -1,10 +1,10 @@
 # LFPT-0703: Fix позиционирование выпадающего списка подсказок партнёра на iPhone при открытой клавиатуре
 
 ## Статус
-approved
+done
 
 ## Источник
-Клиентский запрос [specs/requests/LFPT-0703-dropdown-keyboard-iphone.md](../requests/LFPT-0703-dropdown-keyboard-iphone.md), issue [#703](https://github.com/UstinKO/padel-core-service/issues/703). Telegram-сообщение (для reply): 5455. Продолжение [LFPT-0700](https://github.com/UstinKO/padel-core-service/issues/700) (PR #701) после проверки на реальном iPhone — тот фикс устранил причину, по которой подсказки ручного ввода вообще не появлялись (`-webkit-overflow-scrolling: touch`), но не затрагивал расчёт позиции самого списка.
+Клиентский запрос [specs/requests/LFPT-0703-dropdown-keyboard-iphone.md](requests/LFPT-0703-dropdown-keyboard-iphone.md), issue [#703](https://github.com/UstinKO/padel-core-service/issues/703). Telegram-сообщение (для reply): 5455. Продолжение [LFPT-0700](https://github.com/UstinKO/padel-core-service/issues/700) (PR #701) после проверки на реальном iPhone — тот фикс устранил причину, по которой подсказки ручного ввода вообще не появлялись (`-webkit-overflow-scrolling: touch`), но не затрагивал расчёт позиции самого списка.
 
 ## Контекст / зачем
 Заказчик подтвердил на реальном iPhone, что подсказки ручного ввода партнёра теперь появляются (LFPT-0700 решил свою проблему). Но при открытой экранной клавиатуре список подсказок иногда рендерится так, что верхние строки уходят за верхнюю границу видимой области экрана и часть вариантов не видна — зависит от того, в каком месте экрана оказалось активное поле после прокрутки формы.
