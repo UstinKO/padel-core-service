@@ -14,7 +14,7 @@ Email-ключи добавляются в **те же** `messages_es.properties
 
 ```properties
 # === EMAIL COMMON ===
-email.footer.rights=© {0} 1-Padel. Todos los derechos reservados.
+email.footer.rights=© {0,number,#} 1-Padel. Todos los derechos reservados.
 email.footer.terms=Términos
 email.footer.privacy=Privacidad
 email.footer.contact=Contacto
