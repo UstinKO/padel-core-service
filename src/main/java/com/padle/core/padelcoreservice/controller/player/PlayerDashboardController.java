@@ -16,7 +16,7 @@ import com.padle.core.padelcoreservice.repository.PlayerRepository;
 import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2User;
 import com.padle.core.padelcoreservice.service.DoubleTournamentRegistrationService;
 import com.padle.core.padelcoreservice.service.TournamentService;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -315,7 +315,7 @@ public class PlayerDashboardController {
                 }
 
                 // Парсим данные нового игрока
-                Map<String, String> newPlayerData = objectMapper.readValue(replaceData, new com.fasterxml.jackson.core.type.TypeReference<Map<String, String>>(){});
+                Map<String, String> newPlayerData = objectMapper.readValue(replaceData, new tools.jackson.core.type.TypeReference<Map<String, String>>(){});
 
                 // Создаем PartnerRegistrationDto из полученных данных
                 PartnerRegistrationDto partnerDto = new PartnerRegistrationDto();

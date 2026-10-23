@@ -19,7 +19,7 @@
 
 ## 1. Общий обзор
 
-**padel-core-service** — Spring Boot 3.x монолит с серверным рендерингом через Thymeleaf. REST API выставлен параллельно для мобильных / SPA клиентов.
+**padel-core-service** — Spring Boot 4.x монолит с серверным рендерингом через Thymeleaf. REST API выставлен параллельно для мобильных / SPA клиентов.
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
@@ -67,7 +67,7 @@
 
 **Стек:**
 - Java 17 (source) / Java 21 (Docker/CI)
-- Spring Boot 3.5.16
+- Spring Boot 4.1 (Spring Framework 7, Spring Security 7, Hibernate 7, Jackson 3, Tomcat 11)
 - PostgreSQL 15 + Liquibase
 - Thymeleaf (SSR)
 - Spring Security (JWT + Form Login + Google OAuth2)
@@ -273,7 +273,7 @@ Spring Boot → Micrometer → Prometheus (scrape /actuator/prometheus)
                     │                             │
               JVM дашборд                  APM дашборд
 
-Spring Boot → logstash-logback-encoder → Loki :3100
+Spring Boot → loki4j appender (JSON-шаблон сообщения) → Loki :3100
                                               │
                                         Grafana Loki datasource
                                               │
@@ -325,7 +325,7 @@ Grafana: `https://epadel.org/grafana/`
 
 ### Логирование
 
-Формат — структурированный JSON через `logstash-logback-encoder`.
+Формат — структурированный JSON: файл `*-json.log` пишет встроенный `ch.qos.logback.classic.encoder.JsonEncoder`, в Loki уходит JSON-шаблон сообщения через `loki-logback-appender` 2.x (метки `app/host/level/environment`, без structured metadata) — см. `logback-spring.xml`.
 
 ```yaml
 logging:

@@ -17,8 +17,8 @@ import com.padle.core.padelcoreservice.model.enums.Modalidad;
 import com.padle.core.padelcoreservice.service.americano.AmericanoService;
 import com.padle.core.padelcoreservice.service.americano.TeamPlayoffService;
 import com.padle.core.padelcoreservice.util.SecurityUtils;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.json.JsonMapper;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -197,8 +197,8 @@ public class TournamentViewController {
 
             int availableSpots = tournament.getDisponibles();
 
-            ObjectMapper mapper = new ObjectMapper();
-            mapper.registerModule(new JavaTimeModule());
+            // Даты массивами [2026,4,5]/[18,0] — формат, который ждёт JS страницы
+            JsonMapper mapper = JsonMapper.builder().enable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS).build();
             String tournamentJson = mapper.writeValueAsString(tournament);
 
             boolean currentUserIsSolo = userRegistration != null

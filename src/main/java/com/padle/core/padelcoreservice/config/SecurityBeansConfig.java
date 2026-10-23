@@ -3,18 +3,26 @@ package com.padle.core.padelcoreservice.config;
 import com.padle.core.padelcoreservice.security.*;
 import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2UserService;
 import com.padle.core.padelcoreservice.security.oauth2.OAuth2AuthenticationSuccessHandler;
+import com.padle.core.padelcoreservice.security.oauth2.OAuth2ProviderErrorHandler;
 import com.padle.core.padelcoreservice.security.oauth2.OAuth2UserManagementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.http.converter.FormHttpMessageConverter;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResponseClient;
+import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest;
+import org.springframework.security.oauth2.client.endpoint.RestClientAuthorizationCodeTokenResponseClient;
+import org.springframework.security.oauth2.core.http.converter.OAuth2AccessTokenResponseHttpMessageConverter;
 import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestTemplate;
 
 @Configuration
 @RequiredArgsConstructor
@@ -44,7 +52,26 @@ public class SecurityBeansConfig {
 
     @Bean
     public CustomOAuth2UserService customOAuth2UserService() {
-        return new CustomOAuth2UserService(oAuth2UserManagementService); // Передаем зависимость
+        CustomOAuth2UserService service = new CustomOAuth2UserService(oAuth2UserManagementService); // Передаем зависимость
+        // LFPT-0726: запрос userinfo — с обработчиком ошибок без oauth2-oidc-sdk/json-smart
+        RestTemplate restTemplate = new RestTemplate();
+        restTemplate.setErrorHandler(new OAuth2ProviderErrorHandler());
+        service.setRestOperations(restTemplate);
+        return service;
+    }
+
+    // LFPT-0726: обмен кода Google на токен — как дефолтный клиент Spring Security, но с
+    // OAuth2ProviderErrorHandler вместо OAuth2ErrorResponseErrorHandler (тому нужен json-smart)
+    @Bean
+    public OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> authorizationCodeTokenResponseClient() {
+        RestClientAuthorizationCodeTokenResponseClient client = new RestClientAuthorizationCodeTokenResponseClient();
+        client.setRestClient(RestClient.builder()
+                .configureMessageConverters(converters -> converters
+                        .addCustomConverter(new FormHttpMessageConverter())
+                        .addCustomConverter(new OAuth2AccessTokenResponseHttpMessageConverter()))
+                .defaultStatusHandler(new OAuth2ProviderErrorHandler())
+                .build());
+        return client;
     }
 
     @Bean

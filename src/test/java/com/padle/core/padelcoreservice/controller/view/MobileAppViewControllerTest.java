@@ -2,7 +2,7 @@ package com.padle.core.padelcoreservice.controller.view;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -46,6 +46,6 @@ class MobileAppViewControllerTest {
     void apiPrivada_anonimo_sigueCerrada() throws Exception {
         mockMvc.perform(get("/api/players/me/tournaments"))
                 .andExpect(status().isFound())
-                .andExpect(redirectedUrl("http://localhost/login"));
+                .andExpect(redirectedUrl("/login"));
     }
 }
