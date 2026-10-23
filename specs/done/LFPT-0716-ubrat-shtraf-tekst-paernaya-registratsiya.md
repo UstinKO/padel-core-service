@@ -1,7 +1,7 @@
 # LFPT-0716: Fix парная регистрация 1Padel.App — убрать неприменимый текст о штрафе −10 за опоздание
 
 ## Статус
-approved
+done
 
 ## Источник
 [GitHub issue #716](https://github.com/UstinKO/padel-core-service/issues/716) — техническая находка архитектора при анализе клиентского запроса [LFPT-0713](../requests/LFPT-0713-poisk-partnera-otmena-americano-usloviya.md), без отдельного клиентского запроса (прямая техническая постановка).
