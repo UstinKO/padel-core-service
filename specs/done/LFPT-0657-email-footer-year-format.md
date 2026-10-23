@@ -1,7 +1,7 @@
 # LFPT-0657: Fix год в подвале писем отображается как 2.026 — форматировать без разделителя разрядов
 
 ## Статус
-approved
+done
 
 ## Источник
 Спека написана напрямую, без клиентского запроса. Issue [#657](https://github.com/UstinKO/padel-core-service/issues/657), найдено тестировщиком при проверке [#617](https://github.com/UstinKO/padel-core-service/issues/617).
