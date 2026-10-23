@@ -5,6 +5,7 @@ import { AuthError, createAuthClient, parseSessionFragment } from './auth';
 import type { Profile } from './auth';
 import { createNativeSessionStore, createWebSessionStore } from './sessionStore';
 import { createIndividualBooking } from './individualBooking';
+import { createPairBooking } from './pairBooking';
 import { createScheduleClient } from './schedule';
 
 const secureKey = 'onepadel.refresh.v1';
@@ -18,7 +19,8 @@ const store = Platform.OS === 'web'
 
 type Auth = { profile: Profile | null; restoring: boolean; restoreError: string | null; googleCode: string | null;
   login: (email: string, password: string) => Promise<void>; google: () => Promise<void>; cancelGoogle: () => void;
-  logout: () => Promise<void>; retryRestore: () => Promise<void>; client: ReturnType<typeof createAuthClient>; booking: ReturnType<typeof createIndividualBooking> };
+  logout: () => Promise<void>; retryRestore: () => Promise<void>; client: ReturnType<typeof createAuthClient>; booking: ReturnType<typeof createIndividualBooking>;
+  pairBooking: ReturnType<typeof createPairBooking> };
 const Context = createContext<Auth | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -33,6 +35,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const baseUrl = Platform.OS === 'web' && typeof window !== 'undefined' && window.location.protocol === 'https:' && ['1-padel.com', 'www.1-padel.com'].includes(window.location.hostname) ? window.location.origin : 'https://1-padel.com';
     const schedule = createScheduleClient({ baseUrl });
     return createIndividualBooking({ ...client, details: id => schedule.details(id, 'es') });
+  }, [client, profile?.id]);
+  // LFPT-0707: misma idea que booking — un modelo de mutación por cuenta, aislado de otra sesión.
+  const pairBooking = useMemo(() => {
+    const baseUrl = Platform.OS === 'web' && typeof window !== 'undefined' && window.location.protocol === 'https:' && ['1-padel.com', 'www.1-padel.com'].includes(window.location.hostname) ? window.location.origin : 'https://1-padel.com';
+    const schedule = createScheduleClient({ baseUrl });
+    return createPairBooking({ ...client, details: id => schedule.details(id, 'es') });
   }, [client, profile?.id]);
   const retryRestore = useCallback(async () => {
     setRestoring(true); setRestoreError(null);
@@ -62,6 +70,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     cancelGoogle(); setRestoreError(null); setProfile(await client.login(email, password));
   }
   async function logout() { cancelGoogle(); await client.logout(); setProfile(null); }
-  return <Context.Provider value={{ profile, restoring, restoreError, googleCode, login, google, cancelGoogle, logout, retryRestore, client, booking }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ profile, restoring, restoreError, googleCode, login, google, cancelGoogle, logout, retryRestore, client, booking, pairBooking }}>{children}</Context.Provider>;
 }
 export function useAuth() { const value = useContext(Context); if (!value) throw new Error('AuthProvider required'); return value; }
