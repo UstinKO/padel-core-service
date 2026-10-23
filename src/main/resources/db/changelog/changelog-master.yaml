@@ -170,3 +170,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.56-add-partner-telegram.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.57-unaccent-extension.yaml
+      relativeToChangelogFile: true

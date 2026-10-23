@@ -132,8 +132,8 @@ class DoubleTournamentRegistrationLevelRestrictionTest {
         partnerDto.setEmail("nueva-pareja@example.com");
 
         when(playerRepository.findByEmail("nueva-pareja@example.com")).thenReturn(Optional.empty());
-        when(playerRepository.findByTelefono("+5492222222222")).thenReturn(Optional.empty());
-        when(playerRepository.existsByTelefono("+5492222222222")).thenReturn(false);
+        // LFPT-0720: findPartnerByContact ahora usa la búsqueda normalizada de teléfono/Telegram.
+        when(playerRepository.findByNormalizedTelefono(any())).thenReturn(Optional.empty());
         when(playerRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(registrationRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(registrationMapper.toDto(any())).thenReturn(null);

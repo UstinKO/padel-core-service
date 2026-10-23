@@ -43,13 +43,16 @@ public interface PlayerRepository extends JpaRepository<PlayerPadel, Long> {
     // совпадали. :phoneDigits — уже нормализован так же (см. PlayerService.extractPhoneDigits);
     // пустая строка, если цифр меньше 4 — ветка не активируется (не "найти всех с телефоном").
     // Telegram — без учёта регистра и лидирующего '@' с обеих сторон.
+    // LFPT-0720: unaccent() на имени/фамилии и на запросе с обеих сторон — «Max» находит
+    // «Máximo» (диакритика не должна мешать совпадению, явный запрос заказчика в #713).
+    // Email/телефон/Telegram не содержат диакритических символов — unaccent на них избыточен.
     @Query(value = "SELECT p.* FROM player_padel_db p WHERE p.activo = true AND p.id <> :excludeId " +
            "AND p.id NOT IN (" +
            "  SELECT tr.player_id FROM tournament_registrations_db tr " +
            "  WHERE tr.tournament_id = :tournamentId AND tr.is_active = true" +
            ") " +
-           "AND (LOWER(p.nombre) LIKE LOWER('%' || :query || '%') " +
-           "  OR LOWER(p.apellido) LIKE LOWER('%' || :query || '%') " +
+           "AND (unaccent(LOWER(p.nombre)) LIKE unaccent(LOWER('%' || :query || '%')) " +
+           "  OR unaccent(LOWER(p.apellido)) LIKE unaccent(LOWER('%' || :query || '%')) " +
            "  OR LOWER(p.email) LIKE LOWER('%' || :query || '%') " +
            "  OR (:phoneDigits <> '' AND " +
            "      RIGHT(regexp_replace(COALESCE(p.telefono, ''), '\\D', '', 'g'), 10) LIKE '%' || :phoneDigits || '%') " +
@@ -63,6 +66,32 @@ public interface PlayerRepository extends JpaRepository<PlayerPadel, Long> {
                                               @Param("excludeId") Long excludeId,
                                               @Param("phoneDigits") String phoneDigits,
                                               @Param("tgQuery") String tgQuery);
+
+    // LFPT-0720: серверная защита от дублей при создании партнёра — сравнение по последним
+    // 10 цифрам телефона без разделителей (тот же приём нормализации, что searchPartnerCandidates/
+    // PlayerService.extractPhoneDigits, LFPT-0679, и PlayerDuplicatesAuditService, #677), в отличие
+    // от точного совпадения строки у findByTelefono.
+    @Query(value = "SELECT p.* FROM player_padel_db p WHERE p.telefono IS NOT NULL AND p.telefono <> '' " +
+           "AND RIGHT(regexp_replace(p.telefono, '\\D', '', 'g'), 10) = :phoneDigits LIMIT 1",
+           nativeQuery = true)
+    Optional<PlayerPadel> findByNormalizedTelefono(@Param("phoneDigits") String phoneDigits);
+
+    // LFPT-0720: аналогично для Telegram — без учёта регистра и лидирующего '@' с обеих сторон,
+    // т.к. партнёр мог быть сохранён без '@' (до нормализации при сохранении, см.
+    // DoubleTournamentRegistrationService.buildGuestPartnerAccount), а самостоятельно
+    // зарегистрированный игрок — всегда с '@' (PlayerContactController.updateContact).
+    @Query(value = "SELECT p.* FROM player_padel_db p WHERE p.telegram_username IS NOT NULL " +
+           "AND LOWER(REPLACE(p.telegram_username, '@', '')) = LOWER(:handle) LIMIT 1",
+           nativeQuery = true)
+    Optional<PlayerPadel> findByNormalizedTelegramUsername(@Param("handle") String handle);
+
+    // LFPT-0720: pg_advisory_xact_lock — лок по хэшу произвольной строки, снимается
+    // автоматически в конце транзакции вызывающего метода (все точки входа, создающие
+    // партнёра, уже @Transactional). Защищает проверку-потом-создание партнёра от гонки
+    // параллельных запросов с одинаковым телефоном/Telegram без жёсткого unique-индекса
+    // на телефон (который бы упал на уже существующих в проде дублях, см. #677).
+    @Query(value = "SELECT pg_advisory_xact_lock(hashtext(:key))", nativeQuery = true)
+    void acquireContactLock(@Param("key") String key);
 
     // LFPT-0561: поиск активных игроков по имени/фамилии/телефону/email для формы
     // «Добавить команду» Team Playoff — в отличие от searchPartnerCandidates, не исключает

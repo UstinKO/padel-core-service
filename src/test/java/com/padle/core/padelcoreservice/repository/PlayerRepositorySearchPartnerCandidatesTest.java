@@ -96,6 +96,18 @@ class PlayerRepositorySearchPartnerCandidatesTest {
     }
 
     @Test
+    void buscaPorNombre_ignoraDiacriticos() {
+        // LFPT-0720: «Max» debe encontrar «Máximo» — ejemplo explícito del cliente (#713).
+        String apellidoUnico = "ConAcento" + UUID.randomUUID().toString().substring(0, 8);
+        PlayerPadel player = playerRepository.saveAndFlush(buildPlayerWithName("Máximo", apellidoUnico));
+
+        List<PlayerPadel> porNombreSinAcento = playerRepository.searchPartnerCandidates(
+                "max", NO_REGISTRATIONS_TOURNAMENT_ID, EXCLUDE_NONE, "", "");
+
+        assertThat(porNombreSinAcento).extracting(PlayerPadel::getId).contains(player.getId());
+    }
+
+    @Test
     void buscaPorNombre_siguenFuncionandoComoAntes() {
         String apellidoUnico = "Buscable" + UUID.randomUUID().toString().substring(0, 8);
         PlayerPadel player = playerRepository.saveAndFlush(buildPlayerWithName("Pedro", apellidoUnico));
@@ -143,6 +155,48 @@ class PlayerRepositorySearchPartnerCandidatesTest {
         assertThat(resultado).extracting(PlayerPadel::getId)
                 .contains(candidatoValido.getId())
                 .doesNotContain(buscador.getId(), yaRegistrado.getId());
+    }
+
+    @Test
+    void findByNormalizedTelefono_encuentraFormatosDiferentes() {
+        // El método espera recibir ya normalizado (últimos 10 dígitos) — como hace
+        // DoubleTournamentRegistrationService.normalizePhoneDigits antes de llamarlo.
+        PlayerPadel player = playerRepository.saveAndFlush(buildPlayer("+5491122334455", null));
+
+        assertThat(playerRepository.findByNormalizedTelefono(extractPhoneDigitsForTest("01122334455")))
+                .map(PlayerPadel::getId).contains(player.getId());
+        assertThat(playerRepository.findByNormalizedTelefono(extractPhoneDigitsForTest("91122334455")))
+                .map(PlayerPadel::getId).contains(player.getId());
+        assertThat(playerRepository.findByNormalizedTelefono("0000000000")).isEmpty();
+    }
+
+    @Test
+    void findByNormalizedTelegramUsername_ignoraArrobaYMayusculas() {
+        // El método espera recibir ya normalizado (sin '@', cualquier mayúscula es igual) —
+        // como hace DoubleTournamentRegistrationService.normalizeTelegramHandle antes de
+        // llamarlo; la comparación interna hace LOWER() de ambos lados, pero solo quita '@'
+        // de la columna, no del parámetro (ya se espera limpio).
+        PlayerPadel player = playerRepository.saveAndFlush(
+                buildPlayer(null, "@Normaliza_" + UUID.randomUUID().toString().substring(0, 8)));
+        String handleSinArroba = player.getTelegramUsername().substring(1);
+
+        assertThat(playerRepository.findByNormalizedTelegramUsername(handleSinArroba.toLowerCase()))
+                .map(PlayerPadel::getId).contains(player.getId());
+        assertThat(playerRepository.findByNormalizedTelegramUsername(handleSinArroba.toUpperCase()))
+                .map(PlayerPadel::getId).contains(player.getId());
+    }
+
+    @Test
+    void acquireContactLock_noLanzaYEsReentranteEnLaMismaTransaccion() {
+        // pg_advisory_xact_lock no bloquea una segunda adquisición del mismo valor por la
+        // misma sesión/transacción (no es un mutex "no reentrante") — solo verificamos que la
+        // llamada no lanza excepción y puede repetirse (p.ej. teléfono y Telegram con el mismo
+        // hash improbable, o dos partners con el mismo contacto en el mismo request).
+        org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> {
+            playerRepository.acquireContactLock("partner-phone:test-key");
+            playerRepository.acquireContactLock("partner-phone:test-key");
+            playerRepository.acquireContactLock("partner-telegram:another-key");
+        });
     }
 
     private List<PlayerPadel> search(String query) {
