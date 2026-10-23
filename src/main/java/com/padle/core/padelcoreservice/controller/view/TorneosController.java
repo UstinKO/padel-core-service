@@ -1,7 +1,7 @@
 package com.padle.core.padelcoreservice.controller.view;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.json.JsonMapper;
 import com.padle.core.padelcoreservice.dto.PlayerResponseDto;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.service.PlayerService;
@@ -57,8 +57,8 @@ public class TorneosController {
 
         // Конвертируем в JSON для JavaScript фильтров
         try {
-            ObjectMapper mapper = new ObjectMapper();
-            mapper.registerModule(new JavaTimeModule());
+            // Даты массивами [2026,4,5]/[18,0] — формат, который ждёт JS страницы
+            JsonMapper mapper = JsonMapper.builder().enable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS).build();
             String tournamentsJson = mapper.writeValueAsString(allTournaments);
             model.addAttribute("tournamentsJson", tournamentsJson);
         } catch (Exception e) {

@@ -1,6 +1,6 @@
 package com.padle.core.padelcoreservice.controller.view;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.padle.core.padelcoreservice.dto.RankingDto;
 import com.padle.core.padelcoreservice.service.RankingService;
 import lombok.RequiredArgsConstructor;

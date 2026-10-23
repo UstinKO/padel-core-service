@@ -364,6 +364,10 @@ Client                          /api/auth/refresh
 - Клиент при загрузке `/app/` читает токены из fragment и сразу убирает их из адресной строки (`history.replaceState`). Остальные запросы клиента: `POST /api/auth/login`, `POST /api/auth/refresh`, `GET /api/auth/me`, `GET /api/players/me/tournaments` — по Bearer-токену, без cookie сайта (`credentials: omit`). Анонимный/просроченный `/api/**` отвечает редиректом на `/login`, клиент считает его истёкшей сессией.
 - Refresh-токен переживает закрытие/повторное открытие вкладки (LFPT-0646): на native — `expo-secure-store`, на вебе — `localStorage` (только за гейтом `secureAuthContext`, т.е. HTTPS или `localhost`/`127.0.0.1`, как и сам вход). Access-токен не персистится, только refresh — на старте клиент меняет его на новый access через `POST /api/auth/refresh`. Логаут удаляет сохранённый refresh-токен из хранилища; сервер при этом остаётся stateless — ничего не ревокирует (см. ниже).
 
+### Ошибки ответов Google (LFPT-0726)
+
+`json-smart` исключён из зависимостей (уязвимость без исправленной версии), а стандартный обработчик ошибок Spring Security разбирает `WWW-Authenticate` через oauth2-oidc-sdk, которому json-smart нужен. Поэтому оба HTTP-вызова к Google — обмен кода на токен (бин `authorizationCodeTokenResponseClient`, подключён в `SecurityConfig` через `tokenEndpoint`) и userinfo (`RestOperations` у `CustomOAuth2UserService`) — используют `OAuth2ProviderErrorHandler` с той же логикой без oidc-sdk. Любая ошибка провайдера заканчивается `/login?error=oauth2`. Discovery по `issuer-uri` (`ClientRegistrations`) требует json-smart — не включать без возврата зависимости.
+
 ---
 
 ## 7. Сброс пароля

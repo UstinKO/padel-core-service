@@ -5,7 +5,7 @@
 
     <!-- ========== МАСКИРОВЩИК ЧУВСТВИТЕЛЬНЫХ ДАННЫХ ========== -->
     <conversionRule conversionWord="mask"
-                    converterClass="com.padle.core.padelcoreservice.logging.MaskingConverter"/>
+                    class="com.padle.core.padelcoreservice.logging.MaskingConverter"/>
 
     <!-- Свойства из application.yml/properties -->
     <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="padel-core"/>
@@ -193,31 +193,34 @@
                 <password>${LOKI_PASSWORD:-}</password>
             </auth>
         </http>
-        <format>
-            <label>
-                <pattern>app=${APP_NAME},host=${HOSTNAME},level=%level,environment=${ENVIRONMENT:-local}</pattern>
-                <readMarkers>true</readMarkers>
-            </label>
-            <message>
-                <!-- %mask вместо %msg — маскируем данные и в Loki -->
-                <pattern>{
-                    "@timestamp": "%d{yyyy-MM-dd'T'HH:mm:ss.SSSZ}",
-                    "level": "%level",
-                    "logger": "%logger{36}",
-                    "thread": "%thread",
-                    "traceId": "%X{traceId:-}",
-                    "userId": "%X{userId:-}",
-                    "requestId": "%X{requestId:-}",
-                    "message": "%mask",
-                    "exception": "%ex{full}"
-                    }</pattern>
-            </message>
-            <sortByTime>true</sortByTime>
-        </format>
-        <batchConfig>
+        <!-- loki4j 2.x: labels/message вынесены из <format>, <batchConfig> → <batch>, sortByTime убран -->
+        <labels>
+            app=${APP_NAME}
+            host=${HOSTNAME}
+            level=%level
+            environment=${ENVIRONMENT:-local}
+        </labels>
+        <readMarkers>true</readMarkers>
+        <!-- В 2.x по умолчанию шлются structured metadata (thread/logger/MDC) — выключаем, как было в 1.x -->
+        <structuredMetadata>off</structuredMetadata>
+        <message class="ch.qos.logback.classic.PatternLayout">
+            <!-- %mask вместо %msg — маскируем данные и в Loki -->
+            <pattern>{
+                "@timestamp": "%d{yyyy-MM-dd'T'HH:mm:ss.SSSZ}",
+                "level": "%level",
+                "logger": "%logger{36}",
+                "thread": "%thread",
+                "traceId": "%X{traceId:-}",
+                "userId": "%X{userId:-}",
+                "requestId": "%X{requestId:-}",
+                "message": "%mask",
+                "exception": "%ex{full}"
+                }</pattern>
+        </message>
+        <batch>
             <maxItems>${LOKI_BATCH_SIZE}</maxItems>
             <timeoutMs>${LOKI_BATCH_TIMEOUT}</timeoutMs>
-        </batchConfig>
+        </batch>
     </appender>
 
     <!-- ========== КОРНЕВОЙ ЛОГГЕР ========== -->
