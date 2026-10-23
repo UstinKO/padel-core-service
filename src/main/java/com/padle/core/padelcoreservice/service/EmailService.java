@@ -91,62 +91,6 @@ public class EmailService {
     }
 
     /**
-     * Отправка приглашения партнеру (для уже зарегистрированного пользователя)
-     */
-    @Timed(
-            name = "email.send.time",
-            tags = {"service=email", "type=partner_invitation"}
-    )
-    @TrackErrors(
-            name = "email.send.errors",
-            tags = {"service=email", "type=partner_invitation"}
-    )
-    @Async
-    public void sendPartnerInvitationEmail(
-            @MetricTag("recipient") String to,
-            @MetricTag("partnerName") String partnerName,
-            @MetricTag("mainPlayerName") String mainPlayerName,
-            String tournamentName,
-            String tournamentDate,
-            String tournamentTime,
-            String clubName,
-            Locale locale) {
-
-        emailMetricsService.recordEmailAttempt("PARTNER_INVITATION");
-
-        if (emailMetricsService.isDailyLimitReached(dailyEmailLimit)) {
-            log.warn("Daily email limit reached, rejecting partner invitation to: {}", to);
-            emailMetricsService.recordEmailRejected("PARTNER_INVITATION", "DAILY_LIMIT");
-            return;
-        }
-
-        try {
-            log.info("📧 Enviando invitación a compañero (registrado) a: {}", to);
-
-            Context context = new Context(locale);
-            context.setVariable("partnerName", partnerName);
-            context.setVariable("mainPlayerName", mainPlayerName);
-            context.setVariable("tournamentName", tournamentName);
-            context.setVariable("tournamentDate", tournamentDate);
-            context.setVariable("tournamentTime", tournamentTime);
-            context.setVariable("clubName", clubName);
-            context.setVariable("baseUrl", baseUrl);
-            context.setVariable("year", java.time.Year.now().getValue());
-
-            String htmlContent = templateEngine.process("email/partner-invitation", context);
-
-            sendHtmlEmail(to, messageSource.getMessage("email.partner_invitation.subject", new Object[]{tournamentName}, locale), htmlContent);
-
-            emailMetricsService.recordEmailSent("PARTNER_INVITATION");
-            log.info("✅ Invitación a compañero enviada a: {}", to);
-
-        } catch (Exception e) {
-            emailMetricsService.recordEmailError("PARTNER_INVITATION", e.getClass().getSimpleName());
-            log.error("❌ Error enviando invitación a compañero a {}: {}", to, e.getMessage(), e);
-        }
-    }
-
-    /**
      * Отправка приглашения новому партнеру (незарегистрированному)
      */
     @Timed(
