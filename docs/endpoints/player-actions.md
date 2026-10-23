@@ -151,7 +151,7 @@
 
 ## GET `/players/tournaments/{tournamentId}/my-registration`
 
-**Кто вызывает:** JavaScript перед показом кнопки отмены парной регистрации.  
+**Кто вызывает:** JavaScript перед показом кнопки отмены парной регистрации; клиент 1Padel.App (`mobile-app/`) — для парной записи внутри приложения (LFPT-0707).  
 **Аутентификация:** `ROLE_PLAYER`.
 
 ### Контракт
@@ -168,8 +168,15 @@
   "partnerId": 15 | null,
   "partnerFirstName": "Ana" | null,
   "partnerLastName": "López" | null,
-  "hasRegisteredPartner": true | false
+  "hasRegisteredPartner": true | false,
+  "registrationId": 501,
+  "status": "CONFIRMED" | "WAITLIST" | "...",
+  "waitlistPosition": 3 | null,
+  "registrationDate": "2026-10-20T12:00:00",
+  "isDoubleRegistration": true | false | null
 }
 ```
+
+`registrationId`/`status`/`waitlistPosition`/`registrationDate`/`isDoubleRegistration` — добавлены в LFPT-0706, напрямую из уже загруженного `TournamentRegistrationDto` (без новых запросов к БД). Контакты партнёра (`telefono`/`telegramUsername`) этот эндпоинт по-прежнему не публикует.
 
 ---

@@ -366,12 +366,20 @@ public class PlayerDashboardController {
             return ResponseEntity.ok(Map.of("registered", false));
         }
 
+        TournamentRegistrationDto dto = registration.get();
         Map<String, Object> response = new HashMap<>();
         response.put("registered", true);
-        response.put("partnerId", registration.get().getPartnerId());
-        response.put("partnerFirstName", registration.get().getPartnerNombre());
-        response.put("partnerLastName", registration.get().getPartnerApellido());
-        response.put("hasRegisteredPartner", registration.get().getPartnerId() != null);
+        response.put("partnerId", dto.getPartnerId());
+        response.put("partnerFirstName", dto.getPartnerNombre());
+        response.put("partnerLastName", dto.getPartnerApellido());
+        response.put("hasRegisteredPartner", dto.getPartnerId() != null);
+        // LFPT-0706: статус/позиция/дата своей регистрации — нужны клиенту 1Padel.App (LFPT-0707)
+        // для парной записи без второго запроса; контакты партнёра всё так же не публикуются.
+        response.put("registrationId", dto.getId());
+        response.put("status", dto.getStatus());
+        response.put("waitlistPosition", dto.getWaitlistPosition());
+        response.put("registrationDate", dto.getRegistrationDate());
+        response.put("isDoubleRegistration", dto.getIsDoubleRegistration());
 
         return ResponseEntity.ok(response);
     }
