@@ -84,8 +84,15 @@ class DoubleTournamentRegistrationNewPartnerInstantTest {
 
         when(playerRepository.findById(MAIN_PLAYER_ID)).thenReturn(Optional.of(mainPlayer));
         org.mockito.Mockito.lenient().when(playerRepository.findByEmail(any())).thenReturn(Optional.empty());
-        when(playerRepository.findByTelefono(any())).thenReturn(Optional.empty());
+        // LFPT-0720: findPartnerByContact ahora usa las búsquedas normalizadas (no findByTelefono)
+        // para decidir si reutiliza un jugador existente o crea uno nuevo.
+        org.mockito.Mockito.lenient().when(playerRepository.findByNormalizedTelefono(any()))
+                .thenReturn(Optional.empty());
+        org.mockito.Mockito.lenient().when(playerRepository.findByNormalizedTelegramUsername(any()))
+                .thenReturn(Optional.empty());
         when(registrationRepository.findByTournamentIdAndPlayerId(eq(TOURNAMENT_ID), anyLong()))
+                .thenReturn(Optional.empty());
+        org.mockito.Mockito.lenient().when(registrationRepository.findByTournamentIdAndPlayerIdAndIsActiveFalse(anyLong(), anyLong()))
                 .thenReturn(Optional.empty());
         org.mockito.Mockito.lenient().when(registrationMapper.toDto(any())).thenReturn(null);
     }
@@ -107,7 +114,9 @@ class DoubleTournamentRegistrationNewPartnerInstantTest {
         ArgumentCaptor<PlayerPadel> playerCaptor = ArgumentCaptor.forClass(PlayerPadel.class);
         verify(playerRepository).save(playerCaptor.capture());
         PlayerPadel createdPartner = playerCaptor.getValue();
-        assertThat(createdPartner.getTelegramUsername()).isEqualTo("pareja_tg");
+        // LFPT-0720: se guarda siempre con '@' inicial (mismo formato que
+        // PlayerContactController.updateContact), aunque el usuario lo haya escrito sin él.
+        assertThat(createdPartner.getTelegramUsername()).isEqualTo("@pareja_tg");
         assertThat(createdPartner.getNivelJugador()).isEqualTo(Nivel.SIN_ESPECIFICAR);
 
         // registerForDoubleTournament сохраняет возвращённую главную регистрацию повторно
@@ -125,7 +134,7 @@ class DoubleTournamentRegistrationNewPartnerInstantTest {
         TournamentRegistration mainRegistration = saved.stream()
                 .filter(reg -> Long.valueOf(MAIN_PLAYER_ID).equals(reg.getPlayer().getId()))
                 .findFirst().orElseThrow();
-        assertThat(mainRegistration.getPartnerTelegram()).isEqualTo("pareja_tg");
+        assertThat(mainRegistration.getPartnerTelegram()).isEqualTo("@pareja_tg");
     }
 
     @Test
@@ -150,17 +159,53 @@ class DoubleTournamentRegistrationNewPartnerInstantTest {
     }
 
     @Test
-    void telefonoYaRegistrado_lanzaExcepcionSinCrearCuenta() {
-        when(playerRepository.existsByTelefono("+5492222222222")).thenReturn(true);
+    void telefonoCoincideConJugadorExistente_reutilizaEnLugarDeCrearDuplicado() {
+        // LFPT-0720: aunque el teléfono venga en un formato distinto del guardado, la
+        // comparación normalizada (findByNormalizedTelefono) encuentra al jugador existente y
+        // lo reutiliza como compañero — en vez de crear una cuenta nueva o lanzar un error.
+        PlayerPadel existingPartner = PlayerPadel.builder()
+                .id(99L)
+                .nombre("Ya")
+                .apellido("Existe")
+                .telefono("+5492222222222")
+                .nivelJugador(Nivel.C6)
+                .build();
+        when(playerRepository.findByNormalizedTelefono(any())).thenReturn(Optional.of(existingPartner));
+        when(registrationRepository.countConfirmedPairs(TOURNAMENT_ID)).thenReturn(0L);
+        when(registrationRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         PartnerRegistrationDto partnerDto = new PartnerRegistrationDto();
         partnerDto.setNombre("Pareja");
         partnerDto.setApellido("Nueva");
-        partnerDto.setTelefono("+5492222222222");
+        partnerDto.setTelefono("011 2222-2222"); // mismo número, formato distinto
 
-        org.junit.jupiter.api.Assertions.assertThrows(
-                com.padle.core.padelcoreservice.exception.TournamentRegistrationException.class,
-                () -> service.registerForDoubleTournament(tournamentDto, MAIN_PLAYER_ID, partnerDto));
+        service.registerForDoubleTournament(tournamentDto, MAIN_PLAYER_ID, partnerDto);
+
+        verify(playerRepository, org.mockito.Mockito.never()).save(any());
+    }
+
+    @Test
+    void telegramCoincideConJugadorExistente_reutilizaEnLugarDeCrearDuplicado() {
+        // LFPT-0720: antes, un nuevo partner con Telegram coincidente no se verificaba en
+        // absoluto antes de crear la cuenta — ahora findPartnerByContact también busca por
+        // Telegram normalizado (sin '@', sin distinción de mayúsculas).
+        PlayerPadel existingPartner = PlayerPadel.builder()
+                .id(77L)
+                .nombre("Ya")
+                .apellido("Existe")
+                .telegramUsername("@Ivan_Petrov")
+                .nivelJugador(Nivel.C6)
+                .build();
+        when(playerRepository.findByNormalizedTelegramUsername(any())).thenReturn(Optional.of(existingPartner));
+        when(registrationRepository.countConfirmedPairs(TOURNAMENT_ID)).thenReturn(0L);
+        when(registrationRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        PartnerRegistrationDto partnerDto = new PartnerRegistrationDto();
+        partnerDto.setNombre("Pareja");
+        partnerDto.setApellido("Nueva");
+        partnerDto.setTelegramUsername("ivan_petrov"); // sin '@', minúsculas
+
+        service.registerForDoubleTournament(tournamentDto, MAIN_PLAYER_ID, partnerDto);
 
         verify(playerRepository, org.mockito.Mockito.never()).save(any());
     }

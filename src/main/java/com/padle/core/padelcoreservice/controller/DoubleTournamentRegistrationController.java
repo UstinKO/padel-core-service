@@ -14,6 +14,7 @@ import com.padle.core.padelcoreservice.util.SecurityUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -76,7 +77,7 @@ public class DoubleTournamentRegistrationController {
             response.put("message", e.getMessage());
             return ResponseEntity.badRequest().body(response);
 
-        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+        } catch (DataIntegrityViolationException e) {
             // Fallback на случай если constraint сработал раньше нашей проверки
             response.put("success", false);
             response.put("message", "Ya estás registrado en este torneo o los datos del compañero son inválidos.");
@@ -98,6 +99,12 @@ public class DoubleTournamentRegistrationController {
 
         } catch (TournamentRegistrationException e) {
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+
+        } catch (DataIntegrityViolationException e) {
+            // LFPT-0720: запасной рубеж на случай гонки, которую не поймал advisory-lock
+            // (confirmPartnerRegistration) — не падать 500 на уникальном индексе Telegram.
+            return ResponseEntity.badRequest().body(Map.of("success", false,
+                    "message", "Este número de teléfono o Telegram ya está registrado"));
 
         } catch (Exception e) {
             log.error("Error confirming partner registration: {}", e.getMessage(), e);
@@ -188,6 +195,13 @@ public class DoubleTournamentRegistrationController {
         } catch (TournamentRegistrationException e) {
             response.put("success", false);
             response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+
+        } catch (DataIntegrityViolationException e) {
+            // LFPT-0720: запасной рубеж на случай гонки, которую не поймал advisory-lock —
+            // как уже сделано в registerForDoubleTournament.
+            response.put("success", false);
+            response.put("message", "Ya estás registrado en este torneo o los datos del compañero son inválidos.");
             return ResponseEntity.badRequest().body(response);
 
         } catch (Exception e) {

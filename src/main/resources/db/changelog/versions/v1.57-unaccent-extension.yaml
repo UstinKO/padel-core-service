@@ -1,0 +1,15 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.57-unaccent-extension
+      author: padel-core
+      comment: >
+        LFPT-0720: расширение Postgres unaccent — нужно для диакритика-нечувствительного
+        сопоставления имени/фамилии в поиске партнёра (PlayerRepository.searchPartnerCandidates),
+        например «Max» находит «Máximo». Стандартное contrib-расширение, не создаёт таблиц/данных.
+      changes:
+        - sql:
+            dbms: postgresql
+            sql: CREATE EXTENSION IF NOT EXISTS unaccent;
+      rollback:
+        - sql:
+            sql: DROP EXTENSION IF EXISTS unaccent;

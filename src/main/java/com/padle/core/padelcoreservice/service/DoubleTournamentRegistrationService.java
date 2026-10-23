@@ -44,6 +44,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.Locale;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -228,7 +229,16 @@ public class DoubleTournamentRegistrationService {
         return findPartnerByContact(partnerDto);
     }
 
+    /**
+     * LFPT-0720: решает «переиспользовать существующего игрока как партнёра или создать
+     * нового» — email → телефон (нормализованный) → Telegram (нормализованный). Захватывает
+     * {@link #acquireDuplicateGuardLocks} до проверки, чтобы последующее создание партнёра
+     * (в вызывающем методе, в той же транзакции) было атомарно с этой проверкой — см. спеку
+     * LFPT-0720 «Функциональные» п.2.
+     */
     private Optional<PlayerPadel> findPartnerByContact(PartnerRegistrationDto partnerDto) {
+        acquireDuplicateGuardLocks(partnerDto.getTelefono(), partnerDto.getTelegramUsername());
+
         if (partnerDto.getEmail() != null && !partnerDto.getEmail().isEmpty()) {
             Optional<PlayerPadel> byEmail = playerRepository.findByEmail(partnerDto.getEmail());
             if (byEmail.isPresent()) {
@@ -236,11 +246,88 @@ public class DoubleTournamentRegistrationService {
             }
         }
 
-        if (partnerDto.getTelefono() != null && !partnerDto.getTelefono().isEmpty()) {
-            return playerRepository.findByTelefono(partnerDto.getTelefono());
+        return findByNormalizedContact(partnerDto.getTelefono(), partnerDto.getTelegramUsername());
+    }
+
+    /**
+     * LFPT-0720: общая проверка по нормализованному телефону/Telegram, без email — используется
+     * и из {@link #findPartnerByContact} (после проверки email), и из легаси-пути
+     * {@link #confirmPartnerRegistration}, у которого нет email-приоритета.
+     */
+    private Optional<PlayerPadel> findByNormalizedContact(String telefono, String telegramUsername) {
+        Optional<PlayerPadel> byPhone = normalizePhoneDigits(telefono)
+                .flatMap(playerRepository::findByNormalizedTelefono);
+        if (byPhone.isPresent()) {
+            return byPhone;
         }
 
-        return Optional.empty();
+        return normalizeTelegramHandle(telegramUsername)
+                .flatMap(playerRepository::findByNormalizedTelegramUsername);
+    }
+
+    /**
+     * LFPT-0720: {@code pg_advisory_xact_lock} по нормализованным значениям — снимается
+     * автоматически в конце транзакции вызывающего публичного метода (все точки входа,
+     * создающие партнёра, уже {@code @Transactional}). Ключи захватываются в сортированном
+     * порядке, чтобы два параллельных запроса с перекрёстными телефоном/Telegram не могли
+     * создать дедлок.
+     */
+    private void acquireDuplicateGuardLocks(String telefono, String telegramUsername) {
+        Stream.of(
+                        normalizePhoneDigits(telefono).map(digits -> "partner-phone:" + digits),
+                        normalizeTelegramHandle(telegramUsername).map(handle -> "partner-telegram:" + handle))
+                .flatMap(Optional::stream)
+                .sorted()
+                .forEach(playerRepository::acquireContactLock);
+    }
+
+    /**
+     * LFPT-0720: последние 10 цифр телефона без разделителей — тот же приём, что
+     * {@code PlayerService.extractPhoneDigits} (LFPT-0679) и
+     * {@code PlayerDuplicatesAuditService.normalizedPhone} (#677); здесь отдельная копия,
+     * т.к. исходный метод приватен в {@code PlayerService} и возвращает {@code ""} вместо
+     * {@code null} для короткого ввода — другой контракт (тот предназначен для LIKE-поиска
+     * с минимальной длиной, этот — для точного сравнения без порога).
+     */
+    private static final int NATIONAL_PHONE_DIGITS = 10;
+
+    private static Optional<String> normalizePhoneDigits(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return Optional.empty();
+        }
+        String digits = raw.replaceAll("\\D", "");
+        if (digits.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(digits.length() > NATIONAL_PHONE_DIGITS
+                ? digits.substring(digits.length() - NATIONAL_PHONE_DIGITS)
+                : digits);
+    }
+
+    /** LFPT-0720: без учёта регистра и лидирующего '@' — как поиск подсказок (LFPT-0679). */
+    private static Optional<String> normalizeTelegramHandle(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return Optional.empty();
+        }
+        return Optional.of(raw.trim().replace("@", "").toLowerCase(Locale.ROOT));
+    }
+
+    /**
+     * LFPT-0720: хранить Telegram-юзернейм партнёра всегда с лидирующим '@' — как уже делает
+     * {@code PlayerContactController.updateContact} для самостоятельного обновления контакта.
+     * До этого партнёр, созданный из контактных данных при парной регистрации, сохранялся без
+     * '@' — тот же человек мог иметь разные по формату (хоть и логически одинаковые) значения
+     * в зависимости от того, как был создан его аккаунт, что мешало и уникальному индексу
+     * ({@code idx_player_telegram_username_unique}, v1.41), и точному сравнению. Возвращает
+     * {@code null} при отсутствии значения — через {@link Optional#orElse} на единственной
+     * точке вызова (поле builder'а гостевого аккаунта, которое и так принимает {@code null}).
+     */
+    private static String formatTelegramForStorage(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        String trimmed = raw.trim();
+        return trimmed.startsWith("@") ? trimmed : "@" + trimmed;
     }
 
     @Timed(
@@ -349,12 +436,11 @@ public class DoubleTournamentRegistrationService {
         // существующего партнёра (статус/место по текущей заполненности турнира).
         log.info("Registering with new partner (instant, no invitation wait): phone={}", partnerDto.getTelefono());
 
-        if (partnerDto.getTelefono() != null && !partnerDto.getTelefono().isBlank()
-                && playerRepository.existsByTelefono(partnerDto.getTelefono())) {
-            throw new TournamentRegistrationException(
-                    "Este número de teléfono ya está registrado. Pídele a tu compañero que inicie sesión.");
-        }
-
+        // LFPT-0720: проверка дубля по телефону/Telegram (нормализованная, с защитой от гонки
+        // параллельных запросов) уже выполнена в findPartnerByContact — этот метод вызывается
+        // только когда там не нашли совпадение, под тем же локом (снимается в конце транзакции
+        // вызывающего registerForDoubleTournament). Повторная проверка здесь была бы мёртвым
+        // кодом (то же самое значение, та же транзакция).
         PlayerPadel savedPartner = playerRepository.save(createPlayerFromPartnerData(partnerDto));
 
         return registerWithExistingPartner(tournamentDto, mainPlayer, savedPartner, partnerDto);
@@ -389,7 +475,7 @@ public class DoubleTournamentRegistrationService {
                 .apellido(apellido)
                 .telefono(telefono)
                 .email(resolvedEmail)
-                .telegramUsername(telegramUsername)
+                .telegramUsername(formatTelegramForStorage(telegramUsername))
                 .passwordHash(passwordEncoder.encode(generateGuestPassword()))
                 .activo(true)
                 .emailConfirmado(false)
@@ -438,8 +524,14 @@ public class DoubleTournamentRegistrationService {
             throw new TournamentRegistrationException("El enlace ha expirado");
         }
 
-        if (playerRepository.existsByTelefono(registration.getPartnerPhone())) {
-            throw new TournamentRegistrationException("Este número de teléfono ya está registrado");
+        // LFPT-0720: нормализованная проверка телефона/Telegram (не только телефон точным
+        // совпадением строки, как раньше), под локом на случай гонки — см.
+        // acquireDuplicateGuardLocks/findByNormalizedContact. Этот легаси-путь (в отличие от
+        // findPartnerByContact) не переиспользует найденного игрока — токен привязан к
+        // конкретной заявке, менять владельца токена на другого игрока не запрошено.
+        acquireDuplicateGuardLocks(registration.getPartnerPhone(), registration.getPartnerTelegram());
+        if (findByNormalizedContact(registration.getPartnerPhone(), registration.getPartnerTelegram()).isPresent()) {
+            throw new TournamentRegistrationException("Este número de teléfono o Telegram ya está registrado");
         }
 
         PlayerPadel newPartner = buildGuestPartnerAccount(
@@ -617,11 +709,8 @@ public class DoubleTournamentRegistrationService {
         } else {
             log.info("Creating new partner account directly (instant, no invitation wait): {} {}",
                     newPlayerDto.getNombre(), newPlayerDto.getApellido());
-            if (newPlayerDto.getTelefono() != null && !newPlayerDto.getTelefono().isBlank()
-                    && playerRepository.existsByTelefono(newPlayerDto.getTelefono())) {
-                throw new TournamentRegistrationException(
-                        "Este número de teléfono ya está registrado. Pídele a tu compañero que inicie sesión.");
-            }
+            // LFPT-0720: проверка дубля (нормализованная, под локом) уже выполнена выше, в
+            // findPartnerByContact — см. комментарий в registerWithNewPartner.
             newPlayer = playerRepository.save(createPlayerFromPartnerData(newPlayerDto));
         }
 
@@ -896,11 +985,8 @@ public class DoubleTournamentRegistrationService {
                     .ifPresent(registrationRepository::delete);
             registrationRepository.flush();
         } else {
-            if (partnerDto.getTelefono() != null && !partnerDto.getTelefono().isBlank()
-                    && playerRepository.existsByTelefono(partnerDto.getTelefono())) {
-                throw new TournamentRegistrationException(
-                        "Este número de teléfono ya está registrado. Pídele a tu compañero que inicie sesión.");
-            }
+            // LFPT-0720: проверка дубля (нормализованная, под локом) уже выполнена выше, в
+            // findPartner → findPartnerByContact — см. комментарий в registerWithNewPartner.
             partner = playerRepository.save(createPlayerFromPartnerData(partnerDto));
         }
 
