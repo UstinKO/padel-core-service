@@ -103,6 +103,8 @@ Depends-On: #580             # только у фронт-PR: номер бэк-
 
 ### 4.2. Движок задач (relay v2)
 
+> Разобранные инциденты, гипотезы и правила работы с движком — [pipeline-engine-lessons](pipeline-engine-lessons). Читать перед правкой `engine.py`/`relay.py`.
+
 Эволюция текущего `scripts/telegram-relay/relay.py` (вне git, прод-сервер). Остаётся на Python stdlib, состояние — SQLite рядом с `state.json` (переживает рестарт, в отличие от текущего буфера в памяти).
 
 **Жизненный цикл задачи:**
