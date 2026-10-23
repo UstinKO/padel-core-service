@@ -175,6 +175,7 @@ window.APP_MESSAGES = {
     'tournament.info.duration':      'Duración estimada',
     'details.error.process':         'Error al procesar la solicitud',
     'details.search.no_results':     'No se encontraron jugadores',
+    'details.search.error':          'No pudimos buscar. Intentá de nuevo.',
     'details.no_contact.hint':       'Para que otros jugadores puedan contactarte, completá tu número de teléfono o username de Telegram en tu perfil.',
     'details.cancel.confirm':        '¿Estás seguro de cancelar tu inscripción en {0}?',
     'details.success.confirmed':     '¡Registro confirmado!',

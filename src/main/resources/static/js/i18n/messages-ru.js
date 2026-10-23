@@ -175,6 +175,7 @@ window.APP_MESSAGES = {
     'tournament.info.duration':      'Продолжительность',
     'details.error.process':         'Ошибка при обработке запроса',
     'details.search.no_results':     'Игроки не найдены',
+    'details.search.error':          'Не удалось выполнить поиск. Попробуйте ещё раз.',
     'details.no_contact.hint':       'Чтобы другие игроки могли связаться с вами, добавьте номер телефона или Telegram в профиле.',
     'details.cancel.confirm':        'Вы уверены, что хотите отменить регистрацию на {0}?',
     'details.success.confirmed':     'Регистрация подтверждена!',

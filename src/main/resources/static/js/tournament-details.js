@@ -151,6 +151,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const manualSuggestionsList = document.getElementById('manualPartnerSuggestionsList');
     const manualSuggestResults  = { firstName: [], lastName: [], phone: [], telegram: [] };
     let manualSuggestDebounceTimer = null;
+    // LFPT-0721: сбой самого запроса подсказок — отличается от «нет совпадений», чтобы не
+    // создавать ложное впечатление, что совпадений действительно нет.
+    let manualSearchHasError = false;
     // LFPT-0688: поле, в которое сейчас вводит пользователь — подсказки позиционируются
     // рядом с ним (а не одним блоком под всеми полями), чтобы не уходить за экран на мобильном.
     let manualActiveInput = null;
@@ -217,6 +220,7 @@ document.addEventListener('DOMContentLoaded', function() {
         manualSuggestResults.lastName  = [];
         manualSuggestResults.phone     = [];
         manualSuggestResults.telegram  = [];
+        manualSearchHasError = false;
         if (manualSuggestionsList) manualSuggestionsList.innerHTML = '';
         if (manualSuggestions) manualSuggestions.style.display = 'none';
     }
@@ -242,6 +246,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const players = [...byId.values()];
 
         manualSuggestionsList.innerHTML = '';
+        if (manualSearchHasError) {
+            const li = document.createElement('li');
+            li.style.cssText = 'padding:.6rem 1rem; color:#A13F31; font-size:.9rem;';
+            li.textContent = t('details.search.error');
+            manualSuggestionsList.appendChild(li);
+            manualSuggestions.style.display = 'block';
+            positionManualDropdown();
+            return;
+        }
         if (!players.length) {
             manualSuggestions.style.display = 'none';
             return;
@@ -268,8 +281,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const res = await fetch(
                 `/api/players/search?query=${encodeURIComponent(query)}&tournamentId=${tournamentId}`
             );
-            manualSuggestResults[field] = res.ok ? await res.json() : [];
+            if (!res.ok) { manualSearchHasError = true; manualSuggestResults[field] = []; renderManualSuggestions(); return; }
+            manualSuggestResults[field] = await res.json();
+            manualSearchHasError = false;
         } catch (e) {
+            manualSearchHasError = true;
             manualSuggestResults[field] = [];
         }
         renderManualSuggestions();
@@ -353,11 +369,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     const res = await fetch(
                         `/api/players/search?query=${encodeURIComponent(query)}&tournamentId=${tournamentId}`
                     );
-                    if (!res.ok) return;
+                    if (!res.ok) { renderSearchResults([], true); return; }
                     const players = await res.json();
-                    renderSearchResults(players);
+                    renderSearchResults(players, false);
                 } catch (e) {
-                    partnerSearchResults.style.display = 'none';
+                    renderSearchResults([], true);
                 }
             }, 300);
         });
@@ -404,9 +420,12 @@ document.addEventListener('DOMContentLoaded', function() {
         positionFloatingList(partnerSearch, partnerSearchResults, PARTNER_SEARCH_RESULTS_MAX_HEIGHT);
     }
 
-    function renderSearchResults(players) {
+    function renderSearchResults(players, isError) {
         partnerSearchResults.innerHTML = '';
-        if (!players.length) {
+        if (isError) {
+            partnerSearchResults.innerHTML =
+                `<li style="padding:.6rem 1rem; color:#A13F31; font-size:.9rem;">${t('details.search.error')}</li>`;
+        } else if (!players.length) {
             partnerSearchResults.innerHTML =
                 `<li style="padding:.6rem 1rem; color:#9ca3af; font-size:.9rem;">${t('details.search.no_results')}</li>`;
         } else {
