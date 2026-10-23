@@ -9,6 +9,10 @@ export type Profile = { id: number; email: string; name: string };
 export type Session = { accessToken: string; refreshToken: string; expiresAt: number };
 // status === null — турнир из истории: сервер отдаёт только сам турнир, без статуса записи.
 export type Registration = { registrationId: number; status: string | null; active: boolean; waitlistPosition: number | null; event: PublicTournament };
+// Forma exacta de PartnerRegistrationDto (servidor) — compañero existente por ID, o datos de uno nuevo sin email (LFPT-0687).
+// nombre/apellido son @NotBlank en el servidor incluso con existingUserId (no se usan para resolver
+// al jugador, pero la validación los exige igual) — se envían también para el compañero existente.
+export type PartnerPayload = { isExistingUser: true; existingUserId: number; nombre: string; apellido: string } | { isExistingUser: false; nombre: string; apellido: string; telefono: string; telegramUsername?: string };
 export const registrationStatuses = ['CONFIRMED', 'WAITLIST', 'WAITLIST_INVITED', 'CANCELLED', 'PARTICIPATED', 'PENDING_PARTNER', 'PARTNER_INVITED', 'PAIR_REGISTERED', 'SOLO_ADD_LATER', 'SOLO_SEARCH', 'SOLO_EXPIRED'] as const;
 export class AuthError extends Error {
   code: string;
@@ -228,6 +232,35 @@ export function createAuthClient({ baseUrl = 'https://1-padel.com', fetchImpl = 
     async cancelIndividual(tournamentId: number) {
       if (!Number.isSafeInteger(tournamentId) || tournamentId < 1) throw new AuthError('UNAVAILABLE');
       return authorized(`/players/tournaments/${tournamentId}/cancel`, { method: 'POST', business: true });
+    },
+    // LFPT-0706/LFPT-0707: estado de la propia inscripción (individual o en pareja) para un evento.
+    async myRegistration(tournamentId: number) {
+      if (!Number.isSafeInteger(tournamentId) || tournamentId < 1) throw new AuthError('UNAVAILABLE');
+      return authorized(`/players/tournaments/${tournamentId}/my-registration`);
+    },
+    async searchPartners(tournamentId: number, query: string) {
+      if (!Number.isSafeInteger(tournamentId) || tournamentId < 1) throw new AuthError('UNAVAILABLE');
+      return authorized(`/api/players/search?tournamentId=${tournamentId}&query=${encodeURIComponent(query)}`);
+    },
+    async registerPair(tournamentId: number, partner: PartnerPayload) {
+      if (!Number.isSafeInteger(tournamentId) || tournamentId < 1) throw new AuthError('UNAVAILABLE');
+      return authorized(`/api/tournaments/double/${tournamentId}/register`, { method: 'POST', body: partner, business: true });
+    },
+    async registerSoloPair(tournamentId: number, soloType: 'SEARCH' | 'ADD_LATER', shareContacts: boolean) {
+      if (!Number.isSafeInteger(tournamentId) || tournamentId < 1) throw new AuthError('UNAVAILABLE');
+      return authorized(`/api/tournaments/double/${tournamentId}/register-solo`, { method: 'POST', body: { soloType, shareContacts }, business: true });
+    },
+    async addPartner(tournamentId: number, partner: PartnerPayload) {
+      if (!Number.isSafeInteger(tournamentId) || tournamentId < 1) throw new AuthError('UNAVAILABLE');
+      return authorized(`/api/tournaments/double/${tournamentId}/add-partner`, { method: 'POST', body: partner, business: true });
+    },
+    async lookingForPartner(tournamentId: number) {
+      if (!Number.isSafeInteger(tournamentId) || tournamentId < 1) throw new AuthError('UNAVAILABLE');
+      return authorized(`/api/tournaments/double/${tournamentId}/looking-for-partner`);
+    },
+    async proposePair(tournamentId: number, targetRegistrationId: number) {
+      if (!Number.isSafeInteger(tournamentId) || tournamentId < 1 || !Number.isSafeInteger(targetRegistrationId) || targetRegistrationId < 1) throw new AuthError('UNAVAILABLE');
+      return authorized(`/api/tournaments/double/${tournamentId}/propose-pair/${targetRegistrationId}`, { method: 'POST', business: true });
     },
     sessionVersion() { return epoch; },
     cancelPending() { epoch++; refreshTask = null; },

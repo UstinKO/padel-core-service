@@ -12,6 +12,7 @@ import { messages, organizerMessages } from './src/copy';
 import { calculateRanking, validateResult } from './src/scoring';
 import { colors as COLORS } from './src/theme';
 import IndividualBookingScreen from './src/IndividualBookingScreen';
+import PairBookingScreen from './src/PairBookingScreen';
 import { readBookingIntent, saveBookingIntent } from './src/bookingIntent';
 import IndividualBookingLab from './src/IndividualBookingLab';
 
@@ -145,19 +146,28 @@ function AppContent() {
   const [showLogin, setShowLogin] = useState(() => Platform.OS === 'web' && typeof window !== 'undefined' && new URL(window.location.href).searchParams.get('screen') === 'login');
   const [language, setLanguage] = useState('ru');
   const [bookingId, setBookingId] = useState(null);
-  const [pendingBookingId, setPendingBookingId] = useState(readBookingIntent);
+  const [pairBookingId, setPairBookingId] = useState(null);
+  const [pendingIntent, setPendingIntent] = useState(readBookingIntent);
   function completeLogin() {
-    if (pendingBookingId !== null) { setBookingId(pendingBookingId); setPendingBookingId(null); setMode('player'); saveBookingIntent(null); }
+    if (pendingIntent !== null) {
+      if (pendingIntent.kind === 'pair') setPairBookingId(pendingIntent.id); else setBookingId(pendingIntent.id);
+      setPendingIntent(null); setMode('player'); saveBookingIntent(null);
+    }
     else setMode('account');
     setShowLogin(false);
   }
-  useEffect(() => { if (auth.profile && (showLogin || pendingBookingId !== null)) completeLogin(); }, [auth.profile?.id, showLogin, pendingBookingId]);
-  useEffect(() => { if (!auth.profile && !auth.restoring && bookingId !== null) { setBookingId(null); setPendingBookingId(bookingId); saveBookingIntent(bookingId); setShowLogin(true); } }, [auth.profile?.id, auth.restoring, bookingId]);
+  useEffect(() => { if (auth.profile && (showLogin || pendingIntent !== null)) completeLogin(); }, [auth.profile?.id, showLogin, pendingIntent]);
+  useEffect(() => { if (!auth.profile && !auth.restoring && bookingId !== null) { setBookingId(null); setPendingIntent({ id: bookingId, kind: 'individual' }); saveBookingIntent(bookingId, 'individual'); setShowLogin(true); } }, [auth.profile?.id, auth.restoring, bookingId]);
+  useEffect(() => { if (!auth.profile && !auth.restoring && pairBookingId !== null) { setPairBookingId(null); setPendingIntent({ id: pairBookingId, kind: 'pair' }); saveBookingIntent(pairBookingId, 'pair'); setShowLogin(true); } }, [auth.profile?.id, auth.restoring, pairBookingId]);
   function startBooking(event) {
     if (auth.profile) setBookingId(event.id);
-    else { setPendingBookingId(event.id); saveBookingIntent(event.id); setShowLogin(true); }
+    else { setPendingIntent({ id: event.id, kind: 'individual' }); saveBookingIntent(event.id, 'individual'); setShowLogin(true); }
   }
-  function closeLogin() { setShowLogin(false); setPendingBookingId(null); saveBookingIntent(null); }
+  function startPairBooking(event) {
+    if (auth.profile) setPairBookingId(event.id);
+    else { setPendingIntent({ id: event.id, kind: 'pair' }); saveBookingIntent(event.id, 'pair'); setShowLogin(true); }
+  }
+  function closeLogin() { setShowLogin(false); setPendingIntent(null); saveBookingIntent(null); }
   const t = messages[language];
   const [savedResult, setSavedResult] = useState(null);
   return (
@@ -174,10 +184,11 @@ function AppContent() {
           </TouchableOpacity>)}
         </View>
       </View>
-      <View style={[styles.body, (showLogin || bookingId !== null) && styles.hidden]}>{mode === 'player' ? <PlayerScreen language={language} onBook={startBooking} /> : mode === 'account' ? (auth.profile ? <MyEventsScreen language={language} onBrowse={() => setMode('player')} /> : <LoginScreen language={language} onClose={() => setMode('player')} onBrowse={() => setMode('player')} onSuccess={() => setMode('account')} />) : <OrganizerScreen language={language} savedResult={savedResult} onSaveResult={setSavedResult} />}</View>
+      <View style={[styles.body, (showLogin || bookingId !== null || pairBookingId !== null) && styles.hidden]}>{mode === 'player' ? <PlayerScreen language={language} onBook={startBooking} onBookPair={startPairBooking} /> : mode === 'account' ? (auth.profile ? <MyEventsScreen language={language} onBrowse={() => setMode('player')} /> : <LoginScreen language={language} onClose={() => setMode('player')} onBrowse={() => setMode('player')} onSuccess={() => setMode('account')} />) : <OrganizerScreen language={language} savedResult={savedResult} onSaveResult={setSavedResult} />}</View>
       {showLogin && <LoginScreen language={language} onClose={closeLogin} onBrowse={() => { setMode('player'); closeLogin(); }} onSuccess={completeLogin} />}
       {bookingId !== null && auth.profile && !showLogin && <IndividualBookingScreen key={`${bookingId}:${auth.profile.id}`} tournamentId={bookingId} booking={auth.booking} profileName={auth.profile.name} language={language} onClose={() => setBookingId(null)} onMyEvents={() => { setBookingId(null); setMode('account'); }} />}
-      {!showLogin && bookingId === null && <View style={styles.tabBar}>
+      {pairBookingId !== null && auth.profile && !showLogin && <PairBookingScreen key={`pair:${pairBookingId}:${auth.profile.id}`} tournamentId={pairBookingId} booking={auth.pairBooking} profileName={auth.profile.name} profileId={auth.profile.id} language={language} onClose={() => setPairBookingId(null)} onMyEvents={() => { setPairBookingId(null); setMode('account'); }} />}
+      {!showLogin && bookingId === null && pairBookingId === null && <View style={styles.tabBar}>
         <TouchableOpacity accessibilityRole="tab" accessibilityState={{ selected: mode === 'player' }}
           onPress={() => setMode('player')} style={[styles.tab, mode === 'player' && styles.tabActive]}>
           <TabIcon active={mode === 'player'} />

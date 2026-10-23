@@ -8,6 +8,7 @@ import type { ScheduleFilters } from './filters';
 import { messages } from './copy';
 import { colors as palette } from './theme';
 import { isIndividualEvent } from './individualBooking';
+import { isPairAmericanoEvent } from './pairBooking';
 import { bookingCopy } from './bookingCopy';
 
 const isFixture = process.env.EXPO_PUBLIC_PREVIEW_MODE === 'fixtures';
@@ -105,7 +106,7 @@ function Availability({ event, language }: { event: PublicTournament; language: 
   </View>;
 }
 
-export default function PlayerScreen({ language, onBook }: { language: Language; onBook?: (event: PublicTournament) => void }) {
+export default function PlayerScreen({ language, onBook, onBookPair }: { language: Language; onBook?: (event: PublicTournament) => void; onBookPair?: (event: PublicTournament) => void }) {
   const t = messages[language];
   const client = useMemo(() => createScheduleClient({ baseUrl: apiBase }), []);
   const [filters, setFilters] = useState<ScheduleFilters>({ ...defaultFilters });
@@ -134,6 +135,9 @@ export default function PlayerScreen({ language, onBook }: { language: Language;
 
   async function openWebsite(url = 'https://1-padel.com/') {
     try { await Linking.openURL(url); } catch { Alert.alert('1‑Padel', t.linkError); }
+  }
+  function inlineBookable(event: PublicTournament) {
+    return isIndividualEvent(event) && !!onBook || isPairAmericanoEvent(event) && !!onBookPair;
   }
 
   function resourceContent() {
@@ -255,10 +259,15 @@ export default function PlayerScreen({ language, onBook }: { language: Language;
       <View style={styles.bookingInner}>
         <View style={styles.bookingRow}>
           <View style={styles.bookingPrice}><Text style={styles.caption}>{t.priceFrom}</Text><Text style={styles.detailPrice}>{eventPrice(selected, language)}</Text></View>
-          <View style={styles.bookingAction}><Action title={selected.registrationOpen ? isIndividualEvent(selected) && onBook ? selected.available > 0 ? bookingCopy[language].openInline : bookingCopy[language].waitInline : selected.available > 0 ? t.book : t.waitlist : t.openEvent}
-            disabled={isFixture} onPress={() => { if (selected.registrationOpen && isIndividualEvent(selected) && onBook) onBook(selected); else void openWebsite(selected.websiteUrl); }} /></View>
+          <View style={styles.bookingAction}><Action title={selected.registrationOpen ? inlineBookable(selected) ? selected.available > 0 ? bookingCopy[language].openInline : bookingCopy[language].waitInline : selected.available > 0 ? t.book : t.waitlist : t.openEvent}
+            disabled={isFixture} onPress={() => {
+              if (!selected.registrationOpen) { void openWebsite(selected.websiteUrl); return; }
+              if (isIndividualEvent(selected) && onBook) onBook(selected);
+              else if (isPairAmericanoEvent(selected) && onBookPair) onBookPair(selected);
+              else void openWebsite(selected.websiteUrl);
+            }} /></View>
         </View>
-        <Text style={styles.bookingNote}>{selected.registrationOpen && isIndividualEvent(selected) && onBook ? bookingCopy[language].inlineNote : t.siteNote}</Text>
+        <Text style={styles.bookingNote}>{inlineBookable(selected) ? bookingCopy[language].inlineNote : t.siteNote}</Text>
       </View>
     </View>}
     <Modal visible={filterVisible} transparent animationType="slide" onRequestClose={() => setFilterVisible(false)}>
