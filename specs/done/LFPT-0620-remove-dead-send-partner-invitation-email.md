@@ -1,7 +1,7 @@
 # LFPT-0620: Fix мёртвый код EmailService.sendPartnerInvitationEmail — несуществующий шаблон email/partner-invitation, как и #617
 
 ## Статус
-approved
+done
 
 ## Источник
 Спека написана напрямую, без клиентского запроса. Issue [#620](https://github.com/UstinKO/padel-core-service/issues/620), побочная находка аудита писем в LFPT-0618. Решение согласовано с [#617](https://github.com/UstinKO/padel-core-service/issues/617) (PR #658): мёртвый метод удаляется, шаблон не заводится.
