@@ -13,6 +13,7 @@ import { messages } from './copy';
 import { colors as c } from './theme';
 
 type Mode = 'partner' | 'search' | 'later' | null;
+type NewPartnerField = 'firstName' | 'lastName' | 'whatsapp' | 'telegram';
 
 export default function PairBookingScreen({ tournamentId, booking, language, profileName, profileId, onClose, onMyEvents }: {
   tournamentId: number; booking: ReturnType<typeof createPairBooking>; language: Language; profileName: string; profileId: number;
@@ -30,16 +31,43 @@ export default function PairBookingScreen({ tournamentId, booking, language, pro
   const [partnerTab, setPartnerTab] = useState<'existing' | 'new'>('existing');
   const [query, setQuery] = useState(''); const [candidates, setCandidates] = useState<PartnerCandidate[]>([]); const [searching, setSearching] = useState(false);
   const [selected, setSelected] = useState<PartnerCandidate | null>(null);
+  const [searchError, setSearchError] = useState(false);
   const [firstName, setFirstName] = useState(''); const [lastName, setLastName] = useState(''); const [whatsapp, setWhatsapp] = useState(''); const [newTelegram, setNewTelegram] = useState('');
   const [shareContacts, setShareContacts] = useState(false);
   const [lookingList, setLookingList] = useState<LookingForPartnerEntry[] | null>(null);
   const [proposedIds, setProposedIds] = useState<number[]>([]);
+  // LFPT-0721: подсказки существующего игрока во время ввода нового партнёра — поиск
+  // независимо по каждому из четырёх полей (имя/фамилия/WhatsApp/Telegram), результаты
+  // объединяются по id (как на сайте, tournament-details.js).
+  const [newPartnerResults, setNewPartnerResults] = useState<Record<NewPartnerField, PartnerCandidate[]>>({ firstName: [], lastName: [], whatsapp: [], telegram: [] });
+  const [newPartnerSearchError, setNewPartnerSearchError] = useState(false);
+  const newPartnerTimers = useRef<Record<NewPartnerField, ReturnType<typeof setTimeout> | null>>({ firstName: null, lastName: null, whatsapp: null, telegram: null });
   const running = useRef(false); const version = useRef(0); const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  function clearNewPartnerSuggestions() {
+    setNewPartnerResults({ firstName: [], lastName: [], whatsapp: [], telegram: [] }); setNewPartnerSearchError(false);
+    (Object.keys(newPartnerTimers.current) as NewPartnerField[]).forEach(field => { const timer = newPartnerTimers.current[field]; if (timer) clearTimeout(timer); newPartnerTimers.current[field] = null; });
+  }
   function resetChoices() {
-    setMode(null); setPartnerTab('existing'); setQuery(''); setCandidates([]); setSelected(null);
+    setMode(null); setPartnerTab('existing'); setQuery(''); setCandidates([]); setSelected(null); setSearchError(false);
     setFirstName(''); setLastName(''); setWhatsapp(''); setNewTelegram(''); setShareContacts(false);
-    setLookingList(null); setProposedIds([]);
+    setLookingList(null); setProposedIds([]); clearNewPartnerSuggestions();
+  }
+  function searchNewPartnerField(field: NewPartnerField, value: string) {
+    const timer = newPartnerTimers.current[field];
+    if (timer) clearTimeout(timer);
+    const trimmed = value.trim();
+    const meetsMinLength = field === 'whatsapp' ? trimmed.replace(/\D/g, '').length >= 4 : trimmed.length >= 2;
+    if (!meetsMinLength) { setNewPartnerResults(prev => ({ ...prev, [field]: [] })); return; }
+    newPartnerTimers.current[field] = setTimeout(() => {
+      booking.searchPartners(tournamentId, trimmed)
+        .then(result => { setNewPartnerResults(prev => ({ ...prev, [field]: result })); setNewPartnerSearchError(false); })
+        .catch(() => setNewPartnerSearchError(true));
+    }, 400);
+  }
+  function selectNewPartnerSuggestion(candidate: PartnerCandidate) {
+    setSelected(candidate); setFirstName(''); setLastName(''); setWhatsapp(''); setNewTelegram('');
+    clearNewPartnerSuggestions();
   }
   function problem(value: unknown) {
     const issue = value instanceof AuthError ? value : new AuthError('UNAVAILABLE');
@@ -67,10 +95,10 @@ export default function PairBookingScreen({ tournamentId, booking, language, pro
   useEffect(() => { version.current++; resetChoices(); void check(); return () => { version.current++; }; }, [booking, tournamentId]);
   useEffect(() => {
     if (searchTimer.current) clearTimeout(searchTimer.current);
-    if (query.trim().length < 2) { setCandidates([]); setSearching(false); return; }
+    if (query.trim().length < 2) { setCandidates([]); setSearching(false); setSearchError(false); return; }
     setSearching(true);
     searchTimer.current = setTimeout(() => {
-      booking.searchPartners(tournamentId, query).then(result => { setCandidates(result); setSearching(false); }).catch(() => { setCandidates([]); setSearching(false); });
+      booking.searchPartners(tournamentId, query).then(result => { setCandidates(result); setSearching(false); setSearchError(false); }).catch(() => { setCandidates([]); setSearching(false); setSearchError(true); });
     }, 300);
     return () => { if (searchTimer.current) clearTimeout(searchTimer.current); };
   }, [query, booking, tournamentId]);
@@ -145,6 +173,10 @@ export default function PairBookingScreen({ tournamentId, booking, language, pro
     // completarse jamás: la pestaña "compañero nuevo" solo se ofrece en el registro inicial.
     return <View style={s.card}>
       <Text style={s.sectionTitle}>{addingPartner ? t.addPartnerTitle : t.modeHasPartner}</Text>
+      {selected && <View style={[s.candidateRow, s.candidateSelected]}>
+        <Text style={s.fact}>{selected.nombreCompleto}</Text>
+        <TouchableOpacity accessibilityRole="button" onPress={() => setSelected(null)}><Text style={s.link}>✕</Text></TouchableOpacity>
+      </View>}
       {!addingPartner && <View style={s.tabRow}>
         <TouchableOpacity accessibilityRole="tab" accessibilityState={{ selected: partnerTab === 'existing' }} onPress={() => setPartnerTab('existing')} style={[s.tab, partnerTab === 'existing' && s.tabActive]}><Text style={[s.tabText, partnerTab === 'existing' && s.tabTextActive]}>{t.searchLabel}</Text></TouchableOpacity>
         <TouchableOpacity accessibilityRole="tab" accessibilityState={{ selected: partnerTab === 'new' }} onPress={() => setPartnerTab('new')} style={[s.tab, partnerTab === 'new' && s.tabActive]}><Text style={[s.tabText, partnerTab === 'new' && s.tabTextActive]}>{t.orNewPartner}</Text></TouchableOpacity>
@@ -152,7 +184,7 @@ export default function PairBookingScreen({ tournamentId, booking, language, pro
       {(partnerTab === 'existing' || addingPartner) && <>
         <TextInput accessibilityLabel={t.searchLabel} value={query} onChangeText={value => { setQuery(value); setSelected(null); }} editable={!busy} style={s.input} placeholder={t.searchPlaceholder} />
         {searching && <Text style={s.body}>{t.searching}</Text>}
-        {!searching && query.trim().length >= 2 && candidates.length === 0 && <Text style={s.body}>{t.noResults}</Text>}
+        {!searching && query.trim().length >= 2 && candidates.length === 0 && <Text style={searchError ? s.error : s.body}>{searchError ? t.searchError : t.noResults}</Text>}
         {candidates.map(candidate => <TouchableOpacity key={candidate.id} accessibilityRole="button" onPress={() => setSelected(candidate)} style={[s.candidateRow, selected?.id === candidate.id && s.candidateSelected]}>
           <Text style={s.fact}>{candidate.nombreCompleto}</Text>
           {selected?.id === candidate.id ? <Text style={s.link}>✓</Text> : <Text style={s.link}>{t.selectPartner}</Text>}
@@ -160,13 +192,26 @@ export default function PairBookingScreen({ tournamentId, booking, language, pro
         {addingPartner && <Text style={s.hint}>{t.addPartnerSearchOnlyHint}</Text>}
       </>}
       {!addingPartner && partnerTab === 'new' && <>
-        <Text style={s.label}>{t.firstName}</Text><TextInput accessibilityLabel={t.firstName} value={firstName} onChangeText={setFirstName} editable={!busy} style={s.input} />
-        <Text style={s.label}>{t.lastName}</Text><TextInput accessibilityLabel={t.lastName} value={lastName} onChangeText={setLastName} editable={!busy} style={s.input} />
-        <Text style={s.label}>{t.whatsapp}</Text><TextInput accessibilityLabel={t.whatsapp} keyboardType="phone-pad" value={whatsapp} onChangeText={setWhatsapp} editable={!busy} style={s.input} placeholder="+54…" />
-        <Text style={s.label}>{t.telegramOptional}</Text><TextInput accessibilityLabel={t.telegramOptional} autoCapitalize="none" autoCorrect={false} value={newTelegram} onChangeText={setNewTelegram} editable={!busy} style={s.input} placeholder="@username" />
+        <Text style={s.label}>{t.firstName}</Text><TextInput accessibilityLabel={t.firstName} value={firstName} onChangeText={value => { setFirstName(value); searchNewPartnerField('firstName', value); }} editable={!busy} style={s.input} />
+        <Text style={s.label}>{t.lastName}</Text><TextInput accessibilityLabel={t.lastName} value={lastName} onChangeText={value => { setLastName(value); searchNewPartnerField('lastName', value); }} editable={!busy} style={s.input} />
+        <Text style={s.label}>{t.whatsapp}</Text><TextInput accessibilityLabel={t.whatsapp} keyboardType="phone-pad" value={whatsapp} onChangeText={value => { setWhatsapp(value); searchNewPartnerField('whatsapp', value); }} editable={!busy} style={s.input} placeholder="+54…" />
+        <Text style={s.label}>{t.telegramOptional}</Text><TextInput accessibilityLabel={t.telegramOptional} autoCapitalize="none" autoCorrect={false} value={newTelegram} onChangeText={value => { setNewTelegram(value); searchNewPartnerField('telegram', value); }} editable={!busy} style={s.input} placeholder="@username" />
+        {newPartnerSearchError && <Text style={s.error}>{t.searchError}</Text>}
+        {!newPartnerSearchError && newPartnerSuggestions().length > 0 && <View style={s.card}>
+          <Text style={s.hint}>{t.newPartnerSuggestionsTitle}</Text>
+          {newPartnerSuggestions().map(candidate => <TouchableOpacity key={candidate.id} accessibilityRole="button" onPress={() => selectNewPartnerSuggestion(candidate)} style={s.candidateRow}>
+            <Text style={s.fact}>{candidate.nombreCompleto}</Text><Text style={s.link}>{t.selectPartner}</Text>
+          </TouchableOpacity>)}
+        </View>}
         <Text style={s.hint}>{t.requiredFields}</Text>
       </>}
     </View>;
+  }
+  function newPartnerSuggestions(): PartnerCandidate[] {
+    const byId = new Map<number, PartnerCandidate>();
+    [...newPartnerResults.firstName, ...newPartnerResults.lastName, ...newPartnerResults.whatsapp, ...newPartnerResults.telegram]
+      .forEach(candidate => byId.set(candidate.id, candidate));
+    return [...byId.values()];
   }
   function lookingForPartnerList() {
     return <View style={s.card}>

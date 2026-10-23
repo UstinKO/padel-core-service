@@ -474,9 +474,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function dashRenderResults(players) {
+    function dashRenderResults(players, isError) {
         dashSearchResults.innerHTML = '';
-        if (!players.length) {
+        if (isError) {
+            dashSearchResults.innerHTML =
+                `<li style="padding:.6rem 1rem; color:#A13F31; font-size:.9rem;">${t('details.search.error')}</li>`;
+        } else if (!players.length) {
             dashSearchResults.innerHTML =
                 `<li style="padding:.6rem 1rem; color:#9ca3af; font-size:.9rem;">${t('details.search.no_results')}</li>`;
         } else {
@@ -516,10 +519,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     const res = await fetch(
                         `/api/players/search?query=${encodeURIComponent(query)}&tournamentId=${tournamentId}`
                     );
-                    if (!res.ok) return;
-                    dashRenderResults(await res.json());
+                    if (!res.ok) { dashRenderResults([], true); return; }
+                    dashRenderResults(await res.json(), false);
                 } catch (e) {
-                    dashSearchResults.style.display = 'none';
+                    dashRenderResults([], true);
                 }
             }, 300);
         });
