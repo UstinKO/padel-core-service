@@ -1,7 +1,7 @@
 # LFPT-0721: Подсказки партнёра во всех полях формы «Новый партнёр» в 1Padel.App
 
 ## Статус
-approved
+done
 
 ## Источник
 GitHub issue [#721](https://github.com/UstinKO/padel-core-service/issues/721), прямая техническая постановка архитектора — этап 1 крупного клиентского ТЗ [#713](https://github.com/UstinKO/padel-core-service/issues/713) (`specs/features/LFPT-0713-poisk-partnera-otmena-americano-usloviya.md`). Зависит от [#720](https://github.com/UstinKO/padel-core-service/issues/720) (бэкенд: нормализованная защита от дублей), ветка создана от `feature/LFPT-0720`. Pipeline-Task: 5485.
