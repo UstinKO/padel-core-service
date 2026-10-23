@@ -5,15 +5,16 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <!-- Обновлено с 3.5.10 до 3.5.14 для исправления:
-             - CVE в ApplicationTemp (session persistence)
-             - CVE в ${random.value} (слабый PRNG)
-             - CVE в ApplicationPidFileWriter (symlink)
-             - CVE в Cassandra SSL (hostname verification)
-             - CVE в RabbitMQ SSL (hostname verification)
-             - CVE в DevTools (timing attack на remote secret)
-             - CVE в Actuator (Authentication Bypass) -->
-        <version>3.5.14</version>
+        <!-- 3.5.14 → 3.5.16 (LFPT-0725). Подтягивает исправленные:
+             - Spring Framework 6.2.19 (XSS в JavaScriptUtils, DoS через SpEL/versioned resources,
+               Open Redirect, multipart smuggling, предсказуемый session id WebSocket)
+             - Spring Security 6.5.11 (Open Redirect через CookieRequestCache)
+             - Spring Data 2025.0.13 (исчерпание heap через кэш property path)
+             - Spring Boot: SSL hostname verification в Mail auto-config (CVE-2026-40992)
+             - Micrometer 1.15.12 (DoS), Logback 1.5.34, Thymeleaf 3.1.5 (CVE-2026-41901, SSTI)
+             Не закрыты в 6.2.x (фикс только в Spring 7.0.9), к проекту неприменимы — не используем
+             SseEmitter/FragmentsRendering и XsltView: CVE-2026-47890, CVE-2026-47884. -->
+        <version>3.5.16</version>
         <relativePath/>
     </parent>
     <groupId>com.padle.core</groupId>
@@ -30,23 +31,28 @@
         <assertj.version>3.27.7</assertj.version>
         <!-- JWT версии -->
         <jjwt.version>0.12.6</jjwt.version>
-        <!-- Tomcat: 10.1.52 → 10.1.54 для исправления:
-             - CVE в CLIENT_CERT аутентификации
-             - CVE в JsonAccessLogValve (Improper Encoding)
-             - CVE в EncryptInterceptor (Padding Oracle)
-             - CVE в cipher preference order
-             - CVE в LoadBalancerDrainingValve (Open Redirect)
-             - CVE в Input Validation (CVE-2025-66614) -->
-        <tomcat.version>10.1.54</tomcat.version>
-        <!-- Jackson: 2.18.6 без изменений, актуальная -->
-        <jackson.version>2.18.6</jackson.version>
-        <!-- Thymeleaf: обновлён для исправления SSTI уязвимостей -->
-        <thymeleaf.version>3.1.4.RELEASE</thymeleaf.version>
+        <!-- Tomcat: 10.1.54 → 10.1.61 (Boot 3.5.16 даёт только 10.1.55) для исправления:
+             - CVE-2026-43515 (security constraints не применяются), CVE-2026-68525 (FORM auth),
+               CVE-2026-65182, CVE-2026-41293 (HTTP/2 headers), CVE-2026-43512/65905 (DIGEST) — CRITICAL
+             - CVE-2026-42498 (WebSocket auth header), CVE-2026-43513, CVE-2026-41284 — HIGH -->
+        <tomcat.version>10.1.61</tomcat.version>
+        <!-- Jackson: единая версия всех модулей через BOM Boot (раньше core/databind/annotations/jsr310
+             были закреплены на 2.18.6, а остальные модули шли из BOM 2.21.x — смешанные версии).
+             2.21.8 закрывает CVE-2026-54512/54513 (обход PolymorphicTypeValidator), CVE-2026-89425/89407/
+             68494/68497/91776/91777 (DoS), CVE-2026-54514/77310 (SSRF) и др. -->
+        <jackson-bom.version>2.21.8</jackson-bom.version>
+        <!-- Log4j API (транзитивно через log4j-to-slf4j): 2.24.3 → 2.25.5, CVE-2026-49844 -->
+        <log4j2.version>2.25.5</log4j2.version>
         <!-- Apache POI: 5.3.0 → 5.4.0 для исправления CVE в OOXML парсинге -->
         <poi.version>5.4.0</poi.version>
-        <!-- PostgreSQL JDBC: обновлён для исправления DoS в SCRAM-SHA-256 -->
-        <postgresql.version>42.7.11</postgresql.version>
-        <!-- Spring Framework: pinned to latest via Boot parent -->
+        <!-- PostgreSQL JDBC: 42.7.11 → 42.7.14, CVE-2026-54291 (даунгрейд channel binding) -->
+        <postgresql.version>42.7.14</postgresql.version>
+        <!-- Logback: 1.5.34 (Boot 3.5.16) → 1.5.38, последний патч ветки 1.5 -->
+        <logback.version>1.5.38</logback.version>
+        <!-- json-smart (транзитивно из spring-boot-starter-test): 2.5.2 → 2.6.0 -->
+        <json-smart.version>2.6.0</json-smart.version>
+        <!-- ASM (транзитивно через accessors-smart, Boot им не управляет): 9.7.1 → 9.11.1 -->
+        <asm.version>9.11.1</asm.version>
     </properties>
 
     <dependencies>
@@ -296,9 +302,14 @@
                                         <!-- Запрещаем уязвимые версии AssertJ -->
                                         <exclude>org.assertj:assertj-core:(,3.27.7)</exclude>
                                         <!-- Запрещаем уязвимые версии Tomcat -->
-                                        <exclude>org.apache.tomcat.embed:tomcat-embed-core:(,10.1.54)</exclude>
+                                        <exclude>org.apache.tomcat.embed:tomcat-embed-core:(,10.1.58)</exclude>
                                         <!-- Запрещаем уязвимые версии PostgreSQL JDBC -->
-                                        <exclude>org.postgresql:postgresql:(,42.7.11)</exclude>
+                                        <exclude>org.postgresql:postgresql:(,42.7.12)</exclude>
+                                        <!-- Запрещаем уязвимые версии Thymeleaf (CVE-2026-41901) -->
+                                        <exclude>org.thymeleaf:thymeleaf:(,3.1.5.RELEASE)</exclude>
+                                        <!-- Запрещаем уязвимые версии Jackson -->
+                                        <exclude>com.fasterxml.jackson.core:jackson-core:(,2.21.7)</exclude>
+                                        <exclude>com.fasterxml.jackson.core:jackson-databind:(,2.21.7)</exclude>
                                         <!-- Запрещаем уязвимые версии Apache POI -->
                                         <exclude>org.apache.poi:poi-ooxml:(,5.4.0)</exclude>
                                     </excludes>
@@ -344,43 +355,11 @@
                 <version>${tomcat.version}</version>
             </dependency>
 
-            <!-- Явно указываем версию Jackson -->
+            <!-- ASM -->
             <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-core</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-databind</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-annotations</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.datatype</groupId>
-                <artifactId>jackson-datatype-jsr310</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-
-            <!-- Явно указываем версию Thymeleaf для исправления SSTI -->
-            <dependency>
-                <groupId>org.thymeleaf</groupId>
-                <artifactId>thymeleaf</artifactId>
-                <version>${thymeleaf.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.thymeleaf</groupId>
-                <artifactId>thymeleaf-spring6</artifactId>
-                <version>${thymeleaf.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.thymeleaf.extras</groupId>
-                <artifactId>thymeleaf-extras-springsecurity6</artifactId>
-                <version>3.1.2.RELEASE</version>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm</artifactId>
+                <version>${asm.version}</version>
             </dependency>
 
             <!-- PostgreSQL JDBC Driver -->

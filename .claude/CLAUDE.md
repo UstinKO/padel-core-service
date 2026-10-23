@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **padel-core-service** — Spring Boot 3.x монолит для управления падель-турнирами. UI рендерится на сервере через Thymeleaf. Целевой рынок — Аргентина (валюта ARS, валидация телефона +54).
 
-**Stack:** Java 17 (source) / Java 21 (Docker/CI), Spring Boot 3.5.14, PostgreSQL 15, Liquibase, Spring Security (JWT + form login + Google OAuth2), Spring WebSocket (STOMP/SockJS), Micrometer + Prometheus + Grafana + Loki, Bucket4j, MapStruct, Lombok.
+**Stack:** Java 17 (source) / Java 21 (Docker/CI), Spring Boot 3.5.16, PostgreSQL 15, Liquibase, Spring Security (JWT + form login + Google OAuth2), Spring WebSocket (STOMP/SockJS), Micrometer + Prometheus + Grafana + Loki, Bucket4j, MapStruct, Lombok.
 
 **Server security stack:** Nginx (rate limiting, DDoS protection, Cloudflare real_ip_module) + CrowdSec (behavioral IDS/IPS, iptables bouncer) + UFW + Cloudflare CDN (orange cloud для `1-padel.com`). Подробнее — [.claude/SECURITY.md](.claude/SECURITY.md). Каталог атак, за счёт чего каждая останавливается, и открытые риски — [.claude/THREATS.md](.claude/THREATS.md).
 
