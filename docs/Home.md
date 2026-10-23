@@ -53,7 +53,7 @@ python3 .github/bin/docs-drift.py   # код возврата 1 — есть р�
 
 ```
 Java 17 (source) / Java 21 (Docker)
-Spring Boot 3.5.14
+Spring Boot 3.5.16
 PostgreSQL 15 + Liquibase
 Thymeleaf (SSR)
 Spring Security — JWT + Form Login + Google OAuth2
