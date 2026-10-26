@@ -612,7 +612,7 @@ tournaments_db
 | `player_id` | `BIGINT` | NOT NULL | — | FK → `player_padel_db.id` |
 | `initial_position` | `INTEGER` | NOT NULL | — | Начальная позиция (посев) |
 | `current_position` | `INTEGER` | NULL | — | Текущая позиция в рейтинге |
-| `status` | `VARCHAR(20)` | NOT NULL | `ACTIVE` | `ACTIVE` / `DROPPED_OUT` |
+| `status` | `VARCHAR(20)` | NOT NULL | `ACTIVE` | `ACTIVE` / `DROPPED_OUT` / `DISQUALIFIED` / `NO_SHOW` (LFPT-0729) |
 | `total_score` | `INTEGER` | NOT NULL | `0` | Сумма набранных очков |
 | `matches_played` | `INTEGER` | NOT NULL | `0` | — |
 | `matches_won` | `INTEGER` | NOT NULL | `0` | — |
@@ -645,7 +645,7 @@ tournaments_db
 | `player2_phone` | `VARCHAR(30)` | NULL | — | Телефон партнёра вне сайта |
 | `team_number` | `INTEGER` | NOT NULL | — | Порядковый номер команды |
 | `current_position` | `INTEGER` | NULL | — | Текущая позиция |
-| `status` | `VARCHAR(20)` | NOT NULL | `ACTIVE` | `ACTIVE` / `DROPPED_OUT` |
+| `status` | `VARCHAR(20)` | NOT NULL | `ACTIVE` | `ACTIVE` / `DROPPED_OUT` / `DISQUALIFIED` / `NO_SHOW` — «не пришла», исключена из подсчёта квалификации/посева плей-офф (LFPT-0729) |
 | `total_score` | `INTEGER` | NOT NULL | `0` | Сумма очков |
 | `matches_played` | `INTEGER` | NOT NULL | `0` | — |
 | `matches_won` | `INTEGER` | NOT NULL | `0` | — |

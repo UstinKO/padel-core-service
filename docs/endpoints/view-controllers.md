@@ -227,6 +227,8 @@
 | `POST /admin/{tournamentId}/teams/add` | admin | Добавить команду |
 | `POST /admin/teams/{teamId}/update` | admin | Обновить команду |
 | `POST /admin/teams/{teamId}/delete` | admin | Удалить команду |
+| `POST /admin/teams/{teamId}/no-show` | admin | Отметить команду «не пришла» (LFPT-0729) — блокируется, если у команды уже есть матч квалификации |
+| `POST /admin/teams/{teamId}/no-show/cancel` | admin | Отменить отметку «не пришла», команда возвращается в `ACTIVE` (LFPT-0729) |
 | `POST /admin/{tournamentId}/import-registrations` | admin | Импорт команд из регистраций |
 | `POST /admin/{tournamentId}/init-qualification` | admin | Инициализировать квалификацию |
 | `POST /admin/{tournamentId}/init-playoff` | admin | Инициализировать playoff |

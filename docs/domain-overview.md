@@ -535,6 +535,8 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 | `GET` | `/tournaments/team-playoff/admin/{tournamentId}/players/search` | Автодополнение игроков для формы «Добавить команду» (LFPT-0561). |
 | `POST` | `/tournaments/team-playoff/admin/teams/{teamId}/update` | Изменить команду. |
 | `POST` | `/tournaments/team-playoff/admin/teams/{teamId}/delete` | Удалить команду. |
+| `POST` | `/tournaments/team-playoff/admin/teams/{teamId}/no-show` | Отметить команду статусом «не пришла» (`AmericanoPlayerStatus.NO_SHOW`, LFPT-0729) — исключается из квалификации/посева плей-офф; блокируется, если у команды уже есть матч квалификации. |
+| `POST` | `/tournaments/team-playoff/admin/teams/{teamId}/no-show/cancel` | Отменить отметку «не пришла» — команда возвращается в `ACTIVE` (LFPT-0729). |
 | `POST` | `/tournaments/team-playoff/admin/{tournamentId}/import-registrations` | Импортировать пары из регистраций турнира. |
 | `POST` | `/tournaments/team-playoff/admin/{tournamentId}/init-qualification` | Сгенерировать квалификацию. |
 | `POST` | `/tournaments/team-playoff/admin/{tournamentId}/init-playoff` | Сгенерировать сетку плей-офф. |

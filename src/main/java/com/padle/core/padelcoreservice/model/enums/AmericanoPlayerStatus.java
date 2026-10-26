@@ -3,7 +3,8 @@ package com.padle.core.padelcoreservice.model.enums;
 public enum AmericanoPlayerStatus {
     ACTIVE("Activo"),
     DROPPED_OUT("Abandonó"),
-    DISQUALIFIED("Descalificado");
+    DISQUALIFIED("Descalificado"),
+    NO_SHOW("No se presentó");
 
     private final String value;
 

@@ -17,6 +17,8 @@ public class PaymentManagementViewDto {
     private String playerPhone;
     private String telegramUsername;
     private Integer position;
+    /** LFPT-0729: только для резерва ({@link #isReserve}) — позиция в очереди WAITLIST. */
+    private Integer waitlistPosition;
     private Boolean attended;
     private Boolean participationConfirmed;
 
@@ -51,4 +53,7 @@ public class PaymentManagementViewDto {
     // Заполняются контроллером поверх generic-данных PaymentService только для AMERICANO_TEAMS.
     private boolean canAddToTeamPlayoff;
     private boolean alreadyInTeamPlayoff;
+
+    /** LFPT-0729: true — регистрация в резерве (WAITLIST), а не в основном составе. */
+    private boolean isReserve;
 }

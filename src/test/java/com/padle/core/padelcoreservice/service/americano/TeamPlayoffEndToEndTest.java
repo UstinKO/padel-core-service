@@ -25,6 +25,7 @@ import com.padle.core.padelcoreservice.repository.americano.AmericanoMatchReposi
 import com.padle.core.padelcoreservice.repository.americano.AmericanoTeamRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.LoggerFactory;
@@ -41,9 +42,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -111,6 +114,48 @@ class TeamPlayoffEndToEndTest {
         assertNoUnexplainedRematchesInPlayoff(tournamentId);
         assertChampionAndRunnerUpDetermined(tournamentId);
         assertEliminatedTeamsExposeCorrectStage(tournamentId, teams);
+    }
+
+    /**
+     * LFPT-0729: из 8 зарегистрированных команд 1 отмечается «не пришла» ДО начала игр —
+     * квалификация проходит только между оставшимися 7. Без фикса {@code canInitPlayoff}/
+     * {@code initPlayoff} по-прежнему считали 8 команд (репозиторий ранжирования не фильтровал
+     * по статусу): при ровно 8 (степень двойки) команда NO_SHOW попадала в посев плей-офф, хотя
+     * ни разу не сыграла.
+     */
+    @Test
+    void noShowTeam_excludedFromQualificationCountAndPlayoffSeeding() {
+        Long tournamentId = createTournament(8);
+        List<AmericanoTeam> teams = createTeams(tournamentId, 8);
+
+        AmericanoTeam noShowTeam = teams.get(7);
+        playoffService.markNoShow(noShowTeam.getId());
+
+        List<AmericanoTeam> activeTeams = teams.subList(0, 7);
+        runQualification(tournamentId, activeTeams);
+        assertEachTeamPlayedExactlyTwoQualMatches(tournamentId, activeTeams);
+
+        assertThat(playoffService.canInitPlayoff(tournamentId)).isTrue();
+
+        playoffService.initPlayoff(tournamentId);
+
+        List<AmericanoMatch> playoffMatches = matchRepository
+                .findByTournamentIdAndPhase(tournamentId, TournamentPhase.PLAYOFF);
+        assertThat(playoffMatches).isNotEmpty();
+        boolean noShowTeamSeeded = playoffMatches.stream()
+                .anyMatch(m -> noShowTeam.getId().equals(m.getTeam1Id()) || noShowTeam.getId().equals(m.getTeam2Id()));
+        assertThat(noShowTeamSeeded)
+                .as("команда NO_SHOW не должна попасть ни в один матч плей-офф")
+                .isFalse();
+
+        // 7 активных команд (не степень двойки) → сетка на 4 (largestPowerOf2(7)), как если бы
+        // в турнире изначально было 7 команд.
+        long seededTeams = playoffMatches.stream()
+                .flatMap(m -> Stream.of(m.getTeam1Id(), m.getTeam2Id()))
+                .filter(Objects::nonNull)
+                .distinct()
+                .count();
+        assertThat(seededTeams).isEqualTo(4);
     }
 
     /**
