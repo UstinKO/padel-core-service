@@ -346,6 +346,8 @@ window.APP_MESSAGES = {
 
     // Playoff confirms
     'admin.playoff.confirm.delete_team':   'Удалить эту команду?',
+    'admin.playoff.confirm.no_show':       'Отметить эту команду как «не пришла»?',
+    'admin.playoff.confirm.no_show_cancel': 'Снять отметку «не пришла» с этой команды?',
     'admin.playoff.confirm.start_qual':    'Начать квалификацию?',
     'admin.playoff.confirm.start_playoff': 'Начать плей-офф с лучшими командами?',
     'admin.playoff.confirm.start_playoff_partial': 'Создать плей-офф по текущим результатам? Неопределившиеся пары будут дозаполнены позже.',

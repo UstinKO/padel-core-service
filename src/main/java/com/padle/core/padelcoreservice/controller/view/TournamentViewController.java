@@ -100,9 +100,18 @@ public class TournamentViewController {
                     .filter(r -> r.getPartnerNombre() != null)
                     .collect(Collectors.toList());
 
+            // LFPT-0730: резервные пары (WAITLIST) — отдельная секция «Список ожидания», видимая
+            // по именам, а не только счётчиком (getRegistrationsByTournament уже дедуплицирует
+            // до одной строки на пару).
+            List<TournamentRegistrationDto> reserveDoubleRegistrations = registrations.stream()
+                    .filter(r -> Boolean.TRUE.equals(r.getIsDoubleRegistration())
+                            && r.getStatus() == RegistrationStatus.WAITLIST)
+                    .collect(Collectors.toList());
+
             model.addAttribute("confirmedRegistrations", confirmedRegistrations);
             model.addAttribute("activeDoubleRegistrations", activeDoubleRegistrations);
             model.addAttribute("confirmedPairsRegistrations", confirmedPairsRegistrations);
+            model.addAttribute("reserveDoubleRegistrations", reserveDoubleRegistrations);
 
             // Логируем для отладки
             for (TournamentRegistrationDto reg : registrations) {

@@ -346,6 +346,8 @@ window.APP_MESSAGES = {
 
     // Playoff confirms
     'admin.playoff.confirm.delete_team':   '¿Eliminar este equipo?',
+    'admin.playoff.confirm.no_show':       '¿Marcar este equipo como no presentado?',
+    'admin.playoff.confirm.no_show_cancel': '¿Quitar la marca de no presentado a este equipo?',
     'admin.playoff.confirm.start_qual':    '¿Iniciar calificación?',
     'admin.playoff.confirm.start_playoff': '¿Iniciar playoff con los mejores equipos?',
     'admin.playoff.confirm.start_playoff_partial': '¿Crear el playoff con los resultados actuales? Las parejas aún no definidas se completarán más adelante.',

@@ -358,7 +358,38 @@
                             /
                             <span class="negative" th:text="${team.gamesLost}">0</span>
                         </td>
-                        <td>
+                        <td style="white-space:nowrap">
+                            <!-- LFPT-0730: отметка «не пришла» (LFPT-0729) — доступна независимо от qualStarted,
+                                 backend сам блокирует, если у команды уже есть матч квалификации. -->
+                            <form th:if="${team.status == 'ACTIVE'}"
+                                  th:action="@{'/tournaments/team-playoff/admin/teams/' + ${team.id} + '/no-show'}"
+                                  method="post"
+                                  onsubmit="return confirm(t('admin.playoff.confirm.no_show'))"
+                                  style="display:inline">
+                                <input type="hidden" name="tournamentId" th:value="${tournament.id}">
+                                <button type="submit" class="btn-sm btn-outline"
+                                        th:title="#{admin.playoff.btn.no_show_title}">
+                                    <i class="fas fa-user-clock"></i>
+                                    <span th:text="#{admin.playoff.btn.no_show}">No se presentó</span>
+                                </button>
+                            </form>
+                            <th:block th:if="${team.status == 'NO_SHOW'}">
+                                <span class="badge-not-attended" th:title="#{admin.playoff.btn.no_show_title}">
+                                    <i class="fas fa-user-clock"></i>
+                                    <span th:text="#{admin.playoff.badge.no_show}">No se presentó</span>
+                                </span>
+                                <form th:action="@{'/tournaments/team-playoff/admin/teams/' + ${team.id} + '/no-show/cancel'}"
+                                      method="post"
+                                      onsubmit="return confirm(t('admin.playoff.confirm.no_show_cancel'))"
+                                      style="display:inline">
+                                    <input type="hidden" name="tournamentId" th:value="${tournament.id}">
+                                    <button type="submit" class="btn-sm btn-outline"
+                                            th:title="#{admin.playoff.btn.no_show_cancel_title}">
+                                        <i class="fas fa-undo"></i>
+                                        <span th:text="#{admin.playoff.btn.no_show_cancel}">Cancelar marca</span>
+                                    </button>
+                                </form>
+                            </th:block>
                             <form th:if="${not qualStarted}"
                                   th:action="@{'/tournaments/team-playoff/admin/teams/' + ${team.id} + '/delete'}"
                                   method="post"
