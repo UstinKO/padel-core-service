@@ -24,7 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * LFPT-0677: {@code GET /api/admin/players/duplicates-audit} — только read-only доступ для
+ * {@code GET /api/admin/players/duplicates-audit} — только read-only доступ для
  * {@code ROLE_SUPER_ADMIN}, остальным (включая {@code ORGANIZER}) и анониму — отказ. Сервис
  * замокан — сами эвристики проверяет {@link com.padle.core.padelcoreservice.service.PlayerDuplicatesAuditServiceTest}.
  */

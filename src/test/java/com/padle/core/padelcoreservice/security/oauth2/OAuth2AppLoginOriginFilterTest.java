@@ -13,9 +13,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * LFPT-0637: el filtro solo debe marcar la sesión cuando el login de Google se
- * inicia explícitamente con {@code ?client=app} en el propio endpoint de inicio —
- * nunca a partir de un redirect_uri arbitrario (evita un open redirect).
+ * Фильтр помечает сессию, только когда вход через Google явно инициирован с
+ * {@code ?client=app} на самом эндпоинте инициации — никогда по произвольному
+ * redirect_uri (иначе открылся бы open redirect).
  */
 class OAuth2AppLoginOriginFilterTest {
 

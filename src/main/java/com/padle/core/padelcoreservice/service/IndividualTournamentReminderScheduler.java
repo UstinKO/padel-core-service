@@ -24,10 +24,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * LFPT-443: email-напоминания за 5 часов до начала индивидуальных турниров
- * (AMERICANO, KING_OF_COURT) и Cancha Abierta — с разным текстом письма для каждой группы.
+ * Email-напоминания за 5 часов до начала индивидуальных турниров (AMERICANO, KING_OF_COURT)
+ * и Cancha Abierta — с разным текстом письма для каждой группы.
  * Дедуп — персистентный (Tournament.startReminderSentAt), по образцу
- * PairTournamentReminderScheduler (LFPT-437).
+ * PairTournamentReminderScheduler.
  */
 @Slf4j
 @Component

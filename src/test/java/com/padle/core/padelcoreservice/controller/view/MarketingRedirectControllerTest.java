@@ -11,7 +11,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-// LFPT-0489: короткая ссылка /ig-bio для профиля Instagram (аналог LFPT-0472).
+// Короткая ссылка /ig-bio для профиля Instagram.
 @SpringBootTest
 @AutoConfigureMockMvc
 @TestPropertySource(properties = {

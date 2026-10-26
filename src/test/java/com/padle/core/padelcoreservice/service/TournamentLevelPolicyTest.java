@@ -143,9 +143,9 @@ class TournamentLevelPolicyTest {
     @EnumSource(value = Nivel.class, names = {"TODOS", "PRINCIPIANTES", "SIN_ESPECIFICAR",
             "C9_C8", "C7_C6", "D7_D8", "D5_D4", "SUMA_13", "SUMA_16", "D5", "D4"})
     void categoriasNoSimples_noAplicanElChequeoIndependientementeDelNivelDelJugador(Nivel categoria) {
-        // Ninguna de estas categorías es Nivel.isPlayerLevel — el chequeo no se aplica,
-        // incluso para un jugador sin nivel especificado (#303: SUMA_*, rangos, TODOS,
-        // PRINCIPIANTES y D5/D4 quedan fuera de esta regla, no solo "lejos" del jugador).
+        // Ни одна из этих категорий не Nivel.isPlayerLevel — проверка не применяется даже
+        // для игрока без указанного уровня (SUMA_*, диапазоны, TODOS, PRINCIPIANTES и D5/D4
+        // вне этого правила, а не просто "далеко" от игрока).
         TournamentLevelPolicy.Result result =
                 TournamentLevelPolicy.evaluate(TournamentType.AMERICANO, categoria, Nivel.SIN_ESPECIFICAR);
 

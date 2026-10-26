@@ -7,7 +7,7 @@ import lombok.Data;
 import java.math.BigDecimal;
 
 /**
- * Write-модель для PaymentManagementController.savePayments() (issue #130) —
+ * Write-модель для PaymentManagementController.savePayments() —
  * только поля, реально нужные PaymentService.savePaymentManagementData().
  * Отдельно от PaymentManagementViewDto, который остаётся read-моделью для
  * страницы управления платежами (там полей вдвое больше, они не нужны на запись).

@@ -21,7 +21,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import java.util.List;
 
 /**
- * LFPT-0623: публичное (анонимное) чтение расписания турниров для мобильного клиента.
+ * Публичное (анонимное) чтение расписания турниров для мобильного клиента.
  * Переиспользует {@code TournamentService.getActiveTournamentsForHome()}/{@code
  * getActiveTournamentById()} — те же методы и правила видимости, что у публичных страниц
  * {@code /} и {@code /torneo/{id}}. Только чтение: мутации остаются под авторизацией.

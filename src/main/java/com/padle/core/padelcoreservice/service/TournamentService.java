@@ -100,8 +100,8 @@ public class TournamentService {
     }
 
     /**
-     * LFPT-491: турниры SOLO_POR_ENLACE не должны попадать в публичные списки/расписание/
-     * поиск, но доступ по id (прямая ссылка) не фильтруется — см. getActiveTournamentById и т.п.
+     * Турниры SOLO_POR_ENLACE не попадают в публичные списки/расписание/поиск, но доступ
+     * по id (прямая ссылка) не фильтруется — см. getActiveTournamentById и т.п.
      */
     private List<TournamentDto> filterPublicOnly(List<TournamentDto> dtos) {
         return dtos.stream()
@@ -184,7 +184,7 @@ public class TournamentService {
 
     /**
      * Результат для дашборда игрока: исторические турниры + id турниров с активной регистрацией.
-     * Оба списка строятся из одного запроса регистраций — см. #178.
+     * Оба списка строятся из одного запроса регистраций.
      */
     public record PlayerDashboardTournaments(List<TournamentDto> historical, List<Long> activeTournamentIds) {}
 
@@ -215,17 +215,17 @@ public class TournamentService {
     }
 
     /**
-     * LFPT-0637: одна запись «Мои мероприятия» — турнир + статус и позиция в листе
-     * ожидания собственной регистрации игрока (не инварианты статуса самого турнира).
+     * Одна запись «Мои мероприятия» — турнир + статус и позиция в листе ожидания
+     * собственной регистрации игрока (не инварианты статуса самого турнира).
      */
     public record MyTournamentEntry(TournamentDto tournament, RegistrationStatus registrationStatus,
                                      Integer waitlistPosition, LocalDateTime registrationDate) {}
 
     /**
-     * LFPT-0637: обзор «Мои мероприятия» для клиента 1Padel.App — read-only, то же
-     * разбиение турниров по {@link TournamentStatus}, что и в дашборде игрока
+     * Обзор «Мои мероприятия» для клиента 1Padel.App — только чтение, то же разбиение
+     * турниров по {@link TournamentStatus}, что и в дашборде игрока
      * ({@link #getHistoricalAndActiveTournamentsByPlayer}), но с сохранением статуса/
-     * позиции в листе ожидания каждой регистрации (дашборду это не требовалось).
+     * позиции в листе ожидания каждой регистрации.
      */
     public record PlayerTournamentsOverview(List<MyTournamentEntry> upcoming, List<TournamentDto> historical) {}
 
@@ -307,8 +307,8 @@ public class TournamentService {
         }
         // ========== КОНЕЦ ПРОВЕРКИ ==========
 
-        // LFPT-0303: правило "±1 ступень" для самостоятельной регистрации на категорийный
-        // турнир. Не применяется к ручной регистрации через TestTournamentController
+        // Правило "±1 ступень" для самостоятельной регистрации на категорийный турнир.
+        // Не применяется к ручной регистрации через TestTournamentController
         // (там своя JDBC-логика, этот метод не вызывается).
         TournamentLevelPolicy.assertEligible(tournament.getTipo(), tournament.getCategoriaNivel(),
                 player.getNivelJugador(), messageSource, LocaleContextHolder.getLocale());
@@ -545,10 +545,10 @@ public class TournamentService {
                 tournamentId, tournament.getModalidad(), confirmedSpots, availableSlots);
 
         if (availableSlots > 0) {
-            // LFPT-0668: для DOBLES резерв может содержать заявки без партнёра («ожидает
-            // партнёра», SOLO_ADD_LATER, переведённые в WAITLIST по дедлайну) — их нельзя
-            // авто-подтверждать наравне с полностью сформированными парами. Для INDIVIDUAL
-            // партнёра у регистраций нет вовсе, фильтр по нему неприменим.
+            // Для DOBLES резерв может содержать заявки без партнёра («ожидает партнёра»,
+            // SOLO_ADD_LATER, переведённые в WAITLIST по дедлайну) — их нельзя авто-подтверждать
+            // наравне с полностью сформированными парами. Для INDIVIDUAL партнёра у регистраций
+            // нет вовсе, фильтр по нему неприменим.
             List<TournamentRegistration> waitlist = tournament.getModalidad() == Modalidad.DOBLES
                     ? registrationRepository.findByTournamentIdAndStatusAndPartnerIsNotNullOrderByWaitlistPositionAsc(
                             tournamentId, RegistrationStatus.WAITLIST)
@@ -557,10 +557,10 @@ public class TournamentService {
 
             log.info("Found {} available slots and {} players in waitlist", availableSlots, waitlist.size());
 
-            // LFPT-0668: для DOBLES availableSlots — это свободные МЕСТА ДЛЯ ПАР (countConfirmedPairs),
-            // а waitlist — отдельные РЯДЫ регистраций (по 2 на пару, с общим waitlistPosition). Старый
-            // код confirм'ил ряды по одному — при availableSlots=1 мог подтвердить только одного игрока
-            // из пары, оставив партнёра в резерве. Подтверждаем пары атомарно, по позиции целиком.
+            // Для DOBLES availableSlots — это свободные места для пар (countConfirmedPairs),
+            // а waitlist — отдельные ряды регистраций (по 2 на пару, с общим waitlistPosition).
+            // Подтверждение по одному ряду при availableSlots=1 подтвердило бы только одного
+            // игрока из пары, поэтому пары подтверждаются атомарно, по позиции целиком.
             if (tournament.getModalidad() == Modalidad.DOBLES) {
                 confirmDoublesPairsFromWaitlist(waitlist, availableSlots, tournament);
             } else {
@@ -578,7 +578,7 @@ public class TournamentService {
         }
     }
 
-    // LFPT-0668: подтверждает полные пары WAITLIST из резерва атомарно (оба ряда сразу), в порядке
+    // Подтверждает полные пары WAITLIST из резерва атомарно (оба ряда сразу), в порядке
     // waitlistPosition, пока не исчерпаны availableSlots (одна пара = один слот). Ряды с одинаковым
     // waitlistPosition принадлежат одной паре — так их создают все пути регистрации пары.
     private void confirmDoublesPairsFromWaitlist(List<TournamentRegistration> waitlist, int availableSlots,
@@ -873,9 +873,9 @@ public class TournamentService {
                     Tournament updated = tournamentRepository.save(existingTournament);
                     log.info("Updated tournament with id: {} by owner: {}", id, owner.getId());
 
-                    // LFPT-0729: увеличение cupoMax освобождает места — переводим пары из
-                    // резерва (WAITLIST) в порядке регистрации, как и при освобождении места
-                    // отменой (processWaitlistForTournament уже делает именно это).
+                    // Увеличение cupoMax освобождает места — переводим пары из резерва
+                    // (WAITLIST) в порядке регистрации, как и при освобождении места
+                    // отменой (processWaitlistForTournament делает именно это).
                     if (updated.getCupoMax() > previousCupoMax) {
                         processWaitlistForTournament(id);
                     }
@@ -1017,7 +1017,7 @@ public class TournamentService {
         return mapToDtoWithDetails(tournamentRepository.findTopByOrderByCreatedAtDesc(limit));
     }
 
-    // LFPT-0546: клубная статистика главной админ-панели (AdminController) — CLUB_ADMIN
+    // Клубная статистика главной админ-панели (AdminController) — CLUB_ADMIN
     // видит только свой клуб, не всю платформу.
     @Transactional(readOnly = true)
     public long getTotalActiveTournamentsForClub(Long clubId) {
@@ -1078,7 +1078,7 @@ public class TournamentService {
 
     /**
      * Батч-версия mapToDtoWithDetails для списков: один запрос на клубы + один на счётчики
-     * регистраций вместо N+1 (см. #177). Переиспользует mapToDtoWithBatchedData —
+     * регистраций вместо N+1. Переиспользует mapToDtoWithBatchedData —
      * тот же паттерн, что и getActiveTournamentsForHome.
      */
     private List<TournamentDto> mapToDtoWithDetails(List<Tournament> tournaments) {
@@ -1289,8 +1289,8 @@ public class TournamentService {
         existing.setDuracion(dto.getDuracion());
         existing.setGeneroFormato(dto.getGeneroFormato());
         existing.setCategoriaNivel(Nivel.valueOf(dto.getCategoriaNivel()));
-        // LFPT-374: nombre se regenera siempre a partir de generoFormato/categoriaNivel
-        // ya actualizados arriba — ya no se ingresa manualmente en el formulario.
+        // nombre всегда пересобирается из уже обновлённых выше generoFormato/categoriaNivel —
+        // вручную в форме не вводится.
         existing.setNombre(Tournament.generateNombre(existing.getGeneroFormato(), existing.getCategoriaNivel()));
         existing.setTipo(dto.getTipo());
         existing.setModalidad(dto.getModalidad());
@@ -1370,7 +1370,7 @@ public class TournamentService {
         return registrationRepository.countTotalWaitlist();
     }
 
-    // LFPT-0546: клубная статистика главной админ-панели — лист ожидания только своего клуба.
+    // Клубная статистика главной админ-панели — лист ожидания только своего клуба.
     @Transactional(readOnly = true)
     public long getTotalWaitlistCountForClub(Long clubId) {
         return registrationRepository.countTotalWaitlistByClub(clubId);
@@ -1454,7 +1454,7 @@ public class TournamentService {
 
     /**
      * Данные для страницы подтверждения приглашения (GET-шаг) — без побочных эффектов,
-     * безопасно для пред-фетча ссылок email-сканерами (issue #194). Реальное подтверждение
+     * безопасно для пред-фетча ссылок email-сканерами. Реальное подтверждение
      * происходит только через {@link #confirmFromWaitlist(String)} по явному действию (POST).
      */
     public record WaitlistInvitationPreview(
@@ -1571,7 +1571,7 @@ public class TournamentService {
     }
 
     /**
-     * LFPT-443: отмечает/снимает опоздание игрока в индивидуальном турнире (AMERICANO/KING_OF_COURT).
+     * Отмечает/снимает опоздание игрока в индивидуальном турнире (AMERICANO/KING_OF_COURT).
      * Применяет/возвращает штраф −10 к текущему результату игрока в этом турнире.
      * Идемпотентно — повторный вызов с тем же значением lateArrival не меняет результат повторно.
      */

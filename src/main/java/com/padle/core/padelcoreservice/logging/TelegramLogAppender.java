@@ -23,10 +23,9 @@ public class TelegramLogAppender extends AppenderBase<ILoggingEvent> {
         String message = event.getFormattedMessage();
         if (message == null) message = "";
 
-        // LFPT-0518: сообщения, собранные через StructuredAlert, уже полностью готовы
-        // (эмодзи по уровню серьёзности, Event, поля, Request ID, Time) — отправляем как есть,
-        // не оборачивая в старый формат "🔴 <class>". Остальные логи (не мигрированные на
-        // StructuredAlert) — прежнее поведение без изменений.
+        // Сообщения, собранные через StructuredAlert, уже полностью готовы
+        // (эмодзи по уровню серьёзности, Event, поля, Request ID, Time) — отправляем как есть.
+        // Остальные логи оборачиваются в формат "🔴 <class>".
         boolean structured = "true".equals(event.getMDCPropertyMap().get(StructuredAlert.STRUCTURED_MDC_KEY));
         if (structured) {
             if (message.length() > 1200) message = message.substring(0, 1200) + "…";

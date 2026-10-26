@@ -33,9 +33,9 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 /**
- * LFPT-0303: integración del chequeo de nivel en los puntos de auto-registro de
- * {@link DoubleTournamentRegistrationService} (registro de pareja con compañero
- * ya existente, y soло-registro). La lógica pura está en {@link TournamentLevelPolicyTest}.
+ * Проверка уровня в точках самостоятельной регистрации {@link DoubleTournamentRegistrationService}
+ * (регистрация пары с уже существующим партнёром и соло-регистрация). Чистая логика —
+ * в {@link TournamentLevelPolicyTest}.
  */
 @ExtendWith(MockitoExtension.class)
 class DoubleTournamentRegistrationLevelRestrictionTest {
@@ -120,11 +120,11 @@ class DoubleTournamentRegistrationLevelRestrictionTest {
 
     @Test
     void companeroSinCuenta_noBloqueaPorNivel_seRegistraDeInmediatoConNivelSinEspecificar() {
-        // Sin existingUserId y sin email/teléfono coincidente con ningún jugador —
-        // findPartner no encuentra cuenta, el nivel del compañero aún no existe (SIN_ESPECIFICAR
-        // se asigna al crear la cuenta en registerWithNewPartner, LFPT-0687: la pareja se
-        // registra de inmediato, sin esperar confirmación) — esta llamada no debe lanzar
-        // PlayerLevelRequiredException/level_mismatch por el compañero.
+        // Без existingUserId и без email/телефона, совпадающего с каким-либо игроком —
+        // findPartner не находит аккаунт, уровня партнёра ещё нет (SIN_ESPECIFICAR присваивается
+        // при создании аккаунта в registerWithNewPartner, пара регистрируется сразу, без ожидания
+        // подтверждения) — этот вызов не должен бросать PlayerLevelRequiredException/level_mismatch
+        // из-за партнёра.
         PartnerRegistrationDto partnerDto = new PartnerRegistrationDto();
         partnerDto.setNombre("Pareja");
         partnerDto.setApellido("Nueva");
@@ -132,7 +132,7 @@ class DoubleTournamentRegistrationLevelRestrictionTest {
         partnerDto.setEmail("nueva-pareja@example.com");
 
         when(playerRepository.findByEmail("nueva-pareja@example.com")).thenReturn(Optional.empty());
-        // LFPT-0720: findPartnerByContact ahora usa la búsqueda normalizada de teléfono/Telegram.
+        // findPartnerByContact использует нормализованный поиск по телефону/Telegram.
         when(playerRepository.findByNormalizedTelefono(any())).thenReturn(Optional.empty());
         when(playerRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(registrationRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));

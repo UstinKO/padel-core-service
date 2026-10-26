@@ -17,11 +17,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * LFPT-376: единая точка принятия решения "может ли этот Owner управлять этим турниром".
- * SUPER_ADMIN/ADMIN — доступ ко всем турнирам (без изменений, существующее поведение).
+ * Единая точка принятия решения "может ли этот Owner управлять этим турниром".
+ * SUPER_ADMIN/ADMIN — доступ ко всем турнирам.
  * CLUB_ADMIN — доступ только если Owner.clubId совпадает с Tournament.clubId (оба не null).
  * Остальные (OWNER/ORGANIZER) — доступ только если Tournament.ownerId совпадает с Owner.id.
- * Резолверы по производным ID разворачивают их до турнира через уже существующие JPA-связи
+ * Резолверы по производным ID разворачивают их до турнира через существующие JPA-связи
  * и делегируют в основную проверку.
  */
 @Service

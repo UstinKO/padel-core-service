@@ -86,7 +86,7 @@ public class PlayerPadel implements UserDetails {
     @Column(name = "password_changed_at")
     private LocalDateTime passwordChangedAt;
 
-    // issue #82: NOT NULL с DEFAULT 'SIN_ESPECIFICAR' (миграция v1.44) — ddl-auto=none,
+    // NOT NULL с DEFAULT 'SIN_ESPECIFICAR' (миграция v1.44) — ddl-auto=none,
     // так что nullable=false тут не меняет схему сам по себе, только документирует её
     // реальное состояние в БД.
     @Enumerated(EnumType.STRING)
@@ -176,7 +176,7 @@ public class PlayerPadel implements UserDetails {
      * регистрировался (см. TestTournamentController.resolveOrCreateGuestPlayer).
      * У таких аккаунтов временный email вида guest.<timestamp>@1padel.guest —
      * единственный признак, по которому в /perfil и в админке разрешается смена
-     * email/выдача временного пароля (issue #217).
+     * email/выдача временного пароля.
      */
     public static boolean isGuestEmail(String email) {
         return email != null && email.endsWith(GUEST_EMAIL_SUFFIX);

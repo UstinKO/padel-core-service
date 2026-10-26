@@ -36,7 +36,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * LFPT-360: то же самое, что {@code TeamPlayoffGuestPartnerDisplayTest}, но для формата
+ * То же самое, что {@code TeamPlayoffGuestPartnerDisplayTest}, но для формата
  * Team Americano (round-robin) — команда с гостевым (незарегистрированным) вторым игроком
  * не должна терять партнёра в отображении матчей публичной страницы турнира.
  */

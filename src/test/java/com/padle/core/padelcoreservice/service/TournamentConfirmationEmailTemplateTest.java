@@ -12,10 +12,10 @@ import java.util.Locale;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * LFPT-0662: email/tournament-confirmation.html debía mostrar siempre "24 horas"/"24 часа"
- * sin importar el deadline de cancelación real del torneo (individual o por defecto).
- * Ahora el texto usa el valor efectivo ya formateado (Tournament.getFormattedCancellationDeadline()),
- * pasado como variable "cancellationDeadline".
+ * email/tournament-confirmation.html показывает реальный дедлайн отмены турнира
+ * (индивидуальный или по умолчанию), а не фиксированные "24 horas"/"24 часа": текст берёт уже
+ * отформатированное значение (Tournament.getFormattedCancellationDeadline()) из переменной
+ * "cancellationDeadline".
  */
 @SpringBootTest
 @TestPropertySource(properties = {

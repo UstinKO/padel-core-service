@@ -34,9 +34,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 
 /**
- * LFPT-398: registrarVictoria/registrarDerrota/inicializarRanking no deben fallar
- * para un jugador que todavía no tiene fila en ranking_db (caso estándar de un
- * jugador nuevo/poco activo que recién recibe un resultado de partido).
+ * registrarVictoria/registrarDerrota/inicializarRanking не падают для игрока, у которого
+ * ещё нет строки в ranking_db (обычный случай нового/малоактивного игрока, впервые
+ * получающего результат матча).
  */
 @SpringBootTest
 @TestPropertySource(properties = {
@@ -107,9 +107,9 @@ class RankingServiceTest {
 
     @Test
     void updateMatchResult_jugadoresSinRankingPrevio_flujoCompletoNoFalla() {
-        // Reproduce el escenario end-to-end del issue: MatchService.updateMatchResult
-        // (el mismo camino que POST /admin/tournaments/{id}/matches/{matchId}, LFPT-394)
-        // para dos jugadores que todavía no tienen fila en ranking_db.
+        // Сквозной сценарий: MatchService.updateMatchResult (тот же путь, что
+        // POST /admin/tournaments/{id}/matches/{matchId}) для двух игроков, у которых ещё нет
+        // строки в ranking_db.
         PlayerPadel winner = createPlayer();
         PlayerPadel loser = createPlayer();
         Match match = createMatch(winner.getId(), loser.getId());

@@ -23,16 +23,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 /**
- * LFPT-314: юнит-тест на GET /tournaments/americano/admin/{tournamentId}/preview.
- * До фикса неинициализированная ветка возвращала несуществующий шаблон
- * admin/americano/initialize (TemplateInputException в реальном рендеринге),
- * а инициализированная ветка редиректила на несуществующий /admin/tournaments/americano/{id}.
- *
- * LFPT-316: тот же паттерн бага в соседнем методе showInitializeForm
- * (GET /tournaments/americano/{tournamentId}/initialize) — см. тесты showInitializeForm_*.
- *
- * LFPT-330: шесть GET-роутов ссылались на несуществующие шаблоны
- * (register/rounds/round/match/match-result/player-stats) — теперь редиректят на рабочие страницы.
+ * Роуты AmericanoViewController без собственных шаблонов редиректят на рабочие страницы:
+ * GET /tournaments/americano/admin/{tournamentId}/preview и
+ * GET /tournaments/americano/{tournamentId}/initialize (см. тесты showInitializeForm_*) —
+ * на страницу деталей турнира или страницу турнира; шесть GET-роутов
+ * register/rounds/round/match/match-result/player-stats — на страницу турнира или рейтинга.
  */
 class AmericanoViewControllerTest {
 
@@ -94,9 +89,8 @@ class AmericanoViewControllerTest {
     }
 
     /**
-     * LFPT-317: admin/tournaments/details.html (целевая страница редиректа) читает
+     * admin/tournaments/details.html (целевая страница редиректа) читает
      * только errorMessage/successMessage — flash-атрибут "error" на ней невидим.
-     * До фикса контроллер слал именно "error" сюда.
      */
     @Test
     void wrongTournamentType_redirectsWithErrorMessageAttribute() {
@@ -111,11 +105,10 @@ class AmericanoViewControllerTest {
     }
 
     /**
-     * LFPT-316: юнит-тест на GET /tournaments/americano/{tournamentId}/initialize.
-     * До фикса неинициализированная ветка возвращала несуществующий шаблон
-     * tournaments/americano/initialize (TemplateInputException в реальном рендеринге).
-     * Роут реально достижим не только прямым набором URL — catch-блок previewRounds
-     * (строка 255 контроллера) редиректит сюда при ошибке AmericanoService.previewRounds.
+     * GET /tournaments/americano/{tournamentId}/initialize. Роут достижим не только прямым
+     * набором URL — catch-блок previewRounds редиректит сюда при ошибке
+     * AmericanoService.previewRounds, поэтому для неинициализированного турнира он должен
+     * редиректить на страницу деталей, а не рендерить несуществующий шаблон.
      */
     @Test
     void showInitializeForm_notInitialized_redirectsToTournamentDetailsWithoutNewFlash() {
@@ -149,8 +142,8 @@ class AmericanoViewControllerTest {
 
         String view = controller.showInitializeForm(TOURNAMENT_ID, model, redirectAttributes);
 
-        // Целевой URL /tournaments/{id} ведёт на несуществующий роут — известная, отдельная
-        // находка (LFPT-317), сознательно не чинится в этой фиче (см. спеку LFPT-316, "Вне скоупа").
+        // Целевой URL /tournaments/{id} ведёт на несуществующий роут — известная отдельная
+        // проблема, этот тест её не проверяет.
         assertThat(view).isEqualTo("redirect:/tournaments/" + TOURNAMENT_ID);
         assertThat(redirectAttributes.getFlashAttributes().get("error"))
                 .isEqualTo("Este torneo no es de tipo Americano");

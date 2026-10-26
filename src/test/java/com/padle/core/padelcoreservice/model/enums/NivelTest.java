@@ -7,8 +7,8 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * LFPT-373: escalas masculina/femenina/mixto completas de {@link Nivel} y filtrado por
- * {@link GenderFormat} en el formulario de torneo.
+ * Полные мужская/женская/смешанная шкалы {@link Nivel} и фильтрация по
+ * {@link GenderFormat} в форме турнира.
  */
 class NivelTest {
 
@@ -33,8 +33,8 @@ class NivelTest {
 
     @Test
     void femenino_contieneTodasLasParejasAdyacentes_reutilizandoD7D8Legacy() {
-        // D7_D8 ya existía antes de LFPT-373 (valor legacy usado por torneos existentes) —
-        // se reutiliza como la pareja D8/D7 en vez de crear un D8_C7 duplicado.
+        // D7_D8 — legacy-значение, которое используют существующие турниры, — переиспользуется
+        // как пара D8/D7 вместо дублирующего D8_C7.
         assertThat(List.of(Nivel.D9_D8, Nivel.D7_D8, Nivel.D7_D6, Nivel.D6_D5, Nivel.D5_D4))
                 .allMatch(nivel -> nivel.getGeneroAplicable() == GenderFormat.FEMENINO);
     }

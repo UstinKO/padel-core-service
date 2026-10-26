@@ -71,9 +71,8 @@ public class OAuth2UserManagementService {
                     .oauth2User(true)
                     .passwordChangedAt(LocalDateTime.now())
                     .preferredLocale("es")
-                    // issue #82: nivel_jugador es NOT NULL — el login con Google no pregunta
-                    // el nivel, así que no hay valor real que poner acá todavía (el jugador
-                    // lo completa después en /perfil).
+                    // nivel_jugador — NOT NULL: вход через Google не спрашивает уровень, реального
+                    // значения пока нет (игрок заполняет его позже в /perfil).
                     .nivelJugador(Nivel.SIN_ESPECIFICAR)
                     .build();
 

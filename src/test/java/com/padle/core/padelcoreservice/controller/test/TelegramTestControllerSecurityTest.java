@@ -23,10 +23,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * LFPT-0423: /test/telegram/** раньше был в permitAll и в CSRF-исключениях — любой анонимный
- * запрос мог слать сообщения в рабочую группу и напоминания игрокам. Проверяет правила доступа
- * через реальную цепочку фильтров Spring Security (MockMvc), Telegram-сервисы замоканы —
- * ни одно сообщение не уходит.
+ * Правила доступа к /test/telegram/**: эндпоинты шлют сообщения в рабочую группу
+ * и напоминания игрокам, поэтому аноним и не-SUPER_ADMIN получают отказ, а мутации идут
+ * под CSRF. Проверка через реальную цепочку фильтров Spring Security (MockMvc),
+ * Telegram-сервисы замоканы — ни одно сообщение не уходит.
  */
 @SpringBootTest
 @AutoConfigureMockMvc

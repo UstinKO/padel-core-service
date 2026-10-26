@@ -11,8 +11,8 @@ import java.time.LocalTime;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * LFPT-0662: cancellationDeadlineFormatted debe reflejar el dedline efectivo
- * (individual si fue fijado, si no "inicio - 24h") — el mismo que usa canCancelRegistration().
+ * cancellationDeadlineFormatted отражает эффективный дедлайн (индивидуальный, если задан,
+ * иначе "старт - 24ч") — тот же, что проверяет canCancelRegistration().
  */
 class TournamentMapperTest {
 

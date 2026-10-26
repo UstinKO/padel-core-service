@@ -21,9 +21,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrlPattern;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-// LFPT-0499: GET /recuperar-password con token inválido/expirado/usado ya no debe
-// devolver la view "error" inexistente (templates/error.html no existe a nivel raíz,
-// causaba TemplateInputException / 500) — debe redirigir a /login?error=reset_expired.
+// GET /recuperar-password с невалидным/просроченным/использованным токеном редиректит
+// на /login?error=reset_expired, а не отдаёт view "error" (такого шаблона на корневом
+// уровне нет — TemplateInputException / 500).
 @SpringBootTest
 @AutoConfigureMockMvc
 @TestPropertySource(properties = {

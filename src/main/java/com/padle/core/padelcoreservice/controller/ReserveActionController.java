@@ -15,7 +15,7 @@ import org.springframework.stereotype.Controller;
 
 import java.util.Locale;
 
-// LFPT-0668: self-service действия из email для резервной заявки без партнёра — без логина,
+// Self-service действия из email для резервной заявки без партнёра — без логина,
 // по токену (аналогично /waitlist/confirm). Переиспользует общий шаблон waitlist-confirmation.
 @Controller
 @RequestMapping("/reserva/accion")

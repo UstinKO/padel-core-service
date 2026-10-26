@@ -29,10 +29,10 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * LFPT-443: email-напоминание за 5ч до начала индивидуального турнира (AMERICANO/KING_OF_COURT)
+ * Email-напоминание за 5ч до начала индивидуального турнира (AMERICANO/KING_OF_COURT)
  * и Cancha Abierta. Проверяет персистентную защиту от дублей (Tournament.startReminderSentAt)
  * и то, что текст письма меняется в зависимости от tipo — по образцу
- * PairTournamentReminderSchedulerTest (LFPT-437).
+ * PairTournamentReminderSchedulerTest.
  */
 @SpringBootTest
 @TestPropertySource(properties = {
@@ -189,8 +189,8 @@ class IndividualTournamentReminderSchedulerTest {
 
         assertThat(html).contains("View event", "Follow the tournament live",
                         "https://1-padel.com/torneo/42")
-                // Текст самого письма остаётся испанским (LFPT-437/443) — LFPT-460 локализует
-                // только кнопку-ссылку.
+                // Текст самого письма остаётся испанским — локализуется
+                // только кнопка-ссылка.
                 .contains("Te pedimos llegar 15 minutos antes");
     }
 
@@ -225,7 +225,7 @@ class IndividualTournamentReminderSchedulerTest {
 
         assertThat(html).contains("Открыть мероприятие", "Посмотреть информацию о мероприятии",
                 "https://1-padel.com/torneo/42");
-        // Cancha Abierta не предоставляет live-информацию по сетке/рейтингу (LFPT-460) — у этого
+        // Cancha Abierta не предоставляет live-информацию по сетке/рейтингу — у этого
         // шаблона нет блока live-info вообще, в отличие от individual/pair.
         assertThat(html).doesNotContain("Следите за турниром в реальном времени");
     }

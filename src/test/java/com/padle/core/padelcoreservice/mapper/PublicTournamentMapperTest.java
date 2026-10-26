@@ -14,7 +14,7 @@ import java.time.LocalTime;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * LFPT-0623: контракт публичного DTO для мобильного приложения — часовой пояс,
+ * Контракт публичного DTO для мобильного приложения — часовой пояс,
  * единица вместимости, отсутствующий дедлайн не превращается в выдуманную дату.
  */
 class PublicTournamentMapperTest {

@@ -35,9 +35,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * LFPT-367: cola de espera para parejas de calificación sin cancha asignada — un partido puede
- * crearse antes de que haya una cancha libre ({@code QUEUED}), ambos equipos quedan ocupados
- * (igual que si ya estuvieran jugando), y el coordinador asigna la cancha después, uno a la vez.
+ * Очередь ожидания для пар квалификации без корта: матч может быть создан до того, как
+ * освободится корт ({@code QUEUED}), обе команды считаются занятыми (как если бы уже играли),
+ * а координатор назначает корт позже, по одному.
  */
 @SpringBootTest
 @TestPropertySource(properties = {

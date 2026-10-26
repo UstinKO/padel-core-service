@@ -132,7 +132,7 @@ public class HomeController {
         return "error/rate-limit";
     }
 
-    // #278: дружелюбная страница вместо Whitelabel Error Page — на неё редиректит
+    // Дружелюбная страница вместо Whitelabel Error Page — на неё редиректит
     // CustomAccessDeniedHandler для всех 403, кроме отдельно обработанного случая
     // GET /admin/tournaments/{id} у авторизованного не-админа (тот редиректит на
     // публичную страницу турнира напрямую, минуя эту страницу).

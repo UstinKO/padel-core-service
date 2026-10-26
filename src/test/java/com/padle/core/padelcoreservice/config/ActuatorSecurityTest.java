@@ -13,8 +13,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * LFPT-0604: раньше весь /actuator/** был в permitAll. Анонимно доступны только health
- * (readiness деплоя) и prometheus (скрейп изнутри Docker-сети), остальное — через логин.
+ * Анонимно из /actuator/** доступны только health (readiness деплоя) и prometheus
+ * (скрейп изнутри Docker-сети), остальное — через логин.
  */
 @SpringBootTest
 @AutoConfigureMockMvc

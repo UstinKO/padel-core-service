@@ -51,8 +51,8 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * T17: сквозные regression-тесты полного цикла Team Playoff (квалификация → плей-офф → финал)
- * для каждого N от 8 до 16 — весь диапазон, поддержанный таблицей ТЗ §4 (T13-T16).
+ * Сквозные regression-тесты полного цикла Team Playoff (квалификация → плей-офф → финал)
+ * для каждого N от 8 до 16 — весь поддерживаемый диапазон.
  * <p>
  * Гоняет турнир через реальный {@link TeamPlayoffService} (не HTTP) с реальной БД —
  * {@code @Transactional} на тесте откатывает все изменения после каждого прогона,
@@ -117,11 +117,10 @@ class TeamPlayoffEndToEndTest {
     }
 
     /**
-     * LFPT-0729: из 8 зарегистрированных команд 1 отмечается «не пришла» ДО начала игр —
-     * квалификация проходит только между оставшимися 7. Без фикса {@code canInitPlayoff}/
-     * {@code initPlayoff} по-прежнему считали 8 команд (репозиторий ранжирования не фильтровал
-     * по статусу): при ровно 8 (степень двойки) команда NO_SHOW попадала в посев плей-офф, хотя
-     * ни разу не сыграла.
+     * Из 8 зарегистрированных команд 1 отмечается «не пришла» до начала игр —
+     * квалификация проходит только между оставшимися 7, и {@code canInitPlayoff}/{@code initPlayoff}
+     * считают 7 команд: команда NO_SHOW не попадает в посев плей-офф, хотя при 8 командах
+     * (степень двойки) попала бы.
      */
     @Test
     void noShowTeam_excludedFromQualificationCountAndPlayoffSeeding() {
@@ -159,9 +158,9 @@ class TeamPlayoffEndToEndTest {
     }
 
     /**
-     * #271: команды приходят не одновременно — квалификация должна стартовать всего от 2 команд,
+     * Команды приходят не одновременно — квалификация стартует всего от 2 команд,
      * не дожидаясь полного набора на четвертьфинал. Плей-офф здесь намеренно не проверяется —
-     * он по-прежнему требует достаточного числа команд и стартует отдельной кнопкой позже.
+     * он требует достаточного числа команд и стартует отдельной кнопкой позже.
      */
     @ParameterizedTest(name = "{0} equipos (solo calificación)")
     @ValueSource(ints = {2, 3})
@@ -244,9 +243,9 @@ class TeamPlayoffEndToEndTest {
 
     /**
      * Прогоняет квалификацию через реальный court-driven механизм: сначала попарно
-     * назначает всех "нетронутых" команд (оставляя, при нечётном N, одну "дополнительную" —
-     * T14), затем следует предложениям {@link TeamPlayoffService#suggestSecondRoundPairings}
-     * (T5/T14/T15) до тех пор, пока каждая команда не сыграет ровно 2 матча.
+     * назначает всех "нетронутых" команд (оставляя, при нечётном N, одну "дополнительную"),
+     * затем следует предложениям {@link TeamPlayoffService#suggestSecondRoundPairings}
+     * до тех пор, пока каждая команда не сыграет ровно 2 матча.
      */
     private void runQualification(Long tournamentId, List<AmericanoTeam> teams) {
         playoffService.initQualification(tournamentId, 8);
@@ -294,7 +293,7 @@ class TeamPlayoffEndToEndTest {
         }
     }
 
-    /** Структурная гарантия T5/T14/T15: победитель-к-победителю/проигравший-к-проигравшему не может повторить пару 1-го тура. */
+    /** Структурная гарантия: победитель-к-победителю/проигравший-к-проигравшему не может повторить пару 1-го тура. */
     private void assertNoRematchesWithinQualification(Long tournamentId) {
         List<AmericanoMatch> qualMatches = matchRepository.findByTournamentIdAndPhase(tournamentId, TournamentPhase.QUALIFICATION);
         Set<String> seenPairs = new HashSet<>();
@@ -309,7 +308,7 @@ class TeamPlayoffEndToEndTest {
     // ПЛЕЙ-ОФФ
     // ═══════════════════════════════════════════════════════════════════════
 
-    /** ТЗ §4 (T13): проверяет, что число напрямую посеянных команд и play-in-матчей точно соответствует таблице. */
+    /** Число напрямую посеянных команд и play-in-матчей точно соответствует таблице PlayoffFormat. */
     private void assertQuarterFinalSeedingMatchesSpecTable(Long tournamentId, int teamCount) {
         List<AmericanoMatch> qfMatches = matchRepository.findByTournamentIdAndPlayoffStage(tournamentId, PlayoffStage.QUARTER_FINAL);
         assertThat(qfMatches).hasSize(4);
@@ -344,9 +343,9 @@ class TeamPlayoffEndToEndTest {
     }
 
     /**
-     * ТЗ §1/§36 (T13/T16): если в итоговой сетке плей-офф встретились две команды, уже
-     * игравшие друг с другом в квалификации, это допустимо только как задокументированное
-     * исключение — в логах должно быть явное предупреждение о неизбежном/непредотвращённом рематче.
+     * Если в итоговой сетке плей-офф встретились две команды, уже игравшие друг с другом
+     * в квалификации, это допустимо только как задокументированное исключение — в логах
+     * должно быть явное предупреждение о неизбежном/непредотвращённом рематче.
      */
     private void assertNoUnexplainedRematchesInPlayoff(Long tournamentId) {
         Map<Long, Set<Long>> qualOpponents = buildOpponentsMap(
@@ -383,7 +382,7 @@ class TeamPlayoffEndToEndTest {
     }
 
     /**
-     * LFPT-0388: колонка «Ситуация» показывает не просто общий статус «Выбыла», а этап плей-офф,
+     * Колонка «Ситуация» показывает не просто общий статус «Выбыла», а этап плей-офф,
      * на котором команда закончила турнир — проверяет, что {@code eliminatedStage} в DTO совпадает
      * с этапом последнего сыгранного командой матча плей-офф и является реальным довфинальным этапом.
      */

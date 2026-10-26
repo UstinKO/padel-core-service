@@ -23,9 +23,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 /**
- * LFPT-0677: группировка/нормализация/эвристики {@link PlayerDuplicatesAuditService} на
- * заранее подготовленном наборе игроков — сценарии из спеки
- * {@code specs/features/LFPT-0677-аудит-дублей-игроков.md} (критерии приёмки).
+ * Группировка/нормализация/эвристики {@link PlayerDuplicatesAuditService} на
+ * заранее подготовленном наборе игроков.
  */
 @ExtendWith(MockitoExtension.class)
 class PlayerDuplicatesAuditServiceTest {

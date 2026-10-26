@@ -53,14 +53,14 @@ public class SecurityBeansConfig {
     @Bean
     public CustomOAuth2UserService customOAuth2UserService() {
         CustomOAuth2UserService service = new CustomOAuth2UserService(oAuth2UserManagementService); // Передаем зависимость
-        // LFPT-0726: запрос userinfo — с обработчиком ошибок без oauth2-oidc-sdk/json-smart
+        // Запрос userinfo — с обработчиком ошибок без oauth2-oidc-sdk/json-smart
         RestTemplate restTemplate = new RestTemplate();
         restTemplate.setErrorHandler(new OAuth2ProviderErrorHandler());
         service.setRestOperations(restTemplate);
         return service;
     }
 
-    // LFPT-0726: обмен кода Google на токен — как дефолтный клиент Spring Security, но с
+    // Обмен кода Google на токен — как дефолтный клиент Spring Security, но с
     // OAuth2ProviderErrorHandler вместо OAuth2ErrorResponseErrorHandler (тому нужен json-smart)
     @Bean
     public OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> authorizationCodeTokenResponseClient() {
@@ -79,7 +79,7 @@ public class SecurityBeansConfig {
         return new OAuth2AuthenticationSuccessHandler(rememberMeServices(), jwtService);
     }
 
-    // #297: общий на форму-логин и Google OAuth2 — единственный источник remember-me
+    // Общий на форму-логин и Google OAuth2 — единственный источник remember-me
     // cookie в приложении, чтобы RememberMeAuthenticationFilter (проверка на следующих
     // запросах) и OAuth2AuthenticationSuccessHandler (явная выдача после Google-логина)
     // работали с одним и тем же ключом/сроком действия.

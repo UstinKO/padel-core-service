@@ -25,7 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * LFPT-0637: {@code GET /api/players/me/tournaments} («Мои мероприятия» для клиента
+ * {@code GET /api/players/me/tournaments} («Мои мероприятия» для клиента
  * 1Padel.App) — через реальную цепочку Spring Security, сервис замокан.
  */
 @SpringBootTest

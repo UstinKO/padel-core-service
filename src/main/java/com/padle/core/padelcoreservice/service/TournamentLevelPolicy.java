@@ -26,7 +26,7 @@ public final class TournamentLevelPolicy {
     private static final int MAX_STEP_DIFFERENCE = 1;
 
     // Открытые форматы, где организатор не ограничивает участников по уровню —
-    // правило не применяется независимо от categoriaNivel (issue #303, ответ заказчика).
+    // правило не применяется независимо от categoriaNivel.
     private static final Set<TournamentType> EXEMPT_TYPES =
             EnumSet.of(TournamentType.CANCHA_ABIERTA, TournamentType.PADEL_CLINIC);
 
@@ -46,10 +46,9 @@ public final class TournamentLevelPolicy {
     }
 
     // Правило применяется только к "простым" категориям, напрямую сопоставимым с уровнем
-    // игрока (Nivel.isPlayerLevel — те же 10 значений, что и PlayerPadel.nivelJugador,
-    // issue #206). Диапазоны (C9_C8, D7_D8...), TODOS, PRINCIPIANTES, SUMA_* и D5/D4
-    // (ещё не назначаемые игроку, см. #373) — структурно "непростые" категории, заказчик
-    // явно вывел SUMA_* и подобные из скоупа этой задачи; остаются без ограничения.
+    // игрока (Nivel.isPlayerLevel — те же 10 значений, что и PlayerPadel.nivelJugador).
+    // Диапазоны (C9_C8, D7_D8...), TODOS, PRINCIPIANTES, SUMA_* и D5/D4 (ещё не назначаемые
+    // игроку) — структурно "непростые" категории и остаются без ограничения.
     public static boolean requiresLevelCheck(TournamentType tipo, Nivel categoriaNivel) {
         return Nivel.isPlayerLevel(categoriaNivel) && !EXEMPT_TYPES.contains(tipo);
     }

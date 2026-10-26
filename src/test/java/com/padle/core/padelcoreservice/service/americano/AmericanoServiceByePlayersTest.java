@@ -33,8 +33,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 /**
- * LFPT-0525: расчёт отдыхающих игроков раунда не пишет INFO-логов (метод вызывается
- * на каждый раунд при каждом просмотре страницы турнира) и даёт прежний результат.
+ * Расчёт отдыхающих игроков раунда не пишет INFO-логов (метод вызывается
+ * на каждый раунд при каждом просмотре страницы турнира) и даёт корректный результат.
  */
 @ExtendWith(MockitoExtension.class)
 class AmericanoServiceByePlayersTest {

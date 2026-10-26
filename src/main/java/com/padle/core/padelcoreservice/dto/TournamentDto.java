@@ -27,7 +27,7 @@ public class TournamentDto {
     private String clubNombre;
     private String clubDireccion;
     private String nombre;
-    // LFPT-384: форматы HTML5 date/time/datetime-local — иначе th:field выводит значение
+    // Форматы HTML5 date/time/datetime-local — иначе th:field выводит значение
     // в формате локали ("12/1/26", "10:00 AM"), и браузер молча блокирует сабмит формы
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate fechaInicio;
@@ -44,7 +44,7 @@ public class TournamentDto {
     private TournamentStatus estado;
     @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm")
     private LocalDateTime deadlineCancelacion;
-    // LFPT-0662: дедлайн отмены, который реально проверяет Tournament.canCancelRegistration()
+    // Дедлайн отмены, который реально проверяет Tournament.canCancelRegistration()
     // (индивидуальный, если задан, иначе "старт - 24ч"), уже отформатированный для показа игроку.
     private String cancellationDeadlineFormatted;
     private String infoDetallada;

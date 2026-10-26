@@ -39,7 +39,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * LFPT-0668: перевод "Agrega compañero luego" в резерв по точному дедлайну (старт - 24ч),
+ * Перевод "Agrega compañero luego" в резерв по точному дедлайну (старт - 24ч),
  * возврат в основной состав с учётом очерёдности резерва, self-service действия по токену.
  */
 @ExtendWith(MockitoExtension.class)

@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
 /**
- * Публичный контракт расписания (LFPT-0623, мобильное приложение). Без полей управления
+ * Публичный контракт расписания для мобильного приложения. Без полей управления
  * ({@code ownerId}, {@code createdBy}), контакта организатора и данных об участниках —
  * см. {@code docs/endpoints/public-schedule.md}.
  */

@@ -41,8 +41,8 @@ public class PasswordResetController {
         boolean tokenValido = passwordResetService.validateToken(token);
 
         if (!tokenValido) {
-            // LFPT-0499: antes se devolvía la view "error", que no existe
-            // (templates/error.html no existe a nivel raíz) — TemplateInputException, 500.
+            // Не view "error": такого шаблона на корневом уровне нет (templates/error.html),
+            // это дало бы TemplateInputException и 500.
             return "redirect:/login?error=reset_expired";
         }
 

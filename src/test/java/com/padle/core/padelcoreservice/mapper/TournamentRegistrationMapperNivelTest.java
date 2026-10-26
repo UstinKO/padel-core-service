@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * LFPT-483: уровень игрока/партнёра (PlayerPadel.nivelJugador) должен попадать
+ * Уровень игрока/партнёра (PlayerPadel.nivelJugador) должен попадать
  * в TournamentRegistrationDto — модель, которую bracket/Cancha Abierta
  * передают в публичный шаблон списка участников.
  */
@@ -37,8 +37,8 @@ class TournamentRegistrationMapperNivelTest {
 
     @Test
     void toDto_jugadorSinNivel_playerNivelEsNull() {
-        // PlayerPadel.nivelJugador es NOT NULL en BD (issue #82) — "sin especificar" se
-        // codifica como Nivel.SIN_ESPECIFICAR, no como null de Java.
+        // PlayerPadel.nivelJugador — NOT NULL в БД: "уровень не указан" кодируется
+        // как Nivel.SIN_ESPECIFICAR, а не как Java null.
         PlayerPadel player = PlayerPadel.builder().id(1L).nombre("Juan").apellido("Perez")
                 .nivelJugador(Nivel.SIN_ESPECIFICAR).build();
         TournamentRegistration registration = TournamentRegistration.builder()

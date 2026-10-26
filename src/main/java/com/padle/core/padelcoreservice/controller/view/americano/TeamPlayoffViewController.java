@@ -128,7 +128,7 @@ public class TeamPlayoffViewController {
             applyQualMatchOrdinals(tournamentId, qualRoundDtos);
             model.addAttribute("ranking", ranking);
             model.addAttribute("qualRounds", splitQualificationWaves(qualRoundDtos));
-            // LFPT-465: доступность кнопки "Начать плей-офф" до полного завершения
+            // Доступность кнопки "Начать плей-офф" до полного завершения
             // квалификации — см. TeamPlayoffService.canInitPlayoff.
             model.addAttribute("canInitPlayoff", !playoffStarted && playoffService.canInitPlayoff(tournamentId));
         }
@@ -156,7 +156,7 @@ public class TeamPlayoffViewController {
                           RedirectAttributes ra,
                           @AuthenticationPrincipal Owner currentOwner) {
         tournamentAccessService.assertCanManageTournament(currentOwner, tournamentId);
-        // LFPT-0572: форма «+ Добавить пару вручную» на странице оплат (returnTo=payments) —
+        // Форма «+ Добавить пару вручную» на странице оплат (returnTo=payments) —
         // та же логика добавления команды, но координатор возвращается на страницу оплат, а не
         // на страницу Team Playoff; у двух страниц разные имена flash-атрибутов для сообщений.
         boolean returnToPayments = "payments".equals(returnTo);
@@ -173,8 +173,8 @@ public class TeamPlayoffViewController {
     }
 
     /**
-     * LFPT-0561: поиск активных игроков (имя/фамилия/телефон/email) для формы «Добавить
-     * команду» — заменяет ручной ввод {@code player1Id}/{@code player2Id} автодополнением.
+     * Поиск активных игроков (имя/фамилия/телефон/email) для автодополнения в форме
+     * «Добавить команду».
      */
     @GetMapping("/admin/{tournamentId}/players/search")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
@@ -309,7 +309,7 @@ public class TeamPlayoffViewController {
         return "redirect:/tournaments/team-playoff/admin/" + tournamentId;
     }
 
-    /** Issue #298 п.2: пересобрать плей-офф после правки результата квалификации. */
+    /** Пересобрать плей-офф после правки результата квалификации. */
     @PostMapping("/admin/{tournamentId}/regenerate-playoff")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     public String regeneratePlayoff(@PathVariable Long tournamentId, RedirectAttributes ra,
@@ -398,7 +398,7 @@ public class TeamPlayoffViewController {
         return ResponseEntity.ok(result);
     }
 
-    /** LFPT-367: ставит пару в очередь без назначения корта. */
+    /** Ставит пару в очередь без назначения корта. */
     @PostMapping("/api/{tournamentId}/qual-matches/queue")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     @ResponseBody
@@ -421,7 +421,7 @@ public class TeamPlayoffViewController {
         return ResponseEntity.ok(result);
     }
 
-    /** LFPT-367: asigna una cancha libre a un partido de la cola — sale de la cola y pasa a EN_CURSO. */
+    /** Назначает свободный корт матчу из очереди — матч выходит из очереди и переходит в IN_PROGRESS. */
     @PostMapping("/api/matches/{matchId}/assign-court")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     @ResponseBody
@@ -443,7 +443,7 @@ public class TeamPlayoffViewController {
         return ResponseEntity.ok(result);
     }
 
-    /** LFPT-367: quita un partido de la cola de espera por completo. */
+    /** Полностью убирает матч из очереди ожидания. */
     @PostMapping("/api/matches/{matchId}/queue/remove")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     @ResponseBody
@@ -461,7 +461,7 @@ public class TeamPlayoffViewController {
         return ResponseEntity.ok(result);
     }
 
-    /** Меняет корт ещё не завершённого матча (T11 — ручное управление координатором). */
+    /** Меняет корт ещё не завершённого матча (ручное управление координатором). */
     @PostMapping("/api/matches/{matchId}/court")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     @ResponseBody
@@ -483,7 +483,7 @@ public class TeamPlayoffViewController {
         return ResponseEntity.ok(result);
     }
 
-    /** Заменяет команду в паре ещё не завершённого матча (T11). slot=1|2. Реванш не блокирует, только предупреждает. */
+    /** Заменяет команду в паре ещё не завершённого матча. slot=1|2. Реванш не блокирует, только предупреждает. */
     @PostMapping("/api/matches/{matchId}/team")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     @ResponseBody
@@ -507,7 +507,7 @@ public class TeamPlayoffViewController {
         return ResponseEntity.ok(result);
     }
 
-    /** Issue #298 п.3: команды-кандидаты для обмена с указанным слотом матча плей-офф (соседние матчи той же стадии). */
+    /** Команды-кандидаты для обмена с указанным слотом матча плей-офф (соседние матчи той же стадии). */
     @GetMapping("/api/matches/{matchId}/swap-candidates")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     @ResponseBody
@@ -517,7 +517,7 @@ public class TeamPlayoffViewController {
         return ResponseEntity.ok(playoffService.getPlayoffSwapCandidates(matchId));
     }
 
-    /** Issue #298 п.3: меняет местами команды в двух ещё не завершённых матчах плей-офф. slot=1|2 в каждом. */
+    /** Меняет местами команды в двух ещё не завершённых матчах плей-офф. slot=1|2 в каждом. */
     @PostMapping("/api/matches/{matchId}/swap-team")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     @ResponseBody
@@ -594,7 +594,7 @@ public class TeamPlayoffViewController {
     /**
      * Доска кортов: статус каждого корта (свободен/занят + текущий матч), пул команд,
      * доступных для назначения прямо сейчас, и предложенные пары 2-го тура квалификации
-     * (победитель-к-победителю/проигравший-к-проигравшему, T5) — по одной на свободный корт.
+     * (победитель-к-победителю/проигравший-к-проигравшему) — по одной на свободный корт.
      */
     @GetMapping("/api/{tournamentId}/court-board")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
@@ -634,8 +634,8 @@ public class TeamPlayoffViewController {
 
     private List<AmericanoRoundDto> buildRoundDtos(List<AmericanoRound> rounds) {
         return rounds.stream().map(round -> {
-            // LFPT-367: los partidos en cola (sin cancha aún) tienen su propio bloque ("Cola de espera") —
-            // no se listan aquí junto a los partidos ya jugados/en curso de la ronda.
+            // У матчей в очереди (ещё без корта) свой блок («Cola de espera») — здесь они
+            // не перечисляются вместе с уже сыгранными/идущими матчами раунда.
             List<AmericanoMatch> matches = matchRepository.findByRoundId(round.getId()).stream()
                     .filter(m -> !m.isQueued())
                     .toList();
@@ -658,7 +658,7 @@ public class TeamPlayoffViewController {
         }).toList();
     }
 
-    /** Issue #298 п.1: проставляет "1-й"/"2-й" квалификационный матч команды на уже собранные round dto. */
+    /** Проставляет "1-й"/"2-й" квалификационный матч команды на уже собранные round dto. */
     private void applyQualMatchOrdinals(Long tournamentId, List<AmericanoRoundDto> qualRoundDtos) {
         Map<Long, int[]> ordinals = playoffService.computeQualMatchOrdinals(tournamentId);
         qualRoundDtos.forEach(round -> round.getMatches().forEach(match -> {
@@ -671,12 +671,12 @@ public class TeamPlayoffViewController {
     }
 
     /**
-     * LFPT-348: квалификация Team Playoff технически — единый round-контейнер
+     * Квалификация Team Playoff технически — единый round-контейнер
      * ({@link TeamPlayoffService#getOrCreateQualificationRound}), где вперемешку лежат 1-й и
      * 2-й квалификационный матч каждой команды. Разбивает его на до 2 визуальных "волн" по уже
      * вычисленным {@code team1MatchOrdinal}/{@code team2MatchOrdinal} (см. {@link #applyQualMatchOrdinals},
      * должен быть вызван раньше) и сортирует матчи внутри волны по номеру корта. "Пограничный"
-     * матч нечётного случая (T14 — ordinal команд отличается, "дополнительная" команда играет
+     * матч нечётного случая (ordinal команд отличается, "дополнительная" команда играет
      * против соперника, для которого это уже 2-й матч) относится к {@code max(ordinal1, ordinal2)} —
      * ко 2-й волне, раз для соперника она уже фактически идёт.
      */

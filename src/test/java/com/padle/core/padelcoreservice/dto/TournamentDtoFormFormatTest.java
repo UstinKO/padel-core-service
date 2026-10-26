@@ -15,10 +15,10 @@ import java.util.Locale;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * LFPT-384: th:field форматирует значение через ConversionService с учётом аннотаций поля.
- * Без @DateTimeFormat LocalDate/LocalTime выводились в коротком формате локали
+ * th:field форматирует значение через ConversionService с учётом аннотаций поля.
+ * Без @DateTimeFormat LocalDate/LocalTime выводятся в коротком формате локали
  * ("12/1/26", "10:00 AM"), который HTML5 date/time/datetime-local не принимает —
- * браузер молча блокировал сабмит формы редактирования турнира.
+ * браузер молча блокирует сабмит формы редактирования турнира.
  */
 class TournamentDtoFormFormatTest {
 

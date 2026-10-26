@@ -9,7 +9,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * LFPT-348: квалификация Team Playoff технически хранится как единый round-контейнер
+ * Квалификация Team Playoff технически хранится как единый round-контейнер
  * (см. {@code TeamPlayoffService.getOrCreateQualificationRound}) — {@link TeamPlayoffViewController#splitQualificationWaves}
  * разбивает его на до 2 визуальных волн ("Раунд 1"/"Раунд 2") и сортирует матчи внутри волны по корту.
  * Не требует Spring-контекста — метод не обращается к внедрённым зависимостям контроллера.
@@ -56,7 +56,7 @@ class TeamPlayoffViewControllerWaveSplitTest {
         assertThat(waves.get(0).getRoundNumber()).isEqualTo(1);
     }
 
-    /** T14: "дополнительная" команда играет свой 1-й матч против соперника, для которого это уже 2-й — относится к волне 2. */
+    /** "Дополнительная" команда играет свой 1-й матч против соперника, для которого это уже 2-й — относится к волне 2. */
     @Test
     void mismatchedOrdinals_assignedToMaxWave() {
         AmericanoRoundDto container = AmericanoRoundDto.builder()

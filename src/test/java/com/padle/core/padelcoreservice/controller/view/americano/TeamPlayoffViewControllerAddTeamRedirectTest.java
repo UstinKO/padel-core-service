@@ -19,9 +19,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doThrow;
 
 /**
- * LFPT-0572: {@code returnTo=payments} переключает редирект и имя flash-атрибута на странице
+ * {@code returnTo=payments} переключает редирект и имя flash-атрибута на странице
  * «Оплаты и посещаемость» ({@code successMessage}/{@code errorMessage}, а не {@code success}/
- * {@code error}, которые читает страница Team Playoff) — без этого форма на странице оплат (#573)
+ * {@code error}, которые читает страница Team Playoff) — без этого форма на странице оплат
  * после сохранения уводила бы координатора обратно на страницу Team Playoff.
  */
 class TeamPlayoffViewControllerAddTeamRedirectTest {

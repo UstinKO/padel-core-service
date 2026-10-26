@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// LFPT-0518: классификация серьёзности Telegram-алерта на регистрации — бизнес-исключение
+// Классификация серьёзности Telegram-алерта на регистрации — бизнес-исключение
 // TournamentService vs непредвиденная ошибка. Чистая функция, без Spring-контекста.
 class PlayerDashboardControllerTest {
 

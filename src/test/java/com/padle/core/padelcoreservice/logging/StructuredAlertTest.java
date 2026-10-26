@@ -12,7 +12,7 @@ import org.slf4j.MDC;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// LFPT-0518: StructuredAlert — чистая логика форматирования алерта, без Spring-контекста.
+// StructuredAlert — чистая логика форматирования алерта, без Spring-контекста.
 class StructuredAlertTest {
 
     private Logger logger;

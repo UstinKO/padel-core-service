@@ -12,7 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-// LFPT-0643: веб-клиент 1Padel.App на /app/ доступен анонимно, приватный API — нет.
+// Веб-клиент 1Padel.App на /app/ доступен анонимно, приватный API — нет.
 @SpringBootTest
 @AutoConfigureMockMvc
 @TestPropertySource(properties = {

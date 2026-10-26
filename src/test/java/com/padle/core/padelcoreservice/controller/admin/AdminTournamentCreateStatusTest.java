@@ -31,9 +31,9 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * LFPT-0558: клубный аккаунт (ROLE_CLUB_ADMIN) не выбирает статус турнира при создании —
+ * Клубный аккаунт (ROLE_CLUB_ADMIN) не выбирает статус турнира при создании —
  * сервер принудительно ставит REGISTRO_ABIERTO, независимо от значения из формы. Для
- * SUPER_ADMIN/ORGANIZER поведение не меняется (регресс).
+ * SUPER_ADMIN/ORGANIZER статус берётся из формы.
  */
 @SpringBootTest
 @TestPropertySource(properties = {

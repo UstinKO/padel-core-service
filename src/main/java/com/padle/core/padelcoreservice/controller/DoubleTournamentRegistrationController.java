@@ -65,7 +65,7 @@ public class DoubleTournamentRegistrationController {
             return ResponseEntity.ok(response);
 
         } catch (PlayerLevelRequiredException e) {
-            // LFPT-0303: уровень не указан — needLevel для фронтенд-попапа "Указать уровень"
+            // Уровень не указан — needLevel для фронтенд-попапа "Указать уровень"
             response.put("success", false);
             response.put("message", e.getMessage());
             response.put("needLevel", true);
@@ -101,7 +101,7 @@ public class DoubleTournamentRegistrationController {
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
 
         } catch (DataIntegrityViolationException e) {
-            // LFPT-0720: запасной рубеж на случай гонки, которую не поймал advisory-lock
+            // Запасной рубеж на случай гонки, которую не поймал advisory-lock
             // (confirmPartnerRegistration) — не падать 500 на уникальном индексе Telegram.
             return ResponseEntity.badRequest().body(Map.of("success", false,
                     "message", "Este número de teléfono o Telegram ya está registrado"));
@@ -198,8 +198,8 @@ public class DoubleTournamentRegistrationController {
             return ResponseEntity.badRequest().body(response);
 
         } catch (DataIntegrityViolationException e) {
-            // LFPT-0720: запасной рубеж на случай гонки, которую не поймал advisory-lock —
-            // как уже сделано в registerForDoubleTournament.
+            // Запасной рубеж на случай гонки, которую не поймал advisory-lock —
+            // как и в registerForDoubleTournament.
             response.put("success", false);
             response.put("message", "Ya estás registrado en este torneo o los datos del compañero son inválidos.");
             return ResponseEntity.badRequest().body(response);

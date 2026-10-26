@@ -43,10 +43,10 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 /**
- * LFPT-0303: integración del chequeo de nivel en {@link TournamentService#registerPlayer}.
- * La lógica pura ya está cubierta en {@link TournamentLevelPolicyTest}; aquí solo se verifica
- * que el servicio la invoca en el punto correcto (antes de tocar el estado de la inscripción)
- * y traduce el verdict a la excepción esperada.
+ * Проверка уровня в {@link TournamentService#registerPlayer}. Чистая логика покрыта
+ * в {@link TournamentLevelPolicyTest}; здесь проверяется только, что сервис вызывает её
+ * в правильной точке (до изменения состояния регистрации) и переводит вердикт
+ * в ожидаемое исключение.
  */
 @ExtendWith(MockitoExtension.class)
 class TournamentServiceLevelRestrictionTest {

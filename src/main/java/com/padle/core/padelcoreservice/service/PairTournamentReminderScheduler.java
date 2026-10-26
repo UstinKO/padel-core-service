@@ -23,7 +23,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * LFPT-437: email-напоминания за 5 часов до начала парных турниров (Modalidad.DOBLES).
+ * Email-напоминания за 5 часов до начала парных турниров (Modalidad.DOBLES).
  * Дедуп — персистентный (Tournament.pairReminderSentAt), в отличие от
  * TelegramReminderScheduler.sendTomorrowReminders (in-memory) — переживает рестарт/деплой
  * и не сбрасывается редактированием турнира.

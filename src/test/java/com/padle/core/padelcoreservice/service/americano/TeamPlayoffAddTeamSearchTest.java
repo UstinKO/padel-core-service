@@ -34,10 +34,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * LFPT-0561: ручное добавление команды через поиск игрока вместо обязательного ID — покрывает
- * все 4 комбинации существующий/новый из клиентского запроса, дедуп по телефону, и видимость
- * команды на странице «Оплаты и посещаемость» ({@code PaymentService.getPaymentManagementData}
- * читает только {@code TournamentRegistration}, а не {@code AmericanoTeam} напрямую).
+ * Ручное добавление команды через поиск игрока — покрывает все 4 комбинации
+ * существующий/новый игрок, дедуп по телефону и видимость команды на странице
+ * «Оплаты и посещаемость» ({@code PaymentService.getPaymentManagementData} читает только
+ * {@code TournamentRegistration}, а не {@code AmericanoTeam} напрямую).
  */
 @SpringBootTest
 @TestPropertySource(properties = {

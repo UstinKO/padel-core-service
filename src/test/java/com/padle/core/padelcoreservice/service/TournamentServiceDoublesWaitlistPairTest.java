@@ -27,9 +27,9 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * LFPT-0668: processWaitlistForTournament debe confirmar las DOS filas de una pareja DOBLES
- * juntas (no una por una) — con un solo slot libre, antes de este fix quedaba un jugador
- * CONFIRMED y su compañero en WAITLIST (pareja rota).
+ * processWaitlistForTournament подтверждает ОБЕ строки пары DOBLES вместе, а не по одной —
+ * иначе при одном свободном слоте один игрок оказался бы CONFIRMED, а партнёр остался
+ * в WAITLIST (разорванная пара).
  */
 @SpringBootTest
 @TestPropertySource(properties = {
