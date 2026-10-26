@@ -1,10 +1,10 @@
 # LFPT-0744: Feature регистрация на турниры другого пола по расчётному уровню — шкала соответствия категорий C/D
 
 ## Статус
-approved
+done
 
 ## Источник
-Клиентский запрос [specs/requests/LFPT-0744-registro-genero-cruzado.md](../requests/LFPT-0744-registro-genero-cruzado.md), технически оформлен в issue [#744](https://github.com/UstinKO/padel-core-service/issues/744). Расширяет #303 (правило "±1 ступень", смотри `TournamentLevelPolicy`) и опирается на уже реализованный попап "Указать уровень" (#632), который эта задача не меняет.
+Клиентский запрос [specs/requests/LFPT-0744-registro-genero-cruzado.md](requests/LFPT-0744-registro-genero-cruzado.md), технически оформлен в issue [#744](https://github.com/UstinKO/padel-core-service/issues/744). Расширяет #303 (правило "±1 ступень", смотри `TournamentLevelPolicy`) и опирается на уже реализованный попап "Указать уровень" (#632), который эта задача не меняет.
 
 ## Контекст / зачем
 
