@@ -57,7 +57,7 @@ public class TeamPlayoffService {
     private final PlayoffMatchingEngine matchingEngine;
 
     /**
-     * LFPT-0729: {@code AmericanoTeamRepository.findPlayoffRankingByTournamentId} не фильтрует по
+     * {@code AmericanoTeamRepository.findPlayoffRankingByTournamentId} не фильтрует по
      * статусу — команда NO_SHOW/DROPPED_OUT/DISQUALIFIED попала бы и в общий подсчёт, и в посев
      * плей-офф. Всё, что определяет размер сетки или посев, использует этот метод, а не сырой
      * запрос к репозиторию.
@@ -73,14 +73,13 @@ public class TeamPlayoffService {
     // ═══════════════════════════════════════════════════════════════════════
 
     /**
-     * LFPT-0561: ручное добавление команды через поиск игрока вместо обязательного ID — в
-     * отличие от прежней версии, оба игрока теперь допускают либо существующий {@code id}
-     * (найденный через {@code GET .../players/search}), либо данные для создания нового, с
-     * дедупом по телефону ({@link PlayerService#resolverJugadorPorTelefonoOCrearInvitado}).
+     * Ручное добавление команды через поиск игрока. Каждый из двух игроков — либо существующий
+     * {@code id} (найденный через {@code GET .../players/search}), либо данные для создания нового
+     * с дедупом по телефону ({@link PlayerService#resolverJugadorPorTelefonoOCrearInvitado}).
      * Вместо прямого создания {@link AmericanoTeam} сначала строится пара
-     * {@link TournamentRegistration} (как обычная парная регистрация с сайта), и переиспользуется
-     * {@link #addTeamFromRegistration} — так команда становится видна на странице «Оплаты и
-     * посещаемость» (которая читает только {@code TournamentRegistration}), как просит клиент.
+     * {@link TournamentRegistration} (как обычная парная регистрация с сайта), затем вызывается
+     * {@link #addTeamFromRegistration} — так команда видна на странице «Оплаты и посещаемость»,
+     * которая читает только {@code TournamentRegistration}.
      */
     @Transactional
     public AmericanoTeam addTeam(Long tournamentId, TeamPlayoffAddTeamRequest req) {
@@ -98,8 +97,8 @@ public class TeamPlayoffService {
         if (isPlayerAlreadyOnActiveTeam(tournamentId, player1.getId())) {
             throw new InvalidStateException("El jugador ya está registrado en otro equipo de este torneo");
         }
-        // LFPT-357: la comprobación anterior sólo cubre a player1 — un jugador ya emparejado
-        // como player2 en otro equipo podía quedar duplicado en dos equipos activos a la vez.
+        // Проверка выше покрывает только player1 — без этой проверки игрок, уже стоящий player2
+        // в другой команде, оказался бы сразу в двух активных командах.
         if (isPlayerAlreadyOnActiveTeam(tournamentId, player2.getId())) {
             throw new InvalidStateException("El compañero ya está registrado en otro equipo de este torneo");
         }
@@ -239,7 +238,7 @@ public class TeamPlayoffService {
     }
 
     /**
-     * LFPT-0729: отмечает команду как «не пришла» — исключается из подсчёта активных команд
+     * Отмечает команду как «не пришла»: она исключается из подсчёта активных команд
      * (квалификация/плей-офф), но не удаляется из базы и истории. Блокируется, если у команды
      * уже есть хотя бы один матч квалификации (неважно, завершён он или нет): не исключаем
      * задним числом команду, которая уже могла повлиять на результат соперника.
@@ -259,7 +258,7 @@ public class TeamPlayoffService {
         return saved;
     }
 
-    /** LFPT-0729: отменяет {@link #markNoShow} — команда снова становится активной. */
+    /** Отменяет {@link #markNoShow} — команда снова становится активной. */
     @Transactional
     public AmericanoTeam cancelNoShow(Long teamId) {
         AmericanoTeam team = teamRepository.findById(teamId)
@@ -292,13 +291,12 @@ public class TeamPlayoffService {
     }
 
     /**
-     * LFPT-465: можно ли уже вызвать {@link #initPlayoff}, не дожидаясь, пока ВСЕ команды
-     * закончат квалификацию. Разрешено только когда число команд — точная степень двойки
-     * (8/16, без play-in): граница "кто идёт напрямую в 1/4, а кто — в play-in" для 9-15 команд
-     * зависит от итогового рейтинга и может измениться, пока квалификация не закончена — создать
-     * её заранее означает риск пересборки уже созданных матчей, что запрещено (см. спеку, "Вне
-     * скоупа"). Для степени двойки такой границы нет — какая стадия будет первой, зависит только
-     * от общего числа команд, а не от итогового рейтинга.
+     * Можно ли уже вызвать {@link #initPlayoff}, не дожидаясь, пока все команды закончат
+     * квалификацию. Разрешено только когда число команд — точная степень двойки (8/16, без
+     * play-in): для 9–15 команд граница "кто идёт напрямую в 1/4, а кто — в play-in" зависит
+     * от итогового рейтинга и может измениться, пока квалификация не закончена, а пересобирать
+     * уже созданные матчи нельзя. Для степени двойки такой границы нет — первая стадия зависит
+     * только от общего числа команд.
      */
     public boolean canInitPlayoff(Long tournamentId) {
         if (isPlayoffStarted(tournamentId) || !isQualificationStarted(tournamentId)) {
@@ -340,9 +338,9 @@ public class TeamPlayoffService {
         List<AmericanoTeam> teams = teamRepository.findByTournamentIdAndStatus(
                 tournamentId, AmericanoPlayerStatus.ACTIVE);
 
-        // Команды приходят не одновременно — court-driven модель (T1) уже умеет вести отдельные
-        // матчи без ожидания "раунда" целиком, поэтому порог снижен до минимально возможной пары
-        // команд (T18/#271), а не до полного набора для четвертьфинала.
+        // Команды приходят не одновременно, а court-driven модель ведёт отдельные матчи без
+        // ожидания "раунда" целиком, поэтому достаточно минимально возможной пары команд,
+        // а не полного набора для четвертьфинала.
         if (teams.size() < 2) {
             throw new InvalidStateException(
                     "Se necesitan al menos 2 equipos para la calificación. Actuales: " + teams.size());
@@ -385,10 +383,10 @@ public class TeamPlayoffService {
     }
 
     /**
-     * LFPT-367: pone en cola una pareja de calificación sin cancha asignada — para cuando todas las
-     * canchas están ocupadas pero ya se puede determinar el próximo partido entre dos equipos libres.
-     * A partir de aquí ambos equipos cuentan como ocupados (ver {@link AmericanoMatch#isActive()}),
-     * igual que si ya estuvieran jugando. El orden de la cola es por {@code createdAt} — ver {@link #getQueue}.
+     * Ставит в очередь пару квалификации без корта — когда все корты заняты, но следующий матч
+     * между двумя свободными командами уже можно определить. С этого момента обе команды
+     * считаются занятыми (см. {@link AmericanoMatch#isActive()}), как если бы уже играли.
+     * Порядок очереди — по {@code createdAt}, см. {@link #getQueue}.
      */
     @Transactional
     public AmericanoMatch queueQualificationMatch(Long tournamentId, Long team1Id, Long team2Id) {
@@ -416,9 +414,9 @@ public class TeamPlayoffService {
     }
 
     /**
-     * LFPT-367: asigna una cancha libre a un partido que estaba en cola — lo pasa a EN_CURSO.
-     * A diferencia de {@link #changeMatchCourt} (cambia la cancha de un partido ya en curso), este
-     * es el único camino válido para que un partido salga de la cola de espera.
+     * Назначает свободный корт матчу из очереди и переводит его в IN_PROGRESS. В отличие от
+     * {@link #changeMatchCourt} (меняет корт уже идущего матча), это единственный способ
+     * вывести матч из очереди ожидания.
      */
     @Transactional
     public AmericanoMatch assignCourtToQueuedMatch(Long matchId, int courtNumber) {
@@ -440,8 +438,8 @@ public class TeamPlayoffService {
     }
 
     /**
-     * LFPT-367: quita un partido de la cola por completo — ambos equipos vuelven al pool de
-     * disponibles para una nueva pareja. Solo mientras el partido sigue {@code QUEUED}.
+     * Полностью убирает матч из очереди — обе команды возвращаются в пул свободных для новой
+     * пары. Только пока матч в статусе {@code QUEUED}.
      */
     @Transactional
     public void removeFromQueue(Long matchId) {
@@ -457,10 +455,9 @@ public class TeamPlayoffService {
     }
 
     /**
-     * LFPT-367: partidos de calificación en cola, ordenados por tiempo de espera — el que lleva
-     * más tiempo en cola primero (ТЗ: "la pareja que espera más tiempo va primero"). Aquí y no en
-     * {@link #toMatchDto} porque {@code queuePosition}/{@code waitingMinutes} dependen del orden de
-     * toda la cola, no del partido en sí mismo.
+     * Матчи квалификации в очереди по времени ожидания — дольше всех ждущая пара первой.
+     * Считается здесь, а не в {@link #toMatchDto}, потому что {@code queuePosition}/{@code waitingMinutes}
+     * зависят от порядка всей очереди, а не от самого матча.
      */
     public List<AmericanoMatchDto> getQueue(Long tournamentId) {
         List<AmericanoMatch> queued = matchRepository
@@ -544,8 +541,8 @@ public class TeamPlayoffService {
         int qualRounds = roundRepository.findMaxRoundNumber(tournamentId).orElse(0);
         int roundNumber = qualRounds + 1;
 
-        // ТЗ §4 (T13): для 9-15 команд часть проходит в 1/4 напрямую, остальные — через play-in
-        // (1/8 финала). 8 и 16 команд — точные степени двойки, укладываются в старую схему ниже.
+        // Для 9–15 команд часть проходит в 1/4 напрямую, остальные — через play-in
+        // (1/8 финала). 8 и 16 команд — точные степени двойки, укладываются в схему ниже.
         if (total > PlayoffFormat.MIN_TEAMS_WITH_TABLE && total < PlayoffFormat.MAX_TEAMS_WITH_TABLE) {
             initPlayoffWithPlayIn(tournament, ranked, roundNumber);
             return;
@@ -567,13 +564,11 @@ public class TeamPlayoffService {
     }
 
     /**
-     * Issue #298 п.2: пересобирает плей-офф заново поверх актуального квалификационного
-     * рейтинга. Нужно, потому что {@link #submitQualResult} (исправление уже сохранённого
-     * результата квалификации) никак не трогает уже созданные PLAYOFF-матчи — если координатор
-     * исправил ошибку в счёте ПОСЛЕ того, как плей-офф уже сформирован, сетка остаётся
-     * построена по старым, неверным посевным местам. Доступно, только пока ни один матч
-     * плей-офф ещё не завершён — иначе пришлось бы стирать реально сыгранный результат, а не
-     * просто ещё не начатую пару.
+     * Пересобирает плей-офф заново по актуальному квалификационному рейтингу. Нужно, потому что
+     * {@link #submitQualResult} (исправление уже сохранённого результата квалификации) не трогает
+     * созданные PLAYOFF-матчи: если координатор исправил счёт после формирования плей-офф, сетка
+     * осталась бы построена по старым посевным местам. Доступно, только пока ни один матч
+     * плей-офф не завершён — иначе пришлось бы стирать реально сыгранный результат.
      */
     @Transactional
     public void regeneratePlayoff(Long tournamentId) {
@@ -604,10 +599,10 @@ public class TeamPlayoffService {
     }
 
     /**
-     * Плей-офф для 9-15 команд (T13, ТЗ §4/§32-36): часть команд проходит в четвертьфинал
-     * напрямую по итогам квалификации, остальные сначала играют 1/8 финала (play-in) — каждый
-     * play-in матч сразу привязан к конкретному свободному слоту четвертьфинала
-     * (nextMatchId/nextMatchSlot вместо ожидания всей стадии, как в {@link #tryFormNextPlayoffStage}).
+     * Плей-офф для 9–15 команд: часть команд проходит в четвертьфинал напрямую по итогам
+     * квалификации, остальные сначала играют 1/8 финала (play-in). Каждый play-in матч сразу
+     * привязан к конкретному свободному слоту четвертьфинала (nextMatchId/nextMatchSlot вместо
+     * ожидания всей стадии, как в {@link #tryFormNextPlayoffStage}).
      * Четвертьфинал всегда даёт ровно 8 слотов: direct + playInTeams/2 == 8.
      */
     private void initPlayoffWithPlayIn(Tournament tournament, List<AmericanoTeam> ranked, int roundNumber) {
@@ -639,7 +634,7 @@ public class TeamPlayoffService {
                 .build();
         qfRound = roundRepository.save(qfRound);
 
-        // ТЗ §35: базовая модель посева — 1-е место с 8-м, 2-е с 7-м, 3-е с 6-м, 4-е с 5-м.
+        // Базовая модель посева — 1-е место с 8-м, 2-е с 7-м, 3-е с 6-м, 4-е с 5-м.
         int[][] crossing = {{1, 8}, {2, 7}, {3, 6}, {4, 5}};
         Map<Integer, AmericanoMatch> qfMatchBySlot = new HashMap<>();
         Map<Integer, Integer> qfSlotNumBySlot = new HashMap<>();
@@ -687,7 +682,7 @@ public class TeamPlayoffService {
 
         // Play-in (1/8 финала): пары — тем же движком, что и обычный QF-посев (анти-реванш, посев).
         // Победитель каждой пары привязывается к конкретному QF-слоту: сильнейшая play-in-команда
-        // получает лучший из оставшихся слотов (ТЗ §35).
+        // получает лучший из оставшихся слотов.
         List<PlayoffMatchingEngine.Pairing> playInPairings = seedPlayoffPairs(tournamentId, playInTeams);
         Map<Long, Integer> localSeedById = new HashMap<>();
         for (int i = 0; i < playInTeams.size(); i++) {
@@ -748,7 +743,7 @@ public class TeamPlayoffService {
     }
 
     /**
-     * ТЗ §36: предупреждает координатора, если пара из двух напрямую прошедших команд
+     * Предупреждает координатора, если пара из двух напрямую прошедших команд
      * (оба слота известны сразу при посеве QF) уже встречалась в квалификации. В отличие от
      * play-in-пар и переходов QF→SF/SF→Final, эти пары фиксируются сразу при посеве и не
      * пересчитываются движком подбора соперников — координатор может вручную поменять команду
@@ -790,8 +785,8 @@ public class TeamPlayoffService {
         webSocketService.notifyTeamPlayoffMatchCompleted(match.getTournament().getId(), toMatchDto(match));
 
         if (match.getNextMatchId() != null) {
-            // Play-in матч (T13): слот в четвертьфинале уже зафиксирован при посеве — не ждём
-            // остальные play-in матчи (ТЗ §33).
+            // Play-in матч: слот в четвертьфинале уже зафиксирован при посеве — не ждём
+            // остальные play-in матчи.
             advanceToLinkedSlot(match);
         } else {
             // Как только все матчи текущей стадии сыграны — формируем пары следующей стадии
@@ -804,11 +799,10 @@ public class TeamPlayoffService {
     }
 
     /**
-     * Play-in-матч (T13) завершён — переносит победителя в заранее привязанный слот
-     * четвертьфинала (nextMatchId/nextMatchSlot), не дожидаясь остальных play-in матчей
-     * (ТЗ §33: "переносит его в последний свободный слот четвертьфинала").
-     * Перед этим проверяет (T16, ТЗ §36/§41), не рематч ли это с ожидающей командой —
-     * и если да, пытается обменять её местами с другой уже укомплектованной парой QF.
+     * Play-in матч завершён — переносит победителя в заранее привязанный слот четвертьфинала
+     * (nextMatchId/nextMatchSlot), не дожидаясь остальных play-in матчей. Перед этим проверяет,
+     * не повторная ли это встреча с ожидающей командой, и если да — пытается обменять её местами
+     * с другой уже укомплектованной парой четвертьфинала.
      */
     private void advanceToLinkedSlot(AmericanoMatch playInMatch) {
         AmericanoTeam winner = winnerOf(playInMatch);
@@ -843,11 +837,11 @@ public class TeamPlayoffService {
     }
 
     /**
-     * ТЗ §36/§41 (T16): если "ожидающая" команда уже играла против только что определившегося
-     * победителя play-in, ищет среди уже укомплектованных пар четвертьфинала такую, с которой
-     * можно поменяться местами без повторных встреч (вариант 2: "1-е место играет против 7-го,
-     * 2-е ожидает победителя 1/8"). Мутирует {@code nextMatch} на месте (слот waitingSlot),
-     * сохраняет "соседний" матч самостоятельно — сам {@code nextMatch} сохраняет вызывающий код.
+     * Если "ожидающая" команда уже играла против только что определившегося победителя play-in,
+     * ищет среди укомплектованных пар четвертьфинала такую, с которой можно поменяться местами
+     * без повторных встреч ("1-е место играет против 7-го, 2-е ожидает победителя 1/8").
+     * Мутирует {@code nextMatch} на месте (слот waitingSlot) и сам сохраняет "соседний" матч —
+     * {@code nextMatch} сохраняет вызывающий код.
      */
     private void trySwapToAvoidRematch(AmericanoMatch nextMatch, int waitingSlot, Long waitingTeamId, AmericanoTeam winner) {
         Map<Long, Set<Long>> priorOpponents = buildPriorOpponentsMap(nextMatch.getTournament().getId());
@@ -873,7 +867,7 @@ public class TeamPlayoffService {
         Optional<Long> swapCandidateId = PlayoffRematchSwap.findSwap(
                 waitingTeamId, winner.getId(), siblingPairs, priorOpponents);
         if (swapCandidateId.isEmpty()) {
-            // ТЗ §1/§36: исключение неизбежно — ни один обмен не убирает рематч, оставляем как есть.
+            // Исключение неизбежно — ни один обмен не убирает рематч, оставляем как есть.
             log.warn("Playoff QF seeding (T16, ТЗ §36): {} vs {} es una revancha inevitable con el ganador de 1/8 — no se encontró un intercambio válido",
                     waiting.getDisplayName(), winner.getDisplayName());
             return;
@@ -933,12 +927,11 @@ public class TeamPlayoffService {
     }
 
     /**
-     * Issue #298 п.1: "1-й"/"2-й" квалификационный матч отдельно для каждой из двух команд
-     * конкретного матча — в отличие от {@link AmericanoMatch#getMatchNumber()} (сквозной номер
-     * матча в рамках раунда, общий для всех команд), это нужно, чтобы в карточке ввода счёта
-     * было видно, какой это по счёту матч именно для игрока/пары, а не только для раунда в целом.
-     * Считается по всем квал.матчам турнира разом (не только завершённым, в отличие от
-     * {@link #applyQualBreakdown} — тот нужен только для итоговой таблицы рейтинга).
+     * Номер квалификационного матча ("1-й"/"2-й") отдельно для каждой из двух команд матча —
+     * в отличие от {@link AmericanoMatch#getMatchNumber()} (сквозной номер в рамках раунда).
+     * Нужен, чтобы в карточке ввода счёта было видно, какой это по счёту матч именно для пары.
+     * Считается по всем квалификационным матчам турнира, включая незавершённые (в отличие от
+     * {@link #applyQualBreakdown}, который нужен только для итоговой таблицы).
      * Возвращает matchId -> [ordinal команды 1, ordinal команды 2] (0, если слот не занят).
      */
     public Map<Long, int[]> computeQualMatchOrdinals(Long tournamentId) {
@@ -1013,9 +1006,9 @@ public class TeamPlayoffService {
     }
 
     /**
-     * Команды, доступные для назначения на корт прямо сейчас: активны, отметились присутствующими
-     * (LFPT-310 — оплата на доступность больше не влияет), не заняты в другом матче и не выбрали
-     * лимит в 2 квалификационных матча.
+     * Команды, доступные для назначения на корт прямо сейчас: активны, отмечены присутствующими
+     * (оплата на доступность не влияет), не заняты в другом матче и не выбрали лимит
+     * в 2 квалификационных матча.
      */
     public List<AmericanoTeamDto> getAvailableTeamsForQualification(Long tournamentId) {
         return teamRepository.findByTournamentIdAndStatus(tournamentId, AmericanoPlayerStatus.ACTIVE)
@@ -1033,10 +1026,10 @@ public class TeamPlayoffService {
     }
 
     /**
-     * Те же команды, что и {@link #getAvailableTeamsForQualification}, но разбитые на 3 визуальные
-     * группы для координатора (LFPT-306): ещё не сыгравшие ни одного матча (высший приоритет),
-     * ожидающие 2-й матч (для них на DTO уже заполнены {@code matchesWon}/{@code matchesLost} —
-     * итог 1-го матча) и завершившие оба квалификационных матча (только для информации, не для выбора).
+     * Те же команды, что и {@link #getAvailableTeamsForQualification}, но разбитые на 3 группы
+     * для координатора: ещё не сыгравшие ни одного матча (высший приоритет), ожидающие 2-й матч
+     * (для них на DTO заполнены {@code matchesWon}/{@code matchesLost} — итог 1-го матча)
+     * и завершившие оба квалификационных матча (только для информации, не для выбора).
      */
     public QualificationTeamGroups getQualificationTeamGroups(Long tournamentId) {
         List<AmericanoTeamDto> notPlayed = teamsWithoutQualMatch(tournamentId).stream()
@@ -1060,15 +1053,15 @@ public class TeamPlayoffService {
     }
 
     /**
-     * Предлагает сопернику для 2-го тура квалификации команде, только что завершившей 1-й матч:
-     * тот же результат (победа/поражение), ещё не сыгравший 2-й матч и не занятый прямо сейчас (ТЗ §5).
-     * При нечётном числе команд (T14, ТЗ §20-25, LFPT-550) правило переопределяется: проигравший
-     * приоритетно встречается с "дополнительной" командой (§22/§23) — проигравший получает свой 2-й
-     * квалификационный матч раньше, а не ждёт партнёра с тем же результатом; победитель продолжает
-     * искать соперника по обычному правилу. Иначе — через {@link QualificationPairing}
-     * (T15, Итоговое ТЗ §2): если для команды не нашлось партнёра с тем же результатом, победители
-     * и проигравшие пересчитываются батчем, чтобы два "хвостовых" исключения не сводились друг с другом.
-     * Ничего не создаёт — координатор подтверждает или назначает другую пару вручную (см. T4/T11).
+     * Предлагает соперника для 2-го тура квалификации команде, только что завершившей 1-й матч:
+     * с тем же результатом (победа/поражение), ещё не сыгравшего 2-й матч и не занятого прямо
+     * сейчас. При нечётном числе команд правило переопределяется: проигравший приоритетно
+     * встречается с "дополнительной" командой и получает свой 2-й матч раньше, а не ждёт партнёра
+     * с тем же результатом; победитель ищет соперника по обычному правилу. Иначе — через
+     * {@link QualificationPairing}: если для команды не нашлось партнёра с тем же результатом,
+     * победители и проигравшие пересчитываются батчем, чтобы два "хвостовых" исключения
+     * не сводились друг с другом.
+     * Ничего не создаёт — координатор подтверждает пару или назначает другую вручную.
      */
     public Optional<AmericanoTeamDto> suggestSecondRoundOpponent(Long tournamentId, Long teamId) {
         List<AmericanoTeam> waiting = teamsAwaitingSecondQualMatch(tournamentId);
@@ -1100,14 +1093,14 @@ public class TeamPlayoffService {
 
     /**
      * Формирует пары для всех команд, ожидающих соперника прямо сейчас.
-     * Используется доской кортов (T2), чтобы не предлагать одну и ту же команду на два корта сразу.
+     * Используется доской кортов, чтобы не предлагать одну и ту же команду на два корта сразу.
      * <p>
-     * LFPT-306: приоритет команд, ещё не сыгравших ни одного матча, абсолютный — пока таких команд
-     * ≥2, W-W/L-L предложения для 2-го тура квалификации не формируются вовсе (ТЗ фидбека: "0 матчей →
-     * сначала дать первый матч всем командам"). Если после разбивки на пары остаётся ровно 1 такая
-     * команда — включается уже существующее правило "дополнительной" команды (ТЗ §22/§23, T14,
-     * LFPT-550: пара с проигравшим, а не победителем первого завершившегося матча).
-     * Только когда команд без единого матча не осталось — обычные W-W/L-L предложения 2-го тура.
+     * Приоритет команд, ещё не сыгравших ни одного матча, абсолютный: пока таких команд ≥2,
+     * предложения W-W/L-L для 2-го тура квалификации не формируются ("0 матчей → сначала дать
+     * первый матч всем командам"). Если после разбивки на пары остаётся ровно 1 такая команда,
+     * действует правило "дополнительной" команды (пара с проигравшим, а не с победителем первого
+     * завершившегося матча). Только когда команд без матчей не осталось — обычные W-W/L-L
+     * предложения 2-го тура.
      */
     public List<AmericanoMatchSuggestionDto> suggestSecondRoundPairings(Long tournamentId) {
         List<AmericanoMatchSuggestionDto> suggestions = new ArrayList<>();
@@ -1129,10 +1122,10 @@ public class TeamPlayoffService {
                 .collect(Collectors.toMap(AmericanoTeam::getId, t -> t));
         Set<Long> used = new HashSet<>();
 
-        // ТЗ §22/§23 (T14, LFPT-550): при нечётном остатке "нетронутых" команд первый же проигравший,
-        // ожидающий 2-й матч, приоритетно встречается с дополнительной командой — вне очереди
-        // и максимально быстро, чтобы не ждать партнёра с тем же результатом. Победитель продолжает
-        // искать соперника по обычному правилу "победитель к победителю".
+        // При нечётном остатке "нетронутых" команд первый же проигравший, ожидающий 2-й матч,
+        // приоритетно встречается с дополнительной командой — вне очереди и максимально быстро,
+        // чтобы не ждать партнёра с тем же результатом. Победитель продолжает искать соперника
+        // по обычному правилу "победитель к победителю".
         extra.ifPresent(e -> waiting.stream()
                 .filter(t -> !wonFirstQualMatch(tournamentId, t.getId()))
                 .findFirst()
@@ -1145,7 +1138,7 @@ public class TeamPlayoffService {
                     used.add(loser.getId());
                 }));
 
-        // LFPT-306: пока есть ≥2 команды без единого матча, они уже полностью покрыли предложения
+        // Пока есть ≥2 команды без единого матча, они уже полностью покрыли предложения
         // выше (по парам) — W-W/L-L для остальных команд, ожидающих 2-й матч, придётся подождать.
         if (zeroMatchTeams.size() > 1) {
             return suggestions;
@@ -1161,7 +1154,7 @@ public class TeamPlayoffService {
         Map<Long, Set<Long>> priorOpponents = buildPriorOpponentsMap(tournamentId);
         for (QualificationPairing.Pairing p : QualificationPairing.pairSecondRound(winners, losers, priorOpponents)) {
             if (priorOpponents.getOrDefault(p.team1Id(), Set.of()).contains(p.team2Id())) {
-                // ТЗ §1: "исключения допускаются только когда распределение невозможно" — здесь именно так.
+                // Исключения допускаются, только когда распределение невозможно — здесь именно так.
                 log.warn("Qualification round 2 pairing for tournament {}: {} vs {} already played each other — no rematch-free alternative was found",
                         tournamentId, byId.get(p.team1Id()).getDisplayName(), byId.get(p.team2Id()).getDisplayName());
             }
@@ -1175,7 +1168,7 @@ public class TeamPlayoffService {
 
     /**
      * Активные команды, ещё не начавшие ни одного квалификационного матча — по возрастанию
-     * {@code teamNumber} для предсказуемого, воспроизводимого порядка распределения (LFPT-306).
+     * {@code teamNumber} для предсказуемого, воспроизводимого порядка распределения.
      */
     private List<AmericanoTeam> teamsWithoutQualMatch(Long tournamentId) {
         return teamRepository.findByTournamentIdAndStatus(tournamentId, AmericanoPlayerStatus.ACTIVE)
@@ -1187,10 +1180,10 @@ public class TeamPlayoffService {
     }
 
     /**
-     * "Дополнительная" команда при нечётном числе участников (ТЗ §20-23): активна, ещё не сыграла
+     * "Дополнительная" команда при нечётном числе участников: активна, ещё не сыграла
      * и не начала ни одного квалификационного матча. Ровно одна — если нетронутых команд несколько
      * (координатор ещё не назначил всем первые матчи), правило пока не применяется: которая из них
-     * окажется "дополнительной", определится позже, по факту (ТЗ §21 — это не конкретный номер команды).
+     * окажется "дополнительной", определится позже, по факту (это не конкретный номер команды).
      */
     private Optional<AmericanoTeam> extraTeam(Long tournamentId) {
         List<AmericanoTeam> untouched = teamsWithoutQualMatch(tournamentId);
@@ -1202,7 +1195,7 @@ public class TeamPlayoffService {
 
     /**
      * Меняет корт ещё не завершённого матча — координатор может в любой момент переназначить
-     * корт вручную, автоматическое назначение остаётся лишь рекомендацией (ТЗ §8/§37).
+     * корт вручную, автоматическое назначение остаётся лишь рекомендацией.
      */
     @Transactional
     public AmericanoMatch changeMatchCourt(Long matchId, int newCourtNumber) {
@@ -1229,7 +1222,7 @@ public class TeamPlayoffService {
 
     /**
      * Заменяет команду в паре ещё не завершённого матча — координатор может заменить любого
-     * соперника вручную (ТЗ §8/§37). Не блокирует повторную встречу, только предупреждает —
+     * соперника вручную. Не блокирует повторную встречу, только предупреждает —
      * автоматические рекомендации не должны ограничивать координатора.
      */
     @Transactional
@@ -1276,11 +1269,10 @@ public class TeamPlayoffService {
     }
 
     /**
-     * Issue #298 п.3: команды, с которыми можно поменять местами указанный слот матча плей-офф —
-     * другой слот из ДРУГОГО ещё не завершённого матча той же стадии. В плей-офф, в отличие от
-     * квалификации, нет отдельного "свободного" пула команд (все посеянные команды сразу
-     * расставлены по парам) — поэтому единственный осмысленный кандидат на замену это команда
-     * из соседнего матча, а не список через {@link #getAvailableTeamsForQualification}.
+     * Команды, с которыми можно поменять местами указанный слот матча плей-офф — другой слот
+     * из другого ещё не завершённого матча той же стадии. В плей-офф, в отличие от квалификации,
+     * нет "свободного" пула команд (все посеянные команды сразу расставлены по парам), поэтому
+     * единственный кандидат на замену — команда из соседнего матча.
      */
     public List<PlayoffSwapCandidate> getPlayoffSwapCandidates(Long matchId) {
         AmericanoMatch match = matchRepository.findById(matchId)
@@ -1312,11 +1304,10 @@ public class TeamPlayoffService {
     }
 
     /**
-     * Issue #298 п.3: взаимно меняет местами команды в двух ещё не завершённых матчах плей-офф —
-     * в отличие от {@link #changeMatchTeam} (замена из "свободного" пула), здесь обе команды уже
-     * заняты каждая в своём матче, и одиночная замена всегда упёрлась бы в проверку "команда уже
-     * играет другой матч". Обмен — единственная операция, которая физически может переставить
-     * местами уже посеянные пары без потери какой-либо из команд.
+     * Взаимно меняет местами команды в двух ещё не завершённых матчах плей-офф. В отличие от
+     * {@link #changeMatchTeam} (замена из "свободного" пула), здесь обе команды уже заняты
+     * каждая в своём матче, и одиночная замена упёрлась бы в проверку "команда уже играет другой
+     * матч". Обмен — единственная операция, которая переставляет посеянные пары без потери команды.
      */
     @Transactional
     public MatchTeamChangeResult swapMatchTeams(Long matchAId, int slotA, Long matchBId, int slotB) {
@@ -1497,9 +1488,9 @@ public class TeamPlayoffService {
     }
 
     /**
-     * LFPT-310: единственное условие "команда может играть матч прямо сейчас" — явка (attended).
-     * Оплата (hasPaid) осталась информационным полем в таблице команд и на доступность не влияет —
-     * координатор отмечает/снимает эту галочку прямо в день турнира по факту присутствия.
+     * Единственное условие "команда может играть матч прямо сейчас" — явка (attended).
+     * Оплата (hasPaid) — информационное поле в таблице команд и на доступность не влияет:
+     * координатор отмечает присутствие по факту в день турнира.
      */
     private boolean isAttended(AmericanoTeam t) {
         return Boolean.TRUE.equals(t.getAttended());
@@ -1544,7 +1535,7 @@ public class TeamPlayoffService {
                 .build();
     }
 
-    /** LFPT-367: как {@link #buildQualMatch}, pero sin cancha/startedAt — status QUEUED en vez de IN_PROGRESS. */
+    /** Как {@link #buildQualMatch}, но без корта и startedAt — статус QUEUED вместо IN_PROGRESS. */
     private AmericanoMatch buildQueuedQualMatch(AmericanoTeam t1, AmericanoTeam t2, AmericanoRound round,
                                                  Tournament tournament, int matchNumber) {
         return AmericanoMatch.builder()
@@ -1603,13 +1594,12 @@ public class TeamPlayoffService {
     }
 
     /**
-     * LFPT-465: квалификация только что полностью завершилась (все команды сыграли оба
-     * матча) — если первый этап плей-офф уже был создан раньше срока (см. {@link #createPlayoffRound}),
-     * в нём могут остаться TBD-слоты (команды, которые на момент создания этапа ещё не
-     * "определились"). Теперь все команды турнира определились, поэтому можно рассадить
-     * оставшихся (тех, кто ещё не попал ни в один матч этого этапа) по свободным слотам —
-     * тем же движком посева, что и при обычном создании. Уже заполненные (реальные) матчи
-     * этапа не трогаются.
+     * Квалификация только что полностью завершилась (все команды сыграли оба матча). Если
+     * первый этап плей-офф был создан раньше срока (см. {@link #createPlayoffRound}), в нём могут
+     * остаться TBD-слоты — команды, которые на момент создания этапа ещё не определились. Теперь
+     * определились все, поэтому оставшиеся (не попавшие ни в один матч этапа) рассаживаются
+     * по свободным слотам тем же движком посева, что и при обычном создании. Уже заполненные
+     * матчи этапа не трогаются.
      */
     private void backfillFirstPlayoffStage(Long tournamentId) {
         List<AmericanoMatch> pendingSlots = matchRepository
@@ -1662,7 +1652,7 @@ public class TeamPlayoffService {
     }
 
     /**
-     * Разбивка по матчам для квалификационной таблицы (ТЗ §28): геймы В/П отдельно
+     * Разбивка по матчам для квалификационной таблицы: геймы В/П отдельно
      * по 1-му и 2-му сыгранным матчам, плюс статус 2-0/1-1/0-2 (§6/§30).
      */
     private void applyQualBreakdown(AmericanoTeamDto dto, Long tournamentId, Long teamId) {
@@ -1686,7 +1676,7 @@ public class TeamPlayoffService {
     }
 
     /**
-     * Текущее положение команды в турнире для публичной страницы (ТЗ §12): играет прямо сейчас,
+     * Текущее положение команды в турнире для публичной страницы: играет прямо сейчас,
      * ждёт следующего матча, вышла в следующий этап плей-офф, выбыла, или уже чемпион/финалист.
      * "Ожидает" и "только что завершила матч" — одно и то же видимое состояние (между матчами).
      */
@@ -1735,7 +1725,7 @@ public class TeamPlayoffService {
         dto.setTournamentStatus("WAITING");
     }
 
-    /** LFPT-367: posición en la cola y nombre del rival — para el estado público "en cola" (ТЗ §12 extendido). */
+    /** Позиция в очереди и имя соперника — для публичного статуса «в очереди». */
     private void applyQueueInfo(AmericanoTeamDto dto, Long tournamentId, Long teamId, AmericanoMatch queuedMatch) {
         dto.setTournamentStatus("QUEUED");
         getQueue(tournamentId).stream()
@@ -1772,12 +1762,11 @@ public class TeamPlayoffService {
                                      List<AmericanoTeam> seeded,
                                      PlayoffStage stage,
                                      int startRoundNumber) {
-        // LFPT-465: если вызвано до полного завершения квалификации (canInitPlayoff допускает
-        // это только для степени двойки команд, см. canInitPlayoff), часть команд ещё не
-        // "определилась" (не отыграла оба квалификационных матча) — такие команды не участвуют
-        // в посеве сейчас, их позиции становятся TBD-заглушками и дозаполняются позже
-        // (см. backfillFirstPlayoffStage). Когда квалификация уже полностью завершена, pending
-        // пуст и поведение не отличается от прежнего.
+        // Если вызвано до полного завершения квалификации (canInitPlayoff допускает это только
+        // для степени двойки), часть команд ещё не "определилась" (не отыграла оба
+        // квалификационных матча) — такие команды не участвуют в посеве сейчас, их позиции
+        // становятся TBD-заглушками и дозаполняются позже (см. backfillFirstPlayoffStage).
+        // Если квалификация завершена, pending пуст.
         List<AmericanoTeam> settled = new ArrayList<>(seeded.stream().filter(this::isSettled).toList());
         List<AmericanoTeam> pending = new ArrayList<>(seeded.stream().filter(t -> !isSettled(t)).toList());
         if (settled.size() % 2 != 0) {
@@ -1841,9 +1830,9 @@ public class TeamPlayoffService {
         matchRepository.saveAll(matches);
         savedRound.setMatches(matches);
 
-        // Создаём следующие раунды с TBD командами (если нужно) — по полному размеру стадии
-        // (totalSlots), а не по числу уже реально заполненных пар (pairs.size()), иначе цепочка
-        // следующих стадий получилась бы короче, чем нужно, при частичном посеве (LFPT-465).
+        // Создаём следующие раунды с TBD командами (если нужно) по полному размеру стадии
+        // (totalSlots), а не по числу реально заполненных пар (pairs.size()), иначе при частичном
+        // посеве цепочка следующих стадий получилась бы короче, чем нужно.
         PlayoffStage nextStage = nextStage(stage);
         if (nextStage != null && totalSlots > 1) {
             createTbdPlayoffRounds(tournament, nextStage, startRoundNumber + 1, totalSlots / 2);
@@ -1851,13 +1840,13 @@ public class TeamPlayoffService {
     }
 
     /**
-     * Строит пары четвертьфинала/play-in через {@link PlayoffMatchingEngine} (ТЗ §17: 2-0 против 0-2,
+     * Строит пары четвертьфинала/play-in через {@link PlayoffMatchingEngine} (2-0 против 0-2,
      * 1-1 между собой, повторные встречи исключаются по возможности). {@code seeded} уже
      * отсортирован по квалификационному рейтингу — позиция в списке становится посевом,
      * matchesWon (0/1/2) — сигналом "силы" для разведения лучших команд по разным парам.
-     * LFPT-348: приоритет {@code REMATCH_FIRST} — анти-реванш важнее сохранения группы по
-     * результату, группа важнее посева (в отличие от {@link #seedNextPlayoffStage}, где
-     * анти-реванш и разведение сильнейших важнее посева, но нет понятия "группы по результату").
+     * Приоритет {@code REMATCH_FIRST}: анти-реванш важнее сохранения группы по результату,
+     * группа важнее посева (в отличие от {@link #seedNextPlayoffStage}, где нет понятия
+     * "группы по результату").
      */
     private List<PlayoffMatchingEngine.Pairing> seedPlayoffPairs(Long tournamentId, List<AmericanoTeam> seeded) {
         List<PlayoffMatchingEngine.Candidate> candidates = new ArrayList<>();
@@ -1926,9 +1915,8 @@ public class TeamPlayoffService {
 
     /**
      * Как только все матчи текущей стадии плей-офф завершены, формирует пары следующей стадии
-     * через {@link PlayoffMatchingEngine} (T9) — вместо жёсткого слота "победитель матча N
-     * идёт в матч N/2" пары считаются заново по посеву/сериям побед/истории встреч всех
-     * победителей стадии разом, как только становится известен последний из них.
+     * через {@link PlayoffMatchingEngine}: вместо жёсткого слота "победитель матча N идёт в матч
+     * N/2" пары считаются заново по посеву, сериям побед и истории встреч всех победителей стадии.
      */
     private void tryFormNextPlayoffStage(AmericanoMatch match) {
         PlayoffStage stage = match.getPlayoffStage();
@@ -1958,7 +1946,7 @@ public class TeamPlayoffService {
     }
 
     /**
-     * Финал завершён (ТЗ §16): определяет чемпиона и 2-е место (currentPosition 1/2 — то же поле,
+     * Финал завершён: определяет чемпиона и 2-е место (currentPosition 1/2 — то же поле,
      * что уже используется для итоговых мест в TeamAmericanoService.updateTeamPositions),
      * переводит турнир в статус FINALIZADO.
      */
@@ -2010,8 +1998,8 @@ public class TeamPlayoffService {
                         t.getId(), seedByTeamId.getOrDefault(t.getId(), Integer.MAX_VALUE), t.getMatchesWon()))
                 .toList();
 
-        // ТЗ §12: для полуфинала (и далее) разведение сильнейших и анти-реванш важнее посева —
-        // не тот порядок приоритетов, что при первичном посеве QF из квалификации (§17/§53).
+        // Для полуфинала (и далее) разведение сильнейших и анти-реванш важнее посева —
+        // не тот порядок приоритетов, что при первичном посеве четвертьфинала из квалификации.
         PlayoffMatchingEngine.MatchingResult result = matchingEngine.match(
                 candidates, buildPriorOpponentsMap(tournament.getId()), PlayoffMatchingEngine.PriorityOrder.STRENGTH_FIRST);
         if (!result.allConstraintsSatisfied()) {
@@ -2157,9 +2145,8 @@ public class TeamPlayoffService {
                     .filter(r -> !r.getPlayer().getId().equals(mainPlayerId))
                     .findFirst().orElse(null);
 
-            // LFPT-357: la misma pareja física puede volver a aparecer con los roles invertidos
-            // (p. ej. tras cancelar y volver a registrarse) — comprobar también al compañero
-            // antes de crear un segundo equipo duplicado.
+            // Та же пара может вернуться с переставленными ролями (например, после отмены
+            // и повторной регистрации) — проверяем и партнёра, чтобы не создать дубль команды.
             Long partnerId = partnerReg != null ? partnerReg.getPlayer().getId()
                     : (mainReg.getPartner() != null ? mainReg.getPartner().getId() : null);
             if (isPlayerAlreadyOnActiveTeam(tournamentId, partnerId)) {
@@ -2168,8 +2155,8 @@ public class TeamPlayoffService {
                 continue;
             }
 
-            // Массовый импорт исторически не переносит статус оплаты/присутствия (T18: для
-            // точечного добавления одной пары со страницы оплат используется addTeamFromRegistration).
+            // Массовый импорт не переносит статус оплаты/присутствия — для добавления одной пары
+            // с её отметками со страницы оплат есть addTeamFromRegistration.
             teamRepository.save(buildTeamFromPair(tournament, mainReg, partnerReg, false, false));
             imported++;
         }
@@ -2178,17 +2165,17 @@ public class TeamPlayoffService {
         return imported;
     }
 
-    /** Уже зарегистрирована ли пара с этим главным игроком как AmericanoTeam (T18, страница оплат). */
+    /** Зарегистрирована ли уже пара с этим главным игроком как AmericanoTeam. */
     public boolean isRegisteredAsTeam(Long tournamentId, Long mainPlayerId) {
         return teamRepository.existsByTournamentIdAndPlayer1Id(tournamentId, mainPlayerId);
     }
 
     /**
-     * T18/#271: если пара уже была добавлена в AmericanoTeam (кнопкой на странице оплат или
-     * вручную), сама команда никак не связана с TournamentRegistration/Payment — изменение
-     * оплаты/присутствия на странице оплат ПОСЛЕ добавления никак на неё не влияло. Вызывается
-     * из PaymentService.savePaymentManagementData на каждое сохранение формы; если команда ещё
-     * не добавлена — тихий no-op (findByTournamentIdAndPlayer1Id ничего не найдёт).
+     * Переносит оплату и присутствие со страницы оплат в уже добавленную AmericanoTeam: сама
+     * команда не связана с TournamentRegistration/Payment, и без этой синхронизации изменения
+     * на странице оплат после добавления команды до неё не доходили бы. Вызывается из
+     * PaymentService.savePaymentManagementData на каждое сохранение; если команда ещё
+     * не добавлена — no-op (findByTournamentIdAndPlayer1Id ничего не найдёт).
      */
     @Transactional
     public void syncPaymentStatusForRegistration(Long tournamentId, Long registrationId,
@@ -2209,9 +2196,9 @@ public class TeamPlayoffService {
     }
 
     /**
-     * Точечный аналог {@link #importFromRegistrations} для ОДНОЙ конкретной пары (T18): заказчик
-     * отмечает оплату/присутствие на странице оплат и нажимает "Добавить команду" — в отличие от
-     * массового импорта, оплата/присутствие переносятся в AmericanoTeam как есть, а не сбрасываются.
+     * Точечный аналог {@link #importFromRegistrations} для одной пары: координатор отмечает
+     * оплату/присутствие на странице оплат и нажимает «Добавить команду». В отличие от массового
+     * импорта, оплата и присутствие переносятся в AmericanoTeam как есть, а не сбрасываются.
      */
     @Transactional
     public AmericanoTeam addTeamFromRegistration(Long tournamentId, Long registrationId,
@@ -2242,9 +2229,9 @@ public class TeamPlayoffService {
                 .filter(r -> mainPlayerId.equals(r.getMainPlayerId()) && !r.getPlayer().getId().equals(mainPlayerId))
                 .findFirst().orElse(null);
 
-        // LFPT-357: comprobar también al compañero — la verificación de arriba sólo cubre al
-        // jugador principal, y una pareja reinscrita con los roles invertidos podría duplicarse
-        // si el compañero de esta inscripción ya es player1/player2 de otro equipo.
+        // Проверяем и партнёра: проверка выше покрывает только главного игрока, а пара,
+        // повторно записавшаяся с переставленными ролями, задублировалась бы, если партнёр
+        // этой регистрации уже player1/player2 другой команды.
         Long partnerId = partnerReg != null ? partnerReg.getPlayer().getId()
                 : (mainReg.getPartner() != null ? mainReg.getPartner().getId() : null);
         if (isPlayerAlreadyOnActiveTeam(tournamentId, partnerId)) {
@@ -2280,15 +2267,15 @@ public class TeamPlayoffService {
     }
 
     /**
-     * LFPT-348/LFPT-357: номер команды должен совпадать с "Posición" пары на странице оплат —
-     * не с сырым {@link TournamentRegistration#getPosition()} (может содержать дубли/пропуски
-     * из-за отменённых и повторно созданных регистраций), а с тем же нормализованным номером,
-     * который координатор реально видит там ({@link RegistrationPairPositions}, общий с
-     * {@code PaymentService.getPaymentManagementData}). Откатывается к прежнему поведению
-     * (следующий свободный по счётчику), если у пары нет нормализованной позиции (регистрация
-     * не в статусе, который показывается на странице оплат) или вычисленный номер уже занят
-     * другой командой этого турнира (смешение ручного {@link #addTeam} с
-     * {@link #addTeamFromRegistration}/{@link #importFromRegistrations} в одном турнире).
+     * Номер команды должен совпадать с «Posición» пары на странице оплат — не с сырым
+     * {@link TournamentRegistration#getPosition()} (там возможны дубли и пропуски из-за отменённых
+     * и пересозданных регистраций), а с тем же нормализованным номером, который видит
+     * координатор ({@link RegistrationPairPositions}, общий с
+     * {@code PaymentService.getPaymentManagementData}). Если у пары нет нормализованной позиции
+     * (регистрация не в статусе, который показывается на странице оплат) или вычисленный номер
+     * уже занят другой командой турнира (ручной {@link #addTeam} вперемешку с
+     * {@link #addTeamFromRegistration}/{@link #importFromRegistrations}), берётся следующий
+     * свободный номер по счётчику.
      */
     private int resolveTeamNumberFromRegistration(Long tournamentId, TournamentRegistration mainReg) {
         List<TournamentRegistration> ordered = registrationRepository
@@ -2305,10 +2292,9 @@ public class TeamPlayoffService {
     }
 
     /**
-     * LFPT-357: un jugador no debería estar simultáneamente en dos equipos activos del mismo
-     * torneo — antes sólo se comprobaba {@code player1Id}, lo que dejaba pasar el caso en que
-     * la misma pareja física se reinscribe con los roles principal/compañero invertidos (p. ej.
-     * tras cancelar y volver a registrar la pareja) y termina duplicada en dos equipos.
+     * Игрок не может одновременно состоять в двух активных командах турнира. Проверяются
+     * и {@code player1Id}, и {@code player2Id}: та же пара может перезаписаться с переставленными
+     * ролями главного игрока и партнёра (например, после отмены и повторной регистрации).
      */
     private boolean isPlayerAlreadyOnActiveTeam(Long tournamentId, Long playerId) {
         if (playerId == null) {
@@ -2356,10 +2342,10 @@ public class TeamPlayoffService {
     }
 
     /**
-     * LFPT-307: номер команды — постоянный идентификатор для координатора, не должен меняться
-     * при пересортировке по результатам квалификации (в отличие от {@code currentPosition}/места).
-     * Префикс добавляется только здесь, в Team Playoff DTO-маппинге — {@link AmericanoTeam#getDisplayName()}
-     * общий с Team Americano (round-robin, {@code TeamAmericanoService}), трогать его нельзя.
+     * Номер команды — постоянный идентификатор для координатора, не меняется при пересортировке
+     * по результатам квалификации (в отличие от {@code currentPosition}/места). Префикс
+     * добавляется только здесь, в DTO-маппинге Team Playoff: {@link AmericanoTeam#getDisplayName()}
+     * общий с Team Americano ({@code TeamAmericanoService}), его трогать нельзя.
      */
     private String formatTeamDisplayName(AmericanoTeam t) {
         return "№" + t.getTeamNumber() + " " + t.getDisplayName();
@@ -2438,8 +2424,8 @@ public class TeamPlayoffService {
             dto.setTeam1Player1Name(
                     m.getTeam1Player1().getNombre() + " " + m.getTeam1Player1().getApellido());
         }
-        // LFPT-307: номер команды нужен на карточке матча (квалификация, 1/8, 1/4, полуфинал, финал).
-        // Заодно переиспользуем эту же команду для LFPT-360 (гостевой второй игрок) — не делать два похода в БД.
+        // Номер команды нужен на карточке матча (квалификация, 1/8, 1/4, полуфинал, финал).
+        // Эта же загрузка команды нужна для гостевого второго игрока ниже — без второго похода в БД.
         Optional<AmericanoTeam> team1 = m.getTeam1Id() != null ? teamRepository.findById(m.getTeam1Id()) : Optional.empty();
         Optional<AmericanoTeam> team2 = m.getTeam2Id() != null ? teamRepository.findById(m.getTeam2Id()) : Optional.empty();
 
@@ -2448,7 +2434,7 @@ public class TeamPlayoffService {
             dto.setTeam1Player2Name(
                     m.getTeam1Player2().getNombre() + " " + m.getTeam1Player2().getApellido());
         } else {
-            // LFPT-360: гостевой (незарегистрированный) второй игрок — имя лежит в AmericanoTeam.player2Name,
+            // Гостевой (незарегистрированный) второй игрок: имя лежит в AmericanoTeam.player2Name,
             // FK team1Player2 на матче для него не заполняется.
             team1.ifPresent(t -> dto.setTeam1Player2Name(t.getPlayer2Name()));
         }
