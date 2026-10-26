@@ -28,9 +28,10 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * LFPT-0729 (regresión, comportamiento no tocado por esta tarea): un torneo con cupoMax=8 y 9
- * parejas registradas (8 CONFIRMED + 1 WAITLIST, como las deja DoubleTournamentRegistrationService)
- * debe importar exactamente 8 equipos — la pareja en reserva nunca llega a la calificación.
+ * LFPT-0729 (регрессия, поведение этой задачей не менялось): турнир с cupoMax=8 и 9
+ * зарегистрированными парами (8 CONFIRMED + 1 WAITLIST, как их оставляет
+ * DoubleTournamentRegistrationService) должен импортировать ровно 8 команд — резервная пара
+ * никогда не попадает в квалификацию.
  */
 @SpringBootTest
 @TestPropertySource(properties = {

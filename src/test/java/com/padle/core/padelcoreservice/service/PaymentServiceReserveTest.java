@@ -16,8 +16,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * LFPT-0729: la página de pagos ("Oplaty i poseschaemost'") debe incluir también las parejas en
- * reserva (WAITLIST) — antes quedaban completamente excluidas, no solo sin marcar.
+ * LFPT-0729: страница «Оплаты и посещаемость» должна включать и резервные (WAITLIST) пары —
+ * раньше они полностью исключались из выдачи, а не просто оставались без отметки.
  */
 class PaymentServiceReserveTest {
 
@@ -56,7 +56,7 @@ class PaymentServiceReserveTest {
 
         List<PaymentManagementViewDto> result = paymentService.getPaymentManagementData(1L);
 
-        assertThat(result).hasSize(2); // CANCELLED sigue excluida — no forma parte de este fix
+        assertThat(result).hasSize(2); // CANCELLED по-прежнему исключена — не часть этого фикса
         PaymentManagementViewDto confirmedDto = result.stream()
                 .filter(r -> r.getPlayerId().equals(20L)).findFirst().orElseThrow();
         PaymentManagementViewDto reserveDto = result.stream()

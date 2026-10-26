@@ -4,6 +4,7 @@ import com.padle.core.padelcoreservice.exception.InvalidStateException;
 import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
 import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.americano.AmericanoMatch;
+import com.padle.core.padelcoreservice.model.americano.AmericanoRound;
 import com.padle.core.padelcoreservice.model.americano.AmericanoTeam;
 import com.padle.core.padelcoreservice.model.enums.AmericanoPlayerStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentPhase;
@@ -19,19 +20,19 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * LFPT-0729: marcar un equipo de Team Playoff como "no se presentó" — no debe tocar equipos
- * con partidos de calificación ya creados, y debe excluirse de inmediato del conteo de equipos
- * activos que usan {@code canInitPlayoff}/{@code initPlayoff} para el tamaño del bracket.
+ * LFPT-0729: отметка команды Team Playoff как «не пришла» — не должна трогать команды с уже
+ * созданными матчами квалификации и должна немедленно исключаться из подсчёта активных команд,
+ * который {@code canInitPlayoff}/{@code initPlayoff} используют для размера сетки.
  */
 class TeamPlayoffServiceNoShowTest {
 
@@ -64,7 +65,7 @@ class TeamPlayoffServiceNoShowTest {
                 .teamNumber(1)
                 .status(AmericanoPlayerStatus.ACTIVE)
                 .build();
-        when(teamRepository.findById(1L)).thenReturn(java.util.Optional.of(team));
+        when(teamRepository.findById(1L)).thenReturn(Optional.of(team));
         when(teamRepository.save(any(AmericanoTeam.class))).thenAnswer(inv -> inv.getArgument(0));
     }
 
@@ -126,14 +127,14 @@ class TeamPlayoffServiceNoShowTest {
 
         when(roundRepository.findByTournamentIdAndPhase(100L, TournamentPhase.PLAYOFF)).thenReturn(List.of());
         when(roundRepository.findByTournamentIdAndPhase(100L, TournamentPhase.QUALIFICATION))
-                .thenReturn(List.of(mock(com.padle.core.padelcoreservice.model.americano.AmericanoRound.class)));
+                .thenReturn(List.of(mock(AmericanoRound.class)));
         when(teamRepository.findPlayoffRankingByTournamentId(100L))
                 .thenReturn(List.of(active1, active2, noShow));
 
         boolean canInit = service.canInitPlayoff(100L);
 
-        // 2 equipos activos con 2 partidos cada uno (settled) ya es suficiente para el bracket
-        // de potencia de 2 — el equipo NO_SHOW (0 partidos) no debe impedirlo ni contarse.
+        // 2 активные команды с 2 матчами каждая (settled) уже достаточно для сетки-степени-двойки —
+        // команда NO_SHOW (0 матчей) не должна ни мешать этому, ни учитываться в подсчёте.
         assertThat(canInit).isTrue();
     }
 

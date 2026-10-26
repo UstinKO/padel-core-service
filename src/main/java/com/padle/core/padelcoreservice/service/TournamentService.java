@@ -873,9 +873,9 @@ public class TournamentService {
                     Tournament updated = tournamentRepository.save(existingTournament);
                     log.info("Updated tournament with id: {} by owner: {}", id, owner.getId());
 
-                    // LFPT-0729: aumentar el cupo libera lugares — promover parejas de la
-                    // reserva (WAITLIST) en orden de registro, igual que cuando se libera un
-                    // lugar por cancelación (processWaitlistForTournament ya hace esto último).
+                    // LFPT-0729: увеличение cupoMax освобождает места — переводим пары из
+                    // резерва (WAITLIST) в порядке регистрации, как и при освобождении места
+                    // отменой (processWaitlistForTournament уже делает именно это).
                     if (updated.getCupoMax() > previousCupoMax) {
                         processWaitlistForTournament(id);
                     }

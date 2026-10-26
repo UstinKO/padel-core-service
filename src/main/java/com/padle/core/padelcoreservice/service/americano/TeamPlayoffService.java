@@ -57,10 +57,10 @@ public class TeamPlayoffService {
     private final PlayoffMatchingEngine matchingEngine;
 
     /**
-     * LFPT-0729: {@code AmericanoTeamRepository.findPlayoffRankingByTournamentId} no filtra por
-     * estado — un equipo NO_SHOW/DROPPED_OUT/DISQUALIFIED entraría igual en el conteo total y en
-     * el seeding del playoff. Todo lo que determina tamaño de bracket o siembra usa esto, no la
-     * consulta cruda.
+     * LFPT-0729: {@code AmericanoTeamRepository.findPlayoffRankingByTournamentId} не фильтрует по
+     * статусу — команда NO_SHOW/DROPPED_OUT/DISQUALIFIED попала бы и в общий подсчёт, и в посев
+     * плей-офф. Всё, что определяет размер сетки или посев, использует этот метод, а не сырой
+     * запрос к репозиторию.
      */
     private List<AmericanoTeam> activePlayoffRanking(Long tournamentId) {
         return teamRepository.findPlayoffRankingByTournamentId(tournamentId).stream()
@@ -239,10 +239,10 @@ public class TeamPlayoffService {
     }
 
     /**
-     * LFPT-0729: marca un equipo como "no se presentó" — excluido de la cuenta de equipos
-     * activos (cupo de quals/playoff), sin borrar su registro ni su historial. Bloqueado si el
-     * equipo ya tiene al menos un partido de calificación (aunque no esté terminado): no
-     * queremos excluir en retrospectiva a un equipo que ya pudo afectar el resultado de otro.
+     * LFPT-0729: отмечает команду как «не пришла» — исключается из подсчёта активных команд
+     * (квалификация/плей-офф), но не удаляется из базы и истории. Блокируется, если у команды
+     * уже есть хотя бы один матч квалификации (неважно, завершён он или нет): не исключаем
+     * задним числом команду, которая уже могла повлиять на результат соперника.
      */
     @Transactional
     public AmericanoTeam markNoShow(Long teamId) {
@@ -259,7 +259,7 @@ public class TeamPlayoffService {
         return saved;
     }
 
-    /** LFPT-0729: revierte {@link #markNoShow} — el equipo vuelve a estar activo. */
+    /** LFPT-0729: отменяет {@link #markNoShow} — команда снова становится активной. */
     @Transactional
     public AmericanoTeam cancelNoShow(Long teamId) {
         AmericanoTeam team = teamRepository.findById(teamId)

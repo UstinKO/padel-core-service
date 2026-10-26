@@ -31,9 +31,9 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * LFPT-0729: aumentar el cupoMax de un torneo DOBLES libera lugares — la pareja completa en
- * reserva (WAITLIST) más antigua debe pasar a CONFIRMED automáticamente, sin que el coordinador
- * tenga que tocar esa pareja a mano.
+ * LFPT-0729: увеличение cupoMax турнира DOBLES освобождает места — самая старая полная пара в
+ * резерве (WAITLIST) должна автоматически перейти в CONFIRMED, без ручного вмешательства
+ * координатора.
  */
 @SpringBootTest
 @TestPropertySource(properties = {
@@ -62,7 +62,7 @@ class TournamentServiceCupoMaxIncreaseTest {
 
     @Test
     void aumentarCupoMax_parejaCompletaEnReserva_pasaAConfirmedAutomaticamente() {
-        Tournament tournament = createDoublesTournament(1); // cupoMax=1 → ya hay 1 pareja confirmada
+        Tournament tournament = createDoublesTournament(1); // cupoMax=1 → уже есть 1 подтверждённая пара
         Owner admin = createSuperAdmin();
 
         PlayerPadel confirmedA = createPlayer();
@@ -97,7 +97,7 @@ class TournamentServiceCupoMaxIncreaseTest {
         createWaitlistPair(tournament, reserveA, reserveB, 1);
 
         TournamentDto updateDto = tournamentService.getTournamentDtoById(tournament.getId()).orElseThrow();
-        // cupoMax igual al actual — no hay lugares nuevos, no debe promover.
+        // cupoMax не изменился — новых мест нет, промоушена быть не должно.
 
         tournamentService.updateTournament(tournament.getId(), updateDto, admin);
 

@@ -42,9 +42,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -115,11 +117,11 @@ class TeamPlayoffEndToEndTest {
     }
 
     /**
-     * LFPT-0729: de 8 equipos registrados, 1 se marca "no se presentó" ANTES de jugar — la
-     * calificación corre sólo entre los 7 restantes. Sin el fix, {@code canInitPlayoff}/
-     * {@code initPlayoff} seguían contando 8 equipos en total (el repositorio de ranking no
-     * filtraba por estado): con exactamente 8 (potencia de 2), el equipo NO_SHOW terminaba
-     * incluido en la sembrada del playoff aunque nunca jugó ni un partido.
+     * LFPT-0729: из 8 зарегистрированных команд 1 отмечается «не пришла» ДО начала игр —
+     * квалификация проходит только между оставшимися 7. Без фикса {@code canInitPlayoff}/
+     * {@code initPlayoff} по-прежнему считали 8 команд (репозиторий ранжирования не фильтровал
+     * по статусу): при ровно 8 (степень двойки) команда NO_SHOW попадала в посев плей-офф, хотя
+     * ни разу не сыграла.
      */
     @Test
     void noShowTeam_excludedFromQualificationCountAndPlayoffSeeding() {
@@ -143,14 +145,14 @@ class TeamPlayoffEndToEndTest {
         boolean noShowTeamSeeded = playoffMatches.stream()
                 .anyMatch(m -> noShowTeam.getId().equals(m.getTeam1Id()) || noShowTeam.getId().equals(m.getTeam2Id()));
         assertThat(noShowTeamSeeded)
-                .as("el equipo NO_SHOW no debe aparecer en ningún partido de playoff")
+                .as("команда NO_SHOW не должна попасть ни в один матч плей-офф")
                 .isFalse();
 
-        // 7 equipos activos (no potencia de 2) → bracket de 4 (largestPowerOf2(7)), igual que si
-        // el torneo hubiera tenido 7 equipos desde el principio.
+        // 7 активных команд (не степень двойки) → сетка на 4 (largestPowerOf2(7)), как если бы
+        // в турнире изначально было 7 команд.
         long seededTeams = playoffMatches.stream()
-                .flatMap(m -> java.util.stream.Stream.of(m.getTeam1Id(), m.getTeam2Id()))
-                .filter(java.util.Objects::nonNull)
+                .flatMap(m -> Stream.of(m.getTeam1Id(), m.getTeam2Id()))
+                .filter(Objects::nonNull)
                 .distinct()
                 .count();
         assertThat(seededTeams).isEqualTo(4);

@@ -235,7 +235,7 @@ public class TeamPlayoffViewController {
             playoffService.markNoShow(teamId);
             ra.addFlashAttribute("success", "Equipo marcado como no presentado");
         } catch (InvalidStateException | ResourceNotFoundException e) {
-            log.error("Error marking team {} as no-show: {}", teamId, e.getMessage());
+            log.warn("Не удалось отметить команду {} как «не пришла»: {}", teamId, e.getMessage());
             ra.addFlashAttribute("error", "Error: " + e.getMessage());
         }
         return "redirect:/tournaments/team-playoff/admin/" + tournamentId;
@@ -252,7 +252,7 @@ public class TeamPlayoffViewController {
             playoffService.cancelNoShow(teamId);
             ra.addFlashAttribute("success", "Se canceló la marca de no presentado");
         } catch (InvalidStateException | ResourceNotFoundException e) {
-            log.error("Error cancelling no-show for team {}: {}", teamId, e.getMessage());
+            log.warn("Не удалось снять отметку «не пришла» с команды {}: {}", teamId, e.getMessage());
             ra.addFlashAttribute("error", "Error: " + e.getMessage());
         }
         return "redirect:/tournaments/team-playoff/admin/" + tournamentId;
