@@ -1,10 +1,10 @@
 # LFPT-0729: Feature единый статус команды в Team Playoff — резерв, авто-перевод, статус «не пришла», пересчёт готовности плей-офф (backend)
 
 ## Статус
-approved
+done
 
 ## Источник
-[specs/requests/LFPT-0729-reserva-no-show-team-playoff.md](../requests/LFPT-0729-reserva-no-show-team-playoff.md), issue [#729](https://github.com/UstinKO/padel-core-service/issues/729). Пара с фронтенд-задачей LFPT-0730 (зависит от этой).
+[specs/requests/LFPT-0729-reserva-no-show-team-playoff.md](requests/LFPT-0729-reserva-no-show-team-playoff.md), issue [#729](https://github.com/UstinKO/padel-core-service/issues/729). Пара с фронтенд-задачей LFPT-0730 (зависит от этой).
 
 ## Контекст / зачем
 
