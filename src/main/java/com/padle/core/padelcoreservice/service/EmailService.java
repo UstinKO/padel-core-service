@@ -597,7 +597,7 @@ public class EmailService {
         }
     }
 
-    // LFPT-0668: заявка SOLO_ADD_LATER переведена в резерв по точному дедлайну (старт - 24ч)
+    // Заявка SOLO_ADD_LATER переведена в резерв по точному дедлайну (старт - 24ч)
     @Timed(name = "email.send.time", tags = {"service=email", "type=partner_reserve"})
     @TrackErrors(name = "email.send.errors", tags = {"service=email", "type=partner_reserve"})
     @Async
@@ -639,7 +639,7 @@ public class EmailService {
         }
     }
 
-    // LFPT-0668: повторное напоминание за 3ч до старта, партнёр всё ещё не добавлен
+    // Повторное напоминание за 3ч до старта, партнёр всё ещё не добавлен
     @Timed(name = "email.send.time", tags = {"service=email", "type=partner_final_reminder"})
     @TrackErrors(name = "email.send.errors", tags = {"service=email", "type=partner_final_reminder"})
     @Async
@@ -720,10 +720,10 @@ public class EmailService {
     }
 
     /**
-     * LFPT-437: email-напоминание за 5ч до начала парного турнира.
-     * Текст письма (приветствие, адрес, время, предупреждение об опоздании) фиксирован на испанском
-     * по требованию заказчика, как и у существующих Telegram-напоминаний в TelegramReminderScheduler —
-     * локализуется только кнопка-ссылка на турнир (LFPT-460), по предпочитаемому языку игрока.
+     * Email-напоминание за 5ч до начала парного турнира.
+     * Текст письма (приветствие, адрес, время, предупреждение об опоздании) по требованию
+     * заказчика фиксирован на испанском, как и у Telegram-напоминаний в TelegramReminderScheduler —
+     * по предпочитаемому языку игрока локализуется только кнопка-ссылка на турнир.
      */
     @Timed(name = "email.send.time", tags = {"service=email", "type=pair_tournament_reminder"})
     @TrackErrors(name = "email.send.errors", tags = {"service=email", "type=pair_tournament_reminder"})
@@ -765,10 +765,10 @@ public class EmailService {
     }
 
     /**
-     * LFPT-443: email-напоминание за 5ч до начала индивидуального турнира (AMERICANO, KING_OF_COURT).
-     * Текст письма (приветствие, адрес, время, штраф за опоздание) фиксирован на испанском по
-     * требованию заказчика (LFPT-437/443) — локализуется только кнопка-ссылка на турнир (LFPT-460),
-     * по предпочитаемому языку игрока (`PlayerPadel.getLocale()`).
+     * Email-напоминание за 5ч до начала индивидуального турнира (AMERICANO, KING_OF_COURT).
+     * Текст письма (приветствие, адрес, время, штраф за опоздание) по требованию заказчика
+     * фиксирован на испанском — по предпочитаемому языку игрока (`PlayerPadel.getLocale()`)
+     * локализуется только кнопка-ссылка на турнир.
      */
     @Timed(name = "email.send.time", tags = {"service=email", "type=individual_tournament_reminder"})
     @TrackErrors(name = "email.send.errors", tags = {"service=email", "type=individual_tournament_reminder"})
@@ -810,9 +810,9 @@ public class EmailService {
     }
 
     /**
-     * LFPT-443: email-напоминание за 5ч до начала Cancha Abierta — без упоминания штрафа
-     * за опоздание (в отличие от sendIndividualTournamentReminderEmail), т.к. Cancha Abierta
-     * не является «индивидуальным турниром» в смысле этой задачи, несмотря на индивидуальную регистрацию.
+     * Email-напоминание за 5ч до начала Cancha Abierta — без упоминания штрафа за опоздание
+     * (в отличие от sendIndividualTournamentReminderEmail): Cancha Abierta не считается
+     * индивидуальным турниром, несмотря на индивидуальную регистрацию.
      */
     @Timed(name = "email.send.time", tags = {"service=email", "type=cancha_abierta_reminder"})
     @TrackErrors(name = "email.send.errors", tags = {"service=email", "type=cancha_abierta_reminder"})
@@ -854,10 +854,10 @@ public class EmailService {
     }
 
     /**
-     * LFPT-0618: единая точка формирования ссылок общего футера письма (условия, конфиденциальность,
-     * контакт, отписка) из {@code app.base-url} — чтобы при смене домена не нужно было править
-     * каждый шаблон вручную. Страниц самостоятельной отписки и формы контакта в системе нет —
-     * обе ссылки временно ведут на почту поддержки, как и в остальных шаблонах (recuperar-password,
+     * Единая точка формирования ссылок общего футера письма (условия, конфиденциальность,
+     * контакт, отписка) из {@code app.base-url} — чтобы при смене домена не править каждый
+     * шаблон вручную. Страниц самостоятельной отписки и формы контакта в системе нет —
+     * обе ссылки ведут на почту поддержки, как и в остальных шаблонах (recuperar-password,
      * tournament-confirmation).
      */
     private void setLegalFooterLinks(Context context) {

@@ -103,7 +103,7 @@ public class WebSocketService {
         sendTeamPlayoffMessage(tournamentId, "MATCH_UPDATED", matchData);
     }
 
-    /** LFPT-367: un partido salió de la cola de espera sin llegar a jugarse (coordinador lo quitó). */
+    /** Матч убран из очереди ожидания, так и не сыгранный (его убрал координатор). */
     public void notifyTeamPlayoffMatchRemoved(Long tournamentId, Long matchId) {
         sendTeamPlayoffMessage(tournamentId, "MATCH_REMOVED", matchId);
     }

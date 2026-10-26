@@ -54,8 +54,8 @@ public class SoloRegistrationSchedulerService {
                 String tournamentUrl = baseUrl + "/torneo/" + reg.getTournament().getId();
                 String clubName = resolveClubName(reg.getTournament().getClubId());
 
-                // LFPT-0668: дедлайн — точное время старта - 24ч (а не календарная дата,
-                // как раньше), единая точка правды с moveExpiredAddLaterToReserve.
+                // Дедлайн — точное время старта - 24ч (не календарная дата),
+                // единая точка правды с moveExpiredAddLaterToReserve.
                 String deadline = reg.getTournament().calculateDefaultDeadline().format(DEADLINE_FMT);
 
                 emailService.sendPartnerDataReminder(
@@ -85,10 +85,10 @@ public class SoloRegistrationSchedulerService {
     }
 
     /**
-     * LFPT-0668: каждые 5 минут переводим SOLO_ADD_LATER-заявки, у которых точный дедлайн
+     * Каждые 5 минут переводит SOLO_ADD_LATER-заявки, у которых точный дедлайн
      * (старт турнира - 24ч, Tournament.calculateDefaultDeadline()) уже прошёл, в резерв
-     * (WAITLIST) вместо тупикового SOLO_EXPIRED — данные не теряются, партнёра можно
-     * добавить позже, слот в основном составе освобождается.
+     * (WAITLIST): данные не теряются, партнёра можно добавить позже, слот в основном
+     * составе освобождается.
      */
     @Scheduled(cron = "0 */5 * * * *")
     @Transactional
@@ -125,8 +125,8 @@ public class SoloRegistrationSchedulerService {
     }
 
     /**
-     * LFPT-0668: каждые 5 минут — повторное напоминание (с self-service действиями) резервным
-     * заявкам без партнёра, если до старта турнира осталось ровно ~3 часа и напоминание ещё
+     * Каждые 5 минут — повторное напоминание (с self-service действиями) резервным
+     * заявкам без партнёра, если до старта турнира осталось ~3 часа и напоминание ещё
      * не отправлялось.
      */
     @Scheduled(cron = "0 */5 * * * *")
@@ -198,7 +198,7 @@ public class SoloRegistrationSchedulerService {
         );
     }
 
-    // LFPT-0668: токен self-service действий (подтвердить/отменить) для резервной заявки без
+    // Токен self-service действий (подтвердить/отменить) для резервной заявки без
     // партнёра — та же схема, что и у DoubleTournamentRegistrationService.generatePartnerActionToken.
     private String generatePartnerActionToken() {
         return "PAT_" + UUID.randomUUID().toString().replace("-", "").substring(0, 20).toUpperCase();

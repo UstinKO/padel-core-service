@@ -296,8 +296,8 @@ public class PaymentService {
                     }
                 });
 
-        // Нормализация позиций (LFPT-357): устраняет дубли из-за тестовых данных или race
-        // conditions. Общая с TeamPlayoffService.resolveTeamNumberFromRegistration логика
+        // Нормализация позиций: устраняет дубли из-за тестовых данных или race conditions.
+        // Общая с TeamPlayoffService.resolveTeamNumberFromRegistration логика
         // (см. RegistrationPairPositions) — гарантирует, что teamNumber команды совпадает
         // с тем, что координатор реально видит здесь в колонке "Posición".
         Map<Long, Integer> groupToPos = RegistrationPairPositions.computeDisplayedPositions(registrations);
@@ -313,11 +313,11 @@ public class PaymentService {
         return result;
     }
 
-    // ==================== Разбивка по способу оплаты (LFPT-0475) ====================
+    // ==================== Разбивка по способу оплаты ====================
 
     /**
      * Агрегирует суммы оплаченных (PAID) платежей по валюте и способу оплаты — для
-     * детализации общей суммы на странице платежей турнира (LFPT-0476). Строки-партнёры
+     * детализации общей суммы на странице платежей турнира. Строки-партнёры
      * (partnerRow) не исключаются: партнёр-гость ссылается на отдельную запись Payment
      * (маркер PARTNER_PAYMENT в notes), а не на тот же платёж основного игрока — оба
      * платежа независимы и оба учитываются. paymentMethod == null (PAID без выбранного
@@ -367,12 +367,11 @@ public class PaymentService {
                             "Registration not found: " + dto.getRegistrationId()));
 
             // Посещение и подтверждение участия — для основной строки.
-            // Партнёр, зарегистрированный в БД, всегда присутствует в этом же updates своей
+            // Партнёр, зарегистрированный в БД, всегда приходит в этом же updates своей
             // отдельной строкой (getPaymentManagementData отдаёт по dto на каждую активную
-            // TournamentRegistration) — раньше здесь ещё и принудительно копировалось attended
-            // на partnerReg, и при обработке следующей по списку строки партнёра его же
-            // собственное (несовпадающее) значение затирало то, что админ только что отметил
-            // (issue #296). Доверяем значению из каждой строки формы независимо, без sync.
+            // TournamentRegistration), поэтому attended на partnerReg здесь не копируется:
+            // иначе строка партнёра, обработанная следом, затёрла бы только что отмеченное
+            // значение своим. Значению из каждой строки формы доверяем независимо.
             if (!dto.isPartnerRow()) {
                 registration.setAttended(dto.isAttended());
                 registration.setParticipationConfirmed(dto.isParticipationConfirmed());
@@ -474,9 +473,9 @@ public class PaymentService {
                         dto.getRegistrationId(), dto.isPartnerRow());
             }
 
-            // T18/#271: если по этой регистрации уже есть AmericanoTeam (Team Playoff), синхронизируем
-            // её hasPaid/attended с только что сохранённым статусом — иначе команда, добавленная в
-            // турнир ДО того, как на этой странице отметили оплату, навсегда останется неотмеченной.
+            // Если по этой регистрации уже есть AmericanoTeam (Team Playoff), синхронизируем
+            // её hasPaid/attended с только что сохранённым статусом — иначе команда, добавленная
+            // в турнир до того, как на этой странице отметили оплату, осталась бы неотмеченной.
             if (!dto.isPartnerRow()) {
                 teamPlayoffService.syncPaymentStatusForRegistration(tournamentId, dto.getRegistrationId(),
                         dto.getPaymentStatus() == PaymentStatus.PAID, dto.isAttended());
