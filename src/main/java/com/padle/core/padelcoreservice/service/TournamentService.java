@@ -859,6 +859,7 @@ public class TournamentService {
                         throw new IllegalStateException("Cannot edit finished or cancelled tournament");
                     }
 
+                    int previousCupoMax = existingTournament.getCupoMax();
                     updateTournamentFields(existingTournament, tournamentDto);
 
                     if (tournamentDto.getFechaInicio() != null && tournamentDto.getHoraInicio() != null) {
@@ -871,6 +872,14 @@ public class TournamentService {
 
                     Tournament updated = tournamentRepository.save(existingTournament);
                     log.info("Updated tournament with id: {} by owner: {}", id, owner.getId());
+
+                    // LFPT-0729: aumentar el cupo libera lugares — promover parejas de la
+                    // reserva (WAITLIST) en orden de registro, igual que cuando se libera un
+                    // lugar por cancelación (processWaitlistForTournament ya hace esto último).
+                    if (updated.getCupoMax() > previousCupoMax) {
+                        processWaitlistForTournament(id);
+                    }
+
                     return mapToDtoWithDetails(updated);
                 });
     }

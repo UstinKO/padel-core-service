@@ -188,9 +188,11 @@ public class PaymentService {
 
         registrations.stream()
                 .filter(reg -> reg.getStatus() == RegistrationStatus.CONFIRMED
-                        || reg.getStatus() == RegistrationStatus.PARTNER_INVITED)
+                        || reg.getStatus() == RegistrationStatus.PARTNER_INVITED
+                        || reg.getStatus() == RegistrationStatus.WAITLIST)
                 .forEach(reg -> {
 
+                    boolean isReserve = reg.getStatus() == RegistrationStatus.WAITLIST;
                     boolean isDouble = Boolean.TRUE.equals(reg.getIsDoubleRegistration());
                     boolean isMainPlayer = !isDouble
                             || (reg.getMainPlayerId() != null
@@ -211,12 +213,14 @@ public class PaymentService {
                     dto.setPlayerPhone(reg.getPlayer().getTelefono());
                     dto.setTelegramUsername(reg.getPlayer().getTelegramUsername());
                     dto.setPosition(reg.getPosition());
+                    dto.setWaitlistPosition(reg.getWaitlistPosition());
                     dto.setPairGroupId(reg.getMainPlayerId() != null ? reg.getMainPlayerId() : reg.getPlayer().getId());
                     dto.setAttended(reg.getAttended() != null ? reg.getAttended() : false);
                     dto.setParticipationConfirmed(reg.getParticipationConfirmed() != null ? reg.getParticipationConfirmed() : false);
                     dto.setPartnerRow(false);
                     dto.setMainRow(isMainPlayer);
                     dto.setDoubleRegistration(isDouble);
+                    dto.setReserve(isReserve);
 
                     // Платёж — без маркера PARTNER_PAYMENT (у каждого своя запись)
                     payments.stream()
@@ -262,9 +266,11 @@ public class PaymentService {
                         partnerDto.setPartnerPhone(reg.getPartnerPhone());
                         partnerDto.setPartnerEmail(reg.getPartnerEmail());
                         partnerDto.setPosition(reg.getPosition());
+                        partnerDto.setWaitlistPosition(reg.getWaitlistPosition());
                         partnerDto.setPairGroupId(reg.getPlayer().getId());
                         partnerDto.setAttended(false);
                         partnerDto.setParticipationConfirmed(false);
+                        partnerDto.setReserve(isReserve);
 
                         // Платёж партнёра — с маркером PARTNER_PAYMENT
                         payments.stream()

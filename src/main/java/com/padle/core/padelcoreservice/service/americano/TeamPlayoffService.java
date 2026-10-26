@@ -56,6 +56,18 @@ public class TeamPlayoffService {
     private final WebSocketService webSocketService;
     private final PlayoffMatchingEngine matchingEngine;
 
+    /**
+     * LFPT-0729: {@code AmericanoTeamRepository.findPlayoffRankingByTournamentId} no filtra por
+     * estado — un equipo NO_SHOW/DROPPED_OUT/DISQUALIFIED entraría igual en el conteo total y en
+     * el seeding del playoff. Todo lo que determina tamaño de bracket o siembra usa esto, no la
+     * consulta cruda.
+     */
+    private List<AmericanoTeam> activePlayoffRanking(Long tournamentId) {
+        return teamRepository.findPlayoffRankingByTournamentId(tournamentId).stream()
+                .filter(t -> t.getStatus() == AmericanoPlayerStatus.ACTIVE)
+                .toList();
+    }
+
     // ═══════════════════════════════════════════════════════════════════════
     // УПРАВЛЕНИЕ КОМАНДАМИ
     // ═══════════════════════════════════════════════════════════════════════
@@ -226,6 +238,39 @@ public class TeamPlayoffService {
         teamRepository.delete(team);
     }
 
+    /**
+     * LFPT-0729: marca un equipo como "no se presentó" — excluido de la cuenta de equipos
+     * activos (cupo de quals/playoff), sin borrar su registro ni su historial. Bloqueado si el
+     * equipo ya tiene al menos un partido de calificación (aunque no esté terminado): no
+     * queremos excluir en retrospectiva a un equipo que ya pudo afectar el resultado de otro.
+     */
+    @Transactional
+    public AmericanoTeam markNoShow(Long teamId) {
+        AmericanoTeam team = getActiveTeam(teamId);
+
+        if (!getTeamQualMatches(team.getTournament().getId(), teamId).isEmpty()) {
+            throw new InvalidStateException(
+                    "El equipo " + team.getDisplayName() + " ya tiene partidos de calificación — no se puede marcar como no presentado");
+        }
+
+        team.setStatus(AmericanoPlayerStatus.NO_SHOW);
+        AmericanoTeam saved = teamRepository.save(team);
+        tryAutoCompleteQualification(team.getTournament().getId());
+        return saved;
+    }
+
+    /** LFPT-0729: revierte {@link #markNoShow} — el equipo vuelve a estar activo. */
+    @Transactional
+    public AmericanoTeam cancelNoShow(Long teamId) {
+        AmericanoTeam team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new ResourceNotFoundException("Team not found: " + teamId));
+        if (team.getStatus() != AmericanoPlayerStatus.NO_SHOW) {
+            throw new InvalidStateException("El equipo " + team.getDisplayName() + " no está marcado como no presentado");
+        }
+        team.setStatus(AmericanoPlayerStatus.ACTIVE);
+        return teamRepository.save(team);
+    }
+
     public List<AmericanoTeam> getTeams(Long tournamentId) {
         return teamRepository.findByTournamentId(tournamentId);
     }
@@ -259,7 +304,7 @@ public class TeamPlayoffService {
         if (isPlayoffStarted(tournamentId) || !isQualificationStarted(tournamentId)) {
             return false;
         }
-        List<AmericanoTeam> ranked = teamRepository.findPlayoffRankingByTournamentId(tournamentId);
+        List<AmericanoTeam> ranked = activePlayoffRanking(tournamentId);
         int total = ranked.size();
         if (total < 2) {
             return false;
@@ -494,7 +539,7 @@ public class TeamPlayoffService {
             throw new InvalidStateException("Aún no hay suficientes equipos clasificados para iniciar el playoff");
         }
 
-        List<AmericanoTeam> ranked = teamRepository.findPlayoffRankingByTournamentId(tournamentId);
+        List<AmericanoTeam> ranked = activePlayoffRanking(tournamentId);
         int total = ranked.size();
         int qualRounds = roundRepository.findMaxRoundNumber(tournamentId).orElse(0);
         int roundNumber = qualRounds + 1;
@@ -1585,7 +1630,7 @@ public class TeamPlayoffService {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
-        List<AmericanoTeam> unseeded = teamRepository.findPlayoffRankingByTournamentId(tournamentId)
+        List<AmericanoTeam> unseeded = activePlayoffRanking(tournamentId)
                 .stream()
                 .filter(t -> !alreadySeeded.contains(t.getId()))
                 .toList();

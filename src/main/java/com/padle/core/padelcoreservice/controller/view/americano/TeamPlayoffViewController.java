@@ -224,6 +224,40 @@ public class TeamPlayoffViewController {
         return "redirect:/tournaments/team-playoff/admin/" + tournamentId;
     }
 
+    @PostMapping("/admin/teams/{teamId}/no-show")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
+    public String markTeamNoShow(@PathVariable Long teamId,
+                                  @RequestParam Long tournamentId,
+                                  RedirectAttributes ra,
+                                  @AuthenticationPrincipal Owner currentOwner) {
+        tournamentAccessService.assertCanManageAmericanoTeam(currentOwner, teamId);
+        try {
+            playoffService.markNoShow(teamId);
+            ra.addFlashAttribute("success", "Equipo marcado como no presentado");
+        } catch (InvalidStateException | ResourceNotFoundException e) {
+            log.error("Error marking team {} as no-show: {}", teamId, e.getMessage());
+            ra.addFlashAttribute("error", "Error: " + e.getMessage());
+        }
+        return "redirect:/tournaments/team-playoff/admin/" + tournamentId;
+    }
+
+    @PostMapping("/admin/teams/{teamId}/no-show/cancel")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
+    public String cancelTeamNoShow(@PathVariable Long teamId,
+                                    @RequestParam Long tournamentId,
+                                    RedirectAttributes ra,
+                                    @AuthenticationPrincipal Owner currentOwner) {
+        tournamentAccessService.assertCanManageAmericanoTeam(currentOwner, teamId);
+        try {
+            playoffService.cancelNoShow(teamId);
+            ra.addFlashAttribute("success", "Se canceló la marca de no presentado");
+        } catch (InvalidStateException | ResourceNotFoundException e) {
+            log.error("Error cancelling no-show for team {}: {}", teamId, e.getMessage());
+            ra.addFlashAttribute("error", "Error: " + e.getMessage());
+        }
+        return "redirect:/tournaments/team-playoff/admin/" + tournamentId;
+    }
+
     // ══════════════════════════════════════════════════════════════════════
     // ADMIN — ИНИЦИАЛИЗАЦИЯ ФАЗ
     // ══════════════════════════════════════════════════════════════════════
