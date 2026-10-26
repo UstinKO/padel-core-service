@@ -216,7 +216,7 @@ tr.partner-row {
 }
 tr.partner-row:hover { background-color: #ede9fe !important; }
 
-/* LFPT-0730: резерв (WAITLIST) — приглушённая строка, явно отделённая от основного состава */
+/* Резерв (WAITLIST) — приглушённая строка, явно отделённая от основного состава */
 tr.reserve-row {
     opacity: .75;
     background-color: #fffbeb !important;
@@ -382,7 +382,7 @@ select.form-control-sm { cursor: pointer; }
     .action-buttons .btn { width: 100%; justify-content: center; }
 }
 
-/* LFPT-0573: подсказка у отметки явки — иконка-кнопка, видна по наведению/фокусу клавиатурой
+/* Подсказка у отметки явки — иконка-кнопка, видна по наведению/фокусу клавиатурой
    (чисто CSS) и по тапу на телефоне (JS добавляет/убирает .open, см. payments.html). */
 .info-tip {
     background: none;

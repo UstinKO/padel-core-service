@@ -282,7 +282,7 @@
     text-transform: uppercase;
 }
 
-/* LFPT-374: estado de cupos en la tarjeta pública (reemplaza la fracción "X/Y") */
+/* Статус заполненности в публичной карточке турнира (вместо дроби "X/Y") */
 .torneo-spots-status {
     font-weight: 600;
 }

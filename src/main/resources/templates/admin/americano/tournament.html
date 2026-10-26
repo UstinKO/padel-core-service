@@ -174,7 +174,7 @@
         <div th:if="${error}"   class="alert alert-danger"  th:text="${error}"></div>
         <div th:if="${info}"    class="alert alert-info"    th:text="${info}"></div>
 
-        <!-- Баннер формата (п.15, 16 ТЗ) -->
+        <!--/* Баннер формата */-->
         <div th:if="${ranking != null and ranking.formatType != null}">
             <div th:if="${ranking.formatType.name() == 'FULL'}" class="format-banner full">
                 <span class="format-badge-pill"><i class="fas fa-star"></i> Full Americano</span>
@@ -274,7 +274,7 @@
                         </div>
                     </div>
 
-                    <!-- Bye игроки раунда — игроки, отдыхающие в этом раунде (п.7 ТЗ) -->
+                    <!--/* Bye игроки раунда — игроки, отдыхающие в этом раунде */-->
                     <div th:if="${round.byePlayerNames != null and not #lists.isEmpty(round.byePlayerNames)}"
                          class="bye-section">
                         <div class="bye-section-title">
@@ -372,7 +372,7 @@
             </div>
         </div>
 
-        <!-- ══════════════ ТАБЛИЦА РЕЙТИНГА (п.4 ТЗ) ══════════════ -->
+        <!--/* ══════════════ ТАБЛИЦА РЕЙТИНГА ══════════════ */-->
         <div class="ranking-card" style="margin-top:2rem">
             <div class="ranking-header">
                 <h3><i class="fas fa-chart-line"></i> <span th:text="#{admin.americano.section.ranking}">Clasificación</span></h3>

@@ -1,20 +1,20 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <body>
-<!--
+<!--/*
     Список допустимых уровней ИГРОКА (не путать с Nivel.values() — тот перечисляет
     категории турниров, их больше и они не все применимы к игроку). Единственное
     место, где перечисляются эти значения — используется и в /perfil, и в админке,
     чтобы список не разъезжался при правках.
 
-    allowEmpty (issue #82) — все вызовы должны передавать оба аргумента явно: Thymeleaf
+    allowEmpty — все вызовы должны передавать оба аргумента явно: Thymeleaf
     не подставляет значение по умолчанию, если вызов указывает меньше позиционных
     параметров, чем объявлено в сигнатуре фрагмента (падает с TemplateProcessingException
-    "Fragment selection does not correctly match"). В админке уровень игрока по-прежнему
-    можно сбросить на "Sin especificar" (allowEmpty=true — исправление ошибочно проставленных
+    "Fragment selection does not correctly match"). В админке уровень игрока можно
+    сбросить на "Sin especificar" (allowEmpty=true — исправление ошибочно проставленных
     данных). В /perfil (self-service) поле обязательное — вызывающая сторона передаёт
     allowEmpty=false, чтобы этой опции не было в выборе игрока вообще.
--->
+*/-->
 <th:block th:fragment="options(selected, allowEmpty)">
     <option th:if="${allowEmpty}" value=""
             th:selected="${selected == null or selected.name() == 'SIN_ESPECIFICAR'}"

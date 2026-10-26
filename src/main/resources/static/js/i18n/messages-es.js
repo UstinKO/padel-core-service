@@ -27,7 +27,7 @@ window.APP_MESSAGES = {
     'contact.error.save':       'Error al guardar',
     'contact.error.connection': 'Error de conexión. Inténtalo de nuevo.',
 
-    // ── level-check.js (LFPT-0632) ──────────────────────────────────────────
+    // ── level-check.js ──────────────────────────────────────────────────────
     'level.modal.title':  'Nivel de juego requerido',
     'level.modal.desc':   'Para inscribirte en este torneo primero tenés que indicar tu nivel en tu perfil.',
     'level.btn.cancel':   'Cancelar',
@@ -109,7 +109,7 @@ window.APP_MESSAGES = {
     'card.spots.limited':    'Últimos cupos',
     'card.spots.full':       'Sin cupos',
 
-    // ── home.js: tarjeta de torneo en la página principal (LFPT-0435) ───────
+    // ── home.js: tarjeta de torneo en la página principal ───────────────────
     'card.spots.completos':       'Cupos completos',
     'card.modalidad.individual':  'Participación individual',
     'card.modalidad.doubles':     'Participación en pareja',

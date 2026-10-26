@@ -1,5 +1,5 @@
 /**
- * Admin Panel - Language Switcher (LFPT-0542)
+ * Admin Panel - Language Switcher
  */
 
 document.addEventListener('DOMContentLoaded', function() {

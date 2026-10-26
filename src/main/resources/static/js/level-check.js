@@ -55,9 +55,9 @@ const LevelCheck = (() => {
         if (m) m.style.display = 'none';
     }
 
-    // LFPT-0632: guarda el torneo pendiente para que /perfil pueda ofrecer volver
-    // a la inscripción después de guardar el nivel. sessionStorage puede no estar
-    // disponible (modo privado) — no debe impedir mostrar el popup.
+    // Сохраняет турнир, на который не удалась регистрация, чтобы /perfil мог предложить
+    // вернуться к ней после сохранения уровня. sessionStorage может быть недоступен
+    // (приватный режим) — это не должно мешать показать попап.
     function rememberTournament(tournamentId) {
         try {
             sessionStorage.setItem(STORAGE_KEY, tournamentId);

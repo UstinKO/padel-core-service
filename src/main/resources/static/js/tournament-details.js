@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Закрытие модального окна — закрываем то окно, внутри которого нажата кнопка,
-    // а не всегда partnerModal (LFPT-0634).
+    // а не всегда partnerModal.
     if (modalClose) {
         modalClose.forEach(btn => {
             btn.addEventListener('click', () => {
@@ -144,21 +144,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const manualFields = document.getElementById('manualPartnerFields');
 
-    // LFPT-0680/LFPT-0700: подсказки существующих игроков во время ручного ввода партнёра —
-    // поиск независимо по каждому из четырёх полей (имя/фамилия/телефон/Telegram), результаты
+    // Подсказки существующих игроков во время ручного ввода партнёра — поиск
+    // независимо по каждому из четырёх полей (имя/фамилия/телефон/Telegram), результаты
     // объединяются по id. Email/телефон найденных игроков не показываются (приватность).
     const manualSuggestions     = document.getElementById('manualPartnerSuggestions');
     const manualSuggestionsList = document.getElementById('manualPartnerSuggestionsList');
     const manualSuggestResults  = { firstName: [], lastName: [], phone: [], telegram: [] };
     let manualSuggestDebounceTimer = null;
-    // LFPT-0721: сбой самого запроса подсказок — отличается от «нет совпадений», чтобы не
+    // Сбой самого запроса подсказок — отличается от «нет совпадений», чтобы не
     // создавать ложное впечатление, что совпадений действительно нет.
     let manualSearchHasError = false;
-    // LFPT-0688: поле, в которое сейчас вводит пользователь — подсказки позиционируются
+    // Поле, в которое сейчас вводит пользователь — подсказки позиционируются
     // рядом с ним (а не одним блоком под всеми полями), чтобы не уходить за экран на мобильном.
     let manualActiveInput = null;
 
-    // LFPT-0694: на iOS Safari внутри модалки с position:fixed window.innerHeight НЕ
+    // На iOS Safari внутри модалки с position:fixed window.innerHeight НЕ
     // уменьшается, когда появляется клавиатура (известная особенность WebKit) — расчёт
     // "места снизу" по window.innerHeight считает доступной область, которую реально
     // перекрывает клавиатура, и позиционирует подсказки вне видимой части экрана. Поля
@@ -169,13 +169,12 @@ document.addEventListener('DOMContentLoaded', function() {
         return (window.visualViewport && window.visualViewport.height) || window.innerHeight;
     }
 
-    // LFPT-0703: общая логика позиционирования для partnerSearchResults и
-    // manualPartnerSuggestions (раньше — два почти идентичных блока). Выбирает сторону
-    // (вниз/вверх от активного поля), как и раньше, но дополнительно ограничивает
-    // max-height списка реально доступным местом в выбранную сторону — иначе список
-    // мог отрендериться выше статичного max-height из разметки и выйти за границу
-    // видимой области экрана (воспроизводилось на iPhone при открытой клавиатуре,
-    // когда свободного места и сверху, и снизу от поля меньше статичного предела).
+    // Общая логика позиционирования для partnerSearchResults и manualPartnerSuggestions.
+    // Выбирает сторону (вниз/вверх от активного поля) и ограничивает max-height списка
+    // реально доступным местом в выбранную сторону — иначе список мог бы отрендериться
+    // выше статичного max-height из разметки и выйти за границу видимой области экрана
+    // (на iPhone при открытой клавиатуре, когда свободного места и сверху, и снизу от поля
+    // меньше статичного предела).
     function positionFloatingList(anchorEl, listEl, maxHeightCap) {
         const rect = anchorEl.getBoundingClientRect();
         const gap = 4;
@@ -225,7 +224,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (manualSuggestions) manualSuggestions.style.display = 'none';
     }
 
-    // LFPT-0703: статичный max-height из разметки (tournament-details.html) — верхняя
+    // Статичный max-height из разметки (tournament-details.html) — верхняя
     // граница, за пределы которой список не рендерится даже при достатке места;
     // positionFloatingList дополнительно ограничивает его доступным местом.
     const MANUAL_SUGGESTIONS_MAX_HEIGHT = 220;
@@ -305,8 +304,8 @@ document.addEventListener('DOMContentLoaded', function() {
         manualSuggestDebounceTimer = setTimeout(() => searchManualField(field, query), 400);
     }
 
-    // LFPT-0700: добавлено поле Telegram — поиск кандидатов по нему уже поддерживает
-    // /api/players/search (LFPT-0679), оставалось только подключить сам input.
+    // Поля ручного ввода, по каждому из которых ищутся кандидаты (/api/players/search
+    // поддерживает поиск и по Telegram).
     const MANUAL_SUGGEST_FIELDS = {
         partnerFirstName: 'firstName',
         partnerLastName:  'lastName',
@@ -403,7 +402,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (partnerModalBody) {
         partnerModalBody.addEventListener('scroll', repositionVisibleDropdowns);
     }
-    // LFPT-0694: открытие/закрытие мобильной клавиатуры меняет visualViewport.height,
+    // Открытие/закрытие мобильной клавиатуры меняет visualViewport.height,
     // не всегда сопровождаясь событием resize на window — пересчитываем позицию и там,
     // и там, чтобы подсказки не оставались позиционированными под уже невидимой (из-за
     // клавиатуры) частью экрана.
@@ -413,7 +412,7 @@ document.addEventListener('DOMContentLoaded', function() {
         window.addEventListener('resize', repositionVisibleDropdowns);
     }
 
-    // LFPT-0703: статичный max-height из разметки tournament-details.html (#partnerSearchResults).
+    // Статичный max-height из разметки tournament-details.html (#partnerSearchResults).
     const PARTNER_SEARCH_RESULTS_MAX_HEIGHT = 200;
 
     function positionDropdown() {
@@ -521,7 +520,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <p>${t('regConfirm.cancha.rule2')}</p>
                 </div>`;
         } else if (tournamentType === 'PADEL_CLINIC') {
-            // LFPT-0651: финансовые условия отмены как у индивидуального турнира,
+            // Финансовые условия отмены как у индивидуального турнира,
             // но без штрафа за опоздание — Padel Clinic не соревновательный формат.
             rulesHtml = `
                 <p class="reg-confirm-subtitle">${t('regConfirm.clinic.subtitle')}</p>
@@ -635,7 +634,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     showResultModal('success', t('details.success.registered'), t('details.success.waitlist_added'));
                                 }
                             } else if (data.needLevel) {
-                                // LFPT-0632: попап "указать уровень" вместо обычной ошибки
+                                // Попап "указать уровень" вместо обычной ошибки
                                 btn.disabled = false;
                                 btn.innerHTML = window.tournament?.inscritosActuales >= window.tournament?.cupoMax ?
                                     `<i class="fas fa-clock"></i> ${t('details.btn.waitlist')}` :
@@ -718,7 +717,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const soloMsg = mode === 'SEARCH' ? t('details.success.solo_search') : t('details.success.solo_later');
                     showResultModal('success', t('details.success.ready'), soloMsg);
                 } else if (data.needLevel) {
-                    // LFPT-0632: попап "указать уровень" вместо обычной ошибки
+                    // Попап "указать уровень" вместо обычной ошибки
                     closeModal();
                     LevelCheck.show(tournamentId);
                     submitPartnerBtn.disabled = false;
@@ -777,7 +776,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 else message = t('details.success.pair_complete');
                 showResultModal('success', t('details.success.registered'), message);
             } else if (data.needLevel) {
-                // LFPT-0632: попап "указать уровень" вместо обычной ошибки
+                // Попап "указать уровень" вместо обычной ошибки
                 closeModal();
                 LevelCheck.show(tournamentId);
                 submitPartnerBtn.disabled = false;

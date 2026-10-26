@@ -193,7 +193,7 @@
 <script th:inline="javascript">
     // Генерация: блокируем отправку с нечётным числом выбранных игроков —
     // BracketService.generateInitialBracket молча теряет последнего через
-    // целочисленное деление (numPlayers / 2), см. LFPT-394.
+    // целочисленное деление (numPlayers / 2).
     (function () {
         var form = document.getElementById('generateBracketForm');
         if (!form) return;
@@ -211,7 +211,7 @@
     // set1/set2/set3/superSet побеждает; при ничьей победитель не выставляется) —
     // AdminMatchController.updateMatchResult продвигает победителя в следующий
     // раунд по ganadorId из отправленной формы, а не по пересчитанному на сервере
-    // результату, см. LFPT-394.
+    // результату.
     document.querySelectorAll('.match-result-form').forEach(function (form) {
         form.addEventListener('submit', function () {
             var player1Id = form.getAttribute('data-player1-id');

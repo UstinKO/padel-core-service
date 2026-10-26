@@ -90,7 +90,7 @@
         .wave-title{display:none;margin:0 0 .5rem;font-size:.9rem;font-weight:700;color:#1e293b}
         .badge-m1{background:#dbeafe;color:#1d4ed8}
         .badge-m2{background:#ede9fe;color:#6d28d9}
-        /* LFPT-415: десктоп — обе волны квалификации (M1/M2) видны одновременно в две колонки,
+        /* Десктоп — обе волны квалификации (M1/M2) видны одновременно в две колонки,
            заскоуплено по #qualRoundContent, а не по .round-content, чтобы не задеть "Nuevo partido"
            и раздел Playoff, которые используют тот же класс для отступов. */
         @media (min-width: 1025px) {
@@ -115,7 +115,7 @@
         .icon-btn:hover{color:#FF6B35}
         .icon-toggle-btn{background:none;border:none;cursor:pointer;padding:0;line-height:1;font-size:inherit}
         .icon-toggle-btn:hover{opacity:.7}
-        /* LFPT-0569: чеклист подготовки турнира для координатора */
+        /* Чеклист подготовки турнира для координатора */
         .prep-checklist{border:1px solid #bfdbfe}
         .prep-checklist-header{cursor:pointer;user-select:none}
         .prep-checklist-chevron{transition:transform .2s}
@@ -173,13 +173,13 @@
         <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
         <div th:if="${error}"   class="alert alert-danger"  th:text="${error}"></div>
 
-        <!-- ══════════════════════════════════════════════════════════════
-             ЧЕКЛИСТ ПОДГОТОВКИ ТУРНИРА (LFPT-0569) — постоянный пошаговый
-             блок для координатора, который впервые управляет турниром.
+        <!--/* ══════════════════════════════════════════════════════════════
+             ЧЕКЛИСТ ПОДГОТОВКИ ТУРНИРА — постоянный пошаговый блок
+             для координатора, который впервые управляет турниром.
              Переиспользует уже существующие действия (импорт/добавление
              команды, настройка кортов, старт квалификации), не дублирует
              их логику — только визуально проводит координатора по порядку.
-        ══════════════════════════════════════════════════════════════ -->
+        ══════════════════════════════════════════════════════════════ */-->
         <div id="prepChecklist" class="section-card prep-checklist">
             <div class="section-header prep-checklist-header" onclick="togglePrepChecklist()">
                 <h3>
@@ -359,8 +359,8 @@
                             <span class="negative" th:text="${team.gamesLost}">0</span>
                         </td>
                         <td style="white-space:nowrap">
-                            <!-- LFPT-0730: отметка «не пришла» (LFPT-0729) — доступна независимо от qualStarted,
-                                 backend сам блокирует, если у команды уже есть матч квалификации. -->
+                            <!--/* Отметка «не пришла» доступна независимо от qualStarted —
+                                 backend сам блокирует, если у команды уже есть матч квалификации. */-->
                             <form th:if="${team.status == 'ACTIVE'}"
                                   th:action="@{'/tournaments/team-playoff/admin/teams/' + ${team.id} + '/no-show'}"
                                   method="post"
@@ -549,7 +549,7 @@
                     <div id="newMatchSuggestions" style="margin-top:.5rem;display:flex;flex-direction:column;gap:.35rem"></div>
                 </div>
 
-                <!-- LFPT-367: cola de espera — parejas ya formadas, sin cancha asignada todavía -->
+                <!--/* Очередь ожидания — пары уже сформированы, корт ещё не назначен */-->
                 <div style="border-bottom:1px solid #e2e8f0">
                     <h4 style="margin:1rem 1.5rem 0;font-size:.9rem;color:#1e293b">
                         <i class="fas fa-clock" style="color:#FF6B35"></i>
@@ -694,8 +694,8 @@
                     </form>
                 </div>
 
-                <!-- LFPT-465: инициализация плей-офф заранее — квалификация ещё не завершена,
-                     но уже достаточно команд определилось (8/16 команд, без play-in) -->
+                <!--/* Инициализация плей-офф заранее — квалификация ещё не завершена,
+                     но уже достаточно команд определилось (8/16 команд, без play-in) */-->
                 <div th:if="${ranking != null and not ranking.finished and canInitPlayoff and not playoffStarted}"
                      style="padding:1rem 1.5rem;background:#fef9c3;border-top:1px solid #fcd34d">
                     <p style="margin:0 0 .75rem;font-size:.9rem;color:#78350f">
@@ -876,7 +876,7 @@
     });
     // ─────────────────────────────────────────────────────────────────────
 
-    // ── LFPT-0569: чеклист подготовки турнира ───────────────────────────────
+    // ── Чеклист подготовки турнира ──────────────────────────────────────────
     function prepChecklistCollapseKey() { return lsKey('prepChecklistCollapsed'); }
 
     function togglePrepChecklist() {
@@ -931,7 +931,7 @@
             .catch(() => {});
     }
 
-    // LFPT-306: 3 визуальные группы вместо плоского списка — "не сыграли 1-й матч" (высший приоритет)
+    // 3 визуальные группы вместо плоского списка — "не сыграли 1-й матч" (высший приоритет)
     // и "ожидают 2-й матч" (с пометкой победитель/проигравший) как отдельные <optgroup>.
     function buildTeamOptions(teamGroups) {
         if (!teamGroups) return '';
@@ -1100,7 +1100,7 @@
             .catch(() => alert('Error de red'));
     }
 
-    // LFPT-367: igual que createQualMatch(), pero sin cancha — el partido queda en cola de espera.
+    // Как createQualMatch(), но без корта — матч встаёт в очередь ожидания.
     function addToQueue() {
         const team1Id = document.getElementById('newMatchTeam1')?.value;
         const team2Id = document.getElementById('newMatchTeam2')?.value;
@@ -1124,7 +1124,7 @@
             .catch(() => alert('Error de red'));
     }
 
-    // LFPT-367: bloque "Partidos en cola" — ordenado por tiempo de espera, con acciones por fila.
+    // Блок "Partidos en cola" — отсортирован по времени ожидания, с действиями по строкам.
     function renderQueueList(queue, courts) {
         const box = document.getElementById('queueList');
         if (!box) return;
@@ -1435,9 +1435,9 @@
             .catch(() => showToast('Error de red'));
     }
 
-    // ── Intercambio de equipos en playoff (issue #298 п.3): a diferencia de la calificación,
-    // en playoff no hay un pool de equipos "libres" — todos ya están asignados a un partido,
-    // así que la única forma de reordenar parejas ya sembradas es intercambiarlas entre sí. ──
+    // ── Обмен команд в плей-офф: в отличие от квалификации, в плей-офф нет пула
+    // "свободных" команд — все уже стоят в каком-то матче, поэтому единственный способ
+    // переставить посеянные пары — поменять их местами друг с другом. ──
     function togglePlayoffSwap(matchId, slot) {
         const box = document.getElementById('team-edit-' + matchId + '-' + slot);
         if (!box) return;

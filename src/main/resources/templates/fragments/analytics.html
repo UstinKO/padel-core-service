@@ -2,10 +2,10 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head></head>
 <body>
-<!-- Google Analytics 4 (Consent Mode). Единственное место с кодом тега — подключается
-     через th:replace в <head> нужных страниц (LFPT-0468). Используется th:block, а не
+<!--/* Google Analytics 4 (Consent Mode). Единственное место с кодом тега — подключается
+     через th:replace в <head> нужных страниц. Используется th:block, а не
      th:fragment на самом <script>, чтобы оба script-тега попадали в вызывающую страницу
-     одним включением (тот же приём, что и в fragments/admin-header.html). -->
+     одним включением (тот же приём, что и в fragments/admin-header.html). */-->
 <th:block th:fragment="ga4" th:if="${not #strings.isEmpty(@environment.getProperty('app.analytics.ga4-id'))}"
           th:with="ga4Id=${@environment.getProperty('app.analytics.ga4-id')}">
     <script th:src="${'https://www.googletagmanager.com/gtag/js?id=' + ga4Id}" async></script>
@@ -36,7 +36,7 @@
             // Токены подтверждения (приглашение в пару, лист ожидания, сброс пароля) приходят
             // в query-параметрах на нескольких публичных страницах (accept-pair, waitlist-
             // confirmation, редирект с /recuperar-password на index) — вырезаем их из того,
-            // что уходит в GA, не трогая реальный URL в адресной строке (issue #468).
+            // что уходит в GA, не трогая реальный URL в адресной строке.
             var SENSITIVE_PARAMS = ['token', 'codigo'];
             var url = new URL(window.location.href);
             SENSITIVE_PARAMS.forEach(function (param) { url.searchParams.delete(param); });
@@ -49,28 +49,23 @@
         })();
     </script>
 </th:block>
-<!-- Баннер согласия на cookies (LFPT-0522). Независимый от ga4/clarity фрагмент —
-     управляет не только GA4/Clarity, но и категорией "маркетинг" (на будущее), поэтому
-     подключается всегда, а не только если аналитика настроена. До этой задачи
-     `cookie-consent.js` был подключён вручную только на index.html — на остальных
-     страницах согласие никогда не запрашивалось явно, если пользователь попадал на
-     сайт не через главную (issue #469). Теперь — единственное место подключения,
-     как и для тега аналитики выше.
+<!--/* Баннер согласия на cookies. Независимый от ga4/clarity фрагмент — управляет
+     не только GA4/Clarity, но и категорией "маркетинг" (на будущее), поэтому подключается
+     всегда, а не только если аналитика настроена, — единственное место подключения
+     cookie-consent.js, как и для тега аналитики выше: согласие запрашивается на любой
+     странице, с которой пользователь пришёл на сайт.
      `csrf.js` включён здесь же: cookie-consent.js вызывает POST /api/cookies/* через
-     fetch(), который без CSRF-заголовка (добавляется csrf.js) получает 403 — пока
-     cookie-consent.js подключался только на страницах, уже имевших свой csrf.js
-     (index.html и ещё 3), это не проявлялось; на остальных страницах баннер молча
-     не сохранял бы выбор пользователя. -->
+     fetch(), который без CSRF-заголовка (добавляется csrf.js) получает 403 — без него
+     на страницах без своего csrf.js баннер молча не сохранял бы выбор пользователя. */-->
 <th:block th:fragment="cookie-consent">
     <script th:src="@{/js/csrf.js}"></script>
     <link rel="stylesheet" th:href="@{/css/cookie-consent.css}">
     <script th:src="@{/js/cookie-consent.js}"></script>
 </th:block>
-<!-- Microsoft Clarity (LFPT-0497). В отличие от GA4 выше, скрипт clarity.ms
+<!--/* Microsoft Clarity. В отличие от GA4 выше, скрипт clarity.ms
      не вставляется в DOM вообще, пока нет явного согласия пользователя —
      у Clarity нет документированного эквивалента Google Consent Mode
-     "грузим, но default denied" без настройки в стороннем кабинете Clarity,
-     к которому у конвейера нет доступа (см. спеку, находка 3). -->
+     "грузим, но default denied" без настройки в стороннем кабинете Clarity. */-->
 <th:block th:fragment="clarity" th:if="${not #strings.isEmpty(@environment.getProperty('app.analytics.clarity-id'))}"
           th:with="clarityId=${@environment.getProperty('app.analytics.clarity-id')}">
     <script th:inline="javascript">

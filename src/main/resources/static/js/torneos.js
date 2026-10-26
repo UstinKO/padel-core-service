@@ -339,8 +339,8 @@ class TorneosPage {
         return this.tipoDisplayMap[tipo] || tipo;
     }
 
-    // LFPT-374: estado de cupos en 3 niveles en vez de la fracción "X/Y" —
-    // umbrales acordados: 10 parejas confirmadas (DOBLES) / 15 jugadores (INDIVIDUAL).
+    // Статус заполненности в 3 уровня вместо дроби "X/Y" — согласованные пороги:
+    // 10 подтверждённых пар (DOBLES) / 15 игроков (INDIVIDUAL).
     getSpotsStatus(tournament) {
         const confirmed = tournament.inscritosActuales || 0;
         const cupoMax = tournament.cupoMax || 0;

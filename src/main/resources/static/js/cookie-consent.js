@@ -124,8 +124,8 @@
     }
 
     // Обновляет Google Consent Mode сразу после выбора пользователя, без
-    // перезагрузки страницы (gtag уже загружен — см. fragments/analytics.html, LFPT-0468).
-    // Дополнительно управляет Microsoft Clarity (LFPT-0497): в отличие от gtag, скрипт
+    // перезагрузки страницы (gtag уже загружен — см. fragments/analytics.html).
+    // Дополнительно управляет Microsoft Clarity: в отличие от gtag, скрипт
     // clarity.ms до этого момента мог вообще не быть вставлен в DOM (см. fragments/analytics.html
     // :: clarity) — initClarity() вставляет его при первом granted; clarity('consent', false)
     // просто фиксирует отказ, если скрипт уже успел загрузиться на этой странице ранее.

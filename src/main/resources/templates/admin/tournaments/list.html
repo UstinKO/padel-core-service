@@ -56,7 +56,7 @@
             </a>
         </div>
 
-        <!-- LFPT-376: фильтр по клубу — виден только SUPER_ADMIN (у CLUB_ADMIN выбирать нечего) -->
+        <!--/* Фильтр по клубу — виден только SUPER_ADMIN (у CLUB_ADMIN выбирать нечего) */-->
         <form th:if="${isSuperAdmin}" method="get" th:action="@{/admin/tournaments}" class="admin-actions">
             <label for="clubIdFilter" th:text="#{admin.tournaments.list.filter.club.label}">Filtrar por club</label>
             <select id="clubIdFilter" name="clubId" onchange="this.form.submit()">
