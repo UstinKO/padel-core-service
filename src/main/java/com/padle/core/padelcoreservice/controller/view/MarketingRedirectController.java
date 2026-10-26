@@ -7,8 +7,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 import java.util.Map;
 
-// LFPT-0472: короткие маркетинговые ссылки для октябрьского календаря турниров.
-// Редирект на уровне приложения (не nginx), чтобы пройти обычный git-flow/деплой.
+// Короткие маркетинговые ссылки (календарь турниров, профиль Instagram).
+// Редирект на уровне приложения (не nginx), чтобы проходить обычный git-flow/деплой.
 @Slf4j
 @Controller
 public class MarketingRedirectController {
@@ -17,7 +17,7 @@ public class MarketingRedirectController {
             "/oct-tg", "https://1-padel.com/?utm_source=telegram&utm_medium=social&utm_campaign=calendar_october",
             "/oct-wa", "https://1-padel.com/?utm_source=whatsapp&utm_medium=message&utm_campaign=calendar_october",
             "/oct-ig", "https://1-padel.com/?utm_source=instagram&utm_medium=social&utm_campaign=calendar_october",
-            // LFPT-0489: короткая ссылка для профиля Instagram ("ссылка в био")
+            // Короткая ссылка для профиля Instagram ("ссылка в био")
             "/ig-bio", "https://1-padel.com/?utm_source=instagram&utm_medium=social&utm_campaign=instagram_profile"
     );
 

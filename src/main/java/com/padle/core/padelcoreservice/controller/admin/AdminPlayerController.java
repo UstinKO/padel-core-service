@@ -55,7 +55,7 @@ public class AdminPlayerController {
 
         List<PlayerResponseDto> players = playerService.getAllPlayers();
         if (owner.isClubAdmin()) {
-            // LFPT-376: клубный админ видит только игроков с регистрацией на турнир своего клуба
+            // Клубный админ видит только игроков с регистрацией на турнир своего клуба
             Set<Long> clubPlayerIds = owner.getClubId() == null
                     ? Set.of()
                     : new HashSet<>(tournamentRegistrationRepository.findDistinctPlayerIdsByTournamentClubId(owner.getClubId()));
@@ -90,7 +90,7 @@ public class AdminPlayerController {
         return "admin/players/details";
     }
 
-    // Выдача/перевыпуск временного пароля гостевого аккаунта (issue #217).
+    // Выдача/перевыпуск временного пароля гостевого аккаунта.
     // Кнопка на странице и так видна только SUPER_ADMIN + гостевому email,
     // но бэкенд обязан перепроверить оба условия самостоятельно.
     @PostMapping("/{id}/guest-credentials")
@@ -134,9 +134,9 @@ public class AdminPlayerController {
                                      @RequestHeader(value = "X-Requested-With", required = false) String requestedWith,
                                      @AuthenticationPrincipal Owner owner,
                                      RedirectAttributes redirectAttributes) {
-        // Список игроков (LFPT-218) шлёт этот же эндпоинт через fetch с заголовком
-        // X-Requested-With — автосейв без перезагрузки страницы (заказчик проставляет
-        // уровни сотням игроков подряд, редирект каждый раз сбрасывал прокрутку).
+        // Список игроков шлёт этот же эндпоинт через fetch с заголовком X-Requested-With —
+        // автосейв без перезагрузки страницы (уровни проставляют сотням игроков подряд,
+        // редирект каждый раз сбрасывал бы прокрутку).
         // Страница деталей игрока продолжает обычный form-submit с редиректом.
         boolean ajax = "XMLHttpRequest".equals(requestedWith);
 
@@ -152,9 +152,9 @@ public class AdminPlayerController {
         log.info("Actualizando nivel del jugador {} a: {}", id, nivel);
 
         try {
-            // issue #82: nivel_jugador es NOT NULL en la base desde v1.44 — el admin sigue
-            // pudiendo "vaciar" el nivel de un jugador (corrección de datos), pero ahora eso
-            // significa asignar el sentinel SIN_ESPECIFICAR en vez de un NULL real.
+            // nivel_jugador — NOT NULL в БД: админ по-прежнему может «очистить» уровень игрока
+            // (исправление данных), но это означает присвоить sentinel SIN_ESPECIFICAR,
+            // а не настоящий NULL.
             Nivel nivelParsed = (nivel != null && !nivel.isBlank()) ? Nivel.valueOf(nivel) : Nivel.SIN_ESPECIFICAR;
             if (!Nivel.isPlayerLevel(nivelParsed) && nivelParsed != Nivel.SIN_ESPECIFICAR) {
                 throw new IllegalArgumentException("Nivel no aplicable a un jugador: " + nivel);

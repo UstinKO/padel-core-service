@@ -650,7 +650,7 @@ public class TestTournamentController {
                 return ResponseEntity.badRequest().body(result);
             }
 
-            // Проверяем, не зарегистрированы ли уже эти игроки (#282: только среди активных
+            // Проверяем, не зарегистрированы ли уже эти игроки (только среди активных
             // регистраций — is_active=false значит игрок ранее отменился, это не должно
             // блокировать повторную регистрацию)
             List<String> alreadyRegistered = new ArrayList<>();
@@ -1386,7 +1386,7 @@ public class TestTournamentController {
                 if (idObj != null) {
                     long existingId = ((Number) idObj).longValue();
                     if (existingId > 0) {
-                        // #282: только среди активных — is_active=false значит игрок ранее отменился
+                        // Только среди активных — is_active=false значит игрок ранее отменился
                         String checkSql = "SELECT p.nombre, p.apellido FROM tournament_registrations_db r " +
                                 "JOIN player_padel_db p ON p.id = r.player_id " +
                                 "WHERE r.tournament_id=? AND r.player_id=? AND r.is_active = true";
@@ -1409,7 +1409,7 @@ public class TestTournamentController {
             Long player2Id = resolveOrCreateGuestPlayer(conn, p2Data);
 
             // Финальная проверка — на случай если resolveOrCreate вернул уже зарегистрированного игрока
-            // (например по телефону); #282: только среди активных, как и выше
+            // (например по телефону); только среди активных, как и выше
             for (Long pid : List.of(player1Id, player2Id)) {
                 String checkSql = "SELECT p.nombre, p.apellido FROM tournament_registrations_db r " +
                         "JOIN player_padel_db p ON p.id = r.player_id " +
@@ -1654,7 +1654,7 @@ public class TestTournamentController {
                 return ResponseEntity.badRequest().body(result);
             }
 
-            // Проверяем, не зарегистрированы ли уже эти игроки (#282: только среди активных)
+            // Проверяем, не зарегистрированы ли уже эти игроки (только среди активных)
             List<String> alreadyRegistered = new ArrayList<>();
             for (Long playerId : playerIds) {
                 String checkSql = "SELECT p.nombre, p.apellido FROM tournament_registrations_db r " +
@@ -1782,7 +1782,7 @@ public class TestTournamentController {
 
 
     /**
-     * #282: игрок мог ранее отменить регистрацию на этот турнир — запись остаётся в
+     * Игрок мог ранее отменить регистрацию на этот турнир — запись остаётся в
      * tournament_registrations_db с is_active=false (soft-cancel, см. TournamentRegistration.cancel()).
      * Проверки "уже зарегистрирован" в этом контроллере должны игнорировать такие строки
      * (см. is_active=true в getTournamentPlayers()), а перед повторной вставкой — удалить
@@ -1807,7 +1807,7 @@ public class TestTournamentController {
         result.put("playerId", playerId);
 
         try {
-            // Проверяем, не зарегистрирован ли уже (#282: только среди активных — is_active=false
+            // Проверяем, не зарегистрирован ли уже (только среди активных — is_active=false
             // означает отменённую ранее регистрацию, которая не должна блокировать повторную)
             String checkSql = "SELECT COUNT(*) FROM tournament_registrations_db " +
                     "WHERE tournament_id = ? AND player_id = ? AND is_active = true";

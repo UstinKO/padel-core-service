@@ -43,7 +43,7 @@ public class KingOfCourtViewController {
         model.addAttribute("tournamentName", king.getTournament().getNombre());
         model.addAttribute("isViewer", true);
         model.addAttribute("currentPlayerId", player != null ? player.getId() : null);
-        // LFPT-484: контролирует видимость колонки «Уровень» в таблицах рейтинга.
+        // Видимость колонки «Уровень» в таблицах рейтинга.
         model.addAttribute("mostrarNivel", Boolean.TRUE.equals(king.getTournament().getMostrarNivel()));
 
         return "king-of-court-view";
@@ -81,7 +81,7 @@ public class KingOfCourtViewController {
         model.addAttribute("tournamentName", king.getTournament().getNombre());
         model.addAttribute("isViewer", true);
         model.addAttribute("currentPlayerId", player != null ? player.getId() : null);
-        // LFPT-484: контролирует видимость колонки «Уровень» в таблицах рейтинга.
+        // Видимость колонки «Уровень» в таблицах рейтинга.
         model.addAttribute("mostrarNivel", Boolean.TRUE.equals(king.getTournament().getMostrarNivel()));
 
         return "king-of-court-view";

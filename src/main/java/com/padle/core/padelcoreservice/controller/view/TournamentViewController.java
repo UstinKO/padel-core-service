@@ -62,9 +62,8 @@ public class TournamentViewController {
             Optional<TournamentDto> tournamentOpt = tournamentService.getActiveTournamentById(id);
 
             if (tournamentOpt.isEmpty()) {
-                // #286: чаще всего это боты/старые ссылки на уже завершённые и деактивированные
-                // турниры (подтверждено по прод-логам) — не инцидент, INFO вместо WARN, чтобы не
-                // шуметь в Telegram-алертах (тот же класс проблемы, что и CSRF-шум в #284).
+                // Чаще всего это боты/старые ссылки на уже завершённые и деактивированные
+                // турниры — не инцидент, INFO вместо WARN, чтобы не шуметь в Telegram-алертах.
                 // 404 вместо редиректа — стандартная SEO-практика для ушедшего контента,
                 // со временем снижает частоту повторных заходов ботов на мёртвую ссылку.
                 log.info("Active tournament not found with id: {}", id);
@@ -100,7 +99,7 @@ public class TournamentViewController {
                     .filter(r -> r.getPartnerNombre() != null)
                     .collect(Collectors.toList());
 
-            // LFPT-0730: резервные пары (WAITLIST) — отдельная секция «Список ожидания», видимая
+            // Резервные пары (WAITLIST) — отдельная секция «Список ожидания», видимая
             // по именам, а не только счётчиком (getRegistrationsByTournament уже дедуплицирует
             // до одной строки на пару).
             List<TournamentRegistrationDto> reserveDoubleRegistrations = registrations.stream()

@@ -53,7 +53,7 @@ public class CookieController {
     // никогда не выставляется в этом деплое (TLS терминируется на Nginx), поэтому статичный флаг
     // не годится: и не отражал бы прод, и ломал бы cookie на http://localhost в dev.
     // jakarta.servlet.http.Cookie не поддерживает SameSite нативно — используем Spring
-    // ResponseCookie (issue #123).
+    // ResponseCookie.
     private void addConsentCookie(HttpServletRequest request, HttpServletResponse response,
                                    String name, String value) {
         ResponseCookie cookie = ResponseCookie.from(name, value)

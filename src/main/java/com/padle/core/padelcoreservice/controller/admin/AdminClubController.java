@@ -31,7 +31,7 @@ public class AdminClubController {
     @GetMapping
     public String listClubs(Model model, @AuthenticationPrincipal Owner owner) {
         log.info("Listing all clubs for admin");
-        // LFPT-376: клубный админ видит только свой клуб
+        // Клубный админ видит только свой клуб
         if (owner.isClubAdmin()) {
             model.addAttribute("clubs", owner.getClubId() == null
                     ? List.of()
@@ -47,7 +47,7 @@ public class AdminClubController {
     @GetMapping("/new")
     public String newClubForm(Model model, @AuthenticationPrincipal Owner owner,
                               org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
-        // LFPT-393: было owner.isAdminRole() — проверяет только role==ADMIN, пропускало CLUB_ADMIN/ORGANIZER/OWNER
+        // Не owner.isAdminRole(): тот проверяет только role==ADMIN и пропускает CLUB_ADMIN/ORGANIZER/OWNER
         if (!owner.isSuperAdmin()) {
             redirectAttributes.addFlashAttribute("errorMessage", "No tienes permiso para crear clubes");
             return "redirect:/admin/clubs";

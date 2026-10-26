@@ -20,9 +20,9 @@ public class GlobalExceptionHandler {
 
     // java.lang.SecurityException — unchecked, никем не перехватывается (ни Spring MVC,
     // ни ExceptionTranslationFilter, который ловит только AuthenticationException/
-    // AccessDeniedException) — без этого хендлера уходит в 500 (issue #125).
+    // AccessDeniedException) — без этого хендлера уходит в 500.
     // Бросается в нескольких контроллерах/сервисах при проверке "этот Owner не владелец
-    // турнира/ресурса" — единый глобальный хендлер чинит все места разом.
+    // турнира/ресурса" — единый глобальный хендлер покрывает все места разом.
     @ExceptionHandler(SecurityException.class)
     public Object handleSecurityException(SecurityException ex, HttpServletRequest request) {
         log.warn("Security exception on {}: {}", request.getRequestURI(), ex.getMessage());

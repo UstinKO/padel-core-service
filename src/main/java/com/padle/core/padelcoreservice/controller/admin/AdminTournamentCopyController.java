@@ -68,8 +68,8 @@ public class AdminTournamentCopyController {
         model.addAttribute("tournament", newTournament);
         model.addAttribute("clubs", clubService.getAllClubs());
         model.addAttribute("genderFormats", GenderFormat.values());
-        // LFPT-373: se conserva el valor legacy del torneo original en la copia
-        // (no desaparece del <select>), pero no se ofrecen otros valores legacy.
+        // Legacy-значение исходного турнира сохраняется в копии (не пропадает из <select>),
+        // но другие legacy-значения не предлагаются.
         model.addAttribute("niveles", Nivel.forTournamentForm(Nivel.parseOrNull(sourceTournament.getCategoriaNivel())));
         model.addAttribute("tournamentTypes", TournamentType.values());
         model.addAttribute("modalidades", Modalidad.values());
@@ -78,7 +78,7 @@ public class AdminTournamentCopyController {
 
         // Добавляем флаг, что это копирование (для отображения в заголовке)
         model.addAttribute("isCopy", true);
-        // LFPT-0559: клубному аккаунту статус всё равно переопределяется (LFPT-0558) — не показываем поле
+        // Клубному аккаунту статус всё равно переопределяется — не показываем поле
         model.addAttribute("isClubAdmin", owner.isClubAdmin());
 
         // ИСПРАВЛЕНО: правильный путь к шаблону

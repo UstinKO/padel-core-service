@@ -83,9 +83,9 @@ public class AmericanoViewController {
     // ==================== РЕГИСТРАЦИЯ ====================
 
     /**
-     * LFPT-330: шаблона tournaments/americano/register нет (TemplateInputException → 500).
-     * Из UI роут не используется — игрок записывается на Americano со страницы турнира
-     * /torneo/{id} через общий POST /players/tournaments/{id}/register. Редиректим туда.
+     * Шаблона tournaments/americano/register нет. Из UI роут не используется — игрок
+     * записывается на Americano со страницы турнира /torneo/{id} через общий
+     * POST /players/tournaments/{id}/register. Редиректим туда.
      */
     @GetMapping("/{tournamentId}/register")
     public String showRegisterForm(@PathVariable Long tournamentId) {
@@ -128,7 +128,7 @@ public class AmericanoViewController {
             americanoService.cancelRegistration(tournamentId, playerId, reason, currentOwner);
             redirectAttributes.addFlashAttribute("success", "Registro cancelado correctamente");
         } catch (TournamentRegistrationException | ResourceNotFoundException e) {
-            // #294: штатный отказ по бизнес-правилу (уже отменено, парная регистрация и т.п.) —
+            // Штатный отказ по бизнес-правилу (уже отменено, парная регистрация и т.п.) —
             // не системная ошибка, INFO вместо ERROR
             log.info("Cancellation rejected for player {} on tournament {}: {}",
                     playerId, tournamentId, e.getMessage());
@@ -144,11 +144,10 @@ public class AmericanoViewController {
     // ==================== ИНИЦИАЛИЗАЦИЯ ====================
 
     /**
-     * LFPT-316: рама неинициализированного турнира раньше рендерила несуществующий
-     * шаблон tournaments/americano/initialize (TemplateInputException). Роут технически
-     * публичный, но реально достижим не только прямым набором URL — catch-блок
-     * previewRounds редиректит сюда при ошибке предпросмотра. Редирект на уже рабочую
-     * страницу деталей турнира с формой конфигурации/инициализации, по аналогии с LFPT-314.
+     * Неинициализированный турнир редиректит на страницу деталей турнира с формой
+     * конфигурации/инициализации: шаблона tournaments/americano/initialize нет. Роут технически
+     * публичный и достижим не только прямым набором URL — catch-блок previewRounds
+     * редиректит сюда при ошибке предпросмотра.
      */
     @GetMapping("/{tournamentId}/initialize")
     public String showInitializeForm(
@@ -238,7 +237,7 @@ public class AmericanoViewController {
     // ==================== РАУНДЫ ====================
 
     /**
-     * LFPT-330: отдельных страниц раунда/матча нет (шаблонов rounds/round/match/match-result
+     * Отдельных страниц раунда/матча нет (шаблонов rounds/round/match/match-result
      * не существует) — раунды и ввод результатов живут на странице турнира и в админке
      * через /api/tournaments/americano/**. GET-роуты ниже из UI не используются, но достижимы
      * прямым URL и как цель редиректа POST start/complete/result — ведём на страницу турнира.
@@ -353,7 +352,7 @@ public class AmericanoViewController {
     // ==================== СТАТИСТИКА ИГРОКА ====================
 
     /**
-     * LFPT-330: шаблона player-stats нет, из UI роут не используется. Статистика игроков
+     * Шаблона player-stats нет, из UI роут не используется. Статистика игроков
      * турнира — на странице рейтинга.
      */
     @GetMapping("/{tournamentId}/players/{playerId}")
@@ -424,9 +423,9 @@ public class AmericanoViewController {
     // ==================== АДМИНСКИЕ МЕТОДЫ ====================
 
     /**
-     * LFPT-314: маршрут мёртвый в UI (нет ни одной ссылки на него), поэтому вместо
-     * несуществующего шаблона admin/americano/initialize — редирект на уже рабочую
-     * страницу деталей турнира с формой конфигурации/инициализации/предпросмотра.
+     * Маршрут в UI не используется (ссылок на него нет), шаблона admin/americano/initialize
+     * не существует — редирект на страницу деталей турнира с формой
+     * конфигурации/инициализации/предпросмотра.
      */
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     @GetMapping("/admin/{tournamentId}/preview")
@@ -477,7 +476,7 @@ public class AmericanoViewController {
             log.info("=== INITIALIZING AMERICANO TOURNAMENT (from preview) ===");
             log.info("tournamentId: {}, config: {}", tournamentId, config);
 
-            // LFPT-376: проверяем права до любого побочного эффекта (закрытие регистрации ниже
+            // Проверяем права до любого побочного эффекта (закрытие регистрации ниже
             // меняет состояние турнира ещё до того, как initializeAmericanoTournament успел бы
             // отказать неавторизованному пользователю).
             tournamentAccessService.assertCanManageTournament(currentOwner, tournamentId);
@@ -589,7 +588,7 @@ public class AmericanoViewController {
         }
         // ──────────────────────────────────────────────────────────────────
 
-        // LFPT-376: проверяем права до побочного эффекта закрытия регистрации ниже.
+        // Проверяем права до побочного эффекта закрытия регистрации ниже.
         tournamentAccessService.assertCanManageTournament(currentOwner, tournamentId);
 
         try {

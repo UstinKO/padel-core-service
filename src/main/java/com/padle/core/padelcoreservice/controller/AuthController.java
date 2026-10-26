@@ -21,10 +21,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * Owner (SUPER_ADMIN/ORGANIZER/ADMIN) и PlayerPadel — оба возможные принципалы
- * (issue #124): CompositeUserDetailsService уже умеет резолвить оба типа, и
- * JwtService/JwtAuthenticationFilter уже полностью generic — этот контроллер
- * был единственным местом, которое смотрело только в PlayerRepository напрямую.
+ * Принципалом может быть и Owner (SUPER_ADMIN/ORGANIZER/ADMIN), и PlayerPadel:
+ * CompositeUserDetailsService резолвит оба типа, а JwtService/JwtAuthenticationFilter
+ * не зависят от типа пользователя, поэтому контроллер не ищет только в PlayerRepository.
  */
 @Slf4j
 @RestController
@@ -106,7 +105,7 @@ public class AuthController {
     public ResponseEntity<?> getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         // authentication.isAuthenticated() всегда true и для AnonymousAuthenticationToken —
-        // проверяем конкретный тип принципала, а не этот флаг (см. issue #122).
+        // проверяем конкретный тип принципала, а не этот флаг.
         Object principal = authentication != null ? authentication.getPrincipal() : null;
 
         if (principal instanceof PlayerPadel player) {

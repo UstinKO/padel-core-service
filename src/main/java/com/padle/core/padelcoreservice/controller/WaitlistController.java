@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 /**
- * Подтверждение приглашения из листа ожидания — двухшаговый флоу (issue #194):
+ * Подтверждение приглашения из листа ожидания — двухшаговый флоу:
  * GET только показывает страницу с деталями (безопасно для пред-фетча ссылок
  * email-сканерами), реальное подтверждение — только по явному POST с той же кнопки.
  */

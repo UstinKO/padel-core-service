@@ -62,8 +62,8 @@ public class AdminController {
         long totalPlayers = playerService.contarJugadoresActivos();
         long totalOwners = ownerService.getTotalActiveOwners();
 
-        // LFPT-0546: CLUB_ADMIN видит статистику только своего клуба, а не всей платформы;
-        // totalPlayers/totalOwners — без изменений (вне скоупа этой задачи, см. спеку).
+        // CLUB_ADMIN видит статистику только своего клуба, а не всей платформы;
+        // totalPlayers/totalOwners — общие для всех ролей.
         boolean isClubAdmin = owner.isClubAdmin();
         Long ownerClubId = owner.getClubId();
 
@@ -124,10 +124,10 @@ public class AdminController {
                                   @RequestParam(required = false) Long clubId) {
         log.info("Listing tournaments for owner: {}", owner.getEmail());
 
-        // LFPT-376: CLUB_ADMIN всегда видит только турниры своего клуба (clubId из запроса
+        // CLUB_ADMIN всегда видит только турниры своего клуба (clubId из запроса
         // игнорируется — иначе клубный админ мог бы подставить чужой clubId в URL).
-        // SUPER_ADMIN может отфильтровать список по клубу через ?clubId=; остальные роли —
-        // без изменений, полный список (доступность конкретных действий регулируется флагами ниже).
+        // SUPER_ADMIN может отфильтровать список по клубу через ?clubId=; остальные роли
+        // видят полный список (доступность конкретных действий регулируется флагами ниже).
         Long effectiveClubId = owner.isClubAdmin() ? owner.getClubId() : clubId;
         List<TournamentDto> allTournaments = effectiveClubId != null
                 ? tournamentService.getTournamentsByClub(effectiveClubId)
@@ -175,9 +175,9 @@ public class AdminController {
         log.info("Creating new tournament: {} / {} by owner: {}",
                 tournamentDto.getGeneroFormato(), tournamentDto.getCategoriaNivel(), owner.getEmail());
 
-        // LFPT-376: клубный админ не может привязать турнир к чужому клубу — не доверяем
+        // Клубный админ не может привязать турнир к чужому клубу — не доверяем
         // значению из формы, всегда принудительно ставим его собственный clubId.
-        // LFPT-0558: клубному аккаунту не нужно выбирать статус турнира при создании —
+        // Клубному аккаунту не нужно выбирать статус турнира при создании —
         // всегда «Регистрация открыта», независимо от значения из формы.
         if (owner.isClubAdmin()) {
             tournamentDto.setClubId(owner.getClubId());
@@ -228,7 +228,7 @@ public class AdminController {
         model.addAttribute("niveles", getNiveles(null));
         model.addAttribute("modalidades", Modalidad.values());
         model.addAttribute("visibilidades", TournamentVisibility.values());
-        // LFPT-0559: клубному аккаунту статус на создании всё равно переопределяется (LFPT-0558) — не показываем поле
+        // Клубному аккаунту статус при создании всё равно переопределяется — не показываем поле
         model.addAttribute("isClubAdmin", owner.isClubAdmin());
 
         return "admin/tournaments/form";
@@ -545,15 +545,15 @@ public class AdminController {
         return ResponseEntity.ok(result);
     }
 
-    // LFPT-373: список уровней для формы турнира — currentValue añade el valor legacy
-    // ya guardado en el torneo (si lo hay) para que no desaparezca del <select> al editar;
-    // null (creación de un torneo nuevo) excluye los valores legacy por completo.
+    // Список уровней для формы турнира: currentValue добавляет legacy-значение, уже сохранённое
+    // в турнире (если есть), чтобы оно не пропало из <select> при редактировании;
+    // null (создание нового турнира) полностью исключает legacy-значения.
     private List<Nivel> getNiveles(String currentValue) {
         return Nivel.forTournamentForm(Nivel.parseOrNull(currentValue));
     }
 
-    // LFPT-376: дропдаун клуба в форме турнира — CLUB_ADMIN видит и может выбрать только свой
-    // клуб (само значение clubId из формы всё равно игнорируется на createTournament, но
+    // Дропдаун клуба в форме турнира: CLUB_ADMIN видит и может выбрать только свой клуб
+    // (само значение clubId из формы всё равно игнорируется на createTournament, но
     // показывать в UI выбор, который ни на что не влияет, не нужно).
     private List<com.padle.core.padelcoreservice.dto.ClubDto> clubsForForm(Owner owner) {
         if (!owner.isClubAdmin()) {
