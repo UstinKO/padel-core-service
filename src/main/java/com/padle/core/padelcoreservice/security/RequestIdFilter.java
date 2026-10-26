@@ -12,9 +12,9 @@ import java.io.IOException;
 import java.util.UUID;
 
 /**
- * LFPT-0518: короткий сквозной идентификатор на один HTTP-запрос — кладётся в MDC,
- * чтобы его можно было сослаться в структурированных Telegram-алертах (logging/StructuredAlert)
- * и в Loki JSON-логах (плейсхолдер %X{requestId:-} в logback-spring.xml, до этого всегда пустой).
+ * Короткий сквозной идентификатор на один HTTP-запрос — кладётся в MDC, чтобы на него
+ * можно было сослаться в структурированных Telegram-алертах (logging/StructuredAlert)
+ * и в Loki JSON-логах (плейсхолдер %X{requestId:-} в logback-spring.xml).
  * Регистрируется в SecurityConfig раньше RateLimitFilter, чтобы id был доступен уже на этапе
  * проверки rate limit.
  */

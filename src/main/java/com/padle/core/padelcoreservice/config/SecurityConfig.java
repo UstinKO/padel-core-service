@@ -77,7 +77,7 @@ public class SecurityConfig {
                         // выставить форгед cross-site запросом, в отличие от session-cookie.
                         // Игнорируем такие запросы, чтобы не ломать stateless API-клиентов.
                         .ignoringRequestMatchers(request -> request.getHeader("Authorization") != null)
-                        // #284: SockJS-фоллбэк транспорты (xhr/xhr_streaming — для клиентов без
+                        // SockJS-фоллбэк транспорты (xhr/xhr_streaming — для клиентов без
                         // нативного WebSocket) шлют служебные POST без X-XSRF-TOKEN — это не fetch,
                         // csrf.js их не видит. Канал только для broadcast сервер→клиент (нет ни одного
                         // @MessageMapping), все мутации идут через отдельные CSRF-защищённые /api/**.
@@ -116,7 +116,7 @@ public class SecurityConfig {
                                 "/css/**",
                                 "/js/**",
                                 "/images/**",
-                                // LFPT-0604: анонимно — только health (readiness деплоя) и prometheus (скрейп изнутри
+                                // Анонимно — только health (readiness деплоя) и prometheus (скрейп изнутри
                                 // Docker-сети); снаружи Nginx отдаёт из /actuator только health
                                 "/actuator/health",
                                 "/actuator/health/**",
@@ -135,18 +135,18 @@ public class SecurityConfig {
                                 "/login/oauth2/**",
                                 "/double-registration/complete",
                                 "/double-registration/accept-pair",
-                                // LFPT-0668: self-service действия из email для резервной заявки без
+                                // Self-service действия из email для резервной заявки без
                                 // партнёра — токен-based, без логина (как /waitlist/confirm выше).
                                 "/reserva/accion/**",
                                 "/ws/**",
                                 "/api/cookies/**",
-                                // LFPT-0472: короткие маркетинговые ссылки октябрьского календаря
+                                // Короткие маркетинговые ссылки календаря турниров
                                 "/oct-tg",
                                 "/oct-wa",
                                 "/oct-ig",
-                                // LFPT-0489: короткая ссылка для профиля Instagram
+                                // Короткая ссылка для профиля Instagram
                                 "/ig-bio",
-                                // LFPT-0643: веб-версия клиента 1Padel.App — статика; приватные данные
+                                // Веб-версия клиента 1Padel.App — статика; приватные данные
                                 // клиент берёт из /api/** по Bearer-токену, их авторизация не меняется
                                 "/app",
                                 "/app/**"
@@ -159,7 +159,7 @@ public class SecurityConfig {
                         // Внутренний тестовый инструментарий организатора (JDBC-based, см. CLAUDE.md) —
                         // доступен только владельцу платформы, не ORGANIZER/ADMIN.
                         .requestMatchers("/test/tournaments/**").hasRole("SUPER_ADMIN")
-                        // LFPT-0423: ручная проверка Telegram-интеграции шлёт сообщения в рабочую группу
+                        // Ручная проверка Telegram-интеграции шлёт сообщения в рабочую группу
                         // и напоминания игрокам — только SUPER_ADMIN, под CSRF, как любая мутация.
                         .requestMatchers("/test/telegram/**").hasRole("SUPER_ADMIN")
                         // Публичные GET-эндпоинты King of Court для страницы зрителей
@@ -170,7 +170,7 @@ public class SecurityConfig {
                                 "/api/king-of-court/ping",
                                 "/api/tournaments/double/*/looking-for-partner",
                                 "/api/internal/telegram-pipeline/status",
-                                // LFPT-0623: публичное расписание для мобильного приложения —
+                                // Публичное расписание для мобильного приложения —
                                 // анонимное чтение, те же правила видимости, что у /torneo/{id}.
                                 "/api/public/tournaments",
                                 "/api/public/tournaments/*"
@@ -189,11 +189,11 @@ public class SecurityConfig {
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
-                // LFPT-0518: requestId должен быть в MDC уже на этапе rate-limit предупреждений —
+                // requestId должен быть в MDC уже на этапе rate-limit предупреждений —
                 // регистрируем после rateLimitFilter (чтобы его позиция в реестре уже была известна),
                 // но "before", чтобы RequestIdFilter реально выполнялся раньше по цепочке.
                 .addFilterBefore(requestIdFilter, RateLimitFilter.class)
-                // LFPT-0637: должен успеть записать в сессию признак "вход из 1Padel.App"
+                // Должен успеть записать в сессию признак "вход из 1Padel.App"
                 // до того, как Spring Security перенаправит на Google.
                 .addFilterBefore(oAuth2AppLoginOriginFilter, OAuth2AuthorizationRequestRedirectFilter.class)
                 // Spring Security 6 генерирует CSRF-токен лениво: cookie XSRF-TOKEN пишется,
@@ -230,8 +230,8 @@ public class SecurityConfig {
                         .permitAll()
                 )
                 // Общий бин RememberMeServices (SecurityBeansConfig) — тот же экземпляр
-                // явно вызывает OAuth2AuthenticationSuccessHandler после Google-логина
-                // (issue #297), поэтому remember-me кука одинаково валидна что после формы,
+                // явно вызывает OAuth2AuthenticationSuccessHandler после Google-логина,
+                // поэтому remember-me кука одинаково валидна что после формы,
                 // что после OAuth2.
                 .rememberMe(remember -> remember.rememberMeServices(rememberMeServices))
                 .headers(headers -> headers

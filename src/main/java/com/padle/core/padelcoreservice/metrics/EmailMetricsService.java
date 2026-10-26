@@ -93,9 +93,9 @@ public class EmailMetricsService {
         return dailyCounter.get();
     }
 
-    // Используется и здесь, и в getEmailStats() — dailyLimit=0 сейчас нигде не выставлен
-    // (дефолт 300), но при ошибке конфигурации целочисленное deление дало бы NaN/Infinity,
-    // а Jackson не умеет сериализовать такие значения в JSON (issue #123).
+    // Используется и здесь, и в getEmailStats(): при dailyLimit=0 (ошибка конфигурации,
+    // дефолт 300) деление дало бы NaN/Infinity, а Jackson не умеет сериализовать такие
+    // значения в JSON.
     public double getUsagePercentage() {
         return calculateUsagePercentage(getDailyEmailCount(), dailyLimit);
     }

@@ -44,8 +44,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         // завершается редиректом от самого Google, не нашей формой, поэтому параметра
         // remember-me, который проверяет AbstractRememberMeServices.rememberMeRequested(),
         // взять неоткуда. Считаем "Войти через Google" неявным "запомнить меня" — подставляем
-        // параметр сами через обёртку запроса (issue #297: раньше remember-me cookie для
-        // OAuth2-логина не выставлялась вообще никогда, и сессия не переживала закрытие браузера).
+        // параметр сами через обёртку запроса, иначе remember-me cookie для OAuth2-логина
+        // не выставлялась бы и сессия не переживала закрытие браузера.
         HttpServletRequest requestWithRememberMe = new HttpServletRequestWrapper(request) {
             @Override
             public String getParameter(String name) {
@@ -57,7 +57,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         };
         rememberMeServices.loginSuccess(requestWithRememberMe, response, authentication);
 
-        // LFPT-0637: вход, инициированный клиентом 1Padel.App (OAuth2AppLoginOriginFilter
+        // Вход, инициированный клиентом 1Padel.App (OAuth2AppLoginOriginFilter
         // проставил флаг в сессию ещё до редиректа на Google) — возвращаем в приложение с
         // токенами во fragment URL (не в query/path — fragment не уходит на сервер и не
         // попадает в Referer/access-логи), а не на /players/dashboard.

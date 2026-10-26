@@ -1,7 +1,7 @@
 package com.padle.core.padelcoreservice.logging;
 
 /**
- * Уровень серьёзности алерта в Telegram (LFPT-0518) — чтобы по одному значку
+ * Уровень серьёзности алерта в Telegram — чтобы по одному значку
  * сразу было понятно, нужно ли реально разбираться с кодом (Application Error)
  * или это сработавшая защита (Security Warning) / ожидаемая ошибка пользователя
  * или бизнес-правила (User/Validation Error).
