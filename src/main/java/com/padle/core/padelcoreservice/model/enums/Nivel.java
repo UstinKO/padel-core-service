@@ -18,7 +18,7 @@ public enum Nivel {
     C5("5", GenderFormat.MASCULINO),
     C4("4", GenderFormat.MASCULINO),
 
-    // Masculino — categorías adyacentes (LFPT-373)
+    // Masculino — соседние категории
     C9_C8("C9/C8", GenderFormat.MASCULINO),
     C8_C7("C8/C7", GenderFormat.MASCULINO),
     C7_C6("C7/C6", GenderFormat.MASCULINO),
@@ -50,24 +50,23 @@ public enum Nivel {
     SUMA_11("11+", GenderFormat.MIXTO),
     SUMA_10("10+", GenderFormat.MIXTO),
 
-    // Категория "Todos" по просьбе заказчика — больше не предлагается при создании
-    // нового турнира (LFPT-373), не привязана ни к одному generoFormato.
+    // Категория "Todos" — не предлагается при создании нового турнира,
+    // не привязана ни к одному generoFormato.
     TODOS("Todos", null),
 
-    // Устаревшее значение — больше не предлагается при создании нового турнира (LFPT-373),
+    // Устаревшее значение — не предлагается при создании нового турнира,
     // не привязано ни к одному generoFormato. Существующие турниры с этим значением
     // продолжают корректно отображаться (без принудительной миграции).
     PRINCIPIANTES("Principiante", null),
 
-    // issue #82: nivelJugador стал обязательным полем — этот sentinel НЕ предлагается
-    // игроку как выбор (исключён из /registro и /perfil, там реального выбора уровня
-    // достаточно), используется только для (а) миграции v1.44, забэкфилившей игроков,
-    // у которых nivel_jugador был NULL до этой задачи, и (б) DEFAULT колонки на будущее —
+    // Sentinel «уровень не указан» для обязательного nivelJugador. Не предлагается игроку
+    // как выбор (исключён из /registro и /perfil), используется только (а) для игроков,
+    // у которых nivel_jugador был NULL до миграции v1.44, и (б) как DEFAULT колонки —
     // OAuth2/гостевая авто-регистрация игрока не собирают уровень при создании аккаунта.
-    // Админ по-прежнему может явно проставить его игроку через /admin/players (сброс
-    // ошибочно указанного уровня) — оттуда и только оттуда этот sentinel может появиться
+    // Админ может явно проставить его игроку через /admin/players (сброс ошибочно
+    // указанного уровня) — оттуда и только оттуда этот sentinel может появиться
     // у игрока уже после регистрации. Никогда не был допустимым значением для турнира
-    // (не входил в CHECK-constraint categoria_nivel ни в одной из прошлых миграций).
+    // (не входил в CHECK-constraint categoria_nivel ни в одной из миграций).
     SIN_ESPECIFICAR("Sin especificar", null);
 
     private final String orden;
@@ -88,7 +87,7 @@ public enum Nivel {
         return generoAplicable == null ? "" : generoAplicable.name();
     }
 
-    // Значения, которые больше не предлагаются при создании нового турнира (LFPT-373) —
+    // Значения, которые не предлагаются при создании нового турнира —
     // не привязаны ни к одному generoFormato, оставлены только для отображения уже
     // существующих турниров с этими значениями.
     private static final Set<Nivel> LEGACY_TOURNAMENT_LEVELS = EnumSet.of(PRINCIPIANTES, TODOS, SIN_ESPECIFICAR);
@@ -123,18 +122,18 @@ public enum Nivel {
 
     // Уровни, реально применимые к игроку (players/perfil.html, admin/players/details.html).
     // Остальные значения Nivel — категории турниров (составные/комбинированные), их
-    // нельзя присваивать игроку напрямую — согласовано с заказчиком (см. issue #206).
+    // нельзя присваивать игроку напрямую.
     private static final Set<Nivel> PLAYER_LEVELS = EnumSet.of(C9, C8, C7, C6, C5, D9, D7, D8, D6, C4);
 
     public static boolean isPlayerLevel(Nivel nivel) {
         return nivel != null && PLAYER_LEVELS.contains(nivel);
     }
 
-    // LFPT-483: PlayerPadel.nivelJugador — NOT NULL в БД (issue #82, миграция v1.44),
-    // "уровень не указан" кодируется значением SIN_ESPECIFICAR, а не Java null. Там, где
-    // уровень игрока опционально показывается наружу (публичные списки участников), это
-    // значение нужно привести к null — тот же критерий, что уже применяют
-    // admin/players/list.html (th:data-nivel, не-SuperAdmin span) при отображении уровня.
+    // PlayerPadel.nivelJugador — NOT NULL в БД (миграция v1.44), "уровень не указан"
+    // кодируется значением SIN_ESPECIFICAR, а не Java null. Там, где уровень игрока
+    // опционально показывается наружу (публичные списки участников), это значение нужно
+    // привести к null — тот же критерий, что применяют admin/players/list.html
+    // (th:data-nivel, не-SuperAdmin span) при отображении уровня.
     public static Nivel orNullIfSinEspecificar(Nivel nivel) {
         return nivel == SIN_ESPECIFICAR ? null : nivel;
     }

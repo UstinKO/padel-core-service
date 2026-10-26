@@ -20,7 +20,7 @@ public class AmericanoRankingDto {
 
     /**
      * Итоговый тип формата после пост-проверки: FULL или FLEX.
-     * Показывается пользователю согласно п. 15 / 16 ТЗ.
+     * Показывается пользователю.
      */
     private AmericanoFormatType formatType;
 

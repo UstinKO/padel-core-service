@@ -68,7 +68,7 @@ public class TournamentRegistration {
     @Builder.Default
     private Integer invitationAttempts = 0;
 
-    // Одноразовый непредсказуемый токен для /waitlist/confirm — заменяет угадываемый ID (issue #194)
+    // Одноразовый непредсказуемый токен для /waitlist/confirm — вместо угадываемого ID
     @Column(name = "waitlist_confirmation_token", length = 64)
     private String waitlistConfirmationToken;
 
@@ -112,7 +112,7 @@ public class TournamentRegistration {
     @Column(name = "partner_email")
     private String partnerEmail;
 
-    // LFPT-0687: контакт партнёра без email — телефон/Telegram вместо email
+    // Контакт партнёра без email — телефон/Telegram вместо email
     @Column(name = "partner_telegram")
     private String partnerTelegram;
 
@@ -135,19 +135,19 @@ public class TournamentRegistration {
     @Column(name = "pair_proposer_reg_id")
     private Long pairProposerRegId;
 
-    // LFPT-443: игрок опоздал к началу индивидуального турнира (AMERICANO/KING_OF_COURT) —
+    // Игрок опоздал к началу индивидуального турнира (AMERICANO/KING_OF_COURT) —
     // применяется штраф −10 к его текущему результату в этом турнире (см. TournamentService.setLateArrival).
     @Column(name = "late_arrival", nullable = false)
     @Builder.Default
     private Boolean lateArrival = false;
 
-    // LFPT-0668: резервная заявка без партнёра (SOLO_ADD_LATER, переведённая в WAITLIST по дедлайну) —
+    // Резервная заявка без партнёра (SOLO_ADD_LATER, переведённая в WAITLIST по дедлайну) —
     // защита от повторной отправки напоминания за 3ч до старта турнира.
     @Column(name = "final_reminder_sent", nullable = false)
     @Builder.Default
     private Boolean finalReminderSent = false;
 
-    // LFPT-0668: токен self-service действий из email (подтвердить актуальность / отменить участие)
+    // Токен self-service действий из email (подтвердить актуальность / отменить участие)
     // для резервной заявки без партнёра — без логина, по аналогии с waitlistConfirmationToken.
     @Column(name = "partner_action_token", length = 64)
     private String partnerActionToken;

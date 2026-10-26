@@ -44,7 +44,7 @@ public class AmericanoPlayer {
 
     // ── Основная статистика ──────────────────────────────────────────────────
 
-    /** Сумма набранных очков (= totalScore по ТЗ) */
+    /** Сумма набранных очков (= totalScore) */
     @Column(name = "total_score", nullable = false)
     @Builder.Default
     private Integer totalScore = 0;
@@ -61,7 +61,7 @@ public class AmericanoPlayer {
     @Builder.Default
     private Integer matchesLost = 0;
 
-    /** Ничьи — опциональны по ТЗ, но поле должно быть */
+    /** Ничьи — опциональны в формате, но поле должно быть */
     @Column(name = "matches_drawn", nullable = false)
     @Builder.Default
     private Integer matchesDrawn = 0;

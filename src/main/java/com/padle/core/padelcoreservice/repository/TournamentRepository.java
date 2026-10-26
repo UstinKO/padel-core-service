@@ -44,7 +44,7 @@ public interface TournamentRepository extends JpaRepository<Tournament, Long> {
     @Query("SELECT t FROM Tournament t ORDER BY t.createdAt DESC LIMIT :limit")
     List<Tournament> findTopByOrderByCreatedAtDesc(@Param("limit") int limit);
 
-    // LFPT-0546: клубная статистика главной админ-панели — CLUB_ADMIN видит только свой клуб.
+    // Клубная статистика главной админ-панели — CLUB_ADMIN видит только свой клуб.
     long countByClubIdAndIsActiveTrue(Long clubId);
 
     @Query("SELECT t FROM Tournament t WHERE t.clubId = :clubId ORDER BY t.createdAt DESC LIMIT :limit")

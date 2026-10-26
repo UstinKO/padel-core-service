@@ -2,7 +2,7 @@ package com.padle.core.padelcoreservice.model.enums;
 
 public enum AmericanoRoundStatus {
     PENDING("Pendiente"),
-    /** LFPT-367: equipos ya definidos, esperando que se libere una cancha (solo para {@code AmericanoMatch}, no para rondas). */
+    /** Команды уже определены и ждут, пока освободится корт (только для {@code AmericanoMatch}, не для раундов). */
     QUEUED("En cola"),
     IN_PROGRESS("En curso"),
     COMPLETED("Completado"),

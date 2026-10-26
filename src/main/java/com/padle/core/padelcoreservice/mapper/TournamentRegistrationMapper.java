@@ -62,7 +62,7 @@ public interface TournamentRegistrationMapper {
         return registration.getPartnerEmail();
     }
 
-    // LFPT-0687: тот же порядок приоритета, что у getPartnerNombre/getPartnerEmail — живая связь
+    // Тот же порядок приоритета, что у getPartnerNombre/getPartnerEmail — живая связь
     // partner, если она уже проставлена, иначе «сырое» поле (снимок контакта на момент регистрации).
     default String getPartnerTelegram(TournamentRegistration registration) {
         if (registration.getPartner() != null) {

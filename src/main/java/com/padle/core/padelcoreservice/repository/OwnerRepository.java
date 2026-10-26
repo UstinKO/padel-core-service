@@ -32,6 +32,6 @@ public interface OwnerRepository extends JpaRepository<Owner, Long> {
     // Поиск по роли
     List<Owner> findByRole(OwnerRole role);
 
-    // LFPT-375: клубные аккаунты конкретного клуба
+    // Клубные аккаунты конкретного клуба
     List<Owner> findByClubId(Long clubId);
 }

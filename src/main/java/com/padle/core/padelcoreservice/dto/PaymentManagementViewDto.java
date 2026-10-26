@@ -17,7 +17,7 @@ public class PaymentManagementViewDto {
     private String playerPhone;
     private String telegramUsername;
     private Integer position;
-    /** LFPT-0729: только для резерва ({@link #isReserve}) — позиция в очереди WAITLIST. */
+    /** Только для резерва ({@link #isReserve}) — позиция в очереди WAITLIST. */
     private Integer waitlistPosition;
     private Boolean attended;
     private Boolean participationConfirmed;
@@ -43,17 +43,17 @@ public class PaymentManagementViewDto {
     // Служебное поле для группировки пар при нормализации позиций (не выводится в шаблоне)
     private Long pairGroupId;
 
-    /** Строка главного игрока пары (не партнёра в БД) — T18: определяет, куда класть кнопку "Добавить команду". */
+    /** Строка главного игрока пары (не партнёра в БД) — определяет, куда класть кнопку "Добавить команду". */
     private boolean isMainRow;
 
-    /** Парная регистрация (в отличие от одиночной "ищу пару") — T18: только парные можно добавить как AmericanoTeam. */
+    /** Парная регистрация (в отличие от одиночной "ищу пару") — только парные можно добавить как AmericanoTeam. */
     private boolean isDoubleRegistration;
 
-    // ── T18: добавление пары в Team Playoff прямо со страницы оплат ──
+    // ── Добавление пары в Team Playoff прямо со страницы оплат ──
     // Заполняются контроллером поверх generic-данных PaymentService только для AMERICANO_TEAMS.
     private boolean canAddToTeamPlayoff;
     private boolean alreadyInTeamPlayoff;
 
-    /** LFPT-0729: true — регистрация в резерве (WAITLIST), а не в основном составе. */
+    /** true — регистрация в резерве (WAITLIST), а не в основном составе. */
     private boolean isReserve;
 }
