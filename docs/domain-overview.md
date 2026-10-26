@@ -327,7 +327,7 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 
 | Метод | URL | Тип | Auth | Описание |
 |-------|-----|-----|------|----------|
-| `POST` | `/players/tournaments/{tournamentId}/register` | JSON | PLAYER | Записаться на турнир. Проверяет `hasValidContact()` и уровень игрока против `categoriaNivel` турнира — правило "±1 ступень" (`TournamentLevelPolicy`, LFPT-0303), не применяется к `CANCHA_ABIERTA`/`PADEL_CLINIC` и к категориям, не входящим в `Nivel.isPlayerLevel` (`TODOS`, `PRINCIPIANTES`, диапазоны, `SUMA_*`). Уровень не указан → 400 + `needLevel: true`. Если мест нет — попадает в WAITLIST. |
+| `POST` | `/players/tournaments/{tournamentId}/register` | JSON | PLAYER | Записаться на турнир. Проверяет `hasValidContact()` и уровень игрока против `categoriaNivel` турнира — правило "±1 ступень" по единой расчётной шкале мужских (C) и женских (D) категорий (`TournamentLevelPolicy`, LFPT-0303/LFPT-0744: `Cn→n`, `Dn→n+1`, пол сам по себе не блокирует регистрацию), не применяется к `CANCHA_ABIERTA`/`PADEL_CLINIC` и к категориям, не входящим в `Nivel.isPlayerLevel` (`TODOS`, `PRINCIPIANTES`, диапазоны, `SUMA_*`, `D5`/`D4`). Уровень не указан → 400 + `needLevel: true`. Если мест нет — попадает в WAITLIST. |
 | `POST` | `/players/tournaments/{tournamentId}/cancel` | JSON | PLAYER | Отменить одиночную регистрацию. Проверяет `deadline_cancelacion`. |
 
 #### Парная регистрация (ROLE_PLAYER)
