@@ -319,7 +319,8 @@ jobs:
           echo "Архивирую:"; echo "$archived"
 
           git add -A specs
-          if git diff --cached --name-only | grep -v '^specs/'; then
+          # core.quotepath=off: иначе пути с кириллицей приходят как "specs/...\320\262..." и ложно не проходят grep (LFPT-0737)
+          if git -c core.quotepath=off diff --cached --name-only | grep -v '^specs/'; then
             echo "::error::Диф архивации вышел за пределы specs/ — PR не создаю."
             exit 1
           fi
