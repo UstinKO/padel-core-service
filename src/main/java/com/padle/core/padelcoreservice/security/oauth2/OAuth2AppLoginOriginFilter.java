@@ -10,7 +10,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 /**
- * LFPT-0637: запоминает в сессии, что вход через Google инициирован клиентом 1Padel.App
+ * Запоминает в сессии, что вход через Google инициирован клиентом 1Padel.App
  * (`?client=app` на самом же эндпоинте инициации, не произвольный redirect_uri — иначе
  * открылся бы open redirect), чтобы {@link OAuth2AuthenticationSuccessHandler} после
  * обмена кода с Google вернул браузер в приложение, а не на /players/dashboard.

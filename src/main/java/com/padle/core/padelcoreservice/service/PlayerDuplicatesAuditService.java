@@ -28,8 +28,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * LFPT-0677: только аудит потенциальных дублей {@link PlayerPadel} — ничего не меняет
- * и не удаляет, см. спеку {@code specs/features/LFPT-0677-аудит-дублей-игроков.md}.
+ * Аудит потенциальных дублей {@link PlayerPadel} — только чтение: ничего не меняет и не удаляет.
  */
 @Service
 @RequiredArgsConstructor
@@ -171,7 +170,7 @@ public class PlayerDuplicatesAuditService {
     /**
      * Простой union-find по id игроков — объединяет записи, попавшие в одну и ту же группу
      * (точную или вероятную), чтобы посчитать реальное число затронутых "людей", а не сумму
-     * размеров пересекающихся групп (см. Edge cases спеки LFPT-0677).
+     * размеров пересекающихся групп.
      */
     private static final class UnionFind {
         private final Map<Long, Long> parent = new HashMap<>();

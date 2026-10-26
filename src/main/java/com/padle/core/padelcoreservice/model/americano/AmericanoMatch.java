@@ -94,14 +94,14 @@ public class AmericanoMatch {
     @Column(name = "team2_games")
     private Integer team2Games;
 
-    /** Матч 1/8 финала (play-in, T13) желательно запустить как можно раньше — ТЗ §32. */
+    /** Матч 1/8 финала (play-in) желательно запустить как можно раньше. */
     @Column(name = "priority", nullable = false)
     @Builder.Default
     private Boolean priority = false;
 
     /**
-     * Play-in-матч (T13): id и слот (1|2) четвертьфинального матча, куда сразу после этого матча
-     * должен попасть победитель — в отличие от QF→SF/SF→Final, слот фиксирован заранее (ТЗ §33/§34),
+     * Play-in матч: id и слот (1|2) четвертьфинального матча, куда сразу после этого матча
+     * должен попасть победитель — в отличие от QF→SF/SF→Final, слот фиксирован заранее,
      * а не пересчитывается движком подбора соперников после завершения всей стадии.
      */
     @Column(name = "next_match_id")
@@ -139,12 +139,12 @@ public class AmericanoMatch {
         return status == AmericanoRoundStatus.IN_PROGRESS;
     }
 
-    /** LFPT-367: equipos ya emparejados, esperando cancha libre — sin cancha asignada todavía. */
+    /** Команды уже в паре и ждут свободного корта — корт ещё не назначен. */
     public boolean isQueued() {
         return status == AmericanoRoundStatus.QUEUED;
     }
 
-    /** Ocupado en cualquier sentido "el equipo no está libre" — jugando o en cola (LFPT-367). */
+    /** Команда занята в любом смысле "не свободна" — играет или стоит в очереди. */
     public boolean isActive() {
         return isInProgress() || isQueued();
     }

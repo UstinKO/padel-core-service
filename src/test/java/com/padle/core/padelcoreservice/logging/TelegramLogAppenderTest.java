@@ -16,9 +16,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// LFPT-0518: TelegramLogAppender — сообщения от StructuredAlert уходят в очередь как есть,
-// остальные (не мигрированные места логирования) — в прежнем формате "🔴 <class> + текст"
-// (критерий приёмки: регрессии для немигрированных мест быть не должно).
+// TelegramLogAppender — сообщения от StructuredAlert уходят в очередь как есть,
+// остальные — в формате "🔴 <class> + текст".
 class TelegramLogAppenderTest {
 
     private final LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();

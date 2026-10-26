@@ -10,7 +10,7 @@ import org.mapstruct.factory.Mappers;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * LFPT-483: уровень игрока должен попадать в PlayerStatsDTO — модель, которую
+ * Уровень игрока должен попадать в PlayerStatsDTO — модель, которую
  * King of Court передаёт в публичный шаблон списка участников (через ranking).
  */
 class KingOfCourtMapperNivelTest {

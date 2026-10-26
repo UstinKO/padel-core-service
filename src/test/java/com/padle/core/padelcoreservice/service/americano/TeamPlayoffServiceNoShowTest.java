@@ -30,7 +30,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * LFPT-0729: отметка команды Team Playoff как «не пришла» — не должна трогать команды с уже
+ * Отметка команды Team Playoff как «не пришла» — не должна трогать команды с уже
  * созданными матчами квалификации и должна немедленно исключаться из подсчёта активных команд,
  * который {@code canInitPlayoff}/{@code initPlayoff} используют для размера сетки.
  */

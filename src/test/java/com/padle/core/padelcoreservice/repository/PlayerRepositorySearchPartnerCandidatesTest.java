@@ -27,9 +27,9 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * LFPT-0679: {@code PlayerRepository.searchPartnerCandidates} — поиск партнёра по телефону
+ * {@code PlayerRepository.searchPartnerCandidates} — поиск партнёра по телефону
  * (в разных форматах записи) и по Telegram username (с/без '@', без учёта регистра), в
- * дополнение к уже существующему поиску по имени/фамилии/email.
+ * дополнение к поиску по имени/фамилии/email.
  */
 @SpringBootTest
 @TestPropertySource(properties = {
@@ -97,7 +97,7 @@ class PlayerRepositorySearchPartnerCandidatesTest {
 
     @Test
     void buscaPorNombre_ignoraDiacriticos() {
-        // LFPT-0720: «Max» debe encontrar «Máximo» — ejemplo explícito del cliente (#713).
+        // «Max» должен находить «Máximo».
         String apellidoUnico = "ConAcento" + UUID.randomUUID().toString().substring(0, 8);
         PlayerPadel player = playerRepository.saveAndFlush(buildPlayerWithName("Máximo", apellidoUnico));
 

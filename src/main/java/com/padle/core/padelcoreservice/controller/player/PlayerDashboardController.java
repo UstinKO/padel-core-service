@@ -74,7 +74,7 @@ public class PlayerDashboardController {
             List<TournamentDto> upcomingTournaments = tournamentService.getVisibleTournamentsForPlayer();
 
             // Турниры, в которых игрок уже участвовал, и id турниров с активной регистрацией —
-            // из одного запроса регистраций (раньше запрашивались дважды, см. #178)
+            // из одного запроса регистраций
             TournamentService.PlayerDashboardTournaments dashboardTournaments =
                     tournamentService.getHistoricalAndActiveTournamentsByPlayer(player.getId());
             List<TournamentDto> historicalTournaments = dashboardTournaments.historical();
@@ -145,10 +145,10 @@ public class PlayerDashboardController {
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            // LFPT-0518: TournamentRegistrationException/InvalidStateException/ResourceNotFoundException —
-            // ожидаемые бизнес-исключения TournamentService (повторная регистрация, турнир закрыт и т.п.),
-            // не баг приложения. Полная централизация через GlobalExceptionHandler — вне скоупа этой
-            // задачи (изменила бы HTTP-статус/формат ответа); здесь только классификация для алерта.
+            // TournamentRegistrationException/InvalidStateException/ResourceNotFoundException —
+            // ожидаемые бизнес-исключения TournamentService (повторная регистрация, турнир закрыт
+            // и т.п.), не баг приложения. Здесь только классификация для алерта: перенос в
+            // GlobalExceptionHandler изменил бы HTTP-статус/формат ответа.
             boolean isBusinessError = isBusinessRegistrationError(e);
             AlertSeverity severity = isBusinessError
                     ? AlertSeverity.USER_VALIDATION_ERROR
@@ -169,8 +169,8 @@ public class PlayerDashboardController {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
             response.put("message", e.getMessage());
-            // LFPT-0303: уровень игрока не указан — по аналогии с needContact выше,
-            // фронтенд-попап "Указать уровень" (отдельная задача) различает этот случай по флагу.
+            // Уровень игрока не указан — по аналогии с needContact выше,
+            // фронтенд-попап "Указать уровень" различает этот случай по флагу.
             if (e instanceof PlayerLevelRequiredException) {
                 response.put("needLevel", true);
             }
@@ -208,7 +208,7 @@ public class PlayerDashboardController {
 
             return ResponseEntity.ok(response);
         } catch (TournamentRegistrationException | ResourceNotFoundException e) {
-            // #294: штатный отказ по бизнес-правилу (дедлайн отмены прошёл, уже отменено,
+            // Штатный отказ по бизнес-правилу (дедлайн отмены прошёл, уже отменено,
             // регистрация не найдена) — не системная ошибка, INFO вместо ERROR, чтобы не
             // засорять Telegram-алерты обычным пользовательским флоу.
             log.info("Cancellation rejected for player {} on tournament {}: {}",
@@ -227,7 +227,7 @@ public class PlayerDashboardController {
     }
 
     /**
-     * LFPT-0518: известные бизнес-исключения TournamentService (повторная регистрация,
+     * Известные бизнес-исключения TournamentService (повторная регистрация,
      * турнир закрыт/недоступен и т.п.) — ожидаемая ошибка пользователя/бизнес-правила,
      * не баг приложения (см. классификацию серьёзности Telegram-алерта выше).
      */
@@ -373,8 +373,8 @@ public class PlayerDashboardController {
         response.put("partnerFirstName", dto.getPartnerNombre());
         response.put("partnerLastName", dto.getPartnerApellido());
         response.put("hasRegisteredPartner", dto.getPartnerId() != null);
-        // LFPT-0706: статус/позиция/дата своей регистрации — нужны клиенту 1Padel.App (LFPT-0707)
-        // для парной записи без второго запроса; контакты партнёра всё так же не публикуются.
+        // Статус/позиция/дата своей регистрации — нужны клиенту 1Padel.App для парной записи
+        // без второго запроса; контакты партнёра по-прежнему не публикуются.
         response.put("registrationId", dto.getId());
         response.put("status", dto.getStatus());
         response.put("waitlistPosition", dto.getWaitlistPosition());

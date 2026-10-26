@@ -31,7 +31,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * LFPT-437: email-напоминание за 5ч до начала парного турнира.
+ * Email-напоминание за 5ч до начала парного турнира.
  * Проверяет именно персистентную защиту от дублей (Tournament.pairReminderSentAt) —
  * отправку самого письма (SMTP) в этом окружении не проверить, но она уже покрыта
  * существующим паттерном EmailService (см. другие sendXxx-методы).
@@ -105,8 +105,8 @@ class PairTournamentReminderSchedulerTest {
 
         assertThat(html).contains("Открыть мероприятие", "Следите за турниром в реальном времени",
                 "https://1-padel.com/torneo/42")
-                // Текст самого письма (приветствие, адрес, предупреждение) остаётся испанским (LFPT-437/443) —
-                // LFPT-460 локализует только кнопку-ссылку.
+                // Текст самого письма (приветствие, адрес, предупреждение) остаётся испанским —
+                // локализуется только кнопка-ссылка.
                 .contains("Les pedimos llegar 15 minutos antes");
     }
 

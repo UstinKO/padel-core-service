@@ -77,7 +77,7 @@ public class PerfilController {
                 actualizado = true;
             }
 
-            // Email — по умолчанию нельзя менять вообще. Единственное исключение (issue #217):
+            // Email — по умолчанию нельзя менять вообще. Единственное исключение:
             // временный гостевой email (@1padel.guest), выданный админом при регистрации игрока
             // "за него" — тогда игрок может один раз указать свой настоящий email.
             if (email != null && !email.equals(player.getEmail())) {
@@ -116,10 +116,10 @@ public class PerfilController {
                 actualizado = true;
             }
 
-            // Nivel de juego — issue #82: obligatorio también al editar el perfil, no solo
-            // al registrarse. El formulario ya no ofrece "Sin especificar" como opción
-            // (fragments/nivel-options.html :: options(selected, allowEmpty=false)), pero
-            // igual se valida en el servidor por si el request llega sin pasar por el form.
+            // Уровень игры обязателен и при редактировании профиля, не только при регистрации.
+            // Форма не предлагает "Sin especificar" (fragments/nivel-options.html ::
+            // options(selected, allowEmpty=false)), но сервер всё равно проверяет — на случай,
+            // если запрос пришёл в обход формы.
             if (nivelJugador == null || nivelJugador.isBlank()) {
                 redirectAttributes.addFlashAttribute("errorMessage",
                         "El nivel de juego es obligatorio");

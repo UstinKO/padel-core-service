@@ -23,8 +23,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * LFPT-374: el nombre del torneo ya no se ingresa manualmente en el formulario — se genera
- * en el servidor a partir de generoFormato + categoriaNivel, tanto al crear como al editar.
+ * Название турнира не вводится вручную в форме — собирается на сервере из
+ * generoFormato + categoriaNivel, и при создании, и при редактировании.
  */
 @SpringBootTest
 @TestPropertySource(properties = {

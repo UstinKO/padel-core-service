@@ -44,7 +44,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * LFPT-376: изоляция доступа по клубу — TournamentAccessService является единственным местом,
+ * Изоляция доступа по клубу — TournamentAccessService является единственным местом,
  * где принимается решение "может ли этот Owner управлять этим турниром". Покрывает основную
  * логику (SUPER_ADMIN/ADMIN — все, CLUB_ADMIN — только свой клуб, OWNER/ORGANIZER — только свой
  * турнир) и по одному резолверу производных ID на формат турнира (bracket-матч, King of Court,

@@ -53,7 +53,7 @@ public class PaymentManagementController {
         model.addAttribute("players", players);
         model.addAttribute("paymentMethods", PaymentMethod.values());
         model.addAttribute("paymentStatuses", PaymentStatus.values());
-        // LFPT-0475: детализация суммы по способу оплаты — используется LFPT-0476
+        // Детализация суммы по способу оплаты
         model.addAttribute("paymentBreakdown", paymentService.getPaymentMethodBreakdown(players));
 
         return "admin/tournaments/payments";
@@ -69,7 +69,7 @@ public class PaymentManagementController {
         tournamentAccessService.assertCanManageTournament(owner, tournamentId);
 
         try {
-            // T18: сначала сохраняем всё, что координатор проставил на странице (в т.ч. только что
+            // Сначала сохраняем всё, что координатор проставил на странице (в т.ч. только что
             // отмеченную оплату этой пары), и только потом добавляем пару в турнир — теми же значениями.
             List<PaymentUpdateDto> updates = parsePaymentUpdates(form.getPayments());
             paymentService.savePaymentManagementData(tournamentId, updates, owner.getId());
@@ -91,11 +91,11 @@ public class PaymentManagementController {
     }
 
     /**
-     * T18: для AMERICANO_TEAMS помечает, у каких пар уже можно (или уже нельзя, потому что готово)
+     * Для AMERICANO_TEAMS помечает, у каких пар уже можно (или уже нельзя, потому что готово)
      * показать кнопку "Добавить команду" на странице оплат — только главная строка парной
-     * регистрации, ещё не добавленная как AmericanoTeam. LFPT-0730: резервные (WAITLIST) пары
-     * исключены — addTeamFromRegistration всё равно отклонит их (требует CONFIRMED/PARTNER_INVITED),
-     * кнопка не должна и показываться для того, что заведомо попадёт в ошибку.
+     * регистрации, ещё не добавленная как AmericanoTeam. Резервные (WAITLIST) пары исключены:
+     * addTeamFromRegistration всё равно отклонит их (требует CONFIRMED/PARTNER_INVITED),
+     * и кнопка не должна показываться для того, что заведомо закончится ошибкой.
      */
     private void markTeamPlayoffEligibility(Long tournamentId, List<PaymentManagementViewDto> players) {
         players.stream()
@@ -182,8 +182,7 @@ public class PaymentManagementController {
 
     /**
      * Обёртка верхнего уровня для @ModelAttribute — Spring MVC биндит вложенный
-     * список через индексированные имена полей формы (payments[i].xxx), заменяя
-     * прежний паттерн из 11+ параллельных List-полей (issue #130).
+     * список через индексированные имена полей формы (payments[i].xxx).
      */
     @Data
     public static class PaymentUpdateForm {

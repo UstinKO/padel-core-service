@@ -25,7 +25,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * LFPT-491: Tournament.visibilidad — закрытые мероприятия (SOLO_POR_ENLACE) не попадают
+ * Tournament.visibilidad — закрытые мероприятия (SOLO_POR_ENLACE) не попадают
  * в публичные списки/расписание/поиск, но остаются полностью доступны по прямой ссылке
  * (по id) и видны в админке независимо от режима.
  */

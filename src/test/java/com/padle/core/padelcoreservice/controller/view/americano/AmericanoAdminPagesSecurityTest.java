@@ -33,10 +33,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * LFPT-391: страницы управления запущенным турниром Americano / Team Americano / Team Playoff
- * лежат не под /admin/** и не имели ролевого гейта — любой залогиненный игрок открывал их,
- * зная id турнира. Проверка через реальную цепочку фильтров и method security (MockMvc),
- * сервисы замоканы.
+ * Страницы управления запущенным турниром Americano / Team Americano / Team Playoff
+ * лежат не под /admin/**, поэтому у них свой ролевой гейт — игрок, знающий id турнира,
+ * не должен их открывать. Проверка через реальную цепочку фильтров и method security
+ * (MockMvc), сервисы замоканы.
  */
 @SpringBootTest
 @AutoConfigureMockMvc

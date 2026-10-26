@@ -32,7 +32,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * LFPT-360: команда с гостевым (незарегистрированным на сайте) вторым игроком должна отображаться
+ * Команда с гостевым (незарегистрированным на сайте) вторым игроком должна отображаться
  * в матчах Team Playoff так же полно, как команда с обоими зарегистрированными игроками —
  * второй игрок не должен пропадать из DTO только потому, что у него нет аккаунта.
  */
@@ -63,13 +63,12 @@ class TeamPlayoffGuestPartnerDisplayTest {
     void toMatchDto_showsGuestPartnerName_whenSecondPlayerHasNoAccount() {
         Long tournamentId = createTournament();
 
-        // LFPT-0561: «Добавить команду» через playoffService.addTeam больше не допускает
-        // второго игрока только текстом — теперь для обоих игроков всегда ищется/создаётся
-        // настоящий PlayerPadel. Сценарий AmericanoTeam с текстовым player2 (без аккаунта)
-        // остаётся реальным (например, команда, импортированная из парной регистрации с сайта,
-        // чей партнёр так и не подтвердил аккаунт — см. TeamPlayoffService.buildTeamFromPair),
-        // поэтому здесь он строится напрямую, минуя addTeam, чтобы не потерять покрытие
-        // логики отображения, которую проверяет этот тест.
+        // playoffService.addTeam всегда ищет/создаёт настоящий PlayerPadel для обоих игроков,
+        // а AmericanoTeam с текстовым player2 (без аккаунта) встречается в реальных данных
+        // (например, команда, импортированная из парной регистрации с сайта, чей партнёр так и
+        // не подтвердил аккаунт — см. TeamPlayoffService.buildTeamFromPair). Поэтому команда
+        // строится напрямую, минуя addTeam, чтобы покрыть логику отображения, которую проверяет
+        // этот тест.
         PlayerPadel registeredCaptain = createPlayer(tournamentId, "Registered", "Captain");
         Tournament tournament = tournamentRepository.findById(tournamentId).orElseThrow();
         AmericanoTeam guestTeam = teamRepository.save(AmericanoTeam.builder()

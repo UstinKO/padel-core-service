@@ -15,7 +15,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * LFPT-402: ranking_db.mejor_posicion — NULL означает «позиции ещё нет», колонка nullable и без
+ * ranking_db.mejor_posicion — NULL означает «позиции ещё нет», колонка nullable и без
  * DEFAULT 0 (v1.54). Проверка на реальной схеме после всех миграций Liquibase.
  */
 @SpringBootTest

@@ -6,9 +6,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 
 /**
- * LFPT-398: calcularMejorPosicion() debe ser null-safe cuando posicionActual
- * todavía no fue calculado (se asigna recién en RankingService.actualizarPosiciones,
- * llamado solo desde getRankingCompleto()) pero mejorPosicion ya tiene un valor.
+ * calcularMejorPosicion() не падает на null, когда posicionActual ещё не посчитан
+ * (присваивается только в RankingService.actualizarPosiciones, который вызывается
+ * лишь из getRankingCompleto()), а mejorPosicion уже имеет значение.
  */
 class RankingTest {
 

@@ -10,7 +10,7 @@ import java.util.Locale;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// LFPT-0541: ручной override языка (cookie "lang") с приоритетом над Accept-Language,
+// Ручной override языка (cookie "lang") с приоритетом над Accept-Language,
 // откат на Accept-Language при отсутствии/невалидности cookie.
 class CookieOverrideLocaleResolverTest {
 

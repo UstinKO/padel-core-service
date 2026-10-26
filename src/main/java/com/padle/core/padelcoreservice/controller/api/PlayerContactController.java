@@ -149,11 +149,11 @@ public class PlayerContactController {
     }
 
     /**
-     * LFPT-0637: «Мои мероприятия» для клиента 1Padel.App — read-only: предстоящие
-     * турниры со статусом/позицией в листе ожидания собственной регистрации, и история.
-     * Индивидуальная запись (LFPT-0660) и отмена (LFPT-0666) — внутри приложения через
+     * «Мои мероприятия» для клиента 1Padel.App — только чтение: предстоящие турниры
+     * со статусом/позицией в листе ожидания собственной регистрации, и история.
+     * Индивидуальная запись и отмена — внутри приложения через
      * {@code POST /players/tournaments/{id}/register|cancel}; парная регистрация/отмена
-     * ({@code .../cancel-double}) — по-прежнему только через сайт.
+     * ({@code .../cancel-double}) — только через сайт.
      */
     @GetMapping("/me/tournaments")
     public ResponseEntity<?> getMyTournaments(Authentication authentication) {

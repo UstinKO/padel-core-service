@@ -15,8 +15,8 @@ import java.nio.charset.StandardCharsets;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-// LFPT-0726: json-smart исключён, поэтому ошибки Google разбираются своим обработчиком,
-// а не OAuth2ErrorResponseErrorHandler (тот на 400 + WWW-Authenticate падал NoClassDefFoundError).
+// json-smart исключён, поэтому ошибки Google разбираются своим обработчиком,
+// а не OAuth2ErrorResponseErrorHandler (тот на 400 + WWW-Authenticate падает NoClassDefFoundError).
 class OAuth2ProviderErrorHandlerTest {
 
     private static final URI URL = URI.create("https://oauth2.example.com/token");

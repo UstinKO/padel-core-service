@@ -37,7 +37,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * LFPT-0687: пара, записанная игроком с партнёром без аккаунта (контакт по телефону/Telegram,
+ * Пара, записанная игроком с партнёром без аккаунта (контакт по телефону/Telegram,
  * без email), регистрируется немедленно — без ожидания email-подтверждения от партнёра или
  * действия координатора. Статус пары определяется занятостью турнира (CONFIRMED/WAITLIST),
  * как и для уже существующего партнёра — без отдельного промежуточного состояния.
@@ -84,8 +84,8 @@ class DoubleTournamentRegistrationNewPartnerInstantTest {
 
         when(playerRepository.findById(MAIN_PLAYER_ID)).thenReturn(Optional.of(mainPlayer));
         org.mockito.Mockito.lenient().when(playerRepository.findByEmail(any())).thenReturn(Optional.empty());
-        // LFPT-0720: findPartnerByContact ahora usa las búsquedas normalizadas (no findByTelefono)
-        // para decidir si reutiliza un jugador existente o crea uno nuevo.
+        // findPartnerByContact решает, переиспользовать существующего игрока или создать нового,
+        // по нормализованным поискам (не findByTelefono).
         org.mockito.Mockito.lenient().when(playerRepository.findByNormalizedTelefono(any()))
                 .thenReturn(Optional.empty());
         org.mockito.Mockito.lenient().when(playerRepository.findByNormalizedTelegramUsername(any()))
@@ -114,8 +114,8 @@ class DoubleTournamentRegistrationNewPartnerInstantTest {
         ArgumentCaptor<PlayerPadel> playerCaptor = ArgumentCaptor.forClass(PlayerPadel.class);
         verify(playerRepository).save(playerCaptor.capture());
         PlayerPadel createdPartner = playerCaptor.getValue();
-        // LFPT-0720: se guarda siempre con '@' inicial (mismo formato que
-        // PlayerContactController.updateContact), aunque el usuario lo haya escrito sin él.
+        // Всегда сохраняется с лидирующим '@' (тот же формат, что
+        // PlayerContactController.updateContact), даже если пользователь ввёл без него.
         assertThat(createdPartner.getTelegramUsername()).isEqualTo("@pareja_tg");
         assertThat(createdPartner.getNivelJugador()).isEqualTo(Nivel.SIN_ESPECIFICAR);
 
@@ -160,9 +160,9 @@ class DoubleTournamentRegistrationNewPartnerInstantTest {
 
     @Test
     void telefonoCoincideConJugadorExistente_reutilizaEnLugarDeCrearDuplicado() {
-        // LFPT-0720: aunque el teléfono venga en un formato distinto del guardado, la
-        // comparación normalizada (findByNormalizedTelefono) encuentra al jugador existente y
-        // lo reutiliza como compañero — en vez de crear una cuenta nueva o lanzar un error.
+        // Даже если телефон пришёл в формате, отличном от сохранённого, нормализованное
+        // сравнение (findByNormalizedTelefono) находит существующего игрока и переиспользует
+        // его как партнёра — вместо создания нового аккаунта или ошибки.
         PlayerPadel existingPartner = PlayerPadel.builder()
                 .id(99L)
                 .nombre("Ya")
@@ -186,9 +186,9 @@ class DoubleTournamentRegistrationNewPartnerInstantTest {
 
     @Test
     void telegramCoincideConJugadorExistente_reutilizaEnLugarDeCrearDuplicado() {
-        // LFPT-0720: antes, un nuevo partner con Telegram coincidente no se verificaba en
-        // absoluto antes de crear la cuenta — ahora findPartnerByContact también busca por
-        // Telegram normalizado (sin '@', sin distinción de mayúsculas).
+        // Новый партнёр с совпадающим Telegram тоже проверяется до создания аккаунта:
+        // findPartnerByContact ищет и по нормализованному Telegram (без '@', без учёта
+        // регистра).
         PlayerPadel existingPartner = PlayerPadel.builder()
                 .id(77L)
                 .nombre("Ya")

@@ -32,10 +32,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * LFPT-357: un jugador no debe terminar simultáneamente en dos equipos activos del mismo torneo.
- * Antes de este fix, la comprobación de duplicados sólo miraba {@code player1Id} — si la misma
- * pareja física se reinscribía con los roles principal/compañero invertidos (p. ej. tras cancelar
- * y volver a registrarse), ambos jugadores podían terminar en dos equipos distintos a la vez.
+ * Игрок не может оказаться одновременно в двух активных командах турнира — в том числе
+ * когда та же пара перезаписывается с переставленными ролями главного игрока и партнёра
+ * (например, после отмены и повторной регистрации).
  */
 @SpringBootTest
 @TestPropertySource(properties = {

@@ -44,7 +44,7 @@ public class PasswordResetService {
 
         // Всегда возвращаем true, даже если email не найден (безопасность)
         if (player == null) {
-            // LFPT-0518: email — на info (виден в файловых логах/Loki, там он маскируется
+            // Email — на info (виден в файловых логах/Loki, там он маскируется
             // %mask-паттерном, см. logging/MaskingConverter), в Telegram-алерт не попадает —
             // только безопасный статус этапа, без PII.
             log.info("Intento de restablecimiento para email no registrado: {}", email);
@@ -103,10 +103,10 @@ public class PasswordResetService {
     }
 
     /**
-     * LFPT-0518: событие PASSWORD_RESET_TOKEN_INVALID для Telegram-алерта — только статус
-     * токена (valid/expired/already_used/invalid), без самого токена и без ссылки (это
-     * одноразовый секрет для сброса пароля). Подробности с замаскированным токеном — отдельно
-     * на info, в файловых логах/Loki (см. вызовы выше и в resetPassword).
+     * Событие PASSWORD_RESET_TOKEN_INVALID для Telegram-алерта — только статус токена
+     * (valid/expired/already_used/invalid), без самого токена и без ссылки (это одноразовый
+     * секрет для сброса пароля). Подробности с замаскированным токеном — отдельно на info,
+     * в файловых логах/Loki (см. вызовы выше и в resetPassword).
      */
     private void alertTokenInvalid(String tokenStatus, Long playerId) {
         StructuredAlert.of(AlertSeverity.USER_VALIDATION_ERROR, "Ошибка восстановления пароля", "PASSWORD_RESET_TOKEN_INVALID")

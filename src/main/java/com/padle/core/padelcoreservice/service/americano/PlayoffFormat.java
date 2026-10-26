@@ -1,8 +1,8 @@
 package com.padle.core.padelcoreservice.service.americano;
 
 /**
- * ТЗ §4 (Team Playoff, 9-16 команд, T13): таблица "сколько команд проходит в 1/4 финала
- * напрямую, а сколько — через play-in (1/8 финала)". Четвертьфинал всегда состоит ровно
+ * Таблица Team Playoff для 9–16 команд: сколько команд проходит в 1/4 финала напрямую,
+ * а сколько — через play-in (1/8 финала). Четвертьфинал всегда состоит ровно
  * из 8 слотов: {@code directToQuarterFinal(n) + playInTeams(n) / 2 == 8} для любого n в [8,16].
  */
 final class PlayoffFormat {

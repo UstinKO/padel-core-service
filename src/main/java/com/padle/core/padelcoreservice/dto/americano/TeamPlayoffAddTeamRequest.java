@@ -3,12 +3,12 @@ package com.padle.core.padelcoreservice.dto.americano;
 import lombok.Data;
 
 /**
- * LFPT-0561: запрос формы «Добавить команду» Team Playoff — каждый игрок задаётся либо
+ * Запрос формы «Добавить команду» Team Playoff — каждый игрок задаётся либо
  * {@code id} (существующий игрок, найденный поиском), либо, если {@code id} не передан,
  * именем/фамилией/телефоном (новый игрок, с дедупом по телефону в
  * {@code PlayerService.resolverJugadorPorTelefonoOCrearInvitado}). Не заменяет
- * {@link TeamPlayoffTeamRequest}, который по-прежнему используется для редактирования уже
- * существующей команды (вне скоупа этой задачи).
+ * {@link TeamPlayoffTeamRequest}, который используется для редактирования уже
+ * существующей команды.
  */
 @Data
 public class TeamPlayoffAddTeamRequest {

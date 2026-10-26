@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 /**
- * LFPT-483: уровень игроков команды (player1Nivel/player2Nivel) должен попадать
+ * Уровень игроков команды (player1Nivel/player2Nivel) должен попадать
  * в AmericanoTeamDto — модель, которую Team Americano / Team Playoff передают
  * в публичный шаблон списка участников (TeamPlayoffService.toDto).
  */

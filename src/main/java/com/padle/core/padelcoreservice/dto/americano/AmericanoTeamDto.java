@@ -22,7 +22,7 @@ public class AmericanoTeamDto {
     private String player1Name;
     private String player1Email;
     private String player1Phone;
-    // LFPT-483: уровень игрока из профиля — для опционального отображения
+    // Уровень игрока из профиля — для опционального отображения
     // в публичном списке участников (Tournament.mostrarNivel), null если не указан
     // (в т.ч. для гостевого player2 без профиля — player2Nivel).
     private com.padle.core.padelcoreservice.model.enums.Nivel player1Nivel;
@@ -53,25 +53,25 @@ public class AmericanoTeamDto {
     private Integer setDifference;
     private Integer gameDifference;
 
-    // Разбивка по квалификационным матчам (ТЗ §28) — заполняется только в getQualRanking()
+    // Разбивка по квалификационным матчам — заполняется только в getQualRanking()
     private Integer match1GamesWon;
     private Integer match1GamesLost;
     private Integer match2GamesWon;
     private Integer match2GamesLost;
 
-    /** TWO_WINS / SPLIT / TWO_LOSSES / PENDING (ещё не сыграны оба квалификационных матча) — ТЗ §6/§30 */
+    /** TWO_WINS / SPLIT / TWO_LOSSES / PENDING (ещё не сыграны оба квалификационных матча) */
     private String qualStatus;
 
-    /** PLAYING / WAITING / QUEUED / ADVANCED / ELIMINATED / CHAMPION / RUNNER_UP — текущее положение в турнире (ТЗ §12) */
+    /** PLAYING / WAITING / QUEUED / ADVANCED / ELIMINATED / CHAMPION / RUNNER_UP — текущее положение в турнире */
     private String tournamentStatus;
 
-    /** LFPT-367: позиция в очереди ожидания корта (1 = следующий) — заполняется только когда tournamentStatus == "QUEUED". */
+    /** Позиция в очереди ожидания корта (1 = следующий) — заполняется только когда tournamentStatus == "QUEUED". */
     private Integer queuePosition;
 
-    /** LFPT-367: соперник по уже сформированной, но ещё не назначенной на корт паре. */
+    /** Соперник по уже сформированной, но ещё не назначенной на корт паре. */
     private String queueOpponentName;
 
-    /** LFPT-0388: этап плей-офф (имя {@link com.padle.core.padelcoreservice.model.enums.PlayoffStage}), на котором команда выбыла — заполняется только когда tournamentStatus == "ELIMINATED". */
+    /** Этап плей-офф (имя {@link com.padle.core.padelcoreservice.model.enums.PlayoffStage}), на котором команда выбыла — заполняется только когда tournamentStatus == "ELIMINATED". */
     private String eliminatedStage;
 
     // Данные регистрации (AMERICANO_TEAMS)

@@ -8,8 +8,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * ТЗ §4: таблица "сколько команд проходит в 1/4 финала напрямую, а сколько — через play-in (1/8)".
- * Значения взяты дословно из ТЗ (8→8/0 ... 16→0/16).
+ * Таблица "сколько команд проходит в 1/4 финала напрямую, а сколько — через play-in (1/8)".
+ * Значения — из требований заказчика (8→8/0 ... 16→0/16).
  */
 class PlayoffFormatTest {
 

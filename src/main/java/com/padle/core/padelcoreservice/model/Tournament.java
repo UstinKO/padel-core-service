@@ -111,26 +111,26 @@ public class Tournament {
     @Column(name = "owner_id")
     private Long ownerId;
 
-    // LFPT-437: момент отправки email-напоминания за 5ч до старта парного турнира.
+    // Момент отправки email-напоминания за 5ч до старта парного турнира.
     // NULL — ещё не отправлено; не-NULL — отправлено (или обработано без CONFIRMED-игроков),
     // повторная отправка не выполняется даже после редактирования турнира.
     @Column(name = "pair_reminder_sent_at")
     private LocalDateTime pairReminderSentAt;
 
-    // LFPT-443: момент отправки email-напоминания за 5ч до старта индивидуального турнира
+    // Момент отправки email-напоминания за 5ч до старта индивидуального турнира
     // (AMERICANO, KING_OF_COURT) либо Cancha Abierta. Общее поле для обоих писем —
     // на турнир приходится ровно один tipo, коллизий нет. Та же семантика, что у pairReminderSentAt.
     @Column(name = "start_reminder_sent_at")
     private LocalDateTime startReminderSentAt;
 
-    // LFPT-483: показывать ли уровень игрока (PlayerPadel.nivelJugador) рядом с каждым
-    // участником в публичном списке зарегистрированных — обратимый эксперимент на уровне
-    // конкретного турнира, по умолчанию выключено. UI-чекбокс — LFPT-484.
+    // Показывать ли уровень игрока (PlayerPadel.nivelJugador) рядом с каждым участником
+    // в публичном списке зарегистрированных — настройка конкретного турнира, по умолчанию
+    // выключено.
     @Column(name = "mostrar_nivel", nullable = false)
     @Builder.Default
     private Boolean mostrarNivel = false;
 
-    // LFPT-491: видимость турнира — PUBLICO (попадает в публичные списки/расписание) или
+    // Видимость турнира — PUBLICO (попадает в публичные списки/расписание) или
     // SOLO_POR_ENLACE (закрытое мероприятие: не в списках/навигации, доступно только по
     // прямой ссылке /torneo/{id}). Enum, а не boolean — задел под будущий третий режим
     // «по приглашению» без новой миграции.
@@ -158,7 +158,7 @@ public class Tournament {
         return startDateTime.minusHours(24);
     }
 
-    // LFPT-0662: единый источник дедлайна отмены — индивидуальный, если задан организатором,
+    // Единый источник дедлайна отмены — индивидуальный, если задан организатором,
     // иначе дефолт "старт - 24ч". Используется и проверкой отмены, и всеми уведомлениями игроку,
     // чтобы текст сообщений не мог расходиться с тем, что реально проверяет canCancelRegistration().
     public LocalDateTime getEffectiveDeadlineCancelacion() {
@@ -167,8 +167,8 @@ public class Tournament {
 
     private static final DateTimeFormatter CANCELLATION_DEADLINE_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
-    // LFPT-0662: отформатированный эффективный дедлайн — для показа игроку в email/UI,
-    // тот же формат, что уже использует страница турнира для поля "Fecha límite de cancelación".
+    // Отформатированный эффективный дедлайн — для показа игроку в email/UI,
+    // тот же формат, что использует страница турнира для поля "Fecha límite de cancelación".
     public String getFormattedCancellationDeadline() {
         return getEffectiveDeadlineCancelacion().format(CANCELLATION_DEADLINE_FORMAT);
     }
@@ -181,8 +181,8 @@ public class Tournament {
         return moneda + " " + precio;
     }
 
-    // LFPT-374: nombre del torneo ya no se ingresa manualmente — se genera a partir
-    // de los campos ya obligatorios generoFormato + categoriaNivel (ej. "Masculino · C6").
+    // Название турнира вручную не вводится — собирается из обязательных полей
+    // generoFormato + categoriaNivel (например, "Masculino · C6").
     public static String generateNombre(GenderFormat generoFormato, Nivel categoriaNivel) {
         String genero = generoFormato != null ? generoFormato.getValue() : null;
         String nivel = categoriaNivel != null ? categoriaNivel.getDisplay() : null;

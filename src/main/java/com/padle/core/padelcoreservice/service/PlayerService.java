@@ -206,7 +206,7 @@ public class PlayerService {
         return new HashSet<>(registrationRepository.findDistinctPlayerIds());
     }
 
-    // Разрешено только для игроков без единой регистрации на турнир (issue #207) —
+    // Разрешено только для игроков без единой регистрации на турнир —
     // иначе физическое удаление рискует нарушить FK-ограничения других таблиц
     @Transactional
     public void eliminarJugador(Long id) {
@@ -252,7 +252,7 @@ public class PlayerService {
         log.info("Contraseña cambiada para jugador con ID: {}", id);
     }
 
-    // Выдача/перевыпуск временного пароля для гостевого аккаунта (issue #217).
+    // Выдача/перевыпуск временного пароля для гостевого аккаунта.
     // Можно вызывать многократно — каждый раз генерируется новый пароль, старый
     // перестаёт подходить. Заодно чинит исходный невалидный bcrypt-хэш-заглушку
     // из TestTournamentController.resolveOrCreateGuestPlayer.
@@ -324,12 +324,12 @@ public class PlayerService {
                 .collect(Collectors.toList());
     }
 
-    // LFPT-0679: цифры запроса для поиска по телефону в разных форматах (+54, пробелы, тире,
-    // скобки). Пустая строка (не null — ветка в searchPartnerCandidates сравнивает с ''),
-    // если цифр меньше 4: короткий фрагмент иначе совпал бы с любым телефоном в базе. Если
-    // цифр больше 10 — оставляем только последние 10 (как PlayerDuplicatesAuditService, #677):
-    // сравниваем по "национальному" хвосту номера, чтобы код страны/мобильный префикс не мешал
-    // сопоставить разные форматы одного и того же номера.
+    // Цифры запроса для поиска по телефону в разных форматах (+54, пробелы, тире, скобки).
+    // Пустая строка (не null — ветка в searchPartnerCandidates сравнивает с ''), если цифр
+    // меньше 4: короткий фрагмент иначе совпал бы с любым телефоном в базе. Если цифр больше
+    // 10 — оставляем только последние 10 (как PlayerDuplicatesAuditService): сравниваем по
+    // "национальному" хвосту номера, чтобы код страны/мобильный префикс не мешал сопоставить
+    // разные форматы одного и того же номера.
     private static String extractPhoneDigits(String query) {
         String digits = query.replaceAll("\\D", "");
         if (digits.length() < 4) {
@@ -338,7 +338,7 @@ public class PlayerService {
         return digits.length() > 10 ? digits.substring(digits.length() - 10) : digits;
     }
 
-    // LFPT-0561: поиск для формы «Добавить команду» Team Playoff — см.
+    // Поиск для формы «Добавить команду» Team Playoff — см.
     // PlayerRepository.searchActivePlayers.
     @Transactional(readOnly = true)
     public List<PlayerResponseDto> searchActivePlayers(String query) {
@@ -349,11 +349,11 @@ public class PlayerService {
     }
 
     /**
-     * LFPT-0561: находит игрока по телефону (среди активных) либо создаёт нового «гостевого»
+     * Находит игрока по телефону (среди активных) либо создаёт нового «гостевого»
      * (тот же паттерн email, что в TestTournamentController.resolveOrCreateGuestPlayer /
      * PlayerPadel.isGuestEmail, но с корректно захэшированным паролем — см.
      * OAuth2UserManagementService.createOrUpdateUser). Не создаёт дубль профиля, если телефон
-     * уже принадлежит активному игроку (явное требование клиента).
+     * уже принадлежит активному игроку.
      */
     @Transactional
     public PlayerPadel resolverJugadorPorTelefonoOCrearInvitado(String nombre, String apellido, String telefono) {
@@ -373,9 +373,9 @@ public class PlayerService {
                 .emailConfirmado(true)
                 .activo(true)
                 .preferredLocale("es")
-                // issue #82: nivel_jugador es NOT NULL — un jugador agregado por el coordinador
-                // en el formulario "Agregar equipo" no indica su nivel ahí, igual que el alta
-                // vía OAuth2 (ver OAuth2UserManagementService.createOrUpdateUser).
+                // nivel_jugador — NOT NULL: координатор, добавляющий игрока в форме «Добавить
+                // команду», уровень там не указывает — как и при регистрации через OAuth2
+                // (см. OAuth2UserManagementService.createOrUpdateUser).
                 .nivelJugador(Nivel.SIN_ESPECIFICAR)
                 .build();
         PlayerPadel saved = playerRepository.save(player);

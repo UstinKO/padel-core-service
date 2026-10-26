@@ -14,7 +14,7 @@ import java.time.ZoneId;
 import java.util.Objects;
 import java.util.Optional;
 
-/** LFPT-0623: маппинг {@link TournamentDto} → публичный DTO для мобильного клиента. */
+/** Маппинг {@link TournamentDto} → публичный DTO для мобильного клиента. */
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
 public interface PublicTournamentMapper {
     ZoneId EVENT_ZONE = ZoneId.of("America/Argentina/Buenos_Aires");

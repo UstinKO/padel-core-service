@@ -55,20 +55,20 @@ public class AmericanoMatchDto {
     private Long team1Id;
     private Long team2Id;
 
-    /** LFPT-307: постоянный номер команды (не путать с местом/посевом) — виден на всех стадиях турнира. */
+    /** Постоянный номер команды (не путать с местом/посевом) — виден на всех стадиях турнира. */
     private Integer team1Number;
     private Integer team2Number;
 
-    /** Issue #298 п.1: "1-й"/"2-й" квалификационный матч для каждой из двух команд (не сквозной matchNumber раунда). */
+    /** "1-й"/"2-й" квалификационный матч для каждой из двух команд (не сквозной matchNumber раунда). */
     private Integer team1MatchOrdinal;
     private Integer team2MatchOrdinal;
 
-    /** Play-in (T13, ТЗ §32): матч желательно запустить как можно раньше. */
+    /** Play-in: матч желательно запустить как можно раньше. */
     private Boolean priority;
 
-    /** LFPT-367: позиция в очереди ожидания корта (1 = следующий) — заполняется только в {@code TeamPlayoffService#getQueue}. */
+    /** Позиция в очереди ожидания корта (1 = следующий) — заполняется только в {@code TeamPlayoffService#getQueue}. */
     private Integer queuePosition;
 
-    /** LFPT-367: сколько минут матч уже ждёт корта — заполняется только в {@code TeamPlayoffService#getQueue}. */
+    /** Сколько минут матч уже ждёт корта — заполняется только в {@code TeamPlayoffService#getQueue}. */
     private Long waitingMinutes;
 }

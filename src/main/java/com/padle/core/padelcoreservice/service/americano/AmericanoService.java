@@ -375,7 +375,7 @@ public class AmericanoService {
             rounds = buildFlexAmericano(tournament, players, config);
         }
 
-        // ── Пост-проверка (п. 11 ТЗ) ────────────────────────────────────────
+        // ── Пост-проверка ───────────────────────────────────────────────────
         AmericanoFormatType verified = verifyFormat(rounds, N);
         int repeatCount = countPartnerRepeats(rounds);
         int maxByeDiff = calcMaxByeDifference(rounds, players);
@@ -387,7 +387,7 @@ public class AmericanoService {
         return new GenerationResult(verified, repeatCount, maxByeDiff, message);
     }
 
-    // ── Проверка возможности Full Americano (п. 9 ТЗ) ───────────────────────
+    // ── Проверка возможности Full Americano ─────────────────────────────────
 
     /**
      * Full возможен если:
@@ -813,7 +813,7 @@ public class AmericanoService {
         return savedRounds;
     }
 
-    // ── Пост-проверка формата (п. 11 ТЗ) ────────────────────────────────────
+    // ── Пост-проверка формата ───────────────────────────────────────────────
 
     /**
      * Проверяет реальный результат генерации и присваивает FULL или FLEX.
@@ -1112,7 +1112,7 @@ public class AmericanoService {
         int team2Score = resultDto.getTeam2Score();
         int limit = match.getRound().getPointsPerMatch();
 
-        // п. 3 ТЗ: сумма очков двух команд == лимит матча
+        // Сумма очков двух команд == лимит матча
         if (team1Score + team2Score != limit) {
             throw new InvalidStateException(String.format(
                     "Total points must equal %d. Current total: %d", limit, team1Score + team2Score));
@@ -1339,7 +1339,7 @@ public class AmericanoService {
     }
 
     /**
-     * Сортировка согласно п. 5 ТЗ.
+     * Сортировка.
      * Режим "по очкам":  очки → победы → разница → меньше поражений
      * Режим "по победам": победы → очки → разница → меньше поражений
      */
@@ -1415,7 +1415,7 @@ public class AmericanoService {
                 .map(ap -> ap.getPlayer().getNombre() + " " + ap.getPlayer().getApellido())
                 .toList();
 
-        // LFPT-0525: вызывается на каждый раунд при каждом просмотре страницы турнира — только DEBUG
+        // Вызывается на каждый раунд при каждом просмотре страницы турнира — только DEBUG
         log.debug("Раунд {}: матчей {}, играют {}, отдыхают {}",
                 roundId, matches.size(), playingIds.size(), byePlayers.size());
         return byePlayers;

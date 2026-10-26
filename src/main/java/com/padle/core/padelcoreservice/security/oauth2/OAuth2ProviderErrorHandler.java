@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
  * {@code OAuth2ErrorResponseErrorHandler} Spring Security, но без oauth2-oidc-sdk.
  * <p>
  * Spring разбирает заголовок {@code WWW-Authenticate} через {@code com.nimbusds...BearerTokenError},
- * которому нужен json-smart, а json-smart исключён из зависимостей (LFPT-0726: уязвимость без
+ * которому нужен json-smart, а json-smart исключён из зависимостей (уязвимость без
  * исправленной версии) — без замены ответ 400 с этим заголовком падал бы {@code NoClassDefFoundError}
  * вместо штатной ошибки входа. Логика та же: ошибка OAuth2 разбирается только у ответа 400 —
  * сначала из Bearer-параметров заголовка (RFC 6750 §3), иначе из JSON-тела; остальные статусы —

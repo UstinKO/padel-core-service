@@ -31,7 +31,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * LFPT-0729: увеличение cupoMax турнира DOBLES освобождает места — самая старая полная пара в
+ * Увеличение cupoMax турнира DOBLES освобождает места — самая старая полная пара в
  * резерве (WAITLIST) должна автоматически перейти в CONFIRMED, без ручного вмешательства
  * координатора.
  */

@@ -17,7 +17,7 @@ public class TournamentRegistrationDto {
     private String playerEmail;
     private String playerPhone;
     private String playerTelegram;
-    // LFPT-483: уровень игрока/партнёра из профиля — для опционального отображения
+    // Уровень игрока/партнёра из профиля — для опционального отображения
     // в публичном списке участников (Tournament.mostrarNivel), null если не указан.
     private Nivel playerNivel;
     private LocalDateTime registrationDate;

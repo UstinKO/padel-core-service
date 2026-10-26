@@ -11,8 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * LFPT-0677: только read-only диагностика, см. спеку
- * {@code specs/features/LFPT-0677-аудит-дублей-игроков.md}.
+ * Отчёт о потенциальных дублях игроков — только чтение, ничего не меняет.
  */
 @RestController
 @RequestMapping("/api/admin/players")

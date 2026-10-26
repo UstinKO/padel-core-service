@@ -106,7 +106,7 @@ public class DoubleTournamentRegistrationService {
         PlayerPadel mainPlayer = playerRepository.findById(mainPlayerId)
                 .orElseThrow(() -> new TournamentRegistrationException("Jugador principal no encontrado"));
 
-        // LFPT-0303: правило "±1 ступень" для самостоятельной регистрации
+        // Правило "±1 ступень" для самостоятельной регистрации
         TournamentType tipo = tournamentDto.getTipo();
         Nivel categoriaNivel = Nivel.parseOrNull(tournamentDto.getCategoriaNivel());
         TournamentLevelPolicy.assertEligible(tipo, categoriaNivel, mainPlayer.getNivelJugador(),
@@ -140,11 +140,11 @@ public class DoubleTournamentRegistrationService {
 
         Optional<PlayerPadel> existingPartner = findPartner(partnerDto);
 
-        // LFPT-0303: партнёр с уже существующим аккаунтом подтверждается сразу (см.
+        // Партнёр с уже существующим аккаунтом подтверждается сразу (см.
         // registerWithExistingPartner — оба CONFIRMED/WAITLIST без отдельного шага
         // подтверждения), это тоже момент его самостоятельного согласия на регистрацию.
         // Партнёр без аккаунта (registerWithNewPartner) создаётся позже с SIN_ESPECIFICAR —
-        // проверить его уровень на этом шаге технически невозможно (вне скоупа, см. спеку).
+        // его уровень на этом шаге проверить невозможно.
         existingPartner.ifPresent(partner -> TournamentLevelPolicy.assertEligible(
                 tipo, categoriaNivel, partner.getNivelJugador(), messageSource, LocaleContextHolder.getLocale()));
 
@@ -230,11 +230,10 @@ public class DoubleTournamentRegistrationService {
     }
 
     /**
-     * LFPT-0720: решает «переиспользовать существующего игрока как партнёра или создать
-     * нового» — email → телефон (нормализованный) → Telegram (нормализованный). Захватывает
+     * Решает «переиспользовать существующего игрока как партнёра или создать нового»:
+     * email → телефон (нормализованный) → Telegram (нормализованный). Захватывает
      * {@link #acquireDuplicateGuardLocks} до проверки, чтобы последующее создание партнёра
-     * (в вызывающем методе, в той же транзакции) было атомарно с этой проверкой — см. спеку
-     * LFPT-0720 «Функциональные» п.2.
+     * (в вызывающем методе, в той же транзакции) было атомарно с этой проверкой.
      */
     private Optional<PlayerPadel> findPartnerByContact(PartnerRegistrationDto partnerDto) {
         acquireDuplicateGuardLocks(partnerDto.getTelefono(), partnerDto.getTelegramUsername());
@@ -250,7 +249,7 @@ public class DoubleTournamentRegistrationService {
     }
 
     /**
-     * LFPT-0720: общая проверка по нормализованному телефону/Telegram, без email — используется
+     * Общая проверка по нормализованному телефону/Telegram, без email — используется
      * и из {@link #findPartnerByContact} (после проверки email), и из легаси-пути
      * {@link #confirmPartnerRegistration}, у которого нет email-приоритета.
      */
@@ -266,11 +265,10 @@ public class DoubleTournamentRegistrationService {
     }
 
     /**
-     * LFPT-0720: {@code pg_advisory_xact_lock} по нормализованным значениям — снимается
-     * автоматически в конце транзакции вызывающего публичного метода (все точки входа,
-     * создающие партнёра, уже {@code @Transactional}). Ключи захватываются в сортированном
-     * порядке, чтобы два параллельных запроса с перекрёстными телефоном/Telegram не могли
-     * создать дедлок.
+     * {@code pg_advisory_xact_lock} по нормализованным значениям — снимается автоматически
+     * в конце транзакции вызывающего публичного метода (все точки входа, создающие партнёра,
+     * уже {@code @Transactional}). Ключи захватываются в сортированном порядке, чтобы два
+     * параллельных запроса с перекрёстными телефоном/Telegram не могли создать дедлок.
      */
     private void acquireDuplicateGuardLocks(String telefono, String telegramUsername) {
         Stream.of(
@@ -282,12 +280,11 @@ public class DoubleTournamentRegistrationService {
     }
 
     /**
-     * LFPT-0720: последние 10 цифр телефона без разделителей — тот же приём, что
-     * {@code PlayerService.extractPhoneDigits} (LFPT-0679) и
-     * {@code PlayerDuplicatesAuditService.normalizedPhone} (#677); здесь отдельная копия,
-     * т.к. исходный метод приватен в {@code PlayerService} и возвращает {@code ""} вместо
-     * {@code null} для короткого ввода — другой контракт (тот предназначен для LIKE-поиска
-     * с минимальной длиной, этот — для точного сравнения без порога).
+     * Последние 10 цифр телефона без разделителей — тот же приём, что
+     * {@code PlayerService.extractPhoneDigits} и {@code PlayerDuplicatesAuditService.normalizedPhone}.
+     * Отдельная копия, т.к. исходный метод приватен в {@code PlayerService} и возвращает
+     * {@code ""} вместо {@code null} для короткого ввода — другой контракт (тот предназначен
+     * для LIKE-поиска с минимальной длиной, этот — для точного сравнения без порога).
      */
     private static final int NATIONAL_PHONE_DIGITS = 10;
 
@@ -304,7 +301,7 @@ public class DoubleTournamentRegistrationService {
                 : digits);
     }
 
-    /** LFPT-0720: без учёта регистра и лидирующего '@' — как поиск подсказок (LFPT-0679). */
+    /** Без учёта регистра и лидирующего '@' — как поиск подсказок партнёра. */
     private static Optional<String> normalizeTelegramHandle(String raw) {
         if (raw == null || raw.isBlank()) {
             return Optional.empty();
@@ -313,14 +310,13 @@ public class DoubleTournamentRegistrationService {
     }
 
     /**
-     * LFPT-0720: хранить Telegram-юзернейм партнёра всегда с лидирующим '@' — как уже делает
-     * {@code PlayerContactController.updateContact} для самостоятельного обновления контакта.
-     * До этого партнёр, созданный из контактных данных при парной регистрации, сохранялся без
-     * '@' — тот же человек мог иметь разные по формату (хоть и логически одинаковые) значения
-     * в зависимости от того, как был создан его аккаунт, что мешало и уникальному индексу
-     * ({@code idx_player_telegram_username_unique}, v1.41), и точному сравнению. Возвращает
-     * {@code null} при отсутствии значения — через {@link Optional#orElse} на единственной
-     * точке вызова (поле builder'а гостевого аккаунта, которое и так принимает {@code null}).
+     * Telegram-юзернейм партнёра всегда хранится с лидирующим '@' — как делает
+     * {@code PlayerContactController.updateContact} при самостоятельном обновлении контакта.
+     * Иначе у одного человека могли бы быть разные по формату значения в зависимости от того,
+     * как создан аккаунт, что мешает и уникальному индексу ({@code idx_player_telegram_username_unique}),
+     * и точному сравнению. Возвращает {@code null} при отсутствии значения — через
+     * {@link Optional#orElse} на единственной точке вызова (поле builder'а гостевого аккаунта,
+     * которое и так принимает {@code null}).
      */
     private static String formatTelegramForStorage(String raw) {
         if (raw == null || raw.isBlank()) {
@@ -430,26 +426,25 @@ public class DoubleTournamentRegistrationService {
             PlayerPadel mainPlayer,
             PartnerRegistrationDto partnerDto) {
 
-        // LFPT-0687: пара, с которой игрок уже договорился сам, регистрируется сразу —
-        // без ожидания email-подтверждения от партнёра или действия координатора. Создаём
-        // аккаунт партнёра немедленно и доверяем дальше тому же коду, что и для уже
-        // существующего партнёра (статус/место по текущей заполненности турнира).
+        // Пара, с которой игрок уже договорился сам, регистрируется сразу — без ожидания
+        // email-подтверждения от партнёра или действия координатора. Создаём аккаунт партнёра
+        // немедленно и доверяем дальше тому же коду, что и для уже существующего партнёра
+        // (статус/место по текущей заполненности турнира).
         log.info("Registering with new partner (instant, no invitation wait): phone={}", partnerDto.getTelefono());
 
-        // LFPT-0720: проверка дубля по телефону/Telegram (нормализованная, с защитой от гонки
-        // параллельных запросов) уже выполнена в findPartnerByContact — этот метод вызывается
-        // только когда там не нашли совпадение, под тем же локом (снимается в конце транзакции
-        // вызывающего registerForDoubleTournament). Повторная проверка здесь была бы мёртвым
-        // кодом (то же самое значение, та же транзакция).
+        // Проверка дубля по телефону/Telegram (нормализованная, с защитой от гонки параллельных
+        // запросов) уже выполнена в findPartnerByContact — этот метод вызывается только когда
+        // там не нашли совпадение, под тем же локом (снимается в конце транзакции вызывающего
+        // registerForDoubleTournament). Повторная проверка здесь была бы мёртвым кодом.
         PlayerPadel savedPartner = playerRepository.save(createPlayerFromPartnerData(partnerDto));
 
         return registerWithExistingPartner(tournamentDto, mainPlayer, savedPartner, partnerDto);
     }
 
     /**
-     * LFPT-0687: создаёт аккаунт партнёра из контактных данных, указанных регистрирующим
-     * игроком — используется и для немедленной регистрации, и (легаси-путь) при подтверждении
-     * по токену в {@link #confirmPartnerRegistration}.
+     * Создаёт аккаунт партнёра из контактных данных, указанных регистрирующим игроком —
+     * используется и для немедленной регистрации, и (легаси-путь) при подтверждении по токену
+     * в {@link #confirmPartnerRegistration}.
      */
     private PlayerPadel createPlayerFromPartnerData(PartnerRegistrationDto partnerDto) {
         return buildGuestPartnerAccount(partnerDto.getNombre(), partnerDto.getApellido(),
@@ -457,9 +452,9 @@ public class DoubleTournamentRegistrationService {
     }
 
     /**
-     * LFPT-0687: email у партнёра теперь не обязателен (контакт — телефон и/или Telegram).
-     * {@code player_padel_db.email}/{@code password_hash} — NOT NULL в БД, поэтому для
-     * партнёра без email генерируем гостевой email (тот же паттерн, что в
+     * Email у партнёра не обязателен (контакт — телефон и/или Telegram), но
+     * {@code player_padel_db.email}/{@code password_hash} — NOT NULL в БД, поэтому для партнёра
+     * без email генерируется гостевой email (тот же паттерн, что в
      * {@code PlayerService.crearJugadorInvitado}/{@code TestTournamentController.resolveOrCreateGuestPlayer}
      * — {@link PlayerPadel#isGuestEmail}) и случайный пароль, который партнёр не узнаёт
      * (как и остальные гостевые аккаунты — учётка не предназначена для входа).
@@ -479,8 +474,8 @@ public class DoubleTournamentRegistrationService {
                 .passwordHash(passwordEncoder.encode(generateGuestPassword()))
                 .activo(true)
                 .emailConfirmado(false)
-                // issue #82: nivel_jugador es NOT NULL — el partner se crea a partir de datos
-                // de contacto, no hay nivel real que asignarle todavía.
+                // nivel_jugador — NOT NULL: партнёр создаётся из контактных данных, реального
+                // уровня, который можно ему присвоить, пока нет.
                 .nivelJugador(Nivel.SIN_ESPECIFICAR)
                 // preferred_locale es NOT NULL; el builder de Lombok no aplica el inicializador
                 // de campo (solo @Builder.Default lo haría) — sin esto, la inserción falla.
@@ -524,11 +519,10 @@ public class DoubleTournamentRegistrationService {
             throw new TournamentRegistrationException("El enlace ha expirado");
         }
 
-        // LFPT-0720: нормализованная проверка телефона/Telegram (не только телефон точным
-        // совпадением строки, как раньше), под локом на случай гонки — см.
+        // Нормализованная проверка телефона/Telegram под локом на случай гонки — см.
         // acquireDuplicateGuardLocks/findByNormalizedContact. Этот легаси-путь (в отличие от
-        // findPartnerByContact) не переиспользует найденного игрока — токен привязан к
-        // конкретной заявке, менять владельца токена на другого игрока не запрошено.
+        // findPartnerByContact) не переиспользует найденного игрока — токен привязан
+        // к конкретной заявке, владелец токена не меняется.
         acquireDuplicateGuardLocks(registration.getPartnerPhone(), registration.getPartnerTelegram());
         if (findByNormalizedContact(registration.getPartnerPhone(), registration.getPartnerTelegram()).isPresent()) {
             throw new TournamentRegistrationException("Este número de teléfono o Telegram ya está registrado");
@@ -542,10 +536,10 @@ public class DoubleTournamentRegistrationService {
 
         Tournament tournament = registration.getTournament();
 
-        // LFPT-0668: всегда ставим пару в конец очереди резерва вместо немедленного CONFIRMED
-        // при наличии свободного места — иначе вновь подтверждённая пара могла бы обойти уже
-        // ожидающие полностью сформированные пары (тот же инвариант справедливой очереди, что
-        // и у резервных SOLO_ADD_LATER-заявок). processWaitlistForTournament сам подтвердит пару
+        // Пара всегда встаёт в конец очереди резерва, даже при наличии свободного места —
+        // иначе вновь подтверждённая пара могла бы обойти уже ожидающие полностью
+        // сформированные пары (тот же инвариант справедливой очереди, что и у резервных
+        // SOLO_ADD_LATER-заявок). processWaitlistForTournament сам подтвердит пару
         // немедленно, если место свободно и очередь дошла до неё.
         int waitlistPosition = registrationRepository.findMaxWaitlistPosition(tournament.getId()).orElse(0) + 1;
 
@@ -699,7 +693,7 @@ public class DoubleTournamentRegistrationService {
         // Проверяем, существует ли новый игрок в системе
         Optional<PlayerPadel> existingNewPlayer = findPartnerByContact(newPlayerDto);
 
-        // LFPT-0687: игрок без аккаунта регистрируется сразу же, как и уже существующий —
+        // Игрок без аккаунта регистрируется сразу же, как и уже существующий —
         // без ожидания email-подтверждения (см. registerWithNewPartner).
         PlayerPadel newPlayer;
         if (existingNewPlayer.isPresent()) {
@@ -709,7 +703,7 @@ public class DoubleTournamentRegistrationService {
         } else {
             log.info("Creating new partner account directly (instant, no invitation wait): {} {}",
                     newPlayerDto.getNombre(), newPlayerDto.getApellido());
-            // LFPT-0720: проверка дубля (нормализованная, под локом) уже выполнена выше, в
+            // Проверка дубля (нормализованная, под локом) уже выполнена выше, в
             // findPartnerByContact — см. комментарий в registerWithNewPartner.
             newPlayer = playerRepository.save(createPlayerFromPartnerData(newPlayerDto));
         }
@@ -759,12 +753,9 @@ public class DoubleTournamentRegistrationService {
     }
 
     /**
-     * ЕДИНСТВЕННАЯ ПРОВЕРКА: не зарегистрирован ли игрок в ЭТОМ турнире.
-     *
-     * #290: раньше сообщение было одинаковым независимо от того, о ком речь — сам заявитель
-     * или партнёр, которого он пытается добавить. Игрок, регистрирующий партнёра, читал
-     * "Ya estás registrado" (=ты уже зарегистрирован) и логично думал, что это про него самого,
-     * хотя на самом деле уже зарегистрирован был партнёр — сбивало с толку в реальном инциденте.
+     * Единственная проверка: не зарегистрирован ли игрок в этом турнире.
+     * Сообщение различает заявителя и партнёра, которого он пытается добавить, — иначе игрок,
+     * регистрирующий партнёра, читал бы "Ya estás registrado" как сообщение о себе самом.
      */
     private void checkPlayerNotRegisteredInThisTournament(Long tournamentId, Long playerId) {
         checkPlayerNotRegisteredInThisTournament(tournamentId, playerId, false);
@@ -781,7 +772,7 @@ public class DoubleTournamentRegistrationService {
         }
     }
 
-    // LFPT-0668: токен self-service действий (подтвердить/отменить) для резервной заявки без партнёра
+    // Токен self-service действий (подтвердить/отменить) для резервной заявки без партнёра
     private String generatePartnerActionToken() {
         return "PAT_" + UUID.randomUUID().toString().replace("-", "").substring(0, 20).toUpperCase();
     }
@@ -832,7 +823,7 @@ public class DoubleTournamentRegistrationService {
         PlayerPadel player = playerRepository.findById(playerId)
                 .orElseThrow(() -> new TournamentRegistrationException("Jugador no encontrado"));
 
-        // LFPT-0303: правило "±1 ступень" для самостоятельной регистрации
+        // Правило "±1 ступень" для самостоятельной регистрации
         TournamentLevelPolicy.assertEligible(tournament.getTipo(), tournament.getCategoriaNivel(),
                 player.getNivelJugador(), messageSource, LocaleContextHolder.getLocale());
 
@@ -854,9 +845,9 @@ public class DoubleTournamentRegistrationService {
                 ? RegistrationStatus.SOLO_SEARCH
                 : RegistrationStatus.SOLO_ADD_LATER;
 
-        // LFPT-0668: если дедлайн добавления партнёра (старт - 24ч) уже прошёл к моменту
-        // самой регистрации — заявка должна сразу попасть в резерв, а не временно занять
-        // место в основном составе до следующего тика планировщика.
+        // Если дедлайн добавления партнёра (старт - 24ч) уже прошёл к моменту самой
+        // регистрации — заявка сразу попадает в резерв, а не занимает временно место
+        // в основном составе до следующего тика планировщика.
         boolean deadlinePassed = status == RegistrationStatus.SOLO_ADD_LATER
                 && tournament.calculateDefaultDeadline().isBefore(LocalDateTime.now());
 
@@ -934,7 +925,7 @@ public class DoubleTournamentRegistrationService {
                 .findByTournamentIdAndPlayerId(tournamentId, playerId)
                 .orElseThrow(() -> new TournamentRegistrationException("No tienes una inscripción en este torneo"));
 
-        // LFPT-0668: заявка без партнёра принимается и до дедлайна (SOLO_ADD_LATER), и после
+        // Заявка без партнёра принимается и до дедлайна (SOLO_ADD_LATER), и после
         // перевода в резерв (WAITLIST, но ещё без партнёра — отличает её от обычной полной пары,
         // которая тоже может оказаться в WAITLIST).
         boolean isReserveWithoutPartner = soloReg.getStatus() == RegistrationStatus.WAITLIST
@@ -967,15 +958,15 @@ public class DoubleTournamentRegistrationService {
 
         Optional<PlayerPadel> existingPartnerOpt = findPartner(partnerDto);
 
-        // LFPT-0687: партнёр без аккаунта регистрируется сразу же, как и уже существующий —
-        // без ожидания email-подтверждения. "Добавлю партнёра позже" сохраняет свои текущие
-        // правила дедлайна/резерва (isPendingSoloAddLater/isReserveWithoutPartner ниже) —
-        // наличие партнёра и попадание пары в основной список или резерв не связаны между собой.
+        // Партнёр без аккаунта регистрируется сразу же, как и уже существующий — без ожидания
+        // email-подтверждения. "Добавлю партнёра позже" сохраняет свои правила дедлайна/резерва
+        // (isPendingSoloAddLater/isReserveWithoutPartner ниже) — наличие партнёра и попадание
+        // пары в основной список или резерв не связаны между собой.
         PlayerPadel partner;
         if (existingPartnerOpt.isPresent()) {
             partner = existingPartnerOpt.get();
 
-            // LFPT-0303: правило "±1 ступень" — партнёр с существующим аккаунтом подтверждается
+            // Правило "±1 ступень" — партнёр с существующим аккаунтом подтверждается
             // сразу (CONFIRMED ниже, без отдельного шага), как и в registerForDoubleTournament.
             TournamentLevelPolicy.assertEligible(tournament.getTipo(), tournament.getCategoriaNivel(),
                     partner.getNivelJugador(), messageSource, LocaleContextHolder.getLocale());
@@ -985,7 +976,7 @@ public class DoubleTournamentRegistrationService {
                     .ifPresent(registrationRepository::delete);
             registrationRepository.flush();
         } else {
-            // LFPT-0720: проверка дубля (нормализованная, под локом) уже выполнена выше, в
+            // Проверка дубля (нормализованная, под локом) уже выполнена выше, в
             // findPartner → findPartnerByContact — см. комментарий в registerWithNewPartner.
             partner = playerRepository.save(createPlayerFromPartnerData(partnerDto));
         }
@@ -1032,10 +1023,10 @@ public class DoubleTournamentRegistrationService {
                     tournament.getNombre(), dateStr, timeStr, null,
                     tournament.getFormattedCancellationDeadline(), mainPlayer.getLocale());
         } else {
-            // LFPT-0668: после перевода в резерв пара встаёт в конец очереди резерва —
-            // не получает преимущества перед уже готовыми парами, ожидающими места
-            // (сценарий В из спеки). processWaitlistForTournament сам подтвердит пару,
-            // если место свободно и очередь дошла (сценарий А), иначе оставит в резерве (Б/В).
+            // После перевода в резерв пара встаёт в конец очереди резерва — не получает
+            // преимущества перед уже готовыми парами, ожидающими места.
+            // processWaitlistForTournament сам подтвердит пару, если место свободно и очередь
+            // дошла, иначе оставит в резерве.
             int waitlistPosition = registrationRepository.findMaxWaitlistPosition(tournamentId).orElse(0) + 1;
             soloReg.setStatus(RegistrationStatus.WAITLIST);
             soloReg.setWaitlistPosition(waitlistPosition);
@@ -1213,7 +1204,7 @@ public class DoubleTournamentRegistrationService {
         return registrationMapper.toDto(target);
     }
 
-    // ── Self-service действия из email для резервной заявки без партнёра (LFPT-0668) ─────────
+    // ── Self-service действия из email для резервной заявки без партнёра ──────────────────────
 
     private TournamentRegistration findEligibleReserveByToken(String token) {
         TournamentRegistration reg = registrationRepository.findByPartnerActionToken(token)

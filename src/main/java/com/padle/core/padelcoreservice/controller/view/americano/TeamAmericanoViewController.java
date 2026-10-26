@@ -85,9 +85,8 @@ public class TeamAmericanoViewController {
     }
 
     /**
-     * LFPT-0424: отдельной страницы рейтинга нет — рейтинг команд показывается на странице
-     * турнира (блок ranking-card в tournaments/team-americano/view.html). Вместо
-     * несуществующего шаблона tournaments/team-americano/ranking — редирект туда же.
+     * Отдельной страницы рейтинга нет — рейтинг команд показывается на странице
+     * турнира (блок ranking-card в tournaments/team-americano/view.html), туда и редирект.
      * Существование турнира здесь не проверяется: это делает целевой роут /{tournamentId}.
      */
     @GetMapping("/{tournamentId}/ranking")
@@ -235,7 +234,7 @@ public class TeamAmericanoViewController {
     // ══════════════════════════════════════════════════════════════════════
 
     /**
-     * Бывшая страница ввода результата: шаблона нет, счёт вводится инлайн на админке. Редиректит на админку турнира (LFPT-0335)
+     * Отдельной страницы ввода результата нет: счёт вводится инлайн на админке. Редиректит на админку турнира.
      */
     @GetMapping("/matches/{matchId}/result")
     public String showResultForm(@PathVariable Long matchId,
@@ -407,7 +406,7 @@ public class TeamAmericanoViewController {
             dto.setTeam1Player2Name(
                     m.getTeam1Player2().getNombre() + " " + m.getTeam1Player2().getApellido());
         } else if (m.getTeam1Player1() != null) {
-            // LFPT-360: гостевой (незарегистрированный) второй игрок — имя лежит в AmericanoTeam.player2Name,
+            // Гостевой (незарегистрированный) второй игрок: имя лежит в AmericanoTeam.player2Name,
             // FK team1Player2 на матче для него не заполняется.
             teamRepository.findByTournamentIdAndPlayer1Id(tournamentId, m.getTeam1Player1().getId())
                     .ifPresent(t -> dto.setTeam1Player2Name(t.getPlayer2Name()));

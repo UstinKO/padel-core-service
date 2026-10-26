@@ -25,8 +25,8 @@ public interface TournamentRegistrationRepository extends JpaRepository<Tourname
 
     List<TournamentRegistration> findByTournamentIdAndStatus(Long tournamentId, RegistrationStatus status);
 
-    // LFPT-376: "игрок клуба" для CLUB_ADMIN — есть хотя бы одна регистрация (любого статуса)
-    // на турнир этого клуба; см. spec Edge cases.
+    // "Игрок клуба" для CLUB_ADMIN — есть хотя бы одна регистрация (любого статуса)
+    // на турнир этого клуба.
     @Query("SELECT DISTINCT tr.player.id FROM TournamentRegistration tr WHERE tr.tournament.clubId = :clubId")
     List<Long> findDistinctPlayerIdsByTournamentClubId(@Param("clubId") Long clubId);
 
@@ -67,7 +67,7 @@ public interface TournamentRegistrationRepository extends JpaRepository<Tourname
     @Query("SELECT COUNT(tr) FROM TournamentRegistration tr WHERE tr.status = 'WAITLIST' AND tr.isActive = true")
     long countTotalWaitlist();
 
-    // LFPT-0546: клубная статистика главной админ-панели — CLUB_ADMIN видит только лист
+    // Клубная статистика главной админ-панели — CLUB_ADMIN видит только лист
     // ожидания турниров своего клуба.
     @Query("SELECT COUNT(tr) FROM TournamentRegistration tr " +
             "WHERE tr.status = 'WAITLIST' AND tr.isActive = true AND tr.tournament.clubId = :clubId")
@@ -84,7 +84,7 @@ public interface TournamentRegistrationRepository extends JpaRepository<Tourname
     List<TournamentRegistration> findByStatusAndInvitationExpiresAtBefore(
             RegistrationStatus status, LocalDateTime expiryTime);
 
-    // Issue #194 — поиск waitlist-приглашения по непредсказуемому токену вместо угадываемого ID
+    // Поиск waitlist-приглашения по непредсказуемому токену вместо угадываемого ID
     Optional<TournamentRegistration> findByWaitlistConfirmationToken(String waitlistConfirmationToken);
 
     List<TournamentRegistration> findByTournamentIdOrderByPositionAscWaitlistPositionAsc(Long tournamentId);
@@ -305,9 +305,9 @@ public interface TournamentRegistrationRepository extends JpaRepository<Tourname
             @Param("from") java.time.LocalDate from,
             @Param("to") java.time.LocalDate to);
 
-    // LFPT-0668: заменяет findSoloAddLaterExpired (сравнивал только календарную дату, не
-    // точное время старта) — кандидаты на перевод в резерв отбираются без фильтра по дате,
-    // точный дедлайн (Tournament.calculateDefaultDeadline()) сравнивается в сервисе.
+    // Кандидаты на перевод в резерв отбираются без фильтра по дате — точный дедлайн
+    // (Tournament.calculateDefaultDeadline(), с учётом времени старта, а не только
+    // календарной даты) сравнивается в сервисе.
     @Query("SELECT tr FROM TournamentRegistration tr " +
             "JOIN FETCH tr.tournament t " +
             "JOIN FETCH tr.player p " +
@@ -315,7 +315,7 @@ public interface TournamentRegistrationRepository extends JpaRepository<Tourname
             "AND tr.isActive = true")
     List<TournamentRegistration> findActiveSoloAddLater();
 
-    // LFPT-0668: резервные заявки без партнёра («ожидает партнёра») — кандидаты на
+    // Резервные заявки без партнёра («ожидает партнёра») — кандидаты на
     // напоминание за 3ч; точное окно до старта проверяется в сервисе.
     @Query("SELECT tr FROM TournamentRegistration tr " +
             "JOIN FETCH tr.tournament t " +
@@ -326,10 +326,10 @@ public interface TournamentRegistrationRepository extends JpaRepository<Tourname
             "AND tr.finalReminderSent = false")
     List<TournamentRegistration> findReserveWithoutPartnerPendingFinalReminder();
 
-    // LFPT-0668: self-service действия из email (подтвердить/отменить) по непредсказуемому токену
+    // Self-service действия из email (подтвердить/отменить) по непредсказуемому токену
     Optional<TournamentRegistration> findByPartnerActionToken(String partnerActionToken);
 
-    // LFPT-0668: та же выборка, что findByTournamentIdAndStatusOrderByWaitlistPositionAsc, но
+    // Та же выборка, что findByTournamentIdAndStatusOrderByWaitlistPositionAsc, но
     // только полностью сформированные пары — используется при авто-подтверждении из резерва для
     // DOBLES-турниров, чтобы не подтвердить случайно заявку без партнёра («ожидает партнёра»).
     List<TournamentRegistration> findByTournamentIdAndStatusAndPartnerIsNotNullOrderByWaitlistPositionAsc(
@@ -341,7 +341,7 @@ public interface TournamentRegistrationRepository extends JpaRepository<Tourname
             "AND tr.isActive = true")
     List<TournamentRegistration> findActiveSoloByTournamentId(@Param("tournamentId") Long tournamentId);
 
-    // Issue #207 — проверка перед удалением игрока: учитываются ВСЕ регистрации
+    // Проверка перед удалением игрока: учитываются ВСЕ регистрации
     // (включая неактивные/отменённые), а не только текущие активные
     @Query("SELECT CASE WHEN COUNT(tr) > 0 THEN true ELSE false END FROM TournamentRegistration tr " +
             "WHERE tr.player.id = :playerId")
@@ -350,7 +350,7 @@ public interface TournamentRegistrationRepository extends JpaRepository<Tourname
     @Query("SELECT DISTINCT tr.player.id FROM TournamentRegistration tr")
     List<Long> findDistinctPlayerIds();
 
-    // LFPT-0677: id игроков, чья собственная запись TournamentRegistration создана как
+    // Id игроков, чья собственная запись TournamentRegistration создана как
     // партнёрская сторона приглашения (DoubleTournamentRegistrationService.confirmPartnerRegistration) —
     // mainPlayerId указывает на инициатора пары, а не на самого игрока.
     @Query("SELECT DISTINCT tr.player.id FROM TournamentRegistration tr " +

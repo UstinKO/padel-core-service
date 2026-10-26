@@ -16,8 +16,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * LFPT-0729: страница «Оплаты и посещаемость» должна включать и резервные (WAITLIST) пары —
- * раньше они полностью исключались из выдачи, а не просто оставались без отметки.
+ * Страница «Оплаты и посещаемость» включает и резервные (WAITLIST) пары.
  */
 class PaymentServiceReserveTest {
 
