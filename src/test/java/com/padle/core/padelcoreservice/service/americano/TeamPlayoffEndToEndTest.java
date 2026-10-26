@@ -25,6 +25,7 @@ import com.padle.core.padelcoreservice.repository.americano.AmericanoMatchReposi
 import com.padle.core.padelcoreservice.repository.americano.AmericanoTeamRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.LoggerFactory;
@@ -111,6 +112,48 @@ class TeamPlayoffEndToEndTest {
         assertNoUnexplainedRematchesInPlayoff(tournamentId);
         assertChampionAndRunnerUpDetermined(tournamentId);
         assertEliminatedTeamsExposeCorrectStage(tournamentId, teams);
+    }
+
+    /**
+     * LFPT-0729: de 8 equipos registrados, 1 se marca "no se presentó" ANTES de jugar — la
+     * calificación corre sólo entre los 7 restantes. Sin el fix, {@code canInitPlayoff}/
+     * {@code initPlayoff} seguían contando 8 equipos en total (el repositorio de ranking no
+     * filtraba por estado): con exactamente 8 (potencia de 2), el equipo NO_SHOW terminaba
+     * incluido en la sembrada del playoff aunque nunca jugó ni un partido.
+     */
+    @Test
+    void noShowTeam_excludedFromQualificationCountAndPlayoffSeeding() {
+        Long tournamentId = createTournament(8);
+        List<AmericanoTeam> teams = createTeams(tournamentId, 8);
+
+        AmericanoTeam noShowTeam = teams.get(7);
+        playoffService.markNoShow(noShowTeam.getId());
+
+        List<AmericanoTeam> activeTeams = teams.subList(0, 7);
+        runQualification(tournamentId, activeTeams);
+        assertEachTeamPlayedExactlyTwoQualMatches(tournamentId, activeTeams);
+
+        assertThat(playoffService.canInitPlayoff(tournamentId)).isTrue();
+
+        playoffService.initPlayoff(tournamentId);
+
+        List<AmericanoMatch> playoffMatches = matchRepository
+                .findByTournamentIdAndPhase(tournamentId, TournamentPhase.PLAYOFF);
+        assertThat(playoffMatches).isNotEmpty();
+        boolean noShowTeamSeeded = playoffMatches.stream()
+                .anyMatch(m -> noShowTeam.getId().equals(m.getTeam1Id()) || noShowTeam.getId().equals(m.getTeam2Id()));
+        assertThat(noShowTeamSeeded)
+                .as("el equipo NO_SHOW no debe aparecer en ningún partido de playoff")
+                .isFalse();
+
+        // 7 equipos activos (no potencia de 2) → bracket de 4 (largestPowerOf2(7)), igual que si
+        // el torneo hubiera tenido 7 equipos desde el principio.
+        long seededTeams = playoffMatches.stream()
+                .flatMap(m -> java.util.stream.Stream.of(m.getTeam1Id(), m.getTeam2Id()))
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .count();
+        assertThat(seededTeams).isEqualTo(4);
     }
 
     /**
