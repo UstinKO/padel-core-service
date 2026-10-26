@@ -34,7 +34,7 @@
             <span th:text="${errorMessage}">Error en la operación</span>
         </div>
 
-        <!-- Кнопка создания — только SUPER_ADMIN (LFPT-393) -->
+        <!--/* Кнопка создания — только SUPER_ADMIN */-->
         <div class="admin-actions" th:if="${isSuperAdmin}">
             <a href="/admin/clubs/new" class="btn btn-primary">
                 <i class="fas fa-plus-circle"></i>

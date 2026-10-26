@@ -401,7 +401,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             updateTabCounts();
                             applyFiltersFunction();
                         } else if (data.needLevel) {
-                            // LFPT-0632: попап "указать уровень" вместо обычной ошибки
+                            // Попап "указать уровень" вместо обычной ошибки
                             LevelCheck.show(tournamentId);
                             button.disabled = false;
                             button.innerHTML = `<i class="fas fa-plus-circle"></i> ${t('dashboard.card.btn.register')}`;
@@ -666,7 +666,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     showResultModal('success', t('details.success.pair_complete'));
                     applyFiltersFunction();
                 } else if (data.needLevel) {
-                    // LFPT-0632: попап "указать уровень" вместо обычной ошибки
+                    // Попап "указать уровень" вместо обычной ошибки
                     closePartnerModal();
                     LevelCheck.show(tournamentId);
                     resetBtn();
@@ -715,7 +715,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (!response.ok) {
                 if (data.needLevel) {
-                    // LFPT-0632: попап "указать уровень" вместо обычной ошибки
+                    // Попап "указать уровень" вместо обычной ошибки
                     closePartnerModal();
                     LevelCheck.show(tournamentId);
                     resetBtn();
@@ -780,7 +780,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <p>${t('regConfirm.cancha.rule2')}</p>
                 </div>`;
         } else if (tournamentType === 'PADEL_CLINIC') {
-            // LFPT-0651: финансовые условия отмены как у индивидуального турнира,
+            // Финансовые условия отмены как у индивидуального турнира,
             // но без штрафа за опоздание — Padel Clinic не соревновательный формат.
             rulesHtml = `
                 <p class="reg-confirm-subtitle">${t('regConfirm.clinic.subtitle')}</p>
@@ -1167,8 +1167,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const generoDisplay = displayMaps.genero[tournament.generoFormato] || tournament.generoFormato || 'N/A';
         const nivelDisplay = tournament.categoriaNivel || 'N/A';
         const tipoDisplay = displayMaps.tipo[tournament.tipo] || tournament.tipo || 'N/A';
-        // LFPT-0653: заголовком карточки — формат мероприятия (как на главной странице,
-        // home.js), а не автогенерированное название турнира, дублирующее пол/категорию.
+        // Заголовок карточки — формат мероприятия (как на главной странице, home.js),
+        // а не автогенерированное название турнира, дублирующее пол/категорию.
         const modalidadDisplay = tournament.modalidad === 'DOBLES'
             ? t('card.modalidad.doubles')
             : t('card.modalidad.individual');

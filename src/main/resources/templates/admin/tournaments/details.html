@@ -89,7 +89,7 @@
         .badge-solo-later   { background: #fef3c7; color: #92400e; padding:.2rem .6rem; border-radius:20px; font-size:.75rem; font-weight:600; }
         .badge-solo-search  { background: #dbeafe; color: #1d4ed8; padding:.2rem .6rem; border-radius:20px; font-size:.75rem; font-weight:600; }
         .badge-solo-expired { background: #fee2e2; color: #991b1b; padding:.2rem .6rem; border-radius:20px; font-size:.75rem; font-weight:600; }
-        /* LFPT-0669: резервные заявки (WAITLIST) без/с партнёром после перевода в резерв */
+        /* Резервные заявки (WAITLIST) без/с партнёром после перевода в резерв */
         .badge-reserve-pending  { background: #fef3c7; color: #92400e; padding:.2rem .6rem; border-radius:20px; font-size:.75rem; font-weight:600; }
         .badge-reserve-complete { background: #dcfce7; color: #15803d; padding:.2rem .6rem; border-radius:20px; font-size:.75rem; font-weight:600; }
 
@@ -803,14 +803,14 @@
                         <!-- Турнир ещё не инициализирован — форма запуска -->
                         <div th:unless="${isInitialized == true or (ranking != null and ranking.ranking != null and not #lists.isEmpty(ranking.ranking))}">
 
-                            <!--
-                                Расчёт по ТЗ (п.6, 7, 9):
+                            <!--/*
+                                Расчёт:
                                   playersPerRound = courts × 4
                                   bye = N - playersPerRound  (если N > playersPerRound)
                                   Full Americano возможен если:
                                     N % playersPerRound == 0
                                     AND pairs_generated == pairs_total
-                            -->
+                            */-->
                             <th:block th:with="
                                 N=${tournament.inscritosActuales},
                                 sugCourts=${N >= 16 ? 4 : (N >= 12 ? 3 : 2)},
@@ -868,7 +868,7 @@
                                       method="post" id="americanoForm">
                                     <input type="hidden" name="tournamentId" th:value="${tournament.id}">
 
-                                    <!-- п.8 ТЗ: Режим генерации (Auto / Full / Flex) -->
+                                    <!--/* Режим генерации (Auto / Full / Flex) */-->
                                     <div class="form-group">
                                         <label for="generationMode">
                                             <i class="fas fa-cog"></i>
@@ -889,7 +889,7 @@
                                         </small>
                                     </div>
 
-                                    <!-- п.2 ТЗ: Лимит очков (15 / 21 / 24 / 32 / 40) -->
+                                    <!--/* Лимит очков (15 / 21 / 24 / 32 / 40) */-->
                                     <div class="form-group">
                                         <label for="pointsPerMatch">
                                             <i class="fas fa-bullseye"></i>
@@ -939,7 +939,7 @@
                                         </small>
                                     </div>
 
-                                    <!-- п.5 ТЗ: Тип рейтинга -->
+                                    <!--/* Тип рейтинга */-->
                                     <div class="form-group">
                                         <label for="rankingType">
                                             <i class="fas fa-trophy"></i>
@@ -1309,7 +1309,7 @@
                                     <span th:if="${(reg.playerTelegram == null or reg.playerTelegram.isEmpty()) and (reg.playerPhone == null or reg.playerPhone.isEmpty())}"
                                           style="color:#94a3b8;">—</span>
                                 </td>
-                                <!-- Колонка «Уровень» (LFPT-0628) -->
+                                <!--/* Колонка «Уровень» */-->
                                 <td th:if="${tournament.mostrarNivel and tournament.modalidad.name() == 'DOBLES'}"
                                     th:text="${(reg.playerNivel != null ? reg.playerNivel.display : '—') + ' / ' + (reg.partnerNivel != null ? reg.partnerNivel.display : '—')}"></td>
                                 <td th:if="${tournament.mostrarNivel and tournament.modalidad.name() != 'DOBLES'}"
@@ -1653,7 +1653,7 @@
                                    th:text="${reg.playerNombre} ?: 'Jugador ' + ${reg.playerId}">
                                     Jugador
                                 </a>
-                                <!-- LFPT-0669: различаем резервную заявку без партнёра от уже сформированной пары -->
+                                <!--/* Различаем резервную заявку без партнёра и уже сформированную пару */-->
                                 <div th:if="${tournament.modalidad.name() == 'DOBLES'}">
                                     <span th:if="${!reg.partnerRegistered}" class="badge-reserve-pending"
                                           th:text="#{admin.tournaments.details.waitlist.pending_partner}">⏳ Reserva — esperando compañero</span>

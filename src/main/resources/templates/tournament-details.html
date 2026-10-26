@@ -612,8 +612,8 @@
                                     <span th:text="${tournament.waitlistCount} + ' ' + #{tournament.waitlist.double}">2 en espera</span>
                                 </div>
 
-                                <!-- LFPT-0730: резервные пары (WAITLIST) по именам — отдельно от основного
-                                     состава, явно не выглядит как полноценный участник (приглушённый стиль). -->
+                                <!--/* Резервные пары (WAITLIST) по именам — отдельно от основного
+                                     состава, явно не выглядит как полноценный участник (приглушённый стиль). */-->
                                 <div th:if="${isTeamPlayoffFormat == true and not #lists.isEmpty(reserveDoubleRegistrations)}"
                                      style="margin-top:1rem; padding-top:1rem; border-top:1px dashed #e9ecef; opacity:.8;">
                                     <h3 style="font-size:.95rem; font-weight:600; color:#92400e; margin:0 0 .5rem;">
@@ -1003,10 +1003,10 @@
                                 <small class="form-text text-muted" th:text="#{modal.partner.field.telegram.hint}">El organizador podrá contactarlo por este medio si es necesario</small>
                             </div>
 
-                            <!-- LFPT-0680/LFPT-0688: подсказки существующих игроков при ручном вводе —
+                            <!--/* Подсказки существующих игроков при ручном вводе —
                                  плавающий блок, позиционируется JS-ом рядом с полем, в которое сейчас
                                  вводит пользователь (как partnerSearchResults), а не одним блоком под
-                                 всеми полями — иначе на мобильном уходит ниже видимой области экрана. -->
+                                 всеми полями — иначе на мобильном уходит ниже видимой области экрана. */-->
                             <div id="manualPartnerSuggestions"
                                  style="display:none; position:fixed; z-index:2000; background:#fff;
                                         border:1px solid #e5e7eb; border-radius:8px; max-height:220px;

@@ -278,7 +278,7 @@
             </table>
         </div>
 
-        <!-- Модалка временных данных для входа гостевого аккаунта (issue #217) -->
+        <!--/* Модалка временных данных для входа гостевого аккаунта */-->
         <div id="guestCredentialsModal" class="modal" style="display:none;" th:if="${isSuperAdmin}">
             <div class="modal-content" style="max-width:480px; padding:2rem;">
                 <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
@@ -420,10 +420,8 @@
     }
 
     // '__all__' — сброс фильтра, value="" у select соответствует "Sin especificar"
-    // (issue #304: с LFPT-82 это Nivel.SIN_ESPECIFICAR, не null — data-nivel для таких
-    // игроков теперь тоже пустая строка благодаря явной проверке на 'SIN_ESPECIFICAR'
-    // в разметке th:data-nivel выше, а не проверке != null, поэтому сравнение здесь
-    // по-прежнему работает как есть).
+    // (Nivel.SIN_ESPECIFICAR, не null): data-nivel для таких игроков — тоже пустая строка
+    // благодаря явной проверке на 'SIN_ESPECIFICAR' в разметке th:data-nivel выше.
     function matchesNivel(el, nivel) {
         return nivel === '__all__' || v(el, 'nivel') === nivel.toLowerCase();
     }
@@ -453,10 +451,10 @@
 })();
 </script>
 <script th:if="${isSuperAdmin}">
-// Уровень игрока (LFPT-218) сохраняется через fetch без перезагрузки страницы —
-// при сотнях игроков редирект после каждого сохранения сбрасывал прокрутку и
-// поисковый запрос. Десктоп-таблица и мобильная карточка рендерят один и тот же
-// select дважды (data-player-id совпадает), поэтому синхронизируем оба сразу.
+// Уровень игрока сохраняется через fetch без перезагрузки страницы — при сотнях игроков
+// редирект после каждого сохранения сбрасывал бы прокрутку и поисковый запрос.
+// Десктоп-таблица и мобильная карточка рендерят один и тот же select дважды
+// (data-player-id совпадает), поэтому синхронизируем оба сразу.
 function saveNivelInline(select) {
     const previousValue = select.dataset.savedValue !== undefined ? select.dataset.savedValue : select.value;
     const newValue = select.value;

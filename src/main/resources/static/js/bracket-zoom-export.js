@@ -1,5 +1,5 @@
 /**
- * bracket-zoom-export.js (LFPT-389)
+ * bracket-zoom-export.js
  * Масштабирование/pan турнирной сетки Team Playoff (desktop fit-to-width,
  * mobile pinch-zoom+pan) и экспорт всей сетки в PNG через SnapDOM.
  *

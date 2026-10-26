@@ -93,7 +93,7 @@
                 </div>
             </div>
 
-            <!-- Разбивка суммы по способу оплаты (LFPT-0476) -->
+            <!--/* Разбивка суммы по способу оплаты */-->
             <div class="payment-breakdown" th:if="${paymentBreakdown != null and not #lists.isEmpty(paymentBreakdown)}">
                 <span class="breakdown-title" th:text="#{admin.payments.breakdown.title}">Desglose por método de pago</span>
                 <div class="breakdown-currency" th:each="breakdown : ${paymentBreakdown}">
@@ -118,9 +118,9 @@
                 <span class="legend-item legend-card"><i class="fas fa-credit-card"></i> <span th:text="#{admin.payments.legend.card}">Tarjeta</span></span>
             </div>
 
-            <!-- LFPT-0573: добавление пары вручную прямо со страницы оплат (этап 1) — та же форма
-                 поиска-или-создания игрока, что и раньше была только на странице Team Playoff
-                 (LFPT-0561/0562); видна только для форматов, где вообще применим Team Playoff. -->
+            <!--/* Добавление пары вручную прямо со страницы оплат — та же форма
+                 поиска-или-создания игрока, что на странице Team Playoff;
+                 видна только для форматов, где вообще применим Team Playoff. */-->
             <div class="team-playoff-add-form" th:if="${tournament.tipo != null and tournament.tipo.name() == 'AMERICANO_TEAMS'}"
                  style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:1.5rem;overflow:hidden">
                 <div style="padding:.85rem 1.5rem;background:#1e293b;color:#fff">
@@ -290,7 +290,7 @@
                                        class="fas fa-user-friends pi-icon"
                                        title="Compañero no registrado"></i>
                                     <span class="player-name" th:text="${player.playerName}">Juan Pérez</span>
-                                    <!-- LFPT-0730: резерв (WAITLIST) — плашка вместо полного скрытия строки -->
+                                    <!--/* Резерв (WAITLIST) — плашка вместо полного скрытия строки */-->
                                     <span th:if="${player.reserve}" class="badge-in-tournament"
                                           style="background:#fff3cd;color:#92400e;"
                                           th:title="#{admin.payments.badge.reserve_title}">
@@ -461,8 +461,8 @@
         f.style.display = f.style.display === 'none' ? 'block' : 'none';
     }
 
-    // LFPT-0573: та же форма поиска-или-создания игрока, что и на странице Team Playoff
-    // (LFPT-0561/0562) — логика вынесена в общий static/js/team-playoff-player-search.js.
+    // Та же форма поиска-или-создания игрока, что и на странице Team Playoff —
+    // логика в общем static/js/team-playoff-player-search.js.
     (function () {
         const formEl = document.getElementById('manualAddTeamFormEl');
         if (!formEl) return;
@@ -475,7 +475,7 @@
         }, function (message) { alert(message); });
     })();
 
-    // LFPT-0573: подсказка у отметки явки — видна по наведению/фокусу (CSS :hover/:focus) и
+    // Подсказка у отметки явки — видна по наведению/фокусу (CSS :hover/:focus) и
     // по нажатию на телефоне (JS-тоггл класса .open, т.к. :focus на кнопке ведёт себя не везде
     // одинаково в мобильных браузерах); закрывается кликом в любом другом месте страницы.
     document.querySelectorAll('.info-tip').forEach(function (btn) {

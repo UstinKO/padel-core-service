@@ -2147,7 +2147,7 @@ h1, h2, h3, h4, h5, h6 {
     word-break: break-word;
 }
 
-/* Tournament spots status badge (LFPT-0435) */
+/* Tournament spots status badge */
 .tournament-spots {
     display: inline-flex;
     align-items: center;
@@ -2248,8 +2248,8 @@ h1, h2, h3, h4, h5, h6 {
     color: white;
 }
 
-/* Botón "Inscribirse en reserva" — misma forma que btn-primary, menos acento
-   (turno mest completo, pero sigue siendo una acción disponible) (LFPT-0435) */
+/* Кнопка "Inscribirse en reserva" — та же форма, что btn-primary, но с меньшим акцентом
+   (мест нет, но действие по-прежнему доступно) */
 .tournament-footer .btn-waitlist {
     background: rgba(255, 107, 53, 0.12);
     color: var(--color-primary-dark);

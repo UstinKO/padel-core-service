@@ -240,9 +240,9 @@ class PadelCoreHome {
         });
     }
 
-    // Статус заполненности турнира по порогам 70%/100% (LFPT-0435) — не путать
-    // с абсолютными порогами getSpotsStatus() в torneos.js (10 пар/15 игроков,
-    // LFPT-374): разные страницы, разная, осознанно выбранная формула.
+    // Статус заполненности турнира по порогам 70%/100% — не путать с абсолютными
+    // порогами getSpotsStatus() в torneos.js (10 пар/15 игроков): разные страницы,
+    // разная, осознанно выбранная формула.
     getSpotsStatus(tournament) {
         const cupoMax = tournament.cupoMax || 0;
         const inscritos = tournament.inscritosActuales || 0;

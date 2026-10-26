@@ -27,7 +27,7 @@ window.APP_MESSAGES = {
     'contact.error.save':       'Ошибка сохранения',
     'contact.error.connection': 'Ошибка соединения. Попробуйте снова.',
 
-    // ── level-check.js (LFPT-0632) ──────────────────────────────────────────
+    // ── level-check.js ──────────────────────────────────────────────────────
     'level.modal.title':  'Нужно указать уровень игры',
     'level.modal.desc':   'Для регистрации на турнир сначала укажите свой уровень в личном кабинете.',
     'level.btn.cancel':   'Отмена',
@@ -109,7 +109,7 @@ window.APP_MESSAGES = {
     'card.spots.limited':    'Последние места',
     'card.spots.full':       'Мест нет',
 
-    // ── home.js: карточка турнира на главной странице (LFPT-0435) ───────────
+    // ── home.js: карточка турнира на главной странице ───────────────────────
     'card.spots.completos':       'Мест нет',
     'card.modalidad.individual':  'Индивидуальное участие',
     'card.modalidad.doubles':     'Парное участие',

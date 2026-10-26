@@ -271,8 +271,8 @@
                     </h2>
 
                     <div class="form-grid">
-                        <!-- LFPT-0559: скрыто на создании/копировании для клубного аккаунта — статус всё равно
-                             переопределяется на бэкенде (LFPT-0558), поле только создаёт путаницу -->
+                        <!--/* Скрыто на создании/копировании для клубного аккаунта — статус всё равно
+                             переопределяется на бэкенде, поле только создаёт путаницу */-->
                         <div class="form-group" th:if="${tournament.id != null or isClubAdmin != true}">
                             <label for="estado" class="required" th:text="#{admin.tournaments.form.field.status}">Estado del Torneo</label>
                             <select th:field="*{estado}"
@@ -333,7 +333,7 @@
                                th:placeholder="#{admin.tournaments.form.field.faq.placeholder}">
                     </div>
 
-                    <!-- LFPT-484: experimento reversible — por defecto desmarcado -->
+                    <!--/* Показ уровня участников — настройка турнира, по умолчанию выключена */-->
                     <div class="form-group" style="display:flex; align-items:center; gap:.5rem;">
                         <input type="checkbox"
                                th:field="*{mostrarNivel}"
@@ -342,7 +342,7 @@
                         <label for="mostrarNivel" style="margin:0;" th:text="#{admin.tournaments.form.field.mostrar_nivel}">Mostrar nivel de los participantes en el listado</label>
                     </div>
 
-                    <!-- LFPT-492: acceso público / solo por enlace -->
+                    <!--/* Доступ: публичный / только по ссылке */-->
                     <div class="form-group">
                         <label for="visibilidad" th:text="#{admin.tournaments.form.field.visibility}">Modo de acceso</label>
                         <select th:field="*{visibilidad}"
@@ -377,9 +377,9 @@
 
 <!-- Скрипт для автоматического расчета даты отмены -->
 <script>
-    // LFPT-373: filtra las opciones de "Categoría / Nivel" según el "Formato de Género"
-    // seleccionado. Las opciones sin data-genero (valores legacy, sólo presentes cuando
-    // ya son el valor actual del torneo) se muestran siempre, sin importar el género.
+    // Фильтрует варианты "Categoría / Nivel" по выбранному "Formato de Género".
+    // Варианты без data-genero (legacy-значения, присутствуют, только когда это текущее
+    // значение турнира) показываются всегда, независимо от пола.
     function onGeneroChange() {
         const generoSelect = document.getElementById('generoFormato');
         const nivelSelect = document.getElementById('categoriaNivel');
@@ -456,10 +456,10 @@
     document.addEventListener('DOMContentLoaded', function() {
         // Применяем логику для уже выбранного типа (при редактировании)
         onTipoChange(null);
-        // LFPT-373: применяем фильтрацию уровней для уже выбранного пола (при редактировании)
+        // Применяем фильтрацию уровней для уже выбранного пола (при редактировании)
         onGeneroChange();
 
-        // LFPT-0555: прямая смена модальности (CANCHA_ABIERTA/PADEL_CLINIC, где она не форсируется типом)
+        // Прямая смена модальности (CANCHA_ABIERTA/PADEL_CLINIC, где она не форсируется типом)
         const modalidadSelectEl = document.getElementById('modalidad');
         if (modalidadSelectEl) {
             modalidadSelectEl.addEventListener('change', updateCupoMaxLabel);

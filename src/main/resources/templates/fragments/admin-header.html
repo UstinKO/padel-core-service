@@ -8,11 +8,10 @@
     <meta name="app-profile">
 </head>
 <body>
-<!-- Фрагмент заголовка для админ-панели.
+<!--/* Фрагмент заголовка для админ-панели.
      th:block оборачивает header+скрипты вместе — th:fragment на самом <header>
-     захватывал бы только этот тег, а скрипты после него никогда бы не попали
-     в вызывающую страницу (issue #198: admin-menu.js/logger.js/t.js молча
-     никогда не рендерились ни на одной admin-странице). -->
+     захватывал бы только этот тег, а скрипты после него (admin-menu.js/logger.js/t.js)
+     не попали бы в вызывающую страницу. */-->
 <th:block th:fragment="header(pageTitle)">
     <header class="header">
         <div class="container">
