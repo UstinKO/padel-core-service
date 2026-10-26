@@ -31,6 +31,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.MessageSource;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Locale;
 import java.util.Optional;
 
@@ -85,6 +86,7 @@ class TournamentServiceLevelRestrictionTest {
                 .fechaInicio(LocalDate.now().plusDays(7))
                 .cupoMax(32)
                 .isActive(true)
+                .horaInicio(LocalTime.of(18, 0))
                 .build();
 
         player = PlayerPadel.builder()
