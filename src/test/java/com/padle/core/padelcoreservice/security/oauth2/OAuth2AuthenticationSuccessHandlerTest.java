@@ -21,7 +21,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Issue #297: Google OAuth2-логин должен выставлять remember-me cookie, хотя у кнопки
+ * Google OAuth2-логин должен выставлять remember-me cookie, хотя у кнопки
  * "Войти через Google" нет чекбокса "запомнить меня" и параметр remember-me неоткуда
  * взять из запроса. Проверяем именно этот механизм — реальный
  * {@link TokenBasedRememberMeServices} (не мок), чтобы убедиться, что подмена параметра
@@ -84,7 +84,7 @@ class OAuth2AuthenticationSuccessHandlerTest {
     }
 
     /**
-     * LFPT-0637: вход, инициированный клиентом 1Padel.App ({@code ?client=app} на
+     * Вход, инициированный клиентом 1Padel.App ({@code ?client=app} на
      * {@code /oauth2/authorization/google}, перехваченный {@link OAuth2AppLoginOriginFilter}),
      * должен вернуть браузер в приложение с токенами во fragment URL, а не на /players/dashboard.
      */

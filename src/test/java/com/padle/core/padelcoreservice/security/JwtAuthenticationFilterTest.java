@@ -17,9 +17,9 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-// LFPT-0608: только access-токен должен аутентифицировать запрос — refresh-токен
-// (tokenType=refresh) подписан тем же секретом и раньше проходил validateToken() так же,
-// как access, что позволяло использовать его как access-токен все 7 дней его жизни.
+// Аутентифицировать запрос может только access-токен. Refresh-токен (tokenType=refresh)
+// подписан тем же секретом и проходит validateToken(), но не должен работать как access-токен
+// все 7 дней своей жизни.
 class JwtAuthenticationFilterTest {
 
     private static final String EMAIL = "player@example.com";
@@ -31,8 +31,7 @@ class JwtAuthenticationFilterTest {
     // SecurityContextHolder — глобальный статический ThreadLocal: другие тестовые классы
     // (например, OAuth2AuthenticationSuccessHandlerTest, вызывающий реальный хендлер) могут
     // оставить в нём установленный Authentication, если Surefire выполняет тесты в одном
-    // потоке (порядок между окружениями не детерминирован — упало именно так в CI, LFPT-0608).
-    // Очищаем и до теста, не только после.
+    // потоке (порядок между окружениями не детерминирован). Очищаем и до теста, не только после.
     @BeforeEach
     @AfterEach
     void limpiarSecurityContext() {

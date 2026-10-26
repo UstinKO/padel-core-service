@@ -15,7 +15,7 @@ import java.util.Set;
 
 /**
  * Переключает json-path (MockMvc {@code jsonPath(...)}) с json-smart на Gson до запуска тестов.
- * json-smart исключён из зависимостей (LFPT-0726: уязвимость без исправленной версии), а json-path
+ * json-smart исключён из зависимостей (уязвимость без исправленной версии), а json-path
  * по умолчанию без него не работает. Регистрируется через
  * META-INF/services/org.junit.platform.launcher.LauncherSessionListener.
  */

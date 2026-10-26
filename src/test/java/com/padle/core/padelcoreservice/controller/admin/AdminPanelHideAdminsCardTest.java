@@ -23,9 +23,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * LFPT-0547: главная админ-панель (GET /admin) скрывает карточку статистики «Администраторы»
+ * Главная админ-панель (GET /admin) скрывает карточку статистики «Администраторы»
  * для клубной учётной записи (CLUB_ADMIN) — эта информация касается всей платформы, а не
- * конкретного клуба. Для остальных ролей карточка должна рендериться как раньше (регресс).
+ * конкретного клуба. Для остальных ролей карточка рендерится.
  * Маркер карточки в HTML — уникальная для неё иконка {@code fa-user-cog}.
  */
 @SpringBootTest

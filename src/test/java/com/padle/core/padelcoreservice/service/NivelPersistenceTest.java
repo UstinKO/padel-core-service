@@ -25,10 +25,9 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThatCode;
 
 /**
- * LFPT-373: regresión sobre el CHECK-constraint {@code tournaments_db_categoria_nivel_check} —
- * cada ampliación previa de {@link Nivel} (v1.43, v1.45) exigió una migración que actualizara
- * este constraint; sin ella, un valor nuevo del enum de Java es rechazado por Postgres al
- * persistir, aunque compile sin problema.
+ * Регрессия на CHECK-constraint {@code tournaments_db_categoria_nivel_check}: каждое
+ * расширение {@link Nivel} требует миграции, обновляющей этот constraint, — без неё новое
+ * значение Java-enum отклоняется Postgres при сохранении, хотя код компилируется.
  */
 @SpringBootTest
 @TestPropertySource(properties = {

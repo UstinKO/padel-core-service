@@ -19,10 +19,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * LFPT-0424: GET /tournaments/team-americano/{id}/ranking раньше возвращал несуществующий
- * шаблон tournaments/team-americano/ranking (TemplateInputException → 500). Теперь —
- * 302 на страницу турнира, где рейтинг уже показан (ranking-card). Проверяется через
- * реальную цепочку фильтров Spring Security: роут в permitAll, аноним не уходит на /login.
+ * GET /tournaments/team-americano/{id}/ranking — 302 на страницу турнира, где рейтинг уже
+ * показан (ranking-card): отдельного шаблона рейтинга нет. Проверяется через реальную
+ * цепочку фильтров Spring Security: роут в permitAll, аноним не уходит на /login.
  */
 @SpringBootTest
 @AutoConfigureMockMvc

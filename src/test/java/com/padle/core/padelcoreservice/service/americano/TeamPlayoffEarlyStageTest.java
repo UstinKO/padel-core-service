@@ -34,8 +34,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * LFPT-465: формирование первого этапа плей-офф до полного завершения квалификации
- * (только степень двойки команд — 8/16, без play-in, см. спеку "Вне скоупа").
+ * Формирование первого этапа плей-офф до полного завершения квалификации
+ * (только степень двойки команд — 8/16, без play-in).
  */
 @SpringBootTest
 @TestPropertySource(properties = {

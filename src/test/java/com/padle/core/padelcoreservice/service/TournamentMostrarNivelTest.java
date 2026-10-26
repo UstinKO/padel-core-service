@@ -23,7 +23,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * LFPT-483: Tournament.mostrarNivel — флаг опционального отображения уровня участников,
+ * Tournament.mostrarNivel — флаг опционального отображения уровня участников,
  * по умолчанию выключен, сохраняется независимо от TournamentType.
  */
 @SpringBootTest

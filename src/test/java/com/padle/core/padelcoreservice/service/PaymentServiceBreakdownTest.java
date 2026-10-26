@@ -13,7 +13,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * LFPT-0475: getPaymentMethodBreakdown — чистая агрегация над уже загруженным списком
+ * getPaymentMethodBreakdown — чистая агрегация над уже загруженным списком
  * PaymentManagementViewDto, без обращений к репозиториям, поэтому Spring-контекст и БД
  * не нужны — конструируем PaymentService напрямую (остальные зависимости не используются
  * этим методом).

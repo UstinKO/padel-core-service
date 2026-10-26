@@ -39,13 +39,12 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * LFPT-376: изоляция доступа по клубу — проверяет, что реальные контроллеры (не только
- * TournamentAccessService напрямую) действительно вызывают проверку владения на потоках,
- * где её раньше не было вообще (турнир/регистрация, оплаты, bracket-матч), и что CLUB_ADMIN
- * своего клуба по-прежнему может выполнять те же действия (регресс).
+ * Изоляция доступа по клубу: реальные контроллеры (не только TournamentAccessService
+ * напрямую) вызывают проверку владения на потоках турнир/регистрация, оплаты, bracket-матч,
+ * и CLUB_ADMIN своего клуба может выполнять те же действия.
  *
- * LFPT-393: дополнительно проверяет, что CLUB_ADMIN не может создавать новые клубы
- * (AdminClubController.newClubForm/createClub) — SUPER_ADMIN-only регресс.
+ * Дополнительно: CLUB_ADMIN не может создавать новые клубы
+ * (AdminClubController.newClubForm/createClub) — только SUPER_ADMIN.
  */
 @SpringBootTest
 @TestPropertySource(properties = {
@@ -83,9 +82,9 @@ class ClubAccessIsolationControllerTest {
         Owner clubAdminA = createOwner(clubA.getId());
         Owner clubAdminB = createOwner(clubB.getId());
 
-        // Эндпоинт исторически (ещё до LFPT-376, для аналогичной проверки по ownerId) гасит
-        // отказ доступа внутри себя и отвечает 200 с success:false — не 200 с чужими данными,
-        // JSON-контракт для AJAX-вызова с фронтенда не меняется. Проверяем именно это, а не 403.
+        // Эндпоинт гасит отказ доступа внутри себя и отвечает 200 с success:false — не 200
+        // с чужими данными, JSON-контракт для AJAX-вызова с фронтенда не меняется. Проверяем
+        // именно это, а не 403.
         ResponseEntity<Map<String, Object>> foreignResponse =
                 adminController.moveToWaitlist(tournamentId, 999_999L, clubAdminB);
         assertThat(foreignResponse.getBody().get("success")).isEqualTo(false);

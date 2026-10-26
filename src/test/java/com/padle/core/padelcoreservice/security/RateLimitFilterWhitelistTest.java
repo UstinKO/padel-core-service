@@ -12,7 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-// LFPT-0607: app.security.whitelisted-ips без дефолта в коде — без переменной окружения
+// app.security.whitelisted-ips без дефолта в коде — без переменной окружения
 // список доверенных IP должен быть пуст, а не захардкоженные IP прода.
 class RateLimitFilterWhitelistTest {
 

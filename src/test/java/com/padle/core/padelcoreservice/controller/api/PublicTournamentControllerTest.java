@@ -34,7 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * LFPT-0623: публичное расписание анонимно доступно через реальную цепочку
+ * Публичное расписание анонимно доступно через реальную цепочку
  * Spring Security, не раскрывает поля управления/контакты и не расширяет
  * авторизацию существующих защищённых маршрутов.
  */

@@ -10,7 +10,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * LFPT-0303: правило "±1 ступень" для самостоятельной регистрации на категорийный турнир.
+ * Правило "±1 ступень" для самостоятельной регистрации на категорийный турнир.
  * Чистая логика {@link TournamentLevelPolicy#evaluate}, без Spring-контекста.
  */
 class TournamentLevelPolicyTest {
@@ -72,9 +72,9 @@ class TournamentLevelPolicyTest {
 
     @Test
     void jugadorExtremoD6_noIncluyeD5EnPermitidos_porqueD5NoEsNivelDeJugador() {
-        // D5/D4 no están en Nivel.PLAYER_LEVELS (issue #373/#206) — aunque D6 esté a una
-        // categoría de D5, D5 nunca puede aparecer como "categoría permitida". Se usa D9
-        // (lejos de D6) como categoría del torneo solo para forzar el cálculo de la lista.
+        // D5/D4 нет в Nivel.PLAYER_LEVELS — хотя D6 в одной категории от D5, D5 никогда не может
+        // оказаться в "разрешённых категориях". D9 (далеко от D6) берётся категорией турнира
+        // только чтобы форсировать расчёт списка.
         TournamentLevelPolicy.Result result =
                 TournamentLevelPolicy.evaluate(TournamentType.AMERICANO, Nivel.D9, Nivel.D6);
 
@@ -112,9 +112,9 @@ class TournamentLevelPolicyTest {
     @EnumSource(value = Nivel.class, names = {"TODOS", "PRINCIPIANTES", "SIN_ESPECIFICAR",
             "C9_C8", "C7_C6", "D7_D8", "D5_D4", "SUMA_13", "SUMA_16", "D5", "D4"})
     void categoriasNoSimples_noAplicanElChequeoIndependientementeDelNivelDelJugador(Nivel categoria) {
-        // Ninguna de estas categorías es Nivel.isPlayerLevel — el chequeo no se aplica,
-        // incluso para un jugador sin nivel especificado (#303: SUMA_*, rangos, TODOS,
-        // PRINCIPIANTES y D5/D4 quedan fuera de esta regla, no solo "lejos" del jugador).
+        // Ни одна из этих категорий не Nivel.isPlayerLevel — проверка не применяется даже
+        // для игрока без указанного уровня (SUMA_*, диапазоны, TODOS, PRINCIPIANTES и D5/D4
+        // вне этого правила, а не просто "далеко" от игрока).
         TournamentLevelPolicy.Result result =
                 TournamentLevelPolicy.evaluate(TournamentType.AMERICANO, categoria, Nivel.SIN_ESPECIFICAR);
 

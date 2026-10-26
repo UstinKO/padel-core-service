@@ -35,7 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * LFPT-443: логика опоздания (штраф −10) для индивидуальных турниров (AMERICANO/KING_OF_COURT).
+ * Логика опоздания (штраф −10) для индивидуальных турниров (AMERICANO/KING_OF_COURT).
  */
 @SpringBootTest
 @TestPropertySource(properties = {

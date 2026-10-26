@@ -11,8 +11,8 @@ import java.time.LocalTime;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * LFPT-374: el nombre del torneo ya no se ingresa manualmente — se genera a partir
- * de generoFormato + categoriaNivel (ej. "Masculino · C6").
+ * Название турнира не вводится вручную — собирается из generoFormato + categoriaNivel
+ * (например, "Masculino · C6").
  */
 class TournamentTest {
 
@@ -43,7 +43,7 @@ class TournamentTest {
         assertThat(Tournament.generateNombre(null, null)).isEqualTo("Torneo");
     }
 
-    // LFPT-0662: единый источник дедлайна отмены — то, что реально проверяет
+    // Единый источник дедлайна отмены — то, что реально проверяет
     // canCancelRegistration(), должно совпадать с тем, что показывается игроку.
 
     @Test

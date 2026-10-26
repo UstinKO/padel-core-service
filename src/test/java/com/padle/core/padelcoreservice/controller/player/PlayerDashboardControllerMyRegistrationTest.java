@@ -22,10 +22,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * LFPT-0706: {@code GET /players/tournaments/{id}/my-registration} — campos nuevos
- * (registrationId/status/waitlistPosition/registrationDate/isDoubleRegistration), necesarios
- * para la inscripción en pareja desde 1Padel.App (LFPT-0707). Cadena real de Spring Security,
- * servicio simulado.
+ * {@code GET /players/tournaments/{id}/my-registration} — поля
+ * registrationId/status/waitlistPosition/registrationDate/isDoubleRegistration, нужные
+ * для парной записи из 1Padel.App. Реальная цепочка Spring Security, сервис замокан.
  */
 @SpringBootTest
 @AutoConfigureMockMvc

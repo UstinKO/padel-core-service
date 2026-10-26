@@ -14,8 +14,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * LFPT-375: modelo de datos para cuentas de club — Owner.clubId (columna nullable, sin FK,
- * mismo patrón que Tournament.clubId) y el nuevo valor de rol CLUB_ADMIN.
+ * Модель данных клубных аккаунтов: Owner.clubId (nullable-колонка без FK, тот же паттерн,
+ * что Tournament.clubId) и значение роли CLUB_ADMIN.
  */
 @SpringBootTest
 @TestPropertySource(properties = {

@@ -11,7 +11,7 @@ import org.mapstruct.factory.Mappers;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * LFPT-483: уровень игрока должен попадать в AmericanoPlayerRankingDto — модель,
+ * Уровень игрока должен попадать в AmericanoPlayerRankingDto — модель,
  * которую AmericanoViewController (getRankingWithDetails) передаёт в публичный
  * шаблон списка участников Americano.
  */

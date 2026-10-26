@@ -36,11 +36,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 
 /**
- * LFPT-0546: главная админ-панель (GET /admin) для CLUB_ADMIN должна показывать статистику
+ * Главная админ-панель (GET /admin) для CLUB_ADMIN показывает статистику
  * («Активные турниры», «Лист ожидания», «Последние турниры») только своего клуба, а не всей
- * платформы; для остальных ролей поведение не должно измениться (регресс).
- * LFPT-0566: модель {@code GET /admin} также содержит флаг {@code isClubAdmin} — нужен шаблону
- * для скрытия карточки «Администраторы» для клубной учётной записи (#547).
+ * платформы; для остальных ролей — статистика всей платформы.
+ * Модель {@code GET /admin} также содержит флаг {@code isClubAdmin} — по нему шаблон
+ * скрывает карточку «Администраторы» для клубной учётной записи.
  */
 @SpringBootTest
 @TestPropertySource(properties = {
@@ -166,8 +166,8 @@ class AdminPanelClubStatsTest {
     }
 
     /**
-     * LFPT-0566: flag {@code isClubAdmin} в модели {@code GET /admin}, нужен шаблону для скрытия
-     * карточки «Администраторы» для клубной учётной записи (#547).
+     * Флаг {@code isClubAdmin} в модели {@code GET /admin}, нужен шаблону для скрытия
+     * карточки «Администраторы» для клубной учётной записи.
      */
     @Test
     void adminPanel_clubAdmin_modeloContieneIsClubAdminTrue() {

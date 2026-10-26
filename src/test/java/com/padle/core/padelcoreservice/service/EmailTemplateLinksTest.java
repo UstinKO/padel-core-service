@@ -15,7 +15,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * LFPT-0618: ссылки на страницы сайта в email-письмах должны формироваться из {@code app.base-url}
+ * Ссылки на страницы сайта в email-письмах должны формироваться из {@code app.base-url}
  * (см. {@code EmailService.setLegalFooterLinks} и переменные вида {@code tournamentUrl}/{@code eventUrl}),
  * а не хардкодиться прямо в шаблоне — иначе при смене домена нужно вручную править каждое письмо.
  * Чистый unit-тест без Spring-контекста — читает .html-файлы с диска.

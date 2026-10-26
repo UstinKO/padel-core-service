@@ -10,7 +10,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 
-// LFPT-0518: requestId в MDC — доступен во время цепочки фильтров, уникален на запрос,
+// requestId в MDC — доступен во время цепочки фильтров, уникален на запрос,
 // очищается после (поток Tomcat переиспользуется для следующего запроса).
 class RequestIdFilterTest {
 

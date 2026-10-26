@@ -13,12 +13,12 @@ import java.util.Locale;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * LFPT-0657: подвал писем выводит год через {@code #{email.footer.rights(${year})}},
- * а {@code EmailService} передаёт {@code year} числом. С ключом {@code © {0} 1-Padel. …}
- * {@code MessageFormat} ставил разделитель разрядов по локали: {@code © 2.026} (es),
- * {@code © 2 026} (ru, неразрывный пробел), {@code © 2,026} (en). Теперь в ключе
- * {@code {0,number,#}}, и год выводится как {@code 2026}. Подвал общий для 8 шаблонов,
- * проверяем на {@code email/tournament-confirmation}.
+ * Подвал писем выводит год через {@code #{email.footer.rights(${year})}},
+ * а {@code EmailService} передаёт {@code year} числом. С форматом {@code {0}} {@code MessageFormat}
+ * поставил бы разделитель разрядов по локали: {@code © 2.026} (es), {@code © 2 026} (ru,
+ * неразрывный пробел), {@code © 2,026} (en), поэтому в ключе {@code {0,number,#}} и год
+ * выводится как {@code 2026}. Подвал общий для 8 шаблонов, проверяем на
+ * {@code email/tournament-confirmation}.
  */
 @SpringBootTest
 @TestPropertySource(properties = {

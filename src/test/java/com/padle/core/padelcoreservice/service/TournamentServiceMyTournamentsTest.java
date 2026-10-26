@@ -29,7 +29,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * LFPT-0637: «Мои мероприятия» для клиента 1Padel.App — read-only обзор собственных
+ * «Мои мероприятия» для клиента 1Padel.App — read-only обзор собственных
  * регистраций игрока (то же разбиение турниров по {@link TournamentStatus}, что и в
  * дашборде игрока, см. {@link TournamentService#getHistoricalAndActiveTournamentsByPlayer}).
  */
