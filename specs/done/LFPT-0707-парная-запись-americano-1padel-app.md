@@ -1,10 +1,10 @@
 # LFPT-0707: Парная запись Americano в 1Padel.App
 
 ## Статус
-approved
+done
 
 ## Источник
-Клиентский запрос [specs/requests/LFPT-0707-парная-запись-americano-1padel-app.md](../requests/LFPT-0707-парная-запись-americano-1padel-app.md) (Telegram, отправитель — customer, переслано от Evgeny_754, `telegram_launch_message_id: 5463`). Ссылка заказчика на подготовленный README/ТЗ: https://github.com/eugenegwork-coder/1padel-app/tree/main/updates/pair-registration — использован только как описание требований (сверено построчно при написании этой спеки); готовый патч/исходники из этого репозитория не применяются — реализация ведётся самостоятельно, в конвенциях `mobile-app/`, по образцу уже смерженной индивидуальной записи (LFPT-0660/PR #661).
+Клиентский запрос [specs/requests/LFPT-0707-парная-запись-americano-1padel-app.md](requests/LFPT-0707-парная-запись-americano-1padel-app.md) (Telegram, отправитель — customer, переслано от Evgeny_754, `telegram_launch_message_id: 5463`). Ссылка заказчика на подготовленный README/ТЗ: https://github.com/eugenegwork-coder/1padel-app/tree/main/updates/pair-registration — использован только как описание требований (сверено построчно при написании этой спеки); готовый патч/исходники из этого репозитория не применяются — реализация ведётся самостоятельно, в конвенциях `mobile-app/`, по образцу уже смерженной индивидуальной записи (LFPT-0660/PR #661).
 
 Зависит от #706 (`feature/LFPT-0706`, уже в этой ветке): расширение `GET /players/tournaments/{id}/my-registration` полями `registrationId`/`status`/`waitlistPosition`/`registrationDate`/`isDoubleRegistration`.
 

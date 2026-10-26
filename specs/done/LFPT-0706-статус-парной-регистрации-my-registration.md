@@ -1,10 +1,10 @@
 # LFPT-0706: Статус парной регистрации в 1Padel.App — расширить GET my-registration
 
 ## Статус
-approved
+done
 
 ## Источник
-Часть клиентского запроса [specs/requests/LFPT-0707-парная-запись-americano-1padel-app.md](../requests/LFPT-0707-парная-запись-americano-1padel-app.md) (Telegram, отправитель — customer, переслано от Evgeny_754, `telegram_launch_message_id: 5463`), разбита на бэкенд-задачу (эта спека) и фронтенд-задачу (LFPT-0707, зависит от этой). Issue: [#706](https://github.com/UstinKO/padel-core-service/issues/706).
+Часть клиентского запроса [specs/requests/LFPT-0707-парная-запись-americano-1padel-app.md](requests/LFPT-0707-парная-запись-americano-1padel-app.md) (Telegram, отправитель — customer, переслано от Evgeny_754, `telegram_launch_message_id: 5463`), разбита на бэкенд-задачу (эта спека) и фронтенд-задачу (LFPT-0707, зависит от этой). Issue: [#706](https://github.com/UstinKO/padel-core-service/issues/706).
 
 ## Контекст / зачем
 
