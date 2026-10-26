@@ -1,7 +1,7 @@
 # LFPT-0582: Пилот автономного конвейера — задача из Telegram до прода без человека
 
 ## Статус
-approved
+done
 
 ## Источник
 [GitHub issue #582](https://github.com/UstinKO/padel-core-service/issues/582). Этап 4 дорожной карты «Автономный конвейер: от Telegram до прода» (локальная `docs/pipeline-autonomy.md`, §7 — хронология пилота).

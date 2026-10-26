@@ -1,7 +1,7 @@
 # LFPT-0650: Fix NPE в логе TournamentServiceLevelRestrictionTest — задать horaInicio в фикстуре турнира
 
 ## Статус
-approved
+done
 
 ## Источник
 Issue [#650](https://github.com/UstinKO/padel-core-service/issues/650) (найдено при прогоне `./mvnw verify` в #617). Клиентского запроса нет — спека написана напрямую по issue.

@@ -1,7 +1,7 @@
 # LFPT-0651: Всплывающее окно после регистрации на Padel Clinic — без штрафа за опоздание
 
 ## Статус
-approved
+done
 
 ## Источник
 Клиентский запрос через Telegram (`specs/requests/LFPT-0651-попап-padel-clinic-отмена.md`), issue [#651](https://github.com/UstinKO/padel-core-service/issues/651).

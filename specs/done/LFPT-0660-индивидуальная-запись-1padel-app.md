@@ -1,10 +1,10 @@
 # LFPT-0660: Индивидуальная запись в 1Padel.App
 
 ## Статус
-approved
+done
 
 ## Источник
-Клиентский запрос [specs/requests/LFPT-0660-индивидуальная-запись-1padel-app.md](../requests/LFPT-0660-индивидуальная-запись-1padel-app.md) (Telegram, отправитель — customer, переслано от Evgeny_754, `telegram_launch_message_id: 5325`). Готовый клиентский патч заказчика: https://github.com/eugenegwork-coder/1padel-app/tree/main/updates/individual-registration (`individual-registration.patch`, 816 строк diff + README), подготовлен на коммите master `04ab54d3` (после LFPT-0646/PR #648) — применяется к текущему master без конфликтов (проверено `git apply --check` на `f8ccd2c`, LFPT-0653 не трогает `mobile-app/**`).
+Клиентский запрос [specs/requests/LFPT-0660-индивидуальная-запись-1padel-app.md](requests/LFPT-0660-индивидуальная-запись-1padel-app.md) (Telegram, отправитель — customer, переслано от Evgeny_754, `telegram_launch_message_id: 5325`). Готовый клиентский патч заказчика: https://github.com/eugenegwork-coder/1padel-app/tree/main/updates/individual-registration (`individual-registration.patch`, 816 строк diff + README), подготовлен на коммите master `04ab54d3` (после LFPT-0646/PR #648) — применяется к текущему master без конфликтов (проверено `git apply --check` на `f8ccd2c`, LFPT-0653 не трогает `mobile-app/**`).
 
 ## Контекст / зачем
 
