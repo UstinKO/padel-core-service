@@ -263,7 +263,7 @@
                         </thead>
                         <tbody>
                         <tr th:each="player, iterStat : ${players}"
-                            th:classappend="${player.partnerRow ? 'partner-row' : ('pm-' + (player.paymentMethod != null ? #strings.toLowerCase(player.paymentMethod.name()) : 'none'))}">
+                            th:classappend="${(player.partnerRow ? 'partner-row' : ('pm-' + (player.paymentMethod != null ? #strings.toLowerCase(player.paymentMethod.name()) : 'none'))) + (player.reserve ? ' reserve-row' : '')}">
 
                             <input type="hidden"
                                    th:name="'payments[' + ${iterStat.index} + '].registrationId'"
@@ -290,6 +290,13 @@
                                        class="fas fa-user-friends pi-icon"
                                        title="Compañero no registrado"></i>
                                     <span class="player-name" th:text="${player.playerName}">Juan Pérez</span>
+                                    <!-- LFPT-0730: резерв (WAITLIST) — плашка вместо полного скрытия строки -->
+                                    <span th:if="${player.reserve}" class="badge-in-tournament"
+                                          style="background:#fff3cd;color:#92400e;"
+                                          th:title="#{admin.payments.badge.reserve_title}">
+                                        <i class="fas fa-clock"></i>
+                                        <span th:text="#{admin.payments.badge.reserve}">Reserva</span>
+                                    </span>
                                     <!-- Telegram (приоритет) -->
                                     <a th:if="${!player.partnerRow and player.telegramUsername != null and !player.telegramUsername.isEmpty()}"
                                        th:href="'https://t.me/' + ${#strings.replace(player.telegramUsername, '@', '')}"

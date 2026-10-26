@@ -216,6 +216,14 @@ tr.partner-row {
 }
 tr.partner-row:hover { background-color: #ede9fe !important; }
 
+/* LFPT-0730: резерв (WAITLIST) — приглушённая строка, явно отделённая от основного состава */
+tr.reserve-row {
+    opacity: .75;
+    background-color: #fffbeb !important;
+    border-left: 3px solid #f59e0b;
+}
+tr.reserve-row:hover { background-color: #fef3c7 !important; }
+
 /* Ячейка игрока — однострочная */
 .player-info-line {
     display: flex;

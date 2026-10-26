@@ -93,11 +93,13 @@ public class PaymentManagementController {
     /**
      * T18: для AMERICANO_TEAMS помечает, у каких пар уже можно (или уже нельзя, потому что готово)
      * показать кнопку "Добавить команду" на странице оплат — только главная строка парной
-     * регистрации, ещё не добавленная как AmericanoTeam.
+     * регистрации, ещё не добавленная как AmericanoTeam. LFPT-0730: резервные (WAITLIST) пары
+     * исключены — addTeamFromRegistration всё равно отклонит их (требует CONFIRMED/PARTNER_INVITED),
+     * кнопка не должна и показываться для того, что заведомо попадёт в ошибку.
      */
     private void markTeamPlayoffEligibility(Long tournamentId, List<PaymentManagementViewDto> players) {
         players.stream()
-                .filter(p -> p.isMainRow() && !p.isPartnerRow() && p.isDoubleRegistration())
+                .filter(p -> p.isMainRow() && !p.isPartnerRow() && p.isDoubleRegistration() && !p.isReserve())
                 .forEach(p -> {
                     boolean already = teamPlayoffService.isRegisteredAsTeam(tournamentId, p.getPlayerId());
                     p.setCanAddToTeamPlayoff(!already);
