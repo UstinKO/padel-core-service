@@ -1,10 +1,10 @@
 # LFPT-0730: Feature отображение резерва и статуса «не пришла» в админке и на публичной странице Team Playoff (frontend)
 
 ## Статус
-approved
+done
 
 ## Источник
-[specs/requests/LFPT-0729-reserva-no-show-team-playoff.md](../requests/LFPT-0729-reserva-no-show-team-playoff.md), issue [#730](https://github.com/UstinKO/padel-core-service/issues/730). Зависит от бэкенд-задачи [LFPT-0729](LFPT-0729-team-playoff-status-unificado.md) (PR #732): `AmericanoPlayerStatus.NO_SHOW`, `markNoShow`/`cancelNoShow`, `PaymentManagementViewDto.isReserve`.
+[specs/requests/LFPT-0729-reserva-no-show-team-playoff.md](requests/LFPT-0729-reserva-no-show-team-playoff.md), issue [#730](https://github.com/UstinKO/padel-core-service/issues/730). Зависит от бэкенд-задачи [LFPT-0729](LFPT-0729-team-playoff-status-unificado.md) (PR #732): `AmericanoPlayerStatus.NO_SHOW`, `markNoShow`/`cancelNoShow`, `PaymentManagementViewDto.isReserve`.
 
 ## Контекст / зачем
 
