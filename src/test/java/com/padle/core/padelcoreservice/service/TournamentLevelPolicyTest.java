@@ -10,7 +10,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * LFPT-0303: правило "±1 ступень" для самостоятельной регистрации на категорийный турнир.
+ * Правило "±1 ступень" для самостоятельной регистрации на категорийный турнир.
  * Чистая логика {@link TournamentLevelPolicy#evaluate}, без Spring-контекста.
  */
 class TournamentLevelPolicyTest {
@@ -46,20 +46,15 @@ class TournamentLevelPolicyTest {
     }
 
     @Test
-    void ejemploDelCliente_c8NoPuedeRegistrarseEnC6_yListaC9C8C7() {
+    void ejemploDelCliente_c8NoPuedeRegistrarseEnC6_yListaIncluyeEquivalentesFemeninos() {
         TournamentLevelPolicy.Result result =
                 TournamentLevelPolicy.evaluate(TournamentType.AMERICANO, Nivel.C6, Nivel.C8);
 
         assertThat(result.verdict()).isEqualTo(TournamentLevelPolicy.Verdict.LEVEL_MISMATCH);
-        assertThat(result.allowedLevels()).containsExactly(Nivel.C9, Nivel.C8, Nivel.C7);
-    }
-
-    @Test
-    void jugadorExtremoC9_soloTieneDosCategoriasPermitidas() {
-        TournamentLevelPolicy.Result result =
-                TournamentLevelPolicy.evaluate(TournamentType.AMERICANO, Nivel.C7, Nivel.C9);
-
-        assertThat(result.allowedLevels()).containsExactly(Nivel.C9, Nivel.C8);
+        // Расчётный уровень C8 — 8: D7 (расчёт 8) и D8 (расчёт 9) в пределах одной ступени,
+        // как и C9/C7; D6 (расчёт 7) тоже входит как нижняя граница.
+        assertThat(result.allowedLevels())
+                .containsExactly(Nivel.C9, Nivel.C8, Nivel.C7, Nivel.D8, Nivel.D7, Nivel.D6);
     }
 
     @Test
@@ -67,24 +62,60 @@ class TournamentLevelPolicyTest {
         TournamentLevelPolicy.Result result =
                 TournamentLevelPolicy.evaluate(TournamentType.AMERICANO, Nivel.C6, Nivel.C4);
 
+        // Расчётный уровень C4 (4) слишком далёк от любой женской категории (D6 — самая
+        // слабая, допустимая для турниров, расчёт 7) — список остаётся только мужским.
         assertThat(result.allowedLevels()).containsExactly(Nivel.C5, Nivel.C4);
     }
 
     @Test
     void jugadorExtremoD6_noIncluyeD5EnPermitidos_porqueD5NoEsNivelDeJugador() {
-        // D5/D4 no están en Nivel.PLAYER_LEVELS (issue #373/#206) — aunque D6 esté a una
-        // categoría de D5, D5 nunca puede aparecer como "categoría permitida". Se usa D9
-        // (lejos de D6) como categoría del torneo solo para forzar el cálculo de la lista.
+        // D5/D4 не назначаются игроку — хотя D6 в одной ступени от D5, D5 никогда не
+        // появится в списке "допустимых категорий". Категория турнира D9 (далёкая от D6)
+        // используется только чтобы форсировать вычисление списка.
         TournamentLevelPolicy.Result result =
                 TournamentLevelPolicy.evaluate(TournamentType.AMERICANO, Nivel.D9, Nivel.D6);
 
-        assertThat(result.allowedLevels()).containsExactly(Nivel.D7, Nivel.D6);
+        // Расчётный уровень D6 — 7: совпадает с C7, в пределах одной ступени от C8/C6/D7.
+        assertThat(result.allowedLevels())
+                .containsExactly(Nivel.C8, Nivel.C7, Nivel.C6, Nivel.D7, Nivel.D6)
+                .doesNotContain(Nivel.D5);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "D6, C7, ALLOWED",
+            "D7, C7, ALLOWED",
+            "D8, C7, LEVEL_MISMATCH",
+            "D9, C7, LEVEL_MISMATCH",
+            "D8, C9, ALLOWED",
+            "D9, C9, ALLOWED",
+            "D9, C8, LEVEL_MISMATCH",
+            "C7, D6, ALLOWED",
+            "C9, D6, LEVEL_MISMATCH",
+            "C7, C9, LEVEL_MISMATCH",
+            "C9, C7, LEVEL_MISMATCH",
+    })
+    void escalaDeEquivalenciaCD_parejasDeReferenciaDelCliente(
+            Nivel jugador, Nivel categoria, TournamentLevelPolicy.Verdict esperado) {
+        TournamentLevelPolicy.Result result =
+                TournamentLevelPolicy.evaluate(TournamentType.AMERICANO, categoria, jugador);
+        assertThat(result.verdict()).isEqualTo(esperado);
     }
 
     @Test
-    void generoDistinto_bloqueaAunqueOrdinalEsteCerca() {
-        // C4 (masculino, ordinal 5) y D9 (femenino, ordinal 11) nunca deberían mezclarse;
-        // este test fija la intención explícita del chequeo de género, no solo el ordinal.
+    void generoDistintoConNivelCalculadoCercano_permiteRegistro() {
+        // D6 (расчётный уровень 7) и C7 (7) эквивалентны по шкале 1-Padel — пол сам по себе
+        // больше не блокирует, только расстояние по расчётной шкале.
+        TournamentLevelPolicy.Result result =
+                TournamentLevelPolicy.evaluate(TournamentType.AMERICANO, Nivel.C7, Nivel.D6);
+
+        assertThat(result.verdict()).isEqualTo(TournamentLevelPolicy.Verdict.ALLOWED);
+    }
+
+    @Test
+    void generoDistintoConNivelCalculadoLejano_bloqueaPorNivelNoPorGenero() {
+        // C4 (4) и D9 (10) далеко друг от друга по расчётной шкале — блокировка из-за
+        // расстояния, а не из-за явной проверки пола (её больше нет).
         TournamentLevelPolicy.Result result =
                 TournamentLevelPolicy.evaluate(TournamentType.AMERICANO, Nivel.D9, Nivel.C4);
 

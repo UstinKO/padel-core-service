@@ -2,21 +2,24 @@ package com.padle.core.padelcoreservice.service;
 
 import com.padle.core.padelcoreservice.exception.PlayerLevelRequiredException;
 import com.padle.core.padelcoreservice.exception.TournamentRegistrationException;
+import com.padle.core.padelcoreservice.model.enums.GenderFormat;
 import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
 import org.springframework.context.MessageSource;
 
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 /**
- * LFPT-0303: правило "±1 ступень" для самостоятельной регистрации на категорийный турнир.
- * Чистая логика, без зависимостей от Spring — i18n-сообщения собирает вызывающий код
- * (TournamentService / DoubleTournamentRegistrationService) на основе {@link Result}.
+ * Правило "±1 ступень" для самостоятельной регистрации на категорийный турнир, по единой
+ * расчётной шкале, сопоставимой между мужскими (C) и женскими (D) категориями ({@link
+ * #calculatedLevel}) — пол категории сам по себе не блокирует регистрацию. Чистая логика,
+ * без зависимостей от Spring — i18n-сообщения собирает вызывающий код (TournamentService /
+ * DoubleTournamentRegistrationService) на основе {@link Result}.
  */
 public final class TournamentLevelPolicy {
 
@@ -58,14 +61,19 @@ public final class TournamentLevelPolicy {
         if (playerLevel == null || playerLevel == Nivel.SIN_ESPECIFICAR) {
             return new Result(Verdict.LEVEL_REQUIRED, List.of());
         }
-        // Сравнение по .ordinal() — хрупко к порядку объявления enum (см. предупреждение
-        // в issue #303 про TODOS), поэтому дополнительно проверяем совпадение пола явно,
-        // а не полагаемся на то, что мужская/женская шкалы случайно далеко друг от друга.
-        if (playerLevel.getGeneroAplicable() != categoriaNivel.getGeneroAplicable()
-                || Math.abs(playerLevel.ordinal() - categoriaNivel.ordinal()) > MAX_STEP_DIFFERENCE) {
+        if (Math.abs(calculatedLevel(playerLevel) - calculatedLevel(categoriaNivel)) > MAX_STEP_DIFFERENCE) {
             return new Result(Verdict.LEVEL_MISMATCH, allowedLevelsAround(playerLevel));
         }
         return Result.allowed();
+    }
+
+    // Шкала соответствия категорий 1-Padel: Cn → n, Dn → n+1 (например D6 ≈ C7). Только для
+    // сравнения допуска — не публичное значение, не меняет отображаемую категорию игрока.
+    // Вызывается только для "простых" категорий (Nivel.isPlayerLevel), где имя — буква
+    // пола + цифра, поэтому разбор имени безопасен.
+    private static int calculatedLevel(Nivel nivel) {
+        int digit = Integer.parseInt(nivel.name().substring(1));
+        return nivel.getGeneroAplicable() == GenderFormat.FEMENINO ? digit + 1 : digit;
     }
 
     // Общая точка для TournamentService / DoubleTournamentRegistrationService — собирает
@@ -91,13 +99,10 @@ public final class TournamentLevelPolicy {
     }
 
     private static List<Nivel> allowedLevelsAround(Nivel playerLevel) {
-        Nivel[] values = Nivel.values();
-        return IntStream.rangeClosed(
-                        playerLevel.ordinal() - MAX_STEP_DIFFERENCE,
-                        playerLevel.ordinal() + MAX_STEP_DIFFERENCE)
-                .filter(ordinal -> ordinal >= 0 && ordinal < values.length)
-                .mapToObj(ordinal -> values[ordinal])
+        int base = calculatedLevel(playerLevel);
+        return Arrays.stream(Nivel.values())
                 .filter(Nivel::isPlayerLevel)
+                .filter(nivel -> Math.abs(calculatedLevel(nivel) - base) <= MAX_STEP_DIFFERENCE)
                 .toList();
     }
 }
