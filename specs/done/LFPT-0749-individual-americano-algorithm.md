@@ -1,10 +1,10 @@
 # LFPT-0749: Fix алгоритм индивидуального Americano — равномерное распределение соперников и кортов, автопроверка расписания
 
 ## Статус
-approved
+done
 
 ## Источник
-Клиентский запрос [specs/requests/LFPT-0749-individual-americano-algorithm.md](../requests/LFPT-0749-individual-americano-algorithm.md), issue [#749](https://github.com/UstinKO/padel-core-service/issues/749). Telegram-сообщение (для reply): 5614.
+Клиентский запрос [specs/requests/LFPT-0749-individual-americano-algorithm.md](requests/LFPT-0749-individual-americano-algorithm.md), issue [#749](https://github.com/UstinKO/padel-core-service/issues/749). Telegram-сообщение (для reply): 5614.
 
 ## Контекст / зачем
 
