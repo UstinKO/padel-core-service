@@ -448,6 +448,8 @@ public void sendEmail(...) { ... }
 | `waitlist-notification.html` | Попал в лист ожидания |
 | `no-spots-left.html` | Мест нет совсем |
 | `recuperar-password.html` | Сброс пароля |
+| `registration-cancelled.html` | Отмена регистрации на турнир (LFPT-0752) |
+| `registration-moved-to-reserve.html` | Перевод из основного состава в резерв администратором (LFPT-0752) |
 
 ### Защита от переспама
 

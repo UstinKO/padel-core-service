@@ -639,6 +639,89 @@ public class EmailService {
         }
     }
 
+    // Подтверждение отмены регистрации — независимо от инициатора (игрок/админ/система)
+    @Timed(name = "email.send.time", tags = {"service=email", "type=registration_cancelled"})
+    @TrackErrors(name = "email.send.errors", tags = {"service=email", "type=registration_cancelled"})
+    @Async
+    public void sendRegistrationCancelledEmail(
+            @MetricTag("recipient") String to,
+            @MetricTag("playerName") String playerName,
+            String tournamentName,
+            String tournamentDate,
+            String tournamentTime,
+            String clubName,
+            String cancellationReason,
+            Locale locale) {
+
+        emailMetricsService.recordEmailAttempt("REGISTRATION_CANCELLED");
+        if (emailMetricsService.isDailyLimitReached(dailyEmailLimit)) {
+            log.warn("Daily email limit reached, skipping registration cancelled email to: {}", to);
+            emailMetricsService.recordEmailRejected("REGISTRATION_CANCELLED", "DAILY_LIMIT");
+            return;
+        }
+        try {
+            Context context = new Context(locale);
+            context.setVariable("playerName", playerName);
+            context.setVariable("tournamentName", tournamentName);
+            context.setVariable("tournamentDate", tournamentDate);
+            context.setVariable("tournamentTime", tournamentTime);
+            context.setVariable("clubName", clubName);
+            context.setVariable("cancellationReason", cancellationReason);
+            context.setVariable("year", java.time.Year.now().getValue());
+
+            String html = templateEngine.process("email/registration-cancelled", context);
+            String subject = messageSource.getMessage("email.registration_cancelled.subject", new Object[]{tournamentName}, locale);
+            sendHtmlEmail(to, subject, html);
+
+            emailMetricsService.recordEmailSent("REGISTRATION_CANCELLED");
+            log.info("✅ Registration cancelled email sent to: {}", to);
+        } catch (Exception e) {
+            emailMetricsService.recordEmailError("REGISTRATION_CANCELLED", e.getClass().getSimpleName());
+            log.error("❌ Error sending registration cancelled email to {}: {}", to, e.getMessage(), e);
+        }
+    }
+
+    // Перевод из основного состава в резерв (не отмена) — отдельное письмо от
+    // sendWaitlistNotificationEmail, которое используется при первичной постановке в очередь
+    @Timed(name = "email.send.time", tags = {"service=email", "type=moved_to_reserve"})
+    @TrackErrors(name = "email.send.errors", tags = {"service=email", "type=moved_to_reserve"})
+    @Async
+    public void sendMovedToReserveEmail(
+            @MetricTag("recipient") String to,
+            @MetricTag("playerName") String playerName,
+            String tournamentName,
+            String tournamentDate,
+            String tournamentTime,
+            String clubName,
+            Locale locale) {
+
+        emailMetricsService.recordEmailAttempt("MOVED_TO_RESERVE");
+        if (emailMetricsService.isDailyLimitReached(dailyEmailLimit)) {
+            log.warn("Daily email limit reached, skipping moved-to-reserve email to: {}", to);
+            emailMetricsService.recordEmailRejected("MOVED_TO_RESERVE", "DAILY_LIMIT");
+            return;
+        }
+        try {
+            Context context = new Context(locale);
+            context.setVariable("playerName", playerName);
+            context.setVariable("tournamentName", tournamentName);
+            context.setVariable("tournamentDate", tournamentDate);
+            context.setVariable("tournamentTime", tournamentTime);
+            context.setVariable("clubName", clubName);
+            context.setVariable("year", java.time.Year.now().getValue());
+
+            String html = templateEngine.process("email/registration-moved-to-reserve", context);
+            String subject = messageSource.getMessage("email.moved_to_reserve.subject", new Object[]{tournamentName}, locale);
+            sendHtmlEmail(to, subject, html);
+
+            emailMetricsService.recordEmailSent("MOVED_TO_RESERVE");
+            log.info("✅ Moved-to-reserve email sent to: {}", to);
+        } catch (Exception e) {
+            emailMetricsService.recordEmailError("MOVED_TO_RESERVE", e.getClass().getSimpleName());
+            log.error("❌ Error sending moved-to-reserve email to {}: {}", to, e.getMessage(), e);
+        }
+    }
+
     // Повторное напоминание за 3ч до старта, партнёр всё ещё не добавлен
     @Timed(name = "email.send.time", tags = {"service=email", "type=partner_final_reminder"})
     @TrackErrors(name = "email.send.errors", tags = {"service=email", "type=partner_final_reminder"})

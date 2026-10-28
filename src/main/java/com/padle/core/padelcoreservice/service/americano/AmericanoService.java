@@ -198,6 +198,8 @@ public class AmericanoService {
         registration.cancel(reason);
         registrationRepository.save(registration);
 
+        sendRegistrationCancelledEmail(registration.getPlayer(), registration.getTournament(), reason);
+
         if (oldStatus == RegistrationStatus.CONFIRMED) {
             processWaitlistAfterCancellation(tournamentId);
         }
@@ -1135,6 +1137,20 @@ public class AmericanoService {
                     getClubName(tournament.getClubId()), tournament.getFormattedCancellationDeadline(), player.getLocale());
         } catch (Exception e) {
             log.error("Error sending waitlist confirmation: {}", e.getMessage());
+        }
+    }
+
+    private void sendRegistrationCancelledEmail(PlayerPadel player, Tournament tournament, String reason) {
+        try {
+            String clubName = getClubName(tournament.getClubId());
+            String dateStr = tournament.getFechaInicio().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+            String timeStr = tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm"));
+
+            emailService.sendRegistrationCancelledEmail(
+                    player.getEmail(), player.getNombre(), tournament.getNombre(),
+                    dateStr, timeStr, clubName, reason, player.getLocale());
+        } catch (Exception e) {
+            log.error("Error sending registration cancelled email: {}", e.getMessage());
         }
     }
 
