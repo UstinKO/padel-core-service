@@ -1,10 +1,10 @@
 # LFPT-0756: Feature алгоритм формирования пар в «Короле корта» — учёт истории партнёрств для разнообразия команд
 
 ## Статус
-approved
+done
 
 ## Источник
-Клиентский запрос [specs/requests/LFPT-0756-koc-istoriya-partnerstv.md](../requests/LFPT-0756-koc-istoriya-partnerstv.md) (Telegram-сообщение 5712, issue [#756](https://github.com/UstinKO/padel-core-service/issues/756)).
+Клиентский запрос [specs/requests/LFPT-0756-koc-istoriya-partnerstv.md](requests/LFPT-0756-koc-istoriya-partnerstv.md) (Telegram-сообщение 5712, issue [#756](https://github.com/UstinKO/padel-core-service/issues/756)).
 
 ## Контекст / зачем
 
