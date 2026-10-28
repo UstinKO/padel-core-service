@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -199,67 +200,70 @@ public class KingOfCourtService {
     }
 
     /**
-     * Создание команд для корта
+     * Создание команд для корта первого раунда — история партнёрств пуста, поэтому все 3
+     * варианта равнозначны и выбор эквивалентен случайному.
      */
     private void createTeamsForCourt(KingOfCourtCourt court, List<PlayerPadel> players) {
+        createTeamsByPartnershipHistory(court, players, Map.of(), 0);
+    }
+
+    /**
+     * Формирует команды на корте, выбирая из 3 возможных разбиений четвёрки игроков вариант,
+     * наименее повторяющий прошлые партнёрства ({@link KingOfCourtPairingEngine}).
+     */
+    private void createTeamsByPartnershipHistory(KingOfCourtCourt court, List<PlayerPadel> players,
+            Map<KingOfCourtPairingEngine.PartnershipKey, KingOfCourtPairingEngine.PartnershipStats> partnershipHistory,
+            int justCompletedRoundNumber) {
         if (players.size() != 4) {
             log.warn("Court {} has {} players, expected 4", court.getCourtNumber(), players.size());
             return;
         }
 
-        List<List<List<PlayerPadel>>> possibleTeams = generatePossibleTeams(players);
+        List<Long> playerIds = players.stream().map(PlayerPadel::getId).toList();
+        List<List<Long>> selectedTeamIds = KingOfCourtPairingEngine.selectBestTeams(
+                playerIds, partnershipHistory, justCompletedRoundNumber, new Random());
 
-        if (possibleTeams.isEmpty()) {
-            return;
-        }
-
-        // Выбираем случайную комбинацию команд
-        List<List<PlayerPadel>> selectedTeams = possibleTeams.get(new Random().nextInt(possibleTeams.size()));
+        Map<Long, PlayerPadel> playersById = players.stream()
+                .collect(Collectors.toMap(PlayerPadel::getId, Function.identity()));
 
         CourtTeam team1 = new CourtTeam();
         team1.setCourt(court);
         team1.setTeamNumber(1);
-        team1.setPlayer1(selectedTeams.get(0).get(0));
-        team1.setPlayer2(selectedTeams.get(0).get(1));
+        team1.setPlayer1(playersById.get(selectedTeamIds.get(0).get(0)));
+        team1.setPlayer2(playersById.get(selectedTeamIds.get(0).get(1)));
 
         CourtTeam team2 = new CourtTeam();
         team2.setCourt(court);
         team2.setTeamNumber(2);
-        team2.setPlayer1(selectedTeams.get(1).get(0));
-        team2.setPlayer2(selectedTeams.get(1).get(1));
+        team2.setPlayer1(playersById.get(selectedTeamIds.get(1).get(0)));
+        team2.setPlayer2(playersById.get(selectedTeamIds.get(1).get(1)));
 
         court.setTeams(List.of(team1, team2));
     }
 
     /**
-     * Генерация всех возможных комбинаций команд
+     * Строит историю партнёрств по всем фактически сыгранным кортам турнира (включая
+     * калибровочные раунды) — только корты с введённым результатом.
      */
-    private List<List<List<PlayerPadel>>> generatePossibleTeams(List<PlayerPadel> players) {
-        List<List<List<PlayerPadel>>> combinations = new ArrayList<>();
+    private Map<KingOfCourtPairingEngine.PartnershipKey, KingOfCourtPairingEngine.PartnershipStats> buildPartnershipHistory(
+            TournamentKingOfCourt kingTournament) {
+        List<KingOfCourtPairingEngine.PlayedCourt> playedCourts = roundRepository
+                .findByTournamentKingOrderByRoundNumberAsc(kingTournament).stream()
+                .flatMap(round -> round.getCourts().stream()
+                        .filter(court -> court.getResult() != null)
+                        .map(court -> toPlayedCourt(round.getRoundNumber(), court)))
+                .toList();
+        return KingOfCourtPairingEngine.buildPartnershipHistory(playedCourts);
+    }
 
-        if (players.size() < 4) {
-            return combinations;
+    private KingOfCourtPairingEngine.PlayedCourt toPlayedCourt(int roundNumber, KingOfCourtCourt court) {
+        List<List<Long>> teamPairs = court.getTeams().stream()
+                .map(team -> List.of(team.getPlayer1().getId(), team.getPlayer2().getId()))
+                .toList();
+        if (teamPairs.size() != 2) {
+            throw new InvalidStateException("Court " + court.getId() + " must have exactly 2 teams, found " + teamPairs.size());
         }
-
-        // Вариант 1: (1,2) vs (3,4)
-        combinations.add(List.of(
-                List.of(players.get(0), players.get(1)),
-                List.of(players.get(2), players.get(3))
-        ));
-
-        // Вариант 2: (1,3) vs (2,4)
-        combinations.add(List.of(
-                List.of(players.get(0), players.get(2)),
-                List.of(players.get(1), players.get(3))
-        ));
-
-        // Вариант 3: (1,4) vs (2,3)
-        combinations.add(List.of(
-                List.of(players.get(0), players.get(3)),
-                List.of(players.get(1), players.get(2))
-        ));
-
-        return combinations;
+        return new KingOfCourtPairingEngine.PlayedCourt(roundNumber, teamPairs.get(0), teamPairs.get(1));
     }
 
     /**
@@ -475,8 +479,9 @@ public class KingOfCourtService {
         int requiredCourts = allPlayers.size() / 4;
         log.info("Required courts: {}", requiredCourts);
 
-        // Собираем карту прошлых партнеров, чтобы избежать повторения
-        Map<Long, Long> prevPartnerMap = buildPreviousPartnersMap(currentRound);
+        // Собираем историю партнёрств за весь турнир, чтобы выбрать наименее повторяющийся состав команд
+        Map<KingOfCourtPairingEngine.PartnershipKey, KingOfCourtPairingEngine.PartnershipStats> partnershipHistory =
+                buildPartnershipHistory(kingTournament);
 
         // Определяем новое распределение по кортам на основе результатов
         Map<Integer, List<PlayerPadel>> courtAssignments = calculateCourtAssignments(
@@ -509,8 +514,8 @@ public class KingOfCourtService {
                 court.setCourtNumber(courtNum);
                 court.setPlayers(new ArrayList<>(courtPlayers));
 
-                // Создаем команды, избегая повторения прошлых партнеров
-                createTeamsAvoidingPreviousPartners(court, courtPlayers, prevPartnerMap);
+                // Создаем команды, выбирая вариант с наименьшим количеством повторов по истории турнира
+                createTeamsByPartnershipHistory(court, courtPlayers, partnershipHistory, currentRound.getRoundNumber());
 
                 courtRepository.save(court);
                 courtsCreated++;
@@ -526,26 +531,6 @@ public class KingOfCourtService {
         kingRepository.save(kingTournament);
 
         return savedRound;
-    }
-
-    /**
-     * Сбор карты прошлых партнеров
-     */
-    private Map<Long, Long> buildPreviousPartnersMap(KingOfCourtRound round) {
-        Map<Long, Long> prevPartnerMap = new HashMap<>();
-
-        for (KingOfCourtCourt court : round.getCourts()) {
-            if (court.getResult() != null) {
-                // Победители были партнерами
-                prevPartnerMap.put(court.getResult().getWinner1().getId(), court.getResult().getWinner2().getId());
-                prevPartnerMap.put(court.getResult().getWinner2().getId(), court.getResult().getWinner1().getId());
-                // Проигравшие были партнерами
-                prevPartnerMap.put(court.getResult().getLoser1().getId(), court.getResult().getLoser2().getId());
-                prevPartnerMap.put(court.getResult().getLoser2().getId(), court.getResult().getLoser1().getId());
-            }
-        }
-
-        return prevPartnerMap;
     }
 
     /**
@@ -614,68 +599,6 @@ public class KingOfCourtService {
         }
 
         return assignments;
-    }
-
-    /**
-     * Создание команд, избегая прошлых партнеров
-     */
-    private void createTeamsAvoidingPreviousPartners(KingOfCourtCourt court, List<PlayerPadel> players,
-                                                     Map<Long, Long> prevPartnerMap) {
-        if (players.size() != 4) {
-            return;
-        }
-
-        List<List<List<PlayerPadel>>> possibleCombinations = generatePossibleTeams(players);
-
-        // Фильтруем комбинации, избегая повторения прошлых партнеров
-        List<List<List<PlayerPadel>>> validCombinations = possibleCombinations.stream()
-                .filter(comb -> {
-                    List<PlayerPadel> team1 = comb.get(0);
-                    List<PlayerPadel> team2 = comb.get(1);
-
-                    // Проверяем, не были ли эти игроки партнерами в прошлом раунде
-                    boolean team1Valid = true;
-                    boolean team2Valid = true;
-
-                    if (prevPartnerMap.containsKey(team1.get(0).getId())) {
-                        team1Valid = !prevPartnerMap.get(team1.get(0).getId()).equals(team1.get(1).getId());
-                    }
-                    if (prevPartnerMap.containsKey(team1.get(1).getId())) {
-                        team1Valid = team1Valid && !prevPartnerMap.get(team1.get(1).getId()).equals(team1.get(0).getId());
-                    }
-
-                    if (prevPartnerMap.containsKey(team2.get(0).getId())) {
-                        team2Valid = !prevPartnerMap.get(team2.get(0).getId()).equals(team2.get(1).getId());
-                    }
-                    if (prevPartnerMap.containsKey(team2.get(1).getId())) {
-                        team2Valid = team2Valid && !prevPartnerMap.get(team2.get(1).getId()).equals(team2.get(0).getId());
-                    }
-
-                    return team1Valid && team2Valid;
-                })
-                .collect(Collectors.toList());
-
-        // Если есть валидные комбинации, выбираем случайную, иначе берем любую
-        List<List<List<PlayerPadel>>> selectedCombinations = validCombinations.isEmpty() ?
-                possibleCombinations : validCombinations;
-
-        List<List<PlayerPadel>> selectedTeams = selectedCombinations.get(
-                new Random().nextInt(selectedCombinations.size())
-        );
-
-        CourtTeam team1 = new CourtTeam();
-        team1.setCourt(court);
-        team1.setTeamNumber(1);
-        team1.setPlayer1(selectedTeams.get(0).get(0));
-        team1.setPlayer2(selectedTeams.get(0).get(1));
-
-        CourtTeam team2 = new CourtTeam();
-        team2.setCourt(court);
-        team2.setTeamNumber(2);
-        team2.setPlayer1(selectedTeams.get(1).get(0));
-        team2.setPlayer2(selectedTeams.get(1).get(1));
-
-        court.setTeams(List.of(team1, team2));
     }
 
     /**
