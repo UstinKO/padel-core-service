@@ -654,6 +654,8 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 | `looking-for-partner-notification.html` | Соло-регистрация: уведомление игрокам, ищущим пару |
 | `pair-proposal.html` | Предложение объединиться в пару (ссылка `/double-registration/accept-pair`) |
 | `admin-solo-registration.html` | Администратору: новая соло-регистрация |
+| `registration-cancelled.html` | Отмена регистрации на турнир — независимо от инициатора (LFPT-0752) |
+| `registration-moved-to-reserve.html` | Перевод из основного состава в резерв администратором (LFPT-0752) |
 
 **Метрики Prometheus (Grafana):**
 - `email_daily` / `email_daily_limit` — дневной расход лимита

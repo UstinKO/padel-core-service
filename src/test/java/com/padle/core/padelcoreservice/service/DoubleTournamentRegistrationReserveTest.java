@@ -33,6 +33,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -267,6 +268,8 @@ class DoubleTournamentRegistrationReserveTest {
 
         assertThat(reg.getStatus()).isEqualTo(RegistrationStatus.CANCELLED);
         assertThat(reg.getIsActive()).isFalse();
+        verify(emailService).sendRegistrationCancelledEmail(
+                eq(player.getEmail()), eq(player.getNombre()), any(), any(), any(), any(), isNull(), any());
     }
 
     @Test
@@ -279,5 +282,7 @@ class DoubleTournamentRegistrationReserveTest {
         service.cancelReserveByToken("PAT_X"); // no debe lanzar
 
         verify(registrationRepository, never()).save(any());
+        verify(emailService, never()).sendRegistrationCancelledEmail(
+                any(), any(), any(), any(), any(), any(), any(), any());
     }
 }

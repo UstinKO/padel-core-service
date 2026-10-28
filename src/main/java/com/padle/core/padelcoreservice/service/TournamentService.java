@@ -512,6 +512,8 @@ public class TournamentService {
         log.info("Registration cancelled. Old status: {}, New status: {}, Active: {}",
                 oldStatus, registration.getStatus(), registration.getIsActive());
 
+        sendRegistrationCancelledEmail(registration.getPlayer(), tournament, reason);
+
         if (oldStatus == RegistrationStatus.CONFIRMED) {
             processWaitlistForTournament(tournamentId);
             if (tournament.getModalidad() == Modalidad.DOBLES) {
@@ -688,6 +690,49 @@ public class TournamentService {
             log.info("Tournament confirmation email sent to {}", player.getEmail());
         } catch (Exception e) {
             log.error("Error sending tournament confirmation email: {}", e.getMessage(), e);
+        }
+    }
+
+    private void sendRegistrationCancelledEmail(PlayerPadel player, Tournament tournament, String reason) {
+        try {
+            String dateStr = tournament.getFechaInicio().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+            String timeStr = tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm"));
+            String clubName = resolveClubName(tournament.getClubId());
+
+            emailService.sendRegistrationCancelledEmail(
+                    player.getEmail(),
+                    player.getNombre(),
+                    tournament.getNombre(),
+                    dateStr,
+                    timeStr,
+                    clubName,
+                    reason,
+                    player.getLocale()
+            );
+            log.info("Registration cancelled email sent to {}", player.getEmail());
+        } catch (Exception e) {
+            log.error("Error sending registration cancelled email: {}", e.getMessage(), e);
+        }
+    }
+
+    private void sendMovedToReserveEmail(PlayerPadel player, Tournament tournament) {
+        try {
+            String dateStr = tournament.getFechaInicio().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+            String timeStr = tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm"));
+            String clubName = resolveClubName(tournament.getClubId());
+
+            emailService.sendMovedToReserveEmail(
+                    player.getEmail(),
+                    player.getNombre(),
+                    tournament.getNombre(),
+                    dateStr,
+                    timeStr,
+                    clubName,
+                    player.getLocale()
+            );
+            log.info("Moved-to-reserve email sent to {}", player.getEmail());
+        } catch (Exception e) {
+            log.error("Error sending moved-to-reserve email: {}", e.getMessage(), e);
         }
     }
 
@@ -1149,16 +1194,18 @@ public class TournamentService {
 
         log.info("Found {} registrations to delete", registrations.size());
 
-        // Просто удаляем все найденные регистрации
+        Tournament tournament = tournamentRepository.findById(tournamentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tournament not found"));
+
+        // Удаляем все найденные регистрации — уведомляем каждого игрока пары до удаления
+        // его записи (после delete() у неё нет смысла читать поля для письма)
         for (TournamentRegistration reg : registrations) {
+            sendRegistrationCancelledEmail(reg.getPlayer(), tournament, reason);
             registrationRepository.delete(reg);
             log.info("Deleted registration id: {} for player: {}", reg.getId(), reg.getPlayer().getId());
         }
 
         // Обрабатываем лист ожидания, если освободились места
-        Tournament tournament = tournamentRepository.findById(tournamentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Tournament not found"));
-
         long confirmedCount = registrationRepository.countByTournamentIdAndStatus(
                 tournamentId, RegistrationStatus.CONFIRMED);
 
@@ -1527,9 +1574,9 @@ public class TournamentService {
         // Пересчитываем позиции для оставшихся игроков
         reorderPositions(tournamentId);
 
-        // Уведомляем игрока о переносе в лист ожидания
-        // (Bug #1 fix: ранее игрок не получал никакого письма при перемещении администратором)
-        sendWaitlistNotification(registration.getPlayer(), tournament, nextWaitlistPosition);
+        // Уведомляем игрока о переносе в резерв — отдельное письмо от sendWaitlistNotification,
+        // которое используется при первичной постановке в очередь при самой регистрации
+        sendMovedToReserveEmail(registration.getPlayer(), tournament);
     }
 
     @Transactional
@@ -1568,6 +1615,10 @@ public class TournamentService {
         // Нормализуем позиции CONFIRMED-игроков и пересчитываем лист ожидания
         reorderPositions(tournamentId);
         reorderWaitlist(tournamentId);
+
+        // Уведомляем игрока о переводе в основной состав (переиспользуем письмо авто-перевода —
+        // по смыслу оно подходит и для ручного перевода администратором)
+        sendWaitlistAutoConfirmEmail(registration.getPlayer(), tournament);
     }
 
     /**

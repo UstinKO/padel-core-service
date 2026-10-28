@@ -1259,9 +1259,30 @@ public class DoubleTournamentRegistrationService {
                     "Esta inscripción ya no está pendiente de compañero (fue completada o confirmada)");
         }
 
+        Tournament tournament = reg.getTournament();
         reg.cancel("No puede participar (desde email)");
         registrationRepository.save(reg);
+        sendRegistrationCancelledEmail(reg, tournament);
         log.info("Reserve registration cancelled by player via email link: registrationId={}", reg.getId());
+    }
+
+    private void sendRegistrationCancelledEmail(TournamentRegistration reg, Tournament tournament) {
+        String dateStr = tournament.getFechaInicio().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        String timeStr = tournament.getHoraInicio() != null
+                ? tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm"))
+                : "";
+        String clubName = resolveClubName(tournament.getClubId());
+
+        emailService.sendRegistrationCancelledEmail(
+                reg.getPlayer().getEmail(),
+                reg.getPlayer().getNombre(),
+                tournament.getNombre(),
+                dateStr,
+                timeStr,
+                clubName,
+                null,  // самоотмена игроком — внутренняя метка в cancellationReason не для показа пользователю
+                reg.getPlayer().getLocale()
+        );
     }
 
     // ── Объединить двух соло-игроков в пару (Variant C — admin) ──────────────

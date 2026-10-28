@@ -456,6 +456,8 @@ repository/
 | `partner-data-reminder.html`, `looking-for-partner-notification.html`, `pair-proposal.html`, `admin-solo-registration.html` | Соло-регистрация на парный турнир |
 | `partner-deadline-reserve.html` | Соло-регистрация (`SOLO_ADD_LATER`) переведена в резерв по дедлайну (старт − 24ч) (LFPT-0668) |
 | `partner-final-reminder.html` | Повторное напоминание за 3ч до старта резервной заявке без партнёра, с действиями добавить/подтвердить/отменить (LFPT-0668) |
+| `registration-cancelled.html` | Отмена регистрации на турнир — независимо от инициатора (игрок/админ/система), с причиной отмены, если она указана (LFPT-0752) |
+| `registration-moved-to-reserve.html` | Перевод игрока из основного состава в резерв администратором — отдельное письмо от постановки в очередь при регистрации (LFPT-0752) |
 
 ### Observability
 
