@@ -1,7 +1,7 @@
 # LFPT-0752: Email-уведомления при отмене регистрации и переводе в резерв
 
 ## Статус
-approved
+done
 
 ## Источник
 GitHub issue [#752](https://github.com/UstinKO/padel-core-service/issues/752) — технический вход от архитектора (Telegram, роль `architect`), напрямую, без `specs/requests/`.
