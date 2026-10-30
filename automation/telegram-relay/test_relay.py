@@ -1,5 +1,10 @@
 """Тесты разбора входящих сообщений релея (без сети)."""
 import unittest
+import socket
+import tempfile
+import threading
+from pathlib import Path
+from types import SimpleNamespace
 
 import relay
 
@@ -45,6 +50,35 @@ class BuildMessageFragmentTest(unittest.TestCase):
         fragment = relay.build_message_fragment(None, message(
             text="задача", forward_origin={"type": "hidden_user", "sender_user_name": "Женя"}))
         self.assertIn("переслано от Женя", fragment)
+
+
+class PipelineSocketTest(unittest.TestCase):
+    def test_socket_status_and_invalid_response_fail_closed(self):
+        for response, expected in [(b'{"paused":false}\n', False),
+                                   (b'{"paused":true}\n', True),
+                                   (b'{"paused":"false"}\n', True),
+                                   (b'broken\n', True), (b'{"paused":false}', True)]:
+            with self.subTest(response=response), tempfile.TemporaryDirectory() as tmp:
+                path = str(Path(tmp) / 'switch.sock')
+                server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                server.bind(path)
+                server.listen(1)
+
+                def serve():
+                    with server, server.accept()[0] as connection:
+                        connection.recv(32)
+                        connection.sendall(response)
+
+                thread = threading.Thread(target=serve)
+                thread.start()
+                cfg = SimpleNamespace(pipeline_status_socket=path)
+                self.assertEqual(relay.is_pipeline_paused(cfg), expected)
+                thread.join(timeout=3)
+                self.assertFalse(thread.is_alive())
+
+    def test_missing_socket_fails_closed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertTrue(relay.is_pipeline_paused(SimpleNamespace(pipeline_status_socket=str(Path(tmp) / 'missing'))))
 
 
 if __name__ == "__main__":

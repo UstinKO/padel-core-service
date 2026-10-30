@@ -39,6 +39,8 @@ class CodexExecutorTest(unittest.TestCase):
         self.assertEqual(env['GH_TOKEN'], 'writer')
         self.assertEqual(env['LOKI_ENABLED'], 'false')
         self.assertEqual(env['LOKI_URL'], 'http://127.0.0.1:1/loki/api/v1/push')
+        self.assertEqual(env['SERVER_ADDRESS'], '127.0.0.1')
+        self.assertEqual(env['SERVER_PORT'], '18080')
         self.assertEqual(self.executor.status(payload['execution_id']), 'accepted')
 
     def test_missing_cli_and_oversized_prompt_fail_without_starting_a_process(self):
