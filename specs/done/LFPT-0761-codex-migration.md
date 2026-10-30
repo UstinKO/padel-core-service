@@ -1,7 +1,7 @@
 # LFPT-0761: Feature среда разработки — переносим правила и конвейер на Codex
 
 ## Статус
-in-progress
+done
 
 ## Источник
 https://github.com/UstinKO/padel-core-service/issues/761
