@@ -71,6 +71,7 @@ def execute_locked(job, repository, timeout, binary):
             ).encode()
             remaining = max(1, int(deadline - time.time()))
             run_process([binary, 'exec', '--sandbox', 'workspace-write',
+                         '--add-dir', str(workspace / '.git'),
                          '-c', 'sandbox_workspace_write.network_access=true', '--json',
                          '--output-last-message', str(job / 'last-message.txt'), '-'],
                         workspace, output, remaining, prompt)
