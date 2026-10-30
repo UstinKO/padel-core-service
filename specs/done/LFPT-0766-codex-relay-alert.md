@@ -1,7 +1,7 @@
 # LFPT-0766: Fix уведомления конвейера — переносим контроль падения relay
 
 ## Статус
-approved
+done
 
 ## Источник
 https://github.com/UstinKO/padel-core-service/issues/766
