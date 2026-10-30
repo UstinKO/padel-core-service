@@ -1,7 +1,7 @@
 # LFPT-0764: Fix Codex-воркер — разрешаем Git только в копии задачи
 
 ## Статус
-approved
+done
 
 ## Источник
 https://github.com/UstinKO/padel-core-service/issues/764
