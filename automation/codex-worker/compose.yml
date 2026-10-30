@@ -1,0 +1,45 @@
+services:
+  postgres:
+    image: postgres:15
+    restart: unless-stopped
+    mem_limit: 512m
+    environment:
+      POSTGRES_DB: padel_codex_test
+      POSTGRES_USER: padel_codex
+      POSTGRES_PASSWORD: ${CODEX_DB_PASSWORD:?Укажите пароль отдельной тестовой БД}
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - codex_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U padel_codex -d padel_codex_test"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  worker:
+    build:
+      context: ..
+      dockerfile: codex-worker/Dockerfile
+    profiles: ["relay"]
+    restart: unless-stopped
+    network_mode: host
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+      - apparmor:padel-codex-worker
+      - seccomp:${CODEX_SECCOMP_FILE:-/opt/padel-codex/automation/codex-worker/seccomp.profile.json}
+    mem_limit: 2g
+    cpus: 1.0
+    env_file: ["${CODEX_ENV_FILE:?Укажите приватный файл окружения}"]
+    volumes:
+      - codex_state:/var/lib/padel-codex
+      - codex_home:/home/padel-codex
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  codex_postgres:
+  codex_state:
+  codex_home:

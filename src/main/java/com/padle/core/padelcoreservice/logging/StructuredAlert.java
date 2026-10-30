@@ -20,7 +20,7 @@ public final class StructuredAlert {
 
     static final String STRUCTURED_MDC_KEY = "alertStructured";
 
-    // Рынок проекта — Аргентина (CLAUDE.md), формат времени — как в примере заказчика (dd/MM/yyyy HH:mm).
+    // Рынок проекта — Аргентина (PROJECT.md), формат времени — как в примере заказчика (dd/MM/yyyy HH:mm).
     private static final ZoneId ZONE = ZoneId.of("America/Argentina/Buenos_Aires");
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     private static final int MAX_FIELD_LENGTH = 300;

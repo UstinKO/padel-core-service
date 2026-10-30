@@ -185,6 +185,6 @@ jobs:
             gh workflow run deploy.yml --ref master -f pr="$PR"
             gh pr comment "$PR" --body "🤖 pipeline-merge: влит автоматически, запущен деплой «Deploy PR #${PR}» — ${GITHUB_SERVER_URL}/${GH_REPO}/actions/workflows/deploy.yml"
           else
-            gh pr comment "$PR" --body "🤖 pipeline-merge: влит автоматически, деплой не нужен (только specs/.claude/docs)."
+            gh pr comment "$PR" --body "🤖 pipeline-merge: влит автоматически, деплой не нужен (только specs/.agents/docs и AGENTS.md)."
             next
           fi

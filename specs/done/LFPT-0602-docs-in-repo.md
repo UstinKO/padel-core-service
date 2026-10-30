@@ -16,14 +16,14 @@ done
 1. `docs/` в репозитории; приватными (в `.gitignore`) остаются `docs/infrastructure-security.md` (защита сервера: IP, лимиты, CrowdSec/UFW, runbook) и `docs/telegram-ai-pipeline.md` (SSH-доступ, идентификаторы роутины).
 2. Аудит публикуемого: ключей/токенов/паролей нет; IP сервера и доверенные IP убраны из `architecture.md`, `Home.md`, `auth-flow.md`; ссылки на приватные документы помечены.
 3. Пометки `[SECURITY]` в `docs/endpoints/*` сверены с кодом: 24 — «закрыто, сверено с кодом 2026-10-16» (с указанием, чем закрыто), 5 — «актуально на 2026-10-16»; сводка в `docs/endpoints/README.md`; F-00 — закрыто.
-4. `.claude/CLAUDE.md` — абзац «Документация `docs/`» для конвейера: что где лежит, приоритет кода и `MASTER.md` над документом, запрет писать IP/доступы в публичные файлы.
-5. Из публичных файлов убраны IP сервера и Telegram-идентификаторы (`.claude/CLAUDE.md`, `specs/features/telegram-remote-pipeline.md`); адрес — в приватном `.claude/SECURITY.md`.
+4. `.agents/PROJECT.md` — абзац «Документация `docs/`» для конвейера: что где лежит, приоритет кода и `MASTER.md` над документом, запрет писать IP/доступы в публичные файлы.
+5. Из публичных файлов убраны IP сервера и Telegram-идентификаторы (`.agents/PROJECT.md`, `specs/features/telegram-remote-pipeline.md`); адрес — в приватном `.agents/SECURITY.md`.
 
 ## Вне скоупа
 Доверенные IP по умолчанию в `RateLimitFilter` (код), закрытие `/actuator/prometheus`, `X-Real-IP` для `/ws`, приём refresh-токена как access, ограничение 443 диапазонами Cloudflare — отдельные задачи. История git не переписывается.
 
 ## Изменения в системе
-`.gitignore`, `docs/**`, `.claude/CLAUDE.md`, `specs/features/telegram-remote-pipeline.md`.
+`.gitignore`, `docs/**`, `.agents/PROJECT.md`, `specs/features/telegram-remote-pipeline.md`.
 
 ## Критерии приёмки
 - [ ] `docs/` в репозитории без двух приватных файлов.

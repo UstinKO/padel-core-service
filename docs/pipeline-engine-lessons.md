@@ -1,6 +1,10 @@
 # Движок задач конвейера: разобранные баги, гипотезы и грабли
 
-Журнал инцидентов движка задач (`scripts/telegram-relay/engine.py`, `relay.py`), роутины (`.claude/commands/develop-feature.md`) и оркестратора автомержа (`.github/workflows/pipeline-merge.yml`) за 2026-10-19 — 2026-10-28. Как всё устроено — в [pipeline-autonomy](pipeline-autonomy). Здесь собрано, что ломалось, какие гипотезы подтвердились, а какие нет, и чего не делать, чтобы не наступать на те же грабли.
+> Это журнал прежней реализации на Anthropic. Версионируемая реализация Codex находится в
+> `automation/telegram-relay/`; перенос и активация описаны в [codex-migration.md](codex-migration.md).
+> До переключения службы исходники работающего сервера по-прежнему нужно отдельно сверить.
+
+Журнал инцидентов движка задач (`scripts/telegram-relay/engine.py`, `relay.py`), роутины (`.agents/workflows/develop-feature.md`) и оркестратора автомержа (`.github/workflows/pipeline-merge.yml`) за 2026-10-19 — 2026-10-28. Как всё устроено — в [pipeline-autonomy](pipeline-autonomy). Здесь собрано, что ломалось, какие гипотезы подтвердились, а какие нет, и чего не делать, чтобы не наступать на те же грабли.
 
 **Читать перед** правкой движка, релея, оркестратора или `develop-feature.md`, а также перед разбором жалобы вида «задача висит», «ответа нет», «отчёт не пришёл».
 
@@ -14,7 +18,7 @@
    - `gh api -X GET search/issues -f q='repo:UstinKO/padel-core-service is:issue "Pipeline-Task: <N>"'` и то же с `is:pull-request`. Без `is:` поиск отвечает 422.
    - Таймлайн PR: `gh api repos/UstinKO/padel-core-service/issues/<PR>/timeline`. Видно, кто и когда ставил и снимал метки, когда был мерж.
    - Деплой и оркестратор: `gh run list --workflow deploy.yml`, `gh run list --workflow pipeline-merge.yml --json event,createdAt,conclusion`.
-2. **Состояние движка на сервере.** SSH на прод, адрес в приватном `.claude/SECURITY.md`. Чтение без согласования, изменения — только с явного «да» пользователя.
+2. **Состояние движка на сервере.** SSH на прод, адрес в приватном `.agents/SECURITY.md`. Чтение без согласования, изменения — только с явного «да» пользователя.
    - `journalctl -u telegram-relay --since ... | grep -E "INFO Задача #<N>|WARNING|ERROR"`. Переходы статусов пишутся как `Задача #N: running → stalled`.
    - «Написал задачу — бот молчит»: `grep -E "Обновление update_id|Пропускаю"`. Каждое обновление от Telegram пишется с типом, каждое отброшенное сообщение — с причиной, темой, отправителем, длиной текста и списком полей (сам текст не пишется). Нет строки `Обновление` — сообщение до релея не дошло (§3.13).
    - `engine.db`: на сервере нет `sqlite3`, читать через `python3 -c "import sqlite3; ..."`. Полезные поля таблицы `tasks`:

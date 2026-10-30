@@ -71,7 +71,7 @@ done
 - [ ] Запрос `GET /api/players/me/tournaments` от `Owner` (админ/организатор) — `403`, не 500 и не пустой список чужого игрока.
 - [ ] Неаутентифицированный запрос — `401`/редирект на форму логина (как остальной `/api/**` сейчас).
 - [ ] `./mvnw compile -DskipTests` и `./mvnw verify` — зелёные.
-- [ ] `docs/auth-flow.md` (§6 Google OAuth2) и `docs/endpoints/auth.md` обновлены под новый параметр `client=app`; `.claude/CLAUDE.md` REST API таблица — новая строка `GET /api/players/me/tournaments`.
+- [ ] `docs/auth-flow.md` (§6 Google OAuth2) и `docs/endpoints/auth.md` обновлены под новый параметр `client=app`; `.agents/PROJECT.md` REST API таблица — новая строка `GET /api/players/me/tournaments`.
 - [ ] `python3 .github/bin/docs-drift.py` — 0 расхождений.
 
 ## Edge cases

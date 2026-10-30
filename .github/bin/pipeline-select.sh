@@ -23,13 +23,13 @@ set -euo pipefail
 R="${GITHUB_REPOSITORY:?нужен GITHUB_REPOSITORY}"
 DRY="${DRY_RUN:-false}"
 RUN_URL="${GITHUB_RUN_URL:-}"
-DOCS_RE='^(specs|\.claude|docs)/'
+DOCS_RE='^((specs|\.agents|\.claude|docs)/|AGENTS\.md$)'
 
 out() {
   if [ -n "${GITHUB_OUTPUT:-}" ]; then echo "$1" >> "$GITHUB_OUTPUT"; else echo "OUTPUT $1"; fi
 }
 
-# PR менял что-то кроме specs/.claude/docs → после мержа нужен деплой.
+# PR менял что-то кроме specs/.agents/docs и AGENTS.md → после мержа нужен деплой.
 needs_deploy() {
   # Список целиком в переменную: grep -q в конвейере закрыл бы pipe раньше времени,
   # gh получил бы SIGPIPE, и под pipefail результат был бы ложным.

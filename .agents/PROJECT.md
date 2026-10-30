@@ -1,6 +1,6 @@
-# CLAUDE.md
+# PROJECT.md — техническая карта проекта
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Технический справочник для Codex. Точка входа и обязательные правила — `AGENTS.md` в корне репозитория.
 
 ---
 
@@ -10,11 +10,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Stack:** Java 17 (source) / Java 21 (Docker/CI), Spring Boot 4.1 (Spring 7, Security 7, Hibernate 7, Jackson 3), PostgreSQL 15, Liquibase, Spring Security (JWT + form login + Google OAuth2), Spring WebSocket (STOMP/SockJS), Micrometer + Prometheus + Grafana + Loki, Bucket4j, MapStruct, Lombok.
 
-**Server security stack:** Nginx (rate limiting, DDoS protection, Cloudflare real_ip_module) + CrowdSec (behavioral IDS/IPS, iptables bouncer) + UFW + Cloudflare CDN (orange cloud для `1-padel.com`). Подробнее — [.claude/SECURITY.md](.claude/SECURITY.md). Каталог атак, за счёт чего каждая останавливается, и открытые риски — [.claude/THREATS.md](.claude/THREATS.md).
+**Server security stack:** Nginx (rate limiting, DDoS protection, Cloudflare real_ip_module) + CrowdSec (behavioral IDS/IPS, iptables bouncer) + UFW + Cloudflare CDN (orange cloud для `1-padel.com`). Подробнее — [.agents/SECURITY.md](SECURITY.md). Каталог атак, за счёт чего каждая останавливается, и открытые риски — [.agents/THREATS.md](THREATS.md).
 
-**Git-flow и код-ревью:** задача = GitHub issue с заголовком `LFPT-XXXX: <Fix|Feature> <что> — <что делаем>` на русском (номер issue с нулями до 4 цифр; заголовок issue = коммит = PR, в описании PR `Closes #N`), метки тип + `frontend`/`backend` + `format:*`, фронт и бэк — отдельными задачами ([GIT_WORKFLOW.md §1](GIT_WORKFLOW.md)); ветка от `master` вида `feature/LFPT-XXXX`, обязательная локальная проверка перед коммитом, коммит без push/PR (пушит и ревьюит пользователь сам) — [.claude/GIT_WORKFLOW.md](.claude/GIT_WORKFLOW.md). Стандарты качества кода (DRY/KISS/SOLID, соответствие ТЗ, известные архитектурные ловушки проекта) — [.claude/CODE_REVIEW.md](.claude/CODE_REVIEW.md). Стиль Java-кода (современный Java 17: `Optional` вместо `null`, Stream API, `record`, switch-выражения, без `catch (Exception)`) — [.claude/CODE_STYLE.md](.claude/CODE_STYLE.md), обязателен для любого нового и изменяемого кода.
+**Git-flow и код-ревью:** задача = GitHub issue с заголовком `LFPT-XXXX: <Fix|Feature> <что> — <что делаем>` на русском (номер issue с нулями до 4 цифр; заголовок issue = коммит = PR, в описании PR `Closes #N`), метки тип + `frontend`/`backend` + `format:*`, фронт и бэк — отдельными задачами ([GIT_WORKFLOW.md §1](GIT_WORKFLOW.md)); ветка от `master` вида `feature/LFPT-XXXX`, обязательная локальная проверка перед коммитом, коммит без push/PR (пушит и ревьюит пользователь сам) — [.agents/GIT_WORKFLOW.md](GIT_WORKFLOW.md). Стандарты качества кода (DRY/KISS/SOLID, соответствие ТЗ, известные архитектурные ловушки проекта) — [.agents/CODE_REVIEW.md](CODE_REVIEW.md). Стиль Java-кода (современный Java 17: `Optional` вместо `null`, Stream API, `record`, switch-выражения, без `catch (Exception)`) — [.agents/CODE_STYLE.md](CODE_STYLE.md), обязателен для любого нового и изменяемого кода.
 
-**Spec-Driven Development:** проект разрабатывается по спекам, не по интуиции. [specs/MASTER.md](../specs/MASTER.md) — единый источник истины по бизнес-логике продукта (роли, форматы турниров, статусы регистрации, инварианты). Любая новая фича начинается со спеки в `specs/features/LFPT-XXX-*.md` (шаблон — `specs/features/_template.md`), согласованной с MASTER.md, и только потом переходит в код. Клиентские запросы на доработку оформляются в `specs/requests/` по шаблону `specs/requests/_template.md` и перерабатываются в полную фиче-спеку до начала реализации. Перед любой задачей по фиче — сначала прочитать соответствующую спеку и MASTER.md, не додумывать поведение системы. Есть автономный конвейер `/develop-feature` (Analyst → Developer → Tester → Architect, роли в `.claude/agents/`), который проводит фичу от клиентского запроса до PR — см. [.claude/GIT_WORKFLOW.md §8](GIT_WORKFLOW.md) про его права/ограничения.
+**Spec-Driven Development:** проект разрабатывается по спекам, не по интуиции. [specs/MASTER.md](../specs/MASTER.md) — единый источник истины по бизнес-логике продукта (роли, форматы турниров, статусы регистрации, инварианты). Любая новая фича начинается со спеки в `specs/features/LFPT-XXX-*.md` (шаблон — `specs/features/_template.md`), согласованной с MASTER.md, и только потом переходит в код. Клиентские запросы на доработку оформляются в `specs/requests/` по шаблону `specs/requests/_template.md` и перерабатываются в полную фиче-спеку до начала реализации. Перед любой задачей по фиче — сначала прочитать соответствующую спеку и MASTER.md, не додумывать поведение системы. Есть автономный конвейер `$develop-feature` (Analyst → Developer → Tester → Architect, роли в `.agents/roles/`), который проводит фичу от клиентского запроса до PR — см. [.agents/GIT_WORKFLOW.md §8](GIT_WORKFLOW.md) про его права/ограничения.
 
 **Документация `docs/`** (в репозитории с LFPT-0602) — контекст приложения для конвейера и людей: [docs/Home.md](../docs/Home.md) — оглавление; архитектура и деплой (`architecture.md`), БД (`database-architecture.md`), домены и все эндпоинты (`domain-overview.md`, `endpoints/`), аутентификация (`auth-flow.md`), i18n (`i18n/`), переход на React (`frontend-react/`), автономный конвейер (`pipeline-autonomy.md`). Перед задачей в незнакомой области — прочитать соответствующий раздел, но источник истины по бизнес-логике — `specs/MASTER.md`, по поведению — код: если документ расходится с кодом, верить коду и поправить документ в том же PR. Пометки `[SECURITY — закрыто/актуально на <дата>]` и `[закрыто, сверено с кодом <дата>]` в `docs/endpoints/*` — результат сверки с кодом на указанную дату. **Документация обновляется в том же PR, что и код** — карта «что изменил → какой документ» в [docs/Home.md § Как поддерживать актуальность](../docs/Home.md#как-поддерживать-актуальность); механические расхождения (версия схемы, колонки, enum, эндпоинты, классы) проверяет `python3 .github/bin/docs-drift.py`, сверено до 0 на 2026-10-16 (LFPT-0615). `docs/infrastructure-security.md` и `docs/telegram-ai-pipeline.md` — приватные (в `.gitignore`), в облачном клоне их нет и не должно быть; IP сервера, доверенные IP, SSH-доступы и идентификаторы роутины в `docs/` и любые публичные файлы не писать.
 
@@ -496,7 +496,7 @@ Email Prometheus-метрики: `email_daily`, `email_daily_limit`, `email_sent
 
 Push в `master` запускает `.github/workflows/deploy.yml`: сборка JAR → SCP на сервер в `/opt/padel-app/temp/` → пересборка Docker-образа (`docker compose build --no-cache padel-app`) → перезапуск контейнера → health-check: опрос `/actuator/health/readiness` каждые 5 с до 5 минут, успех — только HTTP 200 (не grep логов — LFPT-331; readiness, а не общий `/actuator/health`, чтобы недоступный SMTP не откатывал деплой), упавший/перезапускающийся контейнер — откат сразу. При неудаче — автоматический rollback из `app.jar.backup`. На сервере запущен полный `docker-compose.yml` стек.
 
-### Серверный стек (production; адрес сервера — в приватном `.claude/SECURITY.md`)
+### Серверный стек (production; адрес сервера — в приватном `.agents/SECURITY.md`)
 
 ```
 [UFW / iptables]
@@ -511,9 +511,9 @@ Push в `master` запускает `.github/workflows/deploy.yml`: сборка
                               └─ Prometheus :9090 (Docker, + scrapes CrowdSec :6060)
 ```
 
-Все Docker-порты привязаны к `127.0.0.1` (localhost binding) — прямой доступ из интернета закрыт. Подробнее — [.claude/SECURITY.md](.claude/SECURITY.md).
+Все Docker-порты привязаны к `127.0.0.1` (localhost binding) — прямой доступ из интернета закрыт. Подробнее — [.agents/SECURITY.md](SECURITY.md).
 
-**Доступ для анализа:** при необходимости диагностики (проверить состояние контейнеров, логи, `current_version.txt`, health-check и т.п.) — SSH на сервер напрямую (`ssh root@<адрес сервера>`, адрес — в приватном `.claude/SECURITY.md`, в облачной роутине недоступен и не нужен). Для рутинной проверки статуса деплоя предпочтительнее `gh run view <run-id> --log` (шаг "Health check" в `deploy.yml` печатает то же самое, но без SSH) — см. `.claude/commands/develop-feature.md § Шаг 7`. Read-only диагностика по SSH не требует отдельного согласования; любые изменения на сервере — по-прежнему только с отдельным согласованием (см. `GIT_WORKFLOW.md §7`).
+**Доступ для анализа:** при необходимости диагностики (проверить состояние контейнеров, логи, `current_version.txt`, health-check и т.п.) — SSH на сервер напрямую (`ssh root@<адрес сервера>`, адрес — в приватном `.agents/SECURITY.md`, в облачной роутине недоступен и не нужен). Для рутинной проверки статуса деплоя предпочтительнее `gh run view <run-id> --log` (шаг "Health check" в `deploy.yml` печатает то же самое, но без SSH) — см. `.agents/workflows/develop-feature.md § Шаг 7`. Read-only диагностика по SSH не требует отдельного согласования; любые изменения на сервере — по-прежнему только с отдельным согласованием (см. `GIT_WORKFLOW.md §7`).
 
 ---
 
@@ -521,7 +521,7 @@ Push в `master` запускает `.github/workflows/deploy.yml`: сборка
 
 - `@Transactional(readOnly = true)` — дефолт на уровне класса в большинстве сервисов; write-методы переопределяют через `@Transactional`.
 - Язык домена смешанный: поля entity на испанском (`nombre`, `fechaInicio`, `modalidad`), комментарии и логи на русском.
-- Язык работы — русский (все разработчики русскоязычные): issue (заголовок и описание), ТЗ в `specs/**`, документация в `docs/**` и `.claude/**`, коммиты и описания PR — на русском. Подробно — [GIT_WORKFLOW.md §1.5](GIT_WORKFLOW.md).
+- Язык работы — русский (все разработчики русскоязычные): issue (заголовок и описание), ТЗ в `specs/**`, документация в `docs/**` и `.agents/**`, коммиты и описания PR — на русском. Подробно — [GIT_WORKFLOW.md §1.5](GIT_WORKFLOW.md).
 - `PlayerPadel.hasValidContact()` — регистрация на турнир требует телефон `+54` **или** Telegram username.
 - `TournamentLevelPolicy` (LFPT-0303) — самостоятельная регистрация на турнир с "простой" категорией (`Nivel.isPlayerLevel(categoriaNivel)`, т.е. `C9..C4`/`D9..D6`) требует уровень игрока в пределах ±1 ступени от категории турнира; не применяется к `CANCHA_ABIERTA`/`PADEL_CLINIC`, `TODOS`/`PRINCIPIANTES`/диапазонам/`SUMA_*`. Проверяется в `TournamentService.registerPlayer()` и в точках самостоятельной регистрации `DoubleTournamentRegistrationService` (не в `TestTournamentController` — ручная регистрация организатором не ограничивается).
 - `TestTournamentController` работает напрямую через JDBC (`DataSource`), **не через JPA**. Используется только для внутреннего тестирования организатором.

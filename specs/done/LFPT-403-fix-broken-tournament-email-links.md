@@ -10,7 +10,7 @@ Telegram-сообщение (для reply): 4553
 
 ## Контекст / зачем
 
-Игрок получил письмо об авто-подтверждении из листа ожидания (`vacancy-invitation.html`) с кнопкой "🏆 Посмотреть турнир" (`email.vacancy.btn`), кликнул — сайт не открылся. Причина: `TournamentService.sendWaitlistAutoConfirmEmail(...)` строит `tournamentUrl` как `{baseUrl}/tournaments/{id}` (английский, множественное число), а реального роута `/tournaments/{id}` в приложении нет — только `/torneo/{id}` (`TournamentViewController`, `@RequestMapping("/torneo")`, см. `.claude/CLAUDE.md` § Navigation Map). Переход по этой ссылке даёт 404 — ровно то, что описал игрок ("куда-то не туда редиректится и не открывается сайт").
+Игрок получил письмо об авто-подтверждении из листа ожидания (`vacancy-invitation.html`) с кнопкой "🏆 Посмотреть турнир" (`email.vacancy.btn`), кликнул — сайт не открылся. Причина: `TournamentService.sendWaitlistAutoConfirmEmail(...)` строит `tournamentUrl` как `{baseUrl}/tournaments/{id}` (английский, множественное число), а реального роута `/tournaments/{id}` в приложении нет — только `/torneo/{id}` (`TournamentViewController`, `@RequestMapping("/torneo")`, см. `.agents/PROJECT.md` § Navigation Map). Переход по этой ссылке даёт 404 — ровно то, что описал игрок ("куда-то не туда редиректится и не открывается сайт").
 
 Тот же неверный паттерн (копипаста) найден ещё в двух местах, формирующих ссылки на турнир в других письмах игрокам:
 - `SoloRegistrationSchedulerService.sendPartnerDataReminders()` — 48-часовое напоминание игрокам с `SOLO_ADD_LATER` донести данные партнёра.
@@ -64,4 +64,4 @@ Email-шаблоны (`src/main/resources/templates/email/vacancy-invitation.htm
 - Существующие уже отправленные письма со старой (битой) ссылкой — не переотправляются задним числом, это не входит в скоуп (пользователи, которым уже пришло письмо с 404-ссылкой, не получают повторное письмо — вне скоупа фикса).
 
 ## Открытые вопросы
-Нет — техническая неоднозначность отсутствует, единственно верный паттерн URL (`/torneo/{id}`) уже используется в проекте (`TelegramReminderScheduler`) и в `.claude/CLAUDE.md` Navigation Map.
+Нет — техническая неоднозначность отсутствует, единственно верный паттерн URL (`/torneo/{id}`) уже используется в проекте (`TelegramReminderScheduler`) и в `.agents/PROJECT.md` Navigation Map.

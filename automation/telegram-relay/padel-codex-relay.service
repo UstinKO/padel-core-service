@@ -1,0 +1,23 @@
+[Unit]
+Description=padel-core-service Telegram to Codex worker
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=padel-codex
+Group=padel-codex
+WorkingDirectory=/opt/padel-codex/automation/telegram-relay
+EnvironmentFile=/etc/padel-codex/relay.env
+ExecStart=/usr/bin/python3 /opt/padel-codex/automation/telegram-relay/relay.py
+StateDirectory=padel-codex
+StateDirectoryMode=0700
+UMask=0077
+Restart=on-failure
+RestartSec=5
+KillMode=control-group
+
+[Install]
+WantedBy=multi-user.target

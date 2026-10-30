@@ -6,6 +6,9 @@ Spring Boot монолит для управления падель-турнир
 
 ## Документация
 
+Переход среды разработки на Codex: [правила, запуск и активация конвейера](codex-migration.md).
+Точка входа для агента — корневой `AGENTS.md`, подробные правила — `.agents/`.
+
 | Раздел | Описание |
 |--------|----------|
 | [Архитектура базы данных](database-architecture) | Все 21 таблица, столбцы, типы, enum-справочники, ERD, история миграций |
@@ -27,14 +30,14 @@ Spring Boot монолит для управления падель-турнир
 
 ## Как поддерживать актуальность
 
-`docs/` — контекст для автономного конвейера: агенты читают его перед задачей, поэтому устаревший документ хуже отсутствующего. Правило: **кто меняет код — правит документ в том же PR** (роли конвейера — `.claude/agents/*.md`, проверка — Шаг 4 `.claude/commands/develop-feature.md`).
+`docs/` — контекст для автономного конвейера: агенты читают его перед задачей, поэтому устаревший документ хуже отсутствующего. Правило: **кто меняет код — правит документ в том же PR** (роли конвейера — `.agents/roles/*.md`, проверка — Шаг 4 `.agents/workflows/develop-feature.md`).
 
 | Изменение в коде | Что обновить |
 |------------------|--------------|
-| Новый, изменённый или удалённый HTTP-эндпоинт | Таблица домена в [domain-overview](domain-overview); подробности — в `endpoints/<файл>.md`, если эндпоинт там описан; таблицы URL в `.claude/CLAUDE.md` |
-| Liquibase-миграция, поле entity, значение enum | [database-architecture](database-architecture): колонка, enum, «История миграций», версия схемы в шапке; «Текущая версия» в [architecture](architecture) и в `.claude/CLAUDE.md` |
+| Новый, изменённый или удалённый HTTP-эндпоинт | Таблица домена в [domain-overview](domain-overview); подробности — в `endpoints/<файл>.md`, если эндпоинт там описан; таблицы URL в `.agents/PROJECT.md` |
+| Liquibase-миграция, поле entity, значение enum | [database-architecture](database-architecture): колонка, enum, «История миграций», версия схемы в шапке; «Текущая версия» в [architecture](architecture) и в `.agents/PROJECT.md` |
 | `SecurityConfig`, `@PreAuthorize`, фильтры, JWT | [auth-flow](auth-flow), строка «Аутентификация» в `endpoints/*.md` |
-| Email-шаблон | Таблица шаблонов в [domain-overview](domain-overview) § Notifications и в `.claude/CLAUDE.md` |
+| Email-шаблон | Таблица шаблонов в [domain-overview](domain-overview) § Notifications и в `.agents/PROJECT.md` |
 | Деплой, CI, Docker, мониторинг | [architecture](architecture); конвейер — [pipeline-autonomy](pipeline-autonomy) |
 | i18n | [i18n/README](i18n/README) |
 | Клиент 1Padel.App (`mobile-app/**`) | `mobile-app/README.md` (контракт с сервером); пересобрать и закоммитить `static/app/` (`pnpm build:site`) |
