@@ -70,8 +70,8 @@
 - [ ] Экраны `NotFound`, `Forbidden`, `RateLimited`, `ServerError`.
 
 **Процесс**
-- [ ] Правила фронта в `.claude/CODE_REVIEW.md`; обновить `.claude/agents/developer.md`, `tester.md`; шаблон фиче-спеки — раздел «экран из contract/screens.md».
-- [ ] Обновить `.claude/CLAUDE.md` (стек, команды, где фронт) и исправить F-11.
+- [ ] Правила фронта в `.agents/CODE_REVIEW.md`; обновить `.agents/roles/developer.md`, `tester.md`; шаблон фиче-спеки — раздел «экран из contract/screens.md».
+- [ ] Обновить `.agents/PROJECT.md` (стек, команды, где фронт) и исправить F-11.
 
 **Готово, когда:** прод работает как раньше; `mvn package` даёт jar с `/app/`; скрытый служебный маршрут (например `/admin/_spa-health` для SUPER_ADMIN) рендерит SPA в `<AdminLayout>` с данными из `/api/auth/session`; CI проверяет типы API и словари.
 
@@ -127,7 +127,7 @@ U-01 дашборд → U-02 профиль → P-11 принять пару →
 - [ ] Удалить form-POST дубли действий, мёртвые маршруты (#330, #335).
 - [ ] CSP: убрать `'unsafe-inline'` из `script-src`, убрать `cdnjs`/`jsdelivr`/Google Fonts.
 - [ ] `thymeleaf-extras-springsecurity6` — удалить, если больше не нужен (письмам не нужен).
-- [ ] Обновить `.claude/CLAUDE.md` (Navigation Map → роуты SPA), `docs/endpoints/*`, пометить этот каталог как завершённый.
+- [ ] Обновить `.agents/PROJECT.md` (Navigation Map → роуты SPA), `docs/endpoints/*`, пометить этот каталог как завершённый.
 
 ## Фаза 7 (вне плана). Вынос фронта в отдельный сервис
 

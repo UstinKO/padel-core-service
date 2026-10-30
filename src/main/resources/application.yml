@@ -227,5 +227,5 @@ telegram:
 
 # ------ SDD-КОНВЕЙЕР ЧЕРЕЗ TELEGRAM (scripts/telegram-relay/) ------
 pipeline:
-  # общий секрет с relay для /api/internal/telegram-pipeline/status — см. .claude/GIT_WORKFLOW.md §8
+  # общий секрет с relay для /api/internal/telegram-pipeline/status — см. .agents/GIT_WORKFLOW.md §8
   shared-secret: ${PIPELINE_SHARED_SECRET:}

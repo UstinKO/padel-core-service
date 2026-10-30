@@ -61,3 +61,14 @@ src/main/java/com/padle/core/padelcoreservice/util/PasswordGenerator.java
 # матчило и mobile-app/scripts/, из-за чего build-site.mjs никогда не попадал в git.
 /scripts/
 design-screenshots/
+# Codex private files and runtime state
+.agents/SECURITY.md
+.agents/THREATS.md
+.agents/archive/claude-settings.json
+.agents/settings.local.json
+.agents/worktrees/
+.agents/runtime/
+.codex/auth.json
+.codex/config.local.toml
+__pycache__/
+/automation/telegram-relay/runtime/

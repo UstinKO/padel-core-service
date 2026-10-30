@@ -30,7 +30,7 @@
 - `SecurityConfig`: `/test/telegram/**` в `permitAll()` и в `csrf.ignoringRequestMatchers(...)`. `TelegramTestController` — без `@Profile`, без `@PreAuthorize`.
 - Прод-nginx (`/etc/nginx/sites-enabled/epadel`, прочитано по SSH) отдельного `location` для `/test/` не имеет — запросы уходят в приложение через `location /`.
 - Что может сделать любой анонимный запрос: `POST /test/telegram/ping` и `/error` — сообщения в рабочую Telegram-группу; `POST /test/telegram/reminders` и `/reminders/force/{tournamentId}` — **разослать напоминания игрокам турнира**; `POST /test/telegram/attacks` — перезаписать счётчик `RateLimitFilter.BLOCKED_TODAY` (искажает сводку атак); `GET /test/telegram/status` — раскрыть chatId/threadId.
-- Предлагаемый фикс: `.requestMatchers("/test/telegram/**").hasRole("SUPER_ADMIN")` (как у `/test/tournaments/**`) и убрать из CSRF-исключений, либо `@Profile("dev")` на контроллер. Отдельный issue, **не ждать фронт-переезда**. Обновить `.claude/THREATS.md` (сейчас там это описано как осознанное исключение).
+- Предлагаемый фикс: `.requestMatchers("/test/telegram/**").hasRole("SUPER_ADMIN")` (как у `/test/tournaments/**`) и убрать из CSRF-исключений, либо `@Profile("dev")` на контроллер. Отдельный issue, **не ждать фронт-переезда**. Обновить `.agents/THREATS.md` (сейчас там это описано как осознанное исключение).
 
 ### F-01. `GET /tournaments/team-americano/{id}/ranking` → ошибка сервера — **подтверждено**
 
@@ -58,7 +58,7 @@
 
 ### F-07. `POST /players/api/registro` недоступен анонимно — **подтверждено**
 
-В `permitAll()` перечислены `/api/players/registro` и `/api/players/confirmar-email/**`, а реальные пути — `/players/api/registro` и `/players/api/confirmar-email` (`PlayerPadelController` c `@RequestMapping("/players")`). Итог: JSON-регистрация требует входа, т.е. не работает. Кроме того, `RateLimitFilter` и honeypot/reCAPTCHA-логика завязаны на form-путь `POST /players/registro` — при починке JSON-пути проверить, что все слои anti-abuse (см. CLAUDE.md «Registration Anti-Abuse») применяются и к нему.
+В `permitAll()` перечислены `/api/players/registro` и `/api/players/confirmar-email/**`, а реальные пути — `/players/api/registro` и `/players/api/confirmar-email` (`PlayerPadelController` c `@RequestMapping("/players")`). Итог: JSON-регистрация требует входа, т.е. не работает. Кроме того, `RateLimitFilter` и honeypot/reCAPTCHA-логика завязаны на form-путь `POST /players/registro` — при починке JSON-пути проверить, что все слои anti-abuse (см. PROJECT.md «Registration Anti-Abuse») применяются и к нему.
 
 ### F-08. `/api/**` без входа отвечает редиректом на `/login` — **подтверждено**
 
@@ -66,7 +66,7 @@
 
 ### F-09. Роль `OWNER` не существует — **подтверждено**
 
-`OwnerRole` = `SUPER_ADMIN, ORGANIZER, ADMIN, CLUB_ADMIN`; `Owner.getAuthorities()` выдаёт `ROLE_` + одно из них. При этом `ROLE_OWNER` / `hasRole('OWNER')` встречается в: URL-правиле `/admin/**`, `customAuthenticationSuccessHandler`, `@PreAuthorize` King of Court, `DataExportController` (`SUPER_ADMIN or OWNER`), `TournamentViewController#deleteTournament` (**только** `OWNER` → `POST /torneo/{id}/delete` недоступен никому). В `.claude/CLAUDE.md` роль `ROLE_OWNER` тоже заявлена. Безвредно (проверки просто никогда не проходят по этой ветке), но вводит в заблуждение при переносе прав в SPA.
+`OwnerRole` = `SUPER_ADMIN, ORGANIZER, ADMIN, CLUB_ADMIN`; `Owner.getAuthorities()` выдаёт `ROLE_` + одно из них. При этом `ROLE_OWNER` / `hasRole('OWNER')` встречается в: URL-правиле `/admin/**`, `customAuthenticationSuccessHandler`, `@PreAuthorize` King of Court, `DataExportController` (`SUPER_ADMIN or OWNER`), `TournamentViewController#deleteTournament` (**только** `OWNER` → `POST /torneo/{id}/delete` недоступен никому). В `.agents/PROJECT.md` роль `ROLE_OWNER` тоже заявлена. Безвредно (проверки просто никогда не проходят по этой ветке), но вводит в заблуждение при переносе прав в SPA.
 
 ### F-10. Rate limit GENERAL редиректит даже `/api/**` — **подтверждено**
 
@@ -74,9 +74,9 @@
 
 ### F-11. Документация расходится с кодом — **подтверждено**
 
-- `.claude/CLAUDE.md` § WebSocket: топик `/topic/king-of-court/{tournamentId}`; в коде — `/topic/tournament/{kingId}` (`WebSocketService`). Топика `/topic/team-playoff/{tournamentId}` в документации нет.
+- `.agents/PROJECT.md` § WebSocket: топик `/topic/king-of-court/{tournamentId}`; в коде — `/topic/tournament/{kingId}` (`WebSocketService`). Топика `/topic/team-playoff/{tournamentId}` в документации нет.
 - `docs/screen-archetypes.md`: «только KoC использует WebSocket» — Team Playoff тоже (`team-playoff-realtime.js`); шаблонов 60, а не 56; нет `admin/tournaments/matches`, `admin/telegram-pipeline`.
-- `.claude/CLAUDE.md` Navigation Map: нет `GET /admin/tournaments/{id}/matches`, `/admin/telegram-pipeline`.
+- `.agents/PROJECT.md` Navigation Map: нет `GET /admin/tournaments/{id}/matches`, `/admin/telegram-pipeline`.
 - `SecurityConfig` открывает `/swagger-ui/**` и `/v3/api-docs/**`, но springdoc не подключён.
 
 ### F-12. Нет изображений, на которые ссылаются все страницы — **подтверждено**

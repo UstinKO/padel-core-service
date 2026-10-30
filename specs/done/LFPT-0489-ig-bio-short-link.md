@@ -58,7 +58,7 @@ Telegram-сообщение (для reply): 4845
 
 ### Документация
 
-`.claude/CLAUDE.md`, раздел "Public Pages" — добавить строку про `/ig-bio` в навигационную карту. `CLAUDE.md` отслеживается git (не в `.gitignore`, в отличие от `SECURITY.md`/`THREATS.md`/`settings.local.json`) — правка идёт в этом же PR обычным коммитом.
+`.agents/PROJECT.md`, раздел "Public Pages" — добавить строку про `/ig-bio` в навигационную карту. `PROJECT.md` отслеживается git (не в `.gitignore`, в отличие от `SECURITY.md`/`THREATS.md`/`settings.local.json`) — правка идёт в этом же PR обычным коммитом.
 
 ## Критерии приёмки
 

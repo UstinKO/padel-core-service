@@ -67,8 +67,8 @@ Telegram-сообщение (для reply): 5669
 - `src/main/resources/templates/email/registration-moved-to-reserve.html` (новый)
 
 ### Документация
-- `docs/Home.md` / соответствующий раздел писем (если есть отдельная таблица email-шаблонов в `docs/`, помимо `.claude/CLAUDE.md`) — добавить обе новые строки по аналогии с существующими.
-- `.claude/CLAUDE.md` раздел "Email Templates" — добавить обе новые строки в таблицу.
+- `docs/Home.md` / соответствующий раздел писем (если есть отдельная таблица email-шаблонов в `docs/`, помимо `.agents/PROJECT.md`) — добавить обе новые строки по аналогии с существующими.
+- `.agents/PROJECT.md` раздел "Email Templates" — добавить обе новые строки в таблицу.
 
 ## Критерии приёмки
 
@@ -80,7 +80,7 @@ Telegram-сообщение (для reply): 5669
 - [ ] Админ переводит игрока CONFIRMED → WAITLIST (`POST /admin/tournaments/{id}/move-to-waitlist/{playerId}`) → письмо отличается от письма о первичной постановке в лист ожидания, явно говорит "не отменено, в резерве".
 - [ ] Админ переводит игрока WAITLIST → CONFIRMED (`POST /admin/tournaments/{id}/move-to-main/{playerId}`) → письмо о подтверждении участия (переиспользуется существующее `vacancy-invitation.html`).
 - [ ] Письма локализуются по `player.getLocale()` — проверить ES/RU/EN текст хотя бы одного нового письма.
-- [ ] `python3 .github/bin/docs-drift.py` — 0 расхождений после обновления `.claude/CLAUDE.md`.
+- [ ] `python3 .github/bin/docs-drift.py` — 0 расхождений после обновления `.agents/PROJECT.md`.
 
 ## Edge cases
 

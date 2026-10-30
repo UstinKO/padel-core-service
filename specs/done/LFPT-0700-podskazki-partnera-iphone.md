@@ -59,7 +59,7 @@ done
 - `src/main/resources/static/css/tournament-details.css` — убрать `-webkit-overflow-scrolling: touch` из `.modal-body` (строка ~643) и из `.modal-body` в `@media (max-width: 768px)` (строка ~1131).
 - `src/main/resources/static/js/tournament-details.js` — добавить `partnerTelegram`/`telegram` в массив полей ручного ввода, `manualSuggestResults`, очистку результатов и полей.
 
-Документация (`docs/`, таблицы `.claude/CLAUDE.md`) — изменений не требует: ни эндпоинты, ни схема БД, ни правила безопасности, ни email-шаблоны не затронуты (карта «Как поддерживать актуальность», `docs/Home.md`).
+Документация (`docs/`, таблицы `.agents/PROJECT.md`) — изменений не требует: ни эндпоинты, ни схема БД, ни правила безопасности, ни email-шаблоны не затронуты (карта «Как поддерживать актуальность», `docs/Home.md`).
 
 ## Критерии приёмки
 - [ ] `.modal-body` в `tournament-details.css` не содержит `-webkit-overflow-scrolling` ни в одном из двух мест (`grep -c` по файлу — 0).

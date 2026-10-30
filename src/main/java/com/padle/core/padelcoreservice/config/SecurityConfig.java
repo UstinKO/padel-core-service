@@ -156,7 +156,7 @@ public class SecurityConfig {
                         .requestMatchers("/players/perfil/**").authenticated()
                         .requestMatchers("/players/mis-torneos").authenticated()
                         .requestMatchers("/admin/**").hasAnyRole("OWNER", "SUPER_ADMIN", "ORGANIZER", "ADMIN", "CLUB_ADMIN")
-                        // Внутренний тестовый инструментарий организатора (JDBC-based, см. CLAUDE.md) —
+                        // Внутренний тестовый инструментарий организатора (JDBC-based, см. PROJECT.md) —
                         // доступен только владельцу платформы, не ORGANIZER/ADMIN.
                         .requestMatchers("/test/tournaments/**").hasRole("SUPER_ADMIN")
                         // Ручная проверка Telegram-интеграции шлёт сообщения в рабочую группу

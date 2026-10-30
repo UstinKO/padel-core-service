@@ -40,7 +40,7 @@ done
    - `GET /reserva/accion/confirmar?token=X` — находит регистрацию по `partnerActionToken`, проверяет что она ещё `WAITLIST`+`partner IS NULL`+`isActive`; действие **без изменения состояния** — просто фиксирует факт отклика (ничего в заявке не меняет, в т.ч. не отправляет повторных писем) и отдаёт страницу-подтверждение (шаблон — фронт-задача #669). Решение разработчика: заказчик не описал, что технически должно произойти при «подтверждении актуальности» кроме самого факта ответа — реализовать как no-op-подтверждение (идемпотентно), без придумывания скрытой бизнес-логики.
    - `GET /reserva/accion/cancelar?token=X` — страница подтверждения отмены (фронт #669, без немедленной отмены по одному клику — требование запроса "подтвердить отмену на сайте").
    - `POST /reserva/accion/cancelar` (`token`) — находит регистрацию по токену, если она ещё активна и в резерве без партнёра — отменяет (`registration.cancel(reason)`, `reason = "No puede participar (desde email)"`), переиспользовать существующую логику отмены парной регистрации, см. `PlayerDashboardController.cancelDoubleRegistration` / сервис, который она вызывает — не дублировать бизнес-правила отмены, вызвать тот же сервисный метод (если сигнатура требует `PlayerPadel`/аутентифицированного игрока — завести отдельный публичный метод в том же сервисе, принимающий `TournamentRegistration` напрямую, без дублирования самой логики отмены).
-   - Оба роута — новый контроллер (например `ReserveActionController` в `controller/`, backend-пакет) или метод в существующем `PartnerRegistrationController` (он уже отвечает за публичные redirect-действия по токену для парной регистрации) — на усмотрение разработчика, любой вариант не противоречит пакетной структуре `CLAUDE.md`.
+   - Оба роута — новый контроллер (например `ReserveActionController` в `controller/`, backend-пакет) или метод в существующем `PartnerRegistrationController` (он уже отвечает за публичные redirect-действия по токену для парной регистрации) — на усмотрение разработчика, любой вариант не противоречит пакетной структуре `PROJECT.md`.
    - Истечение токена не требуется — токен действителен, пока заявка в допустимом для действия состоянии (аналогично тому, что `waitlistConfirmationToken` не имеет отдельного TTL, годность определяется состоянием заявки).
 
 7. **Возврат в основной состав после добавления партнёра** (происходит в `DoubleTournamentRegistrationService.addPartnerToSoloRegistration` и в `confirmPartnerRegistration`):
@@ -77,17 +77,17 @@ done
 - `GET /reserva/accion/confirmar?token=X` — no-op подтверждение актуальности заявки по токену, отдаёт страницу (фронт #669).
 - `GET /reserva/accion/cancelar?token=X` — страница подтверждения отмены (фронт #669).
 - `POST /reserva/accion/cancelar` (`token`) — отмена резервной регистрации по токену.
-- Документировать все три в `docs/endpoints/double-registration.md` и в таблице `.claude/CLAUDE.md` (новая секция для `/reserva/**`).
+- Документировать все три в `docs/endpoints/double-registration.md` и в таблице `.agents/PROJECT.md` (новая секция для `/reserva/**`).
 
 ### БД
 Новая миграция `v1.55-add-partner-reserve-fields.yaml`:
 - `tournament_registrations_db.final_reminder_sent BOOLEAN NOT NULL DEFAULT FALSE`
 - `tournament_registrations_db.partner_action_token VARCHAR(64)` (nullable)
 
-Зарегистрировать в `changelog-master.yaml` следующим по номеру. Обновить `docs/database-architecture.md` (новые колонки, версия схемы) и «Текущая версия» в `docs/architecture.md`/`.claude/CLAUDE.md`.
+Зарегистрировать в `changelog-master.yaml` следующим по номеру. Обновить `docs/database-architecture.md` (новые колонки, версия схемы) и «Текущая версия» в `docs/architecture.md`/`.agents/PROJECT.md`.
 
 ### UI
-Нет изменений шаблонов в этой (бэкенд) задаче — страницы `confirmar`/`cancelar` и различение резервных состояний в админке делает фронт-задача #669 на базе готового API/данных. Email-шаблоны (`templates/email/**`) — по проектной классификации backend (`CLAUDE.md`/`GIT_WORKFLOW.md` §1.4), значит два новых письма (`partner-deadline-reserve.html`, `partner-final-reminder.html`) — в этой задаче.
+Нет изменений шаблонов в этой (бэкенд) задаче — страницы `confirmar`/`cancelar` и различение резервных состояний в админке делает фронт-задача #669 на базе готового API/данных. Email-шаблоны (`templates/email/**`) — по проектной классификации backend (`PROJECT.md`/`GIT_WORKFLOW.md` §1.4), значит два новых письма (`partner-deadline-reserve.html`, `partner-final-reminder.html`) — в этой задаче.
 
 ## Критерии приёмки
 - [ ] Турнир старт воскресенье 15:00 → `calculateDefaultDeadline()` возвращает субботу 15:00 (точное время, не календарную дату).
@@ -106,7 +106,7 @@ done
 - [ ] Регистрация отменена до 24ч/3ч-проверки → ни одно из новых писем не отправляется.
 - [ ] Изменение даты/времени турнира после перевода заявки в резерв, но до истечения нового дедлайна — пересчёт происходит сам собой (дедлайн не хранится), 3-часовое окно считается от нового времени.
 - [ ] Все новые строки — в `messages_es/ru/en.properties`; страница под `Accept-Language: ru` не показывает испанский текст.
-- [ ] `python3 .github/bin/docs-drift.py` — 0 расхождений; `docs/endpoints/double-registration.md`, `docs/database-architecture.md`, `.claude/CLAUDE.md` обновлены.
+- [ ] `python3 .github/bin/docs-drift.py` — 0 расхождений; `docs/endpoints/double-registration.md`, `docs/database-architecture.md`, `.agents/PROJECT.md` обновлены.
 
 ## Edge cases
 - Турнир `INDIVIDUAL` (не `DOBLES`) — вся эта логика не применяется (`SOLO_ADD_LATER` существует только для `DOBLES`, уже так в текущем коде — `registerSoloForDoubleTournament` отдельно проверяет `Modalidad.DOBLES`).

@@ -4,7 +4,7 @@
 done — смержено в master, [PR #315](https://github.com/UstinKO/padel-core-service/pull/315)
 
 ## Источник
-`specs/requests/LFPT-314-americano-preview-crash.md`. GitHub issue: https://github.com/UstinKO/padel-core-service/issues/314. Баг уже был задокументирован в `.claude/CLAUDE.md` (раздел "Americano Admin Pages", блок "Известный баг").
+`specs/requests/LFPT-314-americano-preview-crash.md`. GitHub issue: https://github.com/UstinKO/padel-core-service/issues/314. Баг уже был задокументирован в `.agents/PROJECT.md` (раздел "Americano Admin Pages", блок "Известный баг").
 
 ## Контекст / зачем
 `GET /tournaments/americano/admin/{tournamentId}/preview` (метод `AmericanoViewController.showAdminPreviewForm`, строки 499-527) для неинициализированного Americano-турнира возвращает имя view `admin/americano/initialize`. Такого файла нет в `templates/admin/americano/` (в каталоге лежат только `preview-double-rounds.html`, `preview-rounds.html`, `tournament-double.html`, `tournament-playoff.html`, `tournament.html`) — Thymeleaf бросает `TemplateInputException`, пользователь видит 500/белый экран.
@@ -55,7 +55,7 @@ done — смержено в master, [PR #315](https://github.com/UstinKO/padel-
 - [ ] `GET /tournaments/americano/admin/{tournamentId}/preview` для турнира с типом, отличным от `AMERICANO`, по-прежнему возвращает HTTP 302 на `/admin/tournaments/{tournamentId}` с flash-атрибутом `error` = `"Este torneo no es de tipo Americano"` (регресс не сломан).
 - [ ] MVC/юнит-тест на `AmericanoViewController.showAdminPreviewForm`, покрывающий все три ветки выше (сейчас тестов на этот метод нет — `grep` по `src/test` ничего не находит).
 - [ ] Ручная/тестовая проверка: переход на `/tournaments/americano/admin/{существующий_id}/preview` для неинициализированного турнира в браузере открывает страницу деталей турнира с формой конфигурации/инициализации вместо страницы ошибки.
-- [ ] `.claude/CLAUDE.md`, раздел "Americano Admin Pages" — запись "Известный баг" удаляется/актуализируется, так как маршрут больше не падает (обновляется в том же PR, где чинится код).
+- [ ] `.agents/PROJECT.md`, раздел "Americano Admin Pages" — запись "Известный баг" удаляется/актуализируется, так как маршрут больше не падает (обновляется в том же PR, где чинится код).
 
 ## Edge cases
 - Несуществующий `tournamentId` — поведение не меняется (см. "Вне скоупа"), покрывать тестом в рамках этой фичи не требуется.

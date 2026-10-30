@@ -50,7 +50,7 @@ done
 Нет изменений шаблонов — чисто JSON API.
 
 ### Документация (к обновлению в этом же PR)
-- `.claude/CLAUDE.md` — таблица "Auth API"/рядом: добавить строку про `GET /api/public/tournaments` и `/api/public/tournaments/{id}`.
+- `.agents/PROJECT.md` — таблица "Auth API"/рядом: добавить строку про `GET /api/public/tournaments` и `/api/public/tournaments/{id}`.
 - `docs/endpoints/README.md` — строка на новый файл.
 - `docs/endpoints/public-schedule.md` — новый файл: контракт, коды ошибок, какие поля исключены и почему.
 - `docs/frontend-react/contract/api.md` — короткая заметка, что минимальный публичный контракт для мобильного клиента появился (без переноса веба на React).

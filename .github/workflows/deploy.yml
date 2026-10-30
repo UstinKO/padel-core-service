@@ -11,6 +11,8 @@ on:
     paths-ignore:
       - 'specs/**'
       - '.claude/**'
+      - '.agents/**'
+      - 'AGENTS.md'
       - 'docs/**'
   # Мерж от GITHUB_TOKEN не порождает push-прогон, поэтому оркестратор запускает деплой явно.
   workflow_dispatch:

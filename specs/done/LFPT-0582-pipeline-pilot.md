@@ -21,7 +21,7 @@ done
 Найденные на пилоте дефекты оформлены отдельно: LFPT-0598 (оркестратор не закрывал issue), устойчивость relay к сетевым сбоям Telegram (вне git, выкачено 2026-10-16).
 
 ## Изменения в системе
-`.claude/commands/develop-feature.md`, `.claude/GIT_WORKFLOW.md`.
+`.agents/workflows/develop-feature.md`, `.agents/GIT_WORKFLOW.md`.
 
 ## Критерии приёмки
 - [x] Реальная задача «бэк+фронт» из Telegram дошла до прода без ручных действий.

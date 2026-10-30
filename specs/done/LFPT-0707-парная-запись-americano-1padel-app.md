@@ -10,7 +10,7 @@ done
 
 ## Контекст / зачем
 
-Веб-клиент 1Padel.App (`mobile-app/`, Expo/React Native, сборка раздаётся на `/app/`) уже поддерживает индивидуальную запись внутри приложения (LFPT-0660) для `KING_OF_COURT`/`AMERICANO` (modality `INDIVIDUAL`)/`PADEL_CLINIC`/`CANCHA_ABIERTA`. Для парных мероприятий (`modality: DOBLES`) кнопка до сих пор ведёт на сайт (`openWebsite(selected.websiteUrl)`). Задача — замкнуть внутри приложения парную запись для Americano-форматов: классический `AMERICANO` с `modality: DOBLES` и `AMERICANO_TEAMS` (Team Americano/Team Playoff — один тип турнира, разные админ-экраны, см. `.claude/CLAUDE.md`).
+Веб-клиент 1Padel.App (`mobile-app/`, Expo/React Native, сборка раздаётся на `/app/`) уже поддерживает индивидуальную запись внутри приложения (LFPT-0660) для `KING_OF_COURT`/`AMERICANO` (modality `INDIVIDUAL`)/`PADEL_CLINIC`/`CANCHA_ABIERTA`. Для парных мероприятий (`modality: DOBLES`) кнопка до сих пор ведёт на сайт (`openWebsite(selected.websiteUrl)`). Задача — замкнуть внутри приложения парную запись для Americano-форматов: классический `AMERICANO` с `modality: DOBLES` и `AMERICANO_TEAMS` (Team Americano/Team Playoff — один тип турнира, разные админ-экраны, см. `.agents/PROJECT.md`).
 
 Серверная часть почти полностью готова и переиспользуется без изменений: `POST /api/tournaments/double/{tournamentId}/register` (пара сразу — партнёр, существующий по ID или новые данные без email, LFPT-0687), `POST .../register-solo` (`SEARCH`/`ADD_LATER`), `POST .../add-partner`, `GET .../looking-for-partner`, `POST .../propose-pair/{targetRegistrationId}`, `GET /api/players/search?query=&tournamentId=`. Единственное серверное изменение — LFPT-0706 (уже в этой ветке).
 

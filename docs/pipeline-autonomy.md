@@ -1,10 +1,14 @@
 # Автономный конвейер: от сообщения в Telegram до фичи на проде
 
+> Перенос на Codex подготовлен в LFPT-0761: актуальные инструкции и порядок активации —
+> [codex-migration.md](codex-migration.md). Ниже сохранены устройство и ограничения прежней
+> реализации Anthropic; они не означают, что новый воркер уже подключён или имеет те же ограничения.
+
 Статус: **дорожная карта утверждена 2026-10-16; этапы 1–3 работают на проде, пилот (этап 4) пройден 2026-10-16** — см. §7.
 
 Цель: сообщение в теме «AI Разработка» → спека → реализация (бэк и фронт) → PR → pr-check → **автоматический мерж** → деплой → сообщение в чат «задача реализована и влита, можно проверять». Человек в цепочке остаётся только там, где нужно бизнес-решение (открытые вопросы в спеке), и как получатель итога.
 
-Предыстория: «Telegram → AI-конвейер» (`docs/telegram-ai-pipeline.md`, приватный, не в репозитории; как устроен вход), `specs/features/telegram-remote-pipeline.md` (как его строили), `.claude/commands/develop-feature.md` (канонические правила конвейера — роутина читает именно их).
+Предыстория: «Telegram → AI-конвейер» (`docs/telegram-ai-pipeline.md`, приватный, не в репозитории; как устроен вход), `specs/features/telegram-remote-pipeline.md` (как его строили), `.agents/workflows/develop-feature.md` (канонические правила конвейера — роутина читает именно их).
 
 ---
 
@@ -120,7 +124,7 @@ QUEUED → RUNNING → PR_CHECKS → READY → MERGING → DEPLOYING → DONE
 
 **Ответ без следов** (LFPT-0641). Пока у задачи в `RUNNING` нет issue/PR с маркером, движок на каждом проходе ищет комментарии `🤖 pipeline-reply <N>` (REST search `in:comments`). Найденный и ещё не доставленный ответ уходит реплаем на карточку, задача переходит в терминальный `ANSWERED` («💬 ответ дан») и освобождает слот. Реплай на этот ответ — обычное продолжение задачи, уже доставленные ответы (`reply:<id>` в `notified`) повторно не засчитываются. Сбой отправки — задача остаётся `RUNNING`, повтор на следующем проходе.
 
-**Когда задача `DONE`** (`derive_status` в `engine.py`): у каждой **открытой** issue с маркером есть PR с `Closes #<issue>`, и все PR задачи влиты, а их деплой прошёл (или не нужен — только `specs/`, `.claude/`, `docs/`). Закрытая без PR issue (закрыли руками как invalid) задачу не держит. Пока у открытой issue нет PR, задача в `RUNNING`: роутина могла ещё не дойти до фронт-PR.
+**Когда задача `DONE`** (`derive_status` в `engine.py`): у каждой **открытой** issue с маркером есть PR с `Closes #<issue>`, и все PR задачи влиты, а их деплой прошёл (или не нужен — только `specs/`, `.agents/`, `docs/`). Закрытая без PR issue (закрыли руками как invalid) задачу не держит. Пока у открытой issue нет PR, задача в `RUNNING`: роутина могла ещё не дойти до фронт-PR.
 
 **Страховка от «вечного STALLED»** (LFPT-0626, на сервере с 2026-10-19). Если все PR задачи влиты и задеплоены, а открытые issue без PR не меняются дольше `STALL_HOURS`, задача переходит в `DONE`, а не в `STALLED`, — в том числе из уже выставленного `STALLED`. Итоговое сообщение перечисляет эти issue отдельным списком («в задачу не вошли»). Цена: фронт-PR, который пишется дольше `STALL_HOURS` без единого следа в GitHub, закроет задачу раньше времени — раньше в этом случае был `STALLED`, то есть человек нужен всё равно.
 
@@ -173,7 +177,7 @@ QUEUED → RUNNING → PR_CHECKS → READY → MERGING → DEPLOYING → DONE
 - **Сериализация:** `concurrency: pipeline-merge` и правило «пока идёт деплой — не мержить». Мерж и деплой строго по одному: следующий PR вливается только после завершения деплоя предыдущего. Это даёт и порядок «бэк → фронт», и отсутствие гонок, ценой ~10 минут на PR.
 - **Выбор PR:** самый старый открытый с `pipeline` + `pipeline:ready`, без `pipeline:conflict`/`pipeline:deploy-failed`; если есть `Depends-On: #M` — #M влит **и** его деплой успешен.
 - **Проверка на свежем master:** pr-check тестировал PR против master на момент своего запуска; с тех пор master мог уйти вперёд (другая задача). Перед мержем — повторный `mvn verify` на `refs/pull/N/merge` (pr-check выносится в переиспользуемый workflow). Упало → `pipeline:conflict` + комментарий; движок перезапускает роутину на починку.
-- **Мерж:** `gh pr merge --squash` с заголовком PR (в нём `LFPT-XXXX` — нужен `archive-specs`), затем `gh workflow run deploy.yml -f pr=N`. PR, затрагивающий только `specs/**`, `.claude/**`, `docs/**`, вливается без деплоя (как `paths-ignore`).
+- **Мерж:** `gh pr merge --squash` с заголовком PR (в нём `LFPT-XXXX` — нужен `archive-specs`), затем `gh workflow run deploy.yml -f pr=N`. PR, затрагивающий только `specs/**`, `.agents/**`, `docs/**`, вливается без деплоя (как `paths-ignore`).
 - **Сбой деплоя:** PR → `pipeline:deploy-failed`, создаётся issue `pipeline:halt` со ссылкой на прогон. Автомерж стоит, пока человек не закроет issue. Проверяет job `deploy-result` по `deploy_run_id` из `deploy.yml`: дожидается завершения прогона деплоя и смотрит его итог (до LFPT-0685 он ждал `workflow_run` и не запускался ни разу).
 
 Правки `deploy.yml`: `workflow_dispatch` с входом `pr`, `run-name` с номером PR, `concurrency: deploy-production`, `archive-specs` берёт заголовок коммита из `git log`, а не из `head_commit` (у dispatch его нет).
@@ -193,7 +197,7 @@ QUEUED → RUNNING → PR_CHECKS → READY → MERGING → DEPLOYING → DONE
 | Этап | Что | Issue | Зависит от | Где живёт |
 |---|---|---|---|---|
 | 1 | Оркестратор автомержа + доработки `deploy.yml`/`pr-check.yml` + метки | [#579](https://github.com/UstinKO/padel-core-service/issues/579) | — | `.github/` (git) |
-| 2 | Протокол роутины: бэк+фронт в одном прогоне, маркеры, `pr-check --watch`, метки | [#580](https://github.com/UstinKO/padel-core-service/issues/580) | 1 | `.claude/commands/develop-feature.md`, `GIT_WORKFLOW.md` (git) |
+| 2 | Протокол роутины: бэк+фронт в одном прогоне, маркеры, `pr-check --watch`, метки | [#580](https://github.com/UstinKO/padel-core-service/issues/580) | 1 | `.agents/workflows/develop-feature.md`, `GIT_WORKFLOW.md` (git) |
 | 3 | Движок задач (relay v2): очередь, параллельность, отслеживание по GitHub, UI в чате | [#581](https://github.com/UstinKO/padel-core-service/issues/581) | 1, 2 | `scripts/telegram-relay/` (вне git, прод-сервер) |
 | 4 | Пилот: задача «бэк+фронт» из Telegram до прода без человека; перевод UI целиком на движок | [#582](https://github.com/UstinKO/padel-core-service/issues/582) | 1–3 | — |
 
