@@ -1,0 +1,11 @@
+[Unit]
+Description=Monitor the Codex Telegram relay
+After=docker.service network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/padel-codex/monitor.env
+ExecStart=/usr/bin/python3 /opt/padel-codex/automation/codex-worker/monitor.py
+StateDirectory=padel-codex-monitor
+StateDirectoryMode=0700
+UMask=0077
