@@ -362,9 +362,13 @@ public class PaymentService {
 
         for (PaymentUpdateDto dto : updates) {
             TournamentRegistration registration = registrationRepository
-                    .findById(dto.getRegistrationId())
+                    .lockById(dto.getRegistrationId())
                     .orElseThrow(() -> new ResourceNotFoundException(
                             "Registration not found: " + dto.getRegistrationId()));
+            if (!registration.getTournament().getId().equals(tournamentId)) {
+                throw new ResourceNotFoundException("Registration not found: " + dto.getRegistrationId());
+            }
+            resolveExistingPayment(dto);
 
             // Посещение и подтверждение участия — для основной строки.
             // Партнёр, зарегистрированный в БД, всегда приходит в этом же updates своей
@@ -390,6 +394,9 @@ public class PaymentService {
                 Payment payment = paymentRepository.findById(dto.getPaymentId())
                         .orElseThrow(() -> new ResourceNotFoundException(
                                 "Payment not found: " + dto.getPaymentId()));
+                if (!payment.getRegistration().getId().equals(registration.getId())) {
+                    throw new ResourceNotFoundException("Payment not found: " + dto.getPaymentId());
+                }
 
                 if (dto.getAmount() != null) {
                     payment.setAmount(normalizeAmount(dto.getAmount()));
@@ -481,6 +488,19 @@ public class PaymentService {
                         dto.getPaymentStatus() == PaymentStatus.PAID, dto.isAttended());
             }
         }
+    }
+
+    private void resolveExistingPayment(PaymentUpdateDto dto) {
+        if (dto.isHasPayment() && dto.getPaymentId() != null) {
+            return;
+        }
+        paymentRepository.findByRegistrationId(dto.getRegistrationId()).stream()
+                .filter(payment -> Boolean.TRUE.equals(payment.getIsActive()))
+                .filter(payment -> (payment.getNotes() != null && payment.getNotes().startsWith(PARTNER_PAYMENT_MARKER)) == dto.isPartnerRow())
+                .findFirst().ifPresent(payment -> {
+                    dto.setPaymentId(payment.getId());
+                    dto.setHasPayment(true);
+                });
     }
 
     // Округляет сумму до scale=2 и проверяет что не превышает лимит колонки NUMERIC(10,2)

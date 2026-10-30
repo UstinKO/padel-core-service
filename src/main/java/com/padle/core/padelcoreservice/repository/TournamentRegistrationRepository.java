@@ -17,6 +17,9 @@ import java.util.Optional;
 
 @Repository
 public interface TournamentRegistrationRepository extends JpaRepository<TournamentRegistration, Long> {
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT r FROM TournamentRegistration r WHERE r.id = :id")
+    Optional<TournamentRegistration> lockById(@Param("id") Long id);
 
     List<TournamentRegistration> findByTournamentId(Long tournamentId);
 

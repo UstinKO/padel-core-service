@@ -436,7 +436,7 @@ repository/
 
 ### Database Migrations
 
-Все изменения схемы — YAML-файлы в `src/main/resources/db/changelog/versions/`, подключены через `changelog-master.yaml`. Текущая версия: v1.57. `ddl-auto = none` — только Liquibase. Новые файлы добавлять с инкрементальным номером и регистрировать в `changelog-master.yaml`.
+Все изменения схемы — YAML-файлы в `src/main/resources/db/changelog/versions/`, подключены через `changelog-master.yaml`. Текущая версия: v1.58. `ddl-auto = none` — только Liquibase. Новые файлы добавлять с инкрементальным номером и регистрировать в `changelog-master.yaml`.
 
 ### Email Templates
 
@@ -528,3 +528,7 @@ Push в `master` запускает `.github/workflows/deploy.yml`: сборка
 - При добавлении новой Liquibase-миграции: создать файл `v1.XX-<description>.yaml` в `versions/` и добавить `include` в конец `changelog-master.yaml`.
 - Таблица регистраций называется `tournament_registrations_db` (не `tournament_registration`).
 - **i18n**: публичный UI, admin-панель и email-шаблоны переведены на `es`/`ru`/`en` через Spring `AcceptHeaderLocaleResolver` (auto-detect по `Accept-Language`, без переключателя). Ключи — в `src/main/resources/i18n/messages_{es,ru,en}.properties`, JS-строки — в `static/js/i18n/messages-{es,ru,en}.js`. Подробности и статус — [docs/i18n/README.md](../docs/i18n/README.md).
+
+## Измерение рекламы Meta
+
+Модуль `marketing/`: CSRF-защищённые `/api/marketing/config`, `/api/marketing/context`, `/api/marketing/events`, `/api/marketing/ack`; экспорт `/admin/marketing/export.csv` с проверкой доступа к турниру. Схема v1.58, интеграция выключена по умолчанию. [Контракт, статусы, очередь, настройка и Test Events](../docs/endpoints/meta-marketing.md).
