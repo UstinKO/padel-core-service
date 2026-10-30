@@ -152,6 +152,13 @@ app:
   analytics:
     ga4-id: ${GA4_MEASUREMENT_ID:}
     clarity-id: ${CLARITY_PROJECT_ID:}
+    meta:
+      enabled: ${META_ENABLED:false}
+      pixel-id: ${META_PIXEL_ID:}
+      access-token: ${META_CAPI_ACCESS_TOKEN:}
+      api-version: ${META_API_VERSION:v26.0}
+      test-mode: ${META_TEST_MODE:true}
+      test-event-code: ${META_TEST_EVENT_CODE:}
   demo:
     auto-confirm-email: ${AUTO_CONFIRM_EMAIL:false}
   email:
