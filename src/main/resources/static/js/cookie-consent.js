@@ -152,6 +152,7 @@
             .then(response => {
                 if (response.ok) {
                     updateAnalyticsConsent(true);
+                    window.dispatchEvent(new Event('marketing-consent-changed'));
                     dismissBanner();
                 }
             })
@@ -164,6 +165,7 @@
             .then(response => {
                 if (response.ok) {
                     updateAnalyticsConsent(false);
+                    window.dispatchEvent(new Event('marketing-consent-changed'));
                     dismissBanner();
                 }
             })
@@ -179,6 +181,7 @@
             .then(response => {
                 if (response.ok) {
                     updateAnalyticsConsent(analytics);
+                    window.dispatchEvent(new Event('marketing-consent-changed'));
                     dismissBanner();
                 }
             })

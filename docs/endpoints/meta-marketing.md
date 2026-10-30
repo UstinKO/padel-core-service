@@ -68,7 +68,7 @@ Purchase не отправляется из браузера: между бра�
 
 Meta дедуплицирует имя+ID в пределах 48 часов. Поэтому автоматическая доставка и выдача браузерных конверсий заканчиваются через 47 часов, затем EXPIRED; не возобновлять такие события новым ID. Это доставка с повторными попытками в окне дедупликации, а не гарантия приёма Meta. При утраченном ответе повтор сохраняет прежние идентификаторы.
 
-Ручная оплата имеет `action_source=other`: факт отмечается организатором, реального веб-платёжного шлюза нет. Сопоставление — SHA-256 случайного ID посетителя и fbp/fbc, полученные с согласия в браузере участника. IP, User-Agent организатора, email, телефон, имя, исходный URL с query/токеном и UTM в CAPI не передаются. Для будущего настоящего веб-платежа нужен отдельный достоверный источник и требования website-events; нельзя просто заменить action_source на website без данных участника.
+Ручная оплата имеет `action_source=other`: факт отмечается организатором, реального веб-платёжного шлюза нет. Сопоставление — SHA-256 случайного ID посетителя — инициатора записи (у пары это может быть основной игрок, а не персональная идентичность гостя) и fbp/fbc, полученные с согласия в браузере участника. IP, User-Agent организатора, email, телефон, имя, исходный URL с query/токеном и UTM в CAPI не передаются. Для будущего настоящего веб-платежа нужен отдельный достоверный источник и требования website-events; нельзя просто заменить action_source на website без данных участника.
 
 ## API
 
@@ -92,3 +92,23 @@ Meta дедуплицирует имя+ID в пределах 48 часов. П�
 6. Тестовый код относится к CAPI; браузерный Pixel проверяется через браузерную сессию Test Events, в нём серверного токена/кода нет. Наличие HTTP 200 в локальном mock-тесте не доказывает приём Meta. Перед production отдельно согласовать отключение тестового режима и провести разрешённый выпуск.
 
 Официальные источники, прочитанные при реализации: [параметры CAPI](https://developers.facebook.com/documentation/ads-commerce/conversions-api/parameters), [server event](https://developers.facebook.com/documentation/ads-commerce/conversions-api/parameters/server-event), [customer information](https://developers.facebook.com/documentation/ads-commerce/conversions-api/parameters/customer-information-parameters), [дедупликация](https://developers.facebook.com/documentation/ads-commerce/conversions-api/deduplicate-pixel-and-server-events), [использование API](https://developers.facebook.com/documentation/ads-commerce/conversions-api/using-the-api).
+
+## Браузерная реализация и её проверка
+
+Общий `meta-marketing.js` подключён через fragment cookie-consent, использует существующий CSRF-wrapper. Он загружает SDK только после маркетингового согласия, передаёт тот же хеш external_id, что CAPI, и отключает autoConfig. В Events Manager также оставить выключенными автоматический сбор событий/Automatic Advanced Matching: внедряемая схема не разрешает считывание контактов из форм.
+
+Обрабатываются публичные страницы главной, каталога, клубов, рейтинга, событий и результатов; /players/dashboard может выдавать конверсии без PageView приватной страницы. Логин/регистрация аккаунта и токеновые/служебные страницы исключены. Любой неизвестный query, адрес/токен в query или небезопасный referrer блокирует SDK; валидные UTM/fbclid/lang сохраняются до очистки query через history.replaceState. Это сознательный приоритет приватности: часть посещений со служебными параметрами не имеет Pixel-просмотра.
+
+Скрипт ожидает сохранения источника перед fetch/form-запросом регистрации, но не ожидает сети Meta. После успеха берёт события из журнала. Только постановка события в загруженный Pixel подтверждается `/ack`; это не подтверждение приёма Meta. При отказе SDK событие остаётся в очереди; при потере ack тот же eventID может повториться в пределах окна дедупликации. После отзыва уже загруженного SDK повторное согласие начнёт Pixel на следующей безопасной странице, не переиспользуя старую идентичность.
+
+Проверки в настоящем Chromium с локальными API-стабами и подменённым SDK (не отправляют событий в Meta):
+
+```bash
+npm install --prefix /tmp/padel-meta-browser --no-audit --no-fund --ignore-scripts playwright-core@1.64.1
+PLAYWRIGHT_MODULE=/tmp/padel-meta-browser/node_modules/playwright-core/index.mjs \
+CHROMIUM_PATH=/usr/bin/chromium node --test tests/meta-marketing.browser.mjs
+```
+
+Это отдельный браузерный набор для существующего Thymeleaf-интерфейса, не изменение Expo-зависимостей. Backend-набор: `./mvnw -Dtest=MarketingIntegrationTest,MetaCapiClientTest test`; полный — `./mvnw verify` с отдельной PostgreSQL.
+
+При включённой интеграции на странице управления платежами турнира есть ссылка «Выгрузить источники рекламы» (ES/RU/EN), ведущая в этот защищённый CSV.
