@@ -113,6 +113,8 @@ class CodexExecutorTest(unittest.TestCase):
         self.assertEqual(commands[0][0][:3], ['git', 'clone', '--no-local'])
         self.assertIn('--sandbox', commands[1][0])
         self.assertIn('workspace-write', commands[1][0])
+        self.assertEqual(commands[1][0][commands[1][0].index('--add-dir') + 1],
+                         str(self.spool.resolve() / 'workspace' / '.git'))
         self.assertIn(b'request', commands[1][1])
         self.assertEqual(json.loads((self.spool / 'status.json').read_text())['state'], 'failed')
 
