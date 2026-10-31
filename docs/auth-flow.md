@@ -549,6 +549,7 @@ HTTP `429 Too Many Requests` + `Retry-After: 60`:
 |------|--------|
 | `/`, `/torneos`, `/clubs/**`, `/ranking`, `/login` | Публичный |
 | `/ig-story` | Публичный фиксированный редирект на главную с метками Instagram Stories |
+| `/ig-bio`, `/ig-ru`, `/tg-calendar`, `/tg-posts`, `/wa-info`, `/threads` | Публичные фиксированные 302-редиректы на главную со списком турниров и отдельными UTM-кампаниями; авторизация не требуется |
 | `/players/registro`, `/api/auth/**` | Публичный |
 | `/recuperar-password/**`, `/double-registration/complete` | Публичный |
 | `/waitlist/confirm`, `/oauth2/**` | Публичный |
