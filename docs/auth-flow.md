@@ -687,3 +687,11 @@ POST /api/auth/login → access (24ч) + refresh (7д)
               ▼
          isEnabled()=false → validateToken()=false → 403 на следующем запросе
 ```
+
+## Доступ к QR-атрибуции Reby
+
+`/qr/reby/site` и `/qr/reby/telegram` — точные публичные маршруты; прочие `/qr/**`
+не становятся публичными. `/api/admin/marketing/qr-stats` требует ROLE_SUPER_ADMIN
+в SecurityConfig и дополнительно через @PreAuthorize. OWNER, ORGANIZER, ADMIN,
+CLUB_ADMIN и PLAYER получают 403. Гость не получает данные. Отчёт — read-only,
+без персональных идентификаторов. Назначения редиректов фиксированы на сервере.

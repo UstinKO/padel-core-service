@@ -173,3 +173,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.57-unaccent-extension.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.58-marketing-qr-daily.yaml
+      relativeToChangelogFile: true
