@@ -751,3 +751,23 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 
 Текущий WebSocket `/ws` (SockJS) используется только доменом King of Court.  
 При декомпозиции — выносить вместе с King of Court сервисом или через отдельный WebSocket gateway.
+
+## Офлайн-атрибуция Reby
+
+| Метод | URL | Роль | Поведение |
+|---|---|---|---|
+
+| `GET` | `/qr/reby/site` | — | Публичный 302 на главную с `reby / qr / offline_tournaments`; серверный счётчик site, no-store. |
+| `GET` | `/qr/reby/telegram` | — | Публичный 302 на `https://t.me/padelarg`; серверный счётчик telegram, no-store. |
+| `GET` | `/api/admin/marketing/qr-stats` | SUPER_ADMIN | JSON отчёт Reby: from/to (ISO даты включительно, до 366 дней), site/telegram и days. Без дат — текущий месяц Buenos Aires. |
+
+Контроллер `RebyQrController`, сервис `QrStatsService`, JDBC-репозиторий
+`QrStatsRepository`. Считаются повторные GET, без JavaScript и analytics cookies.
+HEAD, Purpose/Sec-Purpose с prefetch/preview и User-Agent с подстроками bot,
+spider, crawler, facebookexternalhit, whatsapp, slack, discord, preview,
+headless, curl/, wget/ исключаются. Список ограниченный: гарантии распознавания
+всех роботов и уникальных людей нет. Браузер Telegram-Android не исключается.
+Неизвестные назначения не публикуются. Query-параметры не меняют назначение.
+При сбое записи редирект сохраняется, ошибка пишется в серверный лог;
+отчёт при сбое чтения не подменяется нулями. Миграция не восстанавливает прошлые
+переходы. Старые QR со ссылкой прямо на главную/Telegram не используют эти счётчики.

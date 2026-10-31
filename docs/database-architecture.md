@@ -1,7 +1,7 @@
 # Архитектура базы данных — padel-core-service
 
 > **СУБД:** PostgreSQL 15  
-> **Версия схемы:** v1.57  
+> **Версия схемы:** v1.58
 > **Миграции:** Liquibase (YAML), файлы в `src/main/resources/db/changelog/versions/`  
 > **ddl-auto:** `none` — схема управляется только через Liquibase
 
@@ -857,3 +857,23 @@ tournaments_db
 | v1.55 | `v1.55-add-partner-reserve-fields` | `tournament_registrations_db.final_reminder_sent`, `partner_action_token` |
 | v1.56 | `v1.56-add-partner-telegram` | `tournament_registrations_db.partner_telegram` |
 | v1.57 | `v1.57-unaccent-extension` | Расширение Postgres `unaccent` (диакритика в поиске партнёра, LFPT-0720) — не таблица/колонка |
+
+| v1.58 | `v1.58-marketing-qr-daily` | Атомарные дневные счётчики QR-переходов Reby на сайт и в Telegram |
+
+## QR-переходы Reby
+
+### `marketing_qr_daily_db`
+
+Серверные агрегаты, миграция `v1.58-marketing-qr-daily.yaml`. Без связей с игроками.
+
+| Колонка | Тип | Назначение |
+|---|---|---|
+| `fecha` | DATE NOT NULL | День America/Argentina/Buenos_Aires |
+| `origen` | VARCHAR(32) NOT NULL | Фиксированное значение `reby` |
+| `destino` | VARCHAR(16) NOT NULL | `site` или `telegram` |
+| `aperturas` | BIGINT NOT NULL DEFAULT 0 | Неотрицательное количество открытий |
+
+Первичный ключ: (`fecha`, `origen`, `destino`). Один атомарный upsert увеличивает
+счётчик; параллельные обращения не теряют инкременты. Перезапуск приложения
+и повторный деплой не обнуляют таблицу. IP, cookies, идентификаторы посетителей,
+полные User-Agent не сохраняются в этой таблице. Это открытия, а не уникальные люди.

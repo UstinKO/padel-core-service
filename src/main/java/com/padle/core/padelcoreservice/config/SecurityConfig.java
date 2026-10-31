@@ -152,6 +152,8 @@ public class SecurityConfig {
                                 "/tg-posts",
                                 "/wa-info",
                                 "/threads",
+                                "/qr/reby/site",
+                                "/qr/reby/telegram",
                                 // Веб-версия клиента 1Padel.App — статика; приватные данные
                                 // клиент берёт из /api/** по Bearer-токену, их авторизация не меняется
                                 "/app",
@@ -184,6 +186,7 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.POST,
                                 "/api/tournaments/double/accept-pair"
                         ).permitAll()
+                        .requestMatchers("/api/admin/marketing/qr-stats").hasRole("SUPER_ADMIN")
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().authenticated()
                 )
