@@ -77,6 +77,11 @@ docker compose up -d
 | `GET /oct-tg`, `/oct-wa`, `/oct-ig` | — (redirect) | `MarketingRedirectController` — короткие ссылки на `1-padel.com/?utm_...` для октябрьского календаря (LFPT-0472) |
 | `GET /ig-bio` | — (redirect) | `MarketingRedirectController` — короткая ссылка на `1-padel.com/?utm_...` для профиля Instagram (LFPT-0489) |
 | `GET /ig-story` | — (redirect) | `MarketingRedirectController` — постоянная анонимная ссылка для сторис и репостов: `instagram / social`, кампания `instagram_stories`, содержание `shared_story` (LFPT-0779) |
+| `GET /ig-ru` | — (redirect) | `MarketingRedirectController` — главная со списком турниров; `instagram / social`, кампания `instagram_profile_ru` |
+| `GET /tg-calendar` | — (redirect) | `MarketingRedirectController` — главная со списком турниров; `telegram / social`, кампания `telegram_calendar` |
+| `GET /tg-posts` | — (redirect) | `MarketingRedirectController` — главная со списком турниров; `telegram / social`, кампания `telegram_posts` |
+| `GET /wa-info` | — (redirect) | `MarketingRedirectController` — главная со списком турниров; `whatsapp / message`, кампания `whatsapp_group` |
+| `GET /threads` | — (redirect) | `MarketingRedirectController` — главная со списком турниров; `threads / social`, кампания `threads_profile` |
 | `GET /app/` (`/app` → редирект) | `static/app/index.html` (forward) | `MobileAppViewController` — веб-версия клиента 1Padel.App, анонимно; сюда же возвращается Google-вход из приложения (LFPT-0637, LFPT-0643) |
 
 ### Player Area (`ROLE_PLAYER`)
