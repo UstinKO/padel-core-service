@@ -5,6 +5,7 @@ import com.padle.core.padelcoreservice.repository.marketing.QrStatsRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessResourceFailureException;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
@@ -34,6 +35,14 @@ class QrStatsServiceTest {
         assertThat(result.to()).isEqualTo(today.withDayOfMonth(today.lengthOfMonth()));
         assertThat(result.site()).isZero();
         assertThat(result.telegram()).isZero();
+    }
+
+    @Test
+    void dayChangesAtMidnightBuenosAiresInsteadOfUtc() {
+        assertThat(QrStatsService.businessDate(Instant.parse("2026-11-01T02:59:59Z")))
+                .isEqualTo(LocalDate.of(2026, 10, 31));
+        assertThat(QrStatsService.businessDate(Instant.parse("2026-11-01T03:00:00Z")))
+                .isEqualTo(LocalDate.of(2026, 11, 1));
     }
 
     @Test

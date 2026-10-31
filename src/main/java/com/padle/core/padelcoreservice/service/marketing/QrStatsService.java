@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
@@ -27,14 +28,18 @@ public class QrStatsService {
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void recordClick(String destination) {
         try {
-            repository.increment(LocalDate.now(ZONE), destination);
+            repository.increment(businessDate(Instant.now()), destination);
         } catch (DataAccessException ex) {
             log.error("Не удалось сохранить QR-переход Reby: {}", destination, ex);
         }
     }
 
+    static LocalDate businessDate(Instant instant) {
+        return LocalDate.ofInstant(instant, ZONE);
+    }
+
     public QrStats stats(LocalDate from, LocalDate to) {
-        LocalDate today = LocalDate.now(ZONE);
+        LocalDate today = businessDate(Instant.now());
         LocalDate start = Optional.ofNullable(from).orElse(today.withDayOfMonth(1));
         LocalDate end = Optional.ofNullable(to).orElse(today.withDayOfMonth(today.lengthOfMonth()));
         if (end.isBefore(start) || ChronoUnit.DAYS.between(start, end) >= 366) {
