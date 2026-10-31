@@ -29,6 +29,24 @@ class MarketingRedirectControllerTest {
     private MockMvc mockMvc;
 
     @Test
+    void igStory_anonimo_redirigeConUtm() throws Exception {
+        mockMvc.perform(get("/ig-story").servletPath("/ig-story"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl(
+                        "https://1-padel.com/?utm_source=instagram&utm_medium=social&utm_campaign=instagram_stories&utm_content=shared_story"));
+    }
+
+    @Test
+    void igStory_parametrosExternos_noCambianDestino() throws Exception {
+        mockMvc.perform(get("/ig-story").servletPath("/ig-story")
+                        .param("url", "https://example.com/")
+                        .param("utm_source", "externo"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl(
+                        "https://1-padel.com/?utm_source=instagram&utm_medium=social&utm_campaign=instagram_stories&utm_content=shared_story"));
+    }
+
+    @Test
     void igBio_anonimo_redirigeConUtm() throws Exception {
         // DispatcherServlet está mapeado a "/" (default servlet) en producción: getServletPath()
         // devuelve la URI completa. MockHttpServletRequest no lo calcula solo — se fija explícitamente.

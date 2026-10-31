@@ -146,6 +146,7 @@ public class SecurityConfig {
                                 "/oct-ig",
                                 // Короткая ссылка для профиля Instagram
                                 "/ig-bio",
+                                "/ig-story",
                                 // Веб-версия клиента 1Padel.App — статика; приватные данные
                                 // клиент берёт из /api/** по Bearer-токену, их авторизация не меняется
                                 "/app",

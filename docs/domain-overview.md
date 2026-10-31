@@ -679,6 +679,7 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 |-------|-----|------|----------|
 | `GET` | `/error/403`, `/error/rate-limit` | — | Страницы ошибок доступа и превышения лимита (`HomeController`). |
 | `GET` | `/oct-tg`, `/oct-wa`, `/oct-ig`, `/ig-bio` | — | Короткие маркетинговые ссылки → `1-padel.com/?utm_...` (LFPT-0472, LFPT-0489). |
+| `GET` | `/ig-story` | — | Постоянная ссылка сторис и репостов → `302 https://1-padel.com/?utm_source=instagram&utm_medium=social&utm_campaign=instagram_stories&utm_content=shared_story` (LFPT-0779). |
 | `GET` | `/app`, `/app/` | — | Веб-версия клиента 1Padel.App: `/app` → `302 /app/`, `/app/` → `forward:/app/index.html` (статика `static/app/`), анонимно (`MobileAppViewController`, LFPT-0643). |
 | `GET` | `/admin/telegram-pipeline` | SUPER_ADMIN | Страница выключателя Telegram-входа в конвейер (`telegram_pipeline_state_db`). |
 | `POST` | `/admin/telegram-pipeline/toggle` | SUPER_ADMIN | Поставить конвейер на паузу / снять. |
