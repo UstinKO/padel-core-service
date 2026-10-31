@@ -1,7 +1,7 @@
 # LFPT-0785: Feature учёт QR-переходов из Reby
 
 ## Статус
-in-progress
+done
 
 ## Источник
 https://github.com/UstinKO/padel-core-service/issues/785
