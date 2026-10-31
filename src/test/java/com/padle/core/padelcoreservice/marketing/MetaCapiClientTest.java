@@ -32,6 +32,13 @@ class MetaCapiClientTest {
     }
 
     @Test
+    void cashPurchaseUsesStoredPhysicalSourceWithoutWebsiteOrOrganizerData() {
+        String payload = JsonMapper.builder().build().writeValueAsString(client.payload(delivery("physical_store")));
+        assertThat(payload).contains("\"action_source\":\"physical_store\"", "\"value\":400.00", "\"currency\":\"ARS\"")
+                .doesNotContain("client_ip_address", "client_user_agent", "event_source_url", "test-secret");
+    }
+
+    @Test
     @SuppressWarnings("unchecked")
     void acceptanceRequiresSuccessfulStatusAndAnActuallyAcceptedEvent() throws IOException, InterruptedException {
         HttpResponse<String> response = mock(HttpResponse.class);
@@ -49,7 +56,27 @@ class MetaCapiClientTest {
     @Test
     void unavailableMetaReturnsRetryableResultWithoutThrowing() throws IOException, InterruptedException {
         when(http.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenThrow(new IOException("offline"));
-        assertThat(client.send(delivery())).isEqualTo(new MetaCapiClient.Result(false, 0));
+        assertThat(client.send(delivery())).isEqualTo(new MetaCapiClient.Result(false, 0, 0));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void acceptedEventStillExposesDiagnosticMessageCountWithoutRetryingAsFailure() throws IOException, InterruptedException {
+        HttpResponse<String> response = mock(HttpResponse.class);
+        when(response.statusCode()).thenReturn(200);
+        when(response.body()).thenReturn("{\"events_received\":1,\"messages\":[\"test session mismatch\"]}");
+        when(http.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(response);
+        assertThat(client.send(delivery())).isEqualTo(new MetaCapiClient.Result(true, 200, 1));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void nonJsonClientRejectionPreservesThePermanentHttpStatus() throws IOException, InterruptedException {
+        HttpResponse<String> response = mock(HttpResponse.class);
+        when(response.statusCode()).thenReturn(400);
+        when(http.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(response);
+        assertThat(client.send(delivery())).isEqualTo(new MetaCapiClient.Result(false, 400, 0));
+        verify(response, never()).body();
     }
 
     @Test
@@ -61,7 +88,11 @@ class MetaCapiClientTest {
     }
 
     private MarketingOutbox.Delivery delivery() {
+        return delivery("other");
+    }
+
+    private MarketingOutbox.Delivery delivery(String actionSource) {
         return new MarketingOutbox.Delivery(UUID.randomUUID(), 123, UUID.randomUUID(), Instant.parse("2026-10-30T12:00:00Z"),
-                new BigDecimal("400.00"), "ARS", 0, 1, "fb.1.1700000000000.click", "fb.1.1700000000000.123");
+                new BigDecimal("400.00"), "ARS", 0, 1, "fb.1.1700000000000.click", "fb.1.1700000000000.123", actionSource);
     }
 }

@@ -7,8 +7,6 @@ services:
       POSTGRES_DB: padel_codex_test
       POSTGRES_USER: padel_codex
       POSTGRES_PASSWORD: ${CODEX_DB_PASSWORD:?Укажите пароль отдельной тестовой БД}
-    ports:
-      - "127.0.0.1:55432:5432"
     volumes:
       - codex_postgres:/var/lib/postgresql/data
     healthcheck:
@@ -23,7 +21,6 @@ services:
       dockerfile: codex-worker/Dockerfile
     profiles: ["relay"]
     restart: unless-stopped
-    network_mode: host
     cap_drop: [ALL]
     security_opt:
       - no-new-privileges:true
@@ -35,6 +32,7 @@ services:
     volumes:
       - codex_state:/var/lib/padel-codex
       - codex_home:/home/padel-codex
+      - /run/padel-codex-switch:/run/padel-codex-switch:ro
     depends_on:
       postgres:
         condition: service_healthy

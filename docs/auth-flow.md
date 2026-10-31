@@ -548,6 +548,8 @@ HTTP `429 Too Many Requests` + `Retry-After: 60`:
 | Путь | Доступ |
 |------|--------|
 | `/`, `/torneos`, `/clubs/**`, `/ranking`, `/login` | Публичный |
+| `/ig-story` | Публичный фиксированный редирект на главную с метками Instagram Stories |
+| `/ig-bio`, `/ig-ru`, `/tg-calendar`, `/tg-posts`, `/wa-info`, `/threads` | Публичные фиксированные 302-редиректы на главную со списком турниров и отдельными UTM-кампаниями; авторизация не требуется |
 | `/players/registro`, `/api/auth/**` | Публичный |
 | `/recuperar-password/**`, `/double-registration/complete` | Публичный |
 | `/waitlist/confirm`, `/oauth2/**` | Публичный |
@@ -685,6 +687,14 @@ POST /api/auth/login → access (24ч) + refresh (7д)
               ▼
          isEnabled()=false → validateToken()=false → 403 на следующем запросе
 ```
+
+## Доступ к QR-атрибуции Reby
+
+`/qr/reby/site` и `/qr/reby/telegram` — точные публичные маршруты; прочие `/qr/**`
+не становятся публичными. `/api/admin/marketing/qr-stats` требует ROLE_SUPER_ADMIN
+в SecurityConfig и дополнительно через @PreAuthorize. OWNER, ORGANIZER, ADMIN,
+CLUB_ADMIN и PLAYER получают 403. Гость не получает данные. Отчёт — read-only,
+без персональных идентификаторов. Назначения редиректов фиксированы на сервере.
 
 ## Маркетинговая атрибуция Meta
 

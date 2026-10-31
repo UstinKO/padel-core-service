@@ -76,6 +76,12 @@ docker compose up -d
 | `GET /reserva/accion/cancelar` | `reserve-cancel-confirm.html` | `ReserveActionController` — страница подтверждения отмены резервной заявки без партнёра (LFPT-0668) |
 | `GET /oct-tg`, `/oct-wa`, `/oct-ig` | — (redirect) | `MarketingRedirectController` — короткие ссылки на `1-padel.com/?utm_...` для октябрьского календаря (LFPT-0472) |
 | `GET /ig-bio` | — (redirect) | `MarketingRedirectController` — короткая ссылка на `1-padel.com/?utm_...` для профиля Instagram (LFPT-0489) |
+| `GET /ig-story` | — (redirect) | `MarketingRedirectController` — постоянная анонимная ссылка для сторис и репостов: `instagram / social`, кампания `instagram_stories`, содержание `shared_story` (LFPT-0779) |
+| `GET /ig-ru` | — (redirect) | `MarketingRedirectController` — главная со списком турниров; `instagram / social`, кампания `instagram_profile_ru` |
+| `GET /tg-calendar` | — (redirect) | `MarketingRedirectController` — главная со списком турниров; `telegram / social`, кампания `telegram_calendar` |
+| `GET /tg-posts` | — (redirect) | `MarketingRedirectController` — главная со списком турниров; `telegram / social`, кампания `telegram_posts` |
+| `GET /wa-info` | — (redirect) | `MarketingRedirectController` — главная со списком турниров; `whatsapp / message`, кампания `whatsapp_group` |
+| `GET /threads` | — (redirect) | `MarketingRedirectController` — главная со списком турниров; `threads / social`, кампания `threads_profile` |
 | `GET /app/` (`/app` → редирект) | `static/app/index.html` (forward) | `MobileAppViewController` — веб-версия клиента 1Padel.App, анонимно; сюда же возвращается Google-вход из приложения (LFPT-0637, LFPT-0643) |
 
 ### Player Area (`ROLE_PLAYER`)
@@ -529,6 +535,17 @@ Push в `master` запускает `.github/workflows/deploy.yml`: сборка
 - Таблица регистраций называется `tournament_registrations_db` (не `tournament_registration`).
 - **i18n**: публичный UI, admin-панель и email-шаблоны переведены на `es`/`ru`/`en` через Spring `AcceptHeaderLocaleResolver` (auto-detect по `Accept-Language`, без переключателя). Ключи — в `src/main/resources/i18n/messages_{es,ru,en}.properties`, JS-строки — в `static/js/i18n/messages-{es,ru,en}.js`. Подробности и статус — [docs/i18n/README.md](../docs/i18n/README.md).
 
+## QR-ссылки Reby
+
+| Метод и URL | Доступ | Реализация |
+|---|---|---|
+| `GET /qr/reby/site` | Публичный | RebyQrController, фиксированный 302, site |
+| `GET /qr/reby/telegram` | Публичный | RebyQrController, фиксированный 302, telegram |
+| `GET /api/admin/marketing/qr-stats` | SUPER_ADMIN | Отчёт за период по marketing_qr_daily_db |
+
+Счётчики: QrStatsService / QrStatsRepository, атомарный PostgreSQL upsert,
+даты America/Argentina/Buenos_Aires. Подробности — docs/domain-overview.md.
+
 ## Измерение рекламы Meta
 
-Модуль `marketing/`: CSRF-защищённые `/api/marketing/config`, `/api/marketing/context`, `/api/marketing/events`, `/api/marketing/ack`; экспорт `/admin/marketing/export.csv` с проверкой доступа к турниру. Схема v1.58, интеграция выключена по умолчанию. [Контракт, статусы, очередь, настройка и Test Events](../docs/endpoints/meta-marketing.md).
+Модуль `marketing/`: CSRF-защищённые `/api/marketing/config`, `/api/marketing/context`, `/api/marketing/events`, `/api/marketing/ack`; экспорт `/admin/marketing/export.csv` с проверкой доступа к турниру. Схемы v1.58/v1.59, источник поступления сохраняется в очереди (наличные на месте — physical_store, перевод/неизвестный — other), интеграция выключена по умолчанию. [Контракт, статусы, очередь, настройка и Test Events](../docs/endpoints/meta-marketing.md).

@@ -1,6 +1,7 @@
 package com.padle.core.padelcoreservice.marketing;
 
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
+import com.padle.core.padelcoreservice.model.enums.PaymentMethod;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.Cookie;
 
@@ -40,6 +41,10 @@ public final class MarketingPolicy {
 
     public static boolean supportedCurrency(String currency) {
         return CURRENCIES.contains(currency == null ? "" : currency);
+    }
+
+    public static String paymentSource(PaymentMethod method) {
+        return method == PaymentMethod.CASH ? "physical_store" : "other";
     }
 
     public static BigDecimal positiveDelta(BigDecimal amount, BigDecimal highWater) {

@@ -23,7 +23,7 @@ public class MarketingOutbox {
     public record BrowserEvent(UUID eventId, String eventName, long tournamentId, String registrationStatus) { }
     public record Delivery(UUID eventId, long tournamentId, UUID visitorId, Instant occurredAt,
                            BigDecimal amount, String currency, int paidParticipants, int attempt,
-                           String fbc, String fbp) { }
+                           String fbc, String fbp, String actionSource) { }
 
     public List<BrowserEvent> browserEvents(HttpServletRequest request) {
         if (!properties.browserEnabled() || !MarketingPolicy.hasConsent(request)) {
@@ -71,7 +71,7 @@ public class MarketingOutbox {
                 """, (rs, row) -> new Delivery(rs.getObject("event_id", UUID.class), rs.getLong("tournament_id"),
                 rs.getObject("visitor_id", UUID.class), rs.getTimestamp("occurred_at").toInstant(),
                 rs.getBigDecimal("amount"), rs.getString("currency"), rs.getInt("paid_participants"),
-                rs.getInt("attempts") + 1, rs.getString("fbc"), rs.getString("fbp")), properties.testMode());
+                rs.getInt("attempts") + 1, rs.getString("fbc"), rs.getString("fbp"), rs.getString("action_source")), properties.testMode());
         return found.stream().findFirst().map(delivery -> {
             jdbc.update("UPDATE marketing_events_db SET lease_until = CURRENT_TIMESTAMP + INTERVAL '2 minutes', attempts = ? WHERE event_id = ?",
                     delivery.attempt(), delivery.eventId());

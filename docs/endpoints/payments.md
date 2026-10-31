@@ -22,7 +22,7 @@
 |---------|-----|----------|
 | `tournament` | TournamentDto | Данные турнира |
 | `players` | `List<PaymentManagementViewDto>` | Участники с платёжным статусом |
-| `paymentMethods` | `PaymentMethod[]` | Допустимые методы: CASH, TRANSFER, MERCADO_PAGO, etc. |
+| `paymentMethods` | `PaymentMethod[]` | Допустимые методы: CASH, BANK_TRANSFER, BY_BIT, BINANCE, TARJETA, TRANSFERENCIA, OTHER. |
 | `paymentStatuses` | `PaymentStatus[]` | PENDING / PAID / REFUNDED |
 
 ---
@@ -83,7 +83,7 @@
 | `amount` | BigDecimal | Сумма |
 | `currency` | String | Валюта |
 | `paymentStatus` | PaymentStatus | PENDING / PAID / REFUNDED |
-| `paymentMethod` | PaymentMethod | CASH / TRANSFER / MERCADO_PAGO |
+| `paymentMethod` | PaymentMethod | CASH / BANK_TRANSFER / BY_BIT / BINANCE / TARJETA / TRANSFERENCIA / OTHER |
 | `transactionId` | String | Номер транзакции |
 | `notes` | String | Заметки |
 
@@ -93,4 +93,4 @@
 
 ## Измерение рекламы
 
-При включённой интеграции Meta положительное увеличение накопительной суммы PAID записывает денежное событие в транзакционную очередь. Цена турнира не заменяет сумму оплаты. Повторы старой формы без paymentId переиспользуют активную платёжную строку под блокировкой регистрации. Частичная/полная оплата, пары, валюты, возвраты, дедупликация и экспорт — [контракт Meta](meta-marketing.md).
+При включённой интеграции Meta положительное увеличение накопительной суммы PAID записывает денежное событие в транзакционную очередь. Цена турнира не заменяет сумму оплаты. Повторы старой формы без paymentId переиспользуют активную платёжную строку под блокировкой регистрации. Для наличных на месте (CASH) фиксируется physical_store, для переводов/прочих/неизвестного способа — other; источник уже созданного поступления не меняется при редактировании платежа. Частичная/полная оплата, пары, валюты, возвраты, дедупликация и экспорт — [контракт Meta](meta-marketing.md).
