@@ -548,6 +548,7 @@ HTTP `429 Too Many Requests` + `Retry-After: 60`:
 | Путь | Доступ |
 |------|--------|
 | `/`, `/torneos`, `/clubs/**`, `/ranking`, `/login` | Публичный |
+| `/ig-story` | Публичный фиксированный редирект на главную с метками Instagram Stories |
 | `/players/registro`, `/api/auth/**` | Публичный |
 | `/recuperar-password/**`, `/double-registration/complete` | Публичный |
 | `/waitlist/confirm`, `/oauth2/**` | Публичный |
