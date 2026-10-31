@@ -85,7 +85,7 @@ class RebyQrControllerTest {
         mvc.perform(get("/api/admin/marketing/qr-stats").param("from", "2026-11-01")
                         .param("to", "2026-11-02").with(user("admin").roles("SUPER_ADMIN")))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.site").value(0))
-                .andExpect(jsonPath("$.telegram").value(0)).andExpect(jsonPath("$.days").isEmpty());
+                .andExpect(jsonPath("$.telegram").value(0)).andExpect(jsonPath("$.days.length()").value(0));
         mvc.perform(get("/api/admin/marketing/qr-stats").param("from", "2026-11-02")
                         .param("to", "2026-11-01").with(user("admin").roles("SUPER_ADMIN")))
                 .andExpect(status().isBadRequest());
