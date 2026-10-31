@@ -856,7 +856,9 @@ tournaments_db
 | v1.54 | `v1.54-ranking-mejor-posicion-drop-default` | `ranking_db.mejor_posicion`: убран DEFAULT 0, нули → NULL |
 | v1.55 | `v1.55-add-partner-reserve-fields` | `tournament_registrations_db.final_reminder_sent`, `partner_action_token` |
 | v1.56 | `v1.56-add-partner-telegram` | `tournament_registrations_db.partner_telegram` |
-| v1.58 | `v1.58-unaccent-extension` | Расширение Postgres `unaccent` (диакритика в поиске партнёра, LFPT-0720) — не таблица/колонка |
+| v1.57 | `v1.57-unaccent-extension` | Расширение Postgres `unaccent` (диакритика в поиске партнёра, LFPT-0720) — не таблица/колонка |
+
+| v1.58 | `v1.58-marketing-qr-daily` | Атомарные дневные счётчики QR-переходов Reby на сайт и в Telegram |
 
 ## QR-переходы Reby
 
