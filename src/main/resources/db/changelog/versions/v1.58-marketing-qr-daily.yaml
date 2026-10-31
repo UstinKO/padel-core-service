@@ -1,0 +1,18 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.58-marketing-qr-daily
+      author: padel-core
+      changes:
+        - sql:
+            dbms: postgresql
+            sql: |
+              CREATE TABLE marketing_qr_daily_db (
+                fecha DATE NOT NULL,
+                origen VARCHAR(32) NOT NULL CHECK (origen = 'reby'),
+                destino VARCHAR(16) NOT NULL CHECK (destino IN ('site', 'telegram')),
+                aperturas BIGINT NOT NULL DEFAULT 0 CHECK (aperturas >= 0),
+                PRIMARY KEY (fecha, origen, destino)
+              );
+      rollback:
+        - dropTable:
+            tableName: marketing_qr_daily_db

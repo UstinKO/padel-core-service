@@ -1,7 +1,7 @@
 # Архитектура базы данных — padel-core-service
 
 > **СУБД:** PostgreSQL 15  
-> **Версия схемы:** v1.58
+> **Версия схемы:** v1.59
 > **Миграции:** Liquibase (YAML), файлы в `src/main/resources/db/changelog/versions/`  
 > **ddl-auto:** `none` — схема управляется только через Liquibase
 
@@ -858,7 +858,28 @@ tournaments_db
 | v1.56 | `v1.56-add-partner-telegram` | `tournament_registrations_db.partner_telegram` |
 | v1.57 | `v1.57-unaccent-extension` | Расширение Postgres `unaccent` (диакритика в поиске партнёра, LFPT-0720) — не таблица/колонка |
 
+| v1.58 | `v1.58-marketing-qr-daily` | Атомарные дневные счётчики QR-переходов Reby на сайт и в Telegram |
 | v1.58 | `v1.58-meta-marketing` | Атрибуция Meta и транзакционный журнал/очередь; историческая база без отправки |
+| v1.59 | `v1.59-meta-payment-source` | Неизменяемый источник каждого поступления: CASH на месте → physical_store, прочие/неизвестные → other; существующие события остаются other |
+
+## QR-переходы Reby
+
+### `marketing_qr_daily_db`
+
+Серверные агрегаты, миграция `v1.58-marketing-qr-daily.yaml`. Без связей с игроками.
+
+| Колонка | Тип | Назначение |
+|---|---|---|
+| `fecha` | DATE NOT NULL | День America/Argentina/Buenos_Aires |
+| `origen` | VARCHAR(32) NOT NULL | Фиксированное значение `reby` |
+| `destino` | VARCHAR(16) NOT NULL | `site` или `telegram` |
+| `aperturas` | BIGINT NOT NULL DEFAULT 0 | Неотрицательное количество открытий |
+
+Первичный ключ: (`fecha`, `origen`, `destino`). Один атомарный upsert увеличивает
+счётчик; параллельные обращения не теряют инкременты. Перезапуск приложения
+и повторный деплой не обнуляют таблицу. IP, cookies, идентификаторы посетителей,
+полные User-Agent не сохраняются в этой таблице. Это открытия, а не уникальные люди.
+
 
 ## Таблицы маркетинговой атрибуции
 
@@ -869,7 +890,7 @@ tournaments_db
 | `marketing_visitors_db` | `id` UUID PK; `consent` boolean; `first_touch`, `last_touch` text (JSON пяти UTM и времени); `fbc` varchar(256), `fbp` varchar(128); `created_at`, `updated_at` timestamptz |
 | `marketing_registrations_db` | `registration_id` PK/FK записи; `visitor_id` nullable FK посетителя; `first_touch`, `last_touch` text; `expected_amount` numeric(10,2), `expected_currency` varchar(10); `fbc`, `fbp`; `created_at`. Неизменяемый снимок источника и стоимости участия; при отзыве согласия рекламные данные очищаются |
 | `marketing_payment_progress_db` | `payment_id` PK/FK платежа; `high_water` numeric(10,2), `currency` varchar(10). Максимальная подтверждённая накопительная сумма, а не сумма последнего события |
-| `marketing_events_db` | `event_id` UUID PK, `event_key` varchar(160) UNIQUE; `event_name`, `channel`, `test_mode`; FK `registration_id`, nullable `payment_id`, `visitor_id`; `registration_status`, `tournament_id`; `amount`, `cumulative_amount`, `currency`, `paid_participants`; `state`, `occurred_at`, `attempts`, `next_attempt_at`, `lease_until`, `last_http_status`. Индекс доставки: channel/state/next_attempt_at |
+| `marketing_events_db` | `event_id` UUID PK, `event_key` varchar(160) UNIQUE; `event_name`, `channel`, `test_mode`, `action_source` varchar(32) NOT NULL (physical_store/other); FK `registration_id`, nullable `payment_id`, `visitor_id`; `registration_status`, `tournament_id`; `amount`, `cumulative_amount`, `currency`, `paid_participants`; `state`, `occurred_at`, `attempts`, `next_attempt_at`, `lease_until`, `last_http_status`. Индекс доставки: channel/state/next_attempt_at |
 | `marketing_paid_slots_db` | Составной PK/FK `registration_id` + `partner_slot` boolean. Однократный учёт полной оплаты основного/гостевого слота |
 
 Миграция заполняет снимки старых регистраций без visitor_id и исходные high_water старых оплат; событий не создаёт. Дедупликация и ограничения валют/согласия описаны в [Meta marketing](endpoints/meta-marketing.md).

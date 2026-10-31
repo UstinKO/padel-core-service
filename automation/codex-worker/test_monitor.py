@@ -3,10 +3,16 @@ from pathlib import Path
 import unittest
 from unittest.mock import Mock
 
-from monitor import check
+from monitor import check, inspect_worker
 
 
 class MonitorTest(unittest.TestCase):
+    def test_bridge_failure_counts_as_worker_failure(self):
+        running = Mock(returncode=0, stdout='true 0')
+        down = Mock(returncode=3)
+        with unittest.mock.patch('monitor.subprocess.run', side_effect=[running, down]):
+            self.assertEqual(inspect_worker(), (False, 0))
+
     def test_down_alert_once_then_recovery_allows_new_alert(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / 'state.json'

@@ -39,6 +39,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 
 @SpringBootTest(properties = {
         "app.analytics.meta.enabled=true", "app.analytics.meta.pixel-id=930260823500064",
+        "app.analytics.meta.access-token=", "app.analytics.meta.test-event-code=",
         "disposable-email-domains.checkers.daily-updated-domains=false",
         "disposable-email-domains.checkers.reload.enabled=false",
         "spring.mail.username=", "spring.mail.password=",
@@ -143,6 +144,42 @@ class MarketingIntegrationTest {
         payment.setNotes("Сохранено повторно");
         payments.saveAndFlush(payment);
         assertThat(purchases(payment.getId())).hasSize(2);
+    }
+
+    @Test
+    void paymentSourceIsFrozenPerIncrementAcrossMethodEditsRetryAndRestart() {
+        Payment payment = payments.saveAndFlush(Payment.builder().registration(registration(RegistrationStatus.CONFIRMED))
+                .amount(new BigDecimal("400")).currency("ARS").status(PaymentStatus.PAID)
+                .paymentMethod(PaymentMethod.CASH).build());
+        var first = outbox.claim().orElseThrow();
+        assertThat(first.actionSource()).isEqualTo("physical_store");
+        outbox.finish(first, false, 503);
+
+        payment.setPaymentMethod(PaymentMethod.BANK_TRANSFER);
+        payments.saveAndFlush(payment);
+        assertThat(purchases(payment.getId())).hasSize(1);
+        jdbc.update("UPDATE marketing_events_db SET next_attempt_at = CURRENT_TIMESTAMP WHERE event_id = ?", first.eventId());
+        var restarted = new MarketingOutbox(jdbc,
+                new MetaProperties(true, "930260823500064", "", "v26.0", true, ""), context);
+        var retry = restarted.claim().orElseThrow();
+        assertThat(retry.eventId()).isEqualTo(first.eventId());
+        assertThat(retry.occurredAt()).isEqualTo(first.occurredAt());
+        assertThat(retry.actionSource()).isEqualTo("physical_store");
+        outbox.finish(retry, true, 200);
+
+        payment.setAmount(new BigDecimal("1000"));
+        payments.saveAndFlush(payment);
+        var topUp = restarted.claim().orElseThrow();
+        assertThat(topUp.actionSource()).isEqualTo("other");
+        assertThat(topUp.amount()).isEqualByComparingTo("600");
+        assertThat(topUp.paidParticipants()).isEqualTo(1);
+        assertThat(purchases(payment.getId())).hasSize(2);
+    }
+
+    @Test
+    void unknownPaymentMethodDoesNotInventAWebsiteOrPhysicalSource() {
+        payment(registration(RegistrationStatus.CONFIRMED), "400", "ARS", null);
+        assertThat(outbox.claim().orElseThrow().actionSource()).isEqualTo("other");
     }
 
     @Test

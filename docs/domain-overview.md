@@ -679,6 +679,12 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 |-------|-----|------|----------|
 | `GET` | `/error/403`, `/error/rate-limit` | — | Страницы ошибок доступа и превышения лимита (`HomeController`). |
 | `GET` | `/oct-tg`, `/oct-wa`, `/oct-ig`, `/ig-bio` | — | Короткие маркетинговые ссылки → `1-padel.com/?utm_...` (LFPT-0472, LFPT-0489). |
+| `GET` | `/ig-story` | — | Постоянная ссылка сторис и репостов → `302 https://1-padel.com/?utm_source=instagram&utm_medium=social&utm_campaign=instagram_stories&utm_content=shared_story` (LFPT-0779). |
+| `GET` | `/ig-ru` | — | Публичный 302 на главную со списком турниров: `instagram / social`, кампания `instagram_profile_ru`. |
+| `GET` | `/tg-calendar` | — | Публичный 302 на главную со списком турниров: `telegram / social`, кампания `telegram_calendar`. |
+| `GET` | `/tg-posts` | — | Публичный 302 на главную со списком турниров: `telegram / social`, кампания `telegram_posts`. |
+| `GET` | `/wa-info` | — | Публичный 302 на главную со списком турниров: `whatsapp / message`, кампания `whatsapp_group`. |
+| `GET` | `/threads` | — | Публичный 302 на главную со списком турниров: `threads / social`, кампания `threads_profile`. |
 | `GET` | `/app`, `/app/` | — | Веб-версия клиента 1Padel.App: `/app` → `302 /app/`, `/app/` → `forward:/app/index.html` (статика `static/app/`), анонимно (`MobileAppViewController`, LFPT-0643). |
 | `GET` | `/admin/telegram-pipeline` | SUPER_ADMIN | Страница выключателя Telegram-входа в конвейер (`telegram_pipeline_state_db`). |
 | `POST` | `/admin/telegram-pipeline/toggle` | SUPER_ADMIN | Поставить конвейер на паузу / снять. |
@@ -745,3 +751,23 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 
 Текущий WebSocket `/ws` (SockJS) используется только доменом King of Court.  
 При декомпозиции — выносить вместе с King of Court сервисом или через отдельный WebSocket gateway.
+
+## Офлайн-атрибуция Reby
+
+| Метод | URL | Роль | Поведение |
+|---|---|---|---|
+
+| `GET` | `/qr/reby/site` | — | Публичный 302 на главную с `reby / qr / offline_tournaments`; серверный счётчик site, no-store. |
+| `GET` | `/qr/reby/telegram` | — | Публичный 302 на `https://t.me/padelarg`; серверный счётчик telegram, no-store. |
+| `GET` | `/api/admin/marketing/qr-stats` | SUPER_ADMIN | JSON отчёт Reby: from/to (ISO даты включительно, до 366 дней), site/telegram и days. Без дат — текущий месяц Buenos Aires. |
+
+Контроллер `RebyQrController`, сервис `QrStatsService`, JDBC-репозиторий
+`QrStatsRepository`. Считаются повторные GET, без JavaScript и analytics cookies.
+HEAD, Purpose/Sec-Purpose с prefetch/preview и User-Agent с подстроками bot,
+spider, crawler, facebookexternalhit, whatsapp, slack, discord, preview,
+headless, curl/, wget/ исключаются. Список ограниченный: гарантии распознавания
+всех роботов и уникальных людей нет. Браузер Telegram-Android не исключается.
+Неизвестные назначения не публикуются. Query-параметры не меняют назначение.
+При сбое записи редирект сохраняется, ошибка пишется в серверный лог;
+отчёт при сбое чтения не подменяется нулями. Миграция не восстанавливает прошлые
+переходы. Старые QR со ссылкой прямо на главную/Telegram не используют эти счётчики.

@@ -44,20 +44,20 @@ public class MetaCapiClient {
     record UserData(List<String> external_id, String fbc, String fbp) { }
     record CustomData(BigDecimal value, String currency, List<String> content_ids,
                       String content_type, int num_items, int paid_participants) { }
-    public record Result(boolean accepted, int httpStatus) { }
+    public record Result(boolean accepted, int httpStatus, int messageCount) { }
 
     Envelope payload(MarketingOutbox.Delivery delivery) {
         UserData user = new UserData(List.of(hash(delivery.visitorId().toString())), delivery.fbc(), delivery.fbp());
         CustomData custom = new CustomData(delivery.amount(), delivery.currency(),
                 List.of(Long.toString(delivery.tournamentId())), "product", 1, delivery.paidParticipants());
         ServerEvent event = new ServerEvent("Purchase", delivery.occurredAt().getEpochSecond(),
-                delivery.eventId().toString(), "other", user, custom);
+                delivery.eventId().toString(), delivery.actionSource(), user, custom);
         return new Envelope(List.of(event), properties.testMode() ? properties.testEventCode() : null);
     }
 
     public Result send(MarketingOutbox.Delivery delivery) {
         if (!properties.serverEnabled()) {
-            return new Result(false, 0);
+            return new Result(false, 0, 0);
         }
         URI endpoint = URI.create("https://graph.facebook.com/" + properties.apiVersion() + "/" + properties.pixelId() + "/events");
         HttpRequest request = HttpRequest.newBuilder(endpoint).timeout(Duration.ofSeconds(5))
@@ -65,14 +65,17 @@ public class MetaCapiClient {
                 .POST(HttpRequest.BodyPublishers.ofString(json.writeValueAsString(payload(delivery)))).build();
         try {
             HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
-            boolean accepted = response.statusCode() == 200
-                    && json.readTree(response.body()).path("events_received").asInt(0) == 1;
-            return new Result(accepted, response.statusCode());
+            if (response.statusCode() != 200) {
+                return new Result(false, response.statusCode(), 0);
+            }
+            var body = json.readTree(response.body());
+            boolean accepted = body.path("events_received").asInt(0) == 1;
+            return new Result(accepted, response.statusCode(), body.path("messages").size());
         } catch (IOException | JacksonException exception) {
-            return new Result(false, 0);
+            return new Result(false, 0, 0);
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
-            return new Result(false, 0);
+            return new Result(false, 0, 0);
         }
     }
 

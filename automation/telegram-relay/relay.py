@@ -9,6 +9,7 @@ import http.client
 import json
 import logging
 import os
+import socket
 import sys
 import time
 import urllib.error
@@ -64,7 +65,9 @@ class Config:
         self.pipeline_status_url = os.environ.get(
             "PIPELINE_STATUS_URL", "http://127.0.0.1:8080/api/internal/telegram-pipeline/status"
         )
-        self.pipeline_shared_secret = _require_env("PIPELINE_SHARED_SECRET")
+        self.pipeline_status_socket = os.environ.get("PIPELINE_STATUS_SOCKET", "")
+        self.pipeline_shared_secret = (os.environ.get("PIPELINE_SHARED_SECRET", "")
+                                       if self.pipeline_status_socket else _require_env("PIPELINE_SHARED_SECRET"))
         # движок задач (LFPT-0581)
         self.github_token = _require_env("GITHUB_TOKEN_RO")  # fine-grained PAT только на чтение
         self.github_repo = os.environ.get("GITHUB_REPO", "UstinKO/padel-core-service")
@@ -347,12 +350,23 @@ def is_pipeline_paused(cfg: Config) -> bool:
     """Fail-closed: любая неопределённость (сеть недоступна, padel-app не отвечает,
     неверный секрет) трактуется как "приостановлен" — это kill-switch, ошибаться
     нужно в сторону "не запускать", а не в сторону "запустить, несмотря ни на что"."""
-    req = urllib.request.Request(
-        cfg.pipeline_status_url,
-        headers={"X-Internal-Secret": cfg.pipeline_shared_secret},
-        method="GET",
-    )
     try:
+        if cfg.pipeline_status_socket:
+            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as connection:
+                connection.settimeout(10)
+                connection.connect(cfg.pipeline_status_socket)
+                connection.sendall(b"status\n")
+                with connection.makefile("rb") as stream:
+                    raw = stream.readline(4097)
+            if len(raw) > 4096 or not raw.endswith(b"\n"):
+                return True
+            body = json.loads(raw)
+            return not isinstance(body, dict) or body.get("paused") is not False
+        req = urllib.request.Request(
+            cfg.pipeline_status_url,
+            headers={"X-Internal-Secret": cfg.pipeline_shared_secret},
+            method="GET",
+        )
         with urllib.request.urlopen(req, timeout=10) as resp:
             if resp.status != 200:
                 log.warning("Проверка статуса конвейера вернула %s — считаю паузу активной", resp.status)

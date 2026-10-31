@@ -27,6 +27,10 @@ public class MetaDeliveryJob {
                 next.ifPresent(event -> {
                     MetaCapiClient.Result result = client.send(event);
                     outbox.finish(event, result.accepted(), result.httpStatus());
+                    if (result.messageCount() > 0) {
+                        log.warn("Meta вернула сообщения для события {} (HTTP {}, сообщений: {}); проверьте настройки и Test Events",
+                                event.eventId(), result.httpStatus(), result.messageCount());
+                    }
                     if (!result.accepted()) {
                         log.warn("Meta не приняла событие {}, HTTP {}", event.eventId(), result.httpStatus());
                     }

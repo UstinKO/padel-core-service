@@ -125,9 +125,11 @@ def worker_environment():
     }
     env = {name: value for name, value in os.environ.items() if name in names}
     env['SPRING_PROFILES_ACTIVE'] = 'cloud'
-    # Контейнер использует сеть хоста; дефолтный localhost:3100 — рабочий Loki.
+    # Не направлять тестовые логи в реальные сервисы, даже при ошибке сетевой настройки.
     # Даже тестовый appender Logback может обращаться к URL при отключённой метрике.
     env['LOKI_ENABLED'] = 'false'
     env['LOKI_URL'] = 'http://127.0.0.1:1/loki/api/v1/push'
+    env['SERVER_ADDRESS'] = '127.0.0.1'
+    env['SERVER_PORT'] = '18080'
     env['PYTHONUNBUFFERED'] = '1'
     return env

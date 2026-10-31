@@ -17,7 +17,9 @@ def inspect_worker():
     if result.returncode:
         return False, 0
     running, restarts = result.stdout.strip().split()
-    return running == 'true', int(restarts)
+    switch = subprocess.run(['systemctl', 'is-active', '--quiet', 'padel-codex-switch.service'],
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=15)
+    return running == 'true' and switch.returncode == 0, int(restarts)
 
 
 def load_state(path):

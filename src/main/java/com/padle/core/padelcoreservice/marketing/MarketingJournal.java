@@ -78,14 +78,14 @@ public class MarketingJournal {
         String key = "payment:" + payment.getId() + ":" + payment.getCurrency() + ":" + payment.getAmount().toPlainString();
         jdbc.update("""
                 INSERT INTO marketing_events_db(event_id, event_key, event_name, channel, test_mode,
-                    registration_id, payment_id, visitor_id, tournament_id, amount, cumulative_amount, currency, paid_participants)
+                    registration_id, payment_id, visitor_id, tournament_id, amount, cumulative_amount, currency, paid_participants, action_source)
                 SELECT ?, ?, 'Purchase', 'CAPI', ?, mr.registration_id, ?, mr.visitor_id,
-                    r.tournament_id, ?, ?, ?, ?
+                    r.tournament_id, ?, ?, ?, ?, ?
                 FROM marketing_registrations_db mr JOIN marketing_visitors_db v ON v.id = mr.visitor_id AND v.consent AND v.updated_at > CURRENT_TIMESTAMP - INTERVAL '90 days'
                 JOIN tournament_registrations_db r ON r.id = mr.registration_id
                 WHERE mr.registration_id = ? ON CONFLICT DO NOTHING
                 """, eventId(key), key, properties.testMode(), payment.getId(), delta, payment.getAmount(), payment.getCurrency(),
-                participants, payment.getRegistration().getId());
+                participants, MarketingPolicy.paymentSource(payment.getPaymentMethod()), payment.getRegistration().getId());
     }
 
     private int newlyPaidSlot(Payment payment) {
