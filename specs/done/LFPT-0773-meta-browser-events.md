@@ -1,7 +1,7 @@
 # LFPT-0773: События Meta в браузере и маркетинговое согласие
 
 ## Статус
-testing
+done
 
 ## Источник
 https://github.com/UstinKO/padel-core-service/issues/773. Прямое задание пользователя в Codex. Зависит от backend #772.
