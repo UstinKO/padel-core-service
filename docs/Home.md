@@ -122,3 +122,5 @@ SITE_KEY, SECRET_KEY
 | Сервер | Ubuntu 22.04 (адрес не публикуется) |
 | Grafana | `https://epadel.org/grafana/` |
 | Deploy | Push в `master` → GitHub Actions → Docker |
+
+Измерение рекламы: [Meta — события, согласие, атрибуция и CAPI](endpoints/meta-marketing.md).

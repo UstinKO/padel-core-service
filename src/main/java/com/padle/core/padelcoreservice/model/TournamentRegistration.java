@@ -1,6 +1,7 @@
 package com.padle.core.padelcoreservice.model;
 
 import com.padle.core.padelcoreservice.model.enums.PaymentStatus;
+import com.padle.core.padelcoreservice.marketing.MarketingEntityListener;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Entity
+@EntityListeners(MarketingEntityListener.class)
 @Table(name = "tournament_registrations_db")
 @Getter
 @Setter

@@ -545,3 +545,7 @@ Push в `master` запускает `.github/workflows/deploy.yml`: сборка
 
 Счётчики: QrStatsService / QrStatsRepository, атомарный PostgreSQL upsert,
 даты America/Argentina/Buenos_Aires. Подробности — docs/domain-overview.md.
+
+## Измерение рекламы Meta
+
+Модуль `marketing/`: CSRF-защищённые `/api/marketing/config`, `/api/marketing/context`, `/api/marketing/events`, `/api/marketing/ack`; экспорт `/admin/marketing/export.csv` с проверкой доступа к турниру. Схемы v1.58/v1.59, источник поступления сохраняется в очереди (наличные на месте — physical_store, перевод/неизвестный — other), интеграция выключена по умолчанию. [Контракт, статусы, очередь, настройка и Test Events](../docs/endpoints/meta-marketing.md).

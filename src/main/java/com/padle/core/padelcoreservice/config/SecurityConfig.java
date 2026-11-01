@@ -1,5 +1,7 @@
 package com.padle.core.padelcoreservice.config;
 
+import com.padle.core.padelcoreservice.marketing.MetaProperties;
+
 import com.padle.core.padelcoreservice.security.CustomAccessDeniedHandler;
 import com.padle.core.padelcoreservice.security.JwtAuthenticationFilter;
 import com.padle.core.padelcoreservice.security.RateLimitFilter;
@@ -49,6 +51,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @Import(SecurityBeansConfig.class)
 public class SecurityConfig {
+    private final MetaProperties metaProperties;
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomOAuth2UserService customOAuth2UserService;
@@ -140,6 +143,7 @@ public class SecurityConfig {
                                 "/reserva/accion/**",
                                 "/ws/**",
                                 "/api/cookies/**",
+                                "/api/marketing/**",
                                 // Короткие маркетинговые ссылки календаря турниров
                                 "/oct-tg",
                                 "/oct-wa",
@@ -256,11 +260,13 @@ public class SecurityConfig {
                         .contentSecurityPolicy(csp -> csp
                                 .policyDirectives(
                                         "default-src 'self'; " +
-                                                "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://www.google.com https://www.gstatic.com https://cdn.jsdelivr.net https://www.googletagmanager.com https://www.clarity.ms; " +
+                                                "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://www.google.com https://www.gstatic.com https://cdn.jsdelivr.net https://www.googletagmanager.com https://www.clarity.ms" +
+                                                (metaProperties.browserEnabled() ? " https://connect.facebook.net; " : "; ") +
                                                 "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://cdn.jsdelivr.net; " +
                                                 "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; " +
                                                 "img-src 'self' data: https:; " +
-                                                "connect-src 'self' https://www.google.com https://www.googletagmanager.com https://www.google-analytics.com https://*.google-analytics.com https://www.clarity.ms https://*.clarity.ms; " +
+                                                "connect-src 'self' https://www.google.com https://www.googletagmanager.com https://www.google-analytics.com https://*.google-analytics.com https://www.clarity.ms https://*.clarity.ms" +
+                                                (metaProperties.browserEnabled() ? " https://www.facebook.com https://connect.facebook.net; " : "; ") +
                                                 "frame-src https://www.google.com; " +
                                                 "frame-ancestors 'none';"
                                 )

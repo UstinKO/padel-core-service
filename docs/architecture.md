@@ -233,7 +233,7 @@ hikari:
 - **Только Liquibase** управляет схемой (`ddl-auto = none`).
 - Файлы: `src/main/resources/db/changelog/versions/vX.XX-<description>.yaml`
 - Мастер-файл: `changelog-master.yaml` — порядок include определяет порядок выполнения.
-- Текущая версия: **v1.58**
+- Текущая версия: **v1.59**
 
 **Добавление новой миграции:**
 ```
@@ -635,3 +635,7 @@ services:
 ```bash
 ./mvnw clean verify   # требует PostgreSQL на localhost:5432
 ```
+
+## Измерение рекламы Meta
+
+Изолированный модуль `marketing/`: JPA callback → JDBC-журнал в общей транзакции → фоновая очередь CAPI. Сеть отделена от сохранения оплаты, включение и токен через конфигурацию. [Контракт и ограничения](endpoints/meta-marketing.md).

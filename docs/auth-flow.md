@@ -695,3 +695,7 @@ POST /api/auth/login → access (24ч) + refresh (7д)
 в SecurityConfig и дополнительно через @PreAuthorize. OWNER, ORGANIZER, ADMIN,
 CLUB_ADMIN и PLAYER получают 403. Гость не получает данные. Отчёт — read-only,
 без персональных идентификаторов. Назначения редиректов фиксированы на сервере.
+
+## Маркетинговая атрибуция Meta
+
+`/api/marketing/*` доступны анонимному посетителю, но изменяющие запросы требуют CSRF; контекст и события дополнительно требуют явного маркетингового согласия и случайного HttpOnly cookie. Вход/OAuth не сбрасывает cookie. Экспорт `/admin/marketing/export.csv` проверяет доступ Owner к выбранному турниру через TournamentAccessService. CSP добавляет только connect.facebook.net в script-src и connect.facebook.net/www.facebook.com в connect-src при включённом Pixel; остальные ограничения сохраняются. [Подробности](endpoints/meta-marketing.md).
