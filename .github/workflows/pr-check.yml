@@ -54,6 +54,7 @@ jobs:
 
       - name: Check agent instructions and pipeline automation
         run: |
+          python3 -m unittest discover -s .github/bin -p 'test_*.py'
           python3 .github/bin/check-agent-migration.py
           python3 -m unittest discover -s automation/telegram-relay -p 'test_*.py'
           python3 -m unittest discover -s automation/codex-worker -p 'test_*.py'
