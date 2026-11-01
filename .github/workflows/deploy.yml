@@ -43,6 +43,7 @@ jobs:
       - name: Build JAR with version
         run: |
           mvn clean package -DskipTests
+          cp .github/bin/configure-meta-env.py target/configure-meta-env.py
           echo "${{ github.sha }}" > target/version.txt
           echo "Build timestamp: $(date)" >> target/version.txt
           echo "Listing target directory:"
@@ -54,27 +55,39 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          source: "target/*.jar,target/version.txt"
+          source: "target/*.jar,target/version.txt,target/configure-meta-env.py"
           target: "/opt/padel-app/temp/"
           strip_components: 1
 
       - name: Deploy to server
         id: deploy
+        env:
+          META_CAPI_ACCESS_TOKEN: ${{ secrets.META_CAPI_ACCESS_TOKEN }}
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_KEY_NEW }}
+          envs: META_CAPI_ACCESS_TOKEN
           timeout: 1200s
           command_timeout: 1200s
           script: |
             set -e
+            umask 077
+            META_ENV_BACKUP=""
+            test -n "$META_CAPI_ACCESS_TOKEN" || { echo "Отсутствует секрет Meta"; exit 1; }
+            command -v python3 >/dev/null
 
             echo "🔧 Starting deployment process..."
 
             # Функция для отката
             rollback() {
               echo "⚠️ Rolling back to previous version..."
+              if [ -n "$META_ENV_BACKUP" ] && [ -f "$META_ENV_BACKUP" ]; then
+                cp -p "$META_ENV_BACKUP" /opt/padel-app/.env
+                rm -f "$META_ENV_BACKUP"
+                echo "Параметры окружения восстановлены"
+              fi
               if [ -f "/opt/padel-app/app.jar.backup" ]; then
                 cp /opt/padel-app/app.jar.backup /opt/padel-app/app.jar
                 echo "🔄 Restored previous JAR"
@@ -88,6 +101,8 @@ jobs:
                 echo "❌ No backup found for rollback"
               fi
             }
+
+            trap 'result=$?; if [ "$result" -ne 0 ]; then trap - EXIT; rollback; exit "$result"; fi' EXIT
 
             # Сохраняем текущую версию для отката
             if [ -f "/opt/padel-app/app.jar" ]; then
@@ -124,11 +139,20 @@ jobs:
             # Переходим в директорию приложения
             cd /opt/padel-app
 
+            META_ENV_CANDIDATE=$(mktemp /opt/.padel-meta-env.XXXXXX)
+            if ! cp -p .env "$META_ENV_CANDIDATE"; then
+              rm -f "$META_ENV_CANDIDATE"
+              exit 1
+            fi
+            META_ENV_BACKUP="$META_ENV_CANDIDATE"
+            chmod 600 "$META_ENV_BACKUP"
+            python3 /opt/padel-app/temp/configure-meta-env.py /opt/padel-app/.env
+            echo "Production-параметры Meta записаны без вывода секрета"
+
             # Пересобираем образ
             echo "🏗️ Building new Docker image..."
             if ! docker compose build --no-cache padel-app; then
               echo "❌ Docker build failed!"
-              rollback
               exit 1
             fi
 
@@ -136,7 +160,6 @@ jobs:
             echo "🔄 Restarting application..."
             if ! docker compose up -d --no-deps padel-app; then
               echo "❌ Failed to restart application container!"
-              rollback
               exit 1
             fi
 
@@ -178,13 +201,26 @@ jobs:
                 | grep -E "ERROR|Exception|Caused by|APPLICATION FAILED" | head -n 60 || true
               echo "📋 Last application log lines:"
               docker compose logs padel-app --since "$DEPLOY_STARTED_AT" --tail=60 || true
-              rollback
               exit 1
             fi
+
+            # Проверяем фактическую конфигурацию внутри нового контейнера.
+            docker compose exec -T padel-app sh -c 'test -n "$META_CAPI_ACCESS_TOKEN" && test "$META_ENABLED" = true && test "$META_TEST_MODE" = false && test -z "$META_TEST_EVENT_CODE"'
+            docker compose exec -T padel-app curl --fail --silent http://localhost:8080/api/marketing/config | python3 -c '
+            import json, sys
+            config = json.load(sys.stdin)
+            if config != {"enabled": True, "pixelId": "930260823500064", "testMode": False}:
+                sys.exit("Конфигурация Meta не соответствует production")
+            print("Meta: enabled=true, pixelId=930260823500064, testMode=false; серверный секрет задан")
+            '
 
             # Если всё хорошо, обновляем current_version
             mv /opt/padel-app/new_version.txt /opt/padel-app/current_version.txt
             echo "✅ New version is healthy!"
+
+            rm -f "$META_ENV_BACKUP"
+            META_ENV_BACKUP=""
+            trap - EXIT
 
             # Удаляем бэкап после успешного деплоя
             rm -f /opt/padel-app/app.jar.backup
