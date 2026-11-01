@@ -1,7 +1,7 @@
 # LFPT-0772: Измерение рекламы Meta — атрибуция и оплата
 
 ## Статус
-testing
+done
 
 ## Источник
 https://github.com/UstinKO/padel-core-service/issues/772. Прямое задание пользователя в Codex. Frontend: #773.
