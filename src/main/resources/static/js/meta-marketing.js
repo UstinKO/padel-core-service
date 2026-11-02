@@ -22,6 +22,7 @@
     let ready = Promise.resolve();
     let generation = 0;
     let contextReady = false;
+    let campaignCaptured = false;
 
     function cookie(name) {
         const pair = document.cookie.split(';').map(value => value.trim()).find(value => value.startsWith(name + '='));
@@ -76,11 +77,11 @@
             body: JSON.stringify({
                 path: publicPage ? landing.pathname : '/',
                 utm: includeCampaign ? Object.fromEntries(['source', 'medium', 'campaign', 'content', 'term'].map((key, index) => [key, values[index]])) : null,
-                fbclid: includeCampaign && /^[A-Za-z0-9_-]{1,200}$/.test(click || '') ? click : null,
-                fbp: cookie('_fbp') || null
+                fbclid: config.enabled && includeCampaign && /^[A-Za-z0-9_-]{1,200}$/.test(click || '') ? click : null,
+                fbp: config.enabled ? cookie('_fbp') || null : null
             })
         });
-        if (!response.ok) return {};
+        if (!response.ok) throw new Error('context');
         return response.json();
     }
 
@@ -157,8 +158,10 @@
             if (!response.ok) return;
             config = await response.json();
         }
-        if (!config.enabled || !/^\d{5,30}$/.test(config.pixelId) || !consent()) return;
-        const identity = await capture(!pageTracked);
+        if ((!config.attributionEnabled && !config.enabled) || !consent()) return;
+        const identity = await capture(!campaignCaptured);
+        campaignCaptured = true;
+        if (!config.enabled || !/^\d{5,30}$/.test(config.pixelId)) return;
         if (!/^[a-f0-9]{64}$/.test(identity.externalId || '') || !consent() || currentGeneration !== generation) return;
         if (!safeUrl(landing) || !safeReferrer() || revoked) return;
         // Параметры кампании уже сохранены сервером; Pixel получает URL без query.
