@@ -1,6 +1,8 @@
 package com.padle.core.padelcoreservice.marketing;
 
 import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2User;
+import com.padle.core.padelcoreservice.util.SecurityUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +31,8 @@ public class InternalAttributionService {
     static Optional<Long> playerId() {
         return Optional.ofNullable(SecurityContextHolder.getContext().getAuthentication())
                 .map(authentication -> authentication.getPrincipal())
-                .filter(PlayerPadel.class::isInstance).map(PlayerPadel.class::cast).map(PlayerPadel::getId);
+                .filter(principal -> principal instanceof PlayerPadel || principal instanceof CustomOAuth2User)
+                .map(SecurityUtils::extractPlayer).map(PlayerPadel::getId);
     }
 
     Optional<UUID> visitorId(HttpServletRequest request) {
