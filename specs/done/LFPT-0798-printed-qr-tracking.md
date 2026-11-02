@@ -1,7 +1,7 @@
 # LFPT-0798: Учёт напечатанных QR Black Padel и 15cero
 
 ## Статус
-in_progress
+done
 
 ## Источник и согласование
 https://github.com/UstinKO/padel-core-service/issues/798

@@ -790,3 +790,8 @@ GET /api/admin/marketing/qr-summary — SUPER_ADMIN; from/to ISO включит�
 Meta Pixel, согласия и маркетинговая атрибуция — отдельный механизм.
 После выпуска проверить Cloudflare (запрос должен доходить до приложения)
 и +1 в закрытом отчёте после каждого тестового открытия старых QR.
+
+
+GET /admin/marketing/qr — страница отчёта QR, только SUPER_ADMIN (HTTP + method).
+Данные через /api/admin/marketing/qr-summary, фильтры from/to/source, ES/RU/EN.
+Thymeleaf admin/qr-report, static/js/qr-report.js, static/css/qr-report.css.
