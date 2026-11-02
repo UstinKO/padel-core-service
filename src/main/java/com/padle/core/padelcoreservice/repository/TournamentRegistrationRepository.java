@@ -332,6 +332,9 @@ public interface TournamentRegistrationRepository extends JpaRepository<Tourname
     // Self-service действия из email (подтвердить/отменить) по непредсказуемому токену
     Optional<TournamentRegistration> findByPartnerActionToken(String partnerActionToken);
 
+    @Query("SELECT r.tournament.id FROM TournamentRegistration r WHERE r.partnerActionToken = :token")
+    Optional<Long> findTournamentIdByPartnerActionToken(@Param("token") String token);
+
     // Та же выборка, что findByTournamentIdAndStatusOrderByWaitlistPositionAsc, но
     // только полностью сформированные пары — используется при авто-подтверждении из резерва для
     // DOBLES-турниров, чтобы не подтвердить случайно заявку без партнёра («ожидает партнёра»).

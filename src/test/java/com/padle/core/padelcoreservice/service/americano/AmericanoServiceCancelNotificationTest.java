@@ -68,6 +68,7 @@ class AmericanoServiceCancelNotificationTest {
                 .status(RegistrationStatus.WAITLIST).isActive(true).isDoubleRegistration(false).build();
 
         when(tournamentRepository.findById(1L)).thenReturn(Optional.of(tournament));
+        when(tournamentRepository.lockById(1L)).thenReturn(Optional.of(tournament));
         when(registrationRepository.findByTournamentIdAndPlayerId(1L, 2L)).thenReturn(Optional.of(reg));
         lenient().when(americanoPlayerRepository.findByTournamentId(1L)).thenReturn(List.of());
         lenient().when(registrationRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));

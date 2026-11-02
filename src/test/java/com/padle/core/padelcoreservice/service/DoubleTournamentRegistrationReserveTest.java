@@ -264,6 +264,8 @@ class DoubleTournamentRegistrationReserveTest {
         when(registrationRepository.findByPartnerActionToken("PAT_X")).thenReturn(Optional.of(reg));
         when(registrationRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
+        when(registrationRepository.findTournamentIdByPartnerActionToken("PAT_X")).thenReturn(Optional.of(TOURNAMENT_ID));
+        when(tournamentRepository.lockById(TOURNAMENT_ID)).thenReturn(Optional.of(reg.getTournament()));
         service.cancelReserveByToken("PAT_X");
 
         assertThat(reg.getStatus()).isEqualTo(RegistrationStatus.CANCELLED);
@@ -279,6 +281,8 @@ class DoubleTournamentRegistrationReserveTest {
                 .status(RegistrationStatus.CANCELLED).isActive(false).partnerActionToken("PAT_X").build();
         when(registrationRepository.findByPartnerActionToken("PAT_X")).thenReturn(Optional.of(reg));
 
+        when(registrationRepository.findTournamentIdByPartnerActionToken("PAT_X")).thenReturn(Optional.of(TOURNAMENT_ID));
+        when(tournamentRepository.lockById(TOURNAMENT_ID)).thenReturn(Optional.of(reg.getTournament()));
         service.cancelReserveByToken("PAT_X"); // no debe lanzar
 
         verify(registrationRepository, never()).save(any());

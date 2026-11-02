@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.service.americano;
 
+import com.padle.core.padelcoreservice.util.AfterCommit;
 import com.padle.core.padelcoreservice.annotation.Timed;
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
 import com.padle.core.padelcoreservice.dto.americano.*;
@@ -178,7 +179,9 @@ public class AmericanoService {
     @Transactional
     public void cancelRegistration(Long tournamentId, Long playerId, String reason, Owner currentOwner) {
         log.info("Cancelling registration player={} tournament={}", playerId, tournamentId);
-        validateCancellation(tournamentId);
+        Tournament tournament = tournamentRepository.lockById(tournamentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tournament not found"));
+        tournamentAccessService.assertCanManage(currentOwner, tournament);
 
         TournamentRegistration registration = registrationRepository
                 .findByTournamentIdAndPlayerId(tournamentId, playerId)
@@ -186,10 +189,11 @@ public class AmericanoService {
 
         tournamentAccessService.assertCanManage(currentOwner, registration.getTournament());
 
-        if (!registration.getIsActive()) {
-            throw new TournamentRegistrationException("Esta registración ya está cancelada");
+        if (!Boolean.TRUE.equals(registration.getIsActive())) {
+            return;
         }
-        if (registration.getIsDoubleRegistration()) {
+        validateCancellation(tournamentId);
+        if (Boolean.TRUE.equals(registration.getIsDoubleRegistration())) {
             throw new TournamentRegistrationException(
                     "Este es un registro de dobles. No válido para Americano");
         }
@@ -1130,27 +1134,34 @@ public class AmericanoService {
 
     private void sendConfirmationFromWaitlist(PlayerPadel player, Tournament tournament, int position) {
         try {
-            emailService.sendTournamentConfirmationEmail(
-                    player.getEmail(), player.getNombre(), tournament.getNombre(),
-                    tournament.getFechaInicio().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
-                    tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm")),
-                    getClubName(tournament.getClubId()), tournament.getFormattedCancellationDeadline(), player.getLocale());
+            String email = player.getEmail();
+            String name = player.getNombre();
+            var locale = player.getLocale();
+            String tournamentName = tournament.getNombre();
+            String clubName = getClubName(tournament.getClubId());
+            String dateStr = tournament.getFechaInicio().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+            String timeStr = tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm"));
+            String deadline = tournament.getFormattedCancellationDeadline();
+            AfterCommit.run(() -> emailService.sendTournamentConfirmationEmail(
+                    email, name, tournamentName, dateStr, timeStr, clubName, deadline, locale));
         } catch (Exception e) {
-            log.error("Error sending waitlist confirmation: {}", e.getMessage());
+            log.error("Не удалось подготовить уведомление об изменении регистрации", e);
         }
     }
 
     private void sendRegistrationCancelledEmail(PlayerPadel player, Tournament tournament, String reason) {
         try {
+            String email = player.getEmail();
+            String name = player.getNombre();
+            var locale = player.getLocale();
+            String tournamentName = tournament.getNombre();
             String clubName = getClubName(tournament.getClubId());
             String dateStr = tournament.getFechaInicio().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
             String timeStr = tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm"));
-
-            emailService.sendRegistrationCancelledEmail(
-                    player.getEmail(), player.getNombre(), tournament.getNombre(),
-                    dateStr, timeStr, clubName, reason, player.getLocale());
+            AfterCommit.run(() -> emailService.sendRegistrationCancelledEmail(
+                    email, name, tournamentName, dateStr, timeStr, clubName, reason, locale));
         } catch (Exception e) {
-            log.error("Error sending registration cancelled email: {}", e.getMessage());
+            log.error("Не удалось подготовить уведомление об изменении регистрации", e);
         }
     }
 
