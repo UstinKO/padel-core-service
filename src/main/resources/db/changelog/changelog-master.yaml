@@ -185,3 +185,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.60-qr-club-sources.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.61-internal-attribution.yaml
+      relativeToChangelogFile: true

@@ -18,10 +18,11 @@ public class MarketingJournal {
     private final JdbcTemplate jdbc;
     private final MetaProperties properties;
     private final MarketingContextService context;
+    private final AttributionRegistrationJournal attribution;
 
     public void registration(TournamentRegistration registration) {
         Optional<UUID> visitor = properties.browserEnabled() ? context.currentVisitor() : Optional.empty();
-        jdbc.update("""
+        int inserted = jdbc.update("""
                 INSERT INTO marketing_registrations_db(registration_id, visitor_id, first_touch, last_touch,
                     expected_amount, expected_currency, fbc, fbp)
                 SELECT r.id, v.id, v.first_touch, v.last_touch, t.precio, t.moneda, v.fbc, v.fbp
@@ -29,6 +30,9 @@ public class MarketingJournal {
                 LEFT JOIN marketing_visitors_db v ON v.id = ? AND v.consent AND v.updated_at > CURRENT_TIMESTAMP - INTERVAL '90 days'
                 WHERE r.id = ? ON CONFLICT DO NOTHING
                 """, visitor.orElse(new UUID(0, 0)), registration.getId());
+        if (inserted > 0) {
+            attribution.registration(registration.getId());
+        }
         if (!properties.browserEnabled() || !Boolean.TRUE.equals(registration.getIsActive())) {
             return;
         }
