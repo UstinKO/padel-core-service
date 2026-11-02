@@ -3,6 +3,7 @@ package com.padle.core.padelcoreservice.marketing;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -26,7 +27,7 @@ import java.util.UUID;
 public class AttributionRegistrationJournal {
     private final JdbcTemplate jdbc;
     private final InternalAttributionService context;
-    private final PlatformTransactionManager transactions;
+    private final ObjectProvider<PlatformTransactionManager> transactions;
 
     public void registration(Long registrationId) {
         Instant recordedAt = Instant.now();
@@ -57,7 +58,7 @@ public class AttributionRegistrationJournal {
     }
 
     private void save(Long id, Optional<Long> actor, Optional<UUID> visitor, Instant at) {
-        var transaction = new TransactionTemplate(transactions);
+        var transaction = new TransactionTemplate(transactions.getObject());
         transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
         try {
             transaction.executeWithoutResult(status -> snapshot(id, actor.orElse(-1L), visitor.orElse(new UUID(0, 0)), at));
