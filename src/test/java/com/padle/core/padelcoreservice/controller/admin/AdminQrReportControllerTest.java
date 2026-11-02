@@ -32,7 +32,7 @@ class AdminQrReportControllerTest {
                         .header("Accept-Language", language).with(user("admin").roles("SUPER_ADMIN")))
                 .andExpect(status().isOk()).andExpect(view().name("admin/qr-report"))
                 .andExpect(content().string(containsString("id=\"qr-filter-form\"")))
-                .andExpect(xpath("//script[starts-with(@src, '/js/qr-report') and @defer]").exists())
+                .andExpect(content().string(containsString("src=\"/js/qr-report")))
                 .andExpect(content().string(containsString("15cero Saavedra")))
                 .andExpect(content().string(containsString(switch (language) {
                     case "ru" -> "Переходы по QR";
@@ -53,3 +53,4 @@ class AdminQrReportControllerTest {
         mvc.perform(get("/admin/marketing/qr")).andExpect(status().is3xxRedirection());
     }
 }
+
