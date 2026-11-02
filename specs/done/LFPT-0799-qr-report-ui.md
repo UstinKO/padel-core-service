@@ -1,7 +1,7 @@
 # LFPT-0799: Отчёт QR в админке
 
 ## Статус
-in_progress
+done
 
 ## Источник и согласование
 https://github.com/UstinKO/padel-core-service/issues/799
