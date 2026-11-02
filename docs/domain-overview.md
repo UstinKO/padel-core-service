@@ -703,7 +703,7 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 | `POST` | `/test/tournaments/{tournamentId}/register-pair-with-players` | SUPER_ADMIN | Тестовые данные, JDBC (`TestTournamentController`): Записать пару, выбранную вручную. |
 | `POST` | `/test/tournaments/{tournamentId}/register-guest-pair` | SUPER_ADMIN | Тестовые данные, JDBC (`TestTournamentController`): Записать пару, где один/оба не в базе. |
 | `POST` | `/test/tournaments/{tournamentId}/register-guest-player` | SUPER_ADMIN | Тестовые данные, JDBC (`TestTournamentController`): Записать гостя на одиночный турнир. |
-| `POST` | `/test/tournaments/{tournamentId}/remove-player/{playerId}` | SUPER_ADMIN | Тестовые данные, JDBC (`TestTournamentController`): Убрать игрока с турнира. |
+| `POST` | `/test/tournaments/{tournamentId}/remove-player/{playerId}` | SUPER_ADMIN | `RegistrationCancellationController` → `TournamentService`: отменить участие (`CANCELLED`, неактивно), сохраняя регистрацию, оплаты и маркетинговую историю. Повторный запрос безопасен; уведомления после commit. |
 | `GET` | `/test/tournaments/{tournamentId}/stats` | SUPER_ADMIN | Тестовые данные, JDBC (`TestTournamentController`): Статистика турнира. |
 | `GET` | `/test/tournaments/{tournamentId}/stats-enhanced` | SUPER_ADMIN | Тестовые данные, JDBC (`TestTournamentController`): Статистика с парами. |
 | `GET` | `/test/tournaments/stats-all` | SUPER_ADMIN | Тестовые данные, JDBC (`TestTournamentController`): Статистика всех турниров одним запросом (вместо N параллельных `/stats`, исчерпывавших пул HikariCP). |

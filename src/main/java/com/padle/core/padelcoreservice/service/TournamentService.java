@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.padelcoreservice.util.AfterCommit;
 import com.padle.core.padelcoreservice.annotation.Counted;
 import com.padle.core.padelcoreservice.annotation.Timed;
 import com.padle.core.padelcoreservice.annotation.TrackErrors;
@@ -486,18 +487,15 @@ public class TournamentService {
     public void cancelRegistration(Long tournamentId, Long playerId, String reason) {
         log.info("Cancelling registration for player {} from tournament {}", playerId, tournamentId);
 
+        Tournament tournament = tournamentRepository.lockById(tournamentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tournament not found"));
         TournamentRegistration registration = registrationRepository
                 .findByTournamentIdAndPlayerId(tournamentId, playerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Registration not found"));
 
-        // Проверяем, активна ли регистрация
-        if (!registration.getIsActive()) {
-            throw new TournamentRegistrationException("Esta registración ya está cancelada");
+        if (!Boolean.TRUE.equals(registration.getIsActive())) {
+            return;
         }
-
-        // Проверяем, можно ли отменить регистрацию
-        Tournament tournament = tournamentRepository.findById(tournamentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Tournament not found"));
 
         if (!tournament.canCancelRegistration()) {
             throw new TournamentRegistrationException("Cannot cancel registration after deadline");
@@ -633,24 +631,18 @@ public class TournamentService {
 
     private void sendWaitlistAutoConfirmEmail(PlayerPadel player, Tournament tournament) {
         try {
+            String email = player.getEmail();
+            String name = player.getNombre();
+            var locale = player.getLocale();
+            String tournamentName = tournament.getNombre();
             String dateStr = tournament.getFechaInicio().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
             String timeStr = tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm"));
             String clubName = resolveClubName(tournament.getClubId());
-            String tournamentUrl = String.format("%s/torneo/%d", baseUrl, tournament.getId());
-
-            emailService.sendWaitlistAutoConfirmEmail(
-                    player.getEmail(),
-                    player.getNombre(),
-                    tournament.getNombre(),
-                    dateStr,
-                    timeStr,
-                    clubName,
-                    tournamentUrl,
-                    player.getLocale()
-            );
-            log.info("Waitlist auto-confirm email sent to {}", player.getEmail());
+            String tournamentUrl = "%s/torneo/%d".formatted(baseUrl, tournament.getId());
+            AfterCommit.run(() -> emailService.sendWaitlistAutoConfirmEmail(
+                    email, name, tournamentName, dateStr, timeStr, clubName, tournamentUrl, locale));
         } catch (Exception e) {
-            log.error("Error sending waitlist auto-confirm email: {}", e.getMessage());
+            log.error("Не удалось подготовить уведомление об изменении регистрации", e);
         }
     }
 
@@ -695,23 +687,17 @@ public class TournamentService {
 
     private void sendRegistrationCancelledEmail(PlayerPadel player, Tournament tournament, String reason) {
         try {
+            String email = player.getEmail();
+            String name = player.getNombre();
+            var locale = player.getLocale();
+            String tournamentName = tournament.getNombre();
             String dateStr = tournament.getFechaInicio().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
             String timeStr = tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm"));
             String clubName = resolveClubName(tournament.getClubId());
-
-            emailService.sendRegistrationCancelledEmail(
-                    player.getEmail(),
-                    player.getNombre(),
-                    tournament.getNombre(),
-                    dateStr,
-                    timeStr,
-                    clubName,
-                    reason,
-                    player.getLocale()
-            );
-            log.info("Registration cancelled email sent to {}", player.getEmail());
+            AfterCommit.run(() -> emailService.sendRegistrationCancelledEmail(
+                    email, name, tournamentName, dateStr, timeStr, clubName, reason, locale));
         } catch (Exception e) {
-            log.error("Error sending registration cancelled email: {}", e.getMessage(), e);
+            log.error("Не удалось подготовить уведомление об изменении регистрации", e);
         }
     }
 
@@ -1170,51 +1156,29 @@ public class TournamentService {
 
     @Transactional
     public void cancelPairRegistration(Long tournamentId, Long playerId, String reason) {
-        log.info("Cancelling pair registration for player {} from tournament {}", playerId, tournamentId);
-
-        // Находим ВСЕ активные регистрации для этого турнира и этого игрока (и его пары)
+        Tournament tournament = tournamentRepository.lockById(tournamentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tournament not found"));
         List<TournamentRegistration> registrations = registrationRepository.findByTournamentId(tournamentId)
                 .stream()
-                .filter(r -> r.getIsActive())
-                .filter(r -> {
-                    // Если это регистрация самого игрока
-                    if (r.getPlayer().getId().equals(playerId)) {
-                        return true;
-                    }
-                    // Если это регистрация партнера (проверяем по mainPlayerId или partner)
-                    if (r.getMainPlayerId() != null && r.getMainPlayerId().equals(playerId)) {
-                        return true;
-                    }
-                    if (r.getPartner() != null && r.getPartner().getId().equals(playerId)) {
-                        return true;
-                    }
-                    return false;
-                })
-                .collect(Collectors.toList());
-
-        log.info("Found {} registrations to delete", registrations.size());
-
-        Tournament tournament = tournamentRepository.findById(tournamentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Tournament not found"));
-
-        // Удаляем все найденные регистрации — уведомляем каждого игрока пары до удаления
-        // его записи (после delete() у неё нет смысла читать поля для письма)
-        for (TournamentRegistration reg : registrations) {
-            sendRegistrationCancelledEmail(reg.getPlayer(), tournament, reason);
-            registrationRepository.delete(reg);
-            log.info("Deleted registration id: {} for player: {}", reg.getId(), reg.getPlayer().getId());
+                .filter(r -> Boolean.TRUE.equals(r.getIsActive()))
+                .filter(r -> r.getPlayer().getId().equals(playerId)
+                        || Objects.equals(r.getMainPlayerId(), playerId)
+                        || (r.getPartner() != null && r.getPartner().getId().equals(playerId)))
+                .toList();
+        if (registrations.isEmpty()) {
+            return;
         }
-
-        // Обрабатываем лист ожидания, если освободились места
+        registrations.forEach(reg -> {
+            reg.cancel(reason);
+            registrationRepository.save(reg);
+            sendRegistrationCancelledEmail(reg.getPlayer(), tournament, reason);
+        });
         long confirmedCount = registrationRepository.countByTournamentIdAndStatus(
                 tournamentId, RegistrationStatus.CONFIRMED);
-
         if (confirmedCount < tournament.getCupoMax()) {
             processWaitlistForTournament(tournamentId);
         }
-
         reorderPairPositions(tournamentId);
-        log.info("Pair registration deleted successfully for tournament {}", tournamentId);
     }
 
     /**
@@ -1258,28 +1222,26 @@ public class TournamentService {
 
     @Transactional
     public void adminRemovePlayerRegistration(Long tournamentId, Long playerId) {
-        Optional<TournamentRegistration> playerRegOpt = registrationRepository
-                .findByTournamentId(tournamentId)
-                .stream()
-                .filter(r -> r.getPlayer().getId().equals(playerId))
-                .findFirst();
-
-        if (playerRegOpt.isEmpty()) {
-            throw new ResourceNotFoundException("Registro no encontrado para el jugador");
+        Tournament tournament = tournamentRepository.lockById(tournamentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tournament not found"));
+        TournamentRegistration playerReg = registrationRepository
+                .findByTournamentIdAndPlayerId(tournamentId, playerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Registration not found"));
+        if (!Boolean.TRUE.equals(playerReg.getIsActive())) {
+            return;
         }
-
-        TournamentRegistration playerReg = playerRegOpt.get();
-
         if (Boolean.TRUE.equals(playerReg.getIsDoubleRegistration())) {
             cancelPairRegistration(tournamentId, playerId, "Eliminado por el organizador");
-        } else if (playerReg.getIsActive()) {
-            RegistrationStatus oldStatus = playerReg.getStatus();
-            registrationRepository.delete(playerReg);
-            if (oldStatus == RegistrationStatus.CONFIRMED) {
-                processWaitlistForTournament(tournamentId);
-            }
-            reorderPositions(tournamentId);
+            return;
         }
+        RegistrationStatus oldStatus = playerReg.getStatus();
+        playerReg.cancel("Eliminado por el organizador");
+        registrationRepository.save(playerReg);
+        sendRegistrationCancelledEmail(playerReg.getPlayer(), tournament, playerReg.getCancellationReason());
+        if (oldStatus == RegistrationStatus.CONFIRMED) {
+            processWaitlistForTournament(tournamentId);
+        }
+        reorderPositions(tournamentId);
     }
 
     private void validateStatusTransition(TournamentStatus current, TournamentStatus newStatus) {

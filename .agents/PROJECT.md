@@ -294,7 +294,7 @@ docker compose up -d
 | POST | `/{tournamentId}/register-real-players` | Зарегистрировать реальных игроков по ID |
 | POST | `/{tournamentId}/register-pair` | Зарегистрировать пару из базы |
 | POST | `/{tournamentId}/register-guest-pair` | Зарегистрировать пару (один/оба не в базе) |
-| POST | `/{tournamentId}/remove-player/{playerId}` | Удалить игрока с турнира |
+| POST | `/{tournamentId}/remove-player/{playerId}` | Отменить участие с сохранением истории (`RegistrationCancellationController`), повтор безопасен |
 | GET | `/{tournamentId}/stats` | Статистика турнира |
 | GET | `/{tournamentId}/stats-enhanced` | Расширенная статистика + список пар |
 | GET | `/{tournamentId}/players` | Список зарегистрированных игроков |

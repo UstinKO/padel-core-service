@@ -1222,33 +1222,6 @@ public class TestTournamentController {
     }
 
     /**
-     * Удаление игрока из турнира
-     */
-    @PostMapping("/{tournamentId}/remove-player/{playerId}")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> removePlayerFromTournament(
-            @PathVariable Long tournamentId,
-            @PathVariable Long playerId) {
-
-        log.info("Удаление игрока {} из турнира {}", playerId, tournamentId);
-
-        Map<String, Object> result = new HashMap<>();
-
-        try {
-            tournamentService.adminRemovePlayerRegistration(tournamentId, playerId);
-            result.put("success", true);
-            result.put("message", "Игрок удален из турнира");
-        } catch (Exception e) {
-            log.error("Ошибка при удалении игрока из турнира", e);
-            result.put("success", false);
-            result.put("message", "Ошибка: " + e.getMessage());
-            return ResponseEntity.internalServerError().body(result);
-        }
-
-        return ResponseEntity.ok(result);
-    }
-
-    /**
      * Получение списка доступных пар для регистрации на турнир
      */
     @GetMapping("/available-pairs")
