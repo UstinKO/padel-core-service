@@ -871,7 +871,7 @@ tournaments_db
 | Колонка | Тип | Назначение |
 |---|---|---|
 | `fecha` | DATE NOT NULL | День America/Argentina/Buenos_Aires |
-| `origen` | VARCHAR(32) NOT NULL | Фиксированное значение `reby` |
+| `origen` | VARCHAR(32) NOT NULL | `reby`, `black_padel`, `15cero_villa_crespo`, `15cero_saavedra` (v1.60) |
 | `destino` | VARCHAR(16) NOT NULL | `site` или `telegram` |
 | `aperturas` | BIGINT NOT NULL DEFAULT 0 | Неотрицательное количество открытий |
 
