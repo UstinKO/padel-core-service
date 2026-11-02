@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
+<html lang="es" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta name="app-profile" th:content="${@environment.getActiveProfiles().length > 0
         ? @environment.getActiveProfiles()[0]
@@ -42,6 +42,10 @@
                         </a>
                         <a href="/admin/players" class="btn btn-outline btn-sm">
                             <i class="fas fa-users"></i> <span th:text="#{admin.nav.players}">Jugadores</span>
+                        </a>
+                        <a sec:authorize="hasRole('SUPER_ADMIN')"
+                           href="/admin/marketing/qr" class="btn btn-outline btn-sm">
+                            <i class="fas fa-qrcode"></i> <span th:text="#{admin.qr.title}">QR</span>
                         </a>
                     </div>
 

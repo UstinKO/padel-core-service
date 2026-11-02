@@ -556,3 +556,8 @@ QrLandingConfig / QrLandingInterceptor: только успешный GET / с �
 black_padel, 15cero_villa_crespo, 15cero_saavedra. Существующие QR неизменны.
 GET /api/admin/marketing/qr-summary — SUPER_ADMIN, общий отчёт с source и from/to.
 Старый qr-stats остаётся Reby. Миграция v1.60 расширяет CHECK источника.
+
+
+GET /admin/marketing/qr — страница отчёта QR, только SUPER_ADMIN (HTTP + method).
+Данные через /api/admin/marketing/qr-summary, фильтры from/to/source, ES/RU/EN.
+Thymeleaf admin/qr-report, static/js/qr-report.js, static/css/qr-report.css.
