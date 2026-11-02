@@ -1,6 +1,9 @@
 package com.padle.core.padelcoreservice.marketing;
 
 import com.padle.core.padelcoreservice.model.*;
+import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2User;
+import org.springframework.security.oauth2.core.user.OAuth2User;
+import static org.mockito.Mockito.mock;
 import com.padle.core.padelcoreservice.model.enums.*;
 import com.padle.core.padelcoreservice.repository.*;
 import jakarta.servlet.http.Cookie;
@@ -88,6 +91,17 @@ class InternalAttributionIntegrationTest {
         assertThat(jdbc.queryForObject("SELECT expires_at FROM marketing_acquisition_db WHERE player_id = ?", Timestamp.class, player.getId())).isEqualTo(expiry);
         login(player());
         assertThat(attribution.visitorId(browser)).isEmpty();
+    }
+
+    @Test
+    void googlePrincipalBindsTheSamePlayerAccount() {
+        var player = player();
+        var principal = new CustomOAuth2User(mock(OAuth2User.class), player);
+        SecurityContextHolder.getContext().setAuthentication(
+                UsernamePasswordAuthenticationToken.authenticated(principal, "", principal.getAuthorities()));
+        capture(browser(), "reby");
+        assertThat(jdbc.queryForObject("SELECT first_touch FROM marketing_acquisition_db WHERE player_id = ?",
+                String.class, player.getId())).contains("reby");
     }
 
     @Test
