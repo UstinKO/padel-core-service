@@ -113,4 +113,69 @@ class RebyQrControllerTest {
         assertThat(persisted.get(0).telegram()).isZero();
         assertThat(persisted.get(1).telegram()).isEqualTo(1);
     }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"black_padel", "15cero_villa_crespo", "15cero_saavedra"})
+    void printedLandingCountsOwnSource(String source) throws Exception {
+        mvc.perform(get("/").param("utm_source", source).param("utm_medium", "qr")
+                        .param("utm_campaign", "offline_tournaments"))
+                .andExpect(status().isOk()).andExpect(header().string("Cache-Control", "no-store"));
+        mvc.perform(get("/api/admin/marketing/qr-summary").param("source", source)
+                        .with(user("admin").roles("SUPER_ADMIN")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.sources[0].source").value(source))
+                .andExpect(jsonPath("$.sources[0].site").value(1))
+                .andExpect(jsonPath("$.sources[0].telegram").value(0));
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM marketing_qr_daily_db", Long.class)).isEqualTo(1);
+    }
+
+    @Test
+    void ordinaryPagesWrongCampaignsProbesAndRebyLandingDoNotAddCounts() throws Exception {
+        mvc.perform(get("/")).andExpect(status().isOk());
+        for (String source : new String[]{"unknown", "reby"}) {
+            mvc.perform(get("/").param("utm_source", source).param("utm_medium", "qr")
+                    .param("utm_campaign", "offline_tournaments")).andExpect(status().isOk());
+        }
+        mvc.perform(get("/").param("utm_source", "black_padel").param("utm_medium", "social")
+                .param("utm_campaign", "offline_tournaments")).andExpect(status().isOk());
+        mvc.perform(get("/").param("utm_source", "black_padel").param("utm_medium", "qr")
+                .param("utm_campaign", "other")).andExpect(status().isOk());
+        mvc.perform(head("/").param("utm_source", "black_padel").param("utm_medium", "qr")
+                .param("utm_campaign", "offline_tournaments")).andExpect(status().isOk());
+        mvc.perform(get("/").param("utm_source", "black_padel").param("utm_medium", "qr")
+                .param("utm_campaign", "offline_tournaments").header("User-Agent", "Googlebot"))
+                .andExpect(status().isOk());
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM marketing_qr_daily_db", Long.class)).isZero();
+        mvc.perform(get("/qr/reby/site")).andExpect(status().isFound());
+        mvc.perform(get("/").param("utm_source", "reby").param("utm_medium", "qr")
+                .param("utm_campaign", "offline_tournaments")).andExpect(status().isOk());
+        assertThat(repository.findDays(LocalDate.now().minusDays(1), LocalDate.now().plusDays(1)).get(0).site()).isEqualTo(1);
+    }
+
+    @Test
+    void summarySeparatesSourcesAndPreservesOldReport() throws Exception {
+        LocalDate day = LocalDate.of(2026, 11, 1);
+        repository.increment(day, "site");
+        repository.increment(day, "black_padel", "site");
+        repository.increment(day, "15cero_saavedra", "site");
+        mvc.perform(get("/api/admin/marketing/qr-summary").param("from", "2026-11-01")
+                        .param("to", "2026-11-01").with(user("admin").roles("SUPER_ADMIN")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.sources.length()").value(4L))
+                .andExpect(jsonPath("$.sources[0].site").value(1))
+                .andExpect(jsonPath("$.sources[1].site").value(0))
+                .andExpect(jsonPath("$.sources[2].site").value(1))
+                .andExpect(jsonPath("$.sources[3].site").value(1));
+        mvc.perform(get("/api/admin/marketing/qr-summary").param("source", "evil")
+                        .with(user("admin").roles("SUPER_ADMIN"))).andExpect(status().isBadRequest());
+        mvc.perform(get("/api/admin/marketing/qr-summary").param("from", "2026-11-02")
+                        .param("to", "2026-11-01").with(user("admin").roles("SUPER_ADMIN")))
+                .andExpect(status().isBadRequest());
+        mvc.perform(get("/api/admin/marketing/qr-summary")).andExpect(status().is3xxRedirection());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"PLAYER", "OWNER", "ORGANIZER", "CLUB_ADMIN"})
+    void summaryForbiddenForOtherRoles(String role) throws Exception {
+        mvc.perform(get("/api/admin/marketing/qr-summary").with(user("other").roles(role)))
+                .andExpect(status().isForbidden());
+    }
 }

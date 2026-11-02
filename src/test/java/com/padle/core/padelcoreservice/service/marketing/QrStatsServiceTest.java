@@ -81,4 +81,21 @@ class QrStatsServiceTest {
         assertThat(QrRequestPolicy.shouldCount("GET", null, null, "prefetch;prerender")).isFalse();
         assertThat(QrRequestPolicy.shouldCount("GET", null, null, null)).isTrue();
     }
+
+    @Test
+    void landingFailureDoesNotBlockAndInvalidSourceNeverWrites() {
+        doThrow(new DataAccessResourceFailureException("offline")).when(repository)
+                .increment(any(), eq("black_padel"), eq("site"));
+        assertThatCode(() -> service.recordLanding("black_padel")).doesNotThrowAnyException();
+        assertThatThrownBy(() -> service.recordLanding("unknown")).isInstanceOf(InvalidQrPeriodException.class);
+        verify(repository, times(1)).increment(any(), eq("black_padel"), eq("site"));
+    }
+
+    @Test
+    void summaryDoesNotMaskDatabaseFailure() {
+        when(repository.findDays(any(), any(), eq("black_padel")))
+                .thenThrow(new DataAccessResourceFailureException("offline"));
+        assertThatThrownBy(() -> service.summary(null, null, "black_padel"))
+                .isInstanceOf(DataAccessResourceFailureException.class);
+    }
 }

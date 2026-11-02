@@ -549,3 +549,10 @@ Push в `master` запускает `.github/workflows/deploy.yml`: сборка
 ## Измерение рекламы Meta
 
 Модуль `marketing/`: CSRF-защищённые `/api/marketing/config`, `/api/marketing/context`, `/api/marketing/events`, `/api/marketing/ack`; экспорт `/admin/marketing/export.csv` с проверкой доступа к турниру. Схемы v1.58/v1.59, источник поступления сохраняется в очереди (наличные на месте — physical_store, перевод/неизвестный — other), интеграция выключена по умолчанию. [Контракт, статусы, очередь, настройка и Test Events](../docs/endpoints/meta-marketing.md).
+
+
+## QR напечатанных листовок
+QrLandingConfig / QrLandingInterceptor: только успешный GET / с точными UTM
+black_padel, 15cero_villa_crespo, 15cero_saavedra. Существующие QR неизменны.
+GET /api/admin/marketing/qr-summary — SUPER_ADMIN, общий отчёт с source и from/to.
+Старый qr-stats остаётся Reby. Миграция v1.60 расширяет CHECK источника.
