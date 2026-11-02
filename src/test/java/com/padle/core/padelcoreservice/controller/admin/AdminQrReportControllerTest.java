@@ -32,7 +32,7 @@ class AdminQrReportControllerTest {
                         .header("Accept-Language", language).with(user("admin").roles("SUPER_ADMIN")))
                 .andExpect(status().isOk()).andExpect(view().name("admin/qr-report"))
                 .andExpect(content().string(containsString("id=\"qr-filter-form\"")))
-                .andExpect(content().string(containsString("/js/qr-report.js")))
+                .andExpect(xpath("//script[starts-with(@src, '/js/qr-report') and @defer]").exists())
                 .andExpect(content().string(containsString("15cero Saavedra")))
                 .andExpect(content().string(containsString(switch (language) {
                     case "ru" -> "Переходы по QR";
@@ -45,7 +45,7 @@ class AdminQrReportControllerTest {
     @ValueSource(strings = {"PLAYER", "OWNER", "ORGANIZER", "ADMIN", "CLUB_ADMIN"})
     void reportRequiresSuperAdmin(String role) throws Exception {
         mvc.perform(get("/admin/marketing/qr").with(user("other").roles(role)))
-                .andExpect(status().isForbidden());
+                .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/error/403"));
     }
 
     @Test
