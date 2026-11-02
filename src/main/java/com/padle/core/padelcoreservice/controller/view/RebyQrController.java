@@ -2,6 +2,7 @@ package com.padle.core.padelcoreservice.controller.view;
 
 import com.padle.core.padelcoreservice.service.marketing.QrRequestPolicy;
 import com.padle.core.padelcoreservice.service.marketing.QrStats;
+import com.padle.core.padelcoreservice.service.marketing.QrSummary;
 import com.padle.core.padelcoreservice.service.marketing.QrStatsService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -51,5 +52,13 @@ public class RebyQrController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(stats.stats(from, to));
+    }
+    @GetMapping("/api/admin/marketing/qr-summary")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<QrSummary> summary(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(defaultValue = "all") String source) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(stats.summary(from, to, source));
     }
 }

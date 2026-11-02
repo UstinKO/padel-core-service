@@ -190,7 +190,7 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.POST,
                                 "/api/tournaments/double/accept-pair"
                         ).permitAll()
-                        .requestMatchers("/api/admin/marketing/qr-stats").hasRole("SUPER_ADMIN")
+                        .requestMatchers("/api/admin/marketing/qr-stats", "/api/admin/marketing/qr-summary").hasRole("SUPER_ADMIN")
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().authenticated()
                 )

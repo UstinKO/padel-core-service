@@ -15,24 +15,32 @@ public class QrStatsRepository {
     private final JdbcTemplate jdbc;
 
     public void increment(LocalDate date, String destination) {
+        increment(date, "reby", destination);
+    }
+
+    public void increment(LocalDate date, String source, String destination) {
         jdbc.update("""
                 INSERT INTO marketing_qr_daily_db (fecha, origen, destino, aperturas)
-                VALUES (?, 'reby', ?, 1)
+                VALUES (?, ?, ?, 1)
                 ON CONFLICT (fecha, origen, destino)
                 DO UPDATE SET aperturas = marketing_qr_daily_db.aperturas + 1
-                """, Date.valueOf(date), destination);
+                """, Date.valueOf(date), source, destination);
     }
 
     public List<QrStats.Day> findDays(LocalDate from, LocalDate to) {
+        return findDays(from, to, "reby");
+    }
+
+    public List<QrStats.Day> findDays(LocalDate from, LocalDate to, String source) {
         return jdbc.query("""
                 SELECT fecha,
                        SUM(CASE WHEN destino = 'site' THEN aperturas ELSE 0 END) AS site,
                        SUM(CASE WHEN destino = 'telegram' THEN aperturas ELSE 0 END) AS telegram
                 FROM marketing_qr_daily_db
-                WHERE origen = 'reby' AND fecha BETWEEN ? AND ?
+                WHERE origen = ? AND fecha BETWEEN ? AND ?
                 GROUP BY fecha ORDER BY fecha
                 """, (rs, row) -> new QrStats.Day(rs.getDate("fecha").toLocalDate(),
                         rs.getLong("site"), rs.getLong("telegram")),
-                Date.valueOf(from), Date.valueOf(to));
+                source, Date.valueOf(from), Date.valueOf(to));
     }
 }

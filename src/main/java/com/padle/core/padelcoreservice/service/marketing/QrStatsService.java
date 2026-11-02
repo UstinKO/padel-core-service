@@ -14,6 +14,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
+import java.util.List;
 
 @Service
 @Slf4j
@@ -34,20 +35,55 @@ public class QrStatsService {
         }
     }
 
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public void recordLanding(String source) {
+        if (!QrLandingPolicy.SOURCES.contains(source)) {
+            throw new InvalidQrPeriodException();
+        }
+        try {
+            repository.increment(businessDate(Instant.now()), source, "site");
+        } catch (DataAccessException ex) {
+            log.error("Не удалось сохранить QR-переход: {}", source, ex);
+        }
+    }
+
+    public QrSummary summary(LocalDate from, LocalDate to, String source) {
+        List<String> sources = "all".equals(source) ? QrLandingPolicy.REPORT_SOURCES : List.of(source);
+        if (!QrLandingPolicy.REPORT_SOURCES.containsAll(sources)) {
+            throw new InvalidQrPeriodException();
+        }
+        var period = period(from, to);
+        var reports = sources.stream().map(value -> {
+            var days = repository.findDays(period.from(), period.to(), value);
+            return aggregate(value, period, days);
+        }).toList();
+        return new QrSummary(period.from(), period.to(), reports);
+    }
+
+    private QrStats aggregate(String source, Period period, List<QrStats.Day> days) {
+        return new QrStats(source, period.from(), period.to(),
+                days.stream().mapToLong(QrStats.Day::site).sum(),
+                days.stream().mapToLong(QrStats.Day::telegram).sum(), days);
+    }
+
+    private record Period(LocalDate from, LocalDate to) {}
+
     static LocalDate businessDate(Instant instant) {
         return LocalDate.ofInstant(instant, ZONE);
     }
 
     public QrStats stats(LocalDate from, LocalDate to) {
+        var period = period(from, to);
+        return aggregate("reby", period, repository.findDays(period.from(), period.to()));
+    }
+
+    private Period period(LocalDate from, LocalDate to) {
         LocalDate today = businessDate(Instant.now());
         LocalDate start = Optional.ofNullable(from).orElse(today.withDayOfMonth(1));
         LocalDate end = Optional.ofNullable(to).orElse(today.withDayOfMonth(today.lengthOfMonth()));
         if (end.isBefore(start) || ChronoUnit.DAYS.between(start, end) >= 366) {
             throw new InvalidQrPeriodException();
         }
-        var days = repository.findDays(start, end);
-        return new QrStats("reby", start, end,
-                days.stream().mapToLong(QrStats.Day::site).sum(),
-                days.stream().mapToLong(QrStats.Day::telegram).sum(), days);
+        return new Period(start, end);
     }
 }

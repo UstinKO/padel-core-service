@@ -1,7 +1,7 @@
 # Архитектура базы данных — padel-core-service
 
 > **СУБД:** PostgreSQL 15  
-> **Версия схемы:** v1.59
+> **Версия схемы:** v1.60
 > **Миграции:** Liquibase (YAML), файлы в `src/main/resources/db/changelog/versions/`  
 > **ddl-auto:** `none` — схема управляется только через Liquibase
 
@@ -894,3 +894,11 @@ tournaments_db
 | `marketing_paid_slots_db` | Составной PK/FK `registration_id` + `partner_slot` boolean. Однократный учёт полной оплаты основного/гостевого слота |
 
 Миграция заполняет снимки старых регистраций без visitor_id и исходные high_water старых оплат; событий не создаёт. Дедупликация и ограничения валют/согласия описаны в [Meta marketing](endpoints/meta-marketing.md).
+
+
+### v1.60 — источники печатных QR
+v1.60-qr-club-sources расширяет CHECK origen в marketing_qr_daily_db:
+reby, black_padel, 15cero_villa_crespo, 15cero_saavedra. Структура, PK и
+история не меняются. Rollback возвращает CHECK reby как NOT VALID, сохраняя
+собранные новые строки; полная валидация старого ограничения возможна только
+после отдельного решения о судьбе новых агрегатов. Новые вставки ограничены.
