@@ -1,6 +1,8 @@
 package com.padle.core.padelcoreservice.controller.api;
 
 import com.padle.core.padelcoreservice.dto.TournamentDto;
+import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
+import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import com.padle.core.padelcoreservice.model.enums.GenderFormat;
 import com.padle.core.padelcoreservice.model.enums.Modalidad;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
@@ -61,6 +63,7 @@ class PublicTournamentControllerTest {
         when(tournamentService.getActiveTournamentsForHome()).thenReturn(List.of(fixture()));
         when(tournamentService.getActiveTournamentById(42L)).thenReturn(Optional.of(fixture()));
         when(tournamentService.getActiveTournamentById(999L)).thenReturn(Optional.empty());
+        when(tournamentService.getActiveRegistrationsByTournament(42L)).thenReturn(List.of());
     }
 
     @Test
@@ -81,7 +84,30 @@ class PublicTournamentControllerTest {
                 .andExpect(jsonPath("$[0].createdBy").doesNotExist())
                 .andExpect(jsonPath("$[0].contactoOrganizador").doesNotExist())
                 .andExpect(jsonPath("$[0].visibilidad").doesNotExist())
-                .andExpect(jsonPath("$[0].registrations").doesNotExist());
+                .andExpect(jsonPath("$[0].registrations").doesNotExist())
+                .andExpect(jsonPath("$[0].participants").doesNotExist());
+    }
+
+    @Test
+    void detalle_incluyeSoloNombresPublicosYSinContactos() throws Exception {
+        TournamentRegistrationDto registration = new TournamentRegistrationDto();
+        registration.setId(123L);
+        registration.setStatus(RegistrationStatus.CONFIRMED);
+        registration.setPlayerNombre("Ana");
+        registration.setPlayerApellido("Pérez");
+        registration.setPlayerEmail("private@example.test");
+        registration.setPlayerPhone("+5491112345678");
+        registration.setPlayerTelegram("private_handle");
+        when(tournamentService.getActiveRegistrationsByTournament(42L)).thenReturn(List.of(registration));
+
+        mockMvc.perform(get("/api/public/tournaments/42"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.participants.confirmed[0].id").value("registration-123"))
+                .andExpect(jsonPath("$.participants.confirmed[0].names[0]").value("Ana Pérez"))
+                .andExpect(jsonPath("$.participants.confirmed[0].email").doesNotExist())
+                .andExpect(jsonPath("$.participants.confirmed[0].phone").doesNotExist())
+                .andExpect(jsonPath("$.participants.confirmed[0].telegram").doesNotExist())
+                .andExpect(jsonPath("$.participants.waitlist").isEmpty());
     }
 
     @Test
