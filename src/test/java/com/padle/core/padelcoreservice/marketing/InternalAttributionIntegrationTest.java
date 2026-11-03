@@ -29,6 +29,9 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.UUID;
+import java.util.Locale;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -48,6 +51,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 @AutoConfigureMockMvc
 class InternalAttributionIntegrationTest {
     @Autowired MockMvc mvc;
+    @Autowired MessageSource messages;
     @Autowired InternalAttributionService attribution;
     @Autowired AttributionRegistrationJournal journal;
     @Autowired RegistrationSourceReportService reports;
@@ -168,6 +172,37 @@ class InternalAttributionIntegrationTest {
         assertThat(report.totals().confirmed()).isEqualTo(2);
         assertThat(report.totals().pairConfirmed()).isEqualTo(1);
         assertThat(report.measuredParticipants()).isZero();
+    }
+
+    @Test
+    void reportUsesActualOpenFormatAndPreservesStoredEventName() {
+        var event = tournament();
+        registration(event, player());
+        var originalLocale = LocaleContextHolder.getLocale();
+        try {
+            for (var language : new String[]{"es", "ru", "en"}) {
+                var locale = Locale.forLanguageTag(language);
+                LocaleContextHolder.setLocale(locale);
+                for (var type : new String[]{"CANCHA_ABIERTA", "PADEL_CLINIC"}) {
+                    jdbc.update("UPDATE tournaments_db SET tipo = ?, nombre = ? WHERE id = ?",
+                            type, "Mixto · TODOS", event.getId());
+                    var key = type.equals("CANCHA_ABIERTA") ? "cancha_abierta" : "padel_clinic";
+                    var report = reports.report(filter(event.getId()));
+                    assertThat(report.rows()).hasSize(1);
+                    assertThat(report.rows().get(0).tournament()).isEqualTo(messages.getMessage(
+                            "admin.tournaments.form.field.type." + key, null, locale));
+                    assertThat(report.totals().participants()).isEqualTo(1);
+                    assertThat(jdbc.queryForObject("SELECT nombre FROM tournaments_db WHERE id = ?",
+                            String.class, event.getId())).isEqualTo("Mixto · TODOS");
+                }
+            }
+            jdbc.update("UPDATE tournaments_db SET tipo = ?, nombre = ? WHERE id = ?",
+                    "AMERICANO_TEAMS", "Masculino · C9", event.getId());
+            assertThat(reports.report(filter(event.getId())).rows().get(0).tournament())
+                    .isEqualTo("Masculino · C9");
+        } finally {
+            LocaleContextHolder.setLocale(originalLocale);
+        }
     }
 
     @Test
