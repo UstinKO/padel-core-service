@@ -41,11 +41,12 @@ public record PublicTournamentDto(
         String websiteUrl,
         @JsonInclude(JsonInclude.Include.NON_NULL) Participants participants
 ) {
-    public PublicTournamentDto withParticipants(Participants roster) {
-        return new PublicTournamentDto(id, name, club, type, modality, gender, level, startsAt,
-                timeZone, duration, price, currency, status, registrationOpen, capacity,
-                capacityUnit, occupied, available, waitlistCount, cancellationDeadline,
-                description, websiteUrl, roster);
+    public static PublicTournamentDto withParticipants(PublicTournamentDto base, Participants roster) {
+        return new PublicTournamentDto(base.id, base.name, base.club, base.type, base.modality,
+                base.gender, base.level, base.startsAt, base.timeZone, base.duration, base.price,
+                base.currency, base.status, base.registrationOpen, base.capacity, base.capacityUnit,
+                base.occupied, base.available, base.waitlistCount, base.cancellationDeadline,
+                base.description, base.websiteUrl, roster);
     }
 
     public record Participant(String id, List<String> names, boolean seekingPartner) {}
