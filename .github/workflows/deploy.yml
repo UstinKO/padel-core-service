@@ -209,7 +209,11 @@ jobs:
             docker compose exec -T padel-app curl --fail --silent http://localhost:8080/api/marketing/config | python3 -c '
             import json, sys
             config = json.load(sys.stdin)
-            if config != {"enabled": True, "pixelId": "930260823500064", "testMode": False}:
+            expected = {"enabled": True, "pixelId": "930260823500064", "testMode": False}
+            if not isinstance(config, dict) or any(
+                type(config.get(key)) is not type(value) or config[key] != value
+                for key, value in expected.items()
+            ):
                 sys.exit("Конфигурация Meta не соответствует production")
             print("Meta: enabled=true, pixelId=930260823500064, testMode=false; серверный секрет задан")
             '
