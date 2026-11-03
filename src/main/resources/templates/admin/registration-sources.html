@@ -7,19 +7,29 @@
     <link rel="stylesheet" th:href="@{/css/admin.css}">
     <link rel="stylesheet" th:href="@{/css/registration-sources.css}">
 </head>
-<body>
+<body class="sources-page">
 <header th:replace="~{fragments/admin-header :: header(#{admin.sources.title})}"></header>
 <main class="admin-main"><div class="container" id="registration-sources"
-    th:attr="data-loading=#{admin.qr.loading},data-error=#{admin.qr.error},data-invalid=#{admin.qr.invalid},data-access=#{admin.qr.access},data-unknown=#{admin.sources.unknown}">
+    th:attr="data-loading=#{admin.qr.loading},data-error=#{admin.qr.error},data-invalid=#{admin.qr.invalid},data-access=#{admin.qr.access},data-unknown=#{admin.sources.unknown},data-coverage=#{admin.sources.ui.coverage}">
     <h1 class="admin-title" th:text="#{admin.sources.title}"></h1>
-    <p class="admin-subtitle" th:text="#{admin.sources.note}"></p>
-    <div class="admin-card"><form id="source-filters" class="source-filters">
+
+    <div class="admin-card source-filter-card"><form id="source-filters">
+        <div class="source-presets" role="group" th:aria-label="#{admin.sources.ui.period}">
+            <button class="btn btn-outline btn-sm" type="button" id="source-this-month" th:text="#{admin.sources.ui.thisMonth}"></button>
+            <button class="btn btn-outline btn-sm" type="button" id="source-last-month" th:text="#{admin.sources.ui.lastMonth}"></button>
+            <button class="btn btn-outline btn-sm" type="button" id="source-last-30" th:text="#{admin.sources.ui.last30}"></button>
+        </div>
+        <div class="source-filters source-primary-filters">
         <label><span th:text="#{admin.qr.from}"></span><input class="form-control" type="date" name="from" required></label>
         <label><span th:text="#{admin.qr.to}"></span><input class="form-control" type="date" name="to" required></label>
         <label><span th:text="#{admin.sources.model}"></span><select class="form-control" name="model">
             <option value="last_non_direct" th:text="#{admin.sources.last}"></option>
             <option value="first_known" th:text="#{admin.sources.first}"></option>
         </select></label>
+        <button class="btn btn-primary" type="submit" th:text="#{admin.qr.apply}"></button>
+        </div>
+        <details class="source-advanced"><summary th:text="#{admin.sources.ui.filters}"></summary>
+        <div class="source-filters">
         <label><span th:text="#{admin.sources.placement}"></span><select class="form-control" name="placement">
             <option value="" th:text="#{admin.qr.all}"></option>
             <option value="bio" th:text="#{admin.sources.place.bio}"></option>
@@ -38,14 +48,19 @@
                 <label><span th:text="#{admin.sources.term}"></span><input class="form-control" name="term" maxlength="100" pattern="[A-Za-z0-9_-]{0,100}"></label>
                 <label><span th:text="#{admin.sources.tournamentId}"></span><input class="form-control" name="tournamentId" type="number" min="1"></label>
                 <label><span th:text="#{admin.sources.clubId}"></span><input class="form-control" name="clubId" type="number" min="1"></label>
-        <button class="btn btn-primary" type="submit" th:text="#{admin.qr.apply}"></button>
+        </div></details>
     </form></div>
     <p id="source-status" role="status" aria-live="polite"></p>
     <section id="source-results" hidden>
-        <div class="admin-card source-summary">
+        <div class="source-summary">
             <div><span th:text="#{admin.sources.participants}"></span><strong id="source-participants"></strong></div>
             <div><span th:text="#{admin.sources.firstRegistrations}"></span><strong id="source-firstRegistrations"></strong></div>
             <div><span th:text="#{admin.sources.pairs}"></span><strong id="source-pairs"></strong></div>
+        </div>
+        <p class="source-coverage" id="source-coverage"></p>
+        <details class="admin-card source-details"><summary th:text="#{admin.sources.ui.details}"></summary>
+        <p class="source-help" th:text="#{admin.sources.note}"></p>
+        <div class="source-status-summary">
             <div><span th:text="#{admin.sources.confirmed}"></span><strong id="source-confirmed"></strong></div>
             <div><span th:text="#{admin.sources.waitlist}"></span><strong id="source-waitlist"></strong></div>
             <div><span th:text="#{admin.sources.pending}"></span><strong id="source-pending"></strong></div>
@@ -55,20 +70,19 @@
             <thead><tr><th th:text="#{admin.sources.unit}"></th><th th:text="#{admin.sources.confirmed}"></th><th th:text="#{admin.sources.waitlist}"></th><th th:text="#{admin.sources.pending}"></th><th th:text="#{admin.sources.cancelled}"></th><th th:text="#{admin.sources.coverage}"></th></tr></thead>
             <tbody id="source-unit-statuses"></tbody>
         </table></div>
-        <p><span th:text="#{admin.sources.asOf}"></span> <time id="source-asof"></time></p>
-        <p th:text="#{admin.sources.history}"></p>
-        <div class="admin-card source-table-wrap"><table class="source-table"><thead><tr>
+        </details>
+        <p class="source-updated"><span th:text="#{admin.sources.asOf}"></span> <time id="source-asof"></time></p>
+        <details class="source-history"><summary th:text="#{admin.sources.ui.history}"></summary><p th:text="#{admin.sources.history}"></p></details>
+        <div class="admin-card source-table-wrap source-main-table" tabindex="0" role="region" th:aria-label="#{admin.sources.title}"><table class="source-table"><thead><tr>
             <th scope="col" th:text="#{admin.sources.source}"></th>
-            <th scope="col" th:text="#{admin.sources.placement}"></th>
-            <th scope="col" th:text="#{admin.sources.campaign}"></th>
             <th scope="col" th:text="#{admin.sources.event}"></th>
-            <th scope="col" th:text="#{admin.sources.participants}"></th>
-            <th scope="col" th:text="#{admin.sources.firstRegistrations}"></th>
-            <th scope="col" th:text="#{admin.sources.pairs}"></th>
-            <th scope="col" th:text="#{admin.sources.confirmed}"></th>
-            <th scope="col" th:text="#{admin.sources.waitlist}"></th>
-            <th scope="col" th:text="#{admin.sources.pending}"></th>
-            <th scope="col" th:text="#{admin.sources.cancelled}"></th>
+            <th scope="col" th:title="#{admin.sources.participants}" th:text="#{admin.sources.ui.participants}"></th>
+            <th scope="col" th:title="#{admin.sources.firstRegistrations}" th:text="#{admin.sources.ui.firstRegistrations}"></th>
+            <th scope="col" th:title="#{admin.sources.pairs}" th:text="#{admin.sources.ui.pairs}"></th>
+            <th scope="col" th:title="#{admin.sources.confirmed}" th:text="#{admin.sources.ui.confirmed}"></th>
+            <th scope="col" th:title="#{admin.sources.waitlist}" th:text="#{admin.sources.ui.waitlist}"></th>
+            <th scope="col" th:title="#{admin.sources.pending}" th:text="#{admin.sources.ui.pending}"></th>
+            <th scope="col" th:title="#{admin.sources.cancelled}" th:text="#{admin.sources.ui.cancelled}"></th>
         </tr></thead><tbody id="source-rows"></tbody></table></div>
         <p id="source-empty" hidden th:text="#{admin.qr.empty}"></p>
         <nav class="source-pages" th:aria-label="#{admin.sources.pages}">

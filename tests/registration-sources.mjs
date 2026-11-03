@@ -28,20 +28,21 @@ function response(body = data(), code = 200) {
     return { ok: code === 200, status: code, redirected: false,
         headers: { get: () => 'application/json' }, json: async () => body };
 }
-async function interfaceHarness(fetch) {
+async function interfaceHarness(fetch, now = '2026-11-03T12:00:00Z') {
     const nodes = {};
     const ids = ['registration-sources','source-filters','source-status','source-results','source-rows','source-prev',
-        'source-next','source-asof','source-empty','source-page','source-unit-statuses'];
+        'source-this-month','source-last-month','source-last-30','source-coverage','source-next','source-asof','source-empty','source-page','source-unit-statuses'];
     Object.keys(counts()).forEach(key => ids.push('source-' + key));
     ids.forEach(id => { nodes[id] = new Element(); });
-    nodes['registration-sources'].dataset = { loading: 'loading', error: 'error', invalid: 'invalid', access: 'access', unknown: 'unknown' };
+    nodes['registration-sources'].dataset = { loading: 'loading', error: 'error', invalid: 'invalid', access: 'access', unknown: 'unknown', coverage: '{measured} / {total}' };
     const form = nodes['source-filters'];
     form.elements = Object.fromEntries(['from','to','model','source','placement','medium','campaign','content','term','tournamentId','clubId'].map(key => [key, { value: key === 'model' ? 'last_non_direct' : '' }]));
     form.elements.placement.options = [{ value: '', textContent: 'all' }, { value: 'qr', textContent: 'QR' }];
     form.reportValidity = () => true;
     class FormData { constructor(value) { this.values = Object.entries(value.elements).map(([key, item]) => [key, item.value]); } [Symbol.iterator]() { return this.values[Symbol.iterator](); } }
+    class Clock extends Date { constructor(...args) { super(...(args.length ? args : [now])); } }
     vm.runInNewContext(reportScript, { document: { getElementById: id => nodes[id], createElement: () => new Element(), documentElement: { lang: 'ru' } },
-        fetch, URLSearchParams, FormData, AbortController, Intl, Date, Number });
+        fetch, URLSearchParams, FormData, AbortController, Intl, Date: Clock, Number });
     await tick(); await tick();
     return { nodes, form, submit: () => form.handlers.submit({ preventDefault() {} }) };
 }
@@ -76,6 +77,23 @@ export async function run() {
         assert.equal(nodes['source-rows'].children.length, 1);
         assert.equal(nodes['source-unit-statuses'].children.length, 3);
         assert.equal(nodes['source-participants'].textContent, '2');
+    });
+    await check('quick periods handle year boundary and inclusive 30 days', async () => {
+        const h = await interfaceHarness(async () => response(), '2026-01-02T12:00:00Z');
+        h.nodes['source-last-month'].handlers.click(); await tick();
+        assert.equal(h.form.elements.from.value, '2025-12-01');
+        assert.equal(h.form.elements.to.value, '2025-12-31');
+        h.nodes['source-last-30'].handlers.click(); await tick();
+        assert.equal(h.form.elements.from.value, '2025-12-04');
+        assert.equal(h.form.elements.to.value, '2026-01-02');
+        h.nodes['source-this-month'].handlers.click(); await tick();
+        assert.equal(h.form.elements.from.value, '2026-01-01');
+        assert.equal(h.form.elements.to.value, '2026-01-31');
+    });
+    await check('coverage is measured across the result, not the visible page', async () => {
+        const report = data(); report.measuredParticipants = 0;
+        const { nodes } = await interfaceHarness(async () => response(report));
+        assert.equal(nodes['source-coverage'].textContent, '0 / 2');
     });
     await check('empty result is zero, not error', async () => {
         const { nodes } = await interfaceHarness(async () => response(data(0)));

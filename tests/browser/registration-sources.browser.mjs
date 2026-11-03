@@ -51,6 +51,8 @@ async function submit(page) {
 async function report(page, language, source) {
     await page.goto(fixture.baseUrl + '/admin/marketing/registration-sources?lang=' + language);
     await page.locator('#source-results').waitFor({ state: 'visible' });
+    assert.equal(await page.locator('.source-advanced').getAttribute('open'), null);
+    await page.locator('.source-advanced summary').click();
     await page.locator('[name=tournamentId]').fill(String(fixture.tournamentId));
     await submit(page);
     assert.equal((await page.locator('#source-participants').textContent()).trim(), '1');
