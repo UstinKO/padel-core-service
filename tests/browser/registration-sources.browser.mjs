@@ -59,6 +59,11 @@ async function report(page, language, source) {
     assert.match(await page.locator('#source-rows').textContent(), new RegExp(source));
     const titles = { es: 'Origen de inscripciones', ru: 'Источники записей', en: 'Registration sources' };
     assert.equal((await page.locator('h1').textContent()).trim(), titles[language]);
+    if ((await page.viewportSize()).width > 768) {
+        const brand = await page.locator('.navbar-brand').boundingBox();
+        const navigation = await page.locator('#navbarNav').boundingBox();
+        assert.ok(brand.x + brand.width <= navigation.x + 1, 'Header navigation overlaps the brand');
+    }
 }
 
 try {
@@ -100,6 +105,8 @@ try {
         await report(admin, language, 'instagram');
         record('desktop report renders and filters in ' + language);
     }
+    record('desktop navigation does not overlap the brand');
+    await admin.evaluate(() => window.scrollTo(0, 0));
     await admin.screenshot({ path: output + '/desktop-en.png', fullPage: true });
     await admin.locator('[name=model]').selectOption('first_known');
     await submit(admin);
@@ -136,6 +143,7 @@ try {
     await report(mobile, 'ru', 'instagram');
     const fits = await mobile.locator('#source-filters').evaluate(element => element.getBoundingClientRect().right <= innerWidth + 1);
     assert.equal(fits, true);
+    await mobile.evaluate(() => window.scrollTo(0, 0));
     await mobile.screenshot({ path: output + '/mobile-webkit-ru.png', fullPage: true });
     record('WebKit with iPhone 13 Pro viewport renders the Russian report');
     assert.deepEqual(errors, []);
