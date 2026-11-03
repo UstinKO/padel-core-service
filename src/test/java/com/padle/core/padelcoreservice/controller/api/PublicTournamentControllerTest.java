@@ -107,7 +107,8 @@ class PublicTournamentControllerTest {
                 .andExpect(jsonPath("$.participants.confirmed[0].email").doesNotExist())
                 .andExpect(jsonPath("$.participants.confirmed[0].phone").doesNotExist())
                 .andExpect(jsonPath("$.participants.confirmed[0].telegram").doesNotExist())
-                .andExpect(jsonPath("$.participants.waitlist").isEmpty());
+                .andExpect(jsonPath("$.participants.waitlist").isArray())
+                .andExpect(jsonPath("$.participants.waitlist[0]").doesNotExist());
     }
 
     @Test
