@@ -167,7 +167,7 @@ public class SecurityConfig {
                         .requestMatchers("/players/lista").authenticated()
                         .requestMatchers("/players/perfil/**").authenticated()
                         .requestMatchers("/players/mis-torneos").authenticated()
-                        .requestMatchers("/admin/marketing/qr").hasRole("SUPER_ADMIN")
+                        .requestMatchers("/admin/marketing/qr", "/admin/marketing/registration-sources").hasRole("SUPER_ADMIN")
                         .requestMatchers("/admin/**").hasAnyRole("OWNER", "SUPER_ADMIN", "ORGANIZER", "ADMIN", "CLUB_ADMIN")
                         // Внутренний тестовый инструментарий организатора (JDBC-based, см. PROJECT.md) —
                         // доступен только владельцу платформы, не ORGANIZER/ADMIN.
@@ -191,7 +191,7 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.POST,
                                 "/api/tournaments/double/accept-pair"
                         ).permitAll()
-                        .requestMatchers("/api/admin/marketing/qr-stats", "/api/admin/marketing/qr-summary").hasRole("SUPER_ADMIN")
+                        .requestMatchers("/api/admin/marketing/qr-stats", "/api/admin/marketing/qr-summary", "/api/admin/marketing/registration-sources").hasRole("SUPER_ADMIN")
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().authenticated()
                 )

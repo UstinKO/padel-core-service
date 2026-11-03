@@ -52,6 +52,23 @@ jobs:
       - name: Build and test
         run: mvn clean verify
 
+      - name: Report test failure causes
+        if: failure()
+        run: |
+          python3 - <<'PYCODE'
+          from pathlib import Path
+          import re
+          causes = set()
+          for path in Path('target/surefire-reports').glob('*.txt'):
+              text = path.read_text(errors='replace')
+              matches = re.findall(r'^Caused by: (.+)$', text, re.M)
+              if matches:
+                  causes.add(matches[-1][:600])
+          for cause in sorted(causes)[:15]:
+              escaped = cause.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+              print('::error title=Test failure cause::' + escaped)
+          PYCODE
+
       - name: Check agent instructions and pipeline automation
         run: |
           python3 -m unittest discover -s .github/bin -p 'test_*.py'

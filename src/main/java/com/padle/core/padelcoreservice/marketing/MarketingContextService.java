@@ -28,6 +28,7 @@ public class MarketingContextService {
     private final JdbcTemplate jdbc;
     private final ObjectMapper json;
     private final MetaProperties properties;
+    private final InternalAttributionService attribution;
 
     public record Utm(String source, String medium, String campaign, String content, String term) {
         Utm sanitized() {
@@ -103,6 +104,7 @@ public class MarketingContextService {
 
     @Transactional
     public void revoke(HttpServletRequest request, HttpServletResponse response) {
+        attribution.revoke(request, response);
         visitorId(request).ifPresent(id -> {
             jdbc.update("UPDATE marketing_visitors_db SET consent = false, first_touch = NULL, last_touch = NULL, fbc = NULL, fbp = NULL WHERE id = ?", id);
             jdbc.update("UPDATE marketing_registrations_db SET first_touch = NULL, last_touch = NULL, fbc = NULL, fbp = NULL WHERE visitor_id = ?", id);

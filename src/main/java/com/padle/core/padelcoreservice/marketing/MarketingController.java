@@ -21,20 +21,22 @@ public class MarketingController {
     private final MetaProperties properties;
     private final MarketingContextService context;
     private final MarketingOutbox outbox;
+    private final InternalAttributionService attribution;
 
-    public record Config(boolean enabled, String pixelId, boolean testMode) { }
+    public record Config(boolean enabled, String pixelId, boolean testMode, boolean attributionEnabled) { }
     public record Acknowledge(UUID eventId) { }
 
     @GetMapping("/config")
     public ResponseEntity<Config> config() {
         boolean enabled = properties.browserEnabled();
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
-                .body(new Config(enabled, enabled ? properties.pixelId() : "", properties.testMode()));
+                .body(new Config(enabled, enabled ? properties.pixelId() : "", properties.testMode(), true));
     }
 
     @PostMapping("/context")
     public ResponseEntity<MarketingContextService.Identity> capture(@RequestBody MarketingContextService.Capture capture,
                                        HttpServletRequest request, HttpServletResponse response) {
+        attribution.capture(capture, request, response);
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(context.capture(capture, request, response));
     }
 

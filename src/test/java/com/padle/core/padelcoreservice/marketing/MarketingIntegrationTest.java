@@ -53,6 +53,7 @@ class MarketingIntegrationTest {
     @Autowired MarketingContextService context;
     @Autowired MarketingOutbox outbox;
     @Autowired MarketingJournal journal;
+    @Autowired AttributionRegistrationJournal attribution;
     @Autowired MarketingReportService report;
     @Autowired PaymentService paymentService;
     @Autowired TournamentService tournamentService;
@@ -278,7 +279,7 @@ class MarketingIntegrationTest {
         var registration = registration(RegistrationStatus.CONFIRMED);
         Payment payment = payment(registration, "300", "ARS", null);
         jdbc.update("DELETE FROM marketing_events_db WHERE payment_id = ?", payment.getId());
-        var disabled = new MarketingJournal(jdbc, new MetaProperties(false, "", "", "", true, ""), context);
+        var disabled = new MarketingJournal(jdbc, new MetaProperties(false, "", "", "", true, ""), context, attribution);
         payment.setAmount(new BigDecimal("500"));
         disabled.payment(payment);
         entities.detach(payment);

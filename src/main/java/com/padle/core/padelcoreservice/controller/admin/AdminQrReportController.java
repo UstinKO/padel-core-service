@@ -11,4 +11,9 @@ public class AdminQrReportController {
     public String report() {
         return "admin/qr-report";
     }
+    @GetMapping("/admin/marketing/registration-sources")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public String registrations() {
+        return "admin/registration-sources";
+    }
 }
