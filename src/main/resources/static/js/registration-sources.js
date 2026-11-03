@@ -24,6 +24,7 @@
         const td = document.createElement('td');
         td.textContent = value;
         tr.appendChild(td);
+        return td;
     }
 
     function render(report) {
@@ -31,6 +32,9 @@
             if (!Number.isSafeInteger(report.totals[field]) || report.totals[field] < 0) throw new Error('error');
             document.getElementById('source-' + field).textContent = numbers.format(report.totals[field]);
         });
+        document.getElementById('source-coverage').textContent = root.dataset.coverage
+            .replace('{measured}', numbers.format(report.measuredParticipants))
+            .replace('{total}', numbers.format(report.totals.participants));
         const units = document.getElementById('source-unit-statuses');
         units.replaceChildren();
         [['participants', '', report.measuredParticipants], ['firstRegistrations', 'first', report.measuredFirstRegistrations], ['pairs', 'pair', report.measuredPairs]].forEach(([unit, prefix, measured]) => {
@@ -48,9 +52,10 @@
         report.rows.forEach(entry => {
             const tr = document.createElement('tr');
             const description = [entry.source === 'unknown' ? root.dataset.unknown : entry.source, entry.medium, entry.content, entry.term].filter(Boolean).join(' · ');
-            cell(tr, description);
-            cell(tr, placements[entry.placement] || root.dataset.unknown);
-            cell(tr, entry.campaign);
+            const sourceCell = cell(tr, description);
+            const detail = document.createElement('small');
+            detail.textContent = [placements[entry.placement] || root.dataset.unknown, entry.campaign].filter(Boolean).join(' · ');
+            sourceCell.appendChild(detail);
             cell(tr, entry.tournament + ' (#' + entry.tournamentId + ')');
             fields.forEach(field => cell(tr, numbers.format(entry.counts[field])));
             rows.appendChild(tr);
@@ -109,6 +114,20 @@
         page = 0;
         void load();
     }
+    function setPeriod(preset) {
+        const year = Number(part('year'));
+        const month = Number(part('month')) - 1;
+        const today = new Date(Date.UTC(year, month, Number(part('day'))));
+        const from = preset === 'last30' ? new Date(today.getTime() - 29 * 86400000)
+            : new Date(Date.UTC(year, month - (preset === 'lastMonth' ? 1 : 0), 1));
+        const to = preset === 'last30' ? today : new Date(Date.UTC(year, month + (preset === 'lastMonth' ? 0 : 1), 0));
+        form.elements.from.value = from.toISOString().slice(0, 10);
+        form.elements.to.value = to.toISOString().slice(0, 10);
+        submit();
+    }
+    document.getElementById('source-this-month').addEventListener('click', () => setPeriod('thisMonth'));
+    document.getElementById('source-last-month').addEventListener('click', () => setPeriod('lastMonth'));
+    document.getElementById('source-last-30').addEventListener('click', () => setPeriod('last30'));
     form.addEventListener('submit', submit);
     previous.addEventListener('click', () => { if (page > 0) { page--; void load(); } });
     next.addEventListener('click', () => { page++; void load(); });

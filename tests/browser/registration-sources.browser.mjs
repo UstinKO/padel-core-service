@@ -51,6 +51,13 @@ async function submit(page) {
 async function report(page, language, source) {
     await page.goto(fixture.baseUrl + '/admin/marketing/registration-sources?lang=' + language);
     await page.locator('#source-results').waitFor({ state: 'visible' });
+    assert.equal(await page.locator('.source-advanced').getAttribute('open'), null);
+    assert.equal(await page.locator('[name=source]').isVisible(), false);
+    assert.equal(await page.locator('#source-unit-statuses').isVisible(), false);
+    await page.locator('.source-details summary').click();
+    assert.equal(await page.locator('#source-unit-statuses').isVisible(), true);
+    await page.locator('.source-details summary').click();
+    await page.locator('.source-advanced summary').click();
     await page.locator('[name=tournamentId]').fill(String(fixture.tournamentId));
     await submit(page);
     assert.equal((await page.locator('#source-participants').textContent()).trim(), '1');
@@ -107,7 +114,9 @@ try {
     }
     record('desktop navigation does not overlap the brand');
     await admin.evaluate(() => window.scrollTo(0, 0));
+    await admin.locator('.source-advanced summary').click();
     await admin.screenshot({ path: output + '/desktop-en.png', fullPage: true });
+    await admin.locator('.source-advanced summary').click();
     await admin.locator('[name=model]').selectOption('first_known');
     await submit(admin);
     assert.match(await admin.locator('#source-rows').textContent(), /reby/);
@@ -143,6 +152,8 @@ try {
     await report(mobile, 'ru', 'instagram');
     const fits = await mobile.locator('#source-filters').evaluate(element => element.getBoundingClientRect().right <= innerWidth + 1);
     assert.equal(fits, true);
+    await mobile.locator('.source-advanced summary').click();
+    assert.equal(await mobile.locator('[name=source]').isVisible(), false);
     await mobile.evaluate(() => window.scrollTo(0, 0));
     await mobile.screenshot({ path: output + '/mobile-webkit-ru.png', fullPage: true });
     record('WebKit with iPhone 13 Pro viewport renders the Russian report');
