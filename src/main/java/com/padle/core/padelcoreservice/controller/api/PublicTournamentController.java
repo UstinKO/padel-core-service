@@ -50,7 +50,7 @@ public class PublicTournamentController {
     @GetMapping("/{id}")
     public ResponseEntity<PublicTournamentDto> details(@PathVariable Long id) {
         PublicTournamentDto tournament = tournamentService.getActiveTournamentById(id)
-                .map(value -> mapper.toPublicDto(value, baseUrl).withParticipants(
+                .map(value -> PublicTournamentDto.withParticipants(mapper.toPublicDto(value, baseUrl),
                         participantsMapper.map(value, tournamentService.getActiveRegistrationsByTournament(id))))
                 .orElseThrow(() -> new ResourceNotFoundException("TOURNAMENT_NOT_FOUND"));
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(tournament);
