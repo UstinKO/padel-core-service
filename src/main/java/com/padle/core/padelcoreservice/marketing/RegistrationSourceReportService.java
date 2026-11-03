@@ -5,6 +5,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -27,6 +29,7 @@ import java.util.stream.IntStream;
 public class RegistrationSourceReportService {
     private static final ZoneId ZONE = ZoneId.of("America/Argentina/Buenos_Aires");
     private final NamedParameterJdbcTemplate jdbc;
+    private final MessageSource messages;
 
     public record Filter(LocalDate from, LocalDate to, String model, String source, String placement,
                          String medium, String campaign, String content, String term,
@@ -109,6 +112,8 @@ public class RegistrationSourceReportService {
                 .addValue("until", Timestamp.from(to.plusDays(1).atStartOfDay(ZONE).toInstant()))
                 .addValue("legacyZone", ZoneId.systemDefault().getId()).addValue("model", filter.model()).addValue("tournament", Optional.ofNullable(filter.tournamentId()).orElse(0L))
                 .addValue("club", Optional.ofNullable(filter.clubId()).orElse(0L))
+                .addValue("openCourtTitle", messages.getMessage("admin.tournaments.form.field.type.cancha_abierta", null, LocaleContextHolder.getLocale()))
+                .addValue("clinicTitle", messages.getMessage("admin.tournaments.form.field.type.padel_clinic", null, LocaleContextHolder.getLocale()))
                 .addValue("limit", filter.pageSize()).addValue("offset", (long) filter.page() * filter.pageSize());
         List<String> names = List.of("source", "placement", "medium", "campaign", "content", "term");
         List<String> values = List.of(filter.source(), filter.placement(), filter.medium(), filter.campaign(), filter.content(), filter.term());
@@ -126,7 +131,9 @@ public class RegistrationSourceReportService {
     private static final String CTE = """
             WITH base AS (
               SELECT r.id, r.player_id, r.partner_id, r.main_player_id, r.is_double_registration,
-                r.tournament_id, t.nombre tournament, t.club_id,
+                r.tournament_id,
+                CASE t.tipo WHEN 'CANCHA_ABIERTA' THEN :openCourtTitle
+                  WHEN 'PADEL_CLINIC' THEN :clinicTitle ELSE t.nombre END tournament, t.club_id,
                 COALESCE(mr.attribution_recorded_at, r.registration_date AT TIME ZONE :legacyZone) recorded,
                 mr.attribution_recorded_at IS NOT NULL measured,
                 CASE WHEN mr.attribution_expires_at >= CURRENT_TIMESTAMP THEN
