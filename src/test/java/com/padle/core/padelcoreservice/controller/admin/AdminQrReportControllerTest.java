@@ -42,9 +42,26 @@ class AdminQrReportControllerTest {
     }
 
     @ParameterizedTest
+    @ValueSource(strings = {"es", "ru", "en"})
+    void rendersRegistrationSourcesForSuperAdmin(String language) throws Exception {
+        mvc.perform(get("/admin/marketing/registration-sources").param("lang", language)
+                        .header("Accept-Language", language).with(user("admin").roles("SUPER_ADMIN")))
+                .andExpect(status().isOk()).andExpect(view().name("admin/registration-sources"))
+                .andExpect(content().string(containsString("id=\"source-filters\"")))
+                .andExpect(content().string(containsString("src=\"/js/registration-sources")))
+                .andExpect(content().string(containsString(switch (language) {
+                    case "ru" -> "Источники записей";
+                    case "en" -> "Registration sources";
+                    default -> "Origen de inscripciones";
+                })));
+    }
+
+    @ParameterizedTest
     @ValueSource(strings = {"PLAYER", "OWNER", "ORGANIZER", "ADMIN", "CLUB_ADMIN"})
     void reportRequiresSuperAdmin(String role) throws Exception {
         mvc.perform(get("/admin/marketing/qr").with(user("other").roles(role)))
+                .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/error/403"));
+        mvc.perform(get("/admin/marketing/registration-sources").with(user("other").roles(role)))
                 .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/error/403"));
     }
 

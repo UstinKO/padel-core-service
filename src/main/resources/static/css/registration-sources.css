@@ -1,0 +1,9 @@
+.source-filters { display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: 1rem; align-items: end; }
+.source-filters label { display: grid; gap: .4rem; }
+.source-summary { display: grid; grid-template-columns: repeat(auto-fit,minmax(150px,1fr)); gap: 1rem; }
+.source-summary strong { display: block; font-size: 1.7rem; }
+.source-table-wrap { overflow-x: auto; }
+.source-table { width: 100%; border-collapse: collapse; }
+.source-table th, .source-table td { text-align: left; padding: .7rem; border-bottom: 1px solid var(--border-color,#ddd); }
+.source-pages { display: flex; justify-content: center; gap: 1rem; align-items: center; margin: 1rem 0; }
+@media(max-width: 480px) { .source-filters { grid-template-columns: 1fr; } }

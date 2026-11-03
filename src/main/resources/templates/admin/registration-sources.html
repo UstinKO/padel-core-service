@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{admin.sources.title} + ' — 1-Padel'"></title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <link rel="stylesheet" th:href="@{/css/registration-sources.css}">
+</head>
+<body>
+<header th:replace="~{fragments/admin-header :: header(#{admin.sources.title})}"></header>
+<main class="admin-main"><div class="container" id="registration-sources"
+    th:attr="data-loading=#{admin.qr.loading},data-error=#{admin.qr.error},data-invalid=#{admin.qr.invalid},data-access=#{admin.qr.access},data-unknown=#{admin.sources.unknown}">
+    <h1 class="admin-title" th:text="#{admin.sources.title}"></h1>
+    <p class="admin-subtitle" th:text="#{admin.sources.note}"></p>
+    <div class="admin-card"><form id="source-filters" class="source-filters">
+        <label><span th:text="#{admin.qr.from}"></span><input class="form-control" type="date" name="from" required></label>
+        <label><span th:text="#{admin.qr.to}"></span><input class="form-control" type="date" name="to" required></label>
+        <label><span th:text="#{admin.sources.model}"></span><select class="form-control" name="model">
+            <option value="last_non_direct" th:text="#{admin.sources.last}"></option>
+            <option value="first_known" th:text="#{admin.sources.first}"></option>
+        </select></label>
+        <label><span th:text="#{admin.sources.placement}"></span><select class="form-control" name="placement">
+            <option value="" th:text="#{admin.qr.all}"></option>
+            <option value="bio" th:text="#{admin.sources.place.bio}"></option>
+            <option value="story" th:text="#{admin.sources.place.story}"></option>
+            <option value="post" th:text="#{admin.sources.place.post}"></option>
+            <option value="calendar" th:text="#{admin.sources.place.calendar}"></option>
+            <option value="group" th:text="#{admin.sources.place.group}"></option>
+            <option value="qr" th:text="#{admin.sources.place.qr}"></option>
+            <option value="paid" th:text="#{admin.sources.place.paid}"></option>
+            <option value="unknown" th:text="#{admin.sources.place.unknown}"></option>
+        </select></label>
+                <label><span th:text="#{admin.sources.source}"></span><input class="form-control" name="source" maxlength="100" pattern="[A-Za-z0-9_-]{0,100}"></label>
+                <label><span th:text="#{admin.sources.campaign}"></span><input class="form-control" name="campaign" maxlength="100" pattern="[A-Za-z0-9_-]{0,100}"></label>
+                <label><span th:text="#{admin.sources.content}"></span><input class="form-control" name="content" maxlength="100" pattern="[A-Za-z0-9_-]{0,100}"></label>
+                <label><span th:text="#{admin.sources.medium}"></span><input class="form-control" name="medium" maxlength="100" pattern="[A-Za-z0-9_-]{0,100}"></label>
+                <label><span th:text="#{admin.sources.term}"></span><input class="form-control" name="term" maxlength="100" pattern="[A-Za-z0-9_-]{0,100}"></label>
+                <label><span th:text="#{admin.sources.tournamentId}"></span><input class="form-control" name="tournamentId" type="number" min="1"></label>
+                <label><span th:text="#{admin.sources.clubId}"></span><input class="form-control" name="clubId" type="number" min="1"></label>
+        <button class="btn btn-primary" type="submit" th:text="#{admin.qr.apply}"></button>
+    </form></div>
+    <p id="source-status" role="status" aria-live="polite"></p>
+    <section id="source-results" hidden>
+        <div class="admin-card source-summary">
+            <div><span th:text="#{admin.sources.participants}"></span><strong id="source-participants"></strong></div>
+            <div><span th:text="#{admin.sources.firstRegistrations}"></span><strong id="source-firstRegistrations"></strong></div>
+            <div><span th:text="#{admin.sources.pairs}"></span><strong id="source-pairs"></strong></div>
+            <div><span th:text="#{admin.sources.confirmed}"></span><strong id="source-confirmed"></strong></div>
+            <div><span th:text="#{admin.sources.waitlist}"></span><strong id="source-waitlist"></strong></div>
+            <div><span th:text="#{admin.sources.pending}"></span><strong id="source-pending"></strong></div>
+            <div><span th:text="#{admin.sources.cancelled}"></span><strong id="source-cancelled"></strong></div>
+        </div>
+        <div class="admin-card source-table-wrap"><table class="source-table">
+            <thead><tr><th th:text="#{admin.sources.unit}"></th><th th:text="#{admin.sources.confirmed}"></th><th th:text="#{admin.sources.waitlist}"></th><th th:text="#{admin.sources.pending}"></th><th th:text="#{admin.sources.cancelled}"></th><th th:text="#{admin.sources.coverage}"></th></tr></thead>
+            <tbody id="source-unit-statuses"></tbody>
+        </table></div>
+        <p><span th:text="#{admin.sources.asOf}"></span> <time id="source-asof"></time></p>
+        <p th:text="#{admin.sources.history}"></p>
+        <div class="admin-card source-table-wrap"><table class="source-table"><thead><tr>
+            <th scope="col" th:text="#{admin.sources.source}"></th>
+            <th scope="col" th:text="#{admin.sources.placement}"></th>
+            <th scope="col" th:text="#{admin.sources.campaign}"></th>
+            <th scope="col" th:text="#{admin.sources.event}"></th>
+            <th scope="col" th:text="#{admin.sources.participants}"></th>
+            <th scope="col" th:text="#{admin.sources.firstRegistrations}"></th>
+            <th scope="col" th:text="#{admin.sources.pairs}"></th>
+            <th scope="col" th:text="#{admin.sources.confirmed}"></th>
+            <th scope="col" th:text="#{admin.sources.waitlist}"></th>
+            <th scope="col" th:text="#{admin.sources.pending}"></th>
+            <th scope="col" th:text="#{admin.sources.cancelled}"></th>
+        </tr></thead><tbody id="source-rows"></tbody></table></div>
+        <p id="source-empty" hidden th:text="#{admin.qr.empty}"></p>
+        <nav class="source-pages" th:aria-label="#{admin.sources.pages}">
+            <button class="btn btn-outline" id="source-prev" type="button" th:text="#{admin.sources.prev}"></button>
+            <span id="source-page"></span>
+            <button class="btn btn-outline" id="source-next" type="button" th:text="#{admin.sources.next}"></button>
+        </nav>
+    </section>
+    <p><a th:href="@{/admin/marketing/qr}" th:text="#{admin.qr.title}"></a></p>
+</div></main>
+<footer th:replace="~{fragments/admin-footer :: footer}"></footer>
+<script th:src="@{/js/registration-sources.js}" defer></script>
+</body></html>

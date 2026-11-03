@@ -3288,3 +3288,20 @@
     background: #6366f1;
     color: white;
 }
+.header .navbar-brand {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+@media (min-width: 769px) {
+    .header .navbar-collapse {
+        min-width: 0;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .header .navbar-menu {
+        flex-wrap: wrap;
+        gap: .75rem;
+    }
+}
