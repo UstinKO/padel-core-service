@@ -725,8 +725,20 @@ public class TournamentService {
     // ==================== Остальные методы без изменений ====================
 
     public List<TournamentRegistrationDto> getRegistrationsByTournament(Long tournamentId) {
-        List<TournamentRegistration> registrations = registrationRepository
-                .findByTournamentIdOrderByPositionAscWaitlistPositionAsc(tournamentId);
+        return mapRegistrationsForDisplay(registrationRepository
+                .findByTournamentIdOrderByPositionAscWaitlistPositionAsc(tournamentId));
+    }
+
+    /** The public API uses the same ordering and pair grouping as the site, excluding inactive rows. */
+    @Transactional(readOnly = true)
+    public List<TournamentRegistrationDto> getActiveRegistrationsByTournament(Long tournamentId) {
+        return mapRegistrationsForDisplay(registrationRepository
+                .findByTournamentIdOrderByPositionAscWaitlistPositionAsc(tournamentId).stream()
+                .filter(r -> Boolean.TRUE.equals(r.getIsActive()))
+                .toList());
+    }
+
+    private List<TournamentRegistrationDto> mapRegistrationsForDisplay(List<TournamentRegistration> registrations) {
 
         // Строим карту mainPlayerId → список регистраций пары
         Map<Long, List<TournamentRegistration>> pairMap = registrations.stream()
