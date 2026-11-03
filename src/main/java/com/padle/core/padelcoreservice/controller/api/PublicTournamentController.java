@@ -4,6 +4,7 @@ import com.padle.core.padelcoreservice.annotation.Timed;
 import com.padle.core.padelcoreservice.dto.PublicTournamentDto;
 import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
 import com.padle.core.padelcoreservice.mapper.PublicTournamentMapper;
+import com.padle.core.padelcoreservice.mapper.PublicParticipantsMapper;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,6 +33,7 @@ import java.util.List;
 public class PublicTournamentController {
     private final TournamentService tournamentService;
     private final PublicTournamentMapper mapper;
+    private final PublicParticipantsMapper participantsMapper;
 
     @Value("${app.base-url:http://localhost:8080}")
     private String baseUrl;
@@ -48,7 +50,8 @@ public class PublicTournamentController {
     @GetMapping("/{id}")
     public ResponseEntity<PublicTournamentDto> details(@PathVariable Long id) {
         PublicTournamentDto tournament = tournamentService.getActiveTournamentById(id)
-                .map(value -> mapper.toPublicDto(value, baseUrl))
+                .map(value -> mapper.toPublicDto(value, baseUrl).withParticipants(
+                        participantsMapper.map(value, tournamentService.getActiveRegistrationsByTournament(id))))
                 .orElseThrow(() -> new ResourceNotFoundException("TOURNAMENT_NOT_FOUND"));
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(tournament);
     }
