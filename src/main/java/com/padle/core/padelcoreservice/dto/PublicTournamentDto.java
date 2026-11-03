@@ -13,8 +13,8 @@ import java.util.List;
 
 /**
  * Публичный контракт расписания для мобильного приложения. Без полей управления
- * ({@code ownerId}, {@code createdBy}), контакта организатора и данных об участниках —
- * см. {@code docs/endpoints/public-schedule.md}.
+ * ({@code ownerId}, {@code createdBy}) и контакта организатора. Только ответ деталей
+ * дополняется публичными именами участников; см. {@code docs/endpoints/public-schedule.md}.
  */
 public record PublicTournamentDto(
         Long id,
