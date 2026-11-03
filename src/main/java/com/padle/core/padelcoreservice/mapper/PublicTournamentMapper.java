@@ -40,6 +40,7 @@ public interface PublicTournamentMapper {
     @Mapping(target = "cancellationDeadline", expression = "java(toOffset(tournament.getDeadlineCancelacion()))")
     @Mapping(target = "description", source = "infoDetallada")
     @Mapping(target = "websiteUrl", expression = "java(websiteUrl(baseUrl, tournament.getId()))")
+    @Mapping(target = "participants", ignore = true)
     PublicTournamentDto toPublicDto(TournamentDto tournament, @Context String baseUrl);
 
     @Named("toPublicClub")
