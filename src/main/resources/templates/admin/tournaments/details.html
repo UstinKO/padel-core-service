@@ -1210,13 +1210,12 @@
                     <h3>
                         <i class="fas fa-check-circle" style="color:#10b981;"></i>
                         <span th:text="#{admin.tournaments.details.table.inscriptions}">Inscripciones</span>
-                        <!-- DOBLES: пары = confirmedRegs/2 из cupoMax/2 -->
                         <span class="reg-badge-count"
                               th:if="${tournament.modalidad.name() == 'DOBLES'}"
                               th:text="${confirmedRegs.size() / 2}"></span>
                         <span th:if="${tournament.modalidad.name() == 'DOBLES'}"
                               style="font-size:.78rem;font-weight:400;color:#64748b;margin-left:.25rem;"
-                              th:text="'/ ' + ${effectiveCupoMax / 2} + ' ' + #{admin.tournaments.details.pairs_label}"></span>
+                              th:text="'/ ' + ${effectiveCupoMax} + ' ' + #{admin.tournaments.details.pairs_label}"></span>
                         <!-- INDIVIDUAL: показываем игроков -->
                         <span class="reg-badge-count"
                               th:unless="${tournament.modalidad.name() == 'DOBLES'}"
