@@ -615,6 +615,10 @@ frame-src www.google.com;
 frame-ancestors 'none';
 ```
 
+Для Microsoft Clarity рабочая директива `script-src` разрешает загрузчик
+`https://www.clarity.ms` и библиотеку `https://scripts.clarity.ms`. Запросы сбора данных
+разрешает `connect-src` для доменов Clarity. Запуск скрипта зависит от согласия на аналитические cookies.
+
 ### CORS
 
 Разрешённые origins:

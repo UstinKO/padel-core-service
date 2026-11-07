@@ -303,6 +303,15 @@ class MarketingIntegrationTest {
     }
 
     @Test
+    void publicPageAllowsClarityScriptOriginInContentSecurityPolicy() throws Exception {
+        String policy = mvc.perform(get("/"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getHeader("Content-Security-Policy");
+
+        assertThat(policy).containsPattern("(?:^|;\\s*)script-src\\s+[^;]*\\bhttps://scripts\\.clarity\\.ms(?=\\s|;|$)");
+    }
+
+    @Test
     void publicCaptureRequiresCsrfAndMarketingConsent() throws Exception {
         mvc.perform(post("/api/marketing/context").contentType("application/json")
                 .content("{\"path\":\"/\"}")).andExpect(status().isForbidden());
