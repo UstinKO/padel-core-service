@@ -8,6 +8,7 @@ import com.padle.core.padelcoreservice.repository.TournamentKingOfCourtRepositor
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import com.padle.core.padelcoreservice.service.KingOfCourtService;
 import com.padle.core.padelcoreservice.service.TournamentAccessService;
+import com.padle.core.padelcoreservice.service.conduct.TournamentConductHistory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -25,6 +26,7 @@ public class AdminKingOfCourtController {
     private final KingOfCourtService kingOfCourtService;
     private final TournamentKingOfCourtRepository kingRepository;
     private final TournamentAccessService tournamentAccessService;
+    private final TournamentConductHistory conductHistory;
 
     /**
      * Страница управления турниром Король Корта
@@ -44,6 +46,7 @@ public class AdminKingOfCourtController {
         model.addAttribute("kingTournament", kingTournament);
         model.addAttribute("tournament", kingTournament.getTournament());
         model.addAttribute("state", state);
+        model.addAttribute("conductVersion", conductHistory.revision(state.getTournamentId()));
         model.addAttribute("admin", true);
 
         return "admin/tournaments/king-of-court";
@@ -130,7 +133,7 @@ public class AdminKingOfCourtController {
      * Полный сброс турнира — удаляет все раунды/статистику, возвращает регистрацию открытой
      */
     @PostMapping("/{kingId}/reset")
-    public String resetTournament(@PathVariable Long kingId,
+    public String resetTournament(@PathVariable Long kingId, @RequestParam long expectedConductVersion,
                                   RedirectAttributes redirectAttributes,
                                   @AuthenticationPrincipal Owner owner) {
         log.info("Admin requested full reset of King of Court tournament: {}", kingId);

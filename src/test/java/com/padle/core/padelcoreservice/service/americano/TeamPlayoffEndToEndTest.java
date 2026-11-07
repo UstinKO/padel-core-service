@@ -7,12 +7,14 @@ import com.padle.core.padelcoreservice.dto.americano.AmericanoMatchSuggestionDto
 import com.padle.core.padelcoreservice.dto.americano.AmericanoTeamDto;
 import com.padle.core.padelcoreservice.dto.americano.TeamPlayoffAddTeamRequest;
 import com.padle.core.padelcoreservice.model.Club;
+import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.americano.AmericanoMatch;
 import com.padle.core.padelcoreservice.model.americano.AmericanoTeam;
 import com.padle.core.padelcoreservice.model.enums.GenderFormat;
 import com.padle.core.padelcoreservice.model.enums.Modalidad;
+import com.padle.core.padelcoreservice.model.enums.OwnerRole;
 import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.model.enums.PlayoffStage;
 import com.padle.core.padelcoreservice.model.enums.TournamentPhase;
@@ -23,6 +25,8 @@ import com.padle.core.padelcoreservice.repository.PlayerRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoMatchRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoTeamRepository;
+import com.padle.core.padelcoreservice.service.conduct.ConductChange;
+import com.padle.core.padelcoreservice.service.conduct.TournamentConductHistory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -82,6 +86,9 @@ class TeamPlayoffEndToEndTest {
     private AmericanoTeamRepository teamRepository;
     @Autowired
     private AmericanoMatchRepository matchRepository;
+
+    @Autowired
+    private TournamentConductHistory history;
 
     private ListAppender<ILoggingEvent> logAppender;
 
@@ -171,6 +178,36 @@ class TeamPlayoffEndToEndTest {
         runQualification(tournamentId, teams);
 
         assertEachTeamPlayedExactlyTwoQualMatches(tournamentId, teams);
+    }
+
+    @Test
+    void restoresBracketWithItsOriginalMatchLinksAfterRegenerationAndResult() {
+        long tournament = createTournament(10);
+        runQualification(tournament, createTeams(tournament, 10));
+        playoffService.initPlayoff(tournament);
+        var original = playoffService.getPlayoffMatches(tournament).stream().map(BracketMatch::of).toList();
+        playoffService.regeneratePlayoff(tournament);
+        var playIn = playoffService.getPlayoffMatches(tournament).stream()
+                .filter(match -> match.getNextMatchId() != null).findFirst().orElseThrow();
+        playoffService.submitPlayoffResult(playIn.getId(), 6, 3);
+
+        Owner owner = Owner.builder().id(90001L).role(OwnerRole.SUPER_ADMIN).build();
+        long beforeRegenerate = history.list(tournament, owner).stream()
+                .filter(version -> version.action() == ConductChange.Action.CHECKPOINT_REGENERATE_PLAYOFF)
+                .findFirst().orElseThrow().id();
+        history.restore(tournament, beforeRegenerate, history.revision(tournament), owner);
+
+        assertThat(playoffService.getPlayoffMatches(tournament)).map(BracketMatch::of)
+                .containsExactlyInAnyOrderElementsOf(original);
+        assertThat(history.list(tournament, owner)).extracting(TournamentConductHistory.Version::action)
+                .contains(ConductChange.Action.REGENERATE_PLAYOFF, ConductChange.Action.CHECKPOINT_RESTORE);
+    }
+
+    private record BracketMatch(Long id, Long first, Long second, Long next, Integer slot) {
+        static BracketMatch of(AmericanoMatch match) {
+            return new BracketMatch(match.getId(), match.getTeam1Id(), match.getTeam2Id(),
+                    match.getNextMatchId(), match.getNextMatchSlot());
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════════════

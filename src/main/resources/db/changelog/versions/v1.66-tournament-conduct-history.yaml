@@ -1,0 +1,39 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.66-tournament-conduct-history
+      author: padel-core
+      changes:
+        - sql:
+            sql: |
+              CREATE TABLE tournament_conduct_history (
+                  id BIGSERIAL PRIMARY KEY,
+                  tournament_id BIGINT NOT NULL REFERENCES tournaments_db(id) ON DELETE CASCADE,
+                  recorded_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+                  actor_id BIGINT,
+                  actor_name VARCHAR(255),
+                  action VARCHAR(40) NOT NULL,
+                  subject_id BIGINT,
+                  round_number INTEGER,
+                  court_number INTEGER,
+                  stage VARCHAR(40),
+                  restored_from BIGINT,
+                  request_key UUID,
+                  snapshot JSONB NOT NULL,
+                  registrations JSONB NOT NULL,
+                  schema_version SMALLINT NOT NULL DEFAULT 1,
+                  UNIQUE (tournament_id, actor_id, request_key)
+              );
+              CREATE INDEX idx_conduct_history_tournament ON tournament_conduct_history (tournament_id, id DESC);
+              CREATE TABLE tournament_conduct_team_details (
+                  team_id BIGINT PRIMARY KEY,
+                  tournament_id BIGINT NOT NULL REFERENCES tournaments_db(id) ON DELETE CASCADE,
+                  player1_id BIGINT NOT NULL,
+                  has_paid BOOLEAN NOT NULL,
+                  admin_comment VARCHAR(500),
+                  player2_phone VARCHAR(30)
+              );
+      rollback:
+        - dropTable:
+            tableName: tournament_conduct_team_details
+        - dropTable:
+            tableName: tournament_conduct_history

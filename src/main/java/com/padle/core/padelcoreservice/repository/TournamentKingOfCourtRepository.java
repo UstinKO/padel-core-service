@@ -16,6 +16,8 @@ public interface TournamentKingOfCourtRepository extends JpaRepository<Tournamen
     // Возвращаем список, так как для одного турнира может быть несколько KingOfCourt
     List<TournamentKingOfCourt> findAllByTournamentId(Long tournamentId);
 
+    Optional<TournamentKingOfCourt> findFirstByTournamentIdOrderByIsActiveDescIdDesc(Long tournamentId);
+
     @Query("SELECT CASE WHEN COUNT(k) > 0 THEN true ELSE false END FROM TournamentKingOfCourt k WHERE k.tournament.id = :tournamentId AND k.isActive = true")
     boolean existsActiveByTournamentId(@Param("tournamentId") Long tournamentId);
 

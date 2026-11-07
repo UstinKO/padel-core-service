@@ -5,12 +5,17 @@ import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.TournamentKingOfCourt;
 import com.padle.core.padelcoreservice.service.KingOfCourtService;
 import com.padle.core.padelcoreservice.service.TournamentAccessService;
+import com.padle.core.padelcoreservice.service.conduct.TournamentConductHistory;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import com.padle.core.padelcoreservice.exception.InvalidStateException;
+import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -19,6 +24,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -29,6 +36,8 @@ public class KingOfCourtApiController {
 
     private final KingOfCourtService kingOfCourtService;
     private final TournamentAccessService tournamentAccessService;
+    private final TournamentConductHistory conductHistory;
+    private final MessageSource messages;
 
     /**
      * Инициализация турнира "Король Корта"
@@ -61,9 +70,11 @@ public class KingOfCourtApiController {
      * Получение текущего состояния турнира
      */
     @GetMapping("/tournaments/{kingId}/state")
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public ResponseEntity<KingOfCourtStateDTO> getTournamentState(@PathVariable Long kingId) {
         log.debug("Getting state for King of Court: {}", kingId);
         KingOfCourtStateDTO state = kingOfCourtService.getCurrentState(kingId);
+        state.setConductVersion(conductHistory.revision(state.getTournamentId()));
         return ResponseEntity.ok(state);
     }
 
@@ -218,25 +229,26 @@ public class KingOfCourtApiController {
         return ResponseEntity.ok("pong");
     }
 
-    /**
-     * Откат последнего раунда.
-     * Удаляет последний раунд, откатывает очки, возвращает предыдущий
-     * раунд в статус "не завершён" — можно исправить результаты.
-     * <p>
-     * Добавить в KingOfCourtApiController рядом с /next-round
-     */
+    @PostMapping("/rounds/{roundId}/reset")
+    @PreAuthorize("hasAnyRole('OWNER', 'SUPER_ADMIN', 'ORGANIZER', 'ADMIN', 'CLUB_ADMIN')")
+    public ResponseEntity<Void> resetRound(@PathVariable Long roundId, @RequestParam long expectedConductVersion,
+                                           @AuthenticationPrincipal Owner currentOwner) {
+        tournamentAccessService.assertCanManageKingRound(currentOwner, roundId);
+        kingOfCourtService.resetRound(roundId);
+        return ResponseEntity.ok().build();
+    }
+
     @PostMapping("/tournaments/{kingId}/rollback")
     @PreAuthorize("hasAnyRole('OWNER', 'SUPER_ADMIN', 'ORGANIZER', 'ADMIN', 'CLUB_ADMIN')")
-    public ResponseEntity<?> rollbackLastRound(@PathVariable Long kingId, @AuthenticationPrincipal Owner currentOwner) {
-        log.info("Rolling back last round for tournament: {}", kingId);
-        tournamentAccessService.assertCanManageKing(currentOwner, kingId);
-        try {
-            kingOfCourtService.rollbackLastRound(kingId);
-            return ResponseEntity.ok().build();
-        } catch (Exception e) {
-            log.error("Error rolling back round", e);
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
-        }
+    public ResponseEntity<Void> legacyResetRound(@PathVariable Long kingId) {
+        // An old tab must reload to confirm a specific round and the scores that will be cleared.
+        throw new ResponseStatusException(HttpStatus.CONFLICT, "Reload the tournament to reset its current round");
+    }
+
+    @ExceptionHandler(InvalidStateException.class)
+    public ResponseEntity<Map<String, String>> invalidState(InvalidStateException exception, Locale locale) {
+        String message = messages.getMessage(exception.getMessage(), null, exception.getMessage(), locale);
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", message));
     }
 
     /**
