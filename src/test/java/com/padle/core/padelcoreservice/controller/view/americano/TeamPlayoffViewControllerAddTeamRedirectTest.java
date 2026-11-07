@@ -46,7 +46,7 @@ class TeamPlayoffViewControllerAddTeamRedirectTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         controller = new TeamPlayoffViewController(playoffService, tournamentService, matchRepository,
-                tournamentAccessService, playerService);
+                tournamentAccessService, null, playerService);
         redirectAttributes = new RedirectAttributesModelMap();
     }
 

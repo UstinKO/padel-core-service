@@ -7,6 +7,7 @@ import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 import org.springframework.stereotype.Component;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,12 +28,13 @@ public interface KingOfCourtMapper {
     @Mapping(target = "ranking", ignore = true)
     @Mapping(target = "history", ignore = true)
     @Mapping(target = "currentRoundId", source = "round.id")
+    @Mapping(target = "conductVersion", ignore = true)
     KingOfCourtStateDTO toStateDTO(TournamentKingOfCourt king, KingOfCourtRound round);
 
     @Mapping(target = "id", source = "court.id")
     @Mapping(target = "courtNumber", source = "court.courtNumber")
-    @Mapping(target = "players", source = "court.players")
-    @Mapping(target = "teams", source = "court.teams")
+    @Mapping(target = "players", source = "court.players", qualifiedByName = "orderedCourtPlayers")
+    @Mapping(target = "teams", source = "court.teams", qualifiedByName = "orderedCourtTeams")
     @Mapping(target = "result", source = "court.result")
     @Mapping(target = "hasResult", expression = "java(court.getResult() != null)")
     CourtDTO toCourtDTO(KingOfCourtCourt court);
@@ -74,6 +76,16 @@ public interface KingOfCourtMapper {
     @Mapping(target = "score", expression = "java(result.getWinnersScore() + \":\" + result.getLosersScore())")
     @Mapping(target = "formattedResult", expression = "java(formatMatchResult(result))")
     MatchHistoryDTO toMatchHistoryDTO(KingOfCourtMatchResult result);
+
+    @Named("orderedCourtPlayers")
+    default List<PlayerInfoDTO> orderedCourtPlayers(List<PlayerPadel> players) {
+        return players.stream().sorted(Comparator.comparing(PlayerPadel::getId)).map(this::toPlayerInfoDTO).toList();
+    }
+
+    @Named("orderedCourtTeams")
+    default List<TeamDTO> orderedCourtTeams(List<CourtTeam> teams) {
+        return teams.stream().sorted(Comparator.comparing(CourtTeam::getTeamNumber)).map(this::toTeamDTO).toList();
+    }
 
     default List<CourtDTO> mapCourts(List<KingOfCourtCourt> courts) {
         return courts.stream()

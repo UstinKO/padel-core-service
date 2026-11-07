@@ -5,7 +5,6 @@ import com.padle.core.padelcoreservice.dto.MatchDto;
 import com.padle.core.padelcoreservice.dto.PlayerResponseDto;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.model.Owner;
-import com.padle.core.padelcoreservice.model.TournamentKingOfCourt;
 import com.padle.core.padelcoreservice.model.enums.*;
 import com.padle.core.padelcoreservice.repository.TournamentKingOfCourtRepository;
 import com.padle.core.padelcoreservice.service.ClubService;
@@ -251,13 +250,12 @@ public class AdminController {
         // ADMIN/SUPER_ADMIN видят все турниры; CLUB_ADMIN — только своего клуба; ORGANIZER — только свои
         tournamentAccessService.assertCanManageTournament(owner, id);
 
-        List<TournamentKingOfCourt> activeKings = tournamentKingOfCourtRepository.findAllByTournamentIdAndIsActiveTrue(id);
-        if (!activeKings.isEmpty()) {
-            TournamentKingOfCourt king = activeKings.get(0);
-            model.addAttribute("kingOfCourtActive", true);
-            model.addAttribute("kingOfCourtId", king.getId());
-        } else {
-            model.addAttribute("kingOfCourtActive", false);
+        if (tournament.getTipo() == TournamentType.KING_OF_COURT) {
+            tournamentKingOfCourtRepository.findFirstByTournamentIdOrderByIsActiveDescIdDesc(id)
+                    .ifPresent(king -> {
+                        model.addAttribute("kingOfCourtActive", king.getIsActive());
+                        model.addAttribute("kingOfCourtId", king.getId());
+                    });
         }
 
         model.addAttribute("tournament", tournament);

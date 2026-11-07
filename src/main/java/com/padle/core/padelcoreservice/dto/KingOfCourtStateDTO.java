@@ -25,4 +25,5 @@ public class KingOfCourtStateDTO {
     private List<PlayerStatsDTO> ranking;
     private List<MatchHistoryDTO> history;
     private Long currentRoundId;
+    private Long conductVersion;
 }

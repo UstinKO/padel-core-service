@@ -23,6 +23,7 @@ import com.padle.core.padelcoreservice.repository.americano.AmericanoRoundReposi
 import com.padle.core.padelcoreservice.service.EmailService;
 import com.padle.core.padelcoreservice.service.PlayerService;
 import com.padle.core.padelcoreservice.service.TournamentAccessService;
+import com.padle.core.padelcoreservice.service.conduct.ConductChange;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -258,6 +259,7 @@ public class AmericanoService {
             tags = {"service=americano", "operation=initialize"}
     )
     @Transactional
+    @ConductChange(ConductChange.Action.START)
     public void initializeAmericanoTournament(Long tournamentId, AmericanoConfigDto config, Owner currentOwner) {
         log.info("Initializing Americano tournament={} config={}", tournamentId, config);
 
@@ -646,6 +648,7 @@ public class AmericanoService {
     // ═══════════════════════════════════════════════════════════════════════
 
     @Transactional
+    @ConductChange(value = ConductChange.Action.START_ROUND, subject = ConductChange.Subject.AMERICANO_ROUND)
     public AmericanoRoundDto startRound(Long roundId, Owner currentOwner) {
         AmericanoRound round = americanoRoundRepository.findById(roundId)
                 .orElseThrow(() -> new ResourceNotFoundException("Round not found"));
@@ -665,6 +668,7 @@ public class AmericanoService {
     }
 
     @Transactional
+    @ConductChange(value = ConductChange.Action.COMPLETE_ROUND, subject = ConductChange.Subject.AMERICANO_ROUND)
     public AmericanoRoundDto completeRound(Long roundId, Owner currentOwner) {
         AmericanoRound round = americanoRoundRepository.findById(roundId)
                 .orElseThrow(() -> new ResourceNotFoundException("Round not found"));
@@ -697,6 +701,7 @@ public class AmericanoService {
     // ═══════════════════════════════════════════════════════════════════════
 
     @Transactional
+    @ConductChange(value = ConductChange.Action.RESULT, subject = ConductChange.Subject.AMERICANO_RESULT)
     public AmericanoMatchDto submitMatchResult(AmericanoMatchResultDto resultDto, Owner currentOwner) {
         log.info("Submitting match result matchId={}", resultDto.getMatchId());
 
@@ -720,8 +725,10 @@ public class AmericanoService {
                     "Total points must equal %d. Current total: %d", limit, team1Score + team2Score));
         }
 
-        // Откат предыдущего результата при редактировании
         if (match.isCompleted()) {
+            if (Objects.equals(match.getTeam1Score(), team1Score) && Objects.equals(match.getTeam2Score(), team2Score)) {
+                return americanoMapper.toDto(match);
+            }
             revertAllPlayerStats(match);
         }
 
@@ -869,6 +876,7 @@ public class AmericanoService {
     // ═══════════════════════════════════════════════════════════════════════
 
     @Transactional
+    @ConductChange(ConductChange.Action.ROSTER)
     public void dropOutPlayer(Long tournamentId, AmericanoDropoutDto dropoutDto, Owner currentOwner) {
         log.info("Player {} dropping out from tournament {}", dropoutDto.getPlayerId(), tournamentId);
 
@@ -1066,6 +1074,7 @@ public class AmericanoService {
     // ═══════════════════════════════════════════════════════════════════════
 
     @Transactional
+    @ConductChange(ConductChange.Action.FINISH)
     public AmericanoRankingDto finishTournament(Long tournamentId, RankingCriteria criteria, Owner currentOwner) {
         log.info("Finishing Americano tournament={}", tournamentId);
 
@@ -1172,6 +1181,7 @@ public class AmericanoService {
     }
 
     @Transactional
+    @ConductChange(value = ConductChange.Action.ROUND_SETTINGS, subject = ConductChange.Subject.AMERICANO_ROUND)
     public void updateRoundPointsLimit(Long roundId, int newLimit, Owner currentOwner) {
         AmericanoRound round = americanoRoundRepository.findById(roundId)
                 .orElseThrow(() -> new ResourceNotFoundException("Round not found"));

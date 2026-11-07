@@ -25,6 +25,7 @@ import com.padle.core.padelcoreservice.repository.americano.AmericanoTeamReposit
 import com.padle.core.padelcoreservice.service.PlayerService;
 import com.padle.core.padelcoreservice.service.RegistrationPairPositions;
 import com.padle.core.padelcoreservice.service.WebSocketService;
+import com.padle.core.padelcoreservice.service.conduct.ConductChange;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -82,6 +83,7 @@ public class TeamPlayoffService {
      * которая читает только {@code TournamentRegistration}.
      */
     @Transactional
+    @ConductChange(ConductChange.Action.ROSTER)
     public AmericanoTeam addTeam(Long tournamentId, TeamPlayoffAddTeamRequest req) {
         Tournament tournament = getTournament(tournamentId);
         validateTournamentType(tournament);
@@ -190,6 +192,7 @@ public class TeamPlayoffService {
     }
 
     @Transactional
+    @ConductChange(value = ConductChange.Action.ROSTER, subject = ConductChange.Subject.AMERICANO_TEAM)
     public AmericanoTeam updateTeam(Long teamId, TeamPlayoffTeamRequest req) {
         AmericanoTeam team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new ResourceNotFoundException("Team not found: " + teamId));
@@ -223,6 +226,7 @@ public class TeamPlayoffService {
     }
 
     @Transactional
+    @ConductChange(value = ConductChange.Action.ROSTER, subject = ConductChange.Subject.AMERICANO_TEAM)
     public void removeTeam(Long teamId) {
         AmericanoTeam team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new ResourceNotFoundException("Team not found: " + teamId));
@@ -247,6 +251,7 @@ public class TeamPlayoffService {
      * задним числом команду, которая уже могла повлиять на результат соперника.
      */
     @Transactional
+    @ConductChange(value = ConductChange.Action.ROSTER, subject = ConductChange.Subject.AMERICANO_TEAM)
     public AmericanoTeam markNoShow(Long teamId) {
         AmericanoTeam team = getActiveTeam(teamId);
 
@@ -263,6 +268,7 @@ public class TeamPlayoffService {
 
     /** Отменяет {@link #markNoShow} — команда снова становится активной. */
     @Transactional
+    @ConductChange(value = ConductChange.Action.ROSTER, subject = ConductChange.Subject.AMERICANO_TEAM)
     public AmericanoTeam cancelNoShow(Long teamId) {
         AmericanoTeam team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new ResourceNotFoundException("Team not found: " + teamId));
@@ -334,6 +340,7 @@ public class TeamPlayoffService {
      * Идемпотентна — повторный вызов не ошибка, а no-op на уже созданном раунде.
      */
     @Transactional
+    @ConductChange(ConductChange.Action.QUALIFICATION)
     public AmericanoRound initQualification(Long tournamentId, int courts) {
         Tournament tournament = getTournament(tournamentId);
         validateTournamentType(tournament);
@@ -360,6 +367,7 @@ public class TeamPlayoffService {
      * Корт и соперников выбирает координатор; система только проверяет базовую доступность.
      */
     @Transactional
+    @ConductChange(ConductChange.Action.CREATE_MATCH)
     public AmericanoMatch createQualificationMatch(Long tournamentId, Long team1Id, Long team2Id, int courtNumber) {
         Tournament tournament = getTournament(tournamentId);
         validateTournamentType(tournament);
@@ -392,6 +400,7 @@ public class TeamPlayoffService {
      * Порядок очереди — по {@code createdAt}, см. {@link #getQueue}.
      */
     @Transactional
+    @ConductChange(ConductChange.Action.QUEUE_MATCH)
     public AmericanoMatch queueQualificationMatch(Long tournamentId, Long team1Id, Long team2Id) {
         Tournament tournament = getTournament(tournamentId);
         validateTournamentType(tournament);
@@ -422,6 +431,7 @@ public class TeamPlayoffService {
      * вывести матч из очереди ожидания.
      */
     @Transactional
+    @ConductChange(value = ConductChange.Action.COURT, subject = ConductChange.Subject.AMERICANO_MATCH)
     public AmericanoMatch assignCourtToQueuedMatch(Long matchId, int courtNumber) {
         AmericanoMatch match = matchRepository.findById(matchId)
                 .orElseThrow(() -> new ResourceNotFoundException("Match not found: " + matchId));
@@ -445,6 +455,7 @@ public class TeamPlayoffService {
      * пары. Только пока матч в статусе {@code QUEUED}.
      */
     @Transactional
+    @ConductChange(value = ConductChange.Action.REMOVE_MATCH, subject = ConductChange.Subject.AMERICANO_MATCH)
     public void removeFromQueue(Long matchId) {
         AmericanoMatch match = matchRepository.findById(matchId)
                 .orElseThrow(() -> new ResourceNotFoundException("Match not found: " + matchId));
@@ -487,6 +498,7 @@ public class TeamPlayoffService {
      * Обновляет статистику сетов/геймов обеих команд.
      */
     @Transactional
+    @ConductChange(value = ConductChange.Action.RESULT, subject = ConductChange.Subject.AMERICANO_MATCH)
     public AmericanoMatch submitQualResult(Long matchId, int team1Games, int team2Games) {
         AmericanoMatch match = matchRepository.findById(matchId)
                 .orElseThrow(() -> new ResourceNotFoundException("Match not found: " + matchId));
@@ -499,8 +511,13 @@ public class TeamPlayoffService {
             throw new InvalidStateException("No se permiten empates en el formato por sets");
         }
 
-        // Откат предыдущего результата
         if (match.isCompleted()) {
+            if (sameScore(match, team1Games, team2Games)) {
+                return match;
+            }
+            if (isPlayoffStarted(match.getTournament().getId())) {
+                throw new InvalidStateException("conduct.history.qualification_dependency");
+            }
             revertSetStats(match);
         }
 
@@ -527,6 +544,7 @@ public class TeamPlayoffService {
      * Берёт топ N команд (N = наибольшая степень 2, не превышающая число команд).
      */
     @Transactional
+    @ConductChange(ConductChange.Action.PLAYOFF)
     public void initPlayoff(Long tournamentId) {
         Tournament tournament = getTournament(tournamentId);
         validateTournamentType(tournament);
@@ -574,6 +592,7 @@ public class TeamPlayoffService {
      * плей-офф не завершён — иначе пришлось бы стирать реально сыгранный результат.
      */
     @Transactional
+    @ConductChange(ConductChange.Action.REGENERATE_PLAYOFF)
     public void regeneratePlayoff(Long tournamentId) {
         Tournament tournament = getTournament(tournamentId);
         validateTournamentType(tournament);
@@ -770,6 +789,7 @@ public class TeamPlayoffService {
      * Сохраняет результат плей-офф матча и заполняет следующий раунд.
      */
     @Transactional
+    @ConductChange(value = ConductChange.Action.RESULT, subject = ConductChange.Subject.AMERICANO_MATCH)
     public AmericanoMatch submitPlayoffResult(Long matchId, int team1Games, int team2Games) {
         AmericanoMatch match = matchRepository.findById(matchId)
                 .orElseThrow(() -> new ResourceNotFoundException("Match not found: " + matchId));
@@ -778,7 +798,17 @@ public class TeamPlayoffService {
             throw new InvalidStateException("No se permiten empates en playoff");
         }
 
-        // Сохраняем результат
+        boolean correction = match.isCompleted();
+        boolean sameWinner = correction && (match.getTeam1Games() > match.getTeam2Games()) == (team1Games > team2Games);
+        if (correction) {
+            if (sameScore(match, team1Games, team2Games)) {
+                return match;
+            }
+            if (!sameWinner && hasSeededDependentMatch(match)) {
+                throw new InvalidStateException("conduct.history.playoff_dependency");
+            }
+        }
+
         match.setTeam1Games(team1Games);
         match.setTeam2Games(team2Games);
         match.setTeam1Score(team1Games > team2Games ? 1 : 0);
@@ -787,6 +817,9 @@ public class TeamPlayoffService {
         matchRepository.save(match);
         webSocketService.notifyTeamPlayoffMatchCompleted(match.getTournament().getId(), toMatchDto(match));
 
+        if (sameWinner) {
+            return match;
+        }
         if (match.getNextMatchId() != null) {
             // Play-in матч: слот в четвертьфинале уже зафиксирован при посеве — не ждём
             // остальные play-in матчи.
@@ -799,6 +832,20 @@ public class TeamPlayoffService {
         tryAutoCompleteRound(match.getRound().getId());
 
         return match;
+    }
+
+    private boolean sameScore(AmericanoMatch match, int team1Games, int team2Games) {
+        return Objects.equals(match.getTeam1Games(), team1Games) && Objects.equals(match.getTeam2Games(), team2Games);
+    }
+
+    private boolean hasSeededDependentMatch(AmericanoMatch match) {
+        if (match.getNextMatchId() != null) {
+            return true;
+        }
+        PlayoffStage stage = match.getPlayoffStage();
+        PlayoffStage next = stage == null ? null : nextStage(stage);
+        return next != null && matchRepository.findByTournamentIdAndPlayoffStage(match.getTournament().getId(), next)
+                .stream().anyMatch(nextMatch -> nextMatch.getTeam1Id() != null || nextMatch.getTeam2Id() != null);
     }
 
     /**
@@ -1201,6 +1248,7 @@ public class TeamPlayoffService {
      * корт вручную, автоматическое назначение остаётся лишь рекомендацией.
      */
     @Transactional
+    @ConductChange(value = ConductChange.Action.COURT, subject = ConductChange.Subject.AMERICANO_MATCH)
     public AmericanoMatch changeMatchCourt(Long matchId, int newCourtNumber) {
         AmericanoMatch match = matchRepository.findById(matchId)
                 .orElseThrow(() -> new ResourceNotFoundException("Match not found: " + matchId));
@@ -1229,6 +1277,7 @@ public class TeamPlayoffService {
      * автоматические рекомендации не должны ограничивать координатора.
      */
     @Transactional
+    @ConductChange(value = ConductChange.Action.MATCH_TEAMS, subject = ConductChange.Subject.AMERICANO_MATCH)
     public MatchTeamChangeResult changeMatchTeam(Long matchId, int slot, Long newTeamId) {
         if (slot != 1 && slot != 2) {
             throw new InvalidStateException("Slot inválido: " + slot);
@@ -1313,6 +1362,7 @@ public class TeamPlayoffService {
      * матч". Обмен — единственная операция, которая переставляет посеянные пары без потери команды.
      */
     @Transactional
+    @ConductChange(value = ConductChange.Action.MATCH_TEAMS, subject = ConductChange.Subject.AMERICANO_MATCH)
     public MatchTeamChangeResult swapMatchTeams(Long matchAId, int slotA, Long matchBId, int slotB) {
         if (slotA != 1 && slotA != 2) {
             throw new InvalidStateException("Slot inválido: " + slotA);
@@ -2111,6 +2161,7 @@ public class TeamPlayoffService {
      * Пропускает пары, которые уже зарегистрированы как команда (по player1).
      */
     @Transactional
+    @ConductChange(ConductChange.Action.ROSTER)
     public int importFromRegistrations(Long tournamentId) {
         Tournament tournament = getTournament(tournamentId);
         validateTournamentType(tournament);
@@ -2204,6 +2255,7 @@ public class TeamPlayoffService {
      * импорта, оплата и присутствие переносятся в AmericanoTeam как есть, а не сбрасываются.
      */
     @Transactional
+    @ConductChange(ConductChange.Action.ROSTER)
     public AmericanoTeam addTeamFromRegistration(Long tournamentId, Long registrationId,
                                                   boolean hasPaid, boolean attended) {
         Tournament tournament = getTournament(tournamentId);

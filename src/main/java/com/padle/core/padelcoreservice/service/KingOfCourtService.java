@@ -8,7 +8,9 @@ import com.padle.core.padelcoreservice.mapper.KingOfCourtMapper;
 import com.padle.core.padelcoreservice.model.*;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
+import com.padle.core.padelcoreservice.model.enums.TournamentType;
 import com.padle.core.padelcoreservice.repository.*;
+import com.padle.core.padelcoreservice.service.conduct.ConductChange;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -39,6 +41,7 @@ public class KingOfCourtService {
     /**
      * Инициализация турнира "Король Корта"
      */
+    @ConductChange(value = ConductChange.Action.START, argument = 1)
     public TournamentKingOfCourt initializeTournament(Owner currentOwner, Long tournamentId, Integer maxCourts, Integer calibrationRounds) {
         log.info("Initializing King of Court tournament with ID: {}", tournamentId);
 
@@ -46,10 +49,13 @@ public class KingOfCourtService {
                 .orElseThrow(() -> new ResourceNotFoundException("Tournament not found with ID: " + tournamentId));
 
         tournamentAccessService.assertCanManage(currentOwner, tournament);
+        if (tournament.getTipo() != TournamentType.KING_OF_COURT) {
+            throw new InvalidStateException("Tournament is not King of Court");
+        }
 
-        // Проверяем, есть ли уже активный турнир
-        if (kingRepository.existsActiveByTournamentId(tournamentId)) {
-            throw new InvalidStateException("Tournament already has an active King of Court instance");
+        var savedRun = kingRepository.findFirstByTournamentIdOrderByIsActiveDescIdDesc(tournamentId);
+        if (savedRun.isPresent()) {
+            return savedRun.get();
         }
 
         // Получаем ТОЛЬКО ПОДТВЕРЖДЕННЫХ игроков (CONFIRMED)
@@ -191,6 +197,7 @@ public class KingOfCourtService {
             createTeamsForCourt(court, courtPlayers);
 
             courtRepository.save(court);
+            savedRound.getCourts().add(court);
         }
 
         kingTournament.getRounds().add(savedRound);
@@ -269,6 +276,7 @@ public class KingOfCourtService {
     /**
      * Сохранение результата матча
      */
+    @ConductChange(value = ConductChange.Action.RESULT, subject = ConductChange.Subject.KING_ROUND)
     public void saveMatchResult(Long roundId, Integer courtNumber,
                                 List<Long> winnerIds, List<Long> loserIds,
                                 Integer winnersScore, Integer losersScore) {
@@ -280,10 +288,17 @@ public class KingOfCourtService {
         KingOfCourtCourt court = courtRepository.findByRoundAndCourtNumber(round, courtNumber)
                 .orElseThrow(() -> new ResourceNotFoundException("Court not found in round"));
 
-        // Проверяем, что результат еще не введен
+        validateCourtPlayers(court, winnerIds, loserIds);
+        if (losersScore < 0 || winnersScore <= losersScore) {
+            throw new InvalidStateException("koc.admin.error_score");
+        }
         if (court.getResult() != null) {
+            if (matchesResult(court.getResult(), winnerIds, winnersScore, losersScore)) {
+                return;
+            }
             throw new InvalidStateException("Result already entered for this court");
         }
+        requireCurrentRound(round);
 
         // Получаем игроков
         PlayerPadel winner1 = playerRepository.findById(winnerIds.get(0))
@@ -414,6 +429,7 @@ public class KingOfCourtService {
      * Переход к следующему раунду
      */
     @Transactional
+    @ConductChange(value = ConductChange.Action.NEXT_ROUND, subject = ConductChange.Subject.KING)
     public void nextRound(Long kingTournamentId) {
         log.info("Moving to next round for tournament ID: {}", kingTournamentId);
 
@@ -435,10 +451,12 @@ public class KingOfCourtService {
         // Получаем последний раунд
         KingOfCourtRound lastRound = rounds.get(rounds.size() - 1);
 
-        // Проверяем, что все результаты введены в последнем раунде
+        // Legacy rollbacks could leave a fully scored round marked incomplete.
         if (!courtRepository.allResultsEntered(lastRound.getId())) {
             throw new InvalidStateException("Cannot proceed to next round: not all results are entered");
         }
+
+        checkAndCompleteRound(lastRound);
 
         // Получаем ВСЕХ игроков турнира
         List<PlayerPadel> allPlayers = statsRepository.findPlayersByTournamentKing(kingTournamentId);
@@ -518,6 +536,7 @@ public class KingOfCourtService {
                 createTeamsByPartnershipHistory(court, courtPlayers, partnershipHistory, currentRound.getRoundNumber());
 
                 courtRepository.save(court);
+                savedRound.getCourts().add(court);
                 courtsCreated++;
 
                 log.info("Court {} created with players: {}", courtNum,
@@ -622,15 +641,11 @@ public class KingOfCourtService {
         // Получаем рейтинг
         state.setRanking(getRanking(kingTournamentId));
 
-        // Получаем историю матчей (только завершенные раунды)
         List<MatchHistoryDTO> history = new ArrayList<>();
-        for (KingOfCourtRound round : king.getRounds()) {
-            // Добавляем только завершенные раунды в историю
-            if (round.getIsCompleted()) {
-                for (KingOfCourtCourt court : round.getCourts()) {
-                    if (court.getResult() != null) {
-                        history.add(kingOfCourtMapper.toMatchHistoryDTO(court.getResult()));
-                    }
+        for (KingOfCourtRound round : rounds) {
+            for (KingOfCourtCourt court : round.getCourts()) {
+                if (court.getResult() != null) {
+                    history.add(kingOfCourtMapper.toMatchHistoryDTO(court.getResult()));
                 }
             }
         }
@@ -680,10 +695,21 @@ public class KingOfCourtService {
     /**
      * Завершение турнира
      */
+    @ConductChange(value = ConductChange.Action.FINISH, subject = ConductChange.Subject.KING)
     public void finishTournament(Long kingTournamentId) {
         TournamentKingOfCourt king = kingRepository.findById(kingTournamentId)
                 .orElseThrow(() -> new ResourceNotFoundException("King tournament not found"));
 
+        if (king.getIsFinished()) {
+            return;
+        }
+        KingOfCourtRound current = roundRepository.findByTournamentKingOrderByRoundNumberAsc(king).stream()
+                .filter(round -> round.getRoundNumber().equals(king.getCurrentRound()))
+                .findFirst().orElseThrow(() -> new InvalidStateException("No current round"));
+        if (!courtRepository.allResultsEntered(current.getId())) {
+            throw new InvalidStateException("Not all results are entered");
+        }
+        checkAndCompleteRound(current);
         king.setIsActive(false);
         king.setIsFinished(true);
         king.setFinishedAt(LocalDateTime.now());
@@ -707,6 +733,7 @@ public class KingOfCourtService {
      * Возвращает ID основного турнира для редиректа.
      */
     @Transactional
+    @ConductChange(value = ConductChange.Action.RESTART, subject = ConductChange.Subject.KING)
     public Long resetTournament(Long kingId) {
         log.info("Resetting King of Court tournament: {}", kingId);
 
@@ -790,6 +817,7 @@ public class KingOfCourtService {
      * Обновление результата матча
      */
     @Transactional
+    @ConductChange(value = ConductChange.Action.RESULT, subject = ConductChange.Subject.KING_RESULT)
     public void updateMatchResult(Long resultId, Integer courtNumber,
                                   List<Long> winnerIds, List<Long> loserIds,
                                   Integer winnersScore, Integer losersScore) {
@@ -807,7 +835,20 @@ public class KingOfCourtService {
             throw new InvalidStateException("Court number mismatch");
         }
 
-        // Отменяем старые очки
+        validateCourtPlayers(court, winnerIds, loserIds);
+        if (losersScore < 0 || winnersScore <= losersScore) {
+            throw new InvalidStateException("koc.admin.error_score");
+        }
+        if (matchesResult(existingResult, winnerIds, winnersScore, losersScore)) {
+            return;
+        }
+        if (round.getTournamentKing().getIsFinished()) {
+            throw new InvalidStateException("Tournament is finished");
+        }
+        if (!round.getRoundNumber().equals(round.getTournamentKing().getCurrentRound())
+                && !sameWinners(existingResult, winnerIds)) {
+            throw new InvalidStateException("conduct.history.king_dependency");
+        }
         revertPlayerStats(round.getTournamentKing(), existingResult);
 
         // Получаем игроков
@@ -924,70 +965,51 @@ public class KingOfCourtService {
         return statsRepository.findRawStats(kingTournamentId);
     }
 
-    /**
-     * Откат последнего раунда.
-     * <p>
-     * Что делает:
-     * 1. Находит последний раунд турнира
-     * 2. Проверяет что он не первый (первый откатить нельзя)
-     * 3. Откатывает очки всех игроков за этот раунд
-     * 4. Удаляет все корты и результаты последнего раунда
-     * 5. Удаляет сам раунд
-     * 6. Снимает флаг isCompleted с предыдущего раунда — админ
-     * может снова ввести результаты и перейти к следующему раунду
-     * 7. Уменьшает currentRound в турнире на 1
-     */
-    @Transactional
-    public void rollbackLastRound(Long kingTournamentId) {
-        log.info("Rolling back last round for tournament: {}", kingTournamentId);
+    @ConductChange(value = ConductChange.Action.RESET_ROUND, subject = ConductChange.Subject.KING_ROUND)
+    public void resetRound(Long roundId) {
+        KingOfCourtRound round = roundRepository.findById(roundId)
+                .orElseThrow(() -> new ResourceNotFoundException("Round not found"));
+        requireCurrentRound(round);
 
-        TournamentKingOfCourt king = kingRepository.findById(kingTournamentId)
-                .orElseThrow(() -> new ResourceNotFoundException("King tournament not found"));
-
-        if (king.getIsFinished()) {
-            throw new InvalidStateException("Cannot rollback: tournament is already finished");
-        }
-
-        List<KingOfCourtRound> rounds =
-                roundRepository.findByTournamentKingOrderByRoundNumberAsc(king);
-
-        if (rounds.size() < 2) {
-            throw new InvalidStateException(
-                    "Cannot rollback: this is the first round. There is nothing to go back to.");
-        }
-
-        KingOfCourtRound lastRound = rounds.get(rounds.size() - 1);
-        KingOfCourtRound prevRound = rounds.get(rounds.size() - 2);
-
-        // 1. Откатываем очки за все матчи последнего раунда
-        for (KingOfCourtCourt court : lastRound.getCourts()) {
-            if (court.getResult() != null) {
-                revertPlayerStats(king, court.getResult());
-                log.info("Reverted stats for court {} of round {}",
-                        court.getCourtNumber(), lastRound.getRoundNumber());
+        for (KingOfCourtCourt court : round.getCourts()) {
+            KingOfCourtMatchResult result = court.getResult();
+            if (result != null) {
+                revertPlayerStats(round.getTournamentKing(), result);
+                court.setResult(null);
+                matchResultRepository.delete(result);
             }
         }
+        round.setIsCompleted(false);
+        round.setCompletedAt(null);
+        matchResultRepository.flush();
 
-        // 2. Удаляем последний раунд (каскадно удалятся корты, команды и результаты)
-        king.getRounds().remove(lastRound);
-        roundRepository.delete(lastRound);
-        log.info("Deleted round {}", lastRound.getRoundNumber());
+        Long kingId = round.getTournamentKing().getId();
+        KingOfCourtStateDTO state = getCurrentState(kingId);
+        webSocketService.notifyTournamentStateUpdated(kingId, state);
+    }
 
-        // 3. Снимаем флаг завершения с предыдущего раунда —
-        //    теперь он снова "активный" и можно исправить результаты
-        prevRound.setIsCompleted(false);
-        prevRound.setCompletedAt(null);
-        roundRepository.save(prevRound);
-        log.info("Reopened round {} for editing", prevRound.getRoundNumber());
+    private void requireCurrentRound(KingOfCourtRound round) {
+        TournamentKingOfCourt king = round.getTournamentKing();
+        if (king.getIsFinished() || !round.getRoundNumber().equals(king.getCurrentRound())) {
+            throw new InvalidStateException("This action requires the current round of an active tournament");
+        }
+    }
 
-        // 4. Уменьшаем счётчик текущего раунда
-        king.setCurrentRound(king.getCurrentRound() - 1);
-        kingRepository.save(king);
+    private void validateCourtPlayers(KingOfCourtCourt court, List<Long> winners, List<Long> losers) {
+        Set<Long> submitted = new HashSet<>(winners);
+        submitted.addAll(losers);
+        Set<Long> assigned = court.getPlayers().stream().map(PlayerPadel::getId).collect(Collectors.toSet());
+        if (winners.size() != 2 || losers.size() != 2 || submitted.size() != 4 || !submitted.equals(assigned)) {
+            throw new InvalidStateException("Result players must match the court assignment");
+        }
+    }
 
-        // 5. Уведомляем всех подключённых клиентов
-        KingOfCourtStateDTO state = getCurrentState(kingTournamentId);
-        webSocketService.notifyTournamentStateUpdated(kingTournamentId, state);
+    private boolean matchesResult(KingOfCourtMatchResult result, List<Long> winners, Integer winnerScore, Integer loserScore) {
+        return sameWinners(result, winners) && winnerScore.equals(result.getWinnersScore())
+                && loserScore.equals(result.getLosersScore());
+    }
 
-        log.info("Rollback complete. Now on round {}", king.getCurrentRound());
+    private boolean sameWinners(KingOfCourtMatchResult result, List<Long> winners) {
+        return winners.contains(result.getWinner1().getId()) && winners.contains(result.getWinner2().getId());
     }
 }

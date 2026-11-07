@@ -23,6 +23,7 @@ import com.padle.core.padelcoreservice.service.PlayerService;
 import com.padle.core.padelcoreservice.service.TournamentAccessService;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import com.padle.core.padelcoreservice.service.americano.TeamPlayoffService;
+import com.padle.core.padelcoreservice.service.conduct.TournamentConductHistory;
 import com.padle.core.padelcoreservice.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -55,6 +56,7 @@ public class TeamPlayoffViewController {
     private final TournamentService tournamentService;
     private final AmericanoMatchRepository matchRepository;
     private final TournamentAccessService tournamentAccessService;
+    private final TournamentConductHistory conductHistory;
     private final PlayerService playerService;
 
     // ══════════════════════════════════════════════════════════════════════
@@ -111,6 +113,7 @@ public class TeamPlayoffViewController {
         TournamentDto tournament = tournamentService.getActiveTournamentById(tournamentId)
                 .orElseThrow(() -> new IllegalArgumentException("Torneo no encontrado"));
 
+        model.addAttribute("conductVersion", conductHistory.revision(tournamentId));
         boolean qualStarted   = playoffService.isQualificationStarted(tournamentId);
         boolean playoffStarted = playoffService.isPlayoffStarted(tournamentId);
 
@@ -312,8 +315,8 @@ public class TeamPlayoffViewController {
     /** Пересобрать плей-офф после правки результата квалификации. */
     @PostMapping("/admin/{tournamentId}/regenerate-playoff")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
-    public String regeneratePlayoff(@PathVariable Long tournamentId, RedirectAttributes ra,
-                                    @AuthenticationPrincipal Owner currentOwner) {
+    public String regeneratePlayoff(@PathVariable Long tournamentId, @RequestParam long expectedConductVersion,
+                                    RedirectAttributes ra, @AuthenticationPrincipal Owner currentOwner) {
         tournamentAccessService.assertCanManageTournament(currentOwner, tournamentId);
         try {
             playoffService.regeneratePlayoff(tournamentId);
