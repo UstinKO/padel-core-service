@@ -14,7 +14,7 @@
 
 1. Извлекает `PlayerPadel` из principal (`CustomOAuth2User`, `PlayerPadel` или `UserDetails` — загрузка из БД).
 2. Если principal — `Owner`, редиректит на `/admin`.
-3. Загружает через `TournamentService.getVisibleTournamentsForPlayer()` открытые турниры.
+3. Загружает через `TournamentService.getVisibleTournamentsForPlayer(activeRegistrationTournamentIds)` открытые турниры. Турниры «Только по ссылке» включаются только при активной записи текущего игрока.
 4. Загружает ID турниров, на которые игрок уже зарегистрирован.
 5. Сериализует данные в JSON-строки для передачи в Thymeleaf → JavaScript.
 

@@ -424,6 +424,36 @@ class RegistrationCancellationIntegrationTest {
                 .andExpect(status().isConflict());
     }
 
+    @Test
+    void dashboardShowsUnlistedPairTournamentOnlyToItsParticipants() throws Exception {
+        var hidden = tournament(4);
+        hidden.setTipo(TournamentType.AMERICANO_TEAMS);
+        hidden.setModalidad(Modalidad.DOBLES);
+        hidden.setVisibilidad(TournamentVisibility.SOLO_POR_ENLACE);
+        var first = registration(hidden, RegistrationStatus.CONFIRMED);
+        var second = registration(hidden, RegistrationStatus.CONFIRMED);
+        pair(first, second);
+        var outsider = registration(tournament(4), RegistrationStatus.CONFIRMED);
+        String tournamentIdField = "\"id\":" + hidden.getId() + ",";
+
+        for (var member : List.of(first, second)) {
+            var dashboard = mvc.perform(get("/players/dashboard")
+                            .param("cancelPair", hidden.getId().toString()).with(user(member.getPlayer())))
+                    .andExpect(status().isOk()).andExpect(view().name("players/dashboard"))
+                    .andReturn().getModelAndView();
+            assertThat(dashboard.getModel().get("tournamentsJson").toString()).contains(tournamentIdField);
+            assertThat(dashboard.getModel().get("myTournamentIdsJson")).isEqualTo("[" + hidden.getId() + "]");
+        }
+
+        var dashboard = mvc.perform(get("/players/dashboard")
+                        .param("cancelPair", hidden.getId().toString()).with(user(outsider.getPlayer())))
+                .andExpect(status().isOk()).andExpect(view().name("players/dashboard"))
+                .andReturn().getModelAndView();
+        assertThat(dashboard.getModel().get("tournamentsJson").toString()).doesNotContain(tournamentIdField);
+        assertThat(dashboard.getModel().get("myTournamentIdsJson"))
+                .isEqualTo("[" + outsider.getTournament().getId() + "]");
+    }
+
     private void pair(TournamentRegistration first, TournamentRegistration second) {
         first.setPartner(second.getPlayer());
         second.setPartner(first.getPlayer());

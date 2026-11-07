@@ -254,7 +254,7 @@
 |---------|----------|-----------|
 | `player` | из principal | |
 | `torneosInscritos` | `getActiveRegistrationsByPlayer()` | реальные данные |
-| `tournamentsJson` | `getVisibleTournamentsForPlayer()` | |
+| `tournamentsJson` | `getVisibleTournamentsForPlayer(activeRegistrationTournamentIds)` | Публичные турниры и турниры по ссылке с активной записью текущего игрока |
 | `historicalJson` | прошедшие турниры игрока | |
 | `myTournamentIdsJson` | `getActiveRegistrationsByPlayer()` | |
 
