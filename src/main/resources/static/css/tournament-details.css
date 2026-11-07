@@ -1361,6 +1361,7 @@ input[type="tel"].form-control {
 }
 
 .registration-actions {
+    scroll-margin-top: 6rem;
     display: flex;
     flex-direction: column;
     gap: 0.75rem;

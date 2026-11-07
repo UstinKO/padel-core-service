@@ -324,7 +324,7 @@ class TorneosPage {
                             <i class="fas fa-info-circle"></i> ${t('card.btn.details')}
                         </a>
                         ${tournament.estado === 'REGISTRO_ABIERTO'
-                            ? `<a href="/torneo/${tournament.id}" class="btn btn-primary btn-small">
+                            ? `<a href="/torneo/${tournament.id}" class="btn btn-primary btn-small" data-registration-intent="${tournament.id}">
                                    <i class="fas fa-plus-circle"></i> ${t('dashboard.card.btn.register')}
                                </a>`
                             : `<span class="torneo-status ${estadoClass}">${estadoTexto}</span>`

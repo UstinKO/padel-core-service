@@ -2,6 +2,7 @@ package com.padle.core.padelcoreservice.security.oauth2;
 
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.security.JwtService;
+import com.padle.core.padelcoreservice.security.TournamentLogin;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
@@ -62,6 +63,15 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         // токенами во fragment URL (не в query/path — fragment не уходит на сервер и не
         // попадает в Referer/access-логи), а не на /players/dashboard.
         HttpSession session = request.getSession(false);
+        var tournament = TournamentLogin.authorizedTournament(request);
+        if (tournament.isPresent()) {
+            if (session != null) {
+                session.removeAttribute(OAuth2AppLoginOriginFilter.SESSION_ATTR);
+            }
+            getRedirectStrategy().sendRedirect(request, response, TournamentLogin.registrationUrl(tournament.get()));
+            return;
+        }
+
         if (session != null && session.getAttribute(OAuth2AppLoginOriginFilter.SESSION_ATTR) != null) {
             session.removeAttribute(OAuth2AppLoginOriginFilter.SESSION_ATTR);
 

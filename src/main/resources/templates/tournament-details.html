@@ -719,17 +719,18 @@
                     </div>
 
                     <!-- Botones de acción -->
-                    <div class="registration-actions">
+                    <div id="tournament-registration" class="registration-actions">
                         <button class="btn-register btn-primary btn-block"
                                 th:if="${!isRegistered && isAuthenticated && tournament.estado.toString() == 'REGISTRO_ABIERTO'}"
                                 th:attr="data-tournament-id=${tournament.id}, data-tournament-name=${tournament.nombre}"
-                                id="registerButton">
+                                th:data-registration-intent="${tournament.id}" id="registerButton">
                             <i class="fas fa-check-circle"></i>
                             <span th:text="${availableSpots > 0} ? #{tournament.btn.register} : #{tournament.btn.waitlist}"></span>
                         </button>
 
                         <!-- Остальные кнопки без изменений -->
-                        <a href="/login" class="btn-login btn-outline btn-block"
+                        <a th:href="@{/login(tournamentId=${tournament.id})}" th:data-registration-intent="${tournament.id}"
+                           class="btn-login btn-outline btn-block"
                            th:if="${!isAuthenticated && tournament.estado.toString() == 'REGISTRO_ABIERTO'}">
                             <i class="fas fa-sign-in-alt"></i>
                             <span th:text="#{tournament.btn.login}">Iniciar sesión para inscribirse</span>

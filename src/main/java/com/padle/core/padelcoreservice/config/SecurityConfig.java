@@ -6,8 +6,10 @@ import com.padle.core.padelcoreservice.security.CustomAccessDeniedHandler;
 import com.padle.core.padelcoreservice.security.JwtAuthenticationFilter;
 import com.padle.core.padelcoreservice.security.RateLimitFilter;
 import com.padle.core.padelcoreservice.security.RequestIdFilter;
+import com.padle.core.padelcoreservice.security.TournamentLogin;
 import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2UserService;
 import com.padle.core.padelcoreservice.security.oauth2.OAuth2AppLoginOriginFilter;
+import com.padle.core.padelcoreservice.security.oauth2.TournamentOAuth2AuthorizationRequestRepository;
 import com.padle.core.padelcoreservice.security.oauth2.OAuth2AuthenticationSuccessHandler;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -223,8 +225,11 @@ public class SecurityConfig {
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(customOAuth2UserService)
                         )
+                        .authorizationEndpoint(endpoint -> endpoint
+                                .authorizationRequestRepository(new TournamentOAuth2AuthorizationRequestRepository()))
                         .successHandler(oAuth2AuthenticationSuccessHandler)
-                        .failureUrl("/login?error=oauth2")
+                        .failureHandler((request, response, exception) -> response.sendRedirect(
+                                TournamentLogin.failureUrl("oauth2", TournamentLogin.authorizedTournament(request))))
                 )
                 .formLogin(form -> form
                         .loginPage("/login")
@@ -299,12 +304,10 @@ public class SecurityConfig {
             log.info("Authentication failure: type={}, message={}",
                     exception.getClass().getName(), exception.getMessage());
 
-            if (exception instanceof DisabledException
-                    || exception instanceof org.springframework.security.authentication.LockedException) {
-                response.sendRedirect("/login?error=not_confirmed");
-            } else {
-                response.sendRedirect("/login?error=true");
-            }
+            boolean notConfirmed = exception instanceof DisabledException
+                    || exception instanceof org.springframework.security.authentication.LockedException;
+            response.sendRedirect(TournamentLogin.failureUrl(
+                    notConfirmed ? "not_confirmed" : "true", TournamentLogin.requestedTournament(request)));
         };
     }
 
@@ -340,6 +343,10 @@ public class SecurityConfig {
 
             if (isAdmin) {
                 targetUrl = "/admin";
+            } else {
+                targetUrl = TournamentLogin.requestedTournament(request)
+                        .map(TournamentLogin::registrationUrl)
+                        .orElse(targetUrl);
             }
 
             response.sendRedirect(targetUrl);

@@ -325,10 +325,10 @@ class PadelCoreHome {
                        </span>`
             : tournament.estado === 'REGISTRO_ABIERTO'
                 ? spotsStatus === 'full'
-                    ? `<a href="/torneo/${tournament.id}" class="btn btn-waitlist btn-small">
+                    ? `<a href="/torneo/${tournament.id}" class="btn btn-waitlist btn-small" data-registration-intent="${tournament.id}">
                                <i class="fas fa-clock"></i> ${t('card.btn.register_waitlist')}
                            </a>`
-                    : `<a href="/torneo/${tournament.id}" class="btn btn-primary btn-small">
+                    : `<a href="/torneo/${tournament.id}" class="btn btn-primary btn-small" data-registration-intent="${tournament.id}">
                                <i class="fas fa-plus-circle"></i> ${t('card.btn.register_now')}
                            </a>`
                 : `<span class="tournament-status ${estadoClass}">${estadoDisplay}</span>`

@@ -60,6 +60,7 @@
                 </div>
 
                 <form th:action="@{/login}" method="post" class="auth-form">
+                    <input type="hidden" name="tournamentId" th:if="${tournamentId != null}" th:value="${tournamentId}">
 
                     <!-- Registro exitoso (ya no se usa, pero por si acaso) -->
                     <div th:if="${param.registered}" class="alert alert-success">
@@ -181,7 +182,8 @@
                     </div>
 
                     <div class="auth-social" style="display: flex; gap: 1rem; justify-content: center; margin-top: 1rem;">
-                        <a href="/oauth2/authorization/google" class="btn btn-outline" style="flex: 1;">
+                        <a th:href="${tournamentId != null} ? @{/oauth2/authorization/google(tournamentId=${tournamentId})} : @{/oauth2/authorization/google}"
+                           class="btn btn-outline" style="flex: 1;">
                             <i class="fab fa-google"></i> Google
                         </a>
                     </div>

@@ -307,7 +307,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
         // Form POST /login → редирект на страницу логина с ошибкой
         if ("POST".equalsIgnoreCase(method) && path.equals("/login")) {
-            response.sendRedirect("/login?error=rate-limit");
+            response.sendRedirect(TournamentLogin.failureUrl("rate-limit", TournamentLogin.requestedTournament(request)));
             return;
         }
 
