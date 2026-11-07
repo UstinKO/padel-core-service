@@ -492,6 +492,97 @@ class RegistrationCancellationIntegrationTest {
         assertThat(report.export(tournament.getId())).contains("original-source");
     }
 
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void adminFormsPairWithReserveSoloAndRespectsExistingQueue(boolean olderPairWaiting) throws Exception {
+        var tournament = tournament(1);
+        tournament.setTipo(TournamentType.AMERICANO_TEAMS);
+        tournament.setModalidad(Modalidad.DOBLES);
+        var reserve = registration(tournament, RegistrationStatus.WAITLIST);
+        reserve.setPartnerActionToken("test-reserve-token");
+        var search = registration(tournament, RegistrationStatus.SOLO_SEARCH);
+
+        if (olderPairWaiting) {
+            var first = registration(tournament, RegistrationStatus.WAITLIST);
+            var second = registration(tournament, RegistrationStatus.WAITLIST);
+            pair(first, second);
+            reserve.setWaitlistPosition(2);
+        }
+
+        var admin = Owner.builder().email("admin@example.test").role(OwnerRole.SUPER_ADMIN).build();
+        String path = "/admin/tournaments/" + tournament.getId();
+
+        var otherTournament = tournament(2);
+        mvc.perform(post("/admin/tournaments/" + otherTournament.getId() + "/pair-solo")
+                        .param("regId1", reserve.getId().toString()).param("regId2", search.getId().toString())
+                        .with(user(admin)).with(csrf()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.success").value(false));
+
+        mvc.perform(post(path + "/pair-solo").param("regId1", reserve.getId().toString())
+                        .param("regId2", search.getId().toString()).with(user(admin)).with(csrf()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true));
+        entities.clear();
+
+        var first = registrations.findById(reserve.getId()).orElseThrow();
+        var second = registrations.findById(search.getId()).orElseThrow();
+        var expected = olderPairWaiting ? RegistrationStatus.WAITLIST : RegistrationStatus.CONFIRMED;
+        assertThat(first.getStatus()).isEqualTo(expected);
+        assertThat(second.getStatus()).isEqualTo(expected);
+        assertThat(first.getPartner().getId()).isEqualTo(second.getPlayer().getId());
+        assertThat(second.getPartner().getId()).isEqualTo(first.getPlayer().getId());
+        assertThat(first.getPairBookingId()).isNotNull().isEqualTo(second.getPairBookingId());
+        assertThat(first.getPartnerActionToken()).isNull();
+        assertThat(registrations.countConfirmedPairs(tournament.getId())).isEqualTo(1);
+        if (olderPairWaiting) {
+            assertThat(first.getWaitlistPosition()).isGreaterThan(2).isEqualTo(second.getWaitlistPosition());
+            assertThat(first.getPosition()).isNull();
+        } else {
+            assertThat(first.getWaitlistPosition()).isNull();
+            assertThat(first.getPosition()).isEqualTo(second.getPosition()).isEqualTo(1);
+        }
+    }
+
+    @Test
+    void teamPlayoffManualAddRestoresCancelledRowsWithTheirPaymentAndAttribution() throws Exception {
+        var tournament = tournament(4);
+        tournament.setTipo(TournamentType.AMERICANO_TEAMS);
+        tournament.setModalidad(Modalidad.DOBLES);
+        var first = registration(tournament, RegistrationStatus.WAITLIST);
+        var second = registration(tournament, RegistrationStatus.SOLO_SEARCH);
+        var oldPartner = registration(tournament, RegistrationStatus.CONFIRMED);
+        oldPartner.setMainPlayerId(first.getPlayer().getId());
+        oldPartner.setIsDoubleRegistration(true);
+        oldPartner.setPartner(first.getPlayer());
+        oldPartner.cancel("Old pair");
+        var payment = payments.saveAndFlush(Payment.builder().registration(first)
+                .amount(new BigDecimal("1000")).currency("ARS").status(PaymentStatus.PAID).build());
+        jdbc.update("UPDATE marketing_registrations_db SET first_touch = 'team-playoff-source' WHERE registration_id = ?",
+                first.getId());
+        service.adminRemovePlayerRegistration(tournament.getId(), first.getPlayer().getId());
+        service.adminRemovePlayerRegistration(tournament.getId(), second.getPlayer().getId());
+
+        var admin = Owner.builder().email("admin@example.test").role(OwnerRole.SUPER_ADMIN).build();
+        String path = "/tournaments/team-playoff/admin/" + tournament.getId();
+        mvc.perform(post(path + "/teams/add").param("player1Id", first.getPlayer().getId().toString())
+                        .param("player2Id", second.getPlayer().getId().toString()).with(user(admin)).with(csrf()))
+                .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl(path))
+                .andExpect(flash().attributeExists("success"));
+        entities.flush();
+        entities.clear();
+
+        assertThat(registrations.findByTournamentId(tournament.getId())).hasSize(3);
+        assertThat(registrations.findById(first.getId()).orElseThrow().getStatus())
+                .isEqualTo(RegistrationStatus.CONFIRMED);
+        assertThat(registrations.findById(second.getId()).orElseThrow().getStatus())
+                .isEqualTo(RegistrationStatus.CONFIRMED);
+        assertThat(registrations.findById(oldPartner.getId()).orElseThrow().getStatus())
+                .isEqualTo(RegistrationStatus.CANCELLED);
+        assertThat(payments.findById(payment.getId()).orElseThrow().getRegistration().getId()).isEqualTo(first.getId());
+        assertThat(report.export(tournament.getId())).contains("team-playoff-source");
+        assertThat(jdbc.queryForObject("SELECT player2_id FROM americano_teams_db WHERE tournament_id = ?",
+                Long.class, tournament.getId())).isEqualTo(second.getPlayer().getId());
+    }
+
     @Test
     void bookerAcceptsForBothAndCancellationUsesTheSamePaymentQuote() {
         Tournament tournament = tournament(1);

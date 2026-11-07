@@ -85,7 +85,8 @@ public class TeamPlayoffService {
     @Transactional
     @ConductChange(ConductChange.Action.ROSTER)
     public AmericanoTeam addTeam(Long tournamentId, TeamPlayoffAddTeamRequest req) {
-        Tournament tournament = getTournament(tournamentId);
+        Tournament tournament = tournamentRepository.lockById(tournamentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tournament not found: " + tournamentId));
         validateTournamentType(tournament);
 
         PlayerPadel player1 = resolvePlayerForNewTeam(req.getPlayer1Id(), req.getPlayer1Nombre(),
@@ -131,7 +132,7 @@ public class TeamPlayoffService {
     }
 
     /**
-     * Создаёт пару {@link TournamentRegistration} (по одной записи на игрока, обе
+     * Создаёт или восстанавливает пару {@link TournamentRegistration} (по одной записи на игрока, обе
      * {@code CONFIRMED}) — как обычная парная регистрация с сайта
      * ({@code DoubleTournamentRegistrationService.registerWithExistingPartner}), но без
      * побочных эффектов веб-флоу (не отправляет письма, не проверяет лимит мест/статус турнира —
@@ -139,56 +140,43 @@ public class TeamPlayoffService {
      */
     private TournamentRegistration createConfirmedPairRegistration(Tournament tournament,
                                                                      PlayerPadel player1, PlayerPadel player2) {
-        for (PlayerPadel player : List.of(player1, player2)) {
-            Optional<TournamentRegistration> existing =
-                    registrationRepository.findByTournamentIdAndPlayerId(tournament.getId(), player.getId());
-            if (existing.isPresent() && Boolean.TRUE.equals(existing.get().getIsActive())) {
-                throw new InvalidStateException(
-                        player.getNombreCompleto() + " ya tiene una inscripción activa en este torneo");
-            }
-            registrationRepository.findByTournamentIdAndPlayerIdAndIsActiveFalse(tournament.getId(), player.getId())
-                    .ifPresent(registrationRepository::delete);
-        }
-        registrationRepository.flush();
-
         int position = (int) registrationRepository.countConfirmedPairs(tournament.getId()) + 1;
         UUID pairBookingId = UUID.randomUUID();
+        createOrRestorePairMember(tournament, player2, player1, player1.getId(), pairBookingId, position);
+        return createOrRestorePairMember(tournament, player1, player2, player1.getId(), pairBookingId, position);
+    }
 
-        TournamentRegistration partnerRegistration = TournamentRegistration.builder()
+    private TournamentRegistration createOrRestorePairMember(Tournament tournament, PlayerPadel player,
+                                                              PlayerPadel partner, Long mainPlayerId,
+                                                              UUID pairBookingId, int position) {
+        TournamentRegistration registration = TournamentRegistration.builder()
                 .tournament(tournament)
-                .player(player2)
-                .partner(player1)
+                .player(player)
+                .partner(partner)
                 .registrationDate(LocalDateTime.now())
                 .isActive(true)
                 .isDoubleRegistration(true)
-                .mainPlayerId(player1.getId())
+                .mainPlayerId(mainPlayerId)
                 .pairBookingId(pairBookingId)
-                .partnerFirstName(player1.getNombre())
-                .partnerLastName(player1.getApellido())
-                .partnerPhone(player1.getTelefono())
-                .partnerEmail(player1.getEmail())
+                .partnerFirstName(partner.getNombre())
+                .partnerLastName(partner.getApellido())
+                .partnerPhone(partner.getTelefono())
+                .partnerEmail(partner.getEmail())
+                .partnerTelegram(partner.getTelegramUsername())
                 .status(RegistrationStatus.CONFIRMED)
                 .position(position)
                 .build();
-        registrationRepository.save(partnerRegistration);
-
-        TournamentRegistration mainRegistration = TournamentRegistration.builder()
-                .tournament(tournament)
-                .player(player1)
-                .partner(player2)
-                .registrationDate(LocalDateTime.now())
-                .isActive(true)
-                .isDoubleRegistration(true)
-                .mainPlayerId(player1.getId())
-                .pairBookingId(pairBookingId)
-                .partnerFirstName(player2.getNombre())
-                .partnerLastName(player2.getApellido())
-                .partnerPhone(player2.getTelefono())
-                .partnerEmail(player2.getEmail())
-                .status(RegistrationStatus.CONFIRMED)
-                .position(position)
-                .build();
-        return registrationRepository.save(mainRegistration);
+        registrationRepository.findByTournamentIdAndPlayerId(tournament.getId(), player.getId())
+                .ifPresent(previous -> {
+                    if (Boolean.TRUE.equals(previous.getIsActive())) {
+                        throw new InvalidStateException(
+                                player.getNombreCompleto() + " ya tiene una inscripción activa en este torneo");
+                    }
+                    // На ID регистрации ссылаются оплаты и история источника заявки.
+                    registration.setId(previous.getId());
+                    registration.setPayments(previous.getPayments());
+                });
+        return registrationRepository.save(registration);
     }
 
     @Transactional
@@ -2282,6 +2270,8 @@ public class TeamPlayoffService {
                 .findByTournamentIdOrderByPositionAscWaitlistPositionAsc(tournamentId)
                 .stream()
                 .filter(r -> mainPlayerId.equals(r.getMainPlayerId()) && !r.getPlayer().getId().equals(mainPlayerId))
+                .filter(r -> Boolean.TRUE.equals(r.getIsActive()))
+                .filter(r -> mainReg.getPairBookingId() == null || mainReg.getPairBookingId().equals(r.getPairBookingId()))
                 .findFirst().orElse(null);
 
         // Проверяем и партнёра: проверка выше покрывает только главного игрока, а пара,

@@ -249,6 +249,12 @@ public class TournamentRegistration {
         return status == RegistrationStatus.PARTNER_INVITED;
     }
 
+    public boolean isPairableSolo() {
+        return Boolean.TRUE.equals(isActive) && !Boolean.TRUE.equals(isDoubleRegistration) && partner == null
+                && (status == RegistrationStatus.SOLO_SEARCH || status == RegistrationStatus.SOLO_ADD_LATER
+                    || status == RegistrationStatus.WAITLIST);
+    }
+
     public boolean isPairComplete() {
         return status == RegistrationStatus.PAIR_REGISTERED ||
                 (status == RegistrationStatus.CONFIRMED && partner != null);
