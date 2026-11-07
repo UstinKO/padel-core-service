@@ -246,6 +246,9 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 | Метод | URL | Тип | Описание |
 |-------|-----|-----|----------|
 | `GET` | `/torneos` | HTML | Публичный список предстоящих турниров с фильтрами. |
+| `GET` | `/api/public/tournaments/{id}/calendar` | JSON | Доступность календаря и Google TEMPLATE, no-store. |
+| `GET` | `/api/public/tournaments/{id}/calendar/google` | 302 | Актуальные данные мероприятия → Google TEMPLATE, без создания события. |
+| `GET` | `/api/public/tournaments/{id}/calendar/event.ics` | iCalendar | UTF-8, inline для Apple; download=true → attachment. Те же правила доступа, что у карточки мероприятия. |
 | `GET` | `/torneo/{id}` | HTML | Публичная карточка турнира: описание, регистрация, список участников. |
 
 #### REST API (публичный, read-only)
@@ -795,3 +798,5 @@ Meta Pixel, согласия и маркетинговая атрибуция �
 GET /admin/marketing/qr — страница отчёта QR, только SUPER_ADMIN (HTTP + method).
 Данные через /api/admin/marketing/qr-summary, фильтры from/to/source, ES/RU/EN.
 Thymeleaf admin/qr-report, static/js/qr-report.js, static/css/qr-report.css.
+
+Календарь мероприятия: [контракт и проверка Apple](endpoints/event-calendar.md). Новые поля настроек: durationMinutes (>0), timeZone (IANA); текст duracion сохраняется.

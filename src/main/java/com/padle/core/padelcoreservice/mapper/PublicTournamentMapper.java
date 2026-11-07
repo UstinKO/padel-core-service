@@ -3,6 +3,7 @@ package com.padle.core.padelcoreservice.mapper;
 import com.padle.core.padelcoreservice.dto.PublicTournamentDto;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.model.enums.Modalidad;
+import com.padle.core.padelcoreservice.service.calendar.EventSchedule;
 import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -10,23 +11,20 @@ import org.mapstruct.Named;
 import org.mapstruct.ReportingPolicy;
 
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
+import java.time.LocalDateTime;
 import java.util.Objects;
-import java.util.Optional;
 
 /** Маппинг {@link TournamentDto} → публичный DTO для мобильного клиента. */
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR, imports = EventSchedule.class)
 public interface PublicTournamentMapper {
-    ZoneId EVENT_ZONE = ZoneId.of("America/Argentina/Buenos_Aires");
-
     @Mapping(target = "name", source = "nombre")
     @Mapping(target = "club", source = "tournament", qualifiedByName = "toPublicClub")
     @Mapping(target = "type", source = "tipo")
     @Mapping(target = "modality", source = "modalidad")
     @Mapping(target = "gender", source = "generoFormato")
     @Mapping(target = "level", source = "categoriaNivel")
-    @Mapping(target = "startsAt", expression = "java(toOffset(tournament.getFechaInicio().atTime(tournament.getHoraInicio())))")
-    @Mapping(target = "timeZone", expression = "java(EVENT_ZONE.getId())")
+    @Mapping(target = "startsAt", expression = "java(toOffset(tournament.getFechaInicio().atTime(tournament.getHoraInicio()), tournament.getTimeZone()))")
+    @Mapping(target = "timeZone", expression = "java(EventSchedule.zone(tournament.getTimeZone()).getId())")
     @Mapping(target = "duration", source = "duracion")
     @Mapping(target = "price", source = "precio")
     @Mapping(target = "currency", source = "moneda")
@@ -37,7 +35,7 @@ public interface PublicTournamentMapper {
     @Mapping(target = "occupied", expression = "java(nonNegative(tournament.getInscritosActuales()))")
     @Mapping(target = "available", source = "disponibles")
     @Mapping(target = "waitlistCount", expression = "java(nonNegative(tournament.getWaitlistCount()))")
-    @Mapping(target = "cancellationDeadline", expression = "java(toOffset(tournament.getDeadlineCancelacion()))")
+    @Mapping(target = "cancellationDeadline", expression = "java(toOffset(tournament.getDeadlineCancelacion(), tournament.getTimeZone()))")
     @Mapping(target = "description", source = "infoDetallada")
     @Mapping(target = "websiteUrl", expression = "java(websiteUrl(baseUrl, tournament.getId()))")
     @Mapping(target = "participants", ignore = true)
@@ -49,8 +47,10 @@ public interface PublicTournamentMapper {
                 tournament.getClubId(), tournament.getClubNombre(), tournament.getClubDireccion());
     }
 
-    default OffsetDateTime toOffset(java.time.LocalDateTime value) {
-        return Optional.ofNullable(value).map(date -> date.atZone(EVENT_ZONE).toOffsetDateTime()).orElse(null);
+    default OffsetDateTime toOffset(LocalDateTime value, String timeZone) {
+        // MapStruct сохраняет null для отсутствующего дедлайна в nullable-поле публичного DTO.
+        if (value == null) return null;
+        return value.atZone(EventSchedule.zone(timeZone)).toOffsetDateTime();
     }
 
     default int nonNegative(Integer value) {

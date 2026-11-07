@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.padelcoreservice.service.calendar.EventSchedule;
 import com.padle.core.padelcoreservice.util.AfterCommit;
 import com.padle.core.padelcoreservice.annotation.Counted;
 import com.padle.core.padelcoreservice.annotation.Timed;
@@ -894,6 +895,7 @@ public class TournamentService {
         Tournament tournament = tournamentMapper.toEntity(tournamentDto);
         tournament.setNombre(Tournament.generateNombre(tournament.getGeneroFormato(), tournament.getCategoriaNivel()));
         tournament.setFaqUrl(normalizeFaqUrl(tournamentDto.getFaqUrl()));
+        tournament.setTimeZone(EventSchedule.zone(tournamentDto.getTimeZone()).getId());
         tournament.setCreatedBy(createdBy);
         tournament.setOwnerId(createdBy);  // ← ДОБАВИТЬ ЭТУ СТРОКУ
         tournament.setIsActive(true);
@@ -1384,6 +1386,8 @@ public class TournamentService {
         existing.setFechaInicio(dto.getFechaInicio());
         existing.setHoraInicio(dto.getHoraInicio());
         existing.setDuracion(dto.getDuracion());
+        existing.setDurationMinutes(dto.getDurationMinutes());
+        existing.setTimeZone(EventSchedule.zone(dto.getTimeZone()).getId());
         existing.setGeneroFormato(dto.getGeneroFormato());
         existing.setCategoriaNivel(Nivel.valueOf(dto.getCategoriaNivel()));
         // nombre всегда пересобирается из уже обновлённых выше generoFormato/categoriaNivel —

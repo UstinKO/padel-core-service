@@ -721,3 +721,5 @@ CLUB_ADMIN и PLAYER получают 403. Гость не получает да
 /api/admin/marketing/qr-summary требует ROLE_SUPER_ADMIN на HTTP и method-security
 уровнях. Обычные роли, включая CLUB_ADMIN, доступа не имеют. Учёт GET / с
 разрешёнными QR UTM анонимный, без cookies и без изменения согласий Meta.
+
+Календарный экспорт: анонимно разрешены только GET `/api/public/tournaments/{id}/calendar`, `/api/public/tournaments/{id}/calendar/google`, `/api/public/tournaments/{id}/calendar/event.ics`. Те же правила чтения активного мероприятия по прямой ссылке; нет OAuth-доступа к календарям и мутаций участия.

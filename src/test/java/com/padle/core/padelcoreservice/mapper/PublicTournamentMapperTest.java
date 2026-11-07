@@ -64,6 +64,17 @@ class PublicTournamentMapperTest {
         assertThat(result.waitlistCount()).isZero();
     }
 
+    @Test
+    void eventZoneAlsoAppliesToPublicScheduleAndDeadline() {
+        TournamentDto source = fixture(Modalidad.INDIVIDUAL);
+        source.setTimeZone("Europe/Madrid");
+        source.setDeadlineCancelacion(LocalDateTime.of(2026, 10, 23, 15, 0));
+        PublicTournamentDto result = mapper.toPublicDto(source, "https://1-padel.com");
+        assertThat(result.startsAt().toString()).isEqualTo("2026-10-24T15:00+02:00");
+        assertThat(result.timeZone()).isEqualTo("Europe/Madrid");
+        assertThat(result.cancellationDeadline().toString()).isEqualTo("2026-10-23T15:00+02:00");
+    }
+
     private TournamentDto fixture(Modalidad modality) {
         return TournamentDto.builder().id(42L).nombre("Evento de prueba")
                 .clubId(1L).clubNombre("Club de prueba").clubDireccion("Dirección de prueba")
