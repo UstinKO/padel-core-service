@@ -273,7 +273,16 @@ export default function PairBookingScreen({ tournamentId, booking, language, pro
           <PairTermsSummary offer={currentOffer} language={language} />
           {currentOffer.regulationUrl && /^https?:\/\//i.test(currentOffer.regulationUrl) && <TouchableOpacity accessibilityRole="link" onPress={() => void external(currentOffer.regulationUrl!)}><Text style={s.link}>{pairTermsCopy[language].rules}</Text></TouchableOpacity>}
         </View>}
-        {!currentOffer && !replacingPartner && pair && open && !needContact && !needLevel && error?.code !== 'EXISTING' && (mode !== null || addingPartner) && <View style={s.card}><Text style={s.sectionTitle}>{t.rules}</Text><Text style={s.label}>{t.cancellation}</Text><Text style={s.fact}>{eventDate(cancellationDeadline(event), event.timeZone, language)}</Text><Text style={s.body}>{t.finance}</Text><TouchableOpacity accessibilityRole="link" onPress={() => void external(event.websiteUrl)} style={s.textButton}><Text style={s.link}>{t.site} ↗</Text></TouchableOpacity><Text style={s.body}>{t.arrival}</Text></View>}
+        {!currentOffer && !replacingPartner && pair && open && !needContact && !needLevel && error?.code !== 'EXISTING' && (mode !== null || addingPartner) && <View style={s.card}>
+          <Text style={s.sectionTitle}>{t.rules}</Text>
+          <Text style={s.label}>{t.cancellation}</Text>
+          <Text style={s.fact}>{eventDate(cancellationDeadline(event), event.timeZone, language)}</Text>
+          <Text style={s.body}>{event.type === 'AMERICANO_TEAMS' ? t.teamReminder : t.finance}</Text>
+          <TouchableOpacity accessibilityRole="link" onPress={() => void external(event.websiteUrl)} style={s.textButton}>
+            <Text style={s.link}>{t.site} ↗</Text>
+          </TouchableOpacity>
+          {event.type !== 'AMERICANO_TEAMS' && <Text style={s.body}>{t.arrival}</Text>}
+        </View>}
         {pair && open && !needContact && !needLevel && error?.code !== 'EXISTING' && (mode !== null || addingPartner) && !currentOffer && !replacingPartner && <TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: accepted, disabled: busy }} disabled={busy} onPress={() => setAccepted(value => !value)} style={s.checkRow}><View style={[s.checkbox, accepted && s.checked]}><Text style={s.check}>{accepted ? '✓' : ''}</Text></View><Text style={s.consent}>{t.consent}</Text></TouchableOpacity>}
       </>}
       {error && !uncertain && !needLevel && !(error.code === 'CLOSED' && !open) && !(error.code === 'NOT_PAIR' && !pair) && <Text accessibilityRole="alert" style={s.error}>{errorText}</Text>}

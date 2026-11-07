@@ -769,7 +769,11 @@
 
                     <!-- Información adicional -->
                     <div class="additional-info">
-                        <div class="info-note" th:if="${tournament.deadlineCancelacion}">
+                        <div class="info-note" th:if="${tournament.tipo.name() == 'AMERICANO_TEAMS'}">
+                            <i class="fas fa-clock"></i>
+                            <span th:text="#{tournament.team_attendance.reminder}">Avisá si cambiaron tus planes y llegá 15 minutos antes.</span>
+                        </div>
+                        <div class="info-note" th:if="${tournament.deadlineCancelacion != null and tournament.tipo.name() != 'AMERICANO_TEAMS'}">
                             <i class="fas fa-clock"></i>
                             <span th:text="#{tournament.cancel.hint(${#temporals.format(tournament.deadlineCancelacion, 'dd/MM/yyyy HH:mm')})}">Puedes cancelar hasta 24h antes del torneo</span>
                         </div>

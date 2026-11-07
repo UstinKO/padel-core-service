@@ -211,6 +211,8 @@ export default function MyEventsScreen({ language, onBrowse, onManagePair, refre
       <Text style={styles.eventTitle}>{messages[language][item.event.type]}</Text>
       <Text style={styles.date}>{eventDate(item.event.startsAt, item.event.timeZone, language)}</Text>
       <Text style={styles.subtitle}>{item.event.club.name}</Text>
+      {!history && item.active && item.status === 'CONFIRMED' && item.event.type === 'AMERICANO_TEAMS' &&
+        <Text style={styles.subtitle}>{pairCopy[language].teamReminder}</Text>}
       {target?.name && <Text style={styles.subtitle}>{pairCopy[language].partner}: {target.name}</Text>}
       {item.waitlistPosition != null && item.active && <Text style={styles.subtitle}>{t.waitPosition}: {item.waitlistPosition}</Text>}
       {item.active && pairDetails[item.event.id] && needsPartnerReplacement(pairDetails[item.event.id]) &&
