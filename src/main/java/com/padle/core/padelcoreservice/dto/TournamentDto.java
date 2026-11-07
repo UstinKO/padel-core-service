@@ -49,6 +49,8 @@ public class TournamentDto {
     private String cancellationDeadlineFormatted;
     private String infoDetallada;
     private String contactoOrganizador;
+    @jakarta.validation.constraints.Size(max = 2000)
+    private String paymentInstructions;
     private String faqUrl;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

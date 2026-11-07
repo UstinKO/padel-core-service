@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<head><meta charset="UTF-8"><title th:text="#{email.pair_terms.subject(${tournamentName})}"></title></head>
+<body style="font:16px/1.5 Arial,sans-serif;color:#1d3029;">
+<main style="max-width:560px;margin:0 auto;padding:24px;">
+    <h1 th:text="${tournamentName}"></h1>
+    <p th:if="${pairWaitlist}" th:text="#{email.pair_terms.waitlist(${playerName})}"></p>
+    <p th:unless="${pairWaitlist}" th:text="#{email.pair_terms.confirmed(${playerName})}"></p>
+    <p th:text="|${tournamentDate} · ${tournamentTime} · ${clubName}|"></p>
+    <h2 style="font-size:18px;border-top:1px solid #d9e0dc;padding-top:12px;" th:text="#{email.pair_terms.payment_section}"></h2>
+    <p th:text="#{email.pair_terms.free_until(${#temporals.format(pairTerms.freeUntil, 'dd/MM/yyyy HH:mm')})}"></p>
+    <p th:text="#{email.pair_terms.late(${pairTerms.lateObligation}, ${pairTerms.currency})}"></p>
+    <p th:text="#{email.pair_terms.replacement}"></p>
+    <h2 style="font-size:18px;border-top:1px solid #d9e0dc;padding-top:12px;" th:text="#{email.pair_terms.arrival_section}"></h2>
+    <p th:text="#{email.pair_terms.arrival}"></p>
+    <p><a th:href="${baseUrl + '/players/dashboard'}" th:text="#{email.tournament_confirm.btn}"></a></p>
+</main>
+</body>
+</html>

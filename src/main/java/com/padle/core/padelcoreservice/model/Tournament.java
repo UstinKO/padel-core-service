@@ -90,6 +90,15 @@ public class Tournament {
     @Column(name = "contacto_organizador", nullable = false, length = 100)
     private String contactoOrganizador;
 
+    // Текст реквизитов конкретного мероприятия, вводимый организатором.
+    @Column(name = "payment_instructions", columnDefinition = "TEXT")
+    private String paymentInstructions;
+
+    // Новые условия парного Americano версионируются независимо от старых заявок.
+    @Column(name = "pair_terms_version", nullable = false)
+    @Builder.Default
+    private Integer pairTermsVersion = 1;
+
     @Column(name = "faq_url", length = 500)
     private String faqUrl;
 

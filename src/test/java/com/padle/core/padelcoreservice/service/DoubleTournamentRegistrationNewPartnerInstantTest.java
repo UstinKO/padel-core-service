@@ -59,6 +59,7 @@ class DoubleTournamentRegistrationNewPartnerInstantTest {
     @Mock private ClubRepository clubRepository;
     @Mock private PasswordEncoder passwordEncoder;
 
+    @Mock private PairTermsService pairTerms;
     @InjectMocks private DoubleTournamentRegistrationService service;
 
     private TournamentDto tournamentDto;
@@ -129,7 +130,10 @@ class DoubleTournamentRegistrationNewPartnerInstantTest {
         assertThat(saved).allSatisfy(reg -> {
             assertThat(reg.getStatus()).isEqualTo(RegistrationStatus.CONFIRMED);
             assertThat(reg.getPartnerRegistrationToken()).isNull();
+            assertThat(reg.getPairBookingId()).isNotNull();
+            assertThat(reg.getPairBookedBy()).isEqualTo(MAIN_PLAYER_ID);
         });
+        assertThat(saved.stream().map(TournamentRegistration::getPairBookingId).distinct()).hasSize(1);
 
         TournamentRegistration mainRegistration = saved.stream()
                 .filter(reg -> Long.valueOf(MAIN_PLAYER_ID).equals(reg.getPlayer().getId()))

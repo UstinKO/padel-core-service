@@ -380,6 +380,10 @@ public class PlayerDashboardController {
         response.put("waitlistPosition", dto.getWaitlistPosition());
         response.put("registrationDate", dto.getRegistrationDate());
         response.put("isDoubleRegistration", dto.getIsDoubleRegistration());
+        response.put("canReplacePartner", dto.getPartnerId() != null
+                && doubleTournamentRegistrationService.canReplaceCurrentPartner(tournamentId, player.getId()));
+        response.put("replacementNeeded", dto.getPartnerId() == null && player.getId().equals(dto.getMainPlayerId())
+                && (dto.getStatus() == RegistrationStatus.CONFIRMED || dto.getStatus() == RegistrationStatus.WAITLIST));
 
         return ResponseEntity.ok(response);
     }

@@ -188,3 +188,15 @@ databaseChangeLog:
   - include:
       file: versions/v1.61-internal-attribution.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.62-pair-terms.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: versions/v1.63-pair-cancellation.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: versions/v1.64-pair-settlement.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: versions/v1.65-pair-replacement-notices.yaml
+      relativeToChangelogFile: true

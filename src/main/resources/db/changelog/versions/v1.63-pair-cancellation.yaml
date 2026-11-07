@@ -1,0 +1,22 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.63-pair-cancellation
+      author: padel-core
+      changes:
+        - sql:
+            sql: |
+              CREATE TABLE pair_cancellations_db (
+                  booking_id UUID PRIMARY KEY,
+                  tournament_id BIGINT NOT NULL,
+                  cancelled_by BIGINT NOT NULL,
+                  cancelled_at TIMESTAMP NOT NULL,
+                  terms_version INTEGER NOT NULL,
+                  currency VARCHAR(10) NOT NULL,
+                  obligation NUMERIC(12, 2) NOT NULL,
+                  already_paid NUMERIC(12, 2) NOT NULL,
+                  remaining_due NUMERIC(12, 2) NOT NULL,
+                  refundable NUMERIC(12, 2) NOT NULL
+              )
+      rollback:
+        - dropTable:
+            tableName: pair_cancellations_db

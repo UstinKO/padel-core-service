@@ -51,7 +51,7 @@ class TournamentServiceStatusChangeNotificationTest {
         service = new TournamentService(
                 tournamentRepository, registrationRepository, null, null,
                 clubService, null, null, emailService, null,
-                null, null, null, null, null, null);
+                null, null, null, null, null, null, new PairTermsService(tournamentRepository, registrationRepository, null, null, null));
     }
 
     private void commonStubs() {
@@ -167,11 +167,12 @@ class TournamentServiceStatusChangeNotificationTest {
                 .mainPlayerId(mainPlayer.getId())
                 .status(RegistrationStatus.CONFIRMED).position(1).isActive(true).isDoubleRegistration(true).build();
 
+        when(registrationRepository.findByTournamentIdAndPlayerIdAndIsActiveTrue(1L, mainPlayer.getId())).thenReturn(Optional.of(mainReg));
         when(registrationRepository.findByTournamentId(1L)).thenReturn(List.of(mainReg, partnerReg));
         lenient().when(tournamentRepository.findById(1L)).thenReturn(Optional.of(tournament));
         lenient().when(tournamentRepository.lockById(1L)).thenReturn(Optional.of(tournament));
         // confirmedCount >= cupoMax de la prueba para no disparar processWaitlistForTournament
-        when(registrationRepository.countByTournamentIdAndStatus(1L, RegistrationStatus.CONFIRMED)).thenReturn(16L);
+        lenient().when(registrationRepository.countByTournamentIdAndStatus(1L, RegistrationStatus.CONFIRMED)).thenReturn(16L);
 
         service.cancelPairRegistration(1L, mainPlayer.getId(), "No pueden asistir");
 

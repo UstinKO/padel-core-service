@@ -7,6 +7,9 @@ import com.padle.core.padelcoreservice.model.enums.PaymentMethod;
 import com.padle.core.padelcoreservice.model.enums.PaymentStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
 import com.padle.core.padelcoreservice.service.PaymentService;
+import com.padle.core.padelcoreservice.service.PairSettlementService;
+import org.springframework.context.MessageSource;
+import org.springframework.web.server.ResponseStatusException;
 import com.padle.core.padelcoreservice.service.TournamentAccessService;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import com.padle.core.padelcoreservice.service.americano.TeamPlayoffService;
@@ -22,6 +25,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.UUID;
 import java.util.stream.IntStream;
 
 @Slf4j
@@ -34,6 +39,8 @@ public class PaymentManagementController {
     private final PaymentService paymentService;
     private final TeamPlayoffService teamPlayoffService;
     private final TournamentAccessService tournamentAccessService;
+    private final PairSettlementService pairSettlements;
+    private final MessageSource messages;
 
     @GetMapping("/{tournamentId}/payments")
     public String paymentManagementPage(@PathVariable Long tournamentId, Model model,
@@ -47,6 +54,10 @@ public class PaymentManagementController {
         List<PaymentManagementViewDto> players = paymentService.getPaymentManagementData(tournamentId);
         if (tournament.getTipo() == TournamentType.AMERICANO_TEAMS) {
             markTeamPlayoffEligibility(tournamentId, players);
+            model.addAttribute("pairSettlements", pairSettlements.settlements(tournamentId));
+            model.addAttribute("replacementPairs", pairSettlements.confirmedPairs(tournamentId, false));
+            model.addAttribute("noShowPairs", pairSettlements.confirmedPairs(tournamentId, true));
+            model.addAttribute("legacyBookers", pairSettlements.legacyBookers(tournamentId));
         }
 
         model.addAttribute("tournament", tournament);
@@ -57,6 +68,41 @@ public class PaymentManagementController {
         model.addAttribute("paymentBreakdown", paymentService.getPaymentMethodBreakdown(players));
 
         return "admin/tournaments/payments";
+    }
+
+    @PostMapping("/{tournamentId}/payments/pair-booker")
+    public String verifyLegacyPairBooker(@PathVariable Long tournamentId, @RequestParam Long playerId,
+                                        @AuthenticationPrincipal Owner owner, Locale locale, RedirectAttributes flash) {
+        tournamentAccessService.assertCanManageTournament(owner, tournamentId);
+        return updatePairSettlement(tournamentId, locale, flash,
+                () -> pairSettlements.verifyLegacyBooker(tournamentId, playerId, owner.getId()));
+    }
+
+    @PostMapping("/{tournamentId}/payments/pair-no-show")
+    public String recordPairNoShow(@PathVariable Long tournamentId, @RequestParam UUID bookingId,
+                                   @AuthenticationPrincipal Owner owner, Locale locale, RedirectAttributes flash) {
+        tournamentAccessService.assertCanManageTournament(owner, tournamentId);
+        return updatePairSettlement(tournamentId, locale, flash,
+                () -> pairSettlements.recordNoShow(tournamentId, bookingId, owner.getId()));
+    }
+
+    @PostMapping("/{tournamentId}/payments/pair-replacement")
+    public String recordPaidPairReplacement(@PathVariable Long tournamentId, @RequestParam UUID bookingId,
+                                            @RequestParam UUID replacementId, @AuthenticationPrincipal Owner owner,
+                                            Locale locale, RedirectAttributes flash) {
+        tournamentAccessService.assertCanManageTournament(owner, tournamentId);
+        return updatePairSettlement(tournamentId, locale, flash,
+                () -> pairSettlements.recordPaidReplacement(tournamentId, bookingId, replacementId, owner.getId()));
+    }
+
+    private String updatePairSettlement(Long tournamentId, Locale locale, RedirectAttributes flash, Runnable action) {
+        try {
+            action.run();
+            flash.addFlashAttribute("successMessage", messages.getMessage("admin.pair_settlement.saved", null, locale));
+        } catch (IllegalStateException | ResponseStatusException error) {
+            flash.addFlashAttribute("errorMessage", messages.getMessage("admin.pair_settlement.unavailable", null, locale));
+        }
+        return "redirect:/admin/tournaments/" + tournamentId + "/payments";
     }
 
     @PostMapping("/{tournamentId}/payments/add-team")

@@ -1,0 +1,33 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.64-pair-settlement
+      author: padel-core
+      changes:
+        - sql:
+            sql: |
+              ALTER TABLE pair_cancellations_db
+                  ADD COLUMN participants TEXT,
+                  ADD COLUMN no_show BOOLEAN NOT NULL DEFAULT FALSE,
+                  ADD COLUMN replacement_booking_id UUID UNIQUE,
+                  ADD COLUMN replacement_confirmed_by BIGINT,
+                  ADD COLUMN replacement_confirmed_at TIMESTAMP
+        - sql:
+            sql: |
+              CREATE TABLE pair_booker_reviews_db (
+                  booking_id UUID PRIMARY KEY,
+                  tournament_id BIGINT NOT NULL,
+                  player_id BIGINT NOT NULL,
+                  reviewed_by BIGINT NOT NULL,
+                  reviewed_at TIMESTAMP NOT NULL
+              )
+      rollback:
+        - dropTable:
+            tableName: pair_booker_reviews_db
+        - sql:
+            sql: |
+              ALTER TABLE pair_cancellations_db
+                  DROP COLUMN participants,
+                  DROP COLUMN no_show,
+                  DROP COLUMN replacement_booking_id,
+                  DROP COLUMN replacement_confirmed_by,
+                  DROP COLUMN replacement_confirmed_at
