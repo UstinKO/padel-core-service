@@ -1072,56 +1072,6 @@ function isTournamentStarted(tournament) {
     return now > start;
 }
 
-// ===== Añadir a Google Calendar =====
-// "duracion" es texto libre del organizador (ej. "4 horas", "2 días", vacío) — no se
-// puede parsear con certeza. Solo se usa cuando calza con un prefijo numérico + "hora(s)";
-// si no, se usa una duración por defecto y el texto real queda en la descripción del evento.
-function estimateDurationHours(duracion) {
-    const DEFAULT_HOURS = 4;
-    if (!duracion) return DEFAULT_HOURS;
-    const match = String(duracion).trim().match(/^(\d+(?:[.,]\d+)?)\s*h/i);
-    if (!match) return DEFAULT_HOURS;
-    const hours = parseFloat(match[1].replace(',', '.'));
-    return hours > 0 ? hours : DEFAULT_HOURS;
-}
-
-function toGoogleCalendarDateTime(date) {
-    const pad = n => String(n).padStart(2, '0');
-    return date.getFullYear() + pad(date.getMonth() + 1) + pad(date.getDate()) +
-        'T' + pad(date.getHours()) + pad(date.getMinutes()) + '00';
-}
-
-function buildGoogleCalendarUrl(tournament, pageUrl) {
-    const start = parseTournamentStart(tournament);
-    if (!start || isNaN(start.getTime())) return null;
-
-    const end = new Date(start.getTime() + estimateDurationHours(tournament.duracion) * 60 * 60 * 1000);
-    const details = (tournament.duracion ? t('tournament.info.duration') + ': ' + tournament.duracion + '\n' : '') + pageUrl;
-
-    const params = new URLSearchParams({
-        action: 'TEMPLATE',
-        text: tournament.nombre || '',
-        dates: toGoogleCalendarDateTime(start) + '/' + toGoogleCalendarDateTime(end),
-        details: details,
-        location: tournament.clubDireccion || tournament.clubNombre || '',
-        ctz: 'America/Argentina/Buenos_Aires'
-    });
-
-    return 'https://calendar.google.com/calendar/render?' + params.toString();
-}
-
-(function setupAddToCalendarButton() {
-    const btn = document.getElementById('addToCalendarBtn');
-    if (!btn) return;
-
-    const url = buildGoogleCalendarUrl(window.tournament, window.location.href);
-    if (!url) {
-        btn.style.display = 'none';
-        return;
-    }
-    btn.href = url;
-})();
-
 // Затем, в том месте где ищешь registerBtn, добавь блокировку:
 const registerBtn = document.querySelector('.btn-register');
 

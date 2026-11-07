@@ -415,3 +415,5 @@ window.APP_MESSAGES = {
     'enum.round.status.COMPLETED':  'Completada',
     'enum.round.status.CANCELLED':  'Cancelada'
 };
+
+Object.assign(window.APP_MESSAGES, {"calendar.unavailable": "No se puede agregar al calendario: el organizador debe revisar el inicio, la duración exacta y la zona horaria del evento.", "calendar.load_error": "No se pudieron cargar los datos del calendario. Cerrá el menú e intentá de nuevo."});

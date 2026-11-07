@@ -415,3 +415,5 @@ window.APP_MESSAGES = {
     'enum.round.status.COMPLETED':  'Завершена',
     'enum.round.status.CANCELLED':  'Отменена'
 };
+
+Object.assign(window.APP_MESSAGES, {"calendar.unavailable": "Добавление в календарь недоступно: организатору нужно проверить начало, точную длительность и часовой пояс мероприятия.", "calendar.load_error": "Не удалось загрузить данные календаря. Закройте меню и попробуйте снова."});
