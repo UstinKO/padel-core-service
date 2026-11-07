@@ -415,3 +415,5 @@ window.APP_MESSAGES = {
     'enum.round.status.COMPLETED':  'Completed',
     'enum.round.status.CANCELLED':  'Cancelled'
 };
+
+Object.assign(window.APP_MESSAGES, {"calendar.unavailable": "Calendar export is unavailable: the organizer needs to check the start, exact duration and event time zone.", "calendar.load_error": "Could not load calendar details. Close the menu and try again."});

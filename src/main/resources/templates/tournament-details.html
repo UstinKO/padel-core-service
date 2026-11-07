@@ -192,8 +192,12 @@
                             </div>
                             <div class="info-content">
                                 <span class="info-label" th:text="#{tournament.info.duration}">Duración estimada</span>
-                                <span class="info-value" th:if="${tournament.duracion}" th:text="${tournament.duracion}">4 horas</span>
-                                <span class="info-value" th:unless="${tournament.duracion}" th:text="#{tournament.info.duration.unknown}">No especificada</span>
+                                <span class="info-value" th:if="${tournament.durationMinutes != null}"
+                                      th:text="#{calendar.duration_minutes(${tournament.durationMinutes})}"></span>
+                                <span class="info-value" th:if="${tournament.durationMinutes == null and not #strings.isEmpty(tournament.duracion)}"
+                                      th:text="${tournament.duracion}">4 horas</span>
+                                <span class="info-value" th:if="${tournament.durationMinutes == null and #strings.isEmpty(tournament.duracion)}"
+                                      th:text="#{tournament.info.duration.unknown}">No especificada</span>
                             </div>
                         </div>
 
@@ -264,15 +268,36 @@
                         </div>
                     </div>
 
-                    <div style="margin-top: 1.25rem;">
-                        <a id="addToCalendarBtn" href="#" target="_blank" rel="noopener noreferrer"
-                           style="display:inline-flex; align-items:center; gap:.5rem; padding:.65rem 1.25rem;
-                                  background:#FF6B35; color:#fff; border-radius:8px; text-decoration:none;
-                                  font-weight:600; font-size:.95rem; transition:opacity .2s;"
-                           onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
-                            <i class="fas fa-calendar-plus"></i>
-                            <span th:text="#{tournament.info.add_to_calendar}">Añadir a Google Calendar</span>
-                        </a>
+                    <div class="calendar-picker" id="calendarPicker"
+                         th:attr="data-event-id=${tournament.id},data-language=${#locale.language}">
+                        <button id="addToCalendarBtn" class="calendar-toggle" type="button"
+                                aria-expanded="false" aria-controls="calendarOptions">
+                            <i class="fas fa-calendar-plus" aria-hidden="true"></i>
+                            <span th:text="#{tournament.info.add_to_calendar}">Agregar al calendario</span>
+                            <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                        </button>
+                        <div id="calendarOptions" class="calendar-options" hidden>
+                            <p id="calendarStatus" class="calendar-status" role="status" hidden></p>
+                            <ul class="calendar-links">
+                                <li><a data-calendar="google" target="_blank" rel="noopener noreferrer"
+                                       th:href="@{/api/public/tournaments/{id}/calendar/google(id=${tournament.id},lang=${#locale.language})}"
+                                       th:text="#{calendar.google}">Google Calendar</a></li>
+                                <li><a data-calendar="apple" target="_blank" rel="noopener noreferrer"
+                                       th:href="@{/api/public/tournaments/{id}/calendar/event.ics(id=${tournament.id},lang=${#locale.language})}"
+                                       th:text="#{calendar.apple}">Apple Calendar</a></li>
+                                <li><a data-calendar="other"
+                                       th:href="@{/api/public/tournaments/{id}/calendar/event.ics(id=${tournament.id},lang=${#locale.language},download=true)}"
+                                       th:text="#{calendar.other}">Otro calendario — descargar .ics</a></li>
+                            </ul>
+                            <details class="calendar-help">
+                                <summary th:text="#{calendar.help_title}">Cómo agregar a Apple Calendar</summary>
+                                <p th:text="#{calendar.help}"></p>
+                                <p th:text="#{calendar.fallback}"></p>
+                                <p th:text="#{calendar.in_app}"></p>
+                                <label for="calendarPageLink" th:text="#{calendar.page_link}"></label>
+                                <input id="calendarPageLink" type="text" readonly>
+                            </details>
+                        </div>
                     </div>
                 </div>
 
@@ -1195,6 +1220,7 @@
 </script>
 <script th:src="@{/js/pair-terms.js}"></script>
 <script th:src="@{/js/tournament-details.js}"></script>
+<script th:src="@{/js/calendar-picker.js}"></script>
 <script>
     (function() {
         const url  = window.location.href;
