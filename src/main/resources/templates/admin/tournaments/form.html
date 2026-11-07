@@ -263,6 +263,16 @@
                     </div>
                 </div>
 
+                <div class="form-section">
+                    <div class="form-group">
+                        <label for="paymentInstructions" th:text="#{admin.tournaments.form.field.pair_payment}"></label>
+                        <textarea class="form-control" th:field="*{paymentInstructions}" id="paymentInstructions"
+                                  rows="3" maxlength="2000"></textarea>
+                        <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('paymentInstructions')}"
+                             th:errors="*{paymentInstructions}"></div>
+                    </div>
+                </div>
+
                 <!-- Estado y Fechas Límite -->
                 <div class="form-section">
                     <h2 class="section-title">

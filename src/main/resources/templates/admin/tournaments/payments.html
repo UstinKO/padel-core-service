@@ -48,6 +48,49 @@
                 <span th:text="${errorMessage}">Error en la operación</span>
             </div>
 
+            <section th:if="${legacyBookers != null and !#lists.isEmpty(legacyBookers)}">
+                <h2 th:text="#{admin.pair_settlement.legacy_title}"></h2>
+                <form method="post" th:action="@{/admin/tournaments/{id}/payments/pair-booker(id=${tournament.id})}">
+                    <label for="legacy-booker" th:text="#{admin.pair_settlement.legacy_booker}"></label>
+                    <select id="legacy-booker" name="playerId" required>
+                        <option value=""></option>
+                        <option th:each="booker : ${legacyBookers}" th:value="${booker.playerId}"
+                                th:text="|${booker.playerName} — ${booker.participants}|"></option>
+                    </select>
+                    <button type="submit" class="btn btn-secondary" th:text="#{admin.pair_settlement.legacy_verify}"></button>
+                </form>
+            </section>
+
+            <section th:if="${pairSettlements != null and (!#lists.isEmpty(pairSettlements) or !#lists.isEmpty(noShowPairs))}">
+                <h2 th:text="#{admin.pair_settlement.title}"></h2>
+                <form th:if="${!#lists.isEmpty(noShowPairs)}" method="post"
+                      th:action="@{/admin/tournaments/{id}/payments/pair-no-show(id=${tournament.id})}">
+                    <label for="no-show-pair" th:text="#{admin.pair_settlement.no_show}"></label>
+                    <select id="no-show-pair" name="bookingId" required>
+                        <option value=""></option>
+                        <option th:each="pair : ${noShowPairs}" th:value="${pair.bookingId}" th:text="${pair.participants}"></option>
+                    </select>
+                    <button type="submit" class="btn btn-secondary" th:text="#{admin.pair_settlement.record_no_show}"></button>
+                </form>
+                <article th:each="entry : ${pairSettlements}" style="padding:.75rem 0;">
+                    <strong th:text="${entry.participants != null ? entry.participants : entry.bookingId}"></strong>
+                    <span th:if="${entry.noShow}" th:text="#{admin.pair_settlement.no_show}"></span>
+                    <div th:text="#{email.pair_terms.due(${entry.due}, ${entry.currency})}"></div>
+                    <div th:text="#{email.pair_terms.refund(${entry.refund}, ${entry.currency})}"></div>
+                    <div th:if="${entry.replacementBookingId != null}" th:text="#{admin.pair_settlement.saved}"></div>
+                    <form th:if="${entry.replacementBookingId == null and !entry.noShow and !#lists.isEmpty(replacementPairs)}"
+                          method="post" th:action="@{/admin/tournaments/{id}/payments/pair-replacement(id=${tournament.id})}">
+                        <input type="hidden" name="bookingId" th:value="${entry.bookingId}">
+                        <label th:for="|replacement-${entry.bookingId}|" th:text="#{admin.pair_settlement.replacement}"></label>
+                        <select th:id="|replacement-${entry.bookingId}|" name="replacementId" required>
+                            <option value=""></option>
+                            <option th:each="pair : ${replacementPairs}" th:value="${pair.bookingId}" th:text="${pair.participants}"></option>
+                        </select>
+                        <button type="submit" class="btn btn-secondary" th:text="#{admin.pair_settlement.record_replacement}"></button>
+                    </form>
+                </article>
+            </section>
+
             <!-- Статистика -->
             <div class="summary-stats" th:if="${players != null and not #lists.isEmpty(players)}">
                 <div class="stat-item">
