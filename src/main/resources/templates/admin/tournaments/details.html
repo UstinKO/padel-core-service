@@ -1444,8 +1444,8 @@
 
         </th:block>
 
-        <!-- ── Таблица: Solo sin pareja (SOLO_ADD_LATER + SOLO_SEARCH + SOLO_EXPIRED) ── -->
-        <th:block th:with="soloRegs=${registrations.?[status.name() == 'SOLO_ADD_LATER' or status.name() == 'SOLO_SEARCH' or status.name() == 'SOLO_EXPIRED']}">
+        <!-- ── Таблица заявок без пары, в том числе в резерве ── -->
+        <th:block th:with="soloRegs=${registrations.?[pairableSolo or status.name() == 'SOLO_EXPIRED']}">
         <div class="reg-table-card" th:if="${not #lists.isEmpty(soloRegs)}">
             <div class="reg-table-header" style="display:flex; align-items:center; justify-content:space-between;">
                 <h3>
@@ -1455,7 +1455,7 @@
                           th:text="${#lists.size(soloRegs)}"></span>
                 </h3>
                 <button class="btn btn-sm btn-primary"
-                        th:if="${#lists.size(soloRegs) >= 2}"
+                        th:if="${#lists.size(soloRegs.?[pairableSolo]) >= 2}"
                         onclick="openPairModal()"
                         style="font-size:.82rem; padding:.35rem .9rem;">
                     <i class="fas fa-handshake"></i>
@@ -1476,7 +1476,7 @@
                     </thead>
                     <tbody>
                         <tr th:each="reg, iterStat : ${soloRegs}"
-                            th:data-reg-id="${reg.id}"
+                            th:data-reg-id="${reg.pairableSolo ? reg.id : null}"
                             th:data-player-name="${reg.playerNombre + ' ' + (reg.playerApellido ?: '')}"
                             th:style="${reg.status.name() == 'SOLO_EXPIRED' ? 'border-left:3px solid #ef4444;' : (reg.status.name() == 'SOLO_SEARCH' ? 'border-left:3px solid #3b82f6;' : 'border-left:3px solid #f59e0b;')}">
                             <td><span class="reg-pos" th:text="${iterStat.count}"></span></td>
@@ -1493,6 +1493,8 @@
                                       class="badge-solo-search">🔍 Busca compañero</span>
                                 <span th:if="${reg.status.name() == 'SOLO_EXPIRED'}"
                                       class="badge-solo-expired">⚠️ Plazo vencido</span>
+                                <span th:if="${reg.status.name() == 'WAITLIST'}" class="badge-solo-later"
+                                      th:text="#{admin.tournaments.details.pair.reserve_without_partner}">Reserva sin compañero</span>
                             </td>
                             <td style="font-size:.82rem; color:#6b7280;"
                                 th:text="${#temporals.format(reg.registrationDate, 'dd/MM/yyyy HH:mm')}"></td>
