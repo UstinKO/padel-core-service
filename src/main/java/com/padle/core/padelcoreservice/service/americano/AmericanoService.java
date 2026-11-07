@@ -1130,7 +1130,7 @@ public class AmericanoService {
             if (status == RegistrationStatus.CONFIRMED) {
                 emailService.sendTournamentConfirmationEmail(
                         player.getEmail(), player.getNombre(), tournament.getNombre(),
-                        dateStr, timeStr, clubName, tournament.getFormattedCancellationDeadline(), player.getLocale());
+                        dateStr, timeStr, clubName, tournament.getFormattedCancellationDeadline(), tournament.getTipo(), player.getLocale());
             } else {
                 emailService.sendWaitlistNotificationEmail(
                         player.getEmail(), player.getNombre(), tournament.getNombre(),
@@ -1152,7 +1152,7 @@ public class AmericanoService {
             String timeStr = tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm"));
             String deadline = tournament.getFormattedCancellationDeadline();
             AfterCommit.run(() -> emailService.sendTournamentConfirmationEmail(
-                    email, name, tournamentName, dateStr, timeStr, clubName, deadline, locale));
+                    email, name, tournamentName, dateStr, timeStr, clubName, deadline, tournament.getTipo(), locale));
         } catch (Exception e) {
             log.error("Не удалось подготовить уведомление об изменении регистрации", e);
         }

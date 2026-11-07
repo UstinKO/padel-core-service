@@ -724,6 +724,7 @@ public class TournamentService {
                     timeStr,
                     clubName,
                     tournament.getFormattedCancellationDeadline(),
+                    tournament.getTipo(),
                     player.getLocale()
             );
             log.info("Tournament confirmation email sent to {}", player.getEmail());

@@ -4,6 +4,7 @@ import com.padle.core.padelcoreservice.annotation.MetricTag;
 import com.padle.core.padelcoreservice.annotation.Timed;
 import com.padle.core.padelcoreservice.annotation.TrackErrors;
 import com.padle.core.padelcoreservice.metrics.EmailMetricsService;
+import com.padle.core.padelcoreservice.model.enums.TournamentType;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -437,6 +438,7 @@ public class EmailService {
             String tournamentTime,
             String clubName,
             String cancellationDeadline,
+            TournamentType tournamentType,
             Locale locale) {
 
         emailMetricsService.recordEmailAttempt("TOURNAMENT_CONFIRMATION");
@@ -457,6 +459,7 @@ public class EmailService {
             context.setVariable("tournamentTime", tournamentTime);
             context.setVariable("clubName", clubName);
             context.setVariable("cancellationDeadline", cancellationDeadline);
+            context.setVariable("teamAmericano", tournamentType == TournamentType.AMERICANO_TEAMS);
             context.setVariable("baseUrl", baseUrl);
             context.setVariable("year", java.time.Year.now().getValue());
 
@@ -875,6 +878,7 @@ public class EmailService {
             String direccion,
             String hora,
             Long tournamentId,
+            boolean teamAmericano,
             Locale locale) {
 
         emailMetricsService.recordEmailAttempt("PAIR_TOURNAMENT_REMINDER");
@@ -889,6 +893,7 @@ public class EmailService {
             context.setVariable("clubName", clubName);
             context.setVariable("direccion", direccion);
             context.setVariable("hora", hora);
+            context.setVariable("teamAmericano", teamAmericano);
             context.setVariable("eventUrl", baseUrl + "/torneo/" + tournamentId);
             context.setVariable("year", java.time.Year.now().getValue());
 
