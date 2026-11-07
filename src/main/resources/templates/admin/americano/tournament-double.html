@@ -95,6 +95,10 @@
 
 <main class="admin-main">
     <div class="container">
+        <div th:replace="~{fragments/conduct-history :: link(${tournament.id})}"></div>
+        <div th:replace="~{fragments/conduct-history :: saveStatus}"></div>
+    </div>
+    <div class="container">
 
         <div style="margin-bottom:1rem">
             <a th:href="@{'/admin/tournaments/' + ${tournament.id}}" class="btn btn-outline">
@@ -350,6 +354,7 @@
     </div>
 </main>
 <script th:src="@{/js/csrf.js}"></script>
+<script th:src="@{/js/tournament-conduct.js}"></script>
 <script th:inline="javascript">
     const TOURNAMENT_ID = /*[[${tournament.id}]]*/ 0;
 
@@ -427,7 +432,7 @@
         btn.textContent = '...';
 
         // Team Americano использует свой API endpoint
-        fetch('/tournaments/team-americano/api/matches/' + matchId + '/result', {
+        conductFetch('/tournaments/team-americano/api/matches/' + matchId + '/result', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ matchId, team1Score: s1, team2Score: s2 })
@@ -520,7 +525,7 @@
     }
 
     function startRound(roundId) {
-        fetch('/api/tournaments/americano/rounds/' + roundId + '/start', { method: 'POST' })
+        conductFetch('/api/tournaments/americano/rounds/' + roundId + '/start', { method: 'POST' })
             .then(r => r.ok ? r.json() : Promise.reject(r))
             .then(() => location.reload())
             .catch(() => {});

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="#{conduct.history.title}">Historial del torneo</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+<header th:replace="~{fragments/admin-header :: header(#{conduct.history.title})}"></header>
+<main class="admin-main">
+    <div class="container">
+        <div class="admin-header">
+            <h1 class="admin-title" th:text="#{conduct.history.title}">Historial del torneo</h1>
+            <p th:text="${tournament.nombre}"></p>
+            <a class="btn btn-secondary" th:href="@{/admin/tournaments/{id}(id=${tournament.id})}"
+               th:text="#{admin.koc.btn.back}">Volver al torneo</a>
+        </div>
+        <p th:if="${conductMessage}" class="alert alert-success" role="status" th:text="#{${conductMessage}}"></p>
+        <p th:if="${conductError}" class="alert alert-danger" role="alert" th:text="#{${conductError}}"></p>
+
+        <section class="admin-card" th:if="${preview != null}">
+            <div class="admin-card-header">
+                <h2 th:text="#{conduct.history.confirm_title}">Confirmar restauración</h2>
+            </div>
+            <div class="admin-card-body">
+                <p th:replace="~{fragments/conduct-history :: versionSummary(${preview.version})}"></p>
+                <p th:text="#{conduct.history.restore_effect}"></p>
+                <details th:if="${!laterVersions.isEmpty()}">
+                    <summary th:text="#{conduct.history.later(${laterVersions.size()})}"></summary>
+                    <ul>
+                        <li th:each="item : ${laterVersions}">
+                            <span th:replace="~{fragments/conduct-history :: versionSummary(${item})}"></span>
+                        </li>
+                    </ul>
+                </details>
+                <p th:if="${preview.registrationsChanged()}" class="alert alert-warning" role="alert"
+                   th:text="#{conduct.history.roster_changed}"></p>
+                <ul th:if="${preview.registrationsChanged()}">
+                    <li th:each="difference : ${preview.registrationDifferences}">
+                        <strong th:text="${difference.playerName + ' #' + difference.registrationId}"></strong>
+                        <span th:if="${difference.oldStatus == difference.currentStatus}"
+                              th:text="#{conduct.history.registration_details_changed}"></span>
+                        <span th:if="${difference.oldStatus != difference.currentStatus}"
+                              th:text="#{conduct.history.registration_status_change(${difference.oldStatus ?: '—'}, ${difference.currentStatus ?: '—'})}"></span>
+                    </li>
+                </ul>
+                <p th:if="${preview.activeRosterChanged}" class="alert alert-warning" role="alert"
+                   th:text="#{conduct.history.active_roster_changed}"></p>
+                <p th:if="${preview.cancelled}" class="alert alert-warning" role="alert"
+                   th:text="#{conduct.history.cancelled}"></p>
+                <div th:replace="~{fragments/conduct-history :: saveStatus}"></div>
+                <form th:unless="${preview.registrationsChanged() or preview.cancelled}" method="post"
+                      th:action="@{/admin/tournaments/{id}/conduct-history/{version}/restore(id=${tournament.id},version=${preview.version.id})}">
+                    <input type="hidden" name="expectedVersion" th:value="${preview.latestVersion}">
+                    <button class="btn btn-warning" type="submit" th:text="#{conduct.history.restore}">Restaurar</button>
+                </form>
+                <a th:href="@{/admin/tournaments/{id}/conduct-history(id=${tournament.id})}"
+                   th:text="#{conduct.history.cancel}">Cancelar</a>
+            </div>
+        </section>
+
+        <section class="admin-card">
+            <div class="admin-card-body">
+                <p th:if="${versions.isEmpty()}" th:text="#{conduct.history.empty}"></p>
+                <ol th:unless="${versions.isEmpty()}" class="admin-list">
+                    <li class="admin-list-item" th:each="item : ${versions}">
+                        <span th:replace="~{fragments/conduct-history :: versionSummary(${item})}"></span>
+                        <a class="btn btn-outline"
+                           th:href="@{/admin/tournaments/{id}/conduct-history(id=${tournament.id},version=${item.id})}"
+                           th:text="${item.action.name() == 'CHECKPOINT_RESET_ROUND'} ? #{conduct.history.before_reset} : #{conduct.history.review}">
+                            Ver versión
+                        </a>
+                    </li>
+                </ol>
+            </div>
+        </section>
+    </div>
+</main>
+<footer th:replace="~{fragments/admin-footer :: footer}"></footer>
+<script th:src="@{/js/tournament-conduct.js}"></script>
+</body>
+</html>

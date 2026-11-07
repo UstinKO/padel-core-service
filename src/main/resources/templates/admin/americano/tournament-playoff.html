@@ -146,6 +146,10 @@
 
 <main class="admin-main">
     <div class="container">
+        <div th:replace="~{fragments/conduct-history :: link(${tournament.id})}"></div>
+        <div th:replace="~{fragments/conduct-history :: saveStatus}"></div>
+    </div>
+    <div class="container">
 
         <!-- Навигация -->
         <div style="margin-bottom:1rem">
@@ -725,6 +729,7 @@
                 </h3>
                 <form th:action="@{'/tournaments/team-playoff/admin/' + ${tournament.id} + '/regenerate-playoff'}"
                       method="post" style="display:inline">
+                    <input type="hidden" name="expectedConductVersion" th:value="${conductVersion}">
                     <button type="submit" class="btn btn-outline btn-sm"
                             onclick="return confirm(t('admin.playoff.confirm.regenerate'))">
                         <i class="fas fa-sync-alt"></i>
@@ -834,6 +839,7 @@
 </main>
 
 <script th:src="@{/js/csrf.js}"></script>
+<script th:src="@{/js/tournament-conduct.js}"></script>
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 <script th:src="@{/js/team-playoff-realtime.js}"></script>
@@ -1080,7 +1086,7 @@
         if (team1Id === team2Id) { alert('Selecciona dos equipos diferentes.'); return; }
         if (!courtNumber) { alert(MSG_NO_COURTS); return; }
 
-        fetch('/tournaments/team-playoff/api/' + TOURNAMENT_ID + '/qual-matches', {
+        conductFetch('/tournaments/team-playoff/api/' + TOURNAMENT_ID + '/qual-matches', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
@@ -1108,7 +1114,7 @@
         if (!team1Id || !team2Id) { alert(MSG_NO_TEAMS); return; }
         if (team1Id === team2Id) { alert('Selecciona dos equipos diferentes.'); return; }
 
-        fetch('/tournaments/team-playoff/api/' + TOURNAMENT_ID + '/qual-matches/queue', {
+        conductFetch('/tournaments/team-playoff/api/' + TOURNAMENT_ID + '/qual-matches/queue', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({team1Id: Number(team1Id), team2Id: Number(team2Id)})
@@ -1186,7 +1192,7 @@
         const courtNumber = document.getElementById('queue-court-' + matchId)?.value;
         if (!courtNumber) { showToast(MSG_QUEUE_NO_COURTS); return; }
 
-        fetch('/tournaments/team-playoff/api/matches/' + matchId + '/assign-court', {
+        conductFetch('/tournaments/team-playoff/api/matches/' + matchId + '/assign-court', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({courtNumber: Number(courtNumber)})
@@ -1205,7 +1211,7 @@
     function removeFromQueueAction(matchId) {
         if (!confirm(MSG_QUEUE_REMOVE_CONFIRM)) return;
 
-        fetch('/tournaments/team-playoff/api/matches/' + matchId + '/queue/remove', {method: 'POST'})
+        conductFetch('/tournaments/team-playoff/api/matches/' + matchId + '/queue/remove', {method: 'POST'})
             .then(r => r.json())
             .then(data => {
                 if (data.success) {
@@ -1231,7 +1237,7 @@
         btn.disabled = true;
         btn.textContent = '...';
 
-        fetch('/tournaments/team-playoff/api/qual-matches/' + matchId + '/result', {
+        conductFetch('/tournaments/team-playoff/api/qual-matches/' + matchId + '/result', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ team1Games: g1, team2Games: g2 })
@@ -1252,7 +1258,9 @@
                         onclick="showQualEdit(this)"><i class="fas fa-edit"></i> editar</button>`;
                 updateQualRanking();
             } else {
-                alert(data.message || 'Error al guardar');
+                alert(data.message === 'conduct.history.qualification_dependency'
+                    ? document.getElementById('conduct-save-status').dataset.qualificationDependency
+                    : data.message || 'Error al guardar');
             }
             btn.disabled = false;
             btn.textContent = 'OK';
@@ -1320,7 +1328,7 @@
         btn.disabled = true;
         btn.textContent = '...';
 
-        fetch('/tournaments/team-playoff/api/playoff-matches/' + matchId + '/result', {
+        conductFetch('/tournaments/team-playoff/api/playoff-matches/' + matchId + '/result', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ team1Games: g1, team2Games: g2 })
@@ -1332,7 +1340,9 @@
                 lsClear('pg2-' + matchId);
                 location.reload();
             } else {
-                alert(data.message || 'Error');
+                alert(data.message === 'conduct.history.playoff_dependency'
+                    ? document.getElementById('conduct-save-status').dataset.playoffDependency
+                    : data.message || 'Error');
                 btn.disabled = false;
                 btn.textContent = 'OK';
             }
@@ -1379,7 +1389,7 @@
         const courtNumber = box?.querySelector('select')?.value;
         if (!courtNumber) return;
 
-        fetch('/tournaments/team-playoff/api/matches/' + matchId + '/court', {
+        conductFetch('/tournaments/team-playoff/api/matches/' + matchId + '/court', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({courtNumber: Number(courtNumber)})
@@ -1418,7 +1428,7 @@
         const teamId = box?.querySelector('select')?.value;
         if (!teamId) return;
 
-        fetch('/tournaments/team-playoff/api/matches/' + matchId + '/team', {
+        conductFetch('/tournaments/team-playoff/api/matches/' + matchId + '/team', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({slot: slot, teamId: Number(teamId)})
@@ -1462,7 +1472,7 @@
         if (!val) return;
         const [otherMatchId, otherSlot] = val.split(':');
 
-        fetch('/tournaments/team-playoff/api/matches/' + matchId + '/swap-team', {
+        conductFetch('/tournaments/team-playoff/api/matches/' + matchId + '/swap-team', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({slot: slot, otherMatchId: Number(otherMatchId), otherSlot: Number(otherSlot)})
