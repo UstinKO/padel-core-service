@@ -571,7 +571,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ===== КНОПКИ РЕГИСТРАЦИИ =====
     const registerBtn = document.querySelector('.btn-register');
-    const cancelBtn = document.querySelector('.btn-cancel');
+    const cancelBtn = document.querySelector('button.btn-cancel');
 
     if (registerBtn) {
         console.log('✅ Register button found');
@@ -759,11 +759,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 existingUserId: existingUserId ? parseInt(existingUserId) : null
             };
 
+            const terms = await window.PairTerms.reviewBooking(tournamentId, [firstName, lastName].join(' ').trim());
+            if (terms === null) {
+                submitPartnerBtn.disabled = false;
+                submitPartnerBtn.textContent = t('details.mode.register_pair');
+                return;
+            }
+            Object.assign(partnerData, terms);
             const response = await fetch(`/api/tournaments/double/${tournamentId}/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(partnerData)
             });
+            if (response.status === 409) throw new Error(t('pair_terms.retry'));
             const data = await response.json();
 
             if (response.ok) {

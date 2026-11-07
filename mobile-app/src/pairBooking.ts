@@ -1,6 +1,8 @@
 import { AuthError, PlayerRequestError } from './auth.ts';
 import type { PartnerPayload } from './auth.ts';
 import type { PublicTournament } from './schedule.ts';
+import { parsePairOffer } from './pairTerms.ts';
+import type { PairOffer } from './pairTerms.ts';
 import { bookingQuote, cancellationDeadline } from './individualBooking.ts';
 
 export { bookingQuote, cancellationDeadline };
@@ -24,9 +26,9 @@ const knownStatuses = [
 export type MyRegistration = {
   registered: boolean; registrationId: number | null; status: string | null;
   waitlistPosition: number | null; registrationDate: string | null; isDoubleRegistration: boolean;
-  partnerId: number | null; partnerFirstName: string | null; partnerLastName: string | null; hasRegisteredPartner: boolean;
+  partnerId: number | null; partnerFirstName: string | null; partnerLastName: string | null; hasRegisteredPartner: boolean; replacementNeeded?: boolean; canReplacePartner?: boolean;
 };
-export type PairSnapshot = { event: PublicTournament; registration: MyRegistration; hasContact: boolean };
+export type PairSnapshot = { event: PublicTournament; registration: MyRegistration; hasContact: boolean; terms?: PairOffer | null };
 // Resultado de una mutación: para register-solo el status es SOLO_SEARCH/SOLO_ADD_LATER (éxito, no error);
 // para register/add-partner siempre CONFIRMED/WAITLIST. Nunca se confunde con BookingReceipt (individual),
 // cuyo tipo está cerrado a esos dos únicos valores.
@@ -38,8 +40,23 @@ export function isPairAmericanoEvent(event: PublicTournament) {
   return event.modality === 'DOBLES' && (event.type === 'AMERICANO' || event.type === 'AMERICANO_TEAMS');
 }
 
+// После дедлайна SOLO_ADD_LATER становится WAITLIST, но остаётся заявкой без партнёра.
+// Сервер разрешает дополнить её через add-partner и затем соблюдает очередь резерва.
+export function needsPartner(reg: MyRegistration): boolean {
+  return reg.registered && (reg.status === 'SOLO_SEARCH' || reg.status === 'SOLO_ADD_LATER'
+    || reg.status === 'WAITLIST' && !reg.isDoubleRegistration && !reg.hasRegisteredPartner
+    || needsPartnerReplacement(reg));
+}
+
+export function needsPartnerReplacement(reg: MyRegistration): boolean {
+  return reg.registered && !reg.hasRegisteredPartner && reg.partnerId === null
+    && ((reg.status === 'CONFIRMED' && reg.isDoubleRegistration)
+      || (reg.status === 'WAITLIST' && reg.replacementNeeded === true));
+}
+
 export type PairBookingTransport = {
   sessionVersion?: () => number;
+  pairTerms?: (id: number) => Promise<unknown>;
   details: (id: number) => Promise<PublicTournament>;
   myRegistration: (id: number) => Promise<unknown>;
   contactStatus: () => Promise<unknown>;
@@ -54,7 +71,7 @@ export type PairBookingTransport = {
 
 function record(value: unknown): value is Record<string, unknown> { return !!value && typeof value === 'object' && !Array.isArray(value); }
 
-function parseMyRegistration(value: unknown): MyRegistration {
+export function parseMyRegistration(value: unknown): MyRegistration {
   if (!record(value)) throw new BookingError('UNAVAILABLE');
   if (value.registered !== true) {
     return { registered: false, registrationId: null, status: null, waitlistPosition: null, registrationDate: null, isDoubleRegistration: false, partnerId: null, partnerFirstName: null, partnerLastName: null, hasRegisteredPartner: false };
@@ -72,6 +89,8 @@ function parseMyRegistration(value: unknown): MyRegistration {
     partnerFirstName: typeof value.partnerFirstName === 'string' ? value.partnerFirstName : null,
     partnerLastName: typeof value.partnerLastName === 'string' ? value.partnerLastName : null,
     hasRegisteredPartner: value.hasRegisteredPartner === true,
+    replacementNeeded: value.replacementNeeded === true,
+    canReplacePartner: value.canReplacePartner === true,
   };
 }
 function parseReceipt(value: unknown, allowed: readonly string[]): PairReceipt {
@@ -80,7 +99,7 @@ function parseReceipt(value: unknown, allowed: readonly string[]): PairReceipt {
   if (row.waitlistPosition != null && (!Number.isSafeInteger(row.waitlistPosition) || Number(row.waitlistPosition) < 1)) throw new BookingError('UNCERTAIN');
   return { status: row.status, waitlistPosition: (row.waitlistPosition as number | null | undefined) ?? null, existing: false };
 }
-function parseCandidates(value: unknown): PartnerCandidate[] {
+export function parsePartnerCandidates(value: unknown): PartnerCandidate[] {
   if (!Array.isArray(value)) throw new BookingError('UNAVAILABLE');
   return value.map(row => {
     if (!record(row) || !Number.isSafeInteger(row.id) || Number(row.id) < 1 || typeof row.nombreCompleto !== 'string' || !row.nombreCompleto.trim()
@@ -108,7 +127,11 @@ export function createPairBooking(transport: PairBookingTransport) {
     const [event, registrationRaw, contact] = await Promise.all([transport.details(id), transport.myRegistration(id), transport.contactStatus()]);
     checkAccount();
     if (event.id !== id || !contact || typeof contact !== 'object' || typeof (contact as { hasContact?: unknown }).hasContact !== 'boolean') throw new BookingError('UNAVAILABLE');
-    return { event, registration: parseMyRegistration(registrationRaw), hasContact: (contact as { hasContact: boolean }).hasContact };
+    const registration = parseMyRegistration(registrationRaw);
+    const terms = transport.pairTerms && event.type === 'AMERICANO_TEAMS' && (!registration.registered || needsPartner(registration)) && event.registrationOpen
+      ? parsePairOffer(await transport.pairTerms(id)) : null;
+    checkAccount();
+    return { event, registration, hasContact: (contact as { hasContact: boolean }).hasContact, ...(terms ? { terms } : {}) };
   }
   function guard(snapshot: PairSnapshot) {
     if (!isPairAmericanoEvent(snapshot.event)) throw new BookingError('NOT_PAIR', snapshot);
@@ -121,11 +144,11 @@ export function createPairBooking(transport: PairBookingTransport) {
   function existingReceipt(snapshot: PairSnapshot): PairReceipt | null {
     const reg = snapshot.registration;
     if (!reg.registered || reg.status === null) return null;
+    if (needsPartner(reg)) return null;
     if ((completeStatuses as readonly string[]).includes(reg.status)) return { status: reg.status, waitlistPosition: reg.waitlistPosition, existing: true };
-    if ((soloResultStatuses as readonly string[]).includes(reg.status)) return null;
     throw new BookingError('EXISTING', snapshot);
   }
-  async function mutate(id: number, quote: string, allowed: readonly string[], send: () => Promise<unknown>): Promise<PairReceipt> {
+  async function mutate(id: number, quote: string, allowed: readonly string[], send: () => Promise<unknown>, offerToken?: string): Promise<PairReceipt> {
     if (pending.has(id)) throw new BookingError('BUSY');
     if (uncertain.has(id)) throw new BookingError('UNCERTAIN');
     pending.add(id);
@@ -134,11 +157,11 @@ export function createPairBooking(transport: PairBookingTransport) {
       const receipt = existingReceipt(snapshot);
       if (receipt) return receipt;
       guard(snapshot);
-      if (bookingQuote(snapshot.event) !== quote) throw new BookingError('CHANGED', snapshot);
+      if (bookingQuote(snapshot.event) !== quote || (offerToken && snapshot.terms?.token !== offerToken)) throw new BookingError('CHANGED', snapshot);
       checkAccount();
       try { return parseReceipt(await send(), allowed); }
       catch (error) {
-        if (error instanceof PlayerRequestError || error instanceof AuthError && ['REVIEW_REQUIRED', 'RATE_LIMIT', 'FORBIDDEN', 'SESSION_EXPIRED', 'CANCELLED', 'PLAYER_REQUIRED'].includes(error.code)) throw error;
+        if (error instanceof PlayerRequestError || error instanceof AuthError && ['REVIEW_REQUIRED', 'RATE_LIMIT', 'FORBIDDEN', 'SESSION_EXPIRED', 'CANCELLED', 'PLAYER_REQUIRED', 'CHANGED'].includes(error.code)) throw error;
         uncertain.add(id); throw new BookingError('UNCERTAIN');
       }
     } finally { pending.delete(id); }
@@ -165,20 +188,20 @@ export function createPairBooking(transport: PairBookingTransport) {
     async searchPartners(id: number, query: string): Promise<PartnerCandidate[]> {
       checkAccount();
       if (query.trim().length < 2) return [];
-      return parseCandidates(await transport.searchPartners(id, query.trim()));
+      return parsePartnerCandidates(await transport.searchPartners(id, query.trim()));
     },
     async lookingForPartner(id: number, selfPlayerId: number | null): Promise<LookingForPartnerEntry[]> {
       checkAccount();
       return parseLookingForPartner(await transport.lookingForPartner(id), selfPlayerId);
     },
     async joinWithPartner(id: number, quote: string, partner: PartnerPayload) {
-      return mutate(id, quote, completeStatuses, () => transport.registerPair(id, partner));
+      return mutate(id, quote, completeStatuses, () => transport.registerPair(id, partner), partner.pairTermsToken);
     },
     async joinSolo(id: number, quote: string, soloType: 'SEARCH' | 'ADD_LATER', shareContacts: boolean) {
       return mutate(id, quote, soloResultStatuses, () => transport.registerSoloPair(id, soloType, shareContacts));
     },
     async addPartnerNow(id: number, quote: string, partner: PartnerPayload) {
-      return mutate(id, quote, completeStatuses, () => transport.addPartner(id, partner));
+      return mutate(id, quote, completeStatuses, () => transport.addPartner(id, partner), partner.pairTermsToken);
     },
     async proposePair(id: number, targetRegistrationId: number) {
       if (pending.has(id)) throw new BookingError('BUSY');
