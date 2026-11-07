@@ -27,6 +27,9 @@ import com.padle.core.padelcoreservice.service.conduct.TournamentConductHistory;
 import com.padle.core.padelcoreservice.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -58,6 +61,7 @@ public class TeamPlayoffViewController {
     private final TournamentAccessService tournamentAccessService;
     private final TournamentConductHistory conductHistory;
     private final PlayerService playerService;
+    private final MessageSource messageSource;
 
     // ══════════════════════════════════════════════════════════════════════
     // ПУБЛИЧНАЯ СТРАНИЦА
@@ -169,6 +173,10 @@ public class TeamPlayoffViewController {
         } catch (InvalidStateException | ResourceNotFoundException e) {
             log.error("Error adding team to {}: {}", tournamentId, e.getMessage());
             ra.addFlashAttribute(returnToPayments ? "errorMessage" : "error", "Error al agregar equipo: " + e.getMessage());
+        } catch (DataAccessException e) {
+            log.error("Не удалось сохранить команду Team Playoff в турнире {}", tournamentId, e);
+            ra.addFlashAttribute(returnToPayments ? "errorMessage" : "error",
+                    messageSource.getMessage("admin.team_playoff.add_team.failure", null, LocaleContextHolder.getLocale()));
         }
         return returnToPayments
                 ? "redirect:/admin/tournaments/" + tournamentId + "/payments"

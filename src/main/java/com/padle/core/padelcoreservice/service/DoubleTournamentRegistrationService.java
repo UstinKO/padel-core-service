@@ -1415,53 +1415,68 @@ public class DoubleTournamentRegistrationService {
     // ── Объединить двух соло-игроков в пару (Variant C — admin) ──────────────
 
     @Transactional
-    public void adminPairSoloPlayers(Long regId1, Long regId2) {
-        TournamentRegistration reg1 = registrationRepository.findById(regId1)
-                .orElseThrow(() -> new TournamentRegistrationException("Inscripción 1 no encontrada"));
-        TournamentRegistration reg2 = registrationRepository.findById(regId2)
-                .orElseThrow(() -> new TournamentRegistrationException("Inscripción 2 no encontrada"));
-
-        if (!reg1.getTournament().getId().equals(reg2.getTournament().getId())) {
-            throw new TournamentRegistrationException("Las inscripciones pertenecen a torneos distintos");
+    public RegistrationStatus adminPairSoloPlayers(Long tournamentId, Long regId1, Long regId2) {
+        Tournament tournament = tournamentRepository.lockById(tournamentId)
+                .orElseThrow(() -> adminPairError("admin.tournaments.details.pair.invalid"));
+        if (tournament.getModalidad() != Modalidad.DOBLES) {
+            throw adminPairError("admin.tournaments.details.pair.invalid");
         }
-        if (reg1.getId().equals(reg2.getId())) {
-            throw new TournamentRegistrationException("Seleccioná dos jugadores distintos");
+        if (regId1.equals(regId2)) {
+            throw adminPairError("admin.tournaments.details.pair.distinct");
         }
 
-        boolean reg1IsSolo = reg1.getStatus() == RegistrationStatus.SOLO_SEARCH
-                || reg1.getStatus() == RegistrationStatus.SOLO_ADD_LATER;
-        boolean reg2IsSolo = reg2.getStatus() == RegistrationStatus.SOLO_SEARCH
-                || reg2.getStatus() == RegistrationStatus.SOLO_ADD_LATER;
-
-        if (!reg1IsSolo || !reg2IsSolo) {
-            throw new TournamentRegistrationException("Ambos jugadores deben tener inscripción sin pareja");
-        }
-
+        TournamentRegistration reg1 = requirePairableSolo(tournamentId, regId1);
+        TournamentRegistration reg2 = requirePairableSolo(tournamentId, regId2);
+        boolean joinsWaitlist = reg1.isInWaitlist() || reg2.isInWaitlist();
         Long mainPlayerId = reg1.getPlayer().getId();
         UUID pairBookingId = UUID.randomUUID();
+        attachAdminPartner(reg1, reg2.getPlayer(), mainPlayerId, pairBookingId);
+        attachAdminPartner(reg2, reg1.getPlayer(), mainPlayerId, pairBookingId);
 
-        reg1.setStatus(RegistrationStatus.CONFIRMED);
-        reg1.setPartner(reg2.getPlayer());
-        reg1.setIsDoubleRegistration(true);
-        reg1.setMainPlayerId(mainPlayerId);
-        reg1.setPairBookingId(pairBookingId);
-        reg1.setPartnerRegistrationToken(null);
-        reg1.setPartnerTokenExpiry(null);
-        reg1.setPairProposerRegId(null);
+        if (joinsWaitlist) {
+            int waitlistPosition = registrationRepository.findMaxWaitlistPosition(tournamentId).orElse(0) + 1;
+            reg1.moveToWaitlist(waitlistPosition);
+            reg2.moveToWaitlist(waitlistPosition);
+        } else {
+            int position = (int) registrationRepository.countConfirmedPairs(tournamentId) + 1;
+            reg1.confirm();
+            reg2.confirm();
+            reg1.setPosition(position);
+            reg2.setPosition(position);
+        }
 
-        reg2.setStatus(RegistrationStatus.CONFIRMED);
-        reg2.setPartner(reg1.getPlayer());
-        reg2.setIsDoubleRegistration(true);
-        reg2.setMainPlayerId(mainPlayerId);
-        reg2.setPairBookingId(pairBookingId);
-        reg2.setPartnerRegistrationToken(null);
-        reg2.setPartnerTokenExpiry(null);
-        reg2.setPairProposerRegId(null);
+        registrationRepository.saveAllAndFlush(List.of(reg1, reg2));
+        tournamentService.processWaitlistForTournament(tournamentId);
+        log.info("Сформирована пара администратором: tournamentId={}, regId1={}, regId2={}, status={}",
+                tournamentId, regId1, regId2, reg1.getStatus());
+        return reg1.getStatus();
+    }
 
-        registrationRepository.save(reg1);
-        registrationRepository.save(reg2);
+    private TournamentRegistration requirePairableSolo(Long tournamentId, Long registrationId) {
+        return registrationRepository.findById(registrationId)
+                .filter(reg -> tournamentId.equals(reg.getTournament().getId()))
+                .filter(TournamentRegistration::isPairableSolo)
+                .orElseThrow(() -> adminPairError("admin.tournaments.details.pair.invalid"));
+    }
 
-        log.info("Admin paired solo players: regId1={}, regId2={}, tournamentId={}",
-                regId1, regId2, reg1.getTournament().getId());
+    private TournamentRegistrationException adminPairError(String key) {
+        return new TournamentRegistrationException(messageSource.getMessage(key, null, LocaleContextHolder.getLocale()));
+    }
+
+    private void attachAdminPartner(TournamentRegistration registration, PlayerPadel partner,
+                                    Long mainPlayerId, UUID pairBookingId) {
+        registration.setPartner(partner);
+        registration.setIsDoubleRegistration(true);
+        registration.setMainPlayerId(mainPlayerId);
+        registration.setPairBookingId(pairBookingId);
+        registration.setPartnerFirstName(partner.getNombre());
+        registration.setPartnerLastName(partner.getApellido());
+        registration.setPartnerPhone(partner.getTelefono());
+        registration.setPartnerEmail(partner.getEmail());
+        registration.setPartnerTelegram(partner.getTelegramUsername());
+        registration.setPartnerRegistrationToken(null);
+        registration.setPartnerTokenExpiry(null);
+        registration.setPairProposerRegId(null);
+        registration.setPartnerActionToken(null);
     }
 }

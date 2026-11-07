@@ -4,6 +4,7 @@ import com.padle.core.padelcoreservice.annotation.Timed;
 import com.padle.core.padelcoreservice.dto.MatchDto;
 import com.padle.core.padelcoreservice.dto.PlayerResponseDto;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
+import com.padle.core.padelcoreservice.exception.TournamentRegistrationException;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.enums.*;
 import com.padle.core.padelcoreservice.repository.TournamentKingOfCourtRepository;
@@ -20,6 +21,8 @@ import com.padle.core.padelcoreservice.service.americano.TeamPlayoffService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.MessageSource;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -33,6 +36,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -53,6 +57,7 @@ public class AdminController {
     private final TeamPlayoffService teamPlayoffService;
     private final DoubleTournamentRegistrationService doubleRegistrationService;
     private final TournamentAccessService tournamentAccessService;
+    private final MessageSource messageSource;
 
     @GetMapping
     public String adminPanel(Model model, @AuthenticationPrincipal Owner owner) {
@@ -525,22 +530,25 @@ public class AdminController {
     public ResponseEntity<Map<String, Object>> pairSoloPlayers(
             @PathVariable Long tournamentId,
             @RequestParam Long regId1,
-            @RequestParam Long regId2) {
+            @RequestParam Long regId2,
+            @AuthenticationPrincipal Owner owner,
+            Locale locale) {
 
-        Map<String, Object> result = new HashMap<>();
+        tournamentAccessService.assertCanManageTournament(owner, tournamentId);
         try {
-            doubleRegistrationService.adminPairSoloPlayers(regId1, regId2);
-            result.put("success", true);
-            result.put("message", "¡Pareja formada con éxito! Ambos jugadores están ahora confirmados.");
-        } catch (com.padle.core.padelcoreservice.exception.TournamentRegistrationException e) {
-            result.put("success", false);
-            result.put("message", e.getMessage());
-        } catch (Exception e) {
-            log.error("Error pairing solo players in tournament {}", tournamentId, e);
-            result.put("success", false);
-            result.put("message", "Error al emparejar jugadores");
+            RegistrationStatus status = doubleRegistrationService.adminPairSoloPlayers(tournamentId, regId1, regId2);
+            String messageKey = status == RegistrationStatus.WAITLIST
+                    ? "admin.tournaments.details.pair.success.reserve"
+                    : "admin.tournaments.details.pair.success.main";
+            return ResponseEntity.ok(Map.of("success", true, "message",
+                    messageSource.getMessage(messageKey, null, locale)));
+        } catch (TournamentRegistrationException e) {
+            return ResponseEntity.ok(Map.of("success", false, "message", e.getMessage()));
+        } catch (DataAccessException e) {
+            log.error("Не удалось объединить заявки в пару в турнире {}", tournamentId, e);
+            return ResponseEntity.ok(Map.of("success", false, "message",
+                    messageSource.getMessage("admin.tournaments.details.pair.failure", null, locale)));
         }
-        return ResponseEntity.ok(result);
     }
 
     // Список уровней для формы турнира: currentValue добавляет legacy-значение, уже сохранённое
