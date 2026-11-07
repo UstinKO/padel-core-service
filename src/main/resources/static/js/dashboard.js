@@ -1216,7 +1216,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <i class="fas fa-lock"></i> ${t('dashboard.card.torneo_iniciado')}
     </span>
 ` : !isMyTournament ? `
-    <button class="btn btn-primary btn-small btn-register"
+    <button class="btn btn-primary btn-small btn-register" data-registration-intent="${tournament.id}"
             data-tournament-id="${tournament.id}"
             data-tournament-name="${escapeHtml(tournament.nombre)}">
         <i class="fas fa-plus-circle"></i>

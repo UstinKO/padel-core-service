@@ -31,14 +31,14 @@ async function pageFor(ctx) {
     page.on('pageerror', error => errors.push(String(error)));
     return page;
 }
-async function login(page, email, destination) {
-    await page.goto(fixture.baseUrl + '/login');
+async function login(page, email, destination, { openLogin = true, hash = '' } = {}) {
+    if (openLogin) await page.goto(fixture.baseUrl + '/login');
     const banner = page.locator('#cookieConsentBanner .cookie-btn-accept');
     if (await banner.isVisible()) await banner.click();
     await page.locator('#username').fill(email);
     await page.locator('#password').fill(fixture.password);
     await Promise.all([
-        page.waitForURL(url => url.pathname === destination),
+        page.waitForURL(url => url.pathname === destination && url.hash === hash),
         page.locator('form.auth-form button[type=submit]').click()
     ]);
 }
@@ -76,7 +76,18 @@ async function report(page, language, source) {
 try {
     const browser = await chromium.launch(); browsers.push(browser);
     const playerContext = await context(browser);
+    await playerContext.addInitScript(() => {
+        window.gtag = (command, name, params) => {
+            if (command === 'event' && name === 'tournament_registration_click') {
+                const intents = JSON.parse(sessionStorage.getItem('qa-registration-intents') || '[]');
+                sessionStorage.setItem('qa-registration-intents', JSON.stringify([...intents, params]));
+            }
+        };
+    });
     const player = await pageFor(playerContext);
+    const tournamentPath = '/torneo/' + fixture.tournamentId;
+    const intent = '[data-registration-intent="' + fixture.tournamentId + '"]';
+    const readIntents = () => player.evaluate(() => JSON.parse(sessionStorage.getItem('qa-registration-intents') || '[]'));
     await player.goto(fixture.baseUrl + '/?utm_source=reby&utm_medium=qr&utm_campaign=offline_tournaments');
     await player.evaluate(() => window.metaMarketing.ready());
     assert.ok(!(await playerContext.cookies()).some(cookie => cookie.name === 'padel_attribution'));
@@ -87,20 +98,43 @@ try {
     await player.evaluate(() => window.metaMarketing.ready());
     assert.ok((await playerContext.cookies()).some(cookie => cookie.name === 'padel_attribution'));
     record('real consent click captures the leaflet source');
-    await login(player, fixture.playerEmail, '/players/dashboard');
-    await player.goto(fixture.baseUrl + '/torneo/' + fixture.tournamentId + '?utm_source=instagram&utm_medium=social&utm_campaign=browser_qa');
+    await player.locator('#tournamentsGrid ' + intent).click();
+    await player.waitForURL(url => url.pathname === tournamentPath);
+    assert.deepEqual(await readIntents(), [{ tournament_id: String(fixture.tournamentId) }]);
+    record('first tournament CTA sends one GA4 click with only the tournament ID');
+    await player.goto(fixture.baseUrl + tournamentPath + '?utm_source=instagram&utm_medium=social&utm_campaign=browser_qa');
     await player.evaluate(() => window.metaMarketing.ready());
+    await player.locator(intent).click();
+    await player.waitForURL(url => url.pathname === '/login');
+    assert.equal(new URL(player.url()).searchParams.get('tournamentId'), String(fixture.tournamentId));
+    await login(player, fixture.playerEmail, tournamentPath, { openLogin: false, hash: '#tournament-registration' });
+    await player.locator('#registerButton').waitFor();
+    record('password login returns to the same tournament without submitting a registration');
     const registered = player.waitForResponse(r => new URL(r.url()).pathname === '/players/tournaments/' + fixture.tournamentId + '/register');
     await player.locator('#registerButton').click();
     const registration = await registered;
     assert.equal(registration.status(), 200);
     assert.equal((await registration.json()).success, true);
-    record('registration through the real player interface succeeds');
+    assert.deepEqual(await readIntents(), [{ tournament_id: String(fixture.tournamentId) }]);
+    record('registration succeeds and repeated CTA clicks do not duplicate the event');
     await player.goto(fixture.baseUrl + '/admin/marketing/registration-sources');
     assert.equal(await player.locator('#registration-sources').count(), 0);
     record('player cannot open the admin report');
     const guestContext = await context(browser);
+    await guestContext.addInitScript(() => {
+        window.gtag = (command, name) => {
+            if (command === 'event' && name === 'tournament_registration_click') {
+                sessionStorage.setItem('qa-unconsented-click', '1');
+            }
+        };
+    });
     const guest = await pageFor(guestContext);
+    await guest.goto(fixture.baseUrl + tournamentPath);
+    await guest.locator('#cookieConsentBanner .cookie-btn-reject').click();
+    await guest.locator(intent).click();
+    await guest.waitForURL(url => url.pathname === '/login');
+    assert.equal(await guest.evaluate(() => sessionStorage.getItem('qa-unconsented-click')), null);
+    record('GA4 click is suppressed without analytics consent');
     await guest.goto(fixture.baseUrl + '/admin/marketing/registration-sources');
     assert.equal(new URL(guest.url()).pathname, '/login');
     record('guest is redirected to login');
