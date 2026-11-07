@@ -1,7 +1,7 @@
 # Архитектура базы данных — padel-core-service
 
 > **СУБД:** PostgreSQL 15  
-> **Версия схемы:** v1.61
+> **Версия схемы:** v1.65
 > **Миграции:** Liquibase (YAML), файлы в `src/main/resources/db/changelog/versions/`  
 > **ddl-auto:** `none` — схема управляется только через Liquibase
 
@@ -231,6 +231,8 @@ owners_db ───────────────────────�
 | `deadline_cancelacion` | `TIMESTAMP` | NULL | — | Дедлайн отмены регистрации. Если NULL — автоматически за 24 ч до старта |
 | `info_detallada` | `TEXT` | NULL | — | Подробное описание турнира |
 | `contacto_organizador` | `VARCHAR(100)` | NOT NULL | — | Контакт организатора |
+| `payment_instructions` | `TEXT` | NULL | — | Реквизиты оплаты для конкретного мероприятия |
+| `pair_terms_version` | `INTEGER` | NOT NULL | `1` | Текущая версия условий парного Americano |
 | `faq_url` | `VARCHAR(500)` | NULL | — | Ссылка на FAQ |
 | `created_at` | `TIMESTAMP` | NOT NULL | now() | Дата создания |
 | `updated_at` | `TIMESTAMP` | NOT NULL | now() | Дата обновления |
@@ -270,6 +272,15 @@ owners_db ───────────────────────�
 | `participation_confirmed` | `BOOLEAN` | NOT NULL | `false` | Участие подтверждено организатором |
 | `is_double_registration` | `BOOLEAN` | NOT NULL | `false` | Флаг парной регистрации |
 | `main_player_id` | `BIGINT` | NULL | — | ID инициатора парной регистрации |
+| `pair_booking_id` | `UUID` | NULL | — | Постоянный ID заявки пары; у старых записей может отсутствовать до сверки |
+| `pair_booked_by` | `BIGINT` | NULL | — | Неизменяемый ID игрока, оформившего пару; у организаторских и старых заявок требует уточнения |
+| `pair_terms_version` | `INTEGER` | NULL | — | Версия условий: 0 — прежние правила, NULL — ещё не классифицирована |
+| `pair_terms_accepted_at` | `TIMESTAMP` | NULL | — | Время явного принятия новой версии |
+| `pair_terms_accepted_by` | `BIGINT` | NULL | — | Аккаунт, принявший условия |
+| `pair_terms_price_per_player` | `DECIMAL(10,2)` | NULL | — | Снимок цены за игрока |
+| `pair_terms_currency` | `VARCHAR(10)` | NULL | — | Снимок валюты |
+| `pair_terms_free_until` | `TIMESTAMP` | NULL | — | Снимок границы бесплатной отмены |
+| `pair_terms_late_fraction` | `DECIMAL(5,4)` | NULL | — | Доля стоимости пары при поздней отмене |
 | `partner_first_name` | `VARCHAR(255)` | NULL | — | Имя незарегистрированного партнёра |
 | `partner_last_name` | `VARCHAR(255)` | NULL | — | Фамилия незарегистрированного партнёра |
 | `partner_phone` | `VARCHAR(255)` | NULL | — | Телефон незарегистрированного партнёра |
@@ -315,6 +326,7 @@ owners_db ───────────────────────�
 |---------|-----|----------|--------------|----------|
 | `id` | `BIGSERIAL` | NOT NULL | auto | PK |
 | `registration_id` | `BIGINT` | NOT NULL | — | FK → `tournament_registrations_db.id` |
+| `pair_booking_id` | `UUID` | NULL | — | ID заявки на момент создания платежа; не меняется при замене игрока |
 | `amount` | `DECIMAL(10,2)` | NOT NULL | — | Сумма |
 | `currency` | `VARCHAR(10)` | NOT NULL | `ARS` | Валюта (ISO 4217, поддерживает USDT и др.) |
 | `status` | `VARCHAR(20)` | NOT NULL | `PENDING` | Статус (enum `PaymentStatus`) |
@@ -329,6 +341,21 @@ owners_db ───────────────────────�
 | `is_active` | `BOOLEAN` | NOT NULL | `true` | Мягкое удаление |
 
 ---
+
+### `pair_replacement_notices_db`
+
+Входящие уведомления для прежнего партнёра после замены оформителем. Запись создаётся в той же транзакции, что и изменение состава. Хранятся идентификаторы адресата и турнира, название турнира, имена оформителя и нового игрока, а также время отметки о прочтении.
+
+### `pair_cancellations_db`
+
+Фиксирует подтверждённый расчёт полной отмены по принятой версии условий. Одна запись на `booking_id`.
+Сохраняются `tournament_id`, `cancelled_by`, `cancelled_at`, `terms_version`, `currency`, `obligation`,
+`already_paid`, `remaining_due`, `refundable`, имена участников и отметку неявки.
+Организатор может зафиксировать оплаченную замену с её ID и временем подтверждения.
+
+### `pair_booker_reviews_db`
+
+Журнал проверки оформителя прежней заявки. Поля: `booking_id`, `tournament_id`, `player_id`, `reviewed_by` и `reviewed_at`.
 
 ## 6. Рейтинг и матчи (bracket)
 
@@ -857,6 +884,7 @@ tournaments_db
 | v1.55 | `v1.55-add-partner-reserve-fields` | `tournament_registrations_db.final_reminder_sent`, `partner_action_token` |
 | v1.56 | `v1.56-add-partner-telegram` | `tournament_registrations_db.partner_telegram` |
 | v1.57 | `v1.57-unaccent-extension` | Расширение Postgres `unaccent` (диакритика в поиске партнёра, LFPT-0720) — не таблица/колонка |
+| v1.62 | `v1.62-pair-terms` | ID заявки пары, снимок условий и реквизиты мероприятия; старые заявки остаются на прежних условиях |
 
 | v1.58 | `v1.58-marketing-qr-daily` | Атомарные дневные счётчики QR-переходов Reby на сайт и в Telegram |
 | v1.58 | `v1.58-meta-marketing` | Атрибуция Meta и транзакционный журнал/очередь; историческая база без отправки |

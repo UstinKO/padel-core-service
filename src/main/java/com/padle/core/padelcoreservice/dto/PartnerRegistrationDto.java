@@ -34,4 +34,7 @@ public class PartnerRegistrationDto {
 
     private Boolean isExistingUser;
     private Long existingUserId;
+
+    @Size(max = 36)
+    private String pairTermsToken;
 }

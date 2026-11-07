@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class PaymentServiceBreakdownTest {
 
-    private final PaymentService paymentService = new PaymentService(null, null, null, null);
+    private final PaymentService paymentService = new PaymentService(null, null, null, null, null);
 
     private static PaymentManagementViewDto row(String currency, PaymentStatus status,
                                                   PaymentMethod method, BigDecimal amount,

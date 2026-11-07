@@ -150,6 +150,7 @@ public class TeamPlayoffService {
         registrationRepository.flush();
 
         int position = (int) registrationRepository.countConfirmedPairs(tournament.getId()) + 1;
+        UUID pairBookingId = UUID.randomUUID();
 
         TournamentRegistration partnerRegistration = TournamentRegistration.builder()
                 .tournament(tournament)
@@ -159,6 +160,7 @@ public class TeamPlayoffService {
                 .isActive(true)
                 .isDoubleRegistration(true)
                 .mainPlayerId(player1.getId())
+                .pairBookingId(pairBookingId)
                 .partnerFirstName(player1.getNombre())
                 .partnerLastName(player1.getApellido())
                 .partnerPhone(player1.getTelefono())
@@ -176,6 +178,7 @@ public class TeamPlayoffService {
                 .isActive(true)
                 .isDoubleRegistration(true)
                 .mainPlayerId(player1.getId())
+                .pairBookingId(pairBookingId)
                 .partnerFirstName(player2.getNombre())
                 .partnerLastName(player2.getApellido())
                 .partnerPhone(player2.getTelefono())

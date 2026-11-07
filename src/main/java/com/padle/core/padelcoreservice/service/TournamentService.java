@@ -78,6 +78,7 @@ public class TournamentService {
     private final AmericanoTeamRepository americanoTeamRepository;
     private final KingOfCourtPlayerStatsRepository kingOfCourtPlayerStatsRepository;
     private final MessageSource messageSource;
+    private final PairTermsService pairTerms;
 
     @Value("${app.base-url:http://localhost:8080}")
     private String baseUrl;
@@ -497,7 +498,12 @@ public class TournamentService {
             return;
         }
 
-        if (!tournament.canCancelRegistration()) {
+        Optional<TournamentRegistration> remainingPartner = findActivePairPartner(tournamentId, registration);
+        if (PairTermsService.accepted(registration)) {
+            if (remainingPartner.isEmpty() || !pairTerms.isCancellable(tournament)) {
+                throw new TournamentRegistrationException("PAIR_CANCELLATION_CONFIRMATION_REQUIRED");
+            }
+        } else if (!tournament.canCancelRegistration()) {
             throw new TournamentRegistrationException("Cannot cancel registration after deadline");
         }
 
@@ -506,13 +512,17 @@ public class TournamentService {
         // Отменяем регистрацию
         registration.cancel(reason);
         registrationRepository.save(registration);
+        remainingPartner.ifPresent(this::retainIncompletePair);
 
         log.info("Registration cancelled. Old status: {}, New status: {}, Active: {}",
                 oldStatus, registration.getStatus(), registration.getIsActive());
 
         sendRegistrationCancelledEmail(registration.getPlayer(), tournament, reason);
 
-        if (oldStatus == RegistrationStatus.CONFIRMED) {
+        boolean heldPlace = oldStatus == RegistrationStatus.CONFIRMED
+                || oldStatus == RegistrationStatus.SOLO_ADD_LATER
+                || oldStatus == RegistrationStatus.SOLO_SEARCH;
+        if (heldPlace && remainingPartner.isEmpty()) {
             processWaitlistForTournament(tournamentId);
             if (tournament.getModalidad() == Modalidad.DOBLES) {
                 reorderPairPositions(tournamentId);
@@ -520,6 +530,39 @@ public class TournamentService {
                 reorderPositions(tournamentId);
             }
         }
+    }
+
+    private Optional<TournamentRegistration> findActivePairPartner(Long tournamentId,
+                                                                    TournamentRegistration registration) {
+        if (!Boolean.TRUE.equals(registration.getIsDoubleRegistration())) {
+            return Optional.empty();
+        }
+        return registrationRepository.findByTournamentId(tournamentId).stream()
+                .filter(other -> !other.getId().equals(registration.getId()))
+                .filter(other -> Boolean.TRUE.equals(other.getIsActive()))
+                .filter(other -> Boolean.TRUE.equals(other.getIsDoubleRegistration()))
+                .filter(other -> registration.getPairBookingId() != null
+                        ? registration.getPairBookingId().equals(other.getPairBookingId())
+                        : (registration.getMainPlayerId() != null
+                        && Objects.equals(other.getMainPlayerId(), registration.getMainPlayerId()))
+                        || Optional.ofNullable(other.getPartner())
+                                .map(player -> player.getId().equals(registration.getPlayer().getId()))
+                                .orElse(false))
+                .findFirst();
+    }
+
+    private void retainIncompletePair(TournamentRegistration partner) {
+        partner.setPartner(null);
+        partner.setPartnerFirstName(null);
+        partner.setPartnerLastName(null);
+        partner.setPartnerPhone(null);
+        partner.setPartnerEmail(null);
+        partner.setPartnerTelegram(null);
+        partner.setMainPlayerId(partner.getPlayer().getId());
+        if (partner.getStatus() == RegistrationStatus.WAITLIST) {
+            partner.setIsDoubleRegistration(false);
+        }
+        registrationRepository.save(partner);
     }
 
     @Timed(
@@ -534,9 +577,10 @@ public class TournamentService {
         Tournament tournament = tournamentRepository.findById(tournamentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tournament not found"));
 
-        // ИСПРАВЛЕНО: считаем только CONFIRMED регистрации
+        // Парное место удерживают как готовые пары, так и активные соло-заявки.
         long confirmedSpots = tournament.getModalidad() == Modalidad.DOBLES
                 ? registrationRepository.countConfirmedPairs(tournamentId)
+                        + registrationRepository.countActiveSoloRegistrations(tournamentId)
                 : registrationRepository.countByTournamentIdAndStatus(tournamentId, RegistrationStatus.CONFIRMED);
 
         int availableSlots = tournament.getCupoMax() - (int) confirmedSpots;
@@ -588,7 +632,8 @@ public class TournamentService {
             byPosition.computeIfAbsent(reg.getWaitlistPosition(), k -> new ArrayList<>()).add(reg);
         }
 
-        long confirmedPairs = registrationRepository.countConfirmedPairs(tournament.getId());
+        long occupiedSpots = registrationRepository.countConfirmedPairs(tournament.getId())
+                + registrationRepository.countActiveSoloRegistrations(tournament.getId());
         int pairsConfirmed = 0;
 
         for (List<TournamentRegistration> pair : byPosition.values()) {
@@ -600,7 +645,7 @@ public class TournamentService {
                 continue;
             }
 
-            int position = (int) confirmedPairs + 1;
+            int position = (int) occupiedSpots + 1;
             for (TournamentRegistration reg : pair) {
                 reg.confirm();
                 reg.setPosition(position);
@@ -608,7 +653,7 @@ public class TournamentService {
                 sendWaitlistAutoConfirmEmail(reg.getPlayer(), tournament);
             }
 
-            confirmedPairs++;
+            occupiedSpots++;
             pairsConfirmed++;
             log.info("Pair auto-confirmed from waitlist for tournament {}: players {}", tournament.getId(),
                     pair.stream().map(r -> r.getPlayer().getId()).toList());
@@ -686,6 +731,11 @@ public class TournamentService {
     }
 
     private void sendRegistrationCancelledEmail(PlayerPadel player, Tournament tournament, String reason) {
+        sendRegistrationCancelledEmail(player, tournament, reason, null);
+    }
+
+    private void sendRegistrationCancelledEmail(PlayerPadel player, Tournament tournament, String reason,
+                                                PairTermsService.Cancellation quote) {
         try {
             String email = player.getEmail();
             String name = player.getNombre();
@@ -694,8 +744,13 @@ public class TournamentService {
             String dateStr = tournament.getFechaInicio().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
             String timeStr = tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm"));
             String clubName = resolveClubName(tournament.getClubId());
-            AfterCommit.run(() -> emailService.sendRegistrationCancelledEmail(
-                    email, name, tournamentName, dateStr, timeStr, clubName, reason, locale));
+            AfterCommit.run(() -> {
+                if (quote == null) {
+                    emailService.sendRegistrationCancelledEmail(email, name, tournamentName, dateStr, timeStr, clubName, reason, locale);
+                } else if (!PlayerPadel.isGuestEmail(email)) {
+                    emailService.sendPairCancellationEmail(email, name, tournamentName, dateStr, timeStr, clubName, quote, locale);
+                }
+            });
         } catch (Exception e) {
             log.error("Не удалось подготовить уведомление об изменении регистрации", e);
         }
@@ -1170,24 +1225,42 @@ public class TournamentService {
     public void cancelPairRegistration(Long tournamentId, Long playerId, String reason) {
         Tournament tournament = tournamentRepository.lockById(tournamentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tournament not found"));
-        List<TournamentRegistration> registrations = registrationRepository.findByTournamentId(tournamentId)
-                .stream()
-                .filter(r -> Boolean.TRUE.equals(r.getIsActive()))
-                .filter(r -> r.getPlayer().getId().equals(playerId)
-                        || Objects.equals(r.getMainPlayerId(), playerId)
-                        || (r.getPartner() != null && r.getPartner().getId().equals(playerId)))
-                .toList();
+        var active = registrationRepository.findByTournamentIdAndPlayerIdAndIsActiveTrue(tournamentId, playerId);
+        if (active.isEmpty()) return;
+        var row = active.orElseThrow();
+        if (PairTermsService.accepted(row)) {
+            throw new TournamentRegistrationException("PAIR_CANCELLATION_CONFIRMATION_REQUIRED");
+        }
+        cancelPairMembers(tournament, pairTerms.members(row), reason, null);
+    }
+
+    @Transactional
+    public PairTermsService.Cancellation confirmPairCancellation(Long tournamentId, Long playerId, String token) {
+        Tournament tournament = pairTerms.lock(tournamentId);
+        TournamentRegistration row = pairTerms.activeRegistration(tournamentId, playerId);
+        var quote = pairTerms.cancellation(tournament, row);
+        PairTermsService.requireToken(quote.token(), token);
+        if (!quote.legacy()) pairTerms.saveCancellation(row, playerId, quote);
+        cancelPairMembers(tournament, pairTerms.members(row), null, quote.legacy() ? null : quote);
+        return quote;
+    }
+
+    private void cancelPairMembers(Tournament tournament, List<TournamentRegistration> registrations,
+                                   String reason, PairTermsService.Cancellation quote) {
+        Long tournamentId = tournament.getId();
         if (registrations.isEmpty()) {
             return;
         }
+        boolean heldPlaceCancelled = registrations.stream()
+                .anyMatch(reg -> reg.getStatus() == RegistrationStatus.CONFIRMED
+                        || reg.getStatus() == RegistrationStatus.SOLO_ADD_LATER
+                        || reg.getStatus() == RegistrationStatus.SOLO_SEARCH);
         registrations.forEach(reg -> {
             reg.cancel(reason);
             registrationRepository.save(reg);
-            sendRegistrationCancelledEmail(reg.getPlayer(), tournament, reason);
+            sendRegistrationCancelledEmail(reg.getPlayer(), tournament, reason, quote);
         });
-        long confirmedCount = registrationRepository.countByTournamentIdAndStatus(
-                tournamentId, RegistrationStatus.CONFIRMED);
-        if (confirmedCount < tournament.getCupoMax()) {
+        if (heldPlaceCancelled) {
             processWaitlistForTournament(tournamentId);
         }
         reorderPairPositions(tournamentId);
@@ -1243,7 +1316,7 @@ public class TournamentService {
             return;
         }
         if (Boolean.TRUE.equals(playerReg.getIsDoubleRegistration())) {
-            cancelPairRegistration(tournamentId, playerId, "Eliminado por el organizador");
+            cancelPairMembers(tournament, pairTerms.members(playerReg), "Eliminado por el organizador", null);
             return;
         }
         RegistrationStatus oldStatus = playerReg.getStatus();
@@ -1321,6 +1394,7 @@ public class TournamentService {
         existing.setDeadlineCancelacion(dto.getDeadlineCancelacion());
         existing.setInfoDetallada(dto.getInfoDetallada());
         existing.setContactoOrganizador(dto.getContactoOrganizador());
+        existing.setPaymentInstructions(dto.getPaymentInstructions());
         existing.setFaqUrl(normalizeFaqUrl(dto.getFaqUrl()));
         existing.setEstado(dto.getEstado());
         existing.setMostrarNivel(Boolean.TRUE.equals(dto.getMostrarNivel()));

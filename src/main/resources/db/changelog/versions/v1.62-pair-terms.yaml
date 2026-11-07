@@ -1,0 +1,115 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.62-pair-terms
+      author: padel-core
+      changes:
+        - addColumn:
+            tableName: tournaments_db
+            columns:
+              - column:
+                  name: payment_instructions
+                  type: text
+              - column:
+                  name: pair_terms_version
+                  type: integer
+                  defaultValueNumeric: 1
+                  constraints:
+                    nullable: false
+        - addColumn:
+            tableName: tournament_registrations_db
+            columns:
+              - column:
+                  name: pair_booking_id
+                  type: uuid
+              - column:
+                  name: pair_booked_by
+                  type: bigint
+              - column:
+                  name: pair_terms_version
+                  type: integer
+              - column:
+                  name: pair_terms_accepted_at
+                  type: timestamp
+              - column:
+                  name: pair_terms_accepted_by
+                  type: bigint
+              - column:
+                  name: pair_terms_price_per_player
+                  type: numeric(10,2)
+              - column:
+                  name: pair_terms_currency
+                  type: varchar(10)
+              - column:
+                  name: pair_terms_free_until
+                  type: timestamp
+              - column:
+                  name: pair_terms_late_fraction
+                  type: numeric(5,4)
+        - addColumn:
+            tableName: payments_db
+            columns:
+              - column:
+                  name: pair_booking_id
+                  type: uuid
+        - createIndex:
+            tableName: payments_db
+            indexName: idx_payments_pair_booking_id
+            columns:
+              - column:
+                  name: pair_booking_id
+        - sql:
+            dbms: postgresql
+            sql: |
+              UPDATE tournament_registrations_db r
+              SET pair_terms_version = 0,
+                  pair_terms_price_per_player = t.precio,
+                  pair_terms_currency = t.moneda,
+                  pair_terms_free_until = COALESCE(
+                    t.deadline_cancelacion,
+                    t.fecha_inicio + t.hora_inicio - INTERVAL '24 hours'
+                  ),
+                  pair_terms_late_fraction = 1.0000
+              FROM tournaments_db t
+              WHERE r.tournament_id = t.id
+                AND t.tipo = 'AMERICANO_TEAMS'
+                AND t.modalidad = 'DOBLES';
+      rollback:
+        - dropIndex:
+            tableName: payments_db
+            indexName: idx_payments_pair_booking_id
+        - dropColumn:
+            tableName: payments_db
+            columnName: pair_booking_id
+        - dropColumn:
+            tableName: tournament_registrations_db
+            columnName: pair_terms_late_fraction
+        - dropColumn:
+            tableName: tournament_registrations_db
+            columnName: pair_terms_free_until
+        - dropColumn:
+            tableName: tournament_registrations_db
+            columnName: pair_terms_currency
+        - dropColumn:
+            tableName: tournament_registrations_db
+            columnName: pair_terms_price_per_player
+        - dropColumn:
+            tableName: tournament_registrations_db
+            columnName: pair_terms_accepted_by
+        - dropColumn:
+            tableName: tournament_registrations_db
+            columnName: pair_terms_accepted_at
+        - dropColumn:
+            tableName: tournament_registrations_db
+            columnName: pair_terms_version
+        - dropColumn:
+            tableName: tournament_registrations_db
+            columnName: pair_booking_id
+        - dropColumn:
+            tableName: tournament_registrations_db
+            columnName: pair_booked_by
+        - dropColumn:
+            tableName: tournaments_db
+            columnName: pair_terms_version
+        - dropColumn:
+            tableName: tournaments_db
+            columnName: payment_instructions

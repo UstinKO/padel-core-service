@@ -10,6 +10,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @EntityListeners(MarketingEntityListener.class)
@@ -30,6 +31,9 @@ public class Payment {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "registration_id", nullable = false)
     private TournamentRegistration registration;
+
+    @Column(name = "pair_booking_id")
+    private UUID pairBookingId;
 
     // Сумма платежа
     @Column(name = "amount", nullable = false, precision = 10, scale = 2)

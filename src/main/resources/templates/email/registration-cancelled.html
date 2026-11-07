@@ -38,6 +38,16 @@
             <div class="value" th:text="${clubName}">Club Padel Central</div>
         </div>
 
+        <div class="reason-box" th:if="${pairCancellation != null}">
+            <p th:text="#{email.pair_terms.cancel_amount(${pairCancellation.obligation}, ${pairCancellation.currency})}"></p>
+            <p th:text="#{email.pair_terms.paid(${pairCancellation.alreadyPaid}, ${pairCancellation.currency})}"></p>
+            <p th:text="#{email.pair_terms.due(${pairCancellation.remainingDue}, ${pairCancellation.currency})}"></p>
+            <p th:text="#{email.pair_terms.refund(${pairCancellation.refundable}, ${pairCancellation.currency})}"></p>
+            <p th:if="${pairCancellation.remainingDue.signum() > 0}"
+               th:text="${#strings.isEmpty(pairCancellation.paymentInstructions)
+                   ? pairCancellation.organizerContact : pairCancellation.paymentInstructions}"></p>
+        </div>
+
         <div class="reason-box" th:if="${cancellationReason != null and !cancellationReason.isBlank()}">
             <span class="label" th:text="#{email.registration_cancelled.reason_label}">Motivo</span>
             <p class="value" style="margin: 4px 0 0;" th:text="${cancellationReason}">Motivo de la cancelación</p>

@@ -90,6 +90,9 @@
 ### Алгоритм
 
 1. Вызывает `TournamentService.cancelRegistration()`.
+   Для полной парной заявки это эквивалент выхода одного участника: оставшийся
+   сохраняет место в основе либо исходную очередь в резерве. Пользовательский
+   интерфейс парного турнира сначала предлагает явный выбор через `cancel-double`.
 2. Делает повторную проверку через `getRegistration()` чтобы убедиться в отмене.
 3. При успехе — запускает логику листа ожидания (в сервисе): следующий WAITLIST-игрок переходит в WAITLIST_INVITED.
 
@@ -119,9 +122,9 @@
 
 | option | Условие | Действие |
 |--------|---------|----------|
-| `self` | партнёр зарегистрирован в системе | Отменяет только себя, партнёр остаётся |
+| `self` | партнёр зарегистрирован в системе | Отменяет только себя; партнёр в основе сохраняет место и может добавить замену, в резерве сохраняет очередь |
 | `full` | всегда | Отменяет всю пару |
-| `replace` | партнёр зарегистрирован в системе | Выходит сам, на его место приглашается новый игрок через `DoubleTournamentRegistrationService.replacePlayerInPair()` |
+| `replace` | партнёр зарегистрирован в системе | Выходит сам, новый игрок регистрируется сразу через `DoubleTournamentRegistrationService.replacePlayerInPair()`; история прежнего участника сохраняется |
 
 `replaceData` (для option=`replace`) — JSON-строка с полями нового игрока:
 ```json
@@ -173,6 +176,7 @@
   "status": "CONFIRMED" | "WAITLIST" | "...",
   "waitlistPosition": 3 | null,
   "registrationDate": "2026-10-20T12:00:00",
+  "canReplacePartner": true | false,
   "isDoubleRegistration": true | false | null
 }
 ```
@@ -180,3 +184,13 @@
 `registrationId`/`status`/`waitlistPosition`/`registrationDate`/`isDoubleRegistration` — добавлены в LFPT-0706, напрямую из уже загруженного `TournamentRegistrationDto` (без новых запросов к БД). Контакты партнёра (`telefono`/`telegramUsername`) этот эндпоинт по-прежнему не публикует.
 
 ---
+
+Поле `replacementNeeded` в `GET /players/tournaments/{tournamentId}/my-registration` отмечает игрока, сохранившего место или очередь после выхода партнёра. Клиент показывает в карточке действие «Добавить замену».
+
+`canReplacePartner` даёт оформителю активной пары Team Americano отдельное действие «Заменить партнёра». Для старой заявки с неизвестным оформителем организатор сначала отмечает проверенного оформителя.
+
+## Уведомления о замене
+
+`GET /api/players/me/pair-replacement-notices` возвращает до 20 непрочитанных уведомлений текущего игрока. Каждое содержит `id`, `tournamentName`, `bookerName` и `replacementName`.
+
+`POST /api/players/me/pair-replacement-notices/{noticeId}/dismiss` отмечает своё уведомление прочитанным и возвращает 204.

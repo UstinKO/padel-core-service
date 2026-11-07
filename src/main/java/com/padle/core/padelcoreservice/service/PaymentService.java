@@ -14,6 +14,7 @@ import com.padle.core.padelcoreservice.model.enums.PaymentStatus;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import com.padle.core.padelcoreservice.repository.PaymentRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
+import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import com.padle.core.padelcoreservice.service.americano.TeamPlayoffService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +40,7 @@ public class PaymentService {
     private final TournamentRegistrationRepository registrationRepository;
     private final PaymentMapper paymentMapper;
     private final TeamPlayoffService teamPlayoffService;
+    private final TournamentRepository tournamentRepository;
 
     // ==================== Базовые методы ====================
 
@@ -75,10 +77,12 @@ public class PaymentService {
         TournamentRegistration registration = registrationRepository.findById(registrationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Registration not found"));
 
+        tournamentRepository.lockById(registration.getTournament().getId());
         Payment payment = Payment.builder()
                 .registration(registration)
+                .pairBookingId(registration.getPairBookingId())
                 .amount(amount)
-                .currency("ARS") // Можно брать из турнира
+                .currency(PairTermsService.accepted(registration) ? registration.getPairTermsCurrency() : "ARS")
                 .status(PaymentStatus.PENDING)
                 .paymentMethod(method)
                 .createdBy(createdBy)
@@ -98,6 +102,9 @@ public class PaymentService {
 
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment not found"));
+        if (payment.getPairBookingId() != null) {
+            tournamentRepository.lockById(payment.getRegistration().getTournament().getId());
+        }
 
         payment.markAsPaid(payment.getPaymentMethod(), transactionId, provider);
         Payment updatedPayment = paymentRepository.save(payment);
@@ -117,6 +124,9 @@ public class PaymentService {
 
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment not found"));
+        if (payment.getPairBookingId() != null) {
+            tournamentRepository.lockById(payment.getRegistration().getTournament().getId());
+        }
 
         payment.markAsFailed(errorMessage);
         Payment updatedPayment = paymentRepository.save(payment);
@@ -130,6 +140,9 @@ public class PaymentService {
 
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment not found"));
+        if (payment.getPairBookingId() != null) {
+            tournamentRepository.lockById(payment.getRegistration().getTournament().getId());
+        }
 
         if (payment.getStatus() != PaymentStatus.PAID) {
             throw new IllegalStateException("Cannot refund non-paid payment");
@@ -225,6 +238,7 @@ public class PaymentService {
                     // Платёж — без маркера PARTNER_PAYMENT (у каждого своя запись)
                     payments.stream()
                             .filter(p -> p.getRegistration().getId().equals(reg.getId()))
+                            .filter(p -> isPaymentForBooking(p, reg))
                             .filter(p -> p.getNotes() == null
                                     || !p.getNotes().startsWith(PARTNER_PAYMENT_MARKER))
                             .findFirst()
@@ -239,7 +253,7 @@ public class PaymentService {
                                 dto.setHasPayment(true);
                             }, () -> {
                                 dto.setHasPayment(false);
-                                dto.setCurrency("ARS");
+                                dto.setCurrency(PairTermsService.accepted(reg) ? reg.getPairTermsCurrency() : "ARS");
                             });
 
                     result.add(dto);
@@ -275,6 +289,7 @@ public class PaymentService {
                         // Платёж партнёра — с маркером PARTNER_PAYMENT
                         payments.stream()
                                 .filter(p -> p.getRegistration().getId().equals(reg.getId()))
+                            .filter(p -> isPaymentForBooking(p, reg))
                                 .filter(p -> p.getNotes() != null
                                         && p.getNotes().startsWith(PARTNER_PAYMENT_MARKER))
                                 .findFirst()
@@ -359,6 +374,7 @@ public class PaymentService {
                                           List<PaymentUpdateDto> updates,
                                           Long updatedBy) {
         log.info("Saving payment management data for tournament: {}", tournamentId);
+        tournamentRepository.lockById(tournamentId);
 
         for (PaymentUpdateDto dto : updates) {
             TournamentRegistration registration = registrationRepository
@@ -368,7 +384,7 @@ public class PaymentService {
             if (!registration.getTournament().getId().equals(tournamentId)) {
                 throw new ResourceNotFoundException("Registration not found: " + dto.getRegistrationId());
             }
-            resolveExistingPayment(dto);
+            resolveExistingPayment(dto, registration);
 
             // Посещение и подтверждение участия — для основной строки.
             // Партнёр, зарегистрированный в БД, всегда приходит в этом же updates своей
@@ -394,7 +410,7 @@ public class PaymentService {
                 Payment payment = paymentRepository.findById(dto.getPaymentId())
                         .orElseThrow(() -> new ResourceNotFoundException(
                                 "Payment not found: " + dto.getPaymentId()));
-                if (!payment.getRegistration().getId().equals(registration.getId())) {
+                if (!payment.getRegistration().getId().equals(registration.getId()) || !isPaymentForBooking(payment, registration)) {
                     throw new ResourceNotFoundException("Payment not found: " + dto.getPaymentId());
                 }
 
@@ -452,6 +468,7 @@ public class PaymentService {
                 // Создаём новый платёж
                 Payment payment = Payment.builder()
                         .registration(registration)
+                        .pairBookingId(registration.getPairBookingId())
                         .amount(normalizeAmount(dto.getAmount()))
                         .currency(dto.getCurrency() != null ? dto.getCurrency() : "ARS")
                         .status(dto.getPaymentStatus() != null
@@ -490,11 +507,16 @@ public class PaymentService {
         }
     }
 
-    private void resolveExistingPayment(PaymentUpdateDto dto) {
+    private boolean isPaymentForBooking(Payment payment, TournamentRegistration registration) {
+        return java.util.Objects.equals(payment.getPairBookingId(), registration.getPairBookingId());
+    }
+
+    private void resolveExistingPayment(PaymentUpdateDto dto, TournamentRegistration registration) {
         if (dto.isHasPayment() && dto.getPaymentId() != null) {
             return;
         }
         paymentRepository.findByRegistrationId(dto.getRegistrationId()).stream()
+                .filter(payment -> isPaymentForBooking(payment, registration))
                 .filter(payment -> Boolean.TRUE.equals(payment.getIsActive()))
                 .filter(payment -> (payment.getNotes() != null && payment.getNotes().startsWith(PARTNER_PAYMENT_MARKER)) == dto.isPartnerRow())
                 .findFirst().ifPresent(payment -> {

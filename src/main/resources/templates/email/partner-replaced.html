@@ -1,0 +1,10 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<head><meta charset="UTF-8"><title th:text="#{email.partner_replaced.subject(${notice.tournamentName})}"></title></head>
+<body style="font:16px/1.5 Arial,sans-serif;color:#1d3029;">
+<main style="max-width:560px;margin:0 auto;padding:24px;">
+    <h1 th:text="${notice.tournamentName}"></h1>
+    <p th:text="#{email.partner_replaced.body(${notice.bookerName}, ${notice.replacementName})}"></p>
+</main>
+</body>
+</html>

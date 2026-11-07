@@ -2,6 +2,8 @@ package com.padle.core.padelcoreservice.service;
 
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.model.Club;
+import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.padelcoreservice.util.AfterCommit;
 import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.TournamentRegistration;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
@@ -20,6 +22,24 @@ public class TournamentNotificationService {
 
     private final EmailService emailService;
     private final ClubRepository clubRepository;
+
+    public void sendPairTermsNotice(PlayerPadel player, PairTermsService.Offer offer,
+                                    Long clubId, RegistrationStatus status) {
+        String email = player.getEmail();
+        if (email == null || email.isBlank() || PlayerPadel.isGuestEmail(email)) return;
+        String name = player.getNombre();
+        Locale locale = player.getLocale();
+        String club = getClubName(clubId);
+        AfterCommit.run(() -> emailService.sendPairTermsEmail(email, name, club, offer,
+                status == RegistrationStatus.WAITLIST, locale));
+    }
+
+    public void sendPartnerReplacedNotice(PlayerPadel player, PairReplacementNoticeService.Notice notice) {
+        String email = player.getEmail();
+        if (email == null || email.isBlank() || PlayerPadel.isGuestEmail(email)) return;
+        Locale locale = player.getLocale();
+        AfterCommit.run(() -> emailService.sendPartnerReplacedEmail(email, notice, locale));
+    }
 
     public void sendPartnerInvitationEmail(String partnerEmail, String partnerName,
                                            String mainPlayerName, TournamentDto tournament,

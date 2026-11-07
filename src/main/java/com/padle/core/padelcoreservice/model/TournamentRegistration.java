@@ -9,10 +9,12 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Entity
 @EntityListeners(MarketingEntityListener.class)
@@ -100,6 +102,34 @@ public class TournamentRegistration {
 
     @Column(name = "main_player_id")
     private Long mainPlayerId;  // ID главного игрока (кто создал регистрацию)
+
+    @Column(name = "pair_booking_id")
+    private UUID pairBookingId;
+
+    @Column(name = "pair_booked_by")
+    private Long pairBookedBy;
+
+    // Снимок условий одинаков у обоих участников заявки и указывает аккаунт, который их принял.
+    @Column(name = "pair_terms_version")
+    private Integer pairTermsVersion;
+
+    @Column(name = "pair_terms_accepted_at")
+    private LocalDateTime pairTermsAcceptedAt;
+
+    @Column(name = "pair_terms_accepted_by")
+    private Long pairTermsAcceptedBy;
+
+    @Column(name = "pair_terms_price_per_player", precision = 10, scale = 2)
+    private BigDecimal pairTermsPricePerPlayer;
+
+    @Column(name = "pair_terms_currency", length = 10)
+    private String pairTermsCurrency;
+
+    @Column(name = "pair_terms_free_until")
+    private LocalDateTime pairTermsFreeUntil;
+
+    @Column(name = "pair_terms_late_fraction", precision = 5, scale = 4)
+    private BigDecimal pairTermsLateFraction;
 
     // Поля для хранения данных партнера (незарегистрированного)
     @Column(name = "partner_first_name")
