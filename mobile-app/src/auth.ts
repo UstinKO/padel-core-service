@@ -12,7 +12,10 @@ export type Registration = { registrationId: number; status: string | null; acti
 // Forma exacta de PartnerRegistrationDto (servidor) — compañero existente por ID, o datos de uno nuevo sin email (LFPT-0687).
 // nombre/apellido son @NotBlank en el servidor incluso con existingUserId (no se usan para resolver
 // al jugador, pero la validación los exige igual) — se envían también para el compañero existente.
-export type PartnerPayload = { isExistingUser: true; existingUserId: number; nombre: string; apellido: string } | { isExistingUser: false; nombre: string; apellido: string; telefono: string; telegramUsername?: string };
+export type PairReplacementNotice = { id: number; tournamentName: string; bookerName: string; replacementName: string };
+export type ReplacementCandidate = { nombre: string; apellido: string }
+  & ({ telefono: string; existingUserId?: never } | { existingUserId: number; telefono?: never });
+export type PartnerPayload = ({ isExistingUser: true; existingUserId: number; nombre: string; apellido: string } | { isExistingUser: false; nombre: string; apellido: string; telefono: string; telegramUsername?: string }) & { pairTermsToken?: string };
 export const registrationStatuses = ['CONFIRMED', 'WAITLIST', 'WAITLIST_INVITED', 'CANCELLED', 'PARTICIPATED', 'PENDING_PARTNER', 'PARTNER_INVITED', 'PAIR_REGISTERED', 'SOLO_ADD_LATER', 'SOLO_SEARCH', 'SOLO_EXPIRED'] as const;
 export class AuthError extends Error {
   code: string;
@@ -28,7 +31,7 @@ export class PlayerRequestError extends AuthError {
     this.needLevel = data.needLevel === true;
   }
 }
-type PlayerRequest = { method?: 'GET' | 'POST' | 'PATCH'; body?: unknown; business?: boolean };
+type PlayerRequest = { method?: 'GET' | 'POST' | 'PATCH'; body?: unknown; business?: boolean; allowEmpty?: boolean };
 type Store = { get: () => Promise<string | null>; set: (token: string | null) => Promise<void> };
 function record(value: unknown): value is Record<string, unknown> { return !!value && typeof value === 'object' && !Array.isArray(value); }
 function text(value: unknown): value is string { return typeof value === 'string' && value.length > 0; }
@@ -140,9 +143,11 @@ export function createAuthClient({ baseUrl = 'https://1-padel.com', fetchImpl = 
           throw new AuthError(badRequest === 'INVALID_CREDENTIALS' && /confirma|desactivada/i.test(message) ? 'ACCOUNT_UNAVAILABLE' : badRequest);
         }
         if (response.status === 401) throw new AuthError('SESSION_EXPIRED');
+        if (response.status === 409) throw new AuthError('CHANGED');
         if (response.status === 403) throw new AuthError('PLAYER_REQUIRED');
         throw new AuthError('UNAVAILABLE');
       }
+      if (options.allowEmpty && response.status === 204) return null;
       if (!isJson) throw new AuthError('UNAVAILABLE');
       const value = await response.json();
       if (options.business && record(value) && value.success === false) throw new PlayerRequestError(value);
@@ -241,6 +246,41 @@ export function createAuthClient({ baseUrl = 'https://1-padel.com', fetchImpl = 
     async searchPartners(tournamentId: number, query: string) {
       if (!Number.isSafeInteger(tournamentId) || tournamentId < 1) throw new AuthError('UNAVAILABLE');
       return authorized(`/api/players/search?tournamentId=${tournamentId}&query=${encodeURIComponent(query)}`);
+    },
+    pairTerms(tournamentId: number) {
+      return authorized(`/api/tournaments/double/${tournamentId}/pair-terms`, { allowEmpty: true });
+    },
+    myPairTerms(tournamentId: number, token?: string) {
+      return authorized(`/api/tournaments/double/${tournamentId}/my-pair-terms`, token ? { method: 'POST', body: { token } } : {});
+    },
+    pairCancellation(tournamentId: number, token?: string) {
+      return authorized(`/api/tournaments/double/${tournamentId}/pair-cancellation`, token ? { method: 'POST', body: { token } } : {});
+    },
+    leavePair(tournamentId: number) {
+      return authorized(`/players/tournaments/${tournamentId}/cancel-double?option=self`, { method: 'POST', business: true });
+    },
+    replaceSelf(tournamentId: number, replacement: ReplacementCandidate) {
+      if (!Number.isSafeInteger(tournamentId) || tournamentId < 1) throw new AuthError('UNAVAILABLE');
+      return authorized(`/api/tournaments/double/${tournamentId}/replace-self`, { method: 'POST', body: replacement, allowEmpty: true });
+    },
+    async replacePartner(tournamentId: number, currentPartnerId: number, replacement: ReplacementCandidate) {
+      if (!Number.isSafeInteger(tournamentId) || tournamentId < 1 || !Number.isSafeInteger(currentPartnerId) || currentPartnerId < 1) {
+        throw new AuthError('UNAVAILABLE');
+      }
+      return authorized(`/api/tournaments/double/${tournamentId}/replace-partner`, {
+        method: 'POST', body: { currentPartnerId, replacement }, allowEmpty: true,
+      });
+    },
+    async pairReplacementNotices(): Promise<PairReplacementNotice[]> {
+      const result = await authorized('/api/players/me/pair-replacement-notices');
+      if (!Array.isArray(result)) throw new AuthError('UNAVAILABLE');
+      return result.filter((row): row is PairReplacementNotice => record(row)
+        && Number.isSafeInteger(row.id) && Number(row.id) > 0
+        && text(row.tournamentName) && text(row.bookerName) && text(row.replacementName));
+    },
+    dismissPairReplacementNotice(noticeId: number) {
+      if (!Number.isSafeInteger(noticeId) || noticeId < 1) throw new AuthError('UNAVAILABLE');
+      return authorized(`/api/players/me/pair-replacement-notices/${noticeId}/dismiss`, { method: 'POST', allowEmpty: true });
     },
     async registerPair(tournamentId: number, partner: PartnerPayload) {
       if (!Number.isSafeInteger(tournamentId) || tournamentId < 1) throw new AuthError('UNAVAILABLE');
