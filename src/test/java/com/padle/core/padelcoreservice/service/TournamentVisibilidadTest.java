@@ -20,6 +20,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -123,7 +124,7 @@ class TournamentVisibilidadTest {
                 .contains(publico.getId())
                 .doesNotContain(soloEnlace.getId());
 
-        assertThat(idsOf(tournamentService.getVisibleTournamentsForPlayer()))
+        assertThat(idsOf(tournamentService.getVisibleTournamentsForPlayer(Set.of())))
                 .contains(publico.getId())
                 .doesNotContain(soloEnlace.getId());
 

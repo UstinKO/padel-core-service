@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 @Controller
 @RequestMapping("/players")
@@ -70,15 +71,14 @@ public class PlayerDashboardController {
         log.info("Dashboard accessed by player: {} (ID: {})", player.getEmail(), player.getId());
 
         try {
-            // Получаем турниры, открытые для регистрации
-            List<TournamentDto> upcomingTournaments = tournamentService.getVisibleTournamentsForPlayer();
-
             // Турниры, в которых игрок уже участвовал, и id турниров с активной регистрацией —
             // из одного запроса регистраций
             TournamentService.PlayerDashboardTournaments dashboardTournaments =
                     tournamentService.getHistoricalAndActiveTournamentsByPlayer(player.getId());
             List<TournamentDto> historicalTournaments = dashboardTournaments.historical();
             List<Long> myTournamentIds = dashboardTournaments.activeTournamentIds();
+            List<TournamentDto> upcomingTournaments =
+                    tournamentService.getVisibleTournamentsForPlayer(Set.copyOf(myTournamentIds));
 
             model.addAttribute("player", player);
             model.addAttribute("torneosInscritos", myTournamentIds.size());

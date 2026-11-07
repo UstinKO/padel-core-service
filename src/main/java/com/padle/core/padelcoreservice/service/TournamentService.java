@@ -173,12 +173,14 @@ public class TournamentService {
             tags = {"service=tournament", "operation=dashboardVisible"}
     )
     @Transactional(readOnly = true)
-    public List<TournamentDto> getVisibleTournamentsForPlayer() {
+    public List<TournamentDto> getVisibleTournamentsForPlayer(Set<Long> activeRegistrationTournamentIds) {
         List<Tournament> visible = tournamentRepository.findByIsActiveTrue().stream()
                 .filter(t -> t.getEstado() == TournamentStatus.REGISTRO_ABIERTO
                         || t.getEstado() == TournamentStatus.PUBLICADO)
-                .collect(Collectors.toList());
-        List<TournamentDto> dtos = filterPublicOnly(mapToDtoWithDetails(visible));
+                .filter(t -> t.getVisibilidad() != TournamentVisibility.SOLO_POR_ENLACE
+                        || activeRegistrationTournamentIds.contains(t.getId()))
+                .toList();
+        List<TournamentDto> dtos = mapToDtoWithDetails(visible);
         dtos.sort(Comparator.comparing(TournamentDto::getFechaInicio)
                 .thenComparing(TournamentDto::getHoraInicio));
         return dtos;
