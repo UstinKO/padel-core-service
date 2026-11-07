@@ -359,13 +359,32 @@
             </div>
         </div>
 
+        <th:block th:if="${tournament.tipo.name() == 'KING_OF_COURT' or tournament.tipo.name() == 'AMERICANO'
+                       or tournament.tipo.name() == 'AMERICANO_TEAMS'}">
+            <div th:replace="~{fragments/conduct-history :: link(${tournament.id})}"></div>
+            <div th:replace="~{fragments/conduct-history :: saveStatus}"></div>
+        </th:block>
+
         <!-- Кнопки действий -->
         <div class="action-buttons-center">
+            <a th:if="${kingOfCourtId != null}" class="btn btn-primary"
+               th:href="@{/admin/tournaments/king-of-court/{id}(id=${kingOfCourtId})}"
+               th:text="${kingOfCourtActive} ? #{conduct.resume} : #{conduct.review_run}">Continuar torneo</a>
+            <a th:if="${isInitialized == true}" class="btn btn-primary"
+               th:href="@{/tournaments/americano/admin/{id}(id=${tournament.id})}"
+               th:text="#{conduct.resume}">Continuar torneo</a>
+            <a th:if="${isTeamAmericanoInitialized == true}" class="btn btn-primary"
+               th:href="@{/tournaments/team-americano/admin/{id}(id=${tournament.id})}"
+               th:text="#{conduct.resume}">Continuar torneo</a>
+            <a th:if="${isPlayoffQualStarted == true}" class="btn btn-primary"
+               th:href="@{/tournaments/team-playoff/admin/{id}(id=${tournament.id})}"
+               th:text="#{conduct.resume}">Continuar torneo</a>
+
             <button onclick="shareAdminTournament()"
                     class="btn btn-outline"
                     style="display:flex; align-items:center; gap:.5rem;"
                     th:attr="data-share-url=${
-                        (kingOfCourtActive != null and kingOfCourtActive and kingOfCourtId != null)
+                        (kingOfCourtId != null)
                             ? '/tournaments/king-of-court/' + kingOfCourtId
                             : (tournament.tipo.name() == 'AMERICANO' and tournament.modalidad.name() == 'INDIVIDUAL' and isInitialized == true)
                                 ? '/tournaments/americano/' + tournament.id
@@ -662,17 +681,12 @@
                     </div>
                     <div class="admin-card-body">
                         <!-- Если турнир уже запущен -->
-                        <div th:if="${kingOfCourtActive != null and kingOfCourtActive}">
+                        <div th:if="${kingOfCourtId != null}">
                             <div class="alert alert-success">
                                 <i class="fas fa-check-circle"></i>
                                 <span th:text="#{admin.tournaments.details.koc.already_started}">¡Torneo ya iniciado!</span>
                             </div>
-                            <a th:href="@{'/admin/tournaments/king-of-court/' + ${kingOfCourtId}}"
-                               class="btn btn-primary btn-block">
-                                <i class="fas fa-arrow-right"></i>
-                                <span th:text="#{admin.tournaments.details.koc.go_to_management}">Ir a gestión</span>
-                            </a>
-                            <a th:if="${tournament.estado.name() == 'FINALIZADO' or tournament.estado.name() == 'CERRADO'}"
+                            <a th:if="${!kingOfCourtActive}"
                                th:href="@{'/tournaments/king-of-court/' + ${kingOfCourtId}}"
                                class="btn btn-success btn-block mt-2">
                                 <i class="fas fa-trophy"></i>
@@ -681,7 +695,7 @@
                         </div>
 
                         <!-- Если турнир можно запустить -->
-                        <div th:unless="${kingOfCourtActive != null and kingOfCourtActive}">
+                        <div th:unless="${kingOfCourtId != null}">
                             <!-- Проверка минимального количества игроков -->
                             <div th:if="${tournament.inscritosActuales < 4}"
                                  class="alert alert-warning" style="margin-bottom: 15px;">
@@ -782,11 +796,6 @@
                                 <span th:text="#{admin.tournaments.details.americano.active_players}">jugadores activos</span>
                             </div>
 
-                            <a th:href="@{'/tournaments/americano/admin/' + ${tournament.id}}"
-                               class="btn btn-primary btn-block">
-                                <i class="fas fa-arrow-right"></i>
-                                <span th:text="#{admin.tournaments.details.americano.go_to_tournament}">Ir al torneo en curso</span>
-                            </a>
                             <a th:href="@{'/tournaments/americano/' + ${tournament.id} + '/ranking'}"
                                class="btn btn-outline btn-block">
                                 <i class="fas fa-chart-bar"></i>
@@ -1008,11 +1017,6 @@
                                 <strong th:text="${teamAmericanoRanking != null ? teamAmericanoRanking.totalTeams : 0}">0</strong>
                                 <span th:text="#{admin.tournaments.details.americano.active_teams}">parejas activas</span>
                             </div>
-                            <a th:href="@{'/tournaments/team-americano/admin/' + ${tournament.id}}"
-                               class="btn btn-primary btn-block">
-                                <i class="fas fa-arrow-right"></i>
-                                <span th:text="#{admin.tournaments.details.americano.go_to_rr}">Ir al torneo Round Robin</span>
-                            </a>
                             <a th:if="${tournament.estado.name() == 'FINALIZADO' or tournament.estado.name() == 'CERRADO'}"
                                th:href="@{'/tournaments/team-americano/' + ${tournament.id}}"
                                class="btn btn-success btn-block mt-2">
@@ -1040,11 +1044,6 @@
                                     <span th:if="${isPlayoffStarted == true}" th:text="#{admin.tournaments.details.teams.status.playoff}">Playoff en curso</span>
                                     <span th:unless="${isPlayoffStarted == true}" th:text="#{admin.tournaments.details.teams.status.qualification}">Calificación en curso</span>
                                 </div>
-                                <a th:href="@{'/tournaments/team-playoff/admin/' + ${tournament.id}}"
-                                   class="btn btn-primary btn-block">
-                                    <i class="fas fa-arrow-right"></i>
-                                    <span th:text="#{admin.tournaments.details.americano.go_to_panel}">Ir al panel del torneo</span>
-                                </a>
                                 <a th:if="${tournament.estado.name() == 'FINALIZADO' or tournament.estado.name() == 'CERRADO'}"
                                    th:href="@{'/tournaments/team-playoff/' + ${tournament.id}}"
                                    class="btn btn-success btn-block mt-2">
@@ -1159,11 +1158,6 @@
                                 <span th:if="${isPlayoffStarted == true}" th:text="#{admin.tournaments.details.teams.status.playoff}">Playoff en curso</span>
                                 <span th:unless="${isPlayoffStarted == true}" th:text="#{admin.tournaments.details.teams.status.qualification}">Calificación en curso</span>
                             </div>
-                            <a th:href="@{'/tournaments/team-playoff/admin/' + ${tournament.id}}"
-                               class="btn btn-primary btn-block">
-                                <i class="fas fa-arrow-right"></i>
-                                <span th:text="#{admin.tournaments.details.americano.go_to_panel}">Ir al panel del torneo</span>
-                            </a>
                         </div>
 
                         <!-- Ещё не запущен -->
@@ -1698,6 +1692,7 @@
 
 <footer th:replace="~{fragments/admin-footer :: footer}"></footer>
 <script th:src="@{/js/csrf.js}"></script>
+<script th:src="@{/js/tournament-conduct.js}"></script>
 <script th:src="@{/js/admin.js}"></script>
 <script th:inline="javascript">
     const TOURNAMENT_ID = /*[[${tournament.id}]]*/ 0;
