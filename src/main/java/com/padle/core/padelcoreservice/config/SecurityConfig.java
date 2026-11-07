@@ -261,7 +261,7 @@ public class SecurityConfig {
                         .contentSecurityPolicy(csp -> csp
                                 .policyDirectives(
                                         "default-src 'self'; " +
-                                                "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://www.google.com https://www.gstatic.com https://cdn.jsdelivr.net https://www.googletagmanager.com https://www.clarity.ms" +
+                                                "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://www.google.com https://www.gstatic.com https://cdn.jsdelivr.net https://www.googletagmanager.com https://www.clarity.ms https://scripts.clarity.ms" +
                                                 (metaProperties.browserEnabled() ? " https://connect.facebook.net; " : "; ") +
                                                 "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://cdn.jsdelivr.net; " +
                                                 "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; " +
