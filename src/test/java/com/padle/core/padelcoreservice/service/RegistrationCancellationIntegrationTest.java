@@ -511,6 +511,10 @@ class RegistrationCancellationIntegrationTest {
 
         var admin = Owner.builder().email("admin@example.test").role(OwnerRole.SUPER_ADMIN).build();
         String path = "/admin/tournaments/" + tournament.getId();
+        mvc.perform(get(path).with(user(admin)))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("data-reg-id=\"" + reserve.getId() + "\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("data-reg-id=\"" + search.getId() + "\"")));
 
         var otherTournament = tournament(2);
         mvc.perform(post("/admin/tournaments/" + otherTournament.getId() + "/pair-solo")
