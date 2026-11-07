@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
@@ -50,6 +51,8 @@ class PairTournamentReminderSchedulerTest {
 
     @Autowired
     private PairTournamentReminderScheduler scheduler;
+    @MockitoBean
+    private EmailService emailService;
     @Autowired
     private TournamentRepository tournamentRepository;
     @Autowired
@@ -89,6 +92,19 @@ class PairTournamentReminderSchedulerTest {
         assertThat(html).contains("Club Padel Central", "Av. Siempre Viva 742", "18:30",
                 "Les pedimos llegar 15 minutos antes", "avisale a tu compañero",
                 "https://1-padel.com/torneo/42", "Ver evento", "Seguí el torneo en vivo");
+    }
+
+    @Test
+    void plantillaDeEmail_americanoEquipos_pideAvisarAlOrganizadorYAlCompanero() {
+        Context context = new Context(java.util.Locale.forLanguageTag("es"));
+        context.setVariable("teamAmericano", true);
+        context.setVariable("eventUrl", "https://1-padel.com/torneo/42");
+        context.setVariable("year", 2026);
+
+        String html = templateEngine.process("email/pair-tournament-reminder", context);
+
+        assertThat(html).contains("Les pedimos llegar 15 minutos antes",
+                "avisales cuanto antes al organizador y a tu compañero");
     }
 
     @Test

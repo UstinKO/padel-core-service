@@ -5,6 +5,7 @@ import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.TournamentRegistration;
 import com.padle.core.padelcoreservice.model.enums.Modalidad;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
+import com.padle.core.padelcoreservice.model.enums.TournamentType;
 import com.padle.core.padelcoreservice.repository.ClubRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
@@ -103,6 +104,7 @@ public class PairTournamentReminderScheduler {
                     direccion,
                     hora,
                     tournament.getId(),
+                    tournament.getTipo() == TournamentType.AMERICANO_TEAMS,
                     registration.getPlayer().getLocale());
             sent++;
         }

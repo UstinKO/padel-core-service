@@ -1135,10 +1135,10 @@ public class DoubleTournamentRegistrationService {
             } else {
                 emailService.sendTournamentConfirmationEmail(partner.getEmail(), partner.getNombre(),
                         tournament.getNombre(), dateStr, timeStr, null,
-                        tournament.getFormattedCancellationDeadline(), partner.getLocale());
+                        tournament.getFormattedCancellationDeadline(), tournament.getTipo(), partner.getLocale());
                 emailService.sendTournamentConfirmationEmail(mainPlayer.getEmail(), mainPlayer.getNombre(),
                         tournament.getNombre(), dateStr, timeStr, null,
-                        tournament.getFormattedCancellationDeadline(), mainPlayer.getLocale());
+                        tournament.getFormattedCancellationDeadline(), tournament.getTipo(), mainPlayer.getLocale());
             }
         } else {
             // Пара, восстановленная после выхода партнёра, сохраняет исходную позицию.

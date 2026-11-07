@@ -39,7 +39,8 @@
         <div class="warning-box">
             👉 Les pedimos llegar 15 minutos antes.<br><br>
             ⚠️ En caso de llegar tarde, la organización puede determinar que comiencen perdiendo 0-3 el primer partido o directamente darlo por perdido.<br><br>
-            Por favor, avisale a tu compañero. 🎾
+            <th:block th:if="${teamAmericano == true}">Si cambian tus planes o vas a llegar tarde, avisales cuanto antes al organizador y a tu compañero. 🎾</th:block>
+            <th:block th:unless="${teamAmericano == true}">Por favor, avisale a tu compañero. 🎾</th:block>
         </div>
 
         <div class="event-link-box">
