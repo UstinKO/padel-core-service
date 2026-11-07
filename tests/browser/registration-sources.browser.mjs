@@ -81,6 +81,7 @@ try {
             if (command === 'event' && name === 'tournament_registration_click') {
                 const intents = JSON.parse(sessionStorage.getItem('qa-registration-intents') || '[]');
                 sessionStorage.setItem('qa-registration-intents', JSON.stringify([...intents, params]));
+                sessionStorage.setItem('qa-registration-intent-path', location.pathname);
             }
         };
     });
@@ -99,9 +100,14 @@ try {
     assert.ok((await playerContext.cookies()).some(cookie => cookie.name === 'padel_attribution'));
     record('real consent click captures the leaflet source');
     await player.locator('#tournamentsGrid ' + intent).click();
-    await player.waitForURL(url => url.pathname === tournamentPath);
+    await player.waitForURL(url => url.pathname === tournamentPath, { waitUntil: 'domcontentloaded' });
+    await player.locator(intent).click();
+    await player.waitForURL(url => url.pathname === '/login');
+    assert.equal(new URL(player.url()).searchParams.get('tournamentId'), String(fixture.tournamentId));
+    await player.waitForFunction(() => sessionStorage.getItem('qa-registration-intents') !== null);
     assert.deepEqual(await readIntents(), [{ tournament_id: String(fixture.tournamentId) }]);
-    record('first tournament CTA sends one GA4 click with only the tournament ID');
+    assert.equal(await player.evaluate(() => sessionStorage.getItem('qa-registration-intent-path')), '/login');
+    record('fast navigation from first CTA to login sends one GA4 click with only the tournament ID');
     await player.goto(fixture.baseUrl + tournamentPath + '?utm_source=instagram&utm_medium=social&utm_campaign=browser_qa');
     await player.evaluate(() => window.metaMarketing.ready());
     await player.locator(intent).click();
