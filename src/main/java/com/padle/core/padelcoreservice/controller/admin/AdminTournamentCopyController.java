@@ -48,6 +48,8 @@ public class AdminTournamentCopyController {
         newTournament.setFechaInicio(sourceTournament.getFechaInicio());
         newTournament.setHoraInicio(sourceTournament.getHoraInicio());
         newTournament.setDuracion(sourceTournament.getDuracion());
+        newTournament.setDurationMinutes(sourceTournament.getDurationMinutes());
+        newTournament.setTimeZone(sourceTournament.getTimeZone());
         newTournament.setGeneroFormato(sourceTournament.getGeneroFormato());
         newTournament.setCategoriaNivel(sourceTournament.getCategoriaNivel());
         newTournament.setTipo(sourceTournament.getTipo());

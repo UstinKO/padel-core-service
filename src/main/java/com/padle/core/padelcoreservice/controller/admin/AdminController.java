@@ -353,6 +353,9 @@ public class AdminController {
             model.addAttribute("tournamentTypes", Arrays.asList(TournamentType.values()));
             model.addAttribute("tournamentStatuses", Arrays.asList(TournamentStatus.values()));
             model.addAttribute("niveles", getNiveles(tournamentDto.getCategoriaNivel()));
+            model.addAttribute("modalidades", Modalidad.values());
+            model.addAttribute("visibilidades", TournamentVisibility.values());
+            model.addAttribute("isClubAdmin", owner.isClubAdmin());
             return "admin/tournaments/form";
         }
 

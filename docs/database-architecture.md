@@ -1,7 +1,7 @@
 # Архитектура базы данных — padel-core-service
 
 > **СУБД:** PostgreSQL 15  
-> **Версия схемы:** v1.66
+> **Версия схемы:** v1.67
 > **Миграции:** Liquibase (YAML), файлы в `src/main/resources/db/changelog/versions/`  
 > **ddl-auto:** `none` — схема управляется только через Liquibase
 
@@ -220,6 +220,8 @@ owners_db ───────────────────────�
 | `fecha_inicio` | `DATE` | NOT NULL | — | Дата начала |
 | `hora_inicio` | `TIME` | NOT NULL | — | Время начала |
 | `duracion` | `VARCHAR(50)` | NULL | — | Продолжительность (свободный текст) |
+| `duration_minutes` | `INTEGER` | NULL | — | Точная длительность для календаря; CHECK > 0, приоритет над свободным текстом |
+| `time_zone` | `VARCHAR(100)` | NOT NULL | `America/Argentina/Buenos_Aires` | IANA-зона мероприятия; проверяется в настройках |
 | `genero_formato` | `VARCHAR(20)` | NOT NULL | — | Формат по полу: `MASCULINO` / `FEMENINO` / `MIXTO` |
 | `categoria_nivel` | `VARCHAR(30)` | NULL | — | Уровень игроков (enum `Nivel`) |
 | `tipo` | `VARCHAR(20)` | NOT NULL | — | Тип турнира (enum `TournamentType`) |
@@ -889,6 +891,8 @@ tournaments_db
 | v1.58 | `v1.58-marketing-qr-daily` | Атомарные дневные счётчики QR-переходов Reby на сайт и в Telegram |
 | v1.58 | `v1.58-meta-marketing` | Атрибуция Meta и транзакционный журнал/очередь; историческая база без отправки |
 | v1.59 | `v1.59-meta-payment-source` | Неизменяемый источник каждого поступления: CASH на месте → physical_store, прочие/неизвестные → other; существующие события остаются other |
+
+| v1.67 | `v1.67-event-calendar` | Точная длительность и IANA-зона мероприятия, CHECK положительной длительности |
 
 ## QR-переходы Reby
 

@@ -188,7 +188,10 @@ public class SecurityConfig {
                                 // Публичное расписание для мобильного приложения —
                                 // анонимное чтение, те же правила видимости, что у /torneo/{id}.
                                 "/api/public/tournaments",
-                                "/api/public/tournaments/*"
+                                "/api/public/tournaments/*",
+                                "/api/public/tournaments/*/calendar",
+                                "/api/public/tournaments/*/calendar/google",
+                                "/api/public/tournaments/*/calendar/event.ics"
                         ).permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.POST,
                                 "/api/tournaments/double/accept-pair"

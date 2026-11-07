@@ -1,0 +1,19 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.67-event-calendar
+      author: padle-team
+      changes:
+        - addColumn:
+            tableName: tournaments_db
+            columns:
+              - column:
+                  name: duration_minutes
+                  type: integer
+              - column:
+                  name: time_zone
+                  type: varchar(100)
+                  defaultValue: America/Argentina/Buenos_Aires
+                  constraints:
+                    nullable: false
+        - sql:
+            sql: ALTER TABLE tournaments_db ADD CONSTRAINT chk_tournament_duration_minutes CHECK (duration_minutes IS NULL OR duration_minutes > 0)

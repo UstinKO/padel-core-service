@@ -50,6 +50,13 @@ public class Tournament {
     @Column(name = "duracion", length = 50)
     private String duracion;
 
+    @Column(name = "duration_minutes")
+    private Integer durationMinutes;
+
+    @Column(name = "time_zone", nullable = false, length = 100)
+    @Builder.Default
+    private String timeZone = "America/Argentina/Buenos_Aires";
+
     @Column(name = "genero_formato", nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
     private GenderFormat generoFormato;
