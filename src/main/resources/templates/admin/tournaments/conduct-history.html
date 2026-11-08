@@ -26,6 +26,19 @@
             </div>
             <div class="admin-card-body">
                 <p th:replace="~{fragments/conduct-history :: versionSummary(${preview.version})}"></p>
+                <div th:if="${preview.playoffSwap != null}" th:with="swap=${preview.playoffSwap}">
+                    <h3 th:text="#{admin.playoff.swap.previous}"></h3>
+                    <ul>
+                        <li th:replace="~{fragments/conduct-history :: playoffPair(${swap.firstBefore})}"></li>
+                        <li th:replace="~{fragments/conduct-history :: playoffPair(${swap.secondBefore})}"></li>
+                    </ul>
+                    <h3 th:text="#{admin.playoff.swap.saved}"></h3>
+                    <ul>
+                        <li th:replace="~{fragments/conduct-history :: playoffPair(${swap.firstAfter})}"></li>
+                        <li th:replace="~{fragments/conduct-history :: playoffPair(${swap.secondAfter})}"></li>
+                    </ul>
+                    <p th:if="${swap.rematchConfirmed}" th:text="#{admin.playoff.swap.rematch_confirmed}"></p>
+                </div>
                 <p th:text="#{conduct.history.restore_effect}"></p>
                 <details th:if="${!laterVersions.isEmpty()}">
                     <summary th:text="#{conduct.history.later(${laterVersions.size()})}"></summary>
