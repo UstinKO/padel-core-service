@@ -1,7 +1,7 @@
 # Архитектура базы данных — padel-core-service
 
 > **СУБД:** PostgreSQL 15  
-> **Версия схемы:** v1.68
+> **Версия схемы:** v1.69
 > **Миграции:** Liquibase (YAML), файлы в `src/main/resources/db/changelog/versions/`  
 > **ddl-auto:** `none` — схема управляется только через Liquibase
 
@@ -625,6 +625,8 @@ tournaments_db
 | `team1_id` | `BIGINT` | NULL | — | FK → `americano_teams_db.id` (Team Americano) |
 | `team2_id` | `BIGINT` | NULL | — | FK → `americano_teams_db.id` |
 | `playoff_stage` | `VARCHAR(20)` | NULL | — | Стадия плей-офф: `QUARTER_FINAL`, `SEMI_FINAL`, `FINAL` |
+| `playoff_play_started` | `BOOLEAN` | NULL | — | Фактическое начало, отмеченное координатором; NULL для игр без отметки из старой сетки |
+| `playoff_pair_changed` | `BOOLEAN` | NULL | — | Состав изменялся; сервер принимает счёт только с указанием обеих команд |
 | `created_at` | `TIMESTAMP` | NOT NULL | now() | — |
 | `updated_at` | `TIMESTAMP` | NOT NULL | now() | — |
 
@@ -894,6 +896,7 @@ tournaments_db
 
 | v1.67 | `v1.67-event-calendar` | Точная длительность и IANA-зона мероприятия, CHECK положительной длительности |
 | v1.68 | `v1.68-additional-points` | Знаковые ручные корректировки по игроку и этапу проведения |
+| v1.69 | `v1.69-playoff-match-start` | Отметки фактического начала и изменения состава матча Team Playoff |
 
 ## QR-переходы Reby
 

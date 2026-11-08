@@ -552,9 +552,12 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 | `POST` | `/tournaments/team-playoff/api/matches/{matchId}/assign-court` | Назначить свободный корт матчу из очереди → в игре. |
 | `POST` | `/tournaments/team-playoff/api/matches/{matchId}/queue/remove` | Убрать матч из очереди. |
 | `POST` | `/tournaments/team-playoff/api/matches/{matchId}/court` | Сменить корт незавершённого матча. |
-| `POST` | `/tournaments/team-playoff/api/matches/{matchId}/team` | Заменить команду в слоте незавершённого матча (реванш — только предупреждение). |
-| `GET` | `/tournaments/team-playoff/api/matches/{matchId}/swap-candidates` | Кандидаты на обмен командами (соседние матчи стадии, issue #298). |
-| `POST` | `/tournaments/team-playoff/api/matches/{matchId}/swap-team` | Обменять команды в двух незавершённых матчах плей-офф. |
+| `POST` | `/tournaments/team-playoff/api/matches/{matchId}/team` | Заменить команду в квалификационном матче (реванш — предупреждение). |
+| `GET` | `/tournaments/team-playoff/api/matches/{matchId}/swap-candidates` | Совместимый список доступных кандидатов для старого интерфейса. |
+| `GET` | `/tournaments/team-playoff/api/matches/{matchId}/pair-options` | Версия, будущие пары, предыдущие встречи и причины блокировки. Параметры `slot`, `correction`. |
+| `POST` | `/tournaments/team-playoff/api/matches/{matchId}/swap-team` | Атомарный обмен между неначатыми матчами стадии; ожидаемая версия и подтверждения. |
+| `POST` | `/tournaments/team-playoff/api/matches/{matchId}/play-start` | Отметить фактическое начало матча на корте. |
+| `POST` | `/tournaments/team-playoff/api/matches/{matchId}/correct-pair` | Подтверждённое исправление составов и счёта до заполнения следующего этапа. |
 | `GET` | `/tournaments/team-playoff/api/{tournamentId}/ranking` | Рейтинг квалификации, JSON. |
 | `GET` | `/tournaments/team-playoff/api/{tournamentId}/court-board` | Доска кортов: занятость, пул команд, предложенные пары 2-го тура. |
 

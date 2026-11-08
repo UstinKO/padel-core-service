@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.69-playoff-match-start
+      author: 1padel
+      changes:
+        - addColumn:
+            tableName: americano_matches_db
+            columns:
+              - column:
+                  name: playoff_play_started
+                  type: boolean
+              - column:
+                  name: playoff_pair_changed
+                  type: boolean
+      rollback:
+        - dropColumn:
+            tableName: americano_matches_db
+            columnName: playoff_play_started
+        - dropColumn:
+            tableName: americano_matches_db
+            columnName: playoff_pair_changed

@@ -67,6 +67,14 @@ public class AmericanoMatch {
     @Column(name = "started_at")
     private LocalDateTime startedAt;
 
+    @Column(name = "playoff_play_started")
+    @Builder.Default
+    private Boolean playoffPlayStarted = false;
+
+    @Column(name = "playoff_pair_changed")
+    @Builder.Default
+    private Boolean playoffPairChanged = false;
+
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
 
