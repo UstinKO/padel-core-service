@@ -52,6 +52,7 @@ public class AmericanoMatchDto {
     private Integer team1Games;
     private Integer team2Games;
     private String playoffStage;
+    private Boolean playoffPlayStarted;
     private Long team1Id;
     private Long team2Id;
 

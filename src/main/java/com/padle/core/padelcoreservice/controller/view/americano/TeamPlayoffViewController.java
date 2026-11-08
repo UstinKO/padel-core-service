@@ -331,7 +331,8 @@ public class TeamPlayoffViewController {
             ra.addFlashAttribute("success", "Playoff reformado correctamente");
         } catch (Exception e) {
             log.error("Error regenerating playoff {}: {}", tournamentId, e.getMessage());
-            ra.addFlashAttribute("error", "Error: " + e.getMessage());
+            ra.addFlashAttribute("error", messageSource.getMessage(e.getMessage(), null, e.getMessage(),
+                    LocaleContextHolder.getLocale()));
         }
         return "redirect:/tournaments/team-playoff/admin/" + tournamentId;
     }
@@ -367,14 +368,17 @@ public class TeamPlayoffViewController {
                                       @RequestParam int team1Games,
                                       @RequestParam int team2Games,
                                       @RequestParam Long tournamentId,
+                                      @RequestParam(required = false) Long expectedTeam1,
+                                      @RequestParam(required = false) Long expectedTeam2,
                                       RedirectAttributes ra,
                                       @AuthenticationPrincipal Owner currentOwner) {
         tournamentAccessService.assertCanManageAmericanoMatch(currentOwner, matchId);
         try {
-            playoffService.submitPlayoffResult(matchId, team1Games, team2Games);
+            playoffService.submitPlayoffResultForPair(matchId, team1Games, team2Games, expectedTeam1, expectedTeam2);
             ra.addFlashAttribute("success", "Resultado guardado");
         } catch (InvalidStateException e) {
-            ra.addFlashAttribute("error", e.getMessage());
+            ra.addFlashAttribute("error", messageSource.getMessage(e.getMessage(), null, e.getMessage(),
+                    LocaleContextHolder.getLocale()));
         } catch (Exception e) {
             log.error("Error submitting playoff result {}: {}", matchId, e.getMessage());
             ra.addFlashAttribute("error", "Error al guardar: " + e.getMessage());
@@ -518,41 +522,6 @@ public class TeamPlayoffViewController {
         return ResponseEntity.ok(result);
     }
 
-    /** Команды-кандидаты для обмена с указанным слотом матча плей-офф (соседние матчи той же стадии). */
-    @GetMapping("/api/matches/{matchId}/swap-candidates")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
-    @ResponseBody
-    public ResponseEntity<List<TeamPlayoffService.PlayoffSwapCandidate>> getPlayoffSwapCandidates(
-            @PathVariable Long matchId, @AuthenticationPrincipal Owner currentOwner) {
-        tournamentAccessService.assertCanManageAmericanoMatch(currentOwner, matchId);
-        return ResponseEntity.ok(playoffService.getPlayoffSwapCandidates(matchId));
-    }
-
-    /** Меняет местами команды в двух ещё не завершённых матчах плей-офф. slot=1|2 в каждом. */
-    @PostMapping("/api/matches/{matchId}/swap-team")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> swapMatchTeamApi(
-            @PathVariable Long matchId,
-            @RequestBody Map<String, Object> body,
-            @AuthenticationPrincipal Owner currentOwner) {
-        Map<String, Object> result = new HashMap<>();
-        tournamentAccessService.assertCanManageAmericanoMatch(currentOwner, matchId);
-        try {
-            int slot = Integer.parseInt(String.valueOf(body.get("slot")));
-            Long otherMatchId = Long.valueOf(String.valueOf(body.get("otherMatchId")));
-            int otherSlot = Integer.parseInt(String.valueOf(body.get("otherSlot")));
-            TeamPlayoffService.MatchTeamChangeResult swapResult =
-                    playoffService.swapMatchTeams(matchId, slot, otherMatchId, otherSlot);
-            result.put("success", true);
-            result.put("warning", swapResult.warning());
-        } catch (Exception e) {
-            result.put("success", false);
-            result.put("message", e.getMessage());
-        }
-        return ResponseEntity.ok(result);
-    }
-
     @PostMapping("/api/qual-matches/{matchId}/result")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     @ResponseBody
@@ -581,13 +550,15 @@ public class TeamPlayoffViewController {
     public ResponseEntity<Map<String, Object>> submitPlayoffResultApi(
             @PathVariable Long matchId,
             @RequestBody Map<String, Integer> body,
+            @RequestParam(required = false) Long expectedTeam1,
+            @RequestParam(required = false) Long expectedTeam2,
             @AuthenticationPrincipal Owner currentOwner) {
         Map<String, Object> result = new HashMap<>();
         tournamentAccessService.assertCanManageAmericanoMatch(currentOwner, matchId);
         try {
             int g1 = body.getOrDefault("team1Games", 0);
             int g2 = body.getOrDefault("team2Games", 0);
-            playoffService.submitPlayoffResult(matchId, g1, g2);
+            playoffService.submitPlayoffResultForPair(matchId, g1, g2, expectedTeam1, expectedTeam2);
             result.put("success", true);
         } catch (Exception e) {
             result.put("success", false);

@@ -209,3 +209,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.68-additional-points.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.69-playoff-match-start.yaml
+      relativeToChangelogFile: true

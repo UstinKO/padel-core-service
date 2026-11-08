@@ -9,6 +9,7 @@ import com.padle.core.padelcoreservice.model.americano.AmericanoMatch;
 import com.padle.core.padelcoreservice.model.americano.AmericanoRound;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
 import com.padle.core.padelcoreservice.service.TournamentAccessService;
+import com.padle.core.padelcoreservice.service.americano.PlayoffPairExchange;
 import com.padle.core.padelcoreservice.service.conduct.ConductChange.Action;
 import com.padle.core.padelcoreservice.service.conduct.ConductChange.Subject;
 import com.padle.core.padelcoreservice.service.conduct.ConductSnapshotStore.Target;
@@ -23,6 +24,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.server.ResponseStatusException;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -47,6 +50,7 @@ public class TournamentConductHistory {
     private final EntityManager entityManager;
     private final ConductSnapshotStore snapshots;
     private final TournamentAccessService access;
+    private final JsonMapper json;
 
     Object record(ConductChange change, Object[] args, Supplier<Object> operation) {
         Subject subject = change.subject();
@@ -85,6 +89,11 @@ public class TournamentConductHistory {
         Object result = operation.get();
         entityManager.flush();
         String after = snapshots.capture(tournamentId, type);
+        if (result instanceof PlayoffPairExchange.Outcome exchange) {
+            ObjectNode auditSnapshot = (ObjectNode) json.readTree(after);
+            auditSnapshot.set("playoffSwap", json.valueToTree(exchange));
+            after = json.writeValueAsString(auditSnapshot);
+        }
         if (!before.equals(after) || key != null || checkpoint != null) {
             if (result instanceof TournamentKingOfCourt king) {
                 subjectId = king.getId();
@@ -129,8 +138,10 @@ public class TournamentConductHistory {
         boolean activeRosterChanged = !snapshots.activeRoster(chosen.snapshot(), type)
                 .equals(snapshots.activeRoster(snapshots.capture(tournamentId, type), type));
         var differences = snapshots.registrationDifferences(chosen.registrations(), snapshots.registrations(tournamentId));
+        var exchange = json.readTree(chosen.snapshot()).get("playoffSwap");
         return new Preview(chosen.version(), revision(tournamentId), differences,
-                activeRosterChanged, snapshots.cancelled(tournamentId));
+                activeRosterChanged, snapshots.cancelled(tournamentId),
+                exchange == null ? null : json.treeToValue(exchange, PlayoffPairExchange.Outcome.class));
     }
 
     @Transactional
@@ -269,7 +280,7 @@ public class TournamentConductHistory {
                           Integer roundNumber, Integer courtNumber, String stage, Long restoredFrom) {}
 
     public record Preview(Version version, long latestVersion, List<RegistrationDifference> registrationDifferences,
-                          boolean activeRosterChanged, boolean cancelled) {
+                          boolean activeRosterChanged, boolean cancelled, PlayoffPairExchange.Outcome playoffSwap) {
         public boolean registrationsChanged() {
             return !registrationDifferences.isEmpty();
         }
