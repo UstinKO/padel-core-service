@@ -267,13 +267,10 @@ public class KingOfCourtService {
     }
 
     private KingOfCourtPairingEngine.PlayedCourt toPlayedCourt(int roundNumber, KingOfCourtCourt court) {
-        List<List<Long>> teamPairs = court.getTeams().stream()
-                .map(team -> List.of(team.getPlayer1().getId(), team.getPlayer2().getId()))
-                .toList();
-        if (teamPairs.size() != 2) {
-            throw new InvalidStateException("Court " + court.getId() + " must have exactly 2 teams, found " + teamPairs.size());
-        }
-        return new KingOfCourtPairingEngine.PlayedCourt(roundNumber, teamPairs.get(0), teamPairs.get(1));
+        KingOfCourtMatchResult result = court.getResult();
+        return new KingOfCourtPairingEngine.PlayedCourt(roundNumber,
+                result.getWinners().stream().map(PlayerPadel::getId).toList(),
+                result.getLosers().stream().map(PlayerPadel::getId).toList());
     }
 
     /**
@@ -282,7 +279,7 @@ public class KingOfCourtService {
     @ConductChange(value = ConductChange.Action.RESULT, subject = ConductChange.Subject.KING_ROUND)
     public void saveMatchResult(Long roundId, Integer courtNumber,
                                 List<Long> winnerIds, List<Long> loserIds,
-                                Integer winnersScore, Integer losersScore) {
+                                Integer winnersScore, Integer losersScore, boolean assignedPairRequired) {
         log.info("Saving result for round: {}, court: {}", roundId, courtNumber);
 
         KingOfCourtRound round = roundRepository.findById(roundId)
@@ -291,7 +288,7 @@ public class KingOfCourtService {
         KingOfCourtCourt court = courtRepository.findByRoundAndCourtNumber(round, courtNumber)
                 .orElseThrow(() -> new ResourceNotFoundException("Court not found in round"));
 
-        validateCourtPlayers(court, winnerIds, loserIds);
+        validateCourtPlayers(court, winnerIds, loserIds, assignedPairRequired);
         if (losersScore < 0 || winnersScore <= losersScore) {
             throw new InvalidStateException("koc.admin.error_score");
         }
@@ -836,7 +833,7 @@ public class KingOfCourtService {
     @ConductChange(value = ConductChange.Action.RESULT, subject = ConductChange.Subject.KING_RESULT)
     public void updateMatchResult(Long resultId, Integer courtNumber,
                                   List<Long> winnerIds, List<Long> loserIds,
-                                  Integer winnersScore, Integer losersScore) {
+                                  Integer winnersScore, Integer losersScore, boolean assignedPairRequired) {
         log.info("Updating match result with id: {}", resultId);
 
         // Находим существующий результат
@@ -851,7 +848,7 @@ public class KingOfCourtService {
             throw new InvalidStateException("Court number mismatch");
         }
 
-        validateCourtPlayers(court, winnerIds, loserIds);
+        validateCourtPlayers(court, winnerIds, loserIds, assignedPairRequired);
         if (losersScore < 0 || winnersScore <= losersScore) {
             throw new InvalidStateException("koc.admin.error_score");
         }
@@ -1008,13 +1005,29 @@ public class KingOfCourtService {
         }
     }
 
-    private void validateCourtPlayers(KingOfCourtCourt court, List<Long> winners, List<Long> losers) {
+    private void validateCourtPlayers(KingOfCourtCourt court, List<Long> winners, List<Long> losers,
+                                      boolean assignedPairRequired) {
+        if (winners.size() != 2 || losers.size() != 2) {
+            throw new InvalidStateException("koc.admin.error_match_players");
+        }
+        if (Objects.equals(winners.get(0), winners.get(1))) {
+            throw new InvalidStateException("koc.admin.error_same_winners");
+        }
         Set<Long> submitted = new HashSet<>(winners);
         submitted.addAll(losers);
         Set<Long> assigned = court.getPlayers().stream().map(PlayerPadel::getId).collect(Collectors.toSet());
-        if (winners.size() != 2 || losers.size() != 2 || submitted.size() != 4 || !submitted.equals(assigned)) {
-            throw new InvalidStateException("Result players must match the court assignment");
+        if (submitted.size() != 4 || !submitted.equals(assigned)) {
+            throw new InvalidStateException("koc.admin.error_match_players");
         }
+        if (assignedPairRequired && court.getTeams().stream().noneMatch(team -> isAssignedPair(team, winners))) {
+            throw new InvalidStateException("koc.admin.error_assigned_pair");
+        }
+    }
+
+    private boolean isAssignedPair(CourtTeam team, List<Long> winners) {
+        return team.getPlayer1() != null && team.getPlayer2() != null
+                && !Objects.equals(team.getPlayer1().getId(), team.getPlayer2().getId())
+                && winners.contains(team.getPlayer1().getId()) && winners.contains(team.getPlayer2().getId());
     }
 
     private boolean matchesResult(KingOfCourtMatchResult result, List<Long> winners, Integer winnerScore, Integer loserScore) {
