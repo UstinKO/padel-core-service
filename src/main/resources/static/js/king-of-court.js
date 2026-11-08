@@ -591,19 +591,45 @@ class KingOfCourt {
             tournamentPoints.action(player.id, this.currentRound, `${tournamentPoints.copy.action} · ${player.name}`)
         ).join('');
 
-        const options = court.players.map(player => new Option(player.name, player.id));
-        const winner1 = document.getElementById('winner1');
-        const winner2 = document.getElementById('winner2');
-        winner1.replaceChildren(...options);
-        winner2.replaceChildren(...options.map(option => option.cloneNode(true)));
-        if (result) {
-            winner1.value = result.winners[0];
-            winner2.value = result.winners[1];
-        }
+        this.setupResultWinners(court, result);
         document.getElementById('scoreWinners').value = result?.winnersScore ?? '';
         document.getElementById('scoreLosers').value = result?.losersScore ?? '';
         document.getElementById('modalError').style.display = 'none';
         modal.style.display = 'flex';
+    }
+
+    setupResultWinners(court, result) {
+        const first = document.getElementById('winner1');
+        const second = document.getElementById('winner2');
+        const manual = document.getElementById('manualWinners');
+        const help = document.getElementById('assignedWinnerHelp');
+        const playerIds = new Set(court.players.map(player => String(player.id)));
+        const partners = new Map();
+        for (const team of court.teams) {
+            const ids = team.players.map(player => String(player.id));
+            if (ids.length === 2 && ids[0] !== ids[1] && ids.every(id => playerIds.has(id))) {
+                partners.set(ids[0], ids[1]);
+                partners.set(ids[1], ids[0]);
+            }
+        }
+        this.resultPartners = partners;
+        const options = [new Option(first.dataset.placeholder, ''),
+            ...court.players.map(player => new Option(player.name, player.id))];
+        first.replaceChildren(...options);
+        second.replaceChildren(...options.map(option => option.cloneNode(true)));
+        first.value = result ? String(result.winners[0]) : '';
+        second.value = result ? String(result.winners[1]) : '';
+
+        manual.disabled = court.teams.length !== 2 || playerIds.size !== 4 || partners.size !== 4;
+        manual.checked = manual.disabled || Boolean(result && partners.get(first.value) !== second.value);
+        const sync = () => {
+            second.disabled = !manual.checked;
+            help.hidden = manual.checked;
+            if (!manual.checked) second.value = partners.get(first.value) ?? '';
+        };
+        manual.onchange = sync;
+        first.onchange = sync;
+        sync();
     }
 
     showNotification(message, type) {
@@ -637,6 +663,7 @@ class KingOfCourt {
         const scoreWinners = parseInt(document.getElementById('scoreWinners')?.value);
         const scoreLosers = parseInt(document.getElementById('scoreLosers')?.value);
         const resultId = this.editCourt.result?.id;
+        const manualWinners = document.getElementById('manualWinners').checked;
 
         if (!winner1 || !winner2 || isNaN(scoreWinners) || isNaN(scoreLosers)) {
             this.showError(t('koc.admin.error_fields'));
@@ -657,8 +684,12 @@ class KingOfCourt {
         const winners = [parseInt(winner1), parseInt(winner2)];
         const losers = allPlayerIds.filter(id => !winners.includes(id));
 
-        if (losers.length !== 2) {
-            this.showError(t('koc.admin.error_losers'));
+        if (losers.length !== 2 || winners.some(id => !allPlayerIds.includes(id))) {
+            this.showError(t('koc.admin.error_match_players'));
+            return;
+        }
+        if (!manualWinners && this.resultPartners.get(winner1) !== winner2) {
+            this.showError(t('koc.admin.error_assigned_pair'));
             return;
         }
 
@@ -674,7 +705,8 @@ class KingOfCourt {
                 winners: winners,
                 losers: losers,
                 winnersScore: scoreWinners,
-                losersScore: scoreLosers
+                losersScore: scoreLosers,
+                manualWinners
             };
 
             const base = '/api/king-of-court/matches/result';
