@@ -131,6 +131,7 @@
                             <label for="durationMinutes" th:text="#{calendar.settings.duration}"></label>
                             <input type="number" th:field="*{durationMinutes}" id="durationMinutes" min="1" step="1"
                                    class="form-control" aria-describedby="calendarDurationHint"
+                                   th:attr="data-suggestion-url=@{/admin/tournaments/calendar-duration}"
                                    th:classappend="${#fields.hasErrors('durationMinutes')} ? 'is-invalid' : ''">
                             <small id="calendarDurationHint" th:text="#{calendar.settings.duration_hint}"></small>
                             <div class="invalid-feedback" th:if="${#fields.hasErrors('durationMinutes')}"
@@ -403,6 +404,7 @@
 <script th:src="@{/js/csrf.js}"></script>
 <!-- Admin JavaScript -->
 <script th:src="@{/js/admin.js}"></script>
+<script th:src="@{/js/calendar-duration.js}"></script>
 
 <!-- Скрипт для автоматического расчета даты отмены -->
 <script>
