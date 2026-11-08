@@ -602,7 +602,6 @@ class KingOfCourt {
         const first = document.getElementById('winner1');
         const second = document.getElementById('winner2');
         const manual = document.getElementById('manualWinners');
-        const help = document.getElementById('assignedWinnerHelp');
         const playerIds = new Set(court.players.map(player => String(player.id)));
         const partners = new Map();
         for (const team of court.teams) {
@@ -624,7 +623,6 @@ class KingOfCourt {
         manual.checked = manual.disabled || Boolean(result && partners.get(first.value) !== second.value);
         const sync = () => {
             second.disabled = !manual.checked;
-            help.hidden = manual.checked;
             if (!manual.checked) second.value = partners.get(first.value) ?? '';
         };
         manual.onchange = sync;
