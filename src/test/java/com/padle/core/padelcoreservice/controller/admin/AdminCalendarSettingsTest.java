@@ -78,6 +78,18 @@ class AdminCalendarSettingsTest {
     }
 
     @Test
+    void suggestsMinutesUsingCalendarRules() throws Exception {
+        mvc.perform(get("/admin/tournaments/calendar-duration").with(user(owner))
+                        .param("description", "3 - 4 horas"))
+                .andExpect(status().isOk()).andExpect(content().string("240"));
+        mvc.perform(get("/admin/tournaments/calendar-duration").with(user(owner))
+                        .param("description", "varias horas"))
+                .andExpect(status().isNoContent());
+        mvc.perform(get("/admin/tournaments/calendar-duration").param("description", "3 horas"))
+                .andExpect(status().is3xxRedirection());
+    }
+
+    @Test
     void invalidSettingsPreserveFormChoicesAndStoredData() throws Exception {
         mvc.perform(post("/admin/tournaments/" + event.getId() + "/edit?lang=en").with(user(owner)).with(csrf())
                         .param("durationMinutes", "0").param("timeZone", "wrong/zone"))
