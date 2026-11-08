@@ -254,7 +254,7 @@ window.APP_MESSAGES = {
     'regConfirm.individual.rule2':         '<strong>If you cancel after {0},</strong> the full fee applies, since the courts are already booked and paid to the club.',
     'regConfirm.individual.rule3':         "<strong>Refund possible.</strong> If we find another player to take your spot and pay in full, you won't be charged, or you'll be refunded.",
     'regConfirm.individual.rule4':         '<strong>Arrive early.</strong> Please arrive 15 minutes before the tournament starts.',
-    'regConfirm.individual.rule5':         "<strong>Late arrival.</strong> If you arrive late, you'll start the tournament with −10 points.",
+    'regConfirm.individual.rule5':         "<strong>Late arrival.</strong> If you arrive late, the coordinator applies a 10-point deduction manually.",
     'regConfirm.cancha.subtitle':          "You're registered for Cancha Abierta.",
     'regConfirm.cancha.rule1':             '<strong>Arrive early.</strong> Please arrive about 15 minutes before the start.',
     'regConfirm.cancha.rule2':             "<strong>If you can't make it,</strong> please let the organizer know in advance so someone else can take your spot.",

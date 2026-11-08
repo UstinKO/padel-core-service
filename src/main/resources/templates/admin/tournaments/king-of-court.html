@@ -23,6 +23,7 @@
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" th:href="@{/css/admin.css}">
     <link rel="stylesheet" th:href="@{/css/king-of-court.css}">
+    <link rel="stylesheet" th:href="@{/css/additional-points.css}">
 </head>
 <body>
 <header th:replace="~{fragments/admin-header :: header(#{admin.koc.title})}"></header>
@@ -83,6 +84,8 @@
             <i class="fas fa-trophy" style="font-size: 4rem; color: #fbbf24; margin-bottom: 1rem;"></i>
             <h2 th:text="#{admin.koc.finished.title}">¡Torneo finalizado!</h2>
             <p th:text="#{admin.koc.finished.text}">La clasificación final está disponible a continuación</p>
+            <button th:if="${admin}" type="button" class="btn btn-outline" data-open-points
+                    th:text="#{additional.points.edit_results}">Editar resultados</button>
         </div>
 
         <!-- Grid de canchas -->
@@ -134,14 +137,16 @@
                         <i class="fas fa-sync-alt"></i>
                     </a>
                 </div>
-                <div class="admin-card-body admin-table-container">
+                <div class="admin-card-body additional-points-scroll">
                     <table class="admin-table">
                         <thead>
                         <tr>
                             <th>#</th>
                             <th th:text="#{admin.koc.col.player}">Jugador</th>
-                            <th th:text="#{admin.koc.col.points}">Puntos</th>
-                            <th th:text="#{admin.koc.col.bonuses}">Bonos</th>
+                            <th th:text="#{additional.points.match}">Puntos de partidos</th>
+                            <th th:text="#{additional.points.bonus}">Bono de cancha</th>
+                            <th th:text="#{additional.points.title}">Puntos adicionales</th>
+                            <th th:text="#{additional.points.total}">Total</th>
                             <th th:text="#{admin.koc.col.games}">Juegos</th>
                             <th th:text="#{admin.koc.col.wins_losses}">V/D</th>
                         </tr>
@@ -227,6 +232,9 @@
     /*]]>*/
 </script>
 
+<div th:replace="~{fragments/additional-points :: copy}"></div>
+<dialog th:if="${admin}" th:insert="~{fragments/additional-points :: editor(${tournament.id}, ${kingTournament.isFinished})}" th:remove="tag"></dialog>
+<script th:src="@{/js/additional-points.js}"></script>
 <script th:src="@{/js/king-of-court.js}"></script>
 <script th:inline="javascript">
     /*<![CDATA[*/

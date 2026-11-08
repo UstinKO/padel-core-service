@@ -17,6 +17,8 @@
             <!-- Информация о командах будет вставлена через JS -->
         </div>
 
+        <div id="court-additional-points" class="additional-points-match-actions"></div>
+
         <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
             <div class="form-group">
                 <label class="form-label" th:text="#{koc.admin.modal.winner1}">Ganador 1</label>
@@ -103,6 +105,8 @@
         </div>
 
         <div class="modal-actions" style="margin-top: 2rem;">
+            <button th:if="${admin}" type="button" class="btn btn-primary" data-open-points
+                    th:text="#{additional.points.edit_results}">Editar resultados</button>
             <button class="btn btn-outline" style="width: 100%;" onclick="window.kingOfCourt.closeFinalModal()" th:text="#{koc.admin.modal.close}">Cerrar</button>
         </div>
     </div>
