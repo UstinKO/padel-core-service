@@ -2,6 +2,9 @@ package com.padle.core.padelcoreservice.service.conduct;
 
 import com.padle.core.padelcoreservice.dto.CourtDTO;
 import com.padle.core.padelcoreservice.dto.KingOfCourtStateDTO;
+import com.padle.core.padelcoreservice.dto.PlayerStatsDTO;
+import com.padle.core.padelcoreservice.dto.americano.RankingCriteria;
+import com.padle.core.padelcoreservice.service.conduct.AdditionalPointsService.Change;
 import com.padle.core.padelcoreservice.dto.americano.AmericanoConfigDto;
 import com.padle.core.padelcoreservice.dto.americano.AmericanoMatchResultDto;
 import com.padle.core.padelcoreservice.dto.americano.TeamAmericanoConfigDto;
@@ -33,6 +36,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,6 +63,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class TournamentConductHistoryIntegrationTest {
 
     @Autowired private TournamentConductHistory history;
+    @Autowired private AdditionalPointsService points;
+    @Autowired private JdbcClient jdbc;
     @Autowired private KingOfCourtService kingOfCourt;
     @Autowired private AmericanoService americano;
     @Autowired private TeamPlayoffService playoff;
@@ -70,6 +77,92 @@ class TournamentConductHistoryIntegrationTest {
     @Autowired private EntityManager entityManager;
 
     private final Owner owner = Owner.builder().id(90001L).firstName("Test").role(OwnerRole.SUPER_ADMIN).build();
+
+    @Test
+    void additionalPointsKeepKingMatchAndCourtBonusSeparateAcrossCorrectionsAndRestore() {
+        long event = event(TournamentType.KING_OF_COURT, Modalidad.INDIVIDUAL, 4);
+        registerFourPlayers(event);
+        long king = kingOfCourt.initializeTournament(owner, event, 1, 0).getId();
+        long player = kingOfCourt.getCurrentState(king).getCourts().get(0).getTeams().get(0).getPlayers().get(0).getId();
+        long other = kingOfCourt.getCurrentState(king).getCourts().get(0).getTeams().get(1).getPlayers().get(0).getId();
+        jdbc.sql("""
+                UPDATE king_of_court_player_stats_db SET total_points = -10
+                WHERE tournament_king_id = :king AND player_id = :player
+                """).param("king", king).param("player", player).update();
+        entityManager.clear();
+        var legacy = kingPlayer(king, player);
+        assertThat(legacy.getMatchPoints()).isZero();
+        assertThat(legacy.getAdditionalPoints().total()).isEqualTo(-10);
+        assertThat(legacy.getTotalPoints()).isEqualTo(-10);
+        var legacyEntry = points.editor(event, false, owner).entries().get(0);
+
+        points.add(event, false, new Change(player, 1, 5, "Private note"), owner);
+        assertThat(kingPlayer(king, player).getTotalPoints()).isEqualTo(-5);
+        long initialAdjustment = version(event, ConductChange.Action.ADD_POINTS);
+        var editId = points.editor(event, false, owner).entries().stream()
+                .filter(entry -> entry.delta() == 5).findFirst().orElseThrow().id();
+        points.edit(event, false, editId, new Change(other, 1, 3, "Corrected"), owner);
+        assertThat(kingPlayer(king, player).getAdditionalPoints().total()).isEqualTo(-10);
+        assertThat(kingPlayer(king, other).getAdditionalPoints().total()).isEqualTo(3);
+
+        score(king, 12, 9);
+        var scored = kingPlayer(king, player);
+        assertThat(scored.getMatchPoints()).isEqualTo(12);
+        assertThat(scored.getBonusPoints()).isEqualTo(3);
+        assertThat(scored.getTotalPoints()).isEqualTo(5);
+        kingOfCourt.resetRound(kingOfCourt.getCurrentState(king).getCurrentRoundId());
+        assertThat(kingPlayer(king, player).getTotalPoints()).isEqualTo(-10);
+        assertThat(kingPlayer(king, other).getAdditionalPoints().total()).isEqualTo(3);
+
+        restore(event, initialAdjustment);
+        assertThat(kingPlayer(king, player).getAdditionalPoints().total()).isEqualTo(-5);
+        assertThat(kingPlayer(king, other).getAdditionalPoints().total()).isZero();
+
+        jdbc.sql("UPDATE tournament_conduct_history SET snapshot = snapshot - 'tournament_additional_points' WHERE id = :id")
+                .param("id", initialAdjustment).update();
+        restore(event, initialAdjustment);
+        assertThat(kingPlayer(king, player).getAdditionalPoints().total()).isEqualTo(-10);
+        assertThat(kingPlayer(king, player).getTotalPoints()).isEqualTo(-10);
+        points.add(event, false, new Change(player, 1, 5, ""), owner);
+        score(king, 12, 9);
+        kingOfCourt.finishTournament(king);
+        points.cancel(event, true, legacyEntry.id(), owner);
+        assertThat(kingOfCourt.getCurrentState(king).getIsFinished()).isTrue();
+        assertThat(kingPlayer(king, player).getTotalPoints()).isEqualTo(20);
+        assertThat(points.editor(event, true, owner).history())
+                .anySatisfy(entry -> assertThat(entry.action()).isEqualTo("CANCEL_POINTS"));
+        assertThatThrownBy(() -> points.editor(event, false, owner)).isInstanceOf(ResponseStatusException.class);
+    }
+
+    @Test
+    void americanoUsesAdjustedScoreAtItsExistingPositionInTheRanking() {
+        long event = event(TournamentType.AMERICANO, Modalidad.INDIVIDUAL, 4);
+        registerFourPlayers(event);
+        tournaments.findById(event).orElseThrow().setEstado(TournamentStatus.CERRADO);
+        americano.initializeAmericanoTournament(event,
+                AmericanoConfigDto.builder().courts(1).totalRounds(2).pointsPerMatch(21).build(), owner);
+        var firstRound = americano.getRounds(event).get(0);
+        var match = americano.getMatchesByRound(firstRound.getId()).get(0);
+        americano.submitMatchResult(result(match.getId(), 12), owner);
+        long player = match.getTeam2Player1Id();
+        jdbc.sql("UPDATE americano_players_db SET total_score = points_scored - 10 WHERE tournament_id = :id AND player_id = :player")
+                .param("id", event).param("player", player).update();
+        entityManager.clear();
+        points.add(event, false, new Change(player, 1, 20, ""), owner);
+
+        var byScore = americano.getRankingWithDetails(event, RankingCriteria.builder().sortBy("score").build());
+        var byWins = americano.getRankingWithDetails(event, RankingCriteria.builder().sortBy("wins").build());
+        assertThat(byScore.getRanking().get(0).getPlayerId()).isEqualTo(player);
+        assertThat(byScore.getRanking().get(0).getMatchPoints()).isEqualTo(9);
+        assertThat(byScore.getRanking().get(0).getTotalScore()).isEqualTo(19);
+        assertThat(byScore.getRanking().get(0).getAdditionalPoints().total()).isEqualTo(10);
+        assertThat(byWins.getRanking().get(0).getMatchesWon()).isEqualTo(1);
+    }
+
+    private PlayerStatsDTO kingPlayer(long king, long player) {
+        return kingOfCourt.getRanking(king).stream().filter(entry -> entry.getPlayerId() == player)
+                .findFirst().orElseThrow();
+    }
 
     @Test
     void kingResetKeepsEarlierResultsAndCanRestoreSecondRoundAndRestart() {

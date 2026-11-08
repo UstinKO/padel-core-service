@@ -362,7 +362,6 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 |-------|-----|-----|------|----------|
 | `POST` | `/admin/tournaments/{tournamentId}/move-to-waitlist/{playerId}` | JSON | ADMIN | Переместить игрока из основного состава в лист ожидания вручную. |
 | `POST` | `/admin/tournaments/{tournamentId}/move-to-main/{playerId}` | JSON | ADMIN | Переместить из листа ожидания в основной состав (обходит автоматическую очередь). |
-| `POST` | `/admin/tournaments/{tournamentId}/players/{playerId}/late-arrival` | JSON | ADMIN | Отметить/снять опоздание (`lateArrival`) в AMERICANO/KING_OF_COURT — штраф −10 (LFPT-443). |
 | `POST` | `/admin/tournaments/{tournamentId}/pair-solo` | JSON | Координатор с правом управления турниром | Объединить две активные заявки без пары (`regId1`, `regId2`), включая резерв. |
 
 ---

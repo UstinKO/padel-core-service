@@ -69,7 +69,7 @@ public class TournamentConductHistory {
         }
 
         long currentVersion = revision(tournamentId);
-        checkExpectedVersion(currentVersion);
+        checkExpectedVersion(currentVersion, change.value());
         String before = snapshots.capture(tournamentId, type);
         if (currentVersion == 0) {
             save(tournamentId, null, Action.BASELINE, null, target, before, null, null);
@@ -95,12 +95,20 @@ public class TournamentConductHistory {
             } else if (result instanceof AmericanoRound round) {
                 subjectId = round.getId();
                 target = snapshots.target(Subject.AMERICANO_ROUND, subjectId);
+            } else if (result instanceof AdditionalPointsStore.Entry entry) {
+                subjectId = entry.playerId();
+                target = entry.roundNumber() == 0
+                        ? new Target(tournamentId, null, null, "BEFORE_FIRST_ROUND")
+                        : new Target(tournamentId, entry.roundNumber(), null, null);
             } else if (change.value() == Action.NEXT_ROUND) {
                 target = snapshots.target(Subject.KING, subjectId);
             } else if (change.value() == Action.RESULT && subject == Subject.KING_ROUND) {
                 target = new Target(tournamentId, target.roundNumber(), (Integer) args[1], null);
             }
-            save(tournamentId, owner, change.value(), subjectId, withPosition(target, type), after, null, key);
+            long version = save(tournamentId, owner, change.value(), subjectId, withPosition(target, type), after, null, key);
+            if (change.value().isPointsChange()) {
+                responseHeader("X-Conduct-Version", Long.toString(version));
+            }
         }
         return result;
     }
@@ -174,14 +182,15 @@ public class TournamentConductHistory {
                 .query(Boolean.class).single();
     }
 
-    private void save(long tournamentId, Owner owner, Action action, Long subjectId, Target target,
+    private long save(long tournamentId, Owner owner, Action action, Long subjectId, Target target,
                       String snapshot, Long restoredFrom, UUID key) {
-        jdbc.sql("""
+        return jdbc.sql("""
                 INSERT INTO tournament_conduct_history
                     (tournament_id, actor_id, actor_name, action, subject_id, round_number, court_number,
                      stage, restored_from, request_key, snapshot, registrations)
                 VALUES (:id, :actor, :name, :action, :subject, :round, :court, :stage, :source,
                         :key, CAST(:snapshot AS jsonb), CAST(:registrations AS jsonb))
+                RETURNING id
                 """)
                 .param("id", tournamentId).param("actor", owner == null ? null : owner.getId())
                 .param("name", owner == null ? null : actorName(owner))
@@ -189,7 +198,7 @@ public class TournamentConductHistory {
                 .param("round", target.roundNumber()).param("court", target.courtNumber())
                 .param("stage", target.stage()).param("source", restoredFrom)
                 .param("key", key).param("snapshot", snapshot)
-                .param("registrations", snapshots.registrations(tournamentId)).update();
+                .param("registrations", snapshots.registrations(tournamentId)).query(Long.class).single();
     }
 
     private Owner currentOwner(Object[] args) {
@@ -214,20 +223,27 @@ public class TournamentConductHistory {
         return snapshots.position(target.tournamentId(), type);
     }
 
-    private void checkExpectedVersion(long currentVersion) {
+    private void checkExpectedVersion(long currentVersion, Action action) {
         if (RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes attributes) {
             String expected = attributes.getRequest().getParameter("expectedConductVersion");
             if (expected != null && !expected.equals(Long.toString(currentVersion))) {
                 markResponse("X-Conduct-Stale");
+                if (action.isPointsChange()) {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT, "conduct.history.stale");
+                }
                 throw new InvalidStateException("conduct.history.stale");
             }
         }
     }
 
     private void markResponse(String header) {
+        responseHeader(header, "true");
+    }
+
+    private void responseHeader(String header, String value) {
         if (RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes attributes
                 && attributes.getResponse() != null) {
-            attributes.getResponse().setHeader(header, "true");
+            attributes.getResponse().setHeader(header, value);
         }
     }
 

@@ -1,0 +1,22 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.68-additional-points
+      author: 1padel
+      changes:
+        - sql:
+            sql: |
+              CREATE TABLE tournament_additional_points (
+                  id uuid PRIMARY KEY,
+                  tournament_id bigint NOT NULL REFERENCES tournaments_db(id) ON DELETE CASCADE,
+                  king_id bigint REFERENCES tournament_king_of_court_db(id) ON DELETE CASCADE,
+                  player_id bigint NOT NULL REFERENCES player_padel_db(id),
+                  round_number integer NOT NULL CHECK (round_number >= 0),
+                  delta integer NOT NULL CHECK (delta <> 0),
+                  note varchar(500) NOT NULL DEFAULT '',
+                  cancelled boolean NOT NULL DEFAULT false
+              );
+              CREATE INDEX tournament_additional_points_scope
+                  ON tournament_additional_points (tournament_id, king_id);
+      rollback:
+        - dropTable:
+            tableName: tournament_additional_points

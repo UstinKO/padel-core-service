@@ -106,6 +106,7 @@ docker compose up -d
 | `GET /admin/tournaments` | `admin/tournaments/list.html` | Список турниров |
 | `GET /admin/tournaments/new` | `admin/tournaments/form.html` | Форма создания турнира |
 | `GET /admin/tournaments/{id}` | `admin/tournaments/details.html` | Детали турнира + список участников |
+| `GET/POST /admin/tournaments/{id}/additional-points` | Редактор ручных очков и история, включая отдельный путь `finished-results/additional-points` |
 | `GET /admin/tournaments/{id}/edit` | `admin/tournaments/form.html` | Редактирование турнира |
 | `GET /admin/tournaments/{id}/copy` | `admin/tournaments/form.html` | Копирование турнира |
 | `GET /admin/clubs` | `admin/clubs/list.html` | Список клубов |

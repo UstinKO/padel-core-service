@@ -10,6 +10,8 @@ import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
 import com.padle.core.padelcoreservice.repository.*;
+import com.padle.core.padelcoreservice.service.conduct.AdditionalPointsStore;
+import com.padle.core.padelcoreservice.service.conduct.AdditionalPointsStore.ScoreSheet;
 import com.padle.core.padelcoreservice.service.conduct.ConductChange;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +39,7 @@ public class KingOfCourtService {
     private final KingOfCourtMapper kingOfCourtMapper;
     private final WebSocketService webSocketService;
     private final TournamentAccessService tournamentAccessService;
+    private final AdditionalPointsStore additionalPoints;
 
     /**
      * Инициализация турнира "Король Корта"
@@ -682,14 +685,27 @@ public class KingOfCourtService {
             tags = {"service=kingofcourt", "operation=ranking"}
     )
     public List<PlayerStatsDTO> getRanking(Long kingTournamentId) {
-        List<KingOfCourtPlayerStats> ranking = statsRepository.findRanking(kingTournamentId);
-        List<PlayerStatsDTO> rankingDTOs = new ArrayList<>();
+        List<PlayerStatsDTO> ranking = mapPlayerStats(kingTournamentId, statsRepository.findRanking(kingTournamentId))
+                .stream().sorted(Comparator.comparingLong(PlayerStatsDTO::getTotalPoints).reversed()).toList();
         for (int i = 0; i < ranking.size(); i++) {
-            PlayerStatsDTO dto = kingOfCourtMapper.toPlayerStatsDTO(ranking.get(i));
-            dto.setRank(i + 1);
-            rankingDTOs.add(dto);
+            ranking.get(i).setRank(i + 1);
         }
-        return rankingDTOs;
+        return ranking;
+    }
+
+    private List<PlayerStatsDTO> mapPlayerStats(Long kingId, List<KingOfCourtPlayerStats> stats) {
+        if (stats.isEmpty()) {
+            return List.of();
+        }
+        ScoreSheet sheet = additionalPoints.forKing(kingId);
+        return stats.stream().map(player -> {
+            PlayerStatsDTO dto = kingOfCourtMapper.toPlayerStatsDTO(player);
+            long playerId = dto.getPlayerId();
+            dto.setMatchPoints(sheet.base(playerId, player.getTotalPoints()) - player.getBonusPoints());
+            dto.setAdditionalPoints(sheet.points(playerId));
+            dto.setTotalPoints(sheet.total(playerId, player.getTotalPoints()));
+            return dto;
+        }).toList();
     }
 
     /**
@@ -952,10 +968,7 @@ public class KingOfCourtService {
      * Получение статистики игроков в виде DTO
      */
     public List<PlayerStatsDTO> getPlayerStats(Long kingTournamentId) {
-        List<KingOfCourtPlayerStats> stats = statsRepository.findAllByTournamentKingId(kingTournamentId);
-        return stats.stream()
-                .map(kingOfCourtMapper::toPlayerStatsDTO)
-                .collect(Collectors.toList());
+        return mapPlayerStats(kingTournamentId, statsRepository.findAllByTournamentKingId(kingTournamentId));
     }
 
     /**

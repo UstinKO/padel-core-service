@@ -17,7 +17,11 @@ public @interface ConductChange {
         RESET_ROUND, RESTART, ROSTER, ROUND_SETTINGS, QUALIFICATION, CREATE_MATCH,
         QUEUE_MATCH, REMOVE_MATCH, COURT, MATCH_TEAMS, PLAYOFF, REGENERATE_PLAYOFF,
         CHECKPOINT_RESET_ROUND, CHECKPOINT_RESTART, CHECKPOINT_REGENERATE_PLAYOFF,
-        CHECKPOINT_RESTORE, RESTORE;
+        CHECKPOINT_RESTORE, RESTORE, ADD_POINTS, EDIT_POINTS, CANCEL_POINTS;
+
+        boolean isPointsChange() {
+            return this == ADD_POINTS || this == EDIT_POINTS || this == CANCEL_POINTS;
+        }
 
         Action checkpoint() {
             return switch (this) {

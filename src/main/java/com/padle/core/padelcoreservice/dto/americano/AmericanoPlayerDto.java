@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.dto.americano;
 
+import com.padle.core.padelcoreservice.dto.AdditionalPointsDto;
 import com.padle.core.padelcoreservice.model.enums.AmericanoPlayerStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,7 +25,7 @@ public class AmericanoPlayerDto {
     private AmericanoPlayerStatus status;
 
     // Основная статистика
-    private Integer totalScore;
+    private Long totalScore;
     private Integer matchesPlayed;
     private Integer matchesWon;
     private Integer matchesLost;
@@ -41,4 +42,6 @@ public class AmericanoPlayerDto {
     private Integer uniqueOpponents;
 
     private Boolean isActive;
+    private Long matchPoints;
+    private AdditionalPointsDto additionalPoints;
 }

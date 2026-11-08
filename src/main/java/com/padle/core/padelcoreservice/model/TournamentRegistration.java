@@ -168,7 +168,7 @@ public class TournamentRegistration {
     private Long pairProposerRegId;
 
     // Игрок опоздал к началу индивидуального турнира (AMERICANO/KING_OF_COURT) —
-    // применяется штраф −10 к его текущему результату в этом турнире (см. TournamentService.setLateArrival).
+    // раньше применялся штраф −10 к его текущему результату в этом турнире.
     @Column(name = "late_arrival", nullable = false)
     @Builder.Default
     private Boolean lateArrival = false;

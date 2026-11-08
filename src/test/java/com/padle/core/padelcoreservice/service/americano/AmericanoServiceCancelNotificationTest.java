@@ -52,7 +52,7 @@ class AmericanoServiceCancelNotificationTest {
     void cancelacionPorAdmin_conMotivo_enviaEmailConElMotivo() {
         service = new AmericanoService(
                 tournamentRepository, registrationRepository, americanoPlayerRepository,
-                null, null, clubRepository, null, null, null, emailService, tournamentAccessService);
+                null, null, clubRepository, null, null, null, emailService, tournamentAccessService, null);
 
         LocalDateTime start = LocalDateTime.now().plusDays(2);
         Tournament tournament = Tournament.builder()
