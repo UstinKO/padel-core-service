@@ -158,6 +158,8 @@ class KingOfCourt {
             if (data.isFinished && !this.finalResultsShown) {
                 this.showFinalResults(data.ranking);
                 this.finalResultsShown = true;
+            } else if (this.isFinished) {
+                this.showFinalResults(data.ranking, false);
             }
 
             console.log('✅ Data loaded and rendered successfully');
@@ -473,7 +475,7 @@ class KingOfCourt {
         tbody.innerHTML = '';
 
         if (ranking.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center">${t('koc.admin.no_data')}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center">${t('koc.admin.no_data')}</td></tr>`;
             return;
         }
 
@@ -484,12 +486,15 @@ class KingOfCourt {
                 <td>
                     <a href="#" class="view-history-btn" 
                        data-player-id="${player.playerId || ''}"
-                       data-player-name="${player.playerName || ''}">
-                        ${player.playerName || t('koc.viewer.unknown_player')}
+                       data-player-name="${tournamentPoints.escape(player.playerName)}">
+                        ${tournamentPoints.escape(player.playerName || t('koc.viewer.unknown_player'))}
                     </a>
+                    ${this.isAdmin && !this.isFinished ? tournamentPoints.action(player.playerId) : ''}
                 </td>
-                <td><strong>${player.totalPoints || 0}</strong></td>
+                <td>${player.matchPoints ?? 0}</td>
                 <td><span class="bonus-points">+${player.bonusPoints || 0}</span></td>
+                ${tournamentPoints.cell(player.additionalPoints)}
+                <td><strong>${player.totalPoints || 0}</strong></td>
                 <td>${player.gamesPlayed || 0}</td>
                 <td>${player.wins || 0}/${player.losses || 0}</td>
             `;
@@ -581,6 +586,10 @@ class KingOfCourt {
         document.getElementById('modalPlayersInfo').textContent = court.teams.map(team =>
             `${t('koc.viewer.team')} ${team.teamNumber}: ${team.players.map(player => player.name).join(' & ')}`
         ).join(' vs ');
+
+        document.getElementById('court-additional-points').innerHTML = court.players.map(player =>
+            tournamentPoints.action(player.id, this.currentRound, `${tournamentPoints.copy.action} · ${player.name}`)
+        ).join('');
 
         const options = court.players.map(player => new Option(player.name, player.id));
         const winner1 = document.getElementById('winner1');
@@ -820,7 +829,7 @@ class KingOfCourt {
         }
     }
 
-    showFinalResults(ranking) {
+    showFinalResults(ranking, open = true) {
         if (!ranking || ranking.length === 0) return;
 
         const winner = ranking[0];
@@ -841,19 +850,23 @@ class KingOfCourt {
             <thead>
                 <tr>
                     <th>№</th>
-                    <th>Игрок</th>
-                    <th>Очки</th>
-                    <th>Бонусы</th>
-                    <th>Игры</th>
+                    <th>${t('koc.table.player')}</th>
+                    <th>${tournamentPoints.escape(tournamentPoints.copy.match)}</th>
+                    <th>${tournamentPoints.escape(tournamentPoints.copy.bonus)}</th>
+                    <th>${tournamentPoints.escape(tournamentPoints.copy.title)}</th>
+                    <th>${tournamentPoints.escape(tournamentPoints.copy.total)}</th>
+                    <th>${t('koc.table.games')}</th>
                 </tr>
             </thead>
             <tbody>
                 ${ranking.map(p => `
                     <tr>
                         <td><strong>#${p.rank || ''}</strong></td>
-                        <td>${p.playerName || ''}</td>
-                        <td>${p.totalPoints || 0}</td>
+                        <td>${tournamentPoints.escape(p.playerName)}</td>
+                        <td>${p.matchPoints ?? 0}</td>
                         <td>+${p.bonusPoints || 0}</td>
+                        ${tournamentPoints.cell(p.additionalPoints)}
+                        <td>${p.totalPoints || 0}</td>
                         <td>${p.gamesPlayed || 0}</td>
                     </tr>
                 `).join('')}
@@ -863,7 +876,7 @@ class KingOfCourt {
         container.appendChild(table);
 
         const finalResultsModal = document.getElementById('finalResultsModal');
-        if (finalResultsModal) {
+        if (open && finalResultsModal) {
             finalResultsModal.style.display = 'flex';
         }
     }
@@ -906,7 +919,7 @@ class KingOfCourt {
 
     closeFinalModal() {
         const finalResultsModal = document.getElementById('finalResultsModal');
-        if (finalResultsModal) {
+        if (open && finalResultsModal) {
             finalResultsModal.style.display = 'none';
         }
     }
@@ -961,4 +974,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     window.kingOfCourt = new KingOfCourt();
+});
+document.addEventListener('additional-points-saved', event => {
+    const manager = window.kingOfCourt;
+    if (!manager) return;
+    const {before, after} = event.detail;
+    if (after > before && manager.editVersion === before) {
+        manager.editVersion = after;
+    }
+    manager.loadData();
 });

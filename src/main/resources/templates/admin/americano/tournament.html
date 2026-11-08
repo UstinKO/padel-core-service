@@ -135,6 +135,7 @@
             color: #fff;
         }
     </style>
+    <link rel="stylesheet" th:href="@{/css/additional-points.css}">
 </head>
 <body>
 <header th:replace="~{fragments/admin-header :: header(#{admin.americano.title})}"></header>
@@ -358,6 +359,10 @@
                                             Guardar
                                         </button>
                                     </div>
+                                    <button th:unless="${tournament.estado.name() == 'FINALIZADO'}"
+                                            type="button" class="btn btn-outline btn-sm" data-open-points
+                                            th:attr="data-round-number=${round.roundNumber}"
+                                            th:text="#{additional.points.action}">± Puntos</button>
                                     <!-- Матч ещё не начат -->
                                     <div th:if="${match.status.name() == 'PENDING'}">
                                         <span class="vs-badge" style="background:#94a3b8">-</span>
@@ -378,6 +383,8 @@
 
         <!--/* ══════════════ ТАБЛИЦА РЕЙТИНГА ══════════════ */-->
         <div class="ranking-card" style="margin-top:2rem">
+            <button th:if="${tournament.estado.name() == 'FINALIZADO'}" type="button" class="btn btn-outline"
+                    data-open-points th:text="#{additional.points.edit_results}">Editar resultados</button>
             <div class="ranking-header">
                 <h3><i class="fas fa-chart-line"></i> <span th:text="#{admin.americano.section.ranking}">Clasificación</span></h3>
                 <div style="display:flex;gap:.5rem;align-items:center">
@@ -414,7 +421,9 @@
                     <tr>
                         <th>#</th>
                         <th th:text="#{admin.americano.col.player}">Jugador</th>
-                        <th th:title="#{admin.americano.col.pts}" th:text="#{admin.americano.col.pts}">Pts</th>
+                        <th th:text="#{additional.points.match}">Puntos de partidos</th>
+                        <th th:text="#{additional.points.title}">Puntos adicionales</th>
+                        <th th:text="#{additional.points.total}">Total</th>
                         <th th:title="#{admin.americano.col.played}" th:text="#{admin.americano.col.played}">PJ</th>
                         <th th:title="#{admin.americano.col.wins}" th:text="#{admin.americano.col.wins}">V</th>
                         <th th:title="#{admin.americano.col.losses}" th:text="#{admin.americano.col.losses}">D</th>
@@ -431,7 +440,15 @@
                         <span th:text="${player.position}"
                               th:class="${player.position == 1 ? 'pos-1' : (player.position == 2 ? 'pos-2' : (player.position == 3 ? 'pos-3' : ''))}">1</span>
                         </td>
-                        <td th:text="${player.playerName} + ' ' + ${player.playerLastName}">Jugador</td>
+                        <td>
+                            <span th:text="${player.playerName} + ' ' + ${player.playerLastName}">Jugador</span>
+                            <button th:unless="${tournament.estado.name() == 'FINALIZADO'}"
+                                    type="button" class="btn btn-outline btn-sm" data-open-points
+                                    th:attr="data-player-id=${player.playerId}"
+                                    th:text="#{additional.points.action}">± Puntos</button>
+                        </td>
+                        <td th:text="${player.matchPoints}">120</td>
+                        <td th:replace="~{fragments/additional-points :: cell(${player.additionalPoints})}"></td>
                         <td class="points" th:text="${player.totalScore}">120</td>
                         <td th:text="${player.matchesPlayed}">8</td>
                         <td th:text="${player.matchesWon}">6</td>
@@ -472,8 +489,13 @@
 
 <script th:src="@{/js/csrf.js}"></script>
 <script th:src="@{/js/tournament-conduct.js}"></script>
+<div th:replace="~{fragments/additional-points :: copy}"></div>
+<dialog th:replace="~{fragments/additional-points :: editor(${tournament.id}, ${tournament.estado.name() == 'FINALIZADO'})}"></dialog>
+<script th:src="@{/js/additional-points.js}"></script>
 <script th:inline="javascript">
     const TOURNAMENT_ID = /*[[${tournament.id}]]*/ 0;
+    const AMERICANO_FINISHED = /*[[${tournament.estado.name() == 'FINALIZADO'}]]*/ false;
+    document.addEventListener('additional-points-saved', () => updateRankingTable());
 
     // ─── Данные раундов ────────────────────────────────────────────────────
     const roundEls  = Array.from(document.querySelectorAll('[id^="round-"]'));
@@ -670,6 +692,7 @@
                     onclick="showEditScore(this)">
                 <i class="fas fa-edit"></i> editar
             </button>
+            ${AMERICANO_FINISHED ? '' : tournamentPoints.action('', match.roundNumber)}
         </div>
     `;
 
@@ -809,7 +832,10 @@
 
             row.innerHTML = `
             <td><span class="${positionClass}">${player.position}</span></td>
-            <td>${player.playerName} ${player.playerLastName}</td>
+            <td>${tournamentPoints.escape(player.playerName)} ${tournamentPoints.escape(player.playerLastName)}
+                ${AMERICANO_FINISHED ? '' : tournamentPoints.action(player.playerId)}</td>
+            <td>${player.matchPoints}</td>
+            ${tournamentPoints.cell(player.additionalPoints)}
             <td class="points">${player.totalScore}</td>
             <td>${player.matchesPlayed}</td>
             <td>${player.matchesWon}</td>

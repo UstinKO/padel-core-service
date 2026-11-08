@@ -254,7 +254,7 @@ window.APP_MESSAGES = {
     'regConfirm.individual.rule2':         '<strong>Si cancelás después de {0},</strong> deberás abonar el valor total de la inscripción, ya que las canchas ya están reservadas.',
     'regConfirm.individual.rule3':         '<strong>Reintegro posible.</strong> Si conseguimos otro jugador que ocupe tu lugar y abone la inscripción, no tendrás que pagar o se realizará el reintegro correspondiente.',
     'regConfirm.individual.rule4':         '<strong>Llegá antes.</strong> Te pedimos llegar 15 minutos antes del inicio del torneo.',
-    'regConfirm.individual.rule5':         '<strong>Llegada tarde.</strong> Si llegás tarde, comenzarás el torneo con −10 puntos.',
+    'regConfirm.individual.rule5':         '<strong>Llegada tarde.</strong> Si llegás tarde, la coordinación aplica manualmente un descuento de 10 puntos.',
     'regConfirm.cancha.subtitle':          'Ya estás inscripto en la Cancha Abierta.',
     'regConfirm.cancha.rule1':             '<strong>Llegá antes.</strong> Te pedimos llegar aproximadamente 15 minutos antes del inicio.',
     'regConfirm.cancha.rule2':             '<strong>Si finalmente no podés venir,</strong> por favor avisá al organizador con anticipación, para que podamos liberar tu lugar para otro jugador.',

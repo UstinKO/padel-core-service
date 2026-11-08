@@ -1,0 +1,68 @@
+.additional-points-cell {
+    min-width: 6rem;
+}
+.additional-points-breakdown summary {
+    cursor: pointer;
+    font-variant-numeric: tabular-nums;
+}
+.additional-points-breakdown dl {
+    display: grid;
+    grid-template-columns: auto auto;
+    gap: .2rem .65rem;
+    margin: .35rem 0 0;
+    text-align: start;
+    font-size: .85rem;
+}
+.additional-points-breakdown dd {
+    margin: 0;
+    text-align: end;
+}
+#additional-points-editor {
+    width: min(28rem, calc(100% - 1.5rem));
+    max-height: calc(100dvh - 1.5rem);
+    padding: 1rem;
+    border: 0;
+    border-radius: .75rem;
+    color: #172033;
+    background: #fff;
+    overflow: auto;
+}
+#additional-points-editor::backdrop {
+    background: rgb(15 23 42 / 65%);
+}
+#additional-points-editor label {
+    display: grid;
+    gap: .25rem;
+    margin: 0 0 .65rem;
+}
+#additional-points-editor :is(input, select, textarea) {
+    width: 100%;
+    min-width: 0;
+    padding: .4rem;
+    font: inherit;
+}
+.additional-points-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .65rem;
+}
+.additional-points-actions, .additional-points-entry, .additional-points-match-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .45rem;
+    margin: .5rem 0;
+}
+.additional-points-entry span {
+    flex: 1 1 12rem;
+    overflow-wrap: anywhere;
+}
+.additional-points-entries {
+    margin: .75rem 0;
+}
+.additional-points-scroll {
+    overflow-x: auto;
+}
+#additional-points-editor [hidden] {
+    display: none;
+}
