@@ -166,8 +166,8 @@ public class PlayerService {
                         mainReg.setStatus(newStatus);
                         registrationRepository.save(mainReg);
 
-                        // Отправляем подтверждение обоим игрокам через DoubleTournamentRegistrationService
-                        doubleTournamentRegistrationService.sendPairConfirmationEmails(mainReg, registration);
+                        // Сообщаем обоим игрокам итоговый статус регистрации
+                        doubleTournamentRegistrationService.sendPairRegistrationEmails(mainReg, registration);
                     });
 
             log.info("Updated double registration status to {} for player {}",

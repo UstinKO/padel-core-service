@@ -414,27 +414,8 @@ public class DoubleTournamentRegistrationService {
             notificationService.sendPairTermsNotice(partner, offer, tournamentDto.getClubId(), status);
             notificationService.sendPairTermsNotice(mainPlayer, offer, tournamentDto.getClubId(), status);
         } else {
-            // Отправляем email
-            notificationService.sendPartnerInvitationEmail(
-                    partner.getEmail(),
-                    partner.getNombre(),
-                    mainPlayer.getNombre() + " " + mainPlayer.getApellido(),
-                    tournamentDto,
-                    status,
-                    position,
-                    partner.getLocale()
-            );
-
-            notificationService.sendConfirmationToMainPlayer(
-                    mainPlayer.getEmail(),
-                    mainPlayer.getNombre(),
-                    partner.getNombre() + " " + partner.getApellido(),
-                    tournamentDto,
-                    status,
-                    position,
-                    mainPlayer.getLocale()
-            );
-
+            notificationService.sendRegistrationStatusEmail(partner, tournamentDto, status, position);
+            notificationService.sendRegistrationStatusEmail(mainPlayer, tournamentDto, status, position);
         }
         return savedMainRegistration;
     }
@@ -604,18 +585,20 @@ public class DoubleTournamentRegistrationService {
         TournamentRegistration refreshedPartnerRegistration = registrationRepository
                 .findById(savedPartnerRegistration.getId()).orElse(savedPartnerRegistration);
 
-        notificationService.sendPairConfirmationEmails(refreshedRegistration, refreshedPartnerRegistration);
+        if (refreshedRegistration.getStatus() == RegistrationStatus.WAITLIST) {
+            notificationService.sendPairRegistrationEmails(refreshedRegistration, refreshedPartnerRegistration);
+        }
 
         return registrationMapper.toDto(refreshedRegistration);
     }
 
     @Timed(
             name = "double.registration.emails.send",
-            description = "Send pair confirmation emails",
+            description = "Send pair registration status emails",
             tags = {"service=double", "operation=sendEmails"}
     )
-    public void sendPairConfirmationEmails(TournamentRegistration mainReg, TournamentRegistration partnerReg) {
-        notificationService.sendPairConfirmationEmails(mainReg, partnerReg);
+    public void sendPairRegistrationEmails(TournamentRegistration mainReg, TournamentRegistration partnerReg) {
+        notificationService.sendPairRegistrationEmails(mainReg, partnerReg);
     }
 
     @Timed(
@@ -830,12 +813,9 @@ public class DoubleTournamentRegistrationService {
         if (PairTermsService.accepted(savedRegistration)) {
             var offer = pairTerms.acceptedOffer(oldPlayerReg.getTournament(), savedRegistration);
             notificationService.sendPairTermsNotice(newPlayer, offer, tournamentDto.getClubId(), previousStatus);
-        } else if (!PlayerPadel.isGuestEmail(newPlayer.getEmail())) {
-            Integer position = previousStatus == RegistrationStatus.WAITLIST
-                    ? oldPlayerReg.getWaitlistPosition() : oldPlayerReg.getPosition();
-            AfterCommit.run(() -> notificationService.sendPartnerInvitationEmail(newPlayer.getEmail(), newPlayer.getNombre(),
-                    remainingPartner.getNombreCompleto(), tournamentDto, previousStatus,
-                    position == null ? 0 : position, newPlayer.getLocale()));
+        } else {
+            notificationService.sendRegistrationStatusEmail(newPlayer, tournamentDto, previousStatus,
+                    savedRegistration.getWaitlistPosition());
         }
         log.info("Player replaced successfully in tournament {}", tournamentDto.getId());
 
@@ -1063,9 +1043,6 @@ public class DoubleTournamentRegistrationService {
                     "No puedes registrarte como tu propio compañero.");
         }
 
-        String dateStr = tournament.getFechaInicio()
-                .format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-
         Optional<PlayerPadel> existingPartnerOpt = findPartner(partnerDto);
 
         // Партнёр без аккаунта регистрируется сразу же, как и уже существующий — без ожидания
@@ -1118,27 +1095,19 @@ public class DoubleTournamentRegistrationService {
                 .partnerEmail(mainPlayer.getEmail())
                 .partnerTelegram(mainPlayer.getTelegramUsername());
 
-        String timeStr = tournament.getHoraInicio() != null
-                ? tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm"))
-                : "";
-
         if (isPendingSolo || isReplacementNeeded) {
             // До дедлайна соло-регистрация уже держит свой слот (countActiveSoloRegistrations) —
             // добавление партнёра просто завершает уже занятое место, без постановки в очередь.
             soloReg.setStatus(RegistrationStatus.CONFIRMED);
             partnerRegBuilder.status(RegistrationStatus.CONFIRMED).position(soloReg.getPosition());
             registrationRepository.save(soloReg);
-            saveNewOrCancelledRegistration(partnerWithTerms(soloReg, partnerRegBuilder.build()));
+            TournamentRegistration savedPartnerReg = saveNewOrCancelledRegistration(
+                    partnerWithTerms(soloReg, partnerRegBuilder.build()));
 
             if (PairTermsService.accepted(soloReg)) {
                 notifyPairWithTerms(soloReg, mainPlayer, partner);
             } else {
-                emailService.sendTournamentConfirmationEmail(partner.getEmail(), partner.getNombre(),
-                        tournament.getNombre(), dateStr, timeStr, null,
-                        tournament.getFormattedCancellationDeadline(), tournament.getTipo(), partner.getLocale());
-                emailService.sendTournamentConfirmationEmail(mainPlayer.getEmail(), mainPlayer.getNombre(),
-                        tournament.getNombre(), dateStr, timeStr, null,
-                        tournament.getFormattedCancellationDeadline(), tournament.getTipo(), mainPlayer.getLocale());
+                notificationService.sendPairRegistrationEmails(soloReg, savedPartnerReg);
             }
         } else {
             // Пара, восстановленная после выхода партнёра, сохраняет исходную позицию.
@@ -1161,8 +1130,8 @@ public class DoubleTournamentRegistrationService {
                     .orElse(savedPartnerReg);
             if (PairTermsService.accepted(refreshedMainReg)) {
                 notifyPairWithTerms(refreshedMainReg, mainPlayer, partner);
-            } else {
-                notificationService.sendPairConfirmationEmails(refreshedMainReg, refreshedPartnerReg);
+            } else if (refreshedMainReg.getStatus() == RegistrationStatus.WAITLIST) {
+                notificationService.sendPairRegistrationEmails(refreshedMainReg, refreshedPartnerReg);
             }
         }
 

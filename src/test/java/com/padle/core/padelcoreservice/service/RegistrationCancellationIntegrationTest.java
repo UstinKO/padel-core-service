@@ -19,6 +19,7 @@ import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.transaction.AfterTransaction;
 import org.springframework.test.context.transaction.TestTransaction;
 import org.springframework.transaction.annotation.Transactional;
@@ -71,7 +72,7 @@ class RegistrationCancellationIntegrationTest {
     @Autowired EntityManager entities;
     @Autowired MarketingReportService report;
     @MockitoBean EmailService email;
-    @MockitoBean TournamentNotificationService notifications;
+    @MockitoSpyBean TournamentNotificationService notifications;
 
     private final List<Long> tournamentIds = new ArrayList<>();
     private final List<Long> playerIds = new ArrayList<>();
@@ -819,6 +820,68 @@ class RegistrationCancellationIntegrationTest {
         verify(email, times(1)).sendWaitlistAutoConfirmEmail(eq(reserve.getPlayer().getEmail()), any(), any(), any(), any(), any(), any(), any());
     }
 
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void fullTournamentEmailsReserveUntilBothPlayersArePromoted(boolean addingPartner) {
+        Tournament tournament = tournament(1);
+        tournament.setTipo(TournamentType.AMERICANO);
+        tournament.setModalidad(Modalidad.DOBLES);
+        TournamentRegistration confirmed = registration(tournament, RegistrationStatus.CONFIRMED);
+        pair(confirmed, registration(tournament, RegistrationStatus.CONFIRMED));
+
+        PlayerPadel main = addingPartner ? registration(tournament, RegistrationStatus.WAITLIST).getPlayer() : player();
+        main.setPreferredLocale("ru");
+        PlayerPadel partner = player();
+        partner.setPreferredLocale("en");
+        var partnerDetails = PartnerRegistrationDto.builder()
+                .existingUserId(partner.getId()).isExistingUser(true).build();
+
+        var result = addingPartner
+                ? doubles.addPartnerToSoloRegistration(tournament.getId(), main.getId(), partnerDetails)
+                : doubles.registerForDoubleTournament(service.getTournamentDtoById(tournament.getId()).orElseThrow(),
+                        main.getId(), partnerDetails);
+        assertThat(result.getStatus()).isEqualTo(RegistrationStatus.WAITLIST);
+        verifyNoInteractions(email);
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+
+        verify(email).sendWaitlistNotificationEmail(eq(main.getEmail()), any(), any(), any(), any(), any(),
+                eq(result.getWaitlistPosition()), eq(Locale.forLanguageTag("ru")));
+        verify(email).sendWaitlistNotificationEmail(eq(partner.getEmail()), any(), any(), any(), any(), any(),
+                eq(result.getWaitlistPosition()), eq(Locale.ENGLISH));
+        verifyNoMoreInteractions(email);
+
+        service.cancelPairRegistration(tournament.getId(), confirmed.getPlayer().getId(), "Test cancellation");
+        TestTransaction.start();
+        for (PlayerPadel player : List.of(main, partner)) {
+            assertThat(registrations.findByTournamentIdAndPlayerId(tournament.getId(), player.getId()).orElseThrow()
+                    .getStatus()).isEqualTo(RegistrationStatus.CONFIRMED);
+            verify(email).sendWaitlistAutoConfirmEmail(eq(player.getEmail()), any(), any(), any(), any(), any(), any(), any());
+        }
+        verify(email, never()).sendTournamentConfirmationEmail(any(), any(), any(), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void readyPairImmediatelyPromotedReceivesOnlyOneConfirmationPerPlayer() {
+        Tournament tournament = tournament(1);
+        tournament.setTipo(TournamentType.AMERICANO);
+        tournament.setModalidad(Modalidad.DOBLES);
+        PlayerPadel main = registration(tournament, RegistrationStatus.WAITLIST).getPlayer();
+        PlayerPadel partner = player();
+
+        var result = doubles.addPartnerToSoloRegistration(tournament.getId(), main.getId(),
+                PartnerRegistrationDto.builder().existingUserId(partner.getId()).isExistingUser(true).build());
+        assertThat(result.getStatus()).isEqualTo(RegistrationStatus.CONFIRMED);
+        verifyNoInteractions(email);
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
+        verify(email).sendWaitlistAutoConfirmEmail(eq(main.getEmail()), any(), any(), any(), any(), any(), any(), any());
+        verify(email).sendWaitlistAutoConfirmEmail(eq(partner.getEmail()), any(), any(), any(), any(), any(), any(), any());
+        verifyNoMoreInteractions(email);
+    }
+
     private void cancelAfter(CountDownLatch start, Long tournamentId, Long playerId) {
         try {
             assertThat(start.await(5, TimeUnit.SECONDS)).isTrue();
@@ -841,12 +904,16 @@ class RegistrationCancellationIntegrationTest {
         return tournament;
     }
 
-    private TournamentRegistration registration(Tournament tournament, RegistrationStatus status) {
+    private PlayerPadel player() {
         PlayerPadel player = players.saveAndFlush(PlayerPadel.builder().nombre("Игрок").apellido("Отмена")
                 .email(UUID.randomUUID() + "@example.test").passwordHash("test-hash").activo(true)
                 .emailConfirmado(true).preferredLocale("es").nivelJugador(Nivel.C9).build());
         playerIds.add(player.getId());
-        return registrations.saveAndFlush(TournamentRegistration.builder().tournament(tournament).player(player)
+        return player;
+    }
+
+    private TournamentRegistration registration(Tournament tournament, RegistrationStatus status) {
+        return registrations.saveAndFlush(TournamentRegistration.builder().tournament(tournament).player(player())
                 .status(status).position(status == RegistrationStatus.CONFIRMED ? 1 : null)
                 .waitlistPosition(status == RegistrationStatus.WAITLIST ? 1 : null).build());
     }
