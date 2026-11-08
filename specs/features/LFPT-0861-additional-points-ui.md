@@ -6,7 +6,7 @@ in-progress — реализация и приёмка.
 
 ## Источник
 
-[Запрос](../requests/LFPT-0860-additional-points.md), [#861](https://github.com/UstinKO/padel-core-service/issues/861). Зависит от [#860](https://github.com/UstinKO/padel-core-service/issues/860).
+[Запрос](../done/requests/LFPT-0860-additional-points.md), [#861](https://github.com/UstinKO/padel-core-service/issues/861). Зависит от [#860](https://github.com/UstinKO/padel-core-service/issues/860).
 
 ## Контекст и связь с MASTER.md
 
