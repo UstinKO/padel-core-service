@@ -65,6 +65,8 @@ public interface KingOfCourtMapper {
     @Mapping(target = "wins", source = "stats.wins")
     @Mapping(target = "losses", source = "stats.losses")
     @Mapping(target = "rank", ignore = true)
+    @Mapping(target = "matchPoints", ignore = true)
+    @Mapping(target = "additionalPoints", ignore = true)
     PlayerStatsDTO toPlayerStatsDTO(KingOfCourtPlayerStats stats);
 
     @Mapping(target = "round", source = "result.court.round.roundNumber")

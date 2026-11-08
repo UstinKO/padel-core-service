@@ -28,6 +28,8 @@ public interface AmericanoMapper {
     @Mapping(target = "isActive",
             expression = "java(player.getStatus() == com.padle.core.padelcoreservice.model.enums.AmericanoPlayerStatus.ACTIVE)")
         // новые поля маппятся напрямую (имена совпадают)
+    @Mapping(target = "matchPoints", ignore = true)
+    @Mapping(target = "additionalPoints", ignore = true)
     AmericanoPlayerDto toDto(AmericanoPlayer player);
 
     List<AmericanoPlayerDto> toPlayerDtoList(List<AmericanoPlayer> players);
@@ -85,5 +87,7 @@ public interface AmericanoMapper {
     @Mapping(target = "pointDifference", expression = "java(player.getPointDifference())")
     // position проставляется вручную в сервисе после сортировки
     @Mapping(target = "position", ignore = true)
+    @Mapping(target = "matchPoints", ignore = true)
+    @Mapping(target = "additionalPoints", ignore = true)
     AmericanoPlayerRankingDto toRankingDto(AmericanoPlayer player);
 }

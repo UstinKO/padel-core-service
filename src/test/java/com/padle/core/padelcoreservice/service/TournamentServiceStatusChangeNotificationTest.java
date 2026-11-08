@@ -51,7 +51,7 @@ class TournamentServiceStatusChangeNotificationTest {
         service = new TournamentService(
                 tournamentRepository, registrationRepository, null, null,
                 clubService, null, null, emailService, null,
-                null, null, null, null, null, null, new PairTermsService(tournamentRepository, registrationRepository, null, null, null));
+                null, null, null, null, null, new PairTermsService(tournamentRepository, registrationRepository, null, null, null));
     }
 
     private void commonStubs() {

@@ -265,3 +265,9 @@ Health check. Возвращает `"pong"`.
 `GET /api/king-of-court/tournaments/{kingId}/state` возвращает `conductVersion`. Клиент передаёт её как `expectedConductVersion` при подтверждении действий. Устаревшая версия даёт 409. Повтор изменения с тем же заголовком `Idempotency-Key` (UUID организатора в пределах турнира) не применяется повторно.
 
 История и восстановление находятся на `/admin/tournaments/{tournamentId}/conduct-history`. Подтверждение восстановления отправляет `POST /admin/tournaments/{tournamentId}/conduct-history/{versionId}/restore` с текущей версией из формы. Доступ ограничен правами управления событием. Полный перезапуск сохраняет контрольную точку с прежними раундами, кортами, парами и результатами.
+
+### Дополнительные очки
+
+Публичный рейтинг отдаёт `matchPoints` и `additionalPoints` с суммой и разбивкой по этапам. Итог равен очкам за матчи, бонусу за корт и ручной сумме. Для завершённого проведения используется отдельный административный маршрут редактирования результата.
+
+Координатор управляет записями по `/admin/tournaments/{tournamentId}/additional-points`. Для завершённого турнира используется `/admin/tournaments/{tournamentId}/finished-results/additional-points`. `GET` отдаёт форму и журнал. `POST` создаёт запись, `POST /admin/tournaments/{tournamentId}/additional-points/{id}` меняет её. `POST /admin/tournaments/{tournamentId}/additional-points/{id}/cancel` отменяет запись. Для записи требуются ключ `Idempotency-Key`, версия `expectedConductVersion` и проверка прав на турнир.

@@ -25,6 +25,7 @@ class ConductSnapshotStore {
     private static final String TEAM = "americano_teams_db";
 
     // Parent tables precede children. Names and predicates are constants, never request parameters.
+    private static final SnapshotTable POINTS = new SnapshotTable("tournament_additional_points", "tournament_id = :id");
     private static final List<SnapshotTable> KING_TABLES = List.of(
             new SnapshotTable(KING, "tournament_id = :id", "id", "youtube_link"),
             new SnapshotTable(KING_ROUND, "tournament_king_id IN (" + KING_SCOPE + ")"),
@@ -32,7 +33,7 @@ class ConductSnapshotStore {
             new SnapshotTable("court_players_db", "court_id IN (" + COURT_SCOPE + ")", "court_id, player_id"),
             new SnapshotTable("court_teams_db", "court_id IN (" + COURT_SCOPE + ")"),
             new SnapshotTable(KING_RESULT, "court_id IN (" + COURT_SCOPE + ")"),
-            new SnapshotTable("king_of_court_player_stats_db", "tournament_king_id IN (" + KING_SCOPE + ")"));
+            new SnapshotTable("king_of_court_player_stats_db", "tournament_king_id IN (" + KING_SCOPE + ")"), POINTS);
     private static final List<SnapshotTable> AMERICANO_TABLES = List.of(
             new SnapshotTable("americano_players_db", "tournament_id = :id"),
             new SnapshotTable(TEAM, "tournament_id = :id", "id", "has_paid", "admin_comment", "player2_phone"),
@@ -215,7 +216,8 @@ class ConductSnapshotStore {
     private List<SnapshotTable> tables(TournamentType type) {
         return switch (type) {
             case KING_OF_COURT -> KING_TABLES;
-            case AMERICANO, AMERICANO_TEAMS -> AMERICANO_TABLES;
+            case AMERICANO -> java.util.stream.Stream.concat(AMERICANO_TABLES.stream(), java.util.stream.Stream.of(POINTS)).toList();
+            case AMERICANO_TEAMS -> AMERICANO_TABLES;
             default -> throw new IllegalArgumentException("Unsupported tournament format");
         };
     }

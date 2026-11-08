@@ -15,10 +15,12 @@ public class PlayerStatsDTO {
     // Уровень игрока из профиля — для опционального отображения
     // в публичном списке участников (Tournament.mostrarNivel), null если не указан.
     private com.padle.core.padelcoreservice.model.enums.Nivel playerNivel;
-    private Integer totalPoints;
+    private Long totalPoints;
     private Integer bonusPoints;
     private Integer gamesPlayed;
     private Integer wins;
     private Integer losses;
     private Integer rank;
+    private Long matchPoints;
+    private AdditionalPointsDto additionalPoints;
 }
