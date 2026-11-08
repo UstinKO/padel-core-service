@@ -20,5 +20,13 @@
         <span th:if="${item.subjectId != null}" th:text="${'#' + item.subjectId}"></span>
         <span th:if="${item.actorName != null}" th:text="${item.actorName}"></span>
     </span>
+    <li th:fragment="playoffPair(pair)">
+        <strong th:text="#{conduct.history.court(${pair.court ?: '—'})}"></strong>
+        <span th:text="${(pair.first.number != null ? '№' + pair.first.number + ' ' : '') + pair.first.name}"></span>
+        <span aria-hidden="true">—</span>
+        <span th:text="${(pair.second.number != null ? '№' + pair.second.number + ' ' : '') + pair.second.name}"></span>
+        <span th:if="${pair.firstGames != null and pair.secondGames != null}"
+              th:text="${pair.firstGames + ':' + pair.secondGames}"></span>
+    </li>
 </body>
 </html>
