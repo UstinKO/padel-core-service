@@ -72,6 +72,17 @@ class TournamentConfirmationEmailTemplateTest {
                 .doesNotContain("без оплаты до");
     }
 
+    @Test
+    void waitlistEmailShowsPositionOnlyWhenKnown() {
+        Context context = contextFor(Locale.forLanguageTag("ru"), "24/10/2026 15:00");
+        context.setVariable("waitlistPosition", 0);
+        assertThat(templateEngine.process("email/waitlist-notification", context))
+                .contains("список ожидания").doesNotContain("Позиция 0");
+
+        context.setVariable("waitlistPosition", 2);
+        assertThat(templateEngine.process("email/waitlist-notification", context)).contains("Позиция 2");
+    }
+
     private Context contextFor(Locale locale, String cancellationDeadline) {
         Context context = new Context(locale);
         context.setVariable("playerName", "Juan");
