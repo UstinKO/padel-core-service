@@ -1,12 +1,12 @@
 # LFPT-0860: Feature дополнительные очки — хранение, расчёт и история проведения
 
 ## Статус
-
+done
 in-progress — реализация и приёмка.
 
 ## Источник
 
-[Запрос](../requests/LFPT-0860-additional-points.md), [#860](https://github.com/UstinKO/padel-core-service/issues/860). Интерфейс зависит от этой задачи и описан в [#861](https://github.com/UstinKO/padel-core-service/issues/861).
+[Запрос](requests/LFPT-0860-additional-points.md), [#860](https://github.com/UstinKO/padel-core-service/issues/860). Интерфейс зависит от этой задачи и описан в [#861](https://github.com/UstinKO/padel-core-service/issues/861).
 
 ## Контекст
 
