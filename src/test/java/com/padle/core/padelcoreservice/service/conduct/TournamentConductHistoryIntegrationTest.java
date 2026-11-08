@@ -159,6 +159,62 @@ class TournamentConductHistoryIntegrationTest {
         assertThat(byWins.getRanking().get(0).getMatchesWon()).isEqualTo(1);
     }
 
+    @Test
+    void kingResultRejectsIncompleteDuplicateForeignAndUnassignedWinnersInAutomaticMode() {
+        long event = event(TournamentType.KING_OF_COURT, Modalidad.INDIVIDUAL, 4);
+        registerFourPlayers(event);
+        long king = kingOfCourt.initializeTournament(owner, event, 1, 0).getId();
+        var state = kingOfCourt.getCurrentState(king);
+        var court = state.getCourts().get(0);
+        var first = court.getTeams().get(0).getPlayers();
+        var second = court.getTeams().get(1).getPlayers();
+        long a = first.get(0).getId(), b = first.get(1).getId();
+        long c = second.get(0).getId(), d = second.get(1).getId();
+        long outsider = player().getId();
+
+        assertThatThrownBy(() -> kingOfCourt.saveMatchResult(state.getCurrentRoundId(), 1,
+                List.of(a, c), List.of(b, d), 12, 9, true)).hasMessage("koc.admin.error_assigned_pair");
+        assertThatThrownBy(() -> kingOfCourt.saveMatchResult(state.getCurrentRoundId(), 1,
+                List.of(a, a), List.of(b, d), 12, 9, false)).hasMessage("koc.admin.error_same_winners");
+        assertThatThrownBy(() -> kingOfCourt.saveMatchResult(state.getCurrentRoundId(), 1,
+                List.of(a, outsider), List.of(b, d), 12, 9, false)).hasMessage("koc.admin.error_match_players");
+        assertThatThrownBy(() -> kingOfCourt.saveMatchResult(state.getCurrentRoundId(), 1,
+                List.of(a), List.of(b, d), 12, 9, true)).hasMessage("koc.admin.error_match_players");
+        assertThat(kingOfCourt.getCurrentState(king).getHistory()).isEmpty();
+    }
+
+    @Test
+    void kingResultCanBeCorrectedToManualPairWithoutDuplicatingStatsOrAdditionalPoints() {
+        long event = event(TournamentType.KING_OF_COURT, Modalidad.INDIVIDUAL, 4);
+        registerFourPlayers(event);
+        long king = kingOfCourt.initializeTournament(owner, event, 1, 0).getId();
+        var state = kingOfCourt.getCurrentState(king);
+        var court = state.getCourts().get(0);
+        var first = court.getTeams().get(0).getPlayers();
+        var second = court.getTeams().get(1).getPlayers();
+        long a = first.get(0).getId(), b = first.get(1).getId();
+        long c = second.get(0).getId(), d = second.get(1).getId();
+        points.add(event, false, new Change(c, 0, 4, ""), owner);
+        kingOfCourt.saveMatchResult(state.getCurrentRoundId(), 1, List.of(a, b), List.of(c, d), 12, 9, true);
+        long resultId = kingOfCourt.getCurrentState(king).getCourts().get(0).getResult().getId();
+        kingOfCourt.updateMatchResult(resultId, 1, List.of(a, c), List.of(b, d), 14, 7, false);
+        kingOfCourt.updateMatchResult(resultId, 1, List.of(a, c), List.of(b, d), 14, 7, false);
+
+        var corrected = kingOfCourt.getCurrentState(king);
+        assertThat(corrected.getCourts().get(0).getResult().getWinners()).containsExactly(a, c);
+        assertThat(corrected.getHistory()).hasSize(1);
+        var movedWinner = kingPlayer(king, c);
+        assertThat(movedWinner.getWins()).isEqualTo(1);
+        assertThat(movedWinner.getMatchPoints()).isEqualTo(14);
+        assertThat(movedWinner.getBonusPoints()).isEqualTo(3);
+        assertThat(movedWinner.getAdditionalPoints().total()).isEqualTo(4);
+        assertThat(movedWinner.getTotalPoints()).isEqualTo(21);
+        assertThat(kingPlayer(king, b).getWins()).isZero();
+        assertThat(kingPlayer(king, b).getMatchPoints()).isEqualTo(7);
+        assertThatThrownBy(() -> kingOfCourt.updateMatchResult(resultId, 1,
+                List.of(a, c), List.of(b, d), 16, 8, true)).hasMessage("koc.admin.error_assigned_pair");
+    }
+
     private PlayerStatsDTO kingPlayer(long king, long player) {
         return kingOfCourt.getRanking(king).stream().filter(entry -> entry.getPlayerId() == player)
                 .findFirst().orElseThrow();
@@ -339,7 +395,7 @@ class TournamentConductHistoryIntegrationTest {
         List<Long> winners = court.getTeams().get(0).getPlayers().stream().map(player -> player.getId()).toList();
         List<Long> losers = court.getTeams().get(1).getPlayers().stream().map(player -> player.getId()).toList();
         kingOfCourt.saveMatchResult(state.getCurrentRoundId(), court.getCourtNumber(), winners, losers,
-                winnersScore, losersScore);
+                winnersScore, losersScore, true);
     }
 
     private AmericanoMatchResultDto result(long match, int score) {

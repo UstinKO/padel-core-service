@@ -102,7 +102,8 @@ public class KingOfCourtApiController {
                 request.getWinners(),
                 request.getLosers(),
                 request.getWinnersScore(),
-                request.getLosersScore()
+                request.getLosersScore(),
+                Boolean.FALSE.equals(request.getManualWinners())
         );
 
         return ResponseEntity.ok().build();
@@ -178,7 +179,8 @@ public class KingOfCourtApiController {
                 request.getWinners(),
                 request.getLosers(),
                 request.getWinnersScore(),
-                request.getLosersScore()
+                request.getLosersScore(),
+                Boolean.FALSE.equals(request.getManualWinners())
         );
 
         return ResponseEntity.ok().build();
