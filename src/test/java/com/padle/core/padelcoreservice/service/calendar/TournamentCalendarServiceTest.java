@@ -79,6 +79,14 @@ class TournamentCalendarServiceTest {
     }
 
     @Test
+    void exportsAnExistingRangeWithoutANumericOverride() {
+        tournament.setDurationMinutes(null);
+        tournament.setDuracion("3 - 4 horas");
+        CalendarEvent event = service.getEvent(42L, Locale.ENGLISH);
+        assertThat(event.endsAt()).isEqualTo(event.startsAt().plus(Duration.ofHours(4)));
+    }
+
+    @Test
     void rejectsMissingDurationAndInvalidZone() {
         tournament.setDurationMinutes(null);
         tournament.setDuracion("примерно несколько часов");

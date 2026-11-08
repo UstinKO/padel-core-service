@@ -18,6 +18,7 @@ import com.padle.core.padelcoreservice.service.TournamentService;
 import com.padle.core.padelcoreservice.service.americano.AmericanoService;
 import com.padle.core.padelcoreservice.service.americano.TeamAmericanoService;
 import com.padle.core.padelcoreservice.service.americano.TeamPlayoffService;
+import com.padle.core.padelcoreservice.service.calendar.EventSchedule;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -302,6 +303,14 @@ public class AdminController {
         }
 
         return "admin/tournaments/details";
+    }
+
+    @GetMapping("/tournaments/calendar-duration")
+    @ResponseBody
+    public ResponseEntity<Integer> suggestCalendarDuration(@RequestParam(defaultValue = "") String description) {
+        return EventSchedule.suggestedDurationMinutes(description)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.noContent().build());
     }
 
     @GetMapping("/tournaments/{id}/edit")

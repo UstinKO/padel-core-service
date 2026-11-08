@@ -23,14 +23,24 @@ class EventScheduleTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"", "0 h", "-2 h", "unas 2 horas", "2 horas aprox", "2", "2 días o más", "1h30", "999999999999999999999999999999 horas", "0.00001 h"})
+    @CsvSource({"3 - 4 horas,240", "3–4 часа,240", "3 часа,180", "90 min — 2 hours,120",
+            "'2,5–3,5 horas',210", "4-3 h,240", "3–4 días,5760"})
+    void usesLargestDurationInCalendarAndForm(String text, int minutes) {
+        TournamentDto event = TournamentDto.builder().duracion(text).build();
+        assertThat(EventSchedule.duration(event)).contains(Duration.ofMinutes(minutes));
+        assertThat(EventSchedule.suggestedDurationMinutes(text)).contains(minutes);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", "0 h", "-2 h", "unas 2 horas", "2 horas aprox", "2", "2 días o más", "1h30",
+            "999999999999999999999999999999 horas", "0.00001 h", "3-4", "0-4 horas", "3–4–5 h", "3– horas"})
     void doesNotInventDuration(String text) {
         assertThat(EventSchedule.parseDuration(text)).isEmpty();
     }
 
     @Test
     void numericDurationTakesPrecedenceAndCrossesMidnight() {
-        TournamentDto event = TournamentDto.builder().durationMinutes(90).duracion("4 horas")
+        TournamentDto event = TournamentDto.builder().durationMinutes(90).duracion("3 - 4 horas")
                 .fechaInicio(LocalDate.of(2026, 11, 2)).horaInicio(LocalTime.of(23, 30)).build();
         assertThat(EventSchedule.duration(event)).contains(Duration.ofMinutes(90));
         assertThat(EventSchedule.start(event).plus(EventSchedule.duration(event).orElseThrow()).toInstant())
