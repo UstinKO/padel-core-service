@@ -19,9 +19,12 @@ public record TournamentSocialDraft(
         Integer finalistGames,
         List<Place> places,
         String resultsPath,
-        Upcoming upcoming
+        Upcoming upcoming,
+        String name,
+        TournamentType type,
+        boolean rankingByWins
 ) {
-    public enum Format { TEAM_PLAYOFF, KING_OF_COURT }
+    public enum Format { TEAM_PLAYOFF, KING_OF_COURT, AMERICANO, GENERAL }
 
     public record Place(int rank, String name, long points) {}
 

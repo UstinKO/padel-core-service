@@ -14,6 +14,13 @@ import com.padle.core.padelcoreservice.model.enums.PlayoffStage;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
 import com.padle.core.padelcoreservice.repository.TournamentKingOfCourtRepository;
+import com.padle.core.padelcoreservice.repository.TournamentRepository;
+import com.padle.core.padelcoreservice.service.americano.AmericanoService;
+import com.padle.core.padelcoreservice.dto.americano.AmericanoPlayerRankingDto;
+import com.padle.core.padelcoreservice.dto.americano.AmericanoRankingDto;
+import com.padle.core.padelcoreservice.dto.americano.RankingCriteria;
+import com.padle.core.padelcoreservice.model.Tournament;
+import com.padle.core.padelcoreservice.model.enums.AmericanoFinalOrder;
 import com.padle.core.padelcoreservice.service.americano.TeamPlayoffService;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.access.AccessDeniedException;
@@ -39,8 +46,10 @@ class TournamentSocialDraftServiceTest {
     private final TeamPlayoffService playoff = mock(TeamPlayoffService.class);
     private final TournamentKingOfCourtRepository kingRepository = mock(TournamentKingOfCourtRepository.class);
     private final KingOfCourtService kingService = mock(KingOfCourtService.class);
+    private final TournamentRepository tournamentRepository = mock(TournamentRepository.class);
+    private final AmericanoService americanoService = mock(AmericanoService.class);
     private final TournamentSocialDraftService service =
-            new TournamentSocialDraftService(access, tournaments, playoff, kingRepository, kingService);
+            new TournamentSocialDraftService(access, tournaments, playoff, kingRepository, kingService, tournamentRepository, americanoService);
     private final Owner owner = new Owner();
 
     @Test
@@ -68,7 +77,7 @@ class TournamentSocialDraftServiceTest {
     }
 
     @Test
-    void rejectsTiedOrIncompleteFinalAndUnsupportedFormat() {
+    void fallsBackToGeneralForTiedOrIncompleteFinalAndOtherFormats() {
         var event = event(151L);
         when(tournaments.getTournamentDtoById(151L)).thenReturn(Optional.of(event));
         var completed = completedFinal();
@@ -76,17 +85,14 @@ class TournamentSocialDraftServiceTest {
         var match = matchDto();
         match.setTeam1Games(6);
         when(playoff.toMatchDto(completed)).thenReturn(match);
-        assertThatThrownBy(() -> service.prepare(owner, 151L))
-                .isInstanceOfSatisfying(ResponseStatusException.class, error -> assertThat(error.getStatusCode().value()).isEqualTo(409));
+        assertThat(service.prepare(owner, 151L).format()).isEqualTo(TournamentSocialDraft.Format.GENERAL);
 
         match.setTeam1Games(3);
         match.setTeam2Player2Name("null null");
-        assertThatThrownBy(() -> service.prepare(owner, 151L))
-                .isInstanceOfSatisfying(ResponseStatusException.class, error -> assertThat(error.getStatusCode().value()).isEqualTo(409));
+        assertThat(service.prepare(owner, 151L).format()).isEqualTo(TournamentSocialDraft.Format.GENERAL);
 
         event.setTipo(TournamentType.KING_OF_COURT);
-        assertThatThrownBy(() -> service.prepare(owner, 151L))
-                .isInstanceOfSatisfying(ResponseStatusException.class, error -> assertThat(error.getStatusCode().value()).isEqualTo(422));
+        assertThat(service.prepare(owner, 151L).format()).isEqualTo(TournamentSocialDraft.Format.GENERAL);
     }
 
     @Test
@@ -119,26 +125,63 @@ class TournamentSocialDraftServiceTest {
     }
 
     @Test
-    void kingRejectsActiveRunEvenWhenParentHasFinishedStatus() {
+    void kingUsesGeneralForActiveRunEvenWhenParentHasFinishedStatus() {
         var run = configureKing(false);
         when(tournaments.getTournamentDtoById(136L)).thenReturn(Optional.of(kingEvent(TournamentStatus.FINALIZADO)));
         assertThat(run.getIsActive()).isTrue();
-        assertIncompleteKing();
+        assertGeneralKing();
         verifyNoInteractions(kingService);
     }
 
     @Test
-    void kingRejectsTieForSecondPlace() {
+    void kingUsesGeneralForTieForSecondPlace() {
         var run = configureKing(true);
         when(kingService.getRanking(run.getId())).thenReturn(List.of(
                 stats(1, "Jugador Uno", 186), stats(2, "Jugador Dos", 181), stats(3, "Jugador Tres", 181)));
-        assertIncompleteKing();
+        assertGeneralKing();
     }
 
-    private void assertIncompleteKing() {
-        assertThatThrownBy(() -> service.prepare(owner, 136L))
-                .isInstanceOfSatisfying(ResponseStatusException.class,
-                        error -> assertThat(error.getStatusCode().value()).isEqualTo(409));
+    @Test
+    void usesStoredAmericanoOrderAndAllowsGeneralForLegacyTournament() {
+        var event = event(159L);
+        event.setTipo(TournamentType.AMERICANO);
+        event.setModalidad(Modalidad.INDIVIDUAL);
+        var tournament = new Tournament();
+        when(tournaments.getTournamentDtoById(159L)).thenReturn(Optional.of(event));
+        when(tournamentRepository.findById(159L)).thenReturn(Optional.of(tournament));
+        assertThat(service.prepare(owner, 159L).format()).isEqualTo(TournamentSocialDraft.Format.GENERAL);
+
+        tournament.setAmericanoFinalOrder(AmericanoFinalOrder.WINS_DESC);
+        when(americanoService.getRankingWithDetails(159L, new RankingCriteria("wins", false)))
+                .thenReturn(AmericanoRankingDto.builder().completedRounds(1).totalRounds(1)
+                        .ranking(List.of(americanoPlayer("Uno", 8, 2), americanoPlayer("Dos", 13, 1))).build());
+
+        var draft = service.prepare(owner, 159L);
+        assertThat(draft.format()).isEqualTo(TournamentSocialDraft.Format.AMERICANO);
+        assertThat(draft.rankingByWins()).isTrue();
+        assertThat(draft.places()).containsExactly(
+                new TournamentSocialDraft.Place(1, "Jugador Uno", 2), new TournamentSocialDraft.Place(2, "Jugador Dos", 1));
+    }
+
+    @Test
+    void openEventDoesNotRequireFinalButMustHaveEnded() {
+        var event = event(160L);
+        event.setTipo(TournamentType.CANCHA_ABIERTA);
+        event.setEstado(TournamentStatus.CERRADO);
+        event.setFechaInicio(LocalDate.now().plusDays(2));
+        when(tournaments.getTournamentDtoById(160L)).thenReturn(Optional.of(event));
+        assertThatThrownBy(() -> service.prepare(owner, 160L)).isInstanceOf(ResponseStatusException.class);
+        event.setFechaInicio(LocalDate.now().minusDays(2));
+        assertThat(service.prepare(owner, 160L).format()).isEqualTo(TournamentSocialDraft.Format.GENERAL);
+    }
+
+    private static AmericanoPlayerRankingDto americanoPlayer(String name, long score, int wins) {
+        return AmericanoPlayerRankingDto.builder().playerName("Jugador").playerLastName(name).matchesPlayed(3)
+                .totalScore(score).matchesWon(wins).build();
+    }
+
+    private void assertGeneralKing() {
+        assertThat(service.prepare(owner, 136L).format()).isEqualTo(TournamentSocialDraft.Format.GENERAL);
     }
 
     private TournamentKingOfCourt configureKing(boolean finished) {
@@ -155,6 +198,7 @@ class TournamentSocialDraftServiceTest {
     private static TournamentDto kingEvent(TournamentStatus status) {
         var tournament = event(136L);
         tournament.setEstado(status);
+        tournament.setFechaInicio(LocalDate.now().minusDays(2));
         tournament.setTipo(TournamentType.KING_OF_COURT);
         tournament.setModalidad(Modalidad.INDIVIDUAL);
         return tournament;

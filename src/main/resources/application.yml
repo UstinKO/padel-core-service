@@ -32,6 +32,11 @@ spring:
             enabled: true
             paths: /**
 
+  servlet:
+    multipart:
+      max-file-size: 2MB
+      max-request-size: 7MB
+
   # ------ JPA ------
   jpa:
     hibernate:

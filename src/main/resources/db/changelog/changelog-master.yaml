@@ -212,3 +212,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.69-playoff-match-start.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.70-social-publication-package.yaml
+      relativeToChangelogFile: true

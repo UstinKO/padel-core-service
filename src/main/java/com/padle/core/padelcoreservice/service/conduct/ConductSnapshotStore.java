@@ -112,7 +112,7 @@ class ConductSnapshotStore {
         String fields = tables(type).stream().map(SnapshotTable::snapshotExpression)
                 .collect(Collectors.joining(", "));
         return jdbc.sql("""
-                SELECT CAST(jsonb_build_object('status', estado, %s) AS text)
+                SELECT CAST(jsonb_build_object('status', estado, 'americanoFinalOrder', americano_final_order, %s) AS text)
                 FROM tournaments_db WHERE id = :id
                 """.formatted(fields)).param("id", tournamentId).query(String.class).single();
     }
@@ -207,7 +207,9 @@ class ConductSnapshotStore {
                     .param("link", youtube).param("id", tournamentId).update();
         }
         jdbc.sql("""
-                UPDATE tournaments_db SET estado = CAST(:snapshot AS jsonb)->>'status'
+                UPDATE tournaments_db
+                SET estado = CAST(:snapshot AS jsonb)->>'status',
+                    americano_final_order = CAST(:snapshot AS jsonb)->>'americanoFinalOrder'
                 WHERE id = :id AND estado <> 'CANCELADO'
                   AND (estado = 'FINALIZADO' OR CAST(:snapshot AS jsonb)->>'status' = 'FINALIZADO')
                 """).param("snapshot", snapshot).param("id", tournamentId).update();
