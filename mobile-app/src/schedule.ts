@@ -25,6 +25,7 @@ export interface PublicTournament {
   cancellationDeadline: string | null;
   description: string | null;
   websiteUrl: string;
+  participants?: unknown;
 }
 
 export class ScheduleError extends Error {
@@ -58,7 +59,7 @@ export function parseTournament(value: unknown): PublicTournament {
     || !['MASCULINO', 'FEMENINO', 'MIXTO'].includes(String(value.gender))
     || !nullableText(value.level) || !offsetDate(value.startsAt) || !text(value.timeZone)
     || !nullableText(value.duration) || typeof value.price !== 'number' || !Number.isFinite(value.price) || value.price < 0
-    || typeof value.currency !== 'string' || !/^[A-Z]{3}$/.test(value.currency)
+    || typeof value.currency !== 'string' || !/^(?:[A-Z]{3}|USDT)$/.test(value.currency)
     || !text(value.status) || !counts.every(nonnegative)
     || value.capacityUnit !== (value.modality === 'DOBLES' ? 'PAIRS' : 'PLAYERS')
     || typeof value.registrationOpen !== 'boolean'
@@ -131,5 +132,7 @@ export function eventDate(date: string, timeZone: string, language: Language): s
 }
 
 export function eventPrice(event: PublicTournament, language: Language): string {
-  return new Intl.NumberFormat(language, { style: 'currency', currency: event.currency, currencyDisplay: 'code', minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(event.price);
+  return event.currency === 'USDT'
+    ? new Intl.NumberFormat(language, { maximumFractionDigits: 2 }).format(event.price) + ' USDT'
+    : new Intl.NumberFormat(language, { style: 'currency', currency: event.currency, currencyDisplay: 'code', minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(event.price);
 }

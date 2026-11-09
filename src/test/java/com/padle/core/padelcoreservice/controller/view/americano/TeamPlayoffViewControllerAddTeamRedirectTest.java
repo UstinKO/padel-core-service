@@ -12,6 +12,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.context.support.StaticMessageSource;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 
@@ -42,11 +45,15 @@ class TeamPlayoffViewControllerAddTeamRedirectTest {
 
     private static final Long TOURNAMENT_ID = 77L;
 
+    private static final String SAVE_FAILURE = "No se pudo guardar el equipo.";
+
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        var messages = new StaticMessageSource();
+        messages.addMessage("admin.team_playoff.add_team.failure", LocaleContextHolder.getLocale(), SAVE_FAILURE);
         controller = new TeamPlayoffViewController(playoffService, tournamentService, matchRepository,
-                tournamentAccessService, playerService);
+                tournamentAccessService, null, playerService, messages);
         redirectAttributes = new RedirectAttributesModelMap();
     }
 
@@ -77,6 +84,19 @@ class TeamPlayoffViewControllerAddTeamRedirectTest {
         assertThat(view).isEqualTo("redirect:/admin/tournaments/" + TOURNAMENT_ID + "/payments");
         assertThat(redirectAttributes.getFlashAttributes()).containsKey("successMessage");
         assertThat(redirectAttributes.getFlashAttributes()).doesNotContainKeys("success", "error", "errorMessage");
+    }
+
+    @Test
+    void databaseFailureReturnsToPaymentsWithSafeMessage() {
+        var request = new TeamPlayoffAddTeamRequest();
+        doThrow(new DataIntegrityViolationException("private database details"))
+                .when(playoffService).addTeam(TOURNAMENT_ID, request);
+
+        String view = controller.addTeam(TOURNAMENT_ID, request, "payments",
+                redirectAttributes, new Owner());
+
+        assertThat(view).isEqualTo("redirect:/admin/tournaments/" + TOURNAMENT_ID + "/payments");
+        assertThat(redirectAttributes.getFlashAttributes().get("errorMessage")).isEqualTo(SAVE_FAILURE);
     }
 
     @Test

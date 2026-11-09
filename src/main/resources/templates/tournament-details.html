@@ -192,8 +192,12 @@
                             </div>
                             <div class="info-content">
                                 <span class="info-label" th:text="#{tournament.info.duration}">Duración estimada</span>
-                                <span class="info-value" th:if="${tournament.duracion}" th:text="${tournament.duracion}">4 horas</span>
-                                <span class="info-value" th:unless="${tournament.duracion}" th:text="#{tournament.info.duration.unknown}">No especificada</span>
+                                <span class="info-value" th:if="${tournament.durationMinutes != null}"
+                                      th:text="#{calendar.duration_minutes(${tournament.durationMinutes})}"></span>
+                                <span class="info-value" th:if="${tournament.durationMinutes == null and not #strings.isEmpty(tournament.duracion)}"
+                                      th:text="${tournament.duracion}">4 horas</span>
+                                <span class="info-value" th:if="${tournament.durationMinutes == null and #strings.isEmpty(tournament.duracion)}"
+                                      th:text="#{tournament.info.duration.unknown}">No especificada</span>
                             </div>
                         </div>
 
@@ -264,15 +268,36 @@
                         </div>
                     </div>
 
-                    <div style="margin-top: 1.25rem;">
-                        <a id="addToCalendarBtn" href="#" target="_blank" rel="noopener noreferrer"
-                           style="display:inline-flex; align-items:center; gap:.5rem; padding:.65rem 1.25rem;
-                                  background:#FF6B35; color:#fff; border-radius:8px; text-decoration:none;
-                                  font-weight:600; font-size:.95rem; transition:opacity .2s;"
-                           onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
-                            <i class="fas fa-calendar-plus"></i>
-                            <span th:text="#{tournament.info.add_to_calendar}">Añadir a Google Calendar</span>
-                        </a>
+                    <div class="calendar-picker" id="calendarPicker"
+                         th:attr="data-event-id=${tournament.id},data-language=${#locale.language}">
+                        <button id="addToCalendarBtn" class="calendar-toggle" type="button"
+                                aria-expanded="false" aria-controls="calendarOptions">
+                            <i class="fas fa-calendar-plus" aria-hidden="true"></i>
+                            <span th:text="#{tournament.info.add_to_calendar}">Agregar al calendario</span>
+                            <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                        </button>
+                        <div id="calendarOptions" class="calendar-options" hidden>
+                            <p id="calendarStatus" class="calendar-status" role="status" hidden></p>
+                            <ul class="calendar-links">
+                                <li><a data-calendar="google" target="_blank" rel="noopener noreferrer"
+                                       th:href="@{/api/public/tournaments/{id}/calendar/google(id=${tournament.id},lang=${#locale.language})}"
+                                       th:text="#{calendar.google}">Google Calendar</a></li>
+                                <li><a data-calendar="apple" target="_blank" rel="noopener noreferrer"
+                                       th:href="@{/api/public/tournaments/{id}/calendar/event.ics(id=${tournament.id},lang=${#locale.language})}"
+                                       th:text="#{calendar.apple}">Apple Calendar</a></li>
+                                <li><a data-calendar="other"
+                                       th:href="@{/api/public/tournaments/{id}/calendar/event.ics(id=${tournament.id},lang=${#locale.language},download=true)}"
+                                       th:text="#{calendar.other}">Otro calendario — descargar .ics</a></li>
+                            </ul>
+                            <details class="calendar-help">
+                                <summary th:text="#{calendar.help_title}">Cómo agregar a Apple Calendar</summary>
+                                <p th:text="#{calendar.help}"></p>
+                                <p th:text="#{calendar.fallback}"></p>
+                                <p th:text="#{calendar.in_app}"></p>
+                                <label for="calendarPageLink" th:text="#{calendar.page_link}"></label>
+                                <input id="calendarPageLink" type="text" readonly>
+                            </details>
+                        </div>
                     </div>
                 </div>
 
@@ -698,12 +723,19 @@
                     <div class="user-registration-status" th:if="${isRegistered}">
                         <div class="status-message" th:classappend="${isInWaitlist} ? 'status-waitlist' : 'status-confirmed'">
                             <i class="fas" th:class="${isInWaitlist} ? 'fa-clock' : 'fa-check-circle'"></i>
-                            <span th:text="${isInWaitlist} ? #{tournament.status.waitlist} : #{tournament.status.confirmed}"></span>
+                            <span th:if="${needsPartnerReplacement}" th:text="#{tournament.status.partner_replacement}"></span>
+                            <span th:unless="${needsPartnerReplacement}"
+                                  th:text="${isInWaitlist} ? #{tournament.status.waitlist} : #{tournament.status.confirmed}"></span>
                         </div>
                         <div class="registration-position" th:if="${userRegistration != null}">
                             <span th:if="${!isInWaitlist}" th:text="#{tournament.position.main} + ' ' + ${userRegistration.position}">Posición: 15</span>
                             <span th:if="${isInWaitlist}" th:text="#{tournament.position.waitlist} + ' ' + ${userRegistration.waitlistPosition}">Posición en espera: 3</span>
                         </div>
+                        <button th:if="${currentUserIsSolo}" type="button" onclick="openAddPartnerModal()"
+                                style="margin-top:.7rem; padding:.5rem .9rem; background:#FF6B35; color:#fff;
+                                       border:0; border-radius:7px; font-weight:600; cursor:pointer;">
+                            <i class="fas fa-user-plus"></i> <span th:text="#{tournament.partner.add}">Agregar compañero</span>
+                        </button>
                     </div>
 
                     <!-- Información de disponibilidad -->
@@ -719,28 +751,38 @@
                     </div>
 
                     <!-- Botones de acción -->
-                    <div class="registration-actions">
+                    <div id="tournament-registration" class="registration-actions">
                         <button class="btn-register btn-primary btn-block"
                                 th:if="${!isRegistered && isAuthenticated && tournament.estado.toString() == 'REGISTRO_ABIERTO'}"
                                 th:attr="data-tournament-id=${tournament.id}, data-tournament-name=${tournament.nombre}"
-                                id="registerButton">
+                                th:data-registration-intent="${tournament.id}" id="registerButton">
                             <i class="fas fa-check-circle"></i>
                             <span th:text="${availableSpots > 0} ? #{tournament.btn.register} : #{tournament.btn.waitlist}"></span>
                         </button>
 
                         <!-- Остальные кнопки без изменений -->
-                        <a href="/login" class="btn-login btn-outline btn-block"
+                        <a th:href="@{/login(tournamentId=${tournament.id})}" th:data-registration-intent="${tournament.id}"
+                           class="btn-login btn-outline btn-block"
                            th:if="${!isAuthenticated && tournament.estado.toString() == 'REGISTRO_ABIERTO'}">
                             <i class="fas fa-sign-in-alt"></i>
                             <span th:text="#{tournament.btn.login}">Iniciar sesión para inscribirse</span>
                         </a>
 
                         <button class="btn-cancel btn-outline btn-block"
-                                th:if="${isRegistered}"
+                                th:if="${isRegistered and tournament.modalidad.name() != 'DOBLES'}"
                                 th:attr="data-tournament-id=${tournament.id}, data-tournament-name=${tournament.nombre}">
                             <i class="fas fa-times-circle"></i>
                             <span th:text="#{tournament.btn.cancel}">Cancelar inscripción</span>
                         </button>
+                        <button type="button" class="btn btn-outline btn-block" data-replace-partner
+                                style="display:none;" th:if="${isRegistered and tournament.tipo.name() == 'AMERICANO_TEAMS'}"
+                                th:attr="data-tournament-id=${tournament.id}"></button>
+                        <a class="btn-cancel btn-outline btn-block"
+                           th:if="${isRegistered and tournament.modalidad.name() == 'DOBLES'}"
+                           th:href="@{/players/dashboard(cancelPair=${tournament.id})}">
+                            <i class="fas fa-times-circle"></i>
+                            <span th:text="#{tournament.btn.cancel}">Cancelar inscripción</span>
+                        </a>
 
                         <div class="registration-closed" th:if="${tournament.estado.toString() != 'REGISTRO_ABIERTO'}">
                             <i class="fas fa-lock"></i>
@@ -752,7 +794,11 @@
 
                     <!-- Información adicional -->
                     <div class="additional-info">
-                        <div class="info-note" th:if="${tournament.deadlineCancelacion}">
+                        <div class="info-note" th:if="${tournament.tipo.name() == 'AMERICANO_TEAMS'}">
+                            <i class="fas fa-clock"></i>
+                            <span th:text="#{tournament.team_attendance.reminder}">Avisá si cambiaron tus planes y llegá 15 minutos antes.</span>
+                        </div>
+                        <div class="info-note" th:if="${tournament.deadlineCancelacion != null and tournament.tipo.name() != 'AMERICANO_TEAMS'}">
                             <i class="fas fa-clock"></i>
                             <span th:text="#{tournament.cancel.hint(${#temporals.format(tournament.deadlineCancelacion, 'dd/MM/yyyy HH:mm')})}">Puedes cancelar hasta 24h antes del torneo</span>
                         </div>
@@ -763,8 +809,8 @@
     </div>
 </main>
 
-<!-- ── Модал «Agregar compañero» (для SOLO_ADD_LATER игроков) ── -->
-<div id="addPartnerModal" th:if="${currentUserIsSolo and userRegistration != null and userRegistration.status.name() == 'SOLO_ADD_LATER'}"
+<!-- ── Модал «Agregar compañero» для активной заявки без партнёра ── -->
+<div id="addPartnerModal" th:if="${currentUserIsSolo}"
      style="display:none; position:fixed; inset:0; z-index:9000;
             background:rgba(0,0,0,.55); align-items:center; justify-content:center;">
     <div style="background:#fff; border-radius:14px; padding:28px 32px; max-width:480px;
@@ -773,7 +819,7 @@
             <i class="fas fa-user-plus" style="color:#FF6B35;"></i> <span th:text="#{modal.add_partner.title}">Agregar compañero de pareja</span>
         </h3>
         <p style="color:#64748b; font-size:.875rem; margin:0 0 20px;" th:text="#{modal.add_partner.subtitle}">
-            Ingresá los datos de tu compañero. Si está registrado en la plataforma, lo confirmaremos automáticamente.
+            Ingresá los datos de tu compañero. Registraremos la pareja al instante; el lugar depende de la disponibilidad y la reserva.
         </p>
         <!-- Nombre -->
         <div style="margin-bottom:12px;">
@@ -798,7 +844,7 @@
             <label style="font-size:.85rem; font-weight:600; color:#374151; display:block; margin-bottom:4px;" th:text="#{modal.add_partner.field.email}">Email</label>
             <input id="apEmail" type="email" th:placeholder="#{modal.add_partner.field.email.placeholder}"
                    style="width:100%; padding:.5rem .75rem; border:1px solid #e2e8f0; border-radius:8px; font-size:.9rem; box-sizing:border-box;">
-            <small style="color:#9ca3af; font-size:.78rem;" th:text="#{modal.add_partner.field.email.hint}">Si tu compañero no está en la plataforma, le enviaremos una invitación por email.</small>
+            <small style="color:#9ca3af; font-size:.78rem;" th:text="#{modal.add_partner.field.email.hint}">El email es opcional si ingresaste un teléfono. No se requiere confirmación por email.</small>
         </div>
         <div id="apError" style="display:none; background:#fee2e2; color:#991b1b; border-radius:8px;
                                   padding:.5rem .8rem; font-size:.85rem; margin-bottom:12px;"></div>
@@ -817,7 +863,7 @@
     </div>
 </div>
 
-<script th:inline="javascript" th:if="${currentUserIsSolo and userRegistration != null and userRegistration.status.name() == 'SOLO_ADD_LATER'}">
+<script th:inline="javascript" th:if="${currentUserIsSolo}">
     const _addPartnerTournamentId = /*[[${tournament.id}]]*/ 0;
 
     function openAddPartnerModal() {
@@ -851,11 +897,24 @@
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
 
         try {
+            const terms = await window.PairTerms.reviewBooking(_addPartnerTournamentId, nombre + ' ' + apellido);
+            if (terms === null) {
+                btn.disabled = false;
+                btn.textContent = t('modal.add_partner.btn.confirm');
+                return;
+            }
             const res = await fetch(`/api/tournaments/double/${_addPartnerTournamentId}/add-partner`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ nombre, apellido, telefono, email })
+                body: JSON.stringify({ nombre, apellido, telefono, email, ...terms })
             });
+            if (res.status === 409) {
+                errEl.textContent = t('pair_terms.retry');
+                errEl.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = t('modal.add_partner.btn.confirm');
+                return;
+            }
             const data = await res.json();
 
             if (data.success) {
@@ -1159,7 +1218,9 @@
     var isAuthenticated = /*[(${isAuthenticated})]*/ false;
     /*]]>*/
 </script>
+<script th:src="@{/js/pair-terms.js}"></script>
 <script th:src="@{/js/tournament-details.js}"></script>
+<script th:src="@{/js/calendar-picker.js}"></script>
 <script>
     (function() {
         const url  = window.location.href;

@@ -6,13 +6,16 @@ import ch.qos.logback.core.read.ListAppender;
 import com.padle.core.padelcoreservice.dto.americano.AmericanoMatchSuggestionDto;
 import com.padle.core.padelcoreservice.dto.americano.AmericanoTeamDto;
 import com.padle.core.padelcoreservice.dto.americano.TeamPlayoffAddTeamRequest;
+import com.padle.core.padelcoreservice.exception.InvalidStateException;
 import com.padle.core.padelcoreservice.model.Club;
+import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.americano.AmericanoMatch;
 import com.padle.core.padelcoreservice.model.americano.AmericanoTeam;
 import com.padle.core.padelcoreservice.model.enums.GenderFormat;
 import com.padle.core.padelcoreservice.model.enums.Modalidad;
+import com.padle.core.padelcoreservice.model.enums.OwnerRole;
 import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.model.enums.PlayoffStage;
 import com.padle.core.padelcoreservice.model.enums.TournamentPhase;
@@ -23,6 +26,8 @@ import com.padle.core.padelcoreservice.repository.PlayerRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoMatchRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoTeamRepository;
+import com.padle.core.padelcoreservice.service.conduct.ConductChange;
+import com.padle.core.padelcoreservice.service.conduct.TournamentConductHistory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,6 +54,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Сквозные regression-тесты полного цикла Team Playoff (квалификация → плей-офф → финал)
@@ -82,6 +88,11 @@ class TeamPlayoffEndToEndTest {
     private AmericanoTeamRepository teamRepository;
     @Autowired
     private AmericanoMatchRepository matchRepository;
+
+    @Autowired
+    private TournamentConductHistory history;
+    @Autowired
+    private PlayoffPairExchange exchange;
 
     private ListAppender<ILoggingEvent> logAppender;
 
@@ -171,6 +182,117 @@ class TeamPlayoffEndToEndTest {
         runQualification(tournamentId, teams);
 
         assertEachTeamPlayedExactlyTwoQualMatches(tournamentId, teams);
+    }
+
+    @Test
+    void restoresBracketWithItsOriginalMatchLinksAfterRegenerationAndResult() {
+        long tournament = createTournament(10);
+        runQualification(tournament, createTeams(tournament, 10));
+        playoffService.initPlayoff(tournament);
+        var original = playoffService.getPlayoffMatches(tournament).stream().map(BracketMatch::of).toList();
+        playoffService.regeneratePlayoff(tournament);
+        var playIn = playoffService.getPlayoffMatches(tournament).stream()
+                .filter(match -> match.getNextMatchId() != null).findFirst().orElseThrow();
+        playoffService.submitPlayoffResult(playIn.getId(), 6, 3);
+
+        Owner owner = Owner.builder().id(90001L).role(OwnerRole.SUPER_ADMIN).build();
+        long beforeRegenerate = history.list(tournament, owner).stream()
+                .filter(version -> version.action() == ConductChange.Action.CHECKPOINT_REGENERATE_PLAYOFF)
+                .findFirst().orElseThrow().id();
+        history.restore(tournament, beforeRegenerate, history.revision(tournament), owner);
+
+        assertThat(playoffService.getPlayoffMatches(tournament)).map(BracketMatch::of)
+                .containsExactlyInAnyOrderElementsOf(original);
+        assertThat(history.list(tournament, owner)).extracting(TournamentConductHistory.Version::action)
+                .contains(ConductChange.Action.REGENERATE_PLAYOFF, ConductChange.Action.CHECKPOINT_RESTORE);
+    }
+
+    @Test
+    void exchangeMovesPlayInLinkPreservesHistoryAndAdvancesWinners() {
+        long tournament = createTournament(9);
+        runQualification(tournament, createTeams(tournament, 9));
+        playoffService.initPlayoff(tournament);
+        var playIn = playoffService.getPlayoffMatches(tournament).stream()
+                .filter(m -> m.getPlayoffStage() == PlayoffStage.ROUND_OF_16).findFirst().orElseThrow();
+        playoffService.submitPlayoffResult(playIn.getId(), 6, 3);
+        Long sourceId = playIn.getNextMatchId();
+        int sourceSlot = playIn.getNextMatchSlot();
+        var source = matchRepository.findById(sourceId).orElseThrow();
+        source.setPlayoffPlayStarted(null);
+        var preview = exchange.options(sourceId, sourceSlot, false);
+        var selected = preview.candidates().stream()
+                .filter(option -> option.block() == null && !option.encounters().isEmpty())
+                .findFirst().orElseThrow();
+        assertThat(selected.confirmNotStarted()).isTrue();
+        var command = new PlayoffPairExchange.Request(sourceSlot, selected.matchId(), selected.slot(), true, true);
+        var oldQualification = matchRepository.findByTournamentIdAndPhase(tournament, TournamentPhase.QUALIFICATION)
+                .stream().map(BracketMatch::of).toList();
+        var saved = exchange.exchange(sourceId, command);
+        assertThat(saved.rematchConfirmed()).isTrue();
+        assertThat(saved.firstBefore()).isEqualTo(preview.current());
+        assertThat(saved.firstAfter()).isEqualTo(selected.firstAfter());
+        assertThat(playIn.getNextMatchId()).isEqualTo(selected.matchId());
+        assertThat(playIn.getNextMatchSlot()).isEqualTo(selected.slot());
+        assertThat(playIn.getTeam1Games()).isEqualTo(6);
+        assertThat(playIn.getTeam2Games()).isEqualTo(3);
+        assertThat(matchRepository.findByTournamentIdAndPhase(tournament, TournamentPhase.QUALIFICATION))
+                .map(BracketMatch::of).containsExactlyElementsOf(oldQualification);
+        var owner = Owner.builder().id(90001L).role(OwnerRole.SUPER_ADMIN).build();
+        var latest = history.list(tournament, owner).get(0);
+        assertThat(latest.action()).isEqualTo(ConductChange.Action.PLAYOFF_SWAP);
+        assertThat(history.preview(tournament, latest.id(), owner).playoffSwap()).isEqualTo(saved);
+        assertThat(history.list(tournament, owner)).extracting(TournamentConductHistory.Version::action)
+                .contains(ConductChange.Action.CHECKPOINT_PLAYOFF_SWAP);
+
+        var qf = matchRepository.findByTournamentIdAndPlayoffStage(tournament, PlayoffStage.QUARTER_FINAL);
+        for (var match : qf) {
+            playoffService.submitPlayoffResultForPair(match.getId(), 6, 4, match.getTeam1Id(), match.getTeam2Id());
+        }
+        assertThat(matchRepository.findByTournamentIdAndPlayoffStage(tournament, PlayoffStage.SEMI_FINAL))
+                .flatExtracting(match -> List.of(match.getTeam1Id(), match.getTeam2Id()))
+                .containsExactlyInAnyOrderElementsOf(qf.stream().map(AmericanoMatch::getTeam1Id).toList());
+    }
+
+    @Test
+    void completedMatchCanOnlyBeCorrectedWithNewScoreAndOldScoreIsAudited() {
+        long tournament = createTournament(8);
+        runQualification(tournament, createTeams(tournament, 8));
+        playoffService.initPlayoff(tournament);
+        var quarterfinals = matchRepository.findByTournamentIdAndPlayoffStage(tournament, PlayoffStage.QUARTER_FINAL);
+        var completed = quarterfinals.get(0);
+        var started = quarterfinals.get(1);
+        exchange.markStarted(started.getId());
+        playoffService.submitPlayoffResult(completed.getId(), 5, 6);
+        assertThat(exchange.options(completed.getId(), 1, false).block()).endsWith(".completed");
+        assertThat(exchange.options(started.getId(), 1, false).block()).endsWith(".started");
+        var selected = exchange.options(completed.getId(), 1, true).candidates().stream()
+                .filter(option -> option.matchId().equals(started.getId()) && option.block() == null)
+                .findFirst().orElseThrow();
+        var command = new PlayoffPairExchange.Request(1, selected.matchId(), selected.slot(), true, true);
+        assertThatThrownBy(() -> exchange.correct(completed.getId(),
+                new PlayoffPairExchange.Correction(command, true, null, null)))
+                .isInstanceOf(InvalidStateException.class).hasMessageEndingWith(".correct_score");
+        var saved = exchange.correct(completed.getId(), new PlayoffPairExchange.Correction(command, true,
+                new PlayoffPairExchange.Score(6, 2), new PlayoffPairExchange.Score(4, 6)));
+        assertThat(saved.firstBefore().firstGames()).isEqualTo(5);
+        assertThat(saved.firstBefore().secondGames()).isEqualTo(6);
+        assertThat(saved.firstAfter().firstGames()).isEqualTo(6);
+        assertThat(saved.firstAfter().secondGames()).isEqualTo(2);
+        assertThat(started.isCompleted()).isTrue();
+        var owner = Owner.builder().id(90001L).role(OwnerRole.SUPER_ADMIN).build();
+        var latest = history.list(tournament, owner).get(0);
+        assertThat(latest.action()).isEqualTo(ConductChange.Action.PLAYOFF_PAIR_CORRECTED);
+        assertThat(history.preview(tournament, latest.id(), owner).playoffSwap()).isEqualTo(saved);
+        assertThatThrownBy(() -> playoffService.submitPlayoffResultForPair(completed.getId(), 3, 6,
+                saved.firstBefore().first().id(), saved.firstBefore().second().id()))
+                .isInstanceOf(InvalidStateException.class).hasMessage("conduct.history.stale");
+    }
+
+    private record BracketMatch(Long id, Long first, Long second, Long next, Integer slot) {
+        static BracketMatch of(AmericanoMatch match) {
+            return new BracketMatch(match.getId(), match.getTeam1Id(), match.getTeam2Id(),
+                    match.getNextMatchId(), match.getNextMatchSlot());
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════════════

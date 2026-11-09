@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.65-pair-replacement-notices
+      author: padel-core
+      changes:
+        - sql:
+            sql: |
+              CREATE TABLE pair_replacement_notices_db (
+                  id BIGSERIAL PRIMARY KEY,
+                  player_id BIGINT NOT NULL REFERENCES player_padel_db(id) ON DELETE CASCADE,
+                  tournament_id BIGINT NOT NULL,
+                  tournament_name TEXT NOT NULL,
+                  booker_name TEXT NOT NULL,
+                  replacement_name TEXT NOT NULL,
+                  dismissed_at TIMESTAMPTZ
+              );
+              CREATE INDEX idx_pair_replacement_notices_unread
+                  ON pair_replacement_notices_db (player_id, id DESC) WHERE dismissed_at IS NULL;
+      rollback:
+        - dropTable:
+            tableName: pair_replacement_notices_db

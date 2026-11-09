@@ -22,6 +22,7 @@ import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoMatchRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoRoundRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoTeamRepository;
+import com.padle.core.padelcoreservice.service.conduct.ConductChange;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -55,6 +56,7 @@ public class TeamAmericanoService {
      * 4. Сохраняет все раунды и матчи
      */
     @Transactional
+    @ConductChange(ConductChange.Action.START)
     public TeamAmericanoRankingDto initialize(Long tournamentId, TeamAmericanoConfigDto config) {
         log.info("Initializing Team Americano: tournamentId={}, courts={}, points={}",
                 tournamentId, config.getCourts(), config.getPointsPerMatch());
@@ -382,6 +384,7 @@ public class TeamAmericanoService {
      * Сохраняет результат матча и обновляет статистику обеих команд.
      */
     @Transactional
+    @ConductChange(value = ConductChange.Action.RESULT, subject = ConductChange.Subject.AMERICANO_MATCH)
     public AmericanoMatch submitMatchResult(Long matchId, int team1Score, int team2Score) {
         AmericanoMatch match = matchRepository.findById(matchId)
                 .orElseThrow(() -> new ResourceNotFoundException("Match not found: " + matchId));
@@ -394,8 +397,10 @@ public class TeamAmericanoService {
                     "La suma de puntos debe ser %d. Actual: %d", limit, team1Score + team2Score));
         }
 
-        // Откатываем предыдущий результат если матч уже был сыгран
         if (match.isCompleted()) {
+            if (Objects.equals(match.getTeam1Score(), team1Score) && Objects.equals(match.getTeam2Score(), team2Score)) {
+                return match;
+            }
             revertTeamStats(match, tournamentId);
         }
 
@@ -495,6 +500,7 @@ public class TeamAmericanoService {
     // ═══════════════════════════════════════════════════════════════════════
 
     @Transactional
+    @ConductChange(ConductChange.Action.FINISH)
     public TeamAmericanoRankingDto finishTournament(Long tournamentId) {
         Tournament tournament = getTournament(tournamentId);
 

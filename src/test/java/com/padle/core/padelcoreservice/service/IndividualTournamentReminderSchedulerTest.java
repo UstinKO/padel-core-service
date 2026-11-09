@@ -159,7 +159,7 @@ class IndividualTournamentReminderSchedulerTest {
     }
 
     @Test
-    void plantillaIndividual_contieneAdvertenciaDePenalizacion() {
+    void plantillaIndividual_explicaQueLaCoordinacionDescuentaLosPuntos() {
         Context context = new Context(new java.util.Locale("es"));
         context.setVariable("playerName", "Juan");
         context.setVariable("clubName", "Club Padel Central");
@@ -171,7 +171,7 @@ class IndividualTournamentReminderSchedulerTest {
         String html = templateEngine.process("email/individual-tournament-reminder", context);
 
         assertThat(html).contains("Club Padel Central", "Av. Siempre Viva 742", "18:30",
-                "Te pedimos llegar 15 minutos antes", "−10 puntos",
+                "Te pedimos llegar 15 minutos antes", "la coordinación aplica manualmente un descuento de 10 puntos",
                 "https://1-padel.com/torneo/42", "Ver evento", "Seguí el torneo en vivo");
     }
 

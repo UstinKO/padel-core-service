@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 @Controller
 @RequestMapping("/players")
@@ -70,15 +71,14 @@ public class PlayerDashboardController {
         log.info("Dashboard accessed by player: {} (ID: {})", player.getEmail(), player.getId());
 
         try {
-            // Получаем турниры, открытые для регистрации
-            List<TournamentDto> upcomingTournaments = tournamentService.getVisibleTournamentsForPlayer();
-
             // Турниры, в которых игрок уже участвовал, и id турниров с активной регистрацией —
             // из одного запроса регистраций
             TournamentService.PlayerDashboardTournaments dashboardTournaments =
                     tournamentService.getHistoricalAndActiveTournamentsByPlayer(player.getId());
             List<TournamentDto> historicalTournaments = dashboardTournaments.historical();
             List<Long> myTournamentIds = dashboardTournaments.activeTournamentIds();
+            List<TournamentDto> upcomingTournaments =
+                    tournamentService.getVisibleTournamentsForPlayer(Set.copyOf(myTournamentIds));
 
             model.addAttribute("player", player);
             model.addAttribute("torneosInscritos", myTournamentIds.size());
@@ -380,6 +380,10 @@ public class PlayerDashboardController {
         response.put("waitlistPosition", dto.getWaitlistPosition());
         response.put("registrationDate", dto.getRegistrationDate());
         response.put("isDoubleRegistration", dto.getIsDoubleRegistration());
+        response.put("canReplacePartner", dto.getPartnerId() != null
+                && doubleTournamentRegistrationService.canReplaceCurrentPartner(tournamentId, player.getId()));
+        response.put("replacementNeeded", dto.getPartnerId() == null && player.getId().equals(dto.getMainPlayerId())
+                && (dto.getStatus() == RegistrationStatus.CONFIRMED || dto.getStatus() == RegistrationStatus.WAITLIST));
 
         return ResponseEntity.ok(response);
     }

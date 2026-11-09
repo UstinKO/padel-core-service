@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="link(tournamentId)" class="admin-actions">
+    <a class="btn btn-outline" th:href="@{/admin/tournaments/{id}/conduct-history(id=${tournamentId})}"
+       th:text="#{conduct.history.title}">Historial del torneo</a>
+</div>
+<div th:fragment="saveStatus" id="conduct-save-status" role="status" aria-live="polite"
+     th:data-saving="#{conduct.save.pending}" th:data-saved="#{conduct.save.done}" th:data-error="#{conduct.save.error}"
+     th:data-replayed="#{conduct.save.replayed}" th:data-stale="#{conduct.history.stale}"
+     th:data-qualification-dependency="#{conduct.history.qualification_dependency}"
+     th:data-playoff-dependency="#{conduct.history.playoff_dependency}"></div>
+    <span th:fragment="versionSummary(item)">
+        <time th:datetime="${item.recordedAt}"
+              th:text="${#temporals.format(item.recordedAt, 'dd/MM/yyyy HH:mm:ss', 'America/Argentina/Buenos_Aires')}"></time>
+        <strong th:text="#{${'conduct.action.' + item.action.name()}}"></strong>
+        <span th:if="${item.roundNumber != null}" th:text="#{conduct.history.round(${item.roundNumber})}"></span>
+        <span th:if="${item.courtNumber != null}" th:text="#{conduct.history.court(${item.courtNumber})}"></span>
+        <span th:if="${item.stage != null}" th:text="#{${'conduct.stage.' + item.stage}}"></span>
+        <span th:if="${item.subjectId != null}" th:text="${'#' + item.subjectId}"></span>
+        <span th:if="${item.actorName != null}" th:text="${item.actorName}"></span>
+    </span>
+    <li th:fragment="playoffPair(pair)">
+        <strong th:text="#{conduct.history.court(${pair.court ?: '—'})}"></strong>
+        <span th:text="${(pair.first.number != null ? '№' + pair.first.number + ' ' : '') + pair.first.name}"></span>
+        <span aria-hidden="true">—</span>
+        <span th:text="${(pair.second.number != null ? '№' + pair.second.number + ' ' : '') + pair.second.name}"></span>
+        <span th:if="${pair.firstGames != null and pair.secondGames != null}"
+              th:text="${pair.firstGames + ':' + pair.secondGames}"></span>
+    </li>
+</body>
+</html>

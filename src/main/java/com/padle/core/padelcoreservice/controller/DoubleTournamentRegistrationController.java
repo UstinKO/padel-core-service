@@ -18,6 +18,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.HashMap;
 import java.util.List;
@@ -83,6 +84,8 @@ public class DoubleTournamentRegistrationController {
             response.put("message", "Ya estás registrado en este torneo o los datos del compañero son inválidos.");
             return ResponseEntity.badRequest().body(response);
 
+        } catch (ResponseStatusException e) {
+            throw e;
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Error al procesar el registro: " + e.getMessage());
@@ -204,6 +207,8 @@ public class DoubleTournamentRegistrationController {
             response.put("message", "Ya estás registrado en este torneo o los datos del compañero son inválidos.");
             return ResponseEntity.badRequest().body(response);
 
+        } catch (ResponseStatusException e) {
+            throw e;
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Error al agregar compañero: " + e.getMessage());

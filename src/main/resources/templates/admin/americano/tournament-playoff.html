@@ -133,6 +133,12 @@
         .prep-step-counter strong{color:#FF6B35}
         .inline-edit{display:none;gap:.35rem;align-items:center;margin-top:.4rem;background:#f8fafc;padding:.4rem;border-radius:6px}
         .inline-edit.open{display:flex}
+        .playoff-start-state{padding:.35rem 1rem}
+        .playoff-exchange{width:min(34rem,calc(100% - 2rem));max-height:calc(100% - 2rem);padding:1.25rem;border:1px solid #e2e8f0;border-radius:.75rem}
+        .playoff-exchange::backdrop{background:rgba(15,23,42,.55)}
+        .playoff-exchange select{width:100%;margin:.35rem 0}
+        .playoff-exchange [hidden]{display:none}
+        .playoff-exchange-actions{display:flex;justify-content:flex-end;gap:.5rem;margin-top:1rem}
         .inline-edit select{flex:1;border:1px solid #e2e8f0;border-radius:6px;padding:.25rem .4rem;font-size:.78rem}
         .toast-box{position:fixed;bottom:1rem;right:1rem;z-index:1000;display:flex;flex-direction:column;gap:.5rem}
         .toast{background:#fef9c3;border:1px solid #fcd34d;color:#78350f;padding:.6rem .9rem;border-radius:8px;font-size:.82rem;box-shadow:0 4px 12px rgba(0,0,0,.1);max-width:320px}
@@ -145,6 +151,10 @@
 <div id="toastBox" class="toast-box"></div>
 
 <main class="admin-main">
+    <div class="container">
+        <div th:replace="~{fragments/conduct-history :: link(${tournament.id})}"></div>
+        <div th:replace="~{fragments/conduct-history :: saveStatus}"></div>
+    </div>
     <div class="container">
 
         <!-- Навигация -->
@@ -725,6 +735,7 @@
                 </h3>
                 <form th:action="@{'/tournaments/team-playoff/admin/' + ${tournament.id} + '/regenerate-playoff'}"
                       method="post" style="display:inline">
+                    <input type="hidden" name="expectedConductVersion" th:value="${conductVersion}">
                     <button type="submit" class="btn btn-outline btn-sm"
                             onclick="return confirm(t('admin.playoff.confirm.regenerate'))">
                         <i class="fas fa-sync-alt"></i>
@@ -742,7 +753,8 @@
                     </h4>
 
                     <div th:each="match : ${round.matches}" class="match-card"
-                         th:id="'pmatch-' + ${match.id}">
+                         th:id="'pmatch-' + ${match.id}"
+                         th:attr="data-team1-id=${match.team1Id},data-team2-id=${match.team2Id}">
 
                         <div class="match-header">
                             <span>
@@ -761,6 +773,14 @@
                             <button type="button" class="save-btn" th:onclick="'submitCourtChange(' + ${match.id} + ')'">OK</button>
                         </div>
 
+                        <div class="playoff-start-state"
+                             th:if="${not match.isCompleted and match.team1Player1Name != null and match.team2Player1Name != null}">
+                            <span th:if="${match.playoffPlayStarted == true}" class="info-pill"
+                                  th:text="#{admin.playoff.swap.started}"></span>
+                            <button th:unless="${match.playoffPlayStarted == true}" type="button" class="btn btn-outline btn-sm"
+                                    th:attr="data-start-match=${match.id}"
+                                    th:text="#{admin.playoff.swap.start}"></button>
+                        </div>
                         <div class="match-body">
                             <div class="team-left">
                                 <div th:if="${match.team1Player1Name != null}" class="team-name"
@@ -769,14 +789,16 @@
                                      th:text="${match.team1Player2Name}">TBD</div>
                                 <div th:if="${match.team1Player1Name == null}" class="tbd"
                                      th:text="#{admin.playoff.bracket.tbd}">TBD</div>
-                                <button th:if="${not match.isCompleted and match.team1Player1Name != null}" type="button" class="icon-btn"
-                                        th:onclick="'togglePlayoffSwap(' + ${match.id} + ', 1)'" title="Intercambiar equipo">
-                                    <i class="fas fa-exchange-alt"></i>
+                                <button th:if="${not match.isCompleted and match.playoffPlayStarted != true and match.team1Player1Name != null and match.team2Player1Name != null}"
+                                        type="button" class="icon-btn"
+                                        th:attr="data-swap-match=${match.id},data-swap-slot=1"
+                                        th:title="#{admin.playoff.swap.title}" th:aria-label="#{admin.playoff.swap.title}">
+                                    <i class="fas fa-exchange-alt" aria-hidden="true"></i>
                                 </button>
-                                <div th:unless="${match.isCompleted}" th:id="'team-edit-' + ${match.id} + '-1'" class="inline-edit">
-                                    <select></select>
-                                    <button type="button" class="save-btn" th:onclick="'submitPlayoffSwap(' + ${match.id} + ', 1)'">OK</button>
-                                </div>
+                                <button th:if="${(match.isCompleted or match.playoffPlayStarted == true) and match.team1Player1Name != null and match.team2Player1Name != null}"
+                                        type="button" class="btn btn-outline btn-sm"
+                                        th:attr="data-swap-match=${match.id},data-swap-slot=1,data-correction='true'"
+                                        th:text="#{admin.playoff.swap.correct}"></button>
                             </div>
 
                             <div class="vs-block">
@@ -815,14 +837,16 @@
                                      th:text="${match.team2Player2Name}">TBD</div>
                                 <div th:if="${match.team2Player1Name == null}" class="tbd"
                                      th:text="#{admin.playoff.bracket.tbd}">TBD</div>
-                                <button th:if="${not match.isCompleted and match.team2Player1Name != null}" type="button" class="icon-btn"
-                                        th:onclick="'togglePlayoffSwap(' + ${match.id} + ', 2)'" title="Intercambiar equipo">
-                                    <i class="fas fa-exchange-alt"></i>
+                                <button th:if="${not match.isCompleted and match.playoffPlayStarted != true and match.team1Player1Name != null and match.team2Player1Name != null}"
+                                        type="button" class="icon-btn"
+                                        th:attr="data-swap-match=${match.id},data-swap-slot=2"
+                                        th:title="#{admin.playoff.swap.title}" th:aria-label="#{admin.playoff.swap.title}">
+                                    <i class="fas fa-exchange-alt" aria-hidden="true"></i>
                                 </button>
-                                <div th:unless="${match.isCompleted}" th:id="'team-edit-' + ${match.id} + '-2'" class="inline-edit">
-                                    <select></select>
-                                    <button type="button" class="save-btn" th:onclick="'submitPlayoffSwap(' + ${match.id} + ', 2)'">OK</button>
-                                </div>
+                                <button th:if="${(match.isCompleted or match.playoffPlayStarted == true) and match.team1Player1Name != null and match.team2Player1Name != null}"
+                                        type="button" class="btn btn-outline btn-sm"
+                                        th:attr="data-swap-match=${match.id},data-swap-slot=2,data-correction='true'"
+                                        th:text="#{admin.playoff.swap.correct}"></button>
                             </div>
                         </div>
                     </div>
@@ -831,12 +855,98 @@
         </div>
 
     </div>
+    <dialog id="playoff-exchange" class="playoff-exchange" aria-labelledby="playoff-exchange-title"
+            th:attr="data-version=${conductVersion}">
+        <h2 id="playoff-exchange-title" th:text="#{admin.playoff.swap.title}"></h2>
+        <p data-exchange-status role="status"></p>
+        <label data-exchange-select hidden>
+            <span th:text="#{admin.playoff.swap.choose}"></span>
+            <select></select>
+        </label>
+        <ul data-exchange-blocked hidden></ul>
+        <div data-exchange-dependencies hidden>
+            <h3 th:text="#{admin.playoff.swap.dependent_matches}"></h3>
+            <ul></ul>
+        </div>
+        <div data-exchange-preview hidden>
+            <div data-exchange-previous hidden>
+                <h3 th:text="#{admin.playoff.swap.previous}"></h3>
+                <ul></ul>
+            </div>
+            <h3 th:text="#{admin.playoff.swap.proposed}"></h3>
+            <ul data-exchange-pairs></ul>
+            <div data-exchange-rematch hidden>
+                <p th:text="#{admin.playoff.swap.rematch_warning}"></p>
+                <ul data-exchange-encounters></ul>
+                <label>
+                    <input type="checkbox" data-confirm-rematch>
+                    <span th:text="#{admin.playoff.swap.confirm_rematch}"></span>
+                </label>
+            </div>
+            <label data-exchange-legacy hidden>
+                <input type="checkbox" data-confirm-not-started>
+                <span th:text="#{admin.playoff.swap.confirm_not_started}"></span>
+            </label>
+            <div data-exchange-correction hidden>
+                <fieldset th:each="index : ${#numbers.sequence(1, 2)}" data-correct-score hidden>
+                    <legend></legend>
+                    <label>
+                        <span th:text="#{admin.playoff.swap.first_games}"></span>
+                        <input type="number" min="0" max="7" step="1">
+                    </label>
+                    <label>
+                        <span th:text="#{admin.playoff.swap.second_games}"></span>
+                        <input type="number" min="0" max="7" step="1">
+                    </label>
+                </fieldset>
+                <label>
+                    <input type="checkbox" data-confirm-correction>
+                    <span th:text="#{admin.playoff.swap.confirm_correction}"></span>
+                </label>
+            </div>
+        </div>
+        <div class="playoff-exchange-actions">
+            <button type="button" class="btn btn-outline" data-exchange-close th:text="#{conduct.history.cancel}"></button>
+            <button type="button" class="btn btn-primary" data-exchange-save disabled th:text="#{koc.admin.modal.save}"></button>
+        </div>
+        <div hidden>
+            <span data-copy="loading" th:text="#{admin.playoff.swap.loading}"></span>
+            <span data-copy="error" th:text="#{admin.playoff.swap.error}"></span>
+            <span data-copy="none" th:text="#{admin.playoff.swap.none}"></span>
+            <span data-copy="completed" th:text="#{admin.playoff.swap.completed}"></span>
+            <span data-copy="started" th:text="#{admin.playoff.swap.started}"></span>
+            <span data-copy="cancelled" th:text="#{admin.playoff.swap.cancelled}"></span>
+            <span data-copy="incomplete" th:text="#{admin.playoff.swap.incomplete}"></span>
+            <span data-copy="duplicate" th:text="#{admin.playoff.swap.duplicate}"></span>
+            <span data-copy="ineligible" th:text="#{admin.playoff.swap.ineligible}"></span>
+            <span data-copy="dependency" th:text="#{admin.playoff.swap.dependency}"></span>
+            <span data-copy="court_conflict" th:text="#{admin.playoff.swap.court_conflict}"></span>
+            <span data-copy="other_match" th:text="#{admin.playoff.swap.other_match}"></span>
+            <span data-copy="tournament_closed" th:text="#{admin.playoff.swap.tournament_closed}"></span>
+            <span data-copy="match" th:text="#{admin.playoff.swap.match}"></span>
+            <span data-copy="court" th:text="#{admin.playoff.label.court}"></span>
+            <span data-copy="qualification" th:text="#{admin.playoff.swap.qualification}"></span>
+            <span data-copy="court_required" th:text="#{admin.playoff.swap.court_required}"></span>
+            <span data-copy="refresh" th:text="#{admin.playoff.swap.refresh}"></span>
+            <span data-copy="confirm_start" th:text="#{admin.playoff.swap.confirm_start}"></span>
+            <span data-copy="title" th:text="#{admin.playoff.swap.title}"></span>
+            <span data-copy="correct" th:text="#{admin.playoff.swap.correct}"></span>
+            <span data-copy="use_exchange" th:text="#{admin.playoff.swap.use_exchange}"></span>
+            <span data-stage="ROUND_OF_16" th:text="#{team_playoff.stage.round_of_16}"></span>
+            <span data-stage="QUARTER_FINAL" th:text="#{team_playoff.stage.quarter_final}"></span>
+            <span data-stage="SEMI_FINAL" th:text="#{team_playoff.stage.semi_final}"></span>
+            <span data-stage="FINAL" th:text="#{team_playoff.stage.final}"></span>
+        </div>
+    </dialog>
+    <p data-start-error class="alert alert-danger" role="alert" hidden></p>
 </main>
 
 <script th:src="@{/js/csrf.js}"></script>
+<script th:src="@{/js/tournament-conduct.js}"></script>
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 <script th:src="@{/js/team-playoff-realtime.js}"></script>
+<script defer th:src="@{/js/team-playoff-exchange.js}"></script>
 <script th:inline="javascript">
     const TOURNAMENT_ID = /*[[${tournament.id}]]*/ 0;
     const QUAL_STARTED = /*[[${qualStarted}]]*/ false;
@@ -862,7 +972,12 @@
     new TeamPlayoffRealtime(TOURNAMENT_ID);
 
     // ─── localStorage backup для незакрытых счётов ────────────────────────
-    function lsKey(inputId) { return 'padel_t' + TOURNAMENT_ID + '_' + inputId; }
+    function lsKey(inputId) {
+        const matchId = /^pg[12]-(\d+)$/.exec(inputId)?.[1];
+        const pair = matchId ? document.getElementById('pmatch-' + matchId)?.dataset : null;
+        const lineup = pair ? '_' + pair.team1Id + '_' + pair.team2Id : '';
+        return 'padel_t' + TOURNAMENT_ID + '_' + inputId + lineup;
+    }
     function lsSave(id, v)  { try { localStorage.setItem(lsKey(id), v); } catch(e) {} }
     function lsClear(id)    { try { localStorage.removeItem(lsKey(id)); } catch(e) {} }
     function lsRestore() {
@@ -1080,7 +1195,7 @@
         if (team1Id === team2Id) { alert('Selecciona dos equipos diferentes.'); return; }
         if (!courtNumber) { alert(MSG_NO_COURTS); return; }
 
-        fetch('/tournaments/team-playoff/api/' + TOURNAMENT_ID + '/qual-matches', {
+        conductFetch('/tournaments/team-playoff/api/' + TOURNAMENT_ID + '/qual-matches', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
@@ -1108,7 +1223,7 @@
         if (!team1Id || !team2Id) { alert(MSG_NO_TEAMS); return; }
         if (team1Id === team2Id) { alert('Selecciona dos equipos diferentes.'); return; }
 
-        fetch('/tournaments/team-playoff/api/' + TOURNAMENT_ID + '/qual-matches/queue', {
+        conductFetch('/tournaments/team-playoff/api/' + TOURNAMENT_ID + '/qual-matches/queue', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({team1Id: Number(team1Id), team2Id: Number(team2Id)})
@@ -1186,7 +1301,7 @@
         const courtNumber = document.getElementById('queue-court-' + matchId)?.value;
         if (!courtNumber) { showToast(MSG_QUEUE_NO_COURTS); return; }
 
-        fetch('/tournaments/team-playoff/api/matches/' + matchId + '/assign-court', {
+        conductFetch('/tournaments/team-playoff/api/matches/' + matchId + '/assign-court', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({courtNumber: Number(courtNumber)})
@@ -1205,7 +1320,7 @@
     function removeFromQueueAction(matchId) {
         if (!confirm(MSG_QUEUE_REMOVE_CONFIRM)) return;
 
-        fetch('/tournaments/team-playoff/api/matches/' + matchId + '/queue/remove', {method: 'POST'})
+        conductFetch('/tournaments/team-playoff/api/matches/' + matchId + '/queue/remove', {method: 'POST'})
             .then(r => r.json())
             .then(data => {
                 if (data.success) {
@@ -1231,7 +1346,7 @@
         btn.disabled = true;
         btn.textContent = '...';
 
-        fetch('/tournaments/team-playoff/api/qual-matches/' + matchId + '/result', {
+        conductFetch('/tournaments/team-playoff/api/qual-matches/' + matchId + '/result', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ team1Games: g1, team2Games: g2 })
@@ -1252,7 +1367,9 @@
                         onclick="showQualEdit(this)"><i class="fas fa-edit"></i> editar</button>`;
                 updateQualRanking();
             } else {
-                alert(data.message || 'Error al guardar');
+                alert(data.message === 'conduct.history.qualification_dependency'
+                    ? document.getElementById('conduct-save-status').dataset.qualificationDependency
+                    : data.message || 'Error al guardar');
             }
             btn.disabled = false;
             btn.textContent = 'OK';
@@ -1320,7 +1437,9 @@
         btn.disabled = true;
         btn.textContent = '...';
 
-        fetch('/tournaments/team-playoff/api/playoff-matches/' + matchId + '/result', {
+        const pair = document.getElementById('pmatch-' + matchId).dataset;
+        const expected = new URLSearchParams({expectedTeam1: pair.team1Id, expectedTeam2: pair.team2Id});
+        conductFetch('/tournaments/team-playoff/api/playoff-matches/' + matchId + '/result?' + expected, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ team1Games: g1, team2Games: g2 })
@@ -1332,7 +1451,10 @@
                 lsClear('pg2-' + matchId);
                 location.reload();
             } else {
-                alert(data.message || 'Error');
+                alert(data.message === 'conduct.history.playoff_dependency'
+                    ? document.getElementById('conduct-save-status').dataset.playoffDependency
+                    : data.message === 'conduct.history.stale'
+                        ? document.getElementById('conduct-save-status').dataset.stale : data.message || 'Error');
                 btn.disabled = false;
                 btn.textContent = 'OK';
             }
@@ -1379,7 +1501,7 @@
         const courtNumber = box?.querySelector('select')?.value;
         if (!courtNumber) return;
 
-        fetch('/tournaments/team-playoff/api/matches/' + matchId + '/court', {
+        conductFetch('/tournaments/team-playoff/api/matches/' + matchId + '/court', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({courtNumber: Number(courtNumber)})
@@ -1418,7 +1540,7 @@
         const teamId = box?.querySelector('select')?.value;
         if (!teamId) return;
 
-        fetch('/tournaments/team-playoff/api/matches/' + matchId + '/team', {
+        conductFetch('/tournaments/team-playoff/api/matches/' + matchId + '/team', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({slot: slot, teamId: Number(teamId)})
@@ -1435,49 +1557,6 @@
             .catch(() => showToast('Error de red'));
     }
 
-    // ── Обмен команд в плей-офф: в отличие от квалификации, в плей-офф нет пула
-    // "свободных" команд — все уже стоят в каком-то матче, поэтому единственный способ
-    // переставить посеянные пары — поменять их местами друг с другом. ──
-    function togglePlayoffSwap(matchId, slot) {
-        const box = document.getElementById('team-edit-' + matchId + '-' + slot);
-        if (!box) return;
-        const opening = !box.classList.contains('open');
-        box.classList.toggle('open', opening);
-        if (opening) {
-            fetch('/tournaments/team-playoff/api/matches/' + matchId + '/swap-candidates')
-                .then(r => r.json())
-                .then(candidates => {
-                    const sel = box.querySelector('select');
-                    sel.innerHTML = candidates.map(c =>
-                        `<option value="${c.matchId}:${c.slot}">${c.teamDisplayName}</option>`
-                    ).join('') || '<option value="">—</option>';
-                })
-                .catch(() => {});
-        }
-    }
-
-    function submitPlayoffSwap(matchId, slot) {
-        const box = document.getElementById('team-edit-' + matchId + '-' + slot);
-        const val = box?.querySelector('select')?.value;
-        if (!val) return;
-        const [otherMatchId, otherSlot] = val.split(':');
-
-        fetch('/tournaments/team-playoff/api/matches/' + matchId + '/swap-team', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({slot: slot, otherMatchId: Number(otherMatchId), otherSlot: Number(otherSlot)})
-        })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    if (data.warning) showToast(data.warning);
-                    location.reload();
-                } else {
-                    showToast(data.message || 'Error');
-                }
-            })
-            .catch(() => showToast('Error de red'));
-    }
 </script>
 <script th:src="@{/js/share-panel.js}"></script>
 </body>

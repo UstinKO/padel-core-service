@@ -3,10 +3,12 @@ package com.padle.core.padelcoreservice.controller.view;
 import tools.jackson.databind.ObjectMapper;
 import com.padle.core.padelcoreservice.dto.PlayerResponseDto;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
+import com.padle.core.padelcoreservice.security.TournamentLogin;
 import com.padle.core.padelcoreservice.service.PlayerService;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -91,6 +93,7 @@ public class HomeController {
             @RequestParam(value = "error", required = false) String error,
             @RequestParam(value = "logout", required = false) String logout,
             @RequestParam(value = "registered", required = false) String registered,
+            HttpServletRequest request,
             Model model) {
 
         log.info("Accediendo a página de login");
@@ -100,14 +103,15 @@ public class HomeController {
                 authentication.isAuthenticated() &&
                 !authentication.getName().equals("anonymousUser");
 
+        var tournament = TournamentLogin.requestedTournament(request);
         if (isAuthenticated) {
             if (isOwner(authentication)) {
                 return "redirect:/admin";
-            } else {
-                return "redirect:/players/dashboard";
             }
+            return "redirect:" + tournament.map(TournamentLogin::registrationUrl).orElse("/players/dashboard");
         }
 
+        tournament.ifPresent(id -> model.addAttribute(TournamentLogin.PARAMETER, id));
         if (error != null) {
             model.addAttribute("error", true);
         }

@@ -1,0 +1,8 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.59-meta-payment-source
+      author: padle-team
+      changes:
+        - sqlFile:
+            path: v1.59-meta-payment-source.sql
+            relativeToChangelogFile: true

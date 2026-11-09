@@ -5,9 +5,11 @@ import { eventDate, eventPrice } from './schedule';
 import { AuthError, PlayerRequestError } from './auth';
 import type { PartnerPayload } from './auth';
 import {
-  BookingError, bookingQuote, cancellationDeadline, isPairAmericanoEvent, createPairBooking,
+  BookingError, bookingQuote, cancellationDeadline, isPairAmericanoEvent, needsPartner, needsPartnerReplacement, createPairBooking,
 } from './pairBooking';
 import type { PairSnapshot, PairReceipt, PartnerCandidate, LookingForPartnerEntry } from './pairBooking';
+import { pairTermsCopy } from './pairTerms';
+import PairTermsSummary from './PairTermsSummary';
 import { pairCopy } from './pairCopy';
 import { messages } from './copy';
 import { colors as c } from './theme';
@@ -89,7 +91,7 @@ export default function PairBookingScreen({ tournamentId, booking, language, pro
       const next = await booking.reconcile(tournamentId);
       if (started !== version.current) return;
       setSnapshot(next.snapshot); setReceipt(next.receipt); setAccepted(false); setUncertain(next.uncertain); setUncertainChecked(next.uncertain);
-      if (next.snapshot.registration.status === 'SOLO_SEARCH' || next.snapshot.registration.status === 'SOLO_ADD_LATER') await loadLooking();
+      if (needsPartner(next.snapshot.registration) && !needsPartnerReplacement(next.snapshot.registration)) await loadLooking();
     });
   }
   useEffect(() => { version.current++; resetChoices(); void check(); return () => { version.current++; }; }, [booking, tournamentId]);
@@ -109,7 +111,9 @@ export default function PairBookingScreen({ tournamentId, booking, language, pro
   const open = !!event && event.registrationOpen && event.status === 'REGISTRO_ABIERTO' && Date.parse(event.startsAt) > Date.now();
   const pair = !!event && isPairAmericanoEvent(event);
   const reg = snapshot?.registration ?? null;
-  const addingPartner = !!reg?.registered && (reg.status === 'SOLO_SEARCH' || reg.status === 'SOLO_ADD_LATER');
+  const addingPartner = !!reg && needsPartner(reg);
+  const replacingPartner = !!reg && needsPartnerReplacement(reg);
+  const currentOffer = mode === 'partner' || addingPartner ? snapshot?.terms : null;
   const showPartnerForm = mode === 'partner' || addingPartner;
   const showShare = !!receipt && !!reg?.hasRegisteredPartner;
   let errorText = t.unavailable;
@@ -126,17 +130,18 @@ export default function PairBookingScreen({ tournamentId, booking, language, pro
   async function external(url: string) { try { await Linking.openURL(url); } catch { setError(new AuthError('UNAVAILABLE')); } }
   function partnerPayload(): PartnerPayload | null {
     if (selected) return { isExistingUser: true, existingUserId: selected.id, nombre: selected.nombre, apellido: selected.apellido };
-    if (firstName.trim() && lastName.trim() && whatsapp.trim()) return { isExistingUser: false, nombre: firstName.trim(), apellido: lastName.trim(), telefono: whatsapp.trim(), ...(newTelegram.trim() ? { telegramUsername: newTelegram.trim() } : {}) };
+    if (partnerTab === 'new' && firstName.trim() && lastName.trim() && whatsapp.trim()) return { isExistingUser: false, nombre: firstName.trim(), apellido: lastName.trim(), telefono: whatsapp.trim(), ...(newTelegram.trim() ? { telegramUsername: newTelegram.trim() } : {}) };
     return null;
   }
   function submitPartner() {
     const partner = partnerPayload();
-    if (!snapshot || !accepted || !partner) return;
+    if (!snapshot || (!accepted && !currentOffer && !replacingPartner) || !partner) return;
     const started = version.current;
     void perform(async () => {
+      const reviewedPartner = currentOffer ? { ...partner, pairTermsToken: currentOffer.token } : partner;
       const result = addingPartner
-        ? await booking.addPartnerNow(tournamentId, bookingQuote(snapshot.event), partner)
-        : await booking.joinWithPartner(tournamentId, bookingQuote(snapshot.event), partner);
+        ? await booking.addPartnerNow(tournamentId, bookingQuote(snapshot.event), reviewedPartner)
+        : await booking.joinWithPartner(tournamentId, bookingQuote(snapshot.event), reviewedPartner);
       if (started !== version.current) return;
       const fresh = await booking.load(tournamentId);
       if (started === version.current) { setSnapshot(fresh); setReceipt(result); setAccepted(false); }
@@ -166,22 +171,17 @@ export default function PairBookingScreen({ tournamentId, booking, language, pro
   async function shareTelegram() { const url = shareUrl(); if (url) await external(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(t.shareMessage)}`); }
 
   function partnerForm() {
-    // addPartnerNow (completar una inscripción SOLO_* ya existente) llama a .../add-partner: para un
-    // compañero NUEVO (sin cuenta) ese endpoint usa el flujo legado PARTNER_INVITED por token de email
-    // (addPartnerToSoloRegistration, rama "else" — no el registro inmediato de LFPT-0687 que sí usa
-    // .../register). Como esta pantalla nunca pide el email del compañero, ese flujo no podría
-    // completarse jamás: la pestaña "compañero nuevo" solo se ofrece en el registro inicial.
     return <View style={s.card}>
-      <Text style={s.sectionTitle}>{addingPartner ? t.addPartnerTitle : t.modeHasPartner}</Text>
+      <Text style={s.sectionTitle}>{replacingPartner ? t.addReplacement : addingPartner ? t.addPartnerTitle : t.modeHasPartner}</Text>
       {selected && <View style={[s.candidateRow, s.candidateSelected]}>
         <Text style={s.fact}>{selected.nombreCompleto}</Text>
         <TouchableOpacity accessibilityRole="button" onPress={() => setSelected(null)}><Text style={s.link}>✕</Text></TouchableOpacity>
       </View>}
-      {!addingPartner && <View style={s.tabRow}>
-        <TouchableOpacity accessibilityRole="tab" accessibilityState={{ selected: partnerTab === 'existing' }} onPress={() => setPartnerTab('existing')} style={[s.tab, partnerTab === 'existing' && s.tabActive]}><Text style={[s.tabText, partnerTab === 'existing' && s.tabTextActive]}>{t.searchLabel}</Text></TouchableOpacity>
-        <TouchableOpacity accessibilityRole="tab" accessibilityState={{ selected: partnerTab === 'new' }} onPress={() => setPartnerTab('new')} style={[s.tab, partnerTab === 'new' && s.tabActive]}><Text style={[s.tabText, partnerTab === 'new' && s.tabTextActive]}>{t.orNewPartner}</Text></TouchableOpacity>
-      </View>}
-      {(partnerTab === 'existing' || addingPartner) && <>
+      <View style={s.tabRow}>
+        <TouchableOpacity accessibilityRole="tab" accessibilityState={{ selected: partnerTab === 'existing' }} onPress={() => { setPartnerTab('existing'); setSelected(null); }} style={[s.tab, partnerTab === 'existing' && s.tabActive]}><Text style={[s.tabText, partnerTab === 'existing' && s.tabTextActive]}>{t.searchLabel}</Text></TouchableOpacity>
+        <TouchableOpacity accessibilityRole="tab" accessibilityState={{ selected: partnerTab === 'new' }} onPress={() => { setPartnerTab('new'); setSelected(null); }} style={[s.tab, partnerTab === 'new' && s.tabActive]}><Text style={[s.tabText, partnerTab === 'new' && s.tabTextActive]}>{t.orNewPartner}</Text></TouchableOpacity>
+      </View>
+      {partnerTab === 'existing' && <>
         <TextInput accessibilityLabel={t.searchLabel} value={query} onChangeText={value => { setQuery(value); setSelected(null); }} editable={!busy} style={s.input} placeholder={t.searchPlaceholder} />
         {searching && <Text style={s.body}>{t.searching}</Text>}
         {!searching && query.trim().length >= 2 && candidates.length === 0 && <Text style={searchError ? s.error : s.body}>{searchError ? t.searchError : t.noResults}</Text>}
@@ -189,13 +189,12 @@ export default function PairBookingScreen({ tournamentId, booking, language, pro
           <Text style={s.fact}>{candidate.nombreCompleto}</Text>
           {selected?.id === candidate.id ? <Text style={s.link}>✓</Text> : <Text style={s.link}>{t.selectPartner}</Text>}
         </TouchableOpacity>)}
-        {addingPartner && <Text style={s.hint}>{t.addPartnerSearchOnlyHint}</Text>}
       </>}
-      {!addingPartner && partnerTab === 'new' && <>
-        <Text style={s.label}>{t.firstName}</Text><TextInput accessibilityLabel={t.firstName} value={firstName} onChangeText={value => { setFirstName(value); searchNewPartnerField('firstName', value); }} editable={!busy} style={s.input} />
-        <Text style={s.label}>{t.lastName}</Text><TextInput accessibilityLabel={t.lastName} value={lastName} onChangeText={value => { setLastName(value); searchNewPartnerField('lastName', value); }} editable={!busy} style={s.input} />
-        <Text style={s.label}>{t.whatsapp}</Text><TextInput accessibilityLabel={t.whatsapp} keyboardType="phone-pad" value={whatsapp} onChangeText={value => { setWhatsapp(value); searchNewPartnerField('whatsapp', value); }} editable={!busy} style={s.input} placeholder="+54…" />
-        <Text style={s.label}>{t.telegramOptional}</Text><TextInput accessibilityLabel={t.telegramOptional} autoCapitalize="none" autoCorrect={false} value={newTelegram} onChangeText={value => { setNewTelegram(value); searchNewPartnerField('telegram', value); }} editable={!busy} style={s.input} placeholder="@username" />
+      {partnerTab === 'new' && <>
+        <Text style={s.label}>{t.firstName}</Text><TextInput accessibilityLabel={t.firstName} value={firstName} onChangeText={value => { setSelected(null); setFirstName(value); searchNewPartnerField('firstName', value); }} editable={!busy} style={s.input} />
+        <Text style={s.label}>{t.lastName}</Text><TextInput accessibilityLabel={t.lastName} value={lastName} onChangeText={value => { setSelected(null); setLastName(value); searchNewPartnerField('lastName', value); }} editable={!busy} style={s.input} />
+        <Text style={s.label}>{t.whatsapp}</Text><TextInput accessibilityLabel={t.whatsapp} keyboardType="phone-pad" value={whatsapp} onChangeText={value => { setSelected(null); setWhatsapp(value); searchNewPartnerField('whatsapp', value); }} editable={!busy} style={s.input} placeholder="+54…" />
+        <Text style={s.label}>{t.telegramOptional}</Text><TextInput accessibilityLabel={t.telegramOptional} autoCapitalize="none" autoCorrect={false} value={newTelegram} onChangeText={value => { setSelected(null); setNewTelegram(value); searchNewPartnerField('telegram', value); }} editable={!busy} style={s.input} placeholder="@username" />
         {newPartnerSearchError && <Text style={s.error}>{t.searchError}</Text>}
         {!newPartnerSearchError && newPartnerSuggestions().length > 0 && <View style={s.card}>
           <Text style={s.hint}>{t.newPartnerSuggestionsTitle}</Text>
@@ -228,7 +227,7 @@ export default function PairBookingScreen({ tournamentId, booking, language, pro
   }
 
   return <KeyboardAvoidingView style={s.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-    <View style={s.top}><TouchableOpacity accessibilityRole="button" onPress={onClose} style={s.back}><Text style={s.link}>‹ {t.back}</Text></TouchableOpacity><Text accessibilityRole="header" style={s.title}>{t.title}</Text></View>
+    <View style={s.top}><TouchableOpacity accessibilityRole="button" onPress={onClose} style={s.back}><Text style={s.link}>‹ {t.back}</Text></TouchableOpacity><Text accessibilityRole="header" style={s.title}>{replacingPartner ? t.addReplacement : t.title}</Text></View>
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={s.content}>
       {loading && <View style={s.state}><ActivityIndicator color={c.orange} /><Text style={s.body}>{t.loading}</Text></View>}
       {receipt && <View style={[s.notice, receipt.status === 'WAITLIST' && s.amber]}>
@@ -243,6 +242,7 @@ export default function PairBookingScreen({ tournamentId, booking, language, pro
         </View>}
       </View>}
       {uncertain && !receipt && <View style={[s.notice, s.amber]}><Text style={s.result}>{t.uncertain}</Text><Text style={s.body}>{t.uncertainBody}</Text>{uncertainChecked && <Text style={s.body}>{t.unconfirmed}</Text>}</View>}
+      {replacingPartner && !receipt && <View style={[s.notice, s.amber]}><Text style={s.result}>{t.replacementNeeded}</Text><Text style={s.body}>{reg?.status === 'WAITLIST' ? t.replacementReserveBody : t.replacementBody}</Text>{event && <TouchableOpacity accessibilityRole="link" onPress={() => void external(event.websiteUrl)} style={s.textButton}><Text style={s.link}>{t.site} ↗</Text></TouchableOpacity>}</View>}
       {event && <View style={s.card}><Text style={s.eventTitle}>{messages[language][event.type]}</Text><Text style={s.body}>{messages[language][event.gender]}{event.level ? ` · ${event.level.replaceAll('_', '/')}` : ''}</Text><Text style={s.fact}>{eventDate(event.startsAt, event.timeZone, language)}</Text><Text style={s.body}>{event.club.name}</Text>{event.club.address && <Text style={s.body}>{event.club.address}</Text>}<View style={s.priceRow}><Text style={s.body}>{t.price}</Text><Text style={s.price}>{eventPrice(event, language)}</Text></View></View>}
       {!loading && event && !receipt && !uncertain && <>
         <View style={s.card}><Text style={s.label}>{t.person}</Text><Text style={s.fact}>{profileName}</Text></View>
@@ -261,21 +261,35 @@ export default function PairBookingScreen({ tournamentId, booking, language, pro
             <TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: shareContacts }} onPress={() => setShareContacts(value => !value)} style={s.checkRow}><View style={[s.checkbox, shareContacts && s.checked]}><Text style={s.check}>{shareContacts ? '✓' : ''}</Text></View><Text style={s.consent}>{t.shareContactsLabel}</Text></TouchableOpacity>
           </View>}
           {mode === 'later' && !reg?.registered && <View style={s.card}><Text style={s.body}>{t.addLaterDeadline}</Text></View>}
-          {addingPartner && <>{reg?.status === 'SOLO_ADD_LATER' && <View style={s.card}><Text style={s.body}>{t.addLaterDeadline}</Text></View>}{lookingForPartnerList()}</>}
+          {addingPartner && <>{reg?.status === 'SOLO_ADD_LATER' && <View style={s.card}><Text style={s.body}>{t.addLaterDeadline}</Text></View>}{reg?.status === 'WAITLIST' && !replacingPartner && <View style={[s.notice, s.amber]}><Text style={s.body}>{t.reserveNeedsPartner}</Text></View>}{!replacingPartner && lookingForPartnerList()}</>}
         </>}
         {needContact && <View style={s.card}><Text style={s.sectionTitle}>{t.contact}</Text><Text style={s.body}>{t.contactHint}</Text><Text style={s.label}>{t.phone}</Text><TextInput accessibilityLabel={t.phone} keyboardType="phone-pad" value={phone} onChangeText={setPhone} editable={!busy} style={s.input} placeholder="+54…" /><Text style={s.label}>{t.telegram}</Text><TextInput accessibilityLabel={t.telegram} autoCapitalize="none" autoCorrect={false} value={telegram} onChangeText={setTelegram} editable={!busy} style={s.input} placeholder="@username" /><Button title={t.saveContact} disabled={busy} onPress={() => {
           const started = version.current;
           void perform(async () => { await booking.saveContact({ telefono: phone, telegramUsername: telegram }); const next = await booking.load(tournamentId); if (started === version.current) { setSnapshot(next); setAccepted(false); setPhone(''); setTelegram(''); } });
         }} /></View>}
         {needLevel && <View style={s.notice}><Text style={s.body}>{t.needLevel}</Text><Button secondary title={t.profile} onPress={() => void external('https://1-padel.com/perfil')} /></View>}
-        {pair && open && !needContact && !needLevel && error?.code !== 'EXISTING' && (mode !== null || addingPartner) && <View style={s.card}><Text style={s.sectionTitle}>{t.rules}</Text><Text style={s.label}>{t.cancellation}</Text><Text style={s.fact}>{eventDate(cancellationDeadline(event), event.timeZone, language)}</Text><Text style={s.body}>{t.finance}</Text><Text style={s.body}>{t.arrival}</Text></View>}
-        {pair && open && !needContact && !needLevel && error?.code !== 'EXISTING' && (mode !== null || addingPartner) && <TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: accepted, disabled: busy }} disabled={busy} onPress={() => setAccepted(value => !value)} style={s.checkRow}><View style={[s.checkbox, accepted && s.checked]}><Text style={s.check}>{accepted ? '✓' : ''}</Text></View><Text style={s.consent}>{t.consent}</Text></TouchableOpacity>}
+        {currentOffer && <View style={s.card}>
+          <Text style={s.sectionTitle}>{pairTermsCopy[language].title}</Text>
+          <PairTermsSummary offer={currentOffer} language={language} />
+          {currentOffer.regulationUrl && /^https?:\/\//i.test(currentOffer.regulationUrl) && <TouchableOpacity accessibilityRole="link" onPress={() => void external(currentOffer.regulationUrl!)}><Text style={s.link}>{pairTermsCopy[language].rules}</Text></TouchableOpacity>}
+        </View>}
+        {!currentOffer && !replacingPartner && pair && open && !needContact && !needLevel && error?.code !== 'EXISTING' && (mode !== null || addingPartner) && <View style={s.card}>
+          <Text style={s.sectionTitle}>{t.rules}</Text>
+          <Text style={s.label}>{t.cancellation}</Text>
+          <Text style={s.fact}>{eventDate(cancellationDeadline(event), event.timeZone, language)}</Text>
+          <Text style={s.body}>{event.type === 'AMERICANO_TEAMS' ? t.teamReminder : t.finance}</Text>
+          <TouchableOpacity accessibilityRole="link" onPress={() => void external(event.websiteUrl)} style={s.textButton}>
+            <Text style={s.link}>{t.site} ↗</Text>
+          </TouchableOpacity>
+          {event.type !== 'AMERICANO_TEAMS' && <Text style={s.body}>{t.arrival}</Text>}
+        </View>}
+        {pair && open && !needContact && !needLevel && error?.code !== 'EXISTING' && (mode !== null || addingPartner) && !currentOffer && !replacingPartner && <TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: accepted, disabled: busy }} disabled={busy} onPress={() => setAccepted(value => !value)} style={s.checkRow}><View style={[s.checkbox, accepted && s.checked]}><Text style={s.check}>{accepted ? '✓' : ''}</Text></View><Text style={s.consent}>{t.consent}</Text></TouchableOpacity>}
       </>}
       {error && !uncertain && !needLevel && !(error.code === 'CLOSED' && !open) && !(error.code === 'NOT_PAIR' && !pair) && <Text accessibilityRole="alert" style={s.error}>{errorText}</Text>}
       {!loading && (error || uncertain || needLevel) && !receipt && <Button secondary title={t.retry} disabled={busy} onPress={() => void check()} />}
       {!loading && event && (uncertain || !pair || !open || error?.code === 'EXISTING') && <Button secondary title={t.site} onPress={() => void external(event.websiteUrl)} />}
     </ScrollView>
-    <View style={s.footer}><View style={s.footerInner}>{receipt || error?.code === 'EXISTING' ? <Button title={t.myEvents} onPress={onMyEvents} /> : (mode === 'partner' || addingPartner) ? <Button title={busy ? t.sending : event?.available === 0 ? t.waitlist : t.join} disabled={busy || loading || !accepted || !partnerPayload() || !pair || !open} onPress={submitPartner} />
+    <View style={s.footer}><View style={s.footerInner}>{receipt || error?.code === 'EXISTING' ? <Button title={t.myEvents} onPress={onMyEvents} /> : (mode === 'partner' || addingPartner) ? <Button title={busy ? t.sending : replacingPartner ? t.addReplacement : addingPartner ? t.addPartnerNow : currentOffer ? t.join : event?.available === 0 ? t.waitlist : t.join} disabled={busy || loading || (!accepted && !currentOffer && !replacingPartner) || !partnerPayload() || !pair || !open} onPress={submitPartner} />
       : mode === 'search' ? <Button title={busy ? t.sending : t.joinSolo} disabled={busy || loading || !accepted || !pair || !open} onPress={() => submitSolo('SEARCH')} />
       : mode === 'later' ? <Button title={busy ? t.sending : t.joinSolo} disabled={busy || loading || !accepted || !pair || !open} onPress={() => submitSolo('ADD_LATER')} />
       : null}</View></View>

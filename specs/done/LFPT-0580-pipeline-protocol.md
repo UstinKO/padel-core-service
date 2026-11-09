@@ -10,7 +10,7 @@ done
 Оркестратор (#579) вливает только PR с меткой `pipeline:ready` и учитывает `Depends-On`, движок задач (#581) отслеживает задачу по маркеру `Pipeline-Task`. Сейчас роутина ничего из этого не ставит, PR ждут ревью, а задачу «бэк + фронт» роутина часто доводит только до бэк-PR, фронт лишь заводит. Нужно, чтобы роутина реализовывала оба слоя, сама доводила PR до зелёного pr-check и отдавала их оркестратору по протоколу.
 
 ## Связь с MASTER.md
-Не затрагивает бизнес-логику продукта. Меняет процесс: `.claude/commands/develop-feature.md`, `.claude/GIT_WORKFLOW.md` §1.4.
+Не затрагивает бизнес-логику продукта. Меняет процесс: `.agents/workflows/develop-feature.md`, `.agents/GIT_WORKFLOW.md` §1.4.
 
 ## Требования
 
@@ -39,7 +39,7 @@ done
 Нет.
 
 ### UI
-Нет. `.claude/commands/develop-feature.md`, `.claude/GIT_WORKFLOW.md`.
+Нет. `.agents/workflows/develop-feature.md`, `.agents/GIT_WORKFLOW.md`.
 
 ## Критерии приёмки
 - [ ] Задача «бэк + фронт» даёт два PR за один прогон; у фронт-PR — `Depends-On: #<бэк-PR>`.

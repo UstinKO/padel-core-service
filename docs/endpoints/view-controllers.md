@@ -224,7 +224,7 @@
 |-----|-----|---------|
 | `GET /{tournamentId}` | публичная | Публичная страница (квал + playoff) |
 | `GET /admin/{tournamentId}` | admin | Страница управления |
-| `POST /admin/{tournamentId}/teams/add` | admin | Добавить команду |
+| `POST /admin/{tournamentId}/teams/add` | admin | Добавить команду. Отменённые заявки переиспользуются с сохранением оплат и источника регистрации. |
 | `POST /admin/teams/{teamId}/update` | admin | Обновить команду |
 | `POST /admin/teams/{teamId}/delete` | admin | Удалить команду |
 | `POST /admin/teams/{teamId}/no-show` | admin | Отметить команду «не пришла» (LFPT-0729) — блокируется, если у команды уже есть матч квалификации |
@@ -254,7 +254,7 @@
 |---------|----------|-----------|
 | `player` | из principal | |
 | `torneosInscritos` | `getActiveRegistrationsByPlayer()` | реальные данные |
-| `tournamentsJson` | `getVisibleTournamentsForPlayer()` | |
+| `tournamentsJson` | `getVisibleTournamentsForPlayer(activeRegistrationTournamentIds)` | Публичные турниры и турниры по ссылке с активной записью текущего игрока |
 | `historicalJson` | прошедшие турниры игрока | |
 | `myTournamentIdsJson` | `getActiveRegistrationsByPlayer()` | |
 

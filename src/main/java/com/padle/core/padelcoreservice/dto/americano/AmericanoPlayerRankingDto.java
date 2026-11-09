@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.dto.americano;
 
+import com.padle.core.padelcoreservice.dto.AdditionalPointsDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -31,5 +32,7 @@ public class AmericanoPlayerRankingDto {
     private Integer pointDifference;   // разница очков
     private Integer uniquePartners;    // уникальные партнёры
     private Integer uniqueOpponents;   // уникальные соперники
-    private Integer totalScore;        // набранные очки (главный критерий режима "по очкам")
+    private Long totalScore;        // набранные очки (главный критерий режима "по очкам")
+    private Long matchPoints;
+    private AdditionalPointsDto additionalPoints;
 }

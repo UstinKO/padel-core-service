@@ -51,3 +51,99 @@ jobs:
 
       - name: Build and test
         run: mvn clean verify
+
+      - name: Report test failure causes
+        if: failure()
+        run: |
+          python3 - <<'PYCODE'
+          from pathlib import Path
+          import re
+          causes = set()
+          for path in Path('target/surefire-reports').glob('*.txt'):
+              text = path.read_text(errors='replace')
+              matches = re.findall(r'^Caused by: (.+)$', text, re.M)
+              if matches:
+                  causes.add(matches[-1][:600])
+          for cause in sorted(causes)[:15]:
+              escaped = cause.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+              print('::error title=Test failure cause::' + escaped)
+          PYCODE
+
+      - name: Check agent instructions and pipeline automation
+        run: |
+          python3 -m unittest discover -s .github/bin -p 'test_*.py'
+          python3 .github/bin/check-agent-migration.py
+          python3 -m unittest discover -s automation/telegram-relay -p 'test_*.py'
+          python3 -m unittest discover -s automation/codex-worker -p 'test_*.py'
+
+  browser-marketing:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: padel_browser_qa
+          POSTGRES_USER: epadel_user
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U epadel_user -d padel_browser_qa"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      SPRING_PROFILES_ACTIVE: test
+      PLAYWRIGHT_MODULE_PATH: /tmp/padel-browser-qa/node_modules/playwright/index.mjs
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || '' }}
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+      - name: Install isolated browser tools
+        run: |
+          npm install --prefix /tmp/padel-browser-qa --no-save --package-lock=false playwright@1.64.1
+          node /tmp/padel-browser-qa/node_modules/playwright/cli.js install --with-deps chromium webkit
+      - name: Check real browsers against isolated test server
+        run: mvn -Dbrowser.qa=true -Dtest=RegistrationSourceBrowserTest test
+      - name: Report browser failure
+        if: failure()
+        run: |
+          python3 - <<'PYCODE'
+          from pathlib import Path
+          import json
+          report = Path('target/browser-qa/report.json')
+          if report.exists():
+              data = json.loads(report.read_text())
+              message = data.get('error', 'Browser test failed')
+              message = message.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+              print('::error title=Browser QA::' + message[:1500])
+          else:
+              browser_log = Path('target/browser-qa/browser.log')
+              if browser_log.exists():
+                  for line in browser_log.read_text(errors='replace').splitlines()[-15:]:
+                      escaped = line.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+                      print('::error title=Browser process::' + escaped[:600])
+              for path in Path('target/surefire-reports').glob('*RegistrationSourceBrowserTest.txt'):
+                  for line in path.read_text(errors='replace').splitlines():
+                      if line.startswith('Caused by:'):
+                          print('::error title=Browser server startup::' + line[:500].replace('%', '%25'))
+          PYCODE
+      - name: Browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: registration-source-browser-qa
+          path: |
+            target/browser-qa/report.json
+            target/browser-qa/*.png
+          if-no-files-found: ignore
+          retention-days: 3

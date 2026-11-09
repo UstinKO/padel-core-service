@@ -1,0 +1,16 @@
+.qr-filters, .qr-table-wrap { padding: 1.5rem; margin-bottom: 1.5rem; }
+.qr-filters form { display: flex; gap: 1rem; flex-wrap: wrap; align-items: end; }
+.qr-filters label { display: grid; gap: .4rem; flex: 1 1 150px; }
+.qr-filters input, .qr-filters select { width: 100%; min-height: 44px; }
+.qr-table-wrap { overflow-x: auto; }
+.qr-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+.qr-table th, .qr-table td { text-align: left; padding: .75rem; border-bottom: 1px solid #e5e7eb; }
+.qr-table td:not(:first-child) { font-variant-numeric: tabular-nums; }
+#qr-status { min-height: 1.5em; }
+#qr-report [hidden] { display: none !important; }
+@media (max-width: 600px) {
+    .qr-filters, .qr-table-wrap { padding: 1rem; }
+    .qr-filters form { flex-direction: column; align-items: stretch; }
+    .qr-filters label { flex-basis: auto; }
+    .qr-table th, .qr-table td { padding: .5rem; }
+}

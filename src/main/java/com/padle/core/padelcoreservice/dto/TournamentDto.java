@@ -5,6 +5,10 @@ import com.padle.core.padelcoreservice.model.enums.Modalidad;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
 import com.padle.core.padelcoreservice.model.enums.TournamentVisibility;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.validation.constraints.AssertTrue;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,6 +19,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 
 @Data
 @Builder
@@ -34,6 +39,11 @@ public class TournamentDto {
     @DateTimeFormat(pattern = "HH:mm")
     private LocalTime horaInicio;
     private String duracion;
+    @Positive(message = "{calendar.validation.duration}")
+    private Integer durationMinutes;
+    @Size(max = 100, message = "{calendar.validation.zone}")
+    private String timeZone;
+
     private GenderFormat generoFormato;
     private String categoriaNivel;
     private TournamentType tipo;
@@ -49,6 +59,8 @@ public class TournamentDto {
     private String cancellationDeadlineFormatted;
     private String infoDetallada;
     private String contactoOrganizador;
+    @jakarta.validation.constraints.Size(max = 2000)
+    private String paymentInstructions;
     private String faqUrl;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -56,6 +68,12 @@ public class TournamentDto {
     private Boolean isActive;
     private Boolean mostrarNivel;
     private TournamentVisibility visibilidad;
+
+    @JsonIgnore
+    @AssertTrue(message = "{calendar.validation.zone}")
+    public boolean isCalendarTimeZoneValid() {
+        return timeZone == null || timeZone.isBlank() || ZoneId.getAvailableZoneIds().contains(timeZone);
+    }
 
     // Поля для статистики
     private Integer inscritosActuales;

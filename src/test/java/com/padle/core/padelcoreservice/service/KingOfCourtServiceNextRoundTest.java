@@ -55,6 +55,8 @@ class KingOfCourtServiceNextRoundTest {
     @Mock private WebSocketService webSocketService;
     @Mock private TournamentAccessService tournamentAccessService;
 
+    @Mock private com.padle.core.padelcoreservice.service.conduct.AdditionalPointsStore additionalPoints;
+
     private KingOfCourtService kingOfCourtService;
 
     private PlayerPadel a, b, c, d, e, f, g, h;
@@ -67,7 +69,7 @@ class KingOfCourtServiceNextRoundTest {
         kingOfCourtService = new KingOfCourtService(
                 kingRepository, matchResultRepository, roundRepository, courtRepository,
                 statsRepository, tournamentRepository, playerRepository,
-                new KingOfCourtMapperImpl(), webSocketService, tournamentAccessService);
+                new KingOfCourtMapperImpl(), webSocketService, tournamentAccessService, additionalPoints);
 
         a = player(1L);
         b = player(2L);

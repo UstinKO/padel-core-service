@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { AuthError, PlayerRequestError } from '../src/auth.ts';
-import { createPairBooking, bookingQuote, isPairAmericanoEvent } from '../src/pairBooking.ts';
+import { createPairBooking, bookingQuote, isPairAmericanoEvent, needsPartner, needsPartnerReplacement } from '../src/pairBooking.ts';
 import { pairCopy } from '../src/pairCopy.ts';
 
 function fixture() {
@@ -81,6 +81,29 @@ test('an existing SOLO_SEARCH registration lets add-partner proceed instead of r
   const f = fixture(); f.state.registration = { registered: true, registrationId: 9, status: 'SOLO_SEARCH', waitlistPosition: null, registrationDate: '2026-10-20T10:00:00', isDoubleRegistration: false, partnerId: null, partnerFirstName: null, partnerLastName: null, hasRegisteredPartner: false };
   const result = await f.client.addPartnerNow(77, bookingQuote(f.state.event), existingPartner);
   assert.equal(result.status, 'CONFIRMED'); assert.equal(f.state.addPartnerWrites, 1); assert.equal(f.state.registerWrites, 0);
+});
+test('a solo ADD_LATER registration moved to WAITLIST can still add a new partner', async () => {
+  const f = fixture();
+  f.state.registration = { registered: true, registrationId: 9, status: 'WAITLIST', waitlistPosition: 4, registrationDate: '2026-10-20T10:00:00', isDoubleRegistration: false, partnerId: null, partnerFirstName: null, partnerLastName: null, hasRegisteredPartner: false };
+  assert.equal(needsPartner((await f.client.load(77)).registration), true);
+  assert.equal((await f.client.reconcile(77)).receipt, null);
+  f.state.addPartnerResult = { success: true, status: 'WAITLIST', waitlistPosition: 5 };
+  const result = await f.client.addPartnerNow(77, bookingQuote(f.state.event), newPartner);
+  assert.deepEqual(result, { status: 'WAITLIST', waitlistPosition: 5, existing: false });
+  assert.equal(f.state.addPartnerWrites, 1);
+  assert.equal(f.state.registerWrites, 0);
+});
+test('confirmed survivor keeps the place and can add a replacement', async () => {
+  const f = fixture();
+  f.state.registration = { registered: true, registrationId: 9, status: 'CONFIRMED', waitlistPosition: null, registrationDate: '2026-10-20T10:00:00', isDoubleRegistration: true, partnerId: null, partnerFirstName: null, partnerLastName: null, hasRegisteredPartner: false };
+  const snapshot = await f.client.load(77);
+  assert.equal(needsPartnerReplacement(snapshot.registration), true);
+  assert.equal(needsPartner(snapshot.registration), true);
+  assert.equal((await f.client.reconcile(77)).receipt, null);
+  const result = await f.client.addPartnerNow(77, bookingQuote(snapshot.event), newPartner);
+  assert.equal(result.status, 'CONFIRMED');
+  assert.equal(f.state.addPartnerWrites, 1);
+  assert.equal(f.state.registerWrites, 0);
 });
 test('a legacy registration status (e.g. PARTNER_INVITED) is never treated as one of the three flows', async () => {
   const f = fixture(); f.state.registration = { registered: true, registrationId: 9, status: 'PARTNER_INVITED', waitlistPosition: null, registrationDate: '2026-10-20T10:00:00', isDoubleRegistration: true, partnerId: null, partnerFirstName: null, partnerLastName: null, hasRegisteredPartner: false };

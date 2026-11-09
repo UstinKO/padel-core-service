@@ -103,11 +103,12 @@ public class TournamentAccessService {
     }
 
     /** Americano/Team Americano/Team Playoff — матч (AmericanoMatch.tournament). */
-    public void assertCanManageAmericanoMatch(Owner owner, Long matchId) {
+    public Long assertCanManageAmericanoMatch(Owner owner, Long matchId) {
         Tournament tournament = americanoMatchRepository.findById(matchId)
                 .orElseThrow(() -> new ResourceNotFoundException("Match not found with id: " + matchId))
                 .getTournament();
         assertCanManage(owner, tournament);
+        return tournament.getId();
     }
 
     /** Team Playoff — команда (AmericanoTeam.tournament). */

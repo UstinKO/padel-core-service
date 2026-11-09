@@ -1,7 +1,7 @@
 # Архитектура базы данных — padel-core-service
 
 > **СУБД:** PostgreSQL 15  
-> **Версия схемы:** v1.57  
+> **Версия схемы:** v1.69
 > **Миграции:** Liquibase (YAML), файлы в `src/main/resources/db/changelog/versions/`  
 > **ddl-auto:** `none` — схема управляется только через Liquibase
 
@@ -220,6 +220,8 @@ owners_db ───────────────────────�
 | `fecha_inicio` | `DATE` | NOT NULL | — | Дата начала |
 | `hora_inicio` | `TIME` | NOT NULL | — | Время начала |
 | `duracion` | `VARCHAR(50)` | NULL | — | Продолжительность (свободный текст) |
+| `duration_minutes` | `INTEGER` | NULL | — | Точная длительность для календаря; CHECK > 0, приоритет над свободным текстом |
+| `time_zone` | `VARCHAR(100)` | NOT NULL | `America/Argentina/Buenos_Aires` | IANA-зона мероприятия; проверяется в настройках |
 | `genero_formato` | `VARCHAR(20)` | NOT NULL | — | Формат по полу: `MASCULINO` / `FEMENINO` / `MIXTO` |
 | `categoria_nivel` | `VARCHAR(30)` | NULL | — | Уровень игроков (enum `Nivel`) |
 | `tipo` | `VARCHAR(20)` | NOT NULL | — | Тип турнира (enum `TournamentType`) |
@@ -231,6 +233,8 @@ owners_db ───────────────────────�
 | `deadline_cancelacion` | `TIMESTAMP` | NULL | — | Дедлайн отмены регистрации. Если NULL — автоматически за 24 ч до старта |
 | `info_detallada` | `TEXT` | NULL | — | Подробное описание турнира |
 | `contacto_organizador` | `VARCHAR(100)` | NOT NULL | — | Контакт организатора |
+| `payment_instructions` | `TEXT` | NULL | — | Реквизиты оплаты для конкретного мероприятия |
+| `pair_terms_version` | `INTEGER` | NOT NULL | `1` | Текущая версия условий парного Americano |
 | `faq_url` | `VARCHAR(500)` | NULL | — | Ссылка на FAQ |
 | `created_at` | `TIMESTAMP` | NOT NULL | now() | Дата создания |
 | `updated_at` | `TIMESTAMP` | NOT NULL | now() | Дата обновления |
@@ -270,6 +274,15 @@ owners_db ───────────────────────�
 | `participation_confirmed` | `BOOLEAN` | NOT NULL | `false` | Участие подтверждено организатором |
 | `is_double_registration` | `BOOLEAN` | NOT NULL | `false` | Флаг парной регистрации |
 | `main_player_id` | `BIGINT` | NULL | — | ID инициатора парной регистрации |
+| `pair_booking_id` | `UUID` | NULL | — | Постоянный ID заявки пары; у старых записей может отсутствовать до сверки |
+| `pair_booked_by` | `BIGINT` | NULL | — | Неизменяемый ID игрока, оформившего пару; у организаторских и старых заявок требует уточнения |
+| `pair_terms_version` | `INTEGER` | NULL | — | Версия условий: 0 — прежние правила, NULL — ещё не классифицирована |
+| `pair_terms_accepted_at` | `TIMESTAMP` | NULL | — | Время явного принятия новой версии |
+| `pair_terms_accepted_by` | `BIGINT` | NULL | — | Аккаунт, принявший условия |
+| `pair_terms_price_per_player` | `DECIMAL(10,2)` | NULL | — | Снимок цены за игрока |
+| `pair_terms_currency` | `VARCHAR(10)` | NULL | — | Снимок валюты |
+| `pair_terms_free_until` | `TIMESTAMP` | NULL | — | Снимок границы бесплатной отмены |
+| `pair_terms_late_fraction` | `DECIMAL(5,4)` | NULL | — | Доля стоимости пары при поздней отмене |
 | `partner_first_name` | `VARCHAR(255)` | NULL | — | Имя незарегистрированного партнёра |
 | `partner_last_name` | `VARCHAR(255)` | NULL | — | Фамилия незарегистрированного партнёра |
 | `partner_phone` | `VARCHAR(255)` | NULL | — | Телефон незарегистрированного партнёра |
@@ -315,6 +328,7 @@ owners_db ───────────────────────�
 |---------|-----|----------|--------------|----------|
 | `id` | `BIGSERIAL` | NOT NULL | auto | PK |
 | `registration_id` | `BIGINT` | NOT NULL | — | FK → `tournament_registrations_db.id` |
+| `pair_booking_id` | `UUID` | NULL | — | ID заявки на момент создания платежа; не меняется при замене игрока |
 | `amount` | `DECIMAL(10,2)` | NOT NULL | — | Сумма |
 | `currency` | `VARCHAR(10)` | NOT NULL | `ARS` | Валюта (ISO 4217, поддерживает USDT и др.) |
 | `status` | `VARCHAR(20)` | NOT NULL | `PENDING` | Статус (enum `PaymentStatus`) |
@@ -329,6 +343,21 @@ owners_db ───────────────────────�
 | `is_active` | `BOOLEAN` | NOT NULL | `true` | Мягкое удаление |
 
 ---
+
+### `pair_replacement_notices_db`
+
+Входящие уведомления для прежнего партнёра после замены оформителем. Запись создаётся в той же транзакции, что и изменение состава. Хранятся идентификаторы адресата и турнира, название турнира, имена оформителя и нового игрока, а также время отметки о прочтении.
+
+### `pair_cancellations_db`
+
+Фиксирует подтверждённый расчёт полной отмены по принятой версии условий. Одна запись на `booking_id`.
+Сохраняются `tournament_id`, `cancelled_by`, `cancelled_at`, `terms_version`, `currency`, `obligation`,
+`already_paid`, `remaining_due`, `refundable`, имена участников и отметку неявки.
+Организатор может зафиксировать оплаченную замену с её ID и временем подтверждения.
+
+### `pair_booker_reviews_db`
+
+Журнал проверки оформителя прежней заявки. Поля: `booking_id`, `tournament_id`, `player_id`, `reviewed_by` и `reviewed_at`.
 
 ## 6. Рейтинг и матчи (bracket)
 
@@ -596,6 +625,8 @@ tournaments_db
 | `team1_id` | `BIGINT` | NULL | — | FK → `americano_teams_db.id` (Team Americano) |
 | `team2_id` | `BIGINT` | NULL | — | FK → `americano_teams_db.id` |
 | `playoff_stage` | `VARCHAR(20)` | NULL | — | Стадия плей-офф: `QUARTER_FINAL`, `SEMI_FINAL`, `FINAL` |
+| `playoff_play_started` | `BOOLEAN` | NULL | — | Фактическое начало, отмеченное координатором; NULL для игр без отметки из старой сетки |
+| `playoff_pair_changed` | `BOOLEAN` | NULL | — | Состав изменялся; сервер принимает счёт только с указанием обеих команд |
 | `created_at` | `TIMESTAMP` | NOT NULL | now() | — |
 | `updated_at` | `TIMESTAMP` | NOT NULL | now() | — |
 
@@ -857,3 +888,57 @@ tournaments_db
 | v1.55 | `v1.55-add-partner-reserve-fields` | `tournament_registrations_db.final_reminder_sent`, `partner_action_token` |
 | v1.56 | `v1.56-add-partner-telegram` | `tournament_registrations_db.partner_telegram` |
 | v1.57 | `v1.57-unaccent-extension` | Расширение Postgres `unaccent` (диакритика в поиске партнёра, LFPT-0720) — не таблица/колонка |
+| v1.62 | `v1.62-pair-terms` | ID заявки пары, снимок условий и реквизиты мероприятия; старые заявки остаются на прежних условиях |
+
+| v1.58 | `v1.58-marketing-qr-daily` | Атомарные дневные счётчики QR-переходов Reby на сайт и в Telegram |
+| v1.58 | `v1.58-meta-marketing` | Атрибуция Meta и транзакционный журнал/очередь; историческая база без отправки |
+| v1.59 | `v1.59-meta-payment-source` | Неизменяемый источник каждого поступления: CASH на месте → physical_store, прочие/неизвестные → other; существующие события остаются other |
+
+| v1.67 | `v1.67-event-calendar` | Точная длительность и IANA-зона мероприятия, CHECK положительной длительности |
+| v1.68 | `v1.68-additional-points` | Знаковые ручные корректировки по игроку и этапу проведения |
+| v1.69 | `v1.69-playoff-match-start` | Отметки фактического начала и изменения состава матча Team Playoff |
+
+## QR-переходы Reby
+
+### `marketing_qr_daily_db`
+
+Серверные агрегаты, миграция `v1.58-marketing-qr-daily.yaml`. Без связей с игроками.
+
+| Колонка | Тип | Назначение |
+|---|---|---|
+| `fecha` | DATE NOT NULL | День America/Argentina/Buenos_Aires |
+| `origen` | VARCHAR(32) NOT NULL | `reby`, `black_padel`, `15cero_villa_crespo`, `15cero_saavedra` (v1.60) |
+| `destino` | VARCHAR(16) NOT NULL | `site` или `telegram` |
+| `aperturas` | BIGINT NOT NULL DEFAULT 0 | Неотрицательное количество открытий |
+
+Первичный ключ: (`fecha`, `origen`, `destino`). Один атомарный upsert увеличивает
+счётчик; параллельные обращения не теряют инкременты. Перезапуск приложения
+и повторный деплой не обнуляют таблицу. IP, cookies, идентификаторы посетителей,
+полные User-Agent не сохраняются в этой таблице. Это открытия, а не уникальные люди.
+
+
+## Таблицы маркетинговой атрибуции
+
+Модуль `marketing/` использует JDBC в транзакциях JPA; таблицы не являются новыми бизнес-статусами.
+
+| Таблица | Колонки и назначение |
+|---|---|
+| `marketing_visitors_db` | `id` UUID PK; `consent` boolean; `first_touch`, `last_touch` text (JSON пяти UTM и времени); `fbc` varchar(256), `fbp` varchar(128); `created_at`, `updated_at` timestamptz |
+| `marketing_registrations_db` | `registration_id` PK/FK записи; `visitor_id` nullable FK посетителя; `first_touch`, `last_touch` text; `expected_amount` numeric(10,2), `expected_currency` varchar(10); `fbc`, `fbp`; `created_at`. Неизменяемый снимок источника и стоимости участия; при отзыве согласия рекламные данные очищаются |
+| `marketing_payment_progress_db` | `payment_id` PK/FK платежа; `high_water` numeric(10,2), `currency` varchar(10). Максимальная подтверждённая накопительная сумма, а не сумма последнего события |
+| `marketing_events_db` | `event_id` UUID PK, `event_key` varchar(160) UNIQUE; `event_name`, `channel`, `test_mode`, `action_source` varchar(32) NOT NULL (physical_store/other); FK `registration_id`, nullable `payment_id`, `visitor_id`; `registration_status`, `tournament_id`; `amount`, `cumulative_amount`, `currency`, `paid_participants`; `state`, `occurred_at`, `attempts`, `next_attempt_at`, `lease_until`, `last_http_status`. Индекс доставки: channel/state/next_attempt_at |
+| `marketing_paid_slots_db` | Составной PK/FK `registration_id` + `partner_slot` boolean. Однократный учёт полной оплаты основного/гостевого слота |
+
+Миграция заполняет снимки старых регистраций без visitor_id и исходные high_water старых оплат; событий не создаёт. Дедупликация и ограничения валют/согласия описаны в [Meta marketing](endpoints/meta-marketing.md).
+
+
+### v1.60 — источники печатных QR
+v1.60-qr-club-sources расширяет CHECK origen в marketing_qr_daily_db:
+reby, black_padel, 15cero_villa_crespo, 15cero_saavedra. Структура, PK и
+история не меняются. Rollback возвращает CHECK reby как NOT VALID, сохраняя
+собранные новые строки; полная валидация старого ограничения возможна только
+после отдельного решения о судьбе новых агрегатов. Новые вставки ограничены.
+
+### Дополнительные очки в проведении
+
+`tournament_additional_points` хранит отдельные знаковые записи игрока по этапам. Номер `0` означает «До первого раунда», для «Короля корта» указан ID проведения. Отмена хранится в той же записи. Снимок проведения включает её состояние, а журнал содержит автора, время и действие. Исторические −10 в накопленной статистике выделяются при чтении по фактически учтённой разнице. Явная запись с тем же стабильным ID заменяет историческое значение.

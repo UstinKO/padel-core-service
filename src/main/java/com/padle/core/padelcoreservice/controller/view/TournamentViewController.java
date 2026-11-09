@@ -211,7 +211,15 @@ public class TournamentViewController {
 
             boolean currentUserIsSolo = userRegistration != null
                     && (userRegistration.getStatus() == com.padle.core.padelcoreservice.model.enums.RegistrationStatus.SOLO_SEARCH
-                    || userRegistration.getStatus() == com.padle.core.padelcoreservice.model.enums.RegistrationStatus.SOLO_ADD_LATER);
+                    || userRegistration.getStatus() == com.padle.core.padelcoreservice.model.enums.RegistrationStatus.SOLO_ADD_LATER
+                    || (userRegistration.getStatus() == com.padle.core.padelcoreservice.model.enums.RegistrationStatus.WAITLIST
+                        && userRegistration.getPartnerId() == null
+                        && !Boolean.TRUE.equals(userRegistration.getIsDoubleRegistration()))
+                    || (userRegistration.getStatus() == com.padle.core.padelcoreservice.model.enums.RegistrationStatus.CONFIRMED
+                        && userRegistration.getPartnerId() == null
+                        && Boolean.TRUE.equals(userRegistration.getIsDoubleRegistration())));
+            boolean needsPartnerReplacement = currentUserIsSolo && userRegistration.getStatus()
+                    == com.padle.core.padelcoreservice.model.enums.RegistrationStatus.CONFIRMED;
 
             model.addAttribute("tournament", tournament);
             model.addAttribute("tournamentJson", tournamentJson);
@@ -223,6 +231,7 @@ public class TournamentViewController {
             model.addAttribute("isAuthenticated", player != null);
             model.addAttribute("player", player);
             model.addAttribute("currentUserIsSolo", currentUserIsSolo);
+            model.addAttribute("needsPartnerReplacement", needsPartnerReplacement);
             model.addAttribute("currentUserSoloRegId", currentUserIsSolo ? userRegistration.getId() : null);
             model.addAttribute("currentUserPlayerId", player != null ? player.getId() : null);
 

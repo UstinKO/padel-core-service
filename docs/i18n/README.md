@@ -199,3 +199,14 @@ admin.players.*          — управление игроками
 ```
 
 Пример: `admin.tournaments.form.field.name`, `admin.koc.error.save`, `admin.common.col.status`
+
+## Отмена участия из списка мероприятия
+
+На `/test/tournaments` подтверждение отмены, результат операции и безопасное сообщение
+об ошибке используют `registration.cancel.*` в `messages.properties` и переводах ES/RU/EN.
+Thymeleaf передаёт строки в JS через `th:inline="javascript"`. Серверные ключи
+`success`/`failure` поставляются вместе с контроллером отмены; интерфейс добавляет
+`confirm`, `success_title` и `error_title`. Текст технического исключения сервера
+или сети пользователю не показывается.
+
+Календарь мероприятия: `calendar.*` и `tournament.info.add_to_calendar` — RU/ES/EN. Ссылки экспорта фиксируют язык через lang; собственные названия клубов и адреса не переводятся.

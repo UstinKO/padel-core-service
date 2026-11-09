@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="copy" hidden id="additional-points-copy"
+     th:attr="data-round=#{additional.points.round},data-before=#{additional.points.before},
+              data-total=#{additional.points.total},data-title=#{additional.points.title},
+              data-match=#{additional.points.match},data-bonus=#{additional.points.bonus},
+              data-action=#{additional.points.action}"></div>
+
+<td th:fragment="cell(points)" class="additional-points-cell">
+    <details class="additional-points-breakdown">
+        <summary th:attr="aria-label=#{additional.points.title} + ': ' + ${points.total > 0 ? '+' + points.total : points.total}"
+                 th:text="${points.total > 0 ? '+' + points.total : points.total}">0</summary>
+        <dl>
+            <th:block th:each="stage : ${points.stages}">
+                <dt th:text="${stage.roundNumber == 0} ? #{additional.points.before} : #{additional.points.round} + ' ' + ${stage.roundNumber}"></dt>
+                <dd th:text="${stage.points > 0 ? '+' + stage.points : stage.points}"></dd>
+            </th:block>
+            <dt th:text="#{additional.points.total}"></dt>
+            <dd th:text="${points.total > 0 ? '+' + points.total : points.total}"></dd>
+        </dl>
+    </details>
+</td>
+
+<dialog th:fragment="editor(tournamentId, finished)" id="additional-points-editor"
+        aria-labelledby="additional-points-heading"
+        th:attr="data-url=@{/admin/tournaments/{id}(id=${tournamentId})},
+                 data-finished=${finished},data-load-error=#{additional.points.load_error},
+                 data-save-error=#{additional.points.save_error},data-saved=#{additional.points.saved},data-stale=#{conduct.history.stale},
+                 data-edit=#{additional.points.edit},data-cancel-entry=#{additional.points.cancel_entry},
+                 data-cancelled=#{additional.points.cancelled},data-confirm-cancel=#{additional.points.confirm_cancel},
+                 data-add-action=#{conduct.action.ADD_POINTS},data-edit-action=#{conduct.action.EDIT_POINTS},
+                 data-cancel-action=#{conduct.action.CANCEL_POINTS}">
+    <h2 id="additional-points-heading" th:text="#{additional.points.title}">Puntos adicionales</h2>
+    <p data-status role="status" aria-live="polite"></p>
+    <form data-entry-form hidden>
+        <label>
+            <span th:text="#{additional.points.player}">Jugador</span>
+            <select name="playerId" required></select>
+        </label>
+        <label>
+            <span th:text="#{additional.points.stage}">Etapa</span>
+            <select name="roundNumber" required></select>
+        </label>
+        <div class="additional-points-inputs">
+            <label>
+                <span th:text="#{additional.points.direction}">Acción</span>
+                <select name="direction">
+                    <option value="1" th:text="#{additional.points.add}">Sumar</option>
+                    <option value="-1" th:text="#{additional.points.subtract}">Restar</option>
+                </select>
+            </label>
+            <label>
+                <span th:text="#{additional.points.amount}">Cantidad</span>
+                <input name="amount" type="number" inputmode="numeric" min="1" max="2147483647" step="1" required>
+            </label>
+        </div>
+        <label>
+            <span th:text="#{additional.points.note}">Nota interna (opcional)</span>
+            <textarea name="note" rows="2" maxlength="500"></textarea>
+        </label>
+        <output data-preview aria-live="polite"></output>
+        <div class="additional-points-actions">
+            <button type="submit" class="btn btn-primary" th:text="#{additional.points.save}">Guardar</button>
+            <button type="button" data-new hidden class="btn btn-outline" th:text="#{additional.points.new}">Nueva corrección</button>
+        </div>
+    </form>
+    <div data-entries class="additional-points-entries"></div>
+    <details data-audit hidden>
+        <summary th:text="#{additional.points.history}">Historial de cambios</summary>
+        <ol data-audit-list></ol>
+    </details>
+    <form method="dialog" class="additional-points-actions">
+        <button type="submit" class="btn btn-outline" th:text="#{additional.points.close}">Cerrar</button>
+    </form>
+</dialog>
+</body>
+</html>

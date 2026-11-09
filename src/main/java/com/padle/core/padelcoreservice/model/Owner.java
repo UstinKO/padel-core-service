@@ -47,7 +47,7 @@ public class Owner implements UserDetails {
     private OwnerRole role = OwnerRole.ORGANIZER;
 
     // Клуб, к которому привязан клубный аккаунт (CLUB_ADMIN); NULL — глобальный аккаунт,
-    // сырой Long без FK — тот же паттерн, что Tournament.clubId (см. CLAUDE.md)
+    // сырой Long без FK — тот же паттерн, что Tournament.clubId (см. PROJECT.md)
     @Column(name = "club_id")
     private Long clubId;
 

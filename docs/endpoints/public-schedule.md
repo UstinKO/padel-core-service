@@ -20,7 +20,7 @@
 
 ### Контракт
 
-**Response 200 OK**: JSON-массив `PublicTournamentDto`. Пустая выборка — `200 []`.
+**Response 200 OK**: JSON-массив `PublicTournamentDto` без поля `participants`. Пустая выборка — `200 []`.
 
 **Response 503 Service Unavailable** (сбой чтения БД, `DataAccessException`):
 ```json
@@ -42,7 +42,7 @@
 
 ### Контракт
 
-**Response 200 OK**: `PublicTournamentDto`.
+**Response 200 OK**: `PublicTournamentDto` с полем `participants`. Списки всегда присутствуют, даже если пусты. Ошибка чтения не превращается в пустые списки.
 
 **Response 404 Not Found**:
 ```json
@@ -74,8 +74,9 @@
 | `cancellationDeadline` | ISO-8601 со смещением либо `null` |
 | `description` | `infoDetallada`, может быть `null` |
 | `websiteUrl` | `${app.base-url}/torneo/{id}` |
+| `participants` | Только в ответе деталей: `{confirmed: [{id, names, seekingPartner}], waitlist: [...]}`. ID — `registration-{id}`; имена упорядочены и объединены в пары по отображению на сайте. `SOLO_SEARCH` помечен `seekingPartner: true`. Отменённые и неактивные заявки исключены. Имена из резерва возвращаются лишь для парного Americano, где они уже публичны на сайте; в других форматах `waitlist` пуст, даже если `waitlistCount` больше нуля. |
 
-**Явно исключено** (не входит в DTO): `ownerId`, `createdBy`, `contactoOrganizador`, `faqUrl`, `mostrarNivel`, `isActive`, `visibilidad`, любые данные об участниках/регистрациях — `TournamentDto` их и не содержит, участники в отдельных сущностях. Разрешены только два GET выше; все остальные маршруты `/api/**` (включая мутации `/api/tournaments/**`) сохраняют авторизацию без изменений.
+**Явно исключено** (не входит в DTO): `ownerId`, `createdBy`, `contactoOrganizador`, `faqUrl`, `mostrarNivel`, `isActive`, `visibilidad`, контактные и служебные данные участников/регистраций (email, телефон, Telegram, платежи, внутренний профиль). Поле `participants` содержит только публичные имена, безопасный ID и флаг поиска партнёра. Разрешены только два GET выше; все остальные маршруты `/api/**` (включая мутации `/api/tournaments/**`) сохраняют авторизацию без изменений.
 
 ### Замечания (ревью)
 

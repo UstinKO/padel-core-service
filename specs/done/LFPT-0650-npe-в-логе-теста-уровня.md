@@ -51,7 +51,7 @@ java.lang.NullPointerException: ...
 ### UI
 Нет изменений.
 
-Затронут один файл: `src/test/java/com/padle/core/padelcoreservice/service/TournamentServiceLevelRestrictionTest.java`. Документация (`docs/`, `.claude/CLAUDE.md`) не требует обновления: правка только в тесте.
+Затронут один файл: `src/test/java/com/padle/core/padelcoreservice/service/TournamentServiceLevelRestrictionTest.java`. Документация (`docs/`, `.agents/PROJECT.md`) не требует обновления: правка только в тесте.
 
 ## Критерии приёмки
 - [ ] `./mvnw test -Dtest=TournamentServiceLevelRestrictionTest` — 4 теста зелёные; в выводе нет `NullPointerException` с `getHoraInicio()` и нет строки `ERROR ... Error sending tournament confirmation email`.

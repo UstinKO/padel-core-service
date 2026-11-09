@@ -2,6 +2,7 @@ package com.padle.core.padelcoreservice.model;
 
 import com.padle.core.padelcoreservice.model.enums.PaymentMethod;
 import com.padle.core.padelcoreservice.model.enums.PaymentStatus;
+import com.padle.core.padelcoreservice.marketing.MarketingEntityListener;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -9,8 +10,10 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
+@EntityListeners(MarketingEntityListener.class)
 @Table(name = "payments_db")
 @Getter
 @Setter
@@ -28,6 +31,9 @@ public class Payment {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "registration_id", nullable = false)
     private TournamentRegistration registration;
+
+    @Column(name = "pair_booking_id")
+    private UUID pairBookingId;
 
     // Сумма платежа
     @Column(name = "amount", nullable = false, precision = 10, scale = 2)

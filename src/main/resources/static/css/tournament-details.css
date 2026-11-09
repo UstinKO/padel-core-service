@@ -1361,6 +1361,7 @@ input[type="tel"].form-control {
 }
 
 .registration-actions {
+    scroll-margin-top: 6rem;
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
@@ -1663,4 +1664,27 @@ textarea.form-control {
 .lp-no-contact-hint:focus .lp-no-contact-tooltip,
 .lp-no-contact-hint:focus-within .lp-no-contact-tooltip {
     display: block;
+}
+.calendar-picker { position: relative; margin-top: 1.25rem; }
+.calendar-toggle { display: inline-flex; align-items: center; gap: .5rem; padding: .65rem 1.25rem; min-height: 44px;
+    background: #FF6B35; color: #fff; border: 0; border-radius: 8px; font: inherit; font-weight: 600; cursor: pointer; }
+.calendar-toggle:hover { opacity: .85; }
+.calendar-toggle:focus-visible, .calendar-options a:focus-visible, .calendar-help summary:focus-visible {
+    outline: 3px solid #1d4ed8; outline-offset: 3px; }
+.calendar-options[hidden], .calendar-status[hidden] { display: none; }
+.calendar-options { position: absolute; z-index: 20; top: calc(100% + .5rem); left: 0; width: min(350px, 100%);
+    max-height: min(70vh, 560px); overflow-y: auto; padding: .5rem; border: 1px solid #e5e7eb; border-radius: 12px;
+    background: #fff; color: #1f2937; box-shadow: 0 8px 24px #0002; }
+.calendar-links { list-style: none; padding: 0; margin: 0; }
+.calendar-links a { display: flex; align-items: center; min-height: 44px; padding: .65rem .75rem; border-radius: 6px;
+    color: inherit; text-decoration: none; overflow-wrap: anywhere; }
+.calendar-links a:hover { background: #fff3ed; }
+.calendar-links a[aria-disabled="true"] { opacity: .5; cursor: default; }
+.calendar-help { border-top: 1px solid #e5e7eb; margin-top: .3rem; padding: .5rem .75rem; font-size: .85rem; line-height: 1.5; }
+.calendar-help summary { cursor: pointer; min-height: 44px; align-content: center; }
+.calendar-help p, .calendar-status { margin: .5rem 0; }
+.calendar-help input { width: 100%; box-sizing: border-box; padding: .6rem; font: inherit; border: 1px solid #d1d5db; border-radius: 6px; }
+.calendar-status { padding: .5rem .75rem; font-size: .9rem; }
+@media (max-width: 600px) {
+    .calendar-options { position: fixed; top: auto; bottom: 1rem; left: 1rem; right: 1rem; width: auto; max-height: 70vh; max-height: 70dvh; }
 }

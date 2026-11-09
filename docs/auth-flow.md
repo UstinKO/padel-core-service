@@ -167,6 +167,19 @@ loadUserByUsername(email)
 | Email не подтверждён (`DisabledException`) | `/login?error=not_confirmed` |
 | Аккаунт заблокирован (`LockedException`) | `/login?error=not_confirmed` |
 
+### Вход для записи на турнир (LFPT-0834)
+
+Гостевая кнопка в карточке ведёт на `/login?tournamentId=<id>`. Форма передаёт числовой
+идентификатор при входе по паролю, а Google-вход хранит его в запросе авторизации,
+привязанном к OAuth state. После входа игрок возвращается к блоку записи того же турнира.
+При ошибке входа с действительным контекстом форма сохраняет выбранный турнир.
+Открытие блока позволяет продолжить обычную запись без автоматической отправки заявки.
+
+Веб-кнопки записи отправляют в GA4 `tournament_registration_click` с `tournament_id`
+при согласии на аналитику, один раз на турнир в текущей вкладке. При переходе по
+ссылке событие передаётся странице назначения. При быстром переходе из карточки
+на форму входа событие отправляет форма. События начала и завершения заявки отдельные.
+
 ### Remember-me
 
 - Включается через чекбокс на форме входа.
@@ -548,6 +561,8 @@ HTTP `429 Too Many Requests` + `Retry-After: 60`:
 | Путь | Доступ |
 |------|--------|
 | `/`, `/torneos`, `/clubs/**`, `/ranking`, `/login` | Публичный |
+| `/ig-story` | Публичный фиксированный редирект на главную с метками Instagram Stories |
+| `/ig-bio`, `/ig-ru`, `/tg-calendar`, `/tg-posts`, `/wa-info`, `/threads` | Публичные фиксированные 302-редиректы на главную со списком турниров и отдельными UTM-кампаниями; авторизация не требуется |
 | `/players/registro`, `/api/auth/**` | Публичный |
 | `/recuperar-password/**`, `/double-registration/complete` | Публичный |
 | `/waitlist/confirm`, `/oauth2/**` | Публичный |
@@ -612,6 +627,10 @@ connect-src 'self' www.google.com;
 frame-src www.google.com;
 frame-ancestors 'none';
 ```
+
+Для Microsoft Clarity рабочая директива `script-src` разрешает загрузчик
+`https://www.clarity.ms` и библиотеку `https://scripts.clarity.ms`. Запросы сбора данных
+разрешает `connect-src` для доменов Clarity. Запуск скрипта зависит от согласия на аналитические cookies.
 
 ### CORS
 
@@ -685,3 +704,22 @@ POST /api/auth/login → access (24ч) + refresh (7д)
               ▼
          isEnabled()=false → validateToken()=false → 403 на следующем запросе
 ```
+
+## Доступ к QR-атрибуции Reby
+
+`/qr/reby/site` и `/qr/reby/telegram` — точные публичные маршруты; прочие `/qr/**`
+не становятся публичными. `/api/admin/marketing/qr-stats` требует ROLE_SUPER_ADMIN
+в SecurityConfig и дополнительно через @PreAuthorize. OWNER, ORGANIZER, ADMIN,
+CLUB_ADMIN и PLAYER получают 403. Гость не получает данные. Отчёт — read-only,
+без персональных идентификаторов. Назначения редиректов фиксированы на сервере.
+
+## Маркетинговая атрибуция Meta
+
+`/api/marketing/*` доступны анонимному посетителю, но изменяющие запросы требуют CSRF; контекст и события дополнительно требуют явного маркетингового согласия и случайного HttpOnly cookie. Вход/OAuth не сбрасывает cookie. Экспорт `/admin/marketing/export.csv` проверяет доступ Owner к выбранному турниру через TournamentAccessService. CSP добавляет только connect.facebook.net в script-src и connect.facebook.net/www.facebook.com в connect-src при включённом Pixel; остальные ограничения сохраняются. [Подробности](endpoints/meta-marketing.md).
+
+
+/api/admin/marketing/qr-summary требует ROLE_SUPER_ADMIN на HTTP и method-security
+уровнях. Обычные роли, включая CLUB_ADMIN, доступа не имеют. Учёт GET / с
+разрешёнными QR UTM анонимный, без cookies и без изменения согласий Meta.
+
+Календарный экспорт: анонимно разрешены только GET `/api/public/tournaments/{id}/calendar`, `/api/public/tournaments/{id}/calendar/google`, `/api/public/tournaments/{id}/calendar/event.ics`. Те же правила чтения активного мероприятия по прямой ссылке; нет OAuth-доступа к календарям и мутаций участия.

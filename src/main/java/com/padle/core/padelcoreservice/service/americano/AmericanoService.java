@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.service.americano;
 
+import com.padle.core.padelcoreservice.util.AfterCommit;
 import com.padle.core.padelcoreservice.annotation.Timed;
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
 import com.padle.core.padelcoreservice.dto.americano.*;
@@ -22,6 +23,9 @@ import com.padle.core.padelcoreservice.repository.americano.AmericanoRoundReposi
 import com.padle.core.padelcoreservice.service.EmailService;
 import com.padle.core.padelcoreservice.service.PlayerService;
 import com.padle.core.padelcoreservice.service.TournamentAccessService;
+import com.padle.core.padelcoreservice.service.conduct.AdditionalPointsStore;
+import com.padle.core.padelcoreservice.service.conduct.AdditionalPointsStore.ScoreSheet;
+import com.padle.core.padelcoreservice.service.conduct.ConductChange;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -53,6 +57,7 @@ public class AmericanoService {
     private final PlayerService playerService;
     private final EmailService emailService;
     private final TournamentAccessService tournamentAccessService;
+    private final AdditionalPointsStore additionalPoints;
 
     // ═══════════════════════════════════════════════════════════════════════
     // РЕГИСТРАЦИЯ НА ТУРНИР
@@ -178,7 +183,9 @@ public class AmericanoService {
     @Transactional
     public void cancelRegistration(Long tournamentId, Long playerId, String reason, Owner currentOwner) {
         log.info("Cancelling registration player={} tournament={}", playerId, tournamentId);
-        validateCancellation(tournamentId);
+        Tournament tournament = tournamentRepository.lockById(tournamentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tournament not found"));
+        tournamentAccessService.assertCanManage(currentOwner, tournament);
 
         TournamentRegistration registration = registrationRepository
                 .findByTournamentIdAndPlayerId(tournamentId, playerId)
@@ -186,10 +193,11 @@ public class AmericanoService {
 
         tournamentAccessService.assertCanManage(currentOwner, registration.getTournament());
 
-        if (!registration.getIsActive()) {
-            throw new TournamentRegistrationException("Esta registración ya está cancelada");
+        if (!Boolean.TRUE.equals(registration.getIsActive())) {
+            return;
         }
-        if (registration.getIsDoubleRegistration()) {
+        validateCancellation(tournamentId);
+        if (Boolean.TRUE.equals(registration.getIsDoubleRegistration())) {
             throw new TournamentRegistrationException(
                     "Este es un registro de dobles. No válido para Americano");
         }
@@ -254,6 +262,7 @@ public class AmericanoService {
             tags = {"service=americano", "operation=initialize"}
     )
     @Transactional
+    @ConductChange(ConductChange.Action.START)
     public void initializeAmericanoTournament(Long tournamentId, AmericanoConfigDto config, Owner currentOwner) {
         log.info("Initializing Americano tournament={} config={}", tournamentId, config);
 
@@ -642,6 +651,7 @@ public class AmericanoService {
     // ═══════════════════════════════════════════════════════════════════════
 
     @Transactional
+    @ConductChange(value = ConductChange.Action.START_ROUND, subject = ConductChange.Subject.AMERICANO_ROUND)
     public AmericanoRoundDto startRound(Long roundId, Owner currentOwner) {
         AmericanoRound round = americanoRoundRepository.findById(roundId)
                 .orElseThrow(() -> new ResourceNotFoundException("Round not found"));
@@ -661,6 +671,7 @@ public class AmericanoService {
     }
 
     @Transactional
+    @ConductChange(value = ConductChange.Action.COMPLETE_ROUND, subject = ConductChange.Subject.AMERICANO_ROUND)
     public AmericanoRoundDto completeRound(Long roundId, Owner currentOwner) {
         AmericanoRound round = americanoRoundRepository.findById(roundId)
                 .orElseThrow(() -> new ResourceNotFoundException("Round not found"));
@@ -693,6 +704,7 @@ public class AmericanoService {
     // ═══════════════════════════════════════════════════════════════════════
 
     @Transactional
+    @ConductChange(value = ConductChange.Action.RESULT, subject = ConductChange.Subject.AMERICANO_RESULT)
     public AmericanoMatchDto submitMatchResult(AmericanoMatchResultDto resultDto, Owner currentOwner) {
         log.info("Submitting match result matchId={}", resultDto.getMatchId());
 
@@ -716,8 +728,10 @@ public class AmericanoService {
                     "Total points must equal %d. Current total: %d", limit, team1Score + team2Score));
         }
 
-        // Откат предыдущего результата при редактировании
         if (match.isCompleted()) {
+            if (Objects.equals(match.getTeam1Score(), team1Score) && Objects.equals(match.getTeam2Score(), team2Score)) {
+                return americanoMapper.toDto(match);
+            }
             revertAllPlayerStats(match);
         }
 
@@ -865,6 +879,7 @@ public class AmericanoService {
     // ═══════════════════════════════════════════════════════════════════════
 
     @Transactional
+    @ConductChange(ConductChange.Action.ROSTER)
     public void dropOutPlayer(Long tournamentId, AmericanoDropoutDto dropoutDto, Owner currentOwner) {
         log.info("Player {} dropping out from tournament {}", dropoutDto.getPlayerId(), tournamentId);
 
@@ -891,17 +906,27 @@ public class AmericanoService {
     // ═══════════════════════════════════════════════════════════════════════
 
     public List<AmericanoPlayerDto> getRanking(Long tournamentId, String sortBy, String sortDirection) {
-        List<AmericanoPlayer> players = getSortedPlayers(tournamentId, sortBy,
-                "DESC".equalsIgnoreCase(sortDirection));
-        return players.stream().map(americanoMapper::toDto).collect(Collectors.toList());
+        ScoreSheet sheet = additionalPoints.forAmericano(tournamentId);
+        return getSortedPlayers(tournamentId, sortBy, "DESC".equalsIgnoreCase(sortDirection), sheet)
+                .stream().map(player -> playerStats(player, sheet)).toList();
+    }
+
+    private AmericanoPlayerDto playerStats(AmericanoPlayer player, ScoreSheet sheet) {
+        AmericanoPlayerDto dto = americanoMapper.toDto(player);
+        long playerId = player.getPlayer().getId();
+        dto.setMatchPoints(sheet.base(playerId, player.getTotalScore()));
+        dto.setAdditionalPoints(sheet.points(playerId));
+        dto.setTotalScore(sheet.total(playerId, player.getTotalScore()));
+        return dto;
     }
 
     public AmericanoRankingDto getRankingWithDetails(Long tournamentId, RankingCriteria criteria) {
         Tournament tournament = tournamentRepository.findById(tournamentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tournament not found"));
 
+        ScoreSheet sheet = additionalPoints.forAmericano(tournamentId);
         List<AmericanoPlayer> players = getSortedPlayers(
-                tournamentId, criteria.getSortBy(), !criteria.isAscending());
+                tournamentId, criteria.getSortBy(), !criteria.isAscending(), sheet);
 
         int totalRounds = americanoRoundRepository.findMaxRoundNumber(tournamentId).orElse(0);
         int completedRounds = americanoRoundRepository.countCompletedRounds(tournamentId);
@@ -910,6 +935,10 @@ public class AmericanoService {
         List<AmericanoPlayerRankingDto> rankingDtos = players.stream()
                 .map(p -> {
                     AmericanoPlayerRankingDto dto = americanoMapper.toRankingDto(p);
+                    long playerId = p.getPlayer().getId();
+                    dto.setMatchPoints(sheet.base(playerId, p.getTotalScore()));
+                    dto.setAdditionalPoints(sheet.points(playerId));
+                    dto.setTotalScore(sheet.total(playerId, p.getTotalScore()));
                     dto.setPosition(pos.getAndIncrement());
                     return dto;
                 })
@@ -941,20 +970,22 @@ public class AmericanoService {
      * Режим "по очкам":  очки → победы → разница → меньше поражений
      * Режим "по победам": победы → очки → разница → меньше поражений
      */
-    private List<AmericanoPlayer> getSortedPlayers(Long tournamentId, String sortBy, boolean descending) {
+    private List<AmericanoPlayer> getSortedPlayers(Long tournamentId, String sortBy, boolean descending,
+                                                   ScoreSheet sheet) {
         List<AmericanoPlayer> players = americanoPlayerRepository.findByTournamentId(tournamentId);
+        Comparator<AmericanoPlayer> score = Comparator.comparingLong(
+                p -> sheet.total(p.getPlayer().getId(), p.getTotalScore()));
 
         Comparator<AmericanoPlayer> cmp;
         if ("wins".equals(sortBy)) {
             cmp = Comparator
                     .comparingInt(AmericanoPlayer::getMatchesWon)
-                    .thenComparingInt(AmericanoPlayer::getTotalScore)
+                    .thenComparing(score)
                     .thenComparingInt(AmericanoPlayer::getPointDifference)
                     .thenComparingInt(ap -> -ap.getMatchesLost());
         } else {
             // default: "score"
-            cmp = Comparator
-                    .comparingInt(AmericanoPlayer::getTotalScore)
+            cmp = score
                     .thenComparingInt(AmericanoPlayer::getMatchesWon)
                     .thenComparingInt(AmericanoPlayer::getPointDifference)
                     .thenComparingInt(ap -> -ap.getMatchesLost());
@@ -1045,7 +1076,7 @@ public class AmericanoService {
 
     public AmericanoPlayerDto getPlayerStats(Long tournamentId, Long playerId) {
         return americanoPlayerRepository.findByTournamentIdAndPlayerId(tournamentId, playerId)
-                .map(americanoMapper::toDto)
+                .map(player -> playerStats(player, additionalPoints.forAmericano(tournamentId)))
                 .orElseThrow(() -> new ResourceNotFoundException("Player not found in tournament"));
     }
 
@@ -1062,6 +1093,7 @@ public class AmericanoService {
     // ═══════════════════════════════════════════════════════════════════════
 
     @Transactional
+    @ConductChange(ConductChange.Action.FINISH)
     public AmericanoRankingDto finishTournament(Long tournamentId, RankingCriteria criteria, Owner currentOwner) {
         log.info("Finishing Americano tournament={}", tournamentId);
 
@@ -1117,7 +1149,7 @@ public class AmericanoService {
             if (status == RegistrationStatus.CONFIRMED) {
                 emailService.sendTournamentConfirmationEmail(
                         player.getEmail(), player.getNombre(), tournament.getNombre(),
-                        dateStr, timeStr, clubName, tournament.getFormattedCancellationDeadline(), player.getLocale());
+                        dateStr, timeStr, clubName, tournament.getFormattedCancellationDeadline(), tournament.getTipo(), player.getLocale());
             } else {
                 emailService.sendWaitlistNotificationEmail(
                         player.getEmail(), player.getNombre(), tournament.getNombre(),
@@ -1130,27 +1162,34 @@ public class AmericanoService {
 
     private void sendConfirmationFromWaitlist(PlayerPadel player, Tournament tournament, int position) {
         try {
-            emailService.sendTournamentConfirmationEmail(
-                    player.getEmail(), player.getNombre(), tournament.getNombre(),
-                    tournament.getFechaInicio().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
-                    tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm")),
-                    getClubName(tournament.getClubId()), tournament.getFormattedCancellationDeadline(), player.getLocale());
+            String email = player.getEmail();
+            String name = player.getNombre();
+            var locale = player.getLocale();
+            String tournamentName = tournament.getNombre();
+            String clubName = getClubName(tournament.getClubId());
+            String dateStr = tournament.getFechaInicio().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+            String timeStr = tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm"));
+            String deadline = tournament.getFormattedCancellationDeadline();
+            AfterCommit.run(() -> emailService.sendTournamentConfirmationEmail(
+                    email, name, tournamentName, dateStr, timeStr, clubName, deadline, tournament.getTipo(), locale));
         } catch (Exception e) {
-            log.error("Error sending waitlist confirmation: {}", e.getMessage());
+            log.error("Не удалось подготовить уведомление об изменении регистрации", e);
         }
     }
 
     private void sendRegistrationCancelledEmail(PlayerPadel player, Tournament tournament, String reason) {
         try {
+            String email = player.getEmail();
+            String name = player.getNombre();
+            var locale = player.getLocale();
+            String tournamentName = tournament.getNombre();
             String clubName = getClubName(tournament.getClubId());
             String dateStr = tournament.getFechaInicio().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
             String timeStr = tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm"));
-
-            emailService.sendRegistrationCancelledEmail(
-                    player.getEmail(), player.getNombre(), tournament.getNombre(),
-                    dateStr, timeStr, clubName, reason, player.getLocale());
+            AfterCommit.run(() -> emailService.sendRegistrationCancelledEmail(
+                    email, name, tournamentName, dateStr, timeStr, clubName, reason, locale));
         } catch (Exception e) {
-            log.error("Error sending registration cancelled email: {}", e.getMessage());
+            log.error("Не удалось подготовить уведомление об изменении регистрации", e);
         }
     }
 
@@ -1161,6 +1200,7 @@ public class AmericanoService {
     }
 
     @Transactional
+    @ConductChange(value = ConductChange.Action.ROUND_SETTINGS, subject = ConductChange.Subject.AMERICANO_ROUND)
     public void updateRoundPointsLimit(Long roundId, int newLimit, Owner currentOwner) {
         AmericanoRound round = americanoRoundRepository.findById(roundId)
                 .orElseThrow(() -> new ResourceNotFoundException("Round not found"));

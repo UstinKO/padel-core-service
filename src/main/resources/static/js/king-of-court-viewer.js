@@ -29,7 +29,7 @@ class KingOfCourtViewer {
     initElements() {
         // Сохраняем ссылки на элементы DOM
         this.courtsContainer = document.getElementById('courtsContainer');
-        this.leaderboard = document.getElementById('leaderboard');
+        this.leaderboard = document.getElementById('finalLeaderboard') ?? document.getElementById('leaderboard');
         this.matchHistory = document.getElementById('matchHistory');
         this.historyModal = document.getElementById('historyModal');
         this.historyPlayerName = document.getElementById('historyPlayerName');
@@ -172,7 +172,7 @@ class KingOfCourtViewer {
         const mostrarNivel = window.tournamentData?.mostrarNivel;
 
         if (ranking.length === 0) {
-            this.leaderboard.innerHTML = `<tr><td colspan="${mostrarNivel ? 7 : 6}" class="text-center">${t('koc.viewer.no_data')}</td></tr>`;
+            this.leaderboard.innerHTML = `<tr><td colspan="${mostrarNivel ? 9 : 8}" class="text-center">${t('koc.viewer.no_data')}</td></tr>`;
             return;
         }
 
@@ -187,13 +187,15 @@ class KingOfCourtViewer {
                 <td>
                     <a href="#" class="view-history-btn"
                        data-player-id="${player.playerId || ''}"
-                       data-player-name="${player.playerName || ''}">
-                        ${player.playerName || t('koc.viewer.unknown_player')}${badgeHtml}
+                       data-player-name="${tournamentPoints.escape(player.playerName)}">
+                        ${tournamentPoints.escape(player.playerName || t('koc.viewer.unknown_player'))}${badgeHtml}
                     </a>
                 </td>
                 ${nivelCell}
-                <td><strong>${player.totalPoints || 0}</strong></td>
+                <td>${player.matchPoints ?? 0}</td>
                 <td><span class="bonus-points">+${player.bonusPoints || 0}</span></td>
+                ${tournamentPoints.cell(player.additionalPoints)}
+                <td><strong>${player.totalPoints || 0}</strong></td>
                 <td>${player.gamesPlayed || 0}</td>
                 <td>${player.wins || 0}/${player.losses || 0}</td>
             `;

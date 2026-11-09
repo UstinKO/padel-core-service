@@ -218,6 +218,14 @@
                 <span th:text="#{admin.common.btn.export}">Exportar datos (Excel)</span>
             </a>
 
+            <a th:if="${isSuperAdmin}"
+               th:href="@{/admin/export/tournament-audit}"
+               class="btn btn-outline"
+               style="margin-left: 1rem;">
+                <i class="fas fa-download"></i>
+                <span th:text="#{admin.common.btn.tournament_audit_export}">Descargar datos de torneos (JSON)</span>
+            </a>
+
             <!-- КНОПКА ПЕРЕХОДА НА ТЕСТОВУЮ СТРАНИЦУ -->
             <div th:if="${isSuperAdmin}" style="margin-left: 1rem; display: inline-block;">
                 <a href="/test/tournaments" class="btn btn-outline">

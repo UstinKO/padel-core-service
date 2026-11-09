@@ -2,6 +2,8 @@ package com.padle.core.padelcoreservice.controller.api;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import com.padle.core.padelcoreservice.marketing.MarketingContextService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
@@ -16,9 +18,11 @@ import java.time.Duration;
 @Slf4j
 @RestController
 @RequestMapping("/api/cookies")
+@RequiredArgsConstructor
 public class CookieController {
 
     private static final Duration CONSENT_MAX_AGE = Duration.ofDays(365);
+    private final MarketingContextService marketing;
 
     @PostMapping("/accept")
     public ResponseEntity<?> acceptCookies(HttpServletRequest request, HttpServletResponse response) {
@@ -31,6 +35,7 @@ public class CookieController {
     public ResponseEntity<?> rejectCookies(HttpServletRequest request, HttpServletResponse response) {
         log.info("Usuario rechazó todas las cookies");
         addConsentCookie(request, response, "cookieConsent", "rejected");
+        marketing.revoke(request, response);
         return ResponseEntity.ok().build();
     }
 
@@ -44,6 +49,9 @@ public class CookieController {
         addConsentCookie(request, response, "cookieConsent", "customized");
         addConsentCookie(request, response, "analyticsConsent", String.valueOf(analytics));
         addConsentCookie(request, response, "marketingConsent", String.valueOf(marketing));
+        if (!marketing) {
+            this.marketing.revoke(request, response);
+        }
 
         return ResponseEntity.ok().build();
     }

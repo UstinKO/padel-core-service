@@ -1,11 +1,15 @@
 package com.padle.core.padelcoreservice.config;
 
+import com.padle.core.padelcoreservice.marketing.MetaProperties;
+
 import com.padle.core.padelcoreservice.security.CustomAccessDeniedHandler;
 import com.padle.core.padelcoreservice.security.JwtAuthenticationFilter;
 import com.padle.core.padelcoreservice.security.RateLimitFilter;
 import com.padle.core.padelcoreservice.security.RequestIdFilter;
+import com.padle.core.padelcoreservice.security.TournamentLogin;
 import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2UserService;
 import com.padle.core.padelcoreservice.security.oauth2.OAuth2AppLoginOriginFilter;
+import com.padle.core.padelcoreservice.security.oauth2.TournamentOAuth2AuthorizationRequestRepository;
 import com.padle.core.padelcoreservice.security.oauth2.OAuth2AuthenticationSuccessHandler;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -49,6 +53,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @Import(SecurityBeansConfig.class)
 public class SecurityConfig {
+    private final MetaProperties metaProperties;
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomOAuth2UserService customOAuth2UserService;
@@ -140,12 +145,21 @@ public class SecurityConfig {
                                 "/reserva/accion/**",
                                 "/ws/**",
                                 "/api/cookies/**",
+                                "/api/marketing/**",
                                 // Короткие маркетинговые ссылки календаря турниров
                                 "/oct-tg",
                                 "/oct-wa",
                                 "/oct-ig",
                                 // Короткая ссылка для профиля Instagram
                                 "/ig-bio",
+                                "/ig-story",
+                                "/ig-ru",
+                                "/tg-calendar",
+                                "/tg-posts",
+                                "/wa-info",
+                                "/threads",
+                                "/qr/reby/site",
+                                "/qr/reby/telegram",
                                 // Веб-версия клиента 1Padel.App — статика; приватные данные
                                 // клиент берёт из /api/** по Bearer-токену, их авторизация не меняется
                                 "/app",
@@ -155,8 +169,9 @@ public class SecurityConfig {
                         .requestMatchers("/players/lista").authenticated()
                         .requestMatchers("/players/perfil/**").authenticated()
                         .requestMatchers("/players/mis-torneos").authenticated()
+                        .requestMatchers("/admin/marketing/qr", "/admin/marketing/registration-sources").hasRole("SUPER_ADMIN")
                         .requestMatchers("/admin/**").hasAnyRole("OWNER", "SUPER_ADMIN", "ORGANIZER", "ADMIN", "CLUB_ADMIN")
-                        // Внутренний тестовый инструментарий организатора (JDBC-based, см. CLAUDE.md) —
+                        // Внутренний тестовый инструментарий организатора (JDBC-based, см. PROJECT.md) —
                         // доступен только владельцу платформы, не ORGANIZER/ADMIN.
                         .requestMatchers("/test/tournaments/**").hasRole("SUPER_ADMIN")
                         // Ручная проверка Telegram-интеграции шлёт сообщения в рабочую группу
@@ -173,11 +188,15 @@ public class SecurityConfig {
                                 // Публичное расписание для мобильного приложения —
                                 // анонимное чтение, те же правила видимости, что у /torneo/{id}.
                                 "/api/public/tournaments",
-                                "/api/public/tournaments/*"
+                                "/api/public/tournaments/*",
+                                "/api/public/tournaments/*/calendar",
+                                "/api/public/tournaments/*/calendar/google",
+                                "/api/public/tournaments/*/calendar/event.ics"
                         ).permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.POST,
                                 "/api/tournaments/double/accept-pair"
                         ).permitAll()
+                        .requestMatchers("/api/admin/marketing/qr-stats", "/api/admin/marketing/qr-summary", "/api/admin/marketing/registration-sources").hasRole("SUPER_ADMIN")
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().authenticated()
                 )
@@ -209,8 +228,11 @@ public class SecurityConfig {
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(customOAuth2UserService)
                         )
+                        .authorizationEndpoint(endpoint -> endpoint
+                                .authorizationRequestRepository(new TournamentOAuth2AuthorizationRequestRepository()))
                         .successHandler(oAuth2AuthenticationSuccessHandler)
-                        .failureUrl("/login?error=oauth2")
+                        .failureHandler((request, response, exception) -> response.sendRedirect(
+                                TournamentLogin.failureUrl("oauth2", TournamentLogin.authorizedTournament(request))))
                 )
                 .formLogin(form -> form
                         .loginPage("/login")
@@ -247,11 +269,13 @@ public class SecurityConfig {
                         .contentSecurityPolicy(csp -> csp
                                 .policyDirectives(
                                         "default-src 'self'; " +
-                                                "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://www.google.com https://www.gstatic.com https://cdn.jsdelivr.net https://www.googletagmanager.com https://www.clarity.ms; " +
+                                                "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://www.google.com https://www.gstatic.com https://cdn.jsdelivr.net https://www.googletagmanager.com https://www.clarity.ms https://scripts.clarity.ms" +
+                                                (metaProperties.browserEnabled() ? " https://connect.facebook.net; " : "; ") +
                                                 "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://cdn.jsdelivr.net; " +
                                                 "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; " +
                                                 "img-src 'self' data: https:; " +
-                                                "connect-src 'self' https://www.google.com https://www.googletagmanager.com https://www.google-analytics.com https://*.google-analytics.com https://www.clarity.ms https://*.clarity.ms; " +
+                                                "connect-src 'self' https://www.google.com https://www.googletagmanager.com https://www.google-analytics.com https://*.google-analytics.com https://www.clarity.ms https://*.clarity.ms" +
+                                                (metaProperties.browserEnabled() ? " https://www.facebook.com https://connect.facebook.net; " : "; ") +
                                                 "frame-src https://www.google.com; " +
                                                 "frame-ancestors 'none';"
                                 )
@@ -283,12 +307,10 @@ public class SecurityConfig {
             log.info("Authentication failure: type={}, message={}",
                     exception.getClass().getName(), exception.getMessage());
 
-            if (exception instanceof DisabledException
-                    || exception instanceof org.springframework.security.authentication.LockedException) {
-                response.sendRedirect("/login?error=not_confirmed");
-            } else {
-                response.sendRedirect("/login?error=true");
-            }
+            boolean notConfirmed = exception instanceof DisabledException
+                    || exception instanceof org.springframework.security.authentication.LockedException;
+            response.sendRedirect(TournamentLogin.failureUrl(
+                    notConfirmed ? "not_confirmed" : "true", TournamentLogin.requestedTournament(request)));
         };
     }
 
@@ -324,6 +346,10 @@ public class SecurityConfig {
 
             if (isAdmin) {
                 targetUrl = "/admin";
+            } else {
+                targetUrl = TournamentLogin.requestedTournament(request)
+                        .map(TournamentLogin::registrationUrl)
+                        .orElse(targetUrl);
             }
 
             response.sendRedirect(targetUrl);

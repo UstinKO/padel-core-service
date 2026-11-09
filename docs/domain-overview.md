@@ -246,6 +246,9 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 | Метод | URL | Тип | Описание |
 |-------|-----|-----|----------|
 | `GET` | `/torneos` | HTML | Публичный список предстоящих турниров с фильтрами. |
+| `GET` | `/api/public/tournaments/{id}/calendar` | JSON | Доступность календаря и Google TEMPLATE, no-store. |
+| `GET` | `/api/public/tournaments/{id}/calendar/google` | 302 | Актуальные данные мероприятия → Google TEMPLATE, без создания события. |
+| `GET` | `/api/public/tournaments/{id}/calendar/event.ics` | iCalendar | UTF-8, inline для Apple; download=true → attachment. Те же правила доступа, что у карточки мероприятия. |
 | `GET` | `/torneo/{id}` | HTML | Публичная карточка турнира: описание, регистрация, список участников. |
 
 #### REST API (публичный, read-only)
@@ -359,8 +362,7 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 |-------|-----|-----|------|----------|
 | `POST` | `/admin/tournaments/{tournamentId}/move-to-waitlist/{playerId}` | JSON | ADMIN | Переместить игрока из основного состава в лист ожидания вручную. |
 | `POST` | `/admin/tournaments/{tournamentId}/move-to-main/{playerId}` | JSON | ADMIN | Переместить из листа ожидания в основной состав (обходит автоматическую очередь). |
-| `POST` | `/admin/tournaments/{tournamentId}/players/{playerId}/late-arrival` | JSON | ADMIN | Отметить/снять опоздание (`lateArrival`) в AMERICANO/KING_OF_COURT — штраф −10 (LFPT-443). |
-| `POST` | `/admin/tournaments/{tournamentId}/pair-solo` | redirect | ADMIN | Вручную свести в пару две соло-регистрации (`regId1`, `regId2`). |
+| `POST` | `/admin/tournaments/{tournamentId}/pair-solo` | JSON | Координатор с правом управления турниром | Объединить две активные заявки без пары (`regId1`, `regId2`), включая резерв. |
 
 ---
 
@@ -531,7 +533,7 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 
 | Метод | URL | Описание |
 |-------|-----|----------|
-| `POST` | `/tournaments/team-playoff/admin/{tournamentId}/teams/add` | Добавить команду (пару). |
+| `POST` | `/tournaments/team-playoff/admin/{tournamentId}/teams/add` | Добавить команду (пару). При повторном добавлении переиспользует отменённые заявки, сохраняя ссылки на оплаты и источник записи. |
 | `GET` | `/tournaments/team-playoff/admin/{tournamentId}/players/search` | Автодополнение игроков для формы «Добавить команду» (LFPT-0561). |
 | `POST` | `/tournaments/team-playoff/admin/teams/{teamId}/update` | Изменить команду. |
 | `POST` | `/tournaments/team-playoff/admin/teams/{teamId}/delete` | Удалить команду. |
@@ -550,9 +552,12 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 | `POST` | `/tournaments/team-playoff/api/matches/{matchId}/assign-court` | Назначить свободный корт матчу из очереди → в игре. |
 | `POST` | `/tournaments/team-playoff/api/matches/{matchId}/queue/remove` | Убрать матч из очереди. |
 | `POST` | `/tournaments/team-playoff/api/matches/{matchId}/court` | Сменить корт незавершённого матча. |
-| `POST` | `/tournaments/team-playoff/api/matches/{matchId}/team` | Заменить команду в слоте незавершённого матча (реванш — только предупреждение). |
-| `GET` | `/tournaments/team-playoff/api/matches/{matchId}/swap-candidates` | Кандидаты на обмен командами (соседние матчи стадии, issue #298). |
-| `POST` | `/tournaments/team-playoff/api/matches/{matchId}/swap-team` | Обменять команды в двух незавершённых матчах плей-офф. |
+| `POST` | `/tournaments/team-playoff/api/matches/{matchId}/team` | Заменить команду в квалификационном матче (реванш — предупреждение). |
+| `GET` | `/tournaments/team-playoff/api/matches/{matchId}/swap-candidates` | Совместимый список доступных кандидатов для старого интерфейса. |
+| `GET` | `/tournaments/team-playoff/api/matches/{matchId}/pair-options` | Версия, будущие пары, предыдущие встречи и причины блокировки. Параметры `slot`, `correction`. |
+| `POST` | `/tournaments/team-playoff/api/matches/{matchId}/swap-team` | Атомарный обмен между неначатыми матчами стадии; ожидаемая версия и подтверждения. |
+| `POST` | `/tournaments/team-playoff/api/matches/{matchId}/play-start` | Отметить фактическое начало матча на корте. |
+| `POST` | `/tournaments/team-playoff/api/matches/{matchId}/correct-pair` | Подтверждённое исправление составов и счёта до заполнения следующего этапа. |
 | `GET` | `/tournaments/team-playoff/api/{tournamentId}/ranking` | Рейтинг квалификации, JSON. |
 | `GET` | `/tournaments/team-playoff/api/{tournamentId}/court-board` | Доска кортов: занятость, пул команд, предложенные пары 2-го тура. |
 
@@ -679,6 +684,12 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 |-------|-----|------|----------|
 | `GET` | `/error/403`, `/error/rate-limit` | — | Страницы ошибок доступа и превышения лимита (`HomeController`). |
 | `GET` | `/oct-tg`, `/oct-wa`, `/oct-ig`, `/ig-bio` | — | Короткие маркетинговые ссылки → `1-padel.com/?utm_...` (LFPT-0472, LFPT-0489). |
+| `GET` | `/ig-story` | — | Постоянная ссылка сторис и репостов → `302 https://1-padel.com/?utm_source=instagram&utm_medium=social&utm_campaign=instagram_stories&utm_content=shared_story` (LFPT-0779). |
+| `GET` | `/ig-ru` | — | Публичный 302 на главную со списком турниров: `instagram / social`, кампания `instagram_profile_ru`. |
+| `GET` | `/tg-calendar` | — | Публичный 302 на главную со списком турниров: `telegram / social`, кампания `telegram_calendar`. |
+| `GET` | `/tg-posts` | — | Публичный 302 на главную со списком турниров: `telegram / social`, кампания `telegram_posts`. |
+| `GET` | `/wa-info` | — | Публичный 302 на главную со списком турниров: `whatsapp / message`, кампания `whatsapp_group`. |
+| `GET` | `/threads` | — | Публичный 302 на главную со списком турниров: `threads / social`, кампания `threads_profile`. |
 | `GET` | `/app`, `/app/` | — | Веб-версия клиента 1Padel.App: `/app` → `302 /app/`, `/app/` → `forward:/app/index.html` (статика `static/app/`), анонимно (`MobileAppViewController`, LFPT-0643). |
 | `GET` | `/admin/telegram-pipeline` | SUPER_ADMIN | Страница выключателя Telegram-входа в конвейер (`telegram_pipeline_state_db`). |
 | `POST` | `/admin/telegram-pipeline/toggle` | SUPER_ADMIN | Поставить конвейер на паузу / снять. |
@@ -697,7 +708,7 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 | `POST` | `/test/tournaments/{tournamentId}/register-pair-with-players` | SUPER_ADMIN | Тестовые данные, JDBC (`TestTournamentController`): Записать пару, выбранную вручную. |
 | `POST` | `/test/tournaments/{tournamentId}/register-guest-pair` | SUPER_ADMIN | Тестовые данные, JDBC (`TestTournamentController`): Записать пару, где один/оба не в базе. |
 | `POST` | `/test/tournaments/{tournamentId}/register-guest-player` | SUPER_ADMIN | Тестовые данные, JDBC (`TestTournamentController`): Записать гостя на одиночный турнир. |
-| `POST` | `/test/tournaments/{tournamentId}/remove-player/{playerId}` | SUPER_ADMIN | Тестовые данные, JDBC (`TestTournamentController`): Убрать игрока с турнира. |
+| `POST` | `/test/tournaments/{tournamentId}/remove-player/{playerId}` | SUPER_ADMIN | `RegistrationCancellationController` → `TournamentService`: отменить участие (`CANCELLED`, неактивно), сохраняя регистрацию, оплаты и маркетинговую историю. Повторный запрос безопасен; уведомления после commit. |
 | `GET` | `/test/tournaments/{tournamentId}/stats` | SUPER_ADMIN | Тестовые данные, JDBC (`TestTournamentController`): Статистика турнира. |
 | `GET` | `/test/tournaments/{tournamentId}/stats-enhanced` | SUPER_ADMIN | Тестовые данные, JDBC (`TestTournamentController`): Статистика с парами. |
 | `GET` | `/test/tournaments/stats-all` | SUPER_ADMIN | Тестовые данные, JDBC (`TestTournamentController`): Статистика всех турниров одним запросом (вместо N параллельных `/stats`, исчерпывавших пул HikariCP). |
@@ -745,3 +756,49 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 
 Текущий WebSocket `/ws` (SockJS) используется только доменом King of Court.  
 При декомпозиции — выносить вместе с King of Court сервисом или через отдельный WebSocket gateway.
+
+## Офлайн-атрибуция Reby
+
+| Метод | URL | Роль | Поведение |
+|---|---|---|---|
+
+| `GET` | `/qr/reby/site` | — | Публичный 302 на главную с `reby / qr / offline_tournaments`; серверный счётчик site, no-store. |
+| `GET` | `/qr/reby/telegram` | — | Публичный 302 на `https://t.me/padelarg`; серверный счётчик telegram, no-store. |
+| `GET` | `/api/admin/marketing/qr-stats` | SUPER_ADMIN | JSON отчёт Reby: from/to (ISO даты включительно, до 366 дней), site/telegram и days. Без дат — текущий месяц Buenos Aires. |
+
+Контроллер `RebyQrController`, сервис `QrStatsService`, JDBC-репозиторий
+`QrStatsRepository`. Считаются повторные GET, без JavaScript и analytics cookies.
+HEAD, Purpose/Sec-Purpose с prefetch/preview и User-Agent с подстроками bot,
+spider, crawler, facebookexternalhit, whatsapp, slack, discord, preview,
+headless, curl/, wget/ исключаются. Список ограниченный: гарантии распознавания
+всех роботов и уникальных людей нет. Браузер Telegram-Android не исключается.
+Неизвестные назначения не публикуются. Query-параметры не меняют назначение.
+При сбое записи редирект сохраняется, ошибка пишется в серверный лог;
+отчёт при сбое чтения не подменяется нулями. Миграция не восстанавливает прошлые
+переходы. Прямой Telegram не использует эти счётчики; напечатанные QR главной Black Padel/15cero теперь учитываются по точным UTM (см. ниже).
+
+
+## QR напечатанных листовок клубов
+Успешный GET / с единственными utm_source=black_padel / 15cero_villa_crespo /
+15cero_saavedra, utm_medium=qr, utm_campaign=offline_tournaments увеличивает site
+этого источника. QrLandingInterceptor считает после рендера HTTP 200,
+Cache-Control: no-store. HEAD/preview/crawler исключаются той же QrRequestPolicy.
+Другие страницы, кампании, дубли параметров и Reby UTM не считаются.
+
+GET /api/admin/marketing/qr-summary — SUPER_ADMIN; from/to ISO включительно,
+по умолчанию текущий месяц Buenos Aires, до 366 дней; source=all (default) или
+один из четырёх источников (включая reby). Ответ QrSummary: from,to,sources;
+каждый элемент источников — QrStats, с site/telegram и days. Нулевые источники
+включены, пустые дни опущены. Неизвестный source и неверный период — 400.
+/api/admin/marketing/qr-stats сохраняет прежний контракт только Reby.
+Это открытия, не уникальные посетители. До включения учёта история не восстанавливается.
+Meta Pixel, согласия и маркетинговая атрибуция — отдельный механизм.
+После выпуска проверить Cloudflare (запрос должен доходить до приложения)
+и +1 в закрытом отчёте после каждого тестового открытия старых QR.
+
+
+GET /admin/marketing/qr — страница отчёта QR, только SUPER_ADMIN (HTTP + method).
+Данные через /api/admin/marketing/qr-summary, фильтры from/to/source, ES/RU/EN.
+Thymeleaf admin/qr-report, static/js/qr-report.js, static/css/qr-report.css.
+
+Календарь мероприятия: [контракт и проверка Apple](endpoints/event-calendar.md). Новые поля настроек: durationMinutes (>0), timeZone (IANA); текст duracion сохраняется.

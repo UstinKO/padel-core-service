@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * Внутренний эндпоинт, который опрашивает scripts/telegram-relay/relay.py перед каждым fire.
  * Защищён общим секретом в заголовке (не пользовательской авторизацией — это не запрос пользователя,
- * а сервер-сервер вызов с того же хоста), см. .claude/GIT_WORKFLOW.md §8.
+ * а сервер-сервер вызов с того же хоста), см. .agents/GIT_WORKFLOW.md §8.
  */
 @RestController
 @RequestMapping("/api/internal/telegram-pipeline")

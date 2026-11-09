@@ -60,6 +60,7 @@ class DoubleTournamentRegistrationReserveTest {
     @Mock private TournamentService tournamentService;
     @Mock private ClubRepository clubRepository;
 
+    @Mock private PairTermsService pairTerms;
     @InjectMocks private DoubleTournamentRegistrationService service;
 
     private PlayerPadel player;
@@ -172,6 +173,31 @@ class DoubleTournamentRegistrationReserveTest {
     }
 
     @Test
+    void addPartner_aSoloSearch_confirmaLaParejaSinReinscripcion() {
+        Tournament tournament = tournamentStartingIn(72);
+        PlayerPadel partner = PlayerPadel.builder().id(PARTNER_ID).email("partner@example.com").nombre("Pareja")
+                .nivelJugador(Nivel.C6).build();
+        TournamentRegistration soloReg = TournamentRegistration.builder()
+                .id(10L).tournament(tournament).player(player)
+                .status(RegistrationStatus.SOLO_SEARCH).isActive(true).isDoubleRegistration(false)
+                .build();
+
+        when(registrationRepository.findByTournamentIdAndPlayerId(TOURNAMENT_ID, PLAYER_ID)).thenReturn(Optional.of(soloReg));
+        when(playerRepository.findByEmail("partner@example.com")).thenReturn(Optional.of(partner));
+        when(registrationRepository.findByTournamentIdAndPlayerIdAndIsActiveFalse(TOURNAMENT_ID, PARTNER_ID)).thenReturn(Optional.empty());
+        when(registrationRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(registrationMapper.toDto(any())).thenReturn(null);
+
+        PartnerRegistrationDto partnerDto = new PartnerRegistrationDto();
+        partnerDto.setEmail("partner@example.com");
+
+        service.addPartnerToSoloRegistration(TOURNAMENT_ID, PLAYER_ID, partnerDto);
+
+        assertThat(soloReg.getStatus()).isEqualTo(RegistrationStatus.CONFIRMED);
+        verify(tournamentService, never()).processWaitlistForTournament(anyLong());
+    }
+
+    @Test
     void addPartner_despuesDeReserva_encolaYDelegaElProcesamientoDeLaWaitlist() {
         Tournament tournament = tournamentStartingIn(2);
         PlayerPadel partner = PlayerPadel.builder().id(PARTNER_ID).email("partner@example.com").nombre("Pareja")
@@ -264,6 +290,8 @@ class DoubleTournamentRegistrationReserveTest {
         when(registrationRepository.findByPartnerActionToken("PAT_X")).thenReturn(Optional.of(reg));
         when(registrationRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
+        when(registrationRepository.findTournamentIdByPartnerActionToken("PAT_X")).thenReturn(Optional.of(TOURNAMENT_ID));
+        when(tournamentRepository.lockById(TOURNAMENT_ID)).thenReturn(Optional.of(reg.getTournament()));
         service.cancelReserveByToken("PAT_X");
 
         assertThat(reg.getStatus()).isEqualTo(RegistrationStatus.CANCELLED);
@@ -279,6 +307,8 @@ class DoubleTournamentRegistrationReserveTest {
                 .status(RegistrationStatus.CANCELLED).isActive(false).partnerActionToken("PAT_X").build();
         when(registrationRepository.findByPartnerActionToken("PAT_X")).thenReturn(Optional.of(reg));
 
+        when(registrationRepository.findTournamentIdByPartnerActionToken("PAT_X")).thenReturn(Optional.of(TOURNAMENT_ID));
+        when(tournamentRepository.lockById(TOURNAMENT_ID)).thenReturn(Optional.of(reg.getTournament()));
         service.cancelReserveByToken("PAT_X"); // no debe lanzar
 
         verify(registrationRepository, never()).save(any());

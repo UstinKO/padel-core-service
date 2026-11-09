@@ -59,13 +59,13 @@ Telegram-сообщение (для reply): 4937
 
 ### UI
 - Новый `src/main/resources/templates/fragments/analytics.html :: cookie-consent`.
-- 22 шаблона получают `th:replace="~{fragments/analytics :: cookie-consent}"` рядом с существующим `:: ga4` (список — см. `.claude/CLAUDE.md`/находка 1 выше); `index.html` — замена ручных тегов на тот же `th:replace`.
+- 22 шаблона получают `th:replace="~{fragments/analytics :: cookie-consent}"` рядом с существующим `:: ga4` (список — см. `.agents/PROJECT.md`/находка 1 выше); `index.html` — замена ручных тегов на тот же `th:replace`.
 - Новый `static/js/registration-tracking.js`, подключён в `tournament-details.html`, `players/dashboard.html`, `accept-pair.html`.
 - Точечные правки `static/js/tournament-details.js`, `static/js/dashboard.js` (вызовы хелпера в существующих обработчиках регистрации), `accept-pair.html` (вызов хелпера в существующем обработчике подтверждения).
 
 ## Критерии приёмки
 
-- [ ] На всех 23 страницах с `fragments/analytics.html :: ga4` (список — `.claude/CLAUDE.md`) при первом визите без cookie `cookieConsent` показывается баннер согласия — независимо от точки входа (прямой переход на `/torneo/{id}`, `/clubs`, `/ranking` и т.д., не только `/`).
+- [ ] На всех 23 страницах с `fragments/analytics.html :: ga4` (список — `.agents/PROJECT.md`) при первом визите без cookie `cookieConsent` показывается баннер согласия — независимо от точки входа (прямой переход на `/torneo/{id}`, `/clubs`, `/ranking` и т.д., не только `/`).
 - [ ] `index.html` — баннер по-прежнему работает (без визуальных изменений, без дублирования DOM-элемента `#cookieConsentBanner`).
 - [ ] Одиночная регистрация (дашборд и страница турнира) — после `data.success === true` в `dataLayer` фиксируется `tournament_registration_complete` с `registration_status` равным `data.status` (`CONFIRMED`/`WAITLIST`); до ответа сервера (в момент дизейбла кнопки) — `tournament_registration_start`.
 - [ ] Парная регистрация (solo-режим и режим с партнёром, оба файла) — аналогично: `start` в момент инициации, `complete` на успешном ответе с соответствующим статусом/режимом.

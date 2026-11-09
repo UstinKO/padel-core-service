@@ -35,7 +35,7 @@ Telegram-сообщение (для reply): 4605
 - Шаблон одиночного Americano (`admin/americano/tournament.html`) — там шапка показывает "Cancha N" + `#matchNumber`, имён команд там нет, дублирования нет.
 - Шаблон Team Americano round-robin (`admin/americano/tournament-double.html`) — там `match.note` используется в шапке карточки аналогично, но в исходном клиентском скриншоте показан именно экран Team Playoff (видны номера посева "№5", "№10" — специфика `tournament-playoff.html`). Если тот же паттерн нежелателен и там — отдельная задача от заказчика, не додумываем расширение скоупа сейчас.
 - Публичные (не админские) страницы просмотра турнира (`tournaments/team-americano/view.html`, `tournaments/americano/view.html`) — запрос касается именно админки, публичные страницы не трогаем.
-- Превью-страницы (`admin/americano/preview-rounds.html`, `preview-double-rounds.html`) — не являются рабочим экраном проведения турнира (см. `.claude/CLAUDE.md` про "мёртвый роут"/предпросмотр), не входят в запрос.
+- Превью-страницы (`admin/americano/preview-rounds.html`, `preview-double-rounds.html`) — не являются рабочим экраном проведения турнира (см. `.agents/PROJECT.md` про "мёртвый роут"/предпросмотр), не входят в запрос.
 
 ## Изменения в системе
 

@@ -30,7 +30,7 @@ done
 Автопочинка настоящих конфликтов роутиной — движок задач #581.
 
 ## Изменения в системе
-`.github/workflows/pipeline-merge.yml`, `.github/bin/pipeline-select.sh`, `.claude/GIT_WORKFLOW.md`, `.claude/commands/develop-feature.md`.
+`.github/workflows/pipeline-merge.yml`, `.github/bin/pipeline-select.sh`, `.agents/GIT_WORKFLOW.md`, `.agents/workflows/develop-feature.md`.
 
 ## Критерии приёмки
 - [ ] `pipeline:ready` на PR из ветки, созданной до появления оркестратора, запускает оркестратор.

@@ -4,6 +4,7 @@ import com.padle.core.padelcoreservice.annotation.MetricTag;
 import com.padle.core.padelcoreservice.annotation.Timed;
 import com.padle.core.padelcoreservice.annotation.TrackErrors;
 import com.padle.core.padelcoreservice.metrics.EmailMetricsService;
+import com.padle.core.padelcoreservice.model.enums.TournamentType;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -437,6 +438,7 @@ public class EmailService {
             String tournamentTime,
             String clubName,
             String cancellationDeadline,
+            TournamentType tournamentType,
             Locale locale) {
 
         emailMetricsService.recordEmailAttempt("TOURNAMENT_CONFIRMATION");
@@ -457,6 +459,7 @@ public class EmailService {
             context.setVariable("tournamentTime", tournamentTime);
             context.setVariable("clubName", clubName);
             context.setVariable("cancellationDeadline", cancellationDeadline);
+            context.setVariable("teamAmericano", tournamentType == TournamentType.AMERICANO_TEAMS);
             context.setVariable("baseUrl", baseUrl);
             context.setVariable("year", java.time.Year.now().getValue());
 
@@ -470,6 +473,63 @@ public class EmailService {
         } catch (Exception e) {
             emailMetricsService.recordEmailError("TOURNAMENT_CONFIRMATION", e.getClass().getSimpleName());
             log.error("❌ Error enviando confirmación de torneo a {}: {}", to, e.getMessage(), e);
+        }
+    }
+
+    @Async
+    public void sendPairTermsEmail(String to, String playerName, String clubName, PairTermsService.Offer offer,
+                                   boolean waitlist, Locale locale) {
+        Context context = new Context(locale);
+        context.setVariable("playerName", playerName);
+        context.setVariable("tournamentName", offer.eventName());
+        context.setVariable("tournamentDate", offer.startsAt().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+        context.setVariable("tournamentTime", offer.startsAt().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm")));
+        context.setVariable("clubName", clubName);
+        context.setVariable("pairTerms", offer);
+        context.setVariable("pairWaitlist", waitlist);
+        context.setVariable("baseUrl", baseUrl);
+        context.setVariable("year", java.time.Year.now().getValue());
+        sendPairPolicyEmail(to, "PAIR_TERMS", "email.pair_terms.subject", offer.eventName(), "email/pair-terms", context);
+    }
+
+    @Async
+    public void sendPairCancellationEmail(String to, String playerName, String tournamentName,
+                                          String tournamentDate, String tournamentTime, String clubName,
+                                          PairTermsService.Cancellation quote, Locale locale) {
+        Context context = new Context(locale);
+        context.setVariable("playerName", playerName);
+        context.setVariable("tournamentName", tournamentName);
+        context.setVariable("tournamentDate", tournamentDate);
+        context.setVariable("tournamentTime", tournamentTime);
+        context.setVariable("clubName", clubName);
+        context.setVariable("pairCancellation", quote);
+        context.setVariable("year", java.time.Year.now().getValue());
+        sendPairPolicyEmail(to, "PAIR_CANCELLATION", "email.registration_cancelled.subject", tournamentName,
+                "email/registration-cancelled", context);
+    }
+
+    @Async
+    public void sendPartnerReplacedEmail(String to, PairReplacementNoticeService.Notice notice, Locale locale) {
+        Context context = new Context(locale);
+        context.setVariable("notice", notice);
+        sendPairPolicyEmail(to, "PAIR_PARTNER_REPLACED", "email.partner_replaced.subject", notice.tournamentName(),
+                "email/partner-replaced", context);
+    }
+
+    private void sendPairPolicyEmail(String to, String type, String subjectKey, String tournamentName,
+                                     String template, Context context) {
+        emailMetricsService.recordEmailAttempt(type);
+        if (emailMetricsService.isDailyLimitReached(dailyEmailLimit)) {
+            emailMetricsService.recordEmailRejected(type, "DAILY_LIMIT");
+            return;
+        }
+        try {
+            sendHtmlEmail(to, messageSource.getMessage(subjectKey, new Object[]{tournamentName}, context.getLocale()),
+                    templateEngine.process(template, context));
+            emailMetricsService.recordEmailSent(type);
+        } catch (Exception e) {
+            emailMetricsService.recordEmailError(type, e.getClass().getSimpleName());
+            log.error("Не удалось отправить письмо об условиях пары", e);
         }
     }
 
@@ -818,6 +878,7 @@ public class EmailService {
             String direccion,
             String hora,
             Long tournamentId,
+            boolean teamAmericano,
             Locale locale) {
 
         emailMetricsService.recordEmailAttempt("PAIR_TOURNAMENT_REMINDER");
@@ -832,6 +893,7 @@ public class EmailService {
             context.setVariable("clubName", clubName);
             context.setVariable("direccion", direccion);
             context.setVariable("hora", hora);
+            context.setVariable("teamAmericano", teamAmericano);
             context.setVariable("eventUrl", baseUrl + "/torneo/" + tournamentId);
             context.setVariable("year", java.time.Year.now().getValue());
 

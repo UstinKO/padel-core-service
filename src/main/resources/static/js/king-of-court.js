@@ -18,9 +18,7 @@ class KingOfCourt {
         this.stompClient = null;
         this.connected = false;
 
-        this.currentCourtId = null;
-        this.currentCourtNumber = null;
-        this.isEditMode = false;
+        this.editCourt = null;
         this.confirmAction = null;
         this.finalResultsShown = false;
         this.pollingInterval = null;
@@ -43,6 +41,7 @@ class KingOfCourt {
         this.init();
         this.initBurgerMenu(); // Добавляем инициализацию бургер-меню
         this.loadData();
+        window.addEventListener('pageshow', event => { if (event.persisted) this.loadData(); });
         this.connectWebSocket();
         this.startPolling();
     }
@@ -125,6 +124,9 @@ class KingOfCourt {
 
             if (!response.ok) {
                 console.error('API returned error:', response.status, response.statusText);
+                if (response.status === 404 && this.isAdmin) {
+                    window.location.replace(`/admin/tournaments/${this.tournamentId}`);
+                }
                 return;
             }
 
@@ -141,8 +143,13 @@ class KingOfCourt {
                 this.currentRound = data.currentRound;
             }
 
-            // Принудительно обновляем отображение
-            this.renderCourts(data.courts || []);
+            this.roundId = data.currentRoundId;
+            this.conductVersion = data.conductVersion;
+            const restartVersion = document.querySelector('#restartTournamentForm [name="expectedConductVersion"]');
+            if (restartVersion) restartVersion.value = this.conductVersion;
+            this.isFinished = data.isFinished;
+            this.currentCourts = data.courts || [];
+            this.renderCourts(this.currentCourts);
             this.renderLeaderboard(data.ranking || []);
             this.renderMatchHistory(data.history || []);
 
@@ -151,6 +158,8 @@ class KingOfCourt {
             if (data.isFinished && !this.finalResultsShown) {
                 this.showFinalResults(data.ranking);
                 this.finalResultsShown = true;
+            } else if (this.isFinished) {
+                this.showFinalResults(data.ranking, false);
             }
 
             console.log('✅ Data loaded and rendered successfully');
@@ -466,7 +475,7 @@ class KingOfCourt {
         tbody.innerHTML = '';
 
         if (ranking.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center">${t('koc.admin.no_data')}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center">${t('koc.admin.no_data')}</td></tr>`;
             return;
         }
 
@@ -477,12 +486,15 @@ class KingOfCourt {
                 <td>
                     <a href="#" class="view-history-btn" 
                        data-player-id="${player.playerId || ''}"
-                       data-player-name="${player.playerName || ''}">
-                        ${player.playerName || t('koc.viewer.unknown_player')}
+                       data-player-name="${tournamentPoints.escape(player.playerName)}">
+                        ${tournamentPoints.escape(player.playerName || t('koc.viewer.unknown_player'))}
                     </a>
+                    ${this.isAdmin && !this.isFinished ? tournamentPoints.action(player.playerId) : ''}
                 </td>
-                <td><strong>${player.totalPoints || 0}</strong></td>
+                <td>${player.matchPoints ?? 0}</td>
                 <td><span class="bonus-points">+${player.bonusPoints || 0}</span></td>
+                ${tournamentPoints.cell(player.additionalPoints)}
+                <td><strong>${player.totalPoints || 0}</strong></td>
                 <td>${player.gamesPlayed || 0}</td>
                 <td>${player.wins || 0}/${player.losses || 0}</td>
             `;
@@ -531,7 +543,7 @@ class KingOfCourt {
 
     checkAdminButtons(allResultsIn) {
         const nextRoundBtn    = document.getElementById('nextRoundBtn');
-        const rollbackBtn     = document.getElementById('rollbackRoundBtn');
+        const resetBtn        = document.getElementById('resetRoundBtn');
         const endTournamentBtn = document.getElementById('endTournamentBtn');
 
         console.log('Checking admin buttons:', {
@@ -547,11 +559,9 @@ class KingOfCourt {
                 (this.isAdmin && !this.isFinished && allResultsIn) ? 'block' : 'none';
         }
 
-        // "Откатить раунд" — доступен когда мы уже перешли на раунд 2+
-        // (currentRound > 1 означает что есть хотя бы один предыдущий раунд)
-        if (rollbackBtn) {
-            rollbackBtn.style.display =
-                (this.isAdmin && !this.isFinished && this.currentRound > 1) ? 'block' : 'none';
+        if (resetBtn) {
+            const canReset = this.isAdmin && !this.isFinished && this.currentCourts?.some(court => court.hasResult);
+            resetBtn.style.display = canReset ? '' : 'none';
         }
 
         // "Завершить турнир" — только когда все результаты введены
@@ -562,119 +572,62 @@ class KingOfCourt {
     }
 
     openResultModal(courtId, courtNumber, isEditMode = false) {
-        this.currentCourtId = courtId;
-        this.currentCourtNumber = courtNumber;
-        this.isEditMode = isEditMode;
+        const court = this.currentCourts?.find(item => item.id === Number(courtId));
+        const modal = document.getElementById('resultModal');
+        if (!court || !modal) return;
 
-        const resultModal = document.getElementById('resultModal');
-        if (!resultModal) {
-            console.error('Result modal not found');
-            return;
-        }
+        this.editCourt = court;
+        this.editRoundId = this.roundId;
+        this.editVersion = this.conductVersion;
+        const result = isEditMode ? court.result : null;
 
-        const modalCourtNumber = document.getElementById('modalCourtNumber');
-        if (modalCourtNumber) {
-            modalCourtNumber.textContent = courtNumber;
-        }
+        document.getElementById('modalTitle').textContent =
+            t(isEditMode ? 'koc.admin.modal.result_edit' : 'koc.admin.modal.result_new', courtNumber);
+        document.getElementById('modalPlayersInfo').textContent = court.teams.map(team =>
+            `${t('koc.viewer.team')} ${team.teamNumber}: ${team.players.map(player => player.name).join(' & ')}`
+        ).join(' vs ');
 
-        const modalTitle = document.getElementById('modalTitle');
-        if (modalTitle) {
-            modalTitle.innerHTML = isEditMode ?
-                '<i class="fas fa-edit"></i> ' + t('koc.admin.modal.result_edit', courtNumber) :
-                '<i class="fas fa-trophy"></i> ' + t('koc.admin.modal.result_new', courtNumber);
-        }
+        document.getElementById('court-additional-points').innerHTML = court.players.map(player =>
+            tournamentPoints.action(player.id, this.currentRound, `${tournamentPoints.copy.action} · ${player.name}`)
+        ).join('');
 
-        const oldResultIdField = document.getElementById('resultId');
-        if (oldResultIdField) {
-            oldResultIdField.remove();
-        }
-
-        this.loadCourtData(courtId, isEditMode);
-
-        resultModal.style.display = 'flex';
+        this.setupResultWinners(court, result);
+        document.getElementById('scoreWinners').value = result?.winnersScore ?? '';
+        document.getElementById('scoreLosers').value = result?.losersScore ?? '';
+        document.getElementById('modalError').style.display = 'none';
+        modal.style.display = 'flex';
     }
 
-    async loadCourtData(courtId, isEditMode = false) {
-        try {
-            const response = await fetch(`/api/king-of-court/tournaments/${this.kingId}/state`);
-            if (!response.ok) return;
-
-            const data = await response.json();
-            const court = data.courts.find(c => c.id == courtId);
-            if (!court) return;
-
-            const modalPlayersInfo = document.getElementById('modalPlayersInfo');
-            if (modalPlayersInfo && court.teams) {
-                const teamsInfo = court.teams.map(team =>
-                    `${window.t('koc.viewer.team')} ${team.teamNumber}: ${team.players.map(p => p.name).join(' & ')}`
-                ).join(' vs ');
-                modalPlayersInfo.textContent = teamsInfo;
+    setupResultWinners(court, result) {
+        const first = document.getElementById('winner1');
+        const second = document.getElementById('winner2');
+        const manual = document.getElementById('manualWinners');
+        const playerIds = new Set(court.players.map(player => String(player.id)));
+        const partners = new Map();
+        for (const team of court.teams) {
+            const ids = team.players.map(player => String(player.id));
+            if (ids.length === 2 && ids[0] !== ids[1] && ids.every(id => playerIds.has(id))) {
+                partners.set(ids[0], ids[1]);
+                partners.set(ids[1], ids[0]);
             }
-
-            const winner1 = document.getElementById('winner1');
-            const winner2 = document.getElementById('winner2');
-
-            if (winner1 && winner2) {
-                winner1.innerHTML = '';
-                winner2.innerHTML = '';
-
-                court.players.forEach(player => {
-                    const option = document.createElement('option');
-                    option.value = player.id;
-                    option.textContent = player.name;
-
-                    winner1.appendChild(option.cloneNode(true));
-                    winner2.appendChild(option);
-                });
-            }
-
-            const scoreWinners = document.getElementById('scoreWinners');
-            const scoreLosers = document.getElementById('scoreLosers');
-            const modalError = document.getElementById('modalError');
-
-            if (isEditMode && court.result) {
-                console.log('Found result ID:', court.result.id);
-
-                if (winner1 && winner2 && court.result.winners) {
-                    winner1.value = court.result.winners[0];
-                    winner2.value = court.result.winners[1];
-                }
-
-                if (scoreWinners && scoreLosers) {
-                    scoreWinners.value = court.result.winnersScore;
-                    scoreLosers.value = court.result.losersScore;
-                }
-
-                let resultIdField = document.getElementById('resultId');
-                if (!resultIdField) {
-                    resultIdField = document.createElement('input');
-                    resultIdField.type = 'hidden';
-                    resultIdField.id = 'resultId';
-                    const formGrid = document.querySelector('#resultModal .form-grid');
-                    if (formGrid) {
-                        formGrid.appendChild(resultIdField);
-                    }
-                }
-                resultIdField.value = court.result.id;
-            } else {
-                if (scoreWinners && scoreLosers) {
-                    scoreWinners.value = '';
-                    scoreLosers.value = '';
-                }
-
-                const resultIdField = document.getElementById('resultId');
-                if (resultIdField) {
-                    resultIdField.remove();
-                }
-            }
-
-            if (modalError) {
-                modalError.style.display = 'none';
-            }
-
-        } catch (error) {
-            console.error('Error loading court data:', error);
         }
+        this.resultPartners = partners;
+        const options = [new Option(first.dataset.placeholder, ''),
+            ...court.players.map(player => new Option(player.name, player.id))];
+        first.replaceChildren(...options);
+        second.replaceChildren(...options.map(option => option.cloneNode(true)));
+        first.value = result ? String(result.winners[0]) : '';
+        second.value = result ? String(result.winners[1]) : '';
+
+        manual.disabled = court.teams.length !== 2 || playerIds.size !== 4 || partners.size !== 4;
+        manual.checked = manual.disabled || Boolean(result && partners.get(first.value) !== second.value);
+        const sync = () => {
+            second.disabled = !manual.checked;
+            if (!manual.checked) second.value = partners.get(first.value) ?? '';
+        };
+        manual.onchange = sync;
+        first.onchange = sync;
+        sync();
     }
 
     showNotification(message, type) {
@@ -702,13 +655,13 @@ class KingOfCourt {
     }
 
     async saveResult() {
+        if (!this.editCourt || this.savingResult) return;
         const winner1 = document.getElementById('winner1')?.value;
         const winner2 = document.getElementById('winner2')?.value;
         const scoreWinners = parseInt(document.getElementById('scoreWinners')?.value);
         const scoreLosers = parseInt(document.getElementById('scoreLosers')?.value);
-        const resultId = document.getElementById('resultId')?.value;
-
-        console.log('resultId:', resultId);
+        const resultId = this.editCourt.result?.id;
+        const manualWinners = document.getElementById('manualWinners').checked;
 
         if (!winner1 || !winner2 || isNaN(scoreWinners) || isNaN(scoreLosers)) {
             this.showError(t('koc.admin.error_fields'));
@@ -725,44 +678,40 @@ class KingOfCourt {
             return;
         }
 
-        const courtData = await this.getCourtData(this.currentCourtId);
-        if (!courtData) {
-            this.showError(t('koc.admin.error_court_data'));
-            return;
-        }
-
-        const allPlayerIds = courtData.players.map(p => p.id);
+        const allPlayerIds = this.editCourt.players.map(player => player.id);
         const winners = [parseInt(winner1), parseInt(winner2)];
         const losers = allPlayerIds.filter(id => !winners.includes(id));
 
-        if (losers.length !== 2) {
-            this.showError(t('koc.admin.error_losers'));
+        if (losers.length !== 2 || winners.some(id => !allPlayerIds.includes(id))) {
+            this.showError(t('koc.admin.error_match_players'));
+            return;
+        }
+        if (!manualWinners && this.resultPartners.get(winner1) !== winner2) {
+            this.showError(t('koc.admin.error_assigned_pair'));
             return;
         }
 
+        this.savingResult = true;
+        const button = document.getElementById('save-result-btn');
+        const label = button.textContent;
+        button.disabled = true;
+        button.textContent = document.getElementById('conduct-save-status').dataset.saving;
         try {
             const requestBody = {
-                roundId: await this.getCurrentRoundId(),
-                courtNumber: parseInt(this.currentCourtNumber),
+                roundId: this.editRoundId,
+                courtNumber: this.editCourt.courtNumber,
                 winners: winners,
                 losers: losers,
                 winnersScore: scoreWinners,
-                losersScore: scoreLosers
+                losersScore: scoreLosers,
+                manualWinners
             };
 
-            let url, method;
+            const base = '/api/king-of-court/matches/result';
+            const url = resultId ? `${base}/${resultId}` : base;
+            const method = resultId ? 'PUT' : 'POST';
 
-            if (resultId && resultId !== 'undefined' && resultId !== '') {
-                url = `/api/king-of-court/matches/result/${resultId}`;
-                method = 'PUT';
-                console.log('UPDATING result with ID:', resultId, 'URL:', url);
-            } else {
-                url = '/api/king-of-court/matches/result';
-                method = 'POST';
-                console.log('CREATING new result, URL:', url);
-            }
-
-            const response = await fetch(url, {
+            const response = await conductFetch(url + `?expectedConductVersion=${this.editVersion}`, {
                 method: method,
                 headers: {
                     'Content-Type': 'application/json',
@@ -770,8 +719,7 @@ class KingOfCourt {
                 body: JSON.stringify(requestBody)
             });
 
-            if (response.ok) {
-                console.log('Result saved successfully');
+            if (response.ok || response.headers.has('X-Conduct-Replayed')) {
                 this.closeResultModal();
                 this.showNotification(resultId ? t('koc.admin.result_updated') : t('koc.admin.result_saved'), 'success');
                 // Данные обновятся через WebSocket, но для надежности загружаем сразу
@@ -784,6 +732,10 @@ class KingOfCourt {
         } catch (error) {
             console.error('Error saving result:', error);
             this.showError(t('koc.admin.error_connection'));
+        } finally {
+            this.savingResult = false;
+            button.disabled = false;
+            button.textContent = label;
         }
     }
 
@@ -791,7 +743,7 @@ class KingOfCourt {
         if (!confirm(t('koc.admin.confirm_next_round'))) return;
 
         try {
-            const response = await fetch(`/api/king-of-court/tournaments/${this.kingId}/next-round`, {
+            const response = await conductFetch(`/api/king-of-court/tournaments/${this.kingId}/next-round?expectedConductVersion=${this.conductVersion}`, {
                 method: 'POST'
             });
 
@@ -815,7 +767,7 @@ class KingOfCourt {
         if (!confirm(t('koc.admin.confirm_finish'))) return;
 
         try {
-            const response = await fetch(`/api/king-of-court/tournaments/${this.kingId}/finish`, {
+            const response = await conductFetch(`/api/king-of-court/tournaments/${this.kingId}/finish?expectedConductVersion=${this.conductVersion}`, {
                 method: 'POST'
             });
 
@@ -907,7 +859,7 @@ class KingOfCourt {
         }
     }
 
-    showFinalResults(ranking) {
+    showFinalResults(ranking, open = true) {
         if (!ranking || ranking.length === 0) return;
 
         const winner = ranking[0];
@@ -928,19 +880,23 @@ class KingOfCourt {
             <thead>
                 <tr>
                     <th>№</th>
-                    <th>Игрок</th>
-                    <th>Очки</th>
-                    <th>Бонусы</th>
-                    <th>Игры</th>
+                    <th>${t('koc.table.player')}</th>
+                    <th>${tournamentPoints.escape(tournamentPoints.copy.match)}</th>
+                    <th>${tournamentPoints.escape(tournamentPoints.copy.bonus)}</th>
+                    <th>${tournamentPoints.escape(tournamentPoints.copy.title)}</th>
+                    <th>${tournamentPoints.escape(tournamentPoints.copy.total)}</th>
+                    <th>${t('koc.table.games')}</th>
                 </tr>
             </thead>
             <tbody>
                 ${ranking.map(p => `
                     <tr>
                         <td><strong>#${p.rank || ''}</strong></td>
-                        <td>${p.playerName || ''}</td>
-                        <td>${p.totalPoints || 0}</td>
+                        <td>${tournamentPoints.escape(p.playerName)}</td>
+                        <td>${p.matchPoints ?? 0}</td>
                         <td>+${p.bonusPoints || 0}</td>
+                        ${tournamentPoints.cell(p.additionalPoints)}
+                        <td>${p.totalPoints || 0}</td>
                         <td>${p.gamesPlayed || 0}</td>
                     </tr>
                 `).join('')}
@@ -950,34 +906,8 @@ class KingOfCourt {
         container.appendChild(table);
 
         const finalResultsModal = document.getElementById('finalResultsModal');
-        if (finalResultsModal) {
+        if (open && finalResultsModal) {
             finalResultsModal.style.display = 'flex';
-        }
-    }
-
-    async getCurrentRoundId() {
-        try {
-            const response = await fetch(`/api/king-of-court/tournaments/${this.kingId}/state`);
-            if (!response.ok) return 0;
-
-            const data = await response.json();
-            return data.currentRoundId || 0;
-        } catch (error) {
-            console.error('Error getting current round ID:', error);
-            return 0;
-        }
-    }
-
-    async getCourtData(courtId) {
-        try {
-            const response = await fetch(`/api/king-of-court/tournaments/${this.kingId}/state`);
-            if (!response.ok) return null;
-
-            const data = await response.json();
-            return data.courts.find(c => c.id == courtId);
-        } catch (error) {
-            console.error('Error getting court data:', error);
-            return null;
         }
     }
 
@@ -987,11 +917,7 @@ class KingOfCourt {
             resultModal.style.display = 'none';
         }
 
-        const resultIdField = document.getElementById('resultId');
-        if (resultIdField) {
-            resultIdField.remove();
-        }
-        this.isEditMode = false;
+        this.editCourt = null;
     }
 
     showError(message) {
@@ -1010,10 +936,7 @@ class KingOfCourt {
         }
 
         this.pollingInterval = setInterval(() => {
-            if (!this.connected) {
-                console.log('Polling for updates (WebSocket disconnected)');
-                this.loadData();
-            }
+            this.loadData();
         }, 10000); // Уменьшил до 10 секунд для надежности
     }
 
@@ -1026,7 +949,7 @@ class KingOfCourt {
 
     closeFinalModal() {
         const finalResultsModal = document.getElementById('finalResultsModal');
-        if (finalResultsModal) {
+        if (open && finalResultsModal) {
             finalResultsModal.style.display = 'none';
         }
     }
@@ -1047,29 +970,29 @@ class KingOfCourt {
 
     // ═══════════════════════════════════════════════════════════════════
     // ПАТЧ для king-of-court.js
-    // Добавить два блока:
-    // 1. Метод rollbackRound — добавить в класс KingOfCourt
-    //    (например, после метода nextRound)
-
-    // ─── 1. НОВЫЙ МЕТОД rollbackRound ────────────────────────────────────
-    async rollbackRound() {
+    async resetRound() {
+        const button = document.getElementById('resetRoundBtn');
+        const scoredCourts = this.currentCourts.filter(court => court.hasResult)
+            .map(court => `${court.courtNumber} (${court.result.winnersScore}:${court.result.losersScore})`).join(', ');
+        if (!scoredCourts || !confirm(button.dataset.confirm.replace('{0}', this.currentRound).replace('{1}', scoredCourts))) {
+            return;
+        }
+        button.disabled = true;
         try {
-            const response = await fetch(`/api/king-of-court/tournaments/${this.kingId}/rollback`, {
-                method: 'POST'
-            });
-
-            if (response.ok) {
-                this.showNotification(t('koc.admin.rollback'), 'success');
-                setTimeout(() => this.loadData(), 500);
-            } else {
-                const error = await response.json();
-                this.showError(error.message || t('koc.admin.error_rollback'));
+            const response = await conductFetch(
+                `/api/king-of-court/rounds/${this.roundId}/reset?expectedConductVersion=${this.conductVersion}`,
+                { method: 'POST' }
+            );
+            if (response.ok || response.headers.has('X-Conduct-Stale') || response.headers.has('X-Conduct-Replayed')) {
+                await this.loadData();
             }
         } catch (error) {
-            console.error('Error rolling back round:', error);
-            this.showError(t('koc.admin.error_connection'));
+            console.error('Error resetting round:', error);
+        } finally {
+            button.disabled = false;
         }
     }
+
 }
 
 // Инициализация при загрузке страницы
@@ -1081,4 +1004,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     window.kingOfCourt = new KingOfCourt();
+});
+document.addEventListener('additional-points-saved', event => {
+    const manager = window.kingOfCourt;
+    if (!manager) return;
+    const {before, after} = event.detail;
+    if (after > before && manager.editVersion === before) {
+        manager.editVersion = after;
+    }
+    manager.loadData();
 });

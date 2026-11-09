@@ -127,6 +127,26 @@
                                    class="form-control"
                                    th:placeholder="#{admin.tournaments.form.field.duration.placeholder}">
                         </div>
+                        <div class="form-group">
+                            <label for="durationMinutes" th:text="#{calendar.settings.duration}"></label>
+                            <input type="number" th:field="*{durationMinutes}" id="durationMinutes" min="1" step="1"
+                                   class="form-control" aria-describedby="calendarDurationHint"
+                                   th:attr="data-suggestion-url=@{/admin/tournaments/calendar-duration}"
+                                   th:classappend="${#fields.hasErrors('durationMinutes')} ? 'is-invalid' : ''">
+                            <small id="calendarDurationHint" th:text="#{calendar.settings.duration_hint}"></small>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('durationMinutes')}"
+                                 th:errors="*{durationMinutes}"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="timeZone" th:text="#{calendar.settings.zone}"></label>
+                            <input type="text" th:field="*{timeZone}" id="timeZone" maxlength="100"
+                                   placeholder="America/Argentina/Buenos_Aires" class="form-control"
+                                   th:classappend="${#fields.hasErrors('calendarTimeZoneValid') or #fields.hasErrors('timeZone')} ? 'is-invalid' : ''"
+                                   aria-describedby="calendarZoneHint">
+                            <small id="calendarZoneHint" th:text="#{calendar.settings.zone_hint}"></small>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('calendarTimeZoneValid')}"
+                                 th:errors="*{calendarTimeZoneValid}"></div>
+                        </div>
                     </div>
                 </div>
 
@@ -263,6 +283,16 @@
                     </div>
                 </div>
 
+                <div class="form-section">
+                    <div class="form-group">
+                        <label for="paymentInstructions" th:text="#{admin.tournaments.form.field.pair_payment}"></label>
+                        <textarea class="form-control" th:field="*{paymentInstructions}" id="paymentInstructions"
+                                  rows="3" maxlength="2000"></textarea>
+                        <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('paymentInstructions')}"
+                             th:errors="*{paymentInstructions}"></div>
+                    </div>
+                </div>
+
                 <!-- Estado y Fechas Límite -->
                 <div class="form-section">
                     <h2 class="section-title">
@@ -374,6 +404,7 @@
 <script th:src="@{/js/csrf.js}"></script>
 <!-- Admin JavaScript -->
 <script th:src="@{/js/admin.js}"></script>
+<script th:src="@{/js/calendar-duration.js}"></script>
 
 <!-- Скрипт для автоматического расчета даты отмены -->
 <script>

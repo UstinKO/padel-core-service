@@ -3,6 +3,7 @@ package com.padle.core.padelcoreservice.service;
 import com.padle.core.padelcoreservice.dto.KingOfCourtStateDTO;
 import com.padle.core.padelcoreservice.dto.MatchHistoryDTO;
 import com.padle.core.padelcoreservice.dto.WebSocketMessage;
+import com.padle.core.padelcoreservice.util.AfterCommit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -27,7 +28,7 @@ public class WebSocketService {
                 .timestamp(LocalDateTime.now().format(FORMATTER))
                 .build();
 
-        messagingTemplate.convertAndSend("/topic/tournament/" + kingId, message);
+        AfterCommit.run(() -> messagingTemplate.convertAndSend("/topic/tournament/" + kingId, message));
         log.info("WebSocket notification sent for result saved: kingId={}, court={}", kingId, courtNumber);
     }
 
@@ -39,7 +40,7 @@ public class WebSocketService {
                 .timestamp(LocalDateTime.now().format(FORMATTER))
                 .build();
 
-        messagingTemplate.convertAndSend("/topic/tournament/" + kingId, message);
+        AfterCommit.run(() -> messagingTemplate.convertAndSend("/topic/tournament/" + kingId, message));
         log.info("WebSocket notification sent for round completed: kingId={}, round={}", kingId, roundNumber);
     }
 
@@ -51,7 +52,7 @@ public class WebSocketService {
                 .timestamp(LocalDateTime.now().format(FORMATTER))
                 .build();
 
-        messagingTemplate.convertAndSend("/topic/tournament/" + kingId, message);
+        AfterCommit.run(() -> messagingTemplate.convertAndSend("/topic/tournament/" + kingId, message));
         log.info("WebSocket notification sent for next round: kingId={}, newRound={}", kingId, newRoundNumber);
     }
 
@@ -63,7 +64,7 @@ public class WebSocketService {
                 .timestamp(LocalDateTime.now().format(FORMATTER))
                 .build();
 
-        messagingTemplate.convertAndSend("/topic/tournament/" + kingId, message);
+        AfterCommit.run(() -> messagingTemplate.convertAndSend("/topic/tournament/" + kingId, message));
         log.info("WebSocket notification sent for tournament finished: kingId={}", kingId);
     }
 
@@ -75,7 +76,7 @@ public class WebSocketService {
                 .timestamp(LocalDateTime.now().format(FORMATTER))
                 .build();
 
-        messagingTemplate.convertAndSend("/topic/tournament/" + kingId, message);
+        AfterCommit.run(() -> messagingTemplate.convertAndSend("/topic/tournament/" + kingId, message));
         log.info("WebSocket notification sent for state update: kingId={}", kingId);
     }
 
@@ -116,7 +117,7 @@ public class WebSocketService {
                 .timestamp(LocalDateTime.now().format(FORMATTER))
                 .build();
 
-        messagingTemplate.convertAndSend("/topic/team-playoff/" + tournamentId, message);
+        AfterCommit.run(() -> messagingTemplate.convertAndSend("/topic/team-playoff/" + tournamentId, message));
         log.info("WebSocket notification sent for team-playoff: tournamentId={}, type={}", tournamentId, type);
     }
 }

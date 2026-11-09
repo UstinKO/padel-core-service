@@ -53,6 +53,7 @@ class DoubleTournamentRegistrationLevelRestrictionTest {
     @Mock private MessageSource messageSource;
     @Mock private PasswordEncoder passwordEncoder;
 
+    @Mock private PairTermsService pairTerms;
     @InjectMocks private DoubleTournamentRegistrationService service;
 
     private TournamentDto tournamentDto;

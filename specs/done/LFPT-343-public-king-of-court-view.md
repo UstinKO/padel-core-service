@@ -42,7 +42,7 @@ done — смержено в master, [PR #345](https://github.com/UstinKO/padel-
 ### Конфигурация
 `src/main/java/com/padle/core/padelcoreservice/config/SecurityConfig.java` — в блок `authorizeHttpRequests` (тот же список `requestMatchers(...)` строки 79-127, где уже перечислены `/tournaments/americano/*`, `/tournaments/team-americano/*`, `/tournaments/team-playoff/*`) добавить `/tournaments/king-of-court/*` и разрешить `.permitAll()`.
 
-Обновление `.claude/CLAUDE.md` (Navigation Map уже перечисляет этот URL как Public — сам файл менять не нужно, он уже соответствует ожидаемому поведению) — правка не требуется, `.claude/` не попадает в git-diff PR в любом случае.
+Обновление `.agents/PROJECT.md` (Navigation Map уже перечисляет этот URL как Public — сам файл менять не нужно, он уже соответствует ожидаемому поведению) — правка не требуется, `.agents/` не попадает в git-diff PR в любом случае.
 
 ## Критерии приёмки
 - [ ] Неавторизованный запрос `GET /tournaments/king-of-court/{kingId}` для существующего KoC-турнира возвращает 200 и рендерит `king-of-court-view.html` (не редирект на `/login`).

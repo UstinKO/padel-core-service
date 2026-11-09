@@ -4,7 +4,7 @@
 done — PR #349, деплой подтверждён успешным (run https://github.com/UstinKO/padel-core-service/actions/runs/32487970134, commit 67baa19)
 
 ## Источник
-GitHub issue [#348](https://github.com/UstinKO/padel-core-service/issues/348) — заведён конвейером напрямую по фидбеку заказчика (Telegram, роль `architect`, 3 сообщения с 3 скриншотами теста парного турнира на 8 команд). Прямого клиентского файла `specs/requests/` нет — вход соответствует варианту 3 из `.claude/commands/develop-feature.md` (issue с готовой технической постановкой).
+GitHub issue [#348](https://github.com/UstinKO/padel-core-service/issues/348) — заведён конвейером напрямую по фидбеку заказчика (Telegram, роль `architect`, 3 сообщения с 3 скриншотами теста парного турнира на 8 команд). Прямого клиентского файла `specs/requests/` нет — вход соответствует варианту 3 из `.agents/workflows/develop-feature.md` (issue с готовой технической постановкой).
 
 ## Контекст / зачем
 Организатор провёл первый реальный турнир Team Playoff (8 команд) вручную и обнаружил три нюанса, мешающих проведению:

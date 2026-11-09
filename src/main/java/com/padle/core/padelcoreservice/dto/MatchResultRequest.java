@@ -31,4 +31,6 @@ public class MatchResultRequest {
 
     @NotNull
     private Integer losersScore;
+
+    private Boolean manualWinners;
 }

@@ -706,11 +706,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 existingUserId: existingUserId ? parseInt(existingUserId) : null
             };
 
+            const terms = await window.PairTerms.reviewBooking(tournamentId, [firstName, lastName].join(' ').trim());
+            if (terms === null) {
+                resetBtn();
+                return;
+            }
+            Object.assign(partnerData, terms);
             const response = await fetch(`/api/tournaments/double/${tournamentId}/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(partnerData)
             });
+            if (response.status === 409) throw new Error(t('pair_terms.retry'));
             const data = await response.json();
 
             if (!response.ok) {
@@ -951,6 +958,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Выбираем опцию full по умолчанию
             if (fullRadio) fullRadio.checked = true;
+            if (selfRadio) selfRadio.checked = false;
             if (replaceCheckbox) replaceCheckbox.checked = false;
 
             // Скрываем поля замены
@@ -1093,14 +1101,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 url += `&replaceData=${encodeURIComponent(JSON.stringify(replaceData))}`;
             }
 
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
+            const data = cancelOption === 'full' ? await window.PairTerms.cancel(tournamentId)
+                : await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+                    .then(response => response.json());
+            if (!data) {
+                if (button) {
+                    button.disabled = false;
+                    button.innerHTML = `<i class="fas fa-times-circle"></i> ${t('common.cancel')}`;
                 }
-            });
-
-            const data = await response.json();
+                return;
+            }
 
             if (data.success) {
                 // Закрываем модальное окно
@@ -1216,7 +1226,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <i class="fas fa-lock"></i> ${t('dashboard.card.torneo_iniciado')}
     </span>
 ` : !isMyTournament ? `
-    <button class="btn btn-primary btn-small btn-register"
+    <button class="btn btn-primary btn-small btn-register" data-registration-intent="${tournament.id}"
             data-tournament-id="${tournament.id}"
             data-tournament-name="${escapeHtml(tournament.nombre)}">
         <i class="fas fa-plus-circle"></i>
@@ -1242,8 +1252,31 @@ document.addEventListener('DOMContentLoaded', function() {
             registerBtn.addEventListener('click', handleRegistration);
         }
 
+        if (isMyTournament && tournament.tipo === 'AMERICANO_TEAMS' && !isTournamentStarted(tournament)) {
+            const terms = document.createElement('button');
+            terms.type = 'button';
+            terms.className = 'btn btn-outline btn-small';
+            terms.textContent = t('pair_terms.title');
+            terms.addEventListener('click', async () => {
+                terms.disabled = true;
+                try {
+                    await window.PairTerms.reviewCurrent(tournament.id);
+                } catch (error) {
+                    showResultModal('error', error.message);
+                } finally {
+                    terms.disabled = false;
+                }
+            });
+            const replacement = document.createElement('button');
+            replacement.type = 'button';
+            replacement.className = 'btn btn-outline btn-small';
+            replacement.style.display = 'none';
+            card.querySelector('.btn-cancel')?.before(terms, replacement);
+            window.PairTerms.bindPartnerReplacement(replacement, tournament.id, true);
+        }
         const cancelBtn = card.querySelector('.btn-cancel');
         if (cancelBtn) {
+            if (tournament.tipo === 'AMERICANO_TEAMS') cancelBtn.textContent = t('pair_exit.action');
             cancelBtn.addEventListener('click', handleCancellation);
         }
 
@@ -1293,6 +1326,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
 
+    async function openTeamCancellation(tournamentId, button) {
+        if (button?.disabled) return;
+        if (button) button.disabled = true;
+        try {
+            if (await window.PairTerms.withdraw(tournamentId)) window.location.reload();
+        } catch (error) {
+            showResultModal('error', error.message);
+        } finally {
+            if (button) button.disabled = false;
+        }
+    }
+
     // Обработчик отмены регистрации
     async function handleCancellation(event) {
         const button = event.currentTarget;
@@ -1303,6 +1348,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const tournament = tournaments.find(t => t.id === parseInt(tournamentId));
         const isDoubles = tournament?.modalidad === 'DOBLES';
 
+        if (isDoubles && tournament.tipo === 'AMERICANO_TEAMS') {
+            await openTeamCancellation(tournamentId, button);
+            return;
+        }
         if (isDoubles) {
             // Для парных турниров - специальное модальное окно
             showDoubleCancellationModal(tournamentId, tournamentName, null);
@@ -1361,6 +1410,15 @@ document.addEventListener('DOMContentLoaded', function() {
     filteredTournaments = getTabBaseList();
     updateTabCounts();
     renderTournaments();
+
+    const pairToCancel = Number(new URLSearchParams(window.location.search).get('cancelPair'));
+    const pairTournament = [...tournaments, ...historicalTournaments]
+        .find(t => t.id === pairToCancel && t.modalidad === 'DOBLES' && myTournamentIds.has(t.id));
+    if (pairTournament?.tipo === 'AMERICANO_TEAMS') {
+        openTeamCancellation(pairToCancel, torneosGrid?.querySelector('.btn-cancel[data-tournament-id="' + pairToCancel + '"]'));
+    } else if (pairTournament) {
+        showDoubleCancellationModal(String(pairToCancel), pairTournament.nombre, null);
+    }
 
     // Автоматически обновляем список каждые 30 секунд (опционально)
     setInterval(() => {

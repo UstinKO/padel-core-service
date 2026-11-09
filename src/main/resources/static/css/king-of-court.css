@@ -280,7 +280,7 @@
     }
 
     .admin-grid-two {
-        grid-template-columns: 1fr !important;
+        grid-template-columns: minmax(0, 1fr) !important;
     }
 
     .court-card {

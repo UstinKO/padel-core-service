@@ -1,6 +1,7 @@
 package com.padle.core.padelcoreservice.model;
 
 import com.padle.core.padelcoreservice.model.enums.PaymentStatus;
+import com.padle.core.padelcoreservice.marketing.MarketingEntityListener;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -8,12 +9,15 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Entity
+@EntityListeners(MarketingEntityListener.class)
 @Table(name = "tournament_registrations_db")
 @Getter
 @Setter
@@ -99,6 +103,34 @@ public class TournamentRegistration {
     @Column(name = "main_player_id")
     private Long mainPlayerId;  // ID главного игрока (кто создал регистрацию)
 
+    @Column(name = "pair_booking_id")
+    private UUID pairBookingId;
+
+    @Column(name = "pair_booked_by")
+    private Long pairBookedBy;
+
+    // Снимок условий одинаков у обоих участников заявки и указывает аккаунт, который их принял.
+    @Column(name = "pair_terms_version")
+    private Integer pairTermsVersion;
+
+    @Column(name = "pair_terms_accepted_at")
+    private LocalDateTime pairTermsAcceptedAt;
+
+    @Column(name = "pair_terms_accepted_by")
+    private Long pairTermsAcceptedBy;
+
+    @Column(name = "pair_terms_price_per_player", precision = 10, scale = 2)
+    private BigDecimal pairTermsPricePerPlayer;
+
+    @Column(name = "pair_terms_currency", length = 10)
+    private String pairTermsCurrency;
+
+    @Column(name = "pair_terms_free_until")
+    private LocalDateTime pairTermsFreeUntil;
+
+    @Column(name = "pair_terms_late_fraction", precision = 5, scale = 4)
+    private BigDecimal pairTermsLateFraction;
+
     // Поля для хранения данных партнера (незарегистрированного)
     @Column(name = "partner_first_name")
     private String partnerFirstName;
@@ -136,7 +168,7 @@ public class TournamentRegistration {
     private Long pairProposerRegId;
 
     // Игрок опоздал к началу индивидуального турнира (AMERICANO/KING_OF_COURT) —
-    // применяется штраф −10 к его текущему результату в этом турнире (см. TournamentService.setLateArrival).
+    // раньше применялся штраф −10 к его текущему результату в этом турнире.
     @Column(name = "late_arrival", nullable = false)
     @Builder.Default
     private Boolean lateArrival = false;
@@ -215,6 +247,12 @@ public class TournamentRegistration {
 
     public boolean isPartnerInvited() {
         return status == RegistrationStatus.PARTNER_INVITED;
+    }
+
+    public boolean isPairableSolo() {
+        return Boolean.TRUE.equals(isActive) && !Boolean.TRUE.equals(isDoubleRegistration) && partner == null
+                && (status == RegistrationStatus.SOLO_SEARCH || status == RegistrationStatus.SOLO_ADD_LATER
+                    || status == RegistrationStatus.WAITLIST);
     }
 
     public boolean isPairComplete() {

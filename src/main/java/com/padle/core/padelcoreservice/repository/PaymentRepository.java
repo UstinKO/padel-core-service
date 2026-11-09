@@ -11,12 +11,15 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     // Найти все платежи по регистрации
     List<Payment> findByRegistrationId(Long registrationId);
+
+    List<Payment> findByPairBookingId(UUID pairBookingId);
 
     // Найти все платежи по статусу
     List<Payment> findByStatus(PaymentStatus status);

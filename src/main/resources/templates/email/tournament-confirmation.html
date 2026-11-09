@@ -198,7 +198,8 @@
 
         <div style="margin-top: 30px; padding: 15px; background-color: #fef9e7; border-radius: 8px; border-left: 4px solid #fbbf24;">
             <p style="margin: 0; color: #92400e; font-size: 14px;">
-                <span th:text="#{email.tournament_confirm.reminder(${cancellationDeadline})}">📌 Recuerda: Puedes cancelar tu participación hasta 24 horas antes.</span>
+                <span th:if="${teamAmericano == true}" th:text="#{tournament.team_attendance.reminder}">Avisá si cambiaron tus planes y llegá 15 minutos antes.</span>
+                <span th:unless="${teamAmericano == true}" th:text="#{email.tournament_confirm.reminder(${cancellationDeadline})}">📌 Recuerda: Puedes cancelar tu participación hasta 24 horas antes.</span>
             </p>
         </div>
     </div>

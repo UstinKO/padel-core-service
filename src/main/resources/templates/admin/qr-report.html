@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{admin.qr.title} + ' — 1-Padel'">QR — 1-Padel</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <link rel="stylesheet" th:href="@{/css/qr-report.css}">
+</head>
+<body>
+<header th:replace="~{fragments/admin-header :: header(#{admin.qr.title})}"></header>
+<main class="admin-main">
+    <div class="container" id="qr-report"
+         th:attr="data-loading=#{admin.qr.loading},data-error=#{admin.qr.error},data-invalid=#{admin.qr.invalid},data-access=#{admin.qr.access}">
+        <div class="admin-header">
+            <h1 class="admin-title" th:text="#{admin.qr.title}">QR</h1>
+            <p class="admin-subtitle" th:text="#{admin.qr.subtitle}"></p>
+        </div>
+        <div class="admin-card qr-filters">
+            <form id="qr-filter-form">
+                <label><span th:text="#{admin.qr.from}"></span><input class="form-control" type="date" name="from" required></label>
+                <label><span th:text="#{admin.qr.to}"></span><input class="form-control" type="date" name="to" required></label>
+                <label><span th:text="#{admin.qr.source}"></span>
+                    <select class="form-control" name="source">
+                        <option value="all" th:text="#{admin.qr.all}"></option>
+                        <option value="black_padel">Black Padel</option>
+                        <option value="15cero_villa_crespo">15cero Villa Crespo</option>
+                        <option value="15cero_saavedra">15cero Saavedra</option>
+                        <option value="reby">Reby</option>
+                    </select>
+                </label>
+                <button class="btn btn-primary" type="submit" th:text="#{admin.qr.apply}"></button>
+            </form>
+        </div>
+        <p id="qr-status" role="status" aria-live="polite"></p>
+        <div id="qr-results" hidden>
+            <div class="admin-card qr-table-wrap">
+                <h2 th:text="#{admin.qr.total}"></h2>
+                <table class="qr-table">
+                    <thead><tr><th scope="col" th:text="#{admin.qr.source}"></th><th scope="col" th:text="#{admin.qr.site}"></th><th scope="col" th:text="#{admin.qr.telegram}"></th><th scope="col" th:text="#{admin.qr.total}"></th></tr></thead>
+                    <tbody id="qr-totals"></tbody>
+                </table>
+            </div>
+            <p id="qr-empty" hidden th:text="#{admin.qr.empty}"></p>
+            <div class="admin-card qr-table-wrap" id="qr-daily-card">
+                <h2 th:text="#{admin.qr.daily}"></h2>
+                <table class="qr-table">
+                    <thead><tr><th scope="col" th:text="#{admin.qr.date}"></th><th scope="col" th:text="#{admin.qr.source}"></th><th scope="col" th:text="#{admin.qr.site}"></th><th scope="col" th:text="#{admin.qr.telegram}"></th></tr></thead>
+                    <tbody id="qr-days"></tbody>
+                </table>
+            </div>
+        </div>
+        <p class="admin-subtitle" th:text="#{admin.qr.note}"></p>
+        <p class="admin-subtitle" th:text="#{admin.qr.history}"></p>
+    </div>
+</main>
+<footer th:replace="~{fragments/admin-footer :: footer}"></footer>
+<script th:src="@{/js/qr-report.js}" defer></script>
+</body>
+</html>

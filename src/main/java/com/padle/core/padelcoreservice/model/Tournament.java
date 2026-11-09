@@ -50,6 +50,13 @@ public class Tournament {
     @Column(name = "duracion", length = 50)
     private String duracion;
 
+    @Column(name = "duration_minutes")
+    private Integer durationMinutes;
+
+    @Column(name = "time_zone", nullable = false, length = 100)
+    @Builder.Default
+    private String timeZone = "America/Argentina/Buenos_Aires";
+
     @Column(name = "genero_formato", nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
     private GenderFormat generoFormato;
@@ -89,6 +96,15 @@ public class Tournament {
 
     @Column(name = "contacto_organizador", nullable = false, length = 100)
     private String contactoOrganizador;
+
+    // Текст реквизитов конкретного мероприятия, вводимый организатором.
+    @Column(name = "payment_instructions", columnDefinition = "TEXT")
+    private String paymentInstructions;
+
+    // Новые условия парного Americano версионируются независимо от старых заявок.
+    @Column(name = "pair_terms_version", nullable = false)
+    @Builder.Default
+    private Integer pairTermsVersion = 1;
 
     @Column(name = "faq_url", length = 500)
     private String faqUrl;

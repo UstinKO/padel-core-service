@@ -1,0 +1,25 @@
+[Unit]
+Description=Read-only local status bridge for the Codex relay
+After=network.target
+Before=docker.service
+
+[Service]
+Type=simple
+DynamicUser=yes
+EnvironmentFile=/etc/padel-codex/switch.env
+RuntimeDirectory=padel-codex-switch
+RuntimeDirectoryMode=0755
+RuntimeDirectoryPreserve=yes
+ExecStart=/usr/bin/python3 /usr/local/lib/padel-codex-switch/switch_proxy.py
+Restart=always
+RestartSec=3
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+RestrictAddressFamilies=AF_UNIX AF_INET
+IPAddressDeny=any
+IPAddressAllow=localhost
+
+[Install]
+WantedBy=multi-user.target

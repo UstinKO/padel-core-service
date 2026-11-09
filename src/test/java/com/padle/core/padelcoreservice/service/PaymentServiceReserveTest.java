@@ -24,7 +24,7 @@ class PaymentServiceReserveTest {
     private final PaymentRepository paymentRepository = mock(PaymentRepository.class);
 
     private final PaymentService paymentService = new PaymentService(
-            paymentRepository, registrationRepository, null, null);
+            paymentRepository, registrationRepository, null, null, null);
 
     @Test
     void getPaymentManagementData_incluyeParejaEnReservaConFlagIsReserve() {

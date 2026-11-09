@@ -61,7 +61,7 @@ Telegram-сообщение (для reply): 4730
 ### i18n
 - `src/main/resources/i18n/messages_{es,ru,en}.properties` — 4 новых ключа: `email.reminder.button.view_event`, `email.reminder.live_info.heading`, `email.reminder.live_info.body`, `email.reminder.view_info`.
 
-### UI (email-шаблоны, относятся к backend по `CLAUDE.md` §1.4)
+### UI (email-шаблоны, относятся к backend по `PROJECT.md` §1.4)
 - `src/main/resources/templates/email/individual-tournament-reminder.html` — кнопка (`#{email.reminder.button.view_event}`) + текст live-информации (`#{email.reminder.live_info.*}`).
 - `src/main/resources/templates/email/pair-tournament-reminder.html` — та же кнопка + live-info.
 - `src/main/resources/templates/email/cancha-abierta-reminder.html` — кнопка + короткая подпись (`#{email.reminder.view_info}`), без блока live-info.

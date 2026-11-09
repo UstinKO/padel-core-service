@@ -52,7 +52,7 @@ class AmericanoServiceCancelNotificationTest {
     void cancelacionPorAdmin_conMotivo_enviaEmailConElMotivo() {
         service = new AmericanoService(
                 tournamentRepository, registrationRepository, americanoPlayerRepository,
-                null, null, clubRepository, null, null, null, emailService, tournamentAccessService);
+                null, null, clubRepository, null, null, null, emailService, tournamentAccessService, null);
 
         LocalDateTime start = LocalDateTime.now().plusDays(2);
         Tournament tournament = Tournament.builder()
@@ -68,6 +68,7 @@ class AmericanoServiceCancelNotificationTest {
                 .status(RegistrationStatus.WAITLIST).isActive(true).isDoubleRegistration(false).build();
 
         when(tournamentRepository.findById(1L)).thenReturn(Optional.of(tournament));
+        when(tournamentRepository.lockById(1L)).thenReturn(Optional.of(tournament));
         when(registrationRepository.findByTournamentIdAndPlayerId(1L, 2L)).thenReturn(Optional.of(reg));
         lenient().when(americanoPlayerRepository.findByTournamentId(1L)).thenReturn(List.of());
         lenient().when(registrationRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));

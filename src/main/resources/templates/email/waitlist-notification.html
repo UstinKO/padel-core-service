@@ -149,7 +149,7 @@
             </div>
         </div>
 
-        <div style="text-align: center; margin: 30px 0;">
+        <div th:if="${waitlistPosition > 0}" style="text-align: center; margin: 30px 0;">
             <div class="position-badge">
                 <span th:text="#{email.waitlist.position(${waitlistPosition})}">Posición 1</span>
             </div>

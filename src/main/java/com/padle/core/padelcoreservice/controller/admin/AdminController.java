@@ -4,8 +4,8 @@ import com.padle.core.padelcoreservice.annotation.Timed;
 import com.padle.core.padelcoreservice.dto.MatchDto;
 import com.padle.core.padelcoreservice.dto.PlayerResponseDto;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
+import com.padle.core.padelcoreservice.exception.TournamentRegistrationException;
 import com.padle.core.padelcoreservice.model.Owner;
-import com.padle.core.padelcoreservice.model.TournamentKingOfCourt;
 import com.padle.core.padelcoreservice.model.enums.*;
 import com.padle.core.padelcoreservice.repository.TournamentKingOfCourtRepository;
 import com.padle.core.padelcoreservice.service.ClubService;
@@ -18,9 +18,12 @@ import com.padle.core.padelcoreservice.service.TournamentService;
 import com.padle.core.padelcoreservice.service.americano.AmericanoService;
 import com.padle.core.padelcoreservice.service.americano.TeamAmericanoService;
 import com.padle.core.padelcoreservice.service.americano.TeamPlayoffService;
+import com.padle.core.padelcoreservice.service.calendar.EventSchedule;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.MessageSource;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -34,6 +37,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -54,6 +58,7 @@ public class AdminController {
     private final TeamPlayoffService teamPlayoffService;
     private final DoubleTournamentRegistrationService doubleRegistrationService;
     private final TournamentAccessService tournamentAccessService;
+    private final MessageSource messageSource;
 
     @GetMapping
     public String adminPanel(Model model, @AuthenticationPrincipal Owner owner) {
@@ -251,13 +256,12 @@ public class AdminController {
         // ADMIN/SUPER_ADMIN видят все турниры; CLUB_ADMIN — только своего клуба; ORGANIZER — только свои
         tournamentAccessService.assertCanManageTournament(owner, id);
 
-        List<TournamentKingOfCourt> activeKings = tournamentKingOfCourtRepository.findAllByTournamentIdAndIsActiveTrue(id);
-        if (!activeKings.isEmpty()) {
-            TournamentKingOfCourt king = activeKings.get(0);
-            model.addAttribute("kingOfCourtActive", true);
-            model.addAttribute("kingOfCourtId", king.getId());
-        } else {
-            model.addAttribute("kingOfCourtActive", false);
+        if (tournament.getTipo() == TournamentType.KING_OF_COURT) {
+            tournamentKingOfCourtRepository.findFirstByTournamentIdOrderByIsActiveDescIdDesc(id)
+                    .ifPresent(king -> {
+                        model.addAttribute("kingOfCourtActive", king.getIsActive());
+                        model.addAttribute("kingOfCourtId", king.getId());
+                    });
         }
 
         model.addAttribute("tournament", tournament);
@@ -299,6 +303,14 @@ public class AdminController {
         }
 
         return "admin/tournaments/details";
+    }
+
+    @GetMapping("/tournaments/calendar-duration")
+    @ResponseBody
+    public ResponseEntity<Integer> suggestCalendarDuration(@RequestParam(defaultValue = "") String description) {
+        return EventSchedule.suggestedDurationMinutes(description)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.noContent().build());
     }
 
     @GetMapping("/tournaments/{id}/edit")
@@ -350,6 +362,9 @@ public class AdminController {
             model.addAttribute("tournamentTypes", Arrays.asList(TournamentType.values()));
             model.addAttribute("tournamentStatuses", Arrays.asList(TournamentStatus.values()));
             model.addAttribute("niveles", getNiveles(tournamentDto.getCategoriaNivel()));
+            model.addAttribute("modalidades", Modalidad.values());
+            model.addAttribute("visibilidades", TournamentVisibility.values());
+            model.addAttribute("isClubAdmin", owner.isClubAdmin());
             return "admin/tournaments/form";
         }
 
@@ -493,56 +508,30 @@ public class AdminController {
         return ResponseEntity.ok(result);
     }
 
-    @PostMapping("/tournaments/{tournamentId}/players/{playerId}/late-arrival")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> setLateArrival(
-            @PathVariable Long tournamentId,
-            @PathVariable Long playerId,
-            @RequestParam boolean lateArrival,
-            @AuthenticationPrincipal Owner owner) {
-
-        Map<String, Object> result = new HashMap<>();
-        log.info("Setting lateArrival={} for player {} in tournament {} by owner: {}",
-                lateArrival, playerId, tournamentId, owner.getEmail());
-
-        try {
-            // ADMIN/SUPER_ADMIN управляют составом любого турнира; CLUB_ADMIN — своего клуба
-            tournamentAccessService.assertCanManageTournament(owner, tournamentId);
-            tournamentService.setLateArrival(tournamentId, playerId, lateArrival);
-            result.put("success", true);
-        } catch (SecurityException | AccessDeniedException e) {
-            result.put("success", false);
-            result.put("message", e.getMessage());
-        } catch (Exception e) {
-            log.error("Error setting late arrival", e);
-            result.put("success", false);
-            result.put("message", e.getMessage());
-        }
-
-        return ResponseEntity.ok(result);
-    }
-
     @PostMapping("/tournaments/{tournamentId}/pair-solo")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> pairSoloPlayers(
             @PathVariable Long tournamentId,
             @RequestParam Long regId1,
-            @RequestParam Long regId2) {
+            @RequestParam Long regId2,
+            @AuthenticationPrincipal Owner owner,
+            Locale locale) {
 
-        Map<String, Object> result = new HashMap<>();
+        tournamentAccessService.assertCanManageTournament(owner, tournamentId);
         try {
-            doubleRegistrationService.adminPairSoloPlayers(regId1, regId2);
-            result.put("success", true);
-            result.put("message", "¡Pareja formada con éxito! Ambos jugadores están ahora confirmados.");
-        } catch (com.padle.core.padelcoreservice.exception.TournamentRegistrationException e) {
-            result.put("success", false);
-            result.put("message", e.getMessage());
-        } catch (Exception e) {
-            log.error("Error pairing solo players in tournament {}", tournamentId, e);
-            result.put("success", false);
-            result.put("message", "Error al emparejar jugadores");
+            RegistrationStatus status = doubleRegistrationService.adminPairSoloPlayers(tournamentId, regId1, regId2);
+            String messageKey = status == RegistrationStatus.WAITLIST
+                    ? "admin.tournaments.details.pair.success.reserve"
+                    : "admin.tournaments.details.pair.success.main";
+            return ResponseEntity.ok(Map.of("success", true, "message",
+                    messageSource.getMessage(messageKey, null, locale)));
+        } catch (TournamentRegistrationException e) {
+            return ResponseEntity.ok(Map.of("success", false, "message", e.getMessage()));
+        } catch (DataAccessException e) {
+            log.error("Не удалось объединить заявки в пару в турнире {}", tournamentId, e);
+            return ResponseEntity.ok(Map.of("success", false, "message",
+                    messageSource.getMessage("admin.tournaments.details.pair.failure", null, locale)));
         }
-        return ResponseEntity.ok(result);
     }
 
     // Список уровней для формы турнира: currentValue добавляет legacy-значение, уже сохранённое

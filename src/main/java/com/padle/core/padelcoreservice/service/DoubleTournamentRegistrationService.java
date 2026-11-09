@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.padelcoreservice.util.AfterCommit;
 import com.padle.core.padelcoreservice.annotation.Counted;
 import com.padle.core.padelcoreservice.annotation.Timed;
 import com.padle.core.padelcoreservice.annotation.TrackErrors;
@@ -57,6 +58,8 @@ public class DoubleTournamentRegistrationService {
     private final TournamentNotificationService notificationService;
     private final EmailService emailService;
     private final TournamentRepository tournamentRepository;
+    private final PairTermsService pairTerms;
+    private final PairReplacementNoticeService replacementNotices;
     private final MessageSource messageSource;
     private final TournamentService tournamentService;
     private final ClubRepository clubRepository;
@@ -103,6 +106,7 @@ public class DoubleTournamentRegistrationService {
             throw new TournamentRegistrationException("El registro para este torneo no está abierto");
         }
 
+        PairTermsService.Offer offer = pairTerms.validateNewBooking(tournamentDto.getId(), partnerDto.getPairTermsToken());
         PlayerPadel mainPlayer = playerRepository.findById(mainPlayerId)
                 .orElseThrow(() -> new TournamentRegistrationException("Jugador principal no encontrado"));
 
@@ -133,11 +137,6 @@ public class DoubleTournamentRegistrationService {
         // Проверяем, не зарегистрирован ли уже главный игрок на ЭТОТ турнир
         checkPlayerNotRegisteredInThisTournament(tournamentDto.getId(), mainPlayerId);
 
-        // Удаляем старую отменённую запись, если она есть (иначе INSERT нарушит uk_tournament_player)
-        registrationRepository.findByTournamentIdAndPlayerIdAndIsActiveFalse(tournamentDto.getId(), mainPlayerId)
-                .ifPresent(registrationRepository::delete);
-        registrationRepository.flush();
-
         Optional<PlayerPadel> existingPartner = findPartner(partnerDto);
 
         // Партнёр с уже существующим аккаунтом подтверждается сразу (см.
@@ -155,14 +154,28 @@ public class DoubleTournamentRegistrationService {
 
         if (existingPartner.isPresent()) {
             registration = registerWithExistingPartner(
-                    tournamentDto, mainPlayer, existingPartner.get(), partnerDto);
+                    tournamentDto, mainPlayer, existingPartner.get(), offer);
         } else {
             registration = registerWithNewPartner(
-                    tournamentDto, mainPlayer, partnerDto);
+                    tournamentDto, mainPlayer, partnerDto, offer);
         }
 
-        TournamentRegistration savedRegistration = registrationRepository.save(registration);
+        TournamentRegistration savedRegistration = saveNewOrCancelledRegistration(registration);
         return registrationMapper.toDto(savedRegistration);
+    }
+
+    private TournamentRegistration saveNewOrCancelledRegistration(TournamentRegistration candidate) {
+        if (candidate.getId() == null) {
+            registrationRepository.findByTournamentIdAndPlayerIdAndIsActiveFalse(
+                    candidate.getTournament().getId(), candidate.getPlayer().getId()).ifPresent(previous -> {
+                candidate.setId(previous.getId());
+                candidate.setPayments(previous.getPayments());
+                if (candidate.getRegistrationDate() == null) {
+                    candidate.setRegistrationDate(LocalDateTime.now());
+                }
+            });
+        }
+        return registrationRepository.save(candidate);
     }
 
     /**
@@ -335,20 +348,16 @@ public class DoubleTournamentRegistrationService {
             TournamentDto tournamentDto,
             PlayerPadel mainPlayer,
             PlayerPadel partner,
-            PartnerRegistrationDto partnerDto) {
+            PairTermsService.Offer offer) {
 
         log.info("Registering with existing partner: partnerId={}", partner.getId());
 
         // ЕДИНСТВЕННАЯ ПРОВЕРКА: не зарегистрирован ли партнер в ЭТОМ же турнире
         checkPlayerNotRegisteredInThisTournament(tournamentDto.getId(), partner.getId(), true);
 
-        // Удаляем старую отменённую запись партнера, если она есть
-        registrationRepository.findByTournamentIdAndPlayerIdAndIsActiveFalse(tournamentDto.getId(), partner.getId())
-                .ifPresent(registrationRepository::delete);
-        registrationRepository.flush();
-
         RegistrationStatus status = determineRegistrationStatusForPair(tournamentDto);
         int position = calculatePosition(tournamentDto, status);
+        UUID pairBookingId = UUID.randomUUID();
 
         // Создаем регистрацию для основного игрока
         TournamentRegistration mainRegistration = TournamentRegistration.builder()
@@ -359,6 +368,8 @@ public class DoubleTournamentRegistrationService {
                 .isActive(true)
                 .isDoubleRegistration(true)
                 .mainPlayerId(mainPlayer.getId())
+                .pairBookingId(pairBookingId)
+                .pairBookedBy(mainPlayer.getId())
                 .partnerFirstName(partner.getNombre())
                 .partnerLastName(partner.getApellido())
                 .partnerPhone(partner.getTelefono())
@@ -378,6 +389,8 @@ public class DoubleTournamentRegistrationService {
                 .isActive(true)
                 .isDoubleRegistration(true)
                 .mainPlayerId(mainPlayer.getId())
+                .pairBookingId(pairBookingId)
+                .pairBookedBy(mainPlayer.getId())
                 .partnerFirstName(mainPlayer.getNombre())
                 .partnerLastName(mainPlayer.getApellido())
                 .partnerPhone(mainPlayer.getTelefono())
@@ -388,31 +401,22 @@ public class DoubleTournamentRegistrationService {
                 .waitlistPosition(status == RegistrationStatus.WAITLIST ? position : null)
                 .build();
 
+        if (offer != null) {
+            LocalDateTime acceptedAt = PairTermsService.now();
+            PairTermsService.recordAcceptance(mainRegistration, offer, mainPlayer.getId(), acceptedAt);
+            PairTermsService.recordAcceptance(partnerRegistration, offer, mainPlayer.getId(), acceptedAt);
+        }
         // Сохраняем обе регистрации
-        registrationRepository.save(partnerRegistration);
-        TournamentRegistration savedMainRegistration = registrationRepository.save(mainRegistration);
+        saveNewOrCancelledRegistration(partnerRegistration);
+        TournamentRegistration savedMainRegistration = saveNewOrCancelledRegistration(mainRegistration);
 
-        // Отправляем email
-        notificationService.sendPartnerInvitationEmail(
-                partner.getEmail(),
-                partner.getNombre(),
-                mainPlayer.getNombre() + " " + mainPlayer.getApellido(),
-                tournamentDto,
-                status,
-                position,
-                partner.getLocale()
-        );
-
-        notificationService.sendConfirmationToMainPlayer(
-                mainPlayer.getEmail(),
-                mainPlayer.getNombre(),
-                partner.getNombre() + " " + partner.getApellido(),
-                tournamentDto,
-                status,
-                position,
-                mainPlayer.getLocale()
-        );
-
+        if (offer != null) {
+            notificationService.sendPairTermsNotice(partner, offer, tournamentDto.getClubId(), status);
+            notificationService.sendPairTermsNotice(mainPlayer, offer, tournamentDto.getClubId(), status);
+        } else {
+            notificationService.sendRegistrationStatusEmail(partner, tournamentDto, status, position);
+            notificationService.sendRegistrationStatusEmail(mainPlayer, tournamentDto, status, position);
+        }
         return savedMainRegistration;
     }
 
@@ -424,7 +428,8 @@ public class DoubleTournamentRegistrationService {
     private TournamentRegistration registerWithNewPartner(
             TournamentDto tournamentDto,
             PlayerPadel mainPlayer,
-            PartnerRegistrationDto partnerDto) {
+            PartnerRegistrationDto partnerDto,
+            PairTermsService.Offer offer) {
 
         // Пара, с которой игрок уже договорился сам, регистрируется сразу — без ожидания
         // email-подтверждения от партнёра или действия координатора. Создаём аккаунт партнёра
@@ -438,7 +443,7 @@ public class DoubleTournamentRegistrationService {
         // registerForDoubleTournament). Повторная проверка здесь была бы мёртвым кодом.
         PlayerPadel savedPartner = playerRepository.save(createPlayerFromPartnerData(partnerDto));
 
-        return registerWithExistingPartner(tournamentDto, mainPlayer, savedPartner, partnerDto);
+        return registerWithExistingPartner(tournamentDto, mainPlayer, savedPartner, offer);
     }
 
     /**
@@ -559,6 +564,8 @@ public class DoubleTournamentRegistrationService {
                 .isActive(true)
                 .isDoubleRegistration(true)
                 .mainPlayerId(registration.getMainPlayerId())
+                .pairBookingId(registration.getPairBookingId())
+                .pairBookedBy(registration.getPairBookedBy())
                 .status(RegistrationStatus.WAITLIST)
                 .waitlistPosition(waitlistPosition)
                 .partnerFirstName(registration.getPlayer().getNombre())
@@ -578,18 +585,20 @@ public class DoubleTournamentRegistrationService {
         TournamentRegistration refreshedPartnerRegistration = registrationRepository
                 .findById(savedPartnerRegistration.getId()).orElse(savedPartnerRegistration);
 
-        notificationService.sendPairConfirmationEmails(refreshedRegistration, refreshedPartnerRegistration);
+        if (refreshedRegistration.getStatus() == RegistrationStatus.WAITLIST) {
+            notificationService.sendPairRegistrationEmails(refreshedRegistration, refreshedPartnerRegistration);
+        }
 
         return registrationMapper.toDto(refreshedRegistration);
     }
 
     @Timed(
             name = "double.registration.emails.send",
-            description = "Send pair confirmation emails",
+            description = "Send pair registration status emails",
             tags = {"service=double", "operation=sendEmails"}
     )
-    public void sendPairConfirmationEmails(TournamentRegistration mainReg, TournamentRegistration partnerReg) {
-        notificationService.sendPairConfirmationEmails(mainReg, partnerReg);
+    public void sendPairRegistrationEmails(TournamentRegistration mainReg, TournamentRegistration partnerReg) {
+        notificationService.sendPairRegistrationEmails(mainReg, partnerReg);
     }
 
     @Timed(
@@ -616,13 +625,18 @@ public class DoubleTournamentRegistrationService {
 
         log.info("Replacing player {} in tournament {} with new player", oldPlayerId, tournamentDto.getId());
 
+        var locked = tournamentRepository.lockById(tournamentDto.getId())
+                .orElseThrow(() -> new TournamentRegistrationException("Torneo no encontrado"));
+        if (!pairTerms.isCancellable(locked)) {
+            throw new TournamentRegistrationException("No se puede reemplazar al jugador después del inicio");
+        }
         // Находим регистрацию старого игрока
         TournamentRegistration oldPlayerReg = registrationRepository
                 .findByTournamentIdAndPlayerId(tournamentDto.getId(), oldPlayerId)
                 .orElseThrow(() -> new TournamentRegistrationException("Registro no encontrado"));
 
         // Проверяем, что это парный турнир
-        if (!oldPlayerReg.getIsDoubleRegistration()) {
+        if (!Boolean.TRUE.equals(oldPlayerReg.getIsActive()) || !Boolean.TRUE.equals(oldPlayerReg.getIsDoubleRegistration())) {
             throw new TournamentRegistrationException("Esta no es una registración de pareja");
         }
 
@@ -686,18 +700,70 @@ public class DoubleTournamentRegistrationService {
             throw new TournamentRegistrationException("No se pudo encontrar al compañero");
         }
 
-        // УДАЛЯЕМ регистрацию старого игрока (чтобы плашка исчезла)
-        log.info("Deleting old player registration for player: {}", oldPlayerId);
-        registrationRepository.delete(oldPlayerReg);
+        var partnerReg = registrationRepository.findByTournamentIdAndPlayerId(tournamentDto.getId(), remainingPartner.getId())
+                .filter(row -> Boolean.TRUE.equals(row.getIsActive())
+                        && java.util.Objects.equals(row.getPairBookingId(), oldPlayerReg.getPairBookingId()))
+                .orElseThrow(() -> new TournamentRegistrationException("Registro del compañero no encontrado"));
+        return registrationMapper.toDto(applyPairReplacement(tournamentDto, oldPlayerReg, partnerReg, newPlayerDto, reason));
+    }
 
+    @Transactional(readOnly = true)
+    public boolean canReplaceCurrentPartner(Long tournamentId, Long bookerId) {
+        return registrationRepository.findByTournamentIdAndPlayerIdAndIsActiveTrue(tournamentId, bookerId)
+                .filter(row -> canReplaceCurrentPartner(row, bookerId)).isPresent();
+    }
+
+    @Transactional
+    public void replaceCurrentPartner(TournamentDto tournamentDto, Long bookerId, Long expectedPartnerId,
+                                      PartnerRegistrationDto candidate) {
+        Long tournamentId = tournamentDto.getId();
+        tournamentRepository.lockById(tournamentId)
+                .orElseThrow(() -> new TournamentRegistrationException("Torneo no encontrado"));
+        var booker = registrationRepository.findByTournamentIdAndPlayerIdAndIsActiveTrue(tournamentId, bookerId)
+                .filter(row -> canReplaceCurrentPartner(row, bookerId))
+                .filter(row -> row.getPartner().getId().equals(expectedPartnerId))
+                .orElseThrow(() -> new TournamentRegistrationException("La pareja cambió o no se puede reemplazar"));
+        var oldPartner = registrationRepository.findByTournamentIdAndPlayerIdAndIsActiveTrue(tournamentId, expectedPartnerId)
+                .filter(row -> Boolean.TRUE.equals(row.getIsDoubleRegistration()) && row.getStatus() == booker.getStatus())
+                .filter(row -> row.getPartner() != null && row.getPartner().getId().equals(bookerId))
+                .filter(row -> java.util.Objects.equals(row.getPairBookingId(), booker.getPairBookingId()))
+                .orElseThrow(() -> new TournamentRegistrationException("La pareja cambió o no se puede reemplazar"));
+
+        var replacement = applyPairReplacement(tournamentDto, oldPartner, booker, candidate, "PARTNER_REPLACED_BY_BOOKER");
+        var notice = replacementNotices.record(tournamentDto, oldPartner.getPlayer(), booker.getPlayer(), replacement.getPlayer());
+        notificationService.sendPartnerReplacedNotice(oldPartner.getPlayer(), notice);
+    }
+
+    private boolean canReplaceCurrentPartner(TournamentRegistration row, Long bookerId) {
+        return bookerId.equals(row.getPairBookedBy())
+                && row.getPartner() != null
+                && Boolean.TRUE.equals(row.getIsDoubleRegistration())
+                && row.getTournament().getTipo() == TournamentType.AMERICANO_TEAMS
+                && pairTerms.isCancellable(row.getTournament())
+                && (row.getStatus() == RegistrationStatus.CONFIRMED || row.getStatus() == RegistrationStatus.WAITLIST);
+    }
+
+    private TournamentRegistration applyPairReplacement(TournamentDto tournamentDto, TournamentRegistration oldPlayerReg,
+                                                        TournamentRegistration partnerReg, PartnerRegistrationDto newPlayerDto,
+                                                        String reason) {
+        PlayerPadel remainingPartner = partnerReg.getPlayer();
+        Long oldPlayerId = oldPlayerReg.getPlayer().getId();
+        RegistrationStatus previousStatus = oldPlayerReg.getStatus();
         // Проверяем, существует ли новый игрок в системе
-        Optional<PlayerPadel> existingNewPlayer = findPartnerByContact(newPlayerDto);
+        Optional<PlayerPadel> existingNewPlayer = findPartner(newPlayerDto);
+        if (newPlayerDto.getExistingUserId() != null
+                && existingNewPlayer.filter(PlayerPadel::isActivo).isEmpty()) {
+            throw new TournamentRegistrationException("No se encontró al jugador elegido");
+        }
 
         // Игрок без аккаунта регистрируется сразу же, как и уже существующий —
         // без ожидания email-подтверждения (см. registerWithNewPartner).
         PlayerPadel newPlayer;
         if (existingNewPlayer.isPresent()) {
             newPlayer = existingNewPlayer.get();
+            if (newPlayer.getId().equals(oldPlayerId)) {
+                throw new TournamentRegistrationException("El reemplazo debe ser otro jugador");
+            }
             log.info("New player already exists: {}", newPlayer.getId());
             checkPlayerNotRegisteredInThisTournament(tournamentDto.getId(), newPlayer.getId(), true);
         } else {
@@ -708,6 +774,10 @@ public class DoubleTournamentRegistrationService {
             newPlayer = playerRepository.save(createPlayerFromPartnerData(newPlayerDto));
         }
 
+        // Сохраняем историю отмены и платежей прежнего участника.
+        oldPlayerReg.cancel(reason);
+        registrationRepository.save(oldPlayerReg);
+
         // Создаем регистрацию для нового игрока
         TournamentRegistration newRegistration = TournamentRegistration.builder()
                 .tournament(Tournament.builder().id(tournamentDto.getId()).build())
@@ -716,40 +786,40 @@ public class DoubleTournamentRegistrationService {
                 .registrationDate(LocalDateTime.now())
                 .isActive(true)
                 .isDoubleRegistration(true)
-                .mainPlayerId(oldPlayerReg.getMainPlayerId())
+                .mainPlayerId(remainingPartner.getId())
+                .pairBookingId(oldPlayerReg.getPairBookingId())
+                .pairBookedBy(oldPlayerReg.getPairBookedBy())
                 .partnerFirstName(remainingPartner.getNombre())
                 .partnerLastName(remainingPartner.getApellido())
                 .partnerPhone(remainingPartner.getTelefono())
                 .partnerEmail(remainingPartner.getEmail())
                 .partnerTelegram(remainingPartner.getTelegramUsername())
-                .status(oldPlayerReg.getStatus())
+                .status(previousStatus)
                 .position(oldPlayerReg.getPosition())
                 .waitlistPosition(oldPlayerReg.getWaitlistPosition())
                 .build();
 
-        // Обновляем партнера, чтобы он указывал на нового игрока
-        TournamentRegistration partnerReg = registrationRepository
-                .findByTournamentIdAndPlayerId(tournamentDto.getId(), remainingPartner.getId())
-                .orElseThrow(() -> new TournamentRegistrationException("Registro del compañero no encontrado"));
-
+        PairTermsService.copyAcceptance(oldPlayerReg, newRegistration);
         partnerReg.setPartner(newPlayer);
+        partnerReg.setMainPlayerId(remainingPartner.getId());
+        partnerReg.setPartnerFirstName(newPlayer.getNombre());
+        partnerReg.setPartnerLastName(newPlayer.getApellido());
+        partnerReg.setPartnerPhone(newPlayer.getTelefono());
+        partnerReg.setPartnerEmail(newPlayer.getEmail());
+        partnerReg.setPartnerTelegram(newPlayer.getTelegramUsername());
         registrationRepository.save(partnerReg);
 
-        // Отправляем уведомление новому игроку
-        notificationService.sendPartnerInvitationEmail(
-                newPlayer.getEmail(),
-                newPlayer.getNombre(),
-                remainingPartner.getNombre() + " " + remainingPartner.getApellido(),
-                tournamentDto,
-                oldPlayerReg.getStatus(),
-                oldPlayerReg.getPosition(),
-                newPlayer.getLocale()
-        );
-
-        TournamentRegistration savedRegistration = registrationRepository.save(newRegistration);
+        TournamentRegistration savedRegistration = saveNewOrCancelledRegistration(newRegistration);
+        if (PairTermsService.accepted(savedRegistration)) {
+            var offer = pairTerms.acceptedOffer(oldPlayerReg.getTournament(), savedRegistration);
+            notificationService.sendPairTermsNotice(newPlayer, offer, tournamentDto.getClubId(), previousStatus);
+        } else {
+            notificationService.sendRegistrationStatusEmail(newPlayer, tournamentDto, previousStatus,
+                    savedRegistration.getWaitlistPosition());
+        }
         log.info("Player replaced successfully in tournament {}", tournamentDto.getId());
 
-        return registrationMapper.toDto(savedRegistration);
+        return savedRegistration;
     }
 
     /**
@@ -829,11 +899,6 @@ public class DoubleTournamentRegistrationService {
 
         checkPlayerNotRegisteredInThisTournament(tournamentId, playerId);
 
-        // Удаляем старую отменённую запись, если есть (иначе INSERT нарушит uk_tournament_player)
-        registrationRepository.findByTournamentIdAndPlayerIdAndIsActiveFalse(tournamentId, playerId)
-                .ifPresent(registrationRepository::delete);
-        registrationRepository.flush();
-
         // Проверяем слоты: confirmed pairs + solo regs < cupoMax
         long confirmedPairs = registrationRepository.countConfirmedPairs(tournamentId);
         long soloRegs = registrationRepository.countActiveSoloRegistrations(tournamentId);
@@ -865,7 +930,7 @@ public class DoubleTournamentRegistrationService {
         }
 
         TournamentRegistration reg = builder.build();
-        reg = registrationRepository.save(reg);
+        reg = saveNewOrCancelledRegistration(reg);
 
         if (deadlinePassed) {
             sendPartnerReserveEmail(reg, tournament);
@@ -915,31 +980,56 @@ public class DoubleTournamentRegistrationService {
         return registrationMapper.toDto(reg);
     }
 
+    private void notifyPairWithTerms(TournamentRegistration row, PlayerPadel main, PlayerPadel partner) {
+        var offer = pairTerms.acceptedOffer(row.getTournament(), row);
+        notificationService.sendPairTermsNotice(partner, offer, row.getTournament().getClubId(), row.getStatus());
+        notificationService.sendPairTermsNotice(main, offer, row.getTournament().getClubId(), row.getStatus());
+    }
+
+    private TournamentRegistration partnerWithTerms(TournamentRegistration source, TournamentRegistration partner) {
+        if (PairTermsService.accepted(source)) {
+            PairTermsService.copyAcceptance(source, partner);
+        }
+        return partner;
+    }
+
     // ── Добавление данных пары к SOLO_ADD_LATER регистрации ──────────────────
 
     @Transactional
     public TournamentRegistrationDto addPartnerToSoloRegistration(
             Long tournamentId, Long playerId, PartnerRegistrationDto partnerDto) {
 
+        tournamentRepository.lockById(tournamentId);
         TournamentRegistration soloReg = registrationRepository
                 .findByTournamentIdAndPlayerId(tournamentId, playerId)
                 .orElseThrow(() -> new TournamentRegistrationException("No tienes una inscripción en este torneo"));
 
-        // Заявка без партнёра принимается и до дедлайна (SOLO_ADD_LATER), и после
-        // перевода в резерв (WAITLIST, но ещё без партнёра — отличает её от обычной полной пары,
-        // которая тоже может оказаться в WAITLIST).
+        // Заявка без партнёра принимается при поиске пары, до дедлайна добавления
+        // партнёра и после перевода в резерв (WAITLIST без сформированной пары).
         boolean isReserveWithoutPartner = soloReg.getStatus() == RegistrationStatus.WAITLIST
                 && soloReg.getPartner() == null
                 && !Boolean.TRUE.equals(soloReg.getIsDoubleRegistration());
-        boolean isPendingSoloAddLater = soloReg.getStatus() == RegistrationStatus.SOLO_ADD_LATER;
+        boolean isPendingSolo = soloReg.getStatus() == RegistrationStatus.SOLO_ADD_LATER
+                || soloReg.getStatus() == RegistrationStatus.SOLO_SEARCH;
+        boolean isReplacementNeeded = soloReg.getStatus() == RegistrationStatus.CONFIRMED
+                && Boolean.TRUE.equals(soloReg.getIsDoubleRegistration())
+                && soloReg.getPartner() == null
+                && soloReg.getMainPlayerId() != null;
+        boolean retainedPair = soloReg.getMainPlayerId() != null;
 
-        if (!Boolean.TRUE.equals(soloReg.getIsActive()) || !(isPendingSoloAddLater || isReserveWithoutPartner)) {
+        if (!Boolean.TRUE.equals(soloReg.getIsActive())
+                || !(isPendingSolo || isReserveWithoutPartner || isReplacementNeeded)) {
             throw new TournamentRegistrationException(
                     "No tienes una inscripción pendiente de compañero en este torneo");
         }
 
         PlayerPadel mainPlayer = soloReg.getPlayer();
         Tournament tournament = soloReg.getTournament();
+        PairTermsService.Offer offer = !retainedPair && pairTerms.canFormFromSolo(soloReg)
+                ? pairTerms.validateNewBooking(tournamentId, partnerDto.getPairTermsToken()) : null;
+        if (offer == null && partnerDto.getPairTermsToken() != null) {
+            PairTermsService.requireToken("", partnerDto.getPairTermsToken());
+        }
 
         if (partnerDto.getEmail() != null && !partnerDto.getEmail().isBlank()
                 && partnerDto.getEmail().trim().equalsIgnoreCase(mainPlayer.getEmail())) {
@@ -953,14 +1043,11 @@ public class DoubleTournamentRegistrationService {
                     "No puedes registrarte como tu propio compañero.");
         }
 
-        String dateStr = tournament.getFechaInicio()
-                .format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-
         Optional<PlayerPadel> existingPartnerOpt = findPartner(partnerDto);
 
         // Партнёр без аккаунта регистрируется сразу же, как и уже существующий — без ожидания
         // email-подтверждения. "Добавлю партнёра позже" сохраняет свои правила дедлайна/резерва
-        // (isPendingSoloAddLater/isReserveWithoutPartner ниже) — наличие партнёра и попадание
+        // (isPendingSolo/isReserveWithoutPartner ниже) — наличие партнёра и попадание
         // пары в основной список или резерв не связаны между собой.
         PlayerPadel partner;
         if (existingPartnerOpt.isPresent()) {
@@ -972,9 +1059,6 @@ public class DoubleTournamentRegistrationService {
                     partner.getNivelJugador(), messageSource, LocaleContextHolder.getLocale());
 
             checkPlayerNotRegisteredInThisTournament(tournamentId, partner.getId(), true);
-            registrationRepository.findByTournamentIdAndPlayerIdAndIsActiveFalse(tournamentId, partner.getId())
-                    .ifPresent(registrationRepository::delete);
-            registrationRepository.flush();
         } else {
             // Проверка дубля (нормализованная, под локом) уже выполнена выше, в
             // findPartner → findPartnerByContact — см. комментарий в registerWithNewPartner.
@@ -983,6 +1067,11 @@ public class DoubleTournamentRegistrationService {
 
         soloReg.setIsDoubleRegistration(true);
         soloReg.setMainPlayerId(playerId);
+        if (soloReg.getPairBookingId() == null && !retainedPair) {
+            soloReg.setPairBookingId(UUID.randomUUID());
+            soloReg.setPairBookedBy(playerId);
+        }
+        if (offer != null) PairTermsService.recordAcceptance(soloReg, offer, playerId, PairTermsService.now());
         soloReg.setPartner(partner);
         soloReg.setPartnerFirstName(partner.getNombre());
         soloReg.setPartnerLastName(partner.getApellido());
@@ -998,42 +1087,40 @@ public class DoubleTournamentRegistrationService {
                 .isActive(true)
                 .isDoubleRegistration(true)
                 .mainPlayerId(playerId)
+                .pairBookingId(soloReg.getPairBookingId())
+                .pairBookedBy(soloReg.getPairBookedBy())
                 .partnerFirstName(mainPlayer.getNombre())
                 .partnerLastName(mainPlayer.getApellido())
                 .partnerPhone(mainPlayer.getTelefono())
                 .partnerEmail(mainPlayer.getEmail())
                 .partnerTelegram(mainPlayer.getTelegramUsername());
 
-        String timeStr = tournament.getHoraInicio() != null
-                ? tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm"))
-                : "";
-
-        if (isPendingSoloAddLater) {
+        if (isPendingSolo || isReplacementNeeded) {
             // До дедлайна соло-регистрация уже держит свой слот (countActiveSoloRegistrations) —
             // добавление партнёра просто завершает уже занятое место, без постановки в очередь.
             soloReg.setStatus(RegistrationStatus.CONFIRMED);
             partnerRegBuilder.status(RegistrationStatus.CONFIRMED).position(soloReg.getPosition());
             registrationRepository.save(soloReg);
-            registrationRepository.save(partnerRegBuilder.build());
+            TournamentRegistration savedPartnerReg = saveNewOrCancelledRegistration(
+                    partnerWithTerms(soloReg, partnerRegBuilder.build()));
 
-            emailService.sendTournamentConfirmationEmail(partner.getEmail(), partner.getNombre(),
-                    tournament.getNombre(), dateStr, timeStr, null,
-                    tournament.getFormattedCancellationDeadline(), partner.getLocale());
-            emailService.sendTournamentConfirmationEmail(mainPlayer.getEmail(), mainPlayer.getNombre(),
-                    tournament.getNombre(), dateStr, timeStr, null,
-                    tournament.getFormattedCancellationDeadline(), mainPlayer.getLocale());
+            if (PairTermsService.accepted(soloReg)) {
+                notifyPairWithTerms(soloReg, mainPlayer, partner);
+            } else {
+                notificationService.sendPairRegistrationEmails(soloReg, savedPartnerReg);
+            }
         } else {
-            // После перевода в резерв пара встаёт в конец очереди резерва — не получает
-            // преимущества перед уже готовыми парами, ожидающими места.
-            // processWaitlistForTournament сам подтвердит пару, если место свободно и очередь
-            // дошла, иначе оставит в резерве.
-            int waitlistPosition = registrationRepository.findMaxWaitlistPosition(tournamentId).orElse(0) + 1;
+            // Пара, восстановленная после выхода партнёра, сохраняет исходную позицию.
+            // Новая соло-заявка без прежней пары встаёт в конец очереди.
+            int waitlistPosition = retainedPair && soloReg.getWaitlistPosition() != null
+                    ? soloReg.getWaitlistPosition()
+                    : registrationRepository.findMaxWaitlistPosition(tournamentId).orElse(0) + 1;
             soloReg.setStatus(RegistrationStatus.WAITLIST);
             soloReg.setWaitlistPosition(waitlistPosition);
             soloReg.setPartnerActionToken(null);
             partnerRegBuilder.status(RegistrationStatus.WAITLIST).waitlistPosition(waitlistPosition);
             registrationRepository.save(soloReg);
-            TournamentRegistration savedPartnerReg = registrationRepository.save(partnerRegBuilder.build());
+            TournamentRegistration savedPartnerReg = saveNewOrCancelledRegistration(partnerWithTerms(soloReg, partnerRegBuilder.build()));
 
             tournamentService.processWaitlistForTournament(tournamentId);
 
@@ -1041,7 +1128,11 @@ public class DoubleTournamentRegistrationService {
                     .orElse(soloReg);
             TournamentRegistration refreshedPartnerReg = registrationRepository.findById(savedPartnerReg.getId())
                     .orElse(savedPartnerReg);
-            notificationService.sendPairConfirmationEmails(refreshedMainReg, refreshedPartnerReg);
+            if (PairTermsService.accepted(refreshedMainReg)) {
+                notifyPairWithTerms(refreshedMainReg, mainPlayer, partner);
+            } else if (refreshedMainReg.getStatus() == RegistrationStatus.WAITLIST) {
+                notificationService.sendPairRegistrationEmails(refreshedMainReg, refreshedPartnerReg);
+            }
         }
 
         log.info("Solo→pair converted: tournamentId={}, mainPlayerId={}, partnerId={}",
@@ -1189,11 +1280,16 @@ public class DoubleTournamentRegistrationService {
         target.setPairProposerRegId(null);
         target.setIsDoubleRegistration(true);
         target.setMainPlayerId(proposerPlayerId);
+        UUID pairBookingId = UUID.randomUUID();
+        target.setPairBookingId(pairBookingId);
+        target.setPairBookedBy(proposerPlayerId);
 
         proposer.setStatus(RegistrationStatus.CONFIRMED);
         proposer.setPartner(target.getPlayer());
         proposer.setIsDoubleRegistration(true);
         proposer.setMainPlayerId(proposerPlayerId);
+        proposer.setPairBookingId(pairBookingId);
+        proposer.setPairBookedBy(proposerPlayerId);
 
         registrationRepository.save(target);
         registrationRepository.save(proposer);
@@ -1245,6 +1341,10 @@ public class DoubleTournamentRegistrationService {
 
     @Transactional
     public void cancelReserveByToken(String token) {
+        Long tournamentId = registrationRepository.findTournamentIdByPartnerActionToken(token)
+                .orElseThrow(() -> new TournamentRegistrationException("Enlace inválido o expirado"));
+        tournamentRepository.lockById(tournamentId)
+                .orElseThrow(() -> new TournamentRegistrationException("Tournament not found"));
         TournamentRegistration reg = registrationRepository.findByPartnerActionToken(token)
                 .orElseThrow(() -> new TournamentRegistrationException("Enlace inválido o expirado"));
 
@@ -1273,65 +1373,79 @@ public class DoubleTournamentRegistrationService {
                 : "";
         String clubName = resolveClubName(tournament.getClubId());
 
-        emailService.sendRegistrationCancelledEmail(
-                reg.getPlayer().getEmail(),
-                reg.getPlayer().getNombre(),
-                tournament.getNombre(),
-                dateStr,
-                timeStr,
-                clubName,
-                null,  // самоотмена игроком — внутренняя метка в cancellationReason не для показа пользователю
-                reg.getPlayer().getLocale()
-        );
+        String email = reg.getPlayer().getEmail();
+        String name = reg.getPlayer().getNombre();
+        var locale = reg.getPlayer().getLocale();
+        String tournamentName = tournament.getNombre();
+        AfterCommit.run(() -> emailService.sendRegistrationCancelledEmail(
+                email, name, tournamentName, dateStr, timeStr, clubName, null, locale));
     }
 
     // ── Объединить двух соло-игроков в пару (Variant C — admin) ──────────────
 
     @Transactional
-    public void adminPairSoloPlayers(Long regId1, Long regId2) {
-        TournamentRegistration reg1 = registrationRepository.findById(regId1)
-                .orElseThrow(() -> new TournamentRegistrationException("Inscripción 1 no encontrada"));
-        TournamentRegistration reg2 = registrationRepository.findById(regId2)
-                .orElseThrow(() -> new TournamentRegistrationException("Inscripción 2 no encontrada"));
-
-        if (!reg1.getTournament().getId().equals(reg2.getTournament().getId())) {
-            throw new TournamentRegistrationException("Las inscripciones pertenecen a torneos distintos");
+    public RegistrationStatus adminPairSoloPlayers(Long tournamentId, Long regId1, Long regId2) {
+        Tournament tournament = tournamentRepository.lockById(tournamentId)
+                .orElseThrow(() -> adminPairError("admin.tournaments.details.pair.invalid"));
+        if (tournament.getModalidad() != Modalidad.DOBLES) {
+            throw adminPairError("admin.tournaments.details.pair.invalid");
         }
-        if (reg1.getId().equals(reg2.getId())) {
-            throw new TournamentRegistrationException("Seleccioná dos jugadores distintos");
+        if (regId1.equals(regId2)) {
+            throw adminPairError("admin.tournaments.details.pair.distinct");
         }
 
-        boolean reg1IsSolo = reg1.getStatus() == RegistrationStatus.SOLO_SEARCH
-                || reg1.getStatus() == RegistrationStatus.SOLO_ADD_LATER;
-        boolean reg2IsSolo = reg2.getStatus() == RegistrationStatus.SOLO_SEARCH
-                || reg2.getStatus() == RegistrationStatus.SOLO_ADD_LATER;
-
-        if (!reg1IsSolo || !reg2IsSolo) {
-            throw new TournamentRegistrationException("Ambos jugadores deben tener inscripción sin pareja");
-        }
-
+        TournamentRegistration reg1 = requirePairableSolo(tournamentId, regId1);
+        TournamentRegistration reg2 = requirePairableSolo(tournamentId, regId2);
+        boolean joinsWaitlist = reg1.isInWaitlist() || reg2.isInWaitlist();
         Long mainPlayerId = reg1.getPlayer().getId();
+        UUID pairBookingId = UUID.randomUUID();
+        attachAdminPartner(reg1, reg2.getPlayer(), mainPlayerId, pairBookingId);
+        attachAdminPartner(reg2, reg1.getPlayer(), mainPlayerId, pairBookingId);
 
-        reg1.setStatus(RegistrationStatus.CONFIRMED);
-        reg1.setPartner(reg2.getPlayer());
-        reg1.setIsDoubleRegistration(true);
-        reg1.setMainPlayerId(mainPlayerId);
-        reg1.setPartnerRegistrationToken(null);
-        reg1.setPartnerTokenExpiry(null);
-        reg1.setPairProposerRegId(null);
+        if (joinsWaitlist) {
+            int waitlistPosition = registrationRepository.findMaxWaitlistPosition(tournamentId).orElse(0) + 1;
+            reg1.moveToWaitlist(waitlistPosition);
+            reg2.moveToWaitlist(waitlistPosition);
+        } else {
+            int position = (int) registrationRepository.countConfirmedPairs(tournamentId) + 1;
+            reg1.confirm();
+            reg2.confirm();
+            reg1.setPosition(position);
+            reg2.setPosition(position);
+        }
 
-        reg2.setStatus(RegistrationStatus.CONFIRMED);
-        reg2.setPartner(reg1.getPlayer());
-        reg2.setIsDoubleRegistration(true);
-        reg2.setMainPlayerId(mainPlayerId);
-        reg2.setPartnerRegistrationToken(null);
-        reg2.setPartnerTokenExpiry(null);
-        reg2.setPairProposerRegId(null);
+        registrationRepository.saveAllAndFlush(List.of(reg1, reg2));
+        tournamentService.processWaitlistForTournament(tournamentId);
+        log.info("Сформирована пара администратором: tournamentId={}, regId1={}, regId2={}, status={}",
+                tournamentId, regId1, regId2, reg1.getStatus());
+        return reg1.getStatus();
+    }
 
-        registrationRepository.save(reg1);
-        registrationRepository.save(reg2);
+    private TournamentRegistration requirePairableSolo(Long tournamentId, Long registrationId) {
+        return registrationRepository.findById(registrationId)
+                .filter(reg -> tournamentId.equals(reg.getTournament().getId()))
+                .filter(TournamentRegistration::isPairableSolo)
+                .orElseThrow(() -> adminPairError("admin.tournaments.details.pair.invalid"));
+    }
 
-        log.info("Admin paired solo players: regId1={}, regId2={}, tournamentId={}",
-                regId1, regId2, reg1.getTournament().getId());
+    private TournamentRegistrationException adminPairError(String key) {
+        return new TournamentRegistrationException(messageSource.getMessage(key, null, LocaleContextHolder.getLocale()));
+    }
+
+    private void attachAdminPartner(TournamentRegistration registration, PlayerPadel partner,
+                                    Long mainPlayerId, UUID pairBookingId) {
+        registration.setPartner(partner);
+        registration.setIsDoubleRegistration(true);
+        registration.setMainPlayerId(mainPlayerId);
+        registration.setPairBookingId(pairBookingId);
+        registration.setPartnerFirstName(partner.getNombre());
+        registration.setPartnerLastName(partner.getApellido());
+        registration.setPartnerPhone(partner.getTelefono());
+        registration.setPartnerEmail(partner.getEmail());
+        registration.setPartnerTelegram(partner.getTelegramUsername());
+        registration.setPartnerRegistrationToken(null);
+        registration.setPartnerTokenExpiry(null);
+        registration.setPairProposerRegId(null);
+        registration.setPartnerActionToken(null);
     }
 }

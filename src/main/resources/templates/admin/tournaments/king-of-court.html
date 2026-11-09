@@ -23,6 +23,7 @@
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" th:href="@{/css/admin.css}">
     <link rel="stylesheet" th:href="@{/css/king-of-court.css}">
+    <link rel="stylesheet" th:href="@{/css/additional-points.css}">
 </head>
 <body>
 <header th:replace="~{fragments/admin-header :: header(#{admin.koc.title})}"></header>
@@ -83,6 +84,8 @@
             <i class="fas fa-trophy" style="font-size: 4rem; color: #fbbf24; margin-bottom: 1rem;"></i>
             <h2 th:text="#{admin.koc.finished.title}">¡Torneo finalizado!</h2>
             <p th:text="#{admin.koc.finished.text}">La clasificación final está disponible a continuación</p>
+            <button th:if="${admin}" type="button" class="btn btn-outline" data-open-points
+                    th:text="#{additional.points.edit_results}">Editar resultados</button>
         </div>
 
         <!-- Grid de canchas -->
@@ -100,8 +103,32 @@
             </div>
         </div>
 
+        <div th:replace="~{fragments/conduct-history :: link(${tournament.id})}"></div>
+        <div th:replace="~{fragments/conduct-history :: saveStatus}"></div>
+
+        <!-- Botones de administrador -->
+        <div class="admin-actions" style="justify-content: center; margin-top: 2rem; gap: 1rem; display: flex; flex-wrap: wrap;"
+             th:if="${admin and not kingTournament.isFinished}">
+
+            <!-- Следующий раунд — показывается JS когда все результаты введены -->
+            <button id="nextRoundBtn" class="btn btn-primary" style="display: none;">
+                <i class="fas fa-forward"></i> <span th:text="#{admin.koc.btn.next_round_start}">Iniciar siguiente ronda</span>
+            </button>
+
+            <button id="resetRoundBtn" class="btn btn-warning" type="button" style="display: none;"
+                    th:data-confirm="#{conduct.koc.confirm_round}"
+                    onclick="window.kingOfCourt?.resetRound()">
+                <i class="fas fa-undo"></i> <span th:text="#{conduct.koc.reset_round}">Restablecer ronda actual</span>
+            </button>
+
+            <!-- Завершить турнир -->
+            <button id="endTournamentBtn" class="btn btn-danger" type="button" style="display: none;">
+                <i class="fas fa-flag-checkered"></i> <span th:text="#{admin.koc.btn.end}">Finalizar torneo</span>
+            </button>
+        </div>
+
         <!-- Ranking e historial en dos columnas -->
-        <div class="admin-grid-two" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem;">
+        <div class="admin-grid-two" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
             <!-- Ranking en vivo -->
             <div class="admin-card">
                 <div class="admin-card-header">
@@ -110,14 +137,16 @@
                         <i class="fas fa-sync-alt"></i>
                     </a>
                 </div>
-                <div class="admin-card-body">
+                <div class="admin-card-body additional-points-scroll">
                     <table class="admin-table">
                         <thead>
                         <tr>
                             <th>#</th>
                             <th th:text="#{admin.koc.col.player}">Jugador</th>
-                            <th th:text="#{admin.koc.col.points}">Puntos</th>
-                            <th th:text="#{admin.koc.col.bonuses}">Bonos</th>
+                            <th th:text="#{additional.points.match}">Puntos de partidos</th>
+                            <th th:text="#{additional.points.bonus}">Bono de cancha</th>
+                            <th th:text="#{additional.points.title}">Puntos adicionales</th>
+                            <th th:text="#{additional.points.total}">Total</th>
                             <th th:text="#{admin.koc.col.games}">Juegos</th>
                             <th th:text="#{admin.koc.col.wins_losses}">V/D</th>
                         </tr>
@@ -151,39 +180,17 @@
             </button>
         </div>
 
-        <!-- Botones de administrador -->
-        <div class="admin-actions" style="justify-content: center; margin-top: 2rem; gap: 1rem; display: flex; flex-wrap: wrap;"
-             th:if="${admin and not kingTournament.isFinished}">
-
-            <!-- Следующий раунд — показывается JS когда все результаты введены -->
-            <button id="nextRoundBtn" class="btn btn-primary" style="display: none;">
-                <i class="fas fa-forward"></i> <span th:text="#{admin.koc.btn.next_round_start}">Iniciar siguiente ronda</span>
-            </button>
-
-            <!-- Откатить раунд — показывается JS когда currentRound > 1 -->
-            <button id="rollbackRoundBtn" class="btn btn-warning" style="display: none;"
-                    onclick="window.kingOfCourt?.rollbackRound()">
-                <i class="fas fa-undo"></i> <span th:text="#{admin.koc.btn.rollback_round}">Cancelar último avance</span>
-            </button>
-
-            <!-- Завершить турнир -->
-            <button id="endTournamentBtn" class="btn btn-danger" style="display: none;"
-                    onclick="window.kingOfCourt?.endTournament()">
-                <i class="fas fa-flag-checkered"></i> <span th:text="#{admin.koc.btn.end}">Finalizar torneo</span>
-            </button>
-        </div>
-
-        <!-- Кнопка сброса — отдельный блок, всегда видна администратору -->
-        <div th:if="${admin and not kingTournament.isFinished}"
+        <div th:if="${admin}"
              style="display:flex; justify-content:center; margin-top:1rem;">
             <form th:action="@{'/admin/tournaments/king-of-court/' + ${kingTournament.id} + '/reset'}"
-                  method="post"
-                  id="resetTournamentForm">
-                <button type="button"
+                  method="post" id="restartTournamentForm"
+                  th:data-confirm="#{conduct.koc.confirm_restart}"
+                  onsubmit="return confirm(this.dataset.confirm)">
+                <input type="hidden" name="expectedConductVersion" th:value="${conductVersion}">
+                <button type="submit"
                         class="btn btn-outline"
-                        style="border-color:#dc2626; color:#dc2626; gap:.5rem; display:flex; align-items:center;"
-                        onclick="confirmReset()">
-                    <i class="fas fa-redo-alt"></i> <span th:text="#{admin.koc.btn.reset}">Reiniciar torneo</span>
+                        style="border-color:#dc2626; color:#dc2626; gap:.5rem; display:flex; align-items:center;">
+                    <i class="fas fa-redo-alt"></i> <span th:text="#{conduct.koc.restart}">Reiniciar torneo</span>
                 </button>
             </form>
         </div>
@@ -204,6 +211,7 @@
 
 <footer th:replace="~{fragments/admin-footer :: footer}"></footer>
 <script th:src="@{/js/csrf.js}"></script>
+<script th:src="@{/js/tournament-conduct.js}"></script>
 <!-- WebSocket libraries -->
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
@@ -224,6 +232,9 @@
     /*]]>*/
 </script>
 
+<div th:replace="~{fragments/additional-points :: copy}"></div>
+<dialog th:if="${admin}" th:insert="~{fragments/additional-points :: editor(${tournament.id}, ${kingTournament.isFinished})}" th:remove="tag"></dialog>
+<script th:src="@{/js/additional-points.js}"></script>
 <script th:src="@{/js/king-of-court.js}"></script>
 <script th:inline="javascript">
     /*<![CDATA[*/
@@ -236,27 +247,5 @@
     /*]]>*/
 </script>
 <script th:src="@{/js/share-panel.js}"></script>
-<script>
-    function confirmReset() {
-        const first = confirm(
-            '⚠️ REINICIAR TORNEO\n\n' +
-            'Esto eliminará:\n' +
-            '• Todos los raundas y resultados\n' +
-            '• Distribución de canchas\n' +
-            '• Estadísticas de jugadores\n\n' +
-            'Los jugadores CONFIRMADOS quedan intactos.\n' +
-            'Podrás modificar el plantel y volver a iniciar.\n\n' +
-            '¿Continuar?'
-        );
-        if (!first) return;
-
-        const second = confirm(
-            '¿Estás seguro?\n\nEsta acción NO se puede deshacer.'
-        );
-        if (!second) return;
-
-        document.getElementById('resetTournamentForm').submit();
-    }
-</script>
 </body>
 </html>

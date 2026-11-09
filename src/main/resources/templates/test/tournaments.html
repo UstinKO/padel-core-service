@@ -1484,6 +1484,15 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script th:src="@{/js/csrf.js}"></script>
+<script th:inline="javascript">
+    const cancellationMessages = {
+        confirm: /*[[#{registration.cancel.confirm}]]*/ '',
+        success: /*[[#{registration.cancel.success}]]*/ '',
+        failure: /*[[#{registration.cancel.failure}]]*/ '',
+        successTitle: /*[[#{registration.cancel.success_title}]]*/ '',
+        errorTitle: /*[[#{registration.cancel.error_title}]]*/ ''
+    };
+</script>
 <script>
     // Глобальные переменные
     let currentTournamentId = null;
@@ -2897,7 +2906,7 @@
                     <div class="d-flex align-items-center gap-2">
                         <span class="badge bg-success">В ТУРНИРЕ</span>
                         <button class="btn btn-sm btn-outline-danger"
-                                onclick="removePlayerFromTournament(${currentViewTournamentId}, ${player.id}, '${player.name.replace(/'/g, "\\'")}')"
+                                onclick="removePlayerFromTournament(event, ${currentViewTournamentId}, ${player.id}, '${player.name.replace(/'/g, "\\'")}')"
                                 title="Удалить игрока">
                             <i class="bi bi-trash"></i>
                         </button>
@@ -2942,7 +2951,7 @@
                     <div class="d-flex align-items-center gap-2">
                         <span class="badge bg-warning text-dark">ОЖИДАНИЕ</span>
                         <button class="btn btn-sm btn-outline-danger"
-                                onclick="removePlayerFromTournament(${currentViewTournamentId}, ${player.id}, '${player.name.replace(/'/g, "\\'")}')"
+                                onclick="removePlayerFromTournament(event, ${currentViewTournamentId}, ${player.id}, '${player.name.replace(/'/g, "\\'")}')"
                                 title="Удалить из резерва">
                             <i class="bi bi-trash"></i>
                         </button>
@@ -2968,45 +2977,33 @@
     }
 
     // Удаление игрока из турнира
-    async function removePlayerFromTournament(tournamentId, playerId, playerName) {
+    async function removePlayerFromTournament(clickEvent, tournamentId, playerId, playerName) {
+        tournamentId = tournamentId || currentViewTournamentId;
         if (!tournamentId) {
-            tournamentId = currentViewTournamentId;
-        }
-
-        if (!tournamentId) {
-            showToast('error', 'Ошибка', 'ID турнира не найден');
+            showToast('error', cancellationMessages.errorTitle, cancellationMessages.failure);
             return;
         }
-
-        if (!confirm(`Удалить игрока "${playerName}" из турнира?`)) {
+        const button = clickEvent.currentTarget;
+        if (button.disabled || !confirm(cancellationMessages.confirm.replace('{0}', () => playerName))) {
             return;
         }
-
-        const button = event.target;
         const originalHtml = button.innerHTML;
         button.disabled = true;
         button.innerHTML = '<span class="loading-spinner"></span>';
-
         try {
             const response = await fetch(`/test/tournaments/${tournamentId}/remove-player/${playerId}`, {
                 method: 'POST'
             });
-
             const result = await response.json();
-
-            if (result.success) {
-                showToast('success', 'Успешно', `Игрок "${playerName}" удален из турнира`);
-
-                // ОБНОВЛЯЕМ СТАТИСТИКУ ТУРНИРА
-                await refreshTournamentStats(tournamentId);
-
-                // Обновляем список в модалке просмотра
-                refreshPlayerList();
-            } else {
-                showToast('error', 'Ошибка', result.message);
+            if (!response.ok || !result.success) {
+                showToast('error', cancellationMessages.errorTitle, cancellationMessages.failure);
+                return;
             }
+            showToast('success', cancellationMessages.successTitle, cancellationMessages.success);
+            await refreshTournamentStats(tournamentId);
+            await refreshPlayerList();
         } catch (error) {
-            showToast('error', 'Ошибка', error.message);
+            showToast('error', cancellationMessages.errorTitle, cancellationMessages.failure);
         } finally {
             button.disabled = false;
             button.innerHTML = originalHtml;
@@ -3127,7 +3124,7 @@
 
         console.log('Обновляем список для турнира:', currentViewTournamentId);
 
-        viewTournamentPlayers({
+        return viewTournamentPlayers({
             dataset: {
                 tournamentId: currentViewTournamentId,
                 tournamentName: document.getElementById('viewModalTournamentName').textContent
