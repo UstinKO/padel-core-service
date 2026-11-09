@@ -211,18 +211,6 @@ function drawCover(ctx, img, width, height, bottomBias = .5) {
     sw, sh, 0, 0, width, height);
 }
 
-function drawGroup(ctx, img) {
-  if (img.naturalWidth / img.naturalHeight <= .84) {
-    drawCover(ctx, img, 1080, 1350);
-    return;
-  }
-  // Широкий кадр помещается целиком, чтобы сохранить участников по краям.
-  const height = Math.round(1080 * img.naturalHeight / img.naturalWidth);
-  ctx.fillStyle = '#f4ede5';
-  ctx.fillRect(0, 0, 1080, 1350);
-  ctx.drawImage(img, 0, Math.floor((1350 - height) / 2), 1080, height);
-}
-
 function drawHeading(ctx, single) {
   const first = draft.format === 'GENERAL' ? eventLabels(draft)[0].toUpperCase()
     : draft.format === 'KING_OF_COURT' ? 'REY DE LA CANCHA' : 'AMERICANO';
@@ -268,54 +256,44 @@ function drawPairPlate(ctx, index) {
   ctx.fillStyle = '#fff7ef'; ctx.fillText(role, x + 39, 1222);
 }
 
-function drawIndividualPlate(ctx) {
-  const names = draft.places.map(place => place.name);
-  ctx.font = 'bold 32px Arial, sans-serif';
-  const rankWidth = Math.ceil(ctx.measureText('1.º').width);
-  const nameWidths = names.map(name => Math.ceil(ctx.measureText(name).width));
-  const width = 99 + (rankWidth + 13) * 2 + nameWidths[0] + nameWidths[1];
-  const stacked = width > 984;
-  const panelWidth = stacked ? Math.min(984, 94 + rankWidth + Math.max(...nameWidths)) : width;
-  const x = (1080 - panelWidth) / 2;
-  ctx.fillStyle = 'rgba(29,25,25,.91)';
-  rounded(ctx, x, stacked ? 1189 : 1233, panelWidth, stacked ? 114 : 70, 18);
-  let start = x + 25;
-  for (const [i, name] of names.entries()) {
-    const y = stacked ? 1231 + i * 46 : 1279;
-    const row = stacked ? x + 25 : start;
-    ctx.font = 'bold 32px Arial, sans-serif';
-    ctx.fillStyle = '#ff744d'; ctx.fillText((i + 1) + '.º', row, y);
-    ctx.fillStyle = '#fff7ef';
-    fit(ctx, name, panelWidth - rankWidth - 64, 32, 'bold {size}px Arial, sans-serif');
-    ctx.fillText(name, row + rankWidth + 13, y);
-    if (!stacked && i === 0) {
-      start += rankWidth + 13 + nameWidths[0] + 24;
-      ctx.fillStyle = 'rgba(255,246,237,.45)'; ctx.fillRect(start, 1253, 1, 30);
-      start += 25;
-    }
-  }
-}
-
 async function makeCard(src, index) {
   const img = await loadPhoto(src);
   const canvas = document.createElement('canvas');
-  canvas.width = 1080; canvas.height = 1350;
+  const single = !isPaired(draft);
+  if (single) {
+    const photoScale = Math.min(1, 2048 / Math.max(img.naturalWidth, img.naturalHeight));
+    canvas.width = Math.max(1, Math.round(img.naturalWidth * photoScale));
+    canvas.height = Math.max(1, Math.round(img.naturalHeight * photoScale));
+  } else {
+    canvas.width = 1080;
+    canvas.height = 1350;
+  }
   const ctx = canvas.getContext('2d', {alpha:false});
   ctx.imageSmoothingQuality = 'high';
-  const single = !isPaired(draft);
-  if (single) drawGroup(ctx, img);
-  else drawCover(ctx, img, 1080, 1350, .91);
-  drawHeading(ctx, single);
-  if (!single) drawPairPlate(ctx, index);
-  else if (draft.places.length) drawIndividualPlate(ctx);
+  if (single) {
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const headingScale = Math.min(canvas.width / 1080, canvas.height / 400);
+    ctx.translate((canvas.width - 1080 * headingScale) / 2, 0);
+    ctx.scale(headingScale, headingScale);
+    drawHeading(ctx, true);
+  } else {
+    drawCover(ctx, img, 1080, 1350, .91);
+    drawHeading(ctx, false);
+    drawPairPlate(ctx, index);
+  }
   return toJPEG(canvas);
 }
+
 async function toJPEG(canvas) {
   const encode = quality => new Promise((resolve, reject) => canvas.toBlob(
     blob => blob ? resolve(blob) : reject(new Error(msg('renderError'))), 'image/jpeg', quality));
-  const image = await encode(.94);
-  return image.size <= 2 * 1024 * 1024 ? image : encode(.85);
+  for (const quality of [.94, .85, .72, .60]) {
+    const image = await encode(quality);
+    if (image.size <= 2 * 1024 * 1024) return image;
+  }
+  throw new Error(msg('packageTooLarge'));
 }
+
 async function makeBracket(src) {
   const img = await loadPhoto(src);
   const canvas = document.createElement('canvas');
