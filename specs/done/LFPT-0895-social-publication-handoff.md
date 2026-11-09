@@ -1,7 +1,7 @@
 # LFPT-0895: Feature комплект публикации — сохранять и скачивать карточки в админке
 
 ## Статус
-in-progress
+done
 
 ## Источник
 [GitHub #895](https://github.com/UstinKO/padel-core-service/issues/895). Зависит от #894 и #891.
