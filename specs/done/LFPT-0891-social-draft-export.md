@@ -1,7 +1,7 @@
 # LFPT-0891: Feature черновики публикаций — предпросмотр и скачивание комплекта
 
 ## Статус
-in-progress
+done
 
 ## Источник
 [GitHub #891](https://github.com/UstinKO/padel-core-service/issues/891). Зависит от [#890](https://github.com/UstinKO/padel-core-service/issues/890).
