@@ -1,6 +1,6 @@
 # ADR-0012. Дизайн: токены как CSS-переменные; значения as-is до утверждения `.agents/DESIGN.md`
 
-- **Статус:** Предложено
+- **Статус:** Заменено [ADR-0013](0013-redesign-and-react-together.md) (2026-10-26): экраны переводятся сразу в новом дизайне, значения токенов — из утверждённого `.agents/DESIGN.md`
 - **Дата:** 2026-09-28
 - **Связано:** [0006](0006-frontend-stack.md), `.agents/DESIGN.md`, `docs/design-tokens-as-is.md`, `docs/screen-archetypes.md`
 

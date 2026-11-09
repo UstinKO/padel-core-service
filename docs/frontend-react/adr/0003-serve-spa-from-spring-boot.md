@@ -1,6 +1,6 @@
 # ADR-0003. SPA собирается внутрь jar и отдаётся Spring Boot с того же домена и тех же URL
 
-- **Статус:** Предложено
+- **Статус:** Предложено; п. 2 — префикс статики `/web/` вместо `/app/` (занят 1Padel.App), см. [ADR-0013](0013-redesign-and-react-together.md)
 - **Дата:** 2026-09-28
 - **Связано:** [0002](0002-frontend-folder-not-maven-module.md), [0005](0005-auth-session-same-origin.md), [0007](0007-incremental-migration.md)
 

@@ -1,0 +1,13 @@
+import { Link } from 'react-router-dom';
+import { useApp } from '../AppContext';
+import type { Event, Registration } from '../domain/types';
+import { occupancy, entryLabel, formatDescription, kindLabel, money } from '../domain/events';
+import { Icon } from './Icon';
+const activeRegistration = (registrations: Registration[], id: string) => registrations.find(r => r.eventId === id && !['cancelled', 'completed'].includes(r.status));
+const registrationLabel = (r: Registration) => ({ confirmed: 'Вы записаны', waiting: 'Вы в резерве', offered: 'Вам предложено место', 'solo-search': 'Ищете партнёра', 'solo-later': 'Добавьте партнёра', cancelled: 'Запись отменена', completed: 'Мероприятие завершено' }[r.status]);
+export function EventPill({ event: e }: {
+    event: Event;
+}) { const { registrations } = useApp(); const r = activeRegistration(registrations, e.id); const left = e.max - occupancy(e, r); const pending = r && r.status !== 'confirmed'; return <span className={`pill ${e.live ? 'lime' : pending ? 'amber' : left === 0 && !r ? 'gray' : left < 4 && !r ? 'amber' : ''}`}>{e.live ? <><span className="dot"/> В игре</> : r ? <><Icon name={r.status === 'confirmed' ? 'check' : r.status.startsWith('solo') ? 'users' : 'clock'}/>{registrationLabel(r)}</> : left < (e.format === 'pairs' ? 2 : 1) ? 'Мест нет' : e.format === 'pairs' ? `Для ${Math.floor(left / 2)} пар` : `${left} ${left === 1 ? 'место' : left < 5 ? 'места' : 'мест'}`}</span>; }
+export function EventCard({ event: e }: {
+    event: Event;
+}) { const { registrations } = useApp(); const r = activeRegistration(registrations, e.id); const actionLabel = r ? (r.status.startsWith('solo') ? 'Моя заявка' : r.status === 'offered' ? 'О предложении' : r.status === 'waiting' ? 'Мой резерв' : 'Моя запись') : 'Подробнее'; return <article className="event-card"><div className="card-top"><span className="event-kind"><span className={`event-symbol ${e.tone}`}><Icon name={e.symbol}/></span>{kindLabel(e)}</span><EventPill event={e}/></div><div className="event-time">{e.week}, {e.date} <span aria-hidden="true">·</span> {e.time}</div><h3><Link to={`/event/${e.id}`}>{e.title}</Link></h3><div className="tags"><span className="level">{e.level}</span><span className="muted">{e.gender}</span></div><div className="entry-explainer"><strong>{entryLabel(e)}</strong><p>{formatDescription(e)}</p></div><div className="event-meta"><div><Icon name="pin"/>{e.club} · CABA</div><div><Icon name="clock"/>{e.duration}</div></div><div className="card-bottom"><div className="price">{money(e.price)}<small>ARS за человека</small></div><Link className={`btn ${occupancy(e, r) === e.max && !r ? 'secondary' : ''}`} to={`/event/${e.id}`}>{actionLabel}<Icon name="arrow"/></Link></div></article>; }

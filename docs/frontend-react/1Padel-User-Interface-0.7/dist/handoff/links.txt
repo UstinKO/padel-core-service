@@ -1,0 +1,430 @@
+1-PADEL · пользовательская часть · 0.7 · 27.10.2026
+
+Каталог всех экранов: https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/review
+
+99 примеров. Ссылки устанавливают демонстрационные данные. Реальный вход не требуется.
+
+
+НАЧАЛО
+
+Главная · новый посетитель
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/home
+
+
+Главная · игрок
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/home-player
+
+
+Все мероприятия
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/catalogue
+
+
+Каталог · событий пока нет
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/catalogue-empty
+
+
+Каталог · загрузка
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/catalogue-loading
+
+
+Каталог · ошибка с повтором
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/catalogue-error
+
+
+Фильтры · ничего не найдено
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/filters-empty
+
+
+
+МЕРОПРИЯТИЯ
+
+Король корта
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/event-king
+
+
+Американо · индивидуальный, резерв
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/event-americano
+
+
+Американо · постоянные пары
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/event-pairs
+
+
+Тренировка + игра
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/event-training
+
+
+Cancha abierta
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/event-open
+
+
+Мест нет
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/event-full
+
+
+Запись закрыта
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/event-closed
+
+
+Турнир идёт
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/event-live
+
+
+Турнир завершён
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/event-finished
+
+
+Мероприятие отменено
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/event-cancelled
+
+
+Вы записаны · Король корта
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/event-confirmed
+
+
+Вы в резерве · Американо
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/event-waiting
+
+
+
+АККАУНТ
+
+Ошибка входа · неверные данные
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/login-error
+
+
+Регистрация · email уже используется
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/register-error
+
+
+Регистрация · телефон уже используется
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/register-phone-error
+
+
+Регистрация · проверка имени
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/register-name-error
+
+
+Регистрация · проверка безопасности
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/register-captcha
+
+
+Регистрация · пауза с таймером
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/register-rate-limit
+
+
+Вход · Google и email
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/login
+
+
+Регистрация с выбранным турниром
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/register
+
+
+После Google · обязательные контакты
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/google
+
+
+Восстановление пароля
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/forgot
+
+
+Новый пароль
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/reset
+
+
+Ссылка восстановления истекла
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/reset-expired
+
+
+Google · вход не завершён
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/oauth-error
+
+
+
+ЗАПИСЬ
+
+Подтверждение участия · игрок
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/book
+
+
+Окно · вы записаны
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/success
+
+
+Записаться в резерв
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/reserve
+
+
+Окно · вы в резерве
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/reserve-success
+
+
+Последнее место заняли
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/book-conflict
+Чтобы увидеть ответ, отметьте согласие с условиями и нажмите «Подтвердить запись».
+
+
+Ошибка отправки
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/book-offline
+Чтобы увидеть ответ, отметьте согласие с условиями и нажмите «Подтвердить запись».
+
+
+Неизвестен результат запроса
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/book-unknown
+Чтобы увидеть ответ, отметьте согласие с условиями и нажмите «Подтвердить запись».
+
+
+
+ПАРЫ
+
+Три способа регистрации
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/pair-book
+
+
+Срок добавления партнёра прошёл
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/pair-deadline
+
+
+Полный парный турнир
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/pair-full
+
+
+Ищу партнёра
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/pair-search
+
+
+Добавить партнёра позже
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/pair-later
+
+
+Предложение отправлено
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/pair-pending
+
+
+Резерв · поиск партнёра
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/pair-reserve-search
+
+
+Резерв · добавить партнёра
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/pair-reserve-later
+
+
+Резерв · принять предложение пары
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/pair-reserve-invitation
+
+
+Входящее предложение
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/invite-pending
+
+
+Пара подтверждена
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/invite-accepted
+
+
+Предложение отклонено
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/invite-declined
+
+
+Приглашение истекло
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/invite-expired
+
+
+Категория не подходит
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/invite-incompatible
+
+
+
+КАБИНЕТ
+
+Отмена · ошибка с повтором
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/cancel-error
+
+
+Окно оплаты · демостатусы
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/payment
+
+
+Редактирование профиля
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/profile-edit
+
+
+Профиль · ошибка сохранения
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/profile-error
+
+
+Мои записи · все статусы
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/games
+
+
+Мои записи · пусто
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/games-empty
+
+
+История · завершено и отменено
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/games-history
+
+
+Переведены в основу · подтвердить участие
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/offer
+
+
+Уведомление · статус записи изменился
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/offer-unavailable
+
+
+Профиль и редактирование
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/profile
+
+
+Готовая пара в кабинете
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/pair-account
+
+
+
+ПРОВЕДЕНИЕ
+
+Король корта
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/live-king
+
+
+Рейтинг · Король корта
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/rank-king
+
+
+Американо · 19 раундов
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/live-americano
+
+
+Рейтинг · Американо
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/rank-americano
+
+
+Пары · квалификация и плей-офф
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/live-pairs
+
+
+Рейтинг · Постоянные пары
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/rank-pairs
+
+
+Сетка · Король корта
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/schedule-king
+
+
+История матчей · Король корта
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/history-king
+
+
+Зритель · Король корта
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/public-king
+
+
+Сетка · Американо
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/schedule-americano
+
+
+История матчей · Американо
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/history-americano
+
+
+Зритель · Американо
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/public-americano
+
+
+Сетка · Постоянные пары
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/schedule-pairs
+
+
+История матчей · Постоянные пары
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/history-pairs
+
+
+Зритель · Постоянные пары
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/public-pairs
+
+
+Пары · этап плей-офф
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/live-playoff
+
+
+Последние данные · нет обновления
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/live-stale
+
+
+Сетка ещё не создана
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/live-not-started
+
+
+Загрузка
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/live-loading
+
+
+Ошибка с повтором
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/live-error
+
+
+Итоги турнира
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/live-finished
+
+
+
+ДРУГИЕ СТРАНИЦЫ
+
+Клубы
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/clubs
+
+
+Страница клуба
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/club
+
+
+Лига · в разработке
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/league
+
+
+Общий рейтинг · в разработке
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/ranking
+
+
+О приложении
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/app
+
+
+Политика cookie
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/cookies
+
+
+Условия участия
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/terms
+
+
+Политика конфиденциальности
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/privacy
+
+
+
+СИСТЕМНЫЕ
+
+Сессия истекла
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/system-session
+
+
+Нет доступа
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/system-forbidden
+
+
+Нет соединения
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/system-offline
+
+
+Слишком много запросов
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/system-rate-limit
+
+
+Сервис недоступен
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/system-unavailable
+
+
+Страница не найдена
+https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/404
