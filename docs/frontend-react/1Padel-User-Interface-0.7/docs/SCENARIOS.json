@@ -1,0 +1,800 @@
+[
+  {
+    "id": "home",
+    "group": "Начало",
+    "title": "Главная · новый посетитель",
+    "path": "/home",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/home"
+  },
+  {
+    "id": "home-player",
+    "group": "Начало",
+    "title": "Главная · игрок",
+    "path": "/home",
+    "fixture": "account",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/home-player"
+  },
+  {
+    "id": "catalogue",
+    "group": "Начало",
+    "title": "Все мероприятия",
+    "path": "/events",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/catalogue"
+  },
+  {
+    "id": "catalogue-empty",
+    "group": "Начало",
+    "title": "Каталог · событий пока нет",
+    "path": "/events?state=empty",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/catalogue-empty"
+  },
+  {
+    "id": "catalogue-loading",
+    "group": "Начало",
+    "title": "Каталог · загрузка",
+    "path": "/events?state=loading",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/catalogue-loading"
+  },
+  {
+    "id": "catalogue-error",
+    "group": "Начало",
+    "title": "Каталог · ошибка с повтором",
+    "path": "/events?state=error",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/catalogue-error"
+  },
+  {
+    "id": "filters-empty",
+    "group": "Начало",
+    "title": "Фильтры · ничего не найдено",
+    "path": "/events?gender=Мужской&level=D5",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/filters-empty"
+  },
+  {
+    "id": "event-king",
+    "group": "Мероприятия",
+    "title": "Король корта",
+    "path": "/event/king",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/event-king"
+  },
+  {
+    "id": "event-americano",
+    "group": "Мероприятия",
+    "title": "Американо · индивидуальный, резерв",
+    "path": "/event/americano",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/event-americano"
+  },
+  {
+    "id": "event-pairs",
+    "group": "Мероприятия",
+    "title": "Американо · постоянные пары",
+    "path": "/event/pairs",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/event-pairs"
+  },
+  {
+    "id": "event-training",
+    "group": "Мероприятия",
+    "title": "Тренировка + игра",
+    "path": "/event/training",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/event-training"
+  },
+  {
+    "id": "event-open",
+    "group": "Мероприятия",
+    "title": "Cancha abierta",
+    "path": "/event/open",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/event-open"
+  },
+  {
+    "id": "event-full",
+    "group": "Мероприятия",
+    "title": "Мест нет",
+    "path": "/event/king?state=full",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/event-full"
+  },
+  {
+    "id": "event-closed",
+    "group": "Мероприятия",
+    "title": "Запись закрыта",
+    "path": "/event/king?state=closed",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/event-closed"
+  },
+  {
+    "id": "event-live",
+    "group": "Мероприятия",
+    "title": "Турнир идёт",
+    "path": "/event/king?state=live",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/event-live"
+  },
+  {
+    "id": "event-finished",
+    "group": "Мероприятия",
+    "title": "Турнир завершён",
+    "path": "/event/king?state=finished",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/event-finished"
+  },
+  {
+    "id": "event-cancelled",
+    "group": "Мероприятия",
+    "title": "Мероприятие отменено",
+    "path": "/event/king?state=cancelled",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/event-cancelled"
+  },
+  {
+    "id": "login-error",
+    "group": "Аккаунт",
+    "title": "Ошибка входа · неверные данные",
+    "path": "/login?state=invalid-credentials",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/login-error"
+  },
+  {
+    "id": "register-error",
+    "group": "Аккаунт",
+    "title": "Регистрация · email уже используется",
+    "path": "/register?state=email-exists",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/register-error"
+  },
+  {
+    "id": "register-phone-error",
+    "group": "Аккаунт",
+    "title": "Регистрация · телефон уже используется",
+    "path": "/register?state=phone-exists",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/register-phone-error"
+  },
+  {
+    "id": "register-name-error",
+    "group": "Аккаунт",
+    "title": "Регистрация · проверка имени",
+    "path": "/register?state=name-rejected",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/register-name-error"
+  },
+  {
+    "id": "register-captcha",
+    "group": "Аккаунт",
+    "title": "Регистрация · проверка безопасности",
+    "path": "/register?state=captcha",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/register-captcha"
+  },
+  {
+    "id": "register-rate-limit",
+    "group": "Аккаунт",
+    "title": "Регистрация · пауза с таймером",
+    "path": "/register?state=rate-limit",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/register-rate-limit"
+  },
+  {
+    "id": "login",
+    "group": "Аккаунт",
+    "title": "Вход · Google и email",
+    "path": "/login",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/login"
+  },
+  {
+    "id": "register",
+    "group": "Аккаунт",
+    "title": "Регистрация с выбранным турниром",
+    "path": "/register?event=king",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/register"
+  },
+  {
+    "id": "google",
+    "group": "Аккаунт",
+    "title": "После Google · обязательные контакты",
+    "path": "/complete-profile?event=king",
+    "fixture": "google",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/google"
+  },
+  {
+    "id": "forgot",
+    "group": "Аккаунт",
+    "title": "Восстановление пароля",
+    "path": "/forgot-password",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/forgot"
+  },
+  {
+    "id": "reset",
+    "group": "Аккаунт",
+    "title": "Новый пароль",
+    "path": "/reset-password",
+    "fixture": "guest",
+    "navigationState": {
+      "recoveryEmail": "daniel@example.com"
+    },
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/reset"
+  },
+  {
+    "id": "reset-expired",
+    "group": "Аккаунт",
+    "title": "Ссылка восстановления истекла",
+    "path": "/reset-password",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/reset-expired"
+  },
+  {
+    "id": "oauth-error",
+    "group": "Аккаунт",
+    "title": "Google · вход не завершён",
+    "path": "/oauth-error?event=king",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/oauth-error"
+  },
+  {
+    "id": "book",
+    "group": "Запись",
+    "title": "Подтверждение участия · игрок",
+    "path": "/book/king",
+    "fixture": "player",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/book"
+  },
+  {
+    "id": "success",
+    "group": "Запись",
+    "title": "Окно · вы записаны",
+    "path": "/book/king?show=confirmed",
+    "fixture": "confirmed",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/success"
+  },
+  {
+    "id": "reserve",
+    "group": "Запись",
+    "title": "Записаться в резерв",
+    "path": "/book/americano",
+    "fixture": "player",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/reserve"
+  },
+  {
+    "id": "reserve-success",
+    "group": "Запись",
+    "title": "Окно · вы в резерве",
+    "path": "/book/americano?show=waiting",
+    "fixture": "waiting",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/reserve-success"
+  },
+  {
+    "id": "book-conflict",
+    "group": "Запись",
+    "title": "Последнее место заняли",
+    "path": "/book/king?simulate=conflict",
+    "fixture": "player",
+    "description": "Чтобы увидеть ответ, отметьте согласие с условиями и нажмите «Подтвердить запись».",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/book-conflict"
+  },
+  {
+    "id": "book-offline",
+    "group": "Запись",
+    "title": "Ошибка отправки",
+    "path": "/book/king?simulate=offline",
+    "fixture": "player",
+    "description": "Чтобы увидеть ответ, отметьте согласие с условиями и нажмите «Подтвердить запись».",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/book-offline"
+  },
+  {
+    "id": "book-unknown",
+    "group": "Запись",
+    "title": "Неизвестен результат запроса",
+    "path": "/book/king?simulate=unknown",
+    "fixture": "player",
+    "description": "Чтобы увидеть ответ, отметьте согласие с условиями и нажмите «Подтвердить запись».",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/book-unknown"
+  },
+  {
+    "id": "pair-book",
+    "group": "Пары",
+    "title": "Три способа регистрации",
+    "path": "/book/pairs",
+    "fixture": "player",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/pair-book"
+  },
+  {
+    "id": "pair-deadline",
+    "group": "Пары",
+    "title": "Срок добавления партнёра прошёл",
+    "path": "/book/pairs?state=partner-deadline",
+    "fixture": "player",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/pair-deadline"
+  },
+  {
+    "id": "pair-full",
+    "group": "Пары",
+    "title": "Полный парный турнир",
+    "path": "/book/pairs?state=full",
+    "fixture": "player",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/pair-full"
+  },
+  {
+    "id": "pair-search",
+    "group": "Пары",
+    "title": "Ищу партнёра",
+    "path": "/partners/pairs",
+    "fixture": "pair-search",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/pair-search"
+  },
+  {
+    "id": "pair-later",
+    "group": "Пары",
+    "title": "Добавить партнёра позже",
+    "path": "/partners/pairs?mode=add",
+    "fixture": "pair-later",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/pair-later"
+  },
+  {
+    "id": "pair-pending",
+    "group": "Пары",
+    "title": "Предложение отправлено",
+    "path": "/partners/pairs",
+    "fixture": "pair-pending",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/pair-pending"
+  },
+  {
+    "id": "pair-reserve-search",
+    "group": "Пары",
+    "title": "Резерв · поиск партнёра",
+    "path": "/partners/pairs",
+    "fixture": "pair-reserve-search",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/pair-reserve-search"
+  },
+  {
+    "id": "pair-reserve-later",
+    "group": "Пары",
+    "title": "Резерв · добавить партнёра",
+    "path": "/partners/pairs?mode=add",
+    "fixture": "pair-reserve-later",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/pair-reserve-later"
+  },
+  {
+    "id": "pair-reserve-invitation",
+    "group": "Пары",
+    "title": "Резерв · принять предложение пары",
+    "path": "/partner-invitation",
+    "fixture": "pair-reserve-search",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/pair-reserve-invitation"
+  },
+  {
+    "id": "invite-pending",
+    "group": "Пары",
+    "title": "Входящее предложение",
+    "path": "/partner-invitation?state=pending",
+    "fixture": "pair-search",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/invite-pending"
+  },
+  {
+    "id": "invite-accepted",
+    "group": "Пары",
+    "title": "Пара подтверждена",
+    "path": "/partner-invitation?state=accepted",
+    "fixture": "pair-confirmed",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/invite-accepted"
+  },
+  {
+    "id": "invite-declined",
+    "group": "Пары",
+    "title": "Предложение отклонено",
+    "path": "/partner-invitation?state=declined",
+    "fixture": "pair-search",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/invite-declined"
+  },
+  {
+    "id": "invite-expired",
+    "group": "Пары",
+    "title": "Приглашение истекло",
+    "path": "/partner-invitation?state=expired",
+    "fixture": "pair-search",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/invite-expired"
+  },
+  {
+    "id": "invite-incompatible",
+    "group": "Пары",
+    "title": "Категория не подходит",
+    "path": "/partner-invitation?state=incompatible",
+    "fixture": "pair-search",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/invite-incompatible"
+  },
+  {
+    "id": "cancel-error",
+    "group": "Кабинет",
+    "title": "Отмена · ошибка с повтором",
+    "path": "/games?dialog=cancel&event=king&state=cancel-error",
+    "fixture": "confirmed",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/cancel-error"
+  },
+  {
+    "id": "payment",
+    "group": "Кабинет",
+    "title": "Окно оплаты · демостатусы",
+    "path": "/games?dialog=payment&event=king",
+    "fixture": "confirmed",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/payment"
+  },
+  {
+    "id": "profile-edit",
+    "group": "Кабинет",
+    "title": "Редактирование профиля",
+    "path": "/profile?dialog=edit",
+    "fixture": "account",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/profile-edit"
+  },
+  {
+    "id": "profile-error",
+    "group": "Кабинет",
+    "title": "Профиль · ошибка сохранения",
+    "path": "/profile?dialog=edit&state=save-error",
+    "fixture": "account",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/profile-error"
+  },
+  {
+    "id": "games",
+    "group": "Кабинет",
+    "title": "Мои записи · все статусы",
+    "path": "/games",
+    "fixture": "account",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/games"
+  },
+  {
+    "id": "games-empty",
+    "group": "Кабинет",
+    "title": "Мои записи · пусто",
+    "path": "/games",
+    "fixture": "player",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/games-empty"
+  },
+  {
+    "id": "games-history",
+    "group": "Кабинет",
+    "title": "История · завершено и отменено",
+    "path": "/games",
+    "fixture": "history",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/games-history"
+  },
+  {
+    "id": "offer",
+    "group": "Кабинет",
+    "title": "Переведены в основу · подтвердить участие",
+    "path": "/waitlist-offer",
+    "fixture": "offer",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/offer"
+  },
+  {
+    "id": "offer-unavailable",
+    "group": "Кабинет",
+    "title": "Уведомление · статус записи изменился",
+    "path": "/waitlist-offer?event=americano",
+    "fixture": "waiting",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/offer-unavailable"
+  },
+  {
+    "id": "profile",
+    "group": "Кабинет",
+    "title": "Профиль и редактирование",
+    "path": "/profile",
+    "fixture": "account",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/profile"
+  },
+  {
+    "id": "pair-account",
+    "group": "Кабинет",
+    "title": "Готовая пара в кабинете",
+    "path": "/games",
+    "fixture": "pair-confirmed",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/pair-account"
+  },
+  {
+    "id": "live-king",
+    "group": "Проведение",
+    "title": "Король корта",
+    "path": "/live/king",
+    "fixture": "account",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/live-king"
+  },
+  {
+    "id": "rank-king",
+    "group": "Проведение",
+    "title": "Рейтинг · Король корта",
+    "path": "/live/king?tab=rank",
+    "fixture": "player",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/rank-king"
+  },
+  {
+    "id": "live-americano",
+    "group": "Проведение",
+    "title": "Американо · 19 раундов",
+    "path": "/live/americano",
+    "fixture": "account",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/live-americano"
+  },
+  {
+    "id": "rank-americano",
+    "group": "Проведение",
+    "title": "Рейтинг · Американо",
+    "path": "/live/americano?tab=rank",
+    "fixture": "player",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/rank-americano"
+  },
+  {
+    "id": "live-pairs",
+    "group": "Проведение",
+    "title": "Пары · квалификация и плей-офф",
+    "path": "/live/pairs",
+    "fixture": "account",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/live-pairs"
+  },
+  {
+    "id": "rank-pairs",
+    "group": "Проведение",
+    "title": "Рейтинг · Постоянные пары",
+    "path": "/live/pairs?tab=rank",
+    "fixture": "player",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/rank-pairs"
+  },
+  {
+    "id": "schedule-king",
+    "group": "Проведение",
+    "title": "Сетка · Король корта",
+    "path": "/live/king?tab=schedule",
+    "fixture": "account",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/schedule-king"
+  },
+  {
+    "id": "history-king",
+    "group": "Проведение",
+    "title": "История матчей · Король корта",
+    "path": "/live/king?tab=history",
+    "fixture": "account",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/history-king"
+  },
+  {
+    "id": "public-king",
+    "group": "Проведение",
+    "title": "Зритель · Король корта",
+    "path": "/live/king?view=public",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/public-king"
+  },
+  {
+    "id": "schedule-americano",
+    "group": "Проведение",
+    "title": "Сетка · Американо",
+    "path": "/live/americano?tab=schedule",
+    "fixture": "account",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/schedule-americano"
+  },
+  {
+    "id": "history-americano",
+    "group": "Проведение",
+    "title": "История матчей · Американо",
+    "path": "/live/americano?tab=history",
+    "fixture": "account",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/history-americano"
+  },
+  {
+    "id": "public-americano",
+    "group": "Проведение",
+    "title": "Зритель · Американо",
+    "path": "/live/americano?view=public",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/public-americano"
+  },
+  {
+    "id": "schedule-pairs",
+    "group": "Проведение",
+    "title": "Сетка · Постоянные пары",
+    "path": "/live/pairs?tab=schedule",
+    "fixture": "account",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/schedule-pairs"
+  },
+  {
+    "id": "history-pairs",
+    "group": "Проведение",
+    "title": "История матчей · Постоянные пары",
+    "path": "/live/pairs?tab=history",
+    "fixture": "account",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/history-pairs"
+  },
+  {
+    "id": "public-pairs",
+    "group": "Проведение",
+    "title": "Зритель · Постоянные пары",
+    "path": "/live/pairs?view=public",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/public-pairs"
+  },
+  {
+    "id": "event-confirmed",
+    "group": "Мероприятия",
+    "title": "Вы записаны · Король корта",
+    "path": "/event/king",
+    "fixture": "confirmed",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/event-confirmed"
+  },
+  {
+    "id": "event-waiting",
+    "group": "Мероприятия",
+    "title": "Вы в резерве · Американо",
+    "path": "/event/americano",
+    "fixture": "waiting",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/event-waiting"
+  },
+  {
+    "id": "live-playoff",
+    "group": "Проведение",
+    "title": "Пары · этап плей-офф",
+    "path": "/live/pairs?state=playoff",
+    "fixture": "account",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/live-playoff"
+  },
+  {
+    "id": "live-stale",
+    "group": "Проведение",
+    "title": "Последние данные · нет обновления",
+    "path": "/live/king?state=stale",
+    "fixture": "account",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/live-stale"
+  },
+  {
+    "id": "live-not-started",
+    "group": "Проведение",
+    "title": "Сетка ещё не создана",
+    "path": "/live/king?state=not-started",
+    "fixture": "player",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/live-not-started"
+  },
+  {
+    "id": "live-loading",
+    "group": "Проведение",
+    "title": "Загрузка",
+    "path": "/live/king?state=loading",
+    "fixture": "player",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/live-loading"
+  },
+  {
+    "id": "live-error",
+    "group": "Проведение",
+    "title": "Ошибка с повтором",
+    "path": "/live/king?state=error",
+    "fixture": "player",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/live-error"
+  },
+  {
+    "id": "live-finished",
+    "group": "Проведение",
+    "title": "Итоги турнира",
+    "path": "/live/king?state=finished",
+    "fixture": "player",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/live-finished"
+  },
+  {
+    "id": "clubs",
+    "group": "Другие страницы",
+    "title": "Клубы",
+    "path": "/clubs",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/clubs"
+  },
+  {
+    "id": "club",
+    "group": "Другие страницы",
+    "title": "Страница клуба",
+    "path": "/clubs/black-padel",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/club"
+  },
+  {
+    "id": "league",
+    "group": "Другие страницы",
+    "title": "Лига · в разработке",
+    "path": "/league",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/league"
+  },
+  {
+    "id": "ranking",
+    "group": "Другие страницы",
+    "title": "Общий рейтинг · в разработке",
+    "path": "/ranking",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/ranking"
+  },
+  {
+    "id": "app",
+    "group": "Другие страницы",
+    "title": "О приложении",
+    "path": "/app-info",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/app"
+  },
+  {
+    "id": "cookies",
+    "group": "Другие страницы",
+    "title": "Политика cookie",
+    "path": "/legal/cookies",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/cookies"
+  },
+  {
+    "id": "terms",
+    "group": "Другие страницы",
+    "title": "Условия участия",
+    "path": "/legal/terms",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/terms"
+  },
+  {
+    "id": "privacy",
+    "group": "Другие страницы",
+    "title": "Политика конфиденциальности",
+    "path": "/legal/privacy",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/privacy"
+  },
+  {
+    "id": "system-session",
+    "group": "Системные",
+    "title": "Сессия истекла",
+    "path": "/status/session",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/system-session"
+  },
+  {
+    "id": "system-forbidden",
+    "group": "Системные",
+    "title": "Нет доступа",
+    "path": "/status/forbidden",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/system-forbidden"
+  },
+  {
+    "id": "system-offline",
+    "group": "Системные",
+    "title": "Нет соединения",
+    "path": "/status/offline",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/system-offline"
+  },
+  {
+    "id": "system-rate-limit",
+    "group": "Системные",
+    "title": "Слишком много запросов",
+    "path": "/status/rate-limit",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/system-rate-limit"
+  },
+  {
+    "id": "system-unavailable",
+    "group": "Системные",
+    "title": "Сервис недоступен",
+    "path": "/status/unavailable",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/system-unavailable"
+  },
+  {
+    "id": "404",
+    "group": "Системные",
+    "title": "Страница не найдена",
+    "path": "/not-found",
+    "fixture": "guest",
+    "url": "https://one-padel-play-concept.evgeny-1800.chatgpt.site/#/preview/404"
+  }
+]

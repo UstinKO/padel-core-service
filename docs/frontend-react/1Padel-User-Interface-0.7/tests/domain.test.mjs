@@ -1,0 +1,15 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {events,findEvent} from '../src/data/events.ts';
+import {matchesFilter,emptyFilters,occupancy,arrival} from '../src/domain/events.ts';
+import {demoRegistrationGateway as gateway} from '../src/services/registration.ts';
+import {roundMatches,ranking} from '../src/domain/live.ts';
+const user={id:'demo-test',first:'Тест',last:'Игрок'};
+test('filters combine type, gender, category and club',()=>{const f={...emptyFilters,type:'tournament',gender:'Мужской',level:'C7',club:'Black Padel'};assert.deepEqual(events.filter(e=>matchesFilter(e,f)).map(e=>e.id),['king','pairs']);assert.equal(events.filter(e=>matchesFilter(e,{...f,level:'D5'})).length,0);assert.ok(matchesFilter(findEvent('open'),{...emptyFilters,level:'D5'}));});
+test('individual registration and full-event reserve remain distinct',async()=>{const a=await gateway.register(findEvent('king'),user,[]);const b=await gateway.register(findEvent('americano'),user,[]);assert.equal(a.status,'confirmed');assert.equal(occupancy(findEvent('king'),a),19);assert.equal(b.status,'waiting');assert.equal(b.position,3);assert.equal(occupancy(findEvent('americano'),b),20)});
+test('pair needs two available places and full partner name',async()=>{await assert.rejects(gateway.register(findEvent('pairs'),user,[],'Алексей'),/имя и фамилию/);const p=await gateway.register(findEvent('pairs'),user,[],'Алексей Петров');assert.equal(p.status,'confirmed');assert.equal(occupancy(findEvent('pairs'),p),18);const w=await gateway.register({...findEvent('pairs'),filled:19},user,[],'Алексей Петров');assert.equal(w.status,'waiting')});
+test('retry reuses previous registration rather than creating another',async()=>{const e=findEvent('king');const first=await gateway.register(e,user,[]);assert.equal(await gateway.register(e,user,[first]),first)});
+test('invalid event is not silently replaced by another tournament',()=>assert.equal(findEvent('missing'),undefined));
+test('arrival is fifteen minutes before start',()=>{assert.equal(arrival('19:00'),'18:45');assert.equal(arrival('14:30'),'14:15')});
+test('live fixtures contain five matches and twenty distinct players per round',()=>{for(let r=1;r<=4;r++){const m=roundMatches(r);assert.equal(m.length,5);assert.equal(new Set(m.flatMap(x=>x.ids)).size,20);for(const x of m)assert.equal(x.score+x.other,21)}});
+test('ranking includes every player and uses only three completed calibration rounds',()=>{const r=ranking();assert.equal(r.length,20);assert.equal(new Set(r.map(x=>x.id)).size,20);assert.equal(r.reduce((sum,x)=>sum+x.points,0),3*5*21*2);assert.ok(r.every(x=>x.games===3))});
