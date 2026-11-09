@@ -1,5 +1,9 @@
 # Архитектура приложения — padel-core-service
 
+Среда агентской разработки перенесена на Codex: корневой `AGENTS.md`, правила и навыки в `.agents/`,
+исполняемый Telegram-адаптер в `automation/telegram-relay/`. Порядок отдельной активации воркера —
+[codex-migration.md](codex-migration.md); приложение и его схема развёртывания этим не меняются.
+
 ---
 
 ## Содержание
@@ -590,7 +594,7 @@ GitHub Actions Runner
 
 | Параметр | Значение |
 |---------|---------|
-| IP | не публикуется (приватная заметка, `.claude/SECURITY.md`) |
+| IP | не публикуется (приватная заметка, `.agents/SECURITY.md`) |
 | Домен | `epadel.org` (инфраструктурный — SSH, Grafana, имена сервисных учёток; не публичный домен сайта, см. `APP_BASE_URL` выше) |
 | ОС | Ubuntu 22.04.5 LTS |
 | Docker Compose | `/opt/padel-app/docker-compose.yml` |

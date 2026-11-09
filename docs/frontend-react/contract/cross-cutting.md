@@ -97,7 +97,7 @@
 
 | Что | Откуда | Где используется | В React |
 |---|---|---|---|
-| Font Awesome **6.0.0-beta3** (CSS) | cdnjs | 40 шаблонов | npm-пакет иконок (одна система, см. `.claude/DESIGN.md`) — бета-версия с CDN уходит |
+| Font Awesome **6.0.0-beta3** (CSS) | cdnjs | 40 шаблонов | npm-пакет иконок (одна система, см. `.agents/DESIGN.md`) — бета-версия с CDN уходит |
 | Inter | Google Fonts | 40 шаблонов | self-host через `@fontsource` (или по DESIGN.md) |
 | Bootstrap 5.1.3 JS + Bootstrap Icons | jsDelivr | `test/tournaments` и 1 шаблон | не нужен |
 | sockjs-client@1, stompjs@2.3.3 | jsDelivr | 4 live-шаблона | `@stomp/stompjs` (+ `sockjs-client`, если фоллбэк нужен) из npm |
@@ -135,7 +135,7 @@
 
 | Сейчас | Куда |
 |---|---|
-| `fragments/public-header`, `public-footer` — используются **только** в `clubs/*`; остальные публичные страницы копируют `<head>`/шапку у себя (3 разных навбара, см. `.claude/DESIGN.md`) | `<PublicLayout>` |
+| `fragments/public-header`, `public-footer` — используются **только** в `clubs/*`; остальные публичные страницы копируют `<head>`/шапку у себя (3 разных навбара, см. `.agents/DESIGN.md`) | `<PublicLayout>` |
 | `fragments/admin-header` (+ `admin-menu.js`), `admin-footer` | `<AdminLayout>` |
 | `fragments/king-of-court-modals` (result/history/finalResults/confirm) | модалки KoC |
 | `fragments/nivel-options` (список уровней) | `<NivelSelect>` из reference-data |

@@ -153,7 +153,7 @@
 В SPA: можно вынести как статические HTML/MDX страницы фронтенда без обращения к бэку.
 
 **Замечания:**
-> URL в CLAUDE.md указаны с префиксом `/legal/...` (`/legal/cookies`, `/legal/privacidad`, `/legal/terminos`), но в коде маппинги без префикса (`/cookies`, `/privacidad`, `/terminos`). Возможно расхождение с реальными URL.
+> URL в PROJECT.md указаны с префиксом `/legal/...` (`/legal/cookies`, `/legal/privacidad`, `/legal/terminos`), но в коде маппинги без префикса (`/cookies`, `/privacidad`, `/terminos`). Возможно расхождение с реальными URL.
 
 ---
 

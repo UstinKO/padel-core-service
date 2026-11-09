@@ -307,7 +307,7 @@
 4. **Единый формат ошибки.** Сейчас встречаются: `{success:false, message}` (133 `put("success"…)`), `{error: "..."}` (`GlobalExceptionHandler`), строка в теле, и **11 мест отвечают `200` с `success:false`**. Целевой формат — `ProblemDetail` (RFC 9457, встроен в Spring 6): `{type, title, status, detail, code, errors?}`, где `code` — стабильный машинный код для i18n на клиенте (`TOURNAMENT_FULL`, `CONTACT_REQUIRED`…). Решение и переходный период — ADR-0011.
 5. **Статусы:** ошибка валидации — `400/422`, нет прав — `403`, не найдено — `404`, конфликт состояния турнира (раунд уже начат и т.п.) — `409`. Никогда `200` с `success:false`.
 6. **OpenAPI.** `springdoc-openapi` **не подключён** (в `SecurityConfig` открыты `/swagger-ui/**` и `/v3/api-docs/**`, но зависимости нет). Подключить в Фазе 0; `/v3/api-docs` — источник генерации TS-типов (ADR-0004). В проде Swagger UI — только SUPER_ADMIN.
-7. **Никаких JPA-сущностей в ответах.** Сейчас в модель страниц местами кладутся сущности (`PlayerPadel` — с хешем пароля, `TournamentKingOfCourt`, `AmericanoMatch`); `POST /api/king-of-court/tournaments/{id}/initialize` **уже сейчас** отдаёт сущность `TournamentKingOfCourt` в JSON. Только MapStruct-DTO (как требует CLAUDE.md).
+7. **Никаких JPA-сущностей в ответах.** Сейчас в модель страниц местами кладутся сущности (`PlayerPadel` — с хешем пароля, `TournamentKingOfCourt`, `AmericanoMatch`); `POST /api/king-of-court/tournaments/{id}/initialize` **уже сейчас** отдаёт сущность `TournamentKingOfCourt` в JSON. Только MapStruct-DTO (как требует PROJECT.md).
 
 ### 4.3. Именование новых эндпоинтов
 
@@ -322,7 +322,7 @@
 | | King of Court | Team Playoff |
 |---|---|---|
 | Эндпоинт | `/ws` (SockJS, `setAllowedOriginPatterns("*")`) | тот же |
-| Топик | `/topic/tournament/{kingId}` *(в CLAUDE.md ошибочно `/topic/king-of-court/{tournamentId}`)* | `/topic/team-playoff/{tournamentId}` |
+| Топик | `/topic/tournament/{kingId}` *(в PROJECT.md ошибочно `/topic/king-of-court/{tournamentId}`)* | `/topic/team-playoff/{tournamentId}` |
 | Типы сообщений | `RESULT_SAVED`, `ROUND_COMPLETED`, `NEXT_ROUND_STARTED`, `TOURNAMENT_FINISHED`, `STATE_UPDATED` | `MATCH_CREATED`, `MATCH_COMPLETED`, `MATCH_UPDATED`, `MATCH_REMOVED`, `TEAM_ADVANCED`, `TOURNAMENT_FINISHED` |
 | Кто слушает | L-01, A-07 | L-06, A-12 |
 | Клиент сейчас | `sockjs-client@1` + `stompjs@2.3.3` с jsDelivr | то же |
