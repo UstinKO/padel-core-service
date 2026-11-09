@@ -260,21 +260,15 @@ async function makeCard(src, index) {
   const img = await loadPhoto(src);
   const canvas = document.createElement('canvas');
   const single = !isPaired(draft);
-  if (single) {
-    const photoScale = Math.min(1, 2048 / Math.max(img.naturalWidth, img.naturalHeight));
-    canvas.width = Math.max(1, Math.round(img.naturalWidth * photoScale));
-    canvas.height = Math.max(1, Math.round(img.naturalHeight * photoScale));
-  } else {
-    canvas.width = 1080;
-    canvas.height = 1350;
+  canvas.width = 1080;
+  canvas.height = single ? Math.ceil(canvas.width * img.naturalHeight / img.naturalWidth) : 1350;
+  if (single && (canvas.height < 566 || canvas.height > 1440)) {
+    throw new Error(msg('feedAspect'));
   }
   const ctx = canvas.getContext('2d', {alpha:false});
   ctx.imageSmoothingQuality = 'high';
   if (single) {
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    const headingScale = Math.min(canvas.width / 1080, canvas.height / 400);
-    ctx.translate((canvas.width - 1080 * headingScale) / 2, 0);
-    ctx.scale(headingScale, headingScale);
     drawHeading(ctx, true);
   } else {
     drawCover(ctx, img, 1080, 1350, .91);
