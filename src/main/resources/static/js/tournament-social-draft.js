@@ -216,24 +216,11 @@ function drawGroup(ctx, img) {
     drawCover(ctx, img, 1080, 1350);
     return;
   }
-  // У широкого общего кадра сохраняем всех людей, а поля продолжаем фоном того же снимка.
-  const background = document.createElement('canvas');
-  background.width = 22; background.height = 28;
-  drawCover(background.getContext('2d'), img, 22, 28);
-  ctx.drawImage(background, 0, 0, 1080, 1350);
-  ctx.fillStyle = 'rgba(27,24,23,.18)'; ctx.fillRect(0, 0, 1080, 1350);
-  const layer = document.createElement('canvas');
-  layer.width = 1080;
-  layer.height = Math.round(1080 * img.naturalHeight / img.naturalWidth);
-  const foreground = layer.getContext('2d');
-  foreground.imageSmoothingQuality = 'high';
-  foreground.drawImage(img, 0, 0, layer.width, layer.height);
-  foreground.globalCompositeOperation = 'destination-in';
-  const edge = foreground.createLinearGradient(0, 0, 0, layer.height);
-  edge.addColorStop(0, 'transparent'); edge.addColorStop(.12, '#000');
-  edge.addColorStop(.88, '#000'); edge.addColorStop(1, 'transparent');
-  foreground.fillStyle = edge; foreground.fillRect(0, 0, layer.width, layer.height);
-  ctx.drawImage(layer, 0, (1350 - layer.height) / 2);
+  // Широкий кадр помещается целиком, чтобы сохранить участников по краям.
+  const height = Math.round(1080 * img.naturalHeight / img.naturalWidth);
+  ctx.fillStyle = '#f4ede5';
+  ctx.fillRect(0, 0, 1080, 1350);
+  ctx.drawImage(img, 0, Math.floor((1350 - height) / 2), 1080, height);
 }
 
 function drawHeading(ctx, single) {
