@@ -1,7 +1,7 @@
 # LFPT-0894: Feature комплект публикации — сохранить готовые карточки турнира
 
 ## Статус
-in-progress
+done
 
 ## Источник
 [GitHub #894](https://github.com/UstinKO/padel-core-service/issues/894). Основа — #890 и #891, интерфейс — #895.
