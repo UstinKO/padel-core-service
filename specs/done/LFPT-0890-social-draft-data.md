@@ -1,7 +1,7 @@
 # LFPT-0890: Feature черновики публикаций — данные парного Americano и «Короля корта»
 
 ## Статус
-in-progress
+done
 
 ## Источник
 [GitHub #890](https://github.com/UstinKO/padel-core-service/issues/890).
