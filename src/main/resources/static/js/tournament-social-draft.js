@@ -256,12 +256,11 @@ function drawPairPlate(ctx, index) {
   ctx.fillStyle = '#fff7ef'; ctx.fillText(role, x + 39, 1222);
 }
 
-async function makeCard(src, index) {
-  const img = await loadPhoto(src);
+async function makeCard(img, index, pairHeight) {
   const canvas = document.createElement('canvas');
   const single = !isPaired(draft);
   canvas.width = 1080;
-  canvas.height = single ? Math.ceil(canvas.width * img.naturalHeight / img.naturalWidth) : 1350;
+  canvas.height = single ? Math.ceil(canvas.width * img.naturalHeight / img.naturalWidth) : pairHeight;
   if (single && (canvas.height < 566 || canvas.height > 1440)) {
     throw new Error(msg('feedAspect'));
   }
@@ -271,8 +270,9 @@ async function makeCard(src, index) {
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
     drawHeading(ctx, true);
   } else {
-    drawCover(ctx, img, 1080, 1350, .91);
+    drawCover(ctx, img, canvas.width, canvas.height, .91);
     drawHeading(ctx, false);
+    ctx.translate(0, canvas.height - 1350);
     drawPairPlate(ctx, index);
   }
   return toJPEG(canvas);
@@ -288,18 +288,18 @@ async function toJPEG(canvas) {
   throw new Error(msg('packageTooLarge'));
 }
 
-async function makeBracket(src) {
+async function makeBracket(src, height) {
   const img = await loadPhoto(src);
   const canvas = document.createElement('canvas');
-  canvas.width = 1080; canvas.height = 1350;
+  canvas.width = 1080; canvas.height = height;
   const ctx = canvas.getContext('2d', {alpha:false});
-  ctx.fillStyle='#1b191a'; ctx.fillRect(0,0,1080,1350);
+  ctx.fillStyle='#1b191a'; ctx.fillRect(0,0,canvas.width,canvas.height);
   ctx.fillStyle='#ff6a43'; ctx.fillRect(40,56,56,5);
   ctx.fillStyle='#fff7ef'; ctx.font='bold 56px Arial, sans-serif'; ctx.fillText('CUADRO FINAL',40,131);
   ctx.fillStyle='#ff6a43'; ctx.font='bold 29px Arial, sans-serif'; ctx.fillText('AMERICANO · ' + categoryLabel(draft) + ' · POR PAREJAS',40,183);
-  const scale=Math.min(956/img.naturalWidth,986/img.naturalHeight);
+  const scale=Math.min(956/img.naturalWidth,(height - 364)/img.naturalHeight);
   const w=img.naturalWidth*scale, h=img.naturalHeight*scale;
-  const x=540-w/2, y=745-h/2;
+  const x=540-w/2, y=(height + 140 - h)/2;
   ctx.fillStyle='#fff'; rounded(ctx,x-22,y-22,w+44,h+44,20);
   ctx.imageSmoothingQuality='high'; ctx.drawImage(img,x,y,w,h);
   return toJPEG(canvas);
@@ -330,12 +330,20 @@ async function generate(inputs) {
   }
   setStatus(msg('rendering'));
   try {
-    const blobs = [];
-    for (let i = 0; i < inputs.length; i++) {
+    const photos = [];
+    for (const file of inputs.slice(0, 2)) {
       if (job !== generation) return;
-      const src = await readDataUrl(inputs[i]);
-      blobs.push(await (i === 2 ? makeBracket(src) : makeCard(src, i)));
+      photos.push(await loadPhoto(await readDataUrl(file)));
     }
+    const pairHeight = photos.length === 2 && photos.every(photo => photo.naturalWidth * 4 === photo.naturalHeight * 3)
+      ? 1440 : 1350;
+    const blobs = [];
+    for (const [index, photo] of photos.entries()) {
+      if (job !== generation) return;
+      blobs.push(await makeCard(photo, index, pairHeight));
+    }
+    if (job !== generation) return;
+    if (inputs[2]) blobs.push(await makeBracket(await readDataUrl(inputs[2]), pairHeight));
     const rendered = await Promise.all(blobs.map(readDataUrl));
     if (job !== generation) return;
     previews = blobs.map((blob, i) => ({

@@ -41,6 +41,8 @@ public class TournamentSocialPackageService {
                          MultipartFile primary, MultipartFile finalist, MultipartFile bracket) {}
     public record Download(String filename, byte[] bytes) {}
 
+    private record Jpeg(byte[] bytes, int height) {}
+
     private enum Slot {
         PRIMARY("primary_card"), FINALIST("finalist_card"), BRACKET("bracket_card");
 
@@ -84,13 +86,13 @@ public class TournamentSocialPackageService {
     public Metadata save(Owner owner, long id, Upload upload) {
         var draft = drafts.prepare(owner, id);
         validateUpload(draft.format(), upload);
-        var primary = jpeg(upload.primary(), upload.format() != Format.TEAM_PLAYOFF);
-        var finalist = optionalJpeg(upload.finalist());
-        var bracket = optionalJpeg(upload.bracket());
+        var primary = jpeg(upload.primary(), upload.format() != Format.TEAM_PLAYOFF, null);
+        var finalist = optionalJpeg(upload.finalist(), primary.height());
+        var bracket = optionalJpeg(upload.bracket(), primary.height());
         return jdbc.sql(saveSql(upload.version()))
                 .param("id", id).param("version", upload.version()).param("format", upload.format().name())
                 .param("author", owner.getFullName()).param("instagram", upload.instagram()).param("telegram", upload.telegram())
-                .param("primary", primary, Types.BINARY).param("finalist", finalist, Types.BINARY)
+                .param("primary", primary.bytes(), Types.BINARY).param("finalist", finalist, Types.BINARY)
                 .param("bracket", bracket, Types.BINARY)
                 .query(TournamentSocialPackageService::metadata).optional()
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.CONFLICT, "PACKAGE_CHANGED"));
@@ -130,11 +132,11 @@ public class TournamentSocialPackageService {
         return part != null && !part.isEmpty();
     }
 
-    private static byte[] optionalJpeg(MultipartFile file) {
-        return present(file) ? jpeg(file, false) : null;
+    private static byte[] optionalJpeg(MultipartFile file, int expectedHeight) {
+        return present(file) ? jpeg(file, false, expectedHeight).bytes() : null;
     }
 
-    private static byte[] jpeg(MultipartFile file, boolean groupPhoto) {
+    private static Jpeg jpeg(MultipartFile file, boolean groupPhoto, Integer expectedHeight) {
         if (!present(file)) {
             throw invalid();
         }
@@ -147,12 +149,16 @@ public class TournamentSocialPackageService {
                 var reader = ImageIO.getImageReadersByFormatName("JPEG").next();
                 try {
                     reader.setInput(input);
-                    if (bytes.length < 4 || bytes[bytes.length - 2] != (byte) 0xff || bytes[bytes.length - 1] != (byte) 0xd9
-                            || !validDimensions(reader.getWidth(0), reader.getHeight(0), groupPhoto)) {
+                    if (bytes.length < 4 || bytes[bytes.length - 2] != (byte) 0xff || bytes[bytes.length - 1] != (byte) 0xd9) {
+                        throw invalid();
+                    }
+                    int height = reader.getHeight(0);
+                    if (!validDimensions(reader.getWidth(0), height, groupPhoto)
+                            || (expectedHeight != null && height != expectedHeight)) {
                         throw invalid();
                     }
                     reader.read(0);
-                    return bytes;
+                    return new Jpeg(bytes, height);
                 } finally {
                     reader.dispose();
                 }
@@ -166,7 +172,7 @@ public class TournamentSocialPackageService {
         if (groupPhoto) {
             return width > 0 && height > 0 && width <= MAX_GROUP_EDGE && height <= MAX_GROUP_EDGE;
         }
-        return width == 1080 && height == 1350;
+        return width == 1080 && (height == 1350 || height == 1440);
     }
 
     public Download card(Owner owner, long id, long version, String filename) {
