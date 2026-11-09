@@ -7,43 +7,83 @@ const msg = key => root.getAttribute('data-msg-' + key.toLowerCase());
 const slots = ['winners', 'finalists'];
 const cards = [...slots, 'bracket'];
 let draft;
+let eventDraft;
+let savedVersion;
+let saving = false;
+let readingSaved = false;
 let imageNames;
 let previews = [];
 let generation = 0;
 let loading = false;
 let addedLink = '';
 
-const isIndividual = data => data.format === 'KING_OF_COURT';
-const categoryLabel = data => data.category.replaceAll('_', '/');
+const isPaired = data => data.format === 'TEAM_PLAYOFF';
+const categoryLabel = data => (data.category || '').replaceAll('_', '/');
+const labels = {
+  AMERICANO: ['Americano', 'Американо'],
+  AMERICANO_TEAMS: ['Americano por parejas', 'Парный Американо'],
+  KING_OF_COURT: ['Rey de la Cancha', 'Король корта'],
+  CANCHA_ABIERTA: ['Cancha Abierta', 'Открытый корт'],
+  PADEL_CLINIC: ['Partidos + Entrenamientos', 'Тренировка + игры']
+};
+const filenamesByFormat = {
+  TEAM_PLAYOFF: ['01-campeones.jpg', '02-subcampeones.jpg', '03-cuadro-final.jpg'],
+  KING_OF_COURT: ['01-rey-de-la-cancha.jpg'],
+  AMERICANO: ['01-americano.jpg'],
+  GENERAL: ['01-evento.jpg']
+};
+const photoLabels = {
+  '01-campeones.jpg': 'winnersCard', '02-subcampeones.jpg': 'finalistsCard',
+  '03-cuadro-final.jpg': 'bracketCard', '01-rey-de-la-cancha.jpg': 'group',
+  '01-americano.jpg': 'group', '01-evento.jpg': 'group'
+};
+const eventLabels = data => labels[data.type] || [data.name || 'Evento de pádel', data.name || 'Падель'];
+const packagePath = root.dataset.endpoint + '/package';
 
 function buildCaptions(data) {
   const date = data.date.split('-').reverse().join('.');
   const category = categoryLabel(data);
-  const results = new URL(data.resultsPath, window.location.origin).href;
+  const location = [data.club, date].filter(Boolean).join(' · ');
+  const [es, ru] = eventLabels(data);
+  const results = data.resultsPath ? new URL(data.resultsPath, window.location.origin).href : '';
   let instagram;
   let telegram;
-  if (isIndividual(data)) {
+  if (data.format === 'GENERAL') {
+    const suffix = category ? ' · ' + category : '';
+    const title = data.name && data.name.toLocaleLowerCase() !== es.toLocaleLowerCase() ? data.name : '';
+    const details = [title, '📍 ' + location].filter(Boolean);
+    instagram = ['🎾 ' + es.toUpperCase() + suffix, ...details, '',
+      'Compartimos una foto de la jornada. ¡Gracias por venir a jugar con nosotros!'].join('\n');
+    telegram = ['🎾 ' + ru.toUpperCase() + suffix, ...details, '',
+      'Делимся фото с мероприятия. Спасибо, что пришли поиграть!'].join('\n');
+  } else if (!isPaired(data)) {
     const [first, second] = data.places;
+    const isAmericano = data.format === 'AMERICANO';
+    const titleEs = isAmericano ? 'AMERICANO' : 'REY DE LA CANCHA';
+    const titleRu = isAmericano ? 'АМЕРИКАНО' : 'КОРОЛЬ КОРТА';
+    const unitEs = data.rankingByWins ? 'victorias' : 'puntos';
+    const unitRu = data.rankingByWins ? 'победы' : 'очки';
+    const categoryPart = category ? ' — ' + category : '';
     instagram = [
-      '🎾 REY DE LA CANCHA — ' + category + ' · INDIVIDUAL',
-      '📍 ' + data.club + ' · ' + date,
-      '', '🥇 ' + first.name + ' — ' + first.points + ' puntos',
-      '🥈 ' + second.name + ' — ' + second.points + ' puntos', '',
+      '🎾 ' + titleEs + categoryPart + ' · INDIVIDUAL',
+      '📍 ' + location,
+      '', '🥇 ' + first.name + ' — ' + first.points + ' ' + unitEs,
+      '🥈 ' + second.name + ' — ' + second.points + ' ' + unitEs, '',
       'Jugamos con parejas rotativas y clasificación individual. ¡Gracias a todos por participar!'
     ].join('\n');
     telegram = [
-      '🎾 КОРОЛЬ КОРТА — ' + category + ' · ИНДИВИДУАЛЬНЫЙ',
-      '📍 ' + data.club + ' · ' + date,
-      '', '🥇 1-е место: ' + first.name + ' · очки: ' + first.points,
-      '🥈 2-е место: ' + second.name + ' · очки: ' + second.points,
-      '', 'Партнёры менялись, а очки шли в личный зачёт. Спасибо всем за игру!',
+      '🎾 ' + titleRu + categoryPart + ' · ИНДИВИДУАЛЬНЫЙ',
+      '📍 ' + location,
+      '', '🥇 1-е место: ' + first.name + ' · ' + unitRu + ': ' + first.points,
+      '🥈 2-е место: ' + second.name + ' · ' + unitRu + ': ' + second.points,
+      '', 'Партнёры менялись, а результаты шли в личный зачёт. Спасибо всем за игру!',
       '', '📊 Итоговая таблица: ' + results
     ].join('\n');
   } else {
     const score = data.winnerGames + ':' + data.finalistGames;
     instagram = [
       '🎾 TORNEO ' + category + ' — AMERICANO EN PAREJAS',
-      '📍 ' + data.club + ' · ' + date,
+      '📍 ' + location,
       '', '¡Felicitaciones!',
       '🥇 Campeones: ' + data.winners.join(' y '), '🥈 Subcampeones: ' + data.finalists.join(' y '),
       '🏆 Final: ' + score, '',
@@ -51,7 +91,7 @@ function buildCaptions(data) {
     ].join('\n');
     telegram = [
       '🎾 ТУРНИР ' + category + ' — ПАРНЫЙ АМЕРИКАНО',
-      '📍 ' + data.club + ' · ' + date,
+      '📍 ' + location,
       '', 'Поздравляем победителей и финалистов!',
       '🥇 1-е место: ' + data.winners.join(' и '), '🥈 2-е место: ' + data.finalists.join(' и '),
       '🏆 Финал: ' + score, '',
@@ -81,44 +121,57 @@ function buildCaptions(data) {
   return {instagram, telegram};
 }
 
+function showMode(data) {
+  draft = data;
+  addedLink = '';
+  const captions = buildCaptions(data);
+  const single = !isPaired(data);
+  imageNames = filenamesByFormat[data.format];
+  $('finalist-slot').hidden = single;
+  $('finalists-card').hidden = single;
+  $('bracket-input').hidden = single;
+  $('photo-label').textContent = msg(single ? 'group' : 'winners');
+  $('primary-title').textContent = msg(single ? 'group' : 'winnersCard');
+  $('winners-preview').alt = $('primary-title').textContent;
+  $('winner-names').textContent = single
+    ? data.places.map(place => place.rank + '. ' + place.name).join(' · ')
+    : data.winners.join(' · ');
+  $('finalist-names').textContent = single ? '' : data.finalists.join(' · ');
+  $('instagram').value = captions.instagram;
+  $('telegram').value = captions.telegram;
+  $('links').hidden = single && !data.resultsPath;
+  $('results-link').hidden = !data.resultsPath;
+  if (data.resultsPath) $('results-link').href = data.resultsPath;
+  $('editor').hidden = false;
+  refresh();
+}
+
 root.addEventListener('toggle', async () => {
-  if (!root.open || draft || loading) return;
+  if (!root.open) return;
+  loadSaved();
+  if (eventDraft || loading) return;
   loading = true;
   $('load-status').textContent = msg('loading');
   try {
-    const response = await fetch(root.dataset.endpoint, {headers:{Accept:'application/json'},cache:'no-store'});
+    const response = await fetch(root.dataset.endpoint + '?extended=true', {headers:{Accept:'application/json'},cache:'no-store'});
     if (!response.ok) {
-      $('load-status').textContent = msg(response.status === 409 ? 'incomplete' : response.status === 422 ? 'unsupported' : 'unavailable');
+      $('load-status').textContent = msg(response.status === 409 ? 'incomplete' : 'unavailable');
       return;
     }
-    const data = await response.json();
-    const captions = buildCaptions(data);
-    draft = data;
-    const single = isIndividual(draft);
-    imageNames = single ? ['01-rey-de-la-cancha.jpg'] : ['01-campeones.jpg','02-subcampeones.jpg','03-cuadro-final.jpg'];
-    $('finalist-slot').hidden = single;
-    $('finalists-card').hidden = single;
-    $('bracket-input').hidden = single;
-    if (single) {
-      $('photo-label').textContent = msg('group');
-      $('primary-title').textContent = msg('group');
-      $('winners-preview').alt = msg('group');
-      $('winner-names').textContent = draft.places.map(p => p.rank + '. ' + p.name).join(' · ');
-      setStatus(msg('chooseGroup'));
-    } else {
-      $('winner-names').textContent = draft.winners.join(' · ');
-      $('finalist-names').textContent = draft.finalists.join(' · ');
-    }
-    $('instagram').value = captions.instagram;
-    $('telegram').value = captions.telegram;
-    $('results-link').href = draft.resultsPath;
+    eventDraft = await response.json();
+    $('mode-picker').hidden = eventDraft.format === 'GENERAL';
+    showMode(eventDraft);
     $('load-status').textContent = '';
-    $('editor').hidden = false;
   } catch {
     $('load-status').textContent = msg('unavailable');
   } finally {
     loading = false;
   }
+});
+
+$('mode').addEventListener('change', () => {
+  const general = $('mode').value === 'general';
+  showMode(general ? {...eventDraft, format:'GENERAL', places:[], resultsPath:null, upcoming:null} : eventDraft);
 });
 
 function rounded(ctx, x, y, w, h, r) {
@@ -158,45 +211,32 @@ function drawCover(ctx, img, width, height, bottomBias = .5) {
     sw, sh, 0, 0, width, height);
 }
 
-function drawGroup(ctx, img) {
-  if (img.naturalWidth / img.naturalHeight <= .84) {
-    drawCover(ctx, img, 1080, 1350);
-    return;
-  }
-  // У широкого общего кадра сохраняем всех людей, а поля продолжаем фоном того же снимка.
-  const background = document.createElement('canvas');
-  background.width = 22; background.height = 28;
-  drawCover(background.getContext('2d'), img, 22, 28);
-  ctx.drawImage(background, 0, 0, 1080, 1350);
-  ctx.fillStyle = 'rgba(27,24,23,.18)'; ctx.fillRect(0, 0, 1080, 1350);
-  const layer = document.createElement('canvas');
-  layer.width = 1080;
-  layer.height = Math.round(1080 * img.naturalHeight / img.naturalWidth);
-  const foreground = layer.getContext('2d');
-  foreground.imageSmoothingQuality = 'high';
-  foreground.drawImage(img, 0, 0, layer.width, layer.height);
-  foreground.globalCompositeOperation = 'destination-in';
-  const edge = foreground.createLinearGradient(0, 0, 0, layer.height);
-  edge.addColorStop(0, 'transparent'); edge.addColorStop(.12, '#000');
-  edge.addColorStop(.88, '#000'); edge.addColorStop(1, 'transparent');
-  foreground.fillStyle = edge; foreground.fillRect(0, 0, layer.width, layer.height);
-  ctx.drawImage(layer, 0, (1350 - layer.height) / 2);
-}
-
 function drawHeading(ctx, single) {
-  const first = single ? 'REY DE LA CANCHA' : 'AMERICANO';
-  const second = categoryLabel(draft) + (single ? ' · INDIVIDUAL' : ' · POR PAREJAS');
+  const first = draft.format === 'GENERAL' ? eventLabels(draft)[0].toUpperCase()
+    : draft.format === 'KING_OF_COURT' ? 'REY DE LA CANCHA' : 'AMERICANO';
+  const category = categoryLabel(draft);
+  const second = draft.format === 'GENERAL' ? category
+    : [category, single ? 'INDIVIDUAL' : 'POR PAREJAS'].filter(Boolean).join(' · ');
   const font = 'italic 900 {size}px "Avenir Next", system-ui, sans-serif';
-  fit(ctx, first, 730, 56, font);
-  const firstWidth = ctx.measureText(first).width + 76;
-  fit(ctx, second, 730, 42, font);
-  const secondWidth = ctx.measureText(second).width + 76;
   ctx.fillStyle = '#d84629';
+  ctx.font = font.replace('{size}', 56);
+  for (let size = 55; size >= 18 && ctx.measureText(first).width > 890; size--) {
+    ctx.font = font.replace('{size}', size);
+  }
+  const headingFont = ctx.font;
+  const firstWidth = Math.min(ctx.measureText(first).width, 890) + 76;
   rounded(ctx, 540 - firstWidth / 2, 52, firstWidth, 86, 18);
-  rounded(ctx, 540 - secondWidth / 2, 119, secondWidth, 65, 17);
-  ctx.textAlign = 'center'; ctx.fillStyle = '#fff7ef';
-  fit(ctx, first, 730, 56, font); ctx.fillText(first, 540, 114);
-  fit(ctx, second, 730, 42, font); ctx.fillText(second, 540, 164);
+  if (second) {
+    fit(ctx, second, 890, 42, font);
+    const secondWidth = ctx.measureText(second).width + 76;
+    rounded(ctx, 540 - secondWidth / 2, 119, secondWidth, 65, 17);
+  }
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#fff7ef';
+  ctx.font = headingFont; ctx.fillText(first, 540, 114, 890);
+  if (second) {
+    fit(ctx, second, 890, 42, font); ctx.fillText(second, 540, 164);
+  }
   ctx.textAlign = 'left';
 }
 
@@ -216,64 +256,50 @@ function drawPairPlate(ctx, index) {
   ctx.fillStyle = '#fff7ef'; ctx.fillText(role, x + 39, 1222);
 }
 
-function drawIndividualPlate(ctx) {
-  const names = draft.places.map(place => place.name);
-  ctx.font = 'bold 32px Arial, sans-serif';
-  const rankWidth = Math.ceil(ctx.measureText('1.º').width);
-  const nameWidths = names.map(name => Math.ceil(ctx.measureText(name).width));
-  const width = 99 + (rankWidth + 13) * 2 + nameWidths[0] + nameWidths[1];
-  const stacked = width > 984;
-  const panelWidth = stacked ? Math.min(984, 94 + rankWidth + Math.max(...nameWidths)) : width;
-  const x = (1080 - panelWidth) / 2;
-  ctx.fillStyle = 'rgba(29,25,25,.91)';
-  rounded(ctx, x, stacked ? 1189 : 1233, panelWidth, stacked ? 114 : 70, 18);
-  let start = x + 25;
-  for (const [i, name] of names.entries()) {
-    const y = stacked ? 1231 + i * 46 : 1279;
-    const row = stacked ? x + 25 : start;
-    ctx.font = 'bold 32px Arial, sans-serif';
-    ctx.fillStyle = '#ff744d'; ctx.fillText((i + 1) + '.º', row, y);
-    ctx.fillStyle = '#fff7ef';
-    fit(ctx, name, panelWidth - rankWidth - 64, 32, 'bold {size}px Arial, sans-serif');
-    ctx.fillText(name, row + rankWidth + 13, y);
-    if (!stacked && i === 0) {
-      start += rankWidth + 13 + nameWidths[0] + 24;
-      ctx.fillStyle = 'rgba(255,246,237,.45)'; ctx.fillRect(start, 1253, 1, 30);
-      start += 25;
-    }
-  }
-}
-
-async function makeCard(src, index) {
-  const img = await loadPhoto(src);
+async function makeCard(img, index, pairHeight) {
   const canvas = document.createElement('canvas');
-  canvas.width = 1080; canvas.height = 1350;
+  const single = !isPaired(draft);
+  canvas.width = 1080;
+  canvas.height = single ? Math.ceil(canvas.width * img.naturalHeight / img.naturalWidth) : pairHeight;
+  if (single && (canvas.height < 566 || canvas.height > 1440)) {
+    throw new Error(msg('feedAspect'));
+  }
   const ctx = canvas.getContext('2d', {alpha:false});
   ctx.imageSmoothingQuality = 'high';
-  const single = isIndividual(draft);
-  if (single) drawGroup(ctx, img);
-  else drawCover(ctx, img, 1080, 1350, .91);
-  drawHeading(ctx, single);
-  if (single) drawIndividualPlate(ctx);
-  else drawPairPlate(ctx, index);
+  if (single) {
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    drawHeading(ctx, true);
+  } else {
+    drawCover(ctx, img, canvas.width, canvas.height, .91);
+    drawHeading(ctx, false);
+    ctx.translate(0, canvas.height - 1350);
+    drawPairPlate(ctx, index);
+  }
   return toJPEG(canvas);
 }
-function toJPEG(canvas) {
-  return new Promise((resolve,reject) => canvas.toBlob(
-    (blob) => blob ? resolve(blob) : reject(new Error(msg('renderError'))), 'image/jpeg', .94));
+
+async function toJPEG(canvas) {
+  const encode = quality => new Promise((resolve, reject) => canvas.toBlob(
+    blob => blob ? resolve(blob) : reject(new Error(msg('renderError'))), 'image/jpeg', quality));
+  for (const quality of [.94, .85, .72, .60]) {
+    const image = await encode(quality);
+    if (image.size <= 2 * 1024 * 1024) return image;
+  }
+  throw new Error(msg('packageTooLarge'));
 }
-async function makeBracket(src) {
+
+async function makeBracket(src, height) {
   const img = await loadPhoto(src);
   const canvas = document.createElement('canvas');
-  canvas.width = 1080; canvas.height = 1350;
+  canvas.width = 1080; canvas.height = height;
   const ctx = canvas.getContext('2d', {alpha:false});
-  ctx.fillStyle='#1b191a'; ctx.fillRect(0,0,1080,1350);
+  ctx.fillStyle='#1b191a'; ctx.fillRect(0,0,canvas.width,canvas.height);
   ctx.fillStyle='#ff6a43'; ctx.fillRect(40,56,56,5);
   ctx.fillStyle='#fff7ef'; ctx.font='bold 56px Arial, sans-serif'; ctx.fillText('CUADRO FINAL',40,131);
   ctx.fillStyle='#ff6a43'; ctx.font='bold 29px Arial, sans-serif'; ctx.fillText('AMERICANO · ' + categoryLabel(draft) + ' · POR PAREJAS',40,183);
-  const scale=Math.min(956/img.naturalWidth,986/img.naturalHeight);
+  const scale=Math.min(956/img.naturalWidth,(height - 364)/img.naturalHeight);
   const w=img.naturalWidth*scale, h=img.naturalHeight*scale;
-  const x=540-w/2, y=745-h/2;
+  const x=540-w/2, y=(height + 140 - h)/2;
   ctx.fillStyle='#fff'; rounded(ctx,x-22,y-22,w+44,h+44,20);
   ctx.imageSmoothingQuality='high'; ctx.drawImage(img,x,y,w,h);
   return toJPEG(canvas);
@@ -288,12 +314,13 @@ function resetPreviews() {
   $('cards').hidden = true;
   $('bracket-card').hidden = true;
   $('bundle').disabled = true;
+  updateSaveButton();
 }
 async function generate(inputs) {
   const job = ++generation;
   resetPreviews();
   if (!inputs.every(Boolean)) {
-    setStatus(msg(isIndividual(draft) ? 'chooseGroup' : 'chooseBoth'));
+    setStatus(msg(isPaired(draft) ? 'chooseBoth' : 'chooseGroup'));
     return;
   }
   const maxSize = 25 * 1024 * 1024;
@@ -303,12 +330,20 @@ async function generate(inputs) {
   }
   setStatus(msg('rendering'));
   try {
-    const blobs = [];
-    for (let i = 0; i < inputs.length; i++) {
+    const photos = [];
+    for (const file of inputs.slice(0, 2)) {
       if (job !== generation) return;
-      const src = await readDataUrl(inputs[i]);
-      blobs.push(await (i === 2 ? makeBracket(src) : makeCard(src, i)));
+      photos.push(await loadPhoto(await readDataUrl(file)));
     }
+    const pairHeight = photos.length === 2 && photos.every(photo => photo.naturalWidth * 4 === photo.naturalHeight * 3)
+      ? 1440 : 1350;
+    const blobs = [];
+    for (const [index, photo] of photos.entries()) {
+      if (job !== generation) return;
+      blobs.push(await makeCard(photo, index, pairHeight));
+    }
+    if (job !== generation) return;
+    if (inputs[2]) blobs.push(await makeBracket(await readDataUrl(inputs[2]), pairHeight));
     const rendered = await Promise.all(blobs.map(readDataUrl));
     if (job !== generation) return;
     previews = blobs.map((blob, i) => ({
@@ -322,14 +357,15 @@ async function generate(inputs) {
     $('cards').hidden = false;
     $('bracket-card').hidden = previews.length < 3;
     $('bundle').disabled = false;
+    updateSaveButton();
     setStatus(msg('ready'));
   } catch (error) {
     if (job === generation) setStatus(error.message || msg('renderError'), true);
   }
 }
 function refresh() {
-  const images = isIndividual(draft) ? [$('winners').files[0]] : slots.map(id => $(id).files[0]);
-  const bracket = !isIndividual(draft) && $('bracket').files[0];
+  const images = isPaired(draft) ? slots.map(id => $(id).files[0]) : [$('winners').files[0]];
+  const bracket = isPaired(draft) && $('bracket').files[0];
   $('clear-bracket').hidden = !bracket;
   if (bracket) images.push(bracket);
   generate(images);
@@ -411,7 +447,7 @@ async function zip(files) {
   return new Blob([...parts,...directory,end.bytes],{type:'application/zip'});
 }
 $('bundle').addEventListener('click', async () => {
-  if (previews.length < (isIndividual(draft) ? 1 : 2)) return;
+  if (previews.length < (isPaired(draft) ? 2 : 1)) return;
   const photos = previews.map(p => ({name:p.filename,blob:p.blob}));
   const captions = Object.entries(filenames).map(([id,name]) => ({name,blob:new Blob([caption(id)])}));
   $('bundle').disabled = true;
@@ -419,5 +455,160 @@ $('bundle').addEventListener('click', async () => {
   try { save(await zip([...photos,...captions]), '1padel-' + draft.id + '-social.zip'); }
   catch { $('action-status').textContent=msg('zipError'); }
   finally { if (job === generation) $('bundle').disabled = false; }
+});
+function updateSaveButton() {
+  $('save-package').disabled = saving || readingSaved || savedVersion === undefined || !previews.length;
+  $('save-package').textContent = msg(savedVersion > 0 ? 'replacePackage' : 'savePackage');
+}
+
+let photoSelection;
+
+async function openPhoto(src, filename, alt, blob) {
+  const dialog = $('photo-dialog');
+  const image = $('photo-image');
+  const share = $('photo-share');
+  const selection = {};
+  photoSelection = selection;
+  image.src = src;
+  image.alt = alt;
+  share.hidden = true;
+  dialog.showModal();
+
+  if (typeof navigator.share !== 'function' || typeof navigator.canShare !== 'function') return;
+  try {
+    if (!blob) {
+      const response = await fetch(src, {headers:{Accept:'image/jpeg'},cache:'no-store'});
+      if (!response.ok || response.redirected) return;
+      blob = await response.blob();
+    }
+    if (photoSelection !== selection || blob.type !== 'image/jpeg') return;
+    const data = {files:[new File([blob], filename, {type:'image/jpeg'})]};
+    if (navigator.canShare(data)) {
+      selection.shareData = data;
+      share.hidden = false;
+    }
+  } catch {
+    // Изображение уже открыто и доступно через меню браузера.
+  }
+}
+
+$('photo-close').addEventListener('click', () => $('photo-dialog').close());
+$('photo-dialog').addEventListener('close', () => {
+  if ($('photo-dialog').open) return;
+  photoSelection = undefined;
+  $('photo-image').removeAttribute('src');
+});
+$('photo-share').addEventListener('click', async () => {
+  const selection = photoSelection;
+  if (!selection?.shareData) return;
+  try {
+    await navigator.share(selection.shareData);
+  } catch (error) {
+    if (photoSelection === selection && error.name !== 'AbortError') $('photo-share').hidden = true;
+  }
+});
+for (const button of root.querySelectorAll('[data-photo-slot]')) {
+  button.addEventListener('click', () => {
+    const slot = button.dataset.photoSlot;
+    const preview = previews[cards.indexOf(slot)];
+    if (!preview) return;
+    const image = $(slot + '-preview');
+    openPhoto(image.src, preview.filename, image.alt, preview.blob);
+  });
+}
+
+function renderSaved(metadata) {
+  savedVersion = metadata?.version ?? 0;
+  $('saved').hidden = !metadata;
+  $('saved-cards').replaceChildren();
+  updateSaveButton();
+  if (!metadata) return;
+
+  const date = new Intl.DateTimeFormat(document.documentElement.lang || 'es', {
+    dateStyle:'medium', timeStyle:'short'
+  }).format(new Date(metadata.savedAt));
+  $('saved-at').textContent = msg('savedAt').replace('%DATE%', () => date).replace('%NAME%', () => metadata.savedBy);
+  const versionPath = packagePath + '/' + metadata.version;
+  $('saved-zip').href = versionPath + '/zip';
+  for (const name of metadata.cards) {
+    const title = msg(photoLabels[name] || 'group');
+    const card = document.createElement('div');
+    card.className = 'card';
+    const label = document.createElement('h3');
+    label.textContent = title;
+    const img = document.createElement('img');
+    img.alt = title;
+    img.loading = 'lazy';
+    img.src = versionPath + '/cards/' + encodeURIComponent(name);
+    const link = document.createElement('a');
+    link.className = 'button';
+    link.href = img.src + '?download=true';
+    link.textContent = msg('downloadJpg');
+    const actions = document.createElement('div');
+    actions.className = 'actions';
+    const photoButton = document.createElement('button');
+    photoButton.type = 'button';
+    photoButton.textContent = msg('savePhoto');
+    photoButton.addEventListener('click', () => openPhoto(img.src, name, title));
+    actions.append(link, photoButton);
+    card.append(label, img, actions);
+    $('saved-cards').append(card);
+  }
+}
+
+async function loadSaved() {
+  if (readingSaved || saving) return;
+  readingSaved = true;
+  updateSaveButton();
+  try {
+    const response = await fetch(packagePath, {headers:{Accept:'application/json'},cache:'no-store'});
+    if (!response.ok) throw new Error();
+    renderSaved(response.status === 204 ? null : await response.json());
+    $('saved-load-status').textContent = '';
+  } catch {
+    $('saved-load-status').textContent = msg('savedLoadError');
+  } finally {
+    readingSaved = false;
+    updateSaveButton();
+  }
+}
+
+$('save-package').addEventListener('click', async () => {
+  if (saving || readingSaved || savedVersion === undefined || !previews.length) return;
+  const form = new FormData();
+  form.set('version', savedVersion);
+  form.set('format', draft.format);
+  form.set('instagram', caption('instagram'));
+  form.set('telegram', caption('telegram'));
+  previews.forEach(({blob, filename}, index) =>
+    form.set(['primary', 'finalist', 'bracket'][index], blob, filename));
+  saving = true;
+  updateSaveButton();
+  const status = $('package-status');
+  status.textContent = msg('savingPackage');
+  let conflict = false;
+  try {
+    const response = await fetch(packagePath, {method:'PUT', body:form, headers:{Accept:'application/json'}});
+    if (response.redirected) throw new Error();
+    if (response.status === 409) {
+      conflict = true;
+      status.textContent = msg('packageConflict');
+    } else if (!response.ok) {
+      const key = response.status === 413 ? 'packageTooLarge' : response.status === 400 ? 'packageInvalid' : 'packageError';
+      status.textContent = msg(key);
+    } else {
+      renderSaved(await response.json());
+      status.textContent = msg('packageSaved');
+    }
+  } catch {
+    status.textContent = msg('packageError');
+  } finally {
+    saving = false;
+    if (conflict) {
+      savedVersion = undefined;
+      await loadSaved();
+    }
+    updateSaveButton();
+  }
 });
 })();

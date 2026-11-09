@@ -14,7 +14,14 @@
 #social-draft button, #social-draft a.button { display: inline-flex; align-items: center; min-height: 42px; padding: .5rem .72rem; border: 1px solid #ded8d2; border-radius: .45rem; color: #211d1b; background: #fff; font: inherit; cursor: pointer; text-decoration: none; }
 #social-draft button.primary { background: #a73923; color: #fff; }
 #social-draft button:disabled { opacity: .5; cursor: default; }
-#social-draft .card img { display: block; width: 100%; max-width: 360px; aspect-ratio: 4/5; border-radius: .45rem; margin-bottom: .45rem; }
+#social-draft .card img { display: block; width: 100%; max-width: 360px; height: auto; border-radius: .45rem; margin-bottom: .45rem; }
 #social-draft #social-status.error { color: #a13221; }
 #social-draft [hidden] { display: none !important; }
 @media (max-width: 600px) { #social-draft .one-col { grid-template-columns: 1fr; } }
+#social-draft #social-saved { padding-bottom: .65rem; border-bottom: 1px solid #ded8d2; }
+#social-draft #social-saved-at { color: #5b514a; }
+#social-draft #social-mode { max-width: 100%; min-height: 42px; font: inherit; }
+#social-draft [role=status]:empty { display: none; }
+#social-draft #social-photo-dialog { width: min(92vw, 42rem); max-height: 92vh; box-sizing: border-box; padding: 1rem; border: 0; border-radius: .65rem; }
+#social-draft #social-photo-dialog::backdrop { background: rgba(0, 0, 0, .65); }
+#social-draft #social-photo-image { display: block; width: auto; height: auto; max-width: 100%; max-height: 63vh; margin-inline: auto; }

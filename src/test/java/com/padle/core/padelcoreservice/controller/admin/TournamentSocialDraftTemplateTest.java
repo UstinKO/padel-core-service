@@ -46,6 +46,6 @@ class TournamentSocialDraftTemplateTest {
 
         assertThat(html).contains("data-endpoint=\"/padel/admin/tournaments/151/social-draft\"",
                 "Подготовить публикации", "Скачать комплект ZIP", "id=\"social-bracket\"",
-                "data-msg-incomplete=\"Проверьте");
+                "data-msg-incomplete=\"Подготовка", "Сохранённый комплект", "Сохранить комплект");
     }
 }

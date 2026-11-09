@@ -25,8 +25,8 @@
     <link rel="stylesheet" th:href="@{/css/admin.css}">
     <link rel="stylesheet" th:href="@{/css/tournament-details.css}">
     <link rel="stylesheet" th:href="@{/css/admin_details_style_fix.css}">
-    <link th:if="${(tournament.tipo.name() == 'AMERICANO_TEAMS' and tournament.modalidad.name() == 'DOBLES' and tournament.estado.name() == 'FINALIZADO') or (tournament.tipo.name() == 'KING_OF_COURT' and tournament.modalidad.name() == 'INDIVIDUAL' and tournament.estado.name() != 'CANCELADO')}" rel="stylesheet" th:href="@{/css/tournament-social-draft.css}">
-    <script th:if="${(tournament.tipo.name() == 'AMERICANO_TEAMS' and tournament.modalidad.name() == 'DOBLES' and tournament.estado.name() == 'FINALIZADO') or (tournament.tipo.name() == 'KING_OF_COURT' and tournament.modalidad.name() == 'INDIVIDUAL' and tournament.estado.name() != 'CANCELADO')}" th:src="@{/js/tournament-social-draft.js}" defer></script>
+    <link th:if="${tournament.estado.name() != 'BORRADOR' and tournament.estado.name() != 'CANCELADO'}" rel="stylesheet" th:href="@{/css/tournament-social-draft.css}">
+    <script th:if="${tournament.estado.name() != 'BORRADOR' and tournament.estado.name() != 'CANCELADO'}" th:src="@{/js/tournament-social-draft.js}" defer></script>
     <style>
         /* Дополнительные стили для новой верстки */
         .tournament-header-compact {
@@ -367,7 +367,7 @@
             <div th:replace="~{fragments/conduct-history :: saveStatus}"></div>
         </th:block>
 
-        <th:block th:if="${(tournament.tipo.name() == 'AMERICANO_TEAMS' and tournament.modalidad.name() == 'DOBLES' and tournament.estado.name() == 'FINALIZADO') or (tournament.tipo.name() == 'KING_OF_COURT' and tournament.modalidad.name() == 'INDIVIDUAL' and tournament.estado.name() != 'CANCELADO')}">
+        <th:block th:if="${tournament.estado.name() != 'BORRADOR' and tournament.estado.name() != 'CANCELADO'}">
             <div th:replace="~{fragments/tournament-social-draft :: panel(${tournament.id})}"></div>
         </th:block>
 
