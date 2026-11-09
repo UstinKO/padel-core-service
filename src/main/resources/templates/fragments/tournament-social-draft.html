@@ -6,6 +6,7 @@
              data-msg-finalistscard=#{social.draft.finalistsCard},
              data-msg-bracketcard=#{social.draft.bracketCard},
              data-msg-downloadjpg=#{social.draft.downloadJpg},
+             data-msg-savephoto=#{social.draft.savePhoto},
              data-msg-savepackage=#{social.draft.savePackage},
              data-msg-replacepackage=#{social.draft.replacePackage},
              data-msg-savedat=#{social.draft.savedAt},
@@ -63,9 +64,12 @@
 </div>
 <p id="social-status" role="status" aria-live="polite" th:text="#{social.draft.chooseBoth}">Elegí las fotos de campeones y subcampeones.</p></section>
 <section id="social-cards" hidden aria-labelledby="social-look"><h2 id="social-look" th:text="#{social.draft.preview}">Revisá las imágenes</h2><div class="pair">
-<div class="card"><h3 id="social-primary-title" th:text="#{social.draft.winnersCard}">1. Campeones</h3><img id="social-winners-preview" alt="" th:alt="#{social.draft.winnersCard}"><a class="button" id="social-winners-save" th:text="#{social.draft.downloadJpg}">Descargar JPG</a></div>
-<div class="card" id="social-finalists-card"><h3 th:text="#{social.draft.finalistsCard}">2. Subcampeones</h3><img id="social-finalists-preview" alt="" th:alt="#{social.draft.finalistsCard}"><a class="button" id="social-finalists-save" th:text="#{social.draft.downloadJpg}">Descargar JPG</a></div>
-<div class="card" id="social-bracket-card" hidden><h3 th:text="#{social.draft.bracketCard}">3. Cuadro final</h3><img id="social-bracket-preview" alt="" th:alt="#{social.draft.bracketCard}"><a class="button" id="social-bracket-save" th:text="#{social.draft.downloadJpg}">Descargar JPG</a></div>
+<div class="card"><h3 id="social-primary-title" th:text="#{social.draft.winnersCard}">1. Campeones</h3><img id="social-winners-preview" alt="" th:alt="#{social.draft.winnersCard}"><div class="actions"><a class="button" id="social-winners-save" th:text="#{social.draft.downloadJpg}">Descargar JPG</a>
+<button type="button" data-photo-slot="winners" th:text="#{social.draft.savePhoto}">Guardar en Fotos</button></div></div>
+<div class="card" id="social-finalists-card"><h3 th:text="#{social.draft.finalistsCard}">2. Subcampeones</h3><img id="social-finalists-preview" alt="" th:alt="#{social.draft.finalistsCard}"><div class="actions"><a class="button" id="social-finalists-save" th:text="#{social.draft.downloadJpg}">Descargar JPG</a>
+<button type="button" data-photo-slot="finalists" th:text="#{social.draft.savePhoto}">Guardar en Fotos</button></div></div>
+<div class="card" id="social-bracket-card" hidden><h3 th:text="#{social.draft.bracketCard}">3. Cuadro final</h3><img id="social-bracket-preview" alt="" th:alt="#{social.draft.bracketCard}"><div class="actions"><a class="button" id="social-bracket-save" th:text="#{social.draft.downloadJpg}">Descargar JPG</a>
+<button type="button" data-photo-slot="bracket" th:text="#{social.draft.savePhoto}">Guardar en Fotos</button></div></div>
 </div></section>
 <section aria-labelledby="social-copies"><h2 id="social-copies" th:text="#{social.draft.export}">Copiá o descargá el material</h2><div class="pair one-col">
 <div><label for="social-instagram"><b>Instagram · Español</b></label><textarea id="social-instagram" maxlength="12000"></textarea>
@@ -82,4 +86,13 @@
 <p id="social-package-status" role="status" aria-live="polite"></p>
 <p id="social-action-status" class="muted" role="status" aria-live="polite"></p></section>
     </div>
+    <dialog id="social-photo-dialog" aria-labelledby="social-photo-title" aria-describedby="social-photo-hint">
+        <h2 id="social-photo-title" th:text="#{social.draft.savePhoto}">Guardar en Fotos</h2>
+        <p id="social-photo-hint" th:text="#{social.draft.photoHint}">En iPhone, mantené presionada la imagen para guardarla en Fotos.</p>
+        <img id="social-photo-image" alt="">
+        <div class="actions">
+            <button id="social-photo-share" class="primary" type="button" hidden th:text="#{social.draft.sharePhoto}">Compartir imagen</button>
+            <button id="social-photo-close" type="button" autofocus th:text="#{social.draft.closePhoto}">Cerrar</button>
+        </div>
+    </dialog>
 </details>

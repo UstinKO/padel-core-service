@@ -461,6 +461,62 @@ function updateSaveButton() {
   $('save-package').textContent = msg(savedVersion > 0 ? 'replacePackage' : 'savePackage');
 }
 
+let photoSelection;
+
+async function openPhoto(src, filename, alt, blob) {
+  const dialog = $('photo-dialog');
+  const image = $('photo-image');
+  const share = $('photo-share');
+  const selection = {};
+  photoSelection = selection;
+  image.src = src;
+  image.alt = alt;
+  share.hidden = true;
+  dialog.showModal();
+
+  if (typeof navigator.share !== 'function' || typeof navigator.canShare !== 'function') return;
+  try {
+    if (!blob) {
+      const response = await fetch(src, {headers:{Accept:'image/jpeg'},cache:'no-store'});
+      if (!response.ok || response.redirected) return;
+      blob = await response.blob();
+    }
+    if (photoSelection !== selection || blob.type !== 'image/jpeg') return;
+    const data = {files:[new File([blob], filename, {type:'image/jpeg'})]};
+    if (navigator.canShare(data)) {
+      selection.shareData = data;
+      share.hidden = false;
+    }
+  } catch {
+    // Изображение уже открыто и доступно через меню браузера.
+  }
+}
+
+$('photo-close').addEventListener('click', () => $('photo-dialog').close());
+$('photo-dialog').addEventListener('close', () => {
+  if ($('photo-dialog').open) return;
+  photoSelection = undefined;
+  $('photo-image').removeAttribute('src');
+});
+$('photo-share').addEventListener('click', async () => {
+  const selection = photoSelection;
+  if (!selection?.shareData) return;
+  try {
+    await navigator.share(selection.shareData);
+  } catch (error) {
+    if (photoSelection === selection && error.name !== 'AbortError') $('photo-share').hidden = true;
+  }
+});
+for (const button of root.querySelectorAll('[data-photo-slot]')) {
+  button.addEventListener('click', () => {
+    const slot = button.dataset.photoSlot;
+    const preview = previews[cards.indexOf(slot)];
+    if (!preview) return;
+    const image = $(slot + '-preview');
+    openPhoto(image.src, preview.filename, image.alt, preview.blob);
+  });
+}
+
 function renderSaved(metadata) {
   savedVersion = metadata?.version ?? 0;
   $('saved').hidden = !metadata;
@@ -488,7 +544,14 @@ function renderSaved(metadata) {
     link.className = 'button';
     link.href = img.src + '?download=true';
     link.textContent = msg('downloadJpg');
-    card.append(label, img, link);
+    const actions = document.createElement('div');
+    actions.className = 'actions';
+    const photoButton = document.createElement('button');
+    photoButton.type = 'button';
+    photoButton.textContent = msg('savePhoto');
+    photoButton.addEventListener('click', () => openPhoto(img.src, name, title));
+    actions.append(link, photoButton);
+    card.append(label, img, actions);
     $('saved-cards').append(card);
   }
 }

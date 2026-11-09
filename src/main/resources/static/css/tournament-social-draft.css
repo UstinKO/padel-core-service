@@ -22,3 +22,6 @@
 #social-draft #social-saved-at { color: #5b514a; }
 #social-draft #social-mode { max-width: 100%; min-height: 42px; font: inherit; }
 #social-draft [role=status]:empty { display: none; }
+#social-draft #social-photo-dialog { width: min(92vw, 42rem); max-height: 92vh; box-sizing: border-box; padding: 1rem; border: 0; border-radius: .65rem; }
+#social-draft #social-photo-dialog::backdrop { background: rgba(0, 0, 0, .65); }
+#social-draft #social-photo-image { display: block; width: auto; height: auto; max-width: 100%; max-height: 63vh; margin-inline: auto; }
