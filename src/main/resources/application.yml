@@ -51,7 +51,7 @@ spring:
 
   # ------ I18N ------
   messages:
-    basename: i18n/messages,i18n/playoff-exchange
+    basename: i18n/messages,i18n/playoff-exchange,i18n/social-draft
     encoding: UTF-8
     fallback-to-system-locale: false
     use-code-as-default-message: false

@@ -1,0 +1,51 @@
+<details th:fragment="panel(tournamentId)" id="social-draft" class="admin-card"
+         th:attr="data-endpoint=@{/admin/tournaments/{id}/social-draft(id=${tournamentId})},
+             data-msg-loading=#{social.draft.loading},
+             data-msg-incomplete=#{social.draft.incomplete},
+             data-msg-unsupported=#{social.draft.unsupported},
+             data-msg-unavailable=#{social.draft.unavailable},
+             data-msg-chooseboth=#{social.draft.chooseBoth},
+             data-msg-choosegroup=#{social.draft.chooseGroup},
+             data-msg-group=#{social.draft.group},
+             data-msg-rendering=#{social.draft.rendering},
+             data-msg-ready=#{social.draft.ready},
+             data-msg-maxsize=#{social.draft.maxSize},
+             data-msg-decode=#{social.draft.decode},
+             data-msg-rendererror=#{social.draft.renderError},
+             data-msg-copied=#{social.draft.copied},
+             data-msg-copyhelp=#{social.draft.copyHelp},
+             data-msg-linkadded=#{social.draft.linkAdded},
+             data-msg-badlink=#{social.draft.badLink},
+             data-msg-ziperror=#{social.draft.zipError}">
+    <summary th:text="#{social.draft.title}">Preparar publicaciones</summary>
+    <p id="social-load-status" role="status" aria-live="polite"></p>
+    <div id="social-editor" hidden>
+<section aria-labelledby="social-choose"><h2 id="social-choose" th:text="#{social.draft.choose}">Elegí las fotos</h2>
+<div class="pair one-col">
+<label class="slot"><b id="social-photo-label" th:text="#{social.draft.winners}">Campeones</b><small id="social-winner-names"></small><input id="social-winners" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"></label>
+<label class="slot" id="social-finalist-slot"><b th:text="#{social.draft.finalists}">Subcampeones</b><small id="social-finalist-names"></small><input id="social-finalists" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"></label>
+</div>
+<div class="slot" style="margin-top:12px">
+<div id="social-bracket-input"><label for="social-bracket"><b th:text="#{social.draft.bracket}">Cuadro del torneo · opcional</b></label>
+<small th:text="#{social.draft.bracketHint}">Descargá el PNG de los resultados y agregalo como tercera imagen.</small>
+<input id="social-bracket" type="file" accept="image/png,image/jpeg,.png,.jpg,.jpeg">
+</div><div class="actions"><a class="button" id="social-results-link" target="_blank" rel="noopener" th:text="#{social.draft.results}">Abrir el cuadro en 1‑Padel</a><button id="social-clear-bracket" type="button" hidden th:text="#{social.draft.clear}">Quitar cuadro</button></div>
+</div>
+<p id="social-status" role="status" aria-live="polite" th:text="#{social.draft.chooseBoth}">Elegí las fotos de campeones y subcampeones.</p></section>
+<section id="social-cards" hidden aria-labelledby="social-look"><h2 id="social-look" th:text="#{social.draft.preview}">Revisá las imágenes</h2><div class="pair">
+<div class="card"><h3 id="social-primary-title" th:text="#{social.draft.winnersCard}">1. Campeones</h3><img id="social-winners-preview" alt="" th:alt="#{social.draft.winnersCard}"><a class="button" id="social-winners-save" th:text="#{social.draft.downloadJpg}">Descargar JPG</a></div>
+<div class="card" id="social-finalists-card"><h3 th:text="#{social.draft.finalistsCard}">2. Subcampeones</h3><img id="social-finalists-preview" alt="" th:alt="#{social.draft.finalistsCard}"><a class="button" id="social-finalists-save" th:text="#{social.draft.downloadJpg}">Descargar JPG</a></div>
+<div class="card" id="social-bracket-card" hidden><h3 th:text="#{social.draft.bracketCard}">3. Cuadro final</h3><img id="social-bracket-preview" alt="" th:alt="#{social.draft.bracketCard}"><a class="button" id="social-bracket-save" th:text="#{social.draft.downloadJpg}">Descargar JPG</a></div>
+</div></section>
+<section aria-labelledby="social-copies"><h2 id="social-copies" th:text="#{social.draft.export}">Copiá o descargá el material</h2><div class="pair one-col">
+<div><label for="social-instagram"><b>Instagram · Español</b></label><textarea id="social-instagram"></textarea>
+<div class="actions"><button type="button" data-copy="instagram" th:text="#{social.draft.copy}">Copiar texto</button><button type="button" data-save="instagram" th:text="#{social.draft.downloadTxt}">Descargar TXT</button></div></div>
+<div><label for="social-telegram"><b>Telegram · Русский</b></label><textarea id="social-telegram"></textarea>
+<div class="actions"><button type="button" data-copy="telegram" th:text="#{social.draft.copy}">Copiar texto</button><button type="button" data-save="telegram" th:text="#{social.draft.downloadTxt}">Descargar TXT</button></div></div>
+</div>
+<p><label for="social-ig-url" th:text="#{social.draft.linkLabel}">Link a la publicación de Instagram (opcional)</label></p>
+<input type="url" id="social-ig-url" placeholder="https://www.instagram.com/p/…/" autocomplete="off" inputmode="url">
+<div class="actions"><button id="social-insert-url" type="button" th:text="#{social.draft.insert}">Agregar al texto de Telegram</button><button id="social-bundle" class="primary" type="button" disabled th:text="#{social.draft.downloadZip}">Descargar paquete ZIP</button></div>
+<p id="social-action-status" class="muted" role="status" aria-live="polite"></p></section>
+    </div>
+</details>

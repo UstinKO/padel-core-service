@@ -1,0 +1,20 @@
+#social-draft { margin: 1rem 0; min-width: 0; }
+#social-draft summary { cursor: pointer; font-size: 1.1rem; font-weight: 700; }
+#social-draft section { margin-top: 1rem; }
+#social-draft h2 { font-size: 1.08rem; margin: 0 0 .6rem; }
+#social-draft h3 { font-size: .98rem; margin: 0 0 .5rem; }
+#social-draft .pair { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .8rem; }
+#social-draft .slot { display: block; border: 1px solid #ded8d2; padding: .65rem; border-radius: .65rem; min-width: 0; }
+#social-draft .slot b, #social-draft .slot small { display: block; }
+#social-draft .slot small { margin: .25rem 0 .55rem; }
+#social-draft input[type=file] { width: 100%; font-size: .86rem; }
+#social-draft input[type=url], #social-draft textarea { width: 100%; padding: .65rem; border: 1px solid #ded8d2; border-radius: .45rem; font: inherit; box-sizing: border-box; }
+#social-draft textarea { resize: vertical; min-height: 14rem; margin: .4rem 0; }
+#social-draft .actions { display: flex; flex-wrap: wrap; gap: .45rem; margin: .55rem 0; }
+#social-draft button, #social-draft a.button { display: inline-flex; align-items: center; min-height: 42px; padding: .5rem .72rem; border: 1px solid #ded8d2; border-radius: .45rem; color: #211d1b; background: #fff; font: inherit; cursor: pointer; text-decoration: none; }
+#social-draft button.primary { background: #a73923; color: #fff; }
+#social-draft button:disabled { opacity: .5; cursor: default; }
+#social-draft .card img { display: block; width: 100%; max-width: 360px; aspect-ratio: 4/5; border-radius: .45rem; margin-bottom: .45rem; }
+#social-draft #social-status.error { color: #a13221; }
+#social-draft [hidden] { display: none !important; }
+@media (max-width: 600px) { #social-draft .one-col { grid-template-columns: 1fr; } }
