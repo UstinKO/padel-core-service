@@ -1,6 +1,21 @@
 <details th:fragment="panel(tournamentId)" id="social-draft" class="admin-card"
          th:attr="data-endpoint=@{/admin/tournaments/{id}/social-draft(id=${tournamentId})},
              data-msg-loading=#{social.draft.loading},
+             data-msg-winners=#{social.draft.winners},
+             data-msg-winnerscard=#{social.draft.winnersCard},
+             data-msg-finalistscard=#{social.draft.finalistsCard},
+             data-msg-bracketcard=#{social.draft.bracketCard},
+             data-msg-downloadjpg=#{social.draft.downloadJpg},
+             data-msg-savepackage=#{social.draft.savePackage},
+             data-msg-replacepackage=#{social.draft.replacePackage},
+             data-msg-savedat=#{social.draft.savedAt},
+             data-msg-savedloaderror=#{social.draft.savedLoadError},
+             data-msg-savingpackage=#{social.draft.savingPackage},
+             data-msg-packagesaved=#{social.draft.packageSaved},
+             data-msg-packageerror=#{social.draft.packageError},
+             data-msg-packageconflict=#{social.draft.packageConflict},
+             data-msg-packagetoolarge=#{social.draft.packageTooLarge},
+             data-msg-packageinvalid=#{social.draft.packageInvalid},
              data-msg-incomplete=#{social.draft.incomplete},
              data-msg-unsupported=#{social.draft.unsupported},
              data-msg-unavailable=#{social.draft.unavailable},
@@ -19,13 +34,27 @@
              data-msg-ziperror=#{social.draft.zipError}">
     <summary th:text="#{social.draft.title}">Preparar publicaciones</summary>
     <p id="social-load-status" role="status" aria-live="polite"></p>
+    <p id="social-saved-load-status" role="status" aria-live="polite"></p>
+    <section id="social-saved" hidden aria-labelledby="social-saved-title">
+        <h2 id="social-saved-title" th:text="#{social.draft.savedTitle}">Material guardado</h2>
+        <p id="social-saved-at"></p>
+        <div id="social-saved-cards" class="pair"></div>
+        <div class="actions"><a class="button" id="social-saved-zip" th:text="#{social.draft.downloadZip}">Descargar paquete ZIP</a></div>
+    </section>
     <div id="social-editor" hidden>
+        <p id="social-mode-picker" hidden>
+            <label for="social-mode" th:text="#{social.draft.mode}">Tipo de publicación</label>
+            <select id="social-mode">
+                <option value="ranked" th:text="#{social.draft.rankedMode}">Resultados</option>
+                <option value="general" th:text="#{social.draft.generalMode}">Foto grupal sin puestos</option>
+            </select>
+        </p>
 <section aria-labelledby="social-choose"><h2 id="social-choose" th:text="#{social.draft.choose}">Elegí las fotos</h2>
 <div class="pair one-col">
 <label class="slot"><b id="social-photo-label" th:text="#{social.draft.winners}">Campeones</b><small id="social-winner-names"></small><input id="social-winners" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"></label>
 <label class="slot" id="social-finalist-slot"><b th:text="#{social.draft.finalists}">Subcampeones</b><small id="social-finalist-names"></small><input id="social-finalists" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"></label>
 </div>
-<div class="slot" style="margin-top:12px">
+<div class="slot" id="social-links" style="margin-top:12px">
 <div id="social-bracket-input"><label for="social-bracket"><b th:text="#{social.draft.bracket}">Cuadro del torneo · opcional</b></label>
 <small th:text="#{social.draft.bracketHint}">Descargá el PNG de los resultados y agregalo como tercera imagen.</small>
 <input id="social-bracket" type="file" accept="image/png,image/jpeg,.png,.jpg,.jpeg">
@@ -38,14 +67,18 @@
 <div class="card" id="social-bracket-card" hidden><h3 th:text="#{social.draft.bracketCard}">3. Cuadro final</h3><img id="social-bracket-preview" alt="" th:alt="#{social.draft.bracketCard}"><a class="button" id="social-bracket-save" th:text="#{social.draft.downloadJpg}">Descargar JPG</a></div>
 </div></section>
 <section aria-labelledby="social-copies"><h2 id="social-copies" th:text="#{social.draft.export}">Copiá o descargá el material</h2><div class="pair one-col">
-<div><label for="social-instagram"><b>Instagram · Español</b></label><textarea id="social-instagram"></textarea>
+<div><label for="social-instagram"><b>Instagram · Español</b></label><textarea id="social-instagram" maxlength="12000"></textarea>
 <div class="actions"><button type="button" data-copy="instagram" th:text="#{social.draft.copy}">Copiar texto</button><button type="button" data-save="instagram" th:text="#{social.draft.downloadTxt}">Descargar TXT</button></div></div>
-<div><label for="social-telegram"><b>Telegram · Русский</b></label><textarea id="social-telegram"></textarea>
+<div><label for="social-telegram"><b>Telegram · Русский</b></label><textarea id="social-telegram" maxlength="12000"></textarea>
 <div class="actions"><button type="button" data-copy="telegram" th:text="#{social.draft.copy}">Copiar texto</button><button type="button" data-save="telegram" th:text="#{social.draft.downloadTxt}">Descargar TXT</button></div></div>
 </div>
 <p><label for="social-ig-url" th:text="#{social.draft.linkLabel}">Link a la publicación de Instagram (opcional)</label></p>
 <input type="url" id="social-ig-url" placeholder="https://www.instagram.com/p/…/" autocomplete="off" inputmode="url">
 <div class="actions"><button id="social-insert-url" type="button" th:text="#{social.draft.insert}">Agregar al texto de Telegram</button><button id="social-bundle" class="primary" type="button" disabled th:text="#{social.draft.downloadZip}">Descargar paquete ZIP</button></div>
+<div class="actions">
+    <button type="button" id="social-save-package" class="primary" disabled th:text="#{social.draft.savePackage}">Guardar paquete</button>
+</div>
+<p id="social-package-status" role="status" aria-live="polite"></p>
 <p id="social-action-status" class="muted" role="status" aria-live="polite"></p></section>
     </div>
 </details>

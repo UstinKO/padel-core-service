@@ -18,3 +18,7 @@
 #social-draft #social-status.error { color: #a13221; }
 #social-draft [hidden] { display: none !important; }
 @media (max-width: 600px) { #social-draft .one-col { grid-template-columns: 1fr; } }
+#social-draft #social-saved { padding-bottom: .65rem; border-bottom: 1px solid #ded8d2; }
+#social-draft #social-saved-at { color: #5b514a; }
+#social-draft #social-mode { max-width: 100%; min-height: 42px; font: inherit; }
+#social-draft [role=status]:empty { display: none; }
