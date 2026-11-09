@@ -27,6 +27,7 @@ import java.util.zip.ZipOutputStream;
 @Service
 @RequiredArgsConstructor
 public class TournamentSocialPackageService {
+    private static final int MAX_GROUP_EDGE = 2048;
     private static final int MAX_CARD_BYTES = 2 * 1024 * 1024;
     private static final int MAX_CAPTION_LENGTH = 12_000;
     private static final String METADATA = "version, saved_at, saved_by, format, "
@@ -83,7 +84,7 @@ public class TournamentSocialPackageService {
     public Metadata save(Owner owner, long id, Upload upload) {
         var draft = drafts.prepare(owner, id);
         validateUpload(draft.format(), upload);
-        var primary = jpeg(upload.primary());
+        var primary = jpeg(upload.primary(), upload.format() != Format.TEAM_PLAYOFF);
         var finalist = optionalJpeg(upload.finalist());
         var bracket = optionalJpeg(upload.bracket());
         return jdbc.sql(saveSql(upload.version()))
@@ -130,10 +131,10 @@ public class TournamentSocialPackageService {
     }
 
     private static byte[] optionalJpeg(MultipartFile file) {
-        return present(file) ? jpeg(file) : null;
+        return present(file) ? jpeg(file, false) : null;
     }
 
-    private static byte[] jpeg(MultipartFile file) {
+    private static byte[] jpeg(MultipartFile file, boolean groupPhoto) {
         if (!present(file)) {
             throw invalid();
         }
@@ -147,7 +148,7 @@ public class TournamentSocialPackageService {
                 try {
                     reader.setInput(input);
                     if (bytes.length < 4 || bytes[bytes.length - 2] != (byte) 0xff || bytes[bytes.length - 1] != (byte) 0xd9
-                            || reader.getWidth(0) != 1080 || reader.getHeight(0) != 1350) {
+                            || !validDimensions(reader.getWidth(0), reader.getHeight(0), groupPhoto)) {
                         throw invalid();
                     }
                     reader.read(0);
@@ -159,6 +160,13 @@ public class TournamentSocialPackageService {
         } catch (IOException exception) {
             throw invalid();
         }
+    }
+
+    private static boolean validDimensions(int width, int height, boolean groupPhoto) {
+        if (groupPhoto) {
+            return width > 0 && height > 0 && width <= MAX_GROUP_EDGE && height <= MAX_GROUP_EDGE;
+        }
+        return width == 1080 && height == 1350;
     }
 
     public Download card(Owner owner, long id, long version, String filename) {
