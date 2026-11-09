@@ -1,0 +1,31 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.70-social-publication-package
+      author: 1padel
+      changes:
+        - addColumn:
+            tableName: tournaments_db
+            columns:
+              - column:
+                  name: americano_final_order
+                  type: varchar(20)
+        - sql:
+            sql: |
+              CREATE TABLE tournament_social_packages (
+                tournament_id bigint PRIMARY KEY REFERENCES tournaments_db(id) ON DELETE CASCADE,
+                version bigint NOT NULL CHECK (version > 0),
+                saved_at timestamptz NOT NULL,
+                saved_by varchar(255) NOT NULL,
+                format varchar(24) NOT NULL,
+                instagram text NOT NULL,
+                telegram text NOT NULL,
+                primary_card bytea NOT NULL,
+                finalist_card bytea,
+                bracket_card bytea
+              );
+      rollback:
+        - dropTable:
+            tableName: tournament_social_packages
+        - dropColumn:
+            tableName: tournaments_db
+            columnName: americano_final_order

@@ -1113,6 +1113,7 @@ public class AmericanoService {
         AmericanoRankingDto ranking = getRankingWithDetails(tournamentId, criteria);
 
         tournament.setEstado(TournamentStatus.FINALIZADO);
+        tournament.setAmericanoFinalOrder(AmericanoFinalOrder.from(criteria.getSortBy(), criteria.isAscending()));
         tournamentRepository.save(tournament);
 
         AmericanoPlayerRankingDto winner = ranking.getRanking().get(0);

@@ -2,6 +2,9 @@ package com.padle.core.padelcoreservice.service;
 
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.dto.TournamentSocialDraft;
+import com.padle.core.padelcoreservice.dto.americano.AmericanoPlayerRankingDto;
+import com.padle.core.padelcoreservice.dto.americano.RankingCriteria;
+import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.americano.AmericanoMatch;
 import com.padle.core.padelcoreservice.model.enums.Modalidad;
@@ -9,6 +12,9 @@ import com.padle.core.padelcoreservice.model.enums.PlayoffStage;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
 import com.padle.core.padelcoreservice.repository.TournamentKingOfCourtRepository;
+import com.padle.core.padelcoreservice.repository.TournamentRepository;
+import com.padle.core.padelcoreservice.service.americano.AmericanoService;
+import com.padle.core.padelcoreservice.service.calendar.EventSchedule;
 import com.padle.core.padelcoreservice.service.americano.TeamPlayoffService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -17,12 +23,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 @Service
@@ -37,6 +45,8 @@ public class TournamentSocialDraftService {
     private final TeamPlayoffService playoffService;
     private final TournamentKingOfCourtRepository kingRepository;
     private final KingOfCourtService kingService;
+    private final TournamentRepository tournamentRepository;
+    private final AmericanoService americanoService;
 
     public TournamentSocialDraft prepare(Owner owner, Long tournamentId) {
         if (owner == null) {
@@ -45,36 +55,65 @@ public class TournamentSocialDraftService {
         accessService.assertCanManageTournament(owner, tournamentId);
         var tournament = tournamentService.getTournamentDtoById(tournamentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        boolean pair = tournament.getTipo() == TournamentType.AMERICANO_TEAMS
-                && tournament.getModalidad() == Modalidad.DOBLES;
-        boolean king = tournament.getTipo() == TournamentType.KING_OF_COURT
-                && tournament.getModalidad() == Modalidad.INDIVIDUAL;
-        if (!pair && !king) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "UNSUPPORTED_FORMAT");
-        }
-        if (tournament.getEstado() == TournamentStatus.CANCELADO || tournament.getFechaInicio() == null
-                || !hasText(tournament.getCategoriaNivel()) || !hasText(tournament.getClubNombre())) {
+        if (tournament.getEstado() == TournamentStatus.CANCELADO || tournament.getEstado() == TournamentStatus.BORRADOR
+                || tournament.getFechaInicio() == null) {
             throw incomplete();
         }
-        return pair ? preparePair(tournament) : prepareKing(tournament);
+        return prepareRanked(tournament).orElseGet(() -> prepareGeneral(tournament));
     }
 
-    private TournamentSocialDraft preparePair(TournamentDto tournament) {
-        if (tournament.getEstado() != TournamentStatus.FINALIZADO) {
+    private Optional<TournamentSocialDraft> prepareRanked(TournamentDto tournament) {
+        if (tournament.getTipo() == TournamentType.KING_OF_COURT && tournament.getModalidad() == Modalidad.INDIVIDUAL) {
+            return prepareKing(tournament);
+        }
+        if (tournament.getTipo() == TournamentType.AMERICANO_TEAMS && tournament.getModalidad() == Modalidad.DOBLES) {
+            return preparePair(tournament);
+        }
+        if (tournament.getTipo() == TournamentType.AMERICANO && tournament.getModalidad() == Modalidad.INDIVIDUAL
+                && tournament.getEstado() == TournamentStatus.FINALIZADO) {
+            return prepareAmericano(tournament);
+        }
+        return Optional.empty();
+    }
+
+    private TournamentSocialDraft prepareGeneral(TournamentDto tournament) {
+        if (!hasEnded(tournament, Instant.now())) {
             throw incomplete();
+        }
+        return new TournamentSocialDraft(tournament.getId(), TournamentSocialDraft.Format.GENERAL,
+                tournament.getCategoriaNivel(), tournament.getFechaInicio(), tournament.getClubNombre(),
+                List.of(), List.of(), null, null, List.of(), null, null,
+                tournament.getNombre(), tournament.getTipo(), false);
+    }
+
+    static boolean hasEnded(TournamentDto tournament, Instant now) {
+        if (tournament.getEstado() == TournamentStatus.FINALIZADO) {
+            return true;
+        }
+        var zone = EventSchedule.zone(tournament.getTimeZone());
+        var duration = EventSchedule.duration(tournament);
+        var end = duration.isPresent() && tournament.getHoraInicio() != null
+                ? tournament.getFechaInicio().atTime(tournament.getHoraInicio()).atZone(zone).plus(duration.get())
+                : tournament.getFechaInicio().plusDays(1).atStartOfDay(zone);
+        return !now.isBefore(end.toInstant());
+    }
+
+    private Optional<TournamentSocialDraft> preparePair(TournamentDto tournament) {
+        if (tournament.getEstado() != TournamentStatus.FINALIZADO) {
+            return Optional.empty();
         }
         Long tournamentId = tournament.getId();
         List<AmericanoMatch> finals = playoffService.getPlayoffMatches(tournamentId).stream()
                 .filter(match -> match.getPlayoffStage() == PlayoffStage.FINAL)
                 .toList();
         if (finals.size() != 1 || !finals.get(0).isCompleted()) {
-            throw incomplete();
+            return Optional.empty();
         }
         var match = playoffService.toMatchDto(finals.get(0));
         Integer left = match.getTeam1Games();
         Integer right = match.getTeam2Games();
         if (left == null || right == null || left < 0 || right < 0 || left.equals(right)) {
-            throw incomplete();
+            return Optional.empty();
         }
         var names = Stream.of(match.getTeam1Player1Name(), match.getTeam1Player2Name(),
                         match.getTeam2Player1Name(), match.getTeam2Player2Name())
@@ -82,27 +121,30 @@ public class TournamentSocialDraftService {
                 .toList();
         if (names.stream().anyMatch(name -> !publishableName(name))
                 || names.stream().map(name -> name.toLowerCase(Locale.ROOT)).distinct().count() != 4) {
-            throw incomplete();
+            return Optional.empty();
         }
         boolean leftWins = left > right;
-        return new TournamentSocialDraft(
+        return Optional.of(new TournamentSocialDraft(
                 tournamentId, TournamentSocialDraft.Format.TEAM_PLAYOFF, tournament.getCategoriaNivel(),
                 tournament.getFechaInicio(), tournament.getClubNombre(),
                 leftWins ? names.subList(0, 2) : names.subList(2, 4),
                 leftWins ? names.subList(2, 4) : names.subList(0, 2),
                 Math.max(left, right), Math.min(left, right), List.of(),
-                "/tournaments/team-playoff/" + tournamentId, upcoming(tournament));
+                "/tournaments/team-playoff/" + tournamentId, upcoming(tournament), tournament.getNombre(), tournament.getTipo(), false));
     }
 
-    private TournamentSocialDraft prepareKing(TournamentDto tournament) {
+    private Optional<TournamentSocialDraft> prepareKing(TournamentDto tournament) {
         var king = kingRepository.findFirstByTournamentIdOrderByIsActiveDescIdDesc(tournament.getId())
                 .filter(run -> Boolean.TRUE.equals(run.getIsFinished()) && !Boolean.TRUE.equals(run.getIsActive()))
-                .orElseThrow(TournamentSocialDraftService::incomplete);
+                .orElse(null);
+        if (king == null) {
+            return Optional.empty();
+        }
         var played = kingService.getRanking(king.getId()).stream()
                 .filter(row -> row.getGamesPlayed() != null && row.getGamesPlayed() > 0)
                 .limit(3).toList();
         if (played.size() < 2) {
-            throw incomplete();
+            return Optional.empty();
         }
         var first = played.get(0);
         var second = played.get(1);
@@ -111,19 +153,60 @@ public class TournamentSocialDraftService {
                 || first.getTotalPoints() <= second.getTotalPoints()
                 || (played.size() == 3 && (played.get(2).getTotalPoints() == null
                         || second.getTotalPoints() <= played.get(2).getTotalPoints()))) {
-            throw incomplete();
+            return Optional.empty();
         }
         String firstName = normalizeName(first.getPlayerName());
         String secondName = normalizeName(second.getPlayerName());
         if (!publishableName(firstName) || !publishableName(secondName) || firstName.equalsIgnoreCase(secondName)) {
-            throw incomplete();
+            return Optional.empty();
         }
-        return new TournamentSocialDraft(tournament.getId(), TournamentSocialDraft.Format.KING_OF_COURT,
+        return Optional.of(new TournamentSocialDraft(tournament.getId(), TournamentSocialDraft.Format.KING_OF_COURT,
                 tournament.getCategoriaNivel(), tournament.getFechaInicio(), tournament.getClubNombre(),
                 List.of(), List.of(), null, null, List.of(
                         new TournamentSocialDraft.Place(1, firstName, first.getTotalPoints()),
                         new TournamentSocialDraft.Place(2, secondName, second.getTotalPoints())),
-                "/tournaments/king-of-court/" + king.getId(), upcoming(tournament));
+                "/tournaments/king-of-court/" + king.getId(), upcoming(tournament), tournament.getNombre(), tournament.getTipo(), false));
+    }
+
+    private Optional<TournamentSocialDraft> prepareAmericano(TournamentDto tournament) {
+        var order = tournamentRepository.findById(tournament.getId()).map(Tournament::getAmericanoFinalOrder);
+        if (order.isEmpty()) {
+            return Optional.empty();
+        }
+        var criteria = new RankingCriteria(order.get().sortBy(), order.get().ascending());
+        var ranking = americanoService.getRankingWithDetails(tournament.getId(), criteria);
+        if (ranking.getCompletedRounds() == 0 || !Objects.equals(ranking.getCompletedRounds(), ranking.getTotalRounds())) {
+            return Optional.empty();
+        }
+        var played = ranking.getRanking().stream().filter(row -> row.getMatchesPlayed() > 0).limit(3).toList();
+        if (played.size() < 2 || sameRank(played.get(0), played.get(1))
+                || (played.size() == 3 && sameRank(played.get(1), played.get(2)))) {
+            return Optional.empty();
+        }
+        boolean wins = "wins".equals(criteria.getSortBy());
+        var first = americanoPlace(1, played.get(0), wins);
+        var second = americanoPlace(2, played.get(1), wins);
+        if (!publishableName(first.name()) || !publishableName(second.name()) || first.name().equalsIgnoreCase(second.name())) {
+            return Optional.empty();
+        }
+        return Optional.of(new TournamentSocialDraft(tournament.getId(), TournamentSocialDraft.Format.AMERICANO,
+                tournament.getCategoriaNivel(), tournament.getFechaInicio(), tournament.getClubNombre(),
+                List.of(), List.of(), null, null, List.of(first, second),
+                "/tournaments/americano/" + tournament.getId(), upcoming(tournament), tournament.getNombre(),
+                tournament.getTipo(), wins));
+    }
+
+    private static boolean sameRank(AmericanoPlayerRankingDto left, AmericanoPlayerRankingDto right) {
+        return Objects.equals(left.getTotalScore(), right.getTotalScore())
+                && Objects.equals(left.getMatchesWon(), right.getMatchesWon())
+                && Objects.equals(left.getPointDifference(), right.getPointDifference())
+                && Objects.equals(left.getMatchesLost(), right.getMatchesLost());
+    }
+
+    private static TournamentSocialDraft.Place americanoPlace(int rank, AmericanoPlayerRankingDto row, boolean wins) {
+        var name = Stream.of(row.getPlayerName(), row.getPlayerLastName()).filter(Objects::nonNull)
+                .collect(java.util.stream.Collectors.joining(" "));
+        return new TournamentSocialDraft.Place(rank, normalizeName(name), wins ? row.getMatchesWon() : row.getTotalScore());
     }
 
     private TournamentSocialDraft.Upcoming upcoming(TournamentDto tournament) {

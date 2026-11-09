@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.model;
 
+import com.padle.core.padelcoreservice.model.enums.AmericanoFinalOrder;
 import com.padle.core.padelcoreservice.model.enums.GenderFormat;
 import com.padle.core.padelcoreservice.model.enums.Modalidad;
 import com.padle.core.padelcoreservice.model.enums.Nivel;
@@ -87,6 +88,10 @@ public class Tournament {
     @Enumerated(EnumType.STRING)
     @Builder.Default
     private TournamentStatus estado = TournamentStatus.REGISTRO_ABIERTO;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "americano_final_order")
+    private AmericanoFinalOrder americanoFinalOrder;
 
     @Column(name = "deadline_cancelacion")
     private LocalDateTime deadlineCancelacion;
