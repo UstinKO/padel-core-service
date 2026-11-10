@@ -159,6 +159,7 @@ public class SecurityConfig {
                                 "/tg-calendar",
                                 "/tg-posts",
                                 "/wa-info",
+                                "/wa-broadcast",
                                 "/threads",
                                 "/qr/reby/site",
                                 "/qr/reby/telegram",
