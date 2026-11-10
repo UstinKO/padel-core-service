@@ -3,6 +3,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
 import { AppLayout } from './components/AppLayout';
 import { ComponentsPage } from './pages/ComponentsPage';
+import { HomePage, CatalogPage } from './pages/DiscoveryPages';
 import { PreviewPage } from './pages/PreviewPage';
 
 const queryClient = new QueryClient({
@@ -18,7 +19,9 @@ const router = createBrowserRouter(
       path: '/',
       element: <AppLayout />,
       children: [
-        { index: true, element: <PreviewPage /> },
+        { index: true, element: <HomePage /> },
+        { path: 'torneos', element: <CatalogPage /> },
+        { path: 'foundation', element: <PreviewPage /> },
         { path: 'components', element: <ComponentsPage /> },
         { path: '*', element: <PreviewPage /> },
       ],

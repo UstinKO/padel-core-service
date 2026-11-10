@@ -23,7 +23,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('preview shell renders session and navigation', async ({ page }) => {
-  await page.goto('/preview/');
+  await page.goto('/preview/foundation');
 
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   await expect(page.getByText('Preview Admin')).toBeVisible();

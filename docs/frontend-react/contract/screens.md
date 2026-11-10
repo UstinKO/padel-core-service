@@ -1153,3 +1153,13 @@
 | `GET /tournaments/team-americano/{tournamentId}/ranking` | `tournaments/team-americano/ranking` | нет — F-01 |
 | `GET /tournaments/team-americano/matches/{matchId}/result` | `admin/americano/match-result` | #335 |
 | `GET /recuperar-password` | `error` | нет — F-02 |
+
+
+## Закрытый React-каталог
+
+| Экран | Preview | Публичный URL после отдельного акцепта | Данные |
+|---|---|---|---|
+| P-01 — главная | `/preview/` | `/` | `/api/public/home`, `/api/public/catalog`, `/api/public/clubs` |
+| P-04 — каталог | `/preview/torneos` | `/torneos` | `/api/public/catalog`, `/api/public/clubs` |
+
+Фильтры и страница — в URL. По умолчанию дата Буэнос-Айреса; единицы вместимости и доступность — серверные. Ссылка карточки пока ведёт в legacy `/torneo/{id}`. Состояния loading/error/retry/empty и фильтры проверяются браузером. Боевые URL не переключены.

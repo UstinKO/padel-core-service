@@ -589,3 +589,6 @@ Thymeleaf admin/qr-report, static/js/qr-report.js, static/css/qr-report.css.
 ### Публичный API UI v2
 
 `PublicDiscoveryController` / `PublicDiscoveryService`: `GET /api/public/home`, `/api/public/catalog`, `/api/public/clubs`, `/api/public/clubs/{id}`. Каталог использует `PublicCatalogSpecification`, пагинацию БД и пакетный маппинг `TournamentService`. Мобильный `/api/public/tournaments` сохранён. [Контракт](../docs/endpoints/public-schedule.md#публичные-данные-ui-v2).
+
+
+React UI v2: `/preview/` — главная, `/preview/torneos` — каталог с URL-фильтрами и серверной пагинацией. `frontend/src/api/discovery.ts` соответствует публичному API; `Catalogue` и `EventCard` отображают серверную вместимость. Служебный фундамент — `/preview/foundation`.
