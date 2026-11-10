@@ -1,7 +1,7 @@
 # LFPT-0427: Fix относительный URL в og:image — передать app.base-url в шаблоны страниц
 
 ## Статус
-
+done
 approved
 
 ## Источник
