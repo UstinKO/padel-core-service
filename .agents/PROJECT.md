@@ -333,6 +333,10 @@ docker compose up -d
 
 ## Architecture
 
+### Общая модель страниц
+
+`config/PageModelAdvice` добавляет `siteBaseUrl: String` из `app.base-url` без завершающих `/` в модели публичных страниц, кабинета игрока и админки. В Thymeleaf атрибут доступен как `${siteBaseUrl}`. Обработчики `@ResponseBody` и `@RestController` исключены; MVC-тесты проверяют сохранность адресов редиректов. Подробности — [архитектура, слой Controller](../docs/architecture.md#слой-controller).
+
 ### Two User Types
 
 Both implement `UserDetails` and live in separate tables:
