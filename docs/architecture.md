@@ -146,6 +146,8 @@ com.padle.core.padelcoreservice
 
 **Правило:** контроллеры не содержат бизнес-логики — только маппинг запрос → сервис → ответ.
 
+`config/PageModelAdvice` через `@ControllerAdvice` и `@ModelAttribute` добавляет общий атрибут `siteBaseUrl: String` в модели публичных страниц, кабинета игрока и админки. В Thymeleaf он доступен как `${siteBaseUrl}`. Значение берётся из `app.base-url` с удалением всех завершающих `/`; схема, порт и префикс пути сохраняются. Заголовки запроса на значение не влияют. Обработчики с `@ResponseBody` на методе или классе, включая `@RestController` и составные аннотации, исключаются. Письма используют отдельный Thymeleaf context. MVC-тесты подтверждают сохранение `Location` с существующими query-параметрами для `redirect:` и `RedirectView` без явного `RedirectAttributes`; глобальные настройки редиректов не менялись.
+
 ### Слой Service
 
 Все сервисы по умолчанию `@Transactional(readOnly = true)` на уровне класса. Методы записи явно помечены `@Transactional`.
@@ -209,7 +211,7 @@ Lombok отрабатывает до MapStruct — обеспечивается 
 | `SITE_KEY` / `SECRET_KEY` | _(из yml)_ | reCAPTCHA v3 |
 | `LOKI_ENABLED` | `false` (dev) / `true` (prod) | Включить отправку логов в Loki |
 | `LOKI_URL` | `http://loki:3100/...` | Адрес Loki |
-| `APP_BASE_URL` | `http://localhost:5173` | Базовый URL для всех пользовательских ссылок на сайт в письмах (`EmailService`/`TournamentService`/`DoubleTournamentRegistrationService` и др. — единая точка, в шаблонах `templates/email/**` домен не хардкодится, LFPT-0618). На проде должен быть публичным доменом сайта (`https://1-padel.com`), а не серверным доменом из раздела «Сервер» ниже — это два разных адреса. |
+| `APP_BASE_URL` | `http://localhost:8080` | Свойство `app.base-url`: источник `siteBaseUrl` для моделей страниц и базовый URL для всех пользовательских ссылок на сайт в письмах (`EmailService`/`TournamentService`/`DoubleTournamentRegistrationService` и др. — единая точка, в шаблонах `templates/email/**` домен не хардкодится, LFPT-0618). На проде должен быть публичным доменом сайта (`https://1-padel.com`), а не серверным доменом из раздела «Сервер» ниже — это два разных адреса. |
 
 ### Локальный запуск
 
