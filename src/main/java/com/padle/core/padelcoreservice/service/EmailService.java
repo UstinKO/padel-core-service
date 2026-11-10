@@ -32,8 +32,15 @@ public class EmailService {
     @Value("${app.email.from:noreply@padelcore.com}")
     private String fromEmail;
 
-    @Value("${app.base-url}")
     private String baseUrl;
+
+    @Value("${app.email.support-address:soporte@1-padel.com}")
+    private String supportAddress;
+
+    @Value("${app.base-url}")
+    void setBaseUrl(String baseUrl) {
+        this.baseUrl = baseUrl.replaceFirst("/+$", "");
+    }
 
     @Value("${app.email.daily-limit:300}")
     private int dailyEmailLimit;  // ← ДОБАВЛЕНО
@@ -70,12 +77,11 @@ public class EmailService {
         try {
             log.info("📧 Отправка письма подтверждения на: {}", to);
 
-            Context context = new Context(locale);
+            Context context = createEmailContext(locale);
             context.setVariable("nombre", nombre);
             context.setVariable("confirmUrl",
                     String.format("%s/players/confirmar-email?codigo=%s", baseUrl, codigo));
             context.setVariable("year", java.time.Year.now().getValue());
-            setLegalFooterLinks(context);
 
             String htmlContent = templateEngine.process("email/confirmacion", context);
 
@@ -126,7 +132,7 @@ public class EmailService {
         try {
             log.info("📧 Enviando invitación a nuevo compañero a: {}", to);
 
-            Context context = new Context(locale);
+            Context context = createEmailContext(locale);
             context.setVariable("partnerName", partnerName);
             context.setVariable("mainPlayerName", mainPlayerName);
             context.setVariable("tournamentName", tournamentName);
@@ -135,7 +141,6 @@ public class EmailService {
             context.setVariable("clubName", clubName);
             context.setVariable("completionUrl", completionUrl);
             context.setVariable("expiryHours", expiryHours);
-            context.setVariable("baseUrl", baseUrl);
             context.setVariable("year", java.time.Year.now().getValue());
 
             String htmlContent = templateEngine.process("email/new-partner-invitation", context);
@@ -169,11 +174,10 @@ public class EmailService {
         try {
             log.info("📧 Отправка приветственного письма на: {}", to);
 
-            Context context = new Context(locale);
+            Context context = createEmailContext(locale);
             context.setVariable("nombre", nombre);
             context.setVariable("dashboardUrl", baseUrl + "/players/dashboard");
             context.setVariable("year", java.time.Year.now().getValue());
-            setLegalFooterLinks(context);
 
             String htmlContent = templateEngine.process("email/bienvenida", context);
 
@@ -215,7 +219,7 @@ public class EmailService {
         try {
             log.info("📧 Отправка уведомления об авто-подтверждении из листа ожидания на: {}", to);
 
-            Context context = new Context(locale);
+            Context context = createEmailContext(locale);
             context.setVariable("playerName", playerName);
             context.setVariable("tournamentName", tournamentName);
             context.setVariable("tournamentDate", tournamentDate);
@@ -223,7 +227,6 @@ public class EmailService {
             context.setVariable("clubName", clubName);
             context.setVariable("tournamentUrl", tournamentUrl);
             context.setVariable("year", java.time.Year.now().getValue());
-            setLegalFooterLinks(context);
 
             String htmlContent = templateEngine.process("email/vacancy-invitation", context);
 
@@ -248,7 +251,7 @@ public class EmailService {
             @MetricTag("recipient") String to,
             @MetricTag("playerName") String playerName,
             String tournamentName,
-            String tournamentUrl,
+            Long tournamentId,
             Locale locale) {
 
         emailMetricsService.recordEmailAttempt("NO_SPOTS_LEFT");
@@ -262,12 +265,11 @@ public class EmailService {
         try {
             log.info("📧 Отправка письма о занятых местах на: {}", to);
 
-            Context context = new Context(locale);
+            Context context = createEmailContext(locale);
             context.setVariable("playerName", playerName);
             context.setVariable("tournamentName", tournamentName);
-            context.setVariable("waitlistUrl", tournamentUrl);
+            context.setVariable("waitlistUrl", baseUrl + "/torneo/" + tournamentId);
             context.setVariable("year", java.time.Year.now().getValue());
-            setLegalFooterLinks(context);
 
             String htmlContent = templateEngine.process("email/no-spots-left", context);
 
@@ -309,14 +311,13 @@ public class EmailService {
         try {
             log.info("📧 Отправка подтверждения регистрации на: {}", to);
 
-            Context context = new Context(locale);
+            Context context = createEmailContext(locale);
             context.setVariable("playerName", playerName);
             context.setVariable("tournamentName", tournamentName);
             context.setVariable("tournamentDate", tournamentDate);
             context.setVariable("tournamentTime", tournamentTime);
             context.setVariable("clubName", clubName);
             context.setVariable("cancellationDeadline", cancellationDeadline);
-            context.setVariable("baseUrl", baseUrl);
             context.setVariable("year", java.time.Year.now().getValue());
 
             String htmlContent = templateEngine.process("email/tournament-confirmation", context);
@@ -355,10 +356,9 @@ public class EmailService {
         try {
             log.info("📧 Enviando email de recuperación de contraseña a: {}", to);
 
-            Context context = new Context(locale);
+            Context context = createEmailContext(locale);
             context.setVariable("nombre", nombre);
             context.setVariable("resetUrl", resetUrl);
-            context.setVariable("baseUrl", baseUrl);
             context.setVariable("year", java.time.Year.now().getValue());
 
             String htmlContent = templateEngine.process("email/recuperar-password", context);
@@ -401,14 +401,13 @@ public class EmailService {
         try {
             log.info("📧 Отправка уведомления о добавлении в лист ожидания на: {}", to);
 
-            Context context = new Context(locale);
+            Context context = createEmailContext(locale);
             context.setVariable("playerName", playerName);
             context.setVariable("tournamentName", tournamentName);
             context.setVariable("tournamentDate", tournamentDate);
             context.setVariable("tournamentTime", tournamentTime);
             context.setVariable("clubName", clubName);
             context.setVariable("waitlistPosition", waitlistPosition);
-            context.setVariable("baseUrl", baseUrl);
             context.setVariable("year", java.time.Year.now().getValue());
 
             String htmlContent = templateEngine.process("email/waitlist-notification", context);
@@ -452,7 +451,7 @@ public class EmailService {
         try {
             log.info("📧 Enviando confirmación de inscripción a torneo a: {}", to);
 
-            Context context = new Context(locale);
+            Context context = createEmailContext(locale);
             context.setVariable("playerName", playerName);
             context.setVariable("tournamentName", tournamentName);
             context.setVariable("tournamentDate", tournamentDate);
@@ -460,7 +459,6 @@ public class EmailService {
             context.setVariable("clubName", clubName);
             context.setVariable("cancellationDeadline", cancellationDeadline);
             context.setVariable("teamAmericano", tournamentType == TournamentType.AMERICANO_TEAMS);
-            context.setVariable("baseUrl", baseUrl);
             context.setVariable("year", java.time.Year.now().getValue());
 
             String htmlContent = templateEngine.process("email/tournament-confirmation", context);
@@ -479,7 +477,7 @@ public class EmailService {
     @Async
     public void sendPairTermsEmail(String to, String playerName, String clubName, PairTermsService.Offer offer,
                                    boolean waitlist, Locale locale) {
-        Context context = new Context(locale);
+        Context context = createEmailContext(locale);
         context.setVariable("playerName", playerName);
         context.setVariable("tournamentName", offer.eventName());
         context.setVariable("tournamentDate", offer.startsAt().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
@@ -487,7 +485,6 @@ public class EmailService {
         context.setVariable("clubName", clubName);
         context.setVariable("pairTerms", offer);
         context.setVariable("pairWaitlist", waitlist);
-        context.setVariable("baseUrl", baseUrl);
         context.setVariable("year", java.time.Year.now().getValue());
         sendPairPolicyEmail(to, "PAIR_TERMS", "email.pair_terms.subject", offer.eventName(), "email/pair-terms", context);
     }
@@ -496,7 +493,7 @@ public class EmailService {
     public void sendPairCancellationEmail(String to, String playerName, String tournamentName,
                                           String tournamentDate, String tournamentTime, String clubName,
                                           PairTermsService.Cancellation quote, Locale locale) {
-        Context context = new Context(locale);
+        Context context = createEmailContext(locale);
         context.setVariable("playerName", playerName);
         context.setVariable("tournamentName", tournamentName);
         context.setVariable("tournamentDate", tournamentDate);
@@ -510,7 +507,7 @@ public class EmailService {
 
     @Async
     public void sendPartnerReplacedEmail(String to, PairReplacementNoticeService.Notice notice, Locale locale) {
-        Context context = new Context(locale);
+        Context context = createEmailContext(locale);
         context.setVariable("notice", notice);
         sendPairPolicyEmail(to, "PAIR_PARTNER_REPLACED", "email.partner_replaced.subject", notice.tournamentName(),
                 "email/partner-replaced", context);
@@ -555,7 +552,7 @@ public class EmailService {
             return;
         }
         try {
-            Context context = new Context();
+            Context context = createEmailContext(Locale.getDefault());
             context.setVariable("playerName", playerName);
             context.setVariable("playerEmail", playerEmail);
             context.setVariable("playerPhone", playerPhone);
@@ -597,7 +594,7 @@ public class EmailService {
             return;
         }
         try {
-            Context context = new Context(locale);
+            Context context = createEmailContext(locale);
             context.setVariable("playerName", playerName);
             context.setVariable("tournamentName", tournamentName);
             context.setVariable("tournamentDate", tournamentDate);
@@ -636,7 +633,7 @@ public class EmailService {
             return;
         }
         try {
-            Context context = new Context(locale);
+            Context context = createEmailContext(locale);
             context.setVariable("playerName", playerName);
             context.setVariable("tournamentName", tournamentName);
             context.setVariable("tournamentDate", tournamentDate);
@@ -678,7 +675,7 @@ public class EmailService {
             return;
         }
         try {
-            Context context = new Context(locale);
+            Context context = createEmailContext(locale);
             context.setVariable("playerName", playerName);
             context.setVariable("tournamentName", tournamentName);
             context.setVariable("tournamentDate", tournamentDate);
@@ -720,7 +717,7 @@ public class EmailService {
             return;
         }
         try {
-            Context context = new Context(locale);
+            Context context = createEmailContext(locale);
             context.setVariable("playerName", playerName);
             context.setVariable("tournamentName", tournamentName);
             context.setVariable("tournamentDate", tournamentDate);
@@ -762,7 +759,7 @@ public class EmailService {
             return;
         }
         try {
-            Context context = new Context(locale);
+            Context context = createEmailContext(locale);
             context.setVariable("playerName", playerName);
             context.setVariable("tournamentName", tournamentName);
             context.setVariable("tournamentDate", tournamentDate);
@@ -804,7 +801,7 @@ public class EmailService {
             return;
         }
         try {
-            Context context = new Context(locale);
+            Context context = createEmailContext(locale);
             context.setVariable("playerName", playerName);
             context.setVariable("tournamentName", tournamentName);
             context.setVariable("timeStr", timeStr);
@@ -843,7 +840,7 @@ public class EmailService {
             return;
         }
         try {
-            Context context = new Context(locale);
+            Context context = createEmailContext(locale);
             context.setVariable("targetPlayerName", targetPlayerName);
             context.setVariable("proposerName", proposerName);
             context.setVariable("tournamentName", tournamentName);
@@ -888,7 +885,7 @@ public class EmailService {
             return;
         }
         try {
-            Context context = new Context(locale);
+            Context context = createEmailContext(locale);
             context.setVariable("playerName", playerName);
             context.setVariable("clubName", clubName);
             context.setVariable("direccion", direccion);
@@ -934,7 +931,7 @@ public class EmailService {
             return;
         }
         try {
-            Context context = new Context(locale);
+            Context context = createEmailContext(locale);
             context.setVariable("playerName", playerName);
             context.setVariable("clubName", clubName);
             context.setVariable("direccion", direccion);
@@ -978,7 +975,7 @@ public class EmailService {
             return;
         }
         try {
-            Context context = new Context(locale);
+            Context context = createEmailContext(locale);
             context.setVariable("playerName", playerName);
             context.setVariable("clubName", clubName);
             context.setVariable("direccion", direccion);
@@ -998,19 +995,13 @@ public class EmailService {
         }
     }
 
-    /**
-     * Единая точка формирования ссылок общего футера письма (условия, конфиденциальность,
-     * контакт, отписка) из {@code app.base-url} — чтобы при смене домена не править каждый
-     * шаблон вручную. Страниц самостоятельной отписки и формы контакта в системе нет —
-     * обе ссылки ведут на почту поддержки, как и в остальных шаблонах (recuperar-password,
-     * tournament-confirmation).
-     */
-    private void setLegalFooterLinks(Context context) {
+    private Context createEmailContext(Locale locale) {
+        Context context = new Context(locale);
         context.setVariable("baseUrl", baseUrl);
         context.setVariable("terminosUrl", baseUrl + "/terminos");
         context.setVariable("privacidadUrl", baseUrl + "/privacidad");
-        context.setVariable("contactoUrl", "mailto:soporte@1-padel.com");
-        context.setVariable("unsubscribeUrl", "mailto:soporte@1-padel.com");
+        context.setVariable("contactoUrl", "mailto:" + supportAddress);
+        return context;
     }
 
     /**

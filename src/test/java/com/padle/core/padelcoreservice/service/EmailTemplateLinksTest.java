@@ -16,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Ссылки на страницы сайта в email-письмах должны формироваться из {@code app.base-url}
- * (см. {@code EmailService.setLegalFooterLinks} и переменные вида {@code tournamentUrl}/{@code eventUrl}),
+ * (см. {@code EmailService.createEmailContext} и переменные вида {@code tournamentUrl}/{@code eventUrl}),
  * а не хардкодиться прямо в шаблоне — иначе при смене домена нужно вручную править каждое письмо.
  * Чистый unit-тест без Spring-контекста — читает .html-файлы с диска.
  */
