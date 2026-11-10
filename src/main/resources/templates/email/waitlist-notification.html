@@ -180,7 +180,7 @@
         <div th:text="#{email.footer.rights(${year})}">© 2026 1-Padel. Todos los derechos reservados.</div>
         <div style="margin-top: 10px;">
             <a th:href="${baseUrl}">1-padel.com</a> |
-            <a href="mailto:soporte@1-padel.com">soporte@1-padel.com</a>
+            <a th:href="${contactoUrl}" th:text="#{email.footer.contact}">Contacto</a>
         </div>
     </div>
 </div>

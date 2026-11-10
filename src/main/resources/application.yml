@@ -171,6 +171,7 @@ app:
   email:
     from: ${EMAIL_FROM:info@epadel.org}
     sender-name: ${EMAIL_SENDER_NAME:E-Padel}
+    support-address: ${EMAIL_SUPPORT_ADDRESS:soporte@1-padel.com}
   security:
     registration:
       max-attempts-per-hour: 10  # По умолчанию выше для dev

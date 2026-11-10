@@ -113,15 +113,6 @@
         .footer-links a:hover {
             text-decoration: underline;
         }
-        .unsubscribe {
-            font-size: 12px;
-            color: #999;
-            margin-top: 15px;
-        }
-        .unsubscribe a {
-            color: #999;
-            text-decoration: underline;
-        }
     </style>
 </head>
 <body>
@@ -186,12 +177,6 @@
             <a th:href="${terminosUrl}" th:text="#{email.footer.terms}">Términos</a>
             <a th:href="${privacidadUrl}" th:text="#{email.footer.privacy}">Privacidad</a>
             <a th:href="${contactoUrl}" th:text="#{email.footer.contact}">Contacto</a>
-        </div>
-
-        <!-- Desuscripción -->
-        <div class="unsubscribe">
-            <span th:text="#{email.footer.unsubscribe.text}">¿No quieres recibir más correos?</span>
-            <a th:href="${unsubscribeUrl}" th:text="#{email.footer.unsubscribe.link}">Cancela tu suscripción</a>
         </div>
     </div>
 </div>

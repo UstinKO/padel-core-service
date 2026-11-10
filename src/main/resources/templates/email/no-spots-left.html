@@ -125,32 +125,6 @@
             background: #FF6B35;
             color: white;
         }
-        .alternative-tournaments {
-            margin: 30px 0;
-        }
-        .tournament-card {
-            background: #F8F9FA;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .tournament-card-info h4 {
-            margin: 0 0 5px;
-            color: #2D2D2D;
-        }
-        .tournament-card-info p {
-            margin: 0;
-            color: #6C6C6E;
-            font-size: 13px;
-        }
-        .tournament-card-link {
-            color: #FF6B35;
-            text-decoration: none;
-            font-weight: 600;
-        }
         .footer {
             background: #F8F9FA;
             padding: 30px;
@@ -180,16 +154,6 @@
         .footer-links a:hover {
             text-decoration: underline;
         }
-        .unsubscribe {
-            font-size: 12px;
-            color: #999;
-            margin-top: 15px;
-        }
-        .unsubscribe a {
-            color: #999;
-            text-decoration: underline;
-        }
-
         /* Responsive */
         @media (max-width: 480px) {
             .container {
@@ -201,11 +165,6 @@
             .button {
                 display: block;
                 margin: 10px 0;
-            }
-            .tournament-card {
-                flex-direction: column;
-                text-align: center;
-                gap: 10px;
             }
         }
     </style>
@@ -253,21 +212,6 @@
             <span th:text="#{email.no_spots.encouragement}">¡Pero no te desanimes! Haremos todo lo posible para aumentar el número de plazas.</span>
         </p>
 
-        <!-- Torneos alternativos -->
-        <div class="alternative-tournaments" th:if="${alternativeTournaments != null and !alternativeTournaments.isEmpty()}">
-            <h3 style="color: #7B2CBF; margin-bottom: 15px;" th:text="#{email.no_spots.alternatives_title}">🎾 Otros torneos que te pueden interesar</h3>
-
-            <div th:each="tournament : ${alternativeTournaments}" class="tournament-card">
-                <div class="tournament-card-info">
-                    <h4 th:text="${tournament.nombre}">Torneo Alternativo</h4>
-                    <p th:text="${tournament.fecha} + ' - ' + ${tournament.nivel}">15/03/2026 - C7 Avanzado</p>
-                </div>
-                <a th:href="${tournament.url}" class="tournament-card-link">
-                    Ver detalles →
-                </a>
-            </div>
-        </div>
-
         <!-- Botón para ver todos los torneos -->
         <div style="text-align: center; margin: 30px 0 20px;">
             <a th:href="${baseUrl + '/torneos'}" class="button">
@@ -300,12 +244,6 @@
             <a th:href="${terminosUrl}" th:text="#{email.footer.terms}">Términos</a>
             <a th:href="${privacidadUrl}" th:text="#{email.footer.privacy}">Privacidad</a>
             <a th:href="${contactoUrl}" th:text="#{email.footer.contact}">Contacto</a>
-        </div>
-
-        <!-- Desuscripción -->
-        <div class="unsubscribe">
-            <span th:text="#{email.footer.unsubscribe.text}">¿No quieres recibir más correos?</span>
-            <a th:href="${unsubscribeUrl}" th:text="#{email.footer.unsubscribe.link}">Cancela tu suscripción</a>
         </div>
     </div>
 </div>

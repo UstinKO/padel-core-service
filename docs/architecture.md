@@ -203,6 +203,7 @@ Lombok отрабатывает до MapStruct — обеспечивается 
 | `JWT_REFRESH_EXPIRATION` | `604800000` | TTL refresh token (мс) |
 | `MAIL_USERNAME` | _(из yml)_ | SMTP логин Brevo |
 | `MAIL_PASSWORD` | _(из yml)_ | SMTP пароль |
+| EMAIL_SUPPORT_ADDRESS | soporte@1-padel.com | Адрес для ссылки Contacto в письмах |
 | `GOOGLE_CLIENT_ID` | _(из yml)_ | OAuth2 Google |
 | `GOOGLE_CLIENT_SECRET` | _(из yml)_ | OAuth2 Google |
 | `SITE_KEY` / `SECRET_KEY` | _(из yml)_ | reCAPTCHA v3 |
