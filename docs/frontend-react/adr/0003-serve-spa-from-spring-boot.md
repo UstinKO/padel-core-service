@@ -1,8 +1,12 @@
 # ADR-0003. SPA собирается внутрь jar и отдаётся Spring Boot с того же домена и тех же URL
 
-- **Статус:** Предложено; п. 2 — префикс статики `/web/` вместо `/app/` (занят 1Padel.App), см. [ADR-0013](0013-redesign-and-react-together.md)
+- **Статус:** Заменено [ADR-0013](0013-redesign-and-react-together.md) и [ADR-0014](0014-spa-delivery-routes.md)
 - **Дата:** 2026-09-28
 - **Связано:** [0002](0002-frontend-folder-not-maven-module.md), [0005](0005-auth-session-same-origin.md), [0007](0007-incremental-migration.md)
+
+> Этот ADR сохранён как история первоначального решения. Путь `/app/**` теперь принадлежит
+> Expo-клиенту 1Padel.App; решение о едином переходе и `/web/` принято в ADR-0013,
+> действующий технический контракт доставки и маршрутизации описан в ADR-0014.
 
 ## Контекст
 

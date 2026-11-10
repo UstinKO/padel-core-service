@@ -1,6 +1,8 @@
 # План перехода на React — по фазам
 
-> **Статус:** v2 (2026-10-26) — перестроен под [ADR-0013](adr/0013-redesign-and-react-together.md): новый дизайн и React одним ходом, через демо и акцепт заказчика. v1 — 2026-09-28. Решения, на которых стоит план, — в [ADR](adr/README.md); чек-листы экранов — в [контракте](contract/README.md).
+> **Статус:** v2 (2026-10-26), Phase 0 в работе с 2026-11-05. План перестроен под
+> [ADR-0013](adr/0013-redesign-and-react-together.md), контракт доставки принят в
+> [ADR-0014](adr/0014-spa-delivery-routes.md); чек-листы экранов — в [контракте](contract/README.md).
 > **Ресурсы:** один разработчик + Claude Code и SDD-конвейер `/develop-feature`. Дедлайнов нет, турниры — каждую неделю.
 > **Оценки** — S / M / L / XL (как в `docs/microservices-migration-plan.md`), не в днях. Риск — отдельно.
 
@@ -62,8 +64,9 @@
 - [ ] `Dockerfile`: builder копирует `frontend/`; кэш npm.
 - [ ] `pr-check.yml`: сборка фронта, линт, тесты; кэш `~/.npm`.
 - [ ] `deploy.yml`: health-check проверяет, что `/web/index.html` отдаётся.
-- [ ] `SpaRoutesConfig` + `app.spa.routes` (пустой список) + `/web/**` с правильными `Cache-Control`.
-- [ ] `/preview/**` → SPA, доступ только `SUPER_ADMIN` (+ демо-аккаунт заказчика, если нужен); `noindex`.
+- [x] Backend: типизированный `app.spa.routes` с пустым default, forward только явно
+  включённых `GET|HEAD`, закрытый `/preview/**`, `/web/**` с правильными `Cache-Control`.
+- [x] `/app/**` остаётся независимой Expo web-сборкой; React-маршрутизация её не перехватывает.
 - [ ] Серверная подстановка meta/OG (ADR-0008) — до первого публичного экрана.
 - [ ] `app.frontend-url` в конфиге; письма/Telegram/OAuth строят ссылки на страницы от него.
 - [ ] Облачная среда конвейера собирает фронт (проверить Node) — иначе `/develop-feature` не сможет делать экраны.
@@ -71,8 +74,10 @@
 **API-основа** (ADR-0004, 0005, 0011)
 - [ ] `springdoc-openapi`, Swagger UI только для SUPER_ADMIN; генерация TS-типов + проверка расхождений в CI.
 - [ ] `401` JSON для `/api/**` (F-08); `RateLimitFilter` — `429` для `/api/**` (F-10).
-- [ ] `@RestControllerAdvice` с `ProblemDetail` + каталог кодов ошибок.
-- [ ] `GET /api/auth/session`, `GET /api/public/config`, `GET /api/admin/reference-data`.
+- [x] Ограниченный `ProblemDetail` + стабильный `code` для нового session API; массовая миграция
+  legacy API остаётся поэкранной.
+- [x] `GET /api/auth/session` для anonymous, Player и Owner; `no-store`, без JWT и CSRF в JSON.
+- [ ] `GET /api/public/config`, `GET /api/admin/reference-data`.
 - [ ] Решить F-09 (роль `OWNER`) — привести права к существующим ролям.
 
 **Каркас SPA** (ADR-0006, 0009, 0010, 0012)
@@ -87,7 +92,9 @@
 - [ ] Правила фронта в `.agents/CODE_REVIEW.md`; обновить `.agents/roles/developer.md`, `tester.md`; шаблон фиче-спеки — раздел «экран из contract/screens.md».
 - [ ] Обновить `.agents/PROJECT.md` (стек, команды, где фронт) и исправить F-11.
 
-**Готово, когда:** прод работает как раньше; `mvn package` даёт jar с `/app/`; скрытый служебный маршрут (например `/admin/_spa-health` для SUPER_ADMIN) рендерит SPA в `<AdminLayout>` с данными из `/api/auth/session`; CI проверяет типы API и словари.
+**Готово, когда:** прод работает как раньше; `mvn package` даёт jar с `/web/`; `/preview/**`
+только для SUPER_ADMIN рендерит SPA с данными из `/api/auth/session`; production allowlist остаётся
+пустым до отдельного переключения экрана; CI проверяет типы API и словари.
 
 **Откат:** убрать плагин из `pom.xml` — бэкенд не зависит от фронта.
 

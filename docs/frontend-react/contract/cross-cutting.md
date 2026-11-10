@@ -17,14 +17,18 @@
 | Logout | `.logout()` | `POST /logout` (с CSRF) → `302 /`, чистит `JSESSIONID` |
 | Уже вошёл и открыл `/login` | `HomeController#loginPage` | `302` в свой кабинет |
 | Игрок/админ не туда | `PlayerDashboardController` | админа с `/players/dashboard` редиректит в `/admin` |
-| Нет прав | `CustomAccessDeniedHandler` | `/api/**` → `403 {success:false,message}`; `GET /admin/tournaments/{id}` → `302 /torneo/{id}`; остальное → `302 /error/403` |
+| Нет прав | `CustomAccessDeniedHandler` | `/api/**` и запросы с `Accept: application/json` или `application/problem+json` → `403 {success:false,message}`; `GET /admin/tournaments/{id}` → `302 /torneo/{id}`; остальное → `302 /error/403` |
 | Не вошёл | дефолтный entry point | **везде**, включая `/api/**` → `302 /login` (F-08) |
 | Клубная изоляция | LFPT-376: `CLUB_ADMIN` видит только свой `clubId` | реализована в view-контроллерах админки; в REST-контроллерах — не везде (см. [api.md §3](api.md#3-расхождения-в-правах-доступа-проверить-до-перевода-экрана)) |
 
 ### 1.2. Что должно быть в React
 
 - Тот же `JSESSIONID` + remember-me, same-origin; никаких токенов в `localStorage` (ADR-0005). JWT — не для веба.
-- При старте приложение делает `GET /api/auth/session` и строит меню/гарды от него. Роли в SPA — **только для UI** (что показать); реальная проверка — всегда на сервере.
+- При старте приложение делает `GET /api/auth/session` и строит меню/гарды от него. Endpoint
+  всегда отвечает `200`, включая anonymous, и отдаёт типизированные поля `authenticated`,
+  `userType`, `id`, `fullName`, `email`, `roles`, `clubId`, `hasValidContact`, `preferredLocale`.
+  Ответ имеет `Cache-Control: no-store`; JWT, cookies, CSRF token, пароль, телефон и Telegram в JSON
+  не входят. Роли в SPA — **только для UI**; реальная проверка — всегда на сервере.
 - Логин: `POST /login` c `Accept: application/json` → `200 {session}` | `401 {code: BAD_CREDENTIALS|NOT_CONFIRMED}` | `429`. После успеха — переход по роли (админ → `/admin`, игрок → `/players/dashboard`) или на `?redirect=` (если пришёл с защищённой страницы).
 - Google: кнопка — обычная ссылка `/oauth2/authorization/google` (полный переход страницы, не XHR). Success handler редиректит на `app.frontend-url + /players/dashboard` (сейчас — относительный путь, same-origin работает и так).
 - Любой ответ API `401` → глобально: сбросить кэш сессии, увести на `/login?redirect=<текущий путь>`. `403` → экран «нет доступа».
@@ -32,9 +36,19 @@
 
 ## 2. CSRF
 
-- Сейчас: cookie `XSRF-TOKEN` (не `HttpOnly`) выдаётся на **каждом** ответе (`csrfCookieFilter`); `static/js/csrf.js` подменяет `window.fetch` и добавляет `X-XSRF-TOKEN` для мутирующих запросов; формы Thymeleaf кладут `_csrf` скрытым полем.
+- Сейчас: cookie `XSRF-TOKEN` (не `HttpOnly`) выдаётся/обновляется при чтении токена
+  `csrfCookieFilter`; `GET /api/auth/session` гарантированно инициирует это чтение.
+  `static/js/csrf.js` подменяет `window.fetch` и добавляет `X-XSRF-TOKEN` для мутирующих запросов;
+  формы Thymeleaf кладут `_csrf` скрытым полем.
 - В React: HTTP-клиент (один на всё приложение) читает cookie и ставит `X-XSRF-TOKEN` на `POST/PUT/PATCH/DELETE`. Серверная часть не меняется. **Важно:** `POST /login` и `POST /logout` — тоже под CSRF.
-- `/ws/**` исключён из CSRF (#284) — остаётся.
+- Bearer-запросы, `/api/auth/login`, `/api/auth/refresh` и `/ws/**` исключены из CSRF.
+  Остальные cookie-сессионные мутации, включая `POST /logout`, требуют пару cookie/header.
+  При ошибке CSRF SPA передаёт JSON `Accept` и получает фактический `403` без redirect;
+  legacy browser flow сохраняет `302 /error/403`.
+
+Новые SPA API возвращают ошибки как `application/problem+json` с обязательными
+`type`, `title`, `status`, `detail`, `instance` и стабильным `code`. Legacy API сохраняют текущие
+ответы до миграции соответствующего экрана.
 
 ## 3. Локализация
 

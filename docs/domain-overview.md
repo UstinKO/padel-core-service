@@ -104,13 +104,14 @@
 | `POST` | `/players/api/registro` | JSON | — | То же, но REST API без reCAPTCHA (для внешних клиентов / тестов). |
 | `GET` | `/players/api/confirmar-email` | JSON | — | Подтверждение email по токену (`?codigo=...`). Активирует аккаунт. |
 
-#### Auth API (JWT)
+#### Auth API (JWT и web-сессия)
 
 | Метод | URL | Тип | Auth | Описание |
 |-------|-----|-----|------|----------|
-| `POST` | `/api/auth/login` | JSON | — | Аутентификация игрока по email/password. Возвращает `accessToken` (24ч) и `refreshToken` (7д), данные профиля. |
+| `POST` | `/api/auth/login` | JSON | — | JWT-аутентификация Player или Owner по email/password. Возвращает `accessToken` (24ч) и `refreshToken` (7д), данные профиля. |
 | `POST` | `/api/auth/refresh` | JSON | — | Обновление access-токена по refresh-токену. Выдаёт новую пару токенов. |
-| `GET` | `/api/auth/me` | JSON | JWT | Возвращает данные текущего авторизованного игрока из SecurityContext. |
+| `GET` | `/api/auth/me` | JSON | JWT | Возвращает `PlayerResponseDto` или `OwnerDto` текущего principal. |
+| `GET` | `/api/auth/session` | JSON | необязательно | Состояние same-origin web-сессии/remember-me для React: единый DTO anonymous/Player/Owner, `no-store`, без JWT, cookies, CSRF token и контактных данных. |
 
 #### Профиль и пароль (ROLE_PLAYER)
 
@@ -691,6 +692,9 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 | `GET` | `/wa-info` | — | Публичный 302 на главную со списком турниров: `whatsapp / message`, кампания `whatsapp_group`. |
 | `GET` | `/threads` | — | Публичный 302 на главную со списком турниров: `threads / social`, кампания `threads_profile`. |
 | `GET` | `/app`, `/app/` | — | Веб-версия клиента 1Padel.App: `/app` → `302 /app/`, `/app/` → `forward:/app/index.html` (статика `static/app/`), анонимно (`MobileAppViewController`, LFPT-0643). |
+| `GET`, `HEAD` | `/web/**` | — | Статика React UI v2 из `static/web/`: shell `no-cache`, versioned assets `immutable`; зона независима от Expo `/app/**`. |
+| `GET`, `HEAD` | `/preview`, `/preview/**` | SUPER_ADMIN | Закрытый preview React: server-side проверка роли, затем forward на `/web/index.html`. |
+| `GET`, `HEAD` | patterns из `app.spa.routes` | как у исходного URL | Точечное переключение production-страницы на `/web/index.html`; список пуст по умолчанию, reserved namespaces и catch-all запрещены. |
 | `GET` | `/admin/telegram-pipeline` | SUPER_ADMIN | Страница выключателя Telegram-входа в конвейер (`telegram_pipeline_state_db`). |
 | `POST` | `/admin/telegram-pipeline/toggle` | SUPER_ADMIN | Поставить конвейер на паузу / снять. |
 | `GET` | `/api/internal/telegram-pipeline/status` | заголовок `X-Internal-Secret` (`pipeline.shared-secret`) | Статус паузы для relay; без сессии. |

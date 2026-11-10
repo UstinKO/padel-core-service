@@ -5,6 +5,21 @@
 
 ---
 
+## Переходная маршрутизация React UI v2
+
+- `/web/**` — отдельная статическая зона React; `/web/index.html` не кэшируется надолго,
+  `/web/assets/**` получает immutable cache. Отсутствующий файл остаётся `404`.
+- `/preview` и `/preview/**` после серверной проверки `ROLE_SUPER_ADMIN` форвардятся на
+  `/web/index.html`; это единственный включённый по умолчанию SPA-route.
+- `app.spa.routes` — типизированный список Spring path patterns для поэкранного переключения.
+  Во всех версионируемых конфигурациях он пуст. Только `GET`/`HEAD` совпавшего pattern получает
+  React shell; catch-all и серверные namespaces запрещены.
+- `/app/**` не относится к UI v2: это существующая Expo web-сборка 1Padel.App.
+- Пока маршрут не добавлен в allowlist, перечисленные ниже Thymeleaf-контроллеры работают без
+  изменений. Глобального fallback неизвестных URL в React нет.
+
+---
+
 ## Принцип разделения при выносе фронта
 
 При переходе на SPA:
@@ -46,8 +61,9 @@
 **Шаблон:** `login.html`
 
 Рендерит форму Spring Security form login.  
-В SPA: фронт рендерит форму, отправляет `POST /api/auth/login`, получает JWT.  
-При переходе эту страницу и соответствующий Spring Security form login можно убрать, оставив только JWT-флоу.
+В React: web-клиент сохраняет same-origin form-login/Google OAuth2 с серверной сессией и CSRF;
+JWT-эндпоинты остаются для мобильного клиента. Текущее состояние UI читает через
+`GET /api/auth/session`.
 
 **Редиректы при уже авторизованном:** `→ /admin` (Owner) или `→ /players/dashboard` (Player).
 

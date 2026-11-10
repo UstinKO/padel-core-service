@@ -8,7 +8,7 @@ Architecture Decision Records — по одному файлу на решени
 |---|---|---|
 | [0001](0001-react-spa.md) | Переводим веб-интерфейс с Thymeleaf на React SPA | Предложено |
 | [0002](0002-frontend-folder-not-maven-module.md) | Фронтенд — самостоятельный npm-проект в `frontend/`; бэкенд не переносим, Maven multi-module не делаем | Предложено |
-| [0003](0003-serve-spa-from-spring-boot.md) | SPA собирается внутрь jar и отдаётся Spring Boot с того же домена и тех же URL; путь выноса в отдельный сервис | Предложено |
+| [0003](0003-serve-spa-from-spring-boot.md) | Историческое решение о доставке SPA через `/app/**` | Заменено ADR-0013/0014 |
 | [0004](0004-api-only-boundary-openapi.md) | Граница фронт↔бэк — только HTTP API и WebSocket; OpenAPI — контракт, TS-типы генерируются | Предложено |
 | [0005](0005-auth-session-same-origin.md) | Аутентификация SPA — серверная сессия + CSRF-cookie, same-origin; JWT только для мобильных | Предложено |
 | [0006](0006-frontend-stack.md) | Стек фронтенда: Vite, React, TypeScript, React Router, TanStack Query, react-i18next | Предложено |
@@ -17,7 +17,8 @@ Architecture Decision Records — по одному файлу на решени
 | [0009](0009-i18n-split.md) | Локализация: строки веба — во фронт, строки писем и сервера — на бэкенде, API отдаёт коды ошибок | Предложено |
 | [0010](0010-realtime.md) | Realtime: один STOMP-клиент, событие = сигнал перечитать состояние; Americano — поллинг | Предложено |
 | [0011](0011-api-conventions.md) | Соглашения API: ProblemDetail + `code`, публичный слой `/api/public`, эндпоинты первой отрисовки, без версий в URL | Предложено |
-| [0012](0012-design-tokens.md) | Дизайн: токены как CSS-переменные; значения as-is до утверждения `.agents/DESIGN.md` | Заменено 0013 |
-| [0013](0013-redesign-and-react-together.md) | Новый дизайн и React одним ходом: экран переводится один раз, через закрытое демо `/preview/**` и акцепт заказчика; статика SPA на `/web/` | **Принято** (2026-10-26) |
+| [0012](0012-design-tokens.md) | Дизайн: токены как CSS-переменные со значениями as-is | Заменено ADR-0013 |
+| [0013](0013-redesign-and-react-together.md) | Новый дизайн и React одним переходом: закрытое демо, акцепт, затем поэкранное переключение | **Принято** |
+| [0014](0014-spa-delivery-routes.md) | React SPA: `/web/**`, закрытый `/preview/**`, пустой production allowlist; `/app/**` остаётся Expo | **Принято** |
 
 Связанные документы: [README перехода](../README.md) · [план](../plan.md) · [контракт](../contract/README.md).

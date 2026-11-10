@@ -5,6 +5,8 @@ import com.padle.core.padelcoreservice.logging.StructuredAlert;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.InvalidMediaTypeException;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -54,7 +56,7 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
                     .warn(log);
         }
 
-        if (path.startsWith("/api/")) {
+        if (path.startsWith("/api/") || acceptsJson(request)) {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             response.setContentType(MediaType.APPLICATION_JSON_VALUE + ";charset=UTF-8");
             response.getWriter().write("{\"success\":false,\"message\":\"Acceso denegado\"}");
@@ -70,6 +72,21 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
         }
 
         response.sendRedirect("/error/403");
+    }
+
+    private boolean acceptsJson(HttpServletRequest request) {
+        var accept = request.getHeader(HttpHeaders.ACCEPT);
+        if (accept == null) {
+            return false;
+        }
+        try {
+            return MediaType.parseMediaTypes(accept).stream()
+                    .filter(mediaType -> !mediaType.isWildcardType() && !mediaType.isWildcardSubtype())
+                    .anyMatch(mediaType -> mediaType.isCompatibleWith(MediaType.APPLICATION_JSON)
+                            || mediaType.isCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON));
+        } catch (InvalidMediaTypeException exception) {
+            return false;
+        }
     }
 
     private boolean isAuthenticated() {

@@ -1,7 +1,9 @@
 # API: Аутентификация — `/api/auth`
 
 **Контроллер:** `AuthController`  
-**Назначение:** JWT-аутентификация для мобильных/SPA клиентов. Веб-форма использует отдельный Spring Security form-login.
+**Назначение:** JWT-аутентификация для мобильных клиентов и типизированное состояние same-origin
+web-сессии для React UI. Веб-вход использует Spring Security form-login/Google OAuth2; React не
+хранит JWT.
 
 Вход через Google для клиента 1Padel.App (`GET /oauth2/authorization/google?client=app`, не часть `AuthController`) — см. [`docs/auth-flow.md` § «Вход из клиента 1Padel.App»](../auth-flow.md#вход-из-клиента-1padelapp-clientapp-lfpt-0637).
 
@@ -102,20 +104,60 @@
 
 1. Читает email из `SecurityContext`.
 2. Загружает `PlayerPadel` из БД.
-3. Возвращает entity напрямую.
+3. Маппит principal через `PlayerMapper` или `OwnerMapper` и возвращает DTO.
 
 ### Контракт
 
 **Request**: `GET /api/auth/me`  
 `Authorization: Bearer <accessToken>`
 
-**Response 200 OK**: объект `PlayerPadel` (entity напрямую, без DTO-маппинга).
+**Response 200 OK**: `PlayerResponseDto` или `OwnerDto` по фактическому типу principal.
 
 **Response 401 Unauthorized**: `"No autenticado"`  
 **Response 404 Not Found**: `"Usuario no encontrado"`
 
 ### Замечания (ревью)
 
-> **[BUG/SECURITY]** Возвращается напрямую JPA-entity `PlayerPadel` вместо DTO. Это потенциально раскрывает внутренние поля: хешированный пароль (`password`), внутренние флаги, lazy-связи Hibernate. Нужно маппить через `PlayerResponseDto`.
+> **[закрыто, сверено с кодом 2026-11-05]** JPA entity не сериализуется: Player и Owner
+> преобразуются MapStruct-мапперами в `PlayerResponseDto`/`OwnerDto`.
 
 > **[закрыто, сверено с кодом 2026-10-16]** `/me` обрабатывает и `Owner`, и `PlayerPadel` (по типу principal). Исходное замечание: эндпоинт искал только в `PlayerRepository`.
+
+---
+
+## GET `/api/auth/session`
+
+**Кто вызывает:** same-origin React UI при загрузке shell.
+**Аутентификация:** необязательна; учитываются обычная web-сессия и remember-me. JWT не выпускается.
+
+**Response 200 OK**, `Cache-Control: no-store`:
+
+```json
+{
+  "authenticated": true,
+  "userType": "PLAYER",
+  "id": 42,
+  "fullName": "Juan Pérez",
+  "email": "player@example.com",
+  "roles": ["ROLE_PLAYER"],
+  "clubId": null,
+  "hasValidContact": true,
+  "preferredLocale": "es"
+}
+```
+
+- Anonymous получает `authenticated: false`, `roles: []`, остальные поля — `null`.
+- Для Owner `userType: OWNER`, возвращается фактическая authority и `clubId`; искусственная
+  `ROLE_OWNER` не добавляется.
+- Для Player возвращаются `hasValidContact` и поддерживаемая locale `es|ru|en`.
+- Пароль/хеш, телефон, Telegram, JWT, remember-me/JSESSIONID и CSRF token в JSON отсутствуют.
+- Ответ инициирует выдачу cookie `XSRF-TOKEN`; React передаёт её в `X-XSRF-TOKEN` на мутациях.
+
+Если authenticated principal не относится к `PlayerPadel` или `Owner`, ответ —
+`500 application/problem+json` с полями `type`, `title`, `status`, `detail`, `instance` и
+`code=SPA_AUTH_UNSUPPORTED_PRINCIPAL`, без имени Java-исключения или stack trace.
+
+### CSRF-граница namespace
+
+Из CSRF исключены только stateless JWT `POST /api/auth/login`, `POST /api/auth/refresh`,
+Bearer-запросы и `/ws/**`. Остальные cookie-сессионные мутации в `/api/auth/**` защищены.

@@ -163,6 +163,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
         // Статические ресурсы и служебные страницы ошибок — пропускаем без лимита
         if (path.startsWith("/css/") || path.startsWith("/js/")
                 || path.startsWith("/images/") || path.startsWith("/webjars/")
+                || path.startsWith("/web/")
                 || path.equals("/favicon.ico") || path.equals("/robots.txt")
                 || path.startsWith("/error/")) {
             return null;

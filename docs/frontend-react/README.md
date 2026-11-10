@@ -1,6 +1,8 @@
 # Переход веб-интерфейса на React
 
-> **Статус:** анализ и решения готовы (2026-09-28). **2026-10-26 принят [ADR-0013](adr/0013-redesign-and-react-together.md):** новый дизайн и React делаются одним ходом — согласование дизайна с заказчиком → закрытое демо на React → акцепт → перевод экран за экраном с переключением боевого URL. На Thymeleaf в итоге остаются только письма. Остальные ADR — «Предложено».
+> **Статус:** Phase 0 начат 2026-11-05. Новый дизайн и React одним переходом приняты в
+> [ADR-0013](adr/0013-redesign-and-react-together.md), доставка и безопасное переключение маршрутов —
+> в [ADR-0014](adr/0014-spa-delivery-routes.md). Остальные ADR принимаются по мере реализации своих частей.
 > **Заменяет** `docs/frontend-migration-plan.md` (июль 2026): тот план предполагал отдельный фронт за gateway (Traefik) в микросервисной архитектуре; 2026-09-06 решено остаться на монолите, и фронт теперь живёт в нём же. Полезное оттуда (письма и `test/tournaments` не переносим, layout-фрагменты → общие компоненты, дизайн as-is) вошло в ADR-0007 и ADR-0012. `docs/design-tokens-as-is.md` и `docs/screen-archetypes.md` остаются справочными (у второго есть неточности — [F-11](contract/findings.md#f-11-документация-расходится-с-кодом--подтверждено)).
 
 ## Зачем
@@ -18,10 +20,11 @@
                    │  Spring Boot (один jar)    │
                    │                            │
    /web/**   ──────┤  статика React (из frontend/ при сборке; /app/ занят 1Padel.App)
-   /preview/** ────┤  → /web/index.html   закрытое демо новых экранов (SUPER_ADMIN)
-   переведённые ───┤  → /web/index.html   (список app.spa.routes)
+   /preview/** ────┤  → /web/index.html   (только ROLE_SUPER_ADMIN)
+   переведённые ───┤  → /web/index.html   (явный список app.spa.routes)
    URL страниц     │
    прочие URL ─────┤  Thymeleaf, как сейчас (до конца переезда)
+   /app/**   ──────┤  существующая Expo web-сборка 1Padel.App
    /api/**, /ws ───┤  REST + WebSocket  ← единственный канал данных для React
    /login, /oauth2 ┤  Spring Security (сессия + CSRF, общая для старых и новых страниц)
    письма ─────────┤  Thymeleaf templates/email — остаются навсегда
@@ -31,8 +34,12 @@
                  frontend/       (самостоятельный npm-проект, Maven только вызывает его сборку)
 ```
 
-- **Один деплой, один jar**, как сейчас ([ADR-0003](adr/0003-serve-spa-from-spring-boot.md)).
+- **Один деплой, один jar**, как сейчас ([ADR-0014](adr/0014-spa-delivery-routes.md)).
+- **React и Expo не пересекаются:** UI v2 использует `/web/**`, а `/app/**` остаётся за
+  1Padel.App ([ADR-0014](adr/0014-spa-delivery-routes.md)).
 - **URL страниц не меняются** — ссылки из писем, Telegram и QR продолжают работать; экран переключается строчкой в конфиге и так же откатывается.
+- **Deny by default:** `app.spa.routes` пуст во всех версионируемых конфигурациях; глобального
+  fallback нет. До переключения production-экрана UI доступен через закрытый `/preview/**`.
 - **Фронт знает о бэкенде только API** (OpenAPI → сгенерированные TS-типы), **бэкенд о фронте — только список его маршрутов** ([ADR-0004](adr/0004-api-only-boundary-openapi.md)). Поэтому вынос фронта в отдельный сервис позже — это изменение сборки и Nginx, а не кода.
 - **Бэкенд не переезжает** в `backend/`, Maven multi-module не делаем ([ADR-0002](adr/0002-frontend-folder-not-maven-module.md)).
 
@@ -42,7 +49,7 @@
 |---|---|
 | [0001](adr/0001-react-spa.md) | React SPA вместо Thymeleaf для веба (не письма) |
 | [0002](adr/0002-frontend-folder-not-maven-module.md) | `frontend/` — npm-проект, не Maven-модуль; бэкенд на месте |
-| [0003](adr/0003-serve-spa-from-spring-boot.md) | SPA внутри jar, те же домен и URL; путь выноса в отдельный сервис |
+| [0003](adr/0003-serve-spa-from-spring-boot.md) | Историческое решение доставки через `/app/**`; заменено ADR-0013/0014 |
 | [0004](adr/0004-api-only-boundary-openapi.md) | Только API; OpenAPI + генерация типов, проверка в CI |
 | [0005](adr/0005-auth-session-same-origin.md) | Та же сессия + CSRF, JWT только мобильным |
 | [0006](adr/0006-frontend-stack.md) | Vite, React, TS, React Router, TanStack Query, react-i18next, CSS-переменные |
@@ -51,8 +58,9 @@
 | [0009](adr/0009-i18n-split.md) | Строки веба — во фронт, строки писем — на бэкенде |
 | [0010](adr/0010-realtime.md) | Один STOMP-клиент, событие → перечитать состояние |
 | [0011](adr/0011-api-conventions.md) | ProblemDetail + коды ошибок, `/api/public`, только DTO |
-| [0012](adr/0012-design-tokens.md) | ~~Токены as-is до утверждения `DESIGN.md`~~ — заменено 0013 |
-| [0013](adr/0013-redesign-and-react-together.md) | **Принято:** экран переводится один раз — сразу на React и в новом дизайне, через демо `/preview/**` и акцепт заказчика |
+| [0012](adr/0012-design-tokens.md) | Историческое решение о токенах as-is; заменено ADR-0013 |
+| [0013](adr/0013-redesign-and-react-together.md) | Новый дизайн и React одним переходом, через закрытое демо и акцепт |
+| [0014](adr/0014-spa-delivery-routes.md) | `/web/**`, закрытый `/preview/**`, пустой allowlist; `/app/**` остаётся Expo |
 
 ## План
 
@@ -67,7 +75,7 @@
 [contract/](contract/README.md) — полная инвентаризация текущего UI, снятая с кода:
 
 - **40 экранов** с данными, действиями, JS, SEO и целевым API — [screens.md](contract/screens.md);
-- **108 JSON-эндпоинтов** с итоговыми правами и потребителями + **33 позиции** недостающего API + расхождения в правах — [api.md](contract/api.md);
+- **109 JSON-эндпоинтов** с итоговыми правами и потребителями + **32 позиции** недостающего API + расхождения в правах — [api.md](contract/api.md);
 - **сквозные механизмы:** вход и роли, CSRF, локализация (1 084 веб-ключа / 103 ключа писем, без пересечений), flash и URL-параметры, **входящие ссылки из писем**, внешние скрипты, SEO, cookie — [cross-cutting.md](contract/cross-cutting.md);
 - **14 находок** — [findings.md](contract/findings.md).
 
