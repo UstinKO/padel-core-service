@@ -690,6 +690,7 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 | `GET` | `/tg-calendar` | — | Публичный 302 на главную со списком турниров: `telegram / social`, кампания `telegram_calendar`. |
 | `GET` | `/tg-posts` | — | Публичный 302 на главную со списком турниров: `telegram / social`, кампания `telegram_posts`. |
 | `GET` | `/wa-info` | — | Публичный 302 на главную со списком турниров: `whatsapp / message`, кампания `whatsapp_group`. |
+| `GET` | `/wa-broadcast` | — | Публичный 302 на календарь на испанском с метками `whatsapp / messaging` и кампанией `whatsapp_broadcast`. |
 | `GET` | `/threads` | — | Публичный 302 на главную со списком турниров: `threads / social`, кампания `threads_profile`. |
 | `GET` | `/app`, `/app/` | — | Веб-версия клиента 1Padel.App: `/app` → `302 /app/`, `/app/` → `forward:/app/index.html` (статика `static/app/`), анонимно (`MobileAppViewController`, LFPT-0643). |
 | `GET`, `HEAD` | `/web/**` | — | Статика React UI v2 из `static/web/`: shell `no-cache`, versioned assets `immutable`; зона независима от Expo `/app/**`. |

@@ -89,6 +89,7 @@ docker compose up -d
 | `GET /tg-calendar` | — (redirect) | `MarketingRedirectController` — главная со списком турниров; `telegram / social`, кампания `telegram_calendar` |
 | `GET /tg-posts` | — (redirect) | `MarketingRedirectController` — главная со списком турниров; `telegram / social`, кампания `telegram_posts` |
 | `GET /wa-info` | — (redirect) | `MarketingRedirectController` — главная со списком турниров; `whatsapp / message`, кампания `whatsapp_group` |
+| `GET /wa-broadcast` | — (redirect) | `MarketingRedirectController` — календарь на испанском, `whatsapp / messaging`, кампания `whatsapp_broadcast` |
 | `GET /threads` | — (redirect) | `MarketingRedirectController` — главная со списком турниров; `threads / social`, кампания `threads_profile` |
 | `GET /app/` (`/app` → редирект) | `static/app/index.html` (forward) | `MobileAppViewController` — веб-версия клиента 1Padel.App, анонимно; сюда же возвращается Google-вход из приложения (LFPT-0637, LFPT-0643) |
 | `GET\|HEAD /web/**` | `static/web/**` | Статика React UI v2; shell `no-cache`, versioned assets `immutable`, независимо от Expo `/app/**` |
