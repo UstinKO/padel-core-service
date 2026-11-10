@@ -1,7 +1,7 @@
 # LFPT-0827: Feature frontend — фундамент UI v2 Phase 0
 
 ## Статус
-approved
+done
 
 ## Источник
 [GitHub issue #827](https://github.com/UstinKO/padel-core-service/issues/827).
