@@ -31,7 +31,7 @@
                    └────────────────────────────┘
 
    репозиторий:  pom.xml + src/  (бэкенд, без изменений структуры)
-                 frontend/       (самостоятельный npm-проект, Maven только вызывает его сборку)
+                 frontend/       (самостоятельный pnpm-проект, Maven вызывает его сборку)
 ```
 
 - **Один деплой, один jar**, как сейчас ([ADR-0014](adr/0014-spa-delivery-routes.md)).
@@ -42,6 +42,28 @@
   fallback нет. До переключения production-экрана UI доступен через закрытый `/preview/**`.
 - **Фронт знает о бэкенде только API** (OpenAPI → сгенерированные TS-типы), **бэкенд о фронте — только список его маршрутов** ([ADR-0004](adr/0004-api-only-boundary-openapi.md)). Поэтому вынос фронта в отдельный сервис позже — это изменение сборки и Nginx, а не кода.
 - **Бэкенд не переезжает** в `backend/`, Maven multi-module не делаем ([ADR-0002](adr/0002-frontend-folder-not-maven-module.md)).
+
+### Реализованный фундамент Phase 0
+
+`frontend/` использует React 19, TypeScript, Vite, BrowserRouter, TanStack Query и react-i18next.
+Production build имеет base `/web/`; закрытые deep links `/preview/**` форвардит Spring Boot.
+Same-origin API client отправляет cookie-сессию, `Accept-Language` и CSRF header, а ответы
+`application/problem+json` читает как типизированный `ProblemDetail`. Auth/session state хранится
+только в памяти Query Client.
+
+```bash
+pnpm --dir frontend install --frozen-lockfile
+pnpm --dir frontend check
+pnpm --dir frontend test:e2e
+./mvnw package                 # собирает и упаковывает frontend в jar
+./mvnw -Dskip.frontend=true package  # быстрая backend-итерация
+```
+
+Maven ставит локальные Node 24.12 и pnpm 11.25 через `frontend-maven-plugin`; глобальный Node для
+обычной Maven-сборки не требуется. CI дополнительно проверяет форматирование, lint, typecheck,
+Vitest, bundle size и Playwright в desktop/mobile Chromium. Визуальный baseline — UI 0.7:
+Manrope, тёплый светлый фон, тёмно-зелёный и лаймовый акцент. Fixtures и demo auth из пакета 0.7
+в production-каркас не перенесены.
 
 ## Решения (ADR)
 

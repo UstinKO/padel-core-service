@@ -21,6 +21,10 @@ logs/
 # Build
 target/
 build/
+frontend/node_modules/
+frontend/playwright-report/
+frontend/test-results/
+frontend/coverage/
 *.jar
 *.war
 *.zip

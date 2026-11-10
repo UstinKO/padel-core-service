@@ -204,6 +204,9 @@ jobs:
               exit 1
             fi
 
+            docker compose exec -T padel-app curl --fail --silent --head http://localhost:8080/web/index.html >/dev/null
+            echo "✅ React SPA assets are available under /web/"
+
             # Проверяем фактическую конфигурацию внутри нового контейнера.
             docker compose exec -T padel-app sh -c 'test -n "$META_CAPI_ACCESS_TOKEN" && test "$META_ENABLED" = true && test "$META_TEST_MODE" = false && test -z "$META_TEST_EVENT_CODE"'
             docker compose exec -T padel-app curl --fail --silent http://localhost:8080/api/marketing/config | python3 -c '

@@ -60,6 +60,15 @@
 - Обновлена ли документация к изменённому коду — `docs/` и таблицы `.agents/PROJECT.md` по карте в [docs/Home.md § Как поддерживать актуальность](../docs/Home.md#как-поддерживать-актуальность), и `python3 .github/bin/docs-drift.py` даёт 0 расхождений?
 - Проходит ли `./mvnw verify` и, где применимо, ручная проверка (см. `GIT_WORKFLOW.md`, п.4)?
 
+### Frontend / React
+
+- Все серверные данные идут через типизированный API client и TanStack Query; fixtures и `localStorage` не являются production-источником истины.
+- Auth/session state не хранится в `localStorage`; роли на клиенте управляют только отображением, права всегда проверяет backend.
+- Мутирующие same-origin запросы отправляют CSRF header, API ошибки обрабатываются как `ProblemDetail` без показа stack trace.
+- Новый пользовательский текст добавлен во все словари `frontend/src/i18n/{es,ru,en}.json`; тест полноты словарей проходит.
+- UI использует токены и общие компоненты, сохраняет клавиатурный фокус, mobile layout и `prefers-reduced-motion`.
+- Перед коммитом проходят `pnpm --dir frontend check` и `pnpm --dir frontend test:e2e`; изменение UI проверено реальным браузером, а не только чтением JSX/CSS.
+
 ---
 
 ## Где искать паттерны для переиспользования

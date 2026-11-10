@@ -1,0 +1,51 @@
+{
+  "app": {
+    "name": "1-Padel",
+    "skip": "Skip to content",
+    "preview": "Private preview",
+    "phase": "UI v2 foundation · Phase 0"
+  },
+  "nav": {
+    "home": "Home",
+    "components": "Components"
+  },
+  "language": {
+    "label": "Language",
+    "es": "Español",
+    "ru": "Русский",
+    "en": "English"
+  },
+  "preview": {
+    "eyebrow": "New frontend",
+    "title": "A foundation for a clearer padel experience",
+    "lead": "This private environment validates navigation, session state and shared components before real screens are migrated.",
+    "sessionTitle": "Server session",
+    "authenticated": "Session active",
+    "anonymous": "No session",
+    "role": "Roles",
+    "club": "Club",
+    "notAvailable": "Not available",
+    "componentTitle": "Foundation components",
+    "componentLead": "Reusable tokens and states from the Play Concept 0.7 direction.",
+    "fieldLabel": "Find a tournament",
+    "fieldPlaceholder": "Name, club or category",
+    "primaryAction": "Primary action",
+    "secondaryAction": "Secondary action",
+    "cardTitle": "Example card",
+    "cardText": "A calm surface with a subtle border and clear hierarchy.",
+    "readyTitle": "Foundation ready",
+    "readyText": "Screens can now move one at a time without changing public routes.",
+    "emptyTitle": "No data yet",
+    "emptyText": "The empty state keeps context and explains the next step."
+  },
+  "state": {
+    "loadingTitle": "Loading your session",
+    "loadingText": "We are checking access with the server.",
+    "errorTitle": "We could not load this section",
+    "errorText": "Check the connection and try again.",
+    "retry": "Try again"
+  },
+  "footer": {
+    "tagline": "We find the game. We bring people together."
+  }
+}
