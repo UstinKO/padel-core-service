@@ -7,10 +7,9 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 
 // app.security.whitelisted-ips без дефолта в коде — без переменной окружения
 // список доверенных IP должен быть пуст, а не захардкоженные IP прода.
@@ -47,14 +46,15 @@ class RateLimitFilterWhitelistTest {
 
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setRequestURI("/css/style.css");
-        request.addHeader("X-Real-IP", "194.124.210.113"); // ex-hardcoded prod IP
+        request.addHeader("X-Real-IP", "194.124.210.113"); // адрес из прежнего захардкоженного allowlist
         MockHttpServletResponse response = new MockHttpServletResponse();
-        FilterChain chain = mock(FilterChain.class);
+        AtomicBoolean invoked = new AtomicBoolean();
+        FilterChain chain = (ignoredRequest, ignoredResponse) -> invoked.set(true);
 
         ReflectionTestUtils.invokeMethod(filter, "doFilterInternal", request, response, chain);
 
         // пропускает дальше, но из-за classifyPath (ресурс без лимита), не из-за whitelist
-        verify(chain).doFilter(request, response);
+        assertThat(invoked).isTrue();
         assertThat((Set<String>) ReflectionTestUtils.getField(filter, "whitelistedIps")).doesNotContain("194.124.210.113");
     }
 
@@ -66,10 +66,27 @@ class RateLimitFilterWhitelistTest {
         request.setRequestURI("/api/tournaments");
         request.addHeader("X-Real-IP", "9.9.9.9");
         MockHttpServletResponse response = new MockHttpServletResponse();
-        FilterChain chain = mock(FilterChain.class);
+        AtomicBoolean invoked = new AtomicBoolean();
+        FilterChain chain = (ignoredRequest, ignoredResponse) -> invoked.set(true);
 
         ReflectionTestUtils.invokeMethod(filter, "doFilterInternal", request, response, chain);
 
-        verify(chain).doFilter(request, response);
+        assertThat(invoked).isTrue();
+    }
+
+    @Test
+    void doFilterInternal_webAssetNoConsumeApplicationBucket() throws Exception {
+        RateLimitFilter filter = newFilter("");
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setRequestURI("/web/assets/app.hash.js");
+        request.addHeader("X-Real-IP", "203.0.113.10");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        AtomicBoolean invoked = new AtomicBoolean();
+        FilterChain chain = (ignoredRequest, ignoredResponse) -> invoked.set(true);
+
+        ReflectionTestUtils.invokeMethod(filter, "doFilterInternal", request, response, chain);
+
+        assertThat(invoked).isTrue();
+        assertThat(response.getStatus()).isEqualTo(200);
     }
 }

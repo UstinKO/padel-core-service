@@ -6,7 +6,7 @@
 
 ## 0. Главное одним экраном
 
-- **Для React не хватает API почти для каждого экрана.** 108 JSON-эндпоинтов уже есть, но они покрывают в основном действия (сохранить результат, зарегистрироваться), а **данные для первой отрисовки** почти везде приходят из модели Thymeleaf. Список недостающих — в §2: 33 позиции (часть из них — группы из 2–5 эндпоинтов).
+- **Для React не хватает API почти для каждого экрана.** После добавления session contract есть 109 JSON-эндпоинтов, но они покрывают в основном действия (сохранить результат, зарегистрироваться), а **данные для первой отрисовки** почти везде приходят из модели Thymeleaf. Список недостающих — в §2: 32 позиции (часть из них — группы из 2–5 эндпоинтов).
 - **Публичные страницы нельзя собрать из текущего API анонимно:** `/api/tournaments/**`, `/api/tournaments/americano/**`, `/api/clubs/**` требуют входа (§3). Для публичных экранов нужен отдельный публичный read-only слой.
 - **37 эндпоинтов нетипизированы** (`ResponseEntity<?>` или `Map<String, Object>`). Из них не сгенерировать TypeScript-типы (ADR-0004) — перед переводом экрана его эндпоинты переводятся на DTO.
 - **Три JSON-зоны живут не под `/api/`:** `/tournaments/team-americano/api/**`, `/tournaments/team-playoff/api/**`, JSON-методы под `/admin/**`, плюс `/players/tournaments/**` и `/recuperar-password/*`. Для них не работает правило «`/api/**` отвечает JSON-ом, а не редиректом» (§4) — переносятся под `/api/` вместе со своим экраном.
@@ -16,7 +16,9 @@
 
 ## 1. Существующие JSON-эндпоинты
 
-Сгенерировано из кода (коммит `eeee06c`): **108** JSON-эндпоинтов вне `/test/tournaments/**` (у тестового инструмента ещё 23 — он не переносится, ADR-0007).
+Базовая инвентаризация из кода (коммит `eeee06c`) содержала **108** JSON-эндпоинтов вне
+`/test/tournaments/**`; реализованный `GET /api/auth/session` довёл текущий список до **109**.
+У тестового инструмента ещё 23 endpoint — он не переносится (ADR-0007).
 
 «Доступ» — **итоговый**: URL-правило `SecurityConfig` + `@PreAuthorize`. «Используется» — какие экраны (ID из [screens.md](screens.md)) вызывают эндпоинт сейчас; «—» = текущий UI его не вызывает (кандидат в неиспользуемые или API «на вырост»).
 
@@ -27,6 +29,7 @@
 | POST | `/api/auth/login` | публичный | body: `AuthRequest` | `?` (нетипизированный) | — |
 | GET | `/api/auth/me` | публичный | — | `?` (нетипизированный) | — |
 | POST | `/api/auth/refresh` | публичный | body: `RefreshTokenRequest` | `?` (нетипизированный) | — |
+| GET | `/api/auth/session` | публичный | текущая web-сессия / remember-me | `SpaSessionResponse` | каркас React |
 
 ### Турниры (общие)
 
@@ -218,7 +221,7 @@
 
 | Эндпоинт | Зачем | Экраны |
 |---|---|---|
-| `GET /api/auth/session` | Кто вошёл, роли, clubId, флаги — для роутинга и меню | все |
+| `GET /api/auth/session` **реализован** | Кто вошёл, роли, clubId, флаги — для роутинга и меню | все |
 | `POST /login` с JSON-ответом (ADR-0005) | Вход из SPA без редиректов — нужен к Ф4 (до этого вход через текущую страницу) | P-02 |
 | `GET /api/public/config` | recaptchaEnabled/siteKey, googleOAuthEnabled, поддерживаемые языки, версия приложения | P-02, P-03 |
 | `GET /api/admin/reference-data` | Все enum-справочники (типы, модальности, уровни, форматы, статусы, методы/статусы оплаты) с подписями на языке запроса | A-03, A-06, A-16 |
@@ -293,7 +296,7 @@
 |---|---|---|
 | Сессия | `JSESSIONID` (Tomcat, in-memory) + remember-me cookie (`TokenBasedRememberMeServices`, общий для формы и Google) | Без изменений, same-origin (ADR-0005) |
 | CSRF | `CookieCsrfTokenRepository.withHttpOnlyFalse()` + `CsrfTokenRequestAttributeHandler` (без маскирования) + фильтр, форсирующий выдачу cookie `XSRF-TOKEN` на каждом ответе | Клиент читает `XSRF-TOKEN` и шлёт `X-XSRF-TOKEN` в каждом мутирующем запросе — ровно то, что сейчас делает `csrf.js` |
-| CSRF-исключения | запросы с `Authorization`, `/api/auth/**`, `/ws/**`, `/test/telegram/**` | `/test/telegram/**` — см. F-00 в [findings.md](findings.md) |
+| CSRF-исключения | Bearer-запросы, `/api/auth/login`, `/api/auth/refresh`, `/ws/**` | Cookie-сессионные мутации в `/api/auth/**` не исключаются; `/test/telegram/**` защищён, см. F-00 |
 | JWT | `/api/auth/login` → access 24ч + refresh 7д | Не используется SPA. Остаётся для мобильных клиентов |
 | CORS | allowlist: `localhost:8080/8081/3000`, `epadel.org`, `1-padel.com` (+www), credentials | Не нужен (same-origin). Для локальной разработки — прокси Vite, а не CORS |
 | Rate limit | `RateLimitFilter`: для `/api/**` → `429` JSON `{success,message,retryAfter}` + `Retry-After`; для браузерных путей — редиректы | SPA обрабатывает `429`. Ветка GENERAL сейчас редиректит **и `/api/**`** (F-10) — исправить |
@@ -303,8 +306,17 @@
 
 1. **`/api/**` без входа → `401` JSON, а не `302` на `/login`.** Сейчас `exceptionHandling` задаёт только `accessDeniedHandler`; для неаутентифицированных срабатывает дефолтный entry point формы логина. Нужен `defaultAuthenticationEntryPointFor(HttpStatusEntryPoint(401), "/api/**")`.
 2. **Логин для SPA.** `POST /login` сейчас отвечает `302` на `/admin` / `/players/dashboard` / `/login?error=...`. Для запросов с `Accept: application/json` success/failure-хендлеры отвечают `200 {user}` / `401 {code}` (ADR-0005). Rate limit на `POST /login` сейчас тоже редирект — для JSON-запроса нужен `429`.
-3. **`GET /api/auth/session`** — один формат для обеих ролей: `{authenticated, userType: PLAYER|OWNER, id, fullName, email, roles[], clubId?, hasValidContact?, preferredLocale?}`. Текущий `/api/auth/me` отдаёт два разных DTO и `401` строкой `"No autenticado"` — оставить для мобильных, SPA его не использует.
-4. **Единый формат ошибки.** Сейчас встречаются: `{success:false, message}` (133 `put("success"…)`), `{error: "..."}` (`GlobalExceptionHandler`), строка в теле, и **11 мест отвечают `200` с `success:false`**. Целевой формат — `ProblemDetail` (RFC 9457, встроен в Spring 6): `{type, title, status, detail, code, errors?}`, где `code` — стабильный машинный код для i18n на клиенте (`TOURNAMENT_FULL`, `CONTACT_REQUIRED`…). Решение и переходный период — ADR-0011.
+3. **`GET /api/auth/session` — реализован.** Всегда отвечает `200` и `Cache-Control: no-store`.
+   Точная схема: `{authenticated:boolean, userType:PLAYER|OWNER|null, id:long|null,
+   fullName:string|null, email:string|null, roles:string[], clubId:long|null,
+   hasValidContact:boolean|null, preferredLocale:es|ru|en|null}`. Anonymous получает пустые nullable-поля
+   и `roles: []`; `clubId` относится только к Owner, контакт и locale — только к Player.
+   Ответ не содержит JWT, session/remember-me/CSRF token, пароль, телефон или Telegram.
+   Текущий `/api/auth/me` остаётся мобильным контрактом и SPA его не использует.
+4. **Единый формат ошибки вводится по границе SPA API.** Новый session endpoint использует
+   `ProblemDetail` (`application/problem+json`) с `{type,title,status,detail,instance,code}` для
+   неподдерживаемого principal. Legacy-эндпоинты пока сохраняют прежние форматы и переводятся
+   вместе со своими экранами; массовая смена ответов в Phase 0 не выполняется.
 5. **Статусы:** ошибка валидации — `400/422`, нет прав — `403`, не найдено — `404`, конфликт состояния турнира (раунд уже начат и т.п.) — `409`. Никогда `200` с `success:false`.
 6. **OpenAPI.** `springdoc-openapi` **не подключён** (в `SecurityConfig` открыты `/swagger-ui/**` и `/v3/api-docs/**`, но зависимости нет). Подключить в Фазе 0; `/v3/api-docs` — источник генерации TS-типов (ADR-0004). В проде Swagger UI — только SUPER_ADMIN.
 7. **Никаких JPA-сущностей в ответах.** Сейчас в модель страниц местами кладутся сущности (`PlayerPadel` — с хешем пароля, `TournamentKingOfCourt`, `AmericanoMatch`); `POST /api/king-of-court/tournaments/{id}/initialize` **уже сейчас** отдаёт сущность `TournamentKingOfCourt` в JSON. Только MapStruct-DTO (как требует PROJECT.md).

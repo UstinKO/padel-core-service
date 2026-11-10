@@ -81,14 +81,15 @@ public class SecurityConfig {
                         // Bearer JWT (заголовок Authorization) не подвержен CSRF — его нельзя
                         // выставить форгед cross-site запросом, в отличие от session-cookie.
                         // Игнорируем такие запросы, чтобы не ломать stateless API-клиентов.
-                        .ignoringRequestMatchers(request -> request.getHeader("Authorization") != null)
+                        .ignoringRequestMatchers(request -> hasBearerAuthorization(request.getHeader("Authorization")))
                         // SockJS-фоллбэк транспорты (xhr/xhr_streaming — для клиентов без
                         // нативного WebSocket) шлют служебные POST без X-XSRF-TOKEN — это не fetch,
                         // csrf.js их не видит. Канал только для broadcast сервер→клиент (нет ни одного
                         // @MessageMapping), все мутации идут через отдельные CSRF-защищённые /api/**.
-                        .ignoringRequestMatchers("/api/auth/**", "/ws/**")
+                        .ignoringRequestMatchers("/api/auth/login", "/api/auth/refresh", "/ws/**")
                 )
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/preview", "/preview/**").hasRole("SUPER_ADMIN")
                         .requestMatchers(
                                 "/",
                                 "/index",
@@ -118,6 +119,7 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/webjars/**",
+                                "/web/**",
                                 "/css/**",
                                 "/js/**",
                                 "/images/**",
@@ -282,6 +284,10 @@ public class SecurityConfig {
                         )
                 )
                 .build();
+    }
+
+    private static boolean hasBearerAuthorization(String authorization) {
+        return authorization != null && authorization.regionMatches(true, 0, "Bearer ", 0, 7);
     }
 
     @Bean

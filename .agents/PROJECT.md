@@ -83,6 +83,8 @@ docker compose up -d
 | `GET /wa-info` | — (redirect) | `MarketingRedirectController` — главная со списком турниров; `whatsapp / message`, кампания `whatsapp_group` |
 | `GET /threads` | — (redirect) | `MarketingRedirectController` — главная со списком турниров; `threads / social`, кампания `threads_profile` |
 | `GET /app/` (`/app` → редирект) | `static/app/index.html` (forward) | `MobileAppViewController` — веб-версия клиента 1Padel.App, анонимно; сюда же возвращается Google-вход из приложения (LFPT-0637, LFPT-0643) |
+| `GET\|HEAD /web/**` | `static/web/**` | Статика React UI v2; shell `no-cache`, versioned assets `immutable`, независимо от Expo `/app/**` |
+| `GET\|HEAD /preview`, `/preview/**` | `static/web/index.html` (forward) | Закрытый preview React, только `ROLE_SUPER_ADMIN`; production routes включаются явным `app.spa.routes`, пустым по умолчанию |
 
 ### Player Area (`ROLE_PLAYER`)
 
@@ -154,6 +156,7 @@ docker compose up -d
 | POST | `/api/auth/login` | Логин, возвращает JWT access + refresh токены |
 | POST | `/api/auth/refresh` | Обновление access-токена по refresh-токену |
 | GET | `/api/auth/me` | Данные текущего авторизованного пользователя |
+| GET | `/api/auth/session` | Типизированное состояние same-origin web-сессии для React; anonymous/Player/Owner, `no-store`, без JWT и контактов |
 
 ### Players API (`/players/api`, `/api/players`)
 
@@ -348,6 +351,8 @@ Both implement `UserDetails` and live in separate tables:
 
 - **Web UI**: form login → Spring session cookie. При успехе: admin → `/admin`, player → `/players/dashboard`.
 - **API**: `JwtAuthenticationFilter` извлекает Bearer-токен и устанавливает `SecurityContext`. `JwtService` выпускает access (24h) и refresh (7d) токены с claims: `userId`, `fullName`, `role`, `tokenType`.
+- **React web**: использует ту же form-login/remember-me сессию и CSRF cookie; состояние читает
+  через `GET /api/auth/session`. `/preview/**` проверяется сервером на `ROLE_SUPER_ADMIN`.
 - **Google OAuth2**: `CustomOAuth2UserService` создаёт/обновляет `PlayerPadel` при первом входе; `OAuth2AuthenticationSuccessHandler` выпускает JWT и делает redirect.
 - **Rate limiting**: `RateLimitFilter` (Bucket4j + Guava cache) блокирует IP, превышающие порог попыток регистрации.
 

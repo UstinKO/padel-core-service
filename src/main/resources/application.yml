@@ -152,6 +152,8 @@ logging:
 app:
   base-url: ${APP_BASE_URL:http://localhost:8080}
   admin-email: ${ADMIN_EMAIL:eugene.g.work@gmail.com}
+  spa:
+    routes: []
   # Без ID по умолчанию здесь — иначе каждый dev/cloud/test запуск
   # шлёт данные в боевой GA4/Clarity. Реальные ID — только в application-prod.yml.
   analytics:

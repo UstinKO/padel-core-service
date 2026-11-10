@@ -28,7 +28,7 @@
 | Тип пользователя | Таблица | Роль | Способ входа |
 |-----------------|---------|------|--------------|
 | **Игрок** (`PlayerPadel`) | `player_padel_db` | `ROLE_PLAYER` | Form Login, JWT API, Google OAuth2 |
-| **Администратор** (`Owner`) | `owners_db` | `ROLE_OWNER` / `ROLE_ORGANIZER` / `ROLE_SUPER_ADMIN` | Form Login |
+| **Администратор** (`Owner`) | `owners_db` | `ROLE_SUPER_ADMIN` / `ROLE_ORGANIZER` / `ROLE_ADMIN` / `ROLE_CLUB_ADMIN` | Form Login, JWT API |
 
 После успешного Form Login:
 - Игрок → редирект на `/players/dashboard`
@@ -49,7 +49,8 @@ HTTP Request
 │     Проверяет IP по Bucket4j. Если превышен лимит   │
 │     или IP заблокирован — возвращает 429, дальше     │
 │     запрос не идёт.                                  │
-│     Статические ресурсы (/css/, /js/, /images/) и   │
+│     Статические ресурсы (/css/, /js/, /images/,     │
+│     /web/) и                                        │
 │     whitelisted IP — пропускаются без проверки.     │
 └──────────────────────┬───────────────────────────────┘
                        │
@@ -651,7 +652,31 @@ Exposed headers: `Authorization`
 
 ### CSRF
 
-**Отключён** (`AbstractHttpConfigurer::disable`). Причина: API использует JWT Bearer токены, а не cookie-based auth. Для форм (form login) это допустимо, так как форма логина защищена rate limiting и CORS. При переходе на полноценный SPA — стоит рассмотреть включение CSRF через Double-Submit Pattern.
+CSRF **включён** для cookie-сессии по double-submit схеме:
+
+- Spring Security `withHttpOnlyFalse()` repository выдаёт cookie `XSRF-TOKEN`;
+- мутирующий запрос передаёт то же значение в `X-XSRF-TOKEN` (Thymeleaf-формы используют `_csrf`);
+- `GET /api/auth/session` форсирует чтение токена через `csrfCookieFilter` и тем самым выдачу cookie;
+- `POST /logout` и другие session-cookie мутации без корректной пары получают отказ в доступе:
+  SPA-запрос с `Accept: application/json` или `application/problem+json` — фактический `403`
+  без редиректа, legacy browser flow — `302 /error/403`;
+- исключены Bearer-запросы, stateless JWT-операции `/api/auth/login` и `/api/auth/refresh`,
+  а также служебные SockJS-запросы `/ws/**`.
+
+Общее исключение `/api/auth/**` не используется: будущие session-based мутации в этом namespace
+должны оставаться защищёнными.
+
+### Web-сессия React и preview
+
+`GET /api/auth/session` читает текущий `SecurityContext`/remember-me и всегда возвращает одну
+типизированную схему для anonymous, `PlayerPadel` и `Owner`. Ответ `Cache-Control: no-store`,
+JWT не выпускается, CSRF token остаётся только в cookie. Неизвестный authenticated principal
+получает безопасный `application/problem+json` со стабильным `code`.
+
+React shell хранится под `/web/**`. Статика доступна анонимно и не содержит пользовательских
+данных. Маршруты `/preview` и `/preview/**` сервер проверяет на фактический
+`ROLE_SUPER_ADMIN` до более широких правил; клиентский route guard не является границей доступа.
+Production forward включается только явным `app.spa.routes`, пустым по умолчанию.
 
 ### Управление сессией
 
@@ -671,9 +696,10 @@ sessionCreationPolicy = SessionCreationPolicy.IF_REQUIRED
 | Игрок (API-клиент) | `POST /api/auth/login` | `accessToken` + `refreshToken` | `Authorization: Bearer <token>` |
 | Игрок (Google) | OAuth2 redirect | `JSESSIONID` + `Authorization` header | Cookie (браузер), header (API) |
 | Администратор | Form Login | `JSESSIONID` cookie | Cookie в каждом запросе |
-| Администратор | `POST /api/auth/login` | ⚠️ Не поддерживается — `AuthController` загружает только из `PlayerRepository` | — |
+| Администратор | `POST /api/auth/login` | `accessToken` + `refreshToken` | `Authorization: Bearer <token>` |
 
-> **Критическая заметка:** `AuthController` (`/api/auth/login`) использует `PlayerRepository.findByEmail()` напрямую — администраторы **не могут** получить JWT через этот эндпоинт. При декомпозиции или добавлении мобильного приложения для администраторов это нужно учесть.
+`AuthController` аутентифицирует оба типа через `AuthenticationManager` и
+`CompositeUserDetailsService`; повторного прямого поиска только в `PlayerRepository` нет.
 
 ### Lifecycle токенов
 

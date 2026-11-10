@@ -23,7 +23,9 @@
 
 ## 1. Общий обзор
 
-**padel-core-service** — Spring Boot 4.x монолит с серверным рендерингом через Thymeleaf. REST API выставлен параллельно для мобильных / SPA клиентов.
+**padel-core-service** — Spring Boot 4.x монолит. Действующие страницы рендерятся через
+Thymeleaf; React UI v2 подключается поэкранно из независимой зоны `/web/**`, а `/app/**` остаётся
+Expo web-клиентом 1Padel.App. REST API выставлен параллельно для мобильных и web-клиентов.
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
@@ -78,6 +80,19 @@
 - Spring WebSocket (STOMP/SockJS)
 - Micrometer + Prometheus + Grafana + Loki
 - Bucket4j, MapStruct, Lombok
+
+### Сосуществование Thymeleaf, React и Expo
+
+- React shell размещается в `classpath:/static/web/`; `/web/index.html` имеет `no-cache`,
+  `/web/assets/**` — долгий immutable cache.
+- `/preview/**` форвардится на React только после server-side проверки `ROLE_SUPER_ADMIN`.
+- Production forward работает только для `GET|HEAD` patterns из `app.spa.routes`; список пуст
+  по умолчанию, catch-all и серверные namespaces запрещены. Поэтому неизвестный URL остаётся `404`,
+  а старый Thymeleaf-контроллер работает до явного переключения.
+- Allowlist не меняет Security rules исходного URL. Откат экрана — удалить его pattern.
+- `/app/**`, OAuth redirect и JWT-контракт Expo не меняются.
+- React читает same-origin сессию через `GET /api/auth/session` и использует существующий
+  double-submit CSRF; создание и упаковка frontend-сборки выполняются отдельным этапом.
 
 ---
 
