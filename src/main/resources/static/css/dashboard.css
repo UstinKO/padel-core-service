@@ -367,6 +367,21 @@
         text-align: center;
     }
 
+    .dashboard-main .welcome-text,
+    .dashboard-main .dashboard-tabs,
+    .dashboard-main .tab-btn {
+        max-width: 100%;
+    }
+
+    .dashboard-main .welcome-text,
+    .dashboard-main .tab-btn {
+        overflow-wrap: anywhere;
+    }
+
+    .dashboard-main .tab-btn {
+        white-space: normal;
+    }
+
     .filter-actions {
         grid-column: 1 / -1;
     }
@@ -508,6 +523,38 @@
     flex-direction: column;
     position: relative;
     z-index: 1;
+}
+
+#dashboardTorneosGrid .torneo-card-body,
+#dashboardTorneosGrid .torneo-card-header {
+    padding-inline: min(1.5rem, 7%);
+}
+
+#dashboardTorneosGrid .torneo-card-header {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+#dashboardTorneosGrid .torneo-footer {
+    flex-flow: row wrap;
+}
+
+#dashboardTorneosGrid .torneo-footer > .btn {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: min(10.5em, 100%);
+    max-width: 100%;
+    min-height: 44px;
+    padding-inline: min(1rem, 5%);
+    line-height: 1.35;
+    text-align: center;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+#dashboardTorneosGrid .torneo-footer > .btn i {
+    flex: none;
+    margin-right: 0;
 }
 
 .torneo-title {
