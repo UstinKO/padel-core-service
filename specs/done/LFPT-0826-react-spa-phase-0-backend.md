@@ -1,7 +1,7 @@
 # LFPT-0826: Feature backend — инфраструктура React SPA Phase 0
 
 ## Статус
-approved
+done
 
 ## Источник
 [GitHub issue #826](https://github.com/UstinKO/padel-core-service/issues/826), техническая постановка без отдельного клиентского запроса.
