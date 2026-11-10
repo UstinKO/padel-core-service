@@ -579,3 +579,8 @@ Thymeleaf admin/qr-report, static/js/qr-report.js, static/css/qr-report.css.
 ## Календарь мероприятия
 
 `GET /api/public/tournaments/{id}/calendar`, `/calendar/google`, `/calendar/event.ics` (последние два — относительно `/api/public/tournaments/{id}`): только чтение активного мероприятия, правила доступа как у `/torneo/{id}`. Один источник данных — `TournamentCalendarService`, Google TEMPLATE и iCalendar — `CalendarEventWriter`; кнопка — `calendar-picker.js`. Настройки `durationMinutes`, `timeZone`, схема v1.67. [Контракт](../docs/endpoints/event-calendar.md).
+
+
+### Публичный API UI v2
+
+`PublicDiscoveryController` / `PublicDiscoveryService`: `GET /api/public/home`, `/api/public/catalog`, `/api/public/clubs`, `/api/public/clubs/{id}`. Каталог использует `PublicCatalogSpecification`, пагинацию БД и пакетный маппинг `TournamentService`. Мобильный `/api/public/tournaments` сохранён. [Контракт](../docs/endpoints/public-schedule.md#публичные-данные-ui-v2).

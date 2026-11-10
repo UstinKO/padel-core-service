@@ -1,5 +1,12 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.padelcoreservice.dto.PublicCatalogFilter;
+import com.padle.core.padelcoreservice.repository.PublicCatalogSpecification;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import java.time.ZoneId;
 import com.padle.core.padelcoreservice.service.calendar.EventSchedule;
 import com.padle.core.padelcoreservice.util.AfterCommit;
 import com.padle.core.padelcoreservice.annotation.Counted;
@@ -1416,6 +1423,25 @@ public class TournamentService {
         return tournamentRepository.findById(id)
                 .filter(Tournament::getIsActive)
                 .map(this::mapToDtoWithDetails);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<TournamentDto> getPublicCatalog(PublicCatalogFilter filter, Pageable pageable) {
+        return publicCatalogPage(PublicCatalogSpecification.matching(filter), pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<TournamentDto> getPublicHomeCatalog(Pageable pageable) {
+        var filter = new PublicCatalogFilter(null, null, null, null, null, null,
+                LocalDate.now(ZoneId.of("America/Argentina/Buenos_Aires")), null);
+        var specification = PublicCatalogSpecification.matching(filter).and((root, query, builder) ->
+                root.get("estado").in(TournamentStatus.PUBLICADO, TournamentStatus.REGISTRO_ABIERTO));
+        return publicCatalogPage(specification, pageable);
+    }
+
+    private Page<TournamentDto> publicCatalogPage(Specification<Tournament> specification, Pageable pageable) {
+        var page = tournamentRepository.findAll(specification, pageable);
+        return new PageImpl<>(mapToDtoWithDetails(page.getContent()), pageable, page.getTotalElements());
     }
 
     @Transactional(readOnly = true)

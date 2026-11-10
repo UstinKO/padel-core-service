@@ -806,3 +806,8 @@ GET /admin/marketing/qr — страница отчёта QR, только SUPER
 Thymeleaf admin/qr-report, static/js/qr-report.js, static/css/qr-report.css.
 
 Календарь мероприятия: [контракт и проверка Apple](endpoints/event-calendar.md). Новые поля настроек: durationMinutes (>0), timeZone (IANA); текст duracion сохраняется.
+
+
+### Публичное чтение UI v2
+
+`PublicDiscoveryController` → `PublicDiscoveryService`: `GET /api/public/home`, `/api/public/catalog`, `/api/public/clubs`, `/api/public/clubs/{id}`. Типизированные публичные DTO, пагинация в БД, без мутаций. [Контракт](endpoints/public-schedule.md#публичные-данные-ui-v2).
