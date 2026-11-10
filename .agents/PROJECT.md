@@ -6,9 +6,9 @@
 
 ## Project Overview
 
-**padel-core-service** — Spring Boot 4.x монолит для управления падель-турнирами. UI рендерится на сервере через Thymeleaf. Целевой рынок — Аргентина (валюта ARS, валидация телефона +54).
+**padel-core-service** — Spring Boot 4.x монолит для управления падель-турнирами. Действующий UI рендерится через Thymeleaf; UI v2 поэтапно переносится в React SPA из `frontend/`, не переключая production-маршруты без отдельной задачи. Целевой рынок — Аргентина (валюта ARS, валидация телефона +54).
 
-**Stack:** Java 17 (source) / Java 21 (Docker/CI), Spring Boot 4.1 (Spring 7, Security 7, Hibernate 7, Jackson 3), PostgreSQL 15, Liquibase, Spring Security (JWT + form login + Google OAuth2), Spring WebSocket (STOMP/SockJS), Micrometer + Prometheus + Grafana + Loki, Bucket4j, MapStruct, Lombok.
+**Stack:** Java 17 (source) / Java 21 (Docker/CI), Spring Boot 4.1 (Spring 7, Security 7, Hibernate 7, Jackson 3), PostgreSQL 15, Liquibase, Spring Security (JWT + form login + Google OAuth2), Spring WebSocket (STOMP/SockJS), React 19 + TypeScript + Vite + pnpm (`frontend/`), TanStack Query, react-i18next, Micrometer + Prometheus + Grafana + Loki, Bucket4j, MapStruct, Lombok.
 
 **Server security stack:** Nginx (rate limiting, DDoS protection, Cloudflare real_ip_module) + CrowdSec (behavioral IDS/IPS, iptables bouncer) + UFW + Cloudflare CDN (orange cloud для `1-padel.com`). Подробнее — [.agents/SECURITY.md](SECURITY.md). Каталог атак, за счёт чего каждая останавливается, и открытые риски — [.agents/THREATS.md](THREATS.md).
 
@@ -33,6 +33,14 @@
 
 # Run locally (uses application.yml defaults: localhost:5432/player_padel_db)
 ./mvnw spring-boot:run
+
+# Frontend Phase 0
+pnpm --dir frontend install --frozen-lockfile
+pnpm --dir frontend check
+pnpm --dir frontend test:e2e
+
+# Быстрая backend-сборка без frontend
+./mvnw -Dskip.frontend=true package
 
 # Start full stack with observability (app + postgres + loki + prometheus + grafana)
 docker compose up -d

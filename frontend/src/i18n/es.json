@@ -1,0 +1,51 @@
+{
+  "app": {
+    "name": "1-Padel",
+    "skip": "Ir al contenido",
+    "preview": "Vista previa privada",
+    "phase": "Fundamentos de UI v2 · Fase 0"
+  },
+  "nav": {
+    "home": "Inicio",
+    "components": "Componentes"
+  },
+  "language": {
+    "label": "Idioma",
+    "es": "Español",
+    "ru": "Русский",
+    "en": "English"
+  },
+  "preview": {
+    "eyebrow": "Nuevo frontend",
+    "title": "La base para una experiencia de pádel más clara",
+    "lead": "Este entorno privado valida navegación, sesión, estados y componentes antes de migrar las pantallas reales.",
+    "sessionTitle": "Sesión del servidor",
+    "authenticated": "Sesión activa",
+    "anonymous": "Sin sesión",
+    "role": "Roles",
+    "club": "Club",
+    "notAvailable": "No disponible",
+    "componentTitle": "Componentes base",
+    "componentLead": "Tokens y estados reutilizables del concepto Play Concept 0.7.",
+    "fieldLabel": "Buscar torneo",
+    "fieldPlaceholder": "Nombre, club o categoría",
+    "primaryAction": "Acción principal",
+    "secondaryAction": "Acción secundaria",
+    "cardTitle": "Tarjeta de ejemplo",
+    "cardText": "Una superficie tranquila con borde sutil y jerarquía clara.",
+    "readyTitle": "Fundamentos listos",
+    "readyText": "La interfaz puede crecer pantalla por pantalla sin cambiar las rutas públicas.",
+    "emptyTitle": "Todavía no hay datos",
+    "emptyText": "El estado vacío conserva el contexto y explica el siguiente paso."
+  },
+  "state": {
+    "loadingTitle": "Cargando la sesión",
+    "loadingText": "Estamos comprobando el acceso con el servidor.",
+    "errorTitle": "No pudimos cargar esta sección",
+    "errorText": "Revisá la conexión e intentá nuevamente.",
+    "retry": "Reintentar"
+  },
+  "footer": {
+    "tagline": "Encontramos el partido. Reunimos a la gente."
+  }
+}

@@ -59,17 +59,19 @@
 Цель: вся инфраструктура на месте, в проде ничего не поменялось для пользователей, кроме того, что экраны ошибок могут рендериться SPA.
 
 **Сборка и раздача** (ADR-0002, 0003)
-- [ ] `frontend/`: Vite + React + TS, ESLint/Prettier, Vitest, Playwright, `size-limit`, README.
-- [ ] `frontend-maven-plugin` в `pom.xml`: `npm ci`, `npm run build`, копирование в `target/classes/static/web/` (`/app/` занят 1Padel.App); флаг `-Dskip.frontend` для быстрой сборки бэкенда.
-- [ ] `Dockerfile`: builder копирует `frontend/`; кэш npm.
-- [ ] `pr-check.yml`: сборка фронта, линт, тесты; кэш `~/.npm`.
-- [ ] `deploy.yml`: health-check проверяет, что `/web/index.html` отдаётся.
+- [x] `frontend/`: Vite + React + TS, ESLint/Prettier, Vitest, Playwright, `size-limit`, README (#827).
+- [x] `frontend-maven-plugin` в `pom.xml`: закреплённые Node/pnpm, frozen install, production build
+  и копирование в `target/classes/static/web/`; `-Dskip.frontend=true` для быстрой backend-сборки (#827).
+- [x] `Dockerfile`: builder копирует и собирает `frontend/` (#827).
+- [x] `pr-check.yml`: frozen install, format/lint/typecheck/unit/build/size и desktop/mobile Playwright,
+  pnpm cache (#827).
+- [x] `deploy.yml`: health-check проверяет, что `/web/index.html` отдаётся (#827).
 - [x] Backend: типизированный `app.spa.routes` с пустым default, forward только явно
   включённых `GET|HEAD`, закрытый `/preview/**`, `/web/**` с правильными `Cache-Control`.
 - [x] `/app/**` остаётся независимой Expo web-сборкой; React-маршрутизация её не перехватывает.
 - [ ] Серверная подстановка meta/OG (ADR-0008) — до первого публичного экрана.
 - [ ] `app.frontend-url` в конфиге; письма/Telegram/OAuth строят ссылки на страницы от него.
-- [ ] Облачная среда конвейера собирает фронт (проверить Node) — иначе `/develop-feature` не сможет делать экраны.
+- [x] Чистая Maven/Docker-среда сама устанавливает закреплённые Node/pnpm; CI собирает frontend (#827).
 
 **API-основа** (ADR-0004, 0005, 0011)
 - [ ] `springdoc-openapi`, Swagger UI только для SUPER_ADMIN; генерация TS-типов + проверка расхождений в CI.
@@ -81,16 +83,19 @@
 - [ ] Решить F-09 (роль `OWNER`) — привести права к существующим ролям.
 
 **Каркас SPA** (ADR-0006, 0009, 0010, 0012)
-- [ ] HTTP-клиент: CSRF, `Accept-Language`, обработка `401/403/429/ProblemDetail`.
+- [x] HTTP-клиент: same-origin credentials, CSRF, `Accept-Language`, типизированный
+  `ProblemDetail` и сигнал истечения сессии (#827); экранные реакции на `401/403/429` добавляются
+  вместе с guards/system screens.
 - [ ] Сессия и гарды роутов; редирект на текущую Thymeleaf-страницу `/login?redirect=`.
-- [ ] i18n-инфраструктура (react-i18next, три языка, проверка полноты в CI).
+- [x] i18n-инфраструктура (react-i18next, ES/RU/EN, тест структурной полноты словарей) (#827).
 - [ ] Файл токенов со значениями из утверждённого `DESIGN.md` (light/dark); `<AdminLayout>`, `<PublicLayout>`; тосты; модалка; `<NivelSelect>`.
 - [ ] STOMP-клиент и хук подписки (пока без потребителей).
 - [ ] Экраны `NotFound`, `Forbidden`, `RateLimited`, `ServerError`.
 
 **Процесс**
 - [ ] Правила фронта в `.agents/CODE_REVIEW.md`; обновить `.agents/roles/developer.md`, `tester.md`; шаблон фиче-спеки — раздел «экран из contract/screens.md».
-- [ ] Обновить `.agents/PROJECT.md` (стек, команды, где фронт) и исправить F-11.
+- [x] Обновить `.agents/PROJECT.md` (стек, команды, где frontend) (#827). Исправление остальных
+  расхождений F-11 остаётся поэкранной работой.
 
 **Готово, когда:** прод работает как раньше; `mvn package` даёт jar с `/web/`; `/preview/**`
 только для SUPER_ADMIN рендерит SPA с данными из `/api/auth/session`; production allowlist остаётся

@@ -76,6 +76,7 @@ Expo web-клиентом 1Padel.App. REST API выставлен паралле
 - Spring Boot 4.1 (Spring Framework 7, Spring Security 7, Hibernate 7, Jackson 3, Tomcat 11)
 - PostgreSQL 15 + Liquibase
 - Thymeleaf (SSR)
+- React 19 + TypeScript + Vite + pnpm (`frontend/`, UI v2)
 - Spring Security (JWT + Form Login + Google OAuth2)
 - Spring WebSocket (STOMP/SockJS)
 - Micrometer + Prometheus + Grafana + Loki
@@ -92,7 +93,9 @@ Expo web-клиентом 1Padel.App. REST API выставлен паралле
 - Allowlist не меняет Security rules исходного URL. Откат экрана — удалить его pattern.
 - `/app/**`, OAuth redirect и JWT-контракт Expo не меняются.
 - React читает same-origin сессию через `GET /api/auth/session` и использует существующий
-  double-submit CSRF; создание и упаковка frontend-сборки выполняются отдельным этапом.
+  double-submit CSRF. Maven ставит закреплённые Node/pnpm, запускает frozen install и Vite build,
+  затем включает `target/generated-resources/frontend/static/web/**` в jar. Флаг
+  `-Dskip.frontend=true` оставлен для локальных backend-итераций; production/CI его не используют.
 
 ---
 

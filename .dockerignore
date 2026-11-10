@@ -1,0 +1,15 @@
+.git
+.idea
+.claude
+.agents/runtime
+.codex
+.env
+.env.*
+target
+frontend/node_modules
+frontend/playwright-report
+frontend/test-results
+frontend/coverage
+mobile-app/node_modules
+logs
+*.log
