@@ -316,6 +316,65 @@
           }
         }
       }
+    },
+    "/api/public/events/{id}": {
+      "get": {
+        "summary": "Публичная веб-карточка: организатор, формат, фаза и безопасные переходы чтения",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Карточка; TEAM_PAIRS означает, что вариант проведения ещё не сохранён. Действия не заменяют серверную проверку прав на мутации.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebEvent"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "INVALID_EVENT_ID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "EVENT_NOT_FOUND: неизвестное, неактивное событие или черновик",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "PUBLIC_DATA_UNAVAILABLE",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -454,6 +513,27 @@
           },
           "websiteUrl": {
             "type": "string"
+          },
+          "participants": {
+            "type": "object",
+            "properties": {
+              "confirmed": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/PublicParticipant"
+                }
+              },
+              "waitlist": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/PublicParticipant"
+                }
+              }
+            },
+            "required": [
+              "confirmed",
+              "waitlist"
+            ]
           }
         },
         "required": [
@@ -529,6 +609,10 @@
               "string",
               "null"
             ]
+          },
+          "canonicalUrl": {
+            "type": "string",
+            "format": "uri"
           }
         },
         "required": [
@@ -539,7 +623,8 @@
           "description",
           "logoUrl",
           "mapUrl",
-          "websiteUrl"
+          "websiteUrl",
+          "canonicalUrl"
         ]
       },
       "CatalogPage": {
@@ -631,6 +716,126 @@
           "status",
           "instance",
           "code"
+        ]
+      },
+      "PublicParticipant": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "names": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "seekingPartner": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "names",
+          "seekingPartner"
+        ]
+      },
+      "WebEvent": {
+        "type": "object",
+        "properties": {
+          "event": {
+            "$ref": "#/components/schemas/Tournament"
+          },
+          "organizer": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "contact": {
+                    "type": "string"
+                  },
+                  "whatsappUrl": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "contact",
+                  "whatsappUrl"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "KING_OF_COURT",
+              "AMERICANO",
+              "TEAM_PAIRS",
+              "TEAM_AMERICANO",
+              "TEAM_PLAYOFF",
+              "CANCHA_ABIERTA",
+              "PADEL_CLINIC"
+            ]
+          },
+          "phase": {
+            "type": "string",
+            "enum": [
+              "NOT_STARTED",
+              "LIVE",
+              "QUALIFICATION",
+              "PLAYOFF",
+              "FINISHED",
+              "CANCELLED"
+            ]
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "REGISTRATION_INFO",
+                    "LIVE",
+                    "CALENDAR"
+                  ]
+                },
+                "url": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "type",
+                "url"
+              ]
+            }
+          },
+          "canonicalUrl": {
+            "type": "string"
+          },
+          "calendarUrl": {
+            "type": "string"
+          },
+          "pngUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "event",
+          "organizer",
+          "format",
+          "phase",
+          "actions",
+          "canonicalUrl",
+          "calendarUrl",
+          "pngUrl"
         ]
       }
     }

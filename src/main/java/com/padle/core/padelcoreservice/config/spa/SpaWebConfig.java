@@ -19,9 +19,13 @@ public class SpaWebConfig implements WebMvcConfigurer {
     private static final List<String> PREVIEW_ROUTES = List.of("/preview", "/preview/{*path}");
 
     @Bean
-    SpaForwardHandlerMapping spaForwardHandlerMapping(SpaProperties properties) {
+    SpaForwardHandlerMapping spaForwardHandlerMapping(SpaProperties properties, SpaPageService pages) {
         var routes = Stream.concat(properties.routes().stream(), PREVIEW_ROUTES.stream()).toList();
-        var mapping = new SpaForwardHandlerMapping(routes);
+        var mapping = new SpaForwardHandlerMapping(routes, (request, response) -> {
+            if (!pages.render(request, response)) {
+                request.getRequestDispatcher("/web/index.html").forward(request, response);
+            }
+        });
         mapping.setOrder(Ordered.HIGHEST_PRECEDENCE + 10);
         return mapping;
     }

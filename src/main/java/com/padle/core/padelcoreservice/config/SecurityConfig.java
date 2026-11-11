@@ -190,7 +190,7 @@ public class SecurityConfig {
                                 "/api/internal/telegram-pipeline/status",
                                 // Публичное расписание для мобильного приложения —
                                 // анонимное чтение, те же правила видимости, что у /torneo/{id}.
-                                "/api/public/home", "/api/public/catalog", "/api/public/clubs", "/api/public/clubs/*",
+                                "/api/public/events/*", "/api/public/home", "/api/public/catalog", "/api/public/clubs", "/api/public/clubs/*",
                                 "/api/public/tournaments",
                                 "/api/public/tournaments/*",
                                 "/api/public/tournaments/*/calendar",

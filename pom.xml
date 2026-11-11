@@ -237,6 +237,18 @@
         </resources>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!-- Общий бюджет соединений кешированных Spring-контекстов только в тестовом JVM. -->
+                    <systemPropertyVariables>
+                        <spring.test.context.cache.maxSize>8</spring.test.context.cache.maxSize>
+                        <spring.datasource.hikari.maximum-pool-size>4</spring.datasource.hikari.maximum-pool-size>
+                        <spring.datasource.hikari.minimum-idle>0</spring.datasource.hikari.minimum-idle>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>com.github.eirslett</groupId>
                 <artifactId>frontend-maven-plugin</artifactId>
                 <version>${frontend-maven-plugin.version}</version>

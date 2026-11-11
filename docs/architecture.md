@@ -660,3 +660,13 @@ services:
 ## Измерение рекламы Meta
 
 Изолированный модуль `marketing/`: JPA callback → JDBC-журнал в общей транзакции → фоновая очередь CAPI. Сеть отделена от сохранения оплаты, включение и токен через конфигурацию. [Контракт и ограничения](endpoints/meta-marketing.md).
+
+
+### Серверные метаданные SPA
+
+`SpaPageService` формирует SEO head для распознанных карточек события/клуба, сохраняя script/link Vite. Работает только внутри уже сопоставленных `SpaForwardHandlerMapping` путей: `/preview/**` закрыт и noindex; боевые пути останутся legacy до отдельного изменения allowlist. Метаданные экранируются, HTML no-store, неизвестные id дают 404, хранилище — 503. Canonical основан на app.base-url.
+
+
+### Ресурсы и логирование тестов
+
+Maven Surefire задаёт общий бюджет тестового JVM: Hikari maximum-pool-size=4, minimum-idle=0, Spring context cache=8. Это предотвращает исчерпание соединений PostgreSQL при нескольких кешированных контекстах. `src/test/resources/logback-test.xml` выводит маскированные сообщения в консоль без Loki/Telegram и файловых аппендеров. Настройки не включаются в production jar и не меняют пулы или логирование приложения.

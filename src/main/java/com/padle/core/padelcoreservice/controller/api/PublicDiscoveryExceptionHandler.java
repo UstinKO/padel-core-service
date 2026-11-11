@@ -19,7 +19,7 @@ import java.net.URI;
 import java.util.Locale;
 
 @Order(Ordered.HIGHEST_PRECEDENCE)
-@RestControllerAdvice(assignableTypes = PublicDiscoveryController.class)
+@RestControllerAdvice(assignableTypes = {PublicDiscoveryController.class, PublicEventController.class})
 @RequiredArgsConstructor
 public class PublicDiscoveryExceptionHandler {
     private final MessageSource messages;
@@ -27,12 +27,13 @@ public class PublicDiscoveryExceptionHandler {
     @ExceptionHandler(PublicDiscoveryException.class)
     public ResponseEntity<ProblemDetail> domain(PublicDiscoveryException exception, Locale locale, HttpServletRequest request) {
         var code = exception.getMessage();
-        return problem(code, code.equals("CLUB_NOT_FOUND") ? HttpStatus.NOT_FOUND : HttpStatus.BAD_REQUEST, locale, request);
+        return problem(code, (code.equals("CLUB_NOT_FOUND") || code.equals("EVENT_NOT_FOUND")) ? HttpStatus.NOT_FOUND : HttpStatus.BAD_REQUEST, locale, request);
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ProblemDetail> invalid(Locale locale, HttpServletRequest request) {
-        return problem("INVALID_CATALOG_FILTER", HttpStatus.BAD_REQUEST, locale, request);
+        return problem(request.getRequestURI().startsWith("/api/public/events/")
+                ? "INVALID_EVENT_ID" : "INVALID_CATALOG_FILTER", HttpStatus.BAD_REQUEST, locale, request);
     }
 
     @ExceptionHandler(DataAccessException.class)

@@ -16,10 +16,14 @@ public final class SpaForwardHandlerMapping extends AbstractHandlerMapping {
     private static final PathPatternParser PARSER = PathPatternParser.defaultInstance;
 
     private final List<PathPattern> routes;
-    private final HttpRequestHandler forwardHandler = (request, response) ->
-            request.getRequestDispatcher(SPA_INDEX).forward(request, response);
+    private final HttpRequestHandler forwardHandler;
 
     public SpaForwardHandlerMapping(List<String> productionRoutes) {
+        this(productionRoutes, (request, response) -> request.getRequestDispatcher(SPA_INDEX).forward(request, response));
+    }
+
+    public SpaForwardHandlerMapping(List<String> productionRoutes, HttpRequestHandler handler) {
+        forwardHandler = handler;
         routes = productionRoutes.stream()
                 .map(PARSER::parse)
                 .toList();

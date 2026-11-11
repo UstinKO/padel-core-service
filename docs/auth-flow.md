@@ -752,3 +752,6 @@ CLUB_ADMIN и PLAYER получают 403. Гость не получает да
 
 
 Публичное чтение UI v2: анонимные GET `/api/public/home`, `/api/public/catalog`, `/api/public/clubs` и `/api/public/clubs/{id}`. Это точечный allowlist; другие API сохраняют действующие требования авторизации.
+
+
+`GET /api/public/events/{id}` доступен анонимно и возвращает безопасную веб-карточку, без контактов участников. `/preview/**` остаётся под SUPER_ADMIN, с X-Robots-Tag noindex; метаданные не расширяют авторизацию и не активируют production SPA routes.
