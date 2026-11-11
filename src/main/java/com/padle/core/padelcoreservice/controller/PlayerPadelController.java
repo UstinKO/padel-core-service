@@ -12,6 +12,8 @@ import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -25,7 +27,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.Locale;
 import java.util.Set;
@@ -40,6 +41,7 @@ public class PlayerPadelController {
     private final RecaptchaService recaptchaService;
     private final RecaptchaProperties recaptchaProperties;
     private final RateLimitFilter rateLimitFilter;
+    private final MessageSource messages;
 
     @GetMapping("/registro")
     public String mostrarFormularioRegistro(Model model) {
@@ -58,7 +60,6 @@ public class PlayerPadelController {
             @RequestParam(value = "g-recaptcha-response", required = false) String recaptchaToken,
             Model model,
             @RequestParam(value = "website", required = false) String honeypot,
-            RedirectAttributes redirectAttributes,
             HttpServletRequest httpRequest) {
 
         log.info("Recibida solicitud de registro para: {}", request.getEmail());
@@ -75,12 +76,7 @@ public class PlayerPadelController {
         if (!recaptchaService.verify(recaptchaToken)) {
             log.warn("reCAPTCHA fallida para IP: {}", ip);
             rateLimitFilter.markRegistrationFailed(ip);
-            model.addAttribute("recaptchaSiteKey", recaptchaProperties.getSiteKey());
-            model.addAttribute("recaptchaEnabled", recaptchaProperties.isEnabled());
-            model.addAttribute("registroRequest", request);
-            model.addAttribute("errorMessage",
-                    "Verificación de seguridad fallida. Por favor intenta de nuevo.");
-            return "registro";
+            return registrationError(model, request, registrationMessage("registro.web.captcha"));
         }
 
         // Limpiar espacios
@@ -99,27 +95,14 @@ public class PlayerPadelController {
             }
         }
 
-        // Verificar que las contraseñas coinciden
-        if (!request.passwordsMatch()) {
-            log.warn("Las contraseñas no coinciden para IP: {}", ip);
-            redirectAttributes.addFlashAttribute("errorMessage", "Las contraseñas no coinciden");
-            return "redirect:/players/registro";
+        if (request.getTelefono() == null || request.getTelefono().isBlank()) {
+            result.rejectValue("telefono", "registro.web.phone.required");
         }
-
-        // Si hay errores de validación
+        if (!request.passwordsMatch()) {
+            result.rejectValue("confirmPassword", "registro.web.password.mismatch");
+        }
         if (result.hasErrors()) {
-            log.warn("Errores de validación en el formulario. IP: {}", ip);
-            result.getAllErrors().forEach(error ->
-                    log.warn("Error: {}", error.getDefaultMessage())
-            );
-
-            String errorMessage = result.getAllErrors().stream()
-                    .map(error -> error.getDefaultMessage())
-                    .findFirst()
-                    .orElse("Por favor, corrige los errores en el formulario");
-
-            redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
-            return "redirect:/players/registro";
+            return registrationError(model, request, registrationMessage("registro.web.fields"));
         }
 
         // Определяем язык браузера и сохраняем в профиль
@@ -163,9 +146,20 @@ public class PlayerPadelController {
         } catch (IllegalArgumentException e) {
             log.info("Ошибка проверки регистрации для IP: {}", ip);
 
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-            return "redirect:/players/registro";
+            return registrationError(model, request, e.getMessage());
         }
+    }
+
+    private String registrationError(Model model, RegistroRequestDto request, String message) {
+        request.setPassword(null);
+        request.setConfirmPassword(null);
+        request.setRecaptchaToken(null);
+        model.addAttribute("errorMessage", message);
+        return mostrarFormularioRegistro(model);
+    }
+
+    private String registrationMessage(String key) {
+        return messages.getMessage(key, null, LocaleContextHolder.getLocale());
     }
 
     private String resolvePreferredLocale(HttpServletRequest httpRequest) {
