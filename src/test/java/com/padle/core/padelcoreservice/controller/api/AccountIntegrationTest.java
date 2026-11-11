@@ -44,6 +44,33 @@ class AccountIntegrationTest {
     private String update(PlayerPadel p) {
         return "{\"nombre\":\"Changed\",\"apellido\":\"Garcia\",\"email\":\""+p.getEmail()+"\",\"telefono\":\"\",\"telegramUsername\":\""+p.getTelegramUsername()+"\",\"nivelJugador\":\"C7\",\"preferredLocale\":\"ru\"}";
     }
+    @Test
+    void webSignupRequiresPhoneEvenWhenTelegramIsPresent() throws Exception {
+        when(captcha.verify(null)).thenReturn(true);
+        var emailAddress = UUID.randomUUID() + "@gmail.com";
+        mvc.perform(post("/players/registro").with(csrf())
+                        .param("nombre", "Maria").param("apellido", "Garcia")
+                        .param("email", emailAddress).param("nivelJugador", "C7")
+                        .param("telegramUsername", "@test_player")
+                        .param("password", "Fixture-Password1!").param("confirmPassword", "Fixture-Password1!"))
+                .andExpect(view().name("registro"))
+                .andExpect(model().attributeHasFieldErrorCode("registroRequest", "telefono", "registro.web.phone.required"));
+        assertThat(players.existsByEmail(emailAddress)).isFalse();
+    }
+
+    @Test
+    void webSignupWithPhoneAndNoTelegramCreatesAccount() throws Exception {
+        when(captcha.verify(null)).thenReturn(true);
+        var emailAddress = UUID.randomUUID() + "@gmail.com";
+        mvc.perform(post("/players/registro").with(csrf())
+                        .param("nombre", "Maria").param("apellido", "Garcia")
+                        .param("email", emailAddress).param("nivelJugador", "C7")
+                        .param("telefono", "+5491199994567")
+                        .param("password", "Fixture-Password1!").param("confirmPassword", "Fixture-Password1!"))
+                .andExpect(redirectedUrl("/?welcome=true"));
+        assertThat(players.existsByEmail(emailAddress)).isTrue();
+    }
+
     @Test void realLoginSessionRotationProfileRefreshAndLogout() throws Exception {
         var p=player(); var before=new MockHttpSession(); String old=before.getId();
         var login=mvc.perform(post("/login").session(before).with(req -> { req.setRequestedSessionId(old); req.setRequestedSessionIdValid(true); return req; }).with(csrf()).accept("application/json")
