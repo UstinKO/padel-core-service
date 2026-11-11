@@ -281,6 +281,11 @@
         align-items: flex-start;
     }
 
+    .auth-entry > .cookie-banner {
+        position: static;
+        animation: none;
+    }
+
     .auth-entry .form-options {
         flex-direction: row;
         flex-wrap: wrap;

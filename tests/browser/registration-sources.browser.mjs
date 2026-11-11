@@ -31,10 +31,14 @@ async function pageFor(ctx) {
     page.on('pageerror', error => errors.push(String(error)));
     return page;
 }
-async function login(page, email, destination, { openLogin = true, hash = '' } = {}) {
+async function login(page, email, destination, { openLogin = true, hash = '', keepConsentVisible = false } = {}) {
     if (openLogin) await page.goto(fixture.baseUrl + '/login');
     const banner = page.locator('#cookieConsentBanner .cookie-btn-accept');
-    if (await banner.isVisible()) await banner.click();
+    if (keepConsentVisible) {
+        await banner.waitFor({ state: 'visible' });
+    } else if (await banner.isVisible()) {
+        await banner.click();
+    }
     await page.locator('#username').fill(email);
     await page.locator('#password').fill(fixture.password);
     await Promise.all([
@@ -188,7 +192,8 @@ try {
     const safari = await webkit.launch(); browsers.push(safari);
     const mobileContext = await context(safari, { ...devices['iPhone 13 Pro'] });
     const mobile = await pageFor(mobileContext);
-    await login(mobile, fixture.adminEmail, '/admin');
+    await login(mobile, fixture.adminEmail, '/admin', { keepConsentVisible: true });
+    await mobile.locator('#cookieConsentBanner .cookie-btn-accept').click();
     await report(mobile, 'ru', 'instagram');
     const fits = await mobile.locator('#source-filters').evaluate(element => element.getBoundingClientRect().right <= innerWidth + 1);
     assert.equal(fits, true);
