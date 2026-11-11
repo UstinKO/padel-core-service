@@ -18,6 +18,7 @@ import java.time.format.DateTimeFormatter;
 public class WebSocketService {
 
     private final SimpMessagingTemplate messagingTemplate;
+    private final PublicLiveNotifications publicChanges;
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
     public void notifyResultSaved(Long kingId, Long roundId, Integer courtNumber, MatchHistoryDTO result) {
@@ -29,6 +30,7 @@ public class WebSocketService {
                 .build();
 
         AfterCommit.run(() -> messagingTemplate.convertAndSend("/topic/tournament/" + kingId, message));
+        publicChanges.kingChanged(kingId);
         log.info("WebSocket notification sent for result saved: kingId={}, court={}", kingId, courtNumber);
     }
 
@@ -41,6 +43,7 @@ public class WebSocketService {
                 .build();
 
         AfterCommit.run(() -> messagingTemplate.convertAndSend("/topic/tournament/" + kingId, message));
+        publicChanges.kingChanged(kingId);
         log.info("WebSocket notification sent for round completed: kingId={}, round={}", kingId, roundNumber);
     }
 
@@ -53,6 +56,7 @@ public class WebSocketService {
                 .build();
 
         AfterCommit.run(() -> messagingTemplate.convertAndSend("/topic/tournament/" + kingId, message));
+        publicChanges.kingChanged(kingId);
         log.info("WebSocket notification sent for next round: kingId={}, newRound={}", kingId, newRoundNumber);
     }
 
@@ -65,6 +69,7 @@ public class WebSocketService {
                 .build();
 
         AfterCommit.run(() -> messagingTemplate.convertAndSend("/topic/tournament/" + kingId, message));
+        publicChanges.kingChanged(kingId);
         log.info("WebSocket notification sent for tournament finished: kingId={}", kingId);
     }
 
@@ -77,6 +82,7 @@ public class WebSocketService {
                 .build();
 
         AfterCommit.run(() -> messagingTemplate.convertAndSend("/topic/tournament/" + kingId, message));
+        publicChanges.kingChanged(kingId);
         log.info("WebSocket notification sent for state update: kingId={}", kingId);
     }
 
@@ -118,6 +124,7 @@ public class WebSocketService {
                 .build();
 
         AfterCommit.run(() -> messagingTemplate.convertAndSend("/topic/team-playoff/" + tournamentId, message));
+        publicChanges.changed(tournamentId);
         log.info("WebSocket notification sent for team-playoff: tournamentId={}, type={}", tournamentId, type);
     }
 }

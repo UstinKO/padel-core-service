@@ -4,6 +4,7 @@ import com.padle.core.padelcoreservice.model.americano.AmericanoMatch;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.enums.AmericanoRoundStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -15,6 +16,7 @@ public interface AmericanoMatchRepository extends JpaRepository<AmericanoMatch, 
 
     List<AmericanoMatch> findByRoundId(Long roundId);
 
+    @EntityGraph(attributePaths = {"round", "team1Player1", "team1Player2", "team2Player1", "team2Player2"})
     List<AmericanoMatch> findByTournamentIdOrderByRoundIdAscMatchNumberAsc(Long tournamentId);
 
     @Query("SELECT am FROM AmericanoMatch am WHERE am.tournament.id = :tournamentId " +

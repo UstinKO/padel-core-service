@@ -815,3 +815,8 @@ Thymeleaf admin/qr-report, static/js/qr-report.js, static/css/qr-report.css.
 
 
 `PublicEventController` → `PublicEventService`/`PublicEventStateService`: `GET /api/public/events/{id}` — типизированная карточка события, опубликованный контакт организатора, формат/фаза сохранённого проведения и read-only ссылки. [Контракт](endpoints/public-schedule.md#веб-карточка-мероприятия-и-серверный-seo-контракт).
+
+
+### LFPT-0903: публичные live-снимки
+
+GET/HEAD `/api/public/events/{eventId}/live` и `/api/public/king-of-court/{kingId}/live` разрешены анонимно, с проверкой active/не BORRADOR, no-store и безопасным DTO для всех ролей. [Контракт, ошибки, пакетное чтение и STOMP](endpoints/public-live.md). В `/topic/public/live/{eventId}` только invalidation после commit; wildcard SUBSCRIBE и клиентский SEND в публичный topic запрещены. Мутации и мобильный API прежние; preview остаётся SUPER_ADMIN.

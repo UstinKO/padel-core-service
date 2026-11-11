@@ -274,3 +274,10 @@ Health check. Возвращает `"pong"`.
 Публичный рейтинг отдаёт `matchPoints` и `additionalPoints` с суммой и разбивкой по этапам. Итог равен очкам за матчи, бонусу за корт и ручной сумме. Для завершённого проведения используется отдельный административный маршрут редактирования результата.
 
 Координатор управляет записями по `/admin/tournaments/{tournamentId}/additional-points`. Для завершённого турнира используется `/admin/tournaments/{tournamentId}/finished-results/additional-points`. `GET` отдаёт форму и журнал. `POST` создаёт запись, `POST /admin/tournaments/{tournamentId}/additional-points/{id}` меняет её. `POST /admin/tournaments/{tournamentId}/additional-points/{id}/cancel` отменяет запись. Для записи требуются ключ `Idempotency-Key`, версия `expectedConductVersion` и проверка прав на турнир.
+
+
+## LFPT-0903: публичный live snapshot UI v2
+
+`GET /api/public/events/{eventId}/live` — типизированный снимок King of Court, индивидуального Americano или Team Playoff. `GET /api/public/king-of-court/{kingId}/live` — проверяемый alias текущего KoC. Оба разрешают анонимный GET/HEAD, отвечают `Cache-Control: no-store`. Нулевой/некорректный ID — 422; отсутствующий/неактивный/BORRADOR event — 404 независимо от роли. SOLO_POR_ENLACE доступен по прямой ссылке. Мобильный контракт и прежние URL сохраняются.
+
+Контракт и ошибки: [public-live.md](public-live.md). Новый топик `/topic/public/live/{eventId}` передаёт только invalidation; прежние `/topic/tournament/{kingId}` и `/topic/team-playoff/{eventId}` сохраняют payload. Публичный снимок не содержит контактов игроков, внутренних заметок или аудита. Административные мутации не меняются.

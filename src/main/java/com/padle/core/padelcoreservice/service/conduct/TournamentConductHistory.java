@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.service.conduct;
 
+import com.padle.core.padelcoreservice.service.PublicLiveNotifications;
 import com.padle.core.padelcoreservice.dto.americano.AmericanoMatchResultDto;
 import com.padle.core.padelcoreservice.exception.InvalidStateException;
 import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
@@ -47,6 +48,7 @@ public class TournamentConductHistory {
             "id, recorded_at, actor_name, action, subject_id, round_number, court_number, stage, restored_from";
 
     private final JdbcClient jdbc;
+    private final PublicLiveNotifications publicChanges;
     private final EntityManager entityManager;
     private final ConductSnapshotStore snapshots;
     private final TournamentAccessService access;
@@ -195,7 +197,7 @@ public class TournamentConductHistory {
 
     private long save(long tournamentId, Owner owner, Action action, Long subjectId, Target target,
                       String snapshot, Long restoredFrom, UUID key) {
-        return jdbc.sql("""
+        long version = jdbc.sql("""
                 INSERT INTO tournament_conduct_history
                     (tournament_id, actor_id, actor_name, action, subject_id, round_number, court_number,
                      stage, restored_from, request_key, snapshot, registrations)
@@ -210,6 +212,8 @@ public class TournamentConductHistory {
                 .param("stage", target.stage()).param("source", restoredFrom)
                 .param("key", key).param("snapshot", snapshot)
                 .param("registrations", snapshots.registrations(tournamentId)).query(Long.class).single();
+        publicChanges.changed(tournamentId);
+        return version;
     }
 
     private Owner currentOwner(Object[] args) {

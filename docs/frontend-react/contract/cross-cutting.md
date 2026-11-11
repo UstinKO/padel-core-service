@@ -164,3 +164,8 @@
 ## Реализованные сквозные механизмы UI v2
 
 Реальный account API описан в [контракте аккаунта](../../endpoints/account.md): `/login` и `/logout` имеют JSON content negotiation, все анонимные `/api/**` возвращают 401 ProblemDetail. Ручной `lang` из прямой ссылки или переключателя синхронизирует cookie сервера. React использует server cookie-consent: optional SDK не загружаются без согласия, существующие hooks получают update/revoke, закрытый preview самостоятельно внешние SDK не подключает. Ошибка сохранения не меняет предыдущий выбор. Root/route boundary не показывает исключение или stack trace; 401 сохраняет destination, 403 не предлагает циклический вход. Retry-After поддерживает секунды и HTTP-date, таймер 429 привязан к моменту ответа и не перезапускается при обычной перерисовке. Повторы не отправляют мутации автоматически.
+
+
+### LFPT-0903: безопасное чтение live
+
+Реализован [публичный контракт live](../../endpoints/public-live.md), [OpenAPI](public-live.openapi.json): один read-only snapshot по eventId и проверяемый alias по kingId. Контакты/заметки/actor не передаются. Старые API и мутации сохраняются. React должен слушать `/topic/public/live/{eventId}` как invalidation, перечитывать целый snapshot после reconnect/focus и применять bounded polling 20 с; индивидуальный Americano использует только polling. Старые описания payload выше относятся к legacy. Production-переключение не входит в #903.

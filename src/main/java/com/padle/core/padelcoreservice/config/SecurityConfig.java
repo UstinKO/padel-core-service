@@ -191,6 +191,8 @@ public class SecurityConfig {
                         // Ручная проверка Telegram-интеграции шлёт сообщения в рабочую группу
                         // и напоминания игрокам — только SUPER_ADMIN, под CSRF, как любая мутация.
                         .requestMatchers("/test/telegram/**").hasRole("SUPER_ADMIN")
+                        .requestMatchers(org.springframework.http.HttpMethod.HEAD,
+                                "/api/public/events/*/live", "/api/public/king-of-court/*/live").permitAll()
                         // Публичные GET-эндпоинты King of Court для страницы зрителей
                         .requestMatchers(org.springframework.http.HttpMethod.GET,
                                 "/api/king-of-court/tournaments/*/state",
@@ -201,7 +203,8 @@ public class SecurityConfig {
                                 "/api/internal/telegram-pipeline/status",
                                 // Публичное расписание для мобильного приложения —
                                 // анонимное чтение, те же правила видимости, что у /torneo/{id}.
-                                "/api/public/config", "/api/public/events/*", "/api/public/home", "/api/public/catalog", "/api/public/clubs", "/api/public/clubs/*",
+                                "/api/public/config", "/api/public/events/*",
+                                "/api/public/events/*/live", "/api/public/king-of-court/*/live", "/api/public/home", "/api/public/catalog", "/api/public/clubs", "/api/public/clubs/*",
                                 "/api/public/tournaments",
                                 "/api/public/tournaments/*",
                                 "/api/public/tournaments/*/calendar",

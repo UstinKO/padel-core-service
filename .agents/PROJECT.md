@@ -339,7 +339,7 @@ docker compose up -d
 
 | Endpoint | Topic | Описание |
 |----------|-------|----------|
-| `/ws` (SockJS) | `/topic/king-of-court/{tournamentId}` | Real-time обновления King of Court |
+| `/ws` (SockJS) | `/topic/tournament/{kingId}` | Real-time обновления King of Court |
 
 ---
 
@@ -380,7 +380,7 @@ Enum `TournamentType` определяет четыре формата, у ка�
 | Americano | `AmericanoService` | `AmericanoRound`, `AmericanoMatch`, `AmericanoPlayer` |
 | Team Americano | `TeamAmericanoService` | `AmericanoTeam`, `AmericanoRound` |
 
-King of Court шлёт real-time состояние на `/topic/king-of-court/{tournamentId}` через `WebSocketService`.
+King of Court шлёт real-time состояние на `/topic/tournament/{kingId}` через `WebSocketService`.
 
 ### Registration Status Flow
 
@@ -612,3 +612,8 @@ React #907: `EventPage`, `ClubsPage`, `ClubPage`; типы/URL-проверки 
 ### React: юридические и системные страницы
 
 `LegalPage`: утверждённые тексты трёх языков из старых шаблонов, статическая миграция `frontend/scripts/sync-legal-content.py` и тест эквивалентности. `CookieConsent`: существующий серверный контракт, CSRF и update/revoke hooks без загрузки SDK в preview. `SystemPage`, `ReadError`, `AppErrorBoundary`: безопасные статусы, offline, 429/Retry-After и 401 с destination. Production routes сохранены.
+
+
+### LFPT-0903: публичные live-снимки
+
+GET/HEAD `/api/public/events/{eventId}/live` и `/api/public/king-of-court/{kingId}/live` разрешены анонимно, с проверкой active/не BORRADOR, no-store и безопасным DTO для всех ролей. [Контракт, ошибки, пакетное чтение и STOMP](../docs/endpoints/public-live.md). В `/topic/public/live/{eventId}` только invalidation после commit; wildcard SUBSCRIBE и клиентский SEND в публичный topic запрещены. Мутации и мобильный API прежние; preview остаётся SUPER_ADMIN.

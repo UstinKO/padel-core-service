@@ -23,6 +23,7 @@ import com.padle.core.padelcoreservice.service.PlayerService;
 import com.padle.core.padelcoreservice.service.TournamentAccessService;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import com.padle.core.padelcoreservice.service.americano.TeamPlayoffService;
+import com.padle.core.padelcoreservice.service.americano.TeamPlayoffReadService;
 import com.padle.core.padelcoreservice.service.conduct.TournamentConductHistory;
 import com.padle.core.padelcoreservice.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
@@ -56,6 +57,7 @@ import java.util.stream.Collectors;
 public class TeamPlayoffViewController {
 
     private final TeamPlayoffService playoffService;
+    private final TeamPlayoffReadService readService;
     private final TournamentService tournamentService;
     private final AmericanoMatchRepository matchRepository;
     private final TournamentAccessService tournamentAccessService;
@@ -615,88 +617,14 @@ public class TeamPlayoffViewController {
     // ══════════════════════════════════════════════════════════════════════
 
     private List<AmericanoRoundDto> buildRoundDtos(List<AmericanoRound> rounds) {
-        return rounds.stream().map(round -> {
-            // У матчей в очереди (ещё без корта) свой блок («Cola de espera») — здесь они
-            // не перечисляются вместе с уже сыгранными/идущими матчами раунда.
-            List<AmericanoMatch> matches = matchRepository.findByRoundId(round.getId()).stream()
-                    .filter(m -> !m.isQueued())
-                    .toList();
-
-            AmericanoRoundDto dto = new AmericanoRoundDto();
-            dto.setId(round.getId());
-            dto.setTournamentId(round.getTournament().getId());
-            dto.setRoundNumber(round.getRoundNumber());
-            dto.setStatus(AmericanoRoundStatus.valueOf(round.getStatus().name()));
-            dto.setCourts(round.getCourts());
-            dto.setPointsPerMatch(round.getPointsPerMatch());
-            dto.setNote(round.getNote());
-            dto.setStartedAt(round.getStartedAt());
-            dto.setCompletedAt(round.getCompletedAt());
-            dto.setTotalMatches(matches.size());
-            dto.setCompletedMatches(
-                    (int) matches.stream().filter(AmericanoMatch::isCompleted).count());
-            dto.setMatches(matches.stream().map(playoffService::toMatchDto).toList());
-            return dto;
-        }).toList();
+        return readService.rounds(rounds);
     }
 
-    /** Проставляет "1-й"/"2-й" квалификационный матч команды на уже собранные round dto. */
-    private void applyQualMatchOrdinals(Long tournamentId, List<AmericanoRoundDto> qualRoundDtos) {
-        Map<Long, int[]> ordinals = playoffService.computeQualMatchOrdinals(tournamentId);
-        qualRoundDtos.forEach(round -> round.getMatches().forEach(match -> {
-            int[] o = ordinals.get(match.getId());
-            if (o != null) {
-                match.setTeam1MatchOrdinal(o[0] > 0 ? o[0] : null);
-                match.setTeam2MatchOrdinal(o[1] > 0 ? o[1] : null);
-            }
-        }));
+    private void applyQualMatchOrdinals(Long tournamentId, List<AmericanoRoundDto> rounds) {
+        readService.qualificationOrdinals(tournamentId, rounds);
     }
 
-    /**
-     * Квалификация Team Playoff технически — единый round-контейнер
-     * ({@link TeamPlayoffService#getOrCreateQualificationRound}), где вперемешку лежат 1-й и
-     * 2-й квалификационный матч каждой команды. Разбивает его на до 2 визуальных "волн" по уже
-     * вычисленным {@code team1MatchOrdinal}/{@code team2MatchOrdinal} (см. {@link #applyQualMatchOrdinals},
-     * должен быть вызван раньше) и сортирует матчи внутри волны по номеру корта. "Пограничный"
-     * матч нечётного случая (ordinal команд отличается, "дополнительная" команда играет
-     * против соперника, для которого это уже 2-й матч) относится к {@code max(ordinal1, ordinal2)} —
-     * ко 2-й волне, раз для соперника она уже фактически идёт.
-     */
-    List<AmericanoRoundDto> splitQualificationWaves(List<AmericanoRoundDto> qualRoundDtos) {
-        if (qualRoundDtos.isEmpty()) {
-            return qualRoundDtos;
-        }
-        AmericanoRoundDto container = qualRoundDtos.get(0);
-        Map<Integer, List<AmericanoMatchDto>> byWave = new TreeMap<>();
-        for (AmericanoMatchDto match : container.getMatches()) {
-            int ordinal1 = match.getTeam1MatchOrdinal() != null ? match.getTeam1MatchOrdinal() : 1;
-            int ordinal2 = match.getTeam2MatchOrdinal() != null ? match.getTeam2MatchOrdinal() : 1;
-            int wave = Math.max(ordinal1, ordinal2);
-            byWave.computeIfAbsent(wave, k -> new ArrayList<>()).add(match);
-        }
-
-        List<AmericanoRoundDto> waves = new ArrayList<>();
-        byWave.forEach((waveNumber, matches) -> {
-            List<AmericanoMatchDto> sorted = matches.stream()
-                    .sorted(Comparator.comparing(AmericanoMatchDto::getCourtNumber,
-                            Comparator.nullsLast(Comparator.naturalOrder())))
-                    .toList();
-            waves.add(AmericanoRoundDto.builder()
-                    .id(container.getId())
-                    .tournamentId(container.getTournamentId())
-                    .roundNumber(waveNumber)
-                    .status(container.getStatus())
-                    .courts(container.getCourts())
-                    .pointsPerMatch(container.getPointsPerMatch())
-                    .note(container.getNote())
-                    .startedAt(container.getStartedAt())
-                    .completedAt(container.getCompletedAt())
-                    .totalMatches(sorted.size())
-                    .completedMatches((int) sorted.stream().filter(m -> Boolean.TRUE.equals(m.getIsCompleted())).count())
-                    .matches(sorted)
-                    .build());
-        });
-        return waves;
+    List<AmericanoRoundDto> splitQualificationWaves(List<AmericanoRoundDto> rounds) {
+        return readService.qualificationWaves(rounds);
     }
-
 }

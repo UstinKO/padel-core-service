@@ -37,6 +37,8 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import java.util.function.Function;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 @Service
@@ -953,34 +955,26 @@ public class TeamPlayoffService {
     // ═══════════════════════════════════════════════════════════════════════
 
     public TeamAmericanoRankingDto getQualRanking(Long tournamentId) {
-        Tournament tournament = getTournament(tournamentId);
-        List<AmericanoTeam> teams = teamRepository.findPlayoffRankingByTournamentId(tournamentId);
-        List<AmericanoRound> qualRounds = roundRepository.findByTournamentIdAndPhase(
-                tournamentId, TournamentPhase.QUALIFICATION);
-
-        long total     = qualRounds.size();
-        long completed = qualRounds.stream().filter(AmericanoRound::isCompleted).count();
-
-        AtomicInteger pos = new AtomicInteger(1);
-        List<AmericanoTeamDto> ranking = teams.stream()
-                .map(t -> {
-                    AmericanoTeamDto dto = toDto(t);
-                    applyTournamentStatus(dto, tournamentId, t);
-                    dto.setCurrentPosition(pos.getAndIncrement());
-                    applyQualBreakdown(dto, tournamentId, t.getId());
-                    return dto;
-                })
-                .collect(Collectors.toList());
-
-        return TeamAmericanoRankingDto.builder()
-                .tournamentId(tournament.getId())
-                .tournamentName(tournament.getNombre())
-                .totalRounds((int) total)
-                .completedRounds((int) completed)
-                .totalTeams(teams.size())
-                .isFinished(total > 0 && completed == total)
-                .ranking(ranking)
-                .build();
+        var tournament = getTournament(tournamentId);
+        var teams = teamRepository.findPlayoffRankingByTournamentId(tournamentId);
+        var allMatches = matchRepository.findByTournamentIdOrderByRoundIdAscMatchNumberAsc(tournamentId);
+        var rounds = roundRepository.findByTournamentIdAndPhase(tournamentId, TournamentPhase.QUALIFICATION);
+        var queue = getQueue(tournamentId);
+        var byId = teams.stream().collect(Collectors.toMap(AmericanoTeam::getId, Function.identity()));
+        var ranking = IntStream.range(0, teams.size()).mapToObj(index -> {
+            var team = teams.get(index);
+            var dto = toDto(team);
+            var matches = allMatches.stream().filter(match -> team.getId().equals(match.getTeam1Id())
+                    || team.getId().equals(match.getTeam2Id())).toList();
+            applyTournamentStatus(dto, team, matches, queue, byId);
+            dto.setCurrentPosition(index + 1);
+            applyQualBreakdown(dto, team.getId(), matches);
+            return dto;
+        }).toList();
+        return TeamAmericanoRankingDto.builder().tournamentId(tournament.getId()).tournamentName(tournament.getNombre())
+                .totalRounds(rounds.size()).completedRounds((int) rounds.stream().filter(AmericanoRound::isCompleted).count())
+                .totalTeams(teams.size()).isFinished(!rounds.isEmpty() && rounds.stream().allMatch(AmericanoRound::isCompleted))
+                .ranking(ranking).build();
     }
 
     public List<AmericanoRound> getQualRounds(Long tournamentId) {
@@ -1622,8 +1616,8 @@ public class TeamPlayoffService {
      * Разбивка по матчам для квалификационной таблицы: геймы В/П отдельно
      * по 1-му и 2-му сыгранным матчам, плюс статус 2-0/1-1/0-2 (§6/§30).
      */
-    private void applyQualBreakdown(AmericanoTeamDto dto, Long tournamentId, Long teamId) {
-        List<AmericanoMatch> completed = getTeamQualMatches(tournamentId, teamId).stream()
+    private void applyQualBreakdown(AmericanoTeamDto dto, Long teamId, List<AmericanoMatch> matches) {
+        List<AmericanoMatch> completed = matches.stream().filter(match -> match.getRound().getPhase() == TournamentPhase.QUALIFICATION)
                 .filter(AmericanoMatch::isCompleted)
                 .sorted(Comparator.comparing(AmericanoMatch::getMatchNumber))
                 .toList();
@@ -1647,7 +1641,8 @@ public class TeamPlayoffService {
      * ждёт следующего матча, вышла в следующий этап плей-офф, выбыла, или уже чемпион/финалист.
      * "Ожидает" и "только что завершила матч" — одно и то же видимое состояние (между матчами).
      */
-    private void applyTournamentStatus(AmericanoTeamDto dto, Long tournamentId, AmericanoTeam team) {
+    private void applyTournamentStatus(AmericanoTeamDto dto, AmericanoTeam team, List<AmericanoMatch> teamMatches,
+                                       List<AmericanoMatchDto> queue, Map<Long, AmericanoTeam> teams) {
         if (Integer.valueOf(1).equals(team.getCurrentPosition())) {
             dto.setTournamentStatus("CHAMPION");
             return;
@@ -1657,11 +1652,6 @@ public class TeamPlayoffService {
             return;
         }
 
-        List<AmericanoMatch> teamMatches = matchRepository.findByTournamentIdOrderByRoundIdAscMatchNumberAsc(tournamentId)
-                .stream()
-                .filter(m -> team.getId().equals(m.getTeam1Id()) || team.getId().equals(m.getTeam2Id()))
-                .toList();
-
         if (teamMatches.stream().anyMatch(AmericanoMatch::isInProgress)) {
             dto.setTournamentStatus("PLAYING");
             return;
@@ -1669,7 +1659,7 @@ public class TeamPlayoffService {
 
         Optional<AmericanoMatch> queuedMatch = teamMatches.stream().filter(AmericanoMatch::isQueued).findFirst();
         if (queuedMatch.isPresent()) {
-            applyQueueInfo(dto, tournamentId, team.getId(), queuedMatch.get());
+            applyQueueInfo(dto, team.getId(), queuedMatch.orElseThrow(), queue, teams);
             return;
         }
 
@@ -1693,14 +1683,15 @@ public class TeamPlayoffService {
     }
 
     /** Позиция в очереди и имя соперника — для публичного статуса «в очереди». */
-    private void applyQueueInfo(AmericanoTeamDto dto, Long tournamentId, Long teamId, AmericanoMatch queuedMatch) {
+    private void applyQueueInfo(AmericanoTeamDto dto, Long teamId, AmericanoMatch queuedMatch,
+                                List<AmericanoMatchDto> queue, Map<Long, AmericanoTeam> teams) {
         dto.setTournamentStatus("QUEUED");
-        getQueue(tournamentId).stream()
+        queue.stream()
                 .filter(m -> m.getId().equals(queuedMatch.getId()))
                 .findFirst()
                 .ifPresent(m -> dto.setQueuePosition(m.getQueuePosition()));
         Long opponentId = teamId.equals(queuedMatch.getTeam1Id()) ? queuedMatch.getTeam2Id() : queuedMatch.getTeam1Id();
-        dto.setQueueOpponentName(teamDisplayName(opponentId));
+        dto.setQueueOpponentName(Optional.ofNullable(teams.get(opponentId)).map(AmericanoTeam::getDisplayName).orElse("—"));
     }
 
     private int[] gamesForAndAgainst(AmericanoMatch match, Long teamId) {
