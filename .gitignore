@@ -41,6 +41,7 @@ application-*.yml
 !application.yml
 !application-prod.yml
 !application-cloud.yml
+!application-preview.yml
 
 # .claude/ теперь публикуется (нужно облачным Claude Code routines — они
 # клонируют репозиторий с GitHub, локального копирования файлов не будет).
@@ -76,3 +77,4 @@ design-screenshots/
 .codex/config.local.toml
 __pycache__/
 /automation/telegram-relay/runtime/
+/automation/ui-preview/runtime/

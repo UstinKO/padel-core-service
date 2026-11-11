@@ -990,3 +990,7 @@ reby, black_padel, 15cero_villa_crespo, 15cero_saavedra. Структура, PK 
 PK `(registration_id, version)` исключает два факта одного перехода; UNIQUE `(event_id, registration_id)` не допускает дублирование участника операции. Индексы: событие по tournament_id/recorded_at, участник по player_id/event_id и повтор по receipt_registration/receipt_version/receipt_actor. Идентификаторы профиля и регистрационной строки — снимки без новых FK: удаление синтетического профиля не блокируется и не каскадирует в платежи или журнал; обычная отмена ничего физически не удаляет. При удалении самого турнира журнал удаляется вместе с его данными.
 
 Коды причин: PARTICIPANT_WITHDRAWAL, PAIR_WITHDRAWAL, ORGANIZER_REMOVAL, PLAYER_DEACTIVATED, PARTICIPANT_REPLACED, LEGACY_UNKNOWN. Миграция переносит сохранившиеся CANCELLED-строки с UNKNOWN/LEGACY_UNKNOWN, без копирования служебного cancellation_reason в публичный комментарий. Один такой факт описывает наблюдаемую строку; прежнюю область парной операции достоверно восстановить нельзя. Уже удалённые или ранее стёртые при реактивации факты не восстанавливаются.
+
+## Метаданные отдельного preview-контура
+
+В выделенной БД `padel_ui_v2_preview` Compose-init создаёт `ui_preview.control(instance_id uuid PRIMARY KEY, state jsonb)`. UUID сверяется до Liquibase; `state` хранит только ID собственных seed-сущностей для идемпотентного старта и ограниченного reset. Таблица не входит в production changelog и не создаётся в обычных профилях. Основная схема проходит те же действующие миграции. См. [runbook контура](ui-v2-preview.md).
