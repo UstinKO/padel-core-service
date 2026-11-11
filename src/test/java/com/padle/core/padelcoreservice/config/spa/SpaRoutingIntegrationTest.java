@@ -85,8 +85,20 @@ class SpaRoutingIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(forwardedUrl(SPA_INDEX));
         mockMvc.perform(get("/preview/path/to/screen").with(user("tester").roles("SUPER_ADMIN")))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("spa-test-shell")));
+    }
+
+    @Test
+    void legalAndSystemPreviewHaveRealStatusAndNoindexMetadata() throws Exception {
+        mockMvc.perform(get("/preview/privacidad").with(user("tester").roles("SUPER_ADMIN")))
                 .andExpect(status().isOk())
-                .andExpect(forwardedUrl(SPA_INDEX));
+                .andExpect(header().string("X-Robots-Tag", "noindex, nofollow"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("/privacidad")));
+        mockMvc.perform(get("/preview/error/503").with(user("tester").roles("SUPER_ADMIN")))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(header().string("X-Robots-Tag", "noindex, nofollow"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("spa-test-shell")));
     }
 
     @Test

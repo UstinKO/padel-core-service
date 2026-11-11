@@ -102,8 +102,6 @@ public class PlayerPadelController {
         // Verificar que las contraseñas coinciden
         if (!request.passwordsMatch()) {
             log.warn("Las contraseñas no coinciden para IP: {}", ip);
-            rateLimitFilter.markRegistrationFailed(ip);
-
             redirectAttributes.addFlashAttribute("errorMessage", "Las contraseñas no coinciden");
             return "redirect:/players/registro";
         }
@@ -114,8 +112,6 @@ public class PlayerPadelController {
             result.getAllErrors().forEach(error ->
                     log.warn("Error: {}", error.getDefaultMessage())
             );
-
-            rateLimitFilter.markRegistrationFailed(ip);
 
             String errorMessage = result.getAllErrors().stream()
                     .map(error -> error.getDefaultMessage())
@@ -165,9 +161,7 @@ public class PlayerPadelController {
             return "redirect:/?welcome=true";
 
         } catch (IllegalArgumentException e) {
-            log.error("Error al registrar jugador: {} (IP: {})", e.getMessage(), ip);
-
-            rateLimitFilter.markRegistrationFailed(ip);
+            log.info("Ошибка проверки регистрации для IP: {}", ip);
 
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
             return "redirect:/players/registro";
@@ -203,7 +197,6 @@ public class PlayerPadelController {
             PlayerResponseDto jugadorRegistrado = playerService.registrarJugador(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(jugadorRegistrado);
         } catch (IllegalArgumentException e) {
-            rateLimitFilter.markRegistrationFailed(ip);
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }

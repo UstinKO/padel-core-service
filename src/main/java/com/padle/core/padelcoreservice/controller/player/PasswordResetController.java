@@ -1,6 +1,9 @@
 package com.padle.core.padelcoreservice.controller.player;
 
 import com.padle.core.padelcoreservice.dto.PasswordResetConfirm;
+import com.padle.core.padelcoreservice.security.AccountDestination;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import com.padle.core.padelcoreservice.dto.PasswordResetRequest;
 import com.padle.core.padelcoreservice.service.PasswordResetService;
 import jakarta.validation.Valid;
@@ -35,7 +38,7 @@ public class PasswordResetController {
      * Этот метод обрабатывает GET запросы на /recuperar-password?token=...
      */
     @GetMapping
-    public String mostrarFormularioNuevoPassword(@RequestParam String token) {
+    public String mostrarFormularioNuevoPassword(@RequestParam String token, @RequestParam(required = false) String destination) {
         log.info("Mostrando formulario para nuevo password con token: {}", PasswordResetService.maskToken(token));
 
         boolean tokenValido = passwordResetService.validateToken(token);
@@ -47,7 +50,8 @@ public class PasswordResetController {
         }
 
         // Перенаправляем на главную с токеном в URL, JS подхватит и покажет модальное окно
-        return "redirect:/?token=" + token;
+        return "redirect:/?token=" + URLEncoder.encode(token, StandardCharsets.UTF_8)
+                + AccountDestination.safe(destination).map(value -> "&destination=" + URLEncoder.encode(value, StandardCharsets.UTF_8)).orElse("");
     }
 
     @PostMapping("/confirmar")

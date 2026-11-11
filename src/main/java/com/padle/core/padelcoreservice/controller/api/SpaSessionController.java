@@ -14,7 +14,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2User;
+import com.padle.core.padelcoreservice.repository.PlayerRepository;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -22,6 +23,7 @@ import java.util.List;
 public class SpaSessionController {
 
     private final SpaSessionMapper sessionMapper;
+    private final PlayerRepository players;
 
     @GetMapping("/session")
     public ResponseEntity<SpaSessionResponse> session(Authentication authentication) {
@@ -30,7 +32,7 @@ public class SpaSessionController {
                 .body(sessionResponse(authentication));
     }
 
-    private SpaSessionResponse sessionResponse(Authentication authentication) {
+    public SpaSessionResponse sessionResponse(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
             return SpaSessionResponse.anonymous();
         }
@@ -40,8 +42,11 @@ public class SpaSessionController {
                 .sorted()
                 .toList();
         var principal = authentication.getPrincipal();
+        if (principal instanceof CustomOAuth2User oauth) {
+            principal = oauth.getPlayer();
+        }
         if (principal instanceof PlayerPadel player) {
-            return sessionMapper.fromPlayer(player, roles);
+            return sessionMapper.fromPlayer(players.findById(player.getId()).orElse(player), roles);
         }
         if (principal instanceof Owner owner) {
             return sessionMapper.fromOwner(owner, roles);

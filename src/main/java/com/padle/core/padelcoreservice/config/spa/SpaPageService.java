@@ -15,6 +15,8 @@ import org.springframework.web.util.HtmlUtils;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
+import java.util.Set;
+import java.util.Optional;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -43,10 +45,13 @@ public class SpaPageService {
         var preview = path.equals("/preview") || path.startsWith("/preview/");
         if (preview) { response.setHeader("X-Robots-Tag", "noindex, nofollow"); }
         var match = ENTITY_PATH.matcher(path);
-        if (!match.matches()) { return false; }
         var locale = RequestContextUtils.getLocale(request);
         Metadata metadata;
-        try {
+        if (!match.matches()) {
+            var page = previewMetadata(path, locale);
+            if (page.isEmpty()) return false;
+            metadata = page.orElseThrow();
+        } else try {
             metadata = metadata(match.group(1), match.group(2), locale);
         } catch (PublicDiscoveryException exception) {
             var key = exception.getMessage().equals("CLUB_NOT_FOUND") ? "CLUB_NOT_FOUND" : "EVENT_NOT_FOUND";
@@ -73,6 +78,27 @@ public class SpaPageService {
         response.setContentLength(bytes.length);
         if (!request.getMethod().equals("HEAD")) { response.getOutputStream().write(bytes); }
         return true;
+    }
+
+    private Optional<Metadata> previewMetadata(String path, Locale locale) {
+        if (!path.startsWith("/preview")) return Optional.empty();
+        String route = path.substring("/preview".length()).replaceAll("/+$", "");
+        if (Set.of("", "/torneos", "/foundation", "/components", "/login", "/players/registro",
+                "/perfil", "/recuperar-password", "/recuperar-password/solicitar").contains(route)) return Optional.empty();
+        if (Set.of("/terminos", "/privacidad", "/cookies").contains(route)) {
+            var title = messages.getMessage("legal." + route.substring(1) + ".page.title", null, locale);
+            return Optional.of(new Metadata(title.replaceFirst("\\s*\\|\\s*1-Padel$", ""), "", baseUrl + route, 200));
+        }
+        int status = switch (route) {
+            case "/error/401" -> 401;
+            case "/error/403" -> 403;
+            case "/error/429" -> 429;
+            case "/error/503", "/error/offline" -> 503;
+            default -> 404;
+        };
+        var code = status == 404 ? "EVENT_NOT_FOUND" : "unavailable";
+        var title = messages.getMessage(status == 404 ? "public.discovery." + code : "public.seo." + code, null, locale);
+        return Optional.of(new Metadata(title, "", "", status));
     }
 
     private Metadata metadata(String kind, String rawId, Locale locale) {

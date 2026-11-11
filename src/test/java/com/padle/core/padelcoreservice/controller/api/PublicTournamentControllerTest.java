@@ -158,11 +158,11 @@ class PublicTournamentControllerTest {
     @Test
     void rutasProtegidasYMutaciones_siguenRequiriendoAutenticacion() throws Exception {
         mockMvc.perform(get("/api/tournaments").accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().is3xxRedirection());
+                .andExpect(status().isUnauthorized());
         mockMvc.perform(post("/api/public/tournaments").with(csrf()))
-                .andExpect(status().is3xxRedirection());
+                .andExpect(status().isUnauthorized());
         mockMvc.perform(post("/api/tournaments").with(csrf()))
-                .andExpect(status().is3xxRedirection());
+                .andExpect(status().isUnauthorized());
     }
 
     private TournamentDto fixture() {

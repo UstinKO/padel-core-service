@@ -1,6 +1,7 @@
 package com.padle.core.padelcoreservice.security.oauth2;
 
 import com.padle.core.padelcoreservice.security.TournamentLogin;
+import com.padle.core.padelcoreservice.security.AccountDestination;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
@@ -30,6 +31,11 @@ public final class TournamentOAuth2AuthorizationRequestRepository
                         .attributes(attributes -> attributes.put(TournamentLogin.PARAMETER, id))
                         .build())
                 .orElse(authorizationRequest);
+        var destination = AccountDestination.requested(request);
+        if (destination.isPresent()) {
+            storedRequest = OAuth2AuthorizationRequest.from(storedRequest)
+                    .attributes(attributes -> attributes.put(AccountDestination.PARAMETER, destination.orElseThrow())).build();
+        }
         delegate.saveAuthorizationRequest(storedRequest, request, response);
     }
 
@@ -38,6 +44,7 @@ public final class TournamentOAuth2AuthorizationRequestRepository
                                                                 HttpServletResponse response) {
         var authorizationRequest = delegate.removeAuthorizationRequest(request, response);
         if (authorizationRequest != null) {
+            request.setAttribute(AccountDestination.PARAMETER, authorizationRequest.getAttribute(AccountDestination.PARAMETER));
             // Только серверный атрибут запроса, для которого Spring подтвердил OAuth state.
             request.setAttribute(TournamentLogin.PARAMETER, authorizationRequest.getAttribute(TournamentLogin.PARAMETER));
         }

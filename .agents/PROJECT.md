@@ -600,3 +600,7 @@ React UI v2: `/preview/` — главная, `/preview/torneos` — катало
 
 
 React #907: `EventPage`, `ClubsPage`, `ClubPage`; типы/URL-проверки в `frontend/src/api/eventDetails.ts`, локальный QR/share — `ShareDialog`. Карточка клуба блокирует подмену clubId через query. Мобильный и legacy UI сохраняются; серверные метаданные предоставляет #944.
+
+### Аккаунт UI v2
+
+`AccountController` / `AccountService` / `AccountMapper`: регистрация, свой профиль, смена/reset пароля; `PublicAccountConfigController`: публичная конфигурация. Spring `/login` и `/logout` отвечают JSON по Accept, mobile JWT сохранён. Методозависимый RateLimitFilter не эскалирует обычную валидацию. [Контракт](../docs/endpoints/account.md).

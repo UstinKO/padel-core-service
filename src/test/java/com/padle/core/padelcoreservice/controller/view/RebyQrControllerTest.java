@@ -76,7 +76,7 @@ class RebyQrControllerTest {
 
     @Test
     void reportNotPublicAndUnknownQrNotPublic() throws Exception {
-        mvc.perform(get("/api/admin/marketing/qr-stats")).andExpect(status().is3xxRedirection());
+        mvc.perform(get("/api/admin/marketing/qr-stats")).andExpect(status().isUnauthorized());
         mvc.perform(get("/qr/reby/unknown")).andExpect(status().is3xxRedirection());
     }
 
@@ -169,7 +169,7 @@ class RebyQrControllerTest {
         mvc.perform(get("/api/admin/marketing/qr-summary").param("from", "2026-11-02")
                         .param("to", "2026-11-01").with(user("admin").roles("SUPER_ADMIN")))
                 .andExpect(status().isBadRequest());
-        mvc.perform(get("/api/admin/marketing/qr-summary")).andExpect(status().is3xxRedirection());
+        mvc.perform(get("/api/admin/marketing/qr-summary")).andExpect(status().isUnauthorized());
     }
 
     @ParameterizedTest

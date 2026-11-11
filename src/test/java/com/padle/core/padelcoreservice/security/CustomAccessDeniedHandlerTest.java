@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class CustomAccessDeniedHandlerTest {
 
-    private final CustomAccessDeniedHandler handler = new CustomAccessDeniedHandler();
+    private final CustomAccessDeniedHandler handler = new CustomAccessDeniedHandler(AccountTestResponses.create());
 
     @ParameterizedTest
     @ValueSource(strings = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_PROBLEM_JSON_VALUE})
@@ -26,7 +26,7 @@ class CustomAccessDeniedHandlerTest {
 
         assertThat(response.getStatus()).isEqualTo(403);
         assertThat(response.getRedirectedUrl()).isNull();
-        assertThat(response.getContentType()).startsWith(MediaType.APPLICATION_JSON_VALUE);
+        assertThat(response.getContentType()).startsWith(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
     }
 
     @Test

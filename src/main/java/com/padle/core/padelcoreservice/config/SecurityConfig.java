@@ -3,6 +3,12 @@ package com.padle.core.padelcoreservice.config;
 import com.padle.core.padelcoreservice.marketing.MetaProperties;
 
 import com.padle.core.padelcoreservice.security.CustomAccessDeniedHandler;
+import com.padle.core.padelcoreservice.security.AccountResponses;
+import com.padle.core.padelcoreservice.security.AccountDestination;
+import com.padle.core.padelcoreservice.dto.AccountDtos;
+import com.padle.core.padelcoreservice.controller.api.SpaSessionController;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import com.padle.core.padelcoreservice.security.JwtAuthenticationFilter;
 import com.padle.core.padelcoreservice.security.RateLimitFilter;
 import com.padle.core.padelcoreservice.security.RequestIdFilter;
@@ -45,6 +51,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 @Slf4j
 @Configuration
@@ -54,6 +62,8 @@ import java.util.List;
 @Import(SecurityBeansConfig.class)
 public class SecurityConfig {
     private final MetaProperties metaProperties;
+    private final AccountResponses accountResponses;
+    private final SpaSessionController sessions;
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomOAuth2UserService customOAuth2UserService;
@@ -111,6 +121,7 @@ public class SecurityConfig {
                                 "/players/confirmar-email",
                                 "/api/auth/**",
                                 "/api/players/registro",
+                                "/api/password-reset/**",
                                 "/api/players/confirmar-email/**",
                                 "/terminos",
                                 "/privacidad",
@@ -190,7 +201,7 @@ public class SecurityConfig {
                                 "/api/internal/telegram-pipeline/status",
                                 // Публичное расписание для мобильного приложения —
                                 // анонимное чтение, те же правила видимости, что у /torneo/{id}.
-                                "/api/public/events/*", "/api/public/home", "/api/public/catalog", "/api/public/clubs", "/api/public/clubs/*",
+                                "/api/public/config", "/api/public/events/*", "/api/public/home", "/api/public/catalog", "/api/public/clubs", "/api/public/clubs/*",
                                 "/api/public/tournaments",
                                 "/api/public/tournaments/*",
                                 "/api/public/tournaments/*/calendar",
@@ -206,6 +217,13 @@ public class SecurityConfig {
                 )
                 .exceptionHandling(ex -> ex
                         .accessDeniedHandler(customAccessDeniedHandler)
+                        .authenticationEntryPoint((request, response, exception) -> {
+                            if (request.getRequestURI().startsWith("/api/") || AccountResponses.wantsJson(request)) {
+                                accountResponses.error(request, response, HttpStatus.UNAUTHORIZED, "SESSION_REQUIRED");
+                            } else {
+                                new LoginUrlAuthenticationEntryPoint("/login").commence(request, response, exception);
+                            }
+                        })
                 )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
@@ -236,7 +254,8 @@ public class SecurityConfig {
                                 .authorizationRequestRepository(new TournamentOAuth2AuthorizationRequestRepository()))
                         .successHandler(oAuth2AuthenticationSuccessHandler)
                         .failureHandler((request, response, exception) -> response.sendRedirect(
-                                TournamentLogin.failureUrl("oauth2", TournamentLogin.authorizedTournament(request))))
+                                TournamentLogin.failureUrl("oauth2", TournamentLogin.authorizedTournament(request))
+                                + AccountDestination.authorized(request).map(value -> "&destination=" + URLEncoder.encode(value, StandardCharsets.UTF_8)).orElse("")))
                 )
                 .formLogin(form -> form
                         .loginPage("/login")
@@ -249,7 +268,11 @@ public class SecurityConfig {
                 )
                 .logout(logout -> logout
                         .logoutUrl("/logout")
-                        .logoutSuccessUrl("/")
+                        .logoutSuccessHandler((request, response, authentication) -> {
+                            if (AccountResponses.wantsJson(request)) {
+                                accountResponses.json(response, 200, new AccountDtos.Result(true, "LOGGED_OUT", "/"));
+                            } else response.sendRedirect("/");
+                        })
                         .invalidateHttpSession(true)
                         .deleteCookies("JSESSIONID")
                         .clearAuthentication(true)
@@ -312,8 +335,11 @@ public class SecurityConfig {
     @Bean
     public AuthenticationFailureHandler customAuthenticationFailureHandler() {
         return (request, response, exception) -> {
-            log.info("Authentication failure: type={}, message={}",
-                    exception.getClass().getName(), exception.getMessage());
+            log.info("Отказ при входе: {}", exception.getClass().getSimpleName());
+            if (AccountResponses.wantsJson(request)) {
+                accountResponses.error(request, response, HttpStatus.UNAUTHORIZED, "LOGIN_INVALID");
+                return;
+            }
 
             boolean notConfirmed = exception instanceof DisabledException
                     || exception instanceof org.springframework.security.authentication.LockedException;
@@ -360,7 +386,10 @@ public class SecurityConfig {
                         .orElse(targetUrl);
             }
 
-            response.sendRedirect(targetUrl);
+            targetUrl = AccountDestination.requested(request).orElse(targetUrl);
+            if (AccountResponses.wantsJson(request)) {
+                accountResponses.json(response, 200, new AccountDtos.Login(true, sessions.sessionResponse(authentication), targetUrl));
+            } else response.sendRedirect(targetUrl);
         };
     }
 }

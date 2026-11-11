@@ -41,6 +41,8 @@ class PasswordResetServiceTest {
     private PlayerRepository playerRepository;
     @Autowired
     private PasswordEncoder passwordEncoder;
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    private EmailService emailService;
 
     private PlayerPadel createPlayer(String oldPasswordRaw) {
         return playerRepository.save(PlayerPadel.builder()
@@ -161,7 +163,7 @@ class PasswordResetServiceTest {
         String masked = PasswordResetService.maskToken(token);
 
         assertThat(masked).isNotEqualTo(token);
-        assertThat(masked).startsWith("abcdefgh");
+        assertThat(masked).isEqualTo("***");
         assertThat(masked).doesNotContain("12345678");
     }
 }
