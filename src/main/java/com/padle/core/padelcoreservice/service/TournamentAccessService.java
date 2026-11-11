@@ -51,7 +51,11 @@ public class TournamentAccessService {
     }
 
     public void assertCanManage(Owner owner, Tournament tournament) {
-        if (!canManage(owner, tournament.getOwnerId(), tournament.getClubId())) {
+        assertCanManageAtClub(owner, tournament, tournament.getClubId());
+    }
+
+    public void assertCanManageAtClub(Owner owner, Tournament tournament, Long clubId) {
+        if (!canManage(owner, tournament.getOwnerId(), clubId)) {
             throw new AccessDeniedException(ACCESS_DENIED_MESSAGE);
         }
     }

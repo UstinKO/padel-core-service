@@ -965,6 +965,7 @@ public class TournamentService {
                     }
 
                     int previousCupoMax = existingTournament.getCupoMax();
+                    updateTournamentClub(existingTournament, tournamentDto.getClubId(), owner);
                     updateTournamentFields(existingTournament, tournamentDto);
 
                     if (tournamentDto.getFechaInicio() != null && tournamentDto.getHoraInicio() != null) {
@@ -1382,6 +1383,19 @@ public class TournamentService {
                     String.format("Invalid status transition from %s to %s", current, newStatus)
             );
         }
+    }
+
+    private void updateTournamentClub(Tournament tournament, Long clubId, Owner owner) {
+        if (clubId == null || Objects.equals(clubId, tournament.getClubId())) {
+            return;
+        }
+
+        tournamentAccessService.assertCanManageAtClub(owner, tournament, clubId);
+        var club = clubService.getClubById(clubId)
+                .filter(candidate -> Boolean.TRUE.equals(candidate.getIsActive()))
+                .orElseThrow(() -> new InvalidStateException(messageSource.getMessage(
+                        "admin.tournaments.form.field.club.select", null, LocaleContextHolder.getLocale())));
+        tournament.setClubId(club.getId());
     }
 
     private void updateTournamentFields(Tournament existing, TournamentDto dto) {
