@@ -5,7 +5,7 @@
         ? @environment.getActiveProfiles()[0]
         : 'default'}">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
     <meta name="description" content="1-Padel - La plataforma de torneos de pádel más completa. Encuentra torneos, mejora tu ranking y conecta con jugadores.">
     <meta name="keywords" content="pádel, torneos, ranking, jugadores, clubes">
     <meta name="author" content="1-Padel">
@@ -33,12 +33,11 @@
 
     <!-- Custom Styles -->
     <link rel="stylesheet" th:href="@{/css/style.css}">
-    <link rel="stylesheet" th:href="@{/css/home.css}">
     <th:block th:replace="~{fragments/analytics :: ga4}"></th:block>
     <th:block th:replace="~{fragments/analytics :: cookie-consent}"></th:block>
     <th:block th:replace="~{fragments/analytics :: clarity}"></th:block>
 </head>
-<body class="public-home" data-clarity-mask="true">
+<body data-clarity-mask="true">
 <!-- Header dinámico según autenticación -->
 <header class="header">
     <div class="container">
@@ -48,24 +47,24 @@
                 <span class="navbar-brand-text">1-<span class="brand-highlight">PADEL</span></span>
             </a>
 
-            <button class="navbar-toggler" id="navbarToggler" type="button" th:aria-label="#{nav.menu}" aria-controls="navbarNav" aria-expanded="false">
+            <button class="navbar-toggler" id="navbarToggler" type="button" aria-label="Menú">
                 <span class="navbar-toggler-icon"></span>
                 <span class="navbar-toggler-icon"></span>
                 <span class="navbar-toggler-icon"></span>
             </button>
 
             <div class="navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav">
-                    <li><a class="nav-link active" th:href="@{/}" aria-current="page" th:text="#{nav.home}">Inicio</a></li>
-                    <li><a class="nav-link" href="#events-catalog" th:text="#{home.catalog.nav}">Eventos</a></li>
-                    <li><a class="nav-link" th:href="@{/clubs}" th:text="#{nav.clubs}">Clubes</a></li>
-                </ul>
-                <div class="home-language" role="group" th:aria-label="#{auth.entry.language}">
-                    <a th:each="language : ${ {'es', 'ru', 'en'} }"
-                       th:href="@{/(lang=${language})}" th:hreflang="${language}" th:lang="${language}"
-                       th:attr="aria-current=${#locale.language == language ? 'true' : null}"
-                       th:text="${#strings.toUpperCase(language)}">ES</a>
-                </div>
+<!--                <ul class="navbar-nav">-->
+<!--                    <li class="nav-item">-->
+<!--                        <a href="/" class="nav-link active" th:classappend="${currentPage == 'home' ? 'active' : ''}">Inicio</a>-->
+<!--                    </li>-->
+<!--                    <li class="nav-item">-->
+<!--                        <a href="/torneos" class="nav-link" th:classappend="${currentPage == 'torneos' ? 'active' : ''}">Torneos</a>-->
+<!--                    </li>-->
+<!--                    <li class="nav-item">-->
+<!--                        <a href="/ranking" class="nav-link" th:classappend="${currentPage == 'ranking' ? 'active' : ''}">Ranking</a>-->
+<!--                    </li>-->
+<!--                </ul>-->
 
                 <!-- БЛОК ДЛЯ НЕАУТЕНТИФИЦИРОВАННЫХ -->
                 <div class="navbar-auth" th:if="${!isAuthenticated}">
@@ -102,77 +101,150 @@
 </header>
 
 <main class="main-content">
-    <section class="container" aria-labelledby="home-title">
-        <div class="home-hero">
-            <div>
-                <p class="home-kicker" th:text="#{home.discovery.kicker}">Pádel en Buenos Aires</p>
-                <h1 id="home-title">
-                    <span th:text="#{home.discovery.title}">Tu próximo partido está</span>
-                    <em th:text="#{home.discovery.accent}">acá.</em>
+    <!-- Hero Section (без изменений) -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content" style="max-width: 800px; margin: 0 auto; text-align: center;">
+                <h1 class="hero-title">
+                    <span class="hero-title-highlight">1-Padel</span>
+                    <br><span th:text="#{home.hero.title}">Todos los torneos de pádel en un solo lugar</span>
                 </h1>
-            </div>
-            <div class="home-hero-action">
-                <p th:text="#{home.discovery.lead}">Torneos, entrenamientos y cancha abierta. Elegí un evento de tu nivel, con pareja o sin ella.</p>
-                <a href="#events-catalog" class="btn home-primary">
-                    <span th:text="#{home.catalog.title}">Elegir un evento</span>
-                    <span aria-hidden="true">→</span>
-                </a>
+<!--                <p class="hero-description">-->
+<!--                    Encuentra torneos, mejora tu ranking y conecta con jugadores de tu nivel.-->
+<!--                    Más de 2000 jugadores ya confían en nosotros.-->
+<!--                </p>-->
+<!--                <div class="hero-stats" style="justify-content: center;">-->
+<!--                    <div class="stat-item">-->
+<!--                        <span class="stat-number">150+</span>-->
+<!--                        <span class="stat-label">Torneos</span>-->
+<!--                    </div>-->
+<!--                    <div class="stat-item">-->
+<!--                        <span class="stat-number">2000+</span>-->
+<!--                        <span class="stat-label">Jugadores</span>-->
+<!--                    </div>-->
+<!--                    <div class="stat-item">-->
+<!--                        <span class="stat-number">50+</span>-->
+<!--                        <span class="stat-label">Clubes</span>-->
+<!--                    </div>-->
+<!--                </div>-->
+
+                <!-- CTA для неаутентифицированных -->
+<!--                <div th:if="${!isAuthenticated}" style="margin-top: 2rem;">-->
+<!--                    <a href="/players/registro" class="btn btn-primary btn-large">-->
+<!--                        <i class="fas fa-user-plus"></i>-->
+<!--                        Regístrate gratis-->
+<!--                    </a>-->
+<!--                    <a href="/login" class="btn btn-outline btn-large" style="margin-left: 1rem;">-->
+<!--                        <i class="fas fa-sign-in-alt"></i>-->
+<!--                        Iniciar sesión-->
+<!--                    </a>-->
+<!--                </div>-->
+
+                <!-- CTA для аутентифицированных -->
+<!--                <div th:if="${isAuthenticated}" style="margin-top: 2rem;">-->
+<!--                    <a href="/players/dashboard" class="btn btn-primary btn-large">-->
+<!--                        <i class="fas fa-tachometer-alt"></i>-->
+<!--                        Ir al Dashboard-->
+<!--                    </a>-->
+<!--                </div>-->
             </div>
         </div>
     </section>
 
-    <section class="home-catalog" id="events-catalog" aria-labelledby="catalog-title">
+    <!-- Mensaje post-registro: confirmar email -->
+<!--    <div th:if="${registroExitoso}" class="container" style="padding-top:1.5rem; padding-bottom:.5rem;">-->
+<!--        <div style="background:linear-gradient(135deg,#ecfdf5,#d1fae5);-->
+<!--                    border:1px solid #6ee7b7;-->
+<!--                    border-left:5px solid #10B981;-->
+<!--                    border-radius:12px;-->
+<!--                    padding:1.25rem 1.75rem;-->
+<!--                    display:flex;-->
+<!--                    gap:1rem;-->
+<!--                    align-items:flex-start;">-->
+<!--            <i class="fas fa-envelope-open-text"-->
+<!--               style="color:#10B981; font-size:2rem; flex-shrink:0; margin-top:.15rem;"></i>-->
+<!--            <div>-->
+<!--                <p style="margin:0 0 .35rem; font-weight:700; font-size:1.05rem; color:#065f46;">-->
+<!--                    ¡Registro exitoso! Revisa tu email para activar tu cuenta-->
+<!--                </p>-->
+<!--                <p style="margin:0 0 .35rem; color:#047857; font-size:.95rem;">-->
+<!--                    Enviamos un enlace de confirmación a-->
+<!--                    <strong th:text="${emailRegistrado}">tu@email.com</strong>.-->
+<!--                    Haz clic en ese enlace y luego podrás iniciar sesión.-->
+<!--                </p>-->
+<!--                <p style="margin:0; color:#6b7280; font-size:.85rem;">-->
+<!--                    <i class="fas fa-exclamation-triangle" style="color:#f59e0b; margin-right:.3rem;"></i>-->
+<!--                    ¿No ves el email? Revisa la carpeta <strong>Spam</strong> o-->
+<!--                    <strong>Correo no deseado</strong>.-->
+<!--                </p>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </div>-->
+
+    <!-- Torneos Section - ИЗМЕНЕНО: теперь все турниры в сетке -->
+    <section class="torneos-section">
         <div class="container">
-            <div class="home-section-head">
-                <div>
-                    <p class="home-kicker" th:text="#{home.catalog.kicker}">A tu ritmo</p>
-                    <h2 id="catalog-title" th:text="#{home.catalog.title}">Elegir un evento</h2>
-                </div>
-                <a class="home-text-link" href="#home-level-question" id="homeLevelHelp"
-                   th:text="#{home.catalog.levelHelp}">¿Cuál es mi nivel?</a>
+            <div class="section-header">
+                <h2 class="section-title" th:text="#{home.section.upcoming}">
+                    Próximos Torneos
+                </h2>
             </div>
 
-            <div class="home-filters">
-                <div class="home-chips" role="group" th:aria-label="#{filter.tipo}">
-                    <button type="button" data-event-group="all" aria-pressed="true" th:text="#{home.catalog.all}">Todos los eventos</button>
-                    <button type="button" data-event-group="tournaments" aria-pressed="false" th:text="#{nav.torneos}">Torneos</button>
-                    <button type="button" data-event-group="training" aria-pressed="false" th:text="#{home.catalog.training}">Entrenamientos</button>
-                    <button type="button" data-event-group="open" aria-pressed="false" th:text="#{filter.tipo.cancha_abierta}">Cancha abierta</button>
+            <!-- Filters (без изменений) -->
+            <div class="filters-card">
+                <div class="filters-header">
+                    <h3>
+                        <i class="fas fa-sliders-h"></i>
+                        <span th:text="#{filter.title}">Filtros de búsqueda</span>
+                    </h3>
+                    <button class="filters-toggle" id="filtersToggle" aria-label="Toggle filters">
+                        <i class="fas fa-chevron-up"></i>
+                        <span th:text="#{filter.hide}">Ocultar filtros</span>
+                    </button>
                 </div>
-                <div class="home-fields">
-                    <label>
-                        <span th:text="#{home.catalog.category}">Categoría</span>
-                        <select id="generoFilter">
-                            <option value="todos" th:text="#{home.catalog.allCategories}">Todas las categorías</option>
-                            <option value="MASCULINO" th:text="#{filter.genero.m}">Masculino</option>
-                            <option value="FEMENINO" th:text="#{filter.genero.f}">Femenino</option>
-                            <option value="MIXTO" th:text="#{filter.genero.mix}">Mixto</option>
-                        </select>
-                    </label>
-                    <label>
-                        <span th:text="#{filter.nivel}">Nivel</span>
-                        <select id="nivelFilter">
-                            <option value="todos" th:text="#{home.catalog.allLevels}">Todos los niveles</option>
-                            <option th:each="level : ${T(com.padle.core.padelcoreservice.model.enums.Nivel).values()}"
-                                    th:unless="${level.legacyTournamentLevel}" th:value="${level.name()}"
-                                    th:text="${#strings.startsWith(level.name(), 'SUMA_') ? #strings.replace(level.name(), '_', ' ') + '+' : #strings.replace(level.name(), '_', '/')}">C9</option>
-                            <option value="PRINCIPIANTES" th:text="#{home.catalog.beginner}">Principiantes</option>
-                            <option value="TODOS" th:text="#{home.catalog.openLevel}">Nivel abierto</option>
-                        </select>
-                    </label>
-                    <label>
-                        <span th:text="#{nav.clubs}">Clubes</span>
-                        <select id="clubFilter">
-                            <option value="todos" th:text="#{home.catalog.allClubs}">Todos los clubes</option>
-                        </select>
-                    </label>
-                </div>
-                <details class="home-extra-filters">
-                    <summary th:text="#{home.catalog.moreFilters}">Más filtros</summary>
-                    <div class="home-fields">
-                        <label>
-                            <span th:text="#{filter.tipo}">Tipo</span>
-                            <select id="tipoFilter">
+
+                <form id="filterForm" class="filters-form" onsubmit="return false;">
+                    <div class="filters-grid">
+                        <div class="filter-group">
+                            <label for="generoFilter" class="filter-label">
+                                <i class="fas fa-venus-mars"></i> <span th:text="#{filter.genero}">Género</span>
+                            </label>
+                            <select id="generoFilter" class="filter-select">
+                                <option value="todos" th:text="#{filter.genero.all}">Todos</option>
+                                <option value="MASCULINO" th:text="#{filter.genero.m}">Masculino</option>
+                                <option value="FEMENINO" th:text="#{filter.genero.f}">Femenino</option>
+                                <option value="MIXTO" th:text="#{filter.genero.mix}">Mixto</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label for="nivelFilter" class="filter-label">
+                                <i class="fas fa-chart-line"></i> <span th:text="#{filter.nivel}">Nivel</span>
+                            </label>
+                            <select id="nivelFilter" class="filter-select">
+                                <option value="todos" th:text="#{filter.nivel.all}">Todos</option>
+                                <option value="Principiante">Principiante</option>
+                                <option value="C9">C9</option>
+                                <option value="C8">C8</option>
+                                <option value="C7">C7</option>
+                                <option value="C6">C6</option>
+                                <option value="C5">C5</option>
+                                <option value="C4">C4</option>
+                                <option value="D9">D9</option>
+                                <option value="D8">D8</option>
+                                <option value="D7">D7</option>
+                                <option value="D6">D6</option>
+                                <option value="SUMA_15">Suma 15+</option>
+                                <option value="SUMA_14">Suma 14+</option>
+                                <option value="SUMA_13">Suma 13+</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label for="tipoFilter" class="filter-label">
+                                <i class="fas fa-trophy"></i> <span th:text="#{filter.tipo}">Tipo</span>
+                            </label>
+                            <select id="tipoFilter" class="filter-select">
                                 <option value="todos" th:text="#{filter.tipo.all}">Todos</option>
                                 <option value="KING_OF_COURT" th:text="#{filter.tipo.koc}">Rey de Cancha</option>
                                 <option value="AMERICANO" th:text="#{filter.tipo.americano}">Americano</option>
@@ -180,27 +252,40 @@
                                 <option value="CANCHA_ABIERTA" th:text="#{filter.tipo.cancha_abierta}">Cancha Abierta</option>
                                 <option value="PADEL_CLINIC" th:text="#{filter.tipo.padel_clinic}">Clínica de pádel</option>
                             </select>
-                        </label>
-                        <label>
-                            <span th:text="#{filter.modalidad}">Modalidad</span>
-                            <select id="modalidadFilter">
+                        </div>
+
+                        <div class="filter-group">
+                            <label for="modalidadFilter" class="filter-label">
+                                <i class="fas fa-users"></i> <span th:text="#{filter.modalidad}">Modalidad</span>
+                            </label>
+                            <select id="modalidadFilter" class="filter-select">
                                 <option value="todos" th:text="#{filter.modalidad.all}">Todos</option>
                                 <option value="INDIVIDUAL" th:text="#{filter.modalidad.individual}">Individual</option>
-                                <option value="DOBLES" th:text="#{filter.modalidad.doubles}">Parejas</option>
+                                <option value="DOBLES" th:text="#{filter.modalidad.doubles}">Cupos</option>
                             </select>
-                        </label>
+                        </div>
+
+                        <div class="filter-group filter-group-button">
+                            <button type="button" id="applyFilters" class="btn btn-primary btn-block">
+                                <i class="fas fa-search"></i> <span th:text="#{filter.apply}">Aplicar filtros</span>
+                            </button>
+                        </div>
+
+                        <div class="filter-group filter-group-button">
+                            <button type="button" id="clearFilters" class="btn btn-outline btn-block">
+                                <i class="fas fa-undo"></i> <span th:text="#{filter.clear}">Limpiar</span>
+                            </button>
+                        </div>
                     </div>
-                </details>
-            </div>
-            <div class="home-results">
-                <p role="status"><span th:text="#{home.catalog.upcoming}">Próximos eventos</span> · <strong id="eventCount" th:text="${totalTournaments}">0</strong></p>
-                <button type="button" id="clearFilters" class="home-text-link" hidden th:text="#{filter.clear}">Limpiar</button>
+                </form>
             </div>
 
+            <!-- ИЗМЕНЕНО: Сетка турниров вместо карусели -->
             <div class="tournaments-grid" id="tournamentsGrid">
                 <!-- Турниры будут вставляться динамически через JavaScript -->
             </div>
 
+            <!-- Сообщение когда нет турниров (без изменений) -->
             <div class="empty-state" id="noTournamentsMessage" style="display: none;">
                 <i class="fas fa-calendar-times empty-icon"></i>
                 <h3 th:text="#{filter.empty.title}">No hay torneos con esos filtros</h3>
@@ -212,223 +297,196 @@
         </div>
     </section>
 
-    <section class="container" aria-labelledby="home-steps-title">
-        <div class="home-split">
-            <div>
-                <p class="home-kicker" th:text="#{home.steps.kicker}">Es fácil empezar</p>
-                <h2 id="home-steps-title" th:text="#{home.steps.title}">Menos preparativos. Más juego.</h2>
-            </div>
-            <ol class="home-steps">
-                <li th:each="step : ${#numbers.sequence(1, 3)}">
-                    <div>
-                        <h3 th:text="#{${'home.steps.' + step + '.title'}}">Elegí un evento</h3>
-                        <p th:text="#{${'home.steps.' + step + '.text'}}">Consultá el horario, el club y el nivel.</p>
-                    </div>
-                </li>
-            </ol>
-        </div>
-    </section>
-
-    <section class="container" id="faq" aria-labelledby="home-faq-title">
-        <div class="home-split">
-            <div>
-                <p class="home-kicker" th:text="#{home.discovery.faqKicker}">Antes del primer partido</p>
-                <h2 id="home-faq-title" th:text="#{home.faq.title}">Preguntas frecuentes</h2>
+    <!-- НОВЫЙ БЛОК: FAQ Section с аккордеоном -->
+    <section id="faq" class="faq-section">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span class="section-title-highlight" th:text="#{home.faq.title}">FAQ</span>
+                </h2>
             </div>
 
             <div class="faq-container">
 
                 <!-- 1 -->
-                <details class="faq-item">
-                    <summary class="faq-question">
+                <div class="faq-item">
+                    <button class="faq-question">
                         <span class="faq-question-text" th:text="#{home.faq.1.q}">¿Cómo puedo inscribirme en un torneo?</span>
-                        <i class="fas fa-chevron-down faq-icon" aria-hidden="true"></i>
-                    </summary>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </button>
                     <div class="faq-answer">
                         <p th:utext="#{home.faq.1.a1}">Elige el torneo en la sección Torneos y presiona <strong>Inscribirme</strong>.</p>
                         <p th:text="#{home.faq.1.a2}">Recibirás la confirmación después del registro.</p>
                     </div>
-                </details>
+                </div>
 
                 <!-- 2 -->
-                <details class="faq-item">
-                    <summary class="faq-question">
+                <div class="faq-item">
+                    <button class="faq-question">
                         <span class="faq-question-text" th:text="#{home.faq.2.q}">¿Puedo inscribirme solo?</span>
-                        <i class="fas fa-chevron-down faq-icon" aria-hidden="true"></i>
-                    </summary>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </button>
                     <div class="faq-answer">
                         <p th:text="#{home.faq.2.a1}">Sí. En torneos individuales puedes inscribirte solo.</p>
                         <p th:text="#{home.faq.2.a2}">En torneos en pareja, si no tienes compañero, podemos ayudarte a encontrar uno.</p>
                     </div>
-                </details>
+                </div>
 
                 <!-- 3 -->
-                <details class="faq-item" id="home-level-question">
-                    <summary class="faq-question">
+                <div class="faq-item">
+                    <button class="faq-question">
                         <span class="faq-question-text" th:text="#{home.faq.3.q}">¿Qué nivel debo tener para jugar?</span>
-                        <i class="fas fa-chevron-down faq-icon" aria-hidden="true"></i>
-                    </summary>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </button>
                     <div class="faq-answer">
                         <p th:text="#{home.faq.3.a1}">Los torneos están divididos por niveles (C9, C8, C7, etc.).</p>
                         <p th:text="#{home.faq.3.a2}">Si no sabes tu nivel, escríbenos y te ayudamos a elegir el adecuado.</p>
                     </div>
-                </details>
+                </div>
 
                 <!-- 4 -->
-                <details class="faq-item">
-                    <summary class="faq-question">
+                <div class="faq-item">
+                    <button class="faq-question">
                         <span class="faq-question-text" th:text="#{home.faq.4.q}">¿Con cuánto tiempo de anticipación debo llegar?</span>
-                        <i class="fas fa-chevron-down faq-icon" aria-hidden="true"></i>
-                    </summary>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </button>
                     <div class="faq-answer">
                         <p th:utext="#{home.faq.4.a1}">Te recomendamos llegar <strong>15 minutos</strong> antes del inicio del torneo.</p>
                     </div>
-                </details>
+                </div>
 
                 <!-- 5 -->
-                <details class="faq-item">
-                    <summary class="faq-question">
+                <div class="faq-item">
+                    <button class="faq-question">
                         <span class="faq-question-text" th:text="#{home.faq.5.q}">¿Cuánto dura el torneo?</span>
-                        <i class="fas fa-chevron-down faq-icon" aria-hidden="true"></i>
-                    </summary>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </button>
                     <div class="faq-answer">
                         <p th:utext="#{home.faq.5.a1}"><strong>Torneos en parejas:</strong> 3,5 – 4 horas</p>
                         <p th:utext="#{home.faq.5.a2}"><strong>Torneos individuales:</strong> 3 horas (tiempo fijo)</p>
                     </div>
-                </details>
+                </div>
 
                 <!-- 6 -->
-                <details class="faq-item">
-                    <summary class="faq-question">
+                <div class="faq-item">
+                    <button class="faq-question">
                         <span class="faq-question-text" th:text="#{home.faq.6.q}">¿Cuántos partidos voy a jugar?</span>
-                        <i class="fas fa-chevron-down faq-icon" aria-hidden="true"></i>
-                    </summary>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </button>
                     <div class="faq-answer">
                         <p th:utext="#{home.faq.6.a1}"><strong>Torneos en parejas:</strong> mínimo 3 partidos garantizados</p>
                         <p th:utext="#{home.faq.6.a2}"><strong>Torneos individuales:</strong> entre 12 y 18 partidos, según formato</p>
                     </div>
-                </details>
+                </div>
 
                 <!-- 7 -->
-                <details class="faq-item">
-                    <summary class="faq-question">
+                <div class="faq-item">
+                    <button class="faq-question">
                         <span class="faq-question-text" th:text="#{home.faq.7.q}">¿Cómo es la modalidad del torneo?</span>
-                        <i class="fas fa-chevron-down faq-icon" aria-hidden="true"></i>
-                    </summary>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </button>
                     <div class="faq-answer">
                         <p th:text="#{home.faq.7.a1}">Trabajamos principalmente con:</p>
                         <p th:utext="#{home.faq.7.a2}"><strong>Americano Parejas</strong> — pareja fija durante todo el torneo</p>
                         <p th:utext="#{home.faq.7.a3}"><strong>Americano</strong> — cambias de compañero en cada partido</p>
                         <p th:utext="#{home.faq.7.a4}"><strong>Rey de la cancha</strong> — subes o bajas de cancha según resultados</p>
                     </div>
-                </details>
+                </div>
 
                 <!-- 8 -->
-                <details class="faq-item">
-                    <summary class="faq-question">
+                <div class="faq-item">
+                    <button class="faq-question">
                         <span class="faq-question-text" th:text="#{home.faq.8.q}">¿Qué pasa si pierdo el primer partido?</span>
-                        <i class="fas fa-chevron-down faq-icon" aria-hidden="true"></i>
-                    </summary>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </button>
                     <div class="faq-answer">
                         <p th:text="#{home.faq.8.a1}">Sigues jugando. Todos los jugadores tienen partidos garantizados.</p>
                     </div>
-                </details>
+                </div>
 
                 <!-- 9 -->
-                <details class="faq-item">
-                    <summary class="faq-question">
+                <div class="faq-item">
+                    <button class="faq-question">
                         <span class="faq-question-text" th:text="#{home.faq.9.q}">¿Se juega el mismo día?</span>
-                        <i class="fas fa-chevron-down faq-icon" aria-hidden="true"></i>
-                    </summary>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </button>
                     <div class="faq-answer">
                         <p th:text="#{home.faq.9.a1}">Sí. Todos los torneos empiezan y terminan el mismo día.</p>
                     </div>
-                </details>
+                </div>
 
                 <!-- 10 -->
-                <details class="faq-item">
-                    <summary class="faq-question">
+                <div class="faq-item">
+                    <button class="faq-question">
                         <span class="faq-question-text" th:text="#{home.faq.10.q}">¿Se suspende el torneo por lluvia?</span>
-                        <i class="fas fa-chevron-down faq-icon" aria-hidden="true"></i>
-                    </summary>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </button>
                     <div class="faq-answer">
                         <p th:text="#{home.faq.10.a1}">No. Las canchas son techadas, por lo que los torneos se juegan normalmente.</p>
                     </div>
-                </details>
+                </div>
 
                 <!-- 11 -->
-                <details class="faq-item">
-                    <summary class="faq-question">
+                <div class="faq-item">
+                    <button class="faq-question">
                         <span class="faq-question-text" th:text="#{home.faq.11.q}">¿Cuál es la cantidad máxima de jugadores?</span>
-                        <i class="fas fa-chevron-down faq-icon" aria-hidden="true"></i>
-                    </summary>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </button>
                     <div class="faq-answer">
                         <p th:utext="#{home.faq.11.a1}"><strong>Torneos en parejas:</strong> hasta 16 parejas</p>
                         <p th:utext="#{home.faq.11.a2}"><strong>Torneos individuales:</strong> aprox. 20 jugadores</p>
                     </div>
-                </details>
+                </div>
 
                 <!-- 12 -->
-                <details class="faq-item">
-                    <summary class="faq-question">
+                <div class="faq-item">
+                    <button class="faq-question">
                         <span class="faq-question-text" th:text="#{home.faq.12.q}">¿Qué pasa si llego tarde?</span>
-                        <i class="fas fa-chevron-down faq-icon" aria-hidden="true"></i>
-                    </summary>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </button>
                     <div class="faq-answer">
                         <p th:utext="#{home.faq.12.a1}"><strong>Hasta 15 minutos tarde</strong> → puedes empezar con 0 – 3</p>
                         <p th:utext="#{home.faq.12.a2}"><strong>Más tarde</strong> → puedes perder el partido 0 – 6</p>
                     </div>
-                </details>
+                </div>
 
                 <!-- 13 -->
-                <details class="faq-item">
-                    <summary class="faq-question">
+                <div class="faq-item">
+                    <button class="faq-question">
                         <span class="faq-question-text" th:text="#{home.faq.13.q}">¿Puedo cambiar de compañero?</span>
-                        <i class="fas fa-chevron-down faq-icon" aria-hidden="true"></i>
-                    </summary>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </button>
                     <div class="faq-answer">
                         <p th:utext="#{home.faq.13.a1}">Sí, pero debes avisar <strong>antes del inicio</strong> del torneo.</p>
                     </div>
-                </details>
+                </div>
 
                 <!-- 14 -->
-                <details class="faq-item">
-                    <summary class="faq-question">
+                <div class="faq-item">
+                    <button class="faq-question">
                         <span class="faq-question-text" th:text="#{home.faq.14.q}">¿Qué hago si no puedo asistir?</span>
-                        <i class="fas fa-chevron-down faq-icon" aria-hidden="true"></i>
-                    </summary>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </button>
                     <div class="faq-answer">
                         <p th:text="#{home.faq.14.a1}">Debes cancelar con anticipación. Las condiciones dependen del torneo.</p>
                     </div>
-                </details>
+                </div>
 
                 <!-- 15 -->
-                <details class="faq-item">
-                    <summary class="faq-question">
+                <div class="faq-item">
+                    <button class="faq-question">
                         <span class="faq-question-text" th:text="#{home.faq.15.q}">¿Cómo puedo contactar con el organizador?</span>
-                        <i class="fas fa-chevron-down faq-icon" aria-hidden="true"></i>
-                    </summary>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </button>
                     <div class="faq-answer">
                         <p th:utext="#{home.faq.15.a1}">Puedes escribirnos por <strong>WhatsApp</strong>.</p>
                     </div>
-                </details>
+                </div>
 
             </div>
         </div>
     </section>
 </main>
-
-<nav class="home-mobile-nav" th:aria-label="#{nav.menu}">
-    <a th:href="@{/}" aria-current="page"><i class="fas fa-house" aria-hidden="true"></i><span th:text="#{nav.home}">Inicio</span></a>
-    <a href="#events-catalog"><i class="fas fa-calendar-days" aria-hidden="true"></i><span th:text="#{home.catalog.nav}">Eventos</span></a>
-    <a th:href="${isAuthenticated} ? @{/players/dashboard} : @{/login}">
-        <i class="fas fa-user" aria-hidden="true"></i>
-        <span th:text="${isAuthenticated} ? #{nav.dashboard} : #{nav.login}">Iniciar sesión</span>
-    </a>
-    <button type="button" id="homeMobileMenu" aria-controls="navbarNav" aria-expanded="false">
-        <i class="fas fa-bars" aria-hidden="true"></i><span th:text="#{nav.menu}">Menú</span>
-    </button>
-</nav>
 
 <!-- Footer (без изменений) -->
 <footer class="footer">
@@ -538,6 +596,16 @@
     var isAuthenticated = /*[(${isAuthenticated})]*/ false;
     var currentPage = 'home';
 
+    console.log('🏆 Tournament data loaded:', tournamentData.length, 'torneos');
+
+    if (tournamentData.length > 0 && window.location.hostname === 'localhost') {
+        const niveles = [...new Set(tournamentData.map(t => t.categoriaNivel))];
+        const tipos = [...new Set(tournamentData.map(t => t.tipo))];
+        const generos = [...new Set(tournamentData.map(t => t.generoFormato))];
+        console.log('📊 Valores únicos - Niveles:', niveles);
+        console.log('📊 Valores únicos - Tipos:', tipos);
+        console.log('📊 Valores únicos - Géneros:', generos);
+    }
     /*]]>*/
 </script>
 
