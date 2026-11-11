@@ -617,3 +617,10 @@ React #907: `EventPage`, `ClubsPage`, `ClubPage`; типы/URL-проверки 
 ### LFPT-0903: публичные live-снимки
 
 GET/HEAD `/api/public/events/{eventId}/live` и `/api/public/king-of-court/{kingId}/live` разрешены анонимно, с проверкой active/не BORRADOR, no-store и безопасным DTO для всех ролей. [Контракт, ошибки, пакетное чтение и STOMP](../docs/endpoints/public-live.md). В `/topic/public/live/{eventId}` только invalidation после commit; wildcard SUBSCRIBE и клиентский SEND в публичный topic запрещены. Мутации и мобильный API прежние; preview остаётся SUPER_ADMIN.
+
+
+## LFPT-0911: пользовательские live-экраны UI v2
+
+Реализованы отдельные preview views KoC, индивидуального Americano и Team Playoff: раунды/корты, серверные рейтинги, история/участник, очередь и bracket, share/QR/PNG, ES/RU/EN и табло. Один STOMP-клиент слушает безопасный public topic #903; события объединяются в refetch, reconnect/focus/visibility перечитывают snapshot, polling 20 с и Retry-After ограничивают запросы. Временные ошибки сохраняют последний снимок со stale; 403/404/409 убирают его.
+
+[Маршруты, детали реализации, бюджеты и проверки](../frontend/README.md#lfpt-0911-пользовательские-live-экраны-ui-v2). Production URL и SUPER_ADMIN-защита preview сохранены; отдельный контур #904 и физические устройства не входят в этот результат.

@@ -8,6 +8,7 @@ import {
   validEntityId,
   type Participant,
 } from '../api/eventDetails';
+import { previewLivePath } from '../api/live';
 import { ShareDialog } from '../components/ShareDialog';
 import { EntityState, NotFoundPage } from '../components/EntityState';
 import { usePageMetadata } from '../components/PageMetadata';
@@ -165,6 +166,13 @@ export function EventPage() {
                 <div className="entity-actions">
                   {details.actions.map((action) => {
                     const url = safeWebUrl(action.url);
+                    const livePath = action.type === 'LIVE' && url ? previewLivePath(url) : null;
+                    if (livePath)
+                      return (
+                        <Link className="button button--secondary" to={livePath} key={action.type}>
+                          {t(`eventAction.${action.type}`)}
+                        </Link>
+                      );
                     return (
                       url && (
                         <a className="button button--secondary" href={url} key={action.type}>

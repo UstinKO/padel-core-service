@@ -368,3 +368,10 @@ Frontend #907 использует `PublicEventResponse` из #944. Публич
 ### LFPT-0903: безопасное чтение live
 
 Реализован [публичный контракт live](../../endpoints/public-live.md), [OpenAPI](public-live.openapi.json): один read-only snapshot по eventId и проверяемый alias по kingId. Контакты/заметки/actor не передаются. Старые API и мутации сохраняются. React должен слушать `/topic/public/live/{eventId}` как invalidation, перечитывать целый snapshot после reconnect/focus и применять bounded polling 20 с; индивидуальный Americano использует только polling. Старые описания payload выше относятся к legacy. Production-переключение не входит в #903.
+
+
+## LFPT-0911: пользовательские live-экраны UI v2
+
+Реализованы отдельные preview views KoC, индивидуального Americano и Team Playoff: раунды/корты, серверные рейтинги, история/участник, очередь и bracket, share/QR/PNG, ES/RU/EN и табло. Один STOMP-клиент слушает безопасный public topic #903; события объединяются в refetch, reconnect/focus/visibility перечитывают snapshot, polling 20 с и Retry-After ограничивают запросы. Временные ошибки сохраняют последний снимок со stale; 403/404/409 убирают его.
+
+[Маршруты, детали реализации, бюджеты и проверки](../../../frontend/README.md#lfpt-0911-пользовательские-live-экраны-ui-v2). Production URL и SUPER_ADMIN-защита preview сохранены; отдельный контур #904 и физические устройства не входят в этот результат.

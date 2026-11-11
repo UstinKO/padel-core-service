@@ -12,6 +12,10 @@ import { ClubsPage, ClubPage } from './pages/ClubPages';
 import { NotFoundPage } from './components/EntityState';
 import { PreviewPage } from './pages/PreviewPage';
 
+const LivePage = lazy(() =>
+  import('./pages/LivePage').then((module) => ({ default: module.LivePage })),
+);
+
 const LegalPage = lazy(() =>
   import('./pages/LegalPages').then((module) => ({ default: module.LegalPage })),
 );
@@ -33,6 +37,23 @@ const router = createBrowserRouter(
         { index: true, element: <HomePage /> },
         { path: 'torneos', element: <CatalogPage /> },
         { path: 'torneo/:id', element: <EventPage /> },
+        ...(
+          [
+            ['torneo/:id/king-of-court', 'KING_OF_COURT', false],
+            ['tournaments/king-of-court/:id', 'KING_OF_COURT', true],
+            ['tournaments/americano/:id', 'AMERICANO', false],
+            ['tournaments/team-playoff/:id', 'TEAM_PLAYOFF', false],
+          ] as const
+        ).flatMap(([path, expected, alias]) =>
+          ['', '/ranking', '/history'].map((suffix) => ({
+            path: path + suffix,
+            element: (
+              <Suspense fallback={<p role="status">…</p>}>
+                <LivePage expected={expected} alias={alias} />
+              </Suspense>
+            ),
+          })),
+        ),
         { path: 'clubs', element: <ClubsPage /> },
         { path: 'clubs/:id', element: <ClubPage /> },
         { path: 'login', element: <AccountPage key="login" mode="login" /> },

@@ -22,4 +22,5 @@ export interface ApiProblem {
   fieldErrors?: { field: string; code: string; message: string }[];
   retryAfter?: number;
   blockedUntil?: string;
+  canonicalUrl?: string;
 }
