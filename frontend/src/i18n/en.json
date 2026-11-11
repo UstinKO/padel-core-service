@@ -174,5 +174,67 @@
     "SUMA_10": "Sum 10+",
     "TODOS": "All levels",
     "PRINCIPIANTES": "Beginners"
+  },
+  "details": {
+    "share": "Share",
+    "shareTitle": "Share the public link",
+    "close": "Close",
+    "publicLink": "Public link",
+    "copy": "Copy link",
+    "copied": "Link copied",
+    "copyError": "Could not copy. Select the link and copy it manually.",
+    "qrAlt": "QR code for the public link",
+    "qrError": "Could not create the QR. You can copy the link.",
+    "notFound": "Page not found",
+    "notFoundText": "This page does not exist or is no longer available. Find another event.",
+    "loading": "Loading details",
+    "nameHidden": "Name not published",
+    "seekingPartner": "Looking for a partner",
+    "noParticipants": "No participants to display yet.",
+    "about": "About this event",
+    "when": "When we play",
+    "price": "Price",
+    "duration": "Duration",
+    "rules": "Format and conditions",
+    "noRules": "Ask the organiser about the conditions.",
+    "cancellationDeadline": "Cancellation deadline",
+    "confirmed": "Confirmed participants",
+    "places": "Places and registration",
+    "downloadPng": "Download bracket PNG",
+    "organizer": "Organiser",
+    "noOrganizer": "Contact not published."
+  },
+  "clubs": {
+    "title": "Clubs",
+    "lead": "Discover clubs and their upcoming events.",
+    "details": "View club",
+    "empty": "No clubs published yet.",
+    "about": "About this club",
+    "noDescription": "The club description is not available yet.",
+    "map": "Open map",
+    "website": "Club website",
+    "events": "Upcoming events at this club"
+  },
+  "eventFormat": {
+    "KING_OF_COURT": "King of Court",
+    "AMERICANO": "Individual Americano",
+    "TEAM_PAIRS": "Pairs event",
+    "TEAM_AMERICANO": "Team Americano · round-robin",
+    "TEAM_PLAYOFF": "Pairs · qualification and playoff",
+    "CANCHA_ABIERTA": "Open court",
+    "PADEL_CLINIC": "Padel training"
+  },
+  "conductPhase": {
+    "NOT_STARTED": "Not started",
+    "LIVE": "In progress",
+    "QUALIFICATION": "Qualification",
+    "PLAYOFF": "Playoff",
+    "FINISHED": "Finished",
+    "CANCELLED": "Cancelled"
+  },
+  "eventAction": {
+    "REGISTRATION_INFO": "Conditions and registration",
+    "LIVE": "Matches and results",
+    "CALENDAR": "Add to calendar"
   }
 }

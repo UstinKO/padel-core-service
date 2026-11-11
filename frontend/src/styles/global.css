@@ -783,3 +783,122 @@ h2 {
     font-size: 1.5rem;
   }
 }
+
+.entity-top {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+}
+.entity-heading {
+  padding-block: var(--space-8);
+  overflow-wrap: anywhere;
+}
+.entity-heading h1 {
+  max-width: 55rem;
+}
+.entity-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr);
+  gap: var(--space-6);
+  align-items: start;
+}
+.entity-columns > * {
+  min-width: 0;
+}
+.entity-facts {
+  display: grid;
+  gap: var(--space-5);
+  margin: var(--space-5) 0;
+}
+.entity-facts dt {
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+.entity-facts dd {
+  margin: var(--space-1) 0 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.entity-facts small {
+  display: block;
+  color: var(--color-muted);
+  font-weight: 400;
+}
+.entity-actions {
+  display: grid;
+  gap: var(--space-3);
+}
+.entity-actions a {
+  text-align: center;
+}
+.participants {
+  padding-left: var(--space-6);
+  margin-bottom: 0;
+}
+.participants li {
+  padding-block: var(--space-3);
+  padding-left: var(--space-2);
+  border-bottom: 1px solid var(--color-line);
+  overflow-wrap: anywhere;
+}
+.participants small {
+  display: block;
+  color: var(--color-muted);
+}
+.event-description {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.club-card {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.share-dialog {
+  width: min(100% - 2rem, 34rem);
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  padding: var(--space-6);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  box-shadow: var(--shadow-pop);
+}
+.share-dialog::backdrop {
+  background: rgb(23 46 40 / 55%);
+}
+.dialog-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.dialog-heading h2 {
+  margin-block: var(--space-2) var(--space-5);
+}
+.share-qr {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: var(--space-6) auto 0;
+}
+@media (max-width: 45rem) {
+  .entity-columns {
+    grid-template-columns: 1fr;
+  }
+  .entity-aside {
+    grid-row: 1;
+  }
+  .nav {
+    flex-wrap: wrap;
+    column-gap: var(--space-3);
+  }
+  .nav a {
+    font-size: 0.75rem;
+  }
+  .share-dialog {
+    padding: var(--space-4);
+  }
+}

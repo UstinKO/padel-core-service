@@ -51,7 +51,7 @@ test('home and catalogue use server counts, canonical event links and all langua
   await expect(page.getByRole('heading', { name: event.name })).toBeVisible();
   await expect(page.getByRole('link', { name: 'View event: Copa del barrio' })).toHaveAttribute(
     'href',
-    '/torneo/42',
+    '/preview/torneo/42',
   );
   await expect(page.getByText('1 pair', { exact: true })).toBeVisible();
   await page.getByLabel('Language').selectOption('ru');

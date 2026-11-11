@@ -4,6 +4,9 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { AppLayout } from './components/AppLayout';
 import { ComponentsPage } from './pages/ComponentsPage';
 import { HomePage, CatalogPage } from './pages/DiscoveryPages';
+import { EventPage } from './pages/EventPage';
+import { ClubsPage, ClubPage } from './pages/ClubPages';
+import { NotFoundPage } from './components/EntityState';
 import { PreviewPage } from './pages/PreviewPage';
 
 const queryClient = new QueryClient({
@@ -21,9 +24,12 @@ const router = createBrowserRouter(
       children: [
         { index: true, element: <HomePage /> },
         { path: 'torneos', element: <CatalogPage /> },
+        { path: 'torneo/:id', element: <EventPage /> },
+        { path: 'clubs', element: <ClubsPage /> },
+        { path: 'clubs/:id', element: <ClubPage /> },
         { path: 'foundation', element: <PreviewPage /> },
         { path: 'components', element: <ComponentsPage /> },
-        { path: '*', element: <PreviewPage /> },
+        { path: '*', element: <NotFoundPage /> },
       ],
     },
   ],

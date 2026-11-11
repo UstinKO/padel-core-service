@@ -7,10 +7,11 @@ import { Button } from './Button';
 import { EventCard } from './EventCard';
 import { StatusView } from './StatusView';
 
-export function Catalogue() {
+export function Catalogue({ clubId, title }: { clubId?: string; title?: string }) {
   const { t, i18n } = useTranslation();
   const [search, setSearch] = useSearchParams();
   const params = catalogParams(search);
+  if (clubId) params.set('clubId', clubId);
   const query = useQuery({
     queryKey: ['catalog', params.toString(), i18n.language],
     queryFn: ({ signal }) => getCatalog(params, signal),
@@ -18,6 +19,7 @@ export function Catalogue() {
   });
   const clubs = useQuery({
     queryKey: ['public-clubs'],
+    enabled: !clubId,
     queryFn: ({ signal }) => getClubs(signal),
     retry: false,
   });
@@ -55,7 +57,7 @@ export function Catalogue() {
       <div className="catalog-heading">
         <div>
           <p className="kicker">{t('catalog.kicker')}</p>
-          <h2 id="catalog-title">{t('catalog.title')}</h2>
+          <h2 id="catalog-title">{title ?? t('catalog.title')}</h2>
         </div>
         <Button variant="ghost" onClick={() => setSearch({})}>
           {t('catalog.reset')}
@@ -66,21 +68,23 @@ export function Catalogue() {
         {select('gender', 'catalog.gender', genders, 'gender')}
         {select('level', 'catalog.level', levels, 'level')}
         {select('modality', 'catalog.modality', ['INDIVIDUAL', 'DOBLES'], 'modality')}
-        <label className="field">
-          <span className="field__label">{t('catalog.club')}</span>
-          <select
-            className="field__input"
-            value={search.get('clubId') ?? ''}
-            onChange={(event) => update('clubId', event.target.value)}
-          >
-            <option value="">{t('catalog.all')}</option>
-            {clubs.data?.map((club) => (
-              <option key={club.id} value={club.id}>
-                {club.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        {!clubId && (
+          <label className="field">
+            <span className="field__label">{t('catalog.club')}</span>
+            <select
+              className="field__input"
+              value={search.get('clubId') ?? ''}
+              onChange={(event) => update('clubId', event.target.value)}
+            >
+              <option value="">{t('catalog.all')}</option>
+              {clubs.data?.map((club) => (
+                <option key={club.id} value={club.id}>
+                  {club.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <label className="field">
           <span className="field__label">{t('catalog.from')}</span>
           <input

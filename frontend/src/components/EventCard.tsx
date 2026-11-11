@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { PublicEvent } from '../api/discovery';
 
@@ -23,7 +24,7 @@ export function EventCard({ event }: { event: PublicEvent }) {
       </div>
       <time dateTime={event.startsAt}>{date}</time>
       <h3>
-        <a href={`/torneo/${event.id}`}>{event.name}</a>
+        <Link to={`/torneo/${event.id}`}>{event.name}</Link>
       </h3>
       <p className="event-club">{event.club.name ?? t('catalog.unknownClub')}</p>
       <div className="event-tags">
@@ -56,15 +57,15 @@ export function EventCard({ event }: { event: PublicEvent }) {
         <strong>{price}</strong>
         <span>{t(event.registrationOpen ? 'catalog.open' : 'catalog.closed')}</span>
       </div>
-      <a
+      <Link
         className="event-link"
         aria-label={`${t('catalog.details')}: ${event.name}`}
-        href={`/torneo/${event.id}`}
+        to={`/torneo/${event.id}`}
       >
         {t('catalog.details')}
         <span className="sr-only">: {event.name}</span>
         <span aria-hidden="true"> ↗</span>
-      </a>
+      </Link>
     </article>
   );
 }

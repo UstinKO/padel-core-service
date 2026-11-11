@@ -356,3 +356,6 @@
 ### Веб-карточка события
 
 `GET /api/public/events/{id}` добавляет организатора, серверные format/phase и read-only ссылки для #907. [OpenAPI](public-discovery.openapi.json), [поведение и SEO](../../endpoints/public-schedule.md#веб-карточка-мероприятия-и-серверный-seo-контракт). Мобильные endpoints сохраняются.
+
+
+Frontend #907 использует `PublicEventResponse` из #944. Публичные клубы дополнены canonicalUrl; websiteUrl по-прежнему означает внешний сайт клуба. Ссылки проверяются по HTTP/HTTPS и назначению, share не содержит preview/query/hash. Некорректный route id не вызывает API; прежний JSON ошибки карточки и ProblemDetail различаются по HTTP-статусу без показа внутреннего тела.
