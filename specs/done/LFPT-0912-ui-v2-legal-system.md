@@ -1,7 +1,7 @@
 # LFPT-0912: Feature frontend UI v2 — юридические и системные страницы
 
 ## Статус
-implemented — блок подтверждён пользователем, реализация выполнена 2026-11-11.
+done
 
 ## Источник
 [Issue #912](https://github.com/UstinKO/padel-core-service/issues/912), напрямую из issue. Зависит от #899 и влитых #826/#827; используется auth/session foundation #908.
