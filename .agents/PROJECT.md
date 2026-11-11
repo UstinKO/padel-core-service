@@ -597,3 +597,6 @@ React UI v2: `/preview/` — главная, `/preview/torneos` — катало
 ### Веб-карточка и SEO UI v2
 
 `GET /api/public/events/{id}` — `PublicEventController`/`PublicEventService`, безопасный `PublicEventResponse` с format/phase от `PublicEventStateService`. `SpaPageService` формирует серверные title/canonical/OG для event/club preview, сохраняя assets и noindex. Production allowlist пуст; прежний мобильный DTO не расширен.
+
+
+React #907: `EventPage`, `ClubsPage`, `ClubPage`; типы/URL-проверки в `frontend/src/api/eventDetails.ts`, локальный QR/share — `ShareDialog`. Карточка клуба блокирует подмену clubId через query. Мобильный и legacy UI сохраняются; серверные метаданные предоставляет #944.

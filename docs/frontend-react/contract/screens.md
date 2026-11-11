@@ -1163,3 +1163,14 @@
 | P-04 — каталог | `/preview/torneos` | `/torneos` | `/api/public/catalog`, `/api/public/clubs` |
 
 Фильтры и страница — в URL. По умолчанию дата Буэнос-Айреса; единицы вместимости и доступность — серверные. Ссылка карточки пока ведёт в legacy `/torneo/{id}`. Состояния loading/error/retry/empty и фильтры проверяются браузером. Боевые URL не переключены.
+
+
+## Закрытые карточки мероприятия и клубов
+
+| Экран | Preview | API |
+|---|---|---|
+| P-05 — мероприятие | `/preview/torneo/{id}` | `/api/public/events/{id}` |
+| P-06 — клубы | `/preview/clubs` | `/api/public/clubs` |
+| P-07 — клуб | `/preview/clubs/{id}` | `/api/public/clubs/{id}` + `/api/public/catalog?clubId=...` |
+
+Параметр clubId в query не может изменить клуб, к которому привязана его карточка. Состав/резерв — публичные имена; формат, фаза и read-only действия определяются сервером #944. Share/canonical/QR всегда используют публичные URL. Неизвестные id и ошибки 503 различаются. Серверные SEO/OG и noindex готовятся backend; боевые URL остаются legacy.

@@ -50,3 +50,9 @@ pnpm test:e2e
 Закрытые маршруты `/preview/` и `/preview/torneos` используют `/api/public/home`, `/api/public/catalog` и `/api/public/clubs` из #898. Фильтры и пагинация сохраняются в query URL, сортировка и вместимость поступают с сервера. Время отображается в зоне Буэнос-Айреса. Карточка ведёт на действующую `/torneo/{id}`. Служебный фундамент доступен на `/preview/foundation`, компоненты — `/preview/components`.
 
 `pnpm test:e2e` проверяет desktop/mobile, три языка, URL/reload/back, загрузку, ошибку, retry, пустой ответ и отсутствие overflow. Тестовые данные находятся только в e2e/unit-тестах; production-код не использует fixtures.
+
+## Мероприятия и клубы
+
+Закрытые страницы `/preview/torneo/{id}`, `/preview/clubs`, `/preview/clubs/{id}` используют публичный контракт backend #944. Карточки каталога теперь ведут в React preview; канонические ссылки шаринга сохраняют публичные `/torneo/{id}` и `/clubs/{id}` из API. Состав показывает только публичные имена, формат/фаза/действия поступают с сервера. Запись и live пока ведут на действующие разрешённые сервером страницы.
+
+Share-диалог использует локальную генерацию QR (`qrcode`), clipboard с ручным fallback и ссылки WhatsApp/Telegram. QR не отправляется внешним сервисам. Метаданные присутствуют в исходном серверном HTML; клиент обновляет title/canonical при SPA-навигации. Preview остаётся закрытым/noindex, production allowlist не меняется.

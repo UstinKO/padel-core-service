@@ -176,5 +176,67 @@
     "SUMA_10": "Suma 10+",
     "TODOS": "Todos los niveles",
     "PRINCIPIANTES": "Principiantes"
+  },
+  "details": {
+    "share": "Compartir",
+    "shareTitle": "Compartir enlace público",
+    "close": "Cerrar",
+    "publicLink": "Enlace público",
+    "copy": "Copiar enlace",
+    "copied": "Enlace copiado",
+    "copyError": "No se pudo copiar. Seleccioná y copiá el enlace.",
+    "qrAlt": "Código QR del enlace público",
+    "qrError": "No se pudo crear el QR. Podés copiar el enlace.",
+    "notFound": "Página no encontrada",
+    "notFoundText": "La página no existe o ya no está disponible. Buscá otro evento.",
+    "loading": "Cargando información",
+    "nameHidden": "Nombre no publicado",
+    "seekingPartner": "Busca pareja",
+    "noParticipants": "Todavía no hay participantes para mostrar.",
+    "about": "Información del evento",
+    "when": "Cuándo jugamos",
+    "price": "Precio",
+    "duration": "Duración",
+    "rules": "Formato y condiciones",
+    "noRules": "Consultá las condiciones con el organizador.",
+    "cancellationDeadline": "Cancelación hasta",
+    "confirmed": "Participantes confirmados",
+    "places": "Lugares e inscripción",
+    "downloadPng": "Descargar cuadro PNG",
+    "organizer": "Organizador",
+    "noOrganizer": "Contacto no publicado."
+  },
+  "clubs": {
+    "title": "Clubes",
+    "lead": "Descubrí los clubes y sus próximos eventos.",
+    "details": "Ver club",
+    "empty": "Todavía no hay clubes publicados.",
+    "about": "Sobre el club",
+    "noDescription": "La descripción del club todavía no está disponible.",
+    "map": "Ver mapa",
+    "website": "Sitio del club",
+    "events": "Próximos eventos del club"
+  },
+  "eventFormat": {
+    "KING_OF_COURT": "Rey de cancha",
+    "AMERICANO": "Americano individual",
+    "TEAM_PAIRS": "Evento de parejas",
+    "TEAM_AMERICANO": "Americano por equipos · round-robin",
+    "TEAM_PLAYOFF": "Parejas · clasificación y playoff",
+    "CANCHA_ABIERTA": "Cancha abierta",
+    "PADEL_CLINIC": "Clínica de pádel"
+  },
+  "conductPhase": {
+    "NOT_STARTED": "Sin iniciar",
+    "LIVE": "En juego",
+    "QUALIFICATION": "Clasificación",
+    "PLAYOFF": "Playoff",
+    "FINISHED": "Finalizado",
+    "CANCELLED": "Cancelado"
+  },
+  "eventAction": {
+    "REGISTRATION_INFO": "Condiciones e inscripción",
+    "LIVE": "Partidos y resultados",
+    "CALENDAR": "Agregar al calendario"
   }
 }

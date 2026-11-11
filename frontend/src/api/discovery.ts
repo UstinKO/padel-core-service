@@ -68,6 +68,11 @@ export interface PublicClub {
   name: string;
   address: string | null;
   city: string | null;
+  description: string | null;
+  logoUrl: string | null;
+  mapUrl: string | null;
+  websiteUrl: string | null;
+  canonicalUrl: string;
 }
 export interface CatalogPage {
   items: PublicEvent[];
@@ -85,6 +90,8 @@ export interface HomeData {
 export const getHome = (signal: AbortSignal) => apiFetch<HomeData>('/api/public/home', { signal });
 export const getClubs = (signal: AbortSignal) =>
   apiFetch<PublicClub[]>('/api/public/clubs', { signal });
+export const getClub = (id: string, signal: AbortSignal) =>
+  apiFetch<PublicClub>(`/api/public/clubs/${id}`, { signal });
 export const getCatalog = (params: URLSearchParams, signal: AbortSignal) =>
   apiFetch<CatalogPage>(`/api/public/catalog?${params}`, { signal });
 
