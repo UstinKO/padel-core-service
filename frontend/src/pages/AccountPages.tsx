@@ -128,13 +128,27 @@ function AccountForm({ mode, initialProfile }: { mode: Mode; initialProfile?: Pr
   const currentError = error ?? passwordError;
   const fieldErrors =
     currentError instanceof ApiError ? (currentError.problem?.fieldErrors ?? []) : [];
+  function errorMessage(value: { code: string; message: string }) {
+    return t(`account.errors.${value.code}`, { defaultValue: value.message });
+  }
+  function errorTarget(name: string) {
+    if (name === 'contact') return 'account-telefono';
+    return name === 'recaptchaToken' || (name in defaults && name !== 'website')
+      ? `account-${name}`
+      : null;
+  }
   function field(name: string) {
     return {
       name,
+      disabled: pending || passwordPending,
       value: values[name] ?? '',
       onChange: (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
         setValues((previous) => ({ ...previous, [name]: event.target.value })),
-      error: fieldErrors.find((value) => value.field === name)?.message,
+      error:
+        fieldErrors
+          .filter((value) => value.field === name)
+          .map(errorMessage)
+          .join(' ') || undefined,
     };
   }
   function continueTo(value: string | null) {
@@ -147,15 +161,18 @@ function AccountForm({ mode, initialProfile }: { mode: Mode; initialProfile?: Pr
     if (value instanceof ApiError) {
       if (value.status === 429)
         return t('account.rateLimit', { seconds: value.problem?.retryAfter ?? 60 });
-      return value.problem?.detail ?? t('account.failed');
+      return value.problem
+        ? t(`account.errors.${value.problem.code}`, { defaultValue: value.problem.detail })
+        : t('account.failed');
     }
     return t('account.uncertain');
   }
   async function submit(event: FormEvent) {
     event.preventDefault();
-    if (pending) return;
+    if (pending || passwordPending) return;
     setPending(true);
     setError(undefined);
+    setPasswordError(undefined);
     setNotice('');
     try {
       if (mode === 'login') {
@@ -230,9 +247,10 @@ function AccountForm({ mode, initialProfile }: { mode: Mode; initialProfile?: Pr
   }
   async function changePassword(event: FormEvent) {
     event.preventDefault();
-    if (passwordPending) return;
+    if (pending || passwordPending) return;
     setPasswordPending(true);
     setPasswordError(undefined);
+    setError(undefined);
     setNotice('');
     try {
       await jsonPost<AccountResult>('/api/players/me/password', {
@@ -290,15 +308,26 @@ function AccountForm({ mode, initialProfile }: { mode: Mode; initialProfile?: Pr
   return (
     <section className="account">
       <h1>{t(`account.${mode}`)}</h1>
+      {params.get('expired') === 'true' && mode === 'login' && (
+        <p role="status">{t('system.sessionText')}</p>
+      )}
       {Boolean(error || passwordError) && (
         <div ref={summary} tabIndex={-1} role="alert" className="account-errors">
           <p>{describe(error ?? passwordError)}</p>
           <ul>
             {fieldErrors.map((value, index) => (
               <li key={`${value.field}-${index}`}>
-                <a href={`#account-${value.field}`}>
-                  {t(`account.${value.field}`, { defaultValue: value.field })}: {value.message}
-                </a>
+                {errorTarget(value.field) ? (
+                  <a href={`#${errorTarget(value.field)}`}>
+                    {t(`account.${value.field}`, { defaultValue: t('account.form') })}:{' '}
+                    {errorMessage(value)}
+                  </a>
+                ) : (
+                  <span>
+                    {t(`account.${value.field}`, { defaultValue: t('account.form') })}:{' '}
+                    {errorMessage(value)}
+                  </span>
+                )}
               </li>
             ))}
           </ul>
@@ -389,7 +418,11 @@ function AccountForm({ mode, initialProfile }: { mode: Mode; initialProfile?: Pr
           {mode === 'profile' && (
             <label className="field">
               {t('account.preferredLocale')}
-              <select className="field__input" {...field('preferredLocale')}>
+              <select
+                id="account-preferredLocale"
+                className="field__input"
+                {...field('preferredLocale')}
+              >
                 {['es', 'ru', 'en'].map((language) => (
                   <option key={language} value={language}>
                     {t(`language.${language}`)}
@@ -456,13 +489,20 @@ function AccountForm({ mode, initialProfile }: { mode: Mode; initialProfile?: Pr
                   }
                 />
               </div>
-              {config.data?.captchaEnabled && (
-                <Captcha
-                  siteKey={config.data.captchaSiteKey}
-                  generation={generation}
-                  onToken={setCaptchaToken}
-                />
-              )}
+              <div
+                id="account-recaptchaToken"
+                tabIndex={-1}
+                role="group"
+                aria-label={t('account.captcha')}
+              >
+                {config.data?.captchaEnabled && (
+                  <Captcha
+                    siteKey={config.data.captchaSiteKey}
+                    generation={generation}
+                    onToken={setCaptchaToken}
+                  />
+                )}
+              </div>
               {config.isError && <p role="alert">{t('account.configFailed')}</p>}
             </>
           )}
@@ -470,6 +510,7 @@ function AccountForm({ mode, initialProfile }: { mode: Mode; initialProfile?: Pr
             type="submit"
             disabled={
               pending ||
+              passwordPending ||
               session.isPending ||
               (mode === 'register' &&
                 (!config.data || (config.data.captchaEnabled && !captchaToken))) ||
@@ -486,6 +527,7 @@ function AccountForm({ mode, initialProfile }: { mode: Mode; initialProfile?: Pr
         <form onSubmit={(event) => void changePassword(event)} aria-busy={passwordPending}>
           <h2>{t('account.changePassword')}</h2>
           <Field
+            id="account-currentPassword"
             label={t('account.currentPassword')}
             type="password"
             autoComplete="current-password"
@@ -494,6 +536,7 @@ function AccountForm({ mode, initialProfile }: { mode: Mode; initialProfile?: Pr
             {...field('currentPassword')}
           />
           <Field
+            id="account-newPassword"
             label={t('account.newPassword')}
             type="password"
             autoComplete="new-password"
@@ -503,6 +546,7 @@ function AccountForm({ mode, initialProfile }: { mode: Mode; initialProfile?: Pr
             {...field('newPassword')}
           />
           <Field
+            id="account-confirmPassword"
             label={t('account.confirmPassword')}
             type="password"
             autoComplete="new-password"
@@ -511,7 +555,7 @@ function AccountForm({ mode, initialProfile }: { mode: Mode; initialProfile?: Pr
             {...field('confirmPassword')}
           />
           <p>{t('account.googlePasswordHelp')}</p>
-          <Button disabled={passwordPending}>{t('account.changePassword')}</Button>
+          <Button disabled={pending || passwordPending}>{t('account.changePassword')}</Button>
         </form>
       )}
       {(mode === 'login' || mode === 'register') && config.data?.googleEnabled && (

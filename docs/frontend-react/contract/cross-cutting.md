@@ -160,3 +160,7 @@
 - `404` турнира — отдельный шаблон `error/tournament-not-found`; `403` — `error/403`; `429` — `error/rate-limit` с таймером.
 - Спринговый `/error` (whitelabel) — для всего остального. **Шаблона `error.html` нет**, а `PasswordResetController` возвращает view `error` → падение (F-02).
 - В React: экраны `NotFound`, `Forbidden`, `RateLimited`, `ServerError`; сетевые ошибки на live-пультах — не терять введённый счёт (см. §9) и показывать «нет связи» вместо молчаливого провала.
+
+## Реализованные сквозные механизмы UI v2
+
+Реальный account API описан в [контракте аккаунта](../../endpoints/account.md): `/login` и `/logout` имеют JSON content negotiation, все анонимные `/api/**` возвращают 401 ProblemDetail. Ручной `lang` из прямой ссылки или переключателя синхронизирует cookie сервера. React использует server cookie-consent: optional SDK не загружаются без согласия, существующие hooks получают update/revoke, закрытый preview самостоятельно внешние SDK не подключает. Ошибка сохранения не меняет предыдущий выбор. Root/route boundary не показывает исключение или stack trace; 401 сохраняет destination, 403 не предлагает циклический вход. Retry-After поддерживает секунды и HTTP-date, таймер 429 привязан к моменту ответа и не перезапускается при обычной перерисовке. Повторы не отправляют мутации автоматически.

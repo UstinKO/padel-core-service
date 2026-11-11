@@ -71,3 +71,7 @@
 > **[MINOR]** `cookie.setSecure(false)` — та же проблема что и выше.
 
 > **[MINOR]** Нет поля `functional` (функциональные cookie) — обычно в GDPR-баннерах есть 3 категории: functional (обязательные), analytics, marketing.
+
+## Клиент React UI v2
+
+CookieConsent использует эти же POST-endpoint с CSRF. Успешный ответ — пустой HTTP 200, клиент не ожидает JSON-тело. Источник выбора — серверные cookieConsent/analyticsConsent/marketingConsent; invalid/unknown означает отказ от optional consent до сохранения. Принятие, отклонение и настройка вызывают обновление существующих analytics hooks и событие marketing-consent-changed; revoke остаётся серверным. React-preview внешние SDK сам не загружает.

@@ -1,3 +1,5 @@
+import { lazy, Suspense } from 'react';
+import { AppErrorBoundary, RouteErrorPage, SystemPage } from './components/SystemState';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
@@ -9,6 +11,10 @@ import { EventPage } from './pages/EventPage';
 import { ClubsPage, ClubPage } from './pages/ClubPages';
 import { NotFoundPage } from './components/EntityState';
 import { PreviewPage } from './pages/PreviewPage';
+
+const LegalPage = lazy(() =>
+  import('./pages/LegalPages').then((module) => ({ default: module.LegalPage })),
+);
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -22,6 +28,7 @@ const router = createBrowserRouter(
     {
       path: '/',
       element: <AppLayout />,
+      errorElement: <RouteErrorPage />,
       children: [
         { index: true, element: <HomePage /> },
         { path: 'torneos', element: <CatalogPage /> },
@@ -36,6 +43,25 @@ const router = createBrowserRouter(
         },
         { path: 'recuperar-password', element: <AccountPage key="reset" mode="reset" /> },
         { path: 'perfil', element: <AccountPage key="profile" mode="profile" /> },
+        ...(['terminos', 'privacidad', 'cookies'] as const).map((page) => ({
+          path: page,
+          element: (
+            <Suspense fallback={<p role="status">…</p>}>
+              <LegalPage page={page} />
+            </Suspense>
+          ),
+        })),
+        { path: 'error/401', element: <SystemPage kind="session" /> },
+        { path: 'error/403', element: <SystemPage kind="forbidden" /> },
+        { path: 'error/429', element: <SystemPage kind="rateLimit" /> },
+        {
+          path: 'error/503',
+          element: <SystemPage kind="unavailable" retry={() => window.location.reload()} />,
+        },
+        {
+          path: 'error/offline',
+          element: <SystemPage kind="offline" retry={() => window.location.reload()} />,
+        },
         { path: 'foundation', element: <PreviewPage /> },
         { path: 'components', element: <ComponentsPage /> },
         { path: '*', element: <NotFoundPage /> },
@@ -47,8 +73,10 @@ const router = createBrowserRouter(
 
 export function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>
+    <AppErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>
+    </AppErrorBoundary>
   );
 }

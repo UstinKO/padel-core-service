@@ -1,21 +1,11 @@
 import type { ReactNode } from 'react';
-import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { StatusView } from './StatusView';
 import { ApiError } from '../api/client';
-import { Button } from './Button';
+import { ReadError, SystemPage } from './SystemState';
 
 export function NotFoundPage() {
-  const { t } = useTranslation();
-  return (
-    <section className="page-stack">
-      <h1>{t('details.notFound')}</h1>
-      <p>{t('details.notFoundText')}</p>
-      <Link className="button button--secondary" to="/torneos">
-        {t('nav.catalog')}
-      </Link>
-    </section>
-  );
+  return <SystemPage kind="notFound" />;
 }
 export function EntityState({
   pending,
@@ -34,14 +24,6 @@ export function EntityState({
       <StatusView tone="loading" title={t('details.loading')} text={t('catalog.loadingText')} />
     );
   if (error instanceof ApiError && error.status === 404) return <NotFoundPage />;
-  if (error)
-    return (
-      <StatusView
-        tone="error"
-        title={t('state.errorTitle')}
-        text={t('state.errorText')}
-        action={<Button onClick={retry}>{t('state.retry')}</Button>}
-      />
-    );
+  if (error) return <ReadError error={error} retry={retry} />;
   return children;
 }
