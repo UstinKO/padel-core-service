@@ -692,6 +692,7 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 | `GET` | `/wa-info` | — | Публичный 302 на главную со списком турниров: `whatsapp / message`, кампания `whatsapp_group`. |
 | `GET` | `/wa-broadcast` | — | Публичный 302 на календарь на испанском с метками `whatsapp / messaging` и кампанией `whatsapp_broadcast`. |
 | `GET` | `/threads` | — | Публичный 302 на главную со списком турниров: `threads / social`, кампания `threads_profile`. |
+| `GET` | `/vamosplan` | — | Публичный 302 на главную со списком турниров с метками `vamosplan / referral` и кампанией `partner_listing`. |
 | `GET` | `/app`, `/app/` | — | Веб-версия клиента 1Padel.App: `/app` → `302 /app/`, `/app/` → `forward:/app/index.html` (статика `static/app/`), анонимно (`MobileAppViewController`, LFPT-0643). |
 | `GET`, `HEAD` | `/web/**` | — | Статика React UI v2 из `static/web/`: shell `no-cache`, versioned assets `immutable`; зона независима от Expo `/app/**`. |
 | `GET`, `HEAD` | `/preview`, `/preview/**` | SUPER_ADMIN | Закрытый preview React: server-side проверка роли, затем forward на `/web/index.html`. |

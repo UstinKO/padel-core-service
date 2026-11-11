@@ -81,6 +81,7 @@ class MarketingRedirectControllerTest {
                 Arguments.of("/wa-info", "https://1-padel.com/?utm_source=whatsapp&utm_medium=message&utm_campaign=whatsapp_group"),
                 Arguments.of("/wa-broadcast", "https://1-padel.com/?lang=es&utm_source=whatsapp&utm_medium=messaging&utm_campaign=whatsapp_broadcast"),
                 Arguments.of("/threads", "https://1-padel.com/?utm_source=threads&utm_medium=social&utm_campaign=threads_profile"),
+                Arguments.of("/vamosplan", "https://1-padel.com/?utm_source=vamosplan&utm_medium=referral&utm_campaign=partner_listing"),
                 Arguments.of("/ig-story", "https://1-padel.com/?utm_source=instagram&utm_medium=social&utm_campaign=instagram_stories&utm_content=shared_story"),
                 Arguments.of("/oct-tg", "https://1-padel.com/?utm_source=telegram&utm_medium=social&utm_campaign=calendar_october"),
                 Arguments.of("/oct-wa", "https://1-padel.com/?utm_source=whatsapp&utm_medium=message&utm_campaign=calendar_october"),

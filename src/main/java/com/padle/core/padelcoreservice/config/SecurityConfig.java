@@ -172,6 +172,7 @@ public class SecurityConfig {
                                 "/wa-info",
                                 "/wa-broadcast",
                                 "/threads",
+                                "/vamosplan",
                                 "/qr/reby/site",
                                 "/qr/reby/telegram",
                                 // Веб-версия клиента 1Padel.App — статика; приватные данные

@@ -25,11 +25,12 @@ public class MarketingRedirectController {
             Map.entry("/tg-posts", "https://1-padel.com/?utm_source=telegram&utm_medium=social&utm_campaign=telegram_posts"),
             Map.entry("/wa-info", "https://1-padel.com/?utm_source=whatsapp&utm_medium=message&utm_campaign=whatsapp_group"),
             Map.entry("/wa-broadcast", "https://1-padel.com/?lang=es&utm_source=whatsapp&utm_medium=messaging&utm_campaign=whatsapp_broadcast"),
-            Map.entry("/threads", "https://1-padel.com/?utm_source=threads&utm_medium=social&utm_campaign=threads_profile")
+            Map.entry("/threads", "https://1-padel.com/?utm_source=threads&utm_medium=social&utm_campaign=threads_profile"),
+            Map.entry("/vamosplan", "https://1-padel.com/?utm_source=vamosplan&utm_medium=referral&utm_campaign=partner_listing")
     );
 
     @GetMapping({"/oct-tg", "/oct-wa", "/oct-ig", "/ig-bio", "/ig-story",
-            "/ig-ru", "/tg-calendar", "/tg-posts", "/wa-info", "/wa-broadcast", "/threads"})
+            "/ig-ru", "/tg-calendar", "/tg-posts", "/wa-info", "/wa-broadcast", "/threads", "/vamosplan"})
     public String redirectShortLink(HttpServletRequest request) {
         String target = SHORT_LINK_TARGETS.get(request.getServletPath());
         log.info("Marketing short link redirect: {} -> {}", request.getServletPath(), target);
