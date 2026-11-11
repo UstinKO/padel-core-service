@@ -35,7 +35,7 @@ class RegistrationCancellationControllerTest {
     @CsvSource({"ru,Не удалось отменить участие", "es,No se pudo cancelar la participación", "en,Unable to cancel participation"})
     void failureIsLocalizedAndDoesNotExposeDatabaseDetails(String language, String expected) throws Exception {
         doThrow(new DataIntegrityViolationException("DELETE SQL marketing_registrations_db_registration_id_fkey"))
-                .when(service).adminRemovePlayerRegistration(1L, 2L);
+                .when(service).adminRemovePlayerRegistration(eq(1L), eq(2L), any());
         mvc.perform(post("/test/tournaments/1/remove-player/2").locale(Locale.forLanguageTag(language)))
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.success").value(false))
@@ -50,6 +50,6 @@ class RegistrationCancellationControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("Участие отменено."));
-        verify(service).adminRemovePlayerRegistration(1L, 2L);
+        verify(service).adminRemovePlayerRegistration(eq(1L), eq(2L), any());
     }
 }

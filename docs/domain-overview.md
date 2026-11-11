@@ -820,3 +820,8 @@ Thymeleaf admin/qr-report, static/js/qr-report.js, static/css/qr-report.css.
 ### LFPT-0903: публичные live-снимки
 
 GET/HEAD `/api/public/events/{eventId}/live` и `/api/public/king-of-court/{kingId}/live` разрешены анонимно, с проверкой active/не BORRADOR, no-store и безопасным DTO для всех ролей. [Контракт, ошибки, пакетное чтение и STOMP](endpoints/public-live.md). В `/topic/public/live/{eventId}` только invalidation после commit; wildcard SUBSCRIBE и клиентский SEND в публичный topic запрещены. Мутации и мобильный API прежние; preview остаётся SUPER_ADMIN.
+
+
+## Структурированная история отмен — LFPT-0900
+
+[Контекст, совместимость API, версия заявки, права и ограничения](endpoints/registration-cancellation.md). Текущая регистрационная строка и платежи сохраняются; событие отмены не стирается при повторной записи. Существующие входы используют общий переход в той же транзакции, письма — после commit. Публичный кабинет и его новые маршруты остаются #902.

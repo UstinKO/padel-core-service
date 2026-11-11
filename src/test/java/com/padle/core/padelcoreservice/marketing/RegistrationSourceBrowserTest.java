@@ -33,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @EnabledIfSystemProperty(named = "browser.qa", matches = "true")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
         "server.address=127.0.0.1",
-        "spring.datasource.url=jdbc:postgresql://localhost:5432/padel_browser_qa",
+        "spring.datasource.url=jdbc:postgresql://${BROWSER_QA_DB_HOST:localhost}:5432/padel_browser_qa",
         "spring.datasource.username=epadel_user", "spring.datasource.password=test",
         "app.analytics.meta.enabled=false", "app.analytics.meta.access-token=",
         "app.analytics.ga4-id=", "app.analytics.clarity-id=",

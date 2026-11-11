@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 @Data
 public class TournamentRegistrationDto {
     private Long id;
+    private Long cancellationVersion;
     private Long tournamentId;
     private String tournamentNombre;
     private Long playerId;

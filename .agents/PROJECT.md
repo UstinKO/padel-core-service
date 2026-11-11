@@ -461,7 +461,7 @@ repository/
 
 ### Database Migrations
 
-Все изменения схемы — YAML-файлы в `src/main/resources/db/changelog/versions/`, подключены через `changelog-master.yaml`. Текущая версия: v1.58. `ddl-auto = none` — только Liquibase. Новые файлы добавлять с инкрементальным номером и регистрировать в `changelog-master.yaml`.
+Все изменения схемы — YAML-файлы в `src/main/resources/db/changelog/versions/`, подключены через `changelog-master.yaml`. Текущая версия: v1.71. `ddl-auto = none` — только Liquibase. Новые файлы добавлять с инкрементальным номером и регистрировать в `changelog-master.yaml`.
 
 ### Email Templates
 
@@ -624,3 +624,8 @@ GET/HEAD `/api/public/events/{eventId}/live` и `/api/public/king-of-court/{king
 Реализованы отдельные preview views KoC, индивидуального Americano и Team Playoff: раунды/корты, серверные рейтинги, история/участник, очередь и bracket, share/QR/PNG, ES/RU/EN и табло. Один STOMP-клиент слушает безопасный public topic #903; события объединяются в refetch, reconnect/focus/visibility перечитывают snapshot, polling 20 с и Retry-After ограничивают запросы. Временные ошибки сохраняют последний снимок со stale; 403/404/409 убирают его.
 
 [Маршруты, детали реализации, бюджеты и проверки](../frontend/README.md#lfpt-0911-пользовательские-live-экраны-ui-v2). Production URL и SUPER_ADMIN-защита preview сохранены; отдельный контур #904 и физические устройства не входят в этот результат.
+
+
+### История отмен — LFPT-0900
+
+Мягкая отмена использует RegistrationCancellationService/CancellationHistoryRepository: отдельное событие, участники и cancellationVersion. История сохраняется при повторной записи; batch-чтение для своего игрока или управляемого турнира проходит проверку доступа. Существующие сроки, PairTerms, оплата и очередь сохраняются. [Модель, права, повтор и ограничения старых запросов](../docs/endpoints/registration-cancellation.md). Два optional поля старых путей: If-Registration-Version для player cancel/cancel-double и comment для организаторской отмены. Новых REST-маршрутов кабинета нет; они остаются #902.

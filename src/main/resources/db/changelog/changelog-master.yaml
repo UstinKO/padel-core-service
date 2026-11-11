@@ -215,3 +215,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.70-social-publication-package.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.71-registration-cancellation-history.yaml
+      relativeToChangelogFile: true

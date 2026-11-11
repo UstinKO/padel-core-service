@@ -26,6 +26,9 @@ import com.padle.core.padelcoreservice.service.TournamentAccessService;
 import com.padle.core.padelcoreservice.service.conduct.AdditionalPointsStore;
 import com.padle.core.padelcoreservice.service.conduct.AdditionalPointsStore.ScoreSheet;
 import com.padle.core.padelcoreservice.service.conduct.ConductChange;
+import com.padle.core.padelcoreservice.service.cancellation.RegistrationCancellationService;
+import com.padle.core.padelcoreservice.service.cancellation.CancellationContext;
+import com.padle.core.padelcoreservice.dto.CancellationHistory.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -46,6 +49,7 @@ import java.util.stream.Stream;
 @Transactional(readOnly = true)
 public class AmericanoService {
 
+    private final RegistrationCancellationService cancellations;
     private final TournamentRepository tournamentRepository;
     private final TournamentRegistrationRepository registrationRepository;
     private final AmericanoPlayerRepository americanoPlayerRepository;
@@ -149,6 +153,7 @@ public class AmericanoService {
         reg.setRegistrationDate(LocalDateTime.now());
         reg.setCancellationDate(null);
         reg.setCancellationReason(null);
+        reg.invalidateActionTokens();
 
         long occupiedSpots = registrationRepository.countActiveRegistrations(tournament.getId());
         if (occupiedSpots < tournament.getCupoMax()) {
@@ -203,7 +208,7 @@ public class AmericanoService {
         }
 
         RegistrationStatus oldStatus = registration.getStatus();
-        registration.cancel(reason);
+        cancellations.cancel(List.of(registration),cancellations.organizer(currentOwner,Scope.PARTICIPANT,reason),reason);
         registrationRepository.save(registration);
 
         sendRegistrationCancelledEmail(registration.getPlayer(), registration.getTournament(), reason);

@@ -1,0 +1,56 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.71-registration-cancellation-history
+      author: codex
+      changes:
+        - sql:
+            sql: |
+              ALTER TABLE tournament_registrations_db ADD COLUMN cancellation_version bigint NOT NULL DEFAULT 0 CHECK (cancellation_version >= 0);
+              CREATE TABLE registration_cancellations (
+                id uuid PRIMARY KEY,
+                tournament_id bigint NOT NULL REFERENCES tournaments_db(id) ON DELETE CASCADE,
+                cancelled_at timestamp,
+                recorded_at timestamp NOT NULL DEFAULT localtimestamp,
+                actor_kind varchar(16) NOT NULL CHECK (actor_kind IN ('PLAYER','OWNER','SYSTEM','UNKNOWN')),
+                actor_id bigint,
+                scope varchar(16) NOT NULL CHECK (scope IN ('PARTICIPANT','PAIR')),
+                reason_code varchar(40) NOT NULL,
+                channel varchar(20) NOT NULL,
+                organizer_comment varchar(255),
+                receipt_actor bigint,
+                receipt_registration bigint,
+                receipt_version bigint,
+                request_digest varchar(64),
+                receipt jsonb
+              );
+              CREATE TABLE registration_cancellation_members (
+                event_id uuid NOT NULL REFERENCES registration_cancellations(id) ON DELETE CASCADE,
+                registration_id bigint NOT NULL,
+                version bigint NOT NULL CHECK (version > 0),
+                player_id bigint NOT NULL,
+                previous_status varchar(24) NOT NULL,
+                registration_date timestamp,
+                pair_booking_id uuid,
+                partner_id bigint,
+                PRIMARY KEY (registration_id,version),
+                UNIQUE (event_id,registration_id)
+              );
+              CREATE INDEX idx_cancellation_event_history ON registration_cancellations(tournament_id,recorded_at DESC);
+              CREATE INDEX idx_cancellation_player_history ON registration_cancellation_members(player_id,event_id);
+              CREATE INDEX idx_cancellation_receipt ON registration_cancellations(receipt_registration,receipt_version,receipt_actor);
+              UPDATE tournament_registrations_db SET cancellation_version=1 WHERE status='CANCELLED';
+              INSERT INTO registration_cancellations(id,tournament_id,cancelled_at,actor_kind,scope,reason_code,channel)
+                SELECT md5('legacy-registration-cancellation:'||id)::uuid,tournament_id,cancellation_date,
+                       'UNKNOWN','PARTICIPANT','LEGACY_UNKNOWN','LEGACY'
+                  FROM tournament_registrations_db WHERE status='CANCELLED';
+              INSERT INTO registration_cancellation_members(event_id,registration_id,version,player_id,previous_status,registration_date,pair_booking_id,partner_id)
+                SELECT md5('legacy-registration-cancellation:'||id)::uuid,id,1,player_id,'UNKNOWN',registration_date,pair_booking_id,partner_id
+                  FROM tournament_registrations_db WHERE status='CANCELLED';
+      rollback:
+        - dropTable:
+            tableName: registration_cancellation_members
+        - dropTable:
+            tableName: registration_cancellations
+        - dropColumn:
+            tableName: tournament_registrations_db
+            columnName: cancellation_version
