@@ -283,7 +283,7 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 | `POST` | `/admin/tournaments` | Сохранить новый турнир. |
 | `GET` | `/admin/tournaments/{id}` | Детальный просмотр турнира + список регистраций + статус KoC/Americano. |
 | `GET` | `/admin/tournaments/{id}/edit` | Форма редактирования (только для владельца или SUPER_ADMIN). |
-| `POST` | `/admin/tournaments/{id}/edit` | Сохранить изменения. |
+| `POST` | `/admin/tournaments/{id}/edit` | Сохранить изменения, включая смену на активный клуб при наличии прав. Клубный администратор редактирует турнир в пределах своего клуба. |
 | `POST` | `/admin/tournaments/{id}/status` | Изменить статус (select из выпадающего списка). |
 | `POST` | `/admin/tournaments/{id}/delete` | Удалить турнир. |
 | `POST` | `/admin/tournaments/{id}/deactivate` | Деактивировать (`is_active = false`), чтобы потом удалить. |
