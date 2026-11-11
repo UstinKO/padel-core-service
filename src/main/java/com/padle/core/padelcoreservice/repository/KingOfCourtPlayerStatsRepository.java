@@ -5,6 +5,7 @@ import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.TournamentKingOfCourt;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -17,6 +18,7 @@ public interface KingOfCourtPlayerStatsRepository extends JpaRepository<KingOfCo
 
     Optional<KingOfCourtPlayerStats> findByTournamentKingAndPlayer(TournamentKingOfCourt tournamentKing, PlayerPadel player);
 
+    @EntityGraph(attributePaths = {"player"})
     @Query("SELECT s FROM KingOfCourtPlayerStats s WHERE s.tournamentKing.id = :kingId ORDER BY s.totalPoints DESC")
     List<KingOfCourtPlayerStats> findRanking(@Param("kingId") Long kingId);
 
@@ -33,6 +35,7 @@ public interface KingOfCourtPlayerStatsRepository extends JpaRepository<KingOfCo
      * @param kingId ID турнира King of Court
      * @return список статистики игроков
      */
+    @EntityGraph(attributePaths = {"player"})
     @Query("SELECT s FROM KingOfCourtPlayerStats s WHERE s.tournamentKing.id = :kingId ORDER BY s.totalPoints DESC")
     List<KingOfCourtPlayerStats> findAllByTournamentKingId(@Param("kingId") Long kingId);
 

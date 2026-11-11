@@ -1,6 +1,8 @@
 package com.padle.core.padelcoreservice.config.spa;
 
 import com.padle.core.padelcoreservice.exception.PublicDiscoveryException;
+import com.padle.core.padelcoreservice.exception.PublicLiveException;
+import com.padle.core.padelcoreservice.service.PublicLiveService;
 import com.padle.core.padelcoreservice.service.PublicDiscoveryService;
 import com.padle.core.padelcoreservice.service.PublicEventService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,15 +26,18 @@ import java.util.regex.Pattern;
 @Service
 public class SpaPageService {
     private static final Pattern ENTITY_PATH = Pattern.compile("^(?:/preview)?/(torneo|clubs)(?:/([^/]+))?/?$");
+    private static final Pattern LIVE_PATH = Pattern.compile("^/preview/(?:torneo/([^/]+)/king-of-court|tournaments/(americano|team-playoff)/([^/]+)|tournaments/king-of-court/([^/]+))(?:/(?:ranking|history))?/?$");
+    private final PublicLiveService live;
     private final PublicEventService events;
     private final PublicDiscoveryService clubs;
     private final MessageSource messages;
     private final Resource index;
     private final String baseUrl;
 
-    public SpaPageService(PublicEventService events, PublicDiscoveryService clubs, MessageSource messages,
+    public SpaPageService(PublicEventService events, PublicDiscoveryService clubs, PublicLiveService live, MessageSource messages,
             @Value("classpath:/static/web/index.html") Resource index,
             @Value("${app.base-url:http://localhost:8080}") String baseUrl) {
+        this.live = live;
         this.events = events;
         this.clubs = clubs;
         this.messages = messages;
@@ -85,6 +90,31 @@ public class SpaPageService {
         String route = path.substring("/preview".length()).replaceAll("/+$", "");
         if (Set.of("", "/torneos", "/foundation", "/components", "/login", "/players/registro",
                 "/perfil", "/recuperar-password", "/recuperar-password/solicitar").contains(route)) return Optional.empty();
+        var livePath = LIVE_PATH.matcher(path);
+        if (livePath.matches()) {
+            try {
+                var snapshot = livePath.group(4) == null
+                        ? live.snapshot(Long.parseLong(livePath.group(1) == null ? livePath.group(3) : livePath.group(1)))
+                        : live.kingAlias(Long.parseLong(livePath.group(4)));
+                var metadata = snapshot.metadata();
+                var expected = livePath.group(2);
+                boolean wrongFormat = expected != null && !snapshot.format().name().equals(expected.replace('-', '_').toUpperCase(Locale.ROOT))
+                        && !snapshot.format().name().equals("TEAM_PAIRS");
+                if (livePath.group(1) != null && !snapshot.format().name().equals("KING_OF_COURT")) wrongFormat = true;
+                return Optional.of(new Metadata(metadata.name(), "", metadata.canonicalUrl(), wrongFormat ? 409 : 200));
+            } catch (PublicLiveException exception) {
+                int status = switch (exception.getMessage()) {
+                    case "LIVE_EVENT_NOT_FOUND" -> 404;
+                    case "LIVE_INVALID_ID" -> 422;
+                    default -> 409;
+                };
+                return Optional.of(new Metadata(messages.getMessage("public.live." + exception.getMessage(), null, locale), "", exception.getCanonicalUrl(), status));
+            } catch (NumberFormatException exception) {
+                return Optional.of(new Metadata(messages.getMessage("public.live.LIVE_INVALID_ID", null, locale), "", "", 422));
+            } catch (DataAccessException exception) {
+                return Optional.of(new Metadata(messages.getMessage("public.seo.unavailable", null, locale), "", "", 503));
+            }
+        }
         if (Set.of("/terminos", "/privacidad", "/cookies").contains(route)) {
             var title = messages.getMessage("legal." + route.substring(1) + ".page.title", null, locale);
             return Optional.of(new Metadata(title.replaceFirst("\\s*\\|\\s*1-Padel$", ""), "", baseUrl + route, 200));

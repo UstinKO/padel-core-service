@@ -4,6 +4,7 @@ import com.padle.core.padelcoreservice.model.americano.AmericanoRound;
 import com.padle.core.padelcoreservice.model.enums.AmericanoRoundStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentPhase;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -18,6 +19,7 @@ public interface AmericanoRoundRepository extends JpaRepository<AmericanoRound, 
 
     boolean existsByTournamentIdAndPhaseIsNull(Long tournamentId);
 
+    @EntityGraph(attributePaths = {"matches", "matches.team1Player1", "matches.team1Player2", "matches.team2Player1", "matches.team2Player2"})
     List<AmericanoRound> findByTournamentIdOrderByRoundNumberAsc(Long tournamentId);
 
     Optional<AmericanoRound> findByTournamentIdAndRoundNumber(Long tournamentId, Integer roundNumber);

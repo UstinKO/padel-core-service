@@ -3,6 +3,7 @@ package com.padle.core.padelcoreservice.repository.americano;
 import com.padle.core.padelcoreservice.model.americano.AmericanoPlayer;
 import com.padle.core.padelcoreservice.model.enums.AmericanoPlayerStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -13,6 +14,7 @@ import java.util.Optional;
 @Repository
 public interface AmericanoPlayerRepository extends JpaRepository<AmericanoPlayer, Long> {
 
+    @EntityGraph(attributePaths = {"player"})
     List<AmericanoPlayer> findByTournamentId(Long tournamentId);
 
     Optional<AmericanoPlayer> findByTournamentIdAndPlayerId(Long tournamentId, Long playerId);
@@ -43,5 +45,6 @@ public interface AmericanoPlayerRepository extends JpaRepository<AmericanoPlayer
     List<AmericanoPlayer> findByTournamentIdOrderByMatchesWonAsc(Long tournamentId);
 
     // Метод для поиска по статусу (нужен в generateAllRounds)
+    @EntityGraph(attributePaths = {"player"})
     List<AmericanoPlayer> findByTournamentIdAndStatus(Long tournamentId, AmericanoPlayerStatus status);
 }

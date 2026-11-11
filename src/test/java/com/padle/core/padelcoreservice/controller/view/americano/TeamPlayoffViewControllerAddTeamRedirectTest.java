@@ -52,7 +52,7 @@ class TeamPlayoffViewControllerAddTeamRedirectTest {
         MockitoAnnotations.openMocks(this);
         var messages = new StaticMessageSource();
         messages.addMessage("admin.team_playoff.add_team.failure", LocaleContextHolder.getLocale(), SAVE_FAILURE);
-        controller = new TeamPlayoffViewController(playoffService, tournamentService, matchRepository,
+        controller = new TeamPlayoffViewController(playoffService, null, tournamentService, matchRepository,
                 tournamentAccessService, null, playerService, messages);
         redirectAttributes = new RedirectAttributesModelMap();
     }
