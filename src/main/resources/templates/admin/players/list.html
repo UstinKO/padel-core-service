@@ -48,6 +48,27 @@
             <span th:text="${errorMessage}">Error en la operación</span>
         </div>
 
+        <details th:if="${isSuperAdmin}" th:open="${guestError != null}" class="admin-card">
+            <summary class="admin-card-header" style="display:list-item; cursor:pointer;"
+                     th:text="#{admin.players.guest.title}">Crear invitado</summary>
+            <div class="admin-card-body">
+                <p th:if="${guestError}" class="alert alert-danger" role="alert" th:text="${guestError}"></p>
+                <form method="post" th:action="@{/admin/players/guests}">
+                    <div class="form-group">
+                        <label for="guest-first-name" th:text="#{admin.playoff.participant.first_name}">Nombre</label>
+                        <input class="form-control" id="guest-first-name" name="firstName"
+                               th:value="${guestFirstName}" maxlength="100" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="guest-last-name" th:text="#{admin.playoff.participant.last_name}">Apellido</label>
+                        <input class="form-control" id="guest-last-name" name="lastName"
+                               th:value="${guestLastName}" maxlength="100">
+                    </div>
+                    <button class="btn btn-primary" type="submit" th:text="#{admin.players.guest.submit}">Crear perfil</button>
+                </form>
+            </div>
+        </details>
+
         <!-- Estadísticas rápidas -->
         <div class="players-stats-grid">
             <div class="stat-card">
