@@ -1,7 +1,7 @@
 # LFPT-0969: Feature главная сайта — обновить оформление и каталог
 
 ## Статус
-approved
+done
 
 ## Источник
 [GitHub #969](https://github.com/UstinKO/padel-core-service/issues/969).
