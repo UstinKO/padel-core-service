@@ -178,6 +178,7 @@ public class TeamPlayoffService {
                     // На ID регистрации ссылаются оплаты и история источника заявки.
                     registration.setId(previous.getId());
                     registration.setPayments(previous.getPayments());
+                    registration.setCancellationVersion(previous.getCancellationVersion());
                 });
         return registrationRepository.save(registration);
     }

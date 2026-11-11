@@ -35,6 +35,9 @@ import com.padle.core.padelcoreservice.repository.americano.AmericanoMatchReposi
 import com.padle.core.padelcoreservice.repository.americano.AmericanoPlayerRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoRoundRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoTeamRepository;
+import com.padle.core.padelcoreservice.service.cancellation.RegistrationCancellationService;
+import com.padle.core.padelcoreservice.service.cancellation.CancellationContext;
+import com.padle.core.padelcoreservice.dto.CancellationHistory.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -42,6 +45,7 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
@@ -67,6 +71,7 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class TournamentService {
 
+    private final RegistrationCancellationService cancellations;
     private final TournamentRepository tournamentRepository;
     private final TournamentRegistrationRepository registrationRepository;
     private final TournamentMapper tournamentMapper;
@@ -393,6 +398,7 @@ public class TournamentService {
             reg.setRegistrationDate(LocalDateTime.now());
             reg.setCancellationDate(null);
             reg.setCancellationReason(null);
+            reg.invalidateActionTokens();
             reg.setStatus(newStatus);
             reg.setPosition(newPosition);
             reg.setWaitlistPosition(newWaitlistPosition);
@@ -493,6 +499,11 @@ public class TournamentService {
     )
     @Transactional
     public void cancelRegistration(Long tournamentId, Long playerId, String reason) {
+        cancelRegistration(tournamentId,playerId,reason,null);
+    }
+
+    @Transactional
+    public void cancelRegistration(Long tournamentId, Long playerId, String reason, Long expectedVersion) {
         log.info("Cancelling registration for player {} from tournament {}", playerId, tournamentId);
 
         Tournament tournament = tournamentRepository.lockById(tournamentId)
@@ -501,6 +512,7 @@ public class TournamentService {
                 .findByTournamentIdAndPlayerId(tournamentId, playerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Registration not found"));
 
+        requireCancellationVersion(registration,expectedVersion);
         if (!Boolean.TRUE.equals(registration.getIsActive())) {
             return;
         }
@@ -517,7 +529,7 @@ public class TournamentService {
         RegistrationStatus oldStatus = registration.getStatus();
 
         // Отменяем регистрацию
-        registration.cancel(reason);
+        cancellations.cancel(List.of(registration),CancellationContext.participant(playerId,Scope.PARTICIPANT,Reason.PARTICIPANT_WITHDRAWAL),reason);
         registrationRepository.save(registration);
         remainingPartner.ifPresent(this::retainIncompletePair);
 
@@ -536,6 +548,12 @@ public class TournamentService {
             } else {
                 reorderPositions(tournamentId);
             }
+        }
+    }
+
+    private void requireCancellationVersion(TournamentRegistration row,Long expectedVersion) {
+        if(Boolean.TRUE.equals(row.getIsActive()) && expectedVersion!=null && !expectedVersion.equals(row.getCancellationVersion())) {
+            throw new TournamentRegistrationException(messageSource.getMessage("registration.cancellation.changed",null,LocaleContextHolder.getLocale()));
         }
     }
 
@@ -1231,40 +1249,52 @@ public class TournamentService {
 
     @Transactional
     public void cancelPairRegistration(Long tournamentId, Long playerId, String reason) {
+        cancelPairRegistration(tournamentId,playerId,reason,null);
+    }
+
+    @Transactional
+    public void cancelPairRegistration(Long tournamentId, Long playerId, String reason, Long expectedVersion) {
         Tournament tournament = tournamentRepository.lockById(tournamentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tournament not found"));
-        var active = registrationRepository.findByTournamentIdAndPlayerIdAndIsActiveTrue(tournamentId, playerId);
-        if (active.isEmpty()) return;
-        var row = active.orElseThrow();
+        var found = registrationRepository.findByTournamentIdAndPlayerId(tournamentId,playerId);
+        if(found.isEmpty()) return;
+        var row = found.orElseThrow();
+        requireCancellationVersion(row,expectedVersion);
+        if(!Boolean.TRUE.equals(row.getIsActive())) return;
         if (PairTermsService.accepted(row)) {
             throw new TournamentRegistrationException("PAIR_CANCELLATION_CONFIRMATION_REQUIRED");
         }
-        cancelPairMembers(tournament, pairTerms.members(row), reason, null);
+        cancelPairMembers(tournament, pairTerms.members(row), reason, null,
+                CancellationContext.participant(playerId,Scope.PAIR,Reason.PAIR_WITHDRAWAL));
     }
 
     @Transactional
     public PairTermsService.Cancellation confirmPairCancellation(Long tournamentId, Long playerId, String token) {
         Tournament tournament = pairTerms.lock(tournamentId);
-        TournamentRegistration row = pairTerms.activeRegistration(tournamentId, playerId);
+        var row = registrationRepository.findByTournamentIdAndPlayerId(tournamentId,playerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Registration not found"));
+        var replay = cancellations.replay(row,playerId,token);
+        if(replay.isPresent()) return replay.orElseThrow();
+        if(!Boolean.TRUE.equals(row.getIsActive())) throw new TournamentRegistrationException("PAIR_TERMS_CHANGED");
         var quote = pairTerms.cancellation(tournament, row);
         PairTermsService.requireToken(quote.token(), token);
         if (!quote.legacy()) pairTerms.saveCancellation(row, playerId, quote);
-        cancelPairMembers(tournament, pairTerms.members(row), null, quote.legacy() ? null : quote);
+        var result = cancelPairMembers(tournament, pairTerms.members(row), null, quote.legacy() ? null : quote,
+                CancellationContext.participant(playerId,Scope.PAIR,Reason.PAIR_WITHDRAWAL));
+        cancellations.saveReceipt(result.eventId(),row,playerId,token,quote);
         return quote;
     }
 
-    private void cancelPairMembers(Tournament tournament, List<TournamentRegistration> registrations,
-                                   String reason, PairTermsService.Cancellation quote) {
+    private Result cancelPairMembers(Tournament tournament, List<TournamentRegistration> registrations,
+                                   String reason, PairTermsService.Cancellation quote, CancellationContext context) {
         Long tournamentId = tournament.getId();
-        if (registrations.isEmpty()) {
-            return;
-        }
+        if (registrations.isEmpty()) return new Result(false,null,null);
         boolean heldPlaceCancelled = registrations.stream()
                 .anyMatch(reg -> reg.getStatus() == RegistrationStatus.CONFIRMED
                         || reg.getStatus() == RegistrationStatus.SOLO_ADD_LATER
                         || reg.getStatus() == RegistrationStatus.SOLO_SEARCH);
+        var result = cancellations.cancel(registrations,context,reason);
         registrations.forEach(reg -> {
-            reg.cancel(reason);
             registrationRepository.save(reg);
             sendRegistrationCancelledEmail(reg.getPlayer(), tournament, reason, quote);
         });
@@ -1272,6 +1302,7 @@ public class TournamentService {
             processWaitlistForTournament(tournamentId);
         }
         reorderPairPositions(tournamentId);
+        return result;
     }
 
     /**
@@ -1281,42 +1312,43 @@ public class TournamentService {
      */
     @Transactional
     public void cancelAllRegistrationsForPlayer(Long playerId) {
-        log.info("Cancelling all active registrations for player {}", playerId);
+        var tournamentIds = registrationRepository.findActiveRegistrationsByPlayerId(playerId).stream()
+                .map(reg->reg.getTournament().getId()).distinct().sorted().toList();
+        tournamentIds.forEach(tournamentId -> {
+            tournamentRepository.lockById(tournamentId).orElseThrow(() -> new ResourceNotFoundException("Tournament not found"));
+            registrationRepository.findByTournamentIdAndPlayerIdAndIsActiveTrue(tournamentId,playerId).ifPresent(reg -> {
+                var remaining = findActivePairPartner(tournamentId,reg);
+                boolean heldPlace = Set.of(RegistrationStatus.CONFIRMED,RegistrationStatus.PAIR_REGISTERED,
+                        RegistrationStatus.SOLO_ADD_LATER,RegistrationStatus.SOLO_SEARCH).contains(reg.getStatus());
+                cancellations.cancel(List.of(reg),CancellationContext.deactivation(),null);
+                registrationRepository.save(reg);
+                remaining.ifPresent(this::retainIncompletePair);
+                if(heldPlace && remaining.isEmpty()) processWaitlistForTournament(tournamentId);
+            });
+        });
+    }
 
-        List<TournamentRegistration> activeRegs =
-                registrationRepository.findActiveRegistrationsByPlayerId(playerId);
-
-        if (activeRegs.isEmpty()) {
-            log.info("No active registrations found for player {}", playerId);
-            return;
-        }
-
-        Set<Long> confirmedTournamentIds = new HashSet<>();
-
-        for (TournamentRegistration reg : activeRegs) {
-            if (reg.getStatus() == RegistrationStatus.CONFIRMED
-                    || reg.getStatus() == RegistrationStatus.PAIR_REGISTERED) {
-                confirmedTournamentIds.add(reg.getTournament().getId());
-            }
-            reg.setStatus(RegistrationStatus.CANCELLED);
-            reg.setIsActive(false);
-            reg.setCancellationDate(LocalDateTime.now());
-            reg.setCancellationReason("Jugador eliminado/desactivado del sistema");
-        }
-        registrationRepository.saveAll(activeRegs);
-        log.info("Cancelled {} registrations for player {}", activeRegs.size(), playerId);
-
-        // Обрабатываем лист ожидания для всех турниров, где игрок освободил место
-        for (Long tournamentId : confirmedTournamentIds) {
-            log.info("Processing waitlist for tournament {} after player {} removal", tournamentId, playerId);
-            processWaitlistForTournament(tournamentId);
-        }
+    @Transactional
+    public void adminRemovePlayerRegistration(Long tournamentId, Long playerId, Owner owner) {
+        if(owner == null) throw new AccessDeniedException("CANCELLATION_HISTORY_FORBIDDEN");
+        removeByOrganizer(tournamentId,playerId,owner,null);
     }
 
     @Transactional
     public void adminRemovePlayerRegistration(Long tournamentId, Long playerId) {
+        removeByOrganizer(tournamentId,playerId,null,null);
+    }
+
+    @Transactional
+    public void adminRemovePlayerRegistration(Long tournamentId, Long playerId, Owner owner, String comment) {
+        if(owner == null) throw new AccessDeniedException("CANCELLATION_HISTORY_FORBIDDEN");
+        removeByOrganizer(tournamentId,playerId,owner,comment);
+    }
+
+    private void removeByOrganizer(Long tournamentId,Long playerId,Owner owner,String comment) {
         Tournament tournament = tournamentRepository.lockById(tournamentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tournament not found"));
+        if(owner!=null) tournamentAccessService.assertCanManage(owner,tournament);
         TournamentRegistration playerReg = registrationRepository
                 .findByTournamentIdAndPlayerId(tournamentId, playerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Registration not found"));
@@ -1324,11 +1356,12 @@ public class TournamentService {
             return;
         }
         if (Boolean.TRUE.equals(playerReg.getIsDoubleRegistration())) {
-            cancelPairMembers(tournament, pairTerms.members(playerReg), "Eliminado por el organizador", null);
+            cancelPairMembers(tournament, pairTerms.members(playerReg), "Eliminado por el organizador", null,
+                    cancellations.organizer(owner,Scope.PAIR,comment));
             return;
         }
         RegistrationStatus oldStatus = playerReg.getStatus();
-        playerReg.cancel("Eliminado por el organizador");
+        cancellations.cancel(List.of(playerReg),cancellations.organizer(owner,Scope.PARTICIPANT,comment),"Eliminado por el organizador");
         registrationRepository.save(playerReg);
         sendRegistrationCancelledEmail(playerReg.getPlayer(), tournament, playerReg.getCancellationReason());
         if (oldStatus == RegistrationStatus.CONFIRMED) {

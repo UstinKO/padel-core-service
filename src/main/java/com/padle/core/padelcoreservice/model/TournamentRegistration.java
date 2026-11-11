@@ -53,6 +53,10 @@ public class TournamentRegistration {
     @JoinColumn(name = "partner_id")
     private PlayerPadel partner;
 
+    @Column(name = "cancellation_version", nullable = false)
+    @Builder.Default
+    private Long cancellationVersion = 0L;
+
     @Column(name = "cancellation_date")
     private LocalDateTime cancellationDate;
 
@@ -236,6 +240,15 @@ public class TournamentRegistration {
         this.invitationExpiresAt = expiresAt;
         this.notifiedAboutVacancy = true;
         this.waitlistConfirmationToken = confirmationToken;
+    }
+
+    public void invalidateActionTokens() {
+        this.partnerActionToken = null;
+        this.waitlistConfirmationToken = null;
+        this.partnerRegistrationToken = null;
+        this.partnerTokenExpiry = null;
+        this.pairProposerRegId = null;
+        this.invitationExpiresAt = null;
     }
 
     public void cancel(String reason) {

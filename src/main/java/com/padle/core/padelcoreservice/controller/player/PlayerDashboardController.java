@@ -21,6 +21,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
@@ -39,6 +41,7 @@ import java.util.Set;
 @Slf4j
 public class PlayerDashboardController {
 
+    private final MessageSource messageSource;
     private final TournamentService tournamentService;
     private final ObjectMapper objectMapper;
     private final DoubleTournamentRegistrationService doubleTournamentRegistrationService;
@@ -182,7 +185,8 @@ public class PlayerDashboardController {
     @ResponseBody
     public ResponseEntity<?> cancelRegistration(@PathVariable Long tournamentId,
                                                 @AuthenticationPrincipal Object principal,
-                                                @RequestParam(required = false) String reason) {
+                                                @RequestParam(required = false) String reason,
+                                                @RequestHeader(value="If-Registration-Version",required=false) Long expectedVersion) {
         PlayerPadel player = extractPlayerFromPrincipal(principal);
 
         if (player == null) {
@@ -192,15 +196,11 @@ public class PlayerDashboardController {
         log.info("Player {} cancelling registration for tournament {}", player.getId(), tournamentId);
 
         try {
-            tournamentService.cancelRegistration(tournamentId, player.getId(), reason);
-
-            // Проверим, действительно ли отмена произошла
-            Optional<TournamentRegistrationDto> check = tournamentService.getRegistration(tournamentId, player.getId());
-            log.info("After cancellation, registration exists: {}", check.isPresent());
-            if (check.isPresent()) {
-                log.info("Registration status: {}, active: {}",
-                        check.get().getStatus(), check.get());
-            }
+            if (expectedVersion == null) {
+                    tournamentService.cancelRegistration(tournamentId, player.getId(), reason);
+                } else {
+                    tournamentService.cancelRegistration(tournamentId, player.getId(), reason, expectedVersion);
+                }
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -218,10 +218,10 @@ public class PlayerDashboardController {
             response.put("message", e.getMessage());
             return ResponseEntity.badRequest().body(response);
         } catch (Exception e) {
-            log.error("Error cancelling registration", e);
+            log.warn("Ошибка отмены участия: type={}",e.getClass().getSimpleName());
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
-            response.put("message", e.getMessage());
+            response.put("message", messageSource.getMessage("registration.cancel.failure",null,LocaleContextHolder.getLocale()));
             return ResponseEntity.badRequest().body(response);
         }
     }
@@ -265,7 +265,8 @@ public class PlayerDashboardController {
                                                       @AuthenticationPrincipal Object principal,
                                                       @RequestParam String option,
                                                       @RequestParam(required = false) String reason,
-                                                      @RequestParam(required = false) String replaceData) {
+                                                      @RequestParam(required = false) String replaceData,
+                                                @RequestHeader(value="If-Registration-Version",required=false) Long expectedVersion) {
         PlayerPadel player = extractPlayerFromPrincipal(principal);
 
         if (player == null) {
@@ -292,13 +293,21 @@ public class PlayerDashboardController {
                             "message", "No puedes cancelar solo tu inscripción porque tu compañero no está registrado en el sistema. Debes cancelar toda la pareja."));
                 }
 
-                tournamentService.cancelRegistration(tournamentId, player.getId(), reason);
+                if (expectedVersion == null) {
+                    tournamentService.cancelRegistration(tournamentId, player.getId(), reason);
+                } else {
+                    tournamentService.cancelRegistration(tournamentId, player.getId(), reason, expectedVersion);
+                }
                 response.put("success", true);
                 response.put("message", "Tu inscripción ha sido cancelada. Tu compañero sigue inscrito.");
 
             } else if ("full".equals(option)) {
                 // Отмена всей пары - доступно всегда
-                tournamentService.cancelPairRegistration(tournamentId, player.getId(), reason);
+                if (expectedVersion == null) {
+                    tournamentService.cancelPairRegistration(tournamentId, player.getId(), reason);
+                } else {
+                    tournamentService.cancelPairRegistration(tournamentId, player.getId(), reason, expectedVersion);
+                }
                 response.put("success", true);
                 response.put("message", "La inscripción de toda la pareja ha sido cancelada.");
 
@@ -341,11 +350,13 @@ public class PlayerDashboardController {
 
             return ResponseEntity.ok(response);
 
+        } catch (TournamentRegistrationException | ResourceNotFoundException e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
         } catch (Exception e) {
-            log.error("Error cancelling double registration", e);
+            log.warn("Ошибка отмены парной заявки: type={}",e.getClass().getSimpleName());
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
-            response.put("message", e.getMessage());
+            response.put("message", messageSource.getMessage("registration.cancel.failure",null,LocaleContextHolder.getLocale()));
             return ResponseEntity.badRequest().body(response);
         }
     }
@@ -376,6 +387,7 @@ public class PlayerDashboardController {
         // Статус/позиция/дата своей регистрации — нужны клиенту 1Padel.App для парной записи
         // без второго запроса; контакты партнёра по-прежнему не публикуются.
         response.put("registrationId", dto.getId());
+        response.put("cancellationVersion", dto.getCancellationVersion());
         response.put("status", dto.getStatus());
         response.put("waitlistPosition", dto.getWaitlistPosition());
         response.put("registrationDate", dto.getRegistrationDate());

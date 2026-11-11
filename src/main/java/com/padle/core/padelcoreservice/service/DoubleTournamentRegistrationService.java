@@ -26,6 +26,9 @@ import com.padle.core.padelcoreservice.repository.ClubRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
+import com.padle.core.padelcoreservice.service.cancellation.RegistrationCancellationService;
+import com.padle.core.padelcoreservice.service.cancellation.CancellationContext;
+import com.padle.core.padelcoreservice.dto.CancellationHistory.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -52,6 +55,7 @@ import java.util.stream.Stream;
 @Slf4j
 public class DoubleTournamentRegistrationService {
 
+    private final RegistrationCancellationService cancellations;
     private final PlayerRepository playerRepository;
     private final TournamentRegistrationRepository registrationRepository;
     private final TournamentRegistrationMapper registrationMapper;
@@ -170,6 +174,7 @@ public class DoubleTournamentRegistrationService {
                     candidate.getTournament().getId(), candidate.getPlayer().getId()).ifPresent(previous -> {
                 candidate.setId(previous.getId());
                 candidate.setPayments(previous.getPayments());
+                candidate.setCancellationVersion(previous.getCancellationVersion());
                 if (candidate.getRegistrationDate() == null) {
                     candidate.setRegistrationDate(LocalDateTime.now());
                 }
@@ -704,7 +709,7 @@ public class DoubleTournamentRegistrationService {
                 .filter(row -> Boolean.TRUE.equals(row.getIsActive())
                         && java.util.Objects.equals(row.getPairBookingId(), oldPlayerReg.getPairBookingId()))
                 .orElseThrow(() -> new TournamentRegistrationException("Registro del compañero no encontrado"));
-        return registrationMapper.toDto(applyPairReplacement(tournamentDto, oldPlayerReg, partnerReg, newPlayerDto, reason));
+        return registrationMapper.toDto(applyPairReplacement(tournamentDto, oldPlayerReg, partnerReg, newPlayerDto, reason, oldPlayerId));
     }
 
     @Transactional(readOnly = true)
@@ -729,7 +734,7 @@ public class DoubleTournamentRegistrationService {
                 .filter(row -> java.util.Objects.equals(row.getPairBookingId(), booker.getPairBookingId()))
                 .orElseThrow(() -> new TournamentRegistrationException("La pareja cambió o no se puede reemplazar"));
 
-        var replacement = applyPairReplacement(tournamentDto, oldPartner, booker, candidate, "PARTNER_REPLACED_BY_BOOKER");
+        var replacement = applyPairReplacement(tournamentDto, oldPartner, booker, candidate, "PARTNER_REPLACED_BY_BOOKER", bookerId);
         var notice = replacementNotices.record(tournamentDto, oldPartner.getPlayer(), booker.getPlayer(), replacement.getPlayer());
         notificationService.sendPartnerReplacedNotice(oldPartner.getPlayer(), notice);
     }
@@ -745,7 +750,7 @@ public class DoubleTournamentRegistrationService {
 
     private TournamentRegistration applyPairReplacement(TournamentDto tournamentDto, TournamentRegistration oldPlayerReg,
                                                         TournamentRegistration partnerReg, PartnerRegistrationDto newPlayerDto,
-                                                        String reason) {
+                                                        String reason, Long actorId) {
         PlayerPadel remainingPartner = partnerReg.getPlayer();
         Long oldPlayerId = oldPlayerReg.getPlayer().getId();
         RegistrationStatus previousStatus = oldPlayerReg.getStatus();
@@ -775,7 +780,7 @@ public class DoubleTournamentRegistrationService {
         }
 
         // Сохраняем историю отмены и платежей прежнего участника.
-        oldPlayerReg.cancel(reason);
+        cancellations.cancel(List.of(oldPlayerReg),CancellationContext.replacement(actorId),reason);
         registrationRepository.save(oldPlayerReg);
 
         // Создаем регистрацию для нового игрока
@@ -1360,7 +1365,7 @@ public class DoubleTournamentRegistrationService {
         }
 
         Tournament tournament = reg.getTournament();
-        reg.cancel("No puede participar (desde email)");
+        cancellations.cancel(List.of(reg),CancellationContext.reserveLink(),"No puede participar (desde email)");
         registrationRepository.save(reg);
         sendRegistrationCancelledEmail(reg, tournament);
         log.info("Reserve registration cancelled by player via email link: registrationId={}", reg.getId());

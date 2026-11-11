@@ -16,6 +16,8 @@ import com.padle.core.padelcoreservice.repository.americano.AmericanoPlayerRepos
 import com.padle.core.padelcoreservice.service.EmailService;
 import com.padle.core.padelcoreservice.service.TournamentAccessService;
 import org.junit.jupiter.api.Test;
+import com.padle.core.padelcoreservice.service.cancellation.RegistrationCancellationService;
+import com.padle.core.padelcoreservice.repository.CancellationHistoryRepository;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -24,6 +26,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import static org.mockito.Mockito.mock;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -51,6 +54,7 @@ class AmericanoServiceCancelNotificationTest {
     @Test
     void cancelacionPorAdmin_conMotivo_enviaEmailConElMotivo() {
         service = new AmericanoService(
+                new RegistrationCancellationService(mock(CancellationHistoryRepository.class),null,null,null,null),
                 tournamentRepository, registrationRepository, americanoPlayerRepository,
                 null, null, clubRepository, null, null, null, emailService, tournamentAccessService, null);
 

@@ -18,6 +18,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
+import org.mockito.Spy;
+import com.padle.core.padelcoreservice.service.cancellation.RegistrationCancellationService;
+import com.padle.core.padelcoreservice.repository.CancellationHistoryRepository;
+import static org.mockito.Mockito.mock;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.MessageSource;
@@ -54,6 +58,10 @@ class DoubleTournamentRegistrationLevelRestrictionTest {
     @Mock private PasswordEncoder passwordEncoder;
 
     @Mock private PairTermsService pairTerms;
+    @Spy
+    private RegistrationCancellationService cancellations = new RegistrationCancellationService(
+            mock(CancellationHistoryRepository.class),null,null,null,null);
+
     @InjectMocks private DoubleTournamentRegistrationService service;
 
     private TournamentDto tournamentDto;

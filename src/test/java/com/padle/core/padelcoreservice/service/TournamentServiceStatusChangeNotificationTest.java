@@ -12,6 +12,8 @@ import com.padle.core.padelcoreservice.repository.ClubRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import org.junit.jupiter.api.Test;
+import com.padle.core.padelcoreservice.service.cancellation.RegistrationCancellationService;
+import com.padle.core.padelcoreservice.repository.CancellationHistoryRepository;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -20,6 +22,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import static org.mockito.Mockito.mock;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -49,6 +52,7 @@ class TournamentServiceStatusChangeNotificationTest {
 
     private void initService() {
         service = new TournamentService(
+                new RegistrationCancellationService(mock(CancellationHistoryRepository.class),null,null,null,null),
                 tournamentRepository, registrationRepository, null, null,
                 clubService, null, null, emailService, null,
                 null, null, null, null, null, new PairTermsService(tournamentRepository, registrationRepository, null, null, null));
@@ -167,7 +171,7 @@ class TournamentServiceStatusChangeNotificationTest {
                 .mainPlayerId(mainPlayer.getId())
                 .status(RegistrationStatus.CONFIRMED).position(1).isActive(true).isDoubleRegistration(true).build();
 
-        when(registrationRepository.findByTournamentIdAndPlayerIdAndIsActiveTrue(1L, mainPlayer.getId())).thenReturn(Optional.of(mainReg));
+        when(registrationRepository.findByTournamentIdAndPlayerId(1L, mainPlayer.getId())).thenReturn(Optional.of(mainReg));
         when(registrationRepository.findByTournamentId(1L)).thenReturn(List.of(mainReg, partnerReg));
         lenient().when(tournamentRepository.findById(1L)).thenReturn(Optional.of(tournament));
         lenient().when(tournamentRepository.lockById(1L)).thenReturn(Optional.of(tournament));

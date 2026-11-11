@@ -1,7 +1,7 @@
 # Архитектура базы данных — padel-core-service
 
 > **СУБД:** PostgreSQL 15  
-> **Версия схемы:** v1.70
+> **Версия схемы:** v1.71
 > **Миграции:** Liquibase (YAML), файлы в `src/main/resources/db/changelog/versions/`  
 > **ddl-auto:** `none` — схема управляется только через Liquibase
 
@@ -266,6 +266,7 @@ owners_db ───────────────────────�
 | `status` | `VARCHAR(20)` | NOT NULL | — | Статус регистрации (enum `RegistrationStatus`) |
 | `position` | `INTEGER` | NULL | — | Позиция в основном составе |
 | `partner_id` | `BIGINT` | NULL | — | FK → `player_padel_db.id` (партнёр-участник сайта) |
+| `cancellation_version` | `BIGINT` | NOT NULL | `0` | Версия перехода в отмену, сохраняется при повторной записи |
 | `cancellation_date` | `TIMESTAMP` | NULL | — | Дата отмены |
 | `cancellation_reason` | `VARCHAR(255)` | NULL | — | Причина отмены |
 | `waitlist_position` | `INTEGER` | NULL | — | Позиция в листе ожидания |
@@ -947,3 +948,45 @@ reby, black_padel, 15cero_villa_crespo, 15cero_saavedra. Структура, PK 
 ### Дополнительные очки в проведении
 
 `tournament_additional_points` хранит отдельные знаковые записи игрока по этапам. Номер `0` означает «До первого раунда», для «Короля корта» указан ID проведения. Отмена хранится в той же записи. Снимок проведения включает её состояние, а журнал содержит автора, время и действие. Исторические −10 в накопленной статистике выделяются при чтении по фактически учтённой разнице. Явная запись с тем же стабильным ID заменяет историческое значение.
+
+
+## История отмен регистраций
+
+Миграция `v1.71-registration-cancellation-history` добавляет в `tournament_registrations_db` поле `cancellation_version` (bigint, NOT NULL, default 0, CHECK >=0). Оно увеличивается только при успешной отмене и сохраняется при повторном использовании регистрационного ID. Версия проверяет цикл записи, не является номером места в очереди.
+
+### `registration_cancellations`
+
+| Поле | Тип | Назначение |
+|---|---|---|
+| id | uuid, PK | Единая операция отмены |
+| tournament_id | bigint, NOT NULL | FK tournaments_db, ON DELETE CASCADE |
+| cancelled_at | timestamp, nullable | Известное время отмены; при неизвестном историческом времени NULL |
+| recorded_at | timestamp, NOT NULL | Время записи события, отдельно от времени исторической отмены |
+| actor_kind | varchar(16), NOT NULL | PLAYER / OWNER / SYSTEM / UNKNOWN |
+| actor_id | bigint, nullable | Внутренний ID известного инициатора; в пользовательскую проекцию не входит |
+| scope | varchar(16), NOT NULL | PARTICIPANT / PAIR |
+| reason_code | varchar(40), NOT NULL | Устойчивый код причины |
+| channel | varchar(20), NOT NULL | ACCOUNT / ORGANIZER / RESERVE_LINK / REPLACEMENT / SYSTEM / LEGACY |
+| organizer_comment | varchar(255), nullable | Разрешённый обычный текст организатора |
+| receipt_actor | bigint, nullable | Игрок, подтвердивший полную отмену через PairTerms |
+| receipt_registration | bigint, nullable | Его регистрационный ряд |
+| receipt_version | bigint, nullable | Цикл отмены для повторного ответа |
+| request_digest | varchar(64), nullable | SHA-256 токена проверки условий; исходный токен не хранится |
+| receipt | jsonb, nullable | Сохранённый ответ PairTerms с пустым token; не публичный журнал |
+
+### `registration_cancellation_members`
+
+| Поле | Тип | Назначение |
+|---|---|---|
+| event_id | uuid, NOT NULL | FK registration_cancellations, ON DELETE CASCADE |
+| registration_id | bigint, NOT NULL | Снимок ID строки заявки |
+| version | bigint, NOT NULL | Положительная версия перехода |
+| player_id | bigint, NOT NULL | Снимок ID затронутого участника |
+| previous_status | varchar(24), NOT NULL | Статус перед отменой; UNKNOWN при историческом переносе |
+| registration_date | timestamp, nullable | Дата текущего цикла записи |
+| pair_booking_id | uuid, nullable | Известный UUID пары в момент операции |
+| partner_id | bigint, nullable | Известный партнёр в момент операции |
+
+PK `(registration_id, version)` исключает два факта одного перехода; UNIQUE `(event_id, registration_id)` не допускает дублирование участника операции. Индексы: событие по tournament_id/recorded_at, участник по player_id/event_id и повтор по receipt_registration/receipt_version/receipt_actor. Идентификаторы профиля и регистрационной строки — снимки без новых FK: удаление синтетического профиля не блокируется и не каскадирует в платежи или журнал; обычная отмена ничего физически не удаляет. При удалении самого турнира журнал удаляется вместе с его данными.
+
+Коды причин: PARTICIPANT_WITHDRAWAL, PAIR_WITHDRAWAL, ORGANIZER_REMOVAL, PLAYER_DEACTIVATED, PARTICIPANT_REPLACED, LEGACY_UNKNOWN. Миграция переносит сохранившиеся CANCELLED-строки с UNKNOWN/LEGACY_UNKNOWN, без копирования служебного cancellation_reason в публичный комментарий. Один такой факт описывает наблюдаемую строку; прежнюю область парной операции достоверно восстановить нельзя. Уже удалённые или ранее стёртые при реактивации факты не восстанавливаются.

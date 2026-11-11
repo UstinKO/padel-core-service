@@ -2,6 +2,10 @@ package com.padle.core.padelcoreservice.service;
 
 import com.padle.core.padelcoreservice.marketing.MarketingReportService;
 import com.padle.core.padelcoreservice.dto.PartnerRegistrationDto;
+import com.padle.core.padelcoreservice.exception.TournamentRegistrationException;
+import com.padle.core.padelcoreservice.service.cancellation.RegistrationCancellationService;
+import com.padle.core.padelcoreservice.dto.CancellationHistory;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.dao.DataIntegrityViolationException;
 import com.padle.core.padelcoreservice.model.*;
 import com.padle.core.padelcoreservice.model.enums.*;
@@ -32,6 +36,8 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -58,6 +64,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 class RegistrationCancellationIntegrationTest {
     @Autowired TournamentService service;
+    @Autowired RegistrationCancellationService cancellationHistory;
     @Autowired MockMvc mvc;
     @Autowired SpringTemplateEngine templates;
     @Autowired PairTermsService pairTerms;
@@ -77,6 +84,107 @@ class RegistrationCancellationIntegrationTest {
     private final List<Long> tournamentIds = new ArrayList<>();
     private final List<Long> playerIds = new ArrayList<>();
     private final List<Long> clubIds = new ArrayList<>();
+
+    @Test
+    void playerHttpVersionIsOptionalButStaleHeaderCannotCancelNewCycleOrSpoofActor() throws Exception {
+        var event=tournament(2);var row=registration(event,RegistrationStatus.CONFIRMED);
+        String path="/players/tournaments/"+event.getId();
+        mvc.perform(get(path+"/my-registration").with(user(row.getPlayer())))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.cancellationVersion").value(0));
+        mvc.perform(post(path+"/cancel").with(user(row.getPlayer())).with(csrf())
+                        .header("If-Registration-Version","0").param("actorKind","OWNER").param("reasonCode","ORGANIZER_REMOVAL"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true));
+        assertThat(cancellationHistory.forPlayer(row.getPlayer(),List.of(event.getId())).get(0).initiator())
+                .isEqualTo(CancellationHistory.ActorKind.PLAYER);
+        row.setIsActive(true);row.setStatus(RegistrationStatus.CONFIRMED);registrations.saveAndFlush(row);
+        mvc.perform(post(path+"/cancel").with(user(row.getPlayer())).with(csrf()).header("If-Registration-Version","0").locale(Locale.forLanguageTag("ru")))
+                .andExpect(status().isBadRequest()).andExpect(content().string(containsString("Заявка изменилась")));
+        assertThat(row.getIsActive()).isTrue();
+    }
+
+    @Test
+    void organizerCommentIsScopedValidatedAndDoesNotLeakToPublicEvent() throws Exception {
+        var event=tournament(2);var row=registration(event,RegistrationStatus.CONFIRMED);
+        var owner=Owner.builder().id(9001L).role(OwnerRole.SUPER_ADMIN).build();
+        String path="/test/tournaments/"+event.getId()+"/remove-player/"+row.getPlayer().getId();
+        mvc.perform(post(path).with(user(owner)).with(csrf()).param("comment","<script>private</script>"))
+                .andExpect(status().isBadRequest());
+        assertThat(row.getIsActive()).isTrue();
+        mvc.perform(post(path).with(user(owner)).with(csrf()).param("comment","Причина для участника"))
+                .andExpect(status().isOk());
+        assertThat(cancellationHistory.forPlayer(row.getPlayer(),List.of(event.getId())).get(0).organizerComment())
+                .isEqualTo("Причина для участника");
+        assertThat(cancellationHistory.forPlayer(player(),List.of(event.getId()))).isEmpty();
+        mvc.perform(get("/api/public/events/"+event.getId())).andExpect(content().string(not(containsString("Причина для участника"))));
+    }
+
+    @Test
+    void immutableHistorySurvivesReactivationAndRejectsStaleVersion() {
+        var event=tournament(2);var row=registration(event,RegistrationStatus.CONFIRMED);
+        var id=row.getId();var player=row.getPlayer();
+        service.cancelRegistration(event.getId(),player.getId(),"private text",0L);
+        service.cancelRegistration(event.getId(),player.getId(),"retry",0L);
+        var first=cancellationHistory.forPlayer(player,List.of(event.getId()));
+        assertThat(first).hasSize(1);
+        assertThat(first.get(0).initiator()).isEqualTo(CancellationHistory.ActorKind.PLAYER);
+        assertThat(first.get(0).reasonCode()).isEqualTo(CancellationHistory.Reason.PARTICIPANT_WITHDRAWAL);
+        assertThat(first.get(0).organizerComment()).isNull();
+        row.setIsActive(true);row.setStatus(RegistrationStatus.CONFIRMED);row.setCancellationDate(null);row.setCancellationReason(null);
+        row.setRegistrationDate(row.getRegistrationDate().plusSeconds(1));registrations.saveAndFlush(row);
+        assertThatThrownBy(()->service.cancelRegistration(event.getId(),player.getId(),null,0L)).isInstanceOf(TournamentRegistrationException.class);
+        assertThat(row.getIsActive()).isTrue();
+        service.cancelRegistration(event.getId(),player.getId(),null,1L);entities.flush();entities.clear();
+        assertThat(registrations.findById(id).orElseThrow().getCancellationVersion()).isEqualTo(2L);
+        var history=cancellationHistory.forPlayer(player,List.of(event.getId()));
+        assertThat(history).hasSize(2);
+        assertThat(history).extracting(CancellationHistory.Entry::version).containsExactlyInAnyOrder(1L,2L);
+        assertThat(history).extracting(CancellationHistory.Entry::eventId).contains(first.get(0).eventId());
+    }
+
+    @Test
+    void historyIsScopedToParticipantAndManagedClub() {
+        var event=tournament(2);var row=registration(event,RegistrationStatus.CONFIRMED);
+        var manager=Owner.builder().id(9000L).role(OwnerRole.CLUB_ADMIN).clubId(event.getClubId()).build();
+        var stranger=Owner.builder().id(9001L).role(OwnerRole.CLUB_ADMIN).clubId(event.getClubId()+10000).build();
+        service.adminRemovePlayerRegistration(event.getId(),row.getPlayer().getId(),manager);
+        assertThat(cancellationHistory.forPlayer(player(),List.of(event.getId()))).isEmpty();
+        assertThat(cancellationHistory.forPlayer(row.getPlayer(),List.of(event.getId()))).singleElement()
+                .satisfies(entry->assertThat(entry.initiator()).isEqualTo(CancellationHistory.ActorKind.OWNER));
+        assertThat(cancellationHistory.forManager(manager,event.getId())).hasSize(1);
+        assertThatThrownBy(()->cancellationHistory.forManager(stranger,event.getId())).isInstanceOf(AccessDeniedException.class);
+        assertThatThrownBy(()->service.adminRemovePlayerRegistration(event.getId(),row.getPlayer().getId(),stranger)).isInstanceOf(AccessDeniedException.class);
+        assertThatThrownBy(()->cancellationHistory.forPlayer(null,List.of(event.getId()))).isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    void fullPairCreatesOneOperationAndSafeReplayOfPairTerms() {
+        var event=tournament(2);event.setModalidad(Modalidad.DOBLES);
+        var first=registration(event,RegistrationStatus.CONFIRMED);var second=registration(event,RegistrationStatus.CONFIRMED);pair(first,second);
+        var token=pairTerms.cancellation(event.getId(),first.getPlayer().getId()).token();
+        var result=service.confirmPairCancellation(event.getId(),first.getPlayer().getId(),token);
+        assertThat(service.confirmPairCancellation(event.getId(),first.getPlayer().getId(),token)).isEqualTo(result);
+        var left=cancellationHistory.forPlayer(first.getPlayer(),List.of(event.getId()));
+        var right=cancellationHistory.forPlayer(second.getPlayer(),List.of(event.getId()));
+        assertThat(left).hasSize(1);assertThat(right).hasSize(1);
+        assertThat(left.get(0).eventId()).isEqualTo(right.get(0).eventId());
+        assertThat(left.get(0).scope()).isEqualTo(CancellationHistory.Scope.PAIR);
+        assertThatThrownBy(()->service.confirmPairCancellation(event.getId(),second.getPlayer().getId(),token)).isInstanceOf(TournamentRegistrationException.class);
+        first.setIsActive(true);first.setStatus(RegistrationStatus.CONFIRMED);first.setPairBookingId(UUID.randomUUID());
+        registrations.saveAndFlush(first);
+        assertThatThrownBy(()->service.confirmPairCancellation(event.getId(),first.getPlayer().getId(),token)).isInstanceOf(ResponseStatusException.class);
+    }
+
+    @Test
+    void reserveLinkDoesNotInventAuthenticatedPlayerAndCannotCancelReactivatedRow() {
+        var event=tournament(2);event.setModalidad(Modalidad.DOBLES);
+        var row=registration(event,RegistrationStatus.WAITLIST);row.setPartnerActionToken("test-"+UUID.randomUUID());
+        registrations.saveAndFlush(row);String token=row.getPartnerActionToken();
+        doubles.cancelReserveByToken(token);doubles.cancelReserveByToken(token);
+        var entry=cancellationHistory.forPlayer(row.getPlayer(),List.of(event.getId())).get(0);
+        assertThat(entry.initiator()).isEqualTo(CancellationHistory.ActorKind.UNKNOWN);
+        row.invalidateActionTokens();row.setIsActive(true);row.setStatus(RegistrationStatus.WAITLIST);registrations.saveAndFlush(row);
+        assertThatThrownBy(()->doubles.cancelReserveByToken(token)).isInstanceOf(TournamentRegistrationException.class);
+    }
 
     @Test
     void physicalDeleteOfAttributedRegistrationReproducesForeignKeyFailure() {
@@ -469,11 +577,10 @@ class RegistrationCancellationIntegrationTest {
     void pairCanRegisterAgainWithoutDeletingItsPaymentOrAttribution() {
         Tournament tournament = tournament(1);
         tournament.setModalidad(Modalidad.DOBLES);
-        TournamentRegistration first = registration(tournament, RegistrationStatus.CANCELLED);
-        TournamentRegistration second = registration(tournament, RegistrationStatus.CANCELLED);
-        first.setIsActive(false);
-        second.setIsActive(false);
-        registrations.saveAllAndFlush(List.of(first, second));
+        TournamentRegistration first = registration(tournament, RegistrationStatus.CONFIRMED);
+        TournamentRegistration second = registration(tournament, RegistrationStatus.CONFIRMED);
+        pair(first,second);
+        service.adminRemovePlayerRegistration(tournament.getId(),first.getPlayer().getId());
         Payment payment = payments.saveAndFlush(Payment.builder().registration(first)
                 .amount(new BigDecimal("1000")).currency("ARS").status(PaymentStatus.PAID).build());
         jdbc.update("UPDATE marketing_registrations_db SET first_touch = 'original-source' WHERE registration_id = ?", first.getId());
@@ -488,9 +595,13 @@ class RegistrationCancellationIntegrationTest {
                 .allSatisfy(row -> {
                     assertThat(row.getIsActive()).isTrue();
                     assertThat(row.getStatus()).isEqualTo(RegistrationStatus.CONFIRMED);
+                    assertThat(row.getCancellationVersion()).isEqualTo(1L);
                 });
         assertThat(payments.findById(payment.getId()).orElseThrow().getRegistration().getId()).isEqualTo(first.getId());
         assertThat(report.export(tournament.getId())).contains("original-source");
+        service.cancelPairRegistration(tournament.getId(),first.getPlayer().getId(),null);
+        assertThat(cancellationHistory.forPlayer(first.getPlayer(),List.of(tournament.getId()))).hasSize(2);
+        assertThat(registrations.findById(first.getId()).orElseThrow().getCancellationVersion()).isEqualTo(2L);
     }
 
     @ParameterizedTest
@@ -514,8 +625,8 @@ class RegistrationCancellationIntegrationTest {
         String path = "/admin/tournaments/" + tournament.getId();
         mvc.perform(get(path).with(user(admin)))
                 .andExpect(status().isOk())
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("data-reg-id=\"" + reserve.getId() + "\"")))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("data-reg-id=\"" + search.getId() + "\"")));
+                .andExpect(content().string(containsString("data-reg-id=\"" + reserve.getId() + "\"")))
+                .andExpect(content().string(containsString("data-reg-id=\"" + search.getId() + "\"")));
 
         var otherTournament = tournament(2);
         mvc.perform(post("/admin/tournaments/" + otherTournament.getId() + "/pair-solo")
@@ -582,6 +693,9 @@ class RegistrationCancellationIntegrationTest {
                 .isEqualTo(RegistrationStatus.CONFIRMED);
         assertThat(registrations.findById(oldPartner.getId()).orElseThrow().getStatus())
                 .isEqualTo(RegistrationStatus.CANCELLED);
+        assertThat(registrations.findById(first.getId()).orElseThrow().getCancellationVersion()).isEqualTo(1L);
+        assertThat(registrations.findById(second.getId()).orElseThrow().getCancellationVersion()).isEqualTo(1L);
+        assertThat(cancellationHistory.forPlayer(first.getPlayer(),List.of(tournament.getId()))).hasSize(1);
         assertThat(payments.findById(payment.getId()).orElseThrow().getRegistration().getId()).isEqualTo(first.getId());
         assertThat(report.export(tournament.getId())).contains("team-playoff-source");
         assertThat(jdbc.queryForObject("SELECT player2_id FROM americano_teams_db WHERE tournament_id = ?",
@@ -769,6 +883,7 @@ class RegistrationCancellationIntegrationTest {
         TestTransaction.end();
         TestTransaction.start();
         assertThat(registrations.findById(registration.getId()).orElseThrow().getStatus()).isEqualTo(RegistrationStatus.CONFIRMED);
+        assertThat(cancellationHistory.forPlayer(registration.getPlayer(),List.of(tournament.getId()))).isEmpty();
         verifyNoInteractions(email);
     }
 
@@ -791,6 +906,7 @@ class RegistrationCancellationIntegrationTest {
 
         assertThat(registrations.findById(confirmed.getId()).orElseThrow().getStatus()).isEqualTo(RegistrationStatus.CONFIRMED);
         assertThat(registrations.findById(reserve.getId()).orElseThrow().getStatus()).isEqualTo(RegistrationStatus.WAITLIST);
+        assertThat(cancellationHistory.forPlayer(confirmed.getPlayer(),List.of(tournament.getId()))).isEmpty();
         verifyNoInteractions(email);
     }
 
@@ -816,6 +932,7 @@ class RegistrationCancellationIntegrationTest {
         assertThat(registrations.findById(confirmed.getId()).orElseThrow().getStatus()).isEqualTo(RegistrationStatus.CANCELLED);
         assertThat(registrations.findById(reserve.getId()).orElseThrow().getStatus()).isEqualTo(RegistrationStatus.CONFIRMED);
         assertThat(registrations.countByTournamentIdAndStatus(tournament.getId(), RegistrationStatus.CONFIRMED)).isEqualTo(1);
+        assertThat(cancellationHistory.forPlayer(confirmed.getPlayer(),List.of(tournament.getId()))).hasSize(1);
         verify(email, times(1)).sendRegistrationCancelledEmail(eq(confirmed.getPlayer().getEmail()), any(), any(), any(), any(), any(), any(), any());
         verify(email, times(1)).sendWaitlistAutoConfirmEmail(eq(reserve.getPlayer().getEmail()), any(), any(), any(), any(), any(), any(), any());
     }

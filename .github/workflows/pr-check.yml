@@ -36,7 +36,7 @@ jobs:
       - name: Check frontend
         run: pnpm --dir frontend check
       - name: Install Chromium
-        run: pnpm --dir frontend exec playwright install --with-deps chromium
+        run: pnpm --dir frontend exec playwright install chromium
       - name: Check preview in desktop and mobile browsers
         run: pnpm --dir frontend test:e2e
 
@@ -108,6 +108,9 @@ jobs:
   browser-marketing:
     needs: build
     runs-on: ubuntu-24.04
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
+      options: --ipc=host
     timeout-minutes: 15
     services:
       postgres:
@@ -126,6 +129,7 @@ jobs:
     env:
       SPRING_PROFILES_ACTIVE: test
       PLAYWRIGHT_MODULE_PATH: /tmp/padel-browser-qa/node_modules/playwright/index.mjs
+      BROWSER_QA_DB_HOST: postgres
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -138,11 +142,9 @@ jobs:
           java-version: 21
           cache: maven
       - name: Install isolated browser tools
-        run: |
-          npm install --prefix /tmp/padel-browser-qa --no-save --package-lock=false playwright@1.64.1
-          node /tmp/padel-browser-qa/node_modules/playwright/cli.js install --with-deps chromium webkit
+        run: npm install --prefix /tmp/padel-browser-qa --no-save --package-lock=false playwright@1.64.1
       - name: Check real browsers against isolated test server
-        run: mvn -Dbrowser.qa=true -Dtest=RegistrationSourceBrowserTest test
+        run: ./mvnw -Dbrowser.qa=true -Dtest=RegistrationSourceBrowserTest test
       - name: Report browser failure
         if: failure()
         run: |
