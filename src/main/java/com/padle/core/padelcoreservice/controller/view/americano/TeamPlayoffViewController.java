@@ -343,6 +343,50 @@ public class TeamPlayoffViewController {
     // ADMIN — ВВОД РЕЗУЛЬТАТОВ
     // ══════════════════════════════════════════════════════════════════════
 
+    @GetMapping("/admin/matches/{matchId}/participant/{side}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
+    public String viewHistoricalParticipant(@PathVariable Long matchId, @PathVariable int side,
+                                            @RequestParam(required = false) String query, Model model,
+                                            RedirectAttributes ra, @AuthenticationPrincipal Owner owner) {
+        Long tournamentId = tournamentAccessService.assertCanManageAmericanoMatch(owner, matchId);
+        try {
+            var participant = playoffService.historicalParticipant(matchId, side);
+            String search = query == null ? participant.name() : query.strip();
+            String[] name = participant.name().strip().split("\\s+", 2);
+            model.addAttribute("participant", participant);
+            model.addAttribute("query", search);
+            model.addAttribute("players", search.length() >= 2 && search.length() <= 200
+                    ? playerService.searchActivePlayers(search) : List.of());
+            model.addAttribute("firstName", name[0]);
+            model.addAttribute("lastName", name.length == 2 ? name[1] : "");
+            return "admin/americano/historical-participant";
+        } catch (InvalidStateException e) {
+            ra.addFlashAttribute("error", messageSource.getMessage(e.getMessage(), null, LocaleContextHolder.getLocale()));
+            return "redirect:/tournaments/team-playoff/admin/" + tournamentId;
+        }
+    }
+
+    @PostMapping("/admin/matches/{matchId}/participant/{side}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
+    public String saveHistoricalParticipant(@PathVariable Long matchId, @PathVariable int side,
+                                            @RequestParam String expectedName, @RequestParam(required = false) Long playerId,
+                                            @RequestParam(defaultValue = "") String firstName,
+                                            @RequestParam(defaultValue = "") String lastName,
+                                            RedirectAttributes ra, @AuthenticationPrincipal Owner owner) {
+        Long tournamentId = tournamentAccessService.assertCanManageAmericanoMatch(owner, matchId);
+        try {
+            AmericanoMatch match = playoffService.linkHistoricalParticipant(matchId, side, expectedName,
+                    playerId, firstName, lastName);
+            ra.addFlashAttribute("success", messageSource.getMessage("admin.playoff.participant.saved", null,
+                    LocaleContextHolder.getLocale()));
+            String anchor = match.getPlayoffStage() == null ? "#qmatch-" : "#pmatch-";
+            return "redirect:/tournaments/team-playoff/admin/" + tournamentId + anchor + matchId;
+        } catch (InvalidStateException e) {
+            ra.addFlashAttribute("error", messageSource.getMessage(e.getMessage(), null, LocaleContextHolder.getLocale()));
+            return "redirect:/tournaments/team-playoff/admin/matches/" + matchId + "/participant/" + side;
+        }
+    }
+
     @PostMapping("/admin/qual-matches/{matchId}/result")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     public String submitQualResult(@PathVariable Long matchId,

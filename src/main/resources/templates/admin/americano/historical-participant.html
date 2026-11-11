@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="#{admin.playoff.participant.title}">Vincular jugador</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body th:with="match=${participant.match()}, side=${participant.side()},
+               path=@{/tournaments/team-playoff/admin/matches/{id}/participant/{side}(id=${match.id},side=${side})}">
+<header th:replace="~{fragments/admin-header :: header(#{admin.playoff.participant.title})}"></header>
+<main class="admin-main">
+    <div class="container">
+        <div class="admin-header">
+            <h1 class="admin-title" th:text="#{admin.playoff.participant.title}"></h1>
+            <a class="btn btn-secondary" th:href="@{/tournaments/team-playoff/admin/{id}(id=${match.tournamentId})}"
+               th:text="#{admin.koc.btn.back}"></a>
+        </div>
+        <p th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></p>
+        <section class="admin-card">
+            <div class="admin-card-body">
+                <h2 th:text="${participant.name()}"></h2>
+                <p th:text="${participant.tournamentName()}"></p>
+                <p>
+                    <span th:text="${match.team1Player1Name + ' / ' + (match.team1Player2Name ?: '—')}"></span>
+                    <strong th:text="${match.team1Games + ':' + match.team2Games}"></strong>
+                    <span th:text="${match.team2Player1Name + ' / ' + (match.team2Player2Name ?: '—')}"></span>
+                </p>
+            </div>
+        </section>
+        <section class="admin-card">
+            <div class="admin-card-body">
+                <h2 th:text="#{admin.playoff.participant.existing}"></h2>
+                <form method="get" th:action="${path}">
+                    <div class="form-group">
+                        <label for="participant-query" th:text="#{admin.playoff.participant.query}"></label>
+                        <input class="form-control" id="participant-query" name="query" type="search"
+                               th:value="${query}" minlength="2" maxlength="200" required>
+                    </div>
+                    <button class="btn btn-secondary" type="submit" th:text="#{admin.playoff.participant.search}"></button>
+                </form>
+                <p th:if="${players.isEmpty()}" th:text="#{admin.playoff.participant.no_results}"></p>
+                <ul th:unless="${players.isEmpty()}" class="admin-list">
+                    <li class="admin-list-item" th:each="player : ${players}">
+                        <form method="post" th:action="${path}">
+                            <input type="hidden" name="expectedName" th:value="${participant.name()}">
+                            <input type="hidden" name="playerId" th:value="${player.id}">
+                            <span th:text="${player.nombre + ' ' + player.apellido + ' · #' + player.id}"></span>
+                            <button class="btn btn-primary" type="submit" th:text="#{admin.playoff.participant.link}"
+                                    th:attr="aria-label=#{admin.playoff.participant.open(${player.nombre + ' ' + player.apellido + ' · #' + player.id})}"></button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </section>
+        <section class="admin-card">
+            <div class="admin-card-body">
+                <h2 th:text="#{admin.playoff.participant.guest}"></h2>
+                <form method="post" th:action="${path}">
+                    <input type="hidden" name="expectedName" th:value="${participant.name()}">
+                    <div class="form-group">
+                        <label for="participant-first" th:text="#{admin.playoff.participant.first_name}"></label>
+                        <input class="form-control" id="participant-first" name="firstName"
+                               th:value="${firstName}" maxlength="100" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="participant-last" th:text="#{admin.playoff.participant.last_name}"></label>
+                        <input class="form-control" id="participant-last" name="lastName"
+                               th:value="${lastName}" maxlength="100">
+                    </div>
+                    <button class="btn btn-primary" type="submit" th:text="#{admin.playoff.participant.create}"></button>
+                </form>
+            </div>
+        </section>
+    </div>
+</main>
+<footer th:replace="~{fragments/admin-footer :: footer}"></footer>
+</body>
+</html>

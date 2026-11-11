@@ -60,6 +60,70 @@ public class TeamPlayoffService {
     private final WebSocketService webSocketService;
     private final PlayoffMatchingEngine matchingEngine;
 
+    public HistoricalParticipant historicalParticipant(Long matchId, int side) {
+        AmericanoMatch match = getHistoricalMatch(matchId);
+        String name = unlinkedPartnerName(match, side);
+        return new HistoricalParticipant(match.getTournament().getNombre(), toMatchDto(match), side, name);
+    }
+
+    @Transactional
+    @ConductChange(value = ConductChange.Action.MATCH_PARTICIPANT, subject = ConductChange.Subject.AMERICANO_MATCH)
+    public AmericanoMatch linkHistoricalParticipant(Long matchId, int side, String expectedName, Long playerId,
+                                                  String firstName, String lastName) {
+        AmericanoMatch match = getHistoricalMatch(matchId);
+        if (!unlinkedPartnerName(match, side).equals(expectedName)) {
+            throw new InvalidStateException("admin.playoff.participant.unavailable");
+        }
+        PlayerPadel player;
+        if (playerId == null) {
+            player = playerService.crearInvitadoParaPartidoHistorico(firstName, lastName);
+        } else {
+            player = playerRepository.findById(playerId).filter(PlayerPadel::isActivo)
+                    .orElseThrow(() -> new InvalidStateException("admin.playoff.participant.player_unavailable"));
+        }
+        boolean alreadyInMatch = Stream.of(match.getTeam1Player1(), match.getTeam1Player2(),
+                        match.getTeam2Player1(), match.getTeam2Player2())
+                .filter(Objects::nonNull).anyMatch(assigned -> assigned.getId().equals(player.getId()));
+        if (alreadyInMatch) {
+            throw new InvalidStateException("admin.playoff.participant.already_in_match");
+        }
+        if (side == 1) {
+            match.setTeam1Player2(player);
+        } else {
+            match.setTeam2Player2(player);
+        }
+        return matchRepository.save(match);
+    }
+
+    private AmericanoMatch getHistoricalMatch(Long matchId) {
+        AmericanoMatch match = matchRepository.findById(matchId)
+                .orElseThrow(() -> new ResourceNotFoundException("Match not found"));
+        if (match.getTournament().getTipo() != TournamentType.AMERICANO_TEAMS || match.getRound().getPhase() == null
+                || !match.isCompleted() || match.getTeam1Games() == null || match.getTeam2Games() == null) {
+            throw new InvalidStateException("admin.playoff.participant.unavailable");
+        }
+        return match;
+    }
+
+    private String unlinkedPartnerName(AmericanoMatch match, int side) {
+        if (side != 1 && side != 2) {
+            throw new InvalidStateException("admin.playoff.participant.unavailable");
+        }
+        PlayerPadel assigned = side == 1 ? match.getTeam1Player2() : match.getTeam2Player2();
+        PlayerPadel captain = side == 1 ? match.getTeam1Player1() : match.getTeam2Player1();
+        Long teamId = side == 1 ? match.getTeam1Id() : match.getTeam2Id();
+        if (assigned != null || captain == null || teamId == null) {
+            throw new InvalidStateException("admin.playoff.participant.unavailable");
+        }
+        return teamRepository.findById(teamId)
+                .filter(team -> team.getTournament().getId().equals(match.getTournament().getId()))
+                .filter(team -> team.getPlayer1() != null && team.getPlayer1().getId().equals(captain.getId()))
+                .map(AmericanoTeam::getPlayer2Name).filter(name -> !name.isBlank())
+                .orElseThrow(() -> new InvalidStateException("admin.playoff.participant.unavailable"));
+    }
+
+    public record HistoricalParticipant(String tournamentName, AmericanoMatchDto match, int side, String name) {}
+
     /**
      * {@code AmericanoTeamRepository.findPlayoffRankingByTournamentId} не фильтрует по
      * статусу — команда NO_SHOW/DROPPED_OUT/DISQUALIFIED попала бы и в общий подсчёт, и в посев
