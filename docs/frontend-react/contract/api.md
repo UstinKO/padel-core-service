@@ -346,3 +346,8 @@
 
 ---
 
+
+
+### Публичный API каталога UI v2
+
+Реализованы `/api/public/home`, `/api/public/catalog`, `/api/public/clubs`, `/api/public/clubs/{id}`. Поля и параметры: [OpenAPI](public-discovery.openapi.json); правила и совместимость: [публичное расписание](../../endpoints/public-schedule.md#публичные-данные-ui-v2). Мобильный массив `/api/public/tournaments` сохраняется.

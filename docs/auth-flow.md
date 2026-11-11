@@ -749,3 +749,6 @@ CLUB_ADMIN и PLAYER получают 403. Гость не получает да
 разрешёнными QR UTM анонимный, без cookies и без изменения согласий Meta.
 
 Календарный экспорт: анонимно разрешены только GET `/api/public/tournaments/{id}/calendar`, `/api/public/tournaments/{id}/calendar/google`, `/api/public/tournaments/{id}/calendar/event.ics`. Те же правила чтения активного мероприятия по прямой ссылке; нет OAuth-доступа к календарям и мутаций участия.
+
+
+Публичное чтение UI v2: анонимные GET `/api/public/home`, `/api/public/catalog`, `/api/public/clubs` и `/api/public/clubs/{id}`. Это точечный allowlist; другие API сохраняют действующие требования авторизации.
