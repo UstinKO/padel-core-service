@@ -97,6 +97,7 @@ public class PlayerPadelController {
 
         if (request.getTelefono() == null || request.getTelefono().isBlank()) {
             result.rejectValue("telefono", "registro.web.phone.required");
+            return registrationError(model, request, registrationMessage("registro.web.phone.required"));
         }
         if (!request.passwordsMatch()) {
             result.rejectValue("confirmPassword", "registro.web.password.mismatch");
