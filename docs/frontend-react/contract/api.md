@@ -351,3 +351,8 @@
 ### Публичный API каталога UI v2
 
 Реализованы `/api/public/home`, `/api/public/catalog`, `/api/public/clubs`, `/api/public/clubs/{id}`. Поля и параметры: [OpenAPI](public-discovery.openapi.json); правила и совместимость: [публичное расписание](../../endpoints/public-schedule.md#публичные-данные-ui-v2). Мобильный массив `/api/public/tournaments` сохраняется.
+
+
+### Веб-карточка события
+
+`GET /api/public/events/{id}` добавляет организатора, серверные format/phase и read-only ссылки для #907. [OpenAPI](public-discovery.openapi.json), [поведение и SEO](../../endpoints/public-schedule.md#веб-карточка-мероприятия-и-серверный-seo-контракт). Мобильные endpoints сохраняются.

@@ -58,11 +58,11 @@ public class PublicDiscoveryService {
     @Timed(name = "public.clubs.time", tags = {"service=public-discovery", "operation=clubs"})
     public List<PublicClubResponse> clubs() {
         return clubRepository.findByIsActiveTrue(Sort.by("nombre", "id")).stream()
-                .map(clubMapper::toPublicDto).toList();
+                .map(club -> clubMapper.toPublicDto(club, baseUrl)).toList();
     }
 
     public PublicClubResponse club(Long id) {
-        return clubRepository.findByIdAndIsActiveTrue(id).map(clubMapper::toPublicDto)
+        return clubRepository.findByIdAndIsActiveTrue(id).map(club -> clubMapper.toPublicDto(club, baseUrl))
                 .orElseThrow(() -> new PublicDiscoveryException("CLUB_NOT_FOUND"));
     }
 }

@@ -812,3 +812,6 @@ Thymeleaf admin/qr-report, static/js/qr-report.js, static/css/qr-report.css.
 ### Публичное чтение UI v2
 
 `PublicDiscoveryController` → `PublicDiscoveryService`: `GET /api/public/home`, `/api/public/catalog`, `/api/public/clubs`, `/api/public/clubs/{id}`. Типизированные публичные DTO, пагинация в БД, без мутаций. [Контракт](endpoints/public-schedule.md#публичные-данные-ui-v2).
+
+
+`PublicEventController` → `PublicEventService`/`PublicEventStateService`: `GET /api/public/events/{id}` — типизированная карточка события, опубликованный контакт организатора, формат/фаза сохранённого проведения и read-only ссылки. [Контракт](endpoints/public-schedule.md#веб-карточка-мероприятия-и-серверный-seo-контракт).

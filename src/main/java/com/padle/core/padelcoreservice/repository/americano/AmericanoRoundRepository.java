@@ -2,6 +2,7 @@ package com.padle.core.padelcoreservice.repository.americano;
 
 import com.padle.core.padelcoreservice.model.americano.AmericanoRound;
 import com.padle.core.padelcoreservice.model.enums.AmericanoRoundStatus;
+import com.padle.core.padelcoreservice.model.enums.TournamentPhase;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,6 +13,10 @@ import java.util.Optional;
 
 @Repository
 public interface AmericanoRoundRepository extends JpaRepository<AmericanoRound, Long> {
+
+    boolean existsByTournamentIdAndPhase(Long tournamentId, TournamentPhase phase);
+
+    boolean existsByTournamentIdAndPhaseIsNull(Long tournamentId);
 
     List<AmericanoRound> findByTournamentIdOrderByRoundNumberAsc(Long tournamentId);
 
@@ -34,5 +39,5 @@ public interface AmericanoRoundRepository extends JpaRepository<AmericanoRound, 
             "AND ar.phase = :phase ORDER BY ar.roundNumber")
     List<AmericanoRound> findByTournamentIdAndPhase(
             @Param("tournamentId") Long tournamentId,
-            @Param("phase") com.padle.core.padelcoreservice.model.enums.TournamentPhase phase);
+            @Param("phase") TournamentPhase phase);
 }

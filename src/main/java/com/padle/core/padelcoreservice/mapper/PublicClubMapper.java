@@ -3,6 +3,7 @@ package com.padle.core.padelcoreservice.mapper;
 import com.padle.core.padelcoreservice.dto.PublicClubResponse;
 import com.padle.core.padelcoreservice.model.Club;
 import org.mapstruct.Mapper;
+import org.mapstruct.Context;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 
@@ -13,5 +14,6 @@ public interface PublicClubMapper {
     @Mapping(target = "city", source = "zonaCiudad")
     @Mapping(target = "description", source = "descripcion")
     @Mapping(target = "mapUrl", source = "mapaUrl")
-    PublicClubResponse toPublicDto(Club club);
+    @Mapping(target = "canonicalUrl", expression = "java(baseUrl.replaceAll(\"/+$\", \"\") + \"/clubs/\" + club.getId())")
+    PublicClubResponse toPublicDto(Club club, @Context String baseUrl);
 }

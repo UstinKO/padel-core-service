@@ -99,3 +99,14 @@
 Новые ошибки — локализованный `application/problem+json`: 400 `INVALID_CATALOG_FILTER`, 404 `CLUB_NOT_FOUND`, 503 `PUBLIC_DATA_UNAVAILABLE`. Мобильный контракт ошибок не изменён. Контакты игроков и административные поля в новые DTO не входят.
 
 Пагинация: страница за последней при допустимом смещении возвращает пустой `items` и фактические итоговые счётчики. При `page × size > 2147483647` возвращается 400 `INVALID_CATALOG_FILTER` до запроса в БД; например, `page=2147483647&size=12`. Такой запрос не означает недоступность хранилища и не возвращает 503.
+
+
+## Веб-карточка мероприятия и серверный SEO-контракт
+
+`GET /api/public/events/{id}` — отдельный типизированный контракт React: `event` (прежний безопасный DTO с публичными именами), `organizer` (только опубликованный контакт события), `format`, `phase`, `actions`, `canonicalUrl`, `calendarUrl`, `pngUrl`. Мобильные `/api/public/tournaments` и `/{id}` не меняются. Черновик/неактивное/неизвестное событие — 404; событие только по ссылке доступно по id.
+
+`format`: KING_OF_COURT, AMERICANO, TEAM_PAIRS, TEAM_AMERICANO, TEAM_PLAYOFF, CANCHA_ABIERTA, PADEL_CLINIC. TEAM_PAIRS обозначает отсутствие сохранённого варианта проведения; null-phase раунды парного события принадлежат round-robin, QUALIFICATION/PLAYOFF — Team Playoff. Фаза определяется сохранённым проведением и финальным статусом, не датой: NOT_STARTED/LIVE/QUALIFICATION/PLAYOFF/FINISHED/CANCELLED.
+
+`actions` содержит только ссылки чтения REGISTRATION_INFO (действующая карточка с условиями), LIVE (существующее проведение/результаты), CALENDAR (существующий .ics). Это навигация, не разрешение на регистрацию: все права и условия мутаций проверяются прежними операциями. PNG URL не предоставляется без публичного серверного контракта. Контакты игроков, внутренние Owner/createdBy/paymentInstructions и YouTube не сериализуются.
+
+Для `/preview/torneo/{id}`, `/preview/clubs`, `/preview/clubs/{id}` сервер формирует title/description/canonical/OG в исходном shell, сохраняя Vite assets и исключая данные приложения из DOM. Canonical берётся из app.base-url, без Host от клиента и preview-prefix. Preview защищён SUPER_ADMIN и noindex; HTML экранируется. Неизвестный id даёт HTTP 404, ошибка хранилища — 503; index не кешируется. Production allowlist не изменяется.
