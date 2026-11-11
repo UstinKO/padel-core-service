@@ -32,6 +32,7 @@ function isTournamentStarted(tournament) {
     if (!start || isNaN(start.getTime())) return false;
 
     const now = new Date();
+    console.log(`[isTournamentStarted] ${tournament.nombre}: start=${start}, now=${now}, started=${now > start}`);
     return now > start;
 }
 
@@ -39,10 +40,8 @@ class PadelCoreHome {
     constructor() {
         this.tournaments = [];
         this.filteredTournaments = [];
-        this.eventGroup = 'all';
-        this.dateFormat = new Intl.DateTimeFormat(document.documentElement.lang, {
-            weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC'
-        });
+        this.itemsPerPage = 9;
+        this.currentPage = 1;
 
         this.displayMaps = {
             nivel: {
@@ -94,103 +93,131 @@ class PadelCoreHome {
         if (typeof tournamentData !== 'undefined') {
             this.tournaments = tournamentData;
             this.filteredTournaments = [...this.tournaments];
+            console.log('🏆 Torneos cargados:', this.tournaments.length);
         }
 
         this.initElements();
-        this.populateClubs();
         this.initEventListeners();
-        this.applyFiltersFunction();
+        this.renderTournaments();
+        this.initFaqAccordion();
     }
 
     initElements() {
         this.tournamentsGrid = document.getElementById('tournamentsGrid');
-        this.noTournamentsMessage = document.getElementById('noTournamentsMessage');
+        this.filtersToggle = document.getElementById('filtersToggle');
+        this.filtersForm = document.getElementById('filterForm');
+        this.applyFilters = document.getElementById('applyFilters');
         this.clearFilters = document.getElementById('clearFilters');
-        this.eventCount = document.getElementById('eventCount');
+        this.clearFiltersEmpty = document.getElementById('clearFiltersEmpty');
         this.generoFilter = document.getElementById('generoFilter');
         this.nivelFilter = document.getElementById('nivelFilter');
-        this.clubFilter = document.getElementById('clubFilter');
         this.tipoFilter = document.getElementById('tipoFilter');
+        this.noTournamentsMessage = document.getElementById('noTournamentsMessage');
+        this.navbarToggler = document.getElementById('navbarToggler');
+        this.navbarNav = document.getElementById('navbarNav');
+        this.loadMoreBtn = document.getElementById('loadMoreBtn');
+        this.tournamentsMore = document.getElementById('tournamentsMore');
         this.modalidadFilter = document.getElementById('modalidadFilter');
-        this.filters = [this.generoFilter, this.nivelFilter, this.clubFilter, this.tipoFilter, this.modalidadFilter];
-        this.groupButtons = document.querySelectorAll('[data-event-group]');
-    }
-
-    populateClubs() {
-        const clubs = new Map();
-        this.tournaments.forEach(({ clubId, clubNombre }) => {
-            if (clubId != null && clubNombre) clubs.set(String(clubId), clubNombre);
-        });
-        [...clubs].sort(([, first], [, second]) =>
-            first.localeCompare(second, document.documentElement.lang)
-        ).forEach(([id, name]) => this.clubFilter.add(new Option(name, id)));
     }
 
     initEventListeners() {
-        this.filters.forEach(filter => filter.addEventListener('change', () => {
-            if (filter === this.tipoFilter) this.selectGroup('all');
-            this.applyFiltersFunction();
-        }));
-        this.groupButtons.forEach(button => button.addEventListener('click', () => {
-            this.selectGroup(button.dataset.eventGroup);
-            this.tipoFilter.value = 'todos';
-            this.applyFiltersFunction();
-        }));
-        [this.clearFilters, document.getElementById('clearFiltersEmpty')].forEach(button =>
-            button.addEventListener('click', () => this.clearFiltersFunction())
-        );
-        document.getElementById('homeLevelHelp').addEventListener('click', () => {
-            document.getElementById('home-level-question').open = true;
-        });
-        const toggle = document.getElementById('navbarToggler');
-        const menu = document.getElementById('navbarNav');
-        const mobileMenu = document.getElementById('homeMobileMenu');
-        mobileMenu.addEventListener('click', () => {
-            toggle.click();
-            if (menu.classList.contains('show')) menu.querySelector('a').focus();
-        });
-        const syncMenu = () => {
-            const expanded = String(menu.classList.contains('show'));
-            toggle.setAttribute('aria-expanded', expanded);
-            mobileMenu.setAttribute('aria-expanded', expanded);
-        };
-        new MutationObserver(syncMenu).observe(menu, { attributes: true, attributeFilter: ['class'] });
+        console.log('initEventListeners started');
+
+        if (this.filtersToggle) {
+            this.filtersToggle.addEventListener('click', () => this.toggleFilters());
+        }
+        if (this.applyFilters) {
+            this.applyFilters.addEventListener('click', () => this.applyFiltersFunction());
+        }
+        if (this.clearFilters) {
+            this.clearFilters.addEventListener('click', () => this.clearFiltersFunction());
+        }
+        if (this.clearFiltersEmpty) {
+            this.clearFiltersEmpty.addEventListener('click', () => this.clearFiltersFunction());
+        }
+        if (this.loadMoreBtn) {
+            this.loadMoreBtn.addEventListener('click', () => this.loadMore());
+        }
+
+        const toggler = document.getElementById('navbarToggler');
+        const nav = document.getElementById('navbarNav');
+
+        if (toggler && nav) {
+            console.log('✅ Нашли бургер и меню');
+            const newToggler = toggler.cloneNode(true);
+            toggler.parentNode.replaceChild(newToggler, toggler);
+            this.navbarToggler = newToggler;
+            this.navbarNav = document.getElementById('navbarNav');
+
+            this.navbarToggler.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.navbarNav.classList.toggle('show');
+                console.log('🍔 Меню:', this.navbarNav.classList.contains('show') ? 'открыто' : 'закрыто');
+            };
+            console.log('✅ Новый обработчик добавлен');
+        } else {
+            console.log('❌ Не найдены элементы меню');
+        }
     }
 
-    selectGroup(group) {
-        this.eventGroup = group;
-        this.groupButtons.forEach(button =>
-            button.setAttribute('aria-pressed', String(button.dataset.eventGroup === group))
-        );
+    toggleFilters() {
+        if (this.filtersForm) {
+            this.filtersForm.classList.toggle('collapsed');
+            const icon = this.filtersToggle.querySelector('i');
+            const span = this.filtersToggle.querySelector('span');
+            if (this.filtersForm.classList.contains('collapsed')) {
+                icon.classList.remove('fa-chevron-up');
+                icon.classList.add('fa-chevron-down');
+                if (span) span.textContent = t('filter.toggle.show');
+            } else {
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up');
+                if (span) span.textContent = t('filter.toggle.hide');
+            }
+        }
     }
 
     applyFiltersFunction() {
-        const [gender, level, club, type, modality] = this.filters.map(filter => filter.value);
-        const eventGroups = {
-            tournaments: ['KING_OF_COURT', 'AMERICANO', 'AMERICANO_TEAMS'],
-            training: ['PADEL_CLINIC'],
-            open: ['CANCHA_ABIERTA']
-        };
-        const groupTypes = eventGroups[this.eventGroup];
+        const genero = this.generoFilter?.value || 'todos';
+        const nivel = this.nivelFilter?.value || 'todos';
+        const tipo = this.tipoFilter?.value || 'todos';
+        const modalidad = this.modalidadFilter?.value || 'todos';
 
-        this.filteredTournaments = this.tournaments.filter(event =>
-            (!groupTypes || groupTypes.includes(event.tipo))
-            && (gender === 'todos' || event.generoFormato === gender)
-            && (level === 'todos' || event.categoriaNivel === level)
-            && (club === 'todos' || String(event.clubId) === club)
-            && (type === 'todos' || event.tipo === type)
-            && (modality === 'todos' || event.modalidad === modality)
-        );
-        this.eventCount.textContent = this.filteredTournaments.length;
-        this.clearFilters.hidden = this.eventGroup === 'all' && this.filters.every(filter => filter.value === 'todos');
+        this.filteredTournaments = this.tournaments.filter(t => {
+            if (genero !== 'todos' && t.generoFormato !== genero) return false;
+
+            if (nivel !== 'todos') {
+                const nivelMap = {
+                    'SUMA_15': 'SUMA_15', 'SUMA_13': 'SUMA_13',
+                    'D9': 'D9', 'D7': 'D7', 'D8': 'D8', 'D7_D8': 'D7_D8',
+                    'D6': 'D6', 'C7_C6': 'C7_C6',
+                    'C9': 'C9', 'C8': 'C8', 'C7': 'C7',
+                    'C6': 'C6', 'C5': 'C5', 'C4': 'C4',
+                    'Principiante': 'PRINCIPIANTES'
+                };
+                if (t.categoriaNivel !== nivelMap[nivel]) return false;
+            }
+
+            if (tipo !== 'todos' && t.tipo !== tipo) return false;
+            if (modalidad !== 'todos' && t.modalidad && t.modalidad !== modalidad) return false;
+            return true;
+        });
+
+        this.currentPage = 1;
         this.renderTournaments();
+        this.toggleLoadMoreButton();
     }
 
     clearFiltersFunction() {
-        this.filters.forEach(filter => { filter.value = 'todos'; });
-        this.selectGroup('all');
-        this.applyFiltersFunction();
-        this.groupButtons[0].focus({ preventScroll: true });
+        if (this.generoFilter) this.generoFilter.value = 'todos';
+        if (this.nivelFilter) this.nivelFilter.value = 'todos';
+        if (this.tipoFilter) this.tipoFilter.value = 'todos';
+        if (this.modalidadFilter) this.modalidadFilter.value = 'todos';
+        this.filteredTournaments = [...this.tournaments];
+        this.currentPage = 1;
+        this.renderTournaments();
+        this.toggleLoadMoreButton();
     }
 
     renderTournaments() {
@@ -199,11 +226,15 @@ class PadelCoreHome {
 
         if (this.filteredTournaments.length === 0) {
             if (this.noTournamentsMessage) this.noTournamentsMessage.style.display = 'block';
+            if (this.tournamentsMore) this.tournamentsMore.style.display = 'none';
             return;
         }
 
         if (this.noTournamentsMessage) this.noTournamentsMessage.style.display = 'none';
-        this.filteredTournaments.forEach(tournament => {
+        console.log('Рендерим турниры:', this.filteredTournaments.length);
+
+        const tournamentsToShow = this.filteredTournaments.slice(0, this.filteredTournaments.length);
+        tournamentsToShow.forEach(tournament => {
             const card = this.createTournamentCard(tournament);
             this.tournamentsGrid.appendChild(card);
         });
@@ -228,23 +259,23 @@ class PadelCoreHome {
         card.className = 'tournament-card';
         card.dataset.tournamentId = tournament.id;
 
-        const { fechaInicio, horaInicio } = tournament;
-        const dateParts = Array.isArray(fechaInicio) ? fechaInicio : String(fechaInicio).split('-').map(Number);
-        const [year, month, day] = dateParts;
-        const date = new Date(Date.UTC(year, month - 1, day));
-        const fecha = Number.isNaN(date.getTime()) ? t('card.date.unknown') : this.dateFormat.format(date);
-        const hora = Array.isArray(horaInicio)
-            ? horaInicio.slice(0, 2).map(part => String(part).padStart(2, '0')).join(':')
-            : horaInicio?.slice(0, 5) || t('card.time.unknown');
+        const fecha = Array.isArray(tournament.fechaInicio)
+            ? `${tournament.fechaInicio[2]}/${tournament.fechaInicio[1]}/${tournament.fechaInicio[0]}`
+            : tournament.fechaInicio || t('card.date.unknown');
 
-        const generoDisplay = this.escapeHtml(this.displayMaps.genero[tournament.generoFormato] || tournament.generoFormato || '—');
-        const nivelDisplay = this.escapeHtml(tournament.categoriaNivel || '—');
-        const tipoDisplay = this.escapeHtml(this.displayMaps.tipo[tournament.tipo] || tournament.tipo || '—');
+        const hora = Array.isArray(tournament.horaInicio)
+            ? `${tournament.horaInicio[0]}:${tournament.horaInicio[1].toString().padStart(2, '0')}`
+            : tournament.horaInicio || t('card.time.unknown');
+
+        const generoDisplay = this.displayMaps.genero[tournament.generoFormato] || tournament.generoFormato || 'N/A';
+        const nivelDisplay  = tournament.categoriaNivel || 'N/A';
+        const tipoDisplay   = this.displayMaps.tipo[tournament.tipo] || tournament.tipo || 'N/A';
         const estadoDisplay = this.displayMaps.estado[tournament.estado] || tournament.estado || '';
         const estadoClass   = tournament.estado ? `status-${tournament.estado.toLowerCase()}` : '';
         const modalidadDisplay = tournament.modalidad === 'DOBLES'
             ? t('card.modalidad.doubles')
             : t('card.modalidad.individual');
+        const isAuthenticated = typeof window.isAuthenticated !== 'undefined' ? window.isAuthenticated : false;
 
         // ── НОВАЯ ПРОВЕРКА: начался ли турнир ──────────────────────
         const started = isTournamentStarted(tournament);
@@ -256,37 +287,23 @@ class PadelCoreHome {
             full: t('card.spots.completos')
         }[spotsStatus];
 
-        const typeIcons = {
-            KING_OF_COURT: 'fa-crown',
-            AMERICANO: 'fa-trophy',
-            AMERICANO_TEAMS: 'fa-trophy',
-            PADEL_CLINIC: 'fa-bolt',
-            CANCHA_ABIERTA: 'fa-table-tennis-paddle-ball'
-        };
         const clubAddress = tournament.clubDireccion
             ? `<span class="club-address">${this.escapeHtml(tournament.clubDireccion)}</span>`
             : '';
 
         card.innerHTML = `
+        <div class="tournament-card-header">
+            <span class="tournament-badge">${generoDisplay}</span>
+            <span class="tournament-badge tournament-badge-level">${nivelDisplay}</span>
+        </div>
         <div class="tournament-card-body">
-            <div class="home-event-top">
-                <span class="home-event-type">
-                    <i class="fas ${typeIcons[tournament.tipo] || 'fa-calendar'}" aria-hidden="true"></i>
-                    ${tipoDisplay}
-                </span>
-                <span class="tournament-spots tournament-spots--${spotsStatus}">
-                    <span class="tournament-spots-dot"></span>${spotsStatusText}
-                </span>
-            </div>
-            <p class="home-event-date">${fecha} · ${hora}</p>
-            <h3 class="tournament-title">
-                <a href="/torneo/${tournament.id}">${this.escapeHtml(tournament.nombre) || tipoDisplay}</a>
-            </h3>
-            <div class="home-event-tags">
-                <span>${nivelDisplay}</span><span>${generoDisplay}</span>
-            </div>
+            <h3 class="tournament-title">${tipoDisplay}</h3>
             <p class="tournament-modalidad">${modalidadDisplay}</p>
             <div class="tournament-info">
+                <div class="tournament-info-item">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>${fecha} ${hora}</span>
+                </div>
                 <div class="tournament-info-item">
                     <i class="fas fa-map-marker-alt"></i>
                     <div class="club-info">
@@ -294,6 +311,9 @@ class PadelCoreHome {
                         ${clubAddress}
                     </div>
                 </div>
+            </div>
+            <div class="tournament-spots tournament-spots--${spotsStatus}">
+                <span class="tournament-spots-dot"></span>${spotsStatusText}
             </div>
             <div class="tournament-footer">
                 <a href="/torneo/${tournament.id}" class="btn btn-outline btn-small">
@@ -318,6 +338,33 @@ class PadelCoreHome {
     `;
 
         return card;
+    }
+
+    toggleLoadMoreButton() {
+        if (!this.tournamentsMore) return;
+        const hasMore = this.filteredTournaments.length > this.currentPage * this.itemsPerPage;
+        this.tournamentsMore.style.display = hasMore ? 'block' : 'none';
+    }
+
+    loadMore() {
+        this.currentPage++;
+        this.renderTournaments();
+    }
+
+    initFaqAccordion() {
+        const faqItems = document.querySelectorAll('.faq-item');
+        faqItems.forEach(item => {
+            const question = item.querySelector('.faq-question');
+            question.addEventListener('click', () => {
+                faqItems.forEach(otherItem => {
+                    if (otherItem !== item && otherItem.classList.contains('active')) {
+                        otherItem.classList.remove('active');
+                    }
+                });
+                item.classList.toggle('active');
+            });
+        });
+        console.log('✅ FAQ Accordion inicializado');
     }
 
     escapeHtml(text) {
