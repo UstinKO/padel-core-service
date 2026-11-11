@@ -7,6 +7,13 @@ import com.padle.core.padelcoreservice.logging.StructuredAlert;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.Refill;
+import io.github.bucket4j.TimeMeter;
+import com.google.common.base.Ticker;
+import org.springframework.beans.factory.annotation.Autowired;
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.LongSupplier;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -27,42 +34,29 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-/**
- * Rate limiting filter на основе IP адреса.
- *
- * Лимиты (bucket4j, окно сброса — 1 минута):
- *   AUTH    /login, /api/auth/**, /oauth2/**, /login/oauth2/**  — 10 запросов / минуту
- *   REGISTER /players/registro, /recuperar-password,
- *            /double-registration/**                            — 3 запроса / минуту
- *   API     /api/** (остальные)                                 — 60 запросов / минуту
- *   GENERAL все остальные endpoints                             — 200 запросов / минуту
- *
- * Блокировка подозрительных IP:
- *   — каждый запрос на REGISTER увеличивает счётчик на +1
- *   — провал регистрации (из контроллера) увеличивает счётчик на +2
- *   — при счётчике >= 5 за 15 минут IP получает статус BLOCKED (1 запрос / 15 мин)
- *   — счётчик сбрасывается автоматически через 15 минут
- *
- * #292: до этого фикса эскалация до BLOCKED работала только для REGISTER — атака
- * на /login могла держать IP под постоянным давлением (получая 429 на каждый лишний
- * запрос) сколь угодно долго, никогда не улетая в hard-block. Для AUTH — отдельный
- * счётчик (suspiciousAuth), увеличивается не на каждый запрос (как у REGISTER —
- * там это осознанно, регистрация сама по себе редкое действие), а только на
- * реальное превышение лимита (иначе легитимный пользователь, пару раз ошибившийся
- * паролем или переключившийся между формой и Google OAuth, рисковал бы словить
- * блокировку на ровном месте) — см. ветку bucket.tryConsume(1) в doFilterInternal.
- *
- * Статические ресурсы (/css/, /js/, /images/, /webjars/, favicon, robots.txt)
- * не учитываются в лимитах.
- */
+/** Ограничивает IP по назначению запроса; эскалация применяется только к признакам абьюза. */
 @Component
 @Slf4j
 public class RateLimitFilter extends OncePerRequestFilter {
 
-    // IP-адреса, которые полностью обходят rate limiting (разработчик / владелец / мониторинг).
-    // Тот же список, что в nginx geo $ratelimit_key и CrowdSec whitelist (см. SECURITY.md) —
-    // вынесен в конфигурацию, чтобы не держать его как отдельную константу, которую легко
-    // забыть синхронизировать при добавлении нового доверенного IP.
+    private final AccountResponses responses;
+    private final LongSupplier millis;
+    private final TimeMeter timeMeter;
+    private final Cache<String, Long> blockedUntil;
+
+    @Autowired
+    public RateLimitFilter(AccountResponses responses) {
+        this(responses, System::currentTimeMillis, TimeMeter.SYSTEM_MILLISECONDS, Ticker.systemTicker());
+    }
+
+    RateLimitFilter(AccountResponses responses, LongSupplier millis, TimeMeter timeMeter, Ticker ticker) {
+        this.responses = responses;
+        this.millis = millis;
+        this.timeMeter = timeMeter;
+        this.blockedUntil = CacheBuilder.newBuilder().expireAfterWrite(15, TimeUnit.MINUTES)
+                .maximumSize(10000).ticker(ticker).build();
+    }
+
     @Value("${app.security.whitelisted-ips:}")
     private String whitelistedIpsProperty;
 
@@ -76,33 +70,21 @@ public class RateLimitFilter extends OncePerRequestFilter {
                 .collect(Collectors.toSet());
     }
 
-    // Кэш buckets по ключу "IP:endpoint_type". expireAfterAccess вместо неограниченного
-    // ConcurrentHashMap — иначе при атаке с большим числом уникальных IP карта растёт
-    // без ограничений (DoS-вектор против памяти самого приложения). TTL взят с запасом
-    // от самого длинного окна лимита (1 минута для AUTH/REGISTER/API/GENERAL) — для активных
-    // IP бакет не сбрасывается (expireAfterAccess продлевает жизнь при каждом обращении),
-    // для простаивающих 15+ минут — пересоздаётся с нуля, что эквивалентно тому, что и так
-    // происходило бы естественным пополнением bucket4j-окна.
     private final Cache<String, Bucket> buckets = CacheBuilder.newBuilder()
             .expireAfterAccess(15, TimeUnit.MINUTES)
             .maximumSize(40_000)
             .build();
 
-    // ✅ Кэш для отслеживания ПОДОЗРИТЕЛЬНЫХ регистраций с IP
-    // Если с IP пришло 3+ регистрации за 15 минут → блокируем
     private final Cache<String, Integer> suspiciousRegistrations = CacheBuilder.newBuilder()
             .expireAfterWrite(15, TimeUnit.MINUTES)
             .maximumSize(10000)
             .build();
 
-    // #292: аналогичный счётчик для AUTH (/login, /api/auth/**, /oauth2/**) — растёт только
-    // на реальное превышение лимита (не на каждый запрос, см. Javadoc класса).
     private final Cache<String, Integer> suspiciousAuth = CacheBuilder.newBuilder()
             .expireAfterWrite(15, TimeUnit.MINUTES)
             .maximumSize(10000)
             .build();
 
-    // Счётчик заблокированных запросов за текущие сутки (сбрасывается в 23:55 планировщиком)
     public static final AtomicInteger BLOCKED_TODAY = new AtomicInteger(0);
 
     private enum LimitType {
@@ -126,7 +108,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
 
         String path = request.getRequestURI();
-        LimitType limitType = classifyPath(path, ip);  // ← передаём ip
+        LimitType limitType = classifyPath(path, request.getMethod(), ip);
 
         if (limitType == null) {
             filterChain.doFilter(request, response);
@@ -135,14 +117,15 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
         if (limitType == LimitType.BLOCKED) {
             BLOCKED_TODAY.incrementAndGet();
-            sendRateLimitResponse(request, response, LimitType.BLOCKED);
+            sendRateLimitResponse(request, response, LimitType.BLOCKED, blockedSeconds(ip));
             return;
         }
 
         String bucketKey = ip + ":" + limitType.name();
         Bucket bucket = getOrCreateBucket(bucketKey, limitType);
 
-        if (bucket.tryConsume(1)) {
+        var probe = bucket.tryConsumeAndReturnRemaining(1);
+        if (probe.isConsumed()) {
             filterChain.doFilter(request, response);
         } else {
             StructuredAlert.of(AlertSeverity.SECURITY_WARNING, "Превышен лимит запросов", "RATE_LIMIT_EXCEEDED")
@@ -154,13 +137,23 @@ public class RateLimitFilter extends OncePerRequestFilter {
             if (limitType == LimitType.AUTH) {
                 incrementSuspiciousAuthCounter(ip);
             }
-            sendRateLimitResponse(request, response, limitType);
+            if (limitType == LimitType.REGISTER) incrementSuspiciousCounter(ip);
+            long retry = Math.max(1, (probe.getNanosToWaitForRefill() + 999_999_999L) / 1_000_000_000L);
+            if (isBlocked(ip)) {
+                limitType = LimitType.BLOCKED;
+                retry = blockedSeconds(ip);
+            }
+            sendRateLimitResponse(request, response, limitType, retry);
         }
     }
 
-    // ✅ Метод с параметром ip
-    private LimitType classifyPath(String path, String ip) {
-        // Статические ресурсы и служебные страницы ошибок — пропускаем без лимита
+    private long blockedSeconds(String ip) {
+        long now = millis.getAsLong();
+        long until = Optional.ofNullable(blockedUntil.getIfPresent(ip)).orElse(now);
+        return Math.max(1, (until - now + 999) / 1000);
+    }
+
+    private LimitType classifyPath(String path, String method, String ip) {
         if (path.startsWith("/css/") || path.startsWith("/js/")
                 || path.startsWith("/images/") || path.startsWith("/webjars/")
                 || path.startsWith("/web/")
@@ -169,33 +162,22 @@ public class RateLimitFilter extends OncePerRequestFilter {
             return null;
         }
 
-        // Проверяем — не заблокирован ли IP по подозрительной активности.
-        // #292: пока IP в статусе BLOCKED, эта ветка отрабатывает на КАЖДЫЙ его запрос —
-        // при активной атаке это может быть по несколько раз в секунду в течение всех
-        // 15 минут блокировки. WARN здесь уже отгремел один раз в момент самой эскалации
-        // (см. incrementSuspiciousCounter/incrementSuspiciousAuthCounter) — дальше это
-        // не новая информация, а просто подтверждение уже принятого решения.
         if (isBlocked(ip)) {
-            log.debug("IP bloqueado por actividad sospechosa: {}", ip);
+            log.debug("IP временно заблокирован: {}", ip);
             return LimitType.BLOCKED;
         }
 
-        // Аутентификация
-        if (path.equals("/login") || path.startsWith("/api/auth/")
+        boolean mutating = !Set.of("GET", "HEAD", "OPTIONS").contains(method);
+        if ((mutating && (path.equals("/login") || path.startsWith("/api/auth/") || path.equals("/api/players/me/password")))
                 || path.startsWith("/oauth2/") || path.startsWith("/login/oauth2/")) {
             return LimitType.AUTH;
         }
-
-        // Регистрация и восстановление пароля
-        if (path.startsWith("/players/registro") || path.startsWith("/players/api/registro")
-                || path.startsWith("/recuperar-password")
-                || path.startsWith("/double-registration/")) {
-            // Увеличиваем счётчик подозрительных регистраций
-            incrementSuspiciousCounter(ip);
+        if (mutating && (path.startsWith("/players/registro") || path.startsWith("/players/api/registro")
+                || path.equals("/api/players/registro") || path.startsWith("/api/password-reset/")
+                || path.startsWith("/recuperar-password") || path.startsWith("/double-registration/"))) {
             return LimitType.REGISTER;
         }
 
-        // API endpoints
         if (path.startsWith("/api/")) {
             return LimitType.API;
         }
@@ -203,23 +185,15 @@ public class RateLimitFilter extends OncePerRequestFilter {
         return LimitType.GENERAL;
     }
 
-    // ✅ Проверка — заблокирован ли IP
     private boolean isBlocked(String ip) {
-        Integer registerCount = suspiciousRegistrations.getIfPresent(ip);
-        if (registerCount != null && registerCount >= 5) {  // 5+ регистраций за 15 мин → блокировка
-            return true;
-        }
-        Integer authCount = suspiciousAuth.getIfPresent(ip);
-        return authCount != null && authCount >= 5;  // #292: 5+ превышений лимита AUTH за 15 мин
+        Long until = blockedUntil.getIfPresent(ip);
+        return until != null && until > millis.getAsLong();
     }
 
-    // ✅ Увеличиваем счётчик при КАЖДОМ запросе на регистрацию
     private void incrementSuspiciousCounter(String ip) {
-        Integer existing = suspiciousRegistrations.getIfPresent(ip);
-        int newCount = (existing == null ? 0 : existing) + 1;
-        suspiciousRegistrations.put(ip, newCount);
+        int newCount = suspiciousRegistrations.asMap().merge(ip, 1, Integer::sum);
         if (newCount == 5) {
-            // #292: WARN один раз, ровно в момент эскалации в BLOCKED — не на каждый запрос
+            blockedUntil.put(ip, millis.getAsLong() + Duration.ofMinutes(15).toMillis());
             StructuredAlert.of(AlertSeverity.SECURITY_WARNING, "IP заблокирован за подозрительную активность", "SUSPICIOUS_ACTIVITY_BLOCKED")
                     .field("IP", ip)
                     .field("Reason", "REGISTER")
@@ -228,12 +202,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
     }
 
-    // #292: увеличиваем только когда AUTH-бакет реально исчерпан (см. вызов в doFilterInternal)
     private void incrementSuspiciousAuthCounter(String ip) {
-        Integer existing = suspiciousAuth.getIfPresent(ip);
-        int newCount = (existing == null ? 0 : existing) + 1;
-        suspiciousAuth.put(ip, newCount);
+        int newCount = suspiciousAuth.asMap().merge(ip, 1, Integer::sum);
         if (newCount == 5) {
+            blockedUntil.put(ip, millis.getAsLong() + Duration.ofMinutes(15).toMillis());
             StructuredAlert.of(AlertSeverity.SECURITY_WARNING, "IP заблокирован за подозрительную активность", "SUSPICIOUS_ACTIVITY_BLOCKED")
                     .field("IP", ip)
                     .field("Reason", "AUTH")
@@ -242,11 +214,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
     }
 
-    // ✅ Публичный метод для ручного увеличения счётчика (из контроллера)
     public void markRegistrationFailed(String ip) {
-        Integer count = suspiciousRegistrations.getIfPresent(ip);
-        int total = count != null ? count + 2 : 2;  // +2 за фейл
-        suspiciousRegistrations.put(ip, total);
+        int total = suspiciousRegistrations.asMap().merge(ip, 2, Integer::sum);
+        if (total >= 5 && !isBlocked(ip)) blockedUntil.put(ip, millis.getAsLong() + Duration.ofMinutes(15).toMillis());
         StructuredAlert.of(AlertSeverity.SECURITY_WARNING, "IP заблокирован за подозрительную активность", "SUSPICIOUS_ACTIVITY_BLOCKED")
                 .field("IP", ip)
                 .field("Reason", "FAILED_REGISTRATION")
@@ -259,29 +229,25 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private Bucket createBucket(LimitType type) {
         Bandwidth limit = switch (type) {
             case AUTH -> Bandwidth.classic(10, Refill.intervally(10, Duration.ofMinutes(1)));
-            // ✅ Ужесточаем: 3 регистрации в минуту вместо 5
             case REGISTER -> Bandwidth.classic(3, Refill.intervally(3, Duration.ofMinutes(1)));
             case BLOCKED -> Bandwidth.classic(1, Refill.intervally(1, Duration.ofMinutes(15)));
             case API -> Bandwidth.classic(60, Refill.greedy(60, Duration.ofMinutes(1)));
             case GENERAL -> Bandwidth.classic(200, Refill.greedy(200, Duration.ofMinutes(1)));
         };
-        return Bucket.builder().addLimit(limit).build();
+        return Bucket.builder().withCustomTimePrecision(timeMeter).addLimit(limit).build();
     }
 
     private Bucket getOrCreateBucket(String bucketKey, LimitType type) {
         try {
             return buckets.get(bucketKey, () -> createBucket(type));
         } catch (ExecutionException e) {
-            // createBucket() не бросает checked-исключений — сюда попасть невозможно
-            throw new IllegalStateException("Failed to create rate limit bucket for key: " + bucketKey, e);
+            throw new IllegalStateException("Не удалось создать ограничитель запросов: " + bucketKey, e);
         }
     }
 
 
 
     public String extractIp(HttpServletRequest request) {
-        // X-Real-IP is set by Nginx to $remote_addr (real IP after Cloudflare real_ip_module).
-        // Trusting CF-Connecting-IP directly would allow forgery on non-Cloudflare connections.
         String xRealIp = request.getHeader("X-Real-IP");
         if (xRealIp != null && !xRealIp.isBlank()) {
             return xRealIp;
@@ -293,49 +259,32 @@ public class RateLimitFilter extends OncePerRequestFilter {
         return request.getRemoteAddr();
     }
 
-    private void sendRateLimitResponse(HttpServletRequest request,
-                                       HttpServletResponse response,
-                                       LimitType type) throws IOException {
+    private void sendRateLimitResponse(HttpServletRequest request, HttpServletResponse response,
+                                       LimitType type, long retryAfter) throws IOException {
         String path = request.getRequestURI();
-        String method = request.getMethod();
-        int retryAfter = (type == LimitType.BLOCKED) ? 900 : 60;
-
-        // BLOCKED на браузерных путях → отдельная страница с объяснением
-        if (type == LimitType.BLOCKED && !path.startsWith("/api/")) {
-            response.sendRedirect("/error/rate-limit?retry=900&blocked=true");
-            return;
-        }
-
-        // Form POST /login → редирект на страницу логина с ошибкой
-        if ("POST".equalsIgnoreCase(method) && path.equals("/login")) {
-            response.sendRedirect(TournamentLogin.failureUrl("rate-limit", TournamentLogin.requestedTournament(request)));
-            return;
-        }
-
-        // Form POST /players/registro → редирект на форму регистрации с ошибкой
-        if ("POST".equalsIgnoreCase(method) && path.equals("/players/registro")) {
-            response.sendRedirect("/players/registro?error=rate-limit");
-            return;
-        }
-
-        // GENERAL на браузерных путях → стилизованная страница 429
-        if (type == LimitType.GENERAL) {
-            response.sendRedirect("/error/rate-limit?retry=60");
-            return;
-        }
-
-        // Всё остальное (API, OAuth2, recuperar-password и т.д.) → JSON
-        response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
-        response.setContentType("application/json;charset=UTF-8");
+        boolean json = path.startsWith("/api/") || AccountResponses.wantsJson(request);
         response.setHeader("Retry-After", String.valueOf(retryAfter));
-
-        String message = switch (type) {
-            case AUTH -> "Demasiados intentos. Intenta en 1 minuto.";
-            case REGISTER -> "Demasiadas solicitudes. Intenta en 1 minuto.";
-            case BLOCKED -> "IP bloqueado por actividad sospechosa. Intenta en 15 minutos.";
-            default -> "Demasiadas solicitudes. Intenta en 1 minuto.";
-        };
-        response.getWriter().write(
-                "{\"success\":false,\"message\":\"" + message + "\",\"retryAfter\":" + retryAfter + "}");
+        if (!json) {
+            if (type == LimitType.BLOCKED) {
+                response.sendRedirect("/error/rate-limit?retry=" + retryAfter + "&blocked=true");
+                return;
+            }
+            if ("POST".equals(request.getMethod()) && path.equals("/login")) {
+                response.sendRedirect(TournamentLogin.failureUrl("rate-limit", TournamentLogin.requestedTournament(request)));
+                return;
+            }
+            if ("POST".equals(request.getMethod()) && path.equals("/players/registro")) {
+                response.sendRedirect("/players/registro?error=rate-limit");
+                return;
+            }
+            if (type == LimitType.GENERAL) {
+                response.sendRedirect("/error/rate-limit?retry=" + retryAfter);
+                return;
+            }
+        }
+        var problem = responses.problem(HttpStatus.TOO_MANY_REQUESTS, "RATE_LIMITED", List.of(), request);
+        problem.setProperty("retryAfter", retryAfter);
+        problem.setProperty("blockedUntil", Instant.ofEpochMilli(millis.getAsLong() + retryAfter * 1000).toString());
+        responses.json(response, 429, problem);
     }
 }

@@ -5,9 +5,8 @@ import com.padle.core.padelcoreservice.logging.StructuredAlert;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.InvalidMediaTypeException;
-import org.springframework.http.MediaType;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -39,7 +38,10 @@ import java.util.regex.Pattern;
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class CustomAccessDeniedHandler implements AccessDeniedHandler {
+
+    private final AccountResponses accountResponses;
 
     private static final Pattern ADMIN_TOURNAMENT_DETAILS = Pattern.compile("^/admin/tournaments/(\\d+)/?$");
 
@@ -48,18 +50,17 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
                         AccessDeniedException accessDeniedException) throws IOException {
         String path = request.getRequestURI();
         if (accessDeniedException instanceof CsrfException) {
-            log.debug("Access denied (CSRF): {} {} ({})", request.getMethod(), path, accessDeniedException.getMessage());
+            log.debug("Отказ CSRF: {} {} ({})", request.getMethod(), path, accessDeniedException.getClass().getSimpleName());
         } else {
             StructuredAlert.of(AlertSeverity.SECURITY_WARNING, "Отказ в доступе", "ACCESS_DENIED")
                     .field("Endpoint", request.getMethod() + " " + path)
-                    .field("Error", accessDeniedException.getMessage())
+                    .field("Error", accessDeniedException.getClass().getSimpleName())
                     .warn(log);
         }
 
-        if (path.startsWith("/api/") || acceptsJson(request)) {
-            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            response.setContentType(MediaType.APPLICATION_JSON_VALUE + ";charset=UTF-8");
-            response.getWriter().write("{\"success\":false,\"message\":\"Acceso denegado\"}");
+        if (path.startsWith("/api/") || AccountResponses.wantsJson(request)) {
+            accountResponses.error(request, response, HttpStatus.FORBIDDEN,
+                    accessDeniedException instanceof CsrfException ? "CSRF_INVALID" : "ACCESS_DENIED");
             return;
         }
 
@@ -72,21 +73,6 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
         }
 
         response.sendRedirect("/error/403");
-    }
-
-    private boolean acceptsJson(HttpServletRequest request) {
-        var accept = request.getHeader(HttpHeaders.ACCEPT);
-        if (accept == null) {
-            return false;
-        }
-        try {
-            return MediaType.parseMediaTypes(accept).stream()
-                    .filter(mediaType -> !mediaType.isWildcardType() && !mediaType.isWildcardSubtype())
-                    .anyMatch(mediaType -> mediaType.isCompatibleWith(MediaType.APPLICATION_JSON)
-                            || mediaType.isCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON));
-        } catch (InvalidMediaTypeException exception) {
-            return false;
-        }
     }
 
     private boolean isAuthenticated() {

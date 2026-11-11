@@ -132,3 +132,7 @@
 > **[MINOR]** Ошибки возвращают `200 OK` с `success: false` вместо `400 Bad Request`. Некорректно с точки зрения HTTP-семантики.
 
 > **[MINOR]** Нет явной валидации совпадения `newPassword == confirmPassword` в контроллере — нужно проверить, есть ли она в `PasswordResetService` или `PasswordResetConfirm`.
+
+## Типизированный API UI v2
+
+Новые `/api/password-reset/request`, `/validate`, `/confirm` используют тот же сервис: [контракт](account.md). Сервис не логирует токен/ссылку; подтверждение блокирует строку токена от одновременного повторного использования. Legacy API сохранён.

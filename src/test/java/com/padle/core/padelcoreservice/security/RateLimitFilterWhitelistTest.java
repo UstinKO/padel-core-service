@@ -16,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class RateLimitFilterWhitelistTest {
 
     private RateLimitFilter newFilter(String whitelistedIpsProperty) {
-        RateLimitFilter filter = new RateLimitFilter();
+        RateLimitFilter filter = new RateLimitFilter(AccountTestResponses.create());
         ReflectionTestUtils.setField(filter, "whitelistedIpsProperty", whitelistedIpsProperty);
         ReflectionTestUtils.invokeMethod(filter, "initWhitelistedIps");
         return filter;

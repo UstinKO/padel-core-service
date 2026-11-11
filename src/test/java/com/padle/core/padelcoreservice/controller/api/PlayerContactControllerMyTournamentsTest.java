@@ -89,7 +89,7 @@ class PlayerContactControllerMyTournamentsTest {
     @Test
     void anonimo_noAccedeAlEndpoint() throws Exception {
         mockMvc.perform(get("/api/players/me/tournaments"))
-                .andExpect(status().is3xxRedirection());
+                .andExpect(status().isUnauthorized());
 
         verifyNoInteractions(tournamentService);
     }

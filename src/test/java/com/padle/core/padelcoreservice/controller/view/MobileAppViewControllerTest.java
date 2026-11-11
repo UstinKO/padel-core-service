@@ -45,7 +45,6 @@ class MobileAppViewControllerTest {
     @Test
     void apiPrivada_anonimo_sigueCerrada() throws Exception {
         mockMvc.perform(get("/api/players/me/tournaments"))
-                .andExpect(status().isFound())
-                .andExpect(redirectedUrl("/login"));
+                .andExpect(status().isUnauthorized());
     }
 }

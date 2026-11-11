@@ -4,7 +4,7 @@ import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.validation.ValidDomain;
 import com.padle.core.padelcoreservice.validation.NoBotPattern;
 import com.padle.core.padelcoreservice.validation.RequiresPhoneOrTelegram;
-import dev.caceresenzo.disposableemaildomains.validation.constraints.NonDisposableEmailDomain;
+import com.padle.core.padelcoreservice.validation.NotDisposableEmail;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -14,6 +14,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Data
 @Builder
@@ -38,7 +39,7 @@ public class RegistroRequestDto {
     @Email(message = "Formato de email inválido")
     @Size(max = 150, message = "El email no puede tener más de 150 caracteres")
     @ValidDomain(message = "Dominio de email no válido o sospechoso")
-    @NonDisposableEmailDomain
+    @NotDisposableEmail
     private String email;
 
     @Size(max = 20, message = "El teléfono no puede tener más de 20 caracteres")
@@ -51,9 +52,11 @@ public class RegistroRequestDto {
 
     @NotBlank(message = "La contraseña es obligatoria")
     @Size(min = 8, max = 100, message = "La contraseña debe tener entre 8 y 100 caracteres")
+    @ToString.Exclude
     private String password;
 
     @NotBlank(message = "La confirmación de contraseña es obligatoria")
+    @ToString.Exclude
     private String confirmPassword;
 
     @NotNull(message = "El nivel de juego es obligatorio")
@@ -61,7 +64,12 @@ public class RegistroRequestDto {
 
     private String preferredLocale = "es";
 
+    @ToString.Exclude
     private String recaptchaToken;
+
+    private String website;
+
+    private String destination;
 
     public boolean passwordsMatch() {
         return password != null && confirmPassword != null && password.equals(confirmPassword);

@@ -49,10 +49,9 @@ class AdminPlayerAuditControllerSecurityTest {
     private PlayerDuplicatesAuditService playerDuplicatesAuditService;
 
     @Test
-    void anonimo_esRedirigidoALogin() throws Exception {
+    void anonimo_recibe401Json() throws Exception {
         mockMvc.perform(get(URL))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/login"));
+                .andExpect(status().isUnauthorized());
 
         verifyNoInteractions(playerDuplicatesAuditService);
     }

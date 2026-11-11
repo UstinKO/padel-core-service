@@ -359,3 +359,7 @@
 
 
 Frontend #907 использует `PublicEventResponse` из #944. Публичные клубы дополнены canonicalUrl; websiteUrl по-прежнему означает внешний сайт клуба. Ссылки проверяются по HTTP/HTTPS и назначению, share не содержит preview/query/hash. Некорректный route id не вызывает API; прежний JSON ошибки карточки и ProblemDetail различаются по HTTP-статусу без показа внутреннего тела.
+
+## Реализованный контракт аккаунта UI v2
+
+Типизированные `/login`, `/logout`, `/api/players/registro`, `/api/players/me`, `/api/players/me/password`, `/api/password-reset/request`, `/validate`, `/confirm` и `/api/public/config`: [контракт](../../endpoints/account.md), [OpenAPI](account.openapi.json). Legacy формы и мобильный JWT сохранены. Ошибки новых операций — ProblemDetail с fieldErrors; все анонимные `/api/**` дают 401 JSON.

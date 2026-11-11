@@ -755,3 +755,7 @@ CLUB_ADMIN и PLAYER получают 403. Гость не получает да
 
 
 `GET /api/public/events/{id}` доступен анонимно и возвращает безопасную веб-карточку, без контактов участников. `/preview/**` остаётся под SUPER_ADMIN, с X-Robots-Tag noindex; метаданные не расширяют авторизацию и не активируют production SPA routes.
+
+## Аккаунт UI v2
+
+Веб использует прежний `/login` с JSON content negotiation, серверную сессию и CSRF; JWT остаётся мобильным. Регистрация, profile/reset API и безопасный destination описаны в [контракте аккаунта](endpoints/account.md). Пароли, CAPTCHA и reset-ссылки не логируются.

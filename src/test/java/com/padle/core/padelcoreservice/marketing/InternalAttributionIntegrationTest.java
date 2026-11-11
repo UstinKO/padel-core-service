@@ -215,7 +215,7 @@ class InternalAttributionIntegrationTest {
     @Test
     void reportRequiresSuperAdminAtHttpBoundary() throws Exception {
         mvc.perform(get("/api/admin/marketing/registration-sources"))
-                .andExpect(status().is3xxRedirection());
+                .andExpect(status().isUnauthorized());
         mvc.perform(get("/api/admin/marketing/registration-sources")
                 .with(user("player").roles("PLAYER")))
                 .andExpect(status().isForbidden());

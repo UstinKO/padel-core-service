@@ -14,7 +14,7 @@
 
 1. **SPA использует ту же серверную сессию**, что и Thymeleaf-страницы: `JSESSIONID` + remember-me, `SameSite=Lax`, `HttpOnly`. Никаких токенов в `localStorage`/`sessionStorage`.
 2. **CSRF — как сейчас:** HTTP-клиент SPA читает `XSRF-TOKEN` и ставит `X-XSRF-TOKEN` на `POST/PUT/PATCH/DELETE` (включая `/login` и `/logout`). Серверную конфигурацию CSRF не трогаем.
-3. **Вход:** тот же `POST /login` (`username`, `password`, `remember-me`, form-urlencoded). Success/failure-хендлеры отвечают JSON-ом, если запрос пришёл с `Accept: application/json` (`200` + данные сессии / `401 {code: BAD_CREDENTIALS | NOT_CONFIRMED}`), иначе — редиректы, как сейчас. Так старая страница входа и новая форма работают на одном эндпоинте. Rate limit на `POST /login` для JSON — `429`, не редирект (F-10).
+3. **Вход:** тот же `POST /login` (`username`, `password`, `remember-me`, form-urlencoded). Success/failure-хендлеры отвечают JSON-ом, если запрос пришёл с `Accept: application/json` (`200` + данные сессии / `401 ProblemDetail {code: LOGIN_INVALID}`), иначе — редиректы, как сейчас. Так старая страница входа и новая форма работают на одном эндпоинте. Rate limit на `POST /login` для JSON — `429`, не редирект (F-10).
 4. **Google:** без изменений — полная навигация на `/oauth2/authorization/google`, после успеха редирект на `app.frontend-url` + `/players/dashboard`.
 5. **`GET /api/auth/session`** — единый источник «кто я» для SPA (один формат для игрока и админа, [api.md §4.2](../contract/api.md#42-что-изменить-на-бэкенде-фаза-0)).
 6. **`/api/**` без аутентификации → `401` JSON** (сейчас `302 /login`, F-08); `403` — JSON (уже так). Клиент на `401` уводит на `/login?redirect=…`.

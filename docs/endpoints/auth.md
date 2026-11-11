@@ -161,3 +161,7 @@ web-сессии для React UI. Веб-вход использует Spring Se
 
 Из CSRF исключены только stateless JWT `POST /api/auth/login`, `POST /api/auth/refresh`,
 Bearer-запросы и `/ws/**`. Остальные cookie-сессионные мутации в `/api/auth/**` защищены.
+
+## Сессионные операции UI v2
+
+Реализованы JSON-вход на существующем `POST /login`, JSON-выход `POST /logout`, публичный config и профиль. См. [аккаунт UI v2](account.md).

@@ -2,6 +2,7 @@ package com.padle.core.padelcoreservice.security.oauth2;
 
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.security.JwtService;
+import com.padle.core.padelcoreservice.security.AccountDestination;
 import com.padle.core.padelcoreservice.security.TournamentLogin;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -85,8 +86,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             return;
         }
 
-        // Редиректим на dashboard
-        getRedirectStrategy().sendRedirect(request, response, "/players/dashboard");
+        getRedirectStrategy().sendRedirect(request, response,
+                AccountDestination.authorized(request).orElse("/players/dashboard"));
     }
 
     private static String urlEncode(String value) {
