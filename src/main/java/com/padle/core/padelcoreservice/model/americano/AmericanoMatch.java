@@ -177,6 +177,18 @@ public class AmericanoMatch {
         }
     }
 
+    public record Outcome(Boolean firstWinner) {}
+
+    /** Ничья, неполный счёт и незавершённый матч не имеют победившей стороны. */
+    public Outcome outcome() {
+        var first = team1Games != null || team2Games != null ? team1Games : team1Score;
+        var second = team1Games != null || team2Games != null ? team2Games : team2Score;
+        if (!isCompleted() || first == null || second == null || first.equals(second)) {
+            return new Outcome(null);
+        }
+        return new Outcome(first > second);
+    }
+
     public boolean isTeam1Winner() {
         return team1Score != null && team2Score != null && team1Score > team2Score;
     }

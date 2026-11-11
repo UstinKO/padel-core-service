@@ -3,6 +3,9 @@ package com.padle.core.padelcoreservice.controller.view.americano;
 import com.padle.core.padelcoreservice.dto.americano.AmericanoMatchDto;
 import com.padle.core.padelcoreservice.dto.americano.AmericanoRoundDto;
 import org.junit.jupiter.api.Test;
+import com.padle.core.padelcoreservice.service.americano.TeamPlayoffReadService;
+import com.padle.core.padelcoreservice.mapper.TeamPlayoffRoundMapper;
+import org.mapstruct.factory.Mappers;
 
 import java.util.List;
 
@@ -16,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class TeamPlayoffViewControllerWaveSplitTest {
 
-    private final TeamPlayoffViewController controller = new TeamPlayoffViewController(null, null, null, null, null, null, null);
+    private final TeamPlayoffViewController controller = new TeamPlayoffViewController(null, new TeamPlayoffReadService(null,null,null,Mappers.getMapper(TeamPlayoffRoundMapper.class)), null, null, null, null, null, null);
 
     @Test
     void splitsMatchesIntoTwoWaves_sortedByCourtWithinEachWave() {

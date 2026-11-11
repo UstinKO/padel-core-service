@@ -997,18 +997,15 @@ public class AmericanoService {
     }
 
     public List<AmericanoRoundDto> getRounds(Long tournamentId) {
-        List<AmericanoRound> rounds =
-                americanoRoundRepository.findByTournamentIdOrderByRoundNumberAsc(tournamentId);
-        List<AmericanoPlayer> allPlayers =
-                americanoPlayerRepository.findByTournamentIdAndStatus(tournamentId, AmericanoPlayerStatus.ACTIVE);
-
-        return rounds.stream()
-                .map(round -> {
-                    AmericanoRoundDto dto = americanoMapper.toDto(round);
-                    dto.setByePlayerNames(calcByePlayerNames(round.getId(), allPlayers));
-                    return dto;
-                })
-                .collect(Collectors.toList());
+        var rounds = americanoRoundRepository.findByTournamentIdOrderByRoundNumberAsc(tournamentId);
+        var players = americanoPlayerRepository.findByTournamentIdAndStatus(tournamentId, AmericanoPlayerStatus.ACTIVE);
+        var byRound = americanoMatchRepository.findByTournamentIdOrderByRoundIdAscMatchNumberAsc(tournamentId).stream()
+                .collect(Collectors.groupingBy(match -> match.getRound().getId()));
+        return rounds.stream().map(round -> {
+            var dto = americanoMapper.toDto(round);
+            dto.setByePlayerNames(calcByePlayerNames(round.getId(), players, byRound.getOrDefault(round.getId(), List.of())));
+            return dto;
+        }).toList();
     }
 
     public AmericanoRoundDto getRound(Long roundId) {
@@ -1028,7 +1025,10 @@ public class AmericanoService {
      * LazyInitializationException вне транзакции.
      */
     private List<String> calcByePlayerNames(Long roundId, List<AmericanoPlayer> allPlayers) {
-        List<AmericanoMatch> matches = americanoMatchRepository.findByRoundId(roundId);
+        return calcByePlayerNames(roundId, allPlayers, americanoMatchRepository.findByRoundId(roundId));
+    }
+
+    private List<String> calcByePlayerNames(Long roundId, List<AmericanoPlayer> allPlayers, List<AmericanoMatch> matches) {
         if (matches.isEmpty()) {
             log.warn("В раунде {} нет матчей — все игроки считаются отдыхающими", roundId);
         }

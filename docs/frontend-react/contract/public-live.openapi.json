@@ -1,0 +1,1241 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Публичные live-снимки UI v2",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/public/events/{eventId}/live": {
+      "get": {
+        "summary": "Чтение публичного live-состояния",
+        "security": [],
+        "parameters": [
+          {
+            "name": "eventId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Публичный неизменяемый снимок; Cache-Control: no-store",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Snapshot"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Нет публичного события",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Другой формат или устаревший инстанс; canonicalUrl",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Некорректный ID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Превышена квота; Retry-After",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Источник данных недоступен",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "summary": "Те же проверки и заголовки без тела",
+        "security": [],
+        "parameters": [
+          {
+            "name": "eventId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Публичный неизменяемый снимок; Cache-Control: no-store"
+          },
+          "404": {
+            "description": "Нет публичного события"
+          },
+          "409": {
+            "description": "Другой формат или устаревший инстанс; canonicalUrl"
+          },
+          "422": {
+            "description": "Некорректный ID"
+          },
+          "429": {
+            "description": "Превышена квота; Retry-After"
+          },
+          "503": {
+            "description": "Источник данных недоступен"
+          }
+        }
+      }
+    },
+    "/api/public/king-of-court/{kingId}/live": {
+      "get": {
+        "summary": "Чтение публичного live-состояния",
+        "security": [],
+        "parameters": [
+          {
+            "name": "kingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Публичный неизменяемый снимок; Cache-Control: no-store",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Snapshot"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Нет публичного события",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Другой формат или устаревший инстанс; canonicalUrl",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Некорректный ID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Превышена квота; Retry-After",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Источник данных недоступен",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "summary": "Те же проверки и заголовки без тела",
+        "security": [],
+        "parameters": [
+          {
+            "name": "kingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Публичный неизменяемый снимок; Cache-Control: no-store"
+          },
+          "404": {
+            "description": "Нет публичного события"
+          },
+          "409": {
+            "description": "Другой формат или устаревший инстанс; canonicalUrl"
+          },
+          "422": {
+            "description": "Некорректный ID"
+          },
+          "429": {
+            "description": "Превышена квота; Retry-After"
+          },
+          "503": {
+            "description": "Источник данных недоступен"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Metadata": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "eventId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "phase": {
+            "type": "string",
+            "enum": [
+              "NOT_STARTED",
+              "LIVE",
+              "QUALIFICATION",
+              "PLAYOFF",
+              "FINISHED",
+              "CANCELLED"
+            ]
+          },
+          "eventStatus": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "instanceId": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "conductVersion": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "generatedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "canonicalUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "showLevels": {
+            "type": "boolean"
+          },
+          "topic": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "pollSeconds": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "required": [
+          "eventId",
+          "name",
+          "phase",
+          "eventStatus",
+          "instanceId",
+          "conductVersion",
+          "generatedAt",
+          "canonicalUrl",
+          "showLevels",
+          "topic",
+          "pollSeconds"
+        ]
+      },
+      "Participant": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "level": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "level"
+        ]
+      },
+      "Side": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "teamId": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "number": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "players": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Participant"
+            }
+          },
+          "score": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "games": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "matchOrdinal": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          }
+        },
+        "required": [
+          "teamId",
+          "number",
+          "name",
+          "players",
+          "score",
+          "games",
+          "matchOrdinal"
+        ]
+      },
+      "Match": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "number": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "court": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "phase": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "stage": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "first": {
+            "$ref": "#/components/schemas/Side"
+          },
+          "second": {
+            "$ref": "#/components/schemas/Side"
+          },
+          "completed": {
+            "type": "boolean"
+          },
+          "firstWinner": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "nextMatchId": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "nextSlot": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "priority": {
+            "type": "boolean"
+          },
+          "queuePosition": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "waitingMinutes": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "court",
+          "phase",
+          "stage",
+          "status",
+          "first",
+          "second",
+          "completed",
+          "firstWinner",
+          "nextMatchId",
+          "nextSlot",
+          "priority",
+          "queuePosition",
+          "waitingMinutes"
+        ]
+      },
+      "Round": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "number": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "phase": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "courts": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "matches": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Match"
+            }
+          },
+          "byePlayerNames": {
+            "type": "array",
+            "items": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "phase",
+          "status",
+          "courts",
+          "matches",
+          "byePlayerNames"
+        ]
+      },
+      "KingRank": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "playerId": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "playerName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "playerNivel": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "rank": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "totalPoints": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "matchPoints": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "bonusPoints": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "additionalPoints": {
+            "$ref": "#/components/schemas/AdditionalPointsDto"
+          },
+          "gamesPlayed": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "wins": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "losses": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          }
+        },
+        "required": [
+          "playerId",
+          "playerName",
+          "playerNivel",
+          "rank",
+          "totalPoints",
+          "matchPoints",
+          "bonusPoints",
+          "additionalPoints",
+          "gamesPlayed",
+          "wins",
+          "losses"
+        ]
+      },
+      "AmericanoRank": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "playerId": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "playerName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "playerNivel": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "position": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "totalScore": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "matchPoints": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "additionalPoints": {
+            "$ref": "#/components/schemas/AdditionalPointsDto"
+          },
+          "matchesPlayed": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "matchesWon": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "matchesLost": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "matchesDrawn": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "byeCount": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "pointsScored": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "pointsConceded": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "pointDifference": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          }
+        },
+        "required": [
+          "playerId",
+          "playerName",
+          "playerNivel",
+          "position",
+          "totalScore",
+          "matchPoints",
+          "additionalPoints",
+          "matchesPlayed",
+          "matchesWon",
+          "matchesLost",
+          "matchesDrawn",
+          "byeCount",
+          "pointsScored",
+          "pointsConceded",
+          "pointDifference"
+        ]
+      },
+      "TeamRank": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "teamNumber": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "displayName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "player1": {
+            "$ref": "#/components/schemas/Participant"
+          },
+          "player2": {
+            "$ref": "#/components/schemas/Participant"
+          },
+          "currentPosition": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "setsWon": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "setsLost": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "gamesWon": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "gamesLost": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "matchesPlayed": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "matchesWon": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "matchesLost": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "matchesDrawn": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "match1GamesWon": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "match1GamesLost": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "match2GamesWon": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "match2GamesLost": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "qualStatus": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tournamentStatus": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "eliminatedStage": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "queuePosition": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "queueOpponentName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "teamNumber",
+          "displayName",
+          "player1",
+          "player2",
+          "currentPosition",
+          "setsWon",
+          "setsLost",
+          "gamesWon",
+          "gamesLost",
+          "matchesPlayed",
+          "matchesWon",
+          "matchesLost",
+          "matchesDrawn",
+          "match1GamesWon",
+          "match1GamesLost",
+          "match2GamesWon",
+          "match2GamesLost",
+          "qualStatus",
+          "tournamentStatus",
+          "eliminatedStage",
+          "queuePosition",
+          "queueOpponentName"
+        ]
+      },
+      "King": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "metadata": {
+            "$ref": "#/components/schemas/Metadata"
+          },
+          "format": {
+            "const": "KING_OF_COURT"
+          },
+          "currentRound": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "calibrationRounds": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "rounds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Round"
+            }
+          },
+          "ranking": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KingRank"
+            }
+          }
+        },
+        "required": [
+          "metadata",
+          "format",
+          "currentRound",
+          "calibrationRounds",
+          "rounds",
+          "ranking"
+        ]
+      },
+      "Americano": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "metadata": {
+            "$ref": "#/components/schemas/Metadata"
+          },
+          "format": {
+            "const": "AMERICANO"
+          },
+          "formatType": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "rounds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Round"
+            }
+          },
+          "ranking": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AmericanoRank"
+            }
+          }
+        },
+        "required": [
+          "metadata",
+          "format",
+          "formatType",
+          "rounds",
+          "ranking"
+        ]
+      },
+      "Playoff": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "metadata": {
+            "$ref": "#/components/schemas/Metadata"
+          },
+          "format": {
+            "const": "TEAM_PLAYOFF"
+          },
+          "rounds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Round"
+            }
+          },
+          "ranking": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TeamRank"
+            }
+          },
+          "queue": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Match"
+            }
+          }
+        },
+        "required": [
+          "metadata",
+          "format",
+          "rounds",
+          "ranking",
+          "queue"
+        ]
+      },
+      "Pending": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "metadata": {
+            "$ref": "#/components/schemas/Metadata"
+          },
+          "format": {
+            "const": "TEAM_PAIRS"
+          },
+          "rounds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Round"
+            }
+          }
+        },
+        "required": [
+          "metadata",
+          "format",
+          "rounds"
+        ]
+      },
+      "Invalidation": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "eventId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "type": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "eventId",
+          "type"
+        ]
+      },
+      "AdditionalPointsDto": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "stages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "roundNumber": {
+                  "type": "integer"
+                },
+                "points": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              },
+              "required": [
+                "roundNumber",
+                "points"
+              ]
+            }
+          }
+        },
+        "required": [
+          "total",
+          "stages"
+        ]
+      },
+      "Snapshot": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/King"
+          },
+          {
+            "$ref": "#/components/schemas/Americano"
+          },
+          {
+            "$ref": "#/components/schemas/Playoff"
+          },
+          {
+            "$ref": "#/components/schemas/Pending"
+          }
+        ]
+      },
+      "Problem": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "canonicalUrl": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "status",
+          "detail",
+          "instance",
+          "code"
+        ]
+      }
+    }
+  }
+}

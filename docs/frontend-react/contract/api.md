@@ -363,3 +363,8 @@ Frontend #907 использует `PublicEventResponse` из #944. Публич
 ## Реализованный контракт аккаунта UI v2
 
 Типизированные `/login`, `/logout`, `/api/players/registro`, `/api/players/me`, `/api/players/me/password`, `/api/password-reset/request`, `/validate`, `/confirm` и `/api/public/config`: [контракт](../../endpoints/account.md), [OpenAPI](account.openapi.json). Legacy формы и мобильный JWT сохранены. Ошибки новых операций — ProblemDetail с fieldErrors; все анонимные `/api/**` дают 401 JSON.
+
+
+### LFPT-0903: безопасное чтение live
+
+Реализован [публичный контракт live](../../endpoints/public-live.md), [OpenAPI](public-live.openapi.json): один read-only snapshot по eventId и проверяемый alias по kingId. Контакты/заметки/actor не передаются. Старые API и мутации сохраняются. React должен слушать `/topic/public/live/{eventId}` как invalidation, перечитывать целый snapshot после reconnect/focus и применять bounded polling 20 с; индивидуальный Americano использует только polling. Старые описания payload выше относятся к legacy. Production-переключение не входит в #903.

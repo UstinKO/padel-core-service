@@ -1182,3 +1182,8 @@
 ## Юридические и системные экраны React
 
 Готовы `/preview/terminos`, `/preview/privacidad`, `/preview/cookies` с прежним текстом и canonical на действующие публичные URL. Все девять сочетаний страницы и языка проверяются по исходным шаблонам. Системные 401/403/offline/429/503/404, root error boundary и безопасный возврат подключены к реальному клиенту API. Error pages noindex, 404/503 сохраняют серверный HTTP-статус; production URL и allowlist не переключаются.
+
+
+### LFPT-0903: безопасное чтение live
+
+Реализован [публичный контракт live](../../endpoints/public-live.md), [OpenAPI](public-live.openapi.json): один read-only snapshot по eventId и проверяемый alias по kingId. Контакты/заметки/actor не передаются. Старые API и мутации сохраняются. React должен слушать `/topic/public/live/{eventId}` как invalidation, перечитывать целый snapshot после reconnect/focus и применять bounded polling 20 с; индивидуальный Americano использует только polling. Старые описания payload выше относятся к legacy. Production-переключение не входит в #903.

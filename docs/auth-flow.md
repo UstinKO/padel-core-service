@@ -759,3 +759,8 @@ CLUB_ADMIN и PLAYER получают 403. Гость не получает да
 ## Аккаунт UI v2
 
 Веб использует прежний `/login` с JSON content negotiation, серверную сессию и CSRF; JWT остаётся мобильным. Регистрация, profile/reset API и безопасный destination описаны в [контракте аккаунта](endpoints/account.md). Пароли, CAPTCHA и reset-ссылки не логируются.
+
+
+### LFPT-0903: публичные live-снимки
+
+GET/HEAD `/api/public/events/{eventId}/live` и `/api/public/king-of-court/{kingId}/live` разрешены анонимно, с проверкой active/не BORRADOR, no-store и безопасным DTO для всех ролей. [Контракт, ошибки, пакетное чтение и STOMP](endpoints/public-live.md). В `/topic/public/live/{eventId}` только invalidation после commit; wildcard SUBSCRIBE и клиентский SEND в публичный topic запрещены. Мутации и мобильный API прежние; preview остаётся SUPER_ADMIN.

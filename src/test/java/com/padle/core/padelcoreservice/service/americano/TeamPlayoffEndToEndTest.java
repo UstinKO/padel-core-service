@@ -4,6 +4,8 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import com.padle.core.padelcoreservice.dto.americano.AmericanoMatchSuggestionDto;
+import com.padle.core.padelcoreservice.dto.live.PublicLiveDtos;
+import com.padle.core.padelcoreservice.service.PublicLiveService;
 import com.padle.core.padelcoreservice.dto.americano.AmericanoTeamDto;
 import com.padle.core.padelcoreservice.dto.americano.TeamPlayoffAddTeamRequest;
 import com.padle.core.padelcoreservice.exception.InvalidStateException;
@@ -93,6 +95,8 @@ class TeamPlayoffEndToEndTest {
     private TournamentConductHistory history;
     @Autowired
     private PlayoffPairExchange exchange;
+    @Autowired
+    private PublicLiveService publicLive;
 
     private ListAppender<ILoggingEvent> logAppender;
 
@@ -120,10 +124,13 @@ class TeamPlayoffEndToEndTest {
 
         playoffService.initPlayoff(tournamentId);
         assertQuarterFinalSeedingMatchesSpecTable(tournamentId, teamCount);
+        assertPublicSnapshotMatchesBracket(tournamentId);
 
         playThroughPlayoff(tournamentId);
         assertNoUnexplainedRematchesInPlayoff(tournamentId);
         assertChampionAndRunnerUpDetermined(tournamentId);
+        assertPublicSnapshotMatchesBracket(tournamentId);
+        assertThat(publicLive.snapshot(tournamentId).metadata().phase().name()).isEqualTo("FINISHED");
         assertEliminatedTeamsExposeCorrectStage(tournamentId, teams);
     }
 
@@ -324,6 +331,24 @@ class TeamPlayoffEndToEndTest {
                 .build());
 
         return tournament.getId();
+    }
+
+    private void assertPublicSnapshotMatchesBracket(long tournamentId) {
+        var snapshot=(PublicLiveDtos.Playoff) publicLive.snapshot(tournamentId);
+        var exposed=snapshot.rounds().stream().filter(round -> "PLAYOFF".equals(round.phase())).flatMap(round -> round.matches().stream()).toList();
+        var entities=matchRepository.findByTournamentIdAndPhase(tournamentId,TournamentPhase.PLAYOFF);
+        assertThat(exposed).hasSize(entities.size());
+        for(var entity:entities) {
+            var match=exposed.stream().filter(row -> row.id().equals(entity.getId())).findFirst().orElseThrow();
+            assertThat(match.nextMatchId()).isEqualTo(entity.getNextMatchId());
+            assertThat(match.nextSlot()).isEqualTo(entity.getNextMatchSlot());
+            assertThat(match.first().teamId()).isEqualTo(entity.getTeam1Id());
+            assertThat(match.second().teamId()).isEqualTo(entity.getTeam2Id());
+            assertThat(match.firstWinner()).isEqualTo(entity.outcome().firstWinner());
+            if (entity.isCompleted()) assertThat(match.firstWinner()).isNotNull();
+            assertThat(match.first().games()).isEqualTo(entity.getTeam1Games());
+            assertThat(match.second().games()).isEqualTo(entity.getTeam2Games());
+        }
     }
 
     private List<AmericanoTeam> createTeams(Long tournamentId, int teamCount) {
