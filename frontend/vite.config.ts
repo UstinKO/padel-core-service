@@ -16,6 +16,7 @@ function previewHistoryFallback(): Plugin {
 
 export default defineConfig({
   base: '/web/',
+  define: { global: 'globalThis' },
   plugins: [previewHistoryFallback(), react()],
   build: {
     outDir: '../target/generated-resources/frontend/static/web',
@@ -24,6 +25,7 @@ export default defineConfig({
   },
   server: {
     proxy: {
+      '/ws': { target: 'http://127.0.0.1:8080', ws: true },
       '/api': 'http://127.0.0.1:8080',
       '/login': 'http://127.0.0.1:8080',
       '/logout': 'http://127.0.0.1:8080',
