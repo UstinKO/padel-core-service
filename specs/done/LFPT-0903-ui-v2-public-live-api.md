@@ -1,7 +1,7 @@
 # LFPT-0903: Feature backend API UI v2 — публичные состояния King of Court, Americano и Team Playoff
 
 ## Статус
-approved — технический план подтверждён пользователем 2026-11-11.
+done
 
 ## Источник
 Напрямую из [issue #903](https://github.com/UstinKO/padel-core-service/issues/903). Основа #826/#827 уже влита, зависимый фронтенд — #911. Исходная версия master: `83617f4`.
