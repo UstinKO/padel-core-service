@@ -5,7 +5,7 @@
         ? @environment.getActiveProfiles()[0]
         : 'default'}">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="1-Padel - Regístrate gratis en la plataforma de torneos de pádel. Crea tu cuenta y empieza a jugar.">
     <meta name="keywords" content="pádel, registro, crear cuenta, torneos, 1-padel">
     <meta name="author" content="1-Padel">
@@ -27,34 +27,15 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" th:href="@{/css/style.css}">
-    <link rel="stylesheet" th:href="@{/css/registro.css}">
+    <link rel="stylesheet" th:href="@{/css/auth-entry.css}">
 
-    <script th:if="${recaptchaEnabled}" src="https://www.google.com/recaptcha/api.js?hl=es" async defer></script>
     <th:block th:replace="~{fragments/analytics :: ga4}"></th:block>
     <th:block th:replace="~{fragments/analytics :: cookie-consent}"></th:block>
     <th:block th:replace="~{fragments/analytics :: clarity}"></th:block>
 </head>
-<body class="auth-page-simple" data-clarity-mask="true">
+<body class="auth-page-simple auth-entry auth-entry-register" data-clarity-mask="true">
 <!-- Header con nuevo logo y botón de login -->
-<header class="header">
-    <div class="container">
-        <nav class="navbar">
-            <a href="/" class="navbar-brand">
-                <!-- Nuevo logo desde 2.svg -->
-                <img th:src="@{/images/1.svg}" alt="1-Padel Logo" class="navbar-logo" width="40" height="40">
-                <span class="navbar-brand-text">1-<span class="brand-highlight">PADEL</span></span>
-            </a>
-
-            <!-- Botón de login rápido -->
-            <div class="navbar-auth">
-                <a href="/login" class="btn btn-outline-sm">
-                    <i class="fas fa-sign-in-alt"></i>
-                    <span th:text="#{registro.btn.login}">Iniciar sesión</span>
-                </a>
-            </div>
-        </nav>
-    </div>
-</header>
+<header th:replace="~{fragments/auth-entry :: header('/players/registro', null)}"></header>
 
 <main class="auth-main-simple">
     <div class="container">
@@ -62,36 +43,17 @@
             <!-- Registration Form -->
             <div class="auth-card">
                 <div class="auth-card-header">
-                    <h2 class="auth-card-title" th:text="#{registro.heading}">Crear cuenta</h2>
-                    <p class="auth-card-subtitle">
-                        <span th:text="#{registro.has_account}">¿Ya tienes cuenta?</span>
-                        <a href="/login" class="auth-link" th:text="#{registro.login_link}">Inicia sesión</a>
-                    </p>
+                    <h1 class="auth-card-title" th:text="#{registro.heading}">Crear cuenta</h1>
                 </div>
-
-                <!-- ===== BLOQUE SOCIAL ÚNICO (AHORA CENTRADO) ===== -->
-                <div style="display: flex; justify-content: center; width: 100%;">
-                    <div class="auth-social" style="justify-content: center; width: auto; min-width: 200px;">
-                        <a href="/oauth2/authorization/google" class="btn" style="margin: 0;">
-                            <i class="fab fa-google"></i> Google
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Pequeño texto opcional debajo (puedes quitarlo si no quieres) -->
-                <p style="text-align: center; margin-top: 1rem; color: #6b7280; font-size: 0.85rem;">
-                    <i class="fas fa-shield-alt" style="margin-right: 0.25rem;"></i>
-                    <span th:text="#{registro.google_secure}">Tus datos están seguros con Google</span>
-                </p>
-
-                <!-- Separador -->
-                <div class="form-divider" style="margin-bottom: 2rem;">
-                    <span th:text="#{registro.or_email}">o crea una cuenta con email</span>
-                </div>
+                <div th:replace="~{fragments/auth-entry :: google(null)}"></div>
+                <p class="auth-entry-divider" th:text="#{registro.or_email}">o crea una cuenta con email</p>
 
                 <!-- Registration Form -->
-                <form th:action="@{/players/registro}" method="post" class="auth-form" id="registroForm">
-                    <!-- Rate limit -->
+                <form th:action="@{/players/registro}" method="post" class="auth-form" id="registroForm" th:object="${registroRequest}" th:attr="data-password-mismatch=#{registro.web.password.mismatch},
+                    data-password-rules=#{registro.field.password.hint},
+                    data-captcha-required=#{registro.web.captcha},
+                    data-submitting=#{auth.entry.submitting}">
+                    <!-- Ограничение частоты запросов -->
                     <div th:if="${param.error != null and param.error[0] == 'rate-limit'}"
                          style="background:#fff7ed; border-left:4px solid #f59e0b; border-radius:8px;
                                 color:#92400e; padding:1rem 1.25rem; display:flex;
@@ -103,10 +65,10 @@
                         </div>
                     </div>
 
-                    <!-- Error Messages -->
-                    <div th:if="${errorMessage}" class="alert alert-error">
+                    <div id="registrationError" class="alert alert-error" role="alert" tabindex="-1"
+                         th:style="${errorMessage == null} ? 'display:none' : ''">
                         <i class="fas fa-exclamation-circle"></i>
-                        <span th:text="${errorMessage}">Error</span>
+                        <span id="registrationErrorText" th:text="${errorMessage}"></span>
                     </div>
 
                     <div th:if="${successMessage}" class="alert alert-success">
@@ -114,90 +76,65 @@
                         <span th:text="${successMessage}">Éxito</span>
                     </div>
 
-                    <!-- Nombre -->
-                    <div class="form-group">
-                        <label for="nombre" class="form-label">
-                            <i class="fas fa-user"></i> <span th:text="#{registro.field.nombre}">Nombre</span>
-                        </label>
-                        <div class="input-with-icon">
-                            <input type="text" id="nombre" name="nombre"
-                                   class="form-control"
-                                   th:placeholder="#{registro.field.nombre.placeholder}"
-                                   required
-                                   th:value="${param.nombre}">
-                            <i class="fas fa-user input-icon"></i>
+                    <div class="auth-entry-pair">
+                        <div class="form-group">
+                            <div class="auth-entry-inset">
+                                <input type="text" id="nombre" name="nombre"
+                                       class="form-control"
+                                       placeholder=" "
+                                       required th:field="*{nombre}" aria-describedby="nombreError" th:attr="aria-invalid=${#fields.hasErrors('nombre')}" minlength="3" maxlength="100" autocomplete="given-name">
+                                <label for="nombre"><span th:text="#{registro.field.nombre}"></span></label>
+                            </div>
+                            <small class="registration-field-error" id="nombreError"
+                                   th:text="${#fields.hasErrors('nombre') ? #fields.errors('nombre')[0] : ''}" aria-live="polite"></small>
+                        </div>
+                        <div class="form-group">
+                            <div class="auth-entry-inset">
+                                <input type="text" id="apellido" name="apellido"
+                                       class="form-control"
+                                       placeholder=" "
+                                       required th:field="*{apellido}" aria-describedby="apellidoError" th:attr="aria-invalid=${#fields.hasErrors('apellido')}" minlength="3" maxlength="100" autocomplete="family-name">
+                                <label for="apellido"><span th:text="#{registro.field.apellido}"></span></label>
+                            </div>
+                            <small class="registration-field-error" id="apellidoError"
+                                   th:text="${#fields.hasErrors('apellido') ? #fields.errors('apellido')[0] : ''}" aria-live="polite"></small>
                         </div>
                     </div>
-
-                    <!-- Apellido -->
                     <div class="form-group">
-                        <label for="apellido" class="form-label">
-                            <i class="fas fa-user"></i> <span th:text="#{registro.field.apellido}">Apellido</span>
-                        </label>
-                        <div class="input-with-icon">
-                            <input type="text" id="apellido" name="apellido"
-                                   class="form-control"
-                                   th:placeholder="#{registro.field.apellido.placeholder}"
-                                   required
-                                   th:value="${param.apellido}">
-                            <i class="fas fa-user input-icon"></i>
-                        </div>
-                    </div>
-
-                    <!-- Email -->
-                    <div class="form-group">
-                        <label for="email" class="form-label">
-                            <i class="fas fa-envelope"></i> <span th:text="#{registro.field.email}">Email</span>
-                        </label>
-                        <div class="input-with-icon">
+                        <div class="auth-entry-inset">
                             <input type="email" id="email" name="email"
                                    class="form-control"
-                                   placeholder="tu@email.com"
-                                   required
-                                   th:value="${param.email}">
-                            <i class="fas fa-envelope input-icon"></i>
+                                   placeholder=" "
+                                   required th:field="*{email}" aria-describedby="emailError" th:attr="aria-invalid=${#fields.hasErrors('email')}" maxlength="150" autocomplete="email">
+                            <label for="email"><span th:text="#{registro.field.email}"></span></label>
                         </div>
+                        <small class="registration-field-error" id="emailError"
+                               th:text="${#fields.hasErrors('email') ? #fields.errors('email')[0] : ''}" aria-live="polite"></small>
                     </div>
-
-                    <!-- Teléfono -->
                     <div class="form-group">
-                        <label for="telefono" class="form-label">
-                            <i class="fas fa-phone"></i> <span th:text="#{registro.field.telefono}">Teléfono</span>
-                        </label>
-                        <div class="input-with-icon">
+                        <div class="auth-entry-inset">
                             <input type="tel" id="telefono" name="telefono"
                                    class="form-control"
-                                   placeholder="+34 600 000 000"
-                                   th:value="${param.telefono}">
-                            <i class="fas fa-phone input-icon"></i>
+                                   placeholder=" " th:field="*{telefono}" aria-describedby="telefonoError" th:attr="aria-invalid=${#fields.hasErrors('telefono')}" required maxlength="20" autocomplete="tel">
+                            <label for="telefono"><span th:text="#{registro.field.telefono}"></span><small th:text="#{auth.entry.required}"></small></label>
                         </div>
+                        <small class="registration-field-error" id="telefonoError"
+                               th:text="${#fields.hasErrors('telefono') ? #fields.errors('telefono')[#fields.errors('telefono').size() - 1] : ''}" aria-live="polite"></small>
                     </div>
-
-                    <!-- Telegram -->
                     <div class="form-group">
-                        <label for="telegramUsername" class="form-label">
-                            <i class="fab fa-telegram"></i> <span th:text="#{registro.field.telegram}">Telegram</span>
-                        </label>
-                        <div class="input-with-icon">
+                        <div class="auth-entry-inset">
                             <input type="text" id="telegramUsername" name="telegramUsername"
                                    class="form-control"
-                                   th:placeholder="#{registro.field.telegram.placeholder}"
-                                   th:value="${param.telegramUsername}">
-                            <i class="fab fa-telegram input-icon"></i>
+                                   placeholder=" " th:field="*{telegramUsername}" aria-describedby="telegramUsernameError" th:attr="aria-invalid=${#fields.hasErrors('telegramUsername')}" maxlength="33" autocomplete="off">
+                            <label for="telegramUsername"><span th:text="#{registro.field.telegram}"></span><small th:text="#{auth.entry.optional}"></small></label>
                         </div>
-                        <small class="form-text" th:text="#{registro.field.contact.hint}">
-                            Necesitas indicar al menos uno de los dos (teléfono o Telegram) para poder inscribirte en torneos
-                        </small>
+                        <small class="registration-field-error" id="telegramUsernameError"
+                               th:text="${#fields.hasErrors('telegramUsername') ? #fields.errors('telegramUsername')[0] : ''}" aria-live="polite"></small>
                     </div>
-
-                    <!-- Nivel de juego -->
                     <div class="form-group">
-                        <label for="nivelJugador" class="form-label">
-                            <i class="fas fa-chart-line"></i> <span th:text="#{registro.field.nivel}">Nivel de juego</span>
-                        </label>
-                        <div class="input-with-icon">
-                            <select id="nivelJugador" name="nivelJugador" class="form-control" required>
-                                <option value="" th:text="#{registro.field.nivel.select}">Selecciona tu nivel</option>
+                        <div class="auth-entry-inset">
+                            <select id="nivelJugador" name="nivelJugador" class="form-control" required th:field="*{nivelJugador}" aria-describedby="nivelJugadorError" th:attr="aria-invalid=${#fields.hasErrors('nivelJugador')}">
+                                <option value=""></option>
                                 <option value="C9">C9</option>
                                 <option value="C8">C8</option>
                                 <option value="C7">C7</option>
@@ -209,64 +146,62 @@
                                 <option value="D6">D6</option>
                                 <option value="C4">C4</option>
                             </select>
-                            <i class="fas fa-chart-line input-icon"></i>
+                            <label for="nivelJugador"><span th:text="#{registro.field.nivel}"></span></label>
+                        </div>
+                        <small class="registration-field-error" id="nivelJugadorError"
+                               th:text="${#fields.hasErrors('nivelJugador') ? #fields.errors('nivelJugador')[0] : ''}" aria-live="polite"></small>
+                    </div>
+                    <div class="auth-entry-pair auth-entry-passwords">
+                        <div class="form-group">
+                            <div class="auth-entry-inset auth-entry-password">
+                                <input type="password" id="password" name="password"
+                                       class="form-control"
+                                       placeholder=" "
+                                       required
+                                       minlength="8" aria-describedby="passwordError passwordRules" th:attr="aria-invalid=${#fields.hasErrors('password')}" autocomplete="new-password" maxlength="100">
+                                <label for="password"><span th:text="#{registro.field.password}"></span></label>
+                                <button type="button" class="toggle-password" data-target="password"
+                                        th:attr="aria-label=#{registro.field.password.toggle}" aria-pressed="false">
+                                    <i class="fas fa-eye" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                            <small class="registration-field-error" id="passwordError"
+                                   th:text="${#fields.hasErrors('password') ? #fields.errors('password')[0] : ''}" aria-live="polite"></small>
+                        </div>
+                        <div class="form-group">
+                            <div class="auth-entry-inset auth-entry-password">
+                                <input type="password" id="confirmPassword" name="confirmPassword"
+                                       class="form-control"
+                                       placeholder=" "
+                                       required aria-describedby="confirmPasswordError" th:attr="aria-invalid=${#fields.hasErrors('confirmPassword')}" autocomplete="new-password" maxlength="100">
+                                <label for="confirmPassword"><span th:text="#{auth.entry.confirm}"></span></label>
+                                <button type="button" class="toggle-password" data-target="confirmPassword"
+                                        th:attr="aria-label=#{registro.field.password.toggle}" aria-pressed="false">
+                                    <i class="fas fa-eye" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                            <small class="registration-field-error" id="confirmPasswordError"
+                                   th:text="${#fields.hasErrors('confirmPassword') ? #fields.errors('confirmPassword')[0] : ''}" aria-live="polite"></small>
                         </div>
                     </div>
+                    <p class="auth-entry-password-rules" id="passwordRules" th:text="#{registro.field.password.hint}"></p>
 
-                    <!-- Contraseña -->
-                    <div class="form-group">
-                        <label for="password" class="form-label">
-                            <i class="fas fa-lock"></i> <span th:text="#{registro.field.password}">Contraseña</span>
-                        </label>
-                        <div class="input-with-icon">
-                            <input type="password" id="password" name="password"
-                                   class="form-control"
-                                   th:placeholder="#{registro.field.password.placeholder}"
-                                   required
-                                   minlength="8">
-                            <i class="fas fa-lock input-icon"></i>
-                            <button type="button" class="toggle-password" data-target="password"
-                                    th:attr="aria-label=#{registro.field.password.toggle}">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                        </div>
-                        <div class="password-strength">
-                            <div class="strength-bar"></div>
-                        </div>
-                        <small class="form-text" th:text="#{registro.field.password.hint}">
-                            Mínimo 8 caracteres, 1 mayúscula, 1 minúscula, 1 número y 1 carácter especial
-                        </small>
-                    </div>
-
-                    <!-- Confirmar Contraseña -->
-                    <div class="form-group">
-                        <label for="confirmPassword" class="form-label">
-                            <i class="fas fa-lock"></i> <span th:text="#{registro.field.confirm_password}">Confirmar contraseña</span>
-                        </label>
-                        <div class="input-with-icon">
-                            <input type="password" id="confirmPassword" name="confirmPassword"
-                                   class="form-control"
-                                   th:placeholder="#{registro.field.confirm_password.placeholder}"
-                                   required>
-                            <i class="fas fa-lock input-icon"></i>
-                            <button type="button" class="toggle-password" data-target="confirmPassword"
-                                    th:attr="aria-label=#{registro.field.password.toggle}">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Términos y condiciones -->
+                    <!-- Условия использования -->
                     <div class="form-checkbox">
-                        <input type="checkbox" id="terminos" name="terminos" required>
+                        <input type="checkbox" id="terminos" name="terminos" required aria-describedby="terminosError" th:checked="${param.terminos != null}">
                         <label for="terminos" th:utext="#{registro.terms}">
                             Acepto los <a href="/terminos" target="_blank">Términos y Condiciones</a> y la
                             <a href="/privacidad" target="_blank">Política de Privacidad</a>
                         </label>
                     </div>
 
+                    <small id="terminosError" class="registration-field-error" aria-live="polite"></small>
+
                     <!-- reCAPTCHA v2 -->
-                    <div th:if="${recaptchaEnabled}" class="g-recaptcha" th:attr="data-sitekey=${recaptchaSiteKey}" style="margin-bottom: 1rem;"></div>
+                    <div th:if="${recaptchaEnabled}" class="auth-entry-captcha">
+                        <div class="g-recaptcha" th:attr="data-sitekey=${recaptchaSiteKey}"></div>
+                        <small id="captchaError" class="registration-field-error" aria-live="polite"></small>
+                    </div>
 
                     <!-- Honeypot: боты заполнят, люди — нет -->
                     <div style="position: absolute; left: -9999px; opacity: 0;" aria-hidden="true">
@@ -274,17 +209,17 @@
                         <label for="website">Website</label>
                     </div>
 
-                    <!-- Submit Button -->
+                    <!-- Создание аккаунта -->
                     <button type="submit" class="btn btn-primary btn-block btn-large" id="submitBtn">
                         <i class="fas fa-user-plus"></i>
                         <span th:text="#{registro.btn.submit}">Registrarse</span>
                     </button>
                 </form>
 
-                <!-- Separador -->
-                <div class="form-divider" style="margin: 1.5rem 0 0.75rem;">
-                    <span th:text="#{registro.or_with}">o regístrate con</span>
-                </div>
+                <p class="auth-entry-switch">
+                    <span th:text="#{registro.has_account}">¿Ya tienes cuenta?</span>
+                    <a th:href="@{/login}" class="auth-link" th:text="#{registro.login_link}">Inicia sesión</a>
+                </p>
             </div>
         </div>
     </div>
@@ -304,64 +239,9 @@
 <script th:src="${'/js/i18n/messages-' + #locale.language + '.js'}"></script>
 <script th:src="@{/js/i18n/t.js}"></script>
 <script th:src="@{/js/auth.js}"></script>
+<script th:src="@{/js/web-signup.js}"></script>
+<script th:if="${recaptchaEnabled}" th:src="@{https://www.google.com/recaptcha/api.js(hl=${#locale.language})}" async defer></script>
 
-<script th:inline="javascript">
-    /*<![CDATA[*/
-    document.addEventListener('DOMContentLoaded', function() {
-        const form = document.getElementById('registroForm');
-        const submitBtn = document.getElementById('submitBtn');
 
-        if (!form) {
-            console.error('Form not found!');
-            return;
-        }
-
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            // Валидация терминов
-            if (!document.getElementById('terminos').checked) {
-                showNotification('Debes aceptar los términos y condiciones', 'warning');
-                return;
-            }
-
-            // Валидация контакта: нужен телефон или Telegram
-            const telefono = document.getElementById('telefono').value.trim();
-            const telegramUsername = document.getElementById('telegramUsername').value.trim();
-            if (!telefono && !telegramUsername) {
-                showNotification('Debes indicar un teléfono o un usuario de Telegram', 'warning');
-                return;
-            }
-
-            // Валидация паролей
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
-            if (password !== confirmPassword) {
-                showNotification('Las contraseñas no coinciden', 'error');
-                return;
-            }
-
-            // Валидация сложности пароля
-            const passwordRegex = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!]).{8,}$/;
-            if (!passwordRegex.test(password)) {
-                showNotification('La contraseña debe contener al menos: 1 mayúscula, 1 minúscula, 1 número y 1 carácter especial', 'warning');
-                return;
-            }
-
-            // Проверяем reCAPTCHA v2 (только если включена)
-            const recaptchaEnabled = /*[[${recaptchaEnabled}]]*/ false;
-            if (recaptchaEnabled && typeof grecaptcha !== 'undefined' && !grecaptcha.getResponse()) {
-                showNotification('Por favor completa la verificación de seguridad', 'warning');
-                return;
-            }
-
-            // Блокируем кнопку и отправляем
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registrando...';
-            form.submit();
-        });
-    });
-    /*]]>*/
-</script>
 </body>
 </html>

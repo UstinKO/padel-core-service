@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<header class="auth-entry-header" th:fragment="header(path, tournamentId)">
+    <div class="auth-entry-header-inner">
+        <a th:href="@{/}" class="navbar-brand" aria-label="1-Padel">
+            <img th:src="@{/images/1.svg}" alt="" class="navbar-logo" width="32" height="32">
+            <span class="navbar-brand-text">1-<span class="brand-highlight">PADEL</span></span>
+        </a>
+        <nav class="auth-entry-languages" th:attr="aria-label=#{auth.entry.language}">
+            <a th:each="lang : ${ {'es', 'ru', 'en'} }"
+               th:href="@{${path}(lang=${lang},tournamentId=${tournamentId})}"
+               th:attr="aria-current=${#locale.language == lang ? 'true' : null}"
+               th:lang="${lang}" th:text="${#strings.toUpperCase(lang)}">ES</a>
+        </nav>
+    </div>
+</header>
+
+<a class="auth-entry-google" th:fragment="google(tournamentId)"
+   th:href="${tournamentId != null} ? @{/oauth2/authorization/google(tournamentId=${tournamentId})} : @{/oauth2/authorization/google}">
+    <img th:src="@{/images/google-signin.svg}" alt="" width="20" height="20">
+    <span th:text="#{auth.entry.google}">Continuar con Google</span>
+</a>
+</body>
+</html>
