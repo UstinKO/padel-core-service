@@ -21,6 +21,7 @@ export function AppLayout() {
             <NavLink to="/" end>
               {t('nav.home')}
             </NavLink>
+            <NavLink to="/torneos">{t('nav.catalog')}</NavLink>
             <NavLink to="/components">{t('nav.components')}</NavLink>
           </nav>
           <LanguagePicker />

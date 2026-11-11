@@ -44,3 +44,9 @@ pnpm test:e2e
 ```bash
 ./mvnw -Dskip.frontend=true package
 ```
+
+## Главная и каталог
+
+Закрытые маршруты `/preview/` и `/preview/torneos` используют `/api/public/home`, `/api/public/catalog` и `/api/public/clubs` из #898. Фильтры и пагинация сохраняются в query URL, сортировка и вместимость поступают с сервера. Время отображается в зоне Буэнос-Айреса. Карточка ведёт на действующую `/torneo/{id}`. Служебный фундамент доступен на `/preview/foundation`, компоненты — `/preview/components`.
+
+`pnpm test:e2e` проверяет desktop/mobile, три языка, URL/reload/back, загрузку, ошибку, retry, пустой ответ и отсутствие overflow. Тестовые данные находятся только в e2e/unit-тестах; production-код не использует fixtures.
