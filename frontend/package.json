@@ -52,7 +52,7 @@
   "size-limit": [
     {
       "name": "initial JavaScript",
-      "path": "../target/generated-resources/frontend/static/web/assets/*.js",
+      "path": "../target/generated-resources/frontend/static/web/assets/index-*.js",
       "limit": "180 kB",
       "gzip": true
     },
@@ -60,6 +60,12 @@
       "name": "styles",
       "path": "../target/generated-resources/frontend/static/web/assets/*.css",
       "limit": "30 kB",
+      "gzip": true
+    },
+    {
+      "name": "legal route",
+      "path": "../target/generated-resources/frontend/static/web/assets/LegalPages-*.js",
+      "limit": "50 kB",
       "gzip": true
     }
   ]

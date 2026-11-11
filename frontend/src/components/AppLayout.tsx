@@ -1,6 +1,8 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
+import { CookieConsent } from './CookieConsent';
+import { SessionAndNetwork } from './SystemState';
 import { AccountNav } from './AccountNav';
 import { LanguagePicker } from './LanguagePicker';
 
@@ -30,6 +32,7 @@ export function AppLayout() {
           <LanguagePicker />
         </div>
       </header>
+      <SessionAndNetwork />
       <main id="main-content" className="container main" tabIndex={-1}>
         <Outlet />
       </main>
@@ -37,6 +40,12 @@ export function AppLayout() {
         <strong>{t('app.name')}</strong>
         <span>{t('footer.tagline')}</span>
         <span>{t('app.phase')}</span>
+        <nav aria-label={t('legal.navigation')}>
+          <NavLink to="/terminos">{t('legal.terminos')}</NavLink>
+          <NavLink to="/privacidad">{t('legal.privacidad')}</NavLink>
+          <NavLink to="/cookies">{t('legal.cookies')}</NavLink>
+        </nav>
+        <CookieConsent />
       </footer>
     </>
   );

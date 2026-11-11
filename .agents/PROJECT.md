@@ -608,3 +608,7 @@ React #907: `EventPage`, `ClubsPage`, `ClubPage`; типы/URL-проверки 
 ### React: аккаунт UI v2
 
 `AccountPage` / `AccountNav` / `Captcha`: реальные формы входа, регистрации, reset и профиля под `/preview/**`. `frontend/src/api/account.ts` — типизированный session/profile контракт, разделение кэша профиля по ID и обновление вкладок. Ручной язык синхронизирован с серверной cookie lang. Production preview остаётся SUPER_ADMIN; публичные auth-маршруты не переключены.
+
+### React: юридические и системные страницы
+
+`LegalPage`: утверждённые тексты трёх языков из старых шаблонов, статическая миграция `frontend/scripts/sync-legal-content.py` и тест эквивалентности. `CookieConsent`: существующий серверный контракт, CSRF и update/revoke hooks без загрузки SDK в preview. `SystemPage`, `ReadError`, `AppErrorBoundary`: безопасные статусы, offline, 429/Retry-After и 401 с destination. Production routes сохранены.

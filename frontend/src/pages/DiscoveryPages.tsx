@@ -2,9 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { getHome } from '../api/discovery';
-import { Button } from '../components/Button';
 import { Catalogue } from '../components/Catalogue';
-import { StatusView } from '../components/StatusView';
+import { ReadError } from '../components/SystemState';
 
 export function HomePage() {
   const { t, i18n } = useTranslation();
@@ -30,12 +29,7 @@ export function HomePage() {
       {home.isPending ? (
         <p role="status">{t('catalog.loading')}</p>
       ) : home.isError ? (
-        <StatusView
-          tone="error"
-          title={t('state.errorTitle')}
-          text={t('state.errorText')}
-          action={<Button onClick={() => void home.refetch()}>{t('state.retry')}</Button>}
-        />
+        <ReadError error={home.error} retry={() => void home.refetch()} />
       ) : (
         <dl className="home-stats">
           {(['totalClubs', 'totalPlayers', 'totalTournaments'] as const).map((key) => (

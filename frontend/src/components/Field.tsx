@@ -11,8 +11,10 @@ export function Field({ label, error, id, ...props }: FieldProps) {
   const fieldId = id ?? generatedId;
   const errorId = `${fieldId}-error`;
   return (
-    <label className="field" htmlFor={fieldId}>
-      <span className="field__label">{label}</span>
+    <div className="field">
+      <label className="field__label" htmlFor={fieldId}>
+        {label}
+      </label>
       <input
         id={fieldId}
         className="field__input"
@@ -25,6 +27,6 @@ export function Field({ label, error, id, ...props }: FieldProps) {
           {error}
         </span>
       )}
-    </label>
+    </div>
   );
 }

@@ -71,11 +71,12 @@ test('registration keeps safe fields and language, exposes typed field errors an
   await page.getByLabel('Password', { exact: true }).fill('secret-password');
   await page.getByLabel('Confirm password', { exact: true }).fill('secret-password');
   await page.getByRole('button', { name: 'Create account', exact: true }).click();
-  await expect(page.getByRole('alert')).toContainText('Correct fields');
+  await expect(page.getByRole('alert')).toContainText('Correct the highlighted fields.');
   await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Maria');
   await expect(page.getByLabel('Password', { exact: true })).toHaveValue('');
   await page.getByRole('combobox', { name: /Idioma|Language|Язык/ }).selectOption('ru');
   await expect(page.getByLabel('Имя', { exact: true })).toHaveValue('Maria');
+  await expect(page.getByRole('alert')).toContainText('Эта почта уже используется.');
   expect((await page.context().cookies()).find((cookie) => cookie.name === 'lang')?.value).toBe(
     'ru',
   );

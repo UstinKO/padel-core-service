@@ -1,0 +1,3859 @@
+{
+  "terminos": {
+    "ru": [
+      "\n                    ",
+      {
+        "tag": "h1",
+        "children": ["Условия использования"]
+      },
+      "\n                    ",
+      {
+        "tag": "p",
+        "children": ["Последнее обновление: 15 марта 2026"]
+      },
+      "\n                    ",
+      {
+        "tag": "div",
+        "children": [
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["1. Принятие условий"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Получая доступ к платформе 1-Padel («Платформа») и используя её, вы соглашаетесь соблюдать настоящие Условия использования. Если вы не согласны с какой-либо частью этих условий, вы не сможете получить доступ к сервису."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["2. Описание сервиса"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["1-Padel — платформа, позволяющая пользователям:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Регистрироваться на турниры по падель"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Управлять регистрациями"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Просматривать рейтинги и результаты"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Общаться с другими игроками и клубами"]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["3. Регистрация и аккаунт"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Для использования определённых функций Платформы необходимо зарегистрироваться и создать аккаунт. Вы несёте ответственность за:"
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Сохранение конфиденциальности вашего пароля"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Все действия, совершённые под вашим аккаунтом"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Предоставление точной и актуальной информации"]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Мы оставляем за собой право приостановить или закрыть аккаунты, предоставляющие ложную информацию или нарушающие настоящие условия."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["4. Конфиденциальность"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Использование Платформы регулируется нашей ",
+                  {
+                    "tag": "a",
+                    "children": ["Политикой конфиденциальности"],
+                    "href": "/privacidad"
+                  },
+                  ", в которой описывается, как мы собираем, используем и защищаем вашу личную информацию."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["5. Поведение пользователя"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["Используя Платформу, вы соглашаетесь не:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Нарушать применимые законы и нормативные акты"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Нарушать права интеллектуальной собственности"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      "Публиковать ложный, вводящий в заблуждение или дискриминационный контент"
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      "Пытаться получить несанкционированный доступ к системам или аккаунтам других пользователей"
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Использовать Платформу в мошеннических целях"]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["6. Оплата и отмена"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Регистрация на турниры может потребовать оплаты. Политика отмены и возврата устанавливается каждым турниром и чётко отображается перед регистрацией. 1-Padel выступает исключительно посредником в управлении платежами."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["7. Интеллектуальная собственность"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Весь контент Платформы, включая логотипы, дизайн, тексты и программное обеспечение, является собственностью 1-Padel или её лицензиаров и защищён законами об интеллектуальной собственности."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["8. Ограничение ответственности"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "1-Padel не несёт ответственности за косвенный, случайный или последующий ущерб, возникший в результате использования или невозможности использования Платформы. Мы не гарантируем бесперебойность или безошибочность работы сервиса."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["9. Изменения"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Мы оставляем за собой право изменять настоящие условия в любое время. Изменения вступают в силу сразу после публикации на Платформе. Продолжение использования Платформы после внесённых изменений означает ваше согласие с новыми условиями."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["10. Контакт"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Если у вас есть вопросы по настоящим Условиям использования, свяжитесь с нами:"
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Email: ",
+                  {
+                    "tag": "a",
+                    "children": ["legal@1-padel.com"],
+                    "href": "mailto:legal@1-padel.com"
+                  }
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                    "
+        ]
+      },
+      "\n                "
+    ],
+    "en": [
+      "\n                    ",
+      {
+        "tag": "h1",
+        "children": ["Terms and Conditions of Use"]
+      },
+      "\n                    ",
+      {
+        "tag": "p",
+        "children": ["Last updated: March 15, 2026"]
+      },
+      "\n                    ",
+      {
+        "tag": "div",
+        "children": [
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["1. Acceptance of Terms"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "By accessing and using the 1-Padel platform (\"the Platform\"), you agree to be bound by these Terms and Conditions of Use. If you disagree with any part of these terms, you will not be able to access the service."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["2. Description of Service"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["1-Padel is a platform that allows users to:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Register for padel tournaments"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Manage registrations"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["View rankings and results"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Connect with other players and clubs"]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["3. Registration and Account"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "To use certain features of the Platform, you must register and create an account. You are responsible for:"
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Maintaining the confidentiality of your password"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["All activities that occur under your account"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Providing accurate and up-to-date information"]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "We reserve the right to suspend or terminate accounts that provide false information or violate these terms."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["4. Privacy"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Your use of the Platform is subject to our ",
+                  {
+                    "tag": "a",
+                    "children": ["Privacy Policy"],
+                    "href": "/privacidad"
+                  },
+                  ", which describes how we collect, use and protect your personal information."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["5. User Conduct"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["When using the Platform, you agree not to:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Violate applicable laws or regulations"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Infringe intellectual property rights"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Post false, misleading or discriminatory content"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      "Attempt to gain unauthorised access to systems or other users' accounts"
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Use the Platform for fraudulent activities"]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["6. Payments and Cancellations"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Tournament registrations may require the payment of a fee. Cancellation and refund policies are set by each tournament and are clearly displayed before registration. 1-Padel acts solely as an intermediary in the management of payments."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["7. Intellectual Property"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "All content on the Platform, including logos, designs, texts and software, is the property of 1-Padel or its licensors and is protected by intellectual property laws."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["8. Limitation of Liability"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "1-Padel shall not be liable for indirect, incidental or consequential damages arising from the use or inability to use the Platform. We do not guarantee that the service will be uninterrupted or error-free."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["9. Modifications"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "We reserve the right to modify these terms at any time. Changes will take effect immediately upon publication on the Platform. Your continued use of the Platform after such changes constitutes your acceptance of the new terms."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["10. Contact"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "If you have questions about these Terms and Conditions, contact us at:"
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Email: ",
+                  {
+                    "tag": "a",
+                    "children": ["legal@1-padel.com"],
+                    "href": "mailto:legal@1-padel.com"
+                  }
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                    "
+        ]
+      },
+      "\n                "
+    ],
+    "es": [
+      "\n                    ",
+      {
+        "tag": "h1",
+        "children": ["Términos y Condiciones de Uso"]
+      },
+      "\n                    ",
+      {
+        "tag": "p",
+        "children": ["Última actualización: 15 de marzo de 2026"]
+      },
+      "\n                    ",
+      {
+        "tag": "div",
+        "children": [
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["1. Aceptación de los Términos"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Al acceder y utilizar la plataforma 1-Padel (\"la Plataforma\"), aceptas estar sujeto a estos Términos y Condiciones de Uso. Si no estás de acuerdo con alguna parte de estos términos, no podrás acceder al servicio."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["2. Descripción del Servicio"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["1-Padel es una plataforma que permite a los usuarios:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Registrarse en torneos de pádel"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Gestionar inscripciones"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Ver rankings y resultados"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Conectar con otros jugadores y clubes"]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["3. Registro y Cuenta"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Para utilizar ciertas funciones de la Plataforma, debes registrarte y crear una cuenta. Eres responsable de:"
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Mantener la confidencialidad de tu contraseña"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Todas las actividades que ocurran bajo tu cuenta"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Proporcionar información precisa y actualizada"]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Nos reservamos el derecho de suspender o terminar cuentas que proporcionen información falsa o violen estos términos."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["4. Privacidad"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "El uso de la Plataforma está sujeto a nuestra ",
+                  {
+                    "tag": "a",
+                    "children": ["Política de Privacidad"],
+                    "href": "/privacidad"
+                  },
+                  ", que describe cómo recopilamos, usamos y protegemos tu información personal."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["5. Conducta del Usuario"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["Al usar la Plataforma, aceptas no:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Violar leyes o regulaciones aplicables"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Infringir derechos de propiedad intelectual"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Publicar contenido falso, engañoso o discriminatorio"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      "Intentar acceder sin autorización a sistemas o cuentas de otros usuarios"
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Usar la Plataforma para actividades fraudulentas"]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["6. Pagos y Cancelaciones"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Las inscripciones a torneos pueden requerir el pago de una tarifa. Las políticas de cancelación y reembolso son establecidas por cada torneo y se muestran claramente antes de la inscripción. 1-Padel actúa únicamente como intermediario en la gestión de pagos."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["7. Propiedad Intelectual"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Todo el contenido de la Plataforma, incluyendo logos, diseños, textos y software, es propiedad de 1-Padel o sus licenciantes y está protegido por leyes de propiedad intelectual."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["8. Limitación de Responsabilidad"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "1-Padel no será responsable por daños indirectos, incidentales o consecuentes derivados del uso o la imposibilidad de uso de la Plataforma. No garantizamos que el servicio sea ininterrumpido o libre de errores."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["9. Modificaciones"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Nos reservamos el derecho de modificar estos términos en cualquier momento. Los cambios entrarán en vigor inmediatamente después de su publicación en la Plataforma. El uso continuado de la Plataforma después de dichos cambios constituye tu aceptación de los nuevos términos."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["10. Contacto"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Si tienes preguntas sobre estos Términos y Condiciones, contáctanos en:"
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Email: ",
+                  {
+                    "tag": "a",
+                    "children": ["legal@1-padel.com"],
+                    "href": "mailto:legal@1-padel.com"
+                  }
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                    "
+        ]
+      },
+      "\n                "
+    ]
+  },
+  "privacidad": {
+    "ru": [
+      "\n                    ",
+      {
+        "tag": "h1",
+        "children": ["Политика конфиденциальности"]
+      },
+      "\n                    ",
+      {
+        "tag": "p",
+        "children": ["Последнее обновление: 15 марта 2026"]
+      },
+      "\n                    ",
+      {
+        "tag": "div",
+        "children": [
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["1. Введение"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "В 1-Padel мы уважаем вашу конфиденциальность и стремимся защитить ваши персональные данные. Настоящая политика описывает, как мы собираем, используем и передаём вашу информацию при использовании нашей платформы."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["2. Информация, которую мы собираем"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["Мы можем собирать следующие типы информации:"]
+              },
+              "\n                            ",
+              {
+                "tag": "h3",
+                "children": ["2.1 Информация, предоставляемая вами напрямую:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Имя и фамилия"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Адрес электронной почты"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Номер телефона"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Информация профиля (фото, уровень игры и т.д.)"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Предпочтения по турнирам"]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "h3",
+                "children": ["2.2 Информация, собираемая автоматически:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Данные об использовании (посещённые страницы, время сессии)"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["IP-адрес и тип устройства"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Cookie и аналогичные технологии"]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "h3",
+                "children": ["2.3 Информация от третьих сторон:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      "При регистрации через Google или Facebook мы получаем базовую информацию вашего профиля (имя, email)"
+                    ]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["3. Как мы используем вашу информацию"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["Мы используем вашу информацию для:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Управления вашим аккаунтом и регистрациями на турниры"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Обработки платежей и управления регистрациями"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Отправки важных уведомлений (подтверждения, напоминания)"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Улучшения наших услуг и пользовательского опыта"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Выполнения правовых обязательств"]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["4. Правовые основания для обработки"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["Мы обрабатываем ваши данные на основании:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Исполнение договора:"]
+                      },
+                      " для управления вашей регистрацией и участием в турнирах"
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Согласие:"]
+                      },
+                      " для маркетинговых коммуникаций (вы можете отозвать согласие в любое время)"
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Законный интерес:"]
+                      },
+                      " для улучшения наших услуг и предотвращения мошенничества"
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Соблюдение требований законодательства:"]
+                      },
+                      " для выполнения налоговых и правовых обязательств"
+                    ]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["5. Передача вашей информации"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["Мы можем передавать вашу информацию:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Организаторам турниров:"]
+                      },
+                      " для управления вашим участием"
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Платёжным системам:"]
+                      },
+                      " для обработки транзакций"
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Поставщикам услуг:"]
+                      },
+                      " таким как email-сервисы и хостинг"
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Государственным органам:"]
+                      },
+                      " когда этого требует закон"
+                    ]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["Мы не продаём вашу личную информацию третьим сторонам."]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["6. Ваши права"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["Вы имеете право:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Получить доступ к своим персональным данным"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Исправить неточные данные"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Запросить удаление своих данных"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Возразить против обработки"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Запросить переносимость данных"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Отозвать своё согласие в любое время"]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Для реализации этих прав обратитесь к нам по адресу ",
+                  {
+                    "tag": "a",
+                    "children": ["privacidad@1-padel.com"],
+                    "href": "mailto:privacidad@1-padel.com"
+                  }
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["7. Безопасность"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Мы применяем технические и организационные меры для защиты ваших данных от несанкционированного доступа, потери или изменения. Однако ни одна система не является полностью защищённой, поэтому мы не можем гарантировать абсолютную безопасность."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["8. Хранение данных"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Мы храним ваши данные, пока ваш аккаунт активен. После закрытия аккаунта мы можем сохранять определённую информацию в течение более длительных периодов в соответствии с требованиями законодательства или для разрешения споров."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["9. Cookie"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Мы используем cookie и аналогичные технологии для улучшения вашего опыта. Вы можете управлять настройками cookie в своём браузере. Подробнее — в нашей ",
+                  {
+                    "tag": "a",
+                    "children": ["Политике cookie"],
+                    "href": "/cookies"
+                  },
+                  "."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["10. Изменения политики"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Мы можем периодически обновлять настоящую политику. О любых существенных изменениях мы уведомим вас через платформу или по электронной почте. Рекомендуем регулярно проверять эту страницу."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["11. Контакт"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Если у вас есть вопросы по настоящей Политике конфиденциальности, свяжитесь с нами:"
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Email: ",
+                  {
+                    "tag": "a",
+                    "children": ["privacidad@1-padel.com"],
+                    "href": "mailto:privacidad@1-padel.com"
+                  }
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                    "
+        ]
+      },
+      "\n                "
+    ],
+    "en": [
+      "\n                    ",
+      {
+        "tag": "h1",
+        "children": ["Privacy Policy"]
+      },
+      "\n                    ",
+      {
+        "tag": "p",
+        "children": ["Last updated: March 15, 2026"]
+      },
+      "\n                    ",
+      {
+        "tag": "div",
+        "children": [
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["1. Introduction"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "At 1-Padel, we respect your privacy and are committed to protecting your personal data. This policy describes how we collect, use and share your information when you use our platform."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["2. Information We Collect"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["We may collect the following types of information:"]
+              },
+              "\n                            ",
+              {
+                "tag": "h3",
+                "children": ["2.1 Information you provide directly:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["First and last name"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Email address"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Phone number"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Profile information (photo, playing level, etc.)"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Tournament preferences"]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "h3",
+                "children": ["2.2 Automatically collected information:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Usage data (pages visited, session time)"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["IP address and device type"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Cookies and similar technologies"]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "h3",
+                "children": ["2.3 Information from third parties:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      "If you register using Google or Facebook, we receive basic profile information (name, email)"
+                    ]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["3. How We Use Your Information"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["We use your information to:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Manage your account and tournament registrations"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Process payments and manage registrations"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Send important notifications (confirmations, reminders)"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Improve our services and user experience"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Comply with legal obligations"]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["4. Legal Bases for Processing"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["We process your data based on:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Contract performance:"]
+                      },
+                      " to manage your registration and tournament participation"
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Consent:"]
+                      },
+                      " for marketing communications (you may withdraw at any time)"
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Legitimate interest:"]
+                      },
+                      " to improve our services and prevent fraud"
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Legal compliance:"]
+                      },
+                      " to meet tax and legal obligations"
+                    ]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["5. Sharing Your Information"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["We may share your information with:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Tournament organisers:"]
+                      },
+                      " to manage your participation"
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Payment processors:"]
+                      },
+                      " to handle transactions"
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Service providers:"]
+                      },
+                      " such as email and hosting services"
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Legal authorities:"]
+                      },
+                      " when required by law"
+                    ]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["We do not sell your personal information to third parties."]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["6. Your Rights"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["You have the right to:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Access your personal data"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Rectify inaccurate data"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Request deletion of your data"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Object to processing"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Request data portability"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Withdraw your consent at any time"]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "To exercise these rights, contact us at ",
+                  {
+                    "tag": "a",
+                    "children": ["privacidad@1-padel.com"],
+                    "href": "mailto:privacidad@1-padel.com"
+                  }
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["7. Security"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "We implement technical and organisational measures to protect your data against unauthorised access, loss or alteration. However, no system is completely secure, so we cannot guarantee absolute security."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["8. Data Retention"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "We retain your data while your account is active. After account closure, we may retain certain information for longer periods according to legal requirements or to resolve disputes."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["9. Cookies"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "We use cookies and similar technologies to improve your experience. You can manage your cookie preferences in your browser settings. See our ",
+                  {
+                    "tag": "a",
+                    "children": ["Cookie Policy"],
+                    "href": "/cookies"
+                  },
+                  " for more information."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["10. Changes to This Policy"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "We may update this policy periodically. We will notify you of any significant changes through the platform or by email. We recommend reviewing this page regularly."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["11. Contact"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["If you have questions about this Privacy Policy, contact us at:"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Email: ",
+                  {
+                    "tag": "a",
+                    "children": ["privacidad@1-padel.com"],
+                    "href": "mailto:privacidad@1-padel.com"
+                  }
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                    "
+        ]
+      },
+      "\n                "
+    ],
+    "es": [
+      "\n                    ",
+      {
+        "tag": "h1",
+        "children": ["Política de Privacidad"]
+      },
+      "\n                    ",
+      {
+        "tag": "p",
+        "children": ["Última actualización: 15 de marzo de 2026"]
+      },
+      "\n                    ",
+      {
+        "tag": "div",
+        "children": [
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["1. Introducción"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "En 1-Padel, respetamos tu privacidad y estamos comprometidos a proteger tus datos personales. Esta política describe cómo recopilamos, usamos y compartimos tu información cuando utilizas nuestra plataforma."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["2. Información que Recopilamos"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["Podemos recopilar los siguientes tipos de información:"]
+              },
+              "\n                            ",
+              {
+                "tag": "h3",
+                "children": ["2.1 Información que nos proporcionas directamente:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Nombre y apellidos"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Dirección de email"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Número de teléfono"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Información de perfil (foto, nivel de juego, etc.)"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Preferencias de torneos"]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "h3",
+                "children": ["2.2 Información recopilada automáticamente:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Datos de uso (páginas visitadas, tiempo de sesión)"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Dirección IP y tipo de dispositivo"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Cookies y tecnologías similares"]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "h3",
+                "children": ["2.3 Información de terceros:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      "Si te registras usando Google o Facebook, recibimos información básica de tu perfil (nombre, email)"
+                    ]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["3. Cómo Usamos tu Información"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["Utilizamos tu información para:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Gestionar tu cuenta y registros en torneos"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Procesar pagos y gestionar inscripciones"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      "Enviar notificaciones importantes (confirmaciones, recordatorios)"
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Mejorar nuestros servicios y experiencia de usuario"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Cumplir con obligaciones legales"]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["4. Bases Legales para el Procesamiento"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["Procesamos tus datos basándonos en:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Ejecución de un contrato:"]
+                      },
+                      " Para gestionar tu registro y participación en torneos"
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Consentimiento:"]
+                      },
+                      " Para comunicaciones de marketing (puedes retirarlo en cualquier momento)"
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Interés legítimo:"]
+                      },
+                      " Para mejorar nuestros servicios y prevenir fraudes"
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Cumplimiento legal:"]
+                      },
+                      " Para cumplir con obligaciones fiscales y legales"
+                    ]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["5. Compartir tu Información"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["Podemos compartir tu información con:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Organizadores de torneos:"]
+                      },
+                      " Para gestionar tu participación"
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Procesadores de pago:"]
+                      },
+                      " Para gestionar transacciones"
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Proveedores de servicios:"]
+                      },
+                      " Como servicios de email y hosting"
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Autoridades legales:"]
+                      },
+                      " Cuando sea requerido por ley"
+                    ]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["No vendemos tu información personal a terceros."]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["6. Tus Derechos"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["Tienes derecho a:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Acceder a tus datos personales"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Rectificar datos inexactos"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Solicitar la eliminación de tus datos"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Oponerte al procesamiento"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Solicitar la portabilidad de datos"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Retirar tu consentimiento en cualquier momento"]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Para ejercer estos derechos, contáctanos en ",
+                  {
+                    "tag": "a",
+                    "children": ["privacidad@1-padel.com"],
+                    "href": "mailto:privacidad@1-padel.com"
+                  }
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["7. Seguridad"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Implementamos medidas técnicas y organizativas para proteger tus datos contra acceso no autorizado, pérdida o alteración. Sin embargo, ningún sistema es completamente seguro, por lo que no podemos garantizar la seguridad absoluta."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["8. Retención de Datos"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Conservamos tus datos mientras mantengas una cuenta activa. Después del cierre de cuenta, podemos retener cierta información por períodos más largos según requisitos legales o para resolver disputas."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["9. Cookies"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Utilizamos cookies y tecnologías similares para mejorar tu experiencia. Puedes gestionar tus preferencias de cookies en la configuración de tu navegador. Consulta nuestra ",
+                  {
+                    "tag": "a",
+                    "children": ["Política de Cookies"],
+                    "href": "/cookies"
+                  },
+                  " para más información."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["10. Cambios en esta Política"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Podemos actualizar esta política periódicamente. Te notificaremos cualquier cambio significativo a través de la plataforma o por email. Te recomendamos revisar esta página regularmente."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["11. Contacto"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Si tienes preguntas sobre esta Política de Privacidad, contáctanos en:"
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Email: ",
+                  {
+                    "tag": "a",
+                    "children": ["privacidad@1-padel.com"],
+                    "href": "mailto:privacidad@1-padel.com"
+                  }
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                    "
+        ]
+      },
+      "\n                "
+    ]
+  },
+  "cookies": {
+    "ru": [
+      "\n                    ",
+      {
+        "tag": "h1",
+        "children": ["Политика использования cookie"]
+      },
+      "\n                    ",
+      {
+        "tag": "p",
+        "children": ["Последнее обновление: 15 марта 2026"]
+      },
+      "\n                    ",
+      {
+        "tag": "div",
+        "children": [
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["1. Что такое cookie?"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Cookie — это небольшие текстовые файлы, которые веб-сайты размещают на вашем устройстве для хранения информации о ваших предпочтениях, улучшения работы в браузере и предоставления персонализированных сервисов. Они являются неотъемлемой частью работы интернета и помогают сделать ваш опыт более эффективным."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["2. Типы cookie, которые мы используем"]
+              },
+              "\n                            ",
+              {
+                "tag": "h3",
+                "children": ["2.1 Необходимые cookie"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Эти cookie необходимы для базовой работы сайта. Они позволяют вам перемещаться по сайту и использовать его основные функции, например, доступ к защищённым разделам. Без них сайт не может работать корректно."
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["Примеры использования:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Поддержание вашей сессии"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Запоминание настроек входа"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Защита от мошеннических действий"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Управление корзиной покупок (при наличии)"]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "h3",
+                "children": ["2.2 Аналитические и производительные cookie"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Эти cookie позволяют нам подсчитывать посещения и источники трафика для измерения и улучшения производительности сайта. Они помогают нам понять, какие страницы наиболее и наименее популярны, и как посетители перемещаются по сайту."
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["Мы используем:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Google Analytics:"]
+                      },
+                      " для анализа поведения пользователей и улучшения опыта"
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Агрегированные данные:"]
+                      },
+                      " вся собираемая информация является анонимной и используется только для улучшения сервиса"
+                    ]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "h3",
+                "children": ["2.3 Функциональные cookie"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Эти cookie позволяют сайту запоминать сделанные вами выборы (например, имя пользователя, язык или регион) и предоставлять расширенные персонализированные функции."
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "h3",
+                "children": ["2.4 Маркетинговые и рекламные cookie"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Эти cookie могут устанавливаться на нашем сайте нашими рекламными партнёрами. Они могут использоваться для создания профиля ваших интересов и показа релевантной рекламы на других сайтах."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["3. Cookie третьих сторон"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "На некоторых страницах мы можем использовать сторонние сервисы, которые устанавливают собственные cookie. К ним относятся:"
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Google:"]
+                      },
+                      " для аутентификации и аналитики"
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Facebook:"]
+                      },
+                      " для социальной аутентификации (при наличии)"
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Платёжные системы:"]
+                      },
+                      " для обработки безопасных транзакций"
+                    ]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Мы не контролируем эти cookie и рекомендуем ознакомиться с политиками конфиденциальности соответствующих третьих сторон."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["4. Управление cookie"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["Вы можете управлять настройками cookie несколькими способами:"]
+              },
+              "\n                            ",
+              {
+                "tag": "h3",
+                "children": ["4.1 Через наш баннер"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "При первом посещении нашего сайта мы показываем баннер, позволяющий принять, отклонить или настроить ваши предпочтения по cookie."
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "h3",
+                "children": ["4.2 Через настройки браузера"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["Большинство браузеров позволяют:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Просматривать имеющиеся cookie и удалять их по отдельности"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Блокировать сторонние cookie"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Блокировать cookie с определённых сайтов"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Блокировать все cookie"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Удалять все cookie при закрытии браузера"]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["Инструкции по настройке cookie в популярных браузерах:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "a",
+                        "children": ["Google Chrome"],
+                        "href": "https://support.google.com/chrome/answer/95647"
+                      }
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "a",
+                        "children": ["Mozilla Firefox"],
+                        "href": "https://support.mozilla.org/es/kb/habilitar-y-deshabilitar-cookies-sitios-web-rastrear-preferencias"
+                      }
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "a",
+                        "children": ["Safari"],
+                        "href": "https://support.apple.com/es-es/guide/safari/sfri11471/mac"
+                      }
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "a",
+                        "children": ["Microsoft Edge"],
+                        "href": "https://support.microsoft.com/es-es/windows/eliminar-y-administrar-cookies-168dab11-0753-043d-7c16-ede5947fc64d"
+                      }
+                    ]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["5. Правовая основа"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["Мы используем cookie на основании:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Согласие:"]
+                      },
+                      " для аналитических и маркетинговых cookie"
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Законный интерес:"]
+                      },
+                      " для cookie, необходимых для работы сайта"
+                    ]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Вы можете отозвать своё согласие в любое время, изменив настройки браузера."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["6. Обновления политики"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Мы можем периодически обновлять настоящую Политику cookie в связи с изменениями в используемых нами cookie или по иным операционным, правовым или регуляторным причинам. Рекомендуем регулярно просматривать эту страницу, чтобы быть в курсе изменений."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["7. Контакт"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["Если у вас есть вопросы по нашей Политике cookie, свяжитесь с нами:"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Email: ",
+                  {
+                    "tag": "a",
+                    "children": ["privacidad@1-padel.com"],
+                    "href": "mailto:privacidad@1-padel.com"
+                  }
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                    "
+        ]
+      },
+      "\n                "
+    ],
+    "en": [
+      "\n                    ",
+      {
+        "tag": "h1",
+        "children": ["Cookie Policy"]
+      },
+      "\n                    ",
+      {
+        "tag": "p",
+        "children": ["Last updated: March 15, 2026"]
+      },
+      "\n                    ",
+      {
+        "tag": "div",
+        "children": [
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["1. What are cookies?"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Cookies are small text files that websites place on your device to store information about your preferences, improve your browsing experience and provide personalised services. They are an essential part of how the internet works and help make your experience more efficient."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["2. Types of cookies we use"]
+              },
+              "\n                            ",
+              {
+                "tag": "h3",
+                "children": ["2.1 Necessary cookies"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "These cookies are essential for the basic functioning of the site. They allow you to navigate the site and use its essential features, such as accessing secure areas. Without these cookies, the site cannot function correctly."
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["Examples of use:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Keeping your session active"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Remembering your login preferences"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Protecting against fraudulent activity"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Managing the shopping cart (where applicable)"]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "h3",
+                "children": ["2.2 Analytics and performance cookies"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "These cookies allow us to count visits and traffic sources so we can measure and improve the performance of our site. They help us know which pages are most and least popular, and how visitors move around the site."
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["We use:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Google Analytics:"]
+                      },
+                      " to analyse user behaviour and improve the experience"
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Aggregated data:"]
+                      },
+                      " all collected information is anonymous and used only to improve the service"
+                    ]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "h3",
+                "children": ["2.3 Functionality cookies"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "These cookies allow the site to remember choices you have made (such as your username, language or region) and provide enhanced and more personal features."
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "h3",
+                "children": ["2.4 Marketing and advertising cookies"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "These cookies may be set through our site by our advertising partners. They may be used by those companies to build a profile of your interests and show you relevant ads on other sites."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["3. Third-party cookies"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "On some pages, we may use third-party services that may set their own cookies. These third parties include:"
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Google:"]
+                      },
+                      " for authentication and analytics"
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Facebook:"]
+                      },
+                      " for social authentication (where available)"
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Payment processors:"]
+                      },
+                      " to manage secure transactions"
+                    ]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "We have no control over these cookies, and we recommend reviewing the privacy policies of these third parties for more information."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["4. Cookie management"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["You can manage your cookie preferences in several ways:"]
+              },
+              "\n                            ",
+              {
+                "tag": "h3",
+                "children": ["4.1 Through our banner"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "When you first visit our site, we display a banner that allows you to accept, reject or customise your cookie preferences."
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "h3",
+                "children": ["4.2 Through browser settings"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["Most browsers allow you to:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["View what cookies you have and delete them individually"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Block third-party cookies"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Block cookies from specific sites"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Block all cookies"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Delete all cookies when closing the browser"]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["Links to cookie settings guides for popular browsers:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "a",
+                        "children": ["Google Chrome"],
+                        "href": "https://support.google.com/chrome/answer/95647"
+                      }
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "a",
+                        "children": ["Mozilla Firefox"],
+                        "href": "https://support.mozilla.org/es/kb/habilitar-y-deshabilitar-cookies-sitios-web-rastrear-preferencias"
+                      }
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "a",
+                        "children": ["Safari"],
+                        "href": "https://support.apple.com/es-es/guide/safari/sfri11471/mac"
+                      }
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "a",
+                        "children": ["Microsoft Edge"],
+                        "href": "https://support.microsoft.com/es-es/windows/eliminar-y-administrar-cookies-168dab11-0753-043d-7c16-ede5947fc64d"
+                      }
+                    ]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["5. Legal basis"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["We use cookies based on:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Consent:"]
+                      },
+                      " for analytics and marketing cookies"
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Legitimate interest:"]
+                      },
+                      " for cookies necessary for the functioning of the site"
+                    ]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "You may withdraw your consent at any time by adjusting your browser settings."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["6. Policy updates"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "We may update this Cookie Policy periodically to reflect changes in the cookies we use or for other operational, legal or regulatory reasons. We recommend reviewing this page regularly to stay informed."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["7. Contact"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["If you have questions about our Cookie Policy, contact us at:"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Email: ",
+                  {
+                    "tag": "a",
+                    "children": ["privacidad@1-padel.com"],
+                    "href": "mailto:privacidad@1-padel.com"
+                  }
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                    "
+        ]
+      },
+      "\n                "
+    ],
+    "es": [
+      "\n                    ",
+      {
+        "tag": "h1",
+        "children": ["Política de Cookies"]
+      },
+      "\n                    ",
+      {
+        "tag": "p",
+        "children": ["Última actualización: 15 de marzo de 2026"]
+      },
+      "\n                    ",
+      {
+        "tag": "div",
+        "children": [
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["1. ¿Qué son las cookies?"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Las cookies son pequeños archivos de texto que los sitios web colocan en tu dispositivo para almacenar información sobre tus preferencias, mejorar tu experiencia de navegación y proporcionar servicios personalizados. Son una parte esencial de cómo funciona internet y ayudan a hacer tu experiencia más eficiente."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["2. Tipos de cookies que utilizamos"]
+              },
+              "\n                            ",
+              {
+                "tag": "h3",
+                "children": ["2.1 Cookies necesarias"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Estas cookies son esenciales para el funcionamiento básico del sitio. Te permiten navegar por el sitio y utilizar sus funciones esenciales, como acceder a áreas seguras. Sin estas cookies, el sitio no puede funcionar correctamente."
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["Ejemplos de uso:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Mantener tu sesión iniciada"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Recordar tus preferencias de inicio de sesión"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Proteger contra actividades fraudulentas"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Gestionar el carrito de compras (si aplica)"]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "h3",
+                "children": ["2.2 Cookies de análisis y rendimiento"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Estas cookies nos permiten contar las visitas y fuentes de tráfico para poder medir y mejorar el rendimiento de nuestro sitio. Nos ayudan a saber qué páginas son las más y menos populares, y cómo los visitantes se mueven por el sitio."
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["Utilizamos:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Google Analytics:"]
+                      },
+                      " Para analizar el comportamiento de los usuarios y mejorar la experiencia"
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Información agregada:"]
+                      },
+                      " Toda la información recopilada es anónima y se utiliza solo para mejorar el servicio"
+                    ]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "h3",
+                "children": ["2.3 Cookies de funcionalidad"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Estas cookies permiten que el sitio recuerde las elecciones que has hecho (como tu nombre de usuario, idioma o región) y proporcionan características mejoradas y más personales."
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "h3",
+                "children": ["2.4 Cookies de marketing y publicidad"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Estas cookies pueden ser establecidas a través de nuestro sitio por nuestros socios publicitarios. Pueden ser utilizadas por esas empresas para crear un perfil de tus intereses y mostrarte anuncios relevantes en otros sitios."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["3. Cookies de terceros"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "En algunas páginas, podemos utilizar servicios de terceros que pueden establecer sus propias cookies. Estos terceros incluyen:"
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Google:"]
+                      },
+                      " Para autenticación y análisis"
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Facebook:"]
+                      },
+                      " Para autenticación social (cuando esté disponible)"
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Procesadores de pago:"]
+                      },
+                      " Para gestionar transacciones seguras"
+                    ]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "No tenemos control sobre estas cookies, y te recomendamos revisar las políticas de privacidad de estos terceros para más información."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["4. Gestión de cookies"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["Puedes gestionar tus preferencias de cookies de varias maneras:"]
+              },
+              "\n                            ",
+              {
+                "tag": "h3",
+                "children": ["4.1 A través de nuestro banner"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Cuando visitas nuestro sitio por primera vez, te mostramos un banner que te permite aceptar, rechazar o personalizar tus preferencias de cookies."
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "h3",
+                "children": ["4.2 A través de la configuración del navegador"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": ["La mayoría de los navegadores te permiten:"]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Ver qué cookies tienes y eliminarlas individualmente"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Bloquear cookies de terceros"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Bloquear cookies de sitios específicos"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Bloquear todas las cookies"]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": ["Eliminar todas las cookies al cerrar el navegador"]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Enlaces a guías de configuración de cookies para los navegadores más populares:"
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "a",
+                        "children": ["Google Chrome"],
+                        "href": "https://support.google.com/chrome/answer/95647"
+                      }
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "a",
+                        "children": ["Mozilla Firefox"],
+                        "href": "https://support.mozilla.org/es/kb/habilitar-y-deshabilitar-cookies-sitios-web-rastrear-preferencias"
+                      }
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "a",
+                        "children": ["Safari"],
+                        "href": "https://support.apple.com/es-es/guide/safari/sfri11471/mac"
+                      }
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "a",
+                        "children": ["Microsoft Edge"],
+                        "href": "https://support.microsoft.com/es-es/windows/eliminar-y-administrar-cookies-168dab11-0753-043d-7c16-ede5947fc64d"
+                      }
+                    ]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["5. Base legal"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "De acuerdo con la normativa española y europea (RGPD), utilizamos cookies basándonos en:"
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "ul",
+                "children": [
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Consentimiento:"]
+                      },
+                      " Para cookies de análisis y marketing"
+                    ]
+                  },
+                  "\n                                ",
+                  {
+                    "tag": "li",
+                    "children": [
+                      {
+                        "tag": "strong",
+                        "children": ["Interés legítimo:"]
+                      },
+                      " Para cookies necesarias para el funcionamiento del sitio"
+                    ]
+                  },
+                  "\n                            "
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Puedes retirar tu consentimiento en cualquier momento ajustando la configuración de tu navegador."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["6. Actualizaciones de la política"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Podemos actualizar esta Política de Cookies periódicamente para reflejar cambios en las cookies que utilizamos o por otros motivos operativos, legales o regulatorios. Te recomendamos revisar esta página regularmente para mantenerte informado."
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                        ",
+          {
+            "tag": "section",
+            "children": [
+              "\n                            ",
+              {
+                "tag": "h2",
+                "children": ["7. Contacto"]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Si tienes preguntas sobre nuestra Política de Cookies, contáctanos en:"
+                ]
+              },
+              "\n                            ",
+              {
+                "tag": "p",
+                "children": [
+                  "Email: ",
+                  {
+                    "tag": "a",
+                    "children": ["privacidad@1-padel.com"],
+                    "href": "mailto:privacidad@1-padel.com"
+                  }
+                ]
+              },
+              "\n                        "
+            ]
+          },
+          "\n                    "
+        ]
+      },
+      "\n                "
+    ]
+  }
+}

@@ -5,6 +5,7 @@ import { catalogParams, eventTypes, genders, getCatalog, getClubs, levels } from
 import { ApiError } from '../api/client';
 import { Button } from './Button';
 import { EventCard } from './EventCard';
+import { ReadError } from './SystemState';
 import { StatusView } from './StatusView';
 
 export function Catalogue({ clubId, title }: { clubId?: string; title?: string }) {
@@ -115,16 +116,20 @@ export function Catalogue({ clubId, title }: { clubId?: string; title?: string }
       {query.isPending ? (
         <StatusView tone="loading" title={t('catalog.loading')} text={t('catalog.loadingText')} />
       ) : query.isError ? (
-        <StatusView
-          tone="error"
-          title={t(
-            query.error instanceof ApiError && query.error.status === 400
-              ? 'catalog.invalid'
-              : 'state.errorTitle',
-          )}
-          text={t('catalog.errorText')}
-          action={<Button onClick={() => void query.refetch()}>{t('state.retry')}</Button>}
-        />
+        query.error instanceof ApiError && query.error.status === 400 ? (
+          <StatusView
+            tone="error"
+            title={t(
+              query.error instanceof ApiError && query.error.status === 400
+                ? 'catalog.invalid'
+                : 'state.errorTitle',
+            )}
+            text={t('catalog.errorText')}
+            action={<Button onClick={() => void query.refetch()}>{t('state.retry')}</Button>}
+          />
+        ) : (
+          <ReadError error={query.error} retry={() => void query.refetch()} />
+        )
       ) : (
         <>
           <p className="catalog-count" role="status" aria-live="polite">
