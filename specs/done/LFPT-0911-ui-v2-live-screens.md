@@ -1,7 +1,7 @@
 # LFPT-0911: Feature frontend UI v2 — live-экраны King of Court, Americano и Team Playoff
 
 ## Статус
-approved — блок #903 → #911 подтверждён пользователем 2026-11-11.
+done
 
 ## Источник
 Напрямую из [issue #911](https://github.com/UstinKO/padel-core-service/issues/911). Фундамент #827 и системные страницы #912 влиты. Интеграцию блокирует только backend #903; он реализуется первым.
