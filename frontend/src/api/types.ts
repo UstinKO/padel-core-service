@@ -19,4 +19,7 @@ export interface ApiProblem {
   detail: string;
   instance: string;
   code: string;
+  fieldErrors?: { field: string; code: string; message: string }[];
+  retryAfter?: number;
+  blockedUntil?: string;
 }

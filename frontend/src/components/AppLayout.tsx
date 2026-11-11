@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
+import { AccountNav } from './AccountNav';
 import { LanguagePicker } from './LanguagePicker';
 
 export function AppLayout() {
@@ -25,6 +26,7 @@ export function AppLayout() {
             <NavLink to="/clubs">{t('clubs.title')}</NavLink>
             <NavLink to="/components">{t('nav.components')}</NavLink>
           </nav>
+          <AccountNav />
           <LanguagePicker />
         </div>
       </header>
