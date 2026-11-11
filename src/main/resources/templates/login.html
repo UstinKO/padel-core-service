@@ -5,7 +5,7 @@
         ? @environment.getActiveProfiles()[0]
         : 'default'}">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="1-Padel - Inicia sesión en la plataforma de torneos de pádel más completa. Accede a tu cuenta para gestionar tus inscripciones.">
     <meta name="keywords" content="pádel, login, iniciar sesión, torneos, 1-padel">
     <meta name="author" content="1-Padel">
@@ -26,39 +26,23 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/auth-entry.css}">
     <th:block th:replace="~{fragments/analytics :: ga4}"></th:block>
     <script th:src="@{/js/registration-tracking.js}" defer></script>
     <th:block th:replace="~{fragments/analytics :: cookie-consent}"></th:block>
 </head>
-<body class="auth-page-simple">
-<header class="header">
-    <div class="container">
-        <nav class="navbar">
-            <a href="/" class="navbar-brand">
-                <img th:src="@{/images/1.svg}" alt="1-Padel Logo" class="navbar-logo" width="40" height="40">
-                <span class="navbar-brand-text">1-<span class="brand-highlight">PADEL</span></span>
-            </a>
-            <div class="navbar-auth">
-                <a href="/players/registro" class="btn btn-primary-sm">
-                    <i class="fas fa-user-plus"></i>
-                    <span th:text="#{login.btn.register}">Registrarse</span>
-                </a>
-            </div>
-        </nav>
-    </div>
-</header>
+<body class="auth-page-simple auth-entry">
+<header th:replace="~{fragments/auth-entry :: header('/login', ${tournamentId})}"></header>
 
 <main class="auth-main-simple">
     <div class="container">
         <div class="auth-container">
             <div class="auth-card">
                 <div class="auth-card-header">
-                    <h2 class="auth-card-title" th:text="#{login.heading}">Iniciar sesión</h2>
-                    <p class="auth-card-subtitle">
-                        <span th:text="#{login.no_account}">¿No tienes cuenta?</span>
-                        <a href="/players/registro" class="auth-link" th:text="#{login.register_free}">Regístrate gratis</a>
-                    </p>
+                    <h1 class="auth-card-title" th:text="#{login.heading}">Iniciar sesión</h1>
                 </div>
+                <div th:replace="~{fragments/auth-entry :: google(${tournamentId})}"></div>
+                <p class="auth-entry-divider" th:text="#{auth.entry.login.email}">o iniciá sesión con email</p>
 
                 <form th:action="@{/login}" method="post" class="auth-form">
                     <input type="hidden" name="tournamentId" th:if="${tournamentId != null}" th:value="${tournamentId}">
@@ -137,7 +121,7 @@
                             <input type="email" id="username" name="username"
                                    class="form-control"
                                    placeholder="tu@email.com"
-                                   required autofocus
+                                   required autocomplete="username"
                                    th:value="${session.username}">
                             <i class="fas fa-envelope input-icon"></i>
                         </div>
@@ -152,7 +136,7 @@
                             <input type="password" id="password" name="password"
                                    class="form-control"
                                    th:placeholder="#{login.field.password.placeholder}"
-                                   required>
+                                   required autocomplete="current-password">
                             <i class="fas fa-lock input-icon"></i>
                             <button type="button" class="toggle-password" data-target="password"
                                     th:attr="aria-label=#{login.field.password.toggle}">
@@ -178,23 +162,11 @@
                         <span th:text="#{login.btn.submit}">Iniciar sesión</span>
                     </button>
 
-                    <div class="auth-divider" style="text-align: center; margin: 1.5rem 0 0; color: var(--color-text-light);">
-                        <small th:text="#{login.or_continue}">o continúa con</small>
-                    </div>
-
-                    <div class="auth-social" style="display: flex; gap: 1rem; justify-content: center; margin-top: 1rem;">
-                        <a th:href="${tournamentId != null} ? @{/oauth2/authorization/google(tournamentId=${tournamentId})} : @{/oauth2/authorization/google}"
-                           class="btn btn-outline" style="flex: 1;">
-                            <i class="fab fa-google"></i> Google
-                        </a>
-                    </div>
                 </form>
-            </div>
-
-            <div class="auth-info" style="text-align: center; margin-top: 1.5rem; color: var(--color-text-light);">
-                <small>
-                    <i class="fas fa-shield-alt"></i> <span th:text="#{login.security_note}">Tus datos están seguros con nosotros</span>
-                </small>
+                <p class="auth-entry-switch">
+                    <span th:text="#{login.no_account}">¿No tienes cuenta?</span>
+                    <a th:href="@{/players/registro}" class="auth-link" th:text="#{login.register_free}">Regístrate gratis</a>
+                </p>
             </div>
         </div>
     </div>

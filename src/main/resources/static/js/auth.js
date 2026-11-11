@@ -10,6 +10,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (passwordInput) {
                 const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
                 passwordInput.setAttribute('type', type);
+                if (this.hasAttribute('aria-pressed')) {
+                    this.setAttribute('aria-pressed', String(type === 'text'));
+                }
 
                 const icon = this.querySelector('i');
                 icon.classList.toggle('fa-eye');
@@ -150,7 +153,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Smooth fade-in animation
-    const authCard = document.querySelector('.auth-card');
+    const authCard = document.querySelector('body:not(.auth-entry) .auth-card');
     if (authCard) {
         authCard.style.opacity = '0';
         authCard.style.transform = 'translateY(20px)';
