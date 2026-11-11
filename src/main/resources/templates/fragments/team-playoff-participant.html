@@ -1,0 +1,14 @@
+<th:block xmlns:th="http://www.thymeleaf.org" th:fragment="partner(match, side)"
+          th:with="name=${side == 1 ? match.team1Player2Name : match.team2Player2Name},
+                   playerId=${side == 1 ? match.team1Player2Id : match.team2Player2Id},
+                   captainId=${side == 1 ? match.team1Player1Id : match.team2Player1Id}">
+    <div class="team-sub" th:if="${name != null}"
+         th:with="canLink=${match.isCompleted and match.team1Games != null and match.team2Games != null
+                          and captainId != null and playerId == null and !#strings.isEmpty(#strings.trim(name))}">
+        <a th:if="${canLink}"
+           th:href="@{/tournaments/team-playoff/admin/matches/{id}/participant/{side}(id=${match.id},side=${side})}"
+           th:attr="aria-label=#{admin.playoff.participant.open(${name})}"
+           th:text="${name}" style="text-decoration:underline"></a>
+        <span th:unless="${canLink}" th:text="${name}"></span>
+    </div>
+</th:block>

@@ -2,6 +2,7 @@ package com.padle.core.padelcoreservice.service;
 
 import com.padle.core.padelcoreservice.dto.PlayerResponseDto;
 import com.padle.core.padelcoreservice.dto.RegistroRequestDto;
+import com.padle.core.padelcoreservice.exception.InvalidStateException;
 import com.padle.core.padelcoreservice.mapper.PlayerMapper;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.Tournament;
@@ -362,6 +363,21 @@ public class PlayerService {
                 .orElseGet(() -> crearJugadorInvitado(nombre, apellido, telefono));
     }
 
+    @Transactional
+    public PlayerPadel crearInvitadoParaPartidoHistorico(String nombre, String apellido) {
+        String firstName = nombre.strip().replaceAll("\\s+", " ");
+        String lastName = apellido.strip().replaceAll("\\s+", " ");
+        if (firstName.isBlank() || firstName.length() > 100 || lastName.length() > 100) {
+            throw new InvalidStateException("admin.playoff.participant.invalid_name");
+        }
+        String normalized = playerRepository.normalizeHistoricalGuestName((firstName + " " + lastName).strip());
+        playerRepository.acquireContactLock("historical-guest:" + normalized);
+        if (playerRepository.existsByHistoricalGuestName(normalized)) {
+            throw new InvalidStateException("admin.playoff.participant.duplicate_name");
+        }
+        return crearJugadorInvitado(firstName, lastName, null);
+    }
+
     private PlayerPadel crearJugadorInvitado(String nombre, String apellido, String telefono) {
         String email = "guest." + UUID.randomUUID() + "@1padel.guest";
         PlayerPadel player = PlayerPadel.builder()
@@ -379,7 +395,7 @@ public class PlayerService {
                 .nivelJugador(Nivel.SIN_ESPECIFICAR)
                 .build();
         PlayerPadel saved = playerRepository.save(player);
-        log.info("Jugador invitado creado al agregar equipo manualmente: ID={}", saved.getId());
+        log.info("Создан профиль гостевого игрока: ID={}", saved.getId());
         return saved;
     }
 

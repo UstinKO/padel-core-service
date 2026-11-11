@@ -92,6 +92,15 @@ public interface PlayerRepository extends JpaRepository<PlayerPadel, Long> {
     @Query(value = "SELECT pg_advisory_xact_lock(hashtext(:key))", nativeQuery = true)
     void acquireContactLock(@Param("key") String key);
 
+    @Query(value = """
+            SELECT EXISTS (SELECT 1 FROM player_padel_db p
+              WHERE lower(unaccent(regexp_replace(trim(concat_ws(' ', p.nombre, p.apellido)), '\\s+', ' ', 'g'))) = :name)
+            """, nativeQuery = true)
+    boolean existsByHistoricalGuestName(@Param("name") String name);
+
+    @Query(value = "SELECT lower(unaccent(:name))", nativeQuery = true)
+    String normalizeHistoricalGuestName(@Param("name") String name);
+
     // Поиск активных игроков по имени/фамилии/телефону/email для формы «Добавить команду»
     // Team Playoff — в отличие от searchPartnerCandidates, не исключает игроков с уже
     // активной регистрацией на турнир (и не требует tournamentId), а также ищет
@@ -99,6 +108,7 @@ public interface PlayerRepository extends JpaRepository<PlayerPadel, Long> {
     @Query("SELECT p FROM PlayerPadel p WHERE p.activo = true " +
            "AND (LOWER(p.nombre) LIKE LOWER(CONCAT('%', :query, '%')) " +
            "  OR LOWER(p.apellido) LIKE LOWER(CONCAT('%', :query, '%')) " +
+           "  OR LOWER(CONCAT(p.nombre, ' ', p.apellido)) LIKE LOWER(CONCAT('%', :query, '%')) " +
            "  OR LOWER(p.email) LIKE LOWER(CONCAT('%', :query, '%')) " +
            "  OR p.telefono LIKE CONCAT('%', :query, '%')) " +
            "ORDER BY p.nombre, p.apellido")

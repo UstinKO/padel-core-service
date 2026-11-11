@@ -617,8 +617,7 @@
                                     <div class="team-left">
                                         <div class="team-name"
                                              th:text="${match.team1Number != null ? '№' + match.team1Number + ' ' + match.team1Player1Name : match.team1Player1Name}">Jugador 1</div>
-                                        <div class="team-sub" th:if="${match.team1Player2Name != null}"
-                                             th:text="${match.team1Player2Name}">Jugador 2</div>
+                                        <div th:replace="~{fragments/team-playoff-participant :: partner(${match}, 1)}"></div>
                                         <span th:if="${match.team1MatchOrdinal != null}" class="info-pill"
                                               th:classappend="${match.team1MatchOrdinal == 1} ? 'badge-m1' : 'badge-m2'"
                                               style="font-size:.65rem;padding:.1rem .4rem"
@@ -665,8 +664,7 @@
                                     <div class="team-right">
                                         <div class="team-name"
                                              th:text="${match.team2Number != null ? '№' + match.team2Number + ' ' + match.team2Player1Name : match.team2Player1Name}">Jugador 3</div>
-                                        <div class="team-sub" th:if="${match.team2Player2Name != null}"
-                                             th:text="${match.team2Player2Name}">Jugador 4</div>
+                                        <div th:replace="~{fragments/team-playoff-participant :: partner(${match}, 2)}"></div>
                                         <span th:if="${match.team2MatchOrdinal != null}" class="info-pill"
                                               th:classappend="${match.team2MatchOrdinal == 1} ? 'badge-m1' : 'badge-m2'"
                                               style="font-size:.65rem;padding:.1rem .4rem"
@@ -785,8 +783,7 @@
                             <div class="team-left">
                                 <div th:if="${match.team1Player1Name != null}" class="team-name"
                                      th:text="${match.team1Number != null ? '№' + match.team1Number + ' ' + match.team1Player1Name : match.team1Player1Name}">TBD</div>
-                                <div th:if="${match.team1Player2Name != null}" class="team-sub"
-                                     th:text="${match.team1Player2Name}">TBD</div>
+                                <div th:replace="~{fragments/team-playoff-participant :: partner(${match}, 1)}"></div>
                                 <div th:if="${match.team1Player1Name == null}" class="tbd"
                                      th:text="#{admin.playoff.bracket.tbd}">TBD</div>
                                 <button th:if="${not match.isCompleted and match.playoffPlayStarted != true and match.team1Player1Name != null and match.team2Player1Name != null}"
@@ -833,8 +830,7 @@
                             <div class="team-right">
                                 <div th:if="${match.team2Player1Name != null}" class="team-name"
                                      th:text="${match.team2Number != null ? '№' + match.team2Number + ' ' + match.team2Player1Name : match.team2Player1Name}">TBD</div>
-                                <div th:if="${match.team2Player2Name != null}" class="team-sub"
-                                     th:text="${match.team2Player2Name}">TBD</div>
+                                <div th:replace="~{fragments/team-playoff-participant :: partner(${match}, 2)}"></div>
                                 <div th:if="${match.team2Player1Name == null}" class="tbd"
                                      th:text="#{admin.playoff.bracket.tbd}">TBD</div>
                                 <button th:if="${not match.isCompleted and match.playoffPlayStarted != true and match.team1Player1Name != null and match.team2Player1Name != null}"
