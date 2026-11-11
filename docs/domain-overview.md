@@ -150,6 +150,7 @@
 | Метод | URL | Тип | Auth | Описание |
 |-------|-----|-----|------|----------|
 | `GET` | `/admin/players` | HTML | ADMIN | Список всех игроков с фильтрацией. |
+| `POST` | `/admin/players/guests` | Form → redirect | SUPER_ADMIN | Создать гостевую карточку по имени без заявки на турнир. |
 | `GET` | `/admin/players/{id}` | HTML | ADMIN | Детальный профиль игрока: данные, регистрации, история. |
 | `POST` | `/admin/players/{id}/nivel` | Form → redirect / JSON | SUPER_ADMIN | Задать уровень игрока (`Nivel`; «пусто» = `SIN_ESPECIFICAR`). Со списка игроков — fetch с `X-Requested-With` (автосейв без перезагрузки, LFPT-218). |
 | `POST` | `/admin/players/{id}/guest-credentials` | JSON | SUPER_ADMIN | Выдать/перевыпустить временный пароль гостевого аккаунта (issue #217). |

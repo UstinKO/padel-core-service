@@ -123,6 +123,39 @@ class HistoricalParticipantIntegrationTest {
                 .query(Long.class).single()).isEqualTo(1);
     }
 
+    @Test
+    void standaloneGuestRequiresSuperAdminAndCreatesOnlyOneProfile() throws Exception {
+        String path = "/admin/players/guests";
+        var admin = auth(OwnerRole.SUPER_ADMIN, null);
+        var clubAdmin = auth(OwnerRole.CLUB_ADMIN, -1L);
+        long registrationsBefore = jdbc.sql("SELECT count(*) FROM tournament_registrations_db")
+                .query(Long.class).single();
+
+        mvc.perform(post(path).with(clubAdmin).with(csrf()).param("firstName", "Rosa"))
+                .andExpect(redirectedUrl("/error/403"));
+        mvc.perform(post(path).with(admin).param("firstName", "Rosa"))
+                .andExpect(redirectedUrl("/error/403"));
+
+        var response = mvc.perform(post(path).with(admin).with(csrf()).locale(Locale.ENGLISH)
+                        .param("firstName", "Rosa").param("lastName", "Standalone Archive"))
+                .andExpect(status().is3xxRedirection())
+                .andReturn().getResponse();
+        String profileUrl = response.getRedirectedUrl();
+        assertThat(profileUrl).matches("/admin/players/\\d+");
+        long id = Long.parseLong(profileUrl.substring("/admin/players/".length()));
+        PlayerPadel guest = players.findById(id).orElseThrow();
+        assertThat(PlayerPadel.isGuestEmail(guest.getEmail())).isTrue();
+        assertThat(guest.getTelefono()).isNull();
+
+        mvc.perform(post(path).with(admin).with(csrf()).locale(Locale.ENGLISH)
+                        .param("firstName", "ROSA").param("lastName", "Standalone Archive"))
+                .andExpect(redirectedUrl("/admin/players")).andExpect(flash().attributeExists("guestError"));
+        assertThat(jdbc.sql("SELECT count(*) FROM player_padel_db WHERE apellido = 'Standalone Archive'")
+                .query(Long.class).single()).isEqualTo(1);
+        assertThat(jdbc.sql("SELECT count(*) FROM tournament_registrations_db")
+                .query(Long.class).single()).isEqualTo(registrationsBefore);
+    }
+
     private org.springframework.test.web.servlet.request.RequestPostProcessor auth(OwnerRole role, Long clubId) {
         Owner owner = Owner.builder().id(99001L).firstName("Admin").role(role).clubId(clubId).build();
         return authentication(new UsernamePasswordAuthenticationToken(owner, null, owner.getAuthorities()));
