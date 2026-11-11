@@ -26,7 +26,7 @@ test('preview shell renders session and navigation', async ({ page }) => {
   await page.goto('/preview/foundation');
 
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-  await expect(page.getByText('Preview Admin')).toBeVisible();
+  await expect(page.locator('#main-content').getByText('Preview Admin')).toBeVisible();
   await expect(page.getByText('ROLE_SUPER_ADMIN')).toBeVisible();
   await page
     .getByRole('link', { name: /Componentes|Компоненты|Components/ })

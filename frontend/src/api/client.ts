@@ -69,8 +69,16 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
   });
 
   if (!response.ok) {
-    const problem = await readProblem(response);
-    if (response.status === 401) window.dispatchEvent(new Event('one-padel:session-expired'));
+    let problem = await readProblem(response);
+    if (response.status === 429) {
+      const retry = Number(response.headers.get('Retry-After'));
+      if (problem && Number.isFinite(retry) && retry > 0)
+        problem = { ...problem, retryAfter: retry };
+    }
+    if (response.status === 401 && url.pathname !== '/login')
+      window.dispatchEvent(
+        new CustomEvent('one-padel:session-expired', { detail: { path: url.pathname } }),
+      );
     throw new ApiError(response.status, problem);
   }
 

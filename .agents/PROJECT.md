@@ -604,3 +604,7 @@ React #907: `EventPage`, `ClubsPage`, `ClubPage`; типы/URL-проверки 
 ### Аккаунт UI v2
 
 `AccountController` / `AccountService` / `AccountMapper`: регистрация, свой профиль, смена/reset пароля; `PublicAccountConfigController`: публичная конфигурация. Spring `/login` и `/logout` отвечают JSON по Accept, mobile JWT сохранён. Методозависимый RateLimitFilter не эскалирует обычную валидацию. [Контракт](../docs/endpoints/account.md).
+
+### React: аккаунт UI v2
+
+`AccountPage` / `AccountNav` / `Captcha`: реальные формы входа, регистрации, reset и профиля под `/preview/**`. `frontend/src/api/account.ts` — типизированный session/profile контракт, разделение кэша профиля по ID и обновление вкладок. Ручной язык синхронизирован с серверной cookie lang. Production preview остаётся SUPER_ADMIN; публичные auth-маршруты не переключены.
