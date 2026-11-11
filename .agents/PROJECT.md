@@ -91,6 +91,7 @@ docker compose up -d
 | `GET /wa-info` | — (redirect) | `MarketingRedirectController` — главная со списком турниров; `whatsapp / message`, кампания `whatsapp_group` |
 | `GET /wa-broadcast` | — (redirect) | `MarketingRedirectController` — календарь на испанском, `whatsapp / messaging`, кампания `whatsapp_broadcast` |
 | `GET /threads` | — (redirect) | `MarketingRedirectController` — главная со списком турниров; `threads / social`, кампания `threads_profile` |
+| `GET /vamosplan` | — (redirect) | `MarketingRedirectController` — главная со списком турниров с метками `vamosplan / referral` и кампанией `partner_listing` |
 | `GET /app/` (`/app` → редирект) | `static/app/index.html` (forward) | `MobileAppViewController` — веб-версия клиента 1Padel.App, анонимно; сюда же возвращается Google-вход из приложения (LFPT-0637, LFPT-0643) |
 | `GET\|HEAD /web/**` | `static/web/**` | Статика React UI v2; shell `no-cache`, versioned assets `immutable`, независимо от Expo `/app/**` |
 | `GET\|HEAD /preview`, `/preview/**` | `static/web/index.html` (forward) | Закрытый preview React, только `ROLE_SUPER_ADMIN`; production routes включаются явным `app.spa.routes`, пустым по умолчанию |
