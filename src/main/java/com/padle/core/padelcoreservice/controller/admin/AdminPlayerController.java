@@ -2,6 +2,7 @@ package com.padle.core.padelcoreservice.controller.admin;
 
 import com.padle.core.padelcoreservice.dto.PlayerResponseDto;
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
+import com.padle.core.padelcoreservice.exception.InvalidStateException;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.enums.Nivel;
@@ -15,6 +16,7 @@ import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -69,6 +71,22 @@ public class AdminPlayerController {
         model.addAttribute("playersWithRegistrations", playerService.getPlayerIdsWithRegistrations());
 
         return "admin/players/list";
+    }
+
+    @PostMapping("/guests")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public String createGuest(@RequestParam(defaultValue = "") String firstName,
+                              @RequestParam(defaultValue = "") String lastName,
+                              RedirectAttributes redirectAttributes) {
+        try {
+            PlayerPadel guest = playerService.crearInvitadoParaPartidoHistorico(firstName, lastName);
+            return "redirect:/admin/players/" + guest.getId();
+        } catch (InvalidStateException e) {
+            redirectAttributes.addFlashAttribute("guestError", msg(e.getMessage()));
+            redirectAttributes.addFlashAttribute("guestFirstName", firstName);
+            redirectAttributes.addFlashAttribute("guestLastName", lastName);
+            return "redirect:/admin/players";
+        }
     }
 
     @GetMapping("/{id}")
