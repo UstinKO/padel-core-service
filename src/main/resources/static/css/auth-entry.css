@@ -157,10 +157,15 @@
     min-height: 46px;
     color: #241711;
     background: var(--color-primary);
+    transform: none;
 }
 
 .auth-entry .auth-form .btn-primary:hover {
     background: var(--color-primary-light);
+}
+
+.auth-entry .auth-form .form-control {
+    font-size: 1rem;
 }
 
 .auth-entry-register .auth-form {
@@ -269,6 +274,19 @@
 
 .auth-entry-captcha {
     overflow: auto;
+}
+
+@media (max-width: 640px) {
+    .auth-entry .auth-main-simple {
+        align-items: flex-start;
+    }
+
+    .auth-entry .form-options {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 12px;
+    }
 }
 
 @media (max-width: 480px) {
