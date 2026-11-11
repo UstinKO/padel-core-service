@@ -767,3 +767,7 @@ CLUB_ADMIN и PLAYER получают 403. Гость не получает да
 ### LFPT-0903: публичные live-снимки
 
 GET/HEAD `/api/public/events/{eventId}/live` и `/api/public/king-of-court/{kingId}/live` разрешены анонимно, с проверкой active/не BORRADOR, no-store и безопасным DTO для всех ролей. [Контракт, ошибки, пакетное чтение и STOMP](endpoints/public-live.md). В `/topic/public/live/{eventId}` только invalidation после commit; wildcard SUBSCRIBE и клиентский SEND в публичный topic запрещены. Мутации и мобильный API прежние; preview остаётся SUPER_ADMIN.
+
+## Авторизация интеграционного preview
+
+Профиль `preview` используется только в [отдельном закрытом контуре](ui-v2-preview.md). Basic Auth на nginx проверяет любой входящий запрос до приложения. Далее действуют обычные form login, session, CSRF и роли; доступ к `/preview/**` остаётся только у SUPER_ADMIN. Внешний OAuth выключен, его маршруты не выполняют перехода к провайдеру. Управление seed/reset требует SUPER_ADMIN и CSRF, внешний редирект утилиты управления запрещён. Доступы генерируются локально и в Git не попадают.

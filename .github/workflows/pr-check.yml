@@ -104,6 +104,25 @@ jobs:
           python3 .github/bin/check-agent-migration.py
           python3 -m unittest discover -s automation/telegram-relay -p 'test_*.py'
           python3 -m unittest discover -s automation/codex-worker -p 'test_*.py'
+          python3 -m unittest discover -s automation/ui-preview -p 'test_*.py'
+
+      - name: Check isolated UI v2 environment
+        env:
+          PLAYWRIGHT_MODULE_PATH: ${{ github.workspace }}/frontend/node_modules/@playwright/test/index.mjs
+        run: |
+          target/frontend-toolchain/node/node frontend/node_modules/@playwright/test/cli.js install chromium
+          python3 automation/ui-preview/preview.py init
+          python3 automation/ui-preview/preview.py config
+          python3 automation/ui-preview/preview.py build
+          python3 automation/ui-preview/preview.py up
+          python3 automation/ui-preview/check.py
+
+      - name: Stop isolated UI v2 environment
+        if: always()
+        run: |
+          if [ -f automation/ui-preview/runtime/state.json ]; then
+            python3 automation/ui-preview/preview.py stop
+          fi
 
   browser-marketing:
     needs: build

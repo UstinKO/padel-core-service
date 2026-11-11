@@ -1,0 +1,64 @@
+spring:
+  config:
+    import: configtree:/run/secrets/
+  datasource:
+    url: jdbc:postgresql://preview-db:5432/padel_ui_v2_preview
+    username: preview
+    hikari:
+      maximum-pool-size: 4
+      minimum-idle: 0
+  mail:
+    host: preview-mail
+    port: 1025
+    username: ''
+    password: ''
+    properties:
+      mail.smtp:
+        auth: false
+        starttls.enable: false
+        starttls.required: false
+  security.oauth2.client.registration.google:
+    client-id: preview-disabled
+    client-secret: preview-disabled
+
+app:
+  scheduling.enabled: false
+  auth.google-enabled: false
+  spa.routes: []
+  analytics:
+    ga4-id: ''
+    clarity-id: ''
+    meta:
+      enabled: false
+      pixel-id: ''
+      access-token: ''
+  email:
+    from: preview@example.test
+    support-address: preview@example.test
+  admin-email: preview-admin@example.test
+telegram:
+  enabled: false
+  bot-token: ''
+  chat-id: ''
+pipeline.shared-secret: ''
+recaptcha:
+  enabled: false
+  site-key: preview-disabled
+  secret-key: preview-disabled
+disposable-email-domains:
+  checkers:
+    daily-updated-domains: false
+    reload.enabled: false
+logging:
+  config: classpath:logback-preview.xml
+  loki.enabled: false
+management:
+  endpoints.web.exposure.include: health
+  endpoint.health:
+    show-details: never
+    probes.enabled: true
+    group:
+      readiness.include: readinessState,db
+      liveness.include: livenessState
+  health.mail.enabled: false
+  prometheus.metrics.export.enabled: false

@@ -126,3 +126,6 @@ SITE_KEY, SECRET_KEY
 | Deploy | Push в `master` → GitHub Actions → Docker |
 
 Измерение рекламы: [Meta — события, согласие, атрибуция и CAPI](endpoints/meta-marketing.md).
+
+- [Закрытый тестовый контур UI v2](ui-v2-preview.md) — локальный запуск, синтетический seed, изоляция, проверка и отключение.
+- [Диагностика и reset preview](endpoints/ui-preview.md) — контракт только для SUPER_ADMIN закрытого контура.

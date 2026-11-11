@@ -1,0 +1,1 @@
+org.springframework.boot.EnvironmentPostProcessor=com.padle.core.padelcoreservice.preview.PreviewEnvironmentGuard

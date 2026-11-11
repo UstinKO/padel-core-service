@@ -629,3 +629,7 @@ GET/HEAD `/api/public/events/{eventId}/live` и `/api/public/king-of-court/{king
 ### История отмен — LFPT-0900
 
 Мягкая отмена использует RegistrationCancellationService/CancellationHistoryRepository: отдельное событие, участники и cancellationVersion. История сохраняется при повторной записи; batch-чтение для своего игрока или управляемого турнира проходит проверку доступа. Существующие сроки, PairTerms, оплата и очередь сохраняются. [Модель, права, повтор и ограничения старых запросов](../docs/endpoints/registration-cancellation.md). Два optional поля старых путей: If-Registration-Version для player cancel/cancel-double и comment для организаторской отмены. Новых REST-маршрутов кабинета нет; они остаются #902.
+
+### Закрытый контур UI v2
+
+Профиль `preview`, пакет `preview/` и `automation/ui-preview/` создают отдельную локальную среду с синтетическими данными, gateway Basic Auth, изолированной PostgreSQL и SMTP-приёмником. Ранние проверки конфигурации/UUID-маркера выполняются до миграций. `SchedulingConfiguration` сохраняет scheduling по умолчанию и отключает его только явным `app.scheduling.enabled=false`. Контракты диагностики/reset: [docs/endpoints/ui-preview.md](../docs/endpoints/ui-preview.md), запуск/проверка/остановка: [docs/ui-v2-preview.md](../docs/ui-v2-preview.md). Production SPA allowlist не включается.
