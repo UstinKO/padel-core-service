@@ -36,3 +36,14 @@ destination — только проверенный same-origin относите
 Настройка `app.auth.google-enabled` управляет отображением публичной кнопки; для изолированного локального теста задаётся false, production по умолчанию true.
 
 Для legal/system frontend сервер сохраняет HTTP-статус preview deep link: неизвестный route — 404, `/preview/error/401`, `/403`, `/429`, `/503` — соответствующий статус, offline — 503. Legal preview содержит canonical на действующий публичный URL. Все preview/error страницы noindex; известные auth-маршруты по-прежнему используют SPA, production allowlist не меняется.
+
+## Подтверждение гостевого профиля
+
+| Метод | URL | Доступ | Контракт |
+|---|---|---|---|
+| POST | `/api/players/me/guest-profile-claims` | Игрок с обычным аккаунтом + CSRF | `phone` → 201, `reference` и `whatsappUrl`. Ответ одинаков для номера с гостем и без него |
+| GET | `/api/admin/guest-profile-claims/{reference}` | ORGANIZER / SUPER_ADMIN | Целевые `accountId`, `accountEmail` и признак `approved`. Номер телефона в ответ не входит |
+| POST | `/api/admin/guest-profile-claims/{reference}/approve` | ORGANIZER / SUPER_ADMIN + CSRF | `whatsappSenderPhone` → `playerId`. Номер сверяется с заявкой и профилем, заявки живут 7 дней |
+| POST | `/api/admin/players/{guestId}/activate-guest-profile` | ORGANIZER / SUPER_ADMIN + CSRF | `whatsappSenderPhone` и `email` → прежний `playerId`. Игрок самостоятельно запускает восстановление пароля |
+
+Для занятого телефона регистрация и обновление контакта возвращают 409 `PHONE_IN_USE` и официальный `whatsappUrl` без данных другого игрока. Устаревшая заявка возвращает 404 `GUEST_CLAIM_NOT_FOUND`. При пересечении историй, неоднозначном номере или конфликте почты возвращается типизированная ошибка `GUEST_CLAIM_*`. Операции привязки не посылают коды и не меняют статус участия.
