@@ -40,6 +40,11 @@
             <span th:text="${errorMessage}">Error en la operación</span>
         </div>
 
+        <div th:if="${playerNameUpdated}" class="alert alert-success" role="status"
+             th:text="#{admin.players.details.name.updated}">Nombre guardado.</div>
+        <div th:if="${playerNameInvalid}" class="alert alert-danger" role="alert"
+             th:text="#{admin.players.details.name.invalid}">Ingresa un nombre y usa hasta 100 caracteres por campo.</div>
+
         <!-- Cabecera del perfil -->
         <div class="player-profile-header">
             <div class="player-profile-avatar">
@@ -67,10 +72,24 @@
                 </div>
                 <div class="admin-card-body">
                     <div class="info-rows">
-                        <div class="info-row">
+                        <div class="info-row" th:unless="${isSuperAdmin}">
                             <span class="info-label" th:text="#{admin.players.details.field.fullname} + ':'">Nombre completo:</span>
                             <span class="info-value" th:text="${player.nombreCompleto}">Juan Pérez</span>
                         </div>
+                        <form th:if="${isSuperAdmin}" th:action="@{/admin/players/{id}/name(id=${player.id})}" method="post">
+                            <div class="form-group">
+                                <label for="player-first-name" th:text="#{admin.players.details.name.first}">Nombre</label>
+                                <input id="player-first-name" name="firstName" class="form-control" type="text"
+                                       th:value="${player.nombre}" required maxlength="100">
+                            </div>
+                            <div class="form-group">
+                                <label for="player-last-name" th:text="#{admin.players.details.name.last}">Apellido</label>
+                                <input id="player-last-name" name="lastName" class="form-control" type="text"
+                                       th:value="${player.apellido}" maxlength="100">
+                            </div>
+                            <button type="submit" class="btn btn-sm btn-primary"
+                                    th:text="#{admin.players.details.name.save}">Guardar nombre</button>
+                        </form>
                         <div class="info-row">
                             <span class="info-label" th:text="#{admin.common.col.email} + ':'">Email:</span>
                             <span class="info-value" th:text="${player.email}">juan@email.com</span>
