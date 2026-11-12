@@ -524,7 +524,8 @@ Email Prometheus-метрики: `email_daily`, `email_daily_limit`, `email_sent
 
 ## Deployment
 
-Push в `master` запускает `.github/workflows/deploy.yml`: сборка JAR → SCP на сервер в `/opt/padel-app/temp/` → пересборка Docker-образа (`docker compose build --no-cache padel-app`) → перезапуск контейнера → health-check: опрос `/actuator/health/readiness` каждые 5 с до 5 минут, успех — только HTTP 200 (не grep логов — LFPT-331; readiness, а не общий `/actuator/health`, чтобы недоступный SMTP не откатывал деплой), упавший/перезапускающийся контейнер — откат сразу. При неудаче — автоматический rollback из `app.jar.backup`. На сервере запущен полный `docker-compose.yml` стек.
+Push в `master` запускает `.github/workflows/deploy.yml`: сборка jar, проверка Vite/Expo и SHA-256 → неизменяемый runtime-образ в CI → пакет образа и публичного манифеста → SCP → автономный `release-runner.pyz`. Runner снимает приватный снимок фактической Compose-конфигурации и окружения; переключает только `padel-app` по image ID с `--no-deps --no-build --pull never`, проверяет readiness, revision header и байты ресурсов. Лишь после smoke фиксирует текущую версию. Ошибка восстанавливает предыдущие образ, конфигурацию и метаданные; прерванное переключение восстанавливается по журналу. Текущий/предыдущий выпуск и исходный baseline сохраняются, старые hashed chunks доступны открытым вкладкам. БД не откатывается, production SPA allowlist остаётся пустым. [Механизм, ограничения и ручное восстановление](../docs/ui-v2-release.md).
+
 
 ### Серверный стек (production; адрес сервера — в приватном `.agents/SECURITY.md`)
 
@@ -543,7 +544,7 @@ Push в `master` запускает `.github/workflows/deploy.yml`: сборка
 
 Все Docker-порты привязаны к `127.0.0.1` (localhost binding) — прямой доступ из интернета закрыт. Подробнее — [.agents/SECURITY.md](SECURITY.md).
 
-**Доступ для анализа:** при необходимости диагностики (проверить состояние контейнеров, логи, `current_version.txt`, health-check и т.п.) — SSH на сервер напрямую (`ssh root@<адрес сервера>`, адрес — в приватном `.agents/SECURITY.md`, в облачной роутине недоступен и не нужен). Для рутинной проверки статуса деплоя предпочтительнее `gh run view <run-id> --log` (шаг "Health check" в `deploy.yml` печатает то же самое, но без SSH) — см. `.agents/workflows/develop-feature.md § Шаг 7`. Read-only диагностика по SSH не требует отдельного согласования; любые изменения на сервере — по-прежнему только с отдельным согласованием (см. `GIT_WORKFLOW.md §7`).
+**Доступ для анализа:** при необходимости диагностики (проверить состояние контейнеров, логи, `current_version.txt`, health-check и т.п.) — SSH на сервер напрямую (`ssh root@<адрес сервера>`, адрес — в приватном `.agents/SECURITY.md`, в облачной роутине недоступен и не нужен). Для рутинной проверки статуса деплоя предпочтительнее `gh run view <run-id> --log` (шаг "Activate and verify release" в `deploy.yml` сообщает итог выпуска без SSH) — см. `.agents/workflows/develop-feature.md § Шаг 7`. Read-only диагностика по SSH не требует отдельного согласования; любые изменения на сервере — по-прежнему только с отдельным согласованием (см. `GIT_WORKFLOW.md §7`).
 
 ---
 

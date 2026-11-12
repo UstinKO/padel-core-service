@@ -583,33 +583,13 @@ scrape_configs:
 
 Пуш в `master` → `.github/workflows/deploy.yml`:
 
-```
-git push master
-      │
-      ▼
-GitHub Actions Runner
-      │
-      ├── ./mvnw clean package -DskipTests
-      │           ↓
-      │       target/*.jar
-      │
-      ├── SCP → сервер /opt/padel-app/temp/app.jar
-      │
-      ├── SSH на сервере:
-      │   cp app.jar app.jar.backup          ← резервная копия
-      │   mv temp/app.jar app.jar
-      │   docker compose build --no-cache padel-app
-      │   docker compose up -d --no-deps padel-app
-      │
-      ├── Health check: GET /actuator/health
-      │   статус = "UP"?
-      │   ┌── YES → деплой завершён ✅
-      │   └── NO  → rollback:
-      │             cp app.jar.backup app.jar
-      │             docker compose up -d --no-deps padel-app
-      │
-      └── Done
-```
+1. CI собирает jar с React/Expo, проверяет Vite graph и SHA-256 каждого ресурса; собирает закреплённый runtime-образ с метками revision/jar SHA.
+2. На сервер передаются пакет `image.tar` + публичный manifest и автономный Python runner. Сервер не пересобирает образ.
+3. Runner сохраняет приватные снимки фактического Compose/env/secrets и исходного работающего образа. Candidate проверяется до переключения; приложение запускается по точному image ID без пересоздания зависимых сервисов.
+4. Readiness, `X-Release-Revision`, HTTP-хеши, cache headers, 404 missing chunk и прежняя публичная главная подтверждают выпуск. После smoke фиксируются версия и указатели current/previous.
+5. При сбое восстанавливаются образ, Compose/env и метаданные предыдущего выпуска; незавершённая операция оставляет журнал для `recover`. Старые hashed React chunks сохраняются для открытых вкладок.
+
+[Подробности, команды восстановления и границы гарантий](ui-v2-release.md). Это транзакционное управление выпуском с перезапуском одного контейнера; zero-downtime и откат данных/миграций не обещаются. Production SPA allowlist остаётся пустым.
 
 ### Сервер
 
@@ -619,7 +599,7 @@ GitHub Actions Runner
 | Домен | `epadel.org` (инфраструктурный — SSH, Grafana, имена сервисных учёток; не публичный домен сайта, см. `APP_BASE_URL` выше) |
 | ОС | Ubuntu 22.04.5 LTS |
 | Docker Compose | `/opt/padel-app/docker-compose.yml` |
-| Резервная копия JAR | `/opt/padel-app/app.jar.backup` |
+| Снимки выпусков / журнал | `/opt/padel-app/releases/`, `/opt/padel-app/release-state/` (приватные) |
 
 ### Локальная сборка для диагностики
 

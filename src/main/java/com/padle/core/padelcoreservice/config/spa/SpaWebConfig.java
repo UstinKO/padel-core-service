@@ -7,14 +7,18 @@ import org.springframework.core.Ordered;
 import org.springframework.http.CacheControl;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import lombok.RequiredArgsConstructor;
 
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
 import java.util.stream.Stream;
 
 @Configuration(proxyBeanMethods = false)
-@EnableConfigurationProperties(SpaProperties.class)
+@EnableConfigurationProperties({SpaProperties.class, ReleaseProperties.class})
+@RequiredArgsConstructor
 public class SpaWebConfig implements WebMvcConfigurer {
+    private final ReleaseProperties release;
 
     private static final List<String> PREVIEW_ROUTES = List.of("/preview", "/preview/{*path}");
 
@@ -32,9 +36,13 @@ public class SpaWebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/web/assets/**")
+        var assets = registry.addResourceHandler("/web/assets/**")
                 .addResourceLocations("classpath:/static/web/assets/")
                 .setCacheControl(CacheControl.maxAge(Duration.ofDays(365)).cachePublic().immutable());
+        if (release.enabled()) {
+            var retained = Path.of(release.assetsDirectory()).toUri().toString();
+            assets.addResourceLocations(retained.endsWith("/") ? retained : retained + "/");
+        }
         registry.addResourceHandler("/web/**")
                 .addResourceLocations("classpath:/static/web/")
                 .setCacheControl(CacheControl.noCache());

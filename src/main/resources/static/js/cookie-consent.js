@@ -141,8 +141,15 @@
             if (typeof window.clarity === 'function') {
                 window.clarity('consent');
             }
-        } else if (typeof window.clarity === 'function') {
-            window.clarity('consent', false);
+        } else {
+            try {
+                window.localStorage.removeItem('clarity-registration-visits');
+            } catch {
+                // Хранилище может быть отключено настройками браузера.
+            }
+            if (typeof window.clarity === 'function') {
+                window.clarity('consent', false);
+            }
         }
     }
 

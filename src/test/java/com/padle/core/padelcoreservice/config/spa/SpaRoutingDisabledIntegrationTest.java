@@ -49,7 +49,8 @@ class SpaRoutingDisabledIntegrationTest {
                     .andExpect(view().name("index"))
                     .andReturn();
             assertThat(result.getResponse().getContentAsString())
-                    .contains("class=\"hero\"", "id=\"filterForm\"", "id=\"applyFilters\"")
+                    .contains("id=\"home-intro-title\"", "class=\"home-camp__link\"",
+                            "utm_content=homepage_banner", "id=\"filterForm\"", "id=\"applyFilters\"")
                     .doesNotContain("public-home", "/css/home.css", "id=\"root\"");
         }
     }
