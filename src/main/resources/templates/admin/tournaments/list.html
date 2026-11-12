@@ -104,7 +104,7 @@
                     </div>
                     <div class="tournament-info-row">
                         <i class="fas fa-chart-line"></i>
-                        <span th:text="${item.tournament.categoriaNivel}">C8</span>
+                        <span th:text="${item.tournament.categoriaNivel == 'TODOS'} ? #{calendar.level.TODOS} : ${item.tournament.categoriaNivel}">C8</span>
                     </div>
                     <div class="tournament-info-row">
                         <i class="fas fa-users"></i>
@@ -196,7 +196,7 @@
                     <td>
                         <div style="display: flex; flex-direction: column; gap: 0.25rem;">
                             <span><i class="fas fa-venus-mars" style="width: 16px; color: var(--admin-primary);"></i> <span th:text="#{__${'enum.genero.' + item.tournament.generoFormato.name()}__}">Mixto</span></span>
-                            <span><i class="fas fa-chart-line" style="width: 16px; color: var(--admin-primary);"></i> <span th:text="${item.tournament.categoriaNivel}">C8</span></span>
+                            <span><i class="fas fa-chart-line" style="width: 16px; color: var(--admin-primary);"></i> <span th:text="${item.tournament.categoriaNivel == 'TODOS'} ? #{calendar.level.TODOS} : ${item.tournament.categoriaNivel}">C8</span></span>
                         </div>
                     </td>
                     <td>

@@ -175,6 +175,7 @@ window.APP_MESSAGES = {
 
     // Enum display maps
     'enum.nivel.principiantes': 'Beginner',
+    'enum.nivel.todos':  'All levels',
     'enum.nivel.c9':     'C9 (Beginner)',
     'enum.nivel.c8':     'C8 (Intermediate)',
     'enum.nivel.c7':     'C7 (Advanced)',
