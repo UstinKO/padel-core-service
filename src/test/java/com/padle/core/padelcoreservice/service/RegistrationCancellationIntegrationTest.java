@@ -2,6 +2,8 @@ package com.padle.core.padelcoreservice.service;
 
 import com.padle.core.padelcoreservice.marketing.MarketingReportService;
 import com.padle.core.padelcoreservice.dto.PartnerRegistrationDto;
+import com.padle.core.padelcoreservice.dto.ParticipationDtos.Decision;
+import com.padle.core.padelcoreservice.exception.AccountException;
 import com.padle.core.padelcoreservice.dto.SoloDoubleRegistrationDto;
 import com.padle.core.padelcoreservice.exception.TournamentRegistrationException;
 import com.padle.core.padelcoreservice.service.cancellation.RegistrationCancellationService;
@@ -54,6 +56,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest(properties = {
         "app.pair-terms.enabled=true",
+        "app.participation.response-email.enabled=true",
         "app.analytics.meta.enabled=false", "app.analytics.meta.access-token=",
         "disposable-email-domains.checkers.daily-updated-domains=false",
         "disposable-email-domains.checkers.reload.enabled=false",
@@ -70,6 +73,8 @@ class RegistrationCancellationIntegrationTest {
     @Autowired MockMvc mvc;
     @Autowired SpringTemplateEngine templates;
     @Autowired PairTermsService pairTerms;
+    @Autowired TournamentParticipationService participation;
+    @Autowired ParticipationRequestRepository participationRequests;
     @Autowired PairSettlementService pairSettlements;
     @Autowired DoubleTournamentRegistrationService doubles;
     @Autowired TournamentRepository tournaments;
@@ -1120,7 +1125,7 @@ class RegistrationCancellationIntegrationTest {
         for (PlayerPadel player : List.of(main, partner)) {
             assertThat(registrations.findByTournamentIdAndPlayerId(tournament.getId(), player.getId()).orElseThrow()
                     .getStatus()).isEqualTo(RegistrationStatus.CONFIRMED);
-            verify(email).sendWaitlistAutoConfirmEmail(eq(player.getEmail()), any(), any(), any(), any(), any(), any(), any());
+            verify(email).sendParticipationRequestEmail(eq(player.getEmail()), any(), any(), any(), eq(false), eq(player.getLocale()));
         }
         verify(email, never()).sendTournamentConfirmationEmail(any(), any(), any(), any(), any(), any(), any(), any(), any());
     }
@@ -1141,9 +1146,125 @@ class RegistrationCancellationIntegrationTest {
         TestTransaction.end();
         TestTransaction.start();
 
-        verify(email).sendWaitlistAutoConfirmEmail(eq(main.getEmail()), any(), any(), any(), any(), any(), any(), any());
-        verify(email).sendWaitlistAutoConfirmEmail(eq(partner.getEmail()), any(), any(), any(), any(), any(), any(), any());
+        verify(email).sendParticipationRequestEmail(eq(main.getEmail()), any(), any(), any(), eq(false), any());
+        verify(email).sendParticipationRequestEmail(eq(partner.getEmail()), any(), any(), any(), eq(false), any());
         verifyNoMoreInteractions(email);
+    }
+
+    @Test
+    void onlyBookerCanConfirmForGuestAndGetDoesNotRecordAnAnswer() throws Exception {
+        Tournament event = tournament(1);
+        event.setTipo(TournamentType.AMERICANO);
+        event.setModalidad(Modalidad.DOBLES);
+        TournamentRegistration booker = registration(event, RegistrationStatus.WAITLIST);
+        TournamentRegistration guest = registration(event, RegistrationStatus.WAITLIST);
+        guest.getPlayer().setEmail(UUID.randomUUID() + "@1padel.guest");
+        pair(booker, guest);
+        booker.setPairBookedBy(booker.getPlayer().getId());
+        guest.setPairBookedBy(booker.getPlayer().getId());
+        service.processWaitlistForTournament(event.getId());
+
+        var ownRequest = requestFor(booker);
+        var guestRequest = requestFor(guest);
+        var other = player();
+        String link = "/participacion/" + guestRequest.getId();
+        mvc.perform(get(link).with(user(booker.getPlayer())))
+                .andExpect(status().isOk()).andExpect(header().string("Cache-Control", "no-store"));
+        mvc.perform(post(link).param("decision", "CONFIRM").with(user(booker.getPlayer())))
+                .andExpect(redirectedUrl("/error/403"));
+        assertThat(guestRequest.getStatus()).isEqualTo(ParticipationStatus.PENDING);
+        assertThat(participation.list(booker.getPlayer())).hasSize(2);
+        assertThatThrownBy(() -> participation.review(guestRequest.getId(), other, true))
+                .isInstanceOf(AccountException.class);
+
+        for (var request : List.of(ownRequest, guestRequest)) {
+            assertThat(participation.answer(request.getId(), booker.getPlayer(), Decision.CONFIRM, true).status())
+                    .isEqualTo(ParticipationStatus.CONFIRMED);
+            assertThat(participation.answer(request.getId(), booker.getPlayer(), Decision.CONFIRM, true).status())
+                    .isEqualTo(ParticipationStatus.CONFIRMED);
+        }
+        assertThat(booker.getStatus()).isEqualTo(RegistrationStatus.CONFIRMED);
+        assertThat(guest.getStatus()).isEqualTo(RegistrationStatus.CONFIRMED);
+    }
+
+    @Test
+    void reserveDeclineAfterCutoffRetainsPartnerPlaceUntilSecondDecline() {
+        Tournament event = tournament(1);
+        event.setTipo(TournamentType.AMERICANO);
+        event.setModalidad(Modalidad.DOBLES);
+        event.setDeadlineCancelacion(LocalDateTime.now().minusHours(1));
+        TournamentRegistration first = registration(event, RegistrationStatus.WAITLIST);
+        TournamentRegistration second = registration(event, RegistrationStatus.WAITLIST);
+        pair(first, second);
+        service.processWaitlistForTournament(event.getId());
+        TournamentRegistration queued = registration(event, RegistrationStatus.WAITLIST);
+        TournamentRegistration queuedPartner = registration(event, RegistrationStatus.WAITLIST);
+        pair(queued, queuedPartner);
+
+        var firstRequest = requestFor(first);
+        var secondRequest = requestFor(second);
+        assertThatThrownBy(() -> participation.review(secondRequest.getId(), first.getPlayer(), false))
+                .isInstanceOf(AccountException.class);
+        assertThat(participation.answer(firstRequest.getId(), first.getPlayer(), Decision.CONFIRM, false).status())
+                .isEqualTo(ParticipationStatus.CONFIRMED);
+        assertThat(participation.answer(firstRequest.getId(), first.getPlayer(), Decision.DECLINE, false).status())
+                .isEqualTo(ParticipationStatus.DECLINED);
+        assertThat(second.needsReplacementInMain()).isTrue();
+        assertThat(queued.getStatus()).isEqualTo(RegistrationStatus.WAITLIST);
+
+        assertThat(participation.answer(secondRequest.getId(), second.getPlayer(), Decision.DECLINE, false).status())
+                .isEqualTo(ParticipationStatus.DECLINED);
+        assertThat(queued.getStatus()).isEqualTo(RegistrationStatus.CONFIRMED);
+        assertThat(queuedPartner.getStatus()).isEqualTo(RegistrationStatus.CONFIRMED);
+        assertThat(requestFor(queued).getStatus()).isEqualTo(ParticipationStatus.PENDING);
+    }
+
+    @Test
+    void replacementReceivesNewRequestAndRemainingPlayerKeepsTheirAnswer() {
+        Tournament event = tournament(1);
+        event.setTipo(TournamentType.AMERICANO);
+        event.setModalidad(Modalidad.DOBLES);
+        TournamentRegistration remaining = registration(event, RegistrationStatus.WAITLIST);
+        TournamentRegistration leaving = registration(event, RegistrationStatus.WAITLIST);
+        pair(remaining, leaving);
+        service.processWaitlistForTournament(event.getId());
+        var existingRequest = requestFor(remaining);
+        participation.answer(existingRequest.getId(), remaining.getPlayer(), Decision.CONFIRM, false);
+        participation.answer(requestFor(leaving).getId(), leaving.getPlayer(), Decision.DECLINE, false);
+
+        PlayerPadel newcomer = player();
+        doubles.addPartnerToSoloRegistration(event.getId(), remaining.getPlayer().getId(),
+                PartnerRegistrationDto.builder().existingUserId(newcomer.getId()).isExistingUser(true).build());
+
+        var added = registrations.findByTournamentIdAndPlayerId(event.getId(), newcomer.getId()).orElseThrow();
+        assertThat(added.getStatus()).isEqualTo(RegistrationStatus.CONFIRMED);
+        assertThat(requestFor(added).getTrigger()).isEqualTo(ParticipationRequest.Trigger.REPLACEMENT);
+        assertThat(requestFor(added).getStatus()).isEqualTo(ParticipationStatus.PENDING);
+        assertThat(requestFor(remaining).getId()).isEqualTo(existingRequest.getId());
+        assertThat(requestFor(remaining).getStatus()).isEqualTo(ParticipationStatus.CONFIRMED);
+    }
+
+    @Test
+    void decliningPairProposalTwicePreservesBothSoloRegistrations() {
+        Tournament event = tournament(1);
+        event.setTipo(TournamentType.AMERICANO);
+        event.setModalidad(Modalidad.DOBLES);
+        TournamentRegistration proposer = registration(event, RegistrationStatus.WAITLIST);
+        TournamentRegistration target = registration(event, RegistrationStatus.WAITLIST);
+        doubles.proposePair(event.getId(), proposer.getPlayer().getId(), target.getId());
+        String token = target.getPartnerRegistrationToken();
+
+        assertThat(doubles.declinePairProposal(token)).isEqualTo(PairProposalResponseRepository.Response.DECLINED);
+        assertThat(doubles.declinePairProposal(token)).isEqualTo(PairProposalResponseRepository.Response.DECLINED);
+        assertThat(proposer.getStatus()).isEqualTo(RegistrationStatus.WAITLIST);
+        assertThat(target.getStatus()).isEqualTo(RegistrationStatus.WAITLIST);
+        assertThat(target.getPartnerRegistrationToken()).isNull();
+        assertThat(proposer.getPartner()).isNull();
+        assertThat(target.getPartner()).isNull();
+    }
+
+    private ParticipationRequest requestFor(TournamentRegistration registration) {
+        return participationRequests.findByRegistrationIdAndSupersededAtIsNull(registration.getId()).orElseThrow();
     }
 
     private void cancelAfter(CountDownLatch start, Long tournamentId, Long playerId) {

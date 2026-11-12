@@ -260,6 +260,12 @@ public class DoubleTournamentRegistrationController {
         }
     }
 
+    @PostMapping("/decline-pair")
+    public ResponseEntity<Map<String, Object>> declinePairProposal(@RequestParam String token) {
+        return ResponseEntity.ok().cacheControl(org.springframework.http.CacheControl.noStore())
+                .body(Map.of("status", doubleRegistrationService.declinePairProposal(token)));
+    }
+
     private Long extractCurrentUserId(Object principal) {
         PlayerPadel player = SecurityUtils.extractPlayer(principal);
         if (player == null) {

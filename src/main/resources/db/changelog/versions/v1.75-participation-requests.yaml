@@ -1,0 +1,44 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.75-participation-requests
+      author: padel
+      changes:
+        - addColumn:
+            tableName: tournament_registrations_db
+            columns:
+              - column:
+                  name: replacement_search
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+        - sql:
+            sql: |
+              CREATE TABLE participation_requests_db (
+                id uuid PRIMARY KEY,
+                registration_id bigint NOT NULL REFERENCES tournament_registrations_db(id) ON DELETE CASCADE,
+                registration_version bigint NOT NULL,
+                delegate_player_id bigint REFERENCES player_padel_db(id) ON DELETE SET NULL,
+                trigger_kind varchar(24) NOT NULL CHECK (trigger_kind IN ('RESERVE', 'REPLACEMENT')),
+                participation_status varchar(16) NOT NULL CHECK (participation_status IN ('PENDING', 'CONFIRMED', 'DECLINED')),
+                requested_at timestamptz NOT NULL,
+                expires_at timestamptz NOT NULL,
+                responded_at timestamptz,
+                responded_by bigint REFERENCES player_padel_db(id) ON DELETE SET NULL,
+                superseded_at timestamptz
+              );
+              CREATE UNIQUE INDEX uq_participation_current ON participation_requests_db(registration_id)
+                WHERE superseded_at IS NULL;
+              CREATE TABLE pair_proposal_responses_db (
+                token varchar(64) PRIMARY KEY,
+                response varchar(16) NOT NULL CHECK (response IN ('DECLINED', 'ACCEPTED', 'PAIR_FORMED', 'EXPIRED')),
+                responded_at timestamptz NOT NULL DEFAULT now()
+              );
+      rollback:
+        - sql:
+            sql: |
+              DROP TABLE pair_proposal_responses_db;
+              DROP TABLE participation_requests_db;
+        - dropColumn:
+            tableName: tournament_registrations_db
+            columnName: replacement_search

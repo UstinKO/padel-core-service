@@ -55,7 +55,8 @@ class TournamentServiceStatusChangeNotificationTest {
                 new RegistrationCancellationService(mock(CancellationHistoryRepository.class),null,null,null,null),
                 tournamentRepository, registrationRepository, null, null,
                 clubService, null, null, emailService, null,
-                null, null, null, null, null, new PairTermsService(tournamentRepository, registrationRepository, null, null, null));
+                null, null, null, null, null, new PairTermsService(tournamentRepository, registrationRepository, null, null, null),
+                mock(ParticipationRequests.class));
     }
 
     private void commonStubs() {

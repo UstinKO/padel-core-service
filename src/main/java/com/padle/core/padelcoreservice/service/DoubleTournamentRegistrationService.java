@@ -22,6 +22,9 @@ import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
+import com.padle.core.padelcoreservice.model.ParticipationRequest.Trigger;
+import com.padle.core.padelcoreservice.repository.PairProposalResponseRepository;
+import com.padle.core.padelcoreservice.repository.PairProposalResponseRepository.Response;
 import com.padle.core.padelcoreservice.repository.ClubRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
@@ -64,6 +67,8 @@ public class DoubleTournamentRegistrationService {
     private final EmailService emailService;
     private final TournamentRepository tournamentRepository;
     private final PairTermsService pairTerms;
+    private final ParticipationRequests participationRequests;
+    private final PairProposalResponseRepository proposalResponses;
     private final PairReplacementNoticeService replacementNotices;
     private final MessageSource messageSource;
     private final TournamentService tournamentService;
@@ -812,6 +817,9 @@ public class DoubleTournamentRegistrationService {
         registrationRepository.save(partnerReg);
 
         TournamentRegistration savedRegistration = saveNewOrCancelledRegistration(newRegistration);
+        if (savedRegistration.isConfirmed()) {
+            participationRequests.open(savedRegistration, Trigger.REPLACEMENT);
+        }
         if (PairTermsService.accepted(savedRegistration)) {
             var offer = pairTerms.acceptedOffer(oldPlayerReg.getTournament(), savedRegistration);
             notificationService.sendPairTermsNotice(newPlayer, offer, tournamentDto.getClubId(), previousStatus);
@@ -1061,7 +1069,11 @@ public class DoubleTournamentRegistrationService {
 
         registrationRepository.save(soloReg);
         TournamentRegistration savedPartner = saveNewOrCancelledRegistration(partnerWithTerms(soloReg, partnerReg));
-        if (!isReplacementNeeded) tournamentService.processWaitlistForTournament(tournamentId);
+        if (isReplacementNeeded) {
+            participationRequests.open(savedPartner, Trigger.REPLACEMENT, playerId);
+        } else {
+            tournamentService.processWaitlistForTournament(tournamentId);
+        }
 
         if (PairTermsService.accepted(soloReg)) {
             notifyPairWithTerms(soloReg, mainPlayer, partner);
@@ -1108,7 +1120,7 @@ public class DoubleTournamentRegistrationService {
         if (!target.getTournament().getId().equals(tournamentId)) {
             throw new TournamentRegistrationException("La inscripción no pertenece a este torneo");
         }
-        if (!target.isPairableSolo()) {
+        if (!target.canFormPairThroughSearch()) {
             throw new TournamentRegistrationException("Este jugador ya tiene pareja");
         }
         if (target.getPlayer().getId().equals(proposerPlayerId)) {
@@ -1120,11 +1132,13 @@ public class DoubleTournamentRegistrationService {
                 .orElseThrow(() -> new TournamentRegistrationException(
                         "Debes estar inscripto en el torneo para proponer pareja"));
 
-        if (!proposerReg.isPairableSolo()) {
+        if (!proposerReg.canFormPairThroughSearch()
+                || (proposerReg.needsReplacementInMain() && target.needsReplacementInMain())) {
             throw new TournamentRegistrationException(
                     "Solo puedes proponer pareja si estás inscripto sin compañero");
         }
 
+        proposalResponses.record(target.getPartnerRegistrationToken(), Response.EXPIRED);
         String token = "PP_" + UUID.randomUUID().toString().replace("-", "").substring(0, 20).toUpperCase();
         target.setPartnerRegistrationToken(token);
         target.setPartnerTokenExpiry(LocalDateTime.now().plusHours(TOKEN_EXPIRY_HOURS));
@@ -1186,7 +1200,7 @@ public class DoubleTournamentRegistrationService {
         if (target.getPairProposerRegId() == null) {
             throw new TournamentRegistrationException("Token inválido");
         }
-        if (!target.isPairableSolo()) {
+        if (!target.canFormPairThroughSearch()) {
             throw new TournamentRegistrationException("Ya tenés pareja confirmada en este torneo");
         }
 
@@ -1194,17 +1208,75 @@ public class DoubleTournamentRegistrationService {
                 .findById(target.getPairProposerRegId())
                 .orElseThrow(() -> new TournamentRegistrationException("Inscripción del compañero no encontrada"));
 
-        if (!proposer.isPairableSolo() || !proposer.getTournament().getId().equals(target.getTournament().getId())) {
+        if (!proposer.canFormPairThroughSearch() || !proposer.getTournament().getId().equals(target.getTournament().getId())
+                || (proposer.needsReplacementInMain() && target.needsReplacementInMain())) {
             throw new TournamentRegistrationException(
                     "El compañero ya no está disponible (tiene pareja o canceló su inscripción)");
         }
 
-        formPairFromSolo(proposer, target);
+        proposalResponses.record(token, Response.ACCEPTED);
+        if (proposer.needsReplacementInMain()) {
+            formReplacementFromSearch(proposer, target);
+        } else if (target.needsReplacementInMain()) {
+            formReplacementFromSearch(target, proposer);
+        } else {
+            formPairFromSolo(proposer, target, proposer.getPlayer().getId());
+        }
 
         log.info("Pair accepted: targetRegId={}, proposerRegId={}, tournamentId={}",
                 target.getId(), proposer.getId(), target.getTournament().getId());
 
         return registrationMapper.toDto(target);
+    }
+
+    @Transactional
+    public Response declinePairProposal(String token) {
+        if (token == null || !token.startsWith("PP_") || token.length() > 64) return Response.EXPIRED;
+        var tournament = registrationRepository.findTournamentIdByPartnerRegistrationToken(token);
+        if (tournament.isPresent()) tournamentRepository.lockById(tournament.orElseThrow());
+
+        var saved = proposalResponses.find(token);
+        if (saved.isPresent()) return saved.orElseThrow();
+
+        var target = registrationRepository.findByPartnerRegistrationToken(token).orElse(null);
+        if (target == null || target.getPairProposerRegId() == null || target.getPartnerTokenExpiry() == null
+                || !target.getPartnerTokenExpiry().isAfter(LocalDateTime.now())) {
+            return Response.EXPIRED;
+        }
+        var proposer = registrationRepository.findById(target.getPairProposerRegId()).orElse(null);
+        if (proposer == null || !Boolean.TRUE.equals(proposer.getIsActive())
+                || !Boolean.TRUE.equals(target.getIsActive())) {
+            return Response.EXPIRED;
+        }
+        if (!target.canFormPairThroughSearch() || !proposer.canFormPairThroughSearch()) {
+            return Response.PAIR_FORMED;
+        }
+
+        proposalResponses.record(token, Response.DECLINED);
+        target.setPartnerRegistrationToken(null);
+        target.setPartnerTokenExpiry(null);
+        target.setPairProposerRegId(null);
+        return Response.DECLINED;
+    }
+
+    private void formReplacementFromSearch(TournamentRegistration remaining, TournamentRegistration newcomer) {
+        var tournament = remaining.getTournament();
+        if (!pairTerms.isCancellable(tournament)) {
+            throw new TournamentRegistrationException("No se puede reemplazar al jugador después del inicio");
+        }
+        TournamentLevelPolicy.assertEligible(tournament.getTipo(), tournament.getCategoriaNivel(),
+                newcomer.getPlayer().getNivelJugador(), messageSource, LocaleContextHolder.getLocale());
+        Long mainPlayerId = remaining.getPlayer().getId();
+        UUID bookingId = remaining.getPairBookingId() == null ? UUID.randomUUID() : remaining.getPairBookingId();
+        attachAdminPartner(remaining, newcomer.getPlayer(), mainPlayerId, bookingId);
+        attachAdminPartner(newcomer, remaining.getPlayer(), mainPlayerId, bookingId);
+        newcomer.setPairBookedBy(remaining.getPairBookedBy());
+        newcomer.setQueuedAt(remaining.queueTime());
+        newcomer.confirm();
+        newcomer.setPosition(remaining.getPosition());
+        partnerWithTerms(remaining, newcomer);
+        registrationRepository.saveAllAndFlush(List.of(remaining, newcomer));
+        participationRequests.open(newcomer, Trigger.REPLACEMENT, mainPlayerId);
     }
 
     private void lockTournamentForPairToken(String token) {
@@ -1310,13 +1382,13 @@ public class DoubleTournamentRegistrationService {
 
         TournamentRegistration reg1 = requirePairableSolo(tournamentId, regId1);
         TournamentRegistration reg2 = requirePairableSolo(tournamentId, regId2);
-        formPairFromSolo(reg1, reg2);
+        formPairFromSolo(reg1, reg2, null);
         log.info("Сформирована пара администратором: tournamentId={}, regId1={}, regId2={}, status={}",
                 tournamentId, regId1, regId2, reg1.getStatus());
         return reg1.getStatus();
     }
 
-    private void formPairFromSolo(TournamentRegistration main, TournamentRegistration partner) {
+    private void formPairFromSolo(TournamentRegistration main, TournamentRegistration partner, Long bookedBy) {
         Long tournamentId = main.getTournament().getId();
         Long mainPlayerId = main.getPlayer().getId();
         UUID pairBookingId = UUID.randomUUID();
@@ -1328,7 +1400,7 @@ public class DoubleTournamentRegistrationService {
         var pair = List.of(main, partner);
         pair.forEach(row -> {
             row.setQueuedAt(queuedAt);
-            row.setPairBookedBy(mainPlayerId);
+            row.setPairBookedBy(bookedBy);
             row.moveToWaitlist(position);
         });
 
@@ -1364,6 +1436,8 @@ public class DoubleTournamentRegistrationService {
         registration.setPartnerPhone(partner.getTelefono());
         registration.setPartnerEmail(partner.getEmail());
         registration.setPartnerTelegram(partner.getTelegramUsername());
+        proposalResponses.record(registration.getPartnerRegistrationToken(), Response.PAIR_FORMED);
+        registration.setReplacementSearch(false);
         registration.setPartnerRegistrationToken(null);
         registration.setPartnerTokenExpiry(null);
         registration.setPairProposerRegId(null);

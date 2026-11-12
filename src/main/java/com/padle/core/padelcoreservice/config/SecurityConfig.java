@@ -219,10 +219,12 @@ public class SecurityConfig {
                                 "/api/public/tournaments/*",
                                 "/api/public/tournaments/*/calendar",
                                 "/api/public/tournaments/*/calendar/google",
-                                "/api/public/tournaments/*/calendar/event.ics"
+                                "/api/public/tournaments/*/calendar/event.ics",
+                                "/participacion/*"
                         ).permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.POST,
-                                "/api/tournaments/double/accept-pair"
+                                "/api/tournaments/double/accept-pair",
+                                "/api/tournaments/double/decline-pair"
                         ).permitAll()
                         .requestMatchers("/api/admin/marketing/qr-stats", "/api/admin/marketing/qr-summary", "/api/admin/marketing/registration-sources").hasRole("SUPER_ADMIN")
                         .requestMatchers("/api/**").authenticated()

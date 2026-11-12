@@ -258,8 +258,9 @@ public interface TournamentRegistrationRepository extends JpaRepository<Tourname
 
     @Query("SELECT tr FROM TournamentRegistration tr " +
             "WHERE tr.tournament.id = :tournamentId " +
-            "AND tr.status = 'SOLO_SEARCH' " +
-            "AND tr.isActive = true")
+            "AND (tr.status = 'SOLO_SEARCH' OR (tr.status = 'CONFIRMED' " +
+            "AND tr.isDoubleRegistration = true AND tr.partner IS NULL AND tr.mainPlayerId IS NOT NULL " +
+            "AND tr.replacementSearch = true)) AND tr.isActive = true")
     List<TournamentRegistration> findLookingForPartnerByTournamentId(@Param("tournamentId") Long tournamentId);
 
     @Query("SELECT COUNT(tr) FROM TournamentRegistration tr " +
