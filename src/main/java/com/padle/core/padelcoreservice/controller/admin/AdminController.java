@@ -1,11 +1,13 @@
 package com.padle.core.padelcoreservice.controller.admin;
 
 import com.padle.core.padelcoreservice.annotation.Timed;
+import com.padle.core.padelcoreservice.dto.ClubDto;
 import com.padle.core.padelcoreservice.dto.MatchDto;
 import com.padle.core.padelcoreservice.dto.PlayerResponseDto;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.exception.TournamentRegistrationException;
 import com.padle.core.padelcoreservice.model.Owner;
+import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.enums.*;
 import com.padle.core.padelcoreservice.repository.TournamentKingOfCourtRepository;
 import com.padle.core.padelcoreservice.service.ClubService;
@@ -24,6 +26,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
 import org.springframework.dao.DataAccessException;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -34,11 +37,15 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Stream;
 import java.util.stream.Collectors;
 
 @Controller
@@ -126,44 +133,80 @@ public class AdminController {
 
     @GetMapping("/tournaments")
     public String listTournaments(Model model, @AuthenticationPrincipal Owner owner,
-                                  @RequestParam(required = false) Long clubId) {
+                                  @RequestParam(required = false) Long clubId,
+                                  @RequestParam(required = false) AdminEventFormat format,
+                                  @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+                                  @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
         log.info("Listing tournaments for owner: {}", owner.getEmail());
 
-        // CLUB_ADMIN всегда видит только турниры своего клуба (clubId из запроса
-        // игнорируется — иначе клубный админ мог бы подставить чужой clubId в URL).
-        // SUPER_ADMIN может отфильтровать список по клубу через ?clubId=; остальные роли
-        // видят полный список (доступность конкретных действий регулируется флагами ниже).
-        Long effectiveClubId = owner.isClubAdmin() ? owner.getClubId() : clubId;
-        List<TournamentDto> allTournaments = effectiveClubId != null
-                ? tournamentService.getTournamentsByClub(effectiveClubId)
-                : tournamentService.getAllTournaments();
+        List<TournamentDto> visible = visibleTournaments(owner);
+        boolean invalidPeriod = from != null && to != null && from.isAfter(to);
+        List<Map<String, Object>> rows = invalidPeriod ? List.of() : visible.stream()
+                .filter(t -> clubId == null || clubId.equals(t.getClubId()))
+                .filter(t -> format == null || format == AdminEventFormat.of(t))
+                .filter(t -> matchesPeriod(t.getFechaInicio(), from, to))
+                .map(t -> tournamentListRow(t, owner))
+                .toList();
 
-        // Добавляем флаги для каждого турнира
-        List<Map<String, Object>> tournamentsWithFlags = allTournaments.stream()
-                .map(t -> {
-                    Map<String, Object> map = new HashMap<>();
-                    map.put("tournament", t);
-
-                    boolean isOwner = tournamentAccessService.canManage(owner, t.getOwnerId(), t.getClubId());
-                    map.put("isOwner", isOwner);
-
-                    // ADMIN: видит все турниры, но не может копировать/редактировать/удалять
-                    map.put("canCopy", !owner.isAdminRole());
-                    map.put("canView", isOwner || owner.isAdminRole());
-
-                    return map;
-                })
-                .collect(Collectors.toList());
-
-        model.addAttribute("tournaments", tournamentsWithFlags);
+        model.addAttribute("tournaments", rows);
+        model.addAttribute("resultCount", rows.size());
         model.addAttribute("isSuperAdmin", owner.isSuperAdmin());
         model.addAttribute("isAdminRole", owner.isAdminRole());
+        List<ClubDto> activeClubs = owner.canViewAllTournaments() ? clubService.getActiveClubsForAdmin() : List.of();
         if (owner.isSuperAdmin()) {
-            model.addAttribute("clubs", clubService.getActiveClubsForAdmin());
-            model.addAttribute("selectedClubId", clubId);
+            model.addAttribute("clubs", activeClubs);
         }
+        model.addAttribute("filterClubs", filterClubs(activeClubs, visible));
+        model.addAttribute("selectedClubId", clubId);
+        model.addAttribute("selectedFormat", format);
+        model.addAttribute("eventFormats", AdminEventFormat.values());
+        model.addAttribute("dateFrom", from);
+        model.addAttribute("dateTo", to);
+        model.addAttribute("invalidPeriod", invalidPeriod);
+        model.addAttribute("filtersActive", clubId != null || format != null || from != null || to != null);
 
         return "admin/tournaments/list";
+    }
+
+    private List<TournamentDto> visibleTournaments(Owner owner) {
+        if (owner.isClubAdmin()) {
+            return owner.getClubId() == null ? List.of() : tournamentService.getTournamentsByClub(owner.getClubId());
+        }
+        List<TournamentDto> tournaments = tournamentService.getAllTournaments();
+        return owner.canViewAllTournaments() ? tournaments : tournaments.stream()
+                .filter(t -> tournamentAccessService.canManage(owner, t.getOwnerId(), t.getClubId()))
+                .toList();
+    }
+
+    private Map<Long, String> filterClubs(List<ClubDto> activeClubs, List<TournamentDto> visible) {
+        Stream<Map.Entry<Long, String>> usedClubs = visible.stream()
+                .filter(t -> t.getClubId() != null && t.getClubNombre() != null)
+                .map(t -> Map.entry(t.getClubId(), t.getClubNombre()));
+        return Stream.concat(activeClubs.stream().map(club -> Map.entry(club.getId(), club.getNombre())), usedClubs)
+                .sorted(Map.Entry.comparingByValue(String.CASE_INSENSITIVE_ORDER))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
+                        (first, second) -> first, LinkedHashMap::new));
+    }
+
+    private static boolean matchesPeriod(LocalDate date, LocalDate from, LocalDate to) {
+        if (from == null && to == null) {
+            return true;
+        }
+        return date != null && (from == null || !date.isBefore(from)) && (to == null || !date.isAfter(to));
+    }
+
+    private Map<String, Object> tournamentListRow(TournamentDto tournament, Owner owner) {
+        boolean canManage = tournamentAccessService.canManage(owner, tournament.getOwnerId(), tournament.getClubId());
+        String automaticName = Tournament.generateNombre(tournament.getGeneroFormato(),
+                Nivel.parseOrNull(tournament.getCategoriaNivel()));
+        Map<String, Object> row = new HashMap<>();
+        row.put("tournament", tournament);
+        row.put("isOwner", canManage);
+        row.put("canCopy", !owner.isAdminRole());
+        row.put("canView", canManage || owner.isAdminRole());
+        row.put("format", AdminEventFormat.of(tournament));
+        row.put("customName", Objects.equals(automaticName, tournament.getNombre()) ? "" : tournament.getNombre());
+        return row;
     }
 
     @PostMapping("/tournaments")
