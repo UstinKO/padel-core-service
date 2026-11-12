@@ -3,7 +3,6 @@ package com.padle.core.padelcoreservice.model.enums;
 public enum RegistrationStatus {
     CONFIRMED("Confirmado"),
     WAITLIST("Lista de Espera"),
-    WAITLIST_INVITED("Invitado a Confirmar"),
     CANCELLED("Cancelado"),
     PARTICIPATED("Participó"),
 

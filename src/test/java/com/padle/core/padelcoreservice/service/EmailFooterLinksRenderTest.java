@@ -74,7 +74,7 @@ class EmailFooterLinksRenderTest {
             assertThat(html).doesNotContain("Cancela tu suscripción");
 
             switch (entry.getKey()) {
-                case "bienvenida", "confirmacion", "vacancy-invitation", "no-spots-left" ->
+                case "bienvenida", "confirmacion", "waitlist-auto-confirm", "no-spots-left" ->
                         assertThat(links).contains(BASE_URL + "/terminos", BASE_URL + "/privacidad", "mailto:" + SUPPORT);
                 case "recuperar-password", "tournament-confirmation", "waitlist-notification" ->
                         assertThat(links).contains("mailto:" + SUPPORT);
@@ -147,7 +147,7 @@ class EmailFooterLinksRenderTest {
                 TO, PLAYER, TOURNAMENT, DATE, TIME, CLUB, LOCALE));
         cases.put("tournament-confirmation", () -> service.sendRegistrationConfirmationEmail(
                 TO, PLAYER, TOURNAMENT, DATE, TIME, CLUB, DATE, LOCALE));
-        cases.put("vacancy-invitation", () -> service.sendWaitlistAutoConfirmEmail(
+        cases.put("waitlist-auto-confirm", () -> service.sendWaitlistAutoConfirmEmail(
                 TO, PLAYER, TOURNAMENT, DATE, TIME, CLUB, TOURNAMENT_URL, LOCALE));
         cases.put("waitlist-notification", () -> service.sendWaitlistNotificationEmail(
                 TO, PLAYER, TOURNAMENT, DATE, TIME, CLUB, 2, LOCALE));

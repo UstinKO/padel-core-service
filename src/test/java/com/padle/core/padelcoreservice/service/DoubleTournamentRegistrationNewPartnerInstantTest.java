@@ -84,6 +84,10 @@ class DoubleTournamentRegistrationNewPartnerInstantTest {
                 .cupoMax(16)
                 .build();
 
+        when(tournamentRepository.lockById(TOURNAMENT_ID)).thenAnswer(invocation -> Optional.of(
+                Tournament.builder().id(TOURNAMENT_ID).modalidad(tournamentDto.getModalidad())
+                        .estado(tournamentDto.getEstado()).cupoMax(tournamentDto.getCupoMax()).build()));
+
         mainPlayer = PlayerPadel.builder()
                 .id(MAIN_PLAYER_ID)
                 .email("main@example.com")

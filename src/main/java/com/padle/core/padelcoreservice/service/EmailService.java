@@ -229,7 +229,7 @@ public class EmailService {
             context.setVariable("tournamentUrl", tournamentUrl);
             context.setVariable("year", java.time.Year.now().getValue());
 
-            String htmlContent = templateEngine.process("email/vacancy-invitation", context);
+            String htmlContent = templateEngine.process("email/waitlist-auto-confirm", context);
 
             sendHtmlEmail(to, messageSource.getMessage("email.vacancy.subject", new Object[]{tournamentName}, locale), htmlContent);
 

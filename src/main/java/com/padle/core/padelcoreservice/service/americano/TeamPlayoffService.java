@@ -202,25 +202,30 @@ public class TeamPlayoffService {
      * Создаёт или восстанавливает пару {@link TournamentRegistration} (по одной записи на игрока, обе
      * {@code CONFIRMED}) — как обычная парная регистрация с сайта
      * ({@code DoubleTournamentRegistrationService.registerWithExistingPartner}), но без
-     * побочных эффектов веб-флоу (не отправляет письма, не проверяет лимит мест/статус турнира —
-     * это ручное добавление координатором, прежний {@code addTeam} их тоже не проверял).
+     * писем веб-регистрации. Ручное добавление координатором учитывает лимит состава.
      */
     private TournamentRegistration createConfirmedPairRegistration(Tournament tournament,
                                                                      PlayerPadel player1, PlayerPadel player2) {
-        int position = (int) registrationRepository.countConfirmedPairs(tournament.getId()) + 1;
+        int occupied = Math.toIntExact(registrationRepository.countConfirmedPairs(tournament.getId()));
+        if (occupied >= tournament.getCupoMax()) {
+            throw new InvalidStateException("registration.reserve.full");
+        }
+        int position = occupied + 1;
         UUID pairBookingId = UUID.randomUUID();
-        createOrRestorePairMember(tournament, player2, player1, player1.getId(), pairBookingId, position);
-        return createOrRestorePairMember(tournament, player1, player2, player1.getId(), pairBookingId, position);
+        LocalDateTime bookedAt = LocalDateTime.now();
+        createOrRestorePairMember(tournament, player2, player1, player1.getId(), pairBookingId, position, bookedAt);
+        return createOrRestorePairMember(tournament, player1, player2, player1.getId(), pairBookingId, position, bookedAt);
     }
 
     private TournamentRegistration createOrRestorePairMember(Tournament tournament, PlayerPadel player,
                                                               PlayerPadel partner, Long mainPlayerId,
-                                                              UUID pairBookingId, int position) {
+                                                              UUID pairBookingId, int position, LocalDateTime bookedAt) {
         TournamentRegistration registration = TournamentRegistration.builder()
                 .tournament(tournament)
                 .player(player)
                 .partner(partner)
-                .registrationDate(LocalDateTime.now())
+                .registrationDate(bookedAt)
+                .queuedAt(bookedAt)
                 .isActive(true)
                 .isDoubleRegistration(true)
                 .mainPlayerId(mainPlayerId)

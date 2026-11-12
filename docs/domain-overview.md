@@ -308,11 +308,11 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 **Сервисы:** `TournamentService` (базовые операции), `DoubleTournamentRegistrationService` (парная логика), `TournamentNotificationService` (отправка писем)
 
 **Фоновые задачи:**
-- Cron `0 */10 * * * *` → `TournamentService.checkExpiredInvitations()` — переводит просроченные `WAITLIST_INVITED` обратно в `WAITLIST`, приглашает следующего. После 2 попыток → `CANCELLED`.
+- Место из резерва закрепляется автоматически при освобождении места. Парный резерв продвигается по времени заявки среди готовых пар.
 
 **Статусная машина:**
 ```
-Одиночная:     → CONFIRMED | WAITLIST → WAITLIST_INVITED → CONFIRMED | CANCELLED
+Одиночная:     → CONFIRMED | WAITLIST → CONFIRMED | CANCELLED
 Парная:        → CONFIRMED | WAITLIST (сразу — партнёр, с аккаунтом или без, LFPT-0687)
 Парная (легаси, регистрации до LFPT-0687): → PARTNER_INVITED → WAITLIST | CONFIRMED
                  (email-подтверждение по ссылке, см. docs/endpoints/double-registration.md)
@@ -326,7 +326,7 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 
 | Метод | URL | Тип | Auth | Описание |
 |-------|-----|-----|------|----------|
-| `GET` | `/waitlist/confirm` | HTML | — | Страница подтверждения по ссылке из email (`?token=...` — одноразовый `waitlist_confirmation_token`, issue #194). Переводит `WAITLIST_INVITED → CONFIRMED`. |
+| `GET` | `/waitlist/confirm` | HTML | — | Страница для старых ссылок с указанием проверить актуальный статус в кабинете. |
 
 #### Одиночная регистрация (ROLE_PLAYER)
 

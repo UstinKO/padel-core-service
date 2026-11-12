@@ -119,7 +119,7 @@ class TournamentServiceStatusChangeNotificationTest {
                 .status(RegistrationStatus.CONFIRMED).position(1).isActive(true).build();
 
         when(registrationRepository.findByTournamentIdAndPlayerId(1L, 2L)).thenReturn(Optional.of(reg));
-        lenient().when(tournamentRepository.findById(1L)).thenReturn(Optional.of(tournament));
+        lenient().when(tournamentRepository.lockById(1L)).thenReturn(Optional.of(tournament));
         lenient().when(tournamentRepository.lockById(1L)).thenReturn(Optional.of(tournament));
         when(registrationRepository.countByTournamentIdAndStatus(1L, RegistrationStatus.CONFIRMED)).thenReturn(5L);
 
@@ -143,7 +143,7 @@ class TournamentServiceStatusChangeNotificationTest {
                 .status(RegistrationStatus.WAITLIST).waitlistPosition(1).isActive(true).build();
 
         when(registrationRepository.findByTournamentIdAndPlayerId(1L, 2L)).thenReturn(Optional.of(reg));
-        lenient().when(tournamentRepository.findById(1L)).thenReturn(Optional.of(tournament));
+        lenient().when(tournamentRepository.lockById(1L)).thenReturn(Optional.of(tournament));
         lenient().when(tournamentRepository.lockById(1L)).thenReturn(Optional.of(tournament));
         when(registrationRepository.countByTournamentIdAndStatus(1L, RegistrationStatus.CONFIRMED)).thenReturn(5L);
 

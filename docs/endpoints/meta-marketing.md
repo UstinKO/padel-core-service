@@ -42,7 +42,7 @@ utm_source=meta&utm_medium=paid_social&utm_campaign={{campaign.id}}&utm_content=
 | Публичная страница | `PageView`, браузер | Просмотр страницы, не запись |
 | `/torneo/{id}` | `ViewContent`, браузер | Просмотр конкретного события, не запись |
 | `CONFIRMED`, `PARTICIPATED` | `EventRegistration`, браузер | Сохранённая подтверждённая запись |
-| `WAITLIST`, `WAITLIST_INVITED` | `EventWaitlist`, браузер | Резерв; не подтверждённое участие |
+| `WAITLIST` | `EventWaitlist`, браузер | Резерв; не подтверждённое участие |
 | `PENDING_PARTNER`, `PARTNER_INVITED`, `PAIR_REGISTERED`, `SOLO_SEARCH`, `SOLO_ADD_LATER` | `EventRegistrationPending`, браузер | Незавершённый подбор/подтверждение пары; не оплаченный участник |
 | `CANCELLED`, `SOLO_EXPIRED` | Нет нового успешного события | Отмена не становится конверсией |
 | Регистрация аккаунта / клик / ошибка | Нет `EventRegistration` | Успех определяется сохранённой записью, не UI-кликом |

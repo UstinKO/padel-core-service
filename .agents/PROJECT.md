@@ -389,7 +389,7 @@ King of Court шлёт real-time состояние на `/topic/tournament/{kin
 
 ### Registration Status Flow
 
-`TournamentRegistration.status` (enum `RegistrationStatus`). Бизнес-правила флоу (когда что меняется, cron-логика листа ожидания, лимит приглашений) — см. [specs/MASTER.md § Статусы регистрации](../specs/MASTER.md#статусы-регистрации-на-турнир). Технически: `TournamentService.checkExpiredInvitations()` (cron `0 */10 * * * *`) переводит следующего WAITLIST-игрока в WAITLIST_INVITED.
+`TournamentRegistration.status` (enum `RegistrationStatus`). Резерв продвигается при освобождении места, без приглашения с таймером. В парных турнирах место получает первая готовая пара по `queuedAt`. См. [specs/MASTER.md § Статусы регистрации](../specs/MASTER.md#статусы-регистрации-на-турнир).
 
 ### Double Tournament Registration Flow
 
