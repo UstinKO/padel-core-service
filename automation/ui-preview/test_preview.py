@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import call, patch
 import urllib.request
 import uuid
 import preview
@@ -41,6 +41,23 @@ class RuntimeBoundaryTest(unittest.TestCase):
                     with self.assertRaises(ValueError):
                         preview.load()
                     run.assert_not_called()
+
+    def test_readiness_retries_connection_reset_during_startup(self):
+        with (
+            patch.object(preview, 'load', return_value={}),
+            patch.object(preview, 'compose'),
+            patch.object(preview, 'Client') as client,
+            patch.object(preview.time, 'sleep') as sleep,
+            patch('sys.argv', ['preview.py', 'up']),
+            patch('builtins.print'),
+        ):
+            request = client.return_value.request
+            request.side_effect = [ConnectionResetError(), b'{"status":"UP"}']
+
+            preview.main()
+
+            self.assertEqual(request.call_args_list, [call('/actuator/health/readiness')] * 2)
+            sleep.assert_called_once_with(1)
 
     def test_redirect_cannot_leak_gateway_credentials_to_another_origin(self):
         handler = preview.LocalRedirects()
