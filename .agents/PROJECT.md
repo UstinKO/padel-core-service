@@ -290,6 +290,10 @@ docker compose up -d
 | POST | `/admin/players/{id}/nivel` | Задать уровень игрока (SUPER_ADMIN) |
 | POST | `/admin/players/{id}/name` | Изменить имя и фамилию игрока (SUPER_ADMIN) |
 | POST | `/admin/players/{id}/guest-credentials` | Временный пароль гостевого аккаунта (SUPER_ADMIN) |
+| POST | `/api/players/me/guest-profile-claims` | Заявка игрока на ручное подтверждение гостевого профиля |
+| GET | `/api/admin/guest-profile-claims/{reference}` | Проверка заявки организатором |
+| POST | `/api/admin/guest-profile-claims/{reference}/approve` | Привязка гостевой истории после сверки номера |
+| POST | `/api/admin/players/{guestId}/activate-guest-profile` | Активация исходного гостевого профиля |
 | POST | `/admin/players/{id}/delete` | Удалить игрока (SUPER_ADMIN) |
 | POST | `/admin/tournaments/king-of-court/start` | Запустить KoC турнир |
 | POST | `/admin/tournaments/king-of-court/{kingId}/finish` | Завершить KoC турнир |
@@ -462,7 +466,7 @@ repository/
 
 ### Database Migrations
 
-Все изменения схемы — YAML-файлы в `src/main/resources/db/changelog/versions/`, подключены через `changelog-master.yaml`. Текущая версия: v1.71. `ddl-auto = none` — только Liquibase. Новые файлы добавлять с инкрементальным номером и регистрировать в `changelog-master.yaml`.
+Все изменения схемы — YAML-файлы в `src/main/resources/db/changelog/versions/`, подключены через `changelog-master.yaml`. Текущая версия: v1.72. `ddl-auto = none` — только Liquibase. Новые файлы добавлять с инкрементальным номером и регистрировать в `changelog-master.yaml`.
 
 ### Email Templates
 
