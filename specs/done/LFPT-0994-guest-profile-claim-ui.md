@@ -1,7 +1,7 @@
 # LFPT-0994: Подтверждение гостевого профиля — интерфейс
 
 ## Статус
-testing
+done
 
 ## Источник
 [GitHub #994](https://github.com/UstinKO/padel-core-service/issues/994), зависит от #901.
