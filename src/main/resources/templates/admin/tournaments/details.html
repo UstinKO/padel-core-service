@@ -342,7 +342,7 @@
                 <h1 th:text="${tournament.nombre}">Torneo Open de Padel 2026</h1>
                 <div class="tournament-badges">
                     <span class="badge" th:text="#{__${'enum.genero.' + tournament.generoFormato.name()}__}">Mixto</span>
-                    <span class="badge badge-level" th:text="${tournament.categoriaNivel}">C7</span>
+                    <span class="badge badge-level" th:text="${tournament.categoriaNivel == 'TODOS'} ? #{calendar.level.TODOS} : ${tournament.categoriaNivel}">C7</span>
                     <span class="badge badge-type" th:text="#{__${'enum.tipo.' + tournament.tipo.name()}__}">Americano</span>
                     <span class="badge badge-status"
                           th:text="#{__${'enum.estado.' + tournament.estado.name()}__}"

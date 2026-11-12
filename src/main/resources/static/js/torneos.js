@@ -12,6 +12,7 @@ class TorneosPage {
 
         // Маппинг для отображения значений enum в читаемые тексты
         this.nivelDisplayMap = {
+            'TODOS': t('enum.nivel.todos'),
             'C9': t('enum.nivel.c9'),
             'C8': t('enum.nivel.c8'),
             'C7': t('enum.nivel.c7'),

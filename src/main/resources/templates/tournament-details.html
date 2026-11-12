@@ -114,7 +114,7 @@
                 <h1 th:text="#{__${'enum.tipo.' + tournament.tipo.name()}__}">Cancha Abierta</h1>
                 <div class="tournament-badges">
                     <span class="badge" th:text="${tournament.generoFormato}">Masculino</span>
-                    <span class="badge badge-level" th:text="${tournament.categoriaNivel}">C7 - Avanzado</span>
+                    <span class="badge badge-level" th:text="${tournament.categoriaNivel == 'TODOS'} ? #{calendar.level.TODOS} : ${tournament.categoriaNivel}">C7 - Avanzado</span>
                     <span class="badge badge-modalidad"
                           th:text="${tournament.modalidad.name() == 'DOBLES'} ? #{tournament.modality.doubles} : #{tournament.modality.individual}">Parejas</span>
                     <span class="badge badge-status"

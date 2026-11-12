@@ -184,9 +184,14 @@
                                     required>
                                 <option value="" th:text="#{admin.tournaments.form.field.level.select}">Seleccione nivel</option>
                                 <option th:each="nivel : ${niveles}"
+                                        th:unless="${nivel.name() == 'TODOS'}"
                                         th:value="${nivel}"
                                         th:attr="data-genero=${nivel.generoAplicableNombre}"
                                         th:text="${nivel.display}"></option>
+                                <option value="TODOS"
+                                        th:with="openClinic=${tournament.generoFormato?.name() == 'MIXTO' and tournament.tipo?.name() == 'PADEL_CLINIC' and tournament.modalidad?.name() == 'INDIVIDUAL'}"
+                                        th:attr="data-legacy-todos=${!openClinic and tournament.categoriaNivel == 'TODOS'}"
+                                        th:text="#{calendar.level.TODOS}">Todos los niveles</option>
                             </select>
                             <div class="invalid-feedback" th:if="${#fields.hasErrors('categoriaNivel')}"
                                  th:errors="*{categoriaNivel}" th:text="#{admin.tournaments.form.error.field}">Error en el campo</div>
@@ -408,9 +413,7 @@
 
 <!-- Скрипт для автоматического расчета даты отмены -->
 <script>
-    // Фильтрует варианты "Categoría / Nivel" по выбранному "Formato de Género".
-    // Варианты без data-genero (legacy-значения, присутствуют, только когда это текущее
-    // значение турнира) показываются всегда, независимо от пола.
+    // Фильтрует уровни по категории, типу мероприятия и формату участия.
     function onGeneroChange() {
         const generoSelect = document.getElementById('generoFormato');
         const nivelSelect = document.getElementById('categoriaNivel');
@@ -418,6 +421,9 @@
             return;
         }
         const genero = generoSelect.value;
+        const openClinic = genero === 'MIXTO'
+            && document.getElementById('tipo').value === 'PADEL_CLINIC'
+            && document.getElementById('modalidad').value === 'INDIVIDUAL';
         let selectedStillVisible = false;
 
         Array.from(nivelSelect.options).forEach(function (opt) {
@@ -425,7 +431,9 @@
                 return; // placeholder "Seleccione nivel"
             }
             const optGenero = opt.getAttribute('data-genero');
-            const visible = !genero || !optGenero || optGenero === genero;
+            const visible = opt.value === 'TODOS'
+                ? openClinic || opt.dataset.legacyTodos === 'true'
+                : !genero || !optGenero || optGenero === genero;
             opt.hidden = !visible;
             opt.disabled = !visible;
             if (visible && opt.selected) {
@@ -482,18 +490,19 @@
         }
 
         updateCupoMaxLabel();
+        onGeneroChange();
     }
 
     document.addEventListener('DOMContentLoaded', function() {
         // Применяем логику для уже выбранного типа (при редактировании)
         onTipoChange(null);
-        // Применяем фильтрацию уровней для уже выбранного пола (при редактировании)
-        onGeneroChange();
-
         // Прямая смена модальности (CANCHA_ABIERTA/PADEL_CLINIC, где она не форсируется типом)
         const modalidadSelectEl = document.getElementById('modalidad');
         if (modalidadSelectEl) {
-            modalidadSelectEl.addEventListener('change', updateCupoMaxLabel);
+            modalidadSelectEl.addEventListener('change', function () {
+                updateCupoMaxLabel();
+                onGeneroChange();
+            });
         }
 
         const fechaInicio = document.getElementById('fechaInicio');

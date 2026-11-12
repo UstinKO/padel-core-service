@@ -268,7 +268,8 @@ class PadelCoreHome {
             : tournament.horaInicio || t('card.time.unknown');
 
         const generoDisplay = this.displayMaps.genero[tournament.generoFormato] || tournament.generoFormato || 'N/A';
-        const nivelDisplay  = tournament.categoriaNivel || 'N/A';
+        const nivelDisplay  = tournament.categoriaNivel === 'TODOS'
+            ? t('enum.nivel.todos') : tournament.categoriaNivel || 'N/A';
         const tipoDisplay   = this.displayMaps.tipo[tournament.tipo] || tournament.tipo || 'N/A';
         const estadoDisplay = this.displayMaps.estado[tournament.estado] || tournament.estado || '';
         const estadoClass   = tournament.estado ? `status-${tournament.estado.toLowerCase()}` : '';
