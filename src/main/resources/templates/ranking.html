@@ -24,6 +24,7 @@
     <!-- Custom Styles -->
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" th:href="@{/css/ranking.css}">
+    <link th:if="${previewElo != null}" rel="stylesheet" th:href="@{/css/elo-preview.css}">
     <th:block th:replace="~{fragments/analytics :: ga4}"></th:block>
     <th:block th:replace="~{fragments/analytics :: cookie-consent}"></th:block>
 </head>
@@ -59,7 +60,9 @@
     </div>
 </header>
 
-<main class="ranking-main">
+<main th:if="${previewElo != null}" class="ranking-main"
+      th:insert="~{fragments/elo-preview :: leaderboard}"></main>
+<main th:unless="${previewElo != null}" class="ranking-main">
     <div class="container">
         <div class="ranking-header">
             <h1 class="ranking-title">
@@ -163,7 +166,7 @@
 <script th:src="@{/js/logger.js}"></script>
 <script th:src="${'/js/i18n/messages-' + #locale.language + '.js'}"></script>
 <script th:src="@{/js/i18n/t.js}"></script>
-<script th:inline="javascript">
+<script th:unless="${previewElo != null}" th:inline="javascript">
     /*<![CDATA[*/
     var rankingData = /*[(${rankingJson})]*/ [];
     var topRankingData = /*[(${topRankingJson})]*/ [];
@@ -171,6 +174,7 @@
 </script>
 
 <script th:src="@{/js/main.js}"></script>
-<script th:src="@{/js/ranking.js}"></script>
+<script th:unless="${previewElo != null}" th:src="@{/js/ranking.js}"></script>
+<script th:if="${previewElo != null}" th:src="@{/js/elo-preview.js}" defer></script>
 </body>
 </html>

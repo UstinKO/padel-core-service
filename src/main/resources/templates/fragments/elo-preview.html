@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="leaderboard" id="elo-leaderboard" class="container elo-preview">
+    <h1 th:text="#{elo.preview.heading}">Ranking Elo</h1>
+    <p th:text="#{elo.preview.asOf(${#temporals.format(previewElo.asOf, 'dd/MM/yyyy')})}"></p>
+    <form class="elo-preview-filters" hidden>
+        <label>
+            <span th:text="#{elo.preview.category}"></span>
+            <select name="category">
+                <option value="" th:text="#{elo.preview.all}"></option>
+                <option th:each="category : ${previewEloCategories}" th:value="${category}"
+                        th:text="${category}"></option>
+            </select>
+        </label>
+        <label>
+            <span th:text="#{elo.preview.status}"></span>
+            <select name="status">
+                <option value="" th:text="#{elo.preview.all}"></option>
+                <option value="confirmed" th:text="#{elo.preview.confirmed}"></option>
+                <option value="provisional" th:text="#{elo.preview.provisional}"></option>
+            </select>
+        </label>
+        <label>
+            <span th:text="#{elo.preview.player}"></span>
+            <input name="player" type="search" autocomplete="off">
+        </label>
+    </form>
+    <p class="elo-preview-count"><output aria-live="polite" th:text="${previewElo.rows.size()}"></output>
+        <span th:text="#{elo.preview.playersShown}"></span></p>
+    <div class="elo-preview-scroll" tabindex="0" role="region" th:aria-label="#{elo.preview.heading}">
+        <table>
+            <thead>
+            <tr>
+                <th scope="col" th:text="#{elo.preview.categoryPlace}"></th>
+                <th scope="col" th:text="#{elo.preview.player}"></th>
+                <th scope="col" th:text="#{elo.preview.category}"></th>
+                <th scope="col" th:text="#{elo.preview.status}"></th>
+                <th scope="col">Elo</th>
+                <th scope="col" th:text="#{elo.preview.overallPlace}"></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="row : ${previewElo.rows}" th:data-player-id="${row.id}"
+                th:data-category="${row.category}"
+                th:data-status="${row.confirmed ? 'confirmed' : 'provisional'}"
+                th:data-elo="${row.elo}" th:data-category-place="${row.categoryPlace}"
+                th:data-category-size="${row.categorySize}" th:data-overall-place="${row.overallPlace}">
+                <td th:text="${row.categoryPlace}"></td>
+                <th scope="row" th:text="${row.name}"></th>
+                <td th:text="${row.category}"></td>
+                <td><span class="elo-preview-badge" th:classappend="${row.confirmed ? 'confirmed' : 'provisional'}"
+                          th:text="${row.confirmed} ? #{elo.preview.confirmed} : #{elo.preview.provisional}"></span></td>
+                <td th:text="${#numbers.formatDecimal(row.elo, 1, 2)}"></td>
+                <td th:text="${row.overallPlace} ?: '—'"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <p class="elo-preview-note" th:text="#{elo.preview.explanation}"></p>
+</div>
+
+<th:block th:fragment="playerCard">
+    <div class="elo-preview-card-heading">
+        <h2 th:text="#{elo.preview.myRanking}"></h2>
+        <span class="elo-preview-badge" th:classappend="${eloRow.confirmed ? 'confirmed' : 'provisional'}">
+            <strong th:text="${eloRow.category}"></strong>
+            <span th:text="${eloRow.confirmed} ? #{elo.preview.confirmed} : #{elo.preview.provisional}"></span>
+        </span>
+    </div>
+    <dl class="elo-preview-metrics">
+        <div><dt>Elo</dt><dd data-stat="elo" th:text="${#numbers.formatDecimal(eloRow.elo, 1, 2)}"></dd></div>
+        <div><dt th:text="#{elo.preview.categoryPlace}"></dt>
+            <dd data-stat="category-place" th:text="#{elo.preview.placeOf(${eloRow.categoryPlace},${eloRow.categorySize})}"></dd></div>
+        <div><dt th:text="#{elo.preview.overallPlace}"></dt>
+            <dd data-stat="overall-place" th:classappend="${eloRow.confirmed ? '' : 'pending'}"
+                th:text="${eloRow.confirmed} ? ${eloRow.overallPlace} : #{elo.preview.afterConfirmation}"></dd></div>
+    </dl>
+    <div th:if="${!eloRow.confirmed and eloRow.progress != null}" th:object="${eloRow.progress}" class="elo-preview-progress">
+        <strong th:text="#{elo.preview.progress(${eloRow.category})}"></strong>
+        <p th:text="#{elo.preview.progressStats(*{tournaments},*{matches},*{wins})}"></p>
+        <p th:text="#{elo.preview.progressRemaining(*{moreTournaments},*{moreMatches},*{moreWins})}"></p>
+    </div>
+    <a th:href="@{/ranking(category=${eloRow.category})}" th:text="#{elo.preview.viewRanking}"></a>
+</th:block>
+</body>
+</html>
