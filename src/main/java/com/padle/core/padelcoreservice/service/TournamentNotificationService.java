@@ -127,6 +127,14 @@ public class TournamentNotificationService {
         }
     }
 
+    public void sendGuestRegistrationStatus(TournamentRegistration registration, String eventName, RegistrationStatus status) {
+        if (status == RegistrationStatus.CONFIRMED || status == RegistrationStatus.WAITLIST) {
+            var kind = status == RegistrationStatus.CONFIRMED
+                    ? GuestPartnerNotice.Kind.CONFIRMED : GuestPartnerNotice.Kind.WAITLIST;
+            GuestPartnerNotice.forward(emailService, registration, eventName, kind);
+        }
+    }
+
     public void sendPairRegistrationEmails(TournamentRegistration mainReg, TournamentRegistration partnerReg) {
         if (mainReg.getStatus() != partnerReg.getStatus()) {
             log.warn("Статусы участников пары различаются, письма не отправлены: {}, {}", mainReg.getId(), partnerReg.getId());
@@ -134,7 +142,11 @@ public class TournamentNotificationService {
         }
         TournamentDto tournament = tournamentMapper.toDto(mainReg.getTournament());
         sendRegistrationStatusEmail(mainReg.getPlayer(), tournament, mainReg.getStatus(), mainReg.getWaitlistPosition());
-        sendRegistrationStatusEmail(partnerReg.getPlayer(), tournament, partnerReg.getStatus(), partnerReg.getWaitlistPosition());
+        if (partnerReg.getPlayer().isGuestAccount()) {
+            sendGuestRegistrationStatus(partnerReg, tournament.getNombre(), partnerReg.getStatus());
+        } else {
+            sendRegistrationStatusEmail(partnerReg.getPlayer(), tournament, partnerReg.getStatus(), partnerReg.getWaitlistPosition());
+        }
     }
 
     private String getClubName(Long clubId) {

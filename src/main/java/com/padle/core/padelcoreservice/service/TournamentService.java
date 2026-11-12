@@ -536,7 +536,7 @@ public class TournamentService {
         log.info("Registration cancelled. Old status: {}, New status: {}, Active: {}",
                 oldStatus, registration.getStatus(), registration.getIsActive());
 
-        sendRegistrationCancelledEmail(registration.getPlayer(), tournament, reason);
+        sendRegistrationCancelledEmail(registration, tournament, reason);
 
         boolean heldPlace = oldStatus == RegistrationStatus.CONFIRMED
                 || oldStatus == RegistrationStatus.SOLO_ADD_LATER
@@ -675,7 +675,7 @@ public class TournamentService {
                 reg.confirm();
                 reg.setPosition(position);
                 registrationRepository.save(reg);
-                sendWaitlistAutoConfirmEmail(reg.getPlayer(), tournament);
+                sendWaitlistAutoConfirmEmail(reg, tournament);
             }
 
             occupiedSpots++;
@@ -696,10 +696,15 @@ public class TournamentService {
         log.info("Player {} auto-confirmed from waitlist for tournament {}",
                 registration.getPlayer().getId(), tournament.getId());
 
-        sendWaitlistAutoConfirmEmail(registration.getPlayer(), tournament);
+        sendWaitlistAutoConfirmEmail(registration, tournament);
     }
 
-    private void sendWaitlistAutoConfirmEmail(PlayerPadel player, Tournament tournament) {
+    private void sendWaitlistAutoConfirmEmail(TournamentRegistration registration, Tournament tournament) {
+        PlayerPadel player = registration.getPlayer();
+        if (player.isGuestAccount()) {
+            GuestPartnerNotice.forward(emailService, registration, tournament.getNombre(), GuestPartnerNotice.Kind.CONFIRMED);
+            return;
+        }
         try {
             String email = player.getEmail();
             String name = player.getNombre();
@@ -754,12 +759,17 @@ public class TournamentService {
         }
     }
 
-    private void sendRegistrationCancelledEmail(PlayerPadel player, Tournament tournament, String reason) {
-        sendRegistrationCancelledEmail(player, tournament, reason, null);
+    private void sendRegistrationCancelledEmail(TournamentRegistration registration, Tournament tournament, String reason) {
+        sendRegistrationCancelledEmail(registration, tournament, reason, null);
     }
 
-    private void sendRegistrationCancelledEmail(PlayerPadel player, Tournament tournament, String reason,
+    private void sendRegistrationCancelledEmail(TournamentRegistration registration, Tournament tournament, String reason,
                                                 PairTermsService.Cancellation quote) {
+        PlayerPadel player = registration.getPlayer();
+        if (player.isGuestAccount()) {
+            GuestPartnerNotice.forward(emailService, registration, tournament.getNombre(), GuestPartnerNotice.Kind.CANCELLED);
+            return;
+        }
         try {
             String email = player.getEmail();
             String name = player.getNombre();
@@ -780,7 +790,12 @@ public class TournamentService {
         }
     }
 
-    private void sendMovedToReserveEmail(PlayerPadel player, Tournament tournament) {
+    private void sendMovedToReserveEmail(TournamentRegistration registration, Tournament tournament) {
+        PlayerPadel player = registration.getPlayer();
+        if (player.isGuestAccount()) {
+            GuestPartnerNotice.forward(emailService, registration, tournament.getNombre(), GuestPartnerNotice.Kind.WAITLIST);
+            return;
+        }
         try {
             String dateStr = tournament.getFechaInicio().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
             String timeStr = tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm"));
@@ -1296,7 +1311,7 @@ public class TournamentService {
         var result = cancellations.cancel(registrations,context,reason);
         registrations.forEach(reg -> {
             registrationRepository.save(reg);
-            sendRegistrationCancelledEmail(reg.getPlayer(), tournament, reason, quote);
+            sendRegistrationCancelledEmail(reg, tournament, reason, quote);
         });
         if (heldPlaceCancelled) {
             processWaitlistForTournament(tournamentId);
@@ -1363,7 +1378,7 @@ public class TournamentService {
         RegistrationStatus oldStatus = playerReg.getStatus();
         cancellations.cancel(List.of(playerReg),cancellations.organizer(owner,Scope.PARTICIPANT,comment),"Eliminado por el organizador");
         registrationRepository.save(playerReg);
-        sendRegistrationCancelledEmail(playerReg.getPlayer(), tournament, playerReg.getCancellationReason());
+        sendRegistrationCancelledEmail(playerReg, tournament, playerReg.getCancellationReason());
         if (oldStatus == RegistrationStatus.CONFIRMED) {
             processWaitlistForTournament(tournamentId);
         }
@@ -1699,7 +1714,7 @@ public class TournamentService {
 
         // Уведомляем игрока о переносе в резерв — отдельное письмо от sendWaitlistNotification,
         // которое используется при первичной постановке в очередь при самой регистрации
-        sendMovedToReserveEmail(registration.getPlayer(), tournament);
+        sendMovedToReserveEmail(registration, tournament);
     }
 
     @Transactional
@@ -1741,7 +1756,7 @@ public class TournamentService {
 
         // Уведомляем игрока о переводе в основной состав (переиспользуем письмо авто-перевода —
         // по смыслу оно подходит и для ручного перевода администратором)
-        sendWaitlistAutoConfirmEmail(registration.getPlayer(), tournament);
+        sendWaitlistAutoConfirmEmail(registration, tournament);
     }
 
     private void reorderPositions(Long tournamentId) {

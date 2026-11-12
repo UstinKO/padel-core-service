@@ -22,6 +22,7 @@ import java.util.Optional;
 public class AccountService {
     private final PlayerRepository players;
     private final PlayerService playerService;
+    private final PlayerPhoneGuard phoneGuard;
     private final AccountMapper mapper;
 
     public PlayerPadel player(Authentication authentication) {
@@ -48,7 +49,7 @@ public class AccountService {
         request.setTelefono(normalize(request.getTelefono()));
         request.setTelegramUsername(telegram(request.getTelegramUsername()));
         if (!request.passwordsMatch()) invalid("PASSWORD_MISMATCH", "confirmPassword");
-        duplicates(request.getEmail(), request.getTelefono(), request.getTelegramUsername(), Optional.empty());
+        duplicates(request.getEmail(), request.getTelegramUsername(), Optional.empty());
         playerService.registrarJugador(request);
     }
 
@@ -60,7 +61,10 @@ public class AccountService {
         if (!Nivel.isPlayerLevel(request.nivelJugador())) invalid("INVALID_FIELD", "nivelJugador");
         if (request.telefono() == null && request.telegramUsername() == null) invalid("CONTACT_REQUIRED", "telefono", "telegramUsername");
         if (!player.isGuestAccount() && !player.getEmail().equals(request.email())) invalid("EMAIL_IMMUTABLE", "email");
-        duplicates(request.email(), request.telefono(), request.telegramUsername(), Optional.of(player));
+        duplicates(request.email(), request.telegramUsername(), Optional.of(player));
+        if (!Objects.equals(player.getTelefono(), request.telefono())) {
+            phoneGuard.requireAvailable(request.telefono(), player.getId());
+        }
         mapper.update(request, player);
         return mapper.profile(players.save(player));
     }
@@ -73,11 +77,9 @@ public class AccountService {
         playerService.cambiarPassword(player.getId(), request.newPassword());
     }
 
-    private void duplicates(String email, String phone, String telegram, Optional<PlayerPadel> current) {
+    private void duplicates(String email, String telegram, Optional<PlayerPadel> current) {
         if (current.map(player -> !player.getEmail().equals(email)).orElse(true) && players.existsByEmail(email))
             invalid("EMAIL_DUPLICATE", "email");
-        if (phone != null && current.map(player -> !Objects.equals(player.getTelefono(), phone)).orElse(true)
-                && players.existsByTelefono(phone)) invalid("PHONE_DUPLICATE", "telefono");
         if (telegram != null && current.map(player -> !telegram.equalsIgnoreCase(Objects.toString(player.getTelegramUsername(), ""))).orElse(true)
                 && players.existsByTelegramUsernameIgnoreCase(telegram)) invalid("TELEGRAM_DUPLICATE", "telegramUsername");
     }

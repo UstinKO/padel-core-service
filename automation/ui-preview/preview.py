@@ -164,7 +164,7 @@ def main():
                 client.request('/actuator/health/readiness')
                 print('Preview готов: ' + client.origin + '/__preview')
                 return
-            except (urllib.error.URLError, TimeoutError):
+            except (urllib.error.URLError, TimeoutError, ConnectionResetError):
                 time.sleep(1)
         raise RuntimeError('Readiness не достигнут; проверьте логи собственного Compose-проекта')
     elif args.command == 'stop':

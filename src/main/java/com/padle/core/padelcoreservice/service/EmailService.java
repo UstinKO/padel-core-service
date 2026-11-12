@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.annotation.MetricTag;
 import com.padle.core.padelcoreservice.annotation.Timed;
 import com.padle.core.padelcoreservice.annotation.TrackErrors;
@@ -513,6 +514,17 @@ public class EmailService {
                 "email/partner-replaced", context);
     }
 
+    @Async
+    public void sendGuestPartnerNotice(String to, String partnerName, String eventName,
+                                       GuestPartnerNotice.Kind kind, Locale locale) {
+        Context context = createEmailContext(locale);
+        context.setVariable("eventName", eventName);
+        context.setVariable("partnerName", partnerName);
+        context.setVariable("notice", messageSource.getMessage("email.guest_partner." + kind.name(), null, locale));
+        sendPairPolicyEmail(to, "GUEST_PARTNER_NOTICE", "email.guest_partner.subject", eventName,
+                "email/guest-partner-notice", context);
+    }
+
     private void sendPairPolicyEmail(String to, String type, String subjectKey, String tournamentName,
                                      String template, Context context) {
         emailMetricsService.recordEmailAttempt(type);
@@ -1008,6 +1020,9 @@ public class EmailService {
      * Универсальный метод для отправки HTML писем (БЕЗ ИЗМЕНЕНИЙ)
      */
     private void sendHtmlEmail(String to, String subject, String htmlContent) throws MessagingException {
+        if (to == null || to.isBlank() || PlayerPadel.isGuestEmail(to)) {
+            return;
+        }
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 

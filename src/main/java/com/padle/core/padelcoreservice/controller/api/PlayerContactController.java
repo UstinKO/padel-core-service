@@ -1,6 +1,7 @@
 package com.padle.core.padelcoreservice.controller.api;
 
 import com.padle.core.padelcoreservice.dto.PlayerResponseDto;
+import com.padle.core.padelcoreservice.exception.ClaimPhoneInUseException;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
 import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2User;
@@ -68,12 +69,6 @@ public class PlayerContactController {
         // Обновляем данные
         if (hasPhone) {
             String newPhone = request.getTelefono().trim();
-            if (!newPhone.equals(player.getTelefono())
-                    && playerService.existsByTelefono(newPhone)) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("success", false,
-                                "message", "Este número de teléfono ya está en uso por otro jugador"));
-            }
             player.setTelefono(newPhone);
         }
         if (hasTelegram) {
@@ -93,6 +88,9 @@ public class PlayerContactController {
 
         try {
             playerService.save(player);
+        } catch (ClaimPhoneInUseException e) {
+            return ResponseEntity.status(409).body(Map.of("success", false, "code", "PHONE_IN_USE",
+                    "message", e.getMessage(), "whatsappUrl", e.whatsappUrl().orElse("")));
         } catch (DataIntegrityViolationException e) {
             boolean isTelegramConflict = e.getMostSpecificCause().getMessage() != null
                     && e.getMostSpecificCause().getMessage().contains("idx_player_telegram_username_unique");

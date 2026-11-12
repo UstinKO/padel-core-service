@@ -59,13 +59,14 @@ jobs:
         id: deploy
         env:
           META_CAPI_ACCESS_TOKEN: ${{ secrets.META_CAPI_ACCESS_TOKEN }}
+          GUEST_CLAIM_WHATSAPP_URL: ${{ vars.GUEST_CLAIM_WHATSAPP_URL }}
           RELEASE_REVISION: ${{ github.sha }}
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_KEY_NEW }}
-          envs: META_CAPI_ACCESS_TOKEN,RELEASE_REVISION
+          envs: META_CAPI_ACCESS_TOKEN,RELEASE_REVISION,GUEST_CLAIM_WHATSAPP_URL
           timeout: 1200s
           command_timeout: 1200s
           script: |

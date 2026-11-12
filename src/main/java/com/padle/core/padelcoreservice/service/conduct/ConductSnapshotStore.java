@@ -125,6 +125,16 @@ class ConductSnapshotStore {
                 """).param("id", tournamentId).query(String.class).single();
     }
 
+    String canonicalRegistrations(String snapshot) {
+        return jdbc.sql("SELECT CAST(guest_claim_registration_snapshot(CAST(:snapshot AS jsonb)) AS text)")
+                .param("snapshot", snapshot).query(String.class).single();
+    }
+
+    String canonicalSnapshot(String snapshot) {
+        return jdbc.sql("SELECT CAST(guest_claim_conduct_snapshot(CAST(:snapshot AS jsonb)) AS text)")
+                .param("snapshot", snapshot).query(String.class).single();
+    }
+
     List<TournamentConductHistory.RegistrationDifference> registrationDifferences(String before, String current) {
         return jdbc.sql("""
                 SELECT CAST(COALESCE(b.item, c.item)->>0 AS bigint) AS registration_id,

@@ -35,6 +35,27 @@ class ConfigureMetaTest(unittest.TestCase):
         self.assertEqual(self.path.read_text(), result)
         self.assertEqual(stat.S_IMODE(self.path.stat().st_mode) & 0o077, 0)
 
+    def test_whatsapp_url_replaces_duplicates_and_survives_unset_variable(self):
+        self.path.write_text("DB=value\nGUEST_CLAIM_WHATSAPP_URL=old\nexport GUEST_CLAIM_WHATSAPP_URL=older\n")
+        url = "https://wa.me/12025550100"
+        MODULE.configure(self.path, TOKEN, url)
+        result = self.path.read_text()
+        self.assertIn("DB=value\n", result)
+        self.assertEqual(result.count("GUEST_CLAIM_WHATSAPP_URL="), 1)
+        self.assertIn("GUEST_CLAIM_WHATSAPP_URL=" + url + "\n", result)
+        MODULE.configure(self.path, TOKEN, url)
+        self.assertEqual(self.path.read_text(), result)
+        MODULE.configure(self.path, TOKEN)
+        self.assertIn("GUEST_CLAIM_WHATSAPP_URL=" + url + "\n", self.path.read_text())
+
+    def test_invalid_whatsapp_url_does_not_modify_file(self):
+        self.path.write_text("DB=value\n")
+        for url in ("https://example.test/12025550100", "https://wa.me/12025550100?text=x",
+                    "https://wa.me/12025550100\nOTHER=value"):
+            with self.subTest(url=url), self.assertRaises(ValueError):
+                MODULE.configure(self.path, TOKEN, url)
+            self.assertEqual(self.path.read_text(), "DB=value\n")
+
     def test_invalid_tokens_do_not_change_file_or_disclose_input(self):
         for token in ("", "short", TOKEN + "\nEVIL=yes", TOKEN + "'", TOKEN + "${ENV}"):
             with self.subTest(token_length=len(token)):

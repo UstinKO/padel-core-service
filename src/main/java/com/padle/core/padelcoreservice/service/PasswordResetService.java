@@ -2,6 +2,7 @@ package com.padle.core.padelcoreservice.service;
 
 import com.padle.core.padelcoreservice.dto.PasswordResetConfirm;
 import com.padle.core.padelcoreservice.model.PasswordResetToken;
+import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.repository.PasswordResetTokenRepository;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
 import com.padle.core.padelcoreservice.security.AccountDestination;
@@ -35,7 +36,8 @@ public class PasswordResetService {
 
     @Transactional
     public boolean requestPasswordReset(String email, Optional<String> destination) {
-        playerRepository.findByEmail(email).ifPresent(player -> {
+        playerRepository.findByEmail(email).filter(PlayerPadel::isActivo)
+                .filter(player -> !player.isGuestAccount()).ifPresent(player -> {
             tokenRepository.deleteByPlayer(player);
             String token = UUID.randomUUID().toString();
             tokenRepository.save(PasswordResetToken.builder().token(token).player(player)
@@ -66,7 +68,8 @@ public class PasswordResetService {
         return true;
     }
 
-    private boolean usable(PasswordResetToken token) { return !token.isUsed() && !token.isExpired(); }
+    private boolean usable(PasswordResetToken token) { return !token.isUsed() && !token.isExpired()
+            && token.getPlayer().isActivo() && !token.getPlayer().isGuestAccount(); }
 
     @Transactional
     public void cleanExpiredTokens() { tokenRepository.deleteAllExpiredOrUsed(LocalDateTime.now()); }

@@ -61,6 +61,12 @@ class Production(DockerAdapter):
             meta = json.loads(self.fetch(record)('/api/marketing/config').body)
             if not env.get('META_CAPI_ACCESS_TOKEN') or not valid_meta(meta, env.get('META_PIXEL_ID')):
                 raise ValueError('Не подтверждена действующая конфигурация Meta')
+            whatsapp_url = env.get('GUEST_CLAIM_WHATSAPP_URL')
+            if whatsapp_url:
+                active_env = self.container()['Config']['Env']
+                if 'GUEST_CLAIM_WHATSAPP_URL=' + whatsapp_url not in active_env:
+                    raise ValueError('Не подтверждена ссылка WhatsApp в контейнере')
+                print('Ссылка WhatsApp подтверждена в контейнере')
 
 
 def valid_meta(config, pixel):
@@ -170,8 +176,13 @@ def main():
             candidate_env = temporary / '.env'
             shutil.copyfile(root / '.env', candidate_env)
             from configure_meta_env import configure
-            configure(candidate_env, os.environ.get('META_CAPI_ACCESS_TOKEN', ''))
-            record = adapter.prepare(jar, manifest, manifest['image'], compose_config(root, candidate_env), candidate_env.read_bytes())
+            whatsapp_url = os.environ.get('GUEST_CLAIM_WHATSAPP_URL', '')
+            configure(candidate_env, os.environ.get('META_CAPI_ACCESS_TOKEN', ''), whatsapp_url)
+            candidate_config = compose_config(root, candidate_env)
+            if whatsapp_url:
+                # --env-file задаёт подстановки Compose, а env_file сервиса может читать прежний .env.
+                candidate_config['services'][adapter.service].setdefault('environment', {})['GUEST_CLAIM_WHATSAPP_URL'] = whatsapp_url
+            record = adapter.prepare(jar, manifest, manifest['image'], candidate_config, candidate_env.read_bytes())
         releases._deploy_locked(record)
         # Сохраняются текущий/предыдущий выпуск и исходный baseline. Архив chunks не очищается.
         if not releases.read('pending'):
@@ -186,6 +197,16 @@ def main():
 def entrypoint():
     try:
         main()
+    except subprocess.CalledProcessError as error:
+        # Выводим только тип операции из известного набора, без argv и stderr.
+        command = error.cmd if isinstance(error.cmd, (list, tuple)) else ()
+        operation = 'внешняя команда'
+        if command and command[0] == 'docker' and len(command) > 1:
+            if command[1] == 'compose':
+                operation = next((name for name in ('config', 'up', 'stop') if name in command), 'compose')
+            elif command[1] in ('create', 'cp', 'inspect', 'ps', 'rm', 'image', 'exec'):
+                operation = command[1]
+        raise SystemExit(f'Выпуск не принят: ошибка операции {operation}, код {error.returncode}')
     except Exception as error:
         # Содержимое Compose, HTTP и аргументы процессов могут включать секреты.
         raise SystemExit('Выпуск не принят: ' + type(error).__name__)
