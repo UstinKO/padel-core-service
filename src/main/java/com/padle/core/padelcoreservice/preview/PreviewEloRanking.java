@@ -5,6 +5,7 @@ import com.padle.core.padelcoreservice.controller.view.RankingController;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import tools.jackson.databind.ObjectMapper;
@@ -15,7 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -32,10 +33,11 @@ public class PreviewEloRanking {
     public record Snapshot(LocalDate asOf, List<Row> rows) { }
 
     private final Snapshot snapshot;
-    private final List<String> categories;
-    private final Map<Long, Row> byPlayerId;
+    private final Optional<PreviewEloHistory> history;
 
-    public PreviewEloRanking(ObjectMapper mapper, @Value("${app.preview.elo-snapshot}") Path path) throws IOException {
+    public PreviewEloRanking(ObjectMapper mapper, @Value("${app.preview.elo-snapshot}") Path path,
+                             Optional<PreviewEloHistory> history) throws IOException {
+        this.history = history;
         try (var input = Files.newInputStream(path)) {
             var imported = mapper.readValue(input, Snapshot.class);
             snapshot = new Snapshot(imported.asOf(), List.copyOf(imported.rows()));
@@ -43,23 +45,14 @@ public class PreviewEloRanking {
         if (snapshot.asOf() == null || snapshot.rows().isEmpty()) {
             throw new IllegalArgumentException("Нет даты или игроков в срезе Elo");
         }
-        categories = snapshot.rows().stream().map(Row::category).distinct().toList();
-        byPlayerId = snapshot.rows().stream()
-                .collect(Collectors.toUnmodifiableMap(Row::id, Function.identity()));
     }
 
-    @ModelAttribute("previewElo")
-    public Snapshot snapshot() {
-        return snapshot;
-    }
-
-    @ModelAttribute("previewEloCategories")
-    public List<String> categories() {
-        return categories;
-    }
-
-    @ModelAttribute("previewEloByPlayer")
-    public Map<Long, Row> byPlayerId() {
-        return byPlayerId;
+    @ModelAttribute
+    public void ranking(Model model) {
+        var current = history.map(source -> source.calculate(snapshot.asOf())).orElse(snapshot);
+        model.addAttribute("previewElo", current);
+        model.addAttribute("previewEloCategories", current.rows().stream().map(Row::category).distinct().toList());
+        model.addAttribute("previewEloByPlayer", current.rows().stream()
+                .collect(Collectors.toUnmodifiableMap(Row::id, Function.identity())));
     }
 }
