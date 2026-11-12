@@ -132,6 +132,27 @@ class ProductionSnapshotTest(unittest.TestCase):
             self.assertEqual((root / 'version.txt').read_bytes(), (root / 'current_version.txt').read_bytes())
 
 
+    def test_smoke_checks_whatsapp_in_the_running_container(self):
+        with tempfile.TemporaryDirectory() as root:
+            root = Path(root)
+            adapter = Production(root, root / 'releases', 'own-project', 'app')
+            record = {'id': 'a' * 32, 'managed': True}
+            directory = adapter.folder(record)
+            directory.mkdir()
+            url = 'https://wa.me/12025550100'
+            environment = {'META_CAPI_ACCESS_TOKEN': 'synthetic', 'META_PIXEL_ID': '1',
+                           'GUEST_CLAIM_WHATSAPP_URL': url}
+            (directory / 'compose.json').write_text(json.dumps({'services': {'app': {'environment': environment}}}))
+            response = smoke.Response(200, {}, b'{"enabled":true,"pixelId":"1","testMode":false}')
+            with (patch.object(DockerAdapter, 'smoke'), patch.object(adapter, 'fetch', return_value=lambda _: response),
+                  patch.object(adapter, 'container') as container, patch('builtins.print')):
+                container.return_value = {'Config': {'Env': []}}
+                with self.assertRaisesRegex(ValueError, 'ссылка WhatsApp'):
+                    adapter.smoke(record)
+                container.return_value = {'Config': {'Env': ['GUEST_CLAIM_WHATSAPP_URL=' + url]}}
+                adapter.smoke(record)
+
+
 class Adapter:
     def __init__(self):
         self.active = None
