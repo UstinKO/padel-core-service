@@ -6,8 +6,10 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -31,6 +33,11 @@ class OAuth2AuthenticationSuccessHandlerTest {
 
     private static final String PLAYER_EMAIL = "oauth-player@example.com";
     private static final String PLAYER_PASSWORD_HASH = "$2a$10$fakeEncodedPasswordHashForTest";
+
+    @AfterEach
+    void clearAuthentication() {
+        SecurityContextHolder.clearContext();
+    }
 
     @Test
     void onAuthenticationSuccess_setsRememberMeCookie_forOAuth2Login() throws Exception {

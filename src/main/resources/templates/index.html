@@ -33,6 +33,7 @@
 
     <!-- Custom Styles -->
     <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/home-intro.css}">
     <th:block th:replace="~{fragments/analytics :: ga4}"></th:block>
     <th:block th:replace="~{fragments/analytics :: cookie-consent}"></th:block>
     <th:block th:replace="~{fragments/analytics :: clarity}"></th:block>
@@ -101,53 +102,18 @@
 </header>
 
 <main class="main-content">
-    <!-- Hero Section (без изменений) -->
-    <section class="hero">
-        <div class="container">
-            <div class="hero-content" style="max-width: 800px; margin: 0 auto; text-align: center;">
-                <h1 class="hero-title">
-                    <span class="hero-title-highlight">1-Padel</span>
-                    <br><span th:text="#{home.hero.title}">Todos los torneos de pádel en un solo lugar</span>
+    <section class="home-intro" aria-labelledby="home-intro-title">
+        <div class="container home-intro__layout">
+            <div>
+                <p class="home-intro__location" th:text="#{home.discovery.kicker}">Pádel en Buenos Aires</p>
+                <h1 id="home-intro-title" class="home-intro__title">
+                    <span th:text="#{home.discovery.title}">Tu próximo partido</span>
+                    <em th:text="#{home.discovery.accent}">está acá.</em>
                 </h1>
-<!--                <p class="hero-description">-->
-<!--                    Encuentra torneos, mejora tu ranking y conecta con jugadores de tu nivel.-->
-<!--                    Más de 2000 jugadores ya confían en nosotros.-->
-<!--                </p>-->
-<!--                <div class="hero-stats" style="justify-content: center;">-->
-<!--                    <div class="stat-item">-->
-<!--                        <span class="stat-number">150+</span>-->
-<!--                        <span class="stat-label">Torneos</span>-->
-<!--                    </div>-->
-<!--                    <div class="stat-item">-->
-<!--                        <span class="stat-number">2000+</span>-->
-<!--                        <span class="stat-label">Jugadores</span>-->
-<!--                    </div>-->
-<!--                    <div class="stat-item">-->
-<!--                        <span class="stat-number">50+</span>-->
-<!--                        <span class="stat-label">Clubes</span>-->
-<!--                    </div>-->
-<!--                </div>-->
-
-                <!-- CTA для неаутентифицированных -->
-<!--                <div th:if="${!isAuthenticated}" style="margin-top: 2rem;">-->
-<!--                    <a href="/players/registro" class="btn btn-primary btn-large">-->
-<!--                        <i class="fas fa-user-plus"></i>-->
-<!--                        Regístrate gratis-->
-<!--                    </a>-->
-<!--                    <a href="/login" class="btn btn-outline btn-large" style="margin-left: 1rem;">-->
-<!--                        <i class="fas fa-sign-in-alt"></i>-->
-<!--                        Iniciar sesión-->
-<!--                    </a>-->
-<!--                </div>-->
-
-                <!-- CTA для аутентифицированных -->
-<!--                <div th:if="${isAuthenticated}" style="margin-top: 2rem;">-->
-<!--                    <a href="/players/dashboard" class="btn btn-primary btn-large">-->
-<!--                        <i class="fas fa-tachometer-alt"></i>-->
-<!--                        Ir al Dashboard-->
-<!--                    </a>-->
-<!--                </div>-->
             </div>
+            <p class="home-intro__lead" th:text="#{home.discovery.lead}">
+                Torneo, entrenamiento, cancha abierta, campamento o partido. Elegí lo que más te interese.
+            </p>
         </div>
     </section>
 
@@ -182,8 +148,19 @@
 <!--    </div>-->
 
     <!-- Torneos Section - ИЗМЕНЕНО: теперь все турниры в сетке -->
-    <section class="torneos-section">
+    <section class="torneos-section home-schedule">
         <div class="container">
+            <aside class="home-camp">
+                <div class="home-camp__copy">
+                    <strong th:text="#{home.mendoza.title}">Campamento de pádel en Mendoza</strong>
+                    <span class="home-camp__date" th:text="#{home.mendoza.dates}">10–13 de diciembre</span>
+                </div>
+                <a class="home-camp__link"
+                   th:href="|https://camp-mendoza.1-padel.com#{home.mendoza.path}?utm_source=1-padel.com&amp;utm_medium=referral&amp;utm_campaign=mendoza_2026&amp;utm_content=homepage_banner|">
+                    <span th:text="#{home.mendoza.details}">Más información</span>
+                    <span aria-hidden="true">↗</span>
+                </a>
+            </aside>
             <div class="section-header">
                 <h2 class="section-title" th:text="#{home.section.upcoming}">
                     Próximos Torneos
