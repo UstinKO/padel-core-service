@@ -445,9 +445,10 @@ document.addEventListener('DOMContentLoaded', function() {
         partnerSearchResults.style.display = 'block';
     }
 
-    function showModal() {
+    function showModal(tournamentId) {
         if (partnerModal) {
             partnerModal.classList.add('show');
+            window.trackClarityRegistrationStep?.(tournamentId, 'form_opened');
         }
     }
 
@@ -601,7 +602,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (modalTournamentId) modalTournamentId.value = tournamentId;
                     if (modalTournamentName) modalTournamentName.textContent = tournamentName;
 
-                    showModal();
+                    showModal(tournamentId);
                 });
             } else {
                 console.log('🎾 Single tournament - using ContactCheck');
@@ -634,6 +635,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     showResultModal('success', t('details.success.registered'), t('details.success.waitlist_added'));
                                 }
                             } else if (data.needLevel) {
+                                window.trackClarityRegistrationError?.(tournamentId, 'level_required');
                                 // Попап "указать уровень" вместо обычной ошибки
                                 btn.disabled = false;
                                 btn.innerHTML = window.tournament?.inscritosActuales >= window.tournament?.cupoMax ?
@@ -641,6 +643,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     `<i class="fas fa-check-circle"></i> ${t('details.btn.register')}`;
                                 LevelCheck.show(tournamentId);
                             } else {
+                                window.trackClarityRegistrationError?.(tournamentId, 'registration_rejected');
                                 btn.disabled = false;
                                 btn.innerHTML = window.tournament?.inscritosActuales >= window.tournament?.cupoMax ?
                                     `<i class="fas fa-clock"></i> ${t('details.btn.waitlist')}` :
@@ -657,6 +660,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 }
                             }
                         } catch (error) {
+                            window.trackClarityRegistrationError?.(tournamentId, 'request_failed');
                             console.error('Error registering:', error);
                             btn.disabled = false;
                             btn.innerHTML = window.tournament?.inscritosActuales >= window.tournament?.cupoMax ?
@@ -697,6 +701,7 @@ document.addEventListener('DOMContentLoaded', function() {
         hideInfoMessage();
         window.trackTournamentRegistrationStart?.(tournamentId);
 
+        let errorCode = 'request_failed';
         try {
             // Соло-регистрация (SEARCH или ADD_LATER)
             if (mode === 'SEARCH' || mode === 'ADD_LATER') {
@@ -717,12 +722,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     const soloMsg = mode === 'SEARCH' ? t('details.success.solo_search') : t('details.success.solo_later');
                     showResultModal('success', t('details.success.ready'), soloMsg);
                 } else if (data.needLevel) {
+                    window.trackClarityRegistrationError?.(tournamentId, 'level_required');
                     // Попап "указать уровень" вместо обычной ошибки
                     closeModal();
                     LevelCheck.show(tournamentId);
                     submitPartnerBtn.disabled = false;
                     submitPartnerBtn.innerHTML = `<i class="fas fa-check-circle"></i> <span id="submitPartnerBtnText">${t('details.mode.register_pair')}</span>`;
                 } else {
+                    window.trackClarityRegistrationError?.(tournamentId, 'registration_rejected');
                     showInfoMessage(data.message || t('details.error.process'), 'error');
                     submitPartnerBtn.disabled = false;
                     submitPartnerBtn.innerHTML = `<i class="fas fa-check-circle"></i> <span id="submitPartnerBtnText">${t('details.mode.register_pair')}</span>`;
@@ -746,6 +753,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             if (!isValid) {
+                window.trackClarityRegistrationError?.(tournamentId, 'required_fields');
                 showInfoMessage(t('details.error.required_fields'), 'warning');
                 submitPartnerBtn.disabled = false;
                 submitPartnerBtn.innerHTML = `<i class="fas fa-check-circle"></i> <span id="submitPartnerBtnText">${t('details.mode.register_pair')}</span>`;
@@ -771,7 +779,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(partnerData)
             });
-            if (response.status === 409) throw new Error(t('pair_terms.retry'));
+            if (response.status === 409) {
+                errorCode = 'terms_changed';
+                throw new Error(t('pair_terms.retry'));
+            }
             const data = await response.json();
 
             if (response.ok) {
@@ -784,12 +795,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 else message = t('details.success.pair_complete');
                 showResultModal('success', t('details.success.registered'), message);
             } else if (data.needLevel) {
+                window.trackClarityRegistrationError?.(tournamentId, 'level_required');
                 // Попап "указать уровень" вместо обычной ошибки
                 closeModal();
                 LevelCheck.show(tournamentId);
                 submitPartnerBtn.disabled = false;
                 submitPartnerBtn.innerHTML = `<i class="fas fa-check-circle"></i> <span id="submitPartnerBtnText">${t('details.mode.register_pair')}</span>`;
             } else {
+                window.trackClarityRegistrationError?.(tournamentId, 'registration_rejected');
                 if (data.message && data.message.includes('Ya estás registrado')) {
                     showResultModal('info', t('details.already_registered'), t('details.already_registered'));
                     closeModal();
@@ -800,6 +813,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 submitPartnerBtn.innerHTML = `<i class="fas fa-check-circle"></i> <span id="submitPartnerBtnText">${t('details.mode.register_pair')}</span>`;
             }
         } catch (error) {
+            window.trackClarityRegistrationError?.(tournamentId, errorCode);
             console.error('Error registering double tournament:', error);
             showInfoMessage(t('common.error.connection'), 'error');
             submitPartnerBtn.disabled = false;
