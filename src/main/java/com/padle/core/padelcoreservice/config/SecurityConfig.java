@@ -1,5 +1,7 @@
 package com.padle.core.padelcoreservice.config;
 
+import com.padle.core.padelcoreservice.repository.PlayerRepository;
+import com.padle.core.padelcoreservice.security.GuestSessionFilter;
 import com.padle.core.padelcoreservice.marketing.MetaProperties;
 
 import com.padle.core.padelcoreservice.security.CustomAccessDeniedHandler;
@@ -67,6 +69,7 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomOAuth2UserService customOAuth2UserService;
+    private final PlayerRepository players;
     private final OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> authorizationCodeTokenResponseClient;
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
     private final RateLimitFilter rateLimitFilter;
@@ -74,6 +77,12 @@ public class SecurityConfig {
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
     private final RememberMeServices rememberMeServices;
     private final OAuth2AppLoginOriginFilter oAuth2AppLoginOriginFilter;
+
+    private static boolean isGuestClaimPath(String path) {
+        return path.equals("/api/players/me/guest-profile-claims")
+                || path.startsWith("/api/admin/guest-profile-claims/")
+                || (path.startsWith("/api/admin/players/") && path.endsWith("/activate-guest-profile"));
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -91,7 +100,8 @@ public class SecurityConfig {
                         // Bearer JWT (заголовок Authorization) не подвержен CSRF — его нельзя
                         // выставить форгед cross-site запросом, в отличие от session-cookie.
                         // Игнорируем такие запросы, чтобы не ломать stateless API-клиентов.
-                        .ignoringRequestMatchers(request -> hasBearerAuthorization(request.getHeader("Authorization")))
+                        .ignoringRequestMatchers(request -> hasBearerAuthorization(request.getHeader("Authorization"))
+                                && !isGuestClaimPath(request.getRequestURI().substring(request.getContextPath().length())))
                         // SockJS-фоллбэк транспорты (xhr/xhr_streaming — для клиентов без
                         // нативного WebSocket) шлют служебные POST без X-XSRF-TOKEN — это не fetch,
                         // csrf.js их не видит. Канал только для broadcast сервер→клиент (нет ни одного
@@ -245,6 +255,7 @@ public class SecurityConfig {
                 // th:action формы). Страницы без форм (чисто JS/fetch) иначе останутся без
                 // cookie. Форсируем чтение токена на каждом запросе.
                 .addFilterAfter(csrfCookieFilter(), CsrfFilter.class)
+                .addFilterBefore(new GuestSessionFilter(players), org.springframework.security.web.access.intercept.AuthorizationFilter.class)
                 .oauth2Login(oauth2 -> oauth2
                         .loginPage("/login")
                         .tokenEndpoint(token -> token

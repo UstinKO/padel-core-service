@@ -1,6 +1,7 @@
 package com.padle.core.padelcoreservice.controller;
 
 import com.padle.core.padelcoreservice.config.RecaptchaProperties;
+import com.padle.core.padelcoreservice.exception.ClaimPhoneInUseException;
 import com.padle.core.padelcoreservice.dto.PlayerResponseDto;
 import com.padle.core.padelcoreservice.dto.RegistroRequestDto;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
@@ -144,6 +145,9 @@ public class PlayerPadelController {
             // 3. Редирект на главную
             return "redirect:/?welcome=true";
 
+        } catch (ClaimPhoneInUseException e) {
+            e.whatsappUrl().ifPresent(url -> model.addAttribute("guestClaimWhatsappUrl", url));
+            return registrationError(model, request, e.getMessage());
         } catch (IllegalArgumentException e) {
             log.info("Ошибка проверки регистрации для IP: {}", ip);
 

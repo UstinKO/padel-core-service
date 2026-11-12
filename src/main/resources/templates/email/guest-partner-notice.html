@@ -1,0 +1,9 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<head><meta charset="UTF-8"><title th:text="#{email.guest_partner.subject(${eventName})}"></title></head>
+<body>
+    <h1 th:text="${eventName}"></h1>
+    <p th:text="#{email.guest_partner.for_player(${partnerName})}"></p>
+    <p th:text="${notice}"></p>
+</body>
+</html>

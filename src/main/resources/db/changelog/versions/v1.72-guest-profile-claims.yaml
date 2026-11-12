@@ -1,0 +1,88 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.72-guest-profile-claims
+      author: padel
+      changes:
+        - sql:
+            splitStatements: false
+            sql: |
+              CREATE FUNCTION player_claim_phone(raw text) RETURNS text
+              LANGUAGE sql IMMUTABLE STRICT PARALLEL SAFE AS $$
+                SELECT CASE
+                  WHEN digits ~ '^00549?[1-3][0-9]{9}$' THEN right(digits, 10)
+                  WHEN digits ~ '^549?[1-3][0-9]{9}$' THEN right(digits, 10)
+                  WHEN digits ~ '^0?1115[0-9]{8}$' THEN '11' || right(digits, 8)
+                  WHEN digits ~ '^0?[1-3][0-9]{9}$' THEN right(digits, 10)
+                END
+                FROM (SELECT regexp_replace(raw, '[^0-9]', '', 'g') AS digits) phone
+                WHERE btrim(raw) ~ '^[+]?[0-9 ()-]+$'
+              $$
+        - sql:
+            sql: |
+              CREATE INDEX idx_player_claim_phone ON player_padel_db (player_claim_phone(telefono))
+                WHERE activo = true;
+              CREATE TABLE guest_profile_claims (
+                id uuid PRIMARY KEY,
+                guest_id bigint,
+                account_id bigint,
+                phone_key varchar(10) NOT NULL,
+                created_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                approved_at timestamptz,
+                approved_by bigint,
+                resolved_player_id bigint,
+                CHECK ((approved_at IS NULL AND approved_by IS NULL AND resolved_player_id IS NULL)
+                    OR (approved_at IS NOT NULL AND approved_by IS NOT NULL AND resolved_player_id IS NOT NULL AND guest_id IS NOT NULL)),
+                CHECK (guest_id IS NOT NULL OR account_id IS NOT NULL)
+              );
+              CREATE UNIQUE INDEX uq_guest_profile_claim_approved ON guest_profile_claims (guest_id)
+                WHERE approved_at IS NOT NULL;
+              CREATE UNIQUE INDEX uq_guest_profile_claim_pending ON guest_profile_claims (account_id)
+                WHERE approved_at IS NULL;
+        - sql:
+            splitStatements: false
+            sql: |
+              CREATE FUNCTION guest_claim_canonical_id(profile_id bigint) RETURNS bigint
+              LANGUAGE sql STABLE STRICT AS $$
+                SELECT coalesce(
+                  (SELECT resolved_player_id FROM guest_profile_claims
+                   WHERE guest_id = profile_id AND approved_at IS NOT NULL),
+                  profile_id)
+              $$;
+              CREATE FUNCTION guest_claim_registration_snapshot(snapshot jsonb) RETURNS jsonb
+              LANGUAGE sql STABLE STRICT AS $$
+                SELECT coalesce(jsonb_agg(jsonb_build_array(
+                  item->0, guest_claim_canonical_id((item->>1)::bigint), item->2,
+                  guest_claim_canonical_id((item->>3)::bigint),
+                  guest_claim_canonical_id((item->>4)::bigint), item->5) ORDER BY ord), '[]'::jsonb)
+                FROM jsonb_array_elements(snapshot) WITH ORDINALITY AS entries(item, ord)
+              $$;
+              CREATE FUNCTION guest_claim_conduct_snapshot(snapshot jsonb) RETURNS jsonb
+              LANGUAGE sql STABLE STRICT AS $$
+                SELECT snapshot || coalesce(jsonb_object_agg(table_name, transformed.rows), '{}'::jsonb)
+                FROM jsonb_each(snapshot) AS tables(table_name, table_rows)
+                CROSS JOIN LATERAL (
+                  SELECT coalesce(jsonb_agg(
+                    row_value || coalesce((
+                      SELECT jsonb_object_agg(col, guest_claim_canonical_id(val::bigint))
+                      FROM jsonb_each_text(row_value) AS fields(col, val)
+                      WHERE col IN ('player_id', 'player1_id', 'player2_id',
+                        'team1_player1_id', 'team1_player2_id', 'team2_player1_id', 'team2_player2_id',
+                        'winner1_id', 'winner2_id', 'loser1_id', 'loser2_id')
+                    ), '{}'::jsonb) ORDER BY ord), '[]'::jsonb) AS rows
+                  FROM jsonb_array_elements(CASE WHEN jsonb_typeof(table_rows) = 'array'
+                       THEN table_rows ELSE '[]'::jsonb END) WITH ORDINALITY AS entries(row_value, ord)
+                ) transformed
+                WHERE table_name IN ('court_players_db', 'court_teams_db',
+                  'king_of_court_match_result_db', 'king_of_court_player_stats_db',
+                  'tournament_additional_points', 'americano_players_db',
+                  'americano_teams_db', 'americano_matches_db')
+              $$;
+      rollback:
+        - sql:
+            sql: |
+              DROP FUNCTION guest_claim_conduct_snapshot(jsonb);
+              DROP FUNCTION guest_claim_registration_snapshot(jsonb);
+              DROP FUNCTION guest_claim_canonical_id(bigint);
+              DROP TABLE guest_profile_claims;
+              DROP INDEX idx_player_claim_phone;
+              DROP FUNCTION player_claim_phone(text);

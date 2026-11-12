@@ -31,6 +31,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -42,6 +44,7 @@ import java.util.stream.Collectors;
 public class PlayerService {
 
     private final PlayerRepository playerRepository;
+    private final PlayerPhoneGuard phoneGuard;
     private final PlayerMapper playerMapper;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
@@ -54,23 +57,17 @@ public class PlayerService {
 
     @Transactional
     public PlayerResponseDto registrarJugador(RegistroRequestDto request) {
-        log.info("Intentando registrar jugador con email: {}", request.getEmail());
-
         // Validar que las contraseñas coinciden
         if (!request.passwordsMatch()) {
             throw new IllegalArgumentException("Las contraseñas no coinciden");
         }
 
-        // Verificar si el email ya existe
-        if (playerRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException(duplicateMessage("registro.error.email.duplicate"));
-        }
+        phoneGuard.requireAvailable(request.getTelefono(), null);
 
-        // Verificar si el teléfono ya existe
-        if (request.getTelefono() != null && !request.getTelefono().trim().isEmpty()) {
-            if (playerRepository.existsByTelefono(request.getTelefono())) {
-                throw new IllegalArgumentException(duplicateMessage("registro.error.telefono.duplicate"));
-            }
+        String email = request.getEmail();
+        playerRepository.acquireContactLock("player-email:" + email.toLowerCase(Locale.ROOT));
+        if (PlayerPadel.isGuestEmail(email) || playerRepository.existsByEmailIgnoreCase(email)) {
+            throw new IllegalArgumentException(duplicateMessage("registro.error.email.duplicate"));
         }
 
         // Verificar si el usuario de Telegram ya existe
@@ -92,7 +89,7 @@ public class PlayerService {
 
         // Сохраняем в БД
         PlayerPadel savedPlayer = playerRepository.save(player);
-        log.info("✅ Jugador registrado con ID: {}, Email confirmado automáticamente", savedPlayer.getId());
+        log.info("Зарегистрирован профиль игрока {}", savedPlayer.getId());
 
         // Письмо НЕ отправляем — игрок уже может войти
         log.info("📧 Email de bienvenida NO enviado (confirmación automática)");
@@ -313,6 +310,7 @@ public class PlayerService {
 
     @Transactional
     public void actualizarJugador(PlayerPadel player) {
+        requireAvailableChangedPhone(player);
         playerRepository.save(player);
         log.info("Jugador actualizado con ID: {}", player.getId());
     }
@@ -434,7 +432,15 @@ public class PlayerService {
         if (player.getId() == null) {
             player.setFechaRegistro(LocalDateTime.now());
         }
+        requireAvailableChangedPhone(player);
         return playerRepository.save(player);
+    }
+
+    private void requireAvailableChangedPhone(PlayerPadel player) {
+        if (player.getId() == null || playerRepository.findById(player.getId())
+                .filter(saved -> Objects.equals(saved.getTelefono(), player.getTelefono())).isEmpty()) {
+            phoneGuard.requireAvailable(player.getTelefono(), player.getId());
+        }
     }
 
     public Optional<PlayerPadel> findByTelegramUsername(String telegramUsername) {

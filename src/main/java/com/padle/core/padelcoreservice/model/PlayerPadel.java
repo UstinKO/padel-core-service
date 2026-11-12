@@ -179,7 +179,7 @@ public class PlayerPadel implements UserDetails {
      * email/выдача временного пароля.
      */
     public static boolean isGuestEmail(String email) {
-        return email != null && email.endsWith(GUEST_EMAIL_SUFFIX);
+        return email != null && email.toLowerCase(Locale.ROOT).endsWith(GUEST_EMAIL_SUFFIX);
     }
 
     public boolean isGuestAccount() {

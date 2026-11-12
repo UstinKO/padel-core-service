@@ -2,7 +2,9 @@ package com.padle.core.padelcoreservice.repository;
 
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import org.springframework.data.domain.Pageable;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -25,6 +27,24 @@ public interface PlayerRepository extends JpaRepository<PlayerPadel, Long> {
     boolean existsByEmail(String email);
 
     boolean existsByTelefono(String telefono);
+
+    @Query(value = "SELECT player_claim_phone(:phone)", nativeQuery = true)
+    Optional<String> claimPhoneKey(@Param("phone") String phone);
+
+    @Query(value = """
+            SELECT p.* FROM player_padel_db p
+            WHERE p.activo = true AND player_claim_phone(p.telefono) = :key
+            ORDER BY p.id
+            """, nativeQuery = true)
+    List<PlayerPadel> findClaimPhoneMatches(@Param("key") String key);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT p FROM PlayerPadel p WHERE p.id IN :ids ORDER BY p.id")
+    List<PlayerPadel> lockPlayers(@Param("ids") List<Long> ids);
+
+    boolean existsByIdAndEmailAndActivoTrue(Long id, String email);
+
+    boolean existsByEmailIgnoreCase(String email);
 
     Optional<PlayerPadel> findByCodigoConfirmacion(String codigoConfirmacion);
 

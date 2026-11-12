@@ -137,9 +137,9 @@ public class TournamentConductHistory {
         access.assertCanManageTournament(owner, tournamentId);
         StoredVersion chosen = find(tournamentId, versionId);
         TournamentType type = snapshots.type(tournamentId);
-        boolean activeRosterChanged = !snapshots.activeRoster(chosen.snapshot(), type)
+        boolean activeRosterChanged = !snapshots.activeRoster(snapshots.canonicalSnapshot(chosen.snapshot()), type)
                 .equals(snapshots.activeRoster(snapshots.capture(tournamentId, type), type));
-        var differences = snapshots.registrationDifferences(chosen.registrations(), snapshots.registrations(tournamentId));
+        var differences = snapshots.registrationDifferences(snapshots.canonicalRegistrations(chosen.registrations()), snapshots.registrations(tournamentId));
         var exchange = json.readTree(chosen.snapshot()).get("playoffSwap");
         return new Preview(chosen.version(), revision(tournamentId), differences,
                 activeRosterChanged, snapshots.cancelled(tournamentId),
@@ -158,7 +158,7 @@ public class TournamentConductHistory {
         }
         snapshots.lockRegistrations(tournamentId);
         StoredVersion chosen = find(tournamentId, versionId);
-        if (!chosen.registrations().equals(snapshots.registrations(tournamentId))) {
+        if (!snapshots.canonicalRegistrations(chosen.registrations()).equals(snapshots.registrations(tournamentId))) {
             throw new InvalidStateException("conduct.history.roster_changed");
         }
         if (chosen.schemaVersion() != 1) {
@@ -166,7 +166,7 @@ public class TournamentConductHistory {
         }
         save(tournamentId, owner, Action.CHECKPOINT_RESTORE, null, snapshots.position(tournamentId, type),
                 snapshots.capture(tournamentId, type), null, null);
-        snapshots.restore(tournamentId, type, chosen.snapshot());
+        snapshots.restore(tournamentId, type, snapshots.canonicalSnapshot(chosen.snapshot()));
         entityManager.clear();
         save(tournamentId, owner, Action.RESTORE, null, snapshots.position(tournamentId, type),
                 snapshots.capture(tournamentId, type), versionId, null);

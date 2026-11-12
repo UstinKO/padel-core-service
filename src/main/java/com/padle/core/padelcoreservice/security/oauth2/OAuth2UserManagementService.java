@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Base64;
+import java.util.Locale;
 import java.util.Optional;
 
 @Slf4j
@@ -31,6 +32,7 @@ public class OAuth2UserManagementService {
 
     @Transactional
     public PlayerPadel createOrUpdateUser(String email, String firstName, String lastName, String provider) {
+        playerRepository.acquireContactLock("player-email:" + email.toLowerCase(Locale.ROOT));
         Optional<PlayerPadel> existingUser = playerRepository.findByEmail(email);
 
         if (existingUser.isPresent()) {

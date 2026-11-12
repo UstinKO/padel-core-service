@@ -119,6 +119,8 @@ class EmailFooterLinksRenderTest {
         cases.put("cancha-abierta-reminder", () -> service.sendCanchaAbiertaReminderEmail(
                 TO, PLAYER, CLUB, "Av. Central", TIME, TOURNAMENT_ID, LOCALE));
         cases.put("confirmacion", () -> service.sendConfirmationEmail(TO, PLAYER, "code", LOCALE));
+        cases.put("guest-partner-notice", () -> service.sendGuestPartnerNotice(
+                TO, PLAYER, TOURNAMENT, GuestPartnerNotice.Kind.CONFIRMED, LOCALE));
         cases.put("individual-tournament-reminder", () -> service.sendIndividualTournamentReminderEmail(
                 TO, PLAYER, CLUB, "Av. Central", TIME, TOURNAMENT_ID, LOCALE));
         cases.put("looking-for-partner-notification", () -> service.sendLookingForPartnerNotification(
@@ -159,7 +161,7 @@ class EmailFooterLinksRenderTest {
         resolver.setCharacterEncoding("UTF-8");
 
         var messages = new ResourceBundleMessageSource();
-        messages.setBasename("i18n/messages");
+        messages.setBasenames("i18n/messages", "i18n/guest-claim");
         messages.setDefaultEncoding("UTF-8");
 
         var engine = new SpringTemplateEngine();

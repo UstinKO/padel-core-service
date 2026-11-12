@@ -47,7 +47,7 @@ public class CancellationHistoryRepository {
     }
     public List<Row> forPlayer(long playerId, Collection<Long> eventIds) {
         if(eventIds.isEmpty()) return List.of();
-        return jdbc.sql(SELECT+" WHERE m.player_id=:player AND e.tournament_id IN (:events) ORDER BY e.recorded_at DESC,e.id DESC")
+        return jdbc.sql(SELECT+" WHERE (m.player_id=:player OR m.player_id IN (SELECT guest_id FROM guest_profile_claims WHERE resolved_player_id=:player)) AND e.tournament_id IN (:events) ORDER BY e.recorded_at DESC,e.id DESC")
                 .param("player",playerId).param("events",eventIds).query(Row.class).list();
     }
     public List<Row> forManager(long tournamentId) {

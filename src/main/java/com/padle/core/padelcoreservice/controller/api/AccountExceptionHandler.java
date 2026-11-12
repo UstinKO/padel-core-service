@@ -2,6 +2,7 @@ package com.padle.core.padelcoreservice.controller.api;
 
 import com.padle.core.padelcoreservice.dto.AccountFieldError;
 import com.padle.core.padelcoreservice.exception.AccountException;
+import com.padle.core.padelcoreservice.exception.ClaimPhoneInUseException;
 import com.padle.core.padelcoreservice.security.AccountResponses;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -18,10 +19,18 @@ import java.util.List;
 import java.util.Locale;
 
 @Order(Ordered.HIGHEST_PRECEDENCE)
-@RestControllerAdvice(assignableTypes = {AccountController.class, PublicAccountConfigController.class})
+@RestControllerAdvice(assignableTypes = {AccountController.class, PublicAccountConfigController.class, GuestProfileClaimController.class})
 @RequiredArgsConstructor
 public class AccountExceptionHandler {
     private final AccountResponses responses;
+
+    @ExceptionHandler(ClaimPhoneInUseException.class)
+    public ResponseEntity<ProblemDetail> phoneInUse(ClaimPhoneInUseException exception, HttpServletRequest request) {
+        var problem = responses.problem(HttpStatus.CONFLICT, "PHONE_IN_USE", List.of(), request);
+        exception.whatsappUrl().ifPresent(url -> problem.setProperty("whatsappUrl", url));
+        return ResponseEntity.status(HttpStatus.CONFLICT).contentType(MediaType.APPLICATION_PROBLEM_JSON)
+                .cacheControl(CacheControl.noStore()).body(problem);
+    }
 
     @ExceptionHandler(AccountException.class)
     public ResponseEntity<ProblemDetail> account(AccountException exception, Locale locale, HttpServletRequest request) {

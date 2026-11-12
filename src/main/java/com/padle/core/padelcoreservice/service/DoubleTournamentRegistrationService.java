@@ -415,6 +415,9 @@ public class DoubleTournamentRegistrationService {
         saveNewOrCancelledRegistration(partnerRegistration);
         TournamentRegistration savedMainRegistration = saveNewOrCancelledRegistration(mainRegistration);
 
+        if (partner.isGuestAccount()) {
+            notificationService.sendGuestRegistrationStatus(partnerRegistration, tournamentDto.getNombre(), status);
+        }
         if (offer != null) {
             notificationService.sendPairTermsNotice(partner, offer, tournamentDto.getClubId(), status);
             notificationService.sendPairTermsNotice(mainPlayer, offer, tournamentDto.getClubId(), status);
@@ -1372,6 +1375,10 @@ public class DoubleTournamentRegistrationService {
     }
 
     private void sendRegistrationCancelledEmail(TournamentRegistration reg, Tournament tournament) {
+        if (reg.getPlayer().isGuestAccount()) {
+            GuestPartnerNotice.forward(emailService, reg, tournament.getNombre(), GuestPartnerNotice.Kind.CANCELLED);
+            return;
+        }
         String dateStr = tournament.getFechaInicio().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
         String timeStr = tournament.getHoraInicio() != null
                 ? tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm"))

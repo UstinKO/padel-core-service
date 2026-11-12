@@ -91,6 +91,10 @@ public class PairTournamentReminderScheduler {
 
         int sent = 0;
         for (TournamentRegistration registration : confirmed) {
+            if (registration.getPlayer().isGuestAccount()) {
+                GuestPartnerNotice.forward(emailService, registration, tournament.getNombre(), GuestPartnerNotice.Kind.REMINDER);
+                continue;
+            }
             String email = registration.getPlayer().getEmail();
             if (email == null || email.isBlank()) {
                 log.warn("Игрок {} без email — пропускаем напоминание о турнире {}",

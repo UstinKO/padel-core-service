@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.controller.player;
 
+import com.padle.core.padelcoreservice.exception.ClaimPhoneInUseException;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.service.PlayerService;
@@ -106,12 +107,6 @@ public class PerfilController {
 
             if (telefono != null && !telefono.equals(player.getTelefono())) {
                 String newPhone = telefono.isBlank() ? null : telefono.trim();
-                if (newPhone != null && playerService.existsByTelefono(newPhone)
-                        && !newPhone.equals(player.getTelefono())) {
-                    redirectAttributes.addFlashAttribute("errorMessage",
-                            "Este número de teléfono ya está en uso por otro jugador");
-                    return "redirect:/perfil";
-                }
                 player.setTelefono(newPhone);
                 actualizado = true;
             }
@@ -205,6 +200,9 @@ public class PerfilController {
                         "No se realizaron cambios en el perfil");
             }
 
+        } catch (ClaimPhoneInUseException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            e.whatsappUrl().ifPresent(url -> redirectAttributes.addFlashAttribute("guestClaimWhatsappUrl", url));
         } catch (DataIntegrityViolationException e) {
             log.warn("Duplicate phone/contact/email on perfil update: {}", e.getMessage());
             String cause = e.getMostSpecificCause().getMessage();
