@@ -254,7 +254,7 @@ hikari:
 - **Только Liquibase** управляет схемой (`ddl-auto = none`).
 - Файлы: `src/main/resources/db/changelog/versions/vX.XX-<description>.yaml`
 - Мастер-файл: `changelog-master.yaml` — порядок include определяет порядок выполнения.
-- Текущая версия: **v1.73**
+- Текущая версия: **v1.74**
 
 **Добавление новой миграции:**
 ```
@@ -487,7 +487,7 @@ public void sendEmail(...) { ... }
 ```
 0 */10 * * * *  →  TournamentService.checkExpiredInvitations()
 ```
-Каждые 10 минут: находит просроченные `WAITLIST_INVITED`, переводит их в `WAITLIST` или `CANCELLED`, приглашает следующего.
+Резерв продвигается автоматически при освобождении места. Парный состав и очередь изменяются под блокировкой турнира.
 
 ---
 

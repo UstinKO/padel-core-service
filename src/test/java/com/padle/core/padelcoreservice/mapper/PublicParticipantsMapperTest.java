@@ -38,11 +38,11 @@ class PublicParticipantsMapperTest {
                 registration(6, RegistrationStatus.WAITLIST, true, "Hana", null),
                 registration(7, RegistrationStatus.CANCELLED, true, "Iva", "Jana")));
         assertThat(roster.confirmed()).extracting(PublicTournamentDto.Participant::names)
-                .containsExactly(List.of("Ana Surname", "Bea Surname"), List.of("Cora Surname"),
-                        List.of("Dina Surname"), List.of("Eva Surname"));
-        assertThat(roster.confirmed().get(3).seekingPartner()).isTrue();
+                .containsExactly(List.of("Ana Surname", "Bea Surname"), List.of("Cora Surname"));
+        assertThat(roster.waitlist().get(1).seekingPartner()).isTrue();
         assertThat(roster.waitlist()).extracting(PublicTournamentDto.Participant::names)
-                .containsExactly(List.of("Fina Surname", "Gina Surname"), List.of("Hana Surname"));
+                .containsExactly(List.of("Dina Surname"), List.of("Eva Surname"),
+                        List.of("Fina Surname", "Gina Surname"), List.of("Hana Surname"));
     }
 
     @Test

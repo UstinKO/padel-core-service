@@ -37,15 +37,12 @@ public class PublicParticipantsMapper {
                     .filter(r -> teamPlayoff || r.getPartnerNombre() != null)
                     .map(r -> entry(r, true, false))
                     .forEach(confirmed::add);
+            // Соло-заявки публично показывались в отдельных группах до изменения резерва.
             registrations.stream()
-                    .filter(r -> r.getStatus() == RegistrationStatus.SOLO_ADD_LATER)
-                    .map(r -> entry(r, false, false))
-                    .forEach(confirmed::add);
-            // The site's separate "looking for partner" block publicly shows these names.
-            registrations.stream()
-                    .filter(r -> r.getStatus() == RegistrationStatus.SOLO_SEARCH)
-                    .map(r -> entry(r, false, true))
-                    .forEach(confirmed::add);
+                    .filter(r -> r.getStatus() == RegistrationStatus.SOLO_ADD_LATER
+                            || r.getStatus() == RegistrationStatus.SOLO_SEARCH)
+                    .map(r -> entry(r, false, r.getStatus() == RegistrationStatus.SOLO_SEARCH))
+                    .forEach(waitlist::add);
             // The site displays reserve names only for Team Americano pairs.
             if (teamPlayoff) {
                 registrations.stream()

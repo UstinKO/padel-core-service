@@ -33,7 +33,7 @@ public final class MarketingPolicy {
         }
         return switch (status) {
             case CONFIRMED, PARTICIPATED -> Optional.of("EventRegistration");
-            case WAITLIST, WAITLIST_INVITED -> Optional.of("EventWaitlist");
+            case WAITLIST -> Optional.of("EventWaitlist");
             case PENDING_PARTNER, PARTNER_INVITED, PAIR_REGISTERED, SOLO_ADD_LATER, SOLO_SEARCH -> Optional.of("EventRegistrationPending");
             case CANCELLED, SOLO_EXPIRED -> Optional.empty();
         };

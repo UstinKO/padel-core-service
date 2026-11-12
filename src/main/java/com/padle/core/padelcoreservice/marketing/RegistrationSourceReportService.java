@@ -141,7 +141,7 @@ public class RegistrationSourceReportService {
                 END touch,
                 CASE WHEN NOT r.is_active OR r.status IN ('CANCELLED','SOLO_EXPIRED') THEN 'cancelled'
                   WHEN r.status IN ('CONFIRMED','PARTICIPATED','PAIR_REGISTERED') THEN 'confirmed'
-                  WHEN r.status IN ('WAITLIST','WAITLIST_INVITED') THEN 'waitlist' ELSE 'pending' END bucket
+                  WHEN r.status = 'WAITLIST' THEN 'waitlist' ELSE 'pending' END bucket
               FROM tournament_registrations_db r JOIN tournaments_db t ON t.id = r.tournament_id
               LEFT JOIN marketing_registrations_db mr ON mr.registration_id = r.id
             ), ranked AS (

@@ -54,6 +54,7 @@ class DoubleTournamentRegistrationLevelRestrictionTest {
     @Mock private TournamentNotificationService notificationService;
     @Mock private EmailService emailService;
     @Mock private TournamentRepository tournamentRepository;
+    @Mock private TournamentService tournamentService;
     @Mock private MessageSource messageSource;
     @Mock private PasswordEncoder passwordEncoder;
 
@@ -77,6 +78,10 @@ class DoubleTournamentRegistrationLevelRestrictionTest {
                 .categoriaNivel(Nivel.C6.name())
                 .cupoMax(16)
                 .build();
+
+        when(tournamentRepository.lockById(TOURNAMENT_ID)).thenAnswer(invocation -> Optional.of(
+                Tournament.builder().id(TOURNAMENT_ID).modalidad(tournamentDto.getModalidad())
+                        .estado(tournamentDto.getEstado()).cupoMax(tournamentDto.getCupoMax()).build()));
 
         mainPlayer = PlayerPadel.builder()
                 .id(MAIN_PLAYER_ID)
@@ -164,7 +169,7 @@ class DoubleTournamentRegistrationLevelRestrictionTest {
                 .build();
         mainPlayer.setNivelJugador(Nivel.C9);
 
-        when(tournamentRepository.findById(TOURNAMENT_ID)).thenReturn(Optional.of(tournament));
+        when(tournamentRepository.lockById(TOURNAMENT_ID)).thenReturn(Optional.of(tournament));
         when(messageSource.getMessage(eq("tournament.register.level_mismatch"), any(), any(Locale.class)))
                 .thenReturn("nivel lejano");
 
