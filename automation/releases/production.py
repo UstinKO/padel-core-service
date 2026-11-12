@@ -4,6 +4,7 @@ import io
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import tarfile
@@ -99,8 +100,8 @@ def package(root, jar, revision, manifest, image):
     """Подготавливает только несекретные файлы доставки и автономный runner."""
     target = root / 'target'
     archive = target / ('release-' + revision + '.tar.gz')
-    image_id = json.loads(run(['docker', 'image', 'inspect', image]))[0]['Id']
-    manifest = dict(manifest, image=image_id)
+    # Тег сохраняется при Docker save/load, даже если на сервере меняется представление ID.
+    manifest = dict(manifest, image=image)
     image_tar = target / 'release-image.tar'
     subprocess.run(['docker', 'image', 'save', '-o', str(image_tar), image], check=True)
     encoded = json.dumps(manifest).encode()
@@ -117,6 +118,14 @@ def package(root, jar, revision, manifest, image):
         shutil.copyfile(root / '.github/bin/configure-meta-env.py', directory / 'configure_meta_env.py')
         zipapp.create_archive(directory, target / 'release-runner.pyz', main='production:entrypoint')
     return archive
+
+
+def release_image_tag(manifest, revision):
+    prefix = 'padel-release:' + revision + '-' + manifest['jarSha256'][:16] + '-'
+    tag = manifest.get('image')
+    if not isinstance(tag, str) or not re.fullmatch(re.escape(prefix) + r'[0-9a-f]{32}', tag):
+        raise ValueError('Тег образа не соответствует манифесту выпуска')
+    return tag
 
 
 def main():
@@ -169,9 +178,10 @@ def main():
             manifest = json.loads((temporary / 'manifest.json').read_text())
             if manifest.get('revision') != args.revision or manifest.get('legacy') or manifest.get('rehearsal'):
                 raise ValueError('Пакет не соответствует запрошенной ревизии')
+            image = release_image_tag(manifest, args.revision)
             run(['docker', 'image', 'load', '-i', str(temporary / 'image.tar')])
             jar = temporary / 'app.jar'
-            image_jar(manifest['image'], jar)
+            image_jar(image, jar)
             artifact.verify(jar, manifest)
             candidate_env = temporary / '.env'
             shutil.copyfile(root / '.env', candidate_env)
@@ -182,7 +192,7 @@ def main():
             if whatsapp_url:
                 # --env-file задаёт подстановки Compose, а env_file сервиса может читать прежний .env.
                 candidate_config['services'][adapter.service].setdefault('environment', {})['GUEST_CLAIM_WHATSAPP_URL'] = whatsapp_url
-            record = adapter.prepare(jar, manifest, manifest['image'], candidate_config, candidate_env.read_bytes())
+            record = adapter.prepare(jar, manifest, image, candidate_config, candidate_env.read_bytes())
         releases._deploy_locked(record)
         # Сохраняются текущий/предыдущий выпуск и исходный baseline. Архив chunks не очищается.
         if not releases.read('pending'):
