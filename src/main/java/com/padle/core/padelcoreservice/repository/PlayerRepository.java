@@ -3,6 +3,7 @@ package com.padle.core.padelcoreservice.repository;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -12,6 +13,10 @@ import java.util.Optional;
 
 @Repository
 public interface PlayerRepository extends JpaRepository<PlayerPadel, Long> {
+
+    @Modifying
+    @Query("UPDATE PlayerPadel p SET p.nombre = :nombre, p.apellido = :apellido WHERE p.id = :id")
+    int actualizarNombre(@Param("id") Long id, @Param("nombre") String nombre, @Param("apellido") String apellido);
 
     Optional<PlayerPadel> findByEmail(String email);
 

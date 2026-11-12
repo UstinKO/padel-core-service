@@ -288,6 +288,7 @@ docker compose up -d
 | POST | `/admin/clubs/{id}/toggle-status` | Включить/отключить клуб |
 | POST | `/admin/clubs/{id}/delete` | Удалить клуб |
 | POST | `/admin/players/{id}/nivel` | Задать уровень игрока (SUPER_ADMIN) |
+| POST | `/admin/players/{id}/name` | Изменить имя и фамилию игрока (SUPER_ADMIN) |
 | POST | `/admin/players/{id}/guest-credentials` | Временный пароль гостевого аккаунта (SUPER_ADMIN) |
 | POST | `/admin/players/{id}/delete` | Удалить игрока (SUPER_ADMIN) |
 | POST | `/admin/tournaments/king-of-court/start` | Запустить KoC турнир |
