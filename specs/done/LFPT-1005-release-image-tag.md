@@ -1,7 +1,7 @@
 # LFPT-1005: Fix production-деплой — находить загруженный образ по тегу выпуска
 
 ## Статус
-testing
+done
 
 ## Источник
 [GitHub #1005](https://github.com/UstinKO/padel-core-service/issues/1005). Выпуск #997 заблокирован на этапе подготовки образа.
