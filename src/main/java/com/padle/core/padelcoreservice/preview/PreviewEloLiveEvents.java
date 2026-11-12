@@ -3,6 +3,7 @@ package com.padle.core.padelcoreservice.preview;
 import com.padle.core.padelcoreservice.model.enums.AmericanoFinalOrder;
 import com.padle.core.padelcoreservice.service.KingOfCourtService;
 import com.padle.core.padelcoreservice.service.americano.AmericanoService;
+import com.padle.core.padelcoreservice.service.americano.TeamPlayoffService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
@@ -29,7 +30,8 @@ class PreviewEloLiveEvents {
                    k.id AS game_tournament, k.is_finished AS finished, NULL AS final_order,
                    m.id AS match_id, r.round_number AS batch, false AS final_match,
                    m.winners_score AS left_score, m.losers_score AS right_score,
-                   m.winner1_id AS a, m.winner2_id AS b, m.loser1_id AS c, m.loser2_id AS d
+                   m.winner1_id AS a, m.winner2_id AS b, m.loser1_id AS c, m.loser2_id AS d,
+                   NULL::bigint AS qualification_id
               FROM king_of_court_match_result_db m
               JOIN king_of_court_court_db c ON c.id=m.court_id
               JOIN king_of_court_round_db r ON r.id=c.round_id
@@ -48,7 +50,9 @@ class PreviewEloLiveEvents {
                    COALESCE(t.tipo='AMERICANO_TEAMS' AND m.playoff_stage='FINAL',false),
                    CASE WHEN t.tipo='AMERICANO_TEAMS' THEN m.team1_games ELSE m.team1_score END,
                    CASE WHEN t.tipo='AMERICANO_TEAMS' THEN m.team2_games ELSE m.team2_score END,
-                   m.team1_player1_id,m.team1_player2_id,m.team2_player1_id,m.team2_player2_id
+                   m.team1_player1_id,m.team1_player2_id,m.team2_player1_id,m.team2_player2_id,
+                   CASE WHEN t.tipo='AMERICANO_TEAMS' AND r.phase='QUALIFICATION' AND m.playoff_stage IS NULL
+                       THEN m.id END
               FROM americano_matches_db m
               JOIN americano_rounds_db r ON r.id=m.round_id
               JOIN tournaments_db t ON t.id=m.tournament_id
@@ -62,9 +66,11 @@ class PreviewEloLiveEvents {
     private final JdbcClient jdbc;
     private final KingOfCourtService king;
     private final AmericanoService americano;
+    private final TeamPlayoffService playoff;
 
     private record NativeGame(long eventId, LocalDate day, String category, String format,
-                              long formatId, boolean finished, String finalOrder, PreviewEloReplay.Game game) { }
+                              long formatId, boolean finished, String finalOrder, Long qualificationId,
+                              PreviewEloReplay.Game game) { }
 
     record LiveHistory(List<PreviewEloReplay.Event> events, Map<Long, String> names) { }
 
@@ -76,7 +82,7 @@ class PreviewEloLiveEvents {
         for (var tournament : groups.values()) {
             var first = tournament.get(0);
             events.add(new PreviewEloReplay.Event("S-" + first.eventId(), first.day(), first.category(),
-                    tournament.stream().map(NativeGame::game).toList(), champions(first)));
+                    games(first.eventId(), tournament), champions(first)));
         }
         var ids = nativeGames.stream().flatMap(item -> item.game().ids().stream()).collect(Collectors.toSet());
         var names = ids.isEmpty() ? Map.<Long, String>of() : jdbc.sql("""
@@ -84,6 +90,20 @@ class PreviewEloLiveEvents {
                 """).param("ids", ids).query((row, index) -> Map.entry(row.getLong(1), row.getString(2)))
                 .list().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         return new LiveHistory(List.copyOf(events), names);
+    }
+
+    private List<PreviewEloReplay.Game> games(long eventId, List<NativeGame> tournament) {
+        Map<Long, int[]> ordinals = tournament.stream().anyMatch(item -> item.qualificationId() != null)
+                ? playoff.computeQualMatchOrdinals(eventId) : Map.of();
+        return tournament.stream().map(item -> {
+            var game = item.game();
+            var ordinal = item.qualificationId() == null ? null : ordinals.get(item.qualificationId());
+            if (ordinal == null) {
+                return game;
+            }
+            int batch = Math.max(ordinal[0], ordinal[1]) >= 2 ? 2 : 1;
+            return new PreviewEloReplay.Game(game.key(), batch, game.ids(), game.left(), game.right(), game.verifiedFinal());
+        }).toList();
     }
 
     private Set<Long> champions(NativeGame first) {
@@ -122,6 +142,6 @@ class PreviewEloLiveEvents {
                 left, right, row.getBoolean("final_match"));
         return new NativeGame(row.getLong("event_id"), row.getObject("fecha_inicio", LocalDate.class),
                 row.getString("categoria_nivel"), format, row.getLong("game_tournament"),
-                row.getBoolean("finished"), row.getString("final_order"), game);
+                row.getBoolean("finished"), row.getString("final_order"), row.getObject("qualification_id", Long.class), game);
     }
 }
