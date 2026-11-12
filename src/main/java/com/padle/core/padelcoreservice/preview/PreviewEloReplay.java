@@ -153,7 +153,8 @@ final class PreviewEloReplay {
         total.events++;
         total.matches += evidence.matches;
         total.wins += evidence.wins;
-        if (evidence.wins * 2 >= evidence.matches
+        boolean eligibleFromOneEvent = !player.isConfirmed() || level >= player.confirmed - 1;
+        if (eligibleFromOneEvent && evidence.wins * 2 >= evidence.matches
                 && ((champion && evidence.matches >= 5) || (finalist && evidence.matches >= 6))) {
             player.confirmed = Math.min(player.confirmed, level);
         }

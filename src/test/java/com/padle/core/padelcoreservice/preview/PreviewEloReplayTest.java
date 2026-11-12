@@ -59,6 +59,38 @@ class PreviewEloReplayTest {
         assertThat(row(confirmed, 1).overallPlace()).isNotNull();
     }
 
+    @Test
+    void requiresTwoTargetEventsForALargeJumpEvenAfterWinningOrPlayingSixMatchesInAFinal() {
+        var initial = event("S-1", 0, "C8", winningRun("base", 5));
+        var opponents = event("S-2", 0, "C8", winningRun("opponents", 5).stream()
+                .map(game -> game.withScore(4, 6)).toList());
+        var distant = event("S-3", 1, "C5", winningRun("distant", 6).stream()
+                .map(game -> game.batch() <= 3 ? game.withScore(4, 6) : game).toList());
+        var afterFirst = replay.replay(FIRST_DAY, NAMES, List.of(initial, opponents, distant));
+        assertThat(row(afterFirst, 1).category()).isEqualTo("C8");
+        assertThat(row(afterFirst, 3).category()).isEqualTo("C8");
+        assertThat(row(afterFirst, 1).elo()).isNotEqualTo(row(
+                replay.replay(FIRST_DAY, NAMES, List.of(initial, opponents)), 1).elo());
+
+        var adjacent = event("S-4", 2, "C7", winningRun("adjacent", 5));
+        var afterAdjacent = replay.replay(FIRST_DAY, NAMES, List.of(initial, opponents, distant, adjacent));
+        assertThat(row(afterAdjacent, 1).category()).isEqualTo("C7");
+
+        var secondC5 = event("S-5", 3, "C5", List.of(
+                game("second-c5", 1, List.of(1L, 2L, 3L, 4L), 6, 4, false)));
+        var afterSecond = replay.replay(FIRST_DAY, NAMES, List.of(initial, opponents, distant, secondC5));
+        assertThat(row(afterSecond, 1).category()).isEqualTo("C5");
+        assertThat(row(afterSecond, 1).confirmed()).isTrue();
+    }
+
+    private List<PreviewEloReplay.Game> winningRun(String prefix, int matches) {
+        var games = new ArrayList<PreviewEloReplay.Game>();
+        for (int batch = 1; batch <= matches; batch++) {
+            games.add(game(prefix + batch, batch, List.of(1L, 2L, 3L, 4L), 6, 4, batch == matches));
+        }
+        return games;
+    }
+
     private PreviewEloReplay.Event event(String key, int daysLater, String category, List<PreviewEloReplay.Game> games) {
         return new PreviewEloReplay.Event(key, FIRST_DAY.plusDays(daysLater), category, games, Set.of());
     }
