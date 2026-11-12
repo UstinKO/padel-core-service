@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Обновляет только параметры Meta в существующем dotenv без вывода секрета."""
+"""Обновляет параметры Meta и ссылку WhatsApp в существующем dotenv без вывода значений."""
 import os
 from pathlib import Path
 import re
@@ -8,9 +8,11 @@ import sys
 import tempfile
 
 
-def configure(path, token):
+def configure(path, token, whatsapp_url=""):
     if not re.fullmatch(r"[A-Za-z0-9._|:-]{20,8192}", token):
         raise ValueError("Некорректный или отсутствующий секрет Meta")
+    if whatsapp_url and not re.fullmatch(r"https://wa\.me/[1-9][0-9]{6,14}", whatsapp_url):
+        raise ValueError("Некорректная ссылка WhatsApp")
     if path.is_symlink() or not path.is_file():
         raise ValueError("Ожидается обычный существующий файл .env")
     values = {
@@ -21,6 +23,8 @@ def configure(path, token):
         "META_TEST_MODE": "false",
         "META_TEST_EVENT_CODE": "",
     }
+    if whatsapp_url:
+        values["GUEST_CLAIM_WHATSAPP_URL"] = whatsapp_url
     original = path.read_text()
     lines = []
     for line in original.splitlines(keepends=True):
@@ -48,6 +52,7 @@ def configure(path, token):
 
 if __name__ == "__main__":
     try:
-        configure(Path(sys.argv[1]), os.environ.get("META_CAPI_ACCESS_TOKEN", ""))
+        configure(Path(sys.argv[1]), os.environ.get("META_CAPI_ACCESS_TOKEN", ""),
+                  os.environ.get("GUEST_CLAIM_WHATSAPP_URL", ""))
     except (ValueError, OSError, IndexError):
-        sys.exit("Не удалось обновить параметры Meta; значения не выводятся")
+        sys.exit("Не удалось обновить параметры окружения; значения не выводятся")

@@ -40,235 +40,42 @@ jobs:
           java-version: 21
           cache: maven
 
-      - name: Build JAR with version
+      - name: Build verified release artifact
         run: |
-          mvn clean package -DskipTests
-          cp .github/bin/configure-meta-env.py target/configure-meta-env.py
-          echo "${{ github.sha }}" > target/version.txt
-          echo "Build timestamp: $(date)" >> target/version.txt
-          echo "Listing target directory:"
-          ls -la target/
+          ./mvnw --batch-mode --no-transfer-progress clean package -DskipTests
+          python3 automation/releases/build.py --revision "$GITHUB_SHA"
 
-      - name: Copy jar to server
+      - name: Copy immutable release to server
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          source: "target/*.jar,target/version.txt,target/configure-meta-env.py"
+          source: "target/release-*.tar.gz,target/release-runner.pyz"
           target: "/opt/padel-app/temp/"
           strip_components: 1
 
-      - name: Deploy to server
+      - name: Activate and verify release
         id: deploy
         env:
           META_CAPI_ACCESS_TOKEN: ${{ secrets.META_CAPI_ACCESS_TOKEN }}
+          GUEST_CLAIM_WHATSAPP_URL: ${{ vars.GUEST_CLAIM_WHATSAPP_URL }}
+          RELEASE_REVISION: ${{ github.sha }}
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_KEY_NEW }}
-          envs: META_CAPI_ACCESS_TOKEN
+          envs: META_CAPI_ACCESS_TOKEN,RELEASE_REVISION,GUEST_CLAIM_WHATSAPP_URL
           timeout: 1200s
           command_timeout: 1200s
           script: |
-            set -e
+            set -eu
             umask 077
-            META_ENV_BACKUP=""
-            test -n "$META_CAPI_ACCESS_TOKEN" || { echo "Отсутствует секрет Meta"; exit 1; }
-            command -v python3 >/dev/null
-
-            echo "🔧 Starting deployment process..."
-
-            # Функция для отката
-            rollback() {
-              echo "⚠️ Rolling back to previous version..."
-              if [ -n "$META_ENV_BACKUP" ] && [ -f "$META_ENV_BACKUP" ]; then
-                cp -p "$META_ENV_BACKUP" /opt/padel-app/.env
-                rm -f "$META_ENV_BACKUP"
-                echo "Параметры окружения восстановлены"
-              fi
-              if [ -f "/opt/padel-app/app.jar.backup" ]; then
-                cp /opt/padel-app/app.jar.backup /opt/padel-app/app.jar
-                echo "🔄 Restored previous JAR"
-            
-                cd /opt/padel-app
-                docker compose build --no-cache padel-app
-                docker compose up -d --no-deps padel-app
-            
-                echo "✅ Rollback completed"
-              else
-                echo "❌ No backup found for rollback"
-              fi
-            }
-
-            trap 'result=$?; if [ "$result" -ne 0 ]; then trap - EXIT; rollback; exit "$result"; fi' EXIT
-
-            # Сохраняем текущую версию для отката
-            if [ -f "/opt/padel-app/app.jar" ]; then
-              cp /opt/padel-app/app.jar /opt/padel-app/app.jar.backup
-              echo "💾 Current version backed up"
-            fi
-
-            # Находим основной jar файл
-            MAIN_JAR=$(ls /opt/padel-app/temp/padel-core-service-*.jar | grep -v "original" | head -1)
-
-            if [ -z "$MAIN_JAR" ]; then
-              echo "❌ No main JAR file found in temp directory!"
-              echo "Contents of temp directory:"
-              ls -la /opt/padel-app/temp/
-              exit 1
-            fi
-
-            echo "📦 Found JAR file: $(basename $MAIN_JAR)"
-
-            # Копируем новый JAR
-            cp "$MAIN_JAR" /opt/padel-app/app.jar
-
-            # Копируем version.txt
-            if [ -f "/opt/padel-app/temp/version.txt" ]; then
-              cp /opt/padel-app/temp/version.txt /opt/padel-app/version.txt
-              echo "📄 Version file copied:"
-              cat /opt/padel-app/version.txt
-            fi
-
-            # Сохраняем информацию о версии
-            echo "$(basename $MAIN_JAR)" > /opt/padel-app/new_version.txt
-            echo "Deployed at: $(date)" >> /opt/padel-app/new_version.txt
-
-            # Переходим в директорию приложения
-            cd /opt/padel-app
-
-            META_ENV_CANDIDATE=$(mktemp /opt/.padel-meta-env.XXXXXX)
-            if ! cp -p .env "$META_ENV_CANDIDATE"; then
-              rm -f "$META_ENV_CANDIDATE"
-              exit 1
-            fi
-            META_ENV_BACKUP="$META_ENV_CANDIDATE"
-            chmod 600 "$META_ENV_BACKUP"
-            python3 /opt/padel-app/temp/configure-meta-env.py /opt/padel-app/.env
-            echo "Production-параметры Meta записаны без вывода секрета"
-
-            # Пересобираем образ
-            echo "🏗️ Building new Docker image..."
-            if ! docker compose build --no-cache padel-app; then
-              echo "❌ Docker build failed!"
-              exit 1
-            fi
-
-            # Перезапускаем приложение
-            echo "🔄 Restarting application..."
-            if ! docker compose up -d --no-deps padel-app; then
-              echo "❌ Failed to restart application container!"
-              exit 1
-            fi
-
-            # LFPT-331: здоровье проверяется только реальным ответом readiness-пробы.
-            # Раньше критерием был grep "Started PadelCoreServiceApplication" в docker logs --tail=N:
-            # при шумном логе строка выталкивалась из окна и здоровый деплой откатывался, а упавшее
-            # после старта приложение считалось здоровым. readiness, а не общий /actuator/health —
-            # чтобы недоступность SMTP (компонент mail) не откатывала рабочее приложение.
-            DEPLOY_STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-            READINESS_URL="http://localhost:8080/actuator/health/readiness"
-            MAX_ATTEMPTS=60
-            POLL_INTERVAL=5
-            HEALTHY="false"
-
-            echo "🏥 Waiting for readiness ($READINESS_URL, up to $((MAX_ATTEMPTS * POLL_INTERVAL))s)..."
-            for i in $(seq 1 $MAX_ATTEMPTS); do
-              CONTAINER_STATE=$(docker inspect -f '{{.State.Status}} {{.RestartCount}}' padel-core-app 2>/dev/null || echo "missing 0")
-              if [ "${CONTAINER_STATE%% *}" != "running" ] || [ "${CONTAINER_STATE##* }" != "0" ]; then
-                echo "❌ Application container is not running steadily (state/restarts: $CONTAINER_STATE)"
-                break
-              fi
-
-              HTTP_CODE=$(docker compose exec -T padel-app curl -s -o /dev/null -w "%{http_code}" "$READINESS_URL" 2>/dev/null || true)
-              if [ "$HTTP_CODE" = "200" ]; then
-                HEALTHY="true"
-                echo "✅ Readiness 200 on attempt $i/$MAX_ATTEMPTS"
-                break
-              fi
-
-              echo "⏳ Attempt $i/$MAX_ATTEMPTS: readiness=${HTTP_CODE:-no response}"
-              sleep $POLL_INTERVAL
-            done
-
-            if [ "$HEALTHY" != "true" ]; then
-              echo "❌ Application is not ready — rolling back"
-              echo "📋 Errors since deploy start:"
-              docker compose logs padel-app --since "$DEPLOY_STARTED_AT" 2>/dev/null \
-                | grep -vE '\|-(INFO|WARN) in ' \
-                | grep -E "ERROR|Exception|Caused by|APPLICATION FAILED" | head -n 60 || true
-              echo "📋 Last application log lines:"
-              docker compose logs padel-app --since "$DEPLOY_STARTED_AT" --tail=60 || true
-              exit 1
-            fi
-
-            docker compose exec -T padel-app curl --fail --silent --head http://localhost:8080/web/index.html >/dev/null
-            echo "✅ React SPA assets are available under /web/"
-
-            # Проверяем фактическую конфигурацию внутри нового контейнера.
-            docker compose exec -T padel-app sh -c 'test -n "$META_CAPI_ACCESS_TOKEN" && test "$META_ENABLED" = true && test "$META_TEST_MODE" = false && test -z "$META_TEST_EVENT_CODE"'
-            docker compose exec -T padel-app curl --fail --silent http://localhost:8080/api/marketing/config | python3 -c '
-            import json, sys
-            config = json.load(sys.stdin)
-            expected = {"enabled": True, "pixelId": "930260823500064", "testMode": False}
-            if not isinstance(config, dict) or any(
-                type(config.get(key)) is not type(value) or config[key] != value
-                for key, value in expected.items()
-            ):
-                sys.exit("Конфигурация Meta не соответствует production")
-            print("Meta: enabled=true, pixelId=930260823500064, testMode=false; серверный секрет задан")
-            '
-
-            # Если всё хорошо, обновляем current_version
-            mv /opt/padel-app/new_version.txt /opt/padel-app/current_version.txt
-            echo "✅ New version is healthy!"
-
-            rm -f "$META_ENV_BACKUP"
-            META_ENV_BACKUP=""
-            trap - EXIT
-
-            # Удаляем бэкап после успешного деплоя
-            rm -f /opt/padel-app/app.jar.backup
-            echo "🧹 Backup removed"
-
-            # Очищаем temp директорию
-            rm -rf /opt/padel-app/temp/*
-            echo "🧹 Temp directory cleaned"
-
-            # Удаляем старые неиспользуемые образы
-            echo "🧹 Cleaning up old images..."
-            docker image prune -f
-
-            echo "✅ Deployment process completed successfully!"
-
-      - name: Health check
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_KEY_NEW }}
-          script: |
-            echo "🏥 Running final health check..."
-            
-            cd /opt/padel-app
-            
-            HTTP_CODE=$(docker compose exec -T padel-app curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health/readiness 2>/dev/null || true)
-            if [ "$HTTP_CODE" = "200" ]; then
-              echo "✅ Readiness 200"
-              echo "📋 Current version:"
-              cat /opt/padel-app/current_version.txt 2>/dev/null || echo "Unknown"
-              echo "📋 Container status:"
-              docker compose ps
-              echo "📋 Last 20 lines of logs:"
-              docker compose logs padel-app --tail=20
-            else
-              echo "❌ Readiness check failed: ${HTTP_CODE:-no response}"
-              docker compose ps
-              docker compose logs padel-app --tail=50
-              exit 1
-            fi
+            python3 /opt/padel-app/temp/release-runner.pyz deploy \
+              --root /opt/padel-app \
+              --bundle "/opt/padel-app/temp/release-${RELEASE_REVISION}.tar.gz" \
+              --revision "$RELEASE_REVISION"
 
       - name: Purge Cloudflare cache
         if: success()
@@ -286,30 +93,32 @@ jobs:
               sys.exit(1)
           "
 
+      - name: Restore release after post-deploy failure
+        if: ${{ failure() && steps.deploy.outcome == 'success' }}
+        env:
+          RELEASE_REVISION: ${{ github.sha }}
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_KEY_NEW }}
+          envs: RELEASE_REVISION
+          script: |
+            set -eu
+            python3 /opt/padel-app/temp/release-runner.pyz rollback \
+              --root /opt/padel-app --revision "$RELEASE_REVISION"
+
       - name: Notify success
         if: success()
         run: |
-          echo "🎉 DEPLOYMENT SUCCESSFUL! 🎉"
-          echo "=================================="
-          echo "✅ Application successfully deployed to production!"
-          echo "📦 Version: $(cat target/version.txt 2>/dev/null | head -1 || echo 'unknown')"
-          echo "🕐 Build time: $(date)"
-          echo "🔗 Commit: ${{ github.sha }}"
-          echo "🌍 Server: ${{ secrets.SERVER_HOST }}"
-          echo "=================================="
+          echo "Деплой проверен: ${GITHUB_SHA}"
 
       - name: Notify failure
         if: failure()
         run: |
-          echo "❌ DEPLOYMENT FAILED! ❌"
-          echo "=================================="
-          echo "❌ Deployment to production failed!"
-          echo "🕐 Time: $(date)"
-          echo "🔗 Commit: ${{ github.sha }}"
-          echo "🌍 Server: ${{ secrets.SERVER_HOST }}"
-          echo "=================================="
-          echo "⚠️ Check the 'Deploy to server' step logs above for '🔄 Rolling back to previous version' to see whether an automatic rollback actually ran and whether it succeeded — it does not always run on every failure path."
-          echo "⚠️ Verify the actual production state directly (docker ps / current_version.txt / actuator/health on the server) before assuming anything about which version is running."
+          echo "Деплой завершился ошибкой: ${GITHUB_SHA}"
+          echo "Результат восстановления указан в шаге Activate and verify release или Restore release after post-deploy failure."
+          echo "Проверьте current_version.txt и состояние приложения перед повторным выпуском."
           exit 1
 
   # Деплой PR конвейера запускает pipeline-merge.yml через gh workflow run от GITHUB_TOKEN — у такого
@@ -378,6 +187,8 @@ jobs:
             -m "Деплой «${subject}» прошёл успешно: ${run_url}"
           git push -q origin "$branch"
 
+          # Обратные кавычки — буквальная разметка Markdown.
+          # shellcheck disable=SC2016
           body=$(printf 'Деплой «%s» (`%s`) прошёл успешно: %s\n\nПеренесено:\n%s\n\nДиф только в `specs/**` — мерж без ревью по §9 `GIT_WORKFLOW.md`.' \
             "$subject" "$short_sha" "$run_url" "$(sed 's/^/- `/; s/$/`/' <<<"$archived")")
           pr_url=$(gh pr create --base master --head "$branch" \

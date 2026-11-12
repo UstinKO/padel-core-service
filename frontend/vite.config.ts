@@ -22,6 +22,7 @@ export default defineConfig({
     outDir: '../target/generated-resources/frontend/static/web',
     emptyOutDir: true,
     sourcemap: true,
+    manifest: true,
   },
   server: {
     proxy: {

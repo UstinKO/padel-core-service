@@ -127,5 +127,6 @@ SITE_KEY, SECRET_KEY
 
 Измерение рекламы: [Meta — события, согласие, атрибуция и CAPI](endpoints/meta-marketing.md).
 
+- [Выпуск и восстановление UI v2](ui-v2-release.md) — артефакт, проверки, снимки и rollback.
 - [Закрытый тестовый контур UI v2](ui-v2-preview.md) — локальный запуск, синтетический seed, изоляция, проверка и отключение.
 - [Диагностика и reset preview](endpoints/ui-preview.md) — контракт только для SUPER_ADMIN закрытого контура.

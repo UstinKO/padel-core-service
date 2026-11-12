@@ -133,17 +133,27 @@ class Client:
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command', choices=['init', 'config', 'build', 'up', 'status', 'reset', 'mail', 'stop'])
+    parser.add_argument('command', choices=['init', 'config', 'build', 'up', 'status', 'reset', 'mail', 'stop', 'release', 'rollback', 'recover'])
     parser.add_argument('--port', type=int, default=18114)
     args = parser.parse_args()
     if args.command == 'init':
         initialize(args.port)
         return
     state = load()
+    managed = (RUNTIME / 'release-state/current.json').exists()
+    if args.command in ('release', 'rollback', 'recover') or (args.command == 'up' and managed):
+        import sys
+        sys.path.insert(0, str(ROOT / 'automation/releases'))
+        from preview_release import command
+        command(args.command)
+        return
     if args.command == 'config':
         compose(state, 'config', '--quiet')
     elif args.command == 'build':
         subprocess.run(['./mvnw', '-DskipTests', 'package'], cwd=ROOT, check=True)
+        if managed:
+            print('Jar подготовлен; используйте release. Исходный образ для rollback сохранён')
+            return
         write_environment(state)
         compose(state, 'build', 'app')
     elif args.command == 'up':
