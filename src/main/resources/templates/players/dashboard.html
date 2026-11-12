@@ -23,6 +23,7 @@
     <!-- Custom Styles -->
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+    <link th:if="${previewElo != null}" rel="stylesheet" th:href="@{/css/elo-preview.css}">
     <link rel="stylesheet" th:href="@{/css/tournament-details.css}">
     <style>
         @media (max-width: 768px) {
@@ -118,6 +119,12 @@
                 </div>
             </div>
         </div>
+
+        <th:block th:if="${previewEloByPlayer != null}"
+                  th:with="eloRow=${previewEloByPlayer.get(player.id)}">
+            <section th:if="${eloRow != null}" id="player-elo" class="elo-preview elo-preview-card"
+                     th:insert="~{fragments/elo-preview :: playerCard}"></section>
+        </th:block>
 
         <!-- Stats Cards -->
         <div class="stats-grid">
