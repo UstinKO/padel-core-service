@@ -88,6 +88,12 @@
         <div th:if="${errorMessage}" class="alert alert-error">
             <i class="fas fa-exclamation-circle"></i>
             <span th:text="${errorMessage}">Error al actualizar el perfil</span>
+            <a th:if="${guestClaimWhatsappUrl}" th:href="${guestClaimWhatsappUrl}" target="_blank"
+               rel="noopener noreferrer" th:text="#{guest.claim.whatsapp}">Confirmar perfil por WhatsApp</a>
+        </div>
+
+        <div th:unless="${player.isGuestAccount()}">
+            <th:block th:replace="~{fragments/guest-profile-claim :: request}"></th:block>
         </div>
 
         <!-- Formulario de perfil -->
@@ -316,5 +322,7 @@
 <script th:src="@{/js/i18n/t.js}"></script>
 <script th:src="@{/js/main.js}"></script>
 <script th:src="@{/js/profile.js}"></script>
+<script th:src="@{/js/csrf.js}"></script>
+<script th:src="@{/js/guest-profile-claim.js}" defer></script>
 </body>
 </html>

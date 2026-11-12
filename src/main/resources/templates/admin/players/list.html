@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
+<html lang="es" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta name="app-profile" th:content="${@environment.getActiveProfiles().length > 0
         ? @environment.getActiveProfiles()[0]
@@ -68,6 +68,10 @@
                 </form>
             </div>
         </details>
+
+        <div sec:authorize="hasAnyRole('ORGANIZER','SUPER_ADMIN')">
+            <th:block th:replace="~{fragments/guest-profile-claim :: review}"></th:block>
+        </div>
 
         <!-- Estadísticas rápidas -->
         <div class="players-stats-grid">
@@ -344,6 +348,7 @@
 
 <footer th:replace="~{fragments/admin-footer :: footer}"></footer>
 <script th:src="@{/js/csrf.js}"></script>
+<script th:src="@{/js/guest-profile-claim.js}" defer></script>
 <script th:src="@{/js/admin.js}"></script>
 <script th:if="${isSuperAdmin}" th:inline="javascript">
     /*<![CDATA[*/
