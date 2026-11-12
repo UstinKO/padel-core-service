@@ -235,6 +235,16 @@ public class PlayerService {
     }
 
     @Transactional
+    public boolean actualizarNombreJugador(Long id, String nombre, String apellido) {
+        String firstName = nombre.strip().replaceAll("\\s+", " ");
+        String lastName = apellido.strip().replaceAll("\\s+", " ");
+        if (firstName.isBlank() || firstName.length() > 100 || lastName.length() > 100) {
+            throw new IllegalArgumentException("Недопустимое имя или фамилия игрока");
+        }
+        return playerRepository.actualizarNombre(id, firstName, lastName) == 1;
+    }
+
+    @Transactional
     public void actualizarNivelJugador(Long id, Nivel nivel) {
         PlayerPadel player = playerRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Jugador no encontrado con ID: " + id));

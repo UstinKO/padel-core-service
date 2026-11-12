@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.HashMap;
@@ -144,6 +145,23 @@ public class AdminPlayerController {
             result.put("message", msg("admin.players.details.error.guest_credentials_failed"));
             return ResponseEntity.internalServerError().body(result);
         }
+    }
+
+    @PostMapping("/{id}/name")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public String updatePlayerName(@PathVariable Long id,
+                                   @RequestParam(defaultValue = "") String firstName,
+                                   @RequestParam(defaultValue = "") String lastName,
+                                   RedirectAttributes redirectAttributes) {
+        try {
+            if (!playerService.actualizarNombreJugador(id, firstName, lastName)) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+            }
+            redirectAttributes.addFlashAttribute("playerNameUpdated", true);
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("playerNameInvalid", true);
+        }
+        return "redirect:/admin/players/" + id;
     }
 
     @PostMapping("/{id}/nivel")
