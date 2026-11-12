@@ -136,6 +136,7 @@ const ContactCheck = (() => {
 
             document.getElementById('ccTournamentName').innerHTML = t('contact.modal.desc', `<strong>${tournamentName}</strong>`);
             document.getElementById('contactCheckModal').style.display = 'flex';
+            window.trackClarityRegistrationStep?.(tournamentId, 'contact_form_opened');
 
             if (data.telefono) document.getElementById('ccPhone').value = data.telefono;
             if (data.telegramUsername) document.getElementById('ccTelegram').value = data.telegramUsername;
@@ -155,16 +156,19 @@ const ContactCheck = (() => {
                 document.getElementById('ccGlobalError').style.display = 'none';
 
                 if (!phone && !telegram) {
+                    window.trackClarityRegistrationError?.(tournamentId, 'contact_required');
                     showGlobalError(t('contact.error.empty'));
                     return;
                 }
 
                 if (phone && (!/^\+[0-9]{7,20}$/.test(phone.replace(/[\s\-\(\)]/g, '')))) {
+                    window.trackClarityRegistrationError?.(tournamentId, 'contact_invalid');
                     document.getElementById('ccPhoneError').style.display = 'block';
                     return;
                 }
 
                 if (telegram && !telegram.startsWith('@')) {
+                    window.trackClarityRegistrationError?.(tournamentId, 'contact_invalid');
                     document.getElementById('ccTgError').style.display = 'block';
                     return;
                 }
@@ -185,6 +189,7 @@ const ContactCheck = (() => {
                     const patchData = await patchRes.json();
 
                     if (!patchData.success) {
+                        window.trackClarityRegistrationError?.(tournamentId, 'contact_save_rejected');
                         showGlobalError(patchData.message || t('contact.error.save'));
                         newSaveBtn.disabled = false;
                         newSaveBtn.innerHTML = `<i class="fas fa-save"></i> ${t('contact.btn.save')}`;
@@ -200,6 +205,7 @@ const ContactCheck = (() => {
                     }
 
                 } catch (err) {
+                    window.trackClarityRegistrationError?.(tournamentId, 'contact_request_failed');
                     console.error('Error saving contact:', err);
                     showGlobalError(t('contact.error.connection'));
                     newSaveBtn.disabled = false;
