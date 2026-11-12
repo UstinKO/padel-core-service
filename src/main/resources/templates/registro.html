@@ -69,6 +69,8 @@
                          th:style="${errorMessage == null} ? 'display:none' : ''">
                         <i class="fas fa-exclamation-circle"></i>
                         <span id="registrationErrorText" th:text="${errorMessage}"></span>
+                        <a th:if="${guestClaimWhatsappUrl}" th:href="${guestClaimWhatsappUrl}" target="_blank"
+                           rel="noopener noreferrer" th:text="#{guest.claim.whatsapp}">Confirmar perfil por WhatsApp</a>
                     </div>
 
                     <div th:if="${successMessage}" class="alert alert-success">

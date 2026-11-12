@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<details th:fragment="request" class="profile-card" data-guest-claim="request">
+    <summary class="section-title" th:text="#{guest.claim.profile.title}">Vincular mi perfil de invitado</summary>
+    <form method="post" class="profile-claim-form" data-claim-request
+          th:attr="data-endpoint=@{/api/players/me/guest-profile-claims},data-whatsapp-text=#{guest.claim.profile.whatsapp_text},data-error=#{guest.claim.error}">
+        <div class="form-group">
+            <label for="guest-claim-player-phone" th:text="#{guest.claim.phone}">Número de WhatsApp</label>
+            <input type="tel" name="phone" id="guest-claim-player-phone" class="form-control"
+                   autocomplete="tel" maxlength="32" required>
+        </div>
+        <button class="btn btn-primary" type="submit" th:text="#{guest.claim.profile.submit}">Crear solicitud</button>
+        <p data-claim-status role="status"></p>
+        <a data-claim-whatsapp hidden target="_blank" rel="noopener noreferrer"
+           th:text="#{guest.claim.whatsapp}">Confirmar perfil por WhatsApp</a>
+    </form>
+</details>
+<details th:fragment="review" class="admin-card" data-guest-claim="review">
+    <summary class="admin-card-header" style="display:list-item; cursor:pointer;" th:text="#{guest.claim.admin.title}">Vincular perfil de invitado</summary>
+    <div class="admin-card-body">
+        <form method="post" data-claim-review
+              th:attr="data-endpoint=@{/api/admin/guest-profile-claims},data-error=#{guest.claim.error}">
+            <div class="form-group">
+                <label for="guest-claim-reference" th:text="#{guest.claim.admin.reference}">Número de solicitud</label>
+                <input id="guest-claim-reference" class="form-control" name="reference" required
+                       autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="36"
+                       pattern="[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}">
+            </div>
+            <button type="submit" class="btn btn-primary" th:text="#{guest.claim.admin.review}">Revisar solicitud</button>
+            <p data-claim-status role="status"></p>
+        </form>
+        <form method="post" data-claim-approve hidden
+              th:attr="data-success=#{guest.claim.admin.approved},data-error=#{guest.claim.error}">
+            <p><span th:text="#{guest.claim.admin.target}">Cuenta de destino</span> <strong data-claim-account></strong></p>
+            <p th:text="#{guest.claim.admin.verify}">Verificá la cuenta con el jugador y usá el número del remitente de WhatsApp.</p>
+            <div class="form-group">
+                <label for="guest-claim-approve-phone" th:text="#{guest.claim.admin.sender}">Número del remitente de WhatsApp</label>
+                <input type="tel" name="whatsappSenderPhone" id="guest-claim-approve-phone"
+                       class="form-control" maxlength="32" required>
+            </div>
+            <button type="submit" class="btn btn-primary" th:text="#{guest.claim.admin.approve}">Confirmar vinculación</button>
+            <p data-claim-status role="status"></p>
+        </form>
+        <p data-claim-approved hidden role="status" th:text="#{guest.claim.admin.approved}">Perfil vinculado.</p>
+    </div>
+</details>
+<details th:fragment="activate(playerId)" class="admin-card" data-guest-claim="activate">
+    <summary class="admin-card-header" style="display:list-item; cursor:pointer;" th:text="#{guest.claim.admin.activate}">Activar perfil de invitado</summary>
+    <div class="admin-card-body">
+        <form method="post" data-claim-activate th:attr="data-endpoint=@{/api/admin/players/{id}/activate-guest-profile(id=${playerId})},
+                    data-success=#{guest.claim.admin.activated},data-error=#{guest.claim.error}">
+            <p th:text="#{guest.claim.admin.activation_hint}">Usá el número real del remitente y el correo indicado por el jugador.</p>
+            <div class="form-group">
+                <label for="guest-claim-activate-phone" th:text="#{guest.claim.admin.sender}">Número del remitente de WhatsApp</label>
+                <input type="tel" name="whatsappSenderPhone" id="guest-claim-activate-phone"
+                       class="form-control" maxlength="32" required>
+            </div>
+            <div class="form-group">
+                <label for="guest-claim-activate-email" th:text="#{guest.claim.admin.email}">Correo del jugador</label>
+                <input type="email" name="email" id="guest-claim-activate-email" class="form-control"
+                       maxlength="150" required>
+            </div>
+            <button type="submit" class="btn btn-primary" th:text="#{guest.claim.admin.activate}">Activar perfil de invitado</button>
+            <p data-claim-status role="status"></p>
+        </form>
+    </div>
+</details>
+</body>
+</html>
