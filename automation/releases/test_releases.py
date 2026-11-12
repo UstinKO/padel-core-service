@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+import tarfile
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -7,7 +8,7 @@ import zipfile
 import artifact
 import smoke
 from docker_adapter import DockerAdapter
-from production import Production
+from production import Production, package, release_image_tag
 from transaction import Releases, RollbackFailure, atomic
 
 
@@ -107,6 +108,35 @@ class SmokeTest(unittest.TestCase):
                 return smoke.Response(200, {'Content-Type': content, 'Cache-Control': 'immutable'}, b'HTML')
             with self.subTest(revision=actual_revision, content=content), self.assertRaises(ValueError):
                 smoke.check(manifest, request)
+
+
+class ProductionBundleTest(unittest.TestCase):
+    def test_bundle_keeps_the_image_tag_used_by_docker_save(self):
+        revision = 'a' * 40
+        manifest = {'revision': revision, 'jarSha256': 'b' * 64}
+        image = 'padel-release:' + revision + '-' + 'b' * 16 + '-' + 'c' * 32
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'target').mkdir()
+            (root / '.github/bin').mkdir(parents=True)
+            (root / '.github/bin/configure-meta-env.py').touch()
+
+            def save(arguments, *, check):
+                self.assertEqual(arguments[:3], ['docker', 'image', 'save'])
+                self.assertEqual(arguments[-1], image)
+                self.assertTrue(check)
+                Path(arguments[4]).write_bytes(b'test image archive')
+
+            with patch('production.subprocess.run', side_effect=save):
+                bundle_path = package(root, root / 'app.jar', revision, manifest, image)
+
+            with tarfile.open(bundle_path, 'r:gz') as bundle:
+                with bundle.extractfile('manifest.json') as metadata:
+                    transported_manifest = json.load(metadata)
+            self.assertEqual(release_image_tag(transported_manifest, revision), image)
+            for wrong in ('sha256:' + 'd' * 64, image.replace('b' * 16, 'd' * 16), 'unrelated:latest'):
+                with self.subTest(wrong=wrong), self.assertRaisesRegex(ValueError, 'Тег образа'):
+                    release_image_tag(dict(transported_manifest, image=wrong), revision)
 
 
 class ProductionSnapshotTest(unittest.TestCase):
