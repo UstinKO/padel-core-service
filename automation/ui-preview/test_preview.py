@@ -9,6 +9,19 @@ import preview
 
 
 class RuntimeBoundaryTest(unittest.TestCase):
+    def test_managed_build_preserves_baseline_image_and_runtime_revision(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)
+            (path / 'release-state').mkdir()
+            (path / 'release-state/current.json').write_text('{}')
+            with patch.object(preview, 'RUNTIME', path), patch.object(preview, 'load', return_value={}), \
+                    patch('sys.argv', ['preview.py', 'build']), patch.object(preview.subprocess, 'run') as build, \
+                    patch.object(preview, 'compose') as compose, patch.object(preview, 'write_environment') as environment:
+                preview.main()
+                build.assert_called_once()
+                compose.assert_not_called()
+                environment.assert_not_called()
+
     def test_host_environment_cannot_replace_runtime(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory)

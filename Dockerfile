@@ -16,12 +16,7 @@ RUN mvn clean package -DskipTests
 # =========================
 # Stage 2: Runtime
 # =========================
-FROM eclipse-temurin:21-jre
-
-# Устанавливаем пакеты
-RUN apt-get update && \
-    apt-get install -y bash tzdata curl && \
-    rm -rf /var/lib/apt/lists/*
+FROM eclipse-temurin:21-jre@sha256:0b99b3376fbb50dbf9c0af8535fdd5b8eb0d3fdfc8b1e4967f383b6919f6901a
 
 ENV TZ=Europe/Moscow
 
