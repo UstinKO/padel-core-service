@@ -1,0 +1,37 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.73-guest-claim-phone-plus-seven
+      author: padel
+      changes:
+        - sql:
+            splitStatements: false
+            sql: |
+              ALTER FUNCTION player_claim_phone(text) RENAME TO player_claim_phone_argentina;
+
+              CREATE FUNCTION player_claim_phone(raw text) RETURNS text
+              LANGUAGE sql IMMUTABLE STRICT PARALLEL SAFE AS $$
+                SELECT COALESCE(
+                  player_claim_phone_argentina(raw),
+                  CASE WHEN btrim(raw) ~ '^[+]?[0-9 ()-]+$'
+                         AND digits ~ '^(00)?7[0-9]{10}$'
+                    THEN right(digits, 11)
+                  END
+                )
+                FROM (SELECT regexp_replace(raw, '[^0-9]', '', 'g') AS digits) phone
+              $$;
+
+              DROP INDEX idx_player_claim_phone;
+              CREATE INDEX idx_player_claim_phone ON player_padel_db (player_claim_phone(telefono))
+                WHERE activo = true;
+
+              ALTER TABLE guest_profile_claims ALTER COLUMN phone_key TYPE varchar(15);
+      rollback:
+        - sql:
+            splitStatements: false
+            sql: |
+              DROP INDEX idx_player_claim_phone;
+              DROP FUNCTION player_claim_phone(text);
+              ALTER FUNCTION player_claim_phone_argentina(text) RENAME TO player_claim_phone;
+              CREATE INDEX idx_player_claim_phone ON player_padel_db (player_claim_phone(telefono))
+                WHERE activo = true;
+              -- Сохраняем ширину колонки, чтобы откат не затронул уже созданные заявки +7.

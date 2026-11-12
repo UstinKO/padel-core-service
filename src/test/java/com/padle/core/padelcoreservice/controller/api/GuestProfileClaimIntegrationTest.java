@@ -15,6 +15,8 @@ import com.padle.core.padelcoreservice.dto.GuestProfileClaimDtos.Request;
 import com.padle.core.padelcoreservice.exception.AccountException;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -70,21 +72,22 @@ class GuestProfileClaimIntegrationTest {
     @Autowired TransactionTemplate transaction;
     @MockitoBean RecaptchaService captcha;
 
-    @Test
-    void duplicateSignupOffersWhatsAppWithoutExposingGuest() throws Exception {
-        var guest = player(true, MOBILE);
+    @ParameterizedTest
+    @CsvSource({MOBILE + ", " + LOCAL, "+7 100 000-00-01, 007 100 000 00 01"})
+    void duplicateSignupOffersWhatsAppWithoutExposingGuest(String storedPhone, String signupPhone) throws Exception {
+        var guest = player(true, storedPhone);
         when(captcha.verify(null)).thenReturn(true);
         String email = UUID.randomUUID() + "@gmail.com";
         String body = """
                 {"nombre":"Maria","apellido":"Garcia","email":"%s","telefono":"%s",
                  "nivelJugador":"C7","password":"Fixture-Password1!","confirmPassword":"Fixture-Password1!"}
-                """.formatted(email, LOCAL);
+                """.formatted(email, signupPhone);
         var result = mvc.perform(post("/api/players/registro").with(csrf())
                         .contentType("application/json").content(body))
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("PHONE_IN_USE"))
                 .andExpect(jsonPath("$.whatsappUrl").value("https://wa.me/12025550100"))
                 .andReturn().getResponse().getContentAsString();
-        assertThat(result).doesNotContain(guest.getEmail(), MOBILE);
+        assertThat(result).doesNotContain(guest.getEmail(), storedPhone);
         assertThat(players.existsByEmail(email)).isFalse();
     }
 
@@ -112,9 +115,10 @@ class GuestProfileClaimIntegrationTest {
         assertThat(registrations.findById(registration.getId()).orElseThrow().getPlayer().getId()).isEqualTo(guest.getId());
     }
 
-    @Test
-    void linksExistingAccountKeepingRegistrationPaymentAndPartner() throws Exception {
-        var guest = player(true, MOBILE);
+    @ParameterizedTest
+    @CsvSource({MOBILE + ", " + LOCAL, "+7 (100) 000-00-01, 007 100 000 00 01"})
+    void linksExistingAccountKeepingRegistrationPaymentAndPartner(String storedPhone, String requestPhone) throws Exception {
+        var guest = player(true, storedPhone);
         var account = player(false, null);
         var booker = player(false, OTHER);
         var event = tournament();
@@ -122,18 +126,18 @@ class GuestProfileClaimIntegrationTest {
         var bookerRow = registration(event, booker, guest);
         var payment = payments.saveAndFlush(Payment.builder().registration(guestRow)
                 .amount(new BigDecimal("1234.50")).status(PaymentStatus.PAID).build());
-        var reference = request(account);
+        var reference = request(account, requestPhone);
         var organizer = owner(OwnerRole.ORGANIZER);
 
         mvc.perform(get("/api/admin/guest-profile-claims/{reference}", reference).with(user(organizer)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.accountEmail").value(account.getEmail()));
-        approve(reference, organizer, MOBILE, 200, "playerId", account.getId().intValue());
-        approve(reference, organizer, LOCAL, 200, "playerId", account.getId().intValue());
+        approve(reference, organizer, storedPhone, 200, "playerId", account.getId().intValue());
+        approve(reference, organizer, requestPhone, 200, "playerId", account.getId().intValue());
 
         em.flush();
         em.clear();
         assertThat(players.findById(guest.getId()).orElseThrow().isActivo()).isFalse();
-        assertThat(players.findById(account.getId()).orElseThrow().getTelefono()).isEqualTo(MOBILE);
+        assertThat(players.findById(account.getId()).orElseThrow().getTelefono()).isEqualTo(storedPhone);
         var moved = registrations.findById(guestRow.getId()).orElseThrow();
         assertThat(moved.getPlayer().getId()).isEqualTo(account.getId());
         assertThat(moved.getStatus()).isEqualTo(RegistrationStatus.WAITLIST);
@@ -147,6 +151,20 @@ class GuestProfileClaimIntegrationTest {
                 """).param("guest", guest.getId()).query(String.class).single();
         assertThat(json.readTree(snapshot).path("americano_teams_db").get(0).path("player1_id").asLong())
                 .isEqualTo(account.getId());
+    }
+
+    @Test
+    void keepsCountryCodeWhenNationalDigitsCoincide() throws Exception {
+        var internationalGuest = player(true, "+7 100 000-00-01");
+        var argentineGuest = player(true, "+54 100 000-00-01");
+        var account = player(false, null);
+        var organizer = owner(OwnerRole.ORGANIZER);
+        var reference = request(account, "71000000001");
+
+        approve(reference, organizer, argentineGuest.getTelefono(), 409, "code", "GUEST_CLAIM_PHONE_MISMATCH");
+        approve(reference, organizer, internationalGuest.getTelefono(), 200, "playerId", account.getId().intValue());
+
+        assertThat(players.findById(argentineGuest.getId()).orElseThrow().isActivo()).isTrue();
     }
 
     @Test
@@ -227,9 +245,15 @@ class GuestProfileClaimIntegrationTest {
     }
 
     private UUID request(PlayerPadel account) throws Exception {
+        return request(account, LOCAL);
+    }
+
+    private UUID request(PlayerPadel account, String phone) throws Exception {
         String body = mvc.perform(post(REQUEST).with(user(account)).with(csrf()).contentType("application/json")
-                        .content("{\"phone\":\"" + LOCAL + "\"}"))
-                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+                        .content(json.writeValueAsString(new Request(phone))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.whatsappUrl").value("https://wa.me/12025550100"))
+                .andReturn().getResponse().getContentAsString();
         return UUID.fromString(json.readTree(body).path("reference").asText());
     }
 
