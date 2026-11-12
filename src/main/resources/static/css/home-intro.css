@@ -1,0 +1,181 @@
+@font-face {
+    font-family: 'Manrope';
+    src: url('../web/fonts/manrope-latin-400-normal.woff2') format('woff2');
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    unicode-range: U+0000-024F;
+}
+
+@font-face {
+    font-family: 'Manrope';
+    src: url('../web/fonts/manrope-cyrillic-400-normal.woff2') format('woff2');
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    unicode-range: U+0400-052F;
+}
+
+@font-face {
+    font-family: 'Manrope';
+    src: url('../web/fonts/manrope-latin-700-normal.woff2') format('woff2');
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    unicode-range: U+0000-024F;
+}
+
+@font-face {
+    font-family: 'Manrope';
+    src: url('../web/fonts/manrope-cyrillic-700-normal.woff2') format('woff2');
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    unicode-range: U+0400-052F;
+}
+
+.home-intro {
+    padding: 0;
+    background: #fdf8f7;
+    color: #212529;
+    font-family: Manrope, Inter, sans-serif;
+}
+
+.home-intro > .container {
+    width: min(100% - 40px, 1136px);
+    padding-inline: 0;
+}
+
+.home-intro__layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 2.75rem;
+    max-width: none;
+    text-align: left;
+    padding-block: 2.75rem 2.4rem;
+    border-bottom: 1px solid #eaded9;
+}
+
+.home-intro__location {
+    margin: 0 0 1.2rem;
+    color: #555d65;
+    font-size: .675rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+}
+
+.home-intro__location::before {
+    content: '';
+    display: inline-block;
+    width: .44rem;
+    height: .44rem;
+    margin-inline-end: .5rem;
+    border-radius: 50%;
+    background: #aa3719;
+}
+
+.home-intro__title {
+    max-width: 14ch;
+    margin: 0;
+    font-size: clamp(2.1rem, 4.25vw, 3.45rem);
+    line-height: 1.04;
+    letter-spacing: -.055em;
+    font-weight: 700;
+}
+
+.home-intro__title em {
+    color: #aa3719;
+    font-style: normal;
+}
+
+.home-intro__lead {
+    margin: 0;
+    max-width: 48ch;
+    color: #555d65;
+    font-size: 1rem;
+    line-height: 1.55;
+}
+
+@media (max-width: 45rem) {
+    .home-intro__layout {
+        grid-template-columns: minmax(0, 1fr);
+        gap: .45rem;
+        padding-block: 1.05rem .9rem;
+    }
+    .home-intro__title {
+        max-width: none;
+        font-size: clamp(1.9rem, 8.5vw, 2.3rem);
+        text-wrap: balance;
+    }
+    .home-intro__location {
+        display: none;
+    }
+    .home-intro__lead {
+        font-size: .9rem;
+    }
+}
+
+.torneos-section.home-schedule {
+    padding-top: 0;
+}
+
+.home-camp {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    margin: 16px 0 24px;
+    padding: 8px 12px;
+    background: #fff1e8;
+    border: 1px solid #f4be9e;
+    border-inline-start: 4px solid #ff6b35;
+    border-radius: 12px;
+    color: #242424;
+    font-size: 15px;
+    line-height: 1.45;
+}
+
+.home-camp__copy {
+    flex: 1 1 140px;
+    display: flex;
+    gap: 2px 16px;
+    flex-wrap: wrap;
+}
+
+.home-camp__date {
+    color: #65514a;
+}
+
+.home-camp__link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 44px;
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #9d361a;
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    text-decoration: none;
+}
+
+.home-camp__link:hover {
+    background: #782810;
+    color: #fff;
+}
+
+.home-camp__link:focus-visible {
+    outline: 2px solid #9d361a;
+    outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+    .home-camp__copy {
+        flex-direction: column;
+    }
+}
