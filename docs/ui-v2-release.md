@@ -4,6 +4,8 @@
 
 ## Артефакт
 
+Единственный runtime jar — `padel-bootstrap/target/padel-core-service-0.0.1-SNAPSHOT.jar`. Корневой `target/` сохраняется для frontend toolchain/generated-resources, QA evidence и пакета выпуска; библиотечный jar не используется как приложение.
+
 После `./mvnw verify` команда `python3 automation/releases/build.py --revision "$(git rev-parse HEAD)"` создаёт:
 
 - `target/release-manifest.json`: Git SHA, SHA-256 jar, хеши всех React/Expo-файлов, пустой список SPA routes. Vite manifest включает статические и динамические imports; отсутствие любого узла отклоняет артефакт. Expo сравнивается с существующей сборкой в исходниках.

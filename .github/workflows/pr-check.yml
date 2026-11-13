@@ -88,7 +88,7 @@ jobs:
           from pathlib import Path
           import re
           causes = set()
-          for path in Path('target/surefire-reports').glob('*.txt'):
+          for path in Path('.').glob('*/target/surefire-reports/*.txt'):
               text = path.read_text(errors='replace')
               matches = re.findall(r'^Caused by: (.+)$', text, re.M)
               if matches:
@@ -122,9 +122,24 @@ jobs:
           python3 automation/ui-preview/preview.py build
           python3 automation/ui-preview/preview.py up
           python3 automation/ui-preview/check.py
-          python3 automation/releases/rehearse.py
+          # Разделяем независимые наборы по штатному AUTH-лимиту 10 входов в минуту.
+          sleep 60
+          python3 automation/ui-preview/playoff-pilot.py run --rehearse
           python3 automation/ui-preview/preview.py stop
           python3 automation/ui-preview/preview.py up
+
+      - name: Modular pilot evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: modular-pilot-qa
+          path: |
+            target/modular-pilot/report.json
+            target/modular-pilot/rollback.json
+            target/modular-pilot/jwt-smoke.json
+            target/release-rehearsal/report.json
+          if-no-files-found: ignore
+          retention-days: 3
 
       - name: Stop isolated UI v2 environment
         if: always()
@@ -191,7 +206,7 @@ jobs:
                   for line in browser_log.read_text(errors='replace').splitlines()[-15:]:
                       escaped = line.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
                       print('::error title=Browser process::' + escaped[:600])
-              for path in Path('target/surefire-reports').glob('*RegistrationSourceBrowserTest.txt'):
+              for path in Path('.').glob('*/target/surefire-reports/*RegistrationSourceBrowserTest.txt'):
                   for line in path.read_text(errors='replace').splitlines():
                       if line.startswith('Caused by:'):
                           print('::error title=Browser server startup::' + line[:500].replace('%', '%25'))

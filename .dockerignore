@@ -6,6 +6,7 @@
 .env
 .env.*
 target
+**/target
 frontend/node_modules
 frontend/playwright-report
 frontend/test-results
