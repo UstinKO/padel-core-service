@@ -148,6 +148,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const tournaments = window.tournamentData || [];
     const historicalTournaments = window.historicalData || [];
     const myTournamentIds = new Set(window.myTournamentIds || []);
+    document.addEventListener('participation:declined', ({ detail: tournamentId }) => {
+        myTournamentIds.delete(tournamentId);
+        updateTabCounts();
+        renderTournaments();
+    });
 
     console.log('🏆 Турниров загружено:', tournaments.length);
     console.log('📋 Мои турниры:', myTournamentIds.size, 'ID:', [...myTournamentIds]);
