@@ -6,15 +6,24 @@ import com.padle.core.padelcoreservice.dto.SoloDoubleRegistrationDto;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
 import com.padle.core.padelcoreservice.exception.PlayerLevelRequiredException;
+import com.padle.core.padelcoreservice.exception.PairRegistrationException;
+import com.padle.core.padelcoreservice.exception.PairRegistrationException.Reason;
+import com.padle.core.padelcoreservice.security.RequestIdFilter;
 import com.padle.core.padelcoreservice.exception.TournamentRegistrationException;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.service.DoubleTournamentRegistrationService;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import com.padle.core.padelcoreservice.util.SecurityUtils;
 import jakarta.validation.Valid;
+import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +32,8 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Locale;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/tournaments/double")
@@ -31,7 +42,9 @@ import java.util.Map;
 public class DoubleTournamentRegistrationController {
 
     private final DoubleTournamentRegistrationService doubleRegistrationService;
-    private final TournamentService tournamentService; // Добавляем для получения TournamentDto
+    private final TournamentService tournamentService;
+    private final Validator validator;
+    private final MessageSource messageSource;
 
     @PostMapping("/{tournamentId}/register")
     public ResponseEntity<?> registerForDoubleTournament(
@@ -45,14 +58,16 @@ public class DoubleTournamentRegistrationController {
         try {
             currentUserId = extractCurrentUserId(principal);
         } catch (SecurityException e) {
-            response.put("success", false);
-            response.put("message", "Usuario no autenticado");
-            return ResponseEntity.status(401).body(response);
+            return pairError(401, Reason.SIGN_IN_REQUIRED);
         }
 
         try {
+            if (partnerDto.getExistingUserId() == null && (Boolean.TRUE.equals(partnerDto.getIsExistingUser())
+                    || !validator.validate(partnerDto, PartnerRegistrationDto.ManualPartner.class).isEmpty())) {
+                return pairError(400, Reason.INVALID_PARTNER);
+            }
             TournamentDto tournamentDto = tournamentService.getTournamentDtoById(tournamentId)
-                    .orElseThrow(() -> new RuntimeException("Torneo no encontrado con id: " + tournamentId));
+                    .orElseThrow(() -> new PairRegistrationException(Reason.TOURNAMENT_NOT_FOUND));
 
             TournamentRegistrationDto registration = doubleRegistrationService
                     .registerForDoubleTournament(tournamentDto, currentUserId, partnerDto);
@@ -66,30 +81,22 @@ public class DoubleTournamentRegistrationController {
             return ResponseEntity.ok(response);
 
         } catch (PlayerLevelRequiredException e) {
-            // Уровень не указан — needLevel для фронтенд-попапа "Указать уровень"
-            response.put("success", false);
-            response.put("message", e.getMessage());
-            response.put("needLevel", true);
-            return ResponseEntity.badRequest().body(response);
-
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false, "code", "PLAYER_LEVEL_REQUIRED", "message", e.getMessage(), "needLevel", true));
+        } catch (PairRegistrationException e) {
+            return pairError(e.getReason() == Reason.TOURNAMENT_NOT_FOUND ? 404 : 400, e.getReason());
         } catch (TournamentRegistrationException e) {
-            // Бизнес-ошибки (включая само-регистрацию, уже зарегистрирован и т.д.)
-            response.put("success", false);
-            response.put("message", e.getMessage());
-            return ResponseEntity.badRequest().body(response);
-
+            return pairError(400, Reason.REGISTRATION_REJECTED);
         } catch (DataIntegrityViolationException e) {
-            // Fallback на случай если constraint сработал раньше нашей проверки
-            response.put("success", false);
-            response.put("message", "Ya estás registrado en este torneo o los datos del compañero son inválidos.");
-            return ResponseEntity.badRequest().body(response);
-
+            log.warn("Pair registration integrity conflict: tournamentId={}, requestId={}", tournamentId,
+                    MDC.get(RequestIdFilter.MDC_KEY));
+            return pairError(400, Reason.REGISTRATION_CONFLICT);
         } catch (ResponseStatusException e) {
             throw e;
         } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", "Error al procesar el registro: " + e.getMessage());
-            return ResponseEntity.status(500).body(response);
+            log.error("Pair registration failed: tournamentId={}, requestId={}, type={}", tournamentId,
+                    MDC.get(RequestIdFilter.MDC_KEY), e.getClass().getSimpleName());
+            return pairError(500, Reason.REGISTRATION_FAILED);
         }
     }
 
@@ -174,12 +181,14 @@ public class DoubleTournamentRegistrationController {
         try {
             currentUserId = extractCurrentUserId(principal);
         } catch (SecurityException e) {
-            response.put("success", false);
-            response.put("message", "Usuario no autenticado");
-            return ResponseEntity.status(401).body(response);
+            return pairError(401, Reason.SIGN_IN_REQUIRED);
         }
 
         try {
+            if (partnerDto.getExistingUserId() == null && (Boolean.TRUE.equals(partnerDto.getIsExistingUser())
+                    || !validator.validate(partnerDto, PartnerRegistrationDto.ManualPartner.class).isEmpty())) {
+                return pairError(400, Reason.INVALID_PARTNER);
+            }
             TournamentRegistrationDto registration = doubleRegistrationService
                     .addPartnerToSoloRegistration(tournamentId, currentUserId, partnerDto);
 
@@ -190,30 +199,38 @@ public class DoubleTournamentRegistrationController {
             return ResponseEntity.ok(response);
 
         } catch (PlayerLevelRequiredException e) {
-            response.put("success", false);
-            response.put("message", e.getMessage());
-            response.put("needLevel", true);
-            return ResponseEntity.badRequest().body(response);
-
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false, "code", "PLAYER_LEVEL_REQUIRED", "message", e.getMessage(), "needLevel", true));
+        } catch (PairRegistrationException e) {
+            return pairError(e.getReason() == Reason.TOURNAMENT_NOT_FOUND ? 404 : 400, e.getReason());
         } catch (TournamentRegistrationException e) {
-            response.put("success", false);
-            response.put("message", e.getMessage());
-            return ResponseEntity.badRequest().body(response);
-
+            return pairError(400, Reason.REGISTRATION_REJECTED);
         } catch (DataIntegrityViolationException e) {
-            // Запасной рубеж на случай гонки, которую не поймал advisory-lock —
-            // как и в registerForDoubleTournament.
-            response.put("success", false);
-            response.put("message", "Ya estás registrado en este torneo o los datos del compañero son inválidos.");
-            return ResponseEntity.badRequest().body(response);
-
+            log.warn("Pair registration integrity conflict: tournamentId={}, requestId={}", tournamentId,
+                    MDC.get(RequestIdFilter.MDC_KEY));
+            return pairError(400, Reason.REGISTRATION_CONFLICT);
         } catch (ResponseStatusException e) {
             throw e;
         } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", "Error al agregar compañero: " + e.getMessage());
-            return ResponseEntity.status(500).body(response);
+            log.error("Pair registration failed: tournamentId={}, requestId={}, type={}", tournamentId,
+                    MDC.get(RequestIdFilter.MDC_KEY), e.getClass().getSimpleName());
+            return pairError(500, Reason.REGISTRATION_FAILED);
         }
+    }
+
+    @ExceptionHandler({MethodArgumentNotValidException.class, HttpMessageNotReadableException.class})
+    public ResponseEntity<?> invalidRegistrationRequest() {
+        return pairError(400, Reason.INVALID_PARTNER);
+    }
+
+    private ResponseEntity<?> pairError(int status, Reason reason) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("success", false);
+        body.put("code", reason.name());
+        body.put("message", messageSource.getMessage("pair.registration." + reason.name().toLowerCase(Locale.ROOT),
+                null, LocaleContextHolder.getLocale()));
+        Optional.ofNullable(MDC.get(RequestIdFilter.MDC_KEY)).ifPresent(id -> body.put("requestId", id));
+        return ResponseEntity.status(status).body(body);
     }
 
     @GetMapping("/{tournamentId}/looking-for-partner")
