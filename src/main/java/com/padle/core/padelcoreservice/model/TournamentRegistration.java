@@ -42,6 +42,13 @@ public class TournamentRegistration {
     @CreationTimestamp
     private LocalDateTime registrationDate;
 
+    @Column(name = "queued_at")
+    private LocalDateTime queuedAt;
+
+    public LocalDateTime queueTime() {
+        return queuedAt == null ? registrationDate : queuedAt;
+    }
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     private RegistrationStatus status;
@@ -210,10 +217,6 @@ public class TournamentRegistration {
         return status == RegistrationStatus.WAITLIST;
     }
 
-    public boolean isInvited() {
-        return status == RegistrationStatus.WAITLIST_INVITED;
-    }
-
     public boolean isCancelled() {
         return status == RegistrationStatus.CANCELLED;
     }
@@ -233,13 +236,6 @@ public class TournamentRegistration {
         this.invitationExpiresAt = null;
         this.notifiedAboutVacancy = false;
         this.waitlistConfirmationToken = null;   // приглашение истекло/отменено — токен больше не действует
-    }
-
-    public void inviteToConfirm(LocalDateTime expiresAt, String confirmationToken) {
-        this.status = RegistrationStatus.WAITLIST_INVITED;
-        this.invitationExpiresAt = expiresAt;
-        this.notifiedAboutVacancy = true;
-        this.waitlistConfirmationToken = confirmationToken;
     }
 
     public void invalidateActionTokens() {
@@ -266,6 +262,19 @@ public class TournamentRegistration {
         return Boolean.TRUE.equals(isActive) && !Boolean.TRUE.equals(isDoubleRegistration) && partner == null
                 && (status == RegistrationStatus.SOLO_SEARCH || status == RegistrationStatus.SOLO_ADD_LATER
                     || status == RegistrationStatus.WAITLIST);
+    }
+
+    @Column(name = "replacement_search", nullable = false)
+    @Builder.Default
+    private boolean replacementSearch = false;
+
+    public boolean needsReplacementInMain() {
+        return isConfirmed() && Boolean.TRUE.equals(isActive) && Boolean.TRUE.equals(isDoubleRegistration)
+                && partner == null && mainPlayerId != null;
+    }
+
+    public boolean canFormPairThroughSearch() {
+        return isPairableSolo() || (needsReplacementInMain() && replacementSearch);
     }
 
     public boolean isPairComplete() {

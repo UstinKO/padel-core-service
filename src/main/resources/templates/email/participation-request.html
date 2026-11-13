@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<head><meta charset="UTF-8"><title th:text="#{participation.heading}">Confirmá tu participación</title></head>
+<body style="font-family:Arial,sans-serif;color:#212529">
+<h1 th:text="#{participation.heading}">Confirmá tu participación</h1>
+<p th:text="${tournamentName}"></p>
+<p th:if="${delegated}" th:text="#{participation.email.guest(${participant})}"></p>
+<p th:text="#{participation.email.body}"></p>
+<p><a th:href="${responseUrl}" th:text="#{participation.email.action}">Responder</a></p>
+</body>
+</html>

@@ -18,7 +18,7 @@
 
 **Документация `docs/`** (в репозитории с LFPT-0602) — контекст приложения для конвейера и людей: [docs/Home.md](../docs/Home.md) — оглавление; архитектура и деплой (`architecture.md`), БД (`database-architecture.md`), домены и все эндпоинты (`domain-overview.md`, `endpoints/`), аутентификация (`auth-flow.md`), i18n (`i18n/`), переход на React (`frontend-react/`), автономный конвейер (`pipeline-autonomy.md`). Перед задачей в незнакомой области — прочитать соответствующий раздел, но источник истины по бизнес-логике — `specs/MASTER.md`, по поведению — код: если документ расходится с кодом, верить коду и поправить документ в том же PR. Пометки `[SECURITY — закрыто/актуально на <дата>]` и `[закрыто, сверено с кодом <дата>]` в `docs/endpoints/*` — результат сверки с кодом на указанную дату. **Документация обновляется в том же PR, что и код** — карта «что изменил → какой документ» в [docs/Home.md § Как поддерживать актуальность](../docs/Home.md#как-поддерживать-актуальность); механические расхождения (версия схемы, колонки, enum, эндпоинты, классы) проверяет `python3 .github/bin/docs-drift.py`, сверено до 0 на 2026-10-16 (LFPT-0615). `docs/infrastructure-security.md` и `docs/telegram-ai-pipeline.md` — приватные (в `.gitignore`), в облачном клоне их нет и не должно быть; IP сервера, доверенные IP, SSH-доступы и идентификаторы роутины в `docs/` и любые публичные файлы не писать.
 
-**Переход на микросервисы:** монолит сейчас готовится к горизонтальному масштабированию (Docker Swarm, 2 реплики/сервис) и последующему выделению сервисов (Payments → Notifications → Bracket → Identity → King of Court → Americano → Tournament-core), с прицелом на мобильные приложения и новые продукты. Полный поэтапный план, известные архитектурные "мины" под несколько реплик и карта связей между доменами — [docs/microservices-migration-plan.md](../docs/microservices-migration-plan.md).
+**Многомодульный монолит (LFPT-1041, решение владельца 13.11.2026):** приняты семь целевых модулей: api-contract, tournament-engines, application, persistence, web, integrations, bootstrap. Spring service/transaction в application разрешён; domain/engines без инфраструктурных зависимостей. Текущее приложение пока один Maven jar-проект; первая фаза готовит рабочий reactor и переносит только PlayoffMatchingEngine. [План и анализ](../docs/modular-monolith/phase-1/README.md): #1047 → #1048 → #1049 → #1050 → #1045. Каждый PR сохраняет запуск/сценарии/контракты и проходит собственные проверки. Выделение persistence/Liquibase — отдельная поздняя #1051, в конце миграции или согласованном окне Swarm #1040; физическая PostgreSQL при необходимости ставится отдельно. Внутренний HTTP/микросервисы сейчас не создаются. [Исторический план](../docs/microservices-migration-plan.md) — справочные связи/риски возможного будущего. До реализации #1049 действуют существующие команды/пути; изменение их в инструкции выполняется вместе с рабочим reactor.
 
 ---
 
@@ -99,7 +99,8 @@ docker compose up -d
 
 | URL | Template | Описание |
 |-----|----------|----------|
-| `GET /players/dashboard` | `players/dashboard.html` | Дашборд игрока |
+| `GET /players/dashboard` | React в production | Мои мероприятия |
+| `GET /legacy/players/dashboard` | `players/dashboard.html` | Прежний кабинет игрока |
 | `GET /perfil` | `players/perfil.html` | Профиль |
 | `POST /perfil/actualizar` | — (redirect) | Обновление профиля |
 | `GET /recuperar-password` | — | Форма сброса пароля |
@@ -179,6 +180,9 @@ docker compose up -d
 | PATCH | `/api/players/me/contact` | Обновление контакта (телефон / Telegram) |
 | GET | `/api/players/me/contact-status` | Проверка наличия контакта |
 | GET | `/api/players/me/tournaments` | «Мои мероприятия» (LFPT-0637) — предстоящие/история, только просмотр |
+| GET | `/api/players/me/events` | Типизированный кабинет игрока, собственные заявки, история и доступные действия |
+| POST | `/api/players/me/events/{registrationId}/withdraw` | Личный выход с версией заявки |
+| PUT | `/api/players/me/events/{registrationId}/contact-visibility` | Согласие на показ контактов при поиске партнёра |
 | GET | `/api/players/search` | Поиск партнёра для парной регистрации — по имени/фамилии/email/телефону/Telegram (LFPT-0679) |
 
 ### Tournaments API (`/api/tournaments`)
@@ -389,7 +393,7 @@ King of Court шлёт real-time состояние на `/topic/tournament/{kin
 
 ### Registration Status Flow
 
-`TournamentRegistration.status` (enum `RegistrationStatus`). Бизнес-правила флоу (когда что меняется, cron-логика листа ожидания, лимит приглашений) — см. [specs/MASTER.md § Статусы регистрации](../specs/MASTER.md#статусы-регистрации-на-турнир). Технически: `TournamentService.checkExpiredInvitations()` (cron `0 */10 * * * *`) переводит следующего WAITLIST-игрока в WAITLIST_INVITED.
+`TournamentRegistration.status` (enum `RegistrationStatus`). Резерв продвигается при освобождении места, без приглашения с таймером. В парных турнирах место получает первая готовая пара по `queuedAt`. См. [specs/MASTER.md § Статусы регистрации](../specs/MASTER.md#статусы-регистрации-на-турнир).
 
 ### Double Tournament Registration Flow
 
@@ -634,8 +638,14 @@ GET/HEAD `/api/public/events/{eventId}/live` и `/api/public/king-of-court/{king
 
 ### История отмен — LFPT-0900
 
-Мягкая отмена использует RegistrationCancellationService/CancellationHistoryRepository: отдельное событие, участники и cancellationVersion. История сохраняется при повторной записи; batch-чтение для своего игрока или управляемого турнира проходит проверку доступа. Существующие сроки, PairTerms, оплата и очередь сохраняются. [Модель, права, повтор и ограничения старых запросов](../docs/endpoints/registration-cancellation.md). Два optional поля старых путей: If-Registration-Version для player cancel/cancel-double и comment для организаторской отмены. Новых REST-маршрутов кабинета нет; они остаются #902.
+Мягкая отмена использует RegistrationCancellationService/CancellationHistoryRepository: отдельное событие, участники и cancellationVersion. История сохраняется при повторной записи; batch-чтение для своего игрока или управляемого турнира проходит проверку доступа. Существующие сроки, PairTerms, оплата и очередь сохраняются. [Модель, права, повтор и ограничения старых запросов](../docs/endpoints/registration-cancellation.md). Два optional поля старых путей: If-Registration-Version для player cancel/cancel-double и comment для организаторской отмены. REST-кабинет #902 использует собственную историю отмен игрока.
 
 ### Закрытый контур UI v2
 
 Профиль `preview`, пакет `preview/` и `automation/ui-preview/` создают отдельную локальную среду с синтетическими данными, gateway Basic Auth, изолированной PostgreSQL и SMTP-приёмником. Ранние проверки конфигурации/UUID-маркера выполняются до миграций. `SchedulingConfiguration` сохраняет scheduling по умолчанию и отключает его только явным `app.scheduling.enabled=false`. Контракты диагностики/reset: [docs/endpoints/ui-preview.md](../docs/endpoints/ui-preview.md), запуск/проверка/остановка: [docs/ui-v2-preview.md](../docs/ui-v2-preview.md). Production SPA allowlist не включается.
+
+### Данные пилота модульного монолита
+
+Браузерные проверки: `automation/ui-preview/playoff-pilot.py` и `tests/browser/modular-pilot/`. Команда `run` проверяет итоговый jar, прежние UI/API и реальные WS по [принятому эталону](../docs/modular-monolith/phase-1/browser-expectations.json); пересоздаёт только пилот. `prepare --reset` готовит ручной набор; `smoke --rehearse` сверяет пять snapshots через существующий выпуск/откат. [Отчёт](../docs/modular-monolith/phase-1/browser-baseline.md), [ручной журнал](../docs/modular-monolith/phase-1/manual-baseline.md). Автоматизация не закрывает человеческую приёмку и не разрешает начать reactor при незавершённой #1048.
+
+`PlayoffPilotController`, `PlayoffPilotFixtureService` и `PlayoffPilotData` существуют только в профиле `preview`. Защищённые seed/read/reset пилота используют существующие проверки имени БД/UUID и блокировку control-row; пять турниров 8/9/16 команд формируются настоящим TeamPlayoffService. Метаданные сохраняются отдельным ключом JSON в существующем preview control, без Liquibase. [Контракт](../docs/endpoints/ui-preview.md), [backend baseline](../docs/modular-monolith/phase-1/backend-baseline.md). Сборка и движок пока остаются в корневом модуле.

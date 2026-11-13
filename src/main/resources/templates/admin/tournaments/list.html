@@ -23,6 +23,7 @@
     <!-- Custom Styles -->
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <link rel="stylesheet" th:href="@{/css/admin-tournament-list.css}">
 </head>
 <body>
 <header th:replace="~{fragments/admin-header :: header(#{admin.tournaments.list.title})}"></header>
@@ -56,29 +57,95 @@
             </a>
         </div>
 
-        <!--/* Фильтр по клубу — виден только SUPER_ADMIN (у CLUB_ADMIN выбирать нечего) */-->
-        <form th:if="${isSuperAdmin}" method="get" th:action="@{/admin/tournaments}" class="admin-actions">
-            <label for="clubIdFilter" th:text="#{admin.tournaments.list.filter.club.label}">Filtrar por club</label>
-            <select id="clubIdFilter" name="clubId" onchange="this.form.submit()">
-                <option value="" th:selected="${selectedClubId == null}"
-                        th:text="#{admin.tournaments.list.filter.club.all}">Todos los clubes</option>
-                <option th:each="club : ${clubs}" th:value="${club.id}"
-                        th:selected="${selectedClubId != null and selectedClubId == club.id}"
-                        th:text="${club.nombre}">Club</option>
-            </select>
-            <noscript>
-                <button type="submit" class="btn btn-secondary"
-                        th:text="#{admin.tournaments.list.filter.club.apply}">Filtrar</button>
-            </noscript>
+        <form method="get" th:action="@{/admin/tournaments}" class="tournament-list-filters"
+              id="tournamentListFilters" th:aria-label="#{admin.tournaments.list.filter.title}">
+            <input type="hidden" name="lang" th:value="${#locale.language}">
+            <fieldset class="tournament-list-filters__period">
+                <legend th:text="#{admin.tournaments.list.filter.period}">Período</legend>
+                <div class="tournament-list-filters__dates">
+                    <label for="eventDateFrom">
+                        <span th:text="#{admin.tournaments.list.filter.from}">Desde</span>
+                        <input type="date" id="eventDateFrom" name="from" th:value="${dateFrom}"
+                               th:attr="aria-invalid=${invalidPeriod},aria-describedby=${invalidPeriod ? 'eventPeriodError' : null}">
+                    </label>
+                    <label for="eventDateTo">
+                        <span th:text="#{admin.tournaments.list.filter.to}">Hasta</span>
+                        <input type="date" id="eventDateTo" name="to" th:value="${dateTo}"
+                               th:attr="aria-invalid=${invalidPeriod},aria-describedby=${invalidPeriod ? 'eventPeriodError' : null}">
+                    </label>
+                </div>
+                <p th:if="${invalidPeriod}" id="eventPeriodError" class="tournament-list-filters__error"
+                   role="alert" th:text="#{admin.tournaments.list.filter.invalidPeriod}"></p>
+            </fieldset>
+            <label for="eventFormat">
+                <span th:text="#{admin.tournaments.list.filter.format}">Tipo de evento</span>
+                <select id="eventFormat" name="format">
+                    <option value="" th:text="#{admin.tournaments.list.filter.format.all}">Todos los eventos</option>
+                    <option th:each="format : ${eventFormats}" th:value="${format.name()}"
+                            th:selected="${selectedFormat == format}"
+                            th:text="#{__${'admin.tournaments.list.format.' + format.name()}__}"></option>
+                </select>
+            </label>
+            <label for="clubIdFilter">
+                <span th:text="#{admin.common.col.club}">Club</span>
+                <select id="clubIdFilter" name="clubId">
+                    <option value="" th:text="#{admin.tournaments.list.filter.club.all}">Todos los clubes</option>
+                    <option th:each="club : ${filterClubs}" th:value="${club.key}"
+                            th:selected="${selectedClubId == club.key}" th:text="${club.value}"></option>
+                </select>
+            </label>
+            <label for="eventGender">
+                <span th:text="#{admin.tournaments.list.filter.gender}"></span>
+                <select id="eventGender" name="gender">
+                    <option value="" th:text="#{admin.tournaments.list.filter.gender.all}"></option>
+                    <option th:each="value : ${eventGenders}" th:value="${value.name()}"
+                            th:selected="${selectedGender == value}" th:text="#{__${'enum.genero.' + value.name()}__}"></option>
+                </select>
+            </label>
+            <label for="eventLevel">
+                <span th:text="#{admin.tournaments.list.filter.level}"></span>
+                <select id="eventLevel" name="level">
+                    <option value="" th:text="#{admin.tournaments.list.filter.level.all}"></option>
+                    <option th:each="value : ${eventLevels}" th:value="${value.name()}"
+                            th:selected="${selectedLevel == value}" th:text="${value.name() == 'PRINCIPIANTES'} ? #{calendar.level.PRINCIPIANTES} : ${#strings.replace(value.name(), '_', #strings.startsWith(value.name(), 'SUMA_') ? ' ' : '–')}"></option>
+                </select>
+            </label>
+            <label for="eventStatus">
+                <span th:text="#{admin.tournaments.list.filter.status}"></span>
+                <select id="eventStatus" name="status">
+                    <option value="" th:text="#{admin.tournaments.list.filter.status.all}"></option>
+                    <option th:each="value : ${eventStatuses}" th:value="${value.name()}"
+                            th:selected="${selectedStatus == value}" th:text="${value.name() == 'CERRADO'} ? #{admin.tournaments.list.filter.registrationClosed} : #{__${'enum.estado.' + value.name()}__}"></option>
+                </select>
+            </label>
+            <div class="tournament-list-filters__buttons">
+                <button type="submit" class="btn btn-primary"
+                        th:text="#{admin.tournaments.list.filter.club.apply}">Aplicar</button>
+                <a th:href="@{/admin/tournaments(lang=${#locale.language})}" class="btn btn-outline"
+                   th:text="#{admin.tournaments.list.filter.reset}">Restablecer</a>
+            </div>
         </form>
 
+        <p th:unless="${invalidPeriod}" class="tournament-list-count"
+           th:text="#{admin.tournaments.list.filter.count(${resultCount})}"></p>
+        <div th:if="${resultCount == 0 and !invalidPeriod}" class="admin-empty">
+            <i class="fas fa-trophy" aria-hidden="true"></i>
+            <h2 th:if="${filtersActive}" th:text="#{admin.tournaments.list.filter.empty}"></h2>
+            <a th:if="${filtersActive}" th:href="@{/admin/tournaments(lang=${#locale.language})}" class="btn btn-outline"
+               th:text="#{admin.tournaments.list.filter.reset}">Restablecer</a>
+            <h2 th:unless="${filtersActive}" th:text="#{admin.tournaments.list.empty.title}">No hay torneos</h2>
+        </div>
+
         <!-- Карточки турниров для мобильных -->
-        <div class="tournaments-cards" id="tournamentsMobileView">
-            <div th:each="item : ${tournaments}" th:if="${not #lists.isEmpty(tournaments)}" class="tournament-card">
+        <div th:if="${resultCount > 0}" class="tournaments-cards" id="tournamentsMobileView">
+            <div th:each="item : ${tournaments}" th:with="levelLabel=${item.tournament.categoriaNivel == 'PRINCIPIANTES' ? #messages.msg('calendar.level.PRINCIPIANTES') : #strings.replace(item.tournament.categoriaNivel, '_', #strings.startsWith(item.tournament.categoriaNivel, 'SUMA_') ? ' ' : '–')}" class="tournament-card">
                 <div class="tournament-card-header">
                     <div class="tournament-card-title">
                         <i class="fas fa-trophy"></i>
-                        <strong th:text="${item.tournament.nombre}">Torneo Open</strong>
+                        <div><strong class="tournament-list-event-name"><span th:text="#{__${'admin.tournaments.list.format.' + item.format.name()}__}">Americano</span><span th:unless="${#strings.isEmpty(levelLabel)}" th:text="' · ' + ${levelLabel}"> · C7</span></strong>
+                            <small class="tournament-list-custom-name" th:if="${not #strings.isEmpty(item.customName)}"
+                                   th:text="${item.customName}"></small>
+                        </div>
                     </div>
                     <div class="tournament-card-statuses">
                         <span class="status-badge" th:classappend="'status-' + ${item.tournament.estado.name().toLowerCase()}"
@@ -104,7 +171,7 @@
                     </div>
                     <div class="tournament-info-row">
                         <i class="fas fa-chart-line"></i>
-                        <span th:text="${item.tournament.categoriaNivel == 'TODOS'} ? #{calendar.level.TODOS} : ${item.tournament.categoriaNivel}">C8</span>
+                        <span th:text="${levelLabel}">C8</span>
                     </div>
                     <div class="tournament-info-row">
                         <i class="fas fa-users"></i>
@@ -167,7 +234,7 @@
         </div>
 
         <!-- Таблица турниров (para escritorio) -->
-        <div class="admin-table-container" id="tournamentsTableView">
+        <div th:if="${resultCount > 0}" class="admin-table-container" id="tournamentsTableView">
             <table class="admin-table">
                 <thead>
                 <tr>
@@ -182,21 +249,19 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="item : ${tournaments}" th:if="${not #lists.isEmpty(tournaments)}">
+                <tr th:each="item : ${tournaments}" th:with="levelLabel=${item.tournament.categoriaNivel == 'PRINCIPIANTES' ? #messages.msg('calendar.level.PRINCIPIANTES') : #strings.replace(item.tournament.categoriaNivel, '_', #strings.startsWith(item.tournament.categoriaNivel, 'SUMA_') ? ' ' : '–')}">
                     <td th:text="${item.tournament.id}">1</td>
                     <td>
-                        <strong th:text="${item.tournament.nombre}">Torneo Open</strong>
-                        <div style="font-size: 0.8rem; color: var(--admin-gray);">
-                            <span th:text="#{__${'enum.tipo.' + item.tournament.tipo.name()}__}">Americano</span> ·
-                            <span th:text="#{__${'enum.modalidad.' + item.tournament.modalidad.name()}__}">Dobles</span>
-                        </div>
+                        <strong class="tournament-list-event-name"><span th:text="#{__${'admin.tournaments.list.format.' + item.format.name()}__}">Americano</span><span th:unless="${#strings.isEmpty(levelLabel)}" th:text="' · ' + ${levelLabel}"> · C7</span></strong>
+                        <small class="tournament-list-custom-name" th:if="${not #strings.isEmpty(item.customName)}"
+                               th:text="${item.customName}"></small>
                     </td>
                     <td th:text="${item.tournament.clubNombre}">Club Padel</td>
                     <td th:text="${#temporals.format(item.tournament.fechaInicio, 'dd/MM/yyyy')}">15/03/2026</td>
                     <td>
                         <div style="display: flex; flex-direction: column; gap: 0.25rem;">
                             <span><i class="fas fa-venus-mars" style="width: 16px; color: var(--admin-primary);"></i> <span th:text="#{__${'enum.genero.' + item.tournament.generoFormato.name()}__}">Mixto</span></span>
-                            <span><i class="fas fa-chart-line" style="width: 16px; color: var(--admin-primary);"></i> <span th:text="${item.tournament.categoriaNivel == 'TODOS'} ? #{calendar.level.TODOS} : ${item.tournament.categoriaNivel}">C8</span></span>
+                            <span><i class="fas fa-chart-line" style="width: 16px; color: var(--admin-primary);"></i> <span th:text="${levelLabel}">C8</span></span>
                         </div>
                     </td>
                     <td>
@@ -261,19 +326,6 @@
                         </div>
                     </td>
                 </tr>
-                <tr th:unless="${not #lists.isEmpty(tournaments)}">
-                    <td colspan="8" class="empty-state-cell">
-                        <div class="admin-empty">
-                            <i class="fas fa-trophy"></i>
-                            <h3 th:text="#{admin.tournaments.list.empty.title}">No hay torneos</h3>
-                            <p th:text="#{admin.tournaments.list.empty.text}">Comienza creando tu primer torneo</p>
-                            <a href="/admin/tournaments/new" class="btn btn-primary">
-                                <i class="fas fa-plus-circle"></i>
-                                Crear Torneo
-                            </a>
-                        </div>
-                    </td>
-                </tr>
                 </tbody>
             </table>
         </div>
@@ -283,5 +335,6 @@
 <footer th:replace="~{fragments/admin-footer :: footer}"></footer>
 <script th:src="@{/js/csrf.js}"></script>
 <script th:src="@{/js/admin.js}"></script>
+<script th:src="@{/js/admin-tournament-list.js}" defer></script>
 </body>
 </html>

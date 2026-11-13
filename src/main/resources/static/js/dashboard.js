@@ -148,6 +148,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const tournaments = window.tournamentData || [];
     const historicalTournaments = window.historicalData || [];
     const myTournamentIds = new Set(window.myTournamentIds || []);
+    document.addEventListener('participation:declined', ({ detail: tournamentId }) => {
+        myTournamentIds.delete(tournamentId);
+        updateTabCounts();
+        renderTournaments();
+    });
 
     console.log('🏆 Турниров загружено:', tournaments.length);
     console.log('📋 Мои турниры:', myTournamentIds.size, 'ID:', [...myTournamentIds]);
@@ -443,10 +448,10 @@ document.addEventListener('DOMContentLoaded', function() {
     function dashSelectPartner(player) {
         dashSelectedId.value = player.id;
         document.getElementById('selectedPartnerName').textContent  = player.nombreCompleto;
-        document.getElementById('selectedPartnerEmail').textContent = player.email;
-        document.getElementById('partnerFirstName').value = player.nombre  || '';
-        document.getElementById('partnerLastName').value  = player.apellido || '';
-        document.getElementById('partnerTelegram').value  = player.telegramUsername || '';
+        document.getElementById('selectedPartnerLevel').textContent = player.nivelJugador || '';
+        document.getElementById('partnerFirstName').value = '';
+        document.getElementById('partnerLastName').value = '';
+        document.getElementById('partnerTelegram').value = '';
         document.getElementById('partnerPhone').value     = '';
         dashSelectedCard.style.display  = 'flex';
         dashSearchResults.style.display = 'none';
@@ -486,10 +491,16 @@ document.addEventListener('DOMContentLoaded', function() {
             players.forEach(p => {
                 const li = document.createElement('li');
                 li.style.cssText = 'padding:.6rem 1rem; cursor:pointer; border-bottom:1px solid #f3f4f6;';
-                li.innerHTML = `
-                    <div style="font-weight:500;">${p.nombreCompleto}</div>
-                    <div style="font-size:.82rem;color:#6b7280;">${p.email}${p.nivelJugador ? ' · ' + p.nivelJugador : ''}</div>
-                `;
+                const name = document.createElement('div');
+                name.style.fontWeight = '500';
+                name.textContent = p.nombreCompleto;
+                li.appendChild(name);
+                if (p.nivelJugador) {
+                    const level = document.createElement('div');
+                    level.style.cssText = 'font-size:.82rem; color:#6b7280;';
+                    level.textContent = p.nivelJugador;
+                    li.appendChild(level);
+                }
                 li.addEventListener('mousedown', () => dashSelectPartner(p));
                 li.addEventListener('mouseover', () => { li.style.background = '#f9fafb'; });
                 li.addEventListener('mouseout',  () => { li.style.background = ''; });
@@ -697,16 +708,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
 
-            const partnerData = {
-                nombre:         firstName,
-                apellido:       lastName,
-                telefono:       phone || null,
-                telegramUsername: document.getElementById('partnerTelegram')?.value.trim() || null,
-                isExistingUser: !!existingUserId,
-                existingUserId: existingUserId ? parseInt(existingUserId) : null
+            const partnerData = existingUserId ? { existingUserId: Number(existingUserId) } : {
+                nombre: firstName,
+                apellido: lastName,
+                telefono: phone || null,
+                telegramUsername: document.getElementById('partnerTelegram')?.value.trim() || null
             };
-
-            const terms = await window.PairTerms.reviewBooking(tournamentId, [firstName, lastName].join(' ').trim());
+            const partnerName = existingUserId
+                ? document.getElementById('selectedPartnerName').textContent
+                : [firstName, lastName].join(' ').trim();
+            const terms = await window.PairTerms.reviewBooking(tournamentId, partnerName);
             if (terms === null) {
                 resetBtn();
                 return;
@@ -717,18 +728,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(partnerData)
             });
-            if (response.status === 409) throw new Error(t('pair_terms.retry'));
-            const data = await response.json();
+            const data = await window.PairRegistrationResponse.read(response);
 
-            if (!response.ok) {
+            if (!response.ok || data.success !== true) {
                 if (data.needLevel) {
                     // Попап "указать уровень" вместо обычной ошибки
-                    closePartnerModal();
                     LevelCheck.show(tournamentId);
                     resetBtn();
                     return;
                 }
-                throw new Error(data.message || 'Error en el registro');
+                showResultModal('error', window.PairRegistrationResponse.message(response, data));
+                resetBtn();
+                return;
             }
 
             window.trackTournamentRegistrationComplete?.(tournamentId, data.status);
@@ -740,7 +751,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         } catch (error) {
             console.error('Error:', error);
-            showResultModal('error', error.message || t('details.error.process'));
+            showResultModal('error', t('common.error.connection'));
             resetBtn();
         }
     }
@@ -756,8 +767,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         modalBody.innerHTML = `
         <i class="fas ${icon}" style="font-size: 48px; color: ${color}; margin-bottom: 15px;"></i>
-        <p style="font-size: 16px; margin: 0;">${message}</p>
+        <p style="font-size: 16px; margin: 0;"></p>
     `;
+        modalBody.querySelector('p').textContent = message;
 
         modal.style.display = 'block';
         modal.classList.add('show');

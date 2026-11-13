@@ -238,9 +238,7 @@ public class PaymentService {
                     // Платёж — без маркера PARTNER_PAYMENT (у каждого своя запись)
                     payments.stream()
                             .filter(p -> p.getRegistration().getId().equals(reg.getId()))
-                            .filter(p -> isPaymentForBooking(p, reg))
-                            .filter(p -> p.getNotes() == null
-                                    || !p.getNotes().startsWith(PARTNER_PAYMENT_MARKER))
+                            .filter(p -> isOwnPayment(p, reg))
                             .findFirst()
                             .ifPresentOrElse(p -> {
                                 dto.setPaymentId(p.getId());
@@ -507,7 +505,12 @@ public class PaymentService {
         }
     }
 
-    private boolean isPaymentForBooking(Payment payment, TournamentRegistration registration) {
+    static boolean isOwnPayment(Payment payment, TournamentRegistration registration) {
+        return isPaymentForBooking(payment, registration) && (payment.getNotes() == null
+                || !payment.getNotes().startsWith(PARTNER_PAYMENT_MARKER));
+    }
+
+    private static boolean isPaymentForBooking(Payment payment, TournamentRegistration registration) {
         return java.util.Objects.equals(payment.getPairBookingId(), registration.getPairBookingId());
     }
 

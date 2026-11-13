@@ -63,6 +63,8 @@ class DoubleTournamentRegistrationNewPartnerInstantTest {
     @Mock private ClubRepository clubRepository;
     @Mock private PasswordEncoder passwordEncoder;
 
+    @Mock private ParticipationRequests participationRequests;
+    @Mock private com.padle.core.padelcoreservice.repository.PairProposalResponseRepository proposalResponses;
     @Mock private PairTermsService pairTerms;
     @Spy
     private RegistrationCancellationService cancellations = new RegistrationCancellationService(
@@ -83,6 +85,10 @@ class DoubleTournamentRegistrationNewPartnerInstantTest {
                 .categoriaNivel(Nivel.TODOS.name())
                 .cupoMax(16)
                 .build();
+
+        when(tournamentRepository.lockById(TOURNAMENT_ID)).thenAnswer(invocation -> Optional.of(
+                Tournament.builder().id(TOURNAMENT_ID).modalidad(tournamentDto.getModalidad())
+                        .estado(tournamentDto.getEstado()).cupoMax(tournamentDto.getCupoMax()).build()));
 
         mainPlayer = PlayerPadel.builder()
                 .id(MAIN_PLAYER_ID)

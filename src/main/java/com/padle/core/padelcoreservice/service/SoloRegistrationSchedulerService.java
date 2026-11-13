@@ -4,6 +4,8 @@ import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.TournamentRegistration;
 import com.padle.core.padelcoreservice.repository.ClubRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
+import com.padle.core.padelcoreservice.repository.TournamentRepository;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -25,6 +28,8 @@ public class SoloRegistrationSchedulerService {
     private final TournamentRegistrationRepository registrationRepository;
     private final EmailService emailService;
     private final ClubRepository clubRepository;
+    private final TournamentRepository tournaments;
+    private final EntityManager entities;
 
     @Value("${app.base-url:http://localhost:8080}")
     private String baseUrl;
@@ -40,22 +45,19 @@ public class SoloRegistrationSchedulerService {
     @Scheduled(cron = "0 0 * * * *")
     @Transactional
     public void sendPartnerDataReminders() {
-        LocalDate from = LocalDate.now().plusDays(1);  // минимум 24h → до начала > 1 дня
-        LocalDate to   = LocalDate.now().plusDays(3);  // максимум 72h → начало через < 3 дней
-
         // Фактически ловим ~48h-окно: турнир послезавтра
         LocalDate reminderDay = LocalDate.now().plusDays(2);
         List<TournamentRegistration> candidates =
                 registrationRepository.findSoloAddLaterForReminder(reminderDay, reminderDay.plusDays(1));
 
         int sent = 0;
-        for (TournamentRegistration reg : candidates) {
+        for (TournamentRegistration reg : inTournamentOrder(candidates)) {
             try {
+                refreshUnderTournamentLock(reg);
+                if (!reg.isPairableSolo() || Boolean.TRUE.equals(reg.getSoloReminderSent())) continue;
                 String tournamentUrl = baseUrl + "/torneo/" + reg.getTournament().getId();
                 String clubName = resolveClubName(reg.getTournament().getClubId());
 
-                // Дедлайн — точное время старта - 24ч (не календарная дата),
-                // единая точка правды с moveExpiredAddLaterToReserve.
                 String deadline = reg.getTournament().calculateDefaultDeadline().format(DEADLINE_FMT);
 
                 emailService.sendPartnerDataReminder(
@@ -85,46 +87,6 @@ public class SoloRegistrationSchedulerService {
     }
 
     /**
-     * Каждые 5 минут переводит SOLO_ADD_LATER-заявки, у которых точный дедлайн
-     * (старт турнира - 24ч, Tournament.calculateDefaultDeadline()) уже прошёл, в резерв
-     * (WAITLIST): данные не теряются, партнёра можно добавить позже, слот в основном
-     * составе освобождается.
-     */
-    @Scheduled(cron = "0 */5 * * * *")
-    @Transactional
-    public void moveExpiredAddLaterToReserve() {
-        LocalDateTime now = LocalDateTime.now();
-        List<TournamentRegistration> candidates = registrationRepository.findActiveSoloAddLater().stream()
-                .filter(reg -> !reg.getTournament().calculateDefaultDeadline().isAfter(now))
-                .toList();
-
-        int count = 0;
-        for (TournamentRegistration reg : candidates) {
-            try {
-                Tournament tournament = reg.getTournament();
-                int waitlistPosition = registrationRepository.findMaxWaitlistPosition(tournament.getId())
-                        .orElse(0) + 1;
-
-                reg.moveToWaitlist(waitlistPosition);
-                reg.setPartnerActionToken(generatePartnerActionToken());
-                registrationRepository.save(reg);
-                count++;
-
-                sendReserveEmail(reg, tournament);
-
-                log.info("Solo registration moved to reserve: tournamentId={}, playerId={}",
-                        tournament.getId(), reg.getPlayer().getId());
-            } catch (Exception e) {
-                log.error("Error moving solo registration {} to reserve: {}", reg.getId(), e.getMessage());
-            }
-        }
-
-        if (count > 0) {
-            log.info("Solo registrations moved to reserve: {}", count);
-        }
-    }
-
-    /**
      * Каждые 5 минут — повторное напоминание (с self-service действиями) резервным
      * заявкам без партнёра, если до старта турнира осталось ~3 часа и напоминание ещё
      * не отправлялось.
@@ -142,8 +104,10 @@ public class SoloRegistrationSchedulerService {
                 .toList();
 
         int sent = 0;
-        for (TournamentRegistration reg : candidates) {
+        for (TournamentRegistration reg : inTournamentOrder(candidates)) {
             try {
+                refreshUnderTournamentLock(reg);
+                if (!reg.isPairableSolo() || Boolean.TRUE.equals(reg.getFinalReminderSent())) continue;
                 if (reg.getPartnerActionToken() == null) {
                     reg.setPartnerActionToken(generatePartnerActionToken());
                 }
@@ -161,21 +125,13 @@ public class SoloRegistrationSchedulerService {
         }
     }
 
-    private void sendReserveEmail(TournamentRegistration reg, Tournament tournament) {
-        String tournamentUrl = baseUrl + "/torneo/" + tournament.getId();
-        String clubName = resolveClubName(tournament.getClubId());
-        String timeStr = tournament.getHoraInicio() != null ? tournament.getHoraInicio().format(TIME_FMT) : "";
+    private List<TournamentRegistration> inTournamentOrder(List<TournamentRegistration> rows) {
+        return rows.stream().sorted(Comparator.comparing(row -> row.getTournament().getId())).toList();
+    }
 
-        emailService.sendPartnerReserveEmail(
-                reg.getPlayer().getEmail(),
-                reg.getPlayer().getNombre(),
-                tournament.getNombre(),
-                tournament.getFechaInicio().format(DATE_FMT),
-                timeStr,
-                clubName,
-                tournamentUrl,
-                reg.getPlayer().getLocale()
-        );
+    private void refreshUnderTournamentLock(TournamentRegistration row) {
+        tournaments.lockById(row.getTournament().getId()).orElseThrow();
+        entities.refresh(row);
     }
 
     private void sendFinalReminderEmail(TournamentRegistration reg, Tournament tournament) {

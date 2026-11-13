@@ -23,6 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -74,12 +75,16 @@ class EmailFooterLinksRenderTest {
             assertThat(html).doesNotContain("Cancela tu suscripción");
 
             switch (entry.getKey()) {
-                case "bienvenida", "confirmacion", "vacancy-invitation", "no-spots-left" ->
+                case "bienvenida", "confirmacion", "waitlist-auto-confirm", "no-spots-left" ->
                         assertThat(links).contains(BASE_URL + "/terminos", BASE_URL + "/privacidad", "mailto:" + SUPPORT);
                 case "recuperar-password", "tournament-confirmation", "waitlist-notification" ->
                         assertThat(links).contains("mailto:" + SUPPORT);
                 default -> {
                 }
+            }
+            if (entry.getKey().equals("participation-request")) {
+                assertThat(links).containsExactly(BASE_URL + "/participacion/398af312-ef63-4919-a534-e67c9320de65");
+                assertThat(html).contains("compañero invitado", "Alex");
             }
             if (entry.getKey().equals("no-spots-left")) {
                 assertThat(links).contains(TOURNAMENT_URL, BASE_URL + "/torneos");
@@ -128,6 +133,8 @@ class EmailFooterLinksRenderTest {
         cases.put("new-partner-invitation", () -> service.sendNewPartnerInvitationEmail(
                 TO, PLAYER, "Alex", TOURNAMENT, DATE, TIME, CLUB, BASE_URL + "/complete", 24, LOCALE));
         cases.put("no-spots-left", () -> service.sendNoSpotsLeftEmail(TO, PLAYER, TOURNAMENT, TOURNAMENT_ID, LOCALE));
+        cases.put("participation-request", () -> service.sendParticipationRequestEmail(
+                TO, "Alex", TOURNAMENT, UUID.fromString("398af312-ef63-4919-a534-e67c9320de65"), true, LOCALE));
         cases.put("pair-proposal", () -> service.sendPairProposalEmail(
                 TO, PLAYER, "Alex", TOURNAMENT, DATE, BASE_URL + "/accept", LOCALE));
         cases.put("pair-terms", () -> service.sendPairTermsEmail(TO, PLAYER, CLUB, offer, true, LOCALE));
@@ -147,7 +154,7 @@ class EmailFooterLinksRenderTest {
                 TO, PLAYER, TOURNAMENT, DATE, TIME, CLUB, LOCALE));
         cases.put("tournament-confirmation", () -> service.sendRegistrationConfirmationEmail(
                 TO, PLAYER, TOURNAMENT, DATE, TIME, CLUB, DATE, LOCALE));
-        cases.put("vacancy-invitation", () -> service.sendWaitlistAutoConfirmEmail(
+        cases.put("waitlist-auto-confirm", () -> service.sendWaitlistAutoConfirmEmail(
                 TO, PLAYER, TOURNAMENT, DATE, TIME, CLUB, TOURNAMENT_URL, LOCALE));
         cases.put("waitlist-notification", () -> service.sendWaitlistNotificationEmail(
                 TO, PLAYER, TOURNAMENT, DATE, TIME, CLUB, 2, LOCALE));

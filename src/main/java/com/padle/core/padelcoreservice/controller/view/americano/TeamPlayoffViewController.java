@@ -174,7 +174,8 @@ public class TeamPlayoffViewController {
             ra.addFlashAttribute(returnToPayments ? "successMessage" : "success", "Equipo agregado correctamente");
         } catch (InvalidStateException | ResourceNotFoundException e) {
             log.error("Error adding team to {}: {}", tournamentId, e.getMessage());
-            ra.addFlashAttribute(returnToPayments ? "errorMessage" : "error", "Error al agregar equipo: " + e.getMessage());
+            String detail = messageSource.getMessage(e.getMessage(), null, e.getMessage(), LocaleContextHolder.getLocale());
+            ra.addFlashAttribute(returnToPayments ? "errorMessage" : "error", "Error al agregar equipo: " + detail);
         } catch (DataAccessException e) {
             log.error("Не удалось сохранить команду Team Playoff в турнире {}", tournamentId, e);
             ra.addFlashAttribute(returnToPayments ? "errorMessage" : "error",

@@ -1,0 +1,42 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.74-doubles-queue-time
+      author: padel
+      preConditions:
+        - onFail: HALT
+        - onFailMessage: "Найдены исторические приглашения WAITLIST_INVITED. Проверьте их перед выпуском."
+        - sqlCheck:
+            expectedResult: "0"
+            sql: SELECT COUNT(*) FROM tournament_registrations_db WHERE status = 'WAITLIST_INVITED'
+      changes:
+        - addColumn:
+            tableName: tournament_registrations_db
+            columns:
+              - column:
+                  name: queued_at
+                  type: timestamp
+        - sql:
+            sql: |
+              UPDATE tournament_registrations_db r
+              SET queued_at = COALESCE((
+                  SELECT m.registration_date FROM tournament_registrations_db m
+                  WHERE m.tournament_id = r.tournament_id AND m.player_id = r.main_player_id
+                    AND m.is_active AND r.is_double_registration
+              ), (
+                  SELECT LEAST(r.registration_date, p.registration_date)
+                  FROM tournament_registrations_db p
+                  WHERE p.tournament_id = r.tournament_id AND p.player_id = r.partner_id
+                    AND p.partner_id = r.player_id AND p.is_active AND r.is_double_registration
+              ), r.registration_date)
+              FROM tournaments_db t
+              WHERE t.id = r.tournament_id AND t.modalidad = 'DOBLES';
+              UPDATE tournament_registrations_db r
+              SET waitlist_position = NULL
+              FROM tournaments_db t
+              WHERE t.id = r.tournament_id AND t.modalidad = 'DOBLES'
+                AND r.is_active AND r.status = 'WAITLIST'
+                AND r.partner_id IS NULL AND NOT r.is_double_registration;
+      rollback:
+        - dropColumn:
+            tableName: tournament_registrations_db
+            columnName: queued_at

@@ -4,6 +4,8 @@
 исполняемый Telegram-адаптер в `automation/telegram-relay/`. Порядок отдельной активации воркера —
 [codex-migration.md](codex-migration.md); приложение и его схема развёртывания этим не меняются.
 
+План развития: [многомодульный монолит, семь согласованных модулей](modular-monolith/target-architecture.md). [Первая фаза](modular-monolith/phase-1/README.md) выделяет PlayoffMatchingEngine через рабочий reactor и отдельные исходную/итоговую e2e. Пока приложение остаётся одним Maven jar-проектом; целевую структуру не считать уже реализованной. Выделение хранения — отдельная поздняя #1051.
+
 ---
 
 ## Содержание
@@ -254,7 +256,7 @@ hikari:
 - **Только Liquibase** управляет схемой (`ddl-auto = none`).
 - Файлы: `src/main/resources/db/changelog/versions/vX.XX-<description>.yaml`
 - Мастер-файл: `changelog-master.yaml` — порядок include определяет порядок выполнения.
-- Текущая версия: **v1.73**
+- Текущая версия: **v1.76**
 
 **Добавление новой миграции:**
 ```
@@ -487,7 +489,7 @@ public void sendEmail(...) { ... }
 ```
 0 */10 * * * *  →  TournamentService.checkExpiredInvitations()
 ```
-Каждые 10 минут: находит просроченные `WAITLIST_INVITED`, переводит их в `WAITLIST` или `CANCELLED`, приглашает следующего.
+Резерв продвигается автоматически при освобождении места. Парный состав и очередь изменяются под блокировкой турнира.
 
 ---
 

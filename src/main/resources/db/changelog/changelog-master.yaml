@@ -224,3 +224,12 @@ databaseChangeLog:
   - include:
       file: versions/v1.73-guest-claim-phone-plus-seven.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.74-doubles-queue-time.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: versions/v1.75-participation-requests.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: versions/v1.76-admin-registration-requests.yaml
+      relativeToChangelogFile: true

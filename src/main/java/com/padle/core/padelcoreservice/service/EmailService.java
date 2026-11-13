@@ -229,7 +229,7 @@ public class EmailService {
             context.setVariable("tournamentUrl", tournamentUrl);
             context.setVariable("year", java.time.Year.now().getValue());
 
-            String htmlContent = templateEngine.process("email/vacancy-invitation", context);
+            String htmlContent = templateEngine.process("email/waitlist-auto-confirm", context);
 
             sendHtmlEmail(to, messageSource.getMessage("email.vacancy.subject", new Object[]{tournamentName}, locale), htmlContent);
 
@@ -239,6 +239,23 @@ public class EmailService {
         } catch (Exception e) {
             emailMetricsService.recordEmailError("WAITLIST_AUTO_CONFIRM", e.getClass().getSimpleName());
             log.error("❌ Ошибка отправки уведомления об авто-подтверждении на {}: {}", to, e.getMessage(), e);
+        }
+    }
+
+    @Async
+    public void sendParticipationRequestEmail(String to, String participant, String tournamentName,
+                                              java.util.UUID requestId, boolean delegated, Locale locale) {
+        try {
+            Context context = createEmailContext(locale);
+            context.setVariable("participant", participant);
+            context.setVariable("tournamentName", tournamentName);
+            context.setVariable("delegated", delegated);
+            context.setVariable("responseUrl", baseUrl + "/participacion/" + requestId);
+            String html = templateEngine.process("email/participation-request", context);
+            sendHtmlEmail(to, messageSource.getMessage("participation.email.subject",
+                    new Object[]{tournamentName}, locale), html);
+        } catch (Exception e) {
+            log.warn("Не удалось отправить запрос участия: type={}", e.getClass().getSimpleName());
         }
     }
 

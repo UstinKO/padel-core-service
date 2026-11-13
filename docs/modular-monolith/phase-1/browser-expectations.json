@@ -1,0 +1,2265 @@
+{
+  "qualified-8": {
+    "initial": {
+      "phase": "PLAYOFF",
+      "format": "TEAM_PLAYOFF",
+      "ranking": [
+        [
+          1,
+          1,
+          "TWO_WINS",
+          "PLAYING",
+          null
+        ],
+        [
+          5,
+          2,
+          "TWO_WINS",
+          "PLAYING",
+          null
+        ],
+        [
+          3,
+          3,
+          "SPLIT",
+          "PLAYING",
+          null
+        ],
+        [
+          7,
+          4,
+          "SPLIT",
+          "PLAYING",
+          null
+        ],
+        [
+          6,
+          5,
+          "SPLIT",
+          "PLAYING",
+          null
+        ],
+        [
+          2,
+          6,
+          "SPLIT",
+          "PLAYING",
+          null
+        ],
+        [
+          8,
+          7,
+          "TWO_LOSSES",
+          "PLAYING",
+          null
+        ],
+        [
+          4,
+          8,
+          "TWO_LOSSES",
+          "PLAYING",
+          null
+        ]
+      ],
+      "matches": [
+        {
+          "key": "PLAYOFF/2/1",
+          "stage": "QUARTER_FINAL",
+          "pair": [
+            1,
+            6
+          ],
+          "status": "IN_PROGRESS",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/2/2",
+          "stage": "QUARTER_FINAL",
+          "pair": [
+            5,
+            2
+          ],
+          "status": "IN_PROGRESS",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/2/3",
+          "stage": "QUARTER_FINAL",
+          "pair": [
+            3,
+            8
+          ],
+          "status": "IN_PROGRESS",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/2/4",
+          "stage": "QUARTER_FINAL",
+          "pair": [
+            7,
+            4
+          ],
+          "status": "IN_PROGRESS",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/3/1",
+          "stage": "SEMI_FINAL",
+          "pair": [
+            null,
+            null
+          ],
+          "status": "PENDING",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/3/2",
+          "stage": "SEMI_FINAL",
+          "pair": [
+            null,
+            null
+          ],
+          "status": "PENDING",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/4/1",
+          "stage": "FINAL",
+          "pair": [
+            null,
+            null
+          ],
+          "status": "PENDING",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        }
+      ]
+    },
+    "stages": [
+      [
+        [
+          "QUARTER_FINAL",
+          1,
+          6
+        ],
+        [
+          "QUARTER_FINAL",
+          5,
+          2
+        ],
+        [
+          "QUARTER_FINAL",
+          3,
+          8
+        ],
+        [
+          "QUARTER_FINAL",
+          7,
+          4
+        ]
+      ],
+      [
+        [
+          "SEMI_FINAL",
+          1,
+          7
+        ],
+        [
+          "SEMI_FINAL",
+          5,
+          3
+        ]
+      ],
+      [
+        [
+          "FINAL",
+          1,
+          5
+        ]
+      ]
+    ],
+    "final": {
+      "phase": "FINISHED",
+      "format": "TEAM_PLAYOFF",
+      "ranking": [
+        [
+          1,
+          1,
+          "TWO_WINS",
+          "CHAMPION",
+          null
+        ],
+        [
+          5,
+          2,
+          "TWO_WINS",
+          "RUNNER_UP",
+          null
+        ],
+        [
+          3,
+          3,
+          "SPLIT",
+          "ELIMINATED",
+          "SEMI_FINAL"
+        ],
+        [
+          7,
+          4,
+          "SPLIT",
+          "ELIMINATED",
+          "SEMI_FINAL"
+        ],
+        [
+          6,
+          5,
+          "SPLIT",
+          "ELIMINATED",
+          "QUARTER_FINAL"
+        ],
+        [
+          2,
+          6,
+          "SPLIT",
+          "ELIMINATED",
+          "QUARTER_FINAL"
+        ],
+        [
+          8,
+          7,
+          "TWO_LOSSES",
+          "ELIMINATED",
+          "QUARTER_FINAL"
+        ],
+        [
+          4,
+          8,
+          "TWO_LOSSES",
+          "ELIMINATED",
+          "QUARTER_FINAL"
+        ]
+      ],
+      "matches": [
+        {
+          "key": "PLAYOFF/2/1",
+          "stage": "QUARTER_FINAL",
+          "pair": [
+            1,
+            6
+          ],
+          "status": "COMPLETED",
+          "games": [
+            6,
+            3
+          ],
+          "winner": true,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/2/2",
+          "stage": "QUARTER_FINAL",
+          "pair": [
+            5,
+            2
+          ],
+          "status": "COMPLETED",
+          "games": [
+            6,
+            3
+          ],
+          "winner": true,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/2/3",
+          "stage": "QUARTER_FINAL",
+          "pair": [
+            3,
+            8
+          ],
+          "status": "COMPLETED",
+          "games": [
+            6,
+            3
+          ],
+          "winner": true,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/2/4",
+          "stage": "QUARTER_FINAL",
+          "pair": [
+            7,
+            4
+          ],
+          "status": "COMPLETED",
+          "games": [
+            6,
+            3
+          ],
+          "winner": true,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/3/1",
+          "stage": "SEMI_FINAL",
+          "pair": [
+            1,
+            7
+          ],
+          "status": "COMPLETED",
+          "games": [
+            6,
+            3
+          ],
+          "winner": true,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/3/2",
+          "stage": "SEMI_FINAL",
+          "pair": [
+            5,
+            3
+          ],
+          "status": "COMPLETED",
+          "games": [
+            6,
+            3
+          ],
+          "winner": true,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/4/1",
+          "stage": "FINAL",
+          "pair": [
+            1,
+            5
+          ],
+          "status": "COMPLETED",
+          "games": [
+            6,
+            3
+          ],
+          "winner": true,
+          "next": null
+        }
+      ]
+    }
+  },
+  "qualified-9": {
+    "initial": {
+      "phase": "PLAYOFF",
+      "format": "TEAM_PLAYOFF",
+      "ranking": [
+        [
+          5,
+          1,
+          "TWO_WINS",
+          "WAITING",
+          null
+        ],
+        [
+          1,
+          2,
+          "TWO_WINS",
+          "PLAYING",
+          null
+        ],
+        [
+          3,
+          3,
+          "SPLIT",
+          "PLAYING",
+          null
+        ],
+        [
+          8,
+          4,
+          "SPLIT",
+          "PLAYING",
+          null
+        ],
+        [
+          4,
+          5,
+          "SPLIT",
+          "PLAYING",
+          null
+        ],
+        [
+          7,
+          6,
+          "SPLIT",
+          "PLAYING",
+          null
+        ],
+        [
+          2,
+          7,
+          "SPLIT",
+          "PLAYING",
+          null
+        ],
+        [
+          9,
+          8,
+          "TWO_LOSSES",
+          "PLAYING",
+          null
+        ],
+        [
+          6,
+          9,
+          "TWO_LOSSES",
+          "PLAYING",
+          null
+        ]
+      ],
+      "matches": [
+        {
+          "key": "PLAYOFF/2/1",
+          "stage": "ROUND_OF_16",
+          "pair": [
+            9,
+            6
+          ],
+          "status": "IN_PROGRESS",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": [
+            "PLAYOFF/3/1",
+            2
+          ]
+        },
+        {
+          "key": "PLAYOFF/3/1",
+          "stage": "QUARTER_FINAL",
+          "pair": [
+            5,
+            null
+          ],
+          "status": "PENDING",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/3/2",
+          "stage": "QUARTER_FINAL",
+          "pair": [
+            1,
+            2
+          ],
+          "status": "IN_PROGRESS",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/3/3",
+          "stage": "QUARTER_FINAL",
+          "pair": [
+            3,
+            7
+          ],
+          "status": "IN_PROGRESS",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/3/4",
+          "stage": "QUARTER_FINAL",
+          "pair": [
+            8,
+            4
+          ],
+          "status": "IN_PROGRESS",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/4/1",
+          "stage": "SEMI_FINAL",
+          "pair": [
+            null,
+            null
+          ],
+          "status": "PENDING",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/4/2",
+          "stage": "SEMI_FINAL",
+          "pair": [
+            null,
+            null
+          ],
+          "status": "PENDING",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/5/1",
+          "stage": "FINAL",
+          "pair": [
+            null,
+            null
+          ],
+          "status": "PENDING",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        }
+      ]
+    },
+    "stages": [
+      [
+        [
+          "ROUND_OF_16",
+          9,
+          6
+        ],
+        [
+          "QUARTER_FINAL",
+          1,
+          2
+        ],
+        [
+          "QUARTER_FINAL",
+          3,
+          7
+        ],
+        [
+          "QUARTER_FINAL",
+          8,
+          4
+        ]
+      ],
+      [
+        [
+          "QUARTER_FINAL",
+          5,
+          9
+        ]
+      ],
+      [
+        [
+          "SEMI_FINAL",
+          5,
+          3
+        ],
+        [
+          "SEMI_FINAL",
+          1,
+          8
+        ]
+      ],
+      [
+        [
+          "FINAL",
+          5,
+          1
+        ]
+      ]
+    ],
+    "final": {
+      "phase": "FINISHED",
+      "format": "TEAM_PLAYOFF",
+      "ranking": [
+        [
+          5,
+          1,
+          "TWO_WINS",
+          "CHAMPION",
+          null
+        ],
+        [
+          1,
+          2,
+          "TWO_WINS",
+          "RUNNER_UP",
+          null
+        ],
+        [
+          3,
+          3,
+          "SPLIT",
+          "ELIMINATED",
+          "SEMI_FINAL"
+        ],
+        [
+          8,
+          4,
+          "SPLIT",
+          "ELIMINATED",
+          "SEMI_FINAL"
+        ],
+        [
+          4,
+          5,
+          "SPLIT",
+          "ELIMINATED",
+          "QUARTER_FINAL"
+        ],
+        [
+          7,
+          6,
+          "SPLIT",
+          "ELIMINATED",
+          "QUARTER_FINAL"
+        ],
+        [
+          2,
+          7,
+          "SPLIT",
+          "ELIMINATED",
+          "QUARTER_FINAL"
+        ],
+        [
+          9,
+          8,
+          "TWO_LOSSES",
+          "ADVANCED",
+          null
+        ],
+        [
+          6,
+          9,
+          "TWO_LOSSES",
+          "ELIMINATED",
+          "ROUND_OF_16"
+        ]
+      ],
+      "matches": [
+        {
+          "key": "PLAYOFF/2/1",
+          "stage": "ROUND_OF_16",
+          "pair": [
+            9,
+            6
+          ],
+          "status": "COMPLETED",
+          "games": [
+            6,
+            3
+          ],
+          "winner": true,
+          "next": [
+            "PLAYOFF/3/1",
+            2
+          ]
+        },
+        {
+          "key": "PLAYOFF/3/1",
+          "stage": "QUARTER_FINAL",
+          "pair": [
+            5,
+            9
+          ],
+          "status": "COMPLETED",
+          "games": [
+            6,
+            3
+          ],
+          "winner": true,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/3/2",
+          "stage": "QUARTER_FINAL",
+          "pair": [
+            1,
+            2
+          ],
+          "status": "COMPLETED",
+          "games": [
+            6,
+            3
+          ],
+          "winner": true,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/3/3",
+          "stage": "QUARTER_FINAL",
+          "pair": [
+            3,
+            7
+          ],
+          "status": "COMPLETED",
+          "games": [
+            6,
+            3
+          ],
+          "winner": true,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/3/4",
+          "stage": "QUARTER_FINAL",
+          "pair": [
+            8,
+            4
+          ],
+          "status": "COMPLETED",
+          "games": [
+            6,
+            3
+          ],
+          "winner": true,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/4/1",
+          "stage": "SEMI_FINAL",
+          "pair": [
+            5,
+            3
+          ],
+          "status": "COMPLETED",
+          "games": [
+            6,
+            3
+          ],
+          "winner": true,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/4/2",
+          "stage": "SEMI_FINAL",
+          "pair": [
+            1,
+            8
+          ],
+          "status": "COMPLETED",
+          "games": [
+            6,
+            3
+          ],
+          "winner": true,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/5/1",
+          "stage": "FINAL",
+          "pair": [
+            5,
+            1
+          ],
+          "status": "COMPLETED",
+          "games": [
+            6,
+            3
+          ],
+          "winner": true,
+          "next": null
+        }
+      ]
+    }
+  },
+  "qualified-16": {
+    "initial": {
+      "phase": "PLAYOFF",
+      "format": "TEAM_PLAYOFF",
+      "ranking": [
+        [
+          1,
+          1,
+          "TWO_WINS",
+          "PLAYING",
+          null
+        ],
+        [
+          5,
+          2,
+          "TWO_WINS",
+          "PLAYING",
+          null
+        ],
+        [
+          13,
+          3,
+          "TWO_WINS",
+          "PLAYING",
+          null
+        ],
+        [
+          9,
+          4,
+          "TWO_WINS",
+          "PLAYING",
+          null
+        ],
+        [
+          15,
+          5,
+          "SPLIT",
+          "PLAYING",
+          null
+        ],
+        [
+          10,
+          6,
+          "SPLIT",
+          "PLAYING",
+          null
+        ],
+        [
+          6,
+          7,
+          "SPLIT",
+          "PLAYING",
+          null
+        ],
+        [
+          3,
+          8,
+          "SPLIT",
+          "PLAYING",
+          null
+        ],
+        [
+          7,
+          9,
+          "SPLIT",
+          "PLAYING",
+          null
+        ],
+        [
+          2,
+          10,
+          "SPLIT",
+          "PLAYING",
+          null
+        ],
+        [
+          11,
+          11,
+          "SPLIT",
+          "PLAYING",
+          null
+        ],
+        [
+          14,
+          12,
+          "SPLIT",
+          "PLAYING",
+          null
+        ],
+        [
+          12,
+          13,
+          "TWO_LOSSES",
+          "PLAYING",
+          null
+        ],
+        [
+          16,
+          14,
+          "TWO_LOSSES",
+          "PLAYING",
+          null
+        ],
+        [
+          8,
+          15,
+          "TWO_LOSSES",
+          "PLAYING",
+          null
+        ],
+        [
+          4,
+          16,
+          "TWO_LOSSES",
+          "PLAYING",
+          null
+        ]
+      ],
+      "matches": [
+        {
+          "key": "PLAYOFF/2/1",
+          "stage": "ROUND_OF_16",
+          "pair": [
+            1,
+            7
+          ],
+          "status": "IN_PROGRESS",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/2/2",
+          "stage": "ROUND_OF_16",
+          "pair": [
+            5,
+            2
+          ],
+          "status": "IN_PROGRESS",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/2/3",
+          "stage": "ROUND_OF_16",
+          "pair": [
+            13,
+            11
+          ],
+          "status": "IN_PROGRESS",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/2/4",
+          "stage": "ROUND_OF_16",
+          "pair": [
+            9,
+            14
+          ],
+          "status": "IN_PROGRESS",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/2/5",
+          "stage": "ROUND_OF_16",
+          "pair": [
+            15,
+            12
+          ],
+          "status": "IN_PROGRESS",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/2/6",
+          "stage": "ROUND_OF_16",
+          "pair": [
+            10,
+            16
+          ],
+          "status": "IN_PROGRESS",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/2/7",
+          "stage": "ROUND_OF_16",
+          "pair": [
+            6,
+            4
+          ],
+          "status": "IN_PROGRESS",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/2/8",
+          "stage": "ROUND_OF_16",
+          "pair": [
+            3,
+            8
+          ],
+          "status": "IN_PROGRESS",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/3/1",
+          "stage": "QUARTER_FINAL",
+          "pair": [
+            null,
+            null
+          ],
+          "status": "PENDING",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/3/2",
+          "stage": "QUARTER_FINAL",
+          "pair": [
+            null,
+            null
+          ],
+          "status": "PENDING",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/3/3",
+          "stage": "QUARTER_FINAL",
+          "pair": [
+            null,
+            null
+          ],
+          "status": "PENDING",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/3/4",
+          "stage": "QUARTER_FINAL",
+          "pair": [
+            null,
+            null
+          ],
+          "status": "PENDING",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/4/1",
+          "stage": "SEMI_FINAL",
+          "pair": [
+            null,
+            null
+          ],
+          "status": "PENDING",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/4/2",
+          "stage": "SEMI_FINAL",
+          "pair": [
+            null,
+            null
+          ],
+          "status": "PENDING",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/5/1",
+          "stage": "FINAL",
+          "pair": [
+            null,
+            null
+          ],
+          "status": "PENDING",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        }
+      ]
+    },
+    "stages": [
+      [
+        [
+          "ROUND_OF_16",
+          1,
+          7
+        ],
+        [
+          "ROUND_OF_16",
+          5,
+          2
+        ],
+        [
+          "ROUND_OF_16",
+          13,
+          11
+        ],
+        [
+          "ROUND_OF_16",
+          9,
+          14
+        ],
+        [
+          "ROUND_OF_16",
+          15,
+          12
+        ],
+        [
+          "ROUND_OF_16",
+          10,
+          16
+        ],
+        [
+          "ROUND_OF_16",
+          6,
+          4
+        ],
+        [
+          "ROUND_OF_16",
+          3,
+          8
+        ]
+      ],
+      [
+        [
+          "QUARTER_FINAL",
+          1,
+          15
+        ],
+        [
+          "QUARTER_FINAL",
+          5,
+          10
+        ],
+        [
+          "QUARTER_FINAL",
+          13,
+          6
+        ],
+        [
+          "QUARTER_FINAL",
+          9,
+          3
+        ]
+      ],
+      [
+        [
+          "SEMI_FINAL",
+          1,
+          13
+        ],
+        [
+          "SEMI_FINAL",
+          5,
+          9
+        ]
+      ],
+      [
+        [
+          "FINAL",
+          1,
+          5
+        ]
+      ]
+    ],
+    "final": {
+      "phase": "FINISHED",
+      "format": "TEAM_PLAYOFF",
+      "ranking": [
+        [
+          1,
+          1,
+          "TWO_WINS",
+          "CHAMPION",
+          null
+        ],
+        [
+          5,
+          2,
+          "TWO_WINS",
+          "RUNNER_UP",
+          null
+        ],
+        [
+          13,
+          3,
+          "TWO_WINS",
+          "ELIMINATED",
+          "SEMI_FINAL"
+        ],
+        [
+          9,
+          4,
+          "TWO_WINS",
+          "ELIMINATED",
+          "SEMI_FINAL"
+        ],
+        [
+          15,
+          5,
+          "SPLIT",
+          "ELIMINATED",
+          "QUARTER_FINAL"
+        ],
+        [
+          10,
+          6,
+          "SPLIT",
+          "ELIMINATED",
+          "QUARTER_FINAL"
+        ],
+        [
+          6,
+          7,
+          "SPLIT",
+          "ELIMINATED",
+          "QUARTER_FINAL"
+        ],
+        [
+          3,
+          8,
+          "SPLIT",
+          "ELIMINATED",
+          "QUARTER_FINAL"
+        ],
+        [
+          7,
+          9,
+          "SPLIT",
+          "ELIMINATED",
+          "ROUND_OF_16"
+        ],
+        [
+          2,
+          10,
+          "SPLIT",
+          "ELIMINATED",
+          "ROUND_OF_16"
+        ],
+        [
+          11,
+          11,
+          "SPLIT",
+          "ELIMINATED",
+          "ROUND_OF_16"
+        ],
+        [
+          14,
+          12,
+          "SPLIT",
+          "ELIMINATED",
+          "ROUND_OF_16"
+        ],
+        [
+          12,
+          13,
+          "TWO_LOSSES",
+          "ELIMINATED",
+          "ROUND_OF_16"
+        ],
+        [
+          16,
+          14,
+          "TWO_LOSSES",
+          "ELIMINATED",
+          "ROUND_OF_16"
+        ],
+        [
+          8,
+          15,
+          "TWO_LOSSES",
+          "ELIMINATED",
+          "ROUND_OF_16"
+        ],
+        [
+          4,
+          16,
+          "TWO_LOSSES",
+          "ELIMINATED",
+          "ROUND_OF_16"
+        ]
+      ],
+      "matches": [
+        {
+          "key": "PLAYOFF/2/1",
+          "stage": "ROUND_OF_16",
+          "pair": [
+            1,
+            7
+          ],
+          "status": "COMPLETED",
+          "games": [
+            6,
+            3
+          ],
+          "winner": true,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/2/2",
+          "stage": "ROUND_OF_16",
+          "pair": [
+            5,
+            2
+          ],
+          "status": "COMPLETED",
+          "games": [
+            6,
+            3
+          ],
+          "winner": true,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/2/3",
+          "stage": "ROUND_OF_16",
+          "pair": [
+            13,
+            11
+          ],
+          "status": "COMPLETED",
+          "games": [
+            6,
+            3
+          ],
+          "winner": true,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/2/4",
+          "stage": "ROUND_OF_16",
+          "pair": [
+            9,
+            14
+          ],
+          "status": "COMPLETED",
+          "games": [
+            6,
+            3
+          ],
+          "winner": true,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/2/5",
+          "stage": "ROUND_OF_16",
+          "pair": [
+            15,
+            12
+          ],
+          "status": "COMPLETED",
+          "games": [
+            6,
+            3
+          ],
+          "winner": true,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/2/6",
+          "stage": "ROUND_OF_16",
+          "pair": [
+            10,
+            16
+          ],
+          "status": "COMPLETED",
+          "games": [
+            6,
+            3
+          ],
+          "winner": true,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/2/7",
+          "stage": "ROUND_OF_16",
+          "pair": [
+            6,
+            4
+          ],
+          "status": "COMPLETED",
+          "games": [
+            6,
+            3
+          ],
+          "winner": true,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/2/8",
+          "stage": "ROUND_OF_16",
+          "pair": [
+            3,
+            8
+          ],
+          "status": "COMPLETED",
+          "games": [
+            6,
+            3
+          ],
+          "winner": true,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/3/1",
+          "stage": "QUARTER_FINAL",
+          "pair": [
+            1,
+            15
+          ],
+          "status": "COMPLETED",
+          "games": [
+            6,
+            3
+          ],
+          "winner": true,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/3/2",
+          "stage": "QUARTER_FINAL",
+          "pair": [
+            5,
+            10
+          ],
+          "status": "COMPLETED",
+          "games": [
+            6,
+            3
+          ],
+          "winner": true,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/3/3",
+          "stage": "QUARTER_FINAL",
+          "pair": [
+            13,
+            6
+          ],
+          "status": "COMPLETED",
+          "games": [
+            6,
+            3
+          ],
+          "winner": true,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/3/4",
+          "stage": "QUARTER_FINAL",
+          "pair": [
+            9,
+            3
+          ],
+          "status": "COMPLETED",
+          "games": [
+            6,
+            3
+          ],
+          "winner": true,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/4/1",
+          "stage": "SEMI_FINAL",
+          "pair": [
+            1,
+            13
+          ],
+          "status": "COMPLETED",
+          "games": [
+            6,
+            3
+          ],
+          "winner": true,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/4/2",
+          "stage": "SEMI_FINAL",
+          "pair": [
+            5,
+            9
+          ],
+          "status": "COMPLETED",
+          "games": [
+            6,
+            3
+          ],
+          "winner": true,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/5/1",
+          "stage": "FINAL",
+          "pair": [
+            1,
+            5
+          ],
+          "status": "COMPLETED",
+          "games": [
+            6,
+            3
+          ],
+          "winner": true,
+          "next": null
+        }
+      ]
+    }
+  },
+  "early": {
+    "partial": {
+      "phase": "PLAYOFF",
+      "format": "TEAM_PLAYOFF",
+      "ranking": [
+        [
+          1,
+          1,
+          "TWO_WINS",
+          "PLAYING",
+          null
+        ],
+        [
+          3,
+          2,
+          "TWO_WINS",
+          "PLAYING",
+          null
+        ],
+        [
+          5,
+          3,
+          "TWO_WINS",
+          "PLAYING",
+          null
+        ],
+        [
+          7,
+          4,
+          "PENDING",
+          "WAITING",
+          null
+        ],
+        [
+          8,
+          5,
+          "PENDING",
+          "WAITING",
+          null
+        ],
+        [
+          4,
+          6,
+          "TWO_LOSSES",
+          "PLAYING",
+          null
+        ],
+        [
+          6,
+          7,
+          "TWO_LOSSES",
+          "PLAYING",
+          null
+        ],
+        [
+          2,
+          8,
+          "TWO_LOSSES",
+          "PLAYING",
+          null
+        ]
+      ],
+      "matches": [
+        {
+          "key": "PLAYOFF/2/1",
+          "stage": "QUARTER_FINAL",
+          "pair": [
+            1,
+            4
+          ],
+          "status": "IN_PROGRESS",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/2/2",
+          "stage": "QUARTER_FINAL",
+          "pair": [
+            3,
+            6
+          ],
+          "status": "IN_PROGRESS",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/2/3",
+          "stage": "QUARTER_FINAL",
+          "pair": [
+            5,
+            2
+          ],
+          "status": "IN_PROGRESS",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/2/4",
+          "stage": "QUARTER_FINAL",
+          "pair": [
+            null,
+            null
+          ],
+          "status": "PENDING",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/3/1",
+          "stage": "SEMI_FINAL",
+          "pair": [
+            null,
+            null
+          ],
+          "status": "PENDING",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/3/2",
+          "stage": "SEMI_FINAL",
+          "pair": [
+            null,
+            null
+          ],
+          "status": "PENDING",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/4/1",
+          "stage": "FINAL",
+          "pair": [
+            null,
+            null
+          ],
+          "status": "PENDING",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        }
+      ]
+    },
+    "filled": {
+      "phase": "PLAYOFF",
+      "format": "TEAM_PLAYOFF",
+      "ranking": [
+        [
+          1,
+          1,
+          "TWO_WINS",
+          "PLAYING",
+          null
+        ],
+        [
+          3,
+          2,
+          "TWO_WINS",
+          "PLAYING",
+          null
+        ],
+        [
+          5,
+          3,
+          "TWO_WINS",
+          "PLAYING",
+          null
+        ],
+        [
+          7,
+          4,
+          "TWO_WINS",
+          "PLAYING",
+          null
+        ],
+        [
+          8,
+          5,
+          "TWO_LOSSES",
+          "PLAYING",
+          null
+        ],
+        [
+          4,
+          6,
+          "TWO_LOSSES",
+          "PLAYING",
+          null
+        ],
+        [
+          6,
+          7,
+          "TWO_LOSSES",
+          "PLAYING",
+          null
+        ],
+        [
+          2,
+          8,
+          "TWO_LOSSES",
+          "PLAYING",
+          null
+        ]
+      ],
+      "matches": [
+        {
+          "key": "PLAYOFF/2/1",
+          "stage": "QUARTER_FINAL",
+          "pair": [
+            1,
+            4
+          ],
+          "status": "IN_PROGRESS",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/2/2",
+          "stage": "QUARTER_FINAL",
+          "pair": [
+            3,
+            6
+          ],
+          "status": "IN_PROGRESS",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/2/3",
+          "stage": "QUARTER_FINAL",
+          "pair": [
+            5,
+            2
+          ],
+          "status": "IN_PROGRESS",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/2/4",
+          "stage": "QUARTER_FINAL",
+          "pair": [
+            7,
+            8
+          ],
+          "status": "IN_PROGRESS",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/3/1",
+          "stage": "SEMI_FINAL",
+          "pair": [
+            null,
+            null
+          ],
+          "status": "PENDING",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/3/2",
+          "stage": "SEMI_FINAL",
+          "pair": [
+            null,
+            null
+          ],
+          "status": "PENDING",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        },
+        {
+          "key": "PLAYOFF/4/1",
+          "stage": "FINAL",
+          "pair": [
+            null,
+            null
+          ],
+          "status": "PENDING",
+          "games": [
+            null,
+            null
+          ],
+          "winner": null,
+          "next": null
+        }
+      ]
+    },
+    "finished": {
+      "stages": [
+        [
+          [
+            "QUARTER_FINAL",
+            1,
+            4
+          ],
+          [
+            "QUARTER_FINAL",
+            3,
+            6
+          ],
+          [
+            "QUARTER_FINAL",
+            5,
+            2
+          ],
+          [
+            "QUARTER_FINAL",
+            7,
+            8
+          ]
+        ],
+        [
+          [
+            "SEMI_FINAL",
+            1,
+            5
+          ],
+          [
+            "SEMI_FINAL",
+            3,
+            7
+          ]
+        ],
+        [
+          [
+            "FINAL",
+            1,
+            3
+          ]
+        ]
+      ],
+      "final": {
+        "phase": "FINISHED",
+        "format": "TEAM_PLAYOFF",
+        "ranking": [
+          [
+            1,
+            1,
+            "TWO_WINS",
+            "CHAMPION",
+            null
+          ],
+          [
+            3,
+            2,
+            "TWO_WINS",
+            "RUNNER_UP",
+            null
+          ],
+          [
+            5,
+            3,
+            "TWO_WINS",
+            "ELIMINATED",
+            "SEMI_FINAL"
+          ],
+          [
+            7,
+            4,
+            "TWO_WINS",
+            "ELIMINATED",
+            "SEMI_FINAL"
+          ],
+          [
+            8,
+            5,
+            "TWO_LOSSES",
+            "ELIMINATED",
+            "QUARTER_FINAL"
+          ],
+          [
+            4,
+            6,
+            "TWO_LOSSES",
+            "ELIMINATED",
+            "QUARTER_FINAL"
+          ],
+          [
+            6,
+            7,
+            "TWO_LOSSES",
+            "ELIMINATED",
+            "QUARTER_FINAL"
+          ],
+          [
+            2,
+            8,
+            "TWO_LOSSES",
+            "ELIMINATED",
+            "QUARTER_FINAL"
+          ]
+        ],
+        "matches": [
+          {
+            "key": "PLAYOFF/2/1",
+            "stage": "QUARTER_FINAL",
+            "pair": [
+              1,
+              4
+            ],
+            "status": "COMPLETED",
+            "games": [
+              6,
+              3
+            ],
+            "winner": true,
+            "next": null
+          },
+          {
+            "key": "PLAYOFF/2/2",
+            "stage": "QUARTER_FINAL",
+            "pair": [
+              3,
+              6
+            ],
+            "status": "COMPLETED",
+            "games": [
+              6,
+              3
+            ],
+            "winner": true,
+            "next": null
+          },
+          {
+            "key": "PLAYOFF/2/3",
+            "stage": "QUARTER_FINAL",
+            "pair": [
+              5,
+              2
+            ],
+            "status": "COMPLETED",
+            "games": [
+              6,
+              3
+            ],
+            "winner": true,
+            "next": null
+          },
+          {
+            "key": "PLAYOFF/2/4",
+            "stage": "QUARTER_FINAL",
+            "pair": [
+              7,
+              8
+            ],
+            "status": "COMPLETED",
+            "games": [
+              6,
+              3
+            ],
+            "winner": true,
+            "next": null
+          },
+          {
+            "key": "PLAYOFF/3/1",
+            "stage": "SEMI_FINAL",
+            "pair": [
+              1,
+              5
+            ],
+            "status": "COMPLETED",
+            "games": [
+              6,
+              3
+            ],
+            "winner": true,
+            "next": null
+          },
+          {
+            "key": "PLAYOFF/3/2",
+            "stage": "SEMI_FINAL",
+            "pair": [
+              3,
+              7
+            ],
+            "status": "COMPLETED",
+            "games": [
+              6,
+              3
+            ],
+            "winner": true,
+            "next": null
+          },
+          {
+            "key": "PLAYOFF/4/1",
+            "stage": "FINAL",
+            "pair": [
+              1,
+              3
+            ],
+            "status": "COMPLETED",
+            "games": [
+              6,
+              3
+            ],
+            "winner": true,
+            "next": null
+          }
+        ]
+      }
+    }
+  },
+  "noShow": {
+    "phase": "PLAYOFF",
+    "format": "TEAM_PLAYOFF",
+    "ranking": [
+      [
+        3,
+        1,
+        "TWO_WINS",
+        "PLAYING",
+        null
+      ],
+      [
+        1,
+        2,
+        "TWO_WINS",
+        "PLAYING",
+        null
+      ],
+      [
+        4,
+        3,
+        "SPLIT",
+        "PLAYING",
+        null
+      ],
+      [
+        5,
+        4,
+        "SPLIT",
+        "PLAYING",
+        null
+      ],
+      [
+        2,
+        5,
+        "SPLIT",
+        "WAITING",
+        null
+      ],
+      [
+        8,
+        6,
+        "PENDING",
+        "WAITING",
+        null
+      ],
+      [
+        6,
+        7,
+        "TWO_LOSSES",
+        "WAITING",
+        null
+      ],
+      [
+        7,
+        8,
+        "TWO_LOSSES",
+        "WAITING",
+        null
+      ]
+    ],
+    "matches": [
+      {
+        "key": "PLAYOFF/2/1",
+        "stage": "SEMI_FINAL",
+        "pair": [
+          3,
+          5
+        ],
+        "status": "IN_PROGRESS",
+        "games": [
+          null,
+          null
+        ],
+        "winner": null,
+        "next": null
+      },
+      {
+        "key": "PLAYOFF/2/2",
+        "stage": "SEMI_FINAL",
+        "pair": [
+          1,
+          4
+        ],
+        "status": "IN_PROGRESS",
+        "games": [
+          null,
+          null
+        ],
+        "winner": null,
+        "next": null
+      },
+      {
+        "key": "PLAYOFF/3/1",
+        "stage": "FINAL",
+        "pair": [
+          null,
+          null
+        ],
+        "status": "PENDING",
+        "games": [
+          null,
+          null
+        ],
+        "winner": null,
+        "next": null
+      }
+    ]
+  }
+}

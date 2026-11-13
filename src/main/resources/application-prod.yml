@@ -68,8 +68,12 @@ server:
 
 app:
   base-url: ${APP_BASE_URL}
+  participation:
+    response-email:
+      enabled: ${PADEL_PARTICIPATION_RESPONSE_EMAIL_ENABLED:true}
   spa:
-    routes: []
+    routes:
+      - /players/dashboard
   # Боевые ID — только в прод-профиле; application.yml (база, все
   # остальные профили) не задаёт дефолт, чтобы dev/cloud/test не слали данные сюда.
   analytics:

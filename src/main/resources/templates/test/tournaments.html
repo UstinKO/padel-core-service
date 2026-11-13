@@ -1485,6 +1485,15 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script th:src="@{/js/csrf.js}"></script>
 <script th:inline="javascript">
+    const manualRegistrationMessages = {
+        success: /*[[#{admin.manual_registration.success}]]*/ '',
+        failure: /*[[#{admin.manual_registration.technical}]]*/ '',
+        errorTitle: /*[[#{registration.cancel.error_title}]]*/ '',
+        successTitle: /*[[#{registration.cancel.success_title}]]*/ '',
+        requestId: /*[[#{admin.manual_registration.request_id}]]*/ '',
+        partial: /*[[#{admin.manual_registration.partial}]]*/ '',
+        unavailable: /*[[#{admin.manual_registration.already_registered}]]*/ ''
+    };
     const cancellationMessages = {
         confirm: /*[[#{registration.cancel.confirm}]]*/ '',
         success: /*[[#{registration.cancel.success}]]*/ '',
@@ -2509,6 +2518,34 @@
         }
     }
 
+    const guestRegistrationRequests = new Map();
+
+    function guestRegistrationHeaders(tournamentId, kind, payload) {
+        const request = JSON.stringify([tournamentId, kind, payload]);
+        if (!guestRegistrationRequests.has(request)) {
+            guestRegistrationRequests.set(request, crypto.randomUUID());
+        }
+        return {'Content-Type': 'application/json', 'Idempotency-Key': guestRegistrationRequests.get(request)};
+    }
+
+    function guestRegistrationCompleted(tournamentId, kind, payload) {
+        guestRegistrationRequests.delete(JSON.stringify([tournamentId, kind, payload]));
+    }
+
+    function showManualRegistrationError(data = {}) {
+        const message = data.message || manualRegistrationMessages.failure;
+        const detail = data.requestId ? message + ' (' + manualRegistrationMessages.requestId + ' ' + data.requestId + ')' : message;
+        showToast('error', manualRegistrationMessages.errorTitle, detail, true);
+    }
+
+    async function refreshAfterManualRegistration(tournamentId) {
+        await refreshTournamentStats(tournamentId);
+        if (Number(currentViewTournamentId) === Number(tournamentId)
+                && document.getElementById('viewPlayersModal')?.classList.contains('show')) {
+            await refreshPlayerList();
+        }
+    }
+
     async function registerGuestPair() {
         const p1 = buildGuestPlayerPayload(1);
         const p2 = buildGuestPlayerPayload(2);
@@ -2527,31 +2564,32 @@
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Регистрация...';
 
+        const payload = {player1: p1, player2: p2};
+        const tournamentId = currentTournamentId;
         try {
-            const resp = await fetch(`/test/tournaments/${currentTournamentId}/register-guest-pair`, {
+            const resp = await fetch(`/test/tournaments/${tournamentId}/register-guest-pair`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ player1: p1, player2: p2 })
+                headers: guestRegistrationHeaders(tournamentId, 'pair', payload),
+                body: JSON.stringify(payload)
             });
             const data = await resp.json();
 
-            if (data.success) {
-                const label1 = p1.nombre || document.getElementById('g1SelectedName').textContent;
-                const label2 = p2.nombre || document.getElementById('g2SelectedName').textContent;
-                showToast('success', 'Готово', `Пара "${label1} + ${label2}" зарегистрирована на позицию ${data.position}`);
+            if (resp.ok && data.success === true) {
+                guestRegistrationCompleted(tournamentId, 'pair', payload);
+                showToast('success', manualRegistrationMessages.successTitle, data.message, true);
                 // Сбрасываем форму
                 [1, 2].forEach(n => { clearGuestPlayer(n); switchGuestMode(n, 'db'); });
                 ['guest1Nombre','guest1Apellido','guest1Telefono','guest2Nombre','guest2Apellido','guest2Telefono']
                     .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
                 document.getElementById('guestPairForm').style.display = 'none';
                 document.getElementById('guestPairToggleIcon').className = 'bi bi-chevron-down';
-                await refreshTournamentStats(currentTournamentId);
+                await refreshAfterManualRegistration(tournamentId);
                 registerModal.hide();
             } else {
-                showToast('error', 'Ошибка', data.message || 'Не удалось зарегистрировать пару');
+                showManualRegistrationError(data);
             }
         } catch (e) {
-            showToast('error', 'Ошибка', e.message);
+            showManualRegistrationError();
         } finally {
             btn.disabled = false;
             btn.innerHTML = originalHtml;
@@ -2579,30 +2617,31 @@
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Регистрация...';
 
+        const tournamentId = currentTournamentId;
         try {
-            const resp = await fetch(`/test/tournaments/${currentTournamentId}/register-guest-player`, {
+            const resp = await fetch(`/test/tournaments/${tournamentId}/register-guest-player`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: guestRegistrationHeaders(tournamentId, 'single', p),
                 body: JSON.stringify(p)
             });
             const data = await resp.json();
 
-            if (data.success) {
-                const label = p.nombre || document.getElementById('gsSelectedName').textContent;
-                showToast('success', 'Готово', `Игрок "${label}" зарегистрирован на позицию ${data.position}`);
+            if (resp.ok && data.success === true) {
+                guestRegistrationCompleted(tournamentId, 'single', p);
+                showToast('success', manualRegistrationMessages.successTitle, data.message, true);
                 clearGuestPlayer('s');
                 switchGuestMode('s', 'db');
                 ['guestsNombre', 'guestsApellido', 'guestsTelefono']
                     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
                 document.getElementById('guestSingleForm').style.display = 'none';
                 document.getElementById('guestSingleToggleIcon').className = 'bi bi-chevron-down';
-                await refreshTournamentStats(currentTournamentId);
+                await refreshAfterManualRegistration(tournamentId);
                 registerModal.hide();
             } else {
-                showToast('error', 'Ошибка', data.message || 'Не удалось зарегистрировать игрока');
+                showManualRegistrationError(data);
             }
         } catch (e) {
-            showToast('error', 'Ошибка', e.message);
+            showManualRegistrationError();
         } finally {
             btn.disabled = false;
             btn.innerHTML = originalHtml;
@@ -2781,10 +2820,10 @@
                 const result = await response.json();
                 console.log('Результат регистрации пары:', result);
 
-                if (result.success) {
-                    showToast('success', 'Регистрация завершена', `Пара успешно зарегистрирована на позицию ${result.position}`);
+                if (response.ok && result.success === true) {
+                    showToast('success', manualRegistrationMessages.successTitle, result.message, true);
                 } else {
-                    showToast('error', 'Ошибка регистрации', result.message);
+                    showManualRegistrationError(result);
                     return;
                 }
 
@@ -2805,7 +2844,21 @@
 
                 const result = await response.json();
 
-                if (result.success) {
+                if (response.ok && result.success === true) {
+                    if (result.errors > 0) {
+                        const detail = result.errorDetails?.[0];
+                        showManualRegistrationError({
+                            message: (result.successfullyRegistered || result.waitlistCount)
+                                ? manualRegistrationMessages.partial : detail?.message,
+                            requestId: detail?.requestId
+                        });
+                        await refreshAfterManualRegistration(currentTournamentId);
+                        return;
+                    }
+                    if (!result.successfullyRegistered && !result.waitlistCount && result.alreadyRegistered) {
+                        showManualRegistrationError({message: manualRegistrationMessages.unavailable});
+                        return;
+                    }
                     let message = '';
                     if (result.successfullyRegistered > 0) {
                         message += `✅ Зарегистрировано: ${result.successfullyRegistered}<br>`;
@@ -2815,13 +2868,13 @@
                     }
                     showToast('success', 'Регистрация завершена', message);
                 } else {
-                    showToast('error', 'Ошибка регистрации', result.message);
+                    showManualRegistrationError(result);
                     return;
                 }
             }
 
             // Обновляем статистику турнира
-            await refreshTournamentStats(currentTournamentId);
+            await refreshAfterManualRegistration(currentTournamentId);
 
             // Закрываем модалку
             registerModal.hide();
@@ -2831,7 +2884,7 @@
 
         } catch (error) {
             console.error('Ошибка:', error);
-            showToast('error', 'Ошибка', error.message);
+            showManualRegistrationError();
         } finally {
             registerBtn.disabled = false;
             registerBtn.innerHTML = originalText;
@@ -3133,18 +3186,22 @@
     }
 
     // Показ toast уведомления
-    function showToast(type, title, message) {
+    function showToast(type, title, message, asText = false) {
         const toastContainer = document.getElementById('toastContainer');
         const toast = document.createElement('div');
         toast.className = `toast-custom toast-${type}`;
         toast.innerHTML = `
                 <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'} fs-4"></i>
                 <div>
-                    <strong>${title}</strong>
-                    <div class="small">${message}</div>
+                    <strong>${asText ? '' : title}</strong>
+                    <div class="small">${asText ? '' : message}</div>
                 </div>
             `;
 
+        if (asText) {
+            toast.querySelector('strong').textContent = title;
+            toast.querySelector('.small').textContent = message;
+        }
         toastContainer.appendChild(toast);
 
         setTimeout(() => {

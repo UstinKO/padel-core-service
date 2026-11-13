@@ -18,6 +18,21 @@ class PlayoffMatchingEngineTest {
 
     private final PlayoffMatchingEngine engine = new PlayoffMatchingEngine();
 
+    @Test
+    void equalCostsKeepTheFirstMatchingAndItsInputOrder() {
+        List<Candidate> ordered = List.of(new Candidate(1L, 1, 0), new Candidate(2L, 2, 0),
+                new Candidate(3L, 3, 0), new Candidate(4L, 4, 0));
+        for (PriorityOrder priority : PriorityOrder.values()) {
+            var result = engine.match(ordered, Map.of(), priority);
+            assertThat(result.pairings()).containsExactly(new Pairing(1L, 3L), new Pairing(2L, 4L));
+            assertThat(result.allConstraintsSatisfied()).isTrue();
+            assertThat(result.warning()).isNull();
+            var reversed = engine.match(List.of(ordered.get(3), ordered.get(2), ordered.get(1), ordered.get(0)),
+                    Map.of(), priority);
+            assertThat(reversed.pairings()).containsExactly(new Pairing(4L, 2L), new Pairing(3L, 1L));
+        }
+    }
+
     /**
      * "Команды с двумя победами получают соперников из числа команд с двумя поражениями;
      * команды с результатом 1–1 играют между собой".

@@ -64,6 +64,8 @@ class DoubleTournamentRegistrationReserveTest {
     @Mock private TournamentService tournamentService;
     @Mock private ClubRepository clubRepository;
 
+    @Mock private ParticipationRequests participationRequests;
+    @Mock private com.padle.core.padelcoreservice.repository.PairProposalResponseRepository proposalResponses;
     @Mock private PairTermsService pairTerms;
     @Spy
     private RegistrationCancellationService cancellations = new RegistrationCancellationService(
@@ -98,44 +100,12 @@ class DoubleTournamentRegistrationReserveTest {
     }
 
     @Test
-    void registrarSolo_dedlineYaPaso_vaDirectoAReservaConToken() {
+    void registrarSolo_despuesDelPlazo_quedaEnReservaIncompleta() {
         Tournament tournament = tournamentStartingIn(1); // старт через 1ч → дедлайн (старт-24ч) давно прошёл
-        when(tournamentRepository.findById(TOURNAMENT_ID)).thenReturn(Optional.of(tournament));
+        when(tournamentRepository.lockById(TOURNAMENT_ID)).thenReturn(Optional.of(tournament));
         when(playerRepository.findById(PLAYER_ID)).thenReturn(Optional.of(player));
         when(registrationRepository.findByTournamentIdAndPlayerId(TOURNAMENT_ID, PLAYER_ID)).thenReturn(Optional.empty());
         when(registrationRepository.findByTournamentIdAndPlayerIdAndIsActiveFalse(TOURNAMENT_ID, PLAYER_ID)).thenReturn(Optional.empty());
-        when(registrationRepository.countConfirmedPairs(TOURNAMENT_ID)).thenReturn(0L);
-        when(registrationRepository.countActiveSoloRegistrations(TOURNAMENT_ID)).thenReturn(0L);
-        when(registrationRepository.findMaxWaitlistPosition(TOURNAMENT_ID)).thenReturn(Optional.of(2));
-        when(registrationRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-        when(registrationMapper.toDto(any())).thenReturn(null);
-
-        SoloDoubleRegistrationDto dto = new SoloDoubleRegistrationDto();
-        dto.setSoloType("ADD_LATER");
-
-        service.registerSoloForDoubleTournament(TOURNAMENT_ID, PLAYER_ID, dto);
-
-        ArgumentCaptor<TournamentRegistration> captor = ArgumentCaptor.forClass(TournamentRegistration.class);
-        verify(registrationRepository).save(captor.capture());
-        TournamentRegistration saved = captor.getValue();
-
-        assertThat(saved.getStatus()).isEqualTo(RegistrationStatus.WAITLIST);
-        assertThat(saved.getWaitlistPosition()).isEqualTo(3);
-        assertThat(saved.getPartnerActionToken()).isNotBlank();
-
-        verify(emailService).sendPartnerReserveEmail(
-                eq(player.getEmail()), any(), any(), any(), any(), any(), any(), any());
-    }
-
-    @Test
-    void registrarSolo_dedlineNoPaso_quedaComoSoloAddLaterSinToken() {
-        Tournament tournament = tournamentStartingIn(72); // старт en 72ч → дедлайн aún no llegó
-        when(tournamentRepository.findById(TOURNAMENT_ID)).thenReturn(Optional.of(tournament));
-        when(playerRepository.findById(PLAYER_ID)).thenReturn(Optional.of(player));
-        when(registrationRepository.findByTournamentIdAndPlayerId(TOURNAMENT_ID, PLAYER_ID)).thenReturn(Optional.empty());
-        when(registrationRepository.findByTournamentIdAndPlayerIdAndIsActiveFalse(TOURNAMENT_ID, PLAYER_ID)).thenReturn(Optional.empty());
-        when(registrationRepository.countConfirmedPairs(TOURNAMENT_ID)).thenReturn(0L);
-        when(registrationRepository.countActiveSoloRegistrations(TOURNAMENT_ID)).thenReturn(0L);
         when(registrationRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(registrationMapper.toDto(any())).thenReturn(null);
 
@@ -150,14 +120,42 @@ class DoubleTournamentRegistrationReserveTest {
 
         assertThat(saved.getStatus()).isEqualTo(RegistrationStatus.SOLO_ADD_LATER);
         assertThat(saved.getWaitlistPosition()).isNull();
-        assertThat(saved.getPartnerActionToken()).isNull();
+        assertThat(saved.getPartnerActionToken()).isNotBlank();
 
-        verify(emailService, never()).sendPartnerReserveEmail(any(), any(), any(), any(), any(), any(), any(), any());
+        verify(emailService).sendPartnerReserveEmail(
+                eq(player.getEmail()), any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test
-    void addPartner_antesDeDeadline_confirmaDeInmediatoSinTocarWaitlist() {
+    void registrarSolo_antesDelPlazo_quedaEnReservaIncompleta() {
+        Tournament tournament = tournamentStartingIn(72); // старт en 72ч → дедлайн aún no llegó
+        when(tournamentRepository.lockById(TOURNAMENT_ID)).thenReturn(Optional.of(tournament));
+        when(playerRepository.findById(PLAYER_ID)).thenReturn(Optional.of(player));
+        when(registrationRepository.findByTournamentIdAndPlayerId(TOURNAMENT_ID, PLAYER_ID)).thenReturn(Optional.empty());
+        when(registrationRepository.findByTournamentIdAndPlayerIdAndIsActiveFalse(TOURNAMENT_ID, PLAYER_ID)).thenReturn(Optional.empty());
+        when(registrationRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(registrationMapper.toDto(any())).thenReturn(null);
+
+        SoloDoubleRegistrationDto dto = new SoloDoubleRegistrationDto();
+        dto.setSoloType("ADD_LATER");
+
+        service.registerSoloForDoubleTournament(TOURNAMENT_ID, PLAYER_ID, dto);
+
+        ArgumentCaptor<TournamentRegistration> captor = ArgumentCaptor.forClass(TournamentRegistration.class);
+        verify(registrationRepository).save(captor.capture());
+        TournamentRegistration saved = captor.getValue();
+
+        assertThat(saved.getStatus()).isEqualTo(RegistrationStatus.SOLO_ADD_LATER);
+        assertThat(saved.getWaitlistPosition()).isNull();
+        assertThat(saved.getPartnerActionToken()).isNotBlank();
+
+        verify(emailService).sendPartnerReserveEmail(any(), any(), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void addPartner_antesDeDeadline_delegaElProcesamientoDeLaReserva() {
         Tournament tournament = tournamentStartingIn(72);
+        when(tournamentRepository.lockById(TOURNAMENT_ID)).thenReturn(Optional.of(tournament));
         PlayerPadel partner = PlayerPadel.builder().id(PARTNER_ID).email("partner@example.com").nombre("Pareja")
                 .nivelJugador(Nivel.C6).build();
         TournamentRegistration soloReg = TournamentRegistration.builder()
@@ -176,13 +174,14 @@ class DoubleTournamentRegistrationReserveTest {
 
         service.addPartnerToSoloRegistration(TOURNAMENT_ID, PLAYER_ID, partnerDto);
 
-        assertThat(soloReg.getStatus()).isEqualTo(RegistrationStatus.CONFIRMED);
-        verify(tournamentService, never()).processWaitlistForTournament(anyLong());
+        assertThat(soloReg.getStatus()).isEqualTo(RegistrationStatus.WAITLIST);
+        verify(tournamentService).processWaitlistForTournament(TOURNAMENT_ID);
     }
 
     @Test
-    void addPartner_aSoloSearch_confirmaLaParejaSinReinscripcion() {
+    void addPartner_aSoloSearch_respetaLaReservaSinReinscripcion() {
         Tournament tournament = tournamentStartingIn(72);
+        when(tournamentRepository.lockById(TOURNAMENT_ID)).thenReturn(Optional.of(tournament));
         PlayerPadel partner = PlayerPadel.builder().id(PARTNER_ID).email("partner@example.com").nombre("Pareja")
                 .nivelJugador(Nivel.C6).build();
         TournamentRegistration soloReg = TournamentRegistration.builder()
@@ -201,13 +200,14 @@ class DoubleTournamentRegistrationReserveTest {
 
         service.addPartnerToSoloRegistration(TOURNAMENT_ID, PLAYER_ID, partnerDto);
 
-        assertThat(soloReg.getStatus()).isEqualTo(RegistrationStatus.CONFIRMED);
-        verify(tournamentService, never()).processWaitlistForTournament(anyLong());
+        assertThat(soloReg.getStatus()).isEqualTo(RegistrationStatus.WAITLIST);
+        verify(tournamentService).processWaitlistForTournament(TOURNAMENT_ID);
     }
 
     @Test
     void addPartner_despuesDeReserva_encolaYDelegaElProcesamientoDeLaWaitlist() {
         Tournament tournament = tournamentStartingIn(2);
+        when(tournamentRepository.lockById(TOURNAMENT_ID)).thenReturn(Optional.of(tournament));
         PlayerPadel partner = PlayerPadel.builder().id(PARTNER_ID).email("partner@example.com").nombre("Pareja")
                 .nivelJugador(Nivel.C6).build();
         TournamentRegistration soloReg = TournamentRegistration.builder()
@@ -219,7 +219,6 @@ class DoubleTournamentRegistrationReserveTest {
         when(playerRepository.findByEmail("partner@example.com")).thenReturn(Optional.of(partner));
         when(registrationRepository.findByTournamentIdAndPlayerIdAndIsActiveFalse(TOURNAMENT_ID, PARTNER_ID)).thenReturn(Optional.empty());
         when(registrationRepository.findMaxWaitlistPosition(TOURNAMENT_ID)).thenReturn(Optional.of(5));
-        when(registrationRepository.findById(10L)).thenReturn(Optional.of(soloReg));
         when(registrationRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(registrationMapper.toDto(any())).thenReturn(null);
 
@@ -229,13 +228,14 @@ class DoubleTournamentRegistrationReserveTest {
         service.addPartnerToSoloRegistration(TOURNAMENT_ID, PLAYER_ID, partnerDto);
 
         assertThat(soloReg.getStatus()).isEqualTo(RegistrationStatus.WAITLIST);
-        assertThat(soloReg.getWaitlistPosition()).isEqualTo(6); // va al final de la cola (max+1), no a su posición anterior
+        assertThat(soloReg.getQueuedAt()).isNotNull();
         verify(tournamentService, times(1)).processWaitlistForTournament(TOURNAMENT_ID);
     }
 
     @Test
     void addPartner_inscripcionYaNoPendiente_lanzaExcepcion() {
         Tournament tournament = tournamentStartingIn(72);
+        when(tournamentRepository.lockById(TOURNAMENT_ID)).thenReturn(Optional.of(tournament));
         PlayerPadel otherPartner = PlayerPadel.builder().id(99L).build();
         TournamentRegistration confirmedPairReg = TournamentRegistration.builder()
                 .id(11L).tournament(tournament).player(player).partner(otherPartner)

@@ -20,6 +20,10 @@ const LegalPage = lazy(() =>
   import('./pages/LegalPages').then((module) => ({ default: module.LegalPage })),
 );
 
+const PlayerEventsPage = lazy(() =>
+  import('./pages/PlayerEventsPage').then((module) => ({ default: module.PlayerEventsPage })),
+);
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { refetchOnWindowFocus: false },
@@ -63,6 +67,14 @@ const router = createBrowserRouter(
           element: <AccountPage key="request" mode="request" />,
         },
         { path: 'recuperar-password', element: <AccountPage key="reset" mode="reset" /> },
+        {
+          path: 'players/dashboard',
+          element: (
+            <Suspense fallback={<p role="status">…</p>}>
+              <PlayerEventsPage />
+            </Suspense>
+          ),
+        },
         { path: 'perfil', element: <AccountPage key="profile" mode="profile" /> },
         ...(['terminos', 'privacidad', 'cookies'] as const).map((page) => ({
           path: page,
