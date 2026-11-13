@@ -93,6 +93,84 @@ class RegistrationCancellationIntegrationTest {
     private final List<Long> clubIds = new ArrayList<>();
 
     @Test
+    void cabinetShowsOwnedUpcomingAndCancellationHistoryWithoutPrivateContactDetails() throws Exception {
+        var event = tournament(4);
+        var row = registration(event, RegistrationStatus.CONFIRMED);
+        var other = registration(event, RegistrationStatus.WAITLIST);
+        payments.saveAndFlush(Payment.builder().registration(row).amount(BigDecimal.TEN)
+                .status(PaymentStatus.PAID).build());
+        payments.saveAndFlush(Payment.builder().registration(row).amount(BigDecimal.TEN)
+                .status(PaymentStatus.PENDING).notes("PARTNER_PAYMENT").build());
+
+        String base = "/api/players/me/events";
+        mvc.perform(get(base).with(user(row.getPlayer())))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Cache-Control", "no-store"))
+                .andExpect(jsonPath("$.upcoming[0].registrationId").value(row.getId()))
+                .andExpect(jsonPath("$.upcoming[0].paymentStatus").value("PAID"))
+                .andExpect(jsonPath("$.upcoming[0].availableActions[0]").value("WITHDRAW"))
+                .andExpect(jsonPath("$.history.length()").value(0L))
+                .andExpect(content().string(not(containsString(other.getPlayer().getEmail()))))
+                .andExpect(content().string(not(containsString(row.getPlayer().getEmail()))));
+
+        String withdraw = base + "/" + row.getId() + "/withdraw";
+        String version = "{\"version\":0}";
+        mvc.perform(post(withdraw).with(user(other.getPlayer())).with(csrf())
+                        .contentType("application/json").content(version))
+                .andExpect(status().isNotFound());
+        mvc.perform(post(withdraw).with(user(row.getPlayer())).contentType("application/json").content(version))
+                .andExpect(status().isForbidden());
+        for (int attempt = 0; attempt < 2; attempt++) {
+            mvc.perform(post(withdraw).with(user(row.getPlayer())).with(csrf())
+                            .contentType("application/json").content(version))
+                    .andExpect(status().isNoContent());
+        }
+        mvc.perform(get(base).with(user(row.getPlayer())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.upcoming.length()").value(0L))
+                .andExpect(jsonPath("$.history[0].cancellations.length()").value(1L))
+                .andExpect(jsonPath("$.history[0].cancellations[0].initiator").value("PLAYER"));
+
+        row.setIsActive(true);
+        row.setStatus(RegistrationStatus.CONFIRMED);
+        registrations.saveAndFlush(row);
+        mvc.perform(get(base).with(user(row.getPlayer())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.upcoming[0].version").value(1))
+                .andExpect(jsonPath("$.history[0].cancellations.length()").value(1L));
+        mvc.perform(post(withdraw).with(user(row.getPlayer())).with(csrf())
+                        .contentType("application/json").content(version))
+                .andExpect(status().isConflict());
+        var clubAdmin = Owner.builder().id(9001L).role(OwnerRole.CLUB_ADMIN).build();
+        mvc.perform(get(base).with(user(clubAdmin))).andExpect(status().isForbidden());
+        mvc.perform(get(base)).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void cabinetChangesContactVisibilityOnlyForTheOwnedSearchRegistration() throws Exception {
+        var event = tournament(4);
+        event.setModalidad(Modalidad.DOBLES);
+        event.setTipo(TournamentType.AMERICANO_TEAMS);
+        var row = registration(event, RegistrationStatus.SOLO_SEARCH);
+        row.getPlayer().setTelefono("+5491155551234");
+        players.saveAndFlush(row.getPlayer());
+
+        String path = "/api/players/me/events/" + row.getId() + "/contact-visibility";
+        String show = "{\"version\":0,\"shareContacts\":true}";
+        mvc.perform(put(path).with(user(player())).with(csrf()).contentType("application/json").content(show))
+                .andExpect(status().isNotFound());
+        mvc.perform(put(path).with(user(row.getPlayer())).with(csrf()).contentType("application/json").content(show))
+                .andExpect(status().isNoContent());
+        assertThat(doubles.getLookingForPartnerPlayers(event.getId()).get(0).getTelefono())
+                .isEqualTo(row.getPlayer().getTelefono());
+
+        mvc.perform(put(path).with(user(row.getPlayer())).with(csrf())
+                        .contentType("application/json").content("{\"version\":0,\"shareContacts\":false}"))
+                .andExpect(status().isNoContent());
+        assertThat(doubles.getLookingForPartnerPlayers(event.getId()).get(0).getTelefono()).isNull();
+    }
+
+    @Test
     void playerHttpVersionIsOptionalButStaleHeaderCannotCancelNewCycleOrSpoofActor() throws Exception {
         var event=tournament(2);var row=registration(event,RegistrationStatus.CONFIRMED);
         String path="/players/tournaments/"+event.getId();
