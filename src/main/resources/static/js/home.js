@@ -376,6 +376,26 @@ class PadelCoreHome {
     }
 }
 
+function trackMendozaBannerClick(event) {
+    if (event.defaultPrevented || (event.type === 'auxclick' && event.button !== 1)
+        || typeof window.gtag !== 'function') {
+        return;
+    }
+
+    const cookies = document.cookie.split(';').map(cookie => cookie.trim());
+    const analyticsAllowed = cookies.includes('cookieConsent=accepted')
+        || (cookies.includes('cookieConsent=customized') && cookies.includes('analyticsConsent=true'));
+    if (analyticsAllowed) {
+        window.gtag('event', 'mendoza_homepage_banner_click', {
+            campaign_name: 'mendoza_2026',
+            placement: 'homepage_banner'
+        });
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+    const mendozaBanner = document.querySelector('[data-mendoza-banner-link]');
+    mendozaBanner?.addEventListener('click', trackMendozaBannerClick);
+    mendozaBanner?.addEventListener('auxclick', trackMendozaBannerClick);
     window.padelCore = new PadelCoreHome();
 });
