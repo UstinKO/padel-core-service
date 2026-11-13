@@ -1,17 +1,20 @@
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import { CookieConsent } from './CookieConsent';
 import { SessionAndNetwork } from './SystemState';
 import { AccountNav } from './AccountNav';
 import { LanguagePicker } from './LanguagePicker';
+import '../styles/player-cabinet-theme.css';
 
 export function AppLayout() {
   const { t } = useTranslation();
   const preview = window.location.pathname.startsWith('/preview');
-  const markUrl = `${import.meta.env.BASE_URL}mark.svg`;
+  const { pathname } = useLocation();
+  const cabinet = /^\/players\/dashboard\/?$/.test(pathname);
+  const markUrl = cabinet ? '/images/1.svg' : `${import.meta.env.BASE_URL}mark.svg`;
   return (
-    <>
+    <div className={cabinet ? 'player-cabinet-theme' : undefined}>
       <a className="skip-link" href="#main-content">
         {t('app.skip')}
       </a>
@@ -77,6 +80,6 @@ export function AppLayout() {
         </nav>
         <CookieConsent />
       </footer>
-    </>
+    </div>
   );
 }

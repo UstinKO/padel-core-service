@@ -1,0 +1,27 @@
+.player-cabinet-theme {
+  --color-canvas: #f8f9fa;
+  --color-surface-soft: #fff1eb;
+  --color-ink: #2d2d2d;
+  --color-muted: #60595a;
+  --color-line: #e9e0de;
+  --color-brand: #9d3214;
+  --color-accent: #ff6b35;
+  --color-accent-ink: #21140f;
+  --color-accent-hover: #ff8c5a;
+  --color-accent-strong: #a83a16;
+  --color-topbar: rgb(255 255 255 / 94%);
+  --color-input-border: #a49a98;
+  --shadow-pop: 0 1.5rem 4rem rgb(45 45 45 / 12%);
+  min-height: 100vh;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+}
+
+.player-cabinet-theme .kicker {
+  color: var(--color-brand);
+}
+
+.player-cabinet-theme .share-dialog::backdrop,
+.player-cabinet-theme .cookie-dialog::backdrop {
+  background: rgb(45 45 45 / 55%);
+}

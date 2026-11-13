@@ -153,7 +153,7 @@ h2 {
   top: 0;
   z-index: 5;
   border-bottom: 1px solid var(--color-line);
-  background: rgb(245 245 239 / 94%);
+  background: var(--color-topbar, rgb(245 245 239 / 94%));
   backdrop-filter: blur(1rem);
 }
 
@@ -304,11 +304,11 @@ h2 {
 
 .button--primary {
   background: var(--color-accent);
-  color: var(--color-brand);
+  color: var(--color-accent-ink, var(--color-brand));
 }
 
 .button--primary:hover {
-  background: #e8faa8;
+  background: var(--color-accent-hover, #e8faa8);
 }
 
 .button--secondary {
@@ -420,7 +420,7 @@ h2 {
   width: 100%;
   min-height: 3rem;
   padding: 0.65rem 0.8rem;
-  border: 1px solid #bdc9be;
+  border: 1px solid var(--color-input-border, #bdc9be);
   border-radius: var(--radius-md);
   background: var(--color-surface);
   color: var(--color-ink);
