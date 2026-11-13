@@ -23,6 +23,9 @@ public class RankingController {
 
     @GetMapping
     public String verRanking(Model model) {
+        if (model.containsAttribute("previewElo")) {
+            return "ranking";
+        }
         log.info("Accediendo a página de ranking");
 
         try {
