@@ -198,12 +198,18 @@ export function PlayerEventsPage() {
       <section className="card">
         <h1>{t('playerEvents.title')}</h1>
         <p>{t('account.playerRequired')}</p>
+        <a href="/admin">{t('account.admin')}</a>
       </section>
     );
 
   return (
     <section className="page-stack">
-      <h1>{t('playerEvents.title')}</h1>
+      {!window.location.pathname.startsWith('/preview') && (
+        <div className="button-row">
+          <a href="/legacy/players/dashboard">{t('playerEvents.legacy')}</a>
+        </div>
+      )}
+      <h1 id="participationRequests">{t('playerEvents.title')}</h1>
       <EntityState
         pending={!readError && (session.isPending || query.isPending)}
         error={readError}

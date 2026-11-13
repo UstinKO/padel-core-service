@@ -7,7 +7,11 @@
 
 ## GET `/players/dashboard`
 
-**Тип:** Thymeleaf view.  
+В профиле `prod` открывает React-кабинет «Мои мероприятия». Для данных используется [API кабинета](account.md#мои-мероприятия). При отключении маршрута в `app.spa.routes` возвращается прежняя страница.
+
+## GET `/legacy/players/dashboard`
+
+**Тип:** Thymeleaf view. Запасная страница с прежними действиями по регистрации и замене партнёра.
 **Аутентификация:** `ROLE_PLAYER` (Spring Security redirect при отсутствии).
 
 ### Алгоритм

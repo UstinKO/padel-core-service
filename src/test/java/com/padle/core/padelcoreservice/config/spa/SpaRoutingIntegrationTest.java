@@ -10,6 +10,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Duration;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
@@ -31,7 +33,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "spring.security.oauth2.client.registration.google.client-secret=test-client-secret",
         "recaptcha.site-key=test-site-key",
         "recaptcha.secret-key=test-secret-key",
-        "app.spa.routes[0]=/react-pilot/**"
+        "app.spa.routes[0]=/react-pilot/**",
+        "app.spa.routes[1]=/players/dashboard"
 })
 class SpaRoutingIntegrationTest {
 
@@ -39,6 +42,22 @@ class SpaRoutingIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Test
+    void productionCabinetAndLegacyRequireAuthentication() throws Exception {
+        for (var path : List.of("/players/dashboard", "/legacy/players/dashboard")) {
+            mockMvc.perform(get(path))
+                    .andExpect(status().isFound())
+                    .andExpect(redirectedUrl("/login"));
+        }
+        mockMvc.perform(get("/players/dashboard").with(user("player").roles("PLAYER")))
+                .andExpect(status().isOk())
+                .andExpect(forwardedUrl(SPA_INDEX));
+        var legacy = mockMvc.perform(get("/legacy/players/dashboard").with(user("player").roles("PLAYER")))
+                .andReturn();
+        assertThat(legacy.getResponse().getForwardedUrl()).isNotEqualTo(SPA_INDEX);
+        assertThat(legacy.getHandler()).isInstanceOf(org.springframework.web.method.HandlerMethod.class);
+    }
 
     @Test
     void allowlistedGetHeadDeepLinkAndQueryAreForwarded() throws Exception {

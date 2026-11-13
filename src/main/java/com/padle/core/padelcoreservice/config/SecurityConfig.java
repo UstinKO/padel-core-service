@@ -195,7 +195,7 @@ public class SecurityConfig {
                                 "/app",
                                 "/app/**"
                         ).permitAll()
-                        .requestMatchers("/players/dashboard").authenticated()
+                        .requestMatchers("/players/dashboard", "/legacy/players/dashboard").authenticated()
                         .requestMatchers("/players/lista").authenticated()
                         .requestMatchers("/players/perfil/**").authenticated()
                         .requestMatchers("/players/mis-torneos").authenticated()

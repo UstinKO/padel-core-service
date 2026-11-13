@@ -2,6 +2,7 @@
   "app": {
     "name": "1-Padel",
     "skip": "Ir al contenido",
+    "navigation": "Navegación principal",
     "preview": "Vista previa privada",
     "phase": "Fundamentos de UI v2 · Fase 0"
   },
@@ -240,6 +241,7 @@
     "CALENDAR": "Agregar al calendario"
   },
   "playerEvents": {
+    "legacy": "Versión anterior de mi cuenta",
     "title": "Mis eventos",
     "upcoming": "Próximos",
     "history": "Historial",
