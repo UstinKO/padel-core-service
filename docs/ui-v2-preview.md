@@ -87,6 +87,8 @@ PLAYWRIGHT_MODULE_PATH="$PWD/frontend/node_modules/@playwright/test/index.mjs" \
 
 ## Данные пилота PlayoffMatchingEngine
 
+Повторяемый исходный прогон: `python3 automation/ui-preview/playoff-pilot.py run` сверяет запущенный jar и принятый эталон; пересоздаёт только пилот. `smoke --rehearse` проверяет общий browser/JWT и сохранность пяти турниров через репетицию выпуска/отката. `prepare --reset` готовит ручной набор; run/reset во время ручной проверки не выполнять. [Команды, ответы и ограничения](modular-monolith/phase-1/browser-baseline.md), [ручной журнал](modular-monolith/phase-1/manual-baseline.md).
+
 После запуска контура SUPER_ADMIN может подготовить пилот запросом `POST /api/internal/ui-preview/playoff-pilot` с сессионной cookie и CSRF header. Повторный POST возвращает те же ID; GET только читает и до подготовки возвращает 404. `POST /api/internal/ui-preview/playoff-pilot/reset` пересоздаёт только пять турниров пилота. Общий `/api/internal/ui-preview/reset` пересоздаёт прежние шесть мероприятий, сохраняя метаданные пилота. Операции сериализуются блокировкой существующего UUID-маркера; отказ откатывает данные и метаданные вместе.
 
 Набор содержит `roster-8`, `qualified-8`, `qualified-9`, `qualified-16`, `finished-8`. Квалификация проходит через настоящий сервис: у каждой команды два завершённых матча. `roster-8` позволяет начинать раннюю сетку и NO_SHOW с исходного состава; отдельные готовые сценарии этих действий создаются браузерной приёмкой #1048.
