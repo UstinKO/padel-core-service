@@ -57,6 +57,8 @@ class RuntimeBoundaryTest(unittest.TestCase):
 
     def test_readiness_retries_connection_reset_during_startup(self):
         with (
+            tempfile.TemporaryDirectory() as directory,
+            patch.object(preview, 'RUNTIME', Path(directory)),
             patch.object(preview, 'load', return_value={}),
             patch.object(preview, 'compose'),
             patch.object(preview, 'Client') as client,
