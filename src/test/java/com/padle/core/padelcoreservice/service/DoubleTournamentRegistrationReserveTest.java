@@ -64,6 +64,8 @@ class DoubleTournamentRegistrationReserveTest {
     @Mock private TournamentService tournamentService;
     @Mock private ClubRepository clubRepository;
 
+    @Mock private ParticipationRequests participationRequests;
+    @Mock private com.padle.core.padelcoreservice.repository.PairProposalResponseRepository proposalResponses;
     @Mock private PairTermsService pairTerms;
     @Spy
     private RegistrationCancellationService cancellations = new RegistrationCancellationService(

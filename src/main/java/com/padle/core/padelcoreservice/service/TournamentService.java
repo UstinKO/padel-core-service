@@ -20,6 +20,9 @@ import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
 import com.padle.core.padelcoreservice.exception.TournamentRegistrationException;
 import com.padle.core.padelcoreservice.mapper.TournamentMapper;
 import com.padle.core.padelcoreservice.mapper.TournamentRegistrationMapper;
+import com.padle.core.padelcoreservice.model.ParticipationRequest;
+import com.padle.core.padelcoreservice.model.ParticipationRequest.Trigger;
+import com.padle.core.padelcoreservice.model.enums.ParticipationStatus;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.Tournament;
@@ -87,6 +90,7 @@ public class TournamentService {
     private final AmericanoTeamRepository americanoTeamRepository;
     private final MessageSource messageSource;
     private final PairTermsService pairTerms;
+    private final ParticipationRequests participationRequests;
 
     @Value("${app.base-url:http://localhost:8080}")
     private String baseUrl;
@@ -231,7 +235,15 @@ public class TournamentService {
      * собственной регистрации игрока (не инварианты статуса самого турнира).
      */
     public record MyTournamentEntry(TournamentDto tournament, RegistrationStatus registrationStatus,
-                                     Integer waitlistPosition, LocalDateTime registrationDate) {}
+                                     Integer waitlistPosition, LocalDateTime registrationDate,
+                                     ParticipationStatus participationStatus,
+                                     boolean replacementNeeded) {
+        public MyTournamentEntry(TournamentDto tournament, RegistrationStatus registrationStatus,
+                                 Integer waitlistPosition, LocalDateTime registrationDate) {
+            this(tournament, registrationStatus, waitlistPosition, registrationDate,
+                    ParticipationStatus.NOT_REQUIRED, false);
+        }
+    }
 
     /**
      * Обзор «Мои мероприятия» для клиента 1Padel.App — только чтение, то же разбиение
@@ -258,12 +270,16 @@ public class TournamentService {
                 upcomingRegistrations.stream().map(TournamentRegistration::getTournament).toList())
                 .stream()
                 .collect(Collectors.toMap(TournamentDto::getId, dto -> dto));
+        var requests = participationRequests.current(upcomingRegistrations);
         List<MyTournamentEntry> upcoming = upcomingRegistrations.stream()
                 .map(r -> new MyTournamentEntry(
                         upcomingDtosByTournamentId.get(r.getTournament().getId()),
                         r.getStatus(),
                         r.getWaitlistPosition(),
-                        r.getRegistrationDate()))
+                        r.getRegistrationDate(),
+                        Optional.ofNullable(requests.get(r.getId())).map(ParticipationRequest::getStatus)
+                                .orElse(ParticipationStatus.NOT_REQUIRED),
+                        r.needsReplacementInMain()))
                 .sorted(Comparator.comparing(e -> e.tournament().getFechaInicio()))
                 .collect(Collectors.toList());
 
@@ -516,10 +532,29 @@ public class TournamentService {
             throw new TournamentRegistrationException("Cannot cancel registration after deadline");
         }
 
+        withdrawParticipant(tournament, registration, remainingPartner, playerId, reason);
+    }
+
+    void declineParticipation(TournamentRegistration row, long actorId) {
+        Tournament tournament = row.getTournament();
+        var remaining = findActivePairPartner(tournament.getId(), row);
+        if (remaining.isEmpty() && PairTermsService.accepted(row)) {
+            var quote = pairTerms.cancellation(tournament, row);
+            pairTerms.saveCancellation(row, actorId, quote);
+            cancelPairMembers(tournament, List.of(row), null, quote,
+                    CancellationContext.participant(actorId, Scope.PAIR, Reason.PAIR_WITHDRAWAL));
+            return;
+        }
+        withdrawParticipant(tournament, row, remaining, actorId, null);
+    }
+
+    private void withdrawParticipant(Tournament tournament, TournamentRegistration registration,
+                                     Optional<TournamentRegistration> remainingPartner, long actorId, String reason) {
+        Long tournamentId = tournament.getId();
         RegistrationStatus oldStatus = registration.getStatus();
 
         // Отменяем регистрацию
-        cancellations.cancel(List.of(registration),CancellationContext.participant(playerId,Scope.PARTICIPANT,Reason.PARTICIPANT_WITHDRAWAL),reason);
+        cancellations.cancel(List.of(registration),CancellationContext.participant(actorId,Scope.PARTICIPANT,Reason.PARTICIPANT_WITHDRAWAL),reason);
         registrationRepository.save(registration);
         remainingPartner.ifPresent(this::retainIncompletePair);
 
@@ -573,6 +608,7 @@ public class TournamentService {
         partner.setPartnerEmail(null);
         partner.setPartnerTelegram(null);
         partner.setMainPlayerId(partner.getPlayer().getId());
+        partner.setReplacementSearch(false);
         if (partner.getStatus() == RegistrationStatus.WAITLIST) {
             partner.setIsDoubleRegistration(false);
             partner.setWaitlistPosition(null);
@@ -616,7 +652,7 @@ public class TournamentService {
         int waitingPosition = 1;
         for (var pair : readyReservePairs(tournamentId)) {
             if (occupied < tournament.getCupoMax() && pair.stream().noneMatch(row -> deferred.contains(row.getId()))) {
-                confirmReservePair(pair, ++occupied, tournament);
+                confirmReservePair(pair, ++occupied, tournament, true);
             } else {
                 for (var row : pair) row.setWaitlistPosition(waitingPosition);
                 waitingPosition++;
@@ -642,12 +678,18 @@ public class TournamentService {
                 .toList();
     }
 
-    private void confirmReservePair(List<TournamentRegistration> pair, int position, Tournament tournament) {
+    private void confirmReservePair(List<TournamentRegistration> pair, int position, Tournament tournament,
+                                    boolean automatic) {
         for (var row : pair) {
             row.confirm();
             row.setPosition(position);
             row.setPartnerActionToken(null);
-            sendWaitlistAutoConfirmEmail(row, tournament);
+            if (automatic) {
+                participationRequests.open(row, Trigger.RESERVE);
+            }
+            if (!automatic || !participationRequests.sendsResponseEmail()) {
+                sendWaitlistAutoConfirmEmail(row, tournament);
+            }
         }
     }
 
@@ -1545,6 +1587,7 @@ public class TournamentService {
             var now = LocalDateTime.now();
             int position = registrationRepository.findMaxWaitlistPosition(tournamentId).orElse(0) + 1;
             pair.forEach(row -> {
+                participationRequests.close(row);
                 row.setQueuedAt(now);
                 row.moveToWaitlist(position);
             });
@@ -1602,7 +1645,7 @@ public class TournamentService {
             var pair = requirePairForMove(tournamentId, registration, RegistrationStatus.WAITLIST);
             int occupied = Math.toIntExact(registrationRepository.countConfirmedPairs(tournamentId));
             if (occupied >= tournament.getCupoMax()) throw reserveMoveError("registration.reserve.full");
-            confirmReservePair(pair, occupied + 1, tournament);
+            confirmReservePair(pair, occupied + 1, tournament, false);
             processDoublesWaitlist(tournament, Set.of());
             return;
         }

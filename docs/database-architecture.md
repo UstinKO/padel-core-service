@@ -1,7 +1,7 @@
 # Архитектура базы данных — padel-core-service
 
 > **СУБД:** PostgreSQL 15  
-> **Версия схемы:** v1.74
+> **Версия схемы:** v1.75
 > **Миграции:** Liquibase (YAML), файлы в `src/main/resources/db/changelog/versions/`  
 > **ddl-auto:** `none` — схема управляется только через Liquibase
 
@@ -264,6 +264,7 @@ owners_db ───────────────────────�
 | `player_id` | `BIGINT` | NOT NULL | — | FK → `player_padel_db.id` (главный игрок) |
 | `registration_date` | `TIMESTAMP` | NOT NULL | now() | Дата регистрации |
 | `queued_at` | `TIMESTAMP` | NULL | — | Время заявки в очереди парного турнира |
+| `replacement_search` | `BOOLEAN` | NOT NULL | false | Игрок в основе включил поиск замены |
 | `status` | `VARCHAR(20)` | NOT NULL | — | Статус регистрации (enum `RegistrationStatus`) |
 | `position` | `INTEGER` | NULL | — | Позиция в основном составе |
 | `partner_id` | `BIGINT` | NULL | — | FK → `player_padel_db.id` (партнёр-участник сайта) |
@@ -1003,3 +1004,23 @@ PK `(registration_id, version)` исключает два факта одног�
 ### Время очереди парных турниров
 
 Миграция `v1.74-doubles-queue-time` заполняет `queued_at` для парных турниров по дате основной записи. Для исторических взаимных пар без основной записи берётся более ранняя дата. Снятие старого статуса приглашения проверяется условием Liquibase: запрос на количество `WAITLIST_INVITED` должен вернуть ноль до обновления схемы.
+
+### Ответы на запрос участия
+
+Миграция `v1.75-participation-requests` создаёт `participation_requests_db` со ссылкой на регистрацию и её версию. Хранятся состояние ответа, причина запроса, допустимый оформитель гостя, время отправки и ответа. Частичный уникальный индекс оставляет один текущий запрос на регистрационную строку. Таблица `pair_proposal_responses_db` хранит исход обработанных предложений пары для повторных открытий.
+
+#### `participation_requests_db`
+
+| Колонка | Тип | Назначение |
+|---|---|---|
+| `id` | UUID | Ссылка на запрос |
+| `registration_id` | BIGINT | Регистрационная строка |
+| `registration_version` | BIGINT | Версия цикла регистрации |
+| `delegate_player_id` | BIGINT | Игрок с правом ответить за гостя |
+| `trigger_kind` | VARCHAR(24) | Перевод из резерва или замена |
+| `participation_status` | VARCHAR(16) | Ожидается ответ, подтверждено или отказ |
+| `requested_at` | TIMESTAMPTZ | Время создания |
+| `expires_at` | TIMESTAMPTZ | Срок действия ссылки |
+| `responded_at` | TIMESTAMPTZ | Время ответа |
+| `responded_by` | BIGINT | Кто ответил |
+| `superseded_at` | TIMESTAMPTZ | Время закрытия старого запроса |

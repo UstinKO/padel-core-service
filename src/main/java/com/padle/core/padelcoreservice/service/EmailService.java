@@ -242,6 +242,23 @@ public class EmailService {
         }
     }
 
+    @Async
+    public void sendParticipationRequestEmail(String to, String participant, String tournamentName,
+                                              java.util.UUID requestId, boolean delegated, Locale locale) {
+        try {
+            Context context = createEmailContext(locale);
+            context.setVariable("participant", participant);
+            context.setVariable("tournamentName", tournamentName);
+            context.setVariable("delegated", delegated);
+            context.setVariable("responseUrl", baseUrl + "/participacion/" + requestId);
+            String html = templateEngine.process("email/participation-request", context);
+            sendHtmlEmail(to, messageSource.getMessage("participation.email.subject",
+                    new Object[]{tournamentName}, locale), html);
+        } catch (Exception e) {
+            log.warn("Не удалось отправить запрос участия: type={}", e.getClass().getSimpleName());
+        }
+    }
+
     /**
      * Отправка письма о том, что мест больше нет
      */

@@ -264,6 +264,19 @@ public class TournamentRegistration {
                     || status == RegistrationStatus.WAITLIST);
     }
 
+    @Column(name = "replacement_search", nullable = false)
+    @Builder.Default
+    private boolean replacementSearch = false;
+
+    public boolean needsReplacementInMain() {
+        return isConfirmed() && Boolean.TRUE.equals(isActive) && Boolean.TRUE.equals(isDoubleRegistration)
+                && partner == null && mainPlayerId != null;
+    }
+
+    public boolean canFormPairThroughSearch() {
+        return isPairableSolo() || (needsReplacementInMain() && replacementSearch);
+    }
+
     public boolean isPairComplete() {
         return status == RegistrationStatus.PAIR_REGISTERED ||
                 (status == RegistrationStatus.CONFIRMED && partner != null);
