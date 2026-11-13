@@ -282,7 +282,7 @@ JWT-эндпоинты остаются для мобильного клиент
 - `PATCH /players/api/players/me/contact`
 - `GET /players/api/players/me/contact-status`
 
-При вынесении фронта: REST-методы остаются как есть, view-метод `GET /players/dashboard` удаляется.
+В production `/players/dashboard` отрисовывает React. Резервный `GET /legacy/players/dashboard` возвращает прежний шаблон и доступен только после входа.
 
 ---
 
