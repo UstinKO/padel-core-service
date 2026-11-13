@@ -26,7 +26,31 @@
     const recent = history.slice(-3);
     const matches = recent.reduce((total, event) => total + event.matches, 0);
     const wins = recent.reduce((total, event) => total + event.wins, 0);
-    panel.querySelector('[data-recent-wins]').textContent = `${percent.format(wins / matches)} · ${wins} / ${matches}`;
+    const card = panel.closest('.elo-preview-card');
+    const winRate = matches ? wins / matches : 0;
+    card.querySelector('[data-recent-wins]').textContent = `${percent.format(winRate)} · ${wins} / ${matches}`;
+    card.querySelector('[data-win-percent]').textContent = percent.format(winRate);
+    card.querySelector('.elo-preview-win-ring').style.setProperty('--win-angle', `${winRate * 360}deg`);
+
+    const recentEvents = panel.querySelector('[data-recent-events]');
+    recent.slice().reverse().forEach(event => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'elo-preview-event' + (event.change < 0 ? ' loss' : '');
+        const label = document.createElement('span');
+        label.textContent = `${event.category} · ${date.format(event.day)}`;
+        const detail = document.createElement('b');
+        detail.textContent = `${number.format(event.elo)} Elo`;
+        label.append(detail);
+        const change = document.createElement('strong');
+        change.textContent = `${signed.format(event.change)} Elo`;
+        button.append(label, change);
+        button.addEventListener('click', () => {
+            picker.selectedIndex = visible.indexOf(event);
+            showPoint();
+        });
+        recentEvents.append(button);
+    });
 
     function draw() {
         const width = canvas.clientWidth;
@@ -71,7 +95,19 @@
         const accent = style.getPropertyValue('--elo-line').trim();
         context.strokeStyle = accent;
         context.fillStyle = accent;
-        context.lineWidth = 2;
+        const fill = context.createLinearGradient(0, 0, 0, bottom);
+        fill.addColorStop(0, '#f1844740');
+        fill.addColorStop(1, '#f1844700');
+        context.beginPath();
+        context.moveTo(points[0][0], bottom);
+        points.forEach(([x, position]) => context.lineTo(x, position));
+        context.lineTo(points.at(-1)[0], bottom);
+        context.closePath();
+        context.fillStyle = fill;
+        context.fill();
+        context.fillStyle = accent;
+        context.lineWidth = 3;
+        context.lineJoin = 'round';
         context.beginPath();
         points.forEach(([x, position], i) => i ? context.lineTo(x, position) : context.moveTo(x, position));
         context.stroke();

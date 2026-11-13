@@ -47,7 +47,7 @@
     <th:block th:replace="~{fragments/analytics :: ga4}"></th:block>
     <th:block th:replace="~{fragments/analytics :: cookie-consent}"></th:block>
 </head>
-<body>
+<body th:classappend="${previewEloByPlayer != null and previewEloByPlayer.get(player.id) != null} ? 'elo-cabinet' : ''">
 <!-- Header con navegación para usuarios autenticados -->
 <header class="header">
     <div class="container">
@@ -105,7 +105,7 @@
 <main class="dashboard-main">
     <div class="container">
         <!-- Welcome Banner -->
-        <div class="welcome-card">
+        <div class="welcome-card" th:unless="${previewEloByPlayer != null and previewEloByPlayer.get(player.id) != null}">
             <div class="welcome-content">
                 <div class="welcome-avatar">
                     <i class="fas fa-user-circle"></i>
