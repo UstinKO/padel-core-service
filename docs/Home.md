@@ -11,6 +11,7 @@ Spring Boot монолит для управления падель-турнир
 
 | Раздел | Описание |
 |--------|----------|
+| [Организация бэклога](../.agents/ISSUE_ORGANIZATION.md) | Выбор Milestone при создании задачи, новый раздел при необходимости; [закреплённый индекс #1055](https://github.com/UstinKO/padel-core-service/issues/1055) |
 | [Архитектура базы данных](database-architecture) | Все 21 таблица, столбцы, типы, enum-справочники, ERD, история миграций |
 | [Доменный обзор](domain-overview) | 10 доменов, каждый HTTP-эндпоинт с описанием, анализ для декомпозиции в микросервисы |
 | [Auth Flow](auth-flow) | Form Login, JWT, Google OAuth2, rate limiting, защита регистрации |
