@@ -4,6 +4,7 @@
 <div th:fragment="leaderboard" id="elo-leaderboard" class="container elo-preview">
     <h1 th:text="#{elo.preview.heading}">Ranking Elo</h1>
     <p th:text="#{elo.preview.asOf(${#temporals.format(previewElo.asOf, 'dd/MM/yyyy')})}"></p>
+    <p th:if="${previewEloStartStep > 0}" th:text="#{elo.preview.seedStep(${previewEloStartStep})}"></p>
     <form class="elo-preview-filters" hidden>
         <label>
             <span th:text="#{elo.preview.category}"></span>
@@ -32,12 +33,12 @@
         <table>
             <thead>
             <tr>
-                <th scope="col" th:text="#{elo.preview.categoryPlace}"></th>
+                <th scope="col" th:text="${previewEloStartStep > 0} ? #{elo.preview.eloPlace} : #{elo.preview.categoryPlace}"></th>
                 <th scope="col" th:text="#{elo.preview.player}"></th>
                 <th scope="col" th:text="#{elo.preview.category}"></th>
                 <th scope="col" th:text="#{elo.preview.status}"></th>
                 <th scope="col">Elo</th>
-                <th scope="col" th:text="#{elo.preview.overallPlace}"></th>
+                <th scope="col" th:text="${previewEloStartStep > 0} ? #{elo.preview.categoryPlace} : #{elo.preview.overallPlace}"></th>
             </tr>
             </thead>
             <tbody>
@@ -46,18 +47,18 @@
                 th:data-status="${row.confirmed ? 'confirmed' : 'provisional'}"
                 th:data-elo="${row.elo}" th:data-category-place="${row.categoryPlace}"
                 th:data-category-size="${row.categorySize}" th:data-overall-place="${row.overallPlace}">
-                <td th:text="${row.categoryPlace}"></td>
+                <td th:text="${previewEloStartStep > 0 ? row.overallPlace : row.categoryPlace}"></td>
                 <th scope="row" th:text="${row.name}"></th>
                 <td th:text="${row.category}"></td>
                 <td><span class="elo-preview-badge" th:classappend="${row.confirmed ? 'confirmed' : 'provisional'}"
                           th:text="${row.confirmed} ? #{elo.preview.confirmed} : #{elo.preview.provisional}"></span></td>
                 <td th:text="${#numbers.formatDecimal(row.elo, 1, 2)}"></td>
-                <td th:text="${row.overallPlace} ?: '—'"></td>
+                <td th:text="${previewEloStartStep > 0 ? row.categoryPlace : row.overallPlace} ?: '—'"></td>
             </tr>
             </tbody>
         </table>
     </div>
-    <p class="elo-preview-note" th:text="#{elo.preview.explanation}"></p>
+    <p class="elo-preview-note" th:text="${previewEloStartStep > 0} ? #{elo.preview.eloExplanation} : #{elo.preview.explanation}"></p>
 </div>
 
 <th:block th:fragment="playerCard">
@@ -72,9 +73,9 @@
         <div><dt>Elo</dt><dd data-stat="elo" th:text="${#numbers.formatDecimal(eloRow.elo, 1, 2)}"></dd></div>
         <div><dt th:text="#{elo.preview.categoryPlace}"></dt>
             <dd data-stat="category-place" th:text="#{elo.preview.placeOf(${eloRow.categoryPlace},${eloRow.categorySize})}"></dd></div>
-        <div><dt th:text="#{elo.preview.overallPlace}"></dt>
-            <dd data-stat="overall-place" th:classappend="${eloRow.confirmed ? '' : 'pending'}"
-                th:text="${eloRow.confirmed} ? ${eloRow.overallPlace} : #{elo.preview.afterConfirmation}"></dd></div>
+        <div><dt th:text="${previewEloStartStep > 0} ? #{elo.preview.eloPlace} : #{elo.preview.overallPlace}"></dt>
+            <dd data-stat="overall-place" th:classappend="${eloRow.overallPlace == null ? 'pending' : ''}"
+                th:text="${eloRow.overallPlace != null} ? ${eloRow.overallPlace} : #{elo.preview.afterConfirmation}"></dd></div>
     </dl>
     <div th:if="${!eloRow.confirmed and eloRow.progress != null}" th:object="${eloRow.progress}" class="elo-preview-progress">
         <strong th:text="#{elo.preview.progress(${eloRow.category})}"></strong>

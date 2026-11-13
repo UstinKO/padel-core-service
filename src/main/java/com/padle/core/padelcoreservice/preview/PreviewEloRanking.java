@@ -51,7 +51,8 @@ public class PreviewEloRanking {
     public void ranking(Model model) {
         var current = history.map(source -> source.calculate(snapshot.asOf())).orElse(snapshot);
         model.addAttribute("previewElo", current);
-        model.addAttribute("previewEloCategories", current.rows().stream().map(Row::category).distinct().toList());
+        model.addAttribute("previewEloStartStep", history.map(PreviewEloHistory::startStep).orElse(0));
+        model.addAttribute("previewEloCategories", current.rows().stream().map(Row::category).distinct().sorted().toList());
         model.addAttribute("previewEloByPlayer", current.rows().stream()
                 .collect(Collectors.toUnmodifiableMap(Row::id, Function.identity())));
     }

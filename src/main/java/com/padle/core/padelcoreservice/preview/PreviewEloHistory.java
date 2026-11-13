@@ -29,13 +29,20 @@ public class PreviewEloHistory {
     private final Map<String, PreviewEloReplay.Game> historicalGames;
     private final JdbcClient jdbc;
     private final PreviewEloLiveEvents liveEvents;
-    private final PreviewEloReplay replay = new PreviewEloReplay();
+    private final PreviewEloReplay replay;
+    private final boolean includeTestResults;
+    private final int startStep;
 
     public PreviewEloHistory(ObjectMapper mapper, @Value("${app.preview.elo-history}") Path path, JdbcClient jdbc,
-                             PreviewEloLiveEvents liveEvents, PreviewConfiguration.DatabaseIdentity identity)
+                             PreviewEloLiveEvents liveEvents, PreviewConfiguration.DatabaseIdentity identity,
+                             @Value("${app.preview.elo-start-step:0}") int startStep,
+                             @Value("${app.preview.elo-include-test-results:true}") boolean includeTestResults)
             throws IOException {
         this.jdbc = jdbc;
         this.liveEvents = liveEvents;
+        this.startStep = startStep;
+        this.includeTestResults = includeTestResults;
+        this.replay = new PreviewEloReplay(startStep);
         try (var input = Files.newInputStream(path)) {
             history = mapper.readValue(input, PreviewEloReplay.History.class);
         }
@@ -57,8 +64,15 @@ public class PreviewEloHistory {
 
     private record Score(int left, int right) { }
 
+    int startStep() {
+        return startStep;
+    }
+
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public PreviewEloRanking.Snapshot calculate(LocalDate cutoff) {
+        if (!includeTestResults) {
+            return replay.replay(cutoff, history.names(), history.events());
+        }
         var corrections = jdbc.sql("SELECT match_key,left_score,right_score FROM ui_preview.elo_score_corrections")
                 .query((row, index) -> Map.entry(row.getString(1), new Score(row.getInt(2), row.getInt(3))))
                 .list().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));

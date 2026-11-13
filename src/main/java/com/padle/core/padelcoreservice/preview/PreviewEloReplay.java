@@ -19,6 +19,15 @@ final class PreviewEloReplay {
     private static final double K = 24;
     private static final double TIE_EPSILON = 1e-9;
     private static final int NO_CATEGORY = 99;
+    private final int startStep;
+
+    PreviewEloReplay() {
+        this(0);
+    }
+
+    PreviewEloReplay(int startStep) {
+        this.startStep = startStep;
+    }
 
     record Game(String key, int batch, List<Long> ids, int left, int right, boolean verifiedFinal) {
         Game {
@@ -68,11 +77,12 @@ final class PreviewEloReplay {
     private static final class Player {
         final long id;
         final Map<Integer, Record> levels = new HashMap<>();
-        double elo = START;
+        double elo;
         int confirmed = NO_CATEGORY;
 
-        Player(long id) {
+        Player(long id, double elo) {
             this.id = id;
+            this.elo = elo;
         }
 
         int category() {
@@ -92,6 +102,11 @@ final class PreviewEloReplay {
         var events = input.stream().sorted(Comparator.comparing(Event::day)
                 .thenComparing(event -> eventSortKey(event.key()))).toList();
         for (var day : events.stream().collect(Collectors.groupingBy(Event::day, LinkedHashMap::new, Collectors.toList())).values()) {
+            for (var event : day) {
+                double start = event.level() == NO_CATEGORY ? START : START + startStep * (8 - event.level());
+                event.games().forEach(game -> game.ids().forEach(id -> players.computeIfAbsent(id,
+                        key -> new Player(key, start))));
+            }
             for (var event : day) {
                 applyEvent(event, players);
             }
@@ -118,7 +133,7 @@ final class PreviewEloReplay {
         for (var batch : batches.values()) {
             var changes = new HashMap<Player, Double>();
             for (var game : batch) {
-                var sides = game.ids().stream().map(id -> players.computeIfAbsent(id, Player::new)).toList();
+                var sides = game.ids().stream().map(players::get).toList();
                 applyGame(game, sides, changes, stats);
                 if (game.verifiedFinal()) {
                     finalists.addAll(game.ids());
@@ -200,7 +215,23 @@ final class PreviewEloReplay {
                         BigDecimal.valueOf(player.elo), categoryPlace, sorted.size(), place, progress(player)));
             }
         }
-        return List.copyOf(rows);
+        return startStep > 0 ? rankByElo(rows) : List.copyOf(rows);
+    }
+
+    private List<PreviewEloRanking.Row> rankByElo(List<PreviewEloRanking.Row> rows) {
+        var sorted = rows.stream().sorted(Comparator.comparing(PreviewEloRanking.Row::elo).reversed()
+                .thenComparingLong(PreviewEloRanking.Row::id)).toList();
+        var result = new ArrayList<PreviewEloRanking.Row>(sorted.size());
+        int place = 0;
+        for (int i = 0; i < sorted.size(); i++) {
+            var row = sorted.get(i);
+            if (i == 0 || Math.abs(row.elo().doubleValue() - sorted.get(i - 1).elo().doubleValue()) > TIE_EPSILON) {
+                place = i + 1;
+            }
+            result.add(new PreviewEloRanking.Row(row.id(), row.name(), row.category(), row.confirmed(), row.elo(),
+                    row.categoryPlace(), row.categorySize(), place, row.progress()));
+        }
+        return List.copyOf(result);
     }
 
     private boolean tied(Player first, Player second) {
