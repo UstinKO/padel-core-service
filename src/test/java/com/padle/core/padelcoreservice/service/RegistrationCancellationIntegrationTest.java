@@ -1355,6 +1355,141 @@ class RegistrationCancellationIntegrationTest {
         }
     }
 
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void adminRebooksPairWithoutLosingHistory(boolean withAttribution) throws Exception {
+        var event = tournament(5);
+        event.setModalidad(Modalidad.DOBLES);
+        event.setTipo(TournamentType.AMERICANO_TEAMS);
+        var first = player();
+        var former = player();
+        var replacement = player();
+        UUID oldBooking = UUID.randomUUID();
+        var original = pairMember(event, first, former, first.getId(), oldBooking);
+        var oldPartner = pairMember(event, former, first, first.getId(), oldBooking);
+        var previousPayment = payments.saveAndFlush(Payment.builder().registration(original).pairBookingId(oldBooking)
+                .amount(BigDecimal.TEN).status(PaymentStatus.PAID).notes("PARTNER_PAYMENT").build());
+        service.adminRemovePlayerRegistration(event.getId(), first.getId());
+        entities.flush();
+        if (withAttribution) {
+            jdbc.update("UPDATE marketing_registrations_db SET first_touch = 'original' WHERE registration_id = ?", original.getId());
+        } else {
+            jdbc.update("DELETE FROM marketing_registrations_db WHERE registration_id = ?", original.getId());
+        }
+        var newPartner = withAttribution ? replacement : former;
+        String body = "{\"playerIds\":[%d,%d]}".formatted(first.getId(), newPartner.getId());
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+
+        String route = "/test/tournaments/" + event.getId();
+        mvc.perform(get("/test/tournaments/available-players-for-pairs").param("tournamentId", event.getId().toString())
+                        .with(user("admin").roles("SUPER_ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.players[?(@.id == " + first.getId() + ")]").isNotEmpty());
+        for (String action : List.of("/register-pair-with-players", "/register-pair")) {
+            mvc.perform(post(route + action).with(user("admin").roles("SUPER_ADMIN")).with(csrf())
+                            .contentType("application/json").content(body))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.tournamentStats.confirmed").value(1))
+                    .andExpect(jsonPath("$.tournamentStats.totalRegistrations").value(2));
+        }
+        assertThat(jdbc.queryForObject("SELECT partner_id FROM tournament_registrations_db WHERE id = ?", Long.class, original.getId()))
+                .isEqualTo(newPartner.getId());
+        assertThat(jdbc.queryForObject("SELECT pair_booking_id FROM tournament_registrations_db WHERE id = ?", UUID.class, original.getId()))
+                .isNotEqualTo(oldBooking);
+        assertThat(jdbc.queryForObject("SELECT pair_booking_id FROM payments_db WHERE id = ?", UUID.class, previousPayment.getId()))
+                .isEqualTo(oldBooking);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM registration_cancellation_members WHERE registration_id = ?", Integer.class, original.getId()))
+                .isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT cancellation_version FROM tournament_registrations_db WHERE id = ?", Long.class, original.getId()))
+                .isEqualTo(1L);
+        assertThat(jdbc.queryForObject("SELECT is_active FROM tournament_registrations_db WHERE id = ?", Boolean.class, oldPartner.getId()))
+                .isEqualTo(!withAttribution);
+        if (withAttribution) {
+            assertThat(jdbc.queryForObject("SELECT first_touch FROM marketing_registrations_db WHERE registration_id = ?", String.class, original.getId()))
+                    .isEqualTo("original");
+        }
+    }
+
+    @Test
+    void adminGuestBookingRollsBackOnFailureAndReplaysWithoutNewGuest() throws Exception {
+        var event = tournament(1);
+        event.setModalidad(Modalidad.DOBLES);
+        event.setTipo(TournamentType.AMERICANO_TEAMS);
+        var booker = player();
+        var former = player();
+        var original = pairMember(event, booker, former, booker.getId(), UUID.randomUUID());
+        service.adminRemovePlayerRegistration(event.getId(), booker.getId());
+        var guestName = "Guest-" + UUID.randomUUID();
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+
+        String route = "/test/tournaments/" + event.getId() + "/register-guest-pair";
+        String payload = "{\"player1\":{\"id\":%d},\"player2\":{\"nombre\":\"%s\"}}".formatted(booker.getId(), guestName);
+        String replayKey = UUID.randomUUID().toString();
+        String checkName = "qa_manual_registration";
+        jdbc.execute("ALTER TABLE tournament_registrations_db ADD CONSTRAINT " + checkName
+                + " CHECK (tournament_id <> " + event.getId() + " OR player_id = " + booker.getId() + ") NOT VALID");
+        try {
+            mvc.perform(post(route).with(user("admin").roles("SUPER_ADMIN")).with(csrf())
+                            .header("Idempotency-Key", replayKey).locale(Locale.ENGLISH)
+                            .contentType("application/json").content(payload))
+                    .andExpect(status().isInternalServerError())
+                    .andExpect(jsonPath("$.code").value("technical"))
+                    .andExpect(jsonPath("$.requestId").exists())
+                    .andExpect(content().string(not(containsString(checkName))));
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM player_padel_db WHERE nombre = ?", Integer.class, guestName)).isZero();
+            assertThat(jdbc.queryForObject("SELECT is_active FROM tournament_registrations_db WHERE id = ?", Boolean.class, original.getId())).isFalse();
+        } finally {
+            jdbc.execute("ALTER TABLE tournament_registrations_db DROP CONSTRAINT " + checkName);
+        }
+        for (int attempt = 0; attempt < 2; attempt++) {
+            mvc.perform(post(route).with(user("admin").roles("SUPER_ADMIN")).with(csrf())
+                            .header("Idempotency-Key", replayKey).contentType("application/json").content(payload))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.tournamentStats.confirmed").value(1));
+        }
+        var guestId = jdbc.queryForObject("SELECT id FROM player_padel_db WHERE nombre = ?", Long.class, guestName);
+        playerIds.add(guestId);
+        assertThat(jdbc.queryForObject("SELECT partner_id FROM tournament_registrations_db WHERE id = ?", Long.class, original.getId()))
+                .isEqualTo(guestId);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM tournament_registrations_db WHERE tournament_id = ? AND is_active",
+                Integer.class, event.getId())).isEqualTo(2);
+        mvc.perform(post(route).with(user("admin").roles("SUPER_ADMIN")).with(csrf())
+                        .header("Idempotency-Key", replayKey).contentType("application/json").content(payload.replace(guestName, "Other")))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("request_conflict"));
+    }
+
+    @Test
+    void adminRebooksCanchaAbiertaAfterRemovalWithAttribution() throws Exception {
+        var event = tournament(4);
+        var row = registration(event, RegistrationStatus.CONFIRMED);
+        service.adminRemovePlayerRegistration(event.getId(), row.getPlayer().getId());
+        entities.flush();
+        jdbc.update("UPDATE marketing_registrations_db SET first_touch = 'original' WHERE registration_id = ?", row.getId());
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+
+        var route = "/test/tournaments/" + event.getId() + "/register-guest-player";
+        var payload = "{\"id\":%d}".formatted(row.getPlayer().getId());
+        mvc.perform(post(route).with(user(row.getPlayer())).with(csrf())
+                        .contentType("application/json").content(payload))
+                .andExpect(status().is3xxRedirection());
+        assertThat(jdbc.queryForObject("SELECT is_active FROM tournament_registrations_db WHERE id = ?", Boolean.class, row.getId())).isFalse();
+        mvc.perform(post(route).with(user("admin").roles("SUPER_ADMIN")).with(csrf())
+                        .contentType("application/json").content(payload))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.tournamentStats.confirmed").value(1));
+        assertThat(jdbc.queryForObject("SELECT is_active FROM tournament_registrations_db WHERE id = ?", Boolean.class, row.getId())).isTrue();
+        assertThat(jdbc.queryForObject("SELECT first_touch FROM marketing_registrations_db WHERE registration_id = ?", String.class, row.getId()))
+                .isEqualTo("original");
+    }
+
+    private TournamentRegistration pairMember(Tournament event, PlayerPadel player, PlayerPadel partner,
+                                              Long mainPlayerId, UUID booking) {
+        return registrations.saveAndFlush(TournamentRegistration.builder().tournament(event).player(player)
+                .partner(partner).pairBookingId(booking).mainPlayerId(mainPlayerId).isDoubleRegistration(true)
+                .status(RegistrationStatus.CONFIRMED).position(1).build());
+    }
+
     private Tournament tournament(int capacity) {
         Club club = clubs.saveAndFlush(Club.builder().nombre("Клуб отмены " + UUID.randomUUID()).isActive(true).build());
         clubIds.add(club.getId());
