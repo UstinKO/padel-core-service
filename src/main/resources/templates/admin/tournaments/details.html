@@ -1218,7 +1218,7 @@
                         <span th:text="#{admin.tournaments.details.table.inscriptions}">Inscripciones</span>
                         <span class="reg-badge-count"
                               th:if="${tournament.modalidad.name() == 'DOBLES'}"
-                              th:text="${confirmedRegs.size() / 2}"></span>
+                              th:text="${confirmedRegs.size()}"></span>
                         <span th:if="${tournament.modalidad.name() == 'DOBLES'}"
                               style="font-size:.78rem;font-weight:400;color:#64748b;margin-left:.25rem;"
                               th:text="'/ ' + ${effectiveCupoMax} + ' ' + #{admin.tournaments.details.pairs_label}"></span>
