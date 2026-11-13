@@ -282,7 +282,7 @@ JWT-эндпоинты остаются для мобильного клиент
 - `PATCH /players/api/players/me/contact`
 - `GET /players/api/players/me/contact-status`
 
-В production `/players/dashboard` отрисовывает React. Резервный `GET /legacy/players/dashboard` возвращает прежний шаблон и доступен только после входа.
+Оба адреса, `GET /players/dashboard` и `GET /legacy/players/dashboard`, открывают шаблон кабинета после входа.
 
 ---
 
