@@ -2,6 +2,12 @@ package com.padle.core.padelcoreservice.controller.test;
 
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.service.TournamentService;
+import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
+import com.padle.core.padelcoreservice.security.RequestIdFilter;
+import org.slf4j.MDC;
+import org.springframework.context.MessageSource;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.context.i18n.LocaleContextHolder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -15,11 +21,16 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Slf4j
 @Controller
@@ -29,6 +40,8 @@ public class TestTournamentController {
 
     private final TournamentService tournamentService;
     private final DataSource dataSource;
+    private final MessageSource messages;
+    private final PasswordEncoder passwordEncoder;
 
     /**
      * Главная страница со списком всех турниров
@@ -200,9 +213,10 @@ public class TestTournamentController {
             result.put("tournamentStats", stats);
 
         } catch (Exception e) {
-            log.error("Ошибка при очистке", e);
-            result.put("success", false);
-            result.put("message", "Ошибка: " + e.getMessage());
+            if (e instanceof SQLException sqlFailure && "23503".equals(sqlFailure.getSQLState())) {
+                return registrationResponse(409, "linked_history");
+            }
+            return registrationFailed(tournamentId, e);
         }
 
         return ResponseEntity.ok(result);
@@ -376,7 +390,7 @@ public class TestTournamentController {
                 try {
                     // Проверяем, не зарегистрирован ли уже
                     String checkSql = "SELECT status, waitlist_position FROM tournament_registrations_db " +
-                            "WHERE tournament_id = ? AND player_id = ?";
+                            "WHERE tournament_id = ? AND player_id = ? AND is_active";
                     boolean alreadyRegistered = false;
                     try (PreparedStatement checkPs = conn.prepareStatement(checkSql)) {
                         checkPs.setLong(1, tournamentId);
@@ -406,8 +420,11 @@ public class TestTournamentController {
                         if ((boolean) regResult.get("success")) {
                             successCount++;
                             registered.add(regResult);
-                            confirmed++; // Увеличиваем счетчик для следующего игрока
-                            log.debug("✅ Зарегистрирован игрок {} в основной состав", playerId);
+                            confirmed++;
+                        } else if ("already_registered".equals(regResult.get("reason"))) {
+                            skipCount++;
+                        } else {
+                            errors.add(regResult);
                         }
                     } else {
                         // Мест нет - добавляем в лист ожидания
@@ -420,11 +437,7 @@ public class TestTournamentController {
                         }
                     }
                 } catch (Exception e) {
-                    log.error("Ошибка при регистрации игрока {}: {}", playerId, e.getMessage());
-                    Map<String, Object> errorInfo = new HashMap<>();
-                    errorInfo.put("playerId", playerId);
-                    errorInfo.put("error", e.getMessage());
-                    errors.add(errorInfo);
+                    errors.add(registrationErrorDetails(tournamentId, playerId, e));
                 }
             }
 
@@ -595,152 +608,6 @@ public class TestTournamentController {
     }
 
     /**
-     * Регистрация пары на турнир (игроки выбирают себе пару сами)
-     */
-    @PostMapping("/{tournamentId}/register-pair-with-players")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> registerPairWithPlayers(
-            @PathVariable Long tournamentId,
-            @RequestBody Map<String, Object> request) {
-
-        log.info("Регистрация пары на турнир: {}", tournamentId);
-
-        Map<String, Object> result = new HashMap<>();
-        List<Integer> playerIdsInt = (List<Integer>) request.get("playerIds");
-
-        if (playerIdsInt == null || playerIdsInt.size() != 2) {
-            result.put("success", false);
-            result.put("message", "Для парного турнира нужно выбрать ровно двух игроков");
-            return ResponseEntity.badRequest().body(result);
-        }
-
-        List<Long> playerIds = new ArrayList<>();
-        for (Integer id : playerIdsInt) {
-            playerIds.add(id.longValue());
-        }
-
-        log.info("Регистрируем пару с игроками: {}", playerIds);
-
-        try (Connection conn = dataSource.getConnection()) {
-            // Проверяем существование турнира
-            TournamentDto tournament = tournamentService.getTournamentDtoById(tournamentId)
-                    .orElse(null);
-
-            if (tournament == null) {
-                result.put("success", false);
-                result.put("message", "Турнир с ID " + tournamentId + " не найден");
-                return ResponseEntity.badRequest().body(result);
-            }
-
-            // Проверяем, что турнир парный
-            if (!"DOBLES".equals(tournament.getModalidad().name())) {
-                result.put("success", false);
-                result.put("message", "Этот турнир не является парным");
-                return ResponseEntity.badRequest().body(result);
-            }
-
-            // Проверяем свободные места
-            Map<String, Object> currentStats = getTournamentStats(conn, tournamentId);
-            int confirmed = (int) currentStats.getOrDefault("confirmed", 0);
-            int available = tournament.getCupoMax() - confirmed;
-
-            if (available < 1) {
-                result.put("success", false);
-                result.put("message", "Нет свободных мест в турнире");
-                return ResponseEntity.badRequest().body(result);
-            }
-
-            // Проверяем, не зарегистрированы ли уже эти игроки (только среди активных
-            // регистраций — is_active=false значит игрок ранее отменился, это не должно
-            // блокировать повторную регистрацию)
-            List<String> alreadyRegistered = new ArrayList<>();
-            for (Long playerId : playerIds) {
-                String checkSql = "SELECT p.nombre, p.apellido FROM tournament_registrations_db r " +
-                        "JOIN player_padel_db p ON p.id = r.player_id " +
-                        "WHERE r.tournament_id = ? AND r.player_id = ? AND r.is_active = true";
-                try (PreparedStatement checkPs = conn.prepareStatement(checkSql)) {
-                    checkPs.setLong(1, tournamentId);
-                    checkPs.setLong(2, playerId);
-                    ResultSet rs = checkPs.executeQuery();
-                    if (rs.next()) {
-                        alreadyRegistered.add(rs.getString("nombre") + " " + rs.getString("apellido"));
-                    }
-                }
-            }
-
-            if (!alreadyRegistered.isEmpty()) {
-                result.put("success", false);
-                result.put("message", "Следующие игроки уже зарегистрированы: " + String.join(", ", alreadyRegistered));
-                return ResponseEntity.badRequest().body(result);
-            }
-
-            // Удаляем неактивные (отменённые) записи этих игроков по этому турниру —
-            // иначе INSERT ниже упадёт на уникальном ограничении uk_tournament_player
-            for (Long playerId : playerIds) {
-                deleteStaleInactiveRegistration(conn, tournamentId, playerId);
-            }
-
-            // Получаем следующий position
-            String maxPosSql = "SELECT COALESCE(MAX(position), 0) FROM tournament_registrations_db " +
-                    "WHERE tournament_id = ?";
-            int nextPosition = 1;
-            try (PreparedStatement maxPs = conn.prepareStatement(maxPosSql)) {
-                maxPs.setLong(1, tournamentId);
-                ResultSet rs = maxPs.executeQuery();
-                if (rs.next()) {
-                    nextPosition = rs.getInt(1) + 1;
-                }
-            }
-
-            // Регистрируем обоих игроков как одну команду
-            String insertSql = "INSERT INTO tournament_registrations_db " +
-                    "(tournament_id, player_id, registration_date, status, position, is_active, is_double_registration, main_player_id) " +
-                    "VALUES (?, ?, ?, 'CONFIRMED', ?, true, true, ?)";
-
-            Long mainPlayerId = playerIds.get(0); // первый игрок — главный в паре
-
-            List<Map<String, Object>> registeredPlayers = new ArrayList<>();
-            for (Long playerId : playerIds) {
-                try (PreparedStatement ps = conn.prepareStatement(insertSql)) {
-                    ps.setLong(1, tournamentId);
-                    ps.setLong(2, playerId);
-                    ps.setObject(3, LocalDateTime.now());
-                    ps.setInt(4, nextPosition);
-                    ps.setLong(5, mainPlayerId);
-
-                    int inserted = ps.executeUpdate();
-                    if (inserted > 0) {
-                        Map<String, Object> playerInfo = new HashMap<>();
-                        playerInfo.put("playerId", playerId);
-                        playerInfo.put("position", nextPosition);
-                        registeredPlayers.add(playerInfo);
-                    }
-                }
-            }
-
-            // Получаем обновленную статистику
-            Map<String, Object> stats = getTournamentStats(conn, tournamentId);
-
-            result.put("success", true);
-            result.put("message", "Пара успешно зарегистрирована");
-            result.put("tournamentId", tournamentId);
-            result.put("position", nextPosition);
-            result.put("registeredPlayers", registeredPlayers);
-            result.put("tournamentStats", stats);
-
-            log.info("Пара успешно зарегистрирована на позицию {}", nextPosition);
-
-        } catch (Exception e) {
-            log.error("Критическая ошибка при регистрации пары", e);
-            result.put("success", false);
-            result.put("message", "Ошибка: " + e.getMessage());
-            return ResponseEntity.internalServerError().body(result);
-        }
-
-        return ResponseEntity.ok(result);
-    }
-
-    /**
      * Получение списка доступных игроков для формирования пар
      */
     @GetMapping("/available-players-for-pairs")
@@ -752,11 +619,11 @@ public class TestTournamentController {
 
         log.info("Запрос доступных игроков для формирования пар, турнир ID: {}", tournamentId);
 
-        // Показываем всех игроков из БД (без фильтра по activo/email_confirmado — это инструмент администратора)
+        // Отменённая заявка не исключает активный профиль из выбора.
         String sql = "SELECT p.id, p.nombre, p.apellido, p.email, p.telefono " +
                 "FROM player_padel_db p " +
-                "WHERE p.id NOT IN ( " +
-                "    SELECT player_id FROM tournament_registrations_db WHERE tournament_id = ? " +
+                "WHERE p.activo AND p.id NOT IN ( " +
+                "    SELECT player_id FROM tournament_registrations_db WHERE tournament_id = ? AND is_active " +
                 ") " +
                 "ORDER BY p.nombre, p.apellido";
 
@@ -1246,7 +1113,7 @@ public class TestTournamentController {
                 "FROM player_padel_db p " +
                 "WHERE p.activo = true AND p.email_confirmado = true " +
                 "AND p.id NOT IN ( " +
-                "    SELECT player_id FROM tournament_registrations_db WHERE tournament_id = ? " +
+                "    SELECT player_id FROM tournament_registrations_db WHERE tournament_id = ? AND is_active " +
                 ") " +
                 "ORDER BY p.nombre, p.apellido";
 
@@ -1308,407 +1175,343 @@ public class TestTournamentController {
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * Регистрация гостевой пары (один или оба игрока не в базе данных)
-     */
+    public record ManualPlayer(Long id, String nombre, String apellido, String telefono) {}
+    public record ManualPair(ManualPlayer player1, ManualPlayer player2) {}
+    public record SelectedPair(List<Long> playerIds) {}
+
     @PostMapping("/{tournamentId}/register-guest-pair")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> registerGuestPair(
-            @PathVariable Long tournamentId,
-            @RequestBody Map<String, Object> request) {
-
-        log.info("Регистрация гостевой пары на турнир: {}", tournamentId);
-
-        Map<String, Object> result = new HashMap<>();
-
-        try (Connection conn = dataSource.getConnection()) {
-            TournamentDto tournament = tournamentService.getTournamentDtoById(tournamentId).orElse(null);
-            if (tournament == null) {
-                result.put("success", false);
-                result.put("message", "Турнир не найден");
-                return ResponseEntity.badRequest().body(result);
-            }
-
-            if (!"DOBLES".equals(tournament.getModalidad().name())) {
-                result.put("success", false);
-                result.put("message", "Гостевая пара только для парных турниров");
-                return ResponseEntity.badRequest().body(result);
-            }
-
-            Map<String, Object> currentStats = getTournamentStats(conn, tournamentId);
-            int confirmed = (int) currentStats.getOrDefault("confirmed", 0);
-            if (confirmed >= tournament.getCupoMax()) {
-                result.put("success", false);
-                result.put("message", "Нет свободных мест в турнире");
-                return ResponseEntity.badRequest().body(result);
-            }
-
-            Map<String, Object> p1Data = (Map<String, Object>) request.get("player1");
-            Map<String, Object> p2Data = (Map<String, Object>) request.get("player2");
-
-            if (p1Data == null || p2Data == null) {
-                result.put("success", false);
-                result.put("message", "Данные обоих игроков обязательны");
-                return ResponseEntity.badRequest().body(result);
-            }
-
-            // Сначала проверяем игроков с явным ID — до создания гостевых записей,
-            // чтобы не оставлять осиротевших записей при ошибке
-            for (Map<String, Object> pData : List.of(p1Data, p2Data)) {
-                Object idObj = pData.get("id");
-                if (idObj != null) {
-                    long existingId = ((Number) idObj).longValue();
-                    if (existingId > 0) {
-                        // Только среди активных — is_active=false значит игрок ранее отменился
-                        String checkSql = "SELECT p.nombre, p.apellido FROM tournament_registrations_db r " +
-                                "JOIN player_padel_db p ON p.id = r.player_id " +
-                                "WHERE r.tournament_id=? AND r.player_id=? AND r.is_active = true";
-                        try (PreparedStatement ps = conn.prepareStatement(checkSql)) {
-                            ps.setLong(1, tournamentId);
-                            ps.setLong(2, existingId);
-                            ResultSet rs = ps.executeQuery();
-                            if (rs.next()) {
-                                String name = rs.getString("nombre") + " " + rs.getString("apellido");
-                                result.put("success", false);
-                                result.put("message", "Игрок " + name.trim() + " уже зарегистрирован в этом турнире");
-                                return ResponseEntity.badRequest().body(result);
-                            }
-                        }
-                    }
-                }
-            }
-
-            Long player1Id = resolveOrCreateGuestPlayer(conn, p1Data);
-            Long player2Id = resolveOrCreateGuestPlayer(conn, p2Data);
-
-            // Финальная проверка — на случай если resolveOrCreate вернул уже зарегистрированного игрока
-            // (например по телефону); только среди активных, как и выше
-            for (Long pid : List.of(player1Id, player2Id)) {
-                String checkSql = "SELECT p.nombre, p.apellido FROM tournament_registrations_db r " +
-                        "JOIN player_padel_db p ON p.id = r.player_id " +
-                        "WHERE r.tournament_id=? AND r.player_id=? AND r.is_active = true";
-                try (PreparedStatement ps = conn.prepareStatement(checkSql)) {
-                    ps.setLong(1, tournamentId);
-                    ps.setLong(2, pid);
-                    ResultSet rs = ps.executeQuery();
-                    if (rs.next()) {
-                        String name = rs.getString("nombre") + " " + rs.getString("apellido");
-                        result.put("success", false);
-                        result.put("message", "Игрок " + name.trim() + " уже зарегистрирован в этом турнире");
-                        return ResponseEntity.badRequest().body(result);
-                    }
-                }
-            }
-
-            // Удаляем неактивные (отменённые) записи — иначе INSERT ниже упадёт на
-            // уникальном ограничении uk_tournament_player
-            for (Long pid : List.of(player1Id, player2Id)) {
-                deleteStaleInactiveRegistration(conn, tournamentId, pid);
-            }
-
-            String maxPosSql = "SELECT COALESCE(MAX(position), 0) FROM tournament_registrations_db WHERE tournament_id=?";
-            int nextPosition = 1;
-            try (PreparedStatement ps = conn.prepareStatement(maxPosSql)) {
-                ps.setLong(1, tournamentId);
-                ResultSet rs = ps.executeQuery();
-                if (rs.next()) nextPosition = rs.getInt(1) + 1;
-            }
-
-            String insertSql = "INSERT INTO tournament_registrations_db " +
-                    "(tournament_id, player_id, registration_date, status, position, is_active, is_double_registration, main_player_id) " +
-                    "VALUES (?, ?, ?, 'CONFIRMED', ?, true, true, ?)";
-
-            for (Long pid : List.of(player1Id, player2Id)) {
-                try (PreparedStatement ps = conn.prepareStatement(insertSql)) {
-                    ps.setLong(1, tournamentId);
-                    ps.setLong(2, pid);
-                    ps.setObject(3, LocalDateTime.now());
-                    ps.setInt(4, nextPosition);
-                    ps.setLong(5, player1Id);
-                    ps.executeUpdate();
-                }
-            }
-
-            Map<String, Object> stats = getTournamentStats(conn, tournamentId);
-            result.put("success", true);
-            result.put("message", "Гостевая пара успешно зарегистрирована");
-            result.put("position", nextPosition);
-            result.put("player1Id", player1Id);
-            result.put("player2Id", player2Id);
-            result.put("tournamentStats", stats);
-
-            log.info("Гостевая пара зарегистрирована на позицию {}: игроки {} и {}", nextPosition, player1Id, player2Id);
-
-        } catch (Exception e) {
-            log.error("Ошибка при регистрации гостевой пары", e);
-            result.put("success", false);
-            result.put("message", "Ошибка: " + e.getMessage());
-            return ResponseEntity.internalServerError().body(result);
+            @PathVariable Long tournamentId, @RequestBody ManualPair request,
+            @RequestHeader(value = "Idempotency-Key", required = false) UUID requestKey) {
+        if (request.player1() == null || request.player2() == null) {
+            return registrationResponse(400, "invalid_pair");
         }
-
-        return ResponseEntity.ok(result);
+        return registerManual(tournamentId, List.of(request.player1(), request.player2()), requestKey);
     }
 
-    /**
-     * Регистрация гостевого игрока на одиночный турнир (игрок не в базе данных)
-     */
+    @PostMapping({"/{tournamentId}/register-pair", "/{tournamentId}/register-pair-with-players"})
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> registerPair(
+            @PathVariable Long tournamentId, @RequestBody SelectedPair request) {
+        if (request.playerIds() == null || request.playerIds().size() != 2
+                || request.playerIds().stream().anyMatch(id -> id == null || id <= 0)) {
+            return registrationResponse(400, "invalid_pair");
+        }
+        return registerManual(tournamentId, request.playerIds().stream()
+                .map(id -> new ManualPlayer(id, null, null, null)).toList(), null);
+    }
+
     @PostMapping("/{tournamentId}/register-guest-player")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> registerGuestPlayer(
-            @PathVariable Long tournamentId,
-            @RequestBody Map<String, Object> playerData) {
-
-        log.info("Регистрация гостевого игрока на турнир: {}", tournamentId);
-
-        Map<String, Object> result = new HashMap<>();
-
-        try (Connection conn = dataSource.getConnection()) {
-            TournamentDto tournament = tournamentService.getTournamentDtoById(tournamentId).orElse(null);
-            if (tournament == null) {
-                result.put("success", false);
-                result.put("message", "Турнир не найден");
-                return ResponseEntity.badRequest().body(result);
-            }
-
-            if ("DOBLES".equals(tournament.getModalidad().name())) {
-                result.put("success", false);
-                result.put("message", "Гостевой игрок доступен только для не парных турниров");
-                return ResponseEntity.badRequest().body(result);
-            }
-
-            Map<String, Object> currentStats = getTournamentStats(conn, tournamentId);
-            int confirmed = (int) currentStats.getOrDefault("confirmed", 0);
-            if (confirmed >= tournament.getCupoMax()) {
-                result.put("success", false);
-                result.put("message", "Нет свободных мест в турнире");
-                return ResponseEntity.badRequest().body(result);
-            }
-
-            Long playerId = resolveOrCreateGuestPlayer(conn, playerData);
-            Map<String, Object> regResult = registerPlayer(conn, tournamentId, playerId);
-
-            if (!(boolean) regResult.get("success")) {
-                result.put("success", false);
-                result.put("message", "already_registered".equals(regResult.get("reason"))
-                        ? "Этот игрок уже зарегистрирован в турнире"
-                        : "Не удалось зарегистрировать игрока: " + regResult.get("error"));
-                return ResponseEntity.badRequest().body(result);
-            }
-
-            Map<String, Object> stats = getTournamentStats(conn, tournamentId);
-            result.put("success", true);
-            result.put("message", "Гостевой игрок успешно зарегистрирован");
-            result.put("playerId", playerId);
-            result.put("position", regResult.get("position"));
-            result.put("tournamentStats", stats);
-
-            log.info("Гостевой игрок {} зарегистрирован на турнир {}", playerId, tournamentId);
-
-        } catch (Exception e) {
-            log.error("Ошибка при регистрации гостевого игрока", e);
-            result.put("success", false);
-            result.put("message", "Ошибка: " + e.getMessage());
-            return ResponseEntity.internalServerError().body(result);
-        }
-
-        return ResponseEntity.ok(result);
+            @PathVariable Long tournamentId, @RequestBody ManualPlayer player,
+            @RequestHeader(value = "Idempotency-Key", required = false) UUID requestKey) {
+        return registerManual(tournamentId, List.of(player), requestKey);
     }
 
-    /**
-     * Находит игрока по ID или по телефону, либо создаёт нового гостевого игрока
-     */
-    private Long resolveOrCreateGuestPlayer(Connection conn, Map<String, Object> playerData) throws Exception {
-        Object idObj = playerData.get("id");
-        if (idObj != null) {
-            long id = ((Number) idObj).longValue();
-            if (id > 0) {
-                String check = "SELECT id FROM player_padel_db WHERE id=?";
-                try (PreparedStatement ps = conn.prepareStatement(check)) {
-                    ps.setLong(1, id);
-                    ResultSet rs = ps.executeQuery();
-                    if (rs.next()) return rs.getLong(1);
+    private ResponseEntity<Map<String, Object>> registerManual(
+            Long tournamentId, List<ManualPlayer> players, UUID requestKey) {
+        try (Connection conn = dataSource.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                boolean doubles = players.size() == 2;
+                int capacity = lockRegistrationTournament(conn, tournamentId, doubles);
+                String fingerprint = requestKey == null ? null : registrationFingerprint(players);
+                var previous = requestKey == null ? null : previousManualRegistration(conn, tournamentId, requestKey, fingerprint);
+                if (previous != null) {
+                    conn.commit();
+                    return ResponseEntity.ok(previous);
                 }
-            }
-        }
-
-        String nombre = (String) playerData.getOrDefault("nombre", "Invitado");
-        String apellido = (String) playerData.getOrDefault("apellido", "");
-        String telefono = (String) playerData.getOrDefault("telefono", "");
-
-        // Если указан телефон — сначала ищем существующего игрока, чтобы не нарушать уникальность
-        if (telefono != null && !telefono.isBlank()) {
-            String phoneLookup = "SELECT id FROM player_padel_db WHERE telefono = ?";
-            try (PreparedStatement ps = conn.prepareStatement(phoneLookup)) {
-                ps.setString(1, telefono);
-                ResultSet rs = ps.executeQuery();
-                if (rs.next()) {
-                    long existingId = rs.getLong(1);
-                    log.info("Найден существующий игрок по телефону {}: ID={}", telefono, existingId);
-                    return existingId;
+                lockManualPhones(conn, players);
+                List<Long> ids = new ArrayList<>(players.size());
+                for (ManualPlayer player : players) {
+                    ids.add(resolveOrCreateGuestPlayer(conn, player));
                 }
+                if (doubles && ids.get(0).equals(ids.get(1))) {
+                    throw new ManualRegistrationRejected("same_player");
+                }
+                var result = saveManualRegistration(conn, tournamentId, ids, capacity);
+                if (requestKey != null) {
+                    saveManualRequest(conn, tournamentId, requestKey, fingerprint, ids);
+                }
+                conn.commit();
+                return ResponseEntity.ok(result);
+            } catch (SQLException | RuntimeException failure) {
+                conn.rollback();
+                throw failure;
             }
+        } catch (ManualRegistrationRejected rejected) {
+            return registrationResponse(400, rejected.code);
+        } catch (SQLException | RuntimeException failure) {
+            return registrationFailed(tournamentId, failure);
         }
-
-        String email = "guest." + System.currentTimeMillis() + "@1padel.guest";
-
-        String insertSql = "INSERT INTO player_padel_db " +
-                "(nombre, apellido, email, telefono, password_hash, activo, email_confirmado, fecha_registro) " +
-                "VALUES (?, ?, ?, NULLIF(?, ''), ?, true, true, NOW())";
-
-        try (PreparedStatement ps = conn.prepareStatement(insertSql, PreparedStatement.RETURN_GENERATED_KEYS)) {
-            ps.setString(1, nombre);
-            ps.setString(2, apellido);
-            ps.setString(3, email);
-            ps.setString(4, telefono);
-            ps.setString(5, "$2a$10$guest" + System.currentTimeMillis());
-            ps.executeUpdate();
-
-            ResultSet keys = ps.getGeneratedKeys();
-            if (keys.next()) {
-                long newId = keys.getLong(1);
-                log.info("Создан гостевой игрок: {} {} (ID={})", nombre, apellido, newId);
-                return newId;
-            }
-        }
-        throw new Exception("Не удалось создать гостевого игрока: " + nombre + " " + apellido);
     }
 
-    /**
-     * Регистрация пары на турнир
-     */
-    @PostMapping("/{tournamentId}/register-pair")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> registerPair(
-            @PathVariable Long tournamentId,
-            @RequestBody Map<String, Object> request) {
+    private int lockRegistrationTournament(Connection conn, Long tournamentId, boolean doubles) throws SQLException {
+        try (PreparedStatement statement = conn.prepareStatement(
+                "SELECT modalidad, cupo_max FROM tournaments_db WHERE id = ? FOR UPDATE")) {
+            statement.setLong(1, tournamentId);
+            try (ResultSet row = statement.executeQuery()) {
+                if (!row.next()) throw new ManualRegistrationRejected("tournament_missing");
+                if (doubles != "DOBLES".equals(row.getString("modalidad"))) {
+                    throw new ManualRegistrationRejected(doubles ? "requires_doubles" : "requires_singles");
+                }
+                return row.getInt("cupo_max");
+            }
+        }
+    }
 
-        log.info("Регистрация пары на турнир: {}", tournamentId);
+    private Map<String, Object> saveManualRegistration(Connection conn, Long tournamentId,
+                                                        List<Long> ids, int capacity) throws SQLException {
+        boolean doubles = ids.size() == 2;
+        Map<String, Object> stats = getTournamentStats(conn, tournamentId);
+        Integer position = activeRegistrationPosition(conn, tournamentId, ids);
+        if (position == null) {
+            if ((int) stats.get("confirmed") >= capacity) throw new ManualRegistrationRejected("full");
+            if (doubles) requirePreviousPairInactive(conn, tournamentId, ids);
+            position = nextRegistrationPosition(conn, tournamentId);
+            LocalDateTime bookedAt = LocalDateTime.now();
+            UUID bookingId = doubles ? UUID.randomUUID() : null;
+            for (int i = 0; i < ids.size(); i++) {
+                saveRegistration(conn, tournamentId, ids.get(i), doubles ? ids.get(1 - i) : null,
+                        doubles ? ids.get(0) : null, bookingId, bookedAt, position, "CONFIRMED", null);
+            }
+            stats = getTournamentStats(conn, tournamentId);
+        }
+        return manualSuccess(tournamentId, ids, position, stats);
+    }
 
+    private void requirePreviousPairInactive(Connection conn, long tournamentId, List<Long> ids) throws SQLException {
+        try (PreparedStatement statement = conn.prepareStatement("""
+                SELECT 1 FROM tournament_registrations_db prior JOIN tournament_registrations_db remaining
+                    ON remaining.tournament_id = prior.tournament_id AND remaining.player_id <> prior.player_id
+                   AND remaining.is_active AND remaining.is_double_registration
+                   AND (remaining.pair_booking_id = prior.pair_booking_id
+                     OR (remaining.pair_booking_id IS NULL AND prior.pair_booking_id IS NULL
+                       AND remaining.main_player_id = prior.main_player_id))
+                WHERE prior.tournament_id = ? AND prior.player_id IN (?, ?) AND NOT prior.is_active
+                LIMIT 1
+                """)) {
+            statement.setLong(1, tournamentId);
+            statement.setLong(2, ids.get(0));
+            statement.setLong(3, ids.get(1));
+            try (ResultSet row = statement.executeQuery()) {
+                if (row.next()) throw new ManualRegistrationRejected("previous_pair_active");
+            }
+        }
+    }
+
+    private Map<String, Object> manualSuccess(Long tournamentId, List<Long> ids, int position,
+                                               Map<String, Object> stats) {
         Map<String, Object> result = new HashMap<>();
-        List<Integer> playerIdsInt = (List<Integer>) request.get("playerIds");
-
-        if (playerIdsInt == null || playerIdsInt.size() != 2) {
-            result.put("success", false);
-            result.put("message", "Для парного турнира нужно выбрать ровно двух игроков");
-            return ResponseEntity.badRequest().body(result);
+        result.put("success", true);
+        result.put("message", registrationMessage("success"));
+        result.put("position", position);
+        result.put("tournamentId", tournamentId);
+        result.put("tournamentStats", stats);
+        if (ids.size() == 2) {
+            result.put("player1Id", ids.get(0));
+            result.put("player2Id", ids.get(1));
+            result.put("registeredPlayers", ids.stream()
+                    .map(id -> Map.of("playerId", id, "position", position)).toList());
+        } else {
+            result.put("playerId", ids.get(0));
         }
+        return result;
+    }
 
-        List<Long> playerIds = new ArrayList<>();
-        for (Integer id : playerIdsInt) {
-            playerIds.add(id.longValue());
-        }
-
-        try (Connection conn = dataSource.getConnection()) {
-            // Проверяем существование турнира
-            TournamentDto tournament = tournamentService.getTournamentDtoById(tournamentId)
-                    .orElse(null);
-
-            if (tournament == null) {
-                result.put("success", false);
-                result.put("message", "Турнир с ID " + tournamentId + " не найден");
-                return ResponseEntity.badRequest().body(result);
-            }
-
-            // Проверяем, что турнир парный
-            if (!"DOBLES".equals(tournament.getModalidad().name())) {
-                result.put("success", false);
-                result.put("message", "Этот турнир не является парным");
-                return ResponseEntity.badRequest().body(result);
-            }
-
-            // Проверяем свободные места
-            Map<String, Object> currentStats = getTournamentStats(conn, tournamentId);
-            int confirmed = (int) currentStats.getOrDefault("confirmed", 0);
-            int available = tournament.getCupoMax() - confirmed;
-
-            if (available < 1) {
-                result.put("success", false);
-                result.put("message", "Нет свободных мест в турнире");
-                return ResponseEntity.badRequest().body(result);
-            }
-
-            // Проверяем, не зарегистрированы ли уже эти игроки (только среди активных)
-            List<String> alreadyRegistered = new ArrayList<>();
-            for (Long playerId : playerIds) {
-                String checkSql = "SELECT p.nombre, p.apellido FROM tournament_registrations_db r " +
-                        "JOIN player_padel_db p ON p.id = r.player_id " +
-                        "WHERE r.tournament_id = ? AND r.player_id = ? AND r.is_active = true";
-                try (PreparedStatement checkPs = conn.prepareStatement(checkSql)) {
-                    checkPs.setLong(1, tournamentId);
-                    checkPs.setLong(2, playerId);
-                    ResultSet rs = checkPs.executeQuery();
-                    if (rs.next()) {
-                        alreadyRegistered.add(rs.getString("nombre") + " " + rs.getString("apellido"));
-                    }
+    private String registrationFingerprint(List<ManualPlayer> players) {
+        try {
+            var digest = MessageDigest.getInstance("SHA-256");
+            for (ManualPlayer player : players) {
+                for (Object field : new Object[]{player.id(), player.nombre(), player.apellido(), player.telefono()}) {
+                    byte[] bytes = java.util.Objects.toString(field, "").getBytes(StandardCharsets.UTF_8);
+                    digest.update(java.nio.ByteBuffer.allocate(Integer.BYTES).putInt(field == null ? -1 : bytes.length).array());
+                    digest.update(bytes);
                 }
             }
-
-            if (!alreadyRegistered.isEmpty()) {
-                result.put("success", false);
-                result.put("message", "Следующие игроки уже зарегистрированы: " + String.join(", ", alreadyRegistered));
-                return ResponseEntity.badRequest().body(result);
-            }
-
-            // Удаляем неактивные (отменённые) записи этих игроков — иначе INSERT ниже
-            // упадёт на уникальном ограничении uk_tournament_player
-            for (Long playerId : playerIds) {
-                deleteStaleInactiveRegistration(conn, tournamentId, playerId);
-            }
-
-            // Получаем следующий position
-            String maxPosSql = "SELECT COALESCE(MAX(position), 0) FROM tournament_registrations_db " +
-                    "WHERE tournament_id = ?";
-            int nextPosition = 1;
-            try (PreparedStatement maxPs = conn.prepareStatement(maxPosSql)) {
-                maxPs.setLong(1, tournamentId);
-                ResultSet rs = maxPs.executeQuery();
-                if (rs.next()) {
-                    nextPosition = rs.getInt(1) + 1;
-                }
-            }
-
-            // Регистрируем обоих игроков
-            List<Map<String, Object>> registeredPlayers = new ArrayList<>();
-            for (Long playerId : playerIds) {
-                String insertSql = "INSERT INTO tournament_registrations_db " +
-                        "(tournament_id, player_id, registration_date, status, position, is_active, is_double_registration, main_player_id) " +
-                        "VALUES (?, ?, ?, 'CONFIRMED', ?, true, true, ?)";
-
-                try (PreparedStatement ps = conn.prepareStatement(insertSql)) {
-                    ps.setLong(1, tournamentId);
-                    ps.setLong(2, playerId);
-                    ps.setObject(3, LocalDateTime.now());
-                    ps.setInt(4, nextPosition);
-                    ps.setLong(5, playerIds.get(0)); // main_player_id - первый игрок в паре
-
-                    int inserted = ps.executeUpdate();
-                    if (inserted > 0) {
-                        Map<String, Object> playerInfo = new HashMap<>();
-                        playerInfo.put("playerId", playerId);
-                        playerInfo.put("position", nextPosition);
-                        registeredPlayers.add(playerInfo);
-                    }
-                }
-            }
-
-            // Получаем обновленную статистику
-            Map<String, Object> stats = getTournamentStats(conn, tournamentId);
-
-            result.put("success", true);
-            result.put("message", "Пара успешно зарегистрирована");
-            result.put("tournamentId", tournamentId);
-            result.put("position", nextPosition);
-            result.put("registeredPlayers", registeredPlayers);
-            result.put("tournamentStats", stats);
-
-        } catch (Exception e) {
-            log.error("Критическая ошибка при регистрации пары", e);
-            result.put("success", false);
-            result.put("message", "Ошибка: " + e.getMessage());
-            return ResponseEntity.internalServerError().body(result);
+            return HexFormat.of().formatHex(digest.digest());
+        } catch (NoSuchAlgorithmException impossible) {
+            throw new IllegalStateException(impossible);
         }
+    }
 
-        return ResponseEntity.ok(result);
+    private Map<String, Object> previousManualRegistration(Connection conn, long tournamentId, UUID requestKey,
+                                                            String fingerprint) throws SQLException {
+        try (PreparedStatement statement = conn.prepareStatement("""
+                SELECT req.fingerprint, req.first_player_id, req.second_player_id,
+                       first.is_active AND first.cancellation_version = req.first_version
+                         AND (req.second_player_id IS NULL OR
+                              second.is_active AND second.cancellation_version = req.second_version) AS current
+                FROM admin_registration_requests_db req
+                LEFT JOIN tournament_registrations_db first
+                  ON first.tournament_id = req.tournament_id AND first.player_id = req.first_player_id
+                LEFT JOIN tournament_registrations_db second
+                  ON second.tournament_id = req.tournament_id AND second.player_id = req.second_player_id
+                WHERE req.tournament_id = ? AND req.request_key = ?
+                """)) {
+            statement.setLong(1, tournamentId);
+            statement.setObject(2, requestKey);
+            try (ResultSet row = statement.executeQuery()) {
+                if (!row.next()) return null;
+                if (!row.getBoolean("current") || !fingerprint.equals(row.getString("fingerprint"))) {
+                    throw new ManualRegistrationRejected("request_conflict");
+                }
+                long first = row.getLong("first_player_id");
+                Long second = row.getObject("second_player_id", Long.class);
+                var ids = second == null ? List.of(first) : List.of(first, second);
+                Integer position = activeRegistrationPosition(conn, tournamentId, ids);
+                if (position == null) throw new ManualRegistrationRejected("request_conflict");
+                return manualSuccess(tournamentId, ids, position, getTournamentStats(conn, tournamentId));
+            }
+        }
+    }
+
+    private void saveManualRequest(Connection conn, long tournamentId, UUID requestKey,
+                                   String fingerprint, List<Long> ids) throws SQLException {
+        try (PreparedStatement statement = conn.prepareStatement("""
+                INSERT INTO admin_registration_requests_db
+                    (tournament_id, request_key, fingerprint, first_player_id, second_player_id, first_version, second_version)
+                SELECT first.tournament_id, ?, ?, first.player_id, second.player_id,
+                       first.cancellation_version, second.cancellation_version
+                FROM tournament_registrations_db first LEFT JOIN tournament_registrations_db second
+                  ON second.tournament_id = first.tournament_id AND second.player_id = ?
+                WHERE first.tournament_id = ? AND first.player_id = ?
+                """)) {
+            statement.setObject(1, requestKey);
+            statement.setString(2, fingerprint);
+            statement.setObject(3, ids.size() == 2 ? ids.get(1) : null);
+            statement.setLong(4, tournamentId);
+            statement.setLong(5, ids.get(0));
+            statement.executeUpdate();
+        }
+    }
+
+    private Integer activeRegistrationPosition(Connection conn, Long tournamentId, List<Long> ids) throws SQLException {
+        try (PreparedStatement statement = conn.prepareStatement("""
+                SELECT position, partner_id, is_double_registration, pair_booking_id, player_id, status
+                FROM tournament_registrations_db
+                WHERE tournament_id = ? AND is_active AND player_id IN (?, ?)
+                """)) {
+            statement.setLong(1, tournamentId);
+            statement.setLong(2, ids.get(0));
+            statement.setLong(3, ids.get(ids.size() - 1));
+            try (ResultSet rows = statement.executeQuery()) {
+                if (!rows.next()) return null;
+                int position = rows.getInt("position");
+                if (ids.size() == 1 && !rows.getBoolean("is_double_registration")
+                        && "CONFIRMED".equals(rows.getString("status"))) return position;
+                if (ids.size() == 2 && matchesActivePair(rows, ids)) return position;
+                throw new ManualRegistrationRejected("already_registered");
+            }
+        }
+    }
+
+    private boolean matchesActivePair(ResultSet rows, List<Long> ids) throws SQLException {
+        UUID booking = rows.getObject("pair_booking_id", UUID.class);
+        long player = rows.getLong("player_id");
+        long partner = rows.getLong("partner_id");
+        return booking != null && player != partner && ids.contains(player) && ids.contains(partner)
+                && rows.getBoolean("is_double_registration") && "CONFIRMED".equals(rows.getString("status"))
+                && rows.next() && booking.equals(rows.getObject("pair_booking_id", UUID.class))
+                && rows.getLong("player_id") == partner && rows.getLong("partner_id") == player
+                && rows.getBoolean("is_double_registration") && "CONFIRMED".equals(rows.getString("status"));
+    }
+
+    private Long resolveOrCreateGuestPlayer(Connection conn, ManualPlayer player) throws SQLException {
+        if (player.id() != null) {
+            try (PreparedStatement statement = conn.prepareStatement("SELECT id FROM player_padel_db WHERE id = ? AND activo")) {
+                statement.setLong(1, player.id());
+                try (ResultSet row = statement.executeQuery()) {
+                    if (row.next()) return row.getLong(1);
+                }
+            }
+            throw new ManualRegistrationRejected("player_missing");
+        }
+        if (player.nombre() == null || player.nombre().isBlank()) {
+            throw new ManualRegistrationRejected("name_required");
+        }
+        String phone = java.util.Objects.requireNonNullElse(player.telefono(), "").strip();
+        Long byPhone = findGuestByPhone(conn, phone);
+        if (byPhone != null) return byPhone;
+        String email = "guest." + UUID.randomUUID() + "@1padel.guest";
+        try (PreparedStatement statement = conn.prepareStatement("""
+                INSERT INTO player_padel_db (nombre, apellido, email, telefono, password_hash,
+                    activo, email_confirmado, fecha_registro)
+                VALUES (?, ?, ?, NULLIF(?, ''), ?, true, true, NOW())
+                RETURNING id
+                """)) {
+            statement.setString(1, player.nombre().strip());
+            statement.setString(2, java.util.Objects.requireNonNullElse(player.apellido(), "").strip());
+            statement.setString(3, email);
+            statement.setString(4, phone);
+            statement.setString(5, passwordEncoder.encode(UUID.randomUUID().toString()));
+            try (ResultSet row = statement.executeQuery()) {
+                if (row.next()) return row.getLong(1);
+            }
+        }
+        throw new SQLException("Вставка гостевого профиля не вернула ID");
+    }
+
+    private String phoneKey(String phone) {
+        String digits = java.util.Objects.requireNonNullElse(phone, "").replaceAll("[^0-9]", "");
+        return digits.substring(Math.max(0, digits.length() - 10));
+    }
+
+    private void lockManualPhones(Connection conn, List<ManualPlayer> players) throws SQLException {
+        var keys = players.stream().filter(player -> player.id() == null)
+                .map(player -> phoneKey(player.telefono())).filter(key -> !key.isEmpty()).distinct().sorted().toList();
+        try (PreparedStatement lock = conn.prepareStatement("SELECT pg_advisory_xact_lock(hashtext(?))")) {
+            for (String key : keys) {
+                lock.setString(1, "partner-phone:" + key);
+                lock.execute();
+            }
+        }
+    }
+
+    private Long findGuestByPhone(Connection conn, String phone) throws SQLException {
+        String phoneKey = phoneKey(phone);
+        if (phoneKey.isEmpty()) return null;
+        try (PreparedStatement statement = conn.prepareStatement("""
+                SELECT id, activo FROM player_padel_db WHERE telefono IS NOT NULL
+                AND RIGHT(regexp_replace(telefono, '[^0-9]', '', 'g'), 10) = ?
+                """)) {
+            statement.setString(1, phoneKey);
+            try (ResultSet row = statement.executeQuery()) {
+                if (!row.next()) return null;
+                long id = row.getLong("id");
+                if (!row.getBoolean("activo") || row.next()) throw new ManualRegistrationRejected("ambiguous_phone");
+                return id;
+            }
+        }
+    }
+
+    private String registrationMessage(String code) {
+        return messages.getMessage("admin.manual_registration." + code, null, LocaleContextHolder.getLocale());
+    }
+
+    private ResponseEntity<Map<String, Object>> registrationResponse(int status, String code) {
+        return ResponseEntity.status(status).body(Map.of("success", false, "code", code, "message", registrationMessage(code)));
+    }
+
+    private ResponseEntity<Map<String, Object>> registrationFailed(Long tournamentId, Exception failure) {
+        String requestId = java.util.Objects.requireNonNullElseGet(MDC.get(RequestIdFilter.MDC_KEY),
+                () -> UUID.randomUUID().toString().substring(0, 8));
+        log.error("Ручная регистрация не сохранена: tournamentId={}, requestId={}, type={}, sqlState={}",
+                tournamentId, requestId, failure.getClass().getSimpleName(),
+                failure instanceof SQLException sql ? sql.getSQLState() : null);
+        return ResponseEntity.internalServerError().body(Map.of("success", false, "code", "technical",
+                "message", registrationMessage("technical"), "requestId", requestId));
+    }
+
+    private static class ManualRegistrationRejected extends RuntimeException {
+        private final String code;
+
+        ManualRegistrationRejected(String code) {
+            super(code);
+            this.code = code;
+        }
     }
 
     /**
@@ -1754,92 +1557,92 @@ public class TestTournamentController {
 
 
 
-    /**
-     * Игрок мог ранее отменить регистрацию на этот турнир — запись остаётся в
-     * tournament_registrations_db с is_active=false (soft-cancel, см. TournamentRegistration.cancel()).
-     * Проверки "уже зарегистрирован" в этом контроллере должны игнорировать такие строки
-     * (см. is_active=true в getTournamentPlayers()), а перед повторной вставкой — удалить
-     * неактивную запись, иначе INSERT упадёт на уникальном ограничении uk_tournament_player
-     * (tournament_id, player_id).
-     */
-    private void deleteStaleInactiveRegistration(Connection conn, Long tournamentId, Long playerId) throws SQLException {
-        String sql = "DELETE FROM tournament_registrations_db " +
-                "WHERE tournament_id = ? AND player_id = ? AND is_active = false";
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setLong(1, tournamentId);
-            ps.setLong(2, playerId);
-            ps.executeUpdate();
+    private int nextRegistrationPosition(Connection conn, Long tournamentId) throws SQLException {
+        try (PreparedStatement statement = conn.prepareStatement(
+                "SELECT COALESCE(MAX(position), 0) + 1 FROM tournament_registrations_db WHERE tournament_id = ?")) {
+            statement.setLong(1, tournamentId);
+            try (ResultSet row = statement.executeQuery()) {
+                row.next();
+                return row.getInt(1);
+            }
         }
     }
 
     /**
-     * Прямая SQL-регистрация игрока (как в твоем PS1 скрипте)
+     * На ID регистрации ссылаются оплаты, атрибуция и история отмен. Поля новой заявки
+     * заменяются, а старый идентификатор пары и её одноразовые ссылки не переносятся.
      */
-    private Map<String, Object> registerPlayer(Connection conn, Long tournamentId, Long playerId) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("playerId", playerId);
+    private void saveRegistration(Connection conn, Long tournamentId, Long playerId, Long partnerId,
+                                  Long mainPlayerId, UUID bookingId, LocalDateTime bookedAt, Integer position,
+                                  String status, Integer waitlistPosition) throws SQLException {
+        try (PreparedStatement statement = conn.prepareStatement("""
+                WITH saved AS (
+                INSERT INTO tournament_registrations_db AS previous
+                    (tournament_id, player_id, registration_date, queued_at, status, position, waitlist_position,
+                     is_active, is_double_registration, main_player_id, partner_id, pair_booking_id, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, true, ?, ?, ?, ?, NOW())
+                ON CONFLICT (tournament_id, player_id) DO UPDATE SET
+                    registration_date = EXCLUDED.registration_date, queued_at = EXCLUDED.queued_at,
+                    status = EXCLUDED.status, position = EXCLUDED.position, waitlist_position = EXCLUDED.waitlist_position,
+                    is_active = true, updated_at = NOW(),
+                    is_double_registration = EXCLUDED.is_double_registration, main_player_id = EXCLUDED.main_player_id,
+                    partner_id = EXCLUDED.partner_id, pair_booking_id = EXCLUDED.pair_booking_id,
+                    partner_first_name = NULL, partner_last_name = NULL, partner_phone = NULL,
+                    partner_email = NULL, partner_telegram = NULL, pair_booked_by = NULL,
+                    pair_terms_version = NULL, pair_terms_accepted_at = NULL, pair_terms_accepted_by = NULL,
+                    pair_terms_price_per_player = NULL, pair_terms_currency = NULL, pair_terms_free_until = NULL,
+                    pair_terms_late_fraction = NULL, partner_registration_token = NULL, partner_token_expiry = NULL,
+                    waitlist_confirmation_token = NULL, invitation_expires_at = NULL, invitation_attempts = 0,
+                    notified_about_vacancy = false, partner_action_token = NULL, pair_proposer_reg_id = NULL,
+                    share_contacts = false, solo_reminder_sent = false, final_reminder_sent = false,
+                    attended = false, participation_confirmed = false, late_arrival = false, replacement_search = false
+                WHERE NOT previous.is_active
+                RETURNING id
+                ), expired_requests AS (
+                    UPDATE participation_requests_db SET superseded_at = NOW()
+                    WHERE registration_id IN (SELECT id FROM saved) AND superseded_at IS NULL
+                )
+                SELECT id FROM saved
+                """)) {
+            statement.setLong(1, tournamentId);
+            statement.setLong(2, playerId);
+            statement.setObject(3, bookedAt);
+            statement.setObject(4, bookingId == null ? null : bookedAt);
+            statement.setString(5, status);
+            statement.setObject(6, position);
+            statement.setObject(7, waitlistPosition);
+            statement.setBoolean(8, bookingId != null);
+            statement.setObject(9, mainPlayerId);
+            statement.setObject(10, partnerId);
+            statement.setObject(11, bookingId);
+            try (ResultSet row = statement.executeQuery()) {
+                if (!row.next()) throw new ManualRegistrationRejected("already_registered");
 
-        try {
-            // Проверяем, не зарегистрирован ли уже (только среди активных — is_active=false
-            // означает отменённую ранее регистрацию, которая не должна блокировать повторную)
-            String checkSql = "SELECT COUNT(*) FROM tournament_registrations_db " +
-                    "WHERE tournament_id = ? AND player_id = ? AND is_active = true";
-
-            try (PreparedStatement checkPs = conn.prepareStatement(checkSql)) {
-                checkPs.setLong(1, tournamentId);
-                checkPs.setLong(2, playerId);
-                ResultSet rs = checkPs.executeQuery();
-
-                if (rs.next() && rs.getInt(1) > 0) {
-                    result.put("success", false);
-                    result.put("reason", "already_registered");
-                    result.put("message", "Игрок уже зарегистрирован");
-                    return result;
-                }
             }
-
-            deleteStaleInactiveRegistration(conn, tournamentId, playerId);
-
-            // Получаем следующий position (как в твоем PS1 скрипте)
-            String maxPosSql = "SELECT COALESCE(MAX(position), 0) FROM tournament_registrations_db " +
-                    "WHERE tournament_id = ?";
-            int nextPosition = 1;
-
-            try (PreparedStatement maxPs = conn.prepareStatement(maxPosSql)) {
-                maxPs.setLong(1, tournamentId);
-                ResultSet rs = maxPs.executeQuery();
-                if (rs.next()) {
-                    nextPosition = rs.getInt(1) + 1;
-                }
-            }
-
-            // Регистрируем (прямая вставка как в PS1)
-            String insertSql = "INSERT INTO tournament_registrations_db " +
-                    "(tournament_id, player_id, registration_date, status, position, is_active) " +
-                    "VALUES (?, ?, ?, 'CONFIRMED', ?, true)";
-
-            try (PreparedStatement ps = conn.prepareStatement(insertSql)) {
-                ps.setLong(1, tournamentId);
-                ps.setLong(2, playerId);
-                ps.setObject(3, LocalDateTime.now());
-                ps.setInt(4, nextPosition);
-
-                int inserted = ps.executeUpdate();
-
-                result.put("success", inserted > 0);
-                result.put("status", "REGISTERED");
-                result.put("position", nextPosition);
-                result.put("timestamp", LocalDateTime.now().toString());
-            }
-
-        } catch (Exception e) {
-            log.error("Ошибка регистрации игрока {}", playerId, e);
-            result.put("success", false);
-            result.put("reason", "exception");
-            result.put("error", e.getMessage());
         }
+    }
 
-        return result;
+    private Map<String, Object> registerPlayer(Connection conn, Long tournamentId, Long playerId) {
+        try {
+            int position = nextRegistrationPosition(conn, tournamentId);
+            LocalDateTime now = LocalDateTime.now();
+            saveRegistration(conn, tournamentId, playerId, null, null, null, now, position, "CONFIRMED", null);
+            return Map.of("success", true, "playerId", playerId, "status", "REGISTERED",
+                    "position", position, "timestamp", now.toString());
+        } catch (ManualRegistrationRejected rejected) {
+            return Map.of("success", false, "playerId", playerId, "reason", rejected.code);
+        } catch (SQLException failure) {
+            return registrationErrorDetails(tournamentId, playerId, failure);
+        }
+    }
+
+    private Map<String, Object> registrationErrorDetails(Long tournamentId, Long playerId, Exception failure) {
+        var response = registrationFailed(tournamentId, failure).getBody();
+        var details = new HashMap<>(response);
+        details.put("playerId", playerId);
+        details.put("reason", "exception");
+        details.put("error", response.get("message"));
+        return details;
     }
 
     /**
@@ -1895,13 +1698,9 @@ public class TestTournamentController {
             // Включаем CONFIRMED + PAIR_REGISTERED + PARTNER_INVITED —
             // во всех трёх случаях место занято.
             // mainPlayerId IS NOT NULL — только запись главного игрока пары.
-            confirmedSql = "SELECT COUNT(DISTINCT main_player_id) as confirmed " +
-                    "FROM tournament_registrations_db " +
-                    "WHERE tournament_id = ? " +
-                    "AND status IN ('CONFIRMED', 'PAIR_REGISTERED', 'PARTNER_INVITED') " +
-                    "AND is_double_registration = true " +
-                    "AND is_active = true " +
-                    "AND main_player_id IS NOT NULL";
+            confirmedSql = "SELECT COUNT(DISTINCT " + TournamentRegistrationRepository.OCCUPIED_PAIR_KEY
+                    + ") as confirmed FROM tournament_registrations_db WHERE tournament_id = ?"
+                    + TournamentRegistrationRepository.OCCUPIED_PAIR_FILTER;
         } else {
             confirmedSql = "SELECT COUNT(*) as confirmed " +
                     "FROM tournament_registrations_db " +
@@ -1946,34 +1745,15 @@ public class TestTournamentController {
      * Добавление игрока в лист ожидания
      */
     private Map<String, Object> addToWaitlist(Connection conn, Long tournamentId, Long playerId, int waitlistPosition) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("playerId", playerId);
-
         try {
-            String insertSql = "INSERT INTO tournament_registrations_db " +
-                    "(tournament_id, player_id, registration_date, status, waitlist_position, is_active) " +
-                    "VALUES (?, ?, ?, 'WAITLIST', ?, true)";
-
-            try (PreparedStatement ps = conn.prepareStatement(insertSql)) {
-                ps.setLong(1, tournamentId);
-                ps.setLong(2, playerId);
-                ps.setObject(3, LocalDateTime.now());
-                ps.setInt(4, waitlistPosition);
-
-                int inserted = ps.executeUpdate();
-
-                result.put("success", inserted > 0);
-                result.put("status", "WAITLIST");
-                result.put("waitlistPosition", waitlistPosition);
-                result.put("timestamp", LocalDateTime.now().toString());
-            }
-
-        } catch (Exception e) {
-            log.error("Ошибка добавления в резерв игрока {}", playerId, e);
-            result.put("success", false);
-            result.put("error", e.getMessage());
+            LocalDateTime now = LocalDateTime.now();
+            saveRegistration(conn, tournamentId, playerId, null, null, null, now, null, "WAITLIST", waitlistPosition);
+            return Map.of("success", true, "playerId", playerId, "status", "WAITLIST",
+                    "waitlistPosition", waitlistPosition, "timestamp", now.toString());
+        } catch (ManualRegistrationRejected rejected) {
+            return Map.of("success", false, "playerId", playerId, "reason", rejected.code);
+        } catch (SQLException failure) {
+            return registrationErrorDetails(tournamentId, playerId, failure);
         }
-
-        return result;
     }
 }
