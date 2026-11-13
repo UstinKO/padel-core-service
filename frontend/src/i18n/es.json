@@ -239,6 +239,79 @@
     "LIVE": "Partidos y resultados",
     "CALENDAR": "Agregar al calendario"
   },
+  "playerEvents": {
+    "title": "Mis eventos",
+    "upcoming": "Próximos",
+    "history": "Historial",
+    "noUpcoming": "No tenés eventos próximos.",
+    "noHistory": "Todavía no tenés eventos en el historial.",
+    "partner": "Compañero",
+    "queue": "Posición en la lista de espera",
+    "payment": "Estado de tu pago",
+    "participationTitle": "Participación",
+    "confirm": "Confirmar participación",
+    "decline": "Rechazar participación",
+    "withdraw": "Retirarme del evento",
+    "cancelPair": "Dar de baja a la pareja",
+    "apply": "Confirmar",
+    "declinePrompt": "¿Querés rechazar esta solicitud de participación?",
+    "withdrawPrompt": "¿Querés retirarte de este evento?",
+    "cancelPairPrompt": "¿Querés dar de baja la inscripción de ambos jugadores?",
+    "quoteError": "No se pudieron cargar las condiciones de cancelación.",
+    "actionError": "No pudimos confirmar la acción. Revisá el estado actual antes de volver a intentar.",
+    "shareContacts": "Compartir mis datos con quienes buscan compañero",
+    "searchReplacement": "Buscar un compañero de reemplazo",
+    "replacementNeeded": "Necesita un compañero de reemplazo",
+    "obligation": "Total a pagar",
+    "alreadyPaid": "Ya pagado",
+    "remainingDue": "Saldo a pagar",
+    "refundable": "Importe a reintegrar",
+    "registration": {
+      "CONFIRMED": "Inscripción confirmada",
+      "WAITLIST": "En lista de espera",
+      "CANCELLED": "Inscripción cancelada",
+      "PARTICIPATED": "Participó",
+      "PENDING_PARTNER": "Esperando confirmación del compañero",
+      "PARTNER_INVITED": "Compañero invitado",
+      "PAIR_REGISTERED": "Pareja inscrita",
+      "SOLO_ADD_LATER": "Agrega compañero más tarde",
+      "SOLO_SEARCH": "Busca compañero",
+      "SOLO_EXPIRED": "Venció el plazo para agregar compañero"
+    },
+    "mode": {
+      "INDIVIDUAL": "Individual",
+      "SOLO": "Sin compañero",
+      "PAIR": "Pareja"
+    },
+    "participation": {
+      "NOT_REQUIRED": "No requiere respuesta",
+      "PENDING": "Pendiente de confirmación",
+      "CONFIRMED": "Confirmada",
+      "DECLINED": "Rechazada"
+    },
+    "payments": {
+      "PENDING": "Pendiente",
+      "PROCESSING": "En proceso",
+      "PAID": "Pagado",
+      "FAILED": "Pago fallido",
+      "REFUNDED": "Reintegrado",
+      "CANCELLED": "Pago cancelado"
+    },
+    "initiator": {
+      "PLAYER": "Canceló un jugador",
+      "OWNER": "Canceló la organización",
+      "SYSTEM": "Cancelación automática",
+      "UNKNOWN": "Sin información sobre quién canceló"
+    },
+    "reason": {
+      "PARTICIPANT_WITHDRAWAL": "Se retiró un jugador",
+      "PAIR_WITHDRAWAL": "Se retiró la pareja",
+      "ORGANIZER_REMOVAL": "La organización dio de baja la inscripción",
+      "PLAYER_DEACTIVATED": "Cuenta del jugador desactivada",
+      "PARTICIPANT_REPLACED": "Se reemplazó al participante",
+      "LEGACY_UNKNOWN": "Motivo no disponible"
+    }
+  },
   "account": {
     "login": "Iniciar sesión",
     "register": "Crear cuenta",

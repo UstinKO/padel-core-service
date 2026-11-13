@@ -40,6 +40,14 @@ try {
   require(forbiddenReset.status() === 403, 'Игрок выполняет reset');
   const preview = await playerPage.goto(origin + '/preview/torneos');
   require(preview.status() === 403, 'Preview доступен игроку');
+  const cabinet = await playerPage.goto(origin + '/preview/players/dashboard');
+  require(cabinet.status() === 200, 'Кабинет React недоступен синтетическому игроку');
+  await playerPage.getByRole('heading', {name: /Мои мероприятия|Mis eventos|My events/}).waitFor();
+  await playerPage.getByRole('button', {name: /История|Historial|History/}).click();
+  const playerEvents = await player.request.get(origin + '/api/players/me/events');
+  const overview = await playerEvents.json();
+  require(playerEvents.status() === 200 && Array.isArray(overview.upcoming) && Array.isArray(overview.history),
+    'Кабинет игрока не получил актуальные данные из API');
   const admin = await context();
   const page = await login(admin, 'preview-admin@example.test');
   const status = await admin.request.get(origin + '/api/internal/ui-preview');

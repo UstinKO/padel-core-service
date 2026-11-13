@@ -10,6 +10,8 @@ import com.padle.core.padelcoreservice.security.AccountDestination;
 import com.padle.core.padelcoreservice.dto.AccountDtos;
 import com.padle.core.padelcoreservice.controller.api.SpaSessionController;
 import org.springframework.http.HttpStatus;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import com.padle.core.padelcoreservice.security.JwtAuthenticationFilter;
 import com.padle.core.padelcoreservice.security.RateLimitFilter;
@@ -66,6 +68,7 @@ public class SecurityConfig {
     private final MetaProperties metaProperties;
     private final AccountResponses accountResponses;
     private final SpaSessionController sessions;
+    private final Environment environment;
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomOAuth2UserService customOAuth2UserService;
@@ -109,6 +112,9 @@ public class SecurityConfig {
                         .ignoringRequestMatchers("/api/auth/login", "/api/auth/refresh", "/ws/**")
                 )
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(request -> environment.acceptsProfiles(Profiles.of("preview"))
+                                && request.getServletPath().equals("/preview/players/dashboard"))
+                        .hasAnyRole("PLAYER", "SUPER_ADMIN")
                         .requestMatchers("/preview", "/preview/**").hasRole("SUPER_ADMIN")
                         .requestMatchers(
                                 "/",

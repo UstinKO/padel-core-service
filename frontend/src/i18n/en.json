@@ -237,6 +237,79 @@
     "LIVE": "Matches and results",
     "CALENDAR": "Add to calendar"
   },
+  "playerEvents": {
+    "title": "My events",
+    "upcoming": "Upcoming",
+    "history": "History",
+    "noUpcoming": "No upcoming events.",
+    "noHistory": "No past events yet.",
+    "partner": "Partner",
+    "queue": "Waitlist position",
+    "payment": "Your payment status",
+    "participationTitle": "Participation",
+    "confirm": "Confirm participation",
+    "decline": "Decline participation",
+    "withdraw": "Leave the event",
+    "cancelPair": "Cancel the pair",
+    "apply": "Confirm",
+    "declinePrompt": "Do you want to decline this participation request?",
+    "withdrawPrompt": "Do you want to withdraw from this event?",
+    "cancelPairPrompt": "Do you want to cancel registration for both players?",
+    "quoteError": "Could not load the current cancellation terms.",
+    "actionError": "Could not confirm the action. Check the current status before trying again.",
+    "shareContacts": "Share my contacts with players looking for a partner",
+    "searchReplacement": "Look for a replacement partner",
+    "replacementNeeded": "Replacement partner needed",
+    "obligation": "Total due",
+    "alreadyPaid": "Already paid",
+    "remainingDue": "Still due",
+    "refundable": "Refund amount",
+    "registration": {
+      "CONFIRMED": "Registered",
+      "WAITLIST": "On the waitlist",
+      "CANCELLED": "Cancelled",
+      "PARTICIPATED": "Played",
+      "PENDING_PARTNER": "Waiting for partner confirmation",
+      "PARTNER_INVITED": "Partner invited",
+      "PAIR_REGISTERED": "Pair registered",
+      "SOLO_ADD_LATER": "Will add a partner later",
+      "SOLO_SEARCH": "Looking for a partner",
+      "SOLO_EXPIRED": "Partner deadline passed"
+    },
+    "mode": {
+      "INDIVIDUAL": "Individual",
+      "SOLO": "Waiting for a partner",
+      "PAIR": "Pair"
+    },
+    "participation": {
+      "NOT_REQUIRED": "No response needed",
+      "PENDING": "Awaiting confirmation",
+      "CONFIRMED": "Confirmed",
+      "DECLINED": "Declined"
+    },
+    "payments": {
+      "PENDING": "Awaiting payment",
+      "PROCESSING": "Processing",
+      "PAID": "Paid",
+      "FAILED": "Payment failed",
+      "REFUNDED": "Refunded",
+      "CANCELLED": "Payment cancelled"
+    },
+    "initiator": {
+      "PLAYER": "Cancelled by a player",
+      "OWNER": "Cancelled by the organizer",
+      "SYSTEM": "Cancelled automatically",
+      "UNKNOWN": "Initiator unavailable"
+    },
+    "reason": {
+      "PARTICIPANT_WITHDRAWAL": "Player withdrew",
+      "PAIR_WITHDRAWAL": "Pair withdrew",
+      "ORGANIZER_REMOVAL": "Organizer removed registration",
+      "PLAYER_DEACTIVATED": "Player account deactivated",
+      "PARTICIPANT_REPLACED": "Participant was replaced",
+      "LEGACY_UNKNOWN": "Reason unavailable"
+    }
+  },
   "account": {
     "login": "Sign in",
     "register": "Create account",

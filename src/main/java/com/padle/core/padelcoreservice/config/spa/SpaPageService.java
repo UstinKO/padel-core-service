@@ -89,7 +89,7 @@ public class SpaPageService {
         if (!path.startsWith("/preview")) return Optional.empty();
         String route = path.substring("/preview".length()).replaceAll("/+$", "");
         if (Set.of("", "/torneos", "/foundation", "/components", "/login", "/players/registro",
-                "/perfil", "/recuperar-password", "/recuperar-password/solicitar").contains(route)) return Optional.empty();
+                "/perfil", "/players/dashboard", "/recuperar-password", "/recuperar-password/solicitar").contains(route)) return Optional.empty();
         var livePath = LIVE_PATH.matcher(path);
         if (livePath.matches()) {
             try {

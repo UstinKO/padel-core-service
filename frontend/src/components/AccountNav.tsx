@@ -32,6 +32,9 @@ export function AccountNav() {
     <div className="account-actions">
       {session.data?.authenticated ? (
         <>
+          {session.data.userType === 'PLAYER' && (
+            <Link to="/players/dashboard">{t('playerEvents.title')}</Link>
+          )}
           <Link to="/perfil">{session.data.fullName ?? t('account.profile')}</Link>
           <Button variant="ghost" disabled={pending} onClick={() => void logout()}>
             {t('account.logout')}
