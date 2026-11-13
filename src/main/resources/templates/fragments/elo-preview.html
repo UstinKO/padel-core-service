@@ -11,7 +11,7 @@
             <select name="category">
                 <option value="" th:text="#{elo.preview.all}"></option>
                 <option th:each="category : ${previewEloCategories}" th:value="${category}"
-                        th:text="${category}"></option>
+                        th:text="${category == 'C10'} ? #{elo.preview.beginner} : ${category}"></option>
             </select>
         </label>
         <label>
@@ -49,7 +49,7 @@
                 th:data-category-size="${row.categorySize}" th:data-overall-place="${row.overallPlace}">
                 <td th:text="${previewEloStartStep > 0 ? row.overallPlace : row.categoryPlace}"></td>
                 <th scope="row" th:text="${row.name}"></th>
-                <td th:text="${row.category}"></td>
+                <td th:text="${row.category == 'C10'} ? #{elo.preview.beginner} : ${row.category}"></td>
                 <td><span class="elo-preview-badge" th:classappend="${row.confirmed ? 'confirmed' : 'provisional'}"
                           th:text="${row.confirmed} ? #{elo.preview.confirmed} : #{elo.preview.provisional}"></span></td>
                 <td th:text="${#numbers.formatDecimal(row.elo, 1, 2)}"></td>
@@ -65,7 +65,7 @@
     <div class="elo-preview-card-heading">
         <h2 th:text="#{elo.preview.myRanking}"></h2>
         <span class="elo-preview-badge" th:classappend="${eloRow.confirmed ? 'confirmed' : 'provisional'}">
-            <strong th:text="${eloRow.category}"></strong>
+            <strong th:text="${eloRow.category == 'C10'} ? #{elo.preview.beginner} : ${eloRow.category}"></strong>
             <span th:text="${eloRow.confirmed} ? #{elo.preview.confirmed} : #{elo.preview.provisional}"></span>
         </span>
     </div>
@@ -78,7 +78,7 @@
                 th:text="${eloRow.overallPlace != null} ? ${eloRow.overallPlace} : #{elo.preview.afterConfirmation}"></dd></div>
     </dl>
     <div th:if="${!eloRow.confirmed and eloRow.progress != null}" th:object="${eloRow.progress}" class="elo-preview-progress">
-        <strong th:text="#{elo.preview.progress(${eloRow.category})}"></strong>
+        <strong th:text="${eloRow.category == 'C10'} ? #{elo.preview.beginnerProgress} : #{elo.preview.progress(${eloRow.category})}"></strong>
         <p th:text="#{elo.preview.progressStats(*{tournaments},*{matches},*{wins})}"></p>
         <p th:text="#{elo.preview.progressRemaining(*{moreTournaments},*{moreMatches},*{moreWins})}"></p>
     </div>
