@@ -261,10 +261,16 @@ document.addEventListener('DOMContentLoaded', function() {
         players.forEach(p => {
             const li = document.createElement('li');
             li.style.cssText = 'padding:.6rem 1rem; cursor:pointer; border-bottom:1px solid #f3f4f6;';
-            li.innerHTML = `
-                <div style="font-weight:500;">${p.nombreCompleto}</div>
-                ${p.nivelJugador ? `<div style="font-size:.82rem; color:#6b7280;">${p.nivelJugador}</div>` : ''}
-            `;
+            const name = document.createElement('div');
+            name.style.fontWeight = '500';
+            name.textContent = p.nombreCompleto;
+            li.appendChild(name);
+            if (p.nivelJugador) {
+                const level = document.createElement('div');
+                level.style.cssText = 'font-size:.82rem; color:#6b7280;';
+                level.textContent = p.nivelJugador;
+                li.appendChild(level);
+            }
             li.addEventListener('click', () => selectPartner(p));
             li.addEventListener('mouseover', () => { li.style.background = '#f9fafb'; });
             li.addEventListener('mouseout', () => { li.style.background = ''; });
@@ -332,10 +338,10 @@ document.addEventListener('DOMContentLoaded', function() {
     function selectPartner(player) {
         selectedPartnerIdInput.value = player.id;
         document.getElementById('selectedPartnerName').textContent  = player.nombreCompleto;
-        document.getElementById('selectedPartnerEmail').textContent = player.email;
-        document.getElementById('partnerFirstName').value = player.nombre  || '';
-        document.getElementById('partnerLastName').value  = player.apellido || '';
-        document.getElementById('partnerTelegram').value  = player.telegramUsername || '';
+        document.getElementById('selectedPartnerLevel').textContent = player.nivelJugador || '';
+        document.getElementById('partnerFirstName').value = '';
+        document.getElementById('partnerLastName').value = '';
+        document.getElementById('partnerTelegram').value = '';
         document.getElementById('partnerPhone').value     = '';
         selectedPartnerCard.style.display  = 'flex';
         partnerSearchResults.style.display = 'none';
@@ -431,10 +437,16 @@ document.addEventListener('DOMContentLoaded', function() {
             players.forEach(p => {
                 const li = document.createElement('li');
                 li.style.cssText = 'padding:.6rem 1rem; cursor:pointer; border-bottom:1px solid #f3f4f6;';
-                li.innerHTML = `
-                    <div style="font-weight:500;">${p.nombreCompleto}</div>
-                    <div style="font-size:.82rem; color:#6b7280;">${p.email}${p.nivelJugador ? ' · ' + p.nivelJugador : ''}</div>
-                `;
+                const name = document.createElement('div');
+                name.style.fontWeight = '500';
+                name.textContent = p.nombreCompleto;
+                li.appendChild(name);
+                if (p.nivelJugador) {
+                    const level = document.createElement('div');
+                    level.style.cssText = 'font-size:.82rem; color:#6b7280;';
+                    level.textContent = p.nivelJugador;
+                    li.appendChild(level);
+                }
                 li.addEventListener('mousedown', () => selectPartner(p));
                 li.addEventListener('mouseover', () => { li.style.background = '#f9fafb'; });
                 li.addEventListener('mouseout', () => { li.style.background = ''; });
@@ -760,14 +772,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            const partnerData = {
-                nombre: firstName, apellido: lastName,
-                telefono: phone || null, telegramUsername: telegramUsername || null,
-                isExistingUser: !!existingUserId,
-                existingUserId: existingUserId ? parseInt(existingUserId) : null
+            const partnerData = existingUserId ? { existingUserId: Number(existingUserId) } : {
+                nombre: firstName,
+                apellido: lastName,
+                telefono: phone || null,
+                telegramUsername: telegramUsername || null
             };
-
-            const terms = await window.PairTerms.reviewBooking(tournamentId, [firstName, lastName].join(' ').trim());
+            const partnerName = existingUserId
+                ? document.getElementById('selectedPartnerName').textContent
+                : [firstName, lastName].join(' ').trim();
+            const terms = await window.PairTerms.reviewBooking(tournamentId, partnerName);
             if (terms === null) {
                 submitPartnerBtn.disabled = false;
                 submitPartnerBtn.textContent = t('details.mode.register_pair');
@@ -779,13 +793,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(partnerData)
             });
-            if (response.status === 409) {
-                errorCode = 'terms_changed';
-                throw new Error(t('pair_terms.retry'));
-            }
-            const data = await response.json();
+            const data = await window.PairRegistrationResponse.read(response);
 
-            if (response.ok) {
+            if (response.ok && data.success === true) {
                 window.trackTournamentRegistrationComplete?.(tournamentId, data.status);
                 closeModal();
                 let message = '';
@@ -796,19 +806,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 showResultModal('success', t('details.success.registered'), message);
             } else if (data.needLevel) {
                 window.trackClarityRegistrationError?.(tournamentId, 'level_required');
-                // Попап "указать уровень" вместо обычной ошибки
-                closeModal();
                 LevelCheck.show(tournamentId);
                 submitPartnerBtn.disabled = false;
                 submitPartnerBtn.innerHTML = `<i class="fas fa-check-circle"></i> <span id="submitPartnerBtnText">${t('details.mode.register_pair')}</span>`;
             } else {
                 window.trackClarityRegistrationError?.(tournamentId, 'registration_rejected');
-                if (data.message && data.message.includes('Ya estás registrado')) {
-                    showResultModal('info', t('details.already_registered'), t('details.already_registered'));
-                    closeModal();
-                } else {
-                    showInfoMessage(data.message || t('details.error.process'), 'error');
-                }
+                showInfoMessage(window.PairRegistrationResponse.message(response, data), 'error');
                 submitPartnerBtn.disabled = false;
                 submitPartnerBtn.innerHTML = `<i class="fas fa-check-circle"></i> <span id="submitPartnerBtnText">${t('details.mode.register_pair')}</span>`;
             }

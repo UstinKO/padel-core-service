@@ -642,3 +642,9 @@ GET/HEAD `/api/public/events/{eventId}/live` и `/api/public/king-of-court/{king
 ### Закрытый контур UI v2
 
 Профиль `preview`, пакет `preview/` и `automation/ui-preview/` создают отдельную локальную среду с синтетическими данными, gateway Basic Auth, изолированной PostgreSQL и SMTP-приёмником. Ранние проверки конфигурации/UUID-маркера выполняются до миграций. `SchedulingConfiguration` сохраняет scheduling по умолчанию и отключает его только явным `app.scheduling.enabled=false`. Контракты диагностики/reset: [docs/endpoints/ui-preview.md](../docs/endpoints/ui-preview.md), запуск/проверка/остановка: [docs/ui-v2-preview.md](../docs/ui-v2-preview.md). Production SPA allowlist не включается.
+
+### Данные пилота модульного монолита
+
+Браузерные проверки: `automation/ui-preview/playoff-pilot.py` и `tests/browser/modular-pilot/`. Команда `run` проверяет итоговый jar, прежние UI/API и реальные WS по [принятому эталону](../docs/modular-monolith/phase-1/browser-expectations.json); пересоздаёт только пилот. `prepare --reset` готовит ручной набор; `smoke --rehearse` сверяет пять snapshots через существующий выпуск/откат. [Отчёт](../docs/modular-monolith/phase-1/browser-baseline.md), [ручной журнал](../docs/modular-monolith/phase-1/manual-baseline.md). Автоматизация не закрывает человеческую приёмку и не разрешает начать reactor при незавершённой #1048.
+
+`PlayoffPilotController`, `PlayoffPilotFixtureService` и `PlayoffPilotData` существуют только в профиле `preview`. Защищённые seed/read/reset пилота используют существующие проверки имени БД/UUID и блокировку control-row; пять турниров 8/9/16 команд формируются настоящим TeamPlayoffService. Метаданные сохраняются отдельным ключом JSON в существующем preview control, без Liquibase. [Контракт](../docs/endpoints/ui-preview.md), [backend baseline](../docs/modular-monolith/phase-1/backend-baseline.md). Сборка и движок пока остаются в корневом модуле.

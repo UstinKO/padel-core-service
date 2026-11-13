@@ -1,6 +1,6 @@
 .tournament-list-filters {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     align-items: flex-end;
     gap: 0.75rem;
     margin-bottom: 1rem;
@@ -15,10 +15,6 @@
     gap: 0.25rem;
     min-width: 0;
     font-weight: 600;
-}
-
-.tournament-list-filters > label {
-    flex: 1 1 10rem;
 }
 
 .tournament-list-filters select,
@@ -38,7 +34,7 @@
 }
 
 .tournament-list-filters__period {
-    flex: 1.5 1 19rem;
+    grid-column: span 2;
     min-width: 0;
     margin: 0;
     padding: 0;
@@ -76,6 +72,14 @@
     font-weight: 600;
 }
 
+.tournament-list-event-name {
+    overflow-wrap: anywhere;
+}
+
+#tournamentsMobileView .tournament-card-title {
+    min-width: 0;
+}
+
 .tournament-list-custom-name {
     display: block;
     color: var(--admin-gray, #4b5563);
@@ -83,12 +87,17 @@
     overflow-wrap: anywhere;
 }
 
-@media (max-width: 480px) {
-    .tournament-list-filters > label,
-    .tournament-list-filters__buttons {
-        flex: 1 1 100%;
+@media (max-width: 900px) {
+    .tournament-list-filters {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
+    .tournament-list-filters__buttons {
+        grid-column: span 2;
+    }
+}
+
+@media (max-width: 480px) {
     .tournament-list-filters__buttons .btn {
         flex: 1 1 auto;
     }

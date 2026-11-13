@@ -39,7 +39,8 @@ try {
   const forbiddenReset = await player.request.post(origin + '/api/internal/ui-preview/reset', {headers: await csrf(player)});
   require(forbiddenReset.status() === 403, 'Игрок выполняет reset');
   const preview = await playerPage.goto(origin + '/preview/torneos');
-  require(preview.status() === 403, 'Preview доступен игроку');
+  require(preview.status() === 403, 'Неожиданный ответ preview для игрока: HTTP ' + preview.status()
+    + ', путь ' + new URL(preview.url()).pathname);
   const cabinet = await playerPage.goto(origin + '/preview/players/dashboard');
   require(cabinet.status() === 200, 'Кабинет React недоступен синтетическому игроку');
   await playerPage.getByRole('heading', {name: /Мои мероприятия|Mis eventos|My events/}).waitFor();

@@ -230,3 +230,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.75-participation-requests.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.76-admin-registration-requests.yaml
+      relativeToChangelogFile: true
