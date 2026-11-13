@@ -642,3 +642,7 @@ GET/HEAD `/api/public/events/{eventId}/live` и `/api/public/king-of-court/{king
 ### Закрытый контур UI v2
 
 Профиль `preview`, пакет `preview/` и `automation/ui-preview/` создают отдельную локальную среду с синтетическими данными, gateway Basic Auth, изолированной PostgreSQL и SMTP-приёмником. Ранние проверки конфигурации/UUID-маркера выполняются до миграций. `SchedulingConfiguration` сохраняет scheduling по умолчанию и отключает его только явным `app.scheduling.enabled=false`. Контракты диагностики/reset: [docs/endpoints/ui-preview.md](../docs/endpoints/ui-preview.md), запуск/проверка/остановка: [docs/ui-v2-preview.md](../docs/ui-v2-preview.md). Production SPA allowlist не включается.
+
+### Данные пилота модульного монолита
+
+`PlayoffPilotController`, `PlayoffPilotFixtureService` и `PlayoffPilotData` существуют только в профиле `preview`. Защищённые seed/read/reset пилота используют существующие проверки имени БД/UUID и блокировку control-row; пять турниров 8/9/16 команд формируются настоящим TeamPlayoffService. Метаданные сохраняются отдельным ключом JSON в существующем preview control, без Liquibase. [Контракт](../docs/endpoints/ui-preview.md), [backend baseline](../docs/modular-monolith/phase-1/backend-baseline.md). Сборка и движок пока остаются в корневом модуле.
