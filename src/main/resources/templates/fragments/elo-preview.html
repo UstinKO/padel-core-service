@@ -4,13 +4,14 @@
 <div th:fragment="leaderboard" id="elo-leaderboard" class="container elo-preview">
     <h1 th:text="#{elo.preview.heading}">Ranking Elo</h1>
     <p th:text="#{elo.preview.asOf(${#temporals.format(previewElo.asOf, 'dd/MM/yyyy')})}"></p>
+    <p th:if="${previewEloStartStep > 0}" th:text="#{elo.preview.seedStep(${previewEloStartStep})}"></p>
     <form class="elo-preview-filters" hidden>
         <label>
             <span th:text="#{elo.preview.category}"></span>
             <select name="category">
                 <option value="" th:text="#{elo.preview.all}"></option>
                 <option th:each="category : ${previewEloCategories}" th:value="${category}"
-                        th:text="${category}"></option>
+                        th:text="${category == 'C10'} ? #{elo.preview.beginner} : ${category}"></option>
             </select>
         </label>
         <label>
@@ -37,7 +38,7 @@
                 <th scope="col" th:text="#{elo.preview.category}"></th>
                 <th scope="col" th:text="#{elo.preview.status}"></th>
                 <th scope="col">Elo</th>
-                <th scope="col" th:text="#{elo.preview.overallPlace}"></th>
+                <th scope="col" th:text="${previewEloStartStep > 0} ? #{elo.preview.eloPlace} : #{elo.preview.overallPlace}"></th>
             </tr>
             </thead>
             <tbody>
@@ -48,7 +49,7 @@
                 th:data-category-size="${row.categorySize}" th:data-overall-place="${row.overallPlace}">
                 <td th:text="${row.categoryPlace}"></td>
                 <th scope="row" th:text="${row.name}"></th>
-                <td th:text="${row.category}"></td>
+                <td th:text="${row.category == 'C10'} ? #{elo.preview.beginner} : ${row.category}"></td>
                 <td><span class="elo-preview-badge" th:classappend="${row.confirmed ? 'confirmed' : 'provisional'}"
                           th:text="${row.confirmed} ? #{elo.preview.confirmed} : #{elo.preview.provisional}"></span></td>
                 <td th:text="${#numbers.formatDecimal(row.elo, 1, 2)}"></td>
@@ -57,14 +58,24 @@
             </tbody>
         </table>
     </div>
-    <p class="elo-preview-note" th:text="#{elo.preview.explanation}"></p>
+    <p class="elo-preview-note" th:text="${previewEloStartStep > 0} ? #{elo.preview.eloExplanation} : #{elo.preview.explanation}"></p>
 </div>
 
 <th:block th:fragment="playerCard">
+    <header class="elo-preview-hero">
+    <div class="elo-preview-court" aria-hidden="true"><span></span></div>
+    <button type="button" class="elo-preview-motion" data-motion-toggle hidden aria-pressed="true"
+            th:aria-label="#{elo.preview.motion}" th:title="#{elo.preview.motion}"><span aria-hidden="true">Ⅱ</span></button>
+    <div class="elo-preview-identity">
+        <span class="elo-preview-avatar" aria-hidden="true" th:text="${#strings.substring(eloRow.name,0,1)}"></span>
+        <div><p class="elo-preview-eyebrow">1-PADEL / <span th:text="#{elo.preview.playerCard}"></span></p>
+            <h1 th:text="${eloRow.name}"></h1>
+            <p class="elo-preview-hero-caption" th:text="#{elo.preview.personalGame}"></p></div>
+    </div>
     <div class="elo-preview-card-heading">
-        <h2 th:text="#{elo.preview.myRanking}"></h2>
+        <h2 th:text="${eloRow.achievements != null} ? #{elo.preview.rankingAchievements} : #{elo.preview.myRanking}"></h2>
         <span class="elo-preview-badge" th:classappend="${eloRow.confirmed ? 'confirmed' : 'provisional'}">
-            <strong th:text="${eloRow.category}"></strong>
+            <strong th:text="${eloRow.category == 'C10'} ? #{elo.preview.beginner} : ${eloRow.category}"></strong>
             <span th:text="${eloRow.confirmed} ? #{elo.preview.confirmed} : #{elo.preview.provisional}"></span>
         </span>
     </div>
@@ -72,16 +83,111 @@
         <div><dt>Elo</dt><dd data-stat="elo" th:text="${#numbers.formatDecimal(eloRow.elo, 1, 2)}"></dd></div>
         <div><dt th:text="#{elo.preview.categoryPlace}"></dt>
             <dd data-stat="category-place" th:text="#{elo.preview.placeOf(${eloRow.categoryPlace},${eloRow.categorySize})}"></dd></div>
-        <div><dt th:text="#{elo.preview.overallPlace}"></dt>
-            <dd data-stat="overall-place" th:classappend="${eloRow.confirmed ? '' : 'pending'}"
-                th:text="${eloRow.confirmed} ? ${eloRow.overallPlace} : #{elo.preview.afterConfirmation}"></dd></div>
+        <div><dt th:text="${previewEloStartStep > 0} ? #{elo.preview.eloPlace} : #{elo.preview.overallPlace}"></dt>
+            <dd data-stat="overall-place" th:classappend="${eloRow.overallPlace == null ? 'pending' : ''}"
+                th:text="${eloRow.overallPlace != null} ? ${eloRow.overallPlace} : #{elo.preview.afterConfirmation}"></dd></div>
     </dl>
+    </header>
+    <section th:if="${eloRow.achievements != null}" th:object="${eloRow.achievements}"
+             class="elo-preview-achievements">
+        <h3 th:text="#{elo.preview.achievements}"></h3>
+        <dl class="elo-preview-totals">
+            <div class="elo-preview-total"><dt th:text="#{elo.preview.tournamentsPlayed}"></dt>
+                <dd data-stat="tournaments" th:text="*{tournaments}"></dd></div>
+            <div class="elo-preview-total"><dt th:text="#{elo.preview.matchesPlayed}"></dt>
+                <dd data-stat="matches" th:text="*{matches}"></dd></div>
+            <div th:replace="~{fragments/elo-preview :: medalTotal(*{titles}, #{elo.preview.titles}, 'titles', 'gold', 1)}"></div>
+            <div th:replace="~{fragments/elo-preview :: medalTotal(*{secondPlaces}, #{elo.preview.secondPlaces}, 'second-places', 'silver', 2)}"></div>
+        </dl>
+    </section>
+    <div class="elo-preview-insights">
+    <section th:unless="${eloRow.tournamentHistory.isEmpty()}" class="elo-preview-evolution" data-elo-evolution>
+        <div class="elo-preview-evolution-heading">
+            <h3 th:text="#{elo.preview.evolution}"></h3>
+            <label><span class="visually-hidden" th:text="#{elo.preview.period}"></span>
+                <select data-period>
+                    <option value="8" th:text="#{elo.preview.lastEight}"></option>
+                    <option value="all" th:text="#{elo.preview.allHistory}"></option>
+                </select>
+            </label>
+        </div>
+        <div class="elo-preview-chart-wrap">
+            <canvas data-elo-chart role="img" th:aria-label="#{elo.preview.evolution}"></canvas>
+            <div class="elo-preview-chart-tooltip" data-chart-tooltip hidden></div>
+        </div>
+        <div class="elo-preview-selected">
+            <label><span th:text="#{elo.preview.tournament}"></span> <select data-event-picker></select></label>
+            <output data-elo-point aria-live="polite"></output>
+        </div>
+        <div class="elo-preview-recent">
+            <div class="elo-preview-events-heading"><h3 th:text="#{elo.preview.events}"></h3>
+                <span class="elo-preview-event-count" th:text="${eloRow.tournamentHistory.size()}"></span></div>
+            <div id="elo-player-events" data-recent-events
+                 th:data-results-label="#{elo.preview.eventResults}"
+                 th:data-unavailable-label="#{elo.preview.resultsUnavailable}"
+                 th:data-americano-label="#{elo.preview.format.americano}"
+                 th:data-king-label="#{elo.preview.format.king}"
+                 th:data-pair-label="#{elo.preview.format.pair}"
+                 th:data-unknown-label="#{elo.preview.format.unknown}"></div>
+            <button th:if="${eloRow.tournamentHistory.size() > 3}" type="button" class="elo-preview-events-toggle"
+                    data-events-toggle hidden aria-expanded="false" aria-controls="elo-player-events"
+                    th:data-expand-label="#{elo.preview.expandEvents(${eloRow.tournamentHistory.size()})}"
+                    th:data-collapse-label="#{elo.preview.collapseEvents}">
+                <span data-events-label></span><span class="elo-preview-chevron" aria-hidden="true">↓</span>
+            </button>
+        </div>
+        <ol hidden>
+            <li th:each="event : ${eloRow.tournamentHistory}" th:data-day="${event.day}"
+                th:data-elo="${event.elo}" th:data-change="${event.change}"
+                th:data-wins="${event.wins}" th:data-matches="${event.matches}"
+                th:data-title="${event.title}" th:data-format="${event.format}"
+                th:data-results-url="${event.resultsUrl}"
+                th:text="${event.category == 'C10'} ? #{elo.preview.beginner} : ${event.category}"></li>
+        </ol>
+    </section>
+    <aside class="elo-preview-sidebar">
+        <section th:unless="${eloRow.tournamentHistory.isEmpty()}" class="elo-preview-form">
+            <div><p class="elo-preview-eyebrow" th:text="#{elo.preview.currentForm}"></p>
+                <strong th:text="#{elo.preview.recentWins(${#lists.size(eloRow.tournamentHistory) < 3 ? #lists.size(eloRow.tournamentHistory) : 3})}"></strong>
+                <output data-recent-wins></output></div>
+            <div class="elo-preview-win-ring" aria-hidden="true"><span data-win-percent></span></div>
+        </section>
     <div th:if="${!eloRow.confirmed and eloRow.progress != null}" th:object="${eloRow.progress}" class="elo-preview-progress">
-        <strong th:text="#{elo.preview.progress(${eloRow.category})}"></strong>
+        <strong th:text="${eloRow.category == 'C10'} ? #{elo.preview.beginnerProgress} : #{elo.preview.progress(${eloRow.category})}"></strong>
         <p th:text="#{elo.preview.progressStats(*{tournaments},*{matches},*{wins})}"></p>
         <p th:text="#{elo.preview.progressRemaining(*{moreTournaments},*{moreMatches},*{moreWins})}"></p>
     </div>
-    <a th:href="@{/ranking(category=${eloRow.category})}" th:text="#{elo.preview.viewRanking}"></a>
+    <div th:each="target : ${eloRow.strongerCategories}" th:object="${target.progress}" class="elo-preview-progress">
+        <strong th:text="#{elo.preview.strongerProgress(${target.category})}"></strong>
+        <p th:if="*{tournaments > 0}" th:text="#{elo.preview.strongerProgressStats(*{tournaments},*{matches},*{wins})}"></p>
+        <p th:if="*{tournaments == 0}" th:text="#{elo.preview.noCategoryMatches}"></p>
+        <div class="elo-preview-progress-bars" aria-hidden="true">
+            <span th:text="#{elo.preview.tournamentsPlayed}"></span><meter min="0" max="2" th:value="*{tournaments}"></meter>
+            <span th:text="#{elo.preview.matchesPlayed}"></span><meter min="0" max="6" th:value="*{matches}"></meter>
+        </div>
+        <details class="elo-preview-rules">
+            <summary th:text="#{elo.preview.confirmationRules}"></summary>
+            <p th:text="#{elo.preview.strongerProgressRemaining(*{moreTournaments},*{moreMatches},*{moreWins})}"></p>
+            <p th:if="${target.eligibleFromOneEvent}" th:text="#{elo.preview.strongerProgressOneEvent}"></p>
+        </details>
+    </div>
+    </aside>
+    </div>
+    <a class="elo-preview-ranking-link" th:href="@{/ranking(category=${eloRow.category})}" th:text="#{elo.preview.viewRanking}"></a>
 </th:block>
+
+<div th:fragment="medalTotal(count, label, stat, tone, place)" class="elo-preview-total elo-preview-medal-total">
+    <dt th:text="${label}"></dt>
+    <dd>
+        <span th:data-stat="${stat}" th:text="${count}"></span>
+        <span th:if="${count > 0}" class="elo-preview-medals" th:classappend="${tone}" aria-hidden="true">
+            <span th:each="index : ${#numbers.sequence(1, count > 4 ? 4 : count)}"
+                  class="elo-preview-medal"><span th:data-place="${place}">
+                <svg viewBox="0 0 60 60" aria-hidden="true"><path d="M20 45C7 36 9 20 17 13M40 45C53 36 51 20 43 13" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M14 22Q5 17 11 12Q18 16 14 22M12 31Q3 27 8 22Q16 26 12 31M16 40Q6 38 8 32Q17 34 16 40M46 22Q55 17 49 12Q42 16 46 22M48 31Q57 27 52 22Q44 26 48 31M44 40Q54 38 52 32Q43 34 44 40M30 8l2 4 5 1-4 3 1 5-4-2-4 2 1-5-4-3 5-1z" fill="currentColor"/></svg>
+                </span></span>
+        </span>
+    </dd>
+</div>
 </body>
 </html>
