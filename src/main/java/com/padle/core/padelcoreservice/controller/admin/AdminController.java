@@ -136,7 +136,10 @@ public class AdminController {
                                   @RequestParam(required = false) Long clubId,
                                   @RequestParam(required = false) AdminEventFormat format,
                                   @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-                                  @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+                                  @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+                                  @RequestParam(required = false) GenderFormat gender,
+                                  @RequestParam(required = false) Nivel level,
+                                  @RequestParam(required = false) TournamentStatus status) {
         log.info("Listing tournaments for owner: {}", owner.getEmail());
 
         List<TournamentDto> visible = visibleTournaments(owner);
@@ -145,6 +148,9 @@ public class AdminController {
                 .filter(t -> clubId == null || clubId.equals(t.getClubId()))
                 .filter(t -> format == null || format == AdminEventFormat.of(t))
                 .filter(t -> matchesPeriod(t.getFechaInicio(), from, to))
+                .filter(t -> gender == null || gender == t.getGeneroFormato())
+                .filter(t -> level == null || matchesDeclaredLevel(t.getCategoriaNivel(), level))
+                .filter(t -> status == null || status == t.getEstado())
                 .map(t -> tournamentListRow(t, owner))
                 .toList();
 
@@ -160,10 +166,19 @@ public class AdminController {
         model.addAttribute("selectedClubId", clubId);
         model.addAttribute("selectedFormat", format);
         model.addAttribute("eventFormats", AdminEventFormat.values());
+        model.addAttribute("eventGenders", GenderFormat.values());
+        model.addAttribute("eventLevels", Arrays.stream(Nivel.values())
+                .filter(value -> value != Nivel.SIN_ESPECIFICAR)
+                .toList());
+        model.addAttribute("eventStatuses", TournamentStatus.values());
+        model.addAttribute("selectedGender", gender);
+        model.addAttribute("selectedLevel", level);
+        model.addAttribute("selectedStatus", status);
         model.addAttribute("dateFrom", from);
         model.addAttribute("dateTo", to);
         model.addAttribute("invalidPeriod", invalidPeriod);
-        model.addAttribute("filtersActive", clubId != null || format != null || from != null || to != null);
+        model.addAttribute("filtersActive", clubId != null || format != null || from != null || to != null
+                || gender != null || level != null || status != null);
 
         return "admin/tournaments/list";
     }
@@ -193,6 +208,16 @@ public class AdminController {
             return true;
         }
         return date != null && (from == null || !date.isBefore(from)) && (to == null || !date.isAfter(to));
+    }
+
+    private static boolean matchesDeclaredLevel(String declared, Nivel level) {
+        String selected = level.name();
+        if (selected.equals(declared)) {
+            return true;
+        }
+        // Для одиночной категории ищем её среди явно перечисленных уровней мероприятия.
+        return declared != null && selected.matches("[CD][0-9]")
+                && Arrays.asList(declared.split("_")).contains(selected);
     }
 
     private Map<String, Object> tournamentListRow(TournamentDto tournament, Owner owner) {
