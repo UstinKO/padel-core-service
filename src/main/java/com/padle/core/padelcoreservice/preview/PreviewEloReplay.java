@@ -51,6 +51,7 @@ final class PreviewEloReplay {
     record Event(String key, LocalDate day, String category, List<Game> games, Set<Long> champions,
                  Set<Long> runnersUp, String title, String format, String resultsUrl) {
         Event {
+            category = normalizeCategory(category);
             games = List.copyOf(games);
             champions = Set.copyOf(champions);
             runnersUp = runnersUp == null ? Set.of() : Set.copyOf(runnersUp);
@@ -74,6 +75,20 @@ final class PreviewEloReplay {
                 case "C9", "D8" -> 9;
                 case "C10", "D9", "PRINCIPIANTES" -> 10;
                 default -> NO_CATEGORY;
+            };
+        }
+
+        private static String normalizeCategory(String category) {
+            return switch (category == null ? "" : category) {
+                case "C9_C8", "C9/C8" -> "C9";
+                case "C8_C7", "C8/C7" -> "C8";
+                case "C7_C6", "C7/C6" -> "C7";
+                case "C6_C5", "C6/C5" -> "C6";
+                case "C5_C4", "C5/C4" -> "C5";
+                case "D9_D8", "D9/D8" -> "D9";
+                case "D7_D8", "D7/D8" -> "D8";
+                case "D7_D6", "D7/D6" -> "D7";
+                default -> category;
             };
         }
     }
