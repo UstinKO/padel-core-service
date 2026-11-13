@@ -47,10 +47,16 @@ final class PreviewEloReplay {
         }
     }
 
-    record Event(String key, LocalDate day, String category, List<Game> games, Set<Long> champions) {
+    record Event(String key, LocalDate day, String category, List<Game> games, Set<Long> champions,
+                 Set<Long> runnersUp) {
         Event {
             games = List.copyOf(games);
             champions = Set.copyOf(champions);
+            runnersUp = runnersUp == null ? Set.of() : Set.copyOf(runnersUp);
+        }
+
+        Event(String key, LocalDate day, String category, List<Game> games, Set<Long> champions) {
+            this(key, day, category, games, champions, Set.of());
         }
 
         int level() {
@@ -79,6 +85,10 @@ final class PreviewEloReplay {
         final Map<Integer, Record> levels = new HashMap<>();
         double elo;
         int confirmed = NO_CATEGORY;
+        int tournaments;
+        int matches;
+        int titles;
+        int secondPlaces;
 
         Player(long id, double elo) {
             this.id = id;
@@ -98,6 +108,10 @@ final class PreviewEloReplay {
 
         boolean eligibleFromOneEvent(int level) {
             return level >= confirmed - 1 || !isConfirmed();
+        }
+
+        PreviewEloRanking.Achievements achievements() {
+            return new PreviewEloRanking.Achievements(tournaments, matches, titles, secondPlaces);
         }
     }
 
@@ -132,6 +146,7 @@ final class PreviewEloReplay {
         var stats = new HashMap<Long, Record>();
         var finalists = new HashSet<Long>();
         var champions = new HashSet<>(event.champions());
+        var runnersUp = new HashSet<>(event.runnersUp());
         var batches = event.games().stream().collect(Collectors.groupingBy(Game::batch, TreeMap::new,
                 Collectors.toList()));
         for (var batch : batches.values()) {
@@ -143,10 +158,22 @@ final class PreviewEloReplay {
                     finalists.addAll(game.ids());
                     int winningSide = game.left() > game.right() ? 0 : 2;
                     champions.addAll(game.ids().subList(winningSide, winningSide + 2));
+                    int losingSide = 2 - winningSide;
+                    runnersUp.addAll(game.ids().subList(losingSide, losingSide + 2));
                 }
             }
             changes.forEach((player, change) -> player.elo += change);
         }
+        stats.forEach((id, evidence) -> {
+            var player = players.get(id);
+            player.tournaments++;
+            player.matches += evidence.matches;
+            if (champions.contains(id)) {
+                player.titles++;
+            } else if (runnersUp.contains(id)) {
+                player.secondPlaces++;
+            }
+        });
         if (event.level() != NO_CATEGORY) {
             stats.forEach((id, evidence) -> recordEvent(players.get(id), event.level(), evidence,
                     finalists.contains(id), champions.contains(id)));
@@ -218,7 +245,7 @@ final class PreviewEloReplay {
                 rows.add(new PreviewEloRanking.Row(player.id, names.get(player.id), category, player.isConfirmed(),
                         BigDecimal.valueOf(player.elo), categoryPlace, sorted.size(), place,
                         player.isConfirmed() ? null : progress(player.levels.get(level)),
-                        strongerCategories(player, level)));
+                        strongerCategories(player, level), player.achievements()));
             }
         }
         return startStep > 0 ? withOverallEloPlaces(rows) : List.copyOf(rows);
@@ -238,7 +265,7 @@ final class PreviewEloReplay {
         }
         return rows.stream().map(row -> new PreviewEloRanking.Row(row.id(), row.name(), row.category(),
                 row.confirmed(), row.elo(), row.categoryPlace(), row.categorySize(), places.get(row.id()),
-                row.progress(), row.strongerCategories())).toList();
+                row.progress(), row.strongerCategories(), row.achievements())).toList();
     }
 
     private boolean tied(Player first, Player second) {

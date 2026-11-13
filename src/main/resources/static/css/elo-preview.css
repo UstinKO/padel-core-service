@@ -43,6 +43,25 @@
 .elo-preview-metrics dt { color: #465571; font-size: .86rem; }
 .elo-preview-metrics dd { margin: .2rem 0 0; font-size: 1.25rem; font-weight: 700; }
 .elo-preview-metrics dd.pending { font-size: 1rem; }
+.elo-preview-achievements {
+    margin: .9rem 0 1rem;
+    padding: .9rem 1rem;
+    border: 1px solid #f0ddcf;
+    border-radius: .65rem;
+    background: #fff7f0;
+}
+.elo-preview-achievements h3 { margin: 0 0 .65rem; font-size: 1rem; color: #953b17; }
+.elo-preview-totals {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: .65rem;
+    margin: 0;
+}
+.elo-preview-totals dt { font-size: .86rem; color: #594d48; }
+.elo-preview-totals dd { margin: .15rem 0 0; font-size: 1.35rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+@media (max-width: 520px) {
+    .elo-preview-totals { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 .elo-preview-progress { margin-bottom: .75rem; }
 .elo-preview-progress p { margin: .2rem 0; }
 .elo-preview-card a { color: #174b9e; text-decoration: underline; }

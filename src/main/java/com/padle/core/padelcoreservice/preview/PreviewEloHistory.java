@@ -90,7 +90,8 @@ public class PreviewEloHistory {
             var score = corrections.get(game.key());
             return score == null ? game : game.withScore(score.left(), score.right());
         }).toList();
-        return new PreviewEloReplay.Event(event.key(), event.day(), event.category(), games, event.champions());
+        return new PreviewEloReplay.Event(event.key(), event.day(), event.category(), games, event.champions(),
+                event.runnersUp());
     }
 
     @Transactional

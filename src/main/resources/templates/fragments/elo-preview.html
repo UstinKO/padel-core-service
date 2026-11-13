@@ -63,7 +63,7 @@
 
 <th:block th:fragment="playerCard">
     <div class="elo-preview-card-heading">
-        <h2 th:text="#{elo.preview.myRanking}"></h2>
+        <h2 th:text="${eloRow.achievements != null} ? #{elo.preview.rankingAchievements} : #{elo.preview.myRanking}"></h2>
         <span class="elo-preview-badge" th:classappend="${eloRow.confirmed ? 'confirmed' : 'provisional'}">
             <strong th:text="${eloRow.category == 'C10'} ? #{elo.preview.beginner} : ${eloRow.category}"></strong>
             <span th:text="${eloRow.confirmed} ? #{elo.preview.confirmed} : #{elo.preview.provisional}"></span>
@@ -77,6 +77,20 @@
             <dd data-stat="overall-place" th:classappend="${eloRow.overallPlace == null ? 'pending' : ''}"
                 th:text="${eloRow.overallPlace != null} ? ${eloRow.overallPlace} : #{elo.preview.afterConfirmation}"></dd></div>
     </dl>
+    <section th:if="${eloRow.achievements != null}" th:object="${eloRow.achievements}"
+             class="elo-preview-achievements">
+        <h3 th:text="#{elo.preview.achievements}"></h3>
+        <dl class="elo-preview-totals">
+            <div><dt th:text="#{elo.preview.tournamentsPlayed}"></dt>
+                <dd data-stat="tournaments" th:text="*{tournaments}"></dd></div>
+            <div><dt th:text="#{elo.preview.matchesPlayed}"></dt>
+                <dd data-stat="matches" th:text="*{matches}"></dd></div>
+            <div><dt><span aria-hidden="true">🥇</span> <span th:text="#{elo.preview.titles}"></span></dt>
+                <dd data-stat="titles" th:text="*{titles}"></dd></div>
+            <div><dt><span aria-hidden="true">🥈</span> <span th:text="#{elo.preview.secondPlaces}"></span></dt>
+                <dd data-stat="second-places" th:text="*{secondPlaces}"></dd></div>
+        </dl>
+    </section>
     <div th:if="${!eloRow.confirmed and eloRow.progress != null}" th:object="${eloRow.progress}" class="elo-preview-progress">
         <strong th:text="${eloRow.category == 'C10'} ? #{elo.preview.beginnerProgress} : #{elo.preview.progress(${eloRow.category})}"></strong>
         <p th:text="#{elo.preview.progressStats(*{tournaments},*{matches},*{wins})}"></p>

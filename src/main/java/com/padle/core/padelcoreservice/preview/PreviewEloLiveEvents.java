@@ -81,8 +81,10 @@ class PreviewEloLiveEvents {
         var events = new ArrayList<PreviewEloReplay.Event>();
         for (var tournament : groups.values()) {
             var first = tournament.get(0);
+            var podium = individualPodium(first);
             events.add(new PreviewEloReplay.Event("S-" + first.eventId(), first.day(), first.category(),
-                    games(first.eventId(), tournament), champions(first)));
+                    games(first.eventId(), tournament), Set.copyOf(podium.stream().limit(1).toList()),
+                    Set.copyOf(podium.stream().skip(1).limit(1).toList())));
         }
         var ids = nativeGames.stream().flatMap(item -> item.game().ids().stream()).collect(Collectors.toSet());
         var names = ids.isEmpty() ? Map.<Long, String>of() : jdbc.sql("""
@@ -106,20 +108,20 @@ class PreviewEloLiveEvents {
         }).toList();
     }
 
-    private Set<Long> champions(NativeGame first) {
+    private List<Long> individualPodium(NativeGame first) {
         if (!first.finished()) {
-            return Set.of();
+            return List.of();
         }
         return switch (first.format()) {
-            case "king" -> king.getRanking(first.formatId()).stream().limit(1)
-                    .map(player -> player.getPlayerId()).collect(Collectors.toSet());
+            case "king" -> king.getRanking(first.formatId()).stream().limit(2)
+                    .map(player -> player.getPlayerId()).toList();
             case "americano" -> {
                 var order = first.finalOrder() == null ? AmericanoFinalOrder.SCORE_DESC
                         : AmericanoFinalOrder.valueOf(first.finalOrder());
                 yield americano.getRanking(first.eventId(), order.sortBy(), order.ascending() ? "ASC" : "DESC")
-                        .stream().limit(1).map(player -> player.getPlayerId()).collect(Collectors.toSet());
+                        .stream().limit(2).map(player -> player.getPlayerId()).toList();
             }
-            default -> Set.of();
+            default -> List.of();
         };
     }
 
