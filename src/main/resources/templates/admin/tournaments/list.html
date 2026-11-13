@@ -94,6 +94,30 @@
                             th:selected="${selectedClubId == club.key}" th:text="${club.value}"></option>
                 </select>
             </label>
+            <label for="eventGender">
+                <span th:text="#{admin.tournaments.list.filter.gender}"></span>
+                <select id="eventGender" name="gender">
+                    <option value="" th:text="#{admin.tournaments.list.filter.gender.all}"></option>
+                    <option th:each="value : ${eventGenders}" th:value="${value.name()}"
+                            th:selected="${selectedGender == value}" th:text="#{__${'enum.genero.' + value.name()}__}"></option>
+                </select>
+            </label>
+            <label for="eventLevel">
+                <span th:text="#{admin.tournaments.list.filter.level}"></span>
+                <select id="eventLevel" name="level">
+                    <option value="" th:text="#{admin.tournaments.list.filter.level.all}"></option>
+                    <option th:each="value : ${eventLevels}" th:value="${value.name()}"
+                            th:selected="${selectedLevel == value}" th:text="${value.name() == 'PRINCIPIANTES'} ? #{calendar.level.PRINCIPIANTES} : ${#strings.replace(value.name(), '_', #strings.startsWith(value.name(), 'SUMA_') ? ' ' : '–')}"></option>
+                </select>
+            </label>
+            <label for="eventStatus">
+                <span th:text="#{admin.tournaments.list.filter.status}"></span>
+                <select id="eventStatus" name="status">
+                    <option value="" th:text="#{admin.tournaments.list.filter.status.all}"></option>
+                    <option th:each="value : ${eventStatuses}" th:value="${value.name()}"
+                            th:selected="${selectedStatus == value}" th:text="${value.name() == 'CERRADO'} ? #{admin.tournaments.list.filter.registrationClosed} : #{__${'enum.estado.' + value.name()}__}"></option>
+                </select>
+            </label>
             <div class="tournament-list-filters__buttons">
                 <button type="submit" class="btn btn-primary"
                         th:text="#{admin.tournaments.list.filter.club.apply}">Aplicar</button>
@@ -114,11 +138,11 @@
 
         <!-- Карточки турниров для мобильных -->
         <div th:if="${resultCount > 0}" class="tournaments-cards" id="tournamentsMobileView">
-            <div th:each="item : ${tournaments}" class="tournament-card">
+            <div th:each="item : ${tournaments}" th:with="levelLabel=${item.tournament.categoriaNivel == 'PRINCIPIANTES' ? #messages.msg('calendar.level.PRINCIPIANTES') : #strings.replace(item.tournament.categoriaNivel, '_', #strings.startsWith(item.tournament.categoriaNivel, 'SUMA_') ? ' ' : '–')}" class="tournament-card">
                 <div class="tournament-card-header">
                     <div class="tournament-card-title">
                         <i class="fas fa-trophy"></i>
-                        <div><strong th:text="#{__${'admin.tournaments.list.format.' + item.format.name()}__}">Americano</strong>
+                        <div><strong class="tournament-list-event-name"><span th:text="#{__${'admin.tournaments.list.format.' + item.format.name()}__}">Americano</span><span th:unless="${#strings.isEmpty(levelLabel)}" th:text="' · ' + ${levelLabel}"> · C7</span></strong>
                             <small class="tournament-list-custom-name" th:if="${not #strings.isEmpty(item.customName)}"
                                    th:text="${item.customName}"></small>
                         </div>
@@ -147,10 +171,7 @@
                     </div>
                     <div class="tournament-info-row">
                         <i class="fas fa-chart-line"></i>
-                        <span th:text="${item.tournament.categoriaNivel == 'TODOS'} ? #{calendar.level.TODOS}
-                                   : (${item.tournament.categoriaNivel == 'PRINCIPIANTES'} ? #{calendar.level.PRINCIPIANTES}
-                                   : ${#strings.replace(item.tournament.categoriaNivel, '_',
-                                                       #strings.startsWith(item.tournament.categoriaNivel, 'SUMA_') ? ' ' : '–')})">C8</span>
+                        <span th:text="${levelLabel}">C8</span>
                     </div>
                     <div class="tournament-info-row">
                         <i class="fas fa-users"></i>
@@ -228,10 +249,10 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="item : ${tournaments}">
+                <tr th:each="item : ${tournaments}" th:with="levelLabel=${item.tournament.categoriaNivel == 'PRINCIPIANTES' ? #messages.msg('calendar.level.PRINCIPIANTES') : #strings.replace(item.tournament.categoriaNivel, '_', #strings.startsWith(item.tournament.categoriaNivel, 'SUMA_') ? ' ' : '–')}">
                     <td th:text="${item.tournament.id}">1</td>
                     <td>
-                        <strong th:text="#{__${'admin.tournaments.list.format.' + item.format.name()}__}">Americano</strong>
+                        <strong class="tournament-list-event-name"><span th:text="#{__${'admin.tournaments.list.format.' + item.format.name()}__}">Americano</span><span th:unless="${#strings.isEmpty(levelLabel)}" th:text="' · ' + ${levelLabel}"> · C7</span></strong>
                         <small class="tournament-list-custom-name" th:if="${not #strings.isEmpty(item.customName)}"
                                th:text="${item.customName}"></small>
                     </td>
@@ -240,10 +261,7 @@
                     <td>
                         <div style="display: flex; flex-direction: column; gap: 0.25rem;">
                             <span><i class="fas fa-venus-mars" style="width: 16px; color: var(--admin-primary);"></i> <span th:text="#{__${'enum.genero.' + item.tournament.generoFormato.name()}__}">Mixto</span></span>
-                            <span><i class="fas fa-chart-line" style="width: 16px; color: var(--admin-primary);"></i> <span th:text="${item.tournament.categoriaNivel == 'TODOS'} ? #{calendar.level.TODOS}
-                                   : (${item.tournament.categoriaNivel == 'PRINCIPIANTES'} ? #{calendar.level.PRINCIPIANTES}
-                                   : ${#strings.replace(item.tournament.categoriaNivel, '_',
-                                                       #strings.startsWith(item.tournament.categoriaNivel, 'SUMA_') ? ' ' : '–')})">C8</span></span>
+                            <span><i class="fas fa-chart-line" style="width: 16px; color: var(--admin-primary);"></i> <span th:text="${levelLabel}">C8</span></span>
                         </div>
                     </td>
                     <td>
