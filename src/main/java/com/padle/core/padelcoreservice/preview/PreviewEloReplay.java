@@ -49,7 +49,7 @@ final class PreviewEloReplay {
     }
 
     record Event(String key, LocalDate day, String category, List<Game> games, Set<Long> champions,
-                 Set<Long> runnersUp) {
+                 Set<Long> runnersUp, String title, String format, String resultsUrl) {
         Event {
             games = List.copyOf(games);
             champions = Set.copyOf(champions);
@@ -58,6 +58,11 @@ final class PreviewEloReplay {
 
         Event(String key, LocalDate day, String category, List<Game> games, Set<Long> champions) {
             this(key, day, category, games, champions, Set.of());
+        }
+
+        Event(String key, LocalDate day, String category, List<Game> games, Set<Long> champions,
+              Set<Long> runnersUp) {
+            this(key, day, category, games, champions, runnersUp, null, null, null);
         }
 
         int level() {
@@ -173,7 +178,8 @@ final class PreviewEloReplay {
             player.tournaments++;
             player.matches += evidence.matches;
             player.tournamentHistory.add(new PreviewEloRanking.TournamentElo(event.day(), event.category(),
-                    player.elo, player.elo - before.get(id), evidence.matches, evidence.wins));
+                    player.elo, player.elo - before.get(id), evidence.matches, evidence.wins,
+                    event.title(), event.format(), event.resultsUrl()));
             if (champions.contains(id)) {
                 player.titles++;
             } else if (runnersUp.contains(id)) {

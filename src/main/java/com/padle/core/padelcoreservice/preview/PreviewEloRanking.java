@@ -31,7 +31,8 @@ public class PreviewEloRanking {
 
     public record Achievements(int tournaments, int matches, int titles, int secondPlaces) { }
 
-    public record TournamentElo(LocalDate day, String category, double elo, double change, int matches, int wins) { }
+    public record TournamentElo(LocalDate day, String category, double elo, double change, int matches, int wins,
+                                String title, String format, String resultsUrl) { }
 
     public record Row(long id, String name, String category, boolean confirmed, BigDecimal elo,
                       int categoryPlace, int categorySize, Integer overallPlace, Progress progress,

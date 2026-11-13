@@ -122,7 +122,13 @@
         <div class="elo-preview-recent">
             <div class="elo-preview-events-heading"><h3 th:text="#{elo.preview.events}"></h3>
                 <span class="elo-preview-event-count" th:text="${eloRow.tournamentHistory.size()}"></span></div>
-            <div id="elo-player-events" data-recent-events></div>
+            <div id="elo-player-events" data-recent-events
+                 th:data-results-label="#{elo.preview.eventResults}"
+                 th:data-unavailable-label="#{elo.preview.resultsUnavailable}"
+                 th:data-americano-label="#{elo.preview.format.americano}"
+                 th:data-king-label="#{elo.preview.format.king}"
+                 th:data-pair-label="#{elo.preview.format.pair}"
+                 th:data-unknown-label="#{elo.preview.format.unknown}"></div>
             <button th:if="${eloRow.tournamentHistory.size() > 3}" type="button" class="elo-preview-events-toggle"
                     data-events-toggle hidden aria-expanded="false" aria-controls="elo-player-events"
                     th:data-expand-label="#{elo.preview.expandEvents(${eloRow.tournamentHistory.size()})}"
@@ -134,6 +140,8 @@
             <li th:each="event : ${eloRow.tournamentHistory}" th:data-day="${event.day}"
                 th:data-elo="${event.elo}" th:data-change="${event.change}"
                 th:data-wins="${event.wins}" th:data-matches="${event.matches}"
+                th:data-title="${event.title}" th:data-format="${event.format}"
+                th:data-results-url="${event.resultsUrl}"
                 th:text="${event.category == 'C10'} ? #{elo.preview.beginner} : ${event.category}"></li>
         </ol>
     </section>

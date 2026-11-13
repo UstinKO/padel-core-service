@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 class PreviewEloLiveEvents {
     private static final String SCORED_MATCHES = """
-            SELECT t.id AS event_id, t.fecha_inicio, t.categoria_nivel, 'king' AS format,
+            SELECT t.id AS event_id, t.nombre AS event_title, t.fecha_inicio, t.categoria_nivel, 'king' AS format,
                    k.id AS game_tournament, k.is_finished AS finished, NULL AS final_order,
                    m.id AS match_id, r.round_number AS batch, false AS final_match,
                    m.winners_score AS left_score, m.losers_score AS right_score,
@@ -39,7 +39,7 @@ class PreviewEloLiveEvents {
               JOIN tournaments_db t ON t.id=k.tournament_id
              WHERE t.fecha_inicio > :cutoff AND t.is_active AND t.estado <> 'CANCELADO' AND r.is_completed
              UNION ALL
-            SELECT t.id, t.fecha_inicio, t.categoria_nivel,
+            SELECT t.id, t.nombre, t.fecha_inicio, t.categoria_nivel,
                    CASE WHEN t.tipo='AMERICANO_TEAMS' THEN 'pair' ELSE 'americano' END,
                    t.id, t.estado='FINALIZADO', t.americano_final_order, m.id,
                    CASE WHEN t.tipo='AMERICANO_TEAMS' THEN
@@ -68,7 +68,7 @@ class PreviewEloLiveEvents {
     private final AmericanoService americano;
     private final TeamPlayoffService playoff;
 
-    private record NativeGame(long eventId, LocalDate day, String category, String format,
+    private record NativeGame(long eventId, String title, LocalDate day, String category, String format,
                               long formatId, boolean finished, String finalOrder, Long qualificationId,
                               PreviewEloReplay.Game game) { }
 
@@ -84,7 +84,12 @@ class PreviewEloLiveEvents {
             var podium = individualPodium(first);
             events.add(new PreviewEloReplay.Event("S-" + first.eventId(), first.day(), first.category(),
                     games(first.eventId(), tournament), Set.copyOf(podium.stream().limit(1).toList()),
-                    Set.copyOf(podium.stream().skip(1).limit(1).toList())));
+                    Set.copyOf(podium.stream().skip(1).limit(1).toList()), first.title(), first.format(),
+                    switch (first.format()) {
+                        case "king" -> "/torneo/" + first.eventId() + "/king-of-court";
+                        case "pair" -> "/tournaments/team-playoff/" + first.eventId();
+                        default -> "/tournaments/americano/" + first.eventId();
+                    }));
         }
         var ids = nativeGames.stream().flatMap(item -> item.game().ids().stream()).collect(Collectors.toSet());
         var names = ids.isEmpty() ? Map.<Long, String>of() : jdbc.sql("""
@@ -142,7 +147,7 @@ class PreviewEloLiveEvents {
         var format = row.getString("format");
         var game = new PreviewEloReplay.Game(format + ":" + row.getLong("match_id"), row.getInt("batch"), ids,
                 left, right, row.getBoolean("final_match"));
-        return new NativeGame(row.getLong("event_id"), row.getObject("fecha_inicio", LocalDate.class),
+        return new NativeGame(row.getLong("event_id"), row.getString("event_title"), row.getObject("fecha_inicio", LocalDate.class),
                 row.getString("categoria_nivel"), format, row.getLong("game_tournament"),
                 row.getBoolean("finished"), row.getString("final_order"), row.getObject("qualification_id", Long.class), game);
     }

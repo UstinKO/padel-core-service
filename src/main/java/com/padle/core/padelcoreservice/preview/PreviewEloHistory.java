@@ -91,7 +91,7 @@ public class PreviewEloHistory {
             return score == null ? game : game.withScore(score.left(), score.right());
         }).toList();
         return new PreviewEloReplay.Event(event.key(), event.day(), event.category(), games, event.champions(),
-                event.runnersUp());
+                event.runnersUp(), event.title(), event.format(), event.resultsUrl());
     }
 
     @Transactional

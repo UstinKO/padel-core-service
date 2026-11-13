@@ -33,7 +33,10 @@
         change: Number(item.dataset.change),
         wins: Number(item.dataset.wins),
         matches: Number(item.dataset.matches),
-        category: item.textContent
+        category: item.textContent,
+        title: item.dataset.title,
+        format: item.dataset.format,
+        resultsUrl: item.dataset.resultsUrl
     }));
     let visible;
     let points = [];
@@ -48,17 +51,31 @@
     card.querySelector('.elo-preview-win-ring').style.setProperty('--win-angle', `${winRate * 360}deg`);
 
     const recentEvents = panel.querySelector('[data-recent-events]');
+    const formats = {
+        americano: recentEvents.dataset.americanoLabel,
+        king: recentEvents.dataset.kingLabel,
+        pair: recentEvents.dataset.pairLabel
+    };
     const eventButtons = [];
     history.slice().reverse().forEach((event, index) => {
+        const row = document.createElement('div');
+        row.className = 'elo-preview-event-row';
+        row.hidden = index >= 3;
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'elo-preview-event' + (event.change < 0 ? ' loss' : '');
-        button.hidden = index >= 3;
         const label = document.createElement('span');
-        label.textContent = `${event.category} · ${date.format(event.day)}`;
+        const format = formats[event.format] || recentEvents.dataset.unknownLabel;
+        const title = event.title || `${format} · ${event.category}`;
+        const name = document.createElement('span');
+        name.className = 'elo-preview-event-title';
+        name.textContent = title;
+        const meta = document.createElement('span');
+        meta.className = 'elo-preview-event-meta';
+        meta.textContent = `${format} · ${event.category} · ${date.format(event.day)}`;
         const detail = document.createElement('b');
         detail.textContent = `${number.format(event.elo)} Elo`;
-        label.append(detail);
+        label.append(name, meta, detail);
         const change = document.createElement('strong');
         change.textContent = `${signed.format(event.change)} Elo`;
         button.append(label, change);
@@ -70,8 +87,24 @@
             picker.selectedIndex = visible.indexOf(event);
             showPoint();
         });
-        recentEvents.append(button);
-        eventButtons.push({ button, event });
+        row.append(button);
+        let url;
+        try {
+            const candidate = event.resultsUrl && new URL(event.resultsUrl, window.location.href);
+            if (candidate && ['http:', 'https:'].includes(candidate.protocol)) url = candidate.href;
+        } catch { /* Missing or invalid sources remain visible without a broken link. */ }
+        const results = document.createElement(url ? 'a' : 'span');
+        results.className = 'elo-preview-event-results';
+        results.textContent = url ? `${recentEvents.dataset.resultsLabel} ↗` : recentEvents.dataset.unavailableLabel;
+        if (url) {
+            results.href = url;
+            results.target = '_blank';
+            results.rel = 'noopener noreferrer';
+            results.setAttribute('aria-label', `${recentEvents.dataset.resultsLabel}: ${title}, ${date.format(event.day)}`);
+        }
+        row.append(results);
+        recentEvents.append(row);
+        eventButtons.push({ button, row, event });
     });
     const toggle = panel.querySelector('[data-events-toggle]');
     if (toggle) {
@@ -82,7 +115,7 @@
             toggle.setAttribute('aria-expanded', String(expanded));
             toggle.querySelector('[data-events-label]').textContent = expanded
                 ? toggle.dataset.collapseLabel : toggle.dataset.expandLabel;
-            eventButtons.forEach(({ button }, i) => { button.hidden = !expanded && i >= 3; });
+            eventButtons.forEach(({ row }, i) => { row.hidden = !expanded && i >= 3; });
         });
     }
 

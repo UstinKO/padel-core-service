@@ -188,6 +188,14 @@
 .elo-preview-event-count { border-radius: 100px; padding: .15rem .5rem; font-size: .7rem; color: #66358a; background: #eee3ff; }
 .elo-preview-event[aria-current="true"] { background: #f5edff; border-radius: 10px; box-shadow: inset 3px 0 #9855d5; }
 .elo-preview-event { padding-inline: .6rem; }
+.elo-preview-event-row { border-top: 1px solid #ece3f4; padding-bottom: .35rem; }
+.elo-preview-event-row:first-child { border-top: 0; }
+.elo-preview-event-row[hidden] { display: none; }
+.elo-preview-event .elo-preview-event-title { display: block; font-size: .88rem; font-weight: 650; overflow-wrap: anywhere; }
+.elo-preview-event .elo-preview-event-meta { display: block; margin-top: .3rem; font-size: .73rem; color: var(--elo-muted); }
+.elo-preview-event-results { display: inline-flex; align-items: center; min-height: 44px; margin-left: .6rem; font-size: .78rem; color: #7135a2; text-underline-offset: 3px; }
+.elo-preview-event-results:not(a) { color: var(--elo-muted); }
+.elo-preview-event-results:focus-visible { outline: 2px solid #7135a2; outline-offset: 3px; border-radius: 3px; }
 .elo-preview-events-toggle { display: flex; align-items: center; justify-content: center; gap: .7rem; width: 100%; min-height: 44px; margin-top: .6rem; border: 1px solid #dac5ee; border-radius: 12px; background: #f4eaff; color: #652891; font: inherit; font-size: .82rem; font-weight: 600; cursor: pointer; }
 .elo-preview-chevron { font-size: 1.2rem; }
 .elo-preview-events-toggle[aria-expanded="true"] .elo-preview-chevron { transform: rotate(180deg); }

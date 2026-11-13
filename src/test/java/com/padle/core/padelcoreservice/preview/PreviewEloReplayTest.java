@@ -18,6 +18,25 @@ class PreviewEloReplayTest {
     private final PreviewEloReplay replay = new PreviewEloReplay();
 
     @Test
+    void carriesTournamentMetadataWithoutChangingRatingOrCategory() {
+        var plain = event("S-1", 0, "C7", winningRun("metadata", 5));
+        var titled = new PreviewEloReplay.Event(plain.key(), plain.day(), plain.category(), plain.games(),
+                plain.champions(), plain.runnersUp(), "C7 Individual", "king", "/torneo/1/king-of-court");
+        var before = replay.replay(FIRST_DAY, NAMES, List.of(plain));
+        var after = replay.replay(FIRST_DAY, NAMES, List.of(titled));
+        for (var player : after.rows()) {
+            var previous = row(before, player.id());
+            assertThat(player).usingRecursiveComparison().ignoringFields("tournamentHistory").isEqualTo(previous);
+            var history = player.tournamentHistory().get(0);
+            assertThat(history).usingRecursiveComparison().ignoringFields("title", "format", "resultsUrl")
+                    .isEqualTo(previous.tournamentHistory().get(0));
+            assertThat(history.title()).isEqualTo("C7 Individual");
+            assertThat(history.format()).isEqualTo("king");
+            assertThat(history.resultsUrl()).isEqualTo("/torneo/1/king-of-court");
+        }
+    }
+
+    @Test
     void replaysLaterOpponentsAndReopensCategoryWhenACorrectedFinalNoLongerConfirmsIt() {
         var games = new ArrayList<PreviewEloReplay.Game>();
         for (int batch = 1; batch <= 5; batch++) {
