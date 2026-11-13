@@ -33,12 +33,12 @@
         <table>
             <thead>
             <tr>
-                <th scope="col" th:text="${previewEloStartStep > 0} ? #{elo.preview.eloPlace} : #{elo.preview.categoryPlace}"></th>
+                <th scope="col" th:text="#{elo.preview.categoryPlace}"></th>
                 <th scope="col" th:text="#{elo.preview.player}"></th>
                 <th scope="col" th:text="#{elo.preview.category}"></th>
                 <th scope="col" th:text="#{elo.preview.status}"></th>
                 <th scope="col">Elo</th>
-                <th scope="col" th:text="${previewEloStartStep > 0} ? #{elo.preview.categoryPlace} : #{elo.preview.overallPlace}"></th>
+                <th scope="col" th:text="${previewEloStartStep > 0} ? #{elo.preview.eloPlace} : #{elo.preview.overallPlace}"></th>
             </tr>
             </thead>
             <tbody>
@@ -47,13 +47,13 @@
                 th:data-status="${row.confirmed ? 'confirmed' : 'provisional'}"
                 th:data-elo="${row.elo}" th:data-category-place="${row.categoryPlace}"
                 th:data-category-size="${row.categorySize}" th:data-overall-place="${row.overallPlace}">
-                <td th:text="${previewEloStartStep > 0 ? row.overallPlace : row.categoryPlace}"></td>
+                <td th:text="${row.categoryPlace}"></td>
                 <th scope="row" th:text="${row.name}"></th>
                 <td th:text="${row.category == 'C10'} ? #{elo.preview.beginner} : ${row.category}"></td>
                 <td><span class="elo-preview-badge" th:classappend="${row.confirmed ? 'confirmed' : 'provisional'}"
                           th:text="${row.confirmed} ? #{elo.preview.confirmed} : #{elo.preview.provisional}"></span></td>
                 <td th:text="${#numbers.formatDecimal(row.elo, 1, 2)}"></td>
-                <td th:text="${previewEloStartStep > 0 ? row.categoryPlace : row.overallPlace} ?: '—'"></td>
+                <td th:text="${row.overallPlace} ?: '—'"></td>
             </tr>
             </tbody>
         </table>

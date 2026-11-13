@@ -221,23 +221,24 @@ final class PreviewEloReplay {
                         strongerCategories(player, level)));
             }
         }
-        return startStep > 0 ? rankByElo(rows) : List.copyOf(rows);
+        return startStep > 0 ? withOverallEloPlaces(rows) : List.copyOf(rows);
     }
 
-    private List<PreviewEloRanking.Row> rankByElo(List<PreviewEloRanking.Row> rows) {
+    private List<PreviewEloRanking.Row> withOverallEloPlaces(List<PreviewEloRanking.Row> rows) {
         var sorted = rows.stream().sorted(Comparator.comparing(PreviewEloRanking.Row::elo).reversed()
                 .thenComparingLong(PreviewEloRanking.Row::id)).toList();
-        var result = new ArrayList<PreviewEloRanking.Row>(sorted.size());
+        var places = new HashMap<Long, Integer>();
         int place = 0;
         for (int i = 0; i < sorted.size(); i++) {
             var row = sorted.get(i);
             if (i == 0 || Math.abs(row.elo().doubleValue() - sorted.get(i - 1).elo().doubleValue()) > TIE_EPSILON) {
                 place = i + 1;
             }
-            result.add(new PreviewEloRanking.Row(row.id(), row.name(), row.category(), row.confirmed(), row.elo(),
-                    row.categoryPlace(), row.categorySize(), place, row.progress(), row.strongerCategories()));
+            places.put(row.id(), place);
         }
-        return List.copyOf(result);
+        return rows.stream().map(row -> new PreviewEloRanking.Row(row.id(), row.name(), row.category(),
+                row.confirmed(), row.elo(), row.categoryPlace(), row.categorySize(), places.get(row.id()),
+                row.progress(), row.strongerCategories())).toList();
     }
 
     private boolean tied(Player first, Player second) {
