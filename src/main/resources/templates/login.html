@@ -45,6 +45,7 @@
                 <p class="auth-entry-divider" th:text="#{auth.entry.login.email}">o iniciá sesión con email</p>
 
                 <form th:action="@{/login}" method="post" class="auth-form">
+                    <input type="hidden" name="destination" th:if="${param.destination != null}" th:value="${param.destination[0]}">
                     <input type="hidden" name="tournamentId" th:if="${tournamentId != null}" th:value="${tournamentId}">
 
                     <!-- Registro exitoso (ya no se usa, pero por si acaso) -->

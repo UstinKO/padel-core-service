@@ -29,7 +29,8 @@ public class ParticipationLinkController {
     @ModelAttribute
     public void noStore(HttpServletResponse response) {
         response.setHeader("Cache-Control", "no-store");
-        response.setHeader("Referrer-Policy", "no-referrer");
+        // Сохраняем Origin для отправки формы внутри сайта, скрывая ссылку от внешних адресов.
+        response.setHeader("Referrer-Policy", "same-origin");
     }
 
     @GetMapping("/{id}")

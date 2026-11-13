@@ -23,6 +23,7 @@
     <!-- Custom Styles -->
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+    <link rel="stylesheet" th:href="@{/css/participation.css}">
     <link rel="stylesheet" th:href="@{/css/tournament-details.css}">
     <style>
         @media (max-width: 768px) {
@@ -269,6 +270,45 @@
             </div>
 
             <!-- Grid турниров -->
+            <section id="participationRequests" class="participation" hidden aria-labelledby="participationTitle"
+                     th:data-login="@{/login(destination='/players/dashboard')}"
+                     th:data-source="@{/api/players/me/participation}"
+                     th:data-pending="#{participation.status.PENDING}"
+                     th:data-confirmed="#{participation.status.CONFIRMED}"
+                     th:data-declined="#{participation.status.DECLINED}"
+                     th:data-not_required="#{participation.status.NOT_REQUIRED}"
+                     th:data-error="#{participation.error}"
+                     th:data-uncertain="#{participation.uncertain}"
+                     th:data-session="#{participation.session}">
+                <h2 id="participationTitle" th:text="#{participation.title}">Participación en torneos</h2>
+                <p data-feedback role="status"></p>
+                <a data-login-link hidden th:href="@{/login}" th:text="#{login.heading}">Iniciar sesión</a>
+                <button data-retry type="button" class="btn btn-outline" hidden th:text="#{participation.refresh}">Actualizar estado</button>
+                <div data-requests class="participation-list"></div>
+                <template data-request-template>
+                    <article class="participation-card">
+                        <h3 data-event></h3>
+                        <p data-player></p>
+                        <p data-delegated hidden th:text="#{participation.delegated}"></p>
+                        <p data-status role="status" class="participation-status"></p>
+                        <div class="participation-actions">
+                            <button type="button" data-confirm class="btn btn-primary" hidden
+                                    th:text="#{participation.confirm}">Confirmar participación</button>
+                            <button type="button" data-decline class="btn btn-outline" hidden
+                                    th:text="#{participation.decline}">Rechazar participación</button>
+                        </div>
+                    </article>
+                </template>
+                <dialog data-decline-dialog class="participation-dialog" aria-labelledby="dashboardDeclineTitle">
+                    <h3 id="dashboardDeclineTitle" th:text="#{participation.decline}"></h3>
+                    <p th:text="#{participation.decline_terms}"></p>
+                    <form method="dialog" class="participation-actions">
+                        <button type="submit" value="cancel" autofocus class="btn btn-outline" th:text="#{participation.back}"></button>
+                        <button type="submit" value="decline" class="btn btn-primary" th:text="#{participation.decline}"></button>
+                    </form>
+                </dialog>
+            </section>
+
             <div class="torneos-grid" id="dashboardTorneosGrid"></div>
 
             <!-- Сообщение когда нет турниров -->
@@ -582,6 +622,7 @@
 <script th:src="@{/js/main.js}"></script>
 <script th:src="@{/js/pair-terms.js}"></script>
 <script th:src="@{/js/dashboard.js}"></script>
+<script th:src="@{/js/participation.js}" defer></script>
 <script th:src="@{/js/contact-check.js}"></script>
 <script th:src="@{/js/level-check.js}"></script>
 </body>
