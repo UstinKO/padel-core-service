@@ -31,11 +31,15 @@ public class PreviewEloRanking {
 
     public record Achievements(int tournaments, int matches, int titles, int secondPlaces) { }
 
+    public record TournamentElo(LocalDate day, String category, double elo, double change, int matches, int wins) { }
+
     public record Row(long id, String name, String category, boolean confirmed, BigDecimal elo,
                       int categoryPlace, int categorySize, Integer overallPlace, Progress progress,
-                      List<CategoryProgress> strongerCategories, Achievements achievements) {
+                      List<CategoryProgress> strongerCategories, Achievements achievements,
+                      List<TournamentElo> tournamentHistory) {
         public Row {
             strongerCategories = strongerCategories == null ? List.of() : List.copyOf(strongerCategories);
+            tournamentHistory = tournamentHistory == null ? List.of() : List.copyOf(tournamentHistory);
         }
     }
 

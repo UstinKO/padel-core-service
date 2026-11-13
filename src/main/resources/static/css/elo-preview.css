@@ -63,5 +63,32 @@
     .elo-preview-totals { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 .elo-preview-progress { margin-bottom: .75rem; }
+.elo-preview-evolution {
+    margin: 1rem 0;
+    padding: .9rem 1rem;
+    border: 1px solid #eaded6;
+    border-radius: .65rem;
+}
+.elo-preview-evolution-heading, .elo-preview-selected, .elo-preview-form {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .55rem .85rem;
+}
+.elo-preview-evolution-heading h3 { margin: 0; font-size: 1rem; }
+.elo-preview-evolution canvas {
+    --elo-grid: #eee1d9;
+    --elo-line: #af4b22;
+    display: block;
+    width: 100%;
+    height: 11rem;
+    margin: .35rem 0;
+    color: #594d48;
+}
+.elo-preview-evolution select { font: inherit; max-width: 100%; min-height: 2rem; }
+.elo-preview-selected label { min-width: 0; max-width: 100%; }
+.elo-preview-evolution output { font-variant-numeric: tabular-nums; }
+.elo-preview-form { margin-top: .8rem; padding-top: .65rem; border-top: 1px solid #eaded6; }
 .elo-preview-progress p { margin: .2rem 0; }
 .elo-preview-card a { color: #174b9e; text-decoration: underline; }

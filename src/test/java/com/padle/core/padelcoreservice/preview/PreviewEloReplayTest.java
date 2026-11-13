@@ -71,9 +71,11 @@ class PreviewEloReplayTest {
         assertThat(row(afterFirst, 3).category()).isEqualTo("C8");
         var progress = new PreviewEloRanking.CategoryProgress("C5",
                 new PreviewEloRanking.Progress(1, 6, 3, 1, 1, 1), false);
-        assertThat(row(afterFirst, 1).strongerCategories()).containsExactly(progress);
+        var next = new PreviewEloRanking.CategoryProgress("C7",
+                new PreviewEloRanking.Progress(0, 0, 0, 2, 6, 3), true);
+        assertThat(row(afterFirst, 1).strongerCategories()).containsExactly(next, progress);
         var seeded = new PreviewEloReplay(40).replay(FIRST_DAY, NAMES, List.of(initial, opponents, distant));
-        assertThat(row(seeded, 1).strongerCategories()).containsExactly(progress);
+        assertThat(row(seeded, 1).strongerCategories()).containsExactly(next, progress);
         assertThat(row(afterFirst, 1).elo()).isNotEqualTo(row(
                 replay.replay(FIRST_DAY, NAMES, List.of(initial, opponents)), 1).elo());
 

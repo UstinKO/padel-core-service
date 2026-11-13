@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 final class PreviewEloReplay {
     private static final double START = 1500;
@@ -83,6 +84,7 @@ final class PreviewEloReplay {
     private static final class Player {
         final long id;
         final Map<Integer, Record> levels = new HashMap<>();
+        final List<PreviewEloRanking.TournamentElo> tournamentHistory = new ArrayList<>();
         double elo;
         int confirmed = NO_CATEGORY;
         int tournaments;
@@ -144,6 +146,7 @@ final class PreviewEloReplay {
 
     private void applyEvent(Event event, Map<Long, Player> players) {
         var stats = new HashMap<Long, Record>();
+        var before = new HashMap<Long, Double>();
         var finalists = new HashSet<Long>();
         var champions = new HashSet<>(event.champions());
         var runnersUp = new HashSet<>(event.runnersUp());
@@ -153,6 +156,7 @@ final class PreviewEloReplay {
             var changes = new HashMap<Player, Double>();
             for (var game : batch) {
                 var sides = game.ids().stream().map(players::get).toList();
+                sides.forEach(player -> before.putIfAbsent(player.id, player.elo));
                 applyGame(game, sides, changes, stats);
                 if (game.verifiedFinal()) {
                     finalists.addAll(game.ids());
@@ -168,6 +172,8 @@ final class PreviewEloReplay {
             var player = players.get(id);
             player.tournaments++;
             player.matches += evidence.matches;
+            player.tournamentHistory.add(new PreviewEloRanking.TournamentElo(event.day(), event.category(),
+                    player.elo, player.elo - before.get(id), evidence.matches, evidence.wins));
             if (champions.contains(id)) {
                 player.titles++;
             } else if (runnersUp.contains(id)) {
@@ -245,7 +251,7 @@ final class PreviewEloReplay {
                 rows.add(new PreviewEloRanking.Row(player.id, names.get(player.id), category, player.isConfirmed(),
                         BigDecimal.valueOf(player.elo), categoryPlace, sorted.size(), place,
                         player.isConfirmed() ? null : progress(player.levels.get(level)),
-                        strongerCategories(player, level), player.achievements()));
+                        strongerCategories(player, level), player.achievements(), player.tournamentHistory));
             }
         }
         return startStep > 0 ? withOverallEloPlaces(rows) : List.copyOf(rows);
@@ -265,7 +271,7 @@ final class PreviewEloReplay {
         }
         return rows.stream().map(row -> new PreviewEloRanking.Row(row.id(), row.name(), row.category(),
                 row.confirmed(), row.elo(), row.categoryPlace(), row.categorySize(), places.get(row.id()),
-                row.progress(), row.strongerCategories(), row.achievements())).toList();
+                row.progress(), row.strongerCategories(), row.achievements(), row.tournamentHistory())).toList();
     }
 
     private boolean tied(Player first, Player second) {
@@ -273,11 +279,13 @@ final class PreviewEloReplay {
     }
 
     private List<PreviewEloRanking.CategoryProgress> strongerCategories(Player player, int currentLevel) {
-        return player.levels.entrySet().stream()
-                .filter(entry -> entry.getKey() < currentLevel)
-                .sorted(Map.Entry.comparingByKey())
-                .map(entry -> new PreviewEloRanking.CategoryProgress("C" + entry.getKey(),
-                        progress(entry.getValue()), player.eligibleFromOneEvent(entry.getKey())))
+        if (currentLevel == NO_CATEGORY) {
+            return List.of();
+        }
+        return IntStream.iterate(currentLevel - 1, level -> level >= 5, level -> level - 1)
+                .filter(level -> level == currentLevel - 1 || player.levels.containsKey(level))
+                .mapToObj(level -> new PreviewEloRanking.CategoryProgress("C" + level,
+                        progress(player.levels.getOrDefault(level, new Record())), player.eligibleFromOneEvent(level)))
                 .toList();
     }
 
