@@ -183,3 +183,39 @@ test('uses the participation actions for each player and updates their states', 
   await dialog.getByRole('button', { name: 'Confirm', exact: true }).click();
   await expect(page.getByText('Test Guest · Declined')).toBeVisible();
 });
+
+test('shows the cancellation quote in USDT before cancelling the pair', async ({ page }) => {
+  let cancelled = false;
+  const quote = {
+    token: 'test-quote',
+    currency: 'USDT',
+    obligation: 15,
+    alreadyPaid: 10,
+    remainingDue: 5,
+    refundable: 0,
+  };
+  await page.route('**/api/players/me/events', (route) =>
+    route.fulfill({
+      json: {
+        upcoming: cancelled ? [] : [{ ...entry, mode: 'PAIR', availableActions: ['CANCEL_PAIR'] }],
+        history: [],
+      },
+    }),
+  );
+  await page.route('**/api/tournaments/double/180/pair-cancellation', async (route) => {
+    if (route.request().method() === 'POST') {
+      expect(route.request().postDataJSON()).toEqual({ token: 'test-quote' });
+      expect(route.request().headers()['x-xsrf-token']).toBe('test-csrf');
+      cancelled = true;
+    }
+    await route.fulfill({ json: quote });
+  });
+  await page.goto('/preview/players/dashboard');
+  await page.getByRole('button', { name: 'Cancel the pair' }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByText('5.00 USDT', { exact: true })).toBeVisible();
+  expect(cancelled).toBe(false);
+  await dialog.getByRole('button', { name: 'Confirm', exact: true }).click();
+  await expect(page.getByText('No upcoming events.')).toBeVisible();
+  expect(cancelled).toBe(true);
+});

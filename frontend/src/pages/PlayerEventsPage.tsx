@@ -65,6 +65,10 @@ function ConfirmationDialog({
       ['refundable', quoteData.refundable],
     ] as const);
   const currency = quoteData?.currency;
+  const formatAmount = (value: number, code: string) =>
+    /^[A-Z]{3}$/i.test(code)
+      ? new Intl.NumberFormat(i18n.language, { style: 'currency', currency: code }).format(value)
+      : `${new Intl.NumberFormat(i18n.language, { minimumFractionDigits: 2 }).format(value)} ${code}`;
   function submit() {
     if (selection.kind === 'withdraw') onSubmit(() => withdraw(selection.entry));
     if (selection.kind === 'decline') {
@@ -105,11 +109,7 @@ function ConfirmationDialog({
               value !== null && (
                 <div key={key}>
                   <dt>{t(`playerEvents.${key}`)}</dt>
-                  <dd>
-                    {new Intl.NumberFormat(i18n.language, { style: 'currency', currency }).format(
-                      value,
-                    )}
-                  </dd>
+                  <dd>{formatAmount(value, currency)}</dd>
                 </div>
               ),
           )}
