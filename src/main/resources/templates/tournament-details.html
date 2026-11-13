@@ -915,19 +915,19 @@
                 btn.textContent = t('modal.add_partner.btn.confirm');
                 return;
             }
-            const data = await res.json();
+            const data = await window.PairRegistrationResponse.read(res);
 
-            if (data.success) {
+            if (res.ok && data.success) {
                 closeAddPartnerModal();
                 location.reload();
             } else {
-                errEl.textContent = data.message || 'Error al agregar compañero';
+                errEl.textContent = window.PairRegistrationResponse.message(res, data);
                 errEl.style.display = 'block';
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-check"></i> Confirmar pareja';
             }
         } catch (e) {
-            errEl.textContent = 'Error de conexión. Intentá de nuevo.';
+            errEl.textContent = t('common.error.connection');
             errEl.style.display = 'block';
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-check"></i> Confirmar pareja';
@@ -1020,7 +1020,7 @@
                             <i class="fas fa-user-check" style="color:#16a34a; font-size:1.2rem;"></i>
                             <div>
                                 <div id="selectedPartnerName" style="font-weight:600; color:#15803d;"></div>
-                                <div id="selectedPartnerEmail" style="font-size:.85rem; color:#6b7280;"></div>
+                                <div id="selectedPartnerLevel" style="font-size:.85rem; color:#6b7280;"></div>
                             </div>
                             <button type="button" id="clearPartnerBtn"
                                     style="margin-left:auto; background:none; border:none; cursor:pointer;
@@ -1219,6 +1219,7 @@
     /*]]>*/
 </script>
 <script th:src="@{/js/pair-terms.js}"></script>
+<script th:src="@{/js/pair-registration-response.js}"></script>
 <script th:src="@{/js/tournament-details.js}"></script>
 <script th:src="@{/js/calendar-picker.js}"></script>
 <script>
