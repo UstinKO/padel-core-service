@@ -29,7 +29,7 @@
 }
 .elo-preview-badge.confirmed { background: #dbf5ea; color: #105641; }
 .elo-preview-badge.provisional { background: #fff0cf; color: #694300; }
-.elo-cabinet .dashboard-main { background: #f1f3f5; padding-top: 2rem; }
+.elo-cabinet .dashboard-main { background: #faf5ff; padding-top: 2rem; }
 .elo-cabinet .dashboard-main > .container { max-width: 1240px; }
 .elo-cabinet .stats-grid:empty { display: none; }
 .elo-cabinet .dashboard-card { border-radius: 24px; box-shadow: none; border: 1px solid #e1e5e9; }
@@ -42,38 +42,38 @@
 }
 .elo-preview-card *, .elo-preview-card *::before, .elo-preview-card *::after { box-sizing: border-box; }
 .elo-preview-hero {
-    position: relative; isolation: isolate; overflow: hidden;
+    position: relative; isolation: isolate; overflow: clip;
     padding: clamp(1.4rem, 3.5vw, 2.6rem); border-radius: 28px;
-    background: radial-gradient(ellipse at 90% 0, #554438, transparent 65%), #17232c;
-    color: #fff; box-shadow: 0 15px 36px #14222d14;
+    background: radial-gradient(ellipse at 85% 0, #ffdb88, transparent 65%), linear-gradient(120deg,#ffb363,#ff845c 65%,#ffb49d);
+    color: #38204d; box-shadow: 0 16px 40px #ee7e4026;
 }
-.elo-preview-court { position: absolute; z-index: -1; width: 430px; height: 270px; right: -40px; top: -36px; transform: rotate(-22deg); border: 1px solid #ffffff15; border-radius: 8px; }
-.elo-preview-court::before, .elo-preview-court::after { content: ''; position: absolute; inset: 25% 0; border-block: 1px solid #ffffff15; }
-.elo-preview-court::after { inset: 0 50%; border-block: 0; border-left: 1px solid #ffffff15; }
-.elo-preview-court span { position: absolute; height: 20px; width: 20px; border-radius: 50%; background: #ff9468; box-shadow: 0 0 55px 18px #ff7e3833; top: 40%; left: 29%; }
+.elo-preview-court { position: absolute; z-index: -1; width: 430px; height: 270px; right: -40px; top: -36px; transform: rotate(-22deg); border: 1px solid #843a4725; border-radius: 8px; }
+.elo-preview-court::before, .elo-preview-court::after { content: ''; position: absolute; inset: 25% 0; border-block: 1px solid #843a4725; }
+.elo-preview-court::after { inset: 0 50%; border-block: 0; border-left: 1px solid #843a4725; }
+.elo-preview-court span { position: absolute; height: 20px; width: 20px; border-radius: 50%; background: #e3ff62; box-shadow: inset -4px -3px 0 #99b827, 0 0 35px 12px #f6ffd944; border: 2px solid #758a2c; top: 40%; left: 29%; }
 .elo-preview-identity { display: flex; align-items: center; gap: 1.1rem; margin-bottom: 2rem; }
-.elo-preview-avatar { flex: 0 0 auto; display: grid; place-items: center; width: 76px; height: 86px; border-radius: 22px; background: #ff875a; color: #17232c; font-weight: 800; font-size: 2.3rem; transform: rotate(-4deg); box-shadow: 5px 6px 0 #ffffff12; }
+.elo-preview-avatar { flex: 0 0 auto; display: grid; place-items: center; width: 76px; height: 86px; border-radius: 22px; background: #7533b4; color: #fff; font-weight: 800; font-size: 2.3rem; transform: rotate(-4deg); box-shadow: 5px 6px 0 #ffffff12; }
 .elo-preview-eyebrow { margin: 0 0 .55rem; font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .15em; }
-.elo-preview-hero .elo-preview-eyebrow { color: #d1d9df; }
-.elo-preview-identity h1 { font-size: clamp(1.65rem, 3vw, 2.7rem); letter-spacing: -.045em; line-height: 1.08; color: #fff; overflow-wrap: anywhere; }
-.elo-preview-hero-caption { margin: .45rem 0 0; color: #c1ccd4; font-size: .87rem; }
-.elo-preview-card-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .8rem; padding-bottom: 1rem; border-bottom: 1px solid #ffffff20; }
-.elo-preview-card-heading h2 { margin: 0; font-size: .85rem; font-weight: 500; color: #c1ccd4; }
-.elo-preview-hero .elo-preview-badge { display: flex; align-items: center; gap: .55rem; background: #ffffff0e; color: #e4ecef; border: 1px solid #ffffff25; border-radius: 100px; font-size: .73rem; padding: .3rem .8rem .3rem .3rem; }
+.elo-preview-hero .elo-preview-eyebrow { color: #593548; }
+.elo-preview-identity h1 { font-size: clamp(1.65rem, 3vw, 2.7rem); letter-spacing: -.045em; line-height: 1.08; color: #38204d; overflow-wrap: anywhere; }
+.elo-preview-hero-caption { margin: .45rem 0 0; color: #613744; font-size: .87rem; }
+.elo-preview-card-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .8rem; padding-bottom: 1rem; border-bottom: 1px solid #843a4725; }
+.elo-preview-card-heading h2 { margin: 0; font-size: .85rem; font-weight: 500; color: #613744; }
+.elo-preview-hero .elo-preview-badge { display: flex; align-items: center; gap: .55rem; background: #ffffff80; color: #4b2c43; border: 1px solid #ffffff80; border-radius: 100px; font-size: .73rem; padding: .3rem .8rem .3rem .3rem; }
 .elo-preview-hero .elo-preview-badge strong { padding: .4rem .6rem; border-radius: 100px; font-size: .88rem; background: #d8f5aa; color: #253724; }
 .elo-preview-hero .elo-preview-badge.provisional strong { background: #f8d8a8; color: #45321c; }
 .elo-preview-metrics { display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 1.5rem; margin: 1.4rem 0 0; }
 .elo-preview-metrics > div { min-width: 0; }
-.elo-preview-metrics > div + div { border-left: 1px solid #ffffff20; padding-left: 1.5rem; }
-.elo-preview-metrics dt { color: #c1ccd4; font-size: .76rem; }
+.elo-preview-metrics > div + div { border-left: 1px solid #843a4725; padding-left: 1.5rem; }
+.elo-preview-metrics dt { color: #613744; font-size: .76rem; }
 .elo-preview-metrics dd { margin: .4rem 0 0; font-size: clamp(1.7rem, 3.5vw, 2.8rem); font-weight: 750; letter-spacing: -.05em; line-height: 1.1; }
-.elo-preview-metrics [data-stat="elo"] { color: #ff9a70; }
+.elo-preview-metrics [data-stat="elo"] { color: #58257d; }
 .elo-preview-metrics dd.pending { font-size: 1rem; letter-spacing: 0; }
 .elo-preview-achievements { margin: 1.4rem 0; }
 .elo-preview-achievements h3 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 .elo-preview-totals { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 1rem; margin: 0; }
 .elo-preview-total { position: relative; min-width: 0; overflow: hidden; padding: 1.35rem; background: #fff; border: 1px solid var(--elo-rule); border-radius: 20px; }
-.elo-preview-total:first-child { background: #e3ebee; border-color: #d9e3e8; }
+.elo-preview-total:first-child { background: #eae0ff; border-color: #d8c3f4; }
 .elo-preview-totals dt { font-size: .78rem; font-weight: 600; color: var(--elo-muted); }
 .elo-preview-totals dd { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .2rem; min-height: 4.2rem; margin: .35rem 0 0; font-size: 2.7rem; font-weight: 750; letter-spacing: -.055em; }
 .elo-preview-medal-total:has(.gold) { background: #fff7e7; border-color: #efdfbd; }
@@ -90,7 +90,7 @@
 .elo-preview-evolution, .elo-preview-form, .elo-preview-progress { min-width: 0; border: 1px solid var(--elo-rule); border-radius: 22px; background: #fff; padding: 1.5rem; }
 .elo-preview-evolution-heading { display: flex; align-items: center; flex-wrap: wrap; justify-content: space-between; gap: .6rem; }
 .elo-preview-evolution-heading h3, .elo-preview-recent h3 { font-size: 1rem; letter-spacing: -.025em; margin: 0; }
-.elo-preview-evolution canvas { --elo-grid: #e9edf0; --elo-line: #e86532; display: block; width: 100%; height: 17rem; margin: 1.2rem 0 .5rem; color: #687683; cursor: crosshair; }
+.elo-preview-evolution canvas { --elo-grid: #e9edf0; --elo-line: #8544c4; display: block; width: 100%; height: 17rem; margin: 1.2rem 0 .5rem; color: #687683; cursor: crosshair; }
 .elo-preview-evolution select { font: inherit; font-size: .75rem; width: auto; max-width: 100%; min-height: 2.5rem; padding: .4rem .6rem; color: var(--elo-ink); background: #f5f7f9; border: 1px solid #e1e6eb; border-radius: 10px; }
 .elo-preview-selected { display: grid; gap: .6rem; }
 .elo-preview-selected label { display: grid; gap: .4rem; font-size: .75rem; color: var(--elo-muted); min-width: 0; }
@@ -104,12 +104,12 @@
 .elo-preview-event strong { font-size: .9rem; white-space: nowrap; color: #22694e; }
 .elo-preview-event.loss strong { color: #ad482d; }
 .elo-preview-sidebar { display: grid; gap: 1.25rem; min-width: 0; }
-.elo-preview-form { display: flex; align-items: center; justify-content: space-between; gap: 1rem; background: #eaf2e9; border-color: #dbe7da; }
+.elo-preview-form { display: flex; align-items: center; justify-content: space-between; gap: 1rem; background: #eff8ce; border-color: #ddeca6; }
 .elo-preview-form .elo-preview-eyebrow { color: #425943; }
 .elo-preview-form strong { display: block; max-width: 170px; font-size: .75rem; font-weight: 500; color: #51644f; line-height: 1.5; }
 .elo-preview-form output { display: block; font-size: 1rem; font-weight: 700; margin-top: .5rem; }
 .elo-preview-win-ring { flex: 0 0 auto; display: grid; place-items: center; width: 94px; height: 94px; border-radius: 50%; background: conic-gradient(#356c4b var(--win-angle,0deg),#d7e3d4 0); position: relative; }
-.elo-preview-win-ring::before { content: ''; position: absolute; inset: 9px; background: #eaf2e9; border-radius: 50%; }
+.elo-preview-win-ring::before { content: ''; position: absolute; inset: 9px; background: #eff8ce; border-radius: 50%; }
 .elo-preview-win-ring span { z-index: 1; font-size: 1.35rem; font-weight: 750; letter-spacing: -.05em; }
 .elo-preview-progress { position: relative; overflow: hidden; }
 .elo-preview-progress::before { content: ''; position: absolute; top: 0; left: 1.5rem; width: 36px; height: 3px; background: #ff875a; border-radius: 0 0 3px 3px; }
@@ -120,7 +120,7 @@
 .elo-preview-progress-bars meter::-webkit-meter-bar { background: #e7ebee; border: 0; }
 .elo-preview-progress-bars meter::-webkit-meter-optimum-value { background: #e86532; }
 .elo-preview-progress-bars meter::-moz-meter-bar { background: #e86532; }
-.elo-preview-ranking-link { display: flex; justify-content: center; align-items: center; width: fit-content; min-height: 44px; gap: .8rem; margin: 1.5rem auto 0; padding: .6rem 1.2rem; background: #1b2c38; color: #fff; border-radius: 100px; text-decoration: none; font-size: .85rem; font-weight: 600; }
+.elo-preview-ranking-link { display: flex; justify-content: center; align-items: center; width: fit-content; min-height: 44px; gap: .8rem; margin: 1.5rem auto 0; padding: .6rem 1.2rem; background: #7133ad; color: #fff; border-radius: 100px; text-decoration: none; font-size: .85rem; font-weight: 600; }
 .elo-preview-ranking-link::after { content: '↗'; font-size: 1.2rem; color: #ff986b; }
 .elo-preview-card :is(a,button,select):focus-visible { outline: 3px solid #e86532; outline-offset: 4px; }
 @media (prefers-reduced-motion: no-preference) {
@@ -138,11 +138,11 @@
     .elo-preview-total, .elo-preview-event, .elo-preview-ranking-link { transition: transform .2s ease, background .2s ease, box-shadow .2s ease; }
     .elo-preview-total:hover { transform: translateY(-4px); box-shadow: 0 12px 22px #1d2c3810; }
     .elo-preview-event:hover { background: #f5f7f9; }
-    .elo-preview-ranking-link:hover { transform: translateY(-2px); background: #304959; }
-    .elo-preview-court span { animation: elo-ball-enter 1.4s ease-out both; }
+    .elo-preview-ranking-link:hover { transform: translateY(-2px); background: #562186; }
+    .elo-preview-court span { animation: elo-ball-rally 6s ease-in-out infinite alternate; }
     @keyframes elo-panel-enter { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
     @keyframes elo-medal-enter { from { opacity: 0; transform: translateY(12px) rotate(-18deg); } to { opacity: 1; transform: none; } }
-    @keyframes elo-ball-enter { from { opacity: 0; transform: translate(90px,-60px); } to { opacity: 1; transform: none; } }
+    @keyframes elo-ball-rally { 0% { transform: translate(0,0); } 45% { transform: translate(110px,-40px); } 100% { transform: translate(40px,65px); } }
 }
 @media (max-width: 900px) {
     .elo-preview-insights { grid-template-columns: 1fr; }
@@ -177,3 +177,28 @@
 }
 .elo-preview-rules summary { color: #8e421f; font-size: .75rem; font-weight: 600; cursor: pointer; padding: .4rem 0; }
 .elo-preview-rules summary:focus-visible { outline: 3px solid #e86532; outline-offset: 3px; border-radius: 4px; }
+.elo-preview-identity { padding-right: 32px; }
+.elo-preview-motion { position: absolute; top: 18px; right: 18px; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: #ffffff80; border: 1px solid #fff9; color: #51246c; font-size: 15px; cursor: pointer; }
+.elo-preview-hero[data-motion-paused] .elo-preview-court span { animation-play-state: paused; }
+.elo-preview-chart-wrap { position: relative; margin: 1.2rem 0 .5rem; }
+.elo-preview-chart-wrap canvas { margin: 0; }
+.elo-preview-chart-tooltip { position: absolute; z-index: 2; pointer-events: none; white-space: pre-line; max-width: 100%; padding: .65rem .8rem; border-radius: 12px; background: #54207e; box-shadow: 0 8px 22px #54207e25; color: #fff; font-size: .76rem; line-height: 1.6; }
+.elo-preview-events-heading { display: flex; align-items: center; gap: .5rem; margin-bottom: .6rem; }
+.elo-preview-events-heading h3 { margin: 0; }
+.elo-preview-event-count { border-radius: 100px; padding: .15rem .5rem; font-size: .7rem; color: #66358a; background: #eee3ff; }
+.elo-preview-event[aria-current="true"] { background: #f5edff; border-radius: 10px; box-shadow: inset 3px 0 #9855d5; }
+.elo-preview-event { padding-inline: .6rem; }
+.elo-preview-events-toggle { display: flex; align-items: center; justify-content: center; gap: .7rem; width: 100%; min-height: 44px; margin-top: .6rem; border: 1px solid #dac5ee; border-radius: 12px; background: #f4eaff; color: #652891; font: inherit; font-size: .82rem; font-weight: 600; cursor: pointer; }
+.elo-preview-chevron { font-size: 1.2rem; }
+.elo-preview-events-toggle[aria-expanded="true"] .elo-preview-chevron { transform: rotate(180deg); }
+.elo-preview-event[hidden], .elo-preview-events-toggle[hidden], .elo-preview-chart-tooltip[hidden], .elo-preview-motion[hidden] { display: none; }
+.elo-preview-medals { --medal-edge: #ad6b0a; --medal-light: #fff6bd; --medal-fill: #f8bf36; padding-inline: .15rem; }
+.elo-preview-medal { width: 3.1rem; }
+.elo-preview-medal + .elo-preview-medal { margin-left: -1.9rem; }
+.elo-preview-medal::before { width: 1.4rem; height: 1.5rem; background: linear-gradient(90deg,#7b37b7 30%,#eee0ff 31% 42%,#a65ee2 43% 60%,#eee0ff 61% 72%,#7b37b7 73%); }
+.elo-preview-medal > span { position: relative; width: 3.1rem; border: 2px solid var(--medal-edge); background: radial-gradient(circle at 35% 25%,var(--medal-light),var(--medal-fill) 75%); box-shadow: inset 0 0 0 2px var(--medal-light),inset 0 0 0 4px var(--medal-edge),0 5px 0 -2px var(--medal-edge),0 8px 12px #60471625; color: var(--medal-edge); }
+.elo-preview-medal > span::before { position: absolute; z-index: 1; top: 42%; left: 0; width: 100%; text-align: center; font: 800 1.1rem Georgia,serif; color: #583811; }
+.elo-preview-medal svg { position: absolute; inset: 1px; width: calc(100% - 2px); height: calc(100% - 2px); }
+.elo-preview-medals.silver .elo-preview-medal > span::before { color: #3b4f6b; }
+@media (max-width: 600px) { .elo-preview-medal, .elo-preview-medal > span { width: 2.8rem; } .elo-preview-medal + .elo-preview-medal { margin-left: -1.9rem; } }
+@media (prefers-reduced-motion: no-preference) { .elo-preview-chevron { transition: transform .25s ease; } }

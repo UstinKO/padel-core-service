@@ -1,4 +1,19 @@
 (() => {
+    const motion = document.querySelector('[data-motion-toggle]');
+    if (motion) {
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const hero = motion.closest('.elo-preview-hero');
+        let playing = true;
+        const updateMotion = () => {
+            motion.hidden = reducedMotion.matches;
+            hero.toggleAttribute('data-motion-paused', !playing || reducedMotion.matches);
+            motion.setAttribute('aria-pressed', String(playing));
+            motion.querySelector('span').textContent = playing ? 'Ⅱ' : '▶';
+        };
+        motion.addEventListener('click', () => { playing = !playing; updateMotion(); });
+        reducedMotion.addEventListener('change', updateMotion);
+        updateMotion();
+    }
     const panel = document.querySelector('[data-elo-evolution]');
     if (!panel) return;
 
@@ -6,12 +21,12 @@
     const context = canvas.getContext('2d');
     const period = panel.querySelector('[data-period]');
     const picker = panel.querySelector('[data-event-picker]');
+    const tooltip = panel.querySelector('[data-chart-tooltip]');
     const locale = document.documentElement.lang;
     const number = new Intl.NumberFormat(locale, { maximumFractionDigits: 2 });
     const signed = new Intl.NumberFormat(locale, { maximumFractionDigits: 2, signDisplay: 'exceptZero' });
     const percent = new Intl.NumberFormat(locale, { style: 'percent' });
     const date = new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeZone: 'UTC' });
-    const shortDate = new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', timeZone: 'UTC' });
     const history = Array.from(panel.querySelectorAll('li[data-day]'), item => ({
         day: Date.parse(item.dataset.day),
         elo: Number(item.dataset.elo),
@@ -33,10 +48,12 @@
     card.querySelector('.elo-preview-win-ring').style.setProperty('--win-angle', `${winRate * 360}deg`);
 
     const recentEvents = panel.querySelector('[data-recent-events]');
-    recent.slice().reverse().forEach(event => {
+    const eventButtons = [];
+    history.slice().reverse().forEach((event, index) => {
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'elo-preview-event' + (event.change < 0 ? ' loss' : '');
+        button.hidden = index >= 3;
         const label = document.createElement('span');
         label.textContent = `${event.category} · ${date.format(event.day)}`;
         const detail = document.createElement('b');
@@ -46,11 +63,28 @@
         change.textContent = `${signed.format(event.change)} Elo`;
         button.append(label, change);
         button.addEventListener('click', () => {
+            if (!visible.includes(event)) {
+                period.value = 'all';
+                showPeriod();
+            }
             picker.selectedIndex = visible.indexOf(event);
             showPoint();
         });
         recentEvents.append(button);
+        eventButtons.push({ button, event });
     });
+    const toggle = panel.querySelector('[data-events-toggle]');
+    if (toggle) {
+        toggle.hidden = false;
+        toggle.querySelector('[data-events-label]').textContent = toggle.dataset.expandLabel;
+        toggle.addEventListener('click', () => {
+            const expanded = toggle.getAttribute('aria-expanded') !== 'true';
+            toggle.setAttribute('aria-expanded', String(expanded));
+            toggle.querySelector('[data-events-label]').textContent = expanded
+                ? toggle.dataset.collapseLabel : toggle.dataset.expandLabel;
+            eventButtons.forEach(({ button }, i) => { button.hidden = !expanded && i >= 3; });
+        });
+    }
 
     function draw() {
         const width = canvas.clientWidth;
@@ -66,9 +100,13 @@
         const high = Math.ceil((Math.max(...values) + 8) / 20) * 20;
         const left = 45;
         const right = width - 13;
-        const bottom = height - 26;
+        const bottom = height - 36;
         const start = visible[0].day;
         const end = visible.at(-1).day;
+        const axisDate = new Intl.DateTimeFormat(locale, {
+            month: 'short', timeZone: 'UTC',
+            ...(end - start > 180 * 86400000 ? { year: '2-digit' } : { day: 'numeric' })
+        });
         const y = value => bottom - (value - low) / (high - low) * (bottom - 13);
         points = visible.map(event => [
             start === end ? (left + right) / 2 : left + (right - left) * (event.day - start) / (end - start),
@@ -86,18 +124,27 @@
             context.stroke();
             context.fillText(number.format(value), left - 6, y(value) + 4);
         }
-        context.textAlign = 'left';
-        context.fillText(shortDate.format(start), left, bottom + 18);
-        if (start !== end) {
-            context.textAlign = 'right';
-            context.fillText(shortDate.format(end), right, bottom + 18);
-        }
+        let lastLabelRight = -Infinity;
+        let lastLabelText;
+        const endLabel = axisDate.format(end);
+        const endLabelLeft = right - context.measureText(endLabel).width;
+        points.forEach(([x], i) => {
+            const text = axisDate.format(visible[i].day);
+            const labelWidth = context.measureText(text).width;
+            const labelLeft = Math.max(left, Math.min(x - labelWidth / 2, right - labelWidth));
+            if (i && (text === lastLabelText || labelLeft < lastLabelRight + 18 ||
+                (i !== points.length - 1 && labelLeft + labelWidth + 18 > endLabelLeft))) return;
+            context.textAlign = 'left';
+            context.fillText(text, labelLeft, bottom + 23);
+            lastLabelRight = labelLeft + labelWidth;
+            lastLabelText = text;
+        });
         const accent = style.getPropertyValue('--elo-line').trim();
         context.strokeStyle = accent;
         context.fillStyle = accent;
         const fill = context.createLinearGradient(0, 0, 0, bottom);
-        fill.addColorStop(0, '#f1844740');
-        fill.addColorStop(1, '#f1844700');
+        fill.addColorStop(0, '#9556df45');
+        fill.addColorStop(1, '#9556df00');
         context.beginPath();
         context.moveTo(points[0][0], bottom);
         points.forEach(([x, position]) => context.lineTo(x, position));
@@ -112,9 +159,19 @@
         points.forEach(([x, position], i) => i ? context.lineTo(x, position) : context.moveTo(x, position));
         context.stroke();
         points.forEach(([x, position], i) => {
+            if (i === picker.selectedIndex) {
+                context.fillStyle = '#f58b3a35';
+                context.beginPath();
+                context.arc(x, position, 12, 0, 2 * Math.PI);
+                context.fill();
+            }
             context.beginPath();
-            context.arc(x, position, i === picker.selectedIndex ? 5 : 2.5, 0, 2 * Math.PI);
+            context.arc(x, position, i === picker.selectedIndex ? 6 : 4, 0, 2 * Math.PI);
+            context.fillStyle = i === picker.selectedIndex ? '#f36b2e' : '#fff';
+            context.strokeStyle = i === picker.selectedIndex ? '#b94112' : accent;
+            context.lineWidth = 2;
             context.fill();
+            context.stroke();
         });
     }
 
@@ -122,6 +179,8 @@
         const event = visible[picker.selectedIndex];
         panel.querySelector('[data-elo-point]').textContent =
             `${number.format(event.elo)} Elo (${signed.format(event.change)}) · ${event.wins} / ${event.matches}`;
+        eventButtons.forEach(item => item.button.setAttribute('aria-current', String(item.event === event)));
+        tooltip.hidden = true;
         draw();
     }
 
@@ -142,6 +201,19 @@
         picker.selectedIndex = points.reduce((best, point, i) => distance(point) < distance(points[best]) ? i : best, 0);
         showPoint();
     });
+    canvas.addEventListener('pointermove', event => {
+        if (!points.length || event.pointerType === 'touch') return;
+        const rect = canvas.getBoundingClientRect();
+        const distance = ([x, y]) => Math.hypot(event.clientX - rect.left - x, event.clientY - rect.top - y);
+        const index = points.reduce((best, point, i) => distance(point) < distance(points[best]) ? i : best, 0);
+        tooltip.hidden = distance(points[index]) > 24;
+        if (tooltip.hidden) return;
+        const item = visible[index];
+        tooltip.textContent = `${date.format(item.day)} · ${item.category}\n${number.format(item.elo)} Elo (${signed.format(item.change)})`;
+        tooltip.style.left = `${Math.max(0, Math.min(points[index][0] - tooltip.offsetWidth / 2, rect.width - tooltip.offsetWidth))}px`;
+        tooltip.style.top = `${Math.max(0, points[index][1] - tooltip.offsetHeight - 14)}px`;
+    });
+    canvas.addEventListener('pointerleave', () => { tooltip.hidden = true; });
     showPeriod();
     new ResizeObserver(draw).observe(canvas);
 })();
