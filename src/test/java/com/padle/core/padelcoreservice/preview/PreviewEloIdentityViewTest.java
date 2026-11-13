@@ -1,8 +1,13 @@
 package com.padle.core.padelcoreservice.preview;
 
+import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.padelcoreservice.rating.EloPilotAccess;
+import com.padle.core.padelcoreservice.rating.EloPilotProperties;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.ui.ExtendedModelMap;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.nio.file.Files;
@@ -16,6 +21,9 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 class PreviewEloIdentityViewTest {
     @Test
@@ -32,12 +40,26 @@ class PreviewEloIdentityViewTest {
         var source = mock(PreviewEloHistory.class);
         when(source.calculate(date)).thenReturn(snapshot);
         when(source.aliases()).thenReturn(history.aliases());
-        var view = new PreviewEloRanking(mapper, file, Optional.of(source));
+        var access = new EloPilotAccess(new EloPilotProperties(true, Set.of(1L), file));
+        var view = new PreviewEloRanking(mapper, file, Optional.of(source), access);
         var model = new ExtendedModelMap();
-        view.ranking(model);
+        var player = new PlayerPadel();
+        player.setId(8L);
+        view.ranking(model, new UsernamePasswordAuthenticationToken(player, null, player.getAuthorities()),
+                new MockHttpServletResponse());
         var players = (Map<?, ?>) model.get("previewEloByPlayer");
         assertThat(players.get(8L)).isSameAs(players.get(1L)).isNotNull();
         assertThat(((PreviewEloRanking.Snapshot) model.get("previewElo")).rows())
                 .hasSize(4).noneMatch(row -> row.id() == 8L);
+
+        clearInvocations(source);
+        var outsider = new PlayerPadel();
+        outsider.setId(2L);
+        var unchanged = new ExtendedModelMap();
+        view.ranking(unchanged, new UsernamePasswordAuthenticationToken(outsider, null, outsider.getAuthorities()),
+                new MockHttpServletResponse());
+        assertThat(unchanged).isEmpty();
+        view.ranking(new ExtendedModelMap(), null, new MockHttpServletResponse());
+        verify(source, never()).calculate(date);
     }
 }

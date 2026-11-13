@@ -2,9 +2,13 @@ package com.padle.core.padelcoreservice.preview;
 
 import com.padle.core.padelcoreservice.controller.player.PlayerDashboardController;
 import com.padle.core.padelcoreservice.controller.view.RankingController;
+import com.padle.core.padelcoreservice.rating.EloPilotAccess;
+import com.padle.core.padelcoreservice.rating.EloRankingView;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
+import org.springframework.security.core.Authentication;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -18,8 +22,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @ControllerAdvice(assignableTypes = {RankingController.class, PlayerDashboardController.class})
 @Profile("preview")
@@ -49,10 +51,12 @@ public class PreviewEloRanking {
 
     private final Snapshot snapshot;
     private final Optional<PreviewEloHistory> history;
+    private final EloPilotAccess pilot;
 
     public PreviewEloRanking(ObjectMapper mapper, @Value("${app.preview.elo-snapshot}") Path path,
-                             Optional<PreviewEloHistory> history) throws IOException {
+                             Optional<PreviewEloHistory> history, EloPilotAccess pilot) throws IOException {
         this.history = history;
+        this.pilot = pilot;
         try (var input = Files.newInputStream(path)) {
             var imported = mapper.readValue(input, Snapshot.class);
             snapshot = new Snapshot(imported.asOf(), List.copyOf(imported.rows()));
@@ -63,20 +67,14 @@ public class PreviewEloRanking {
     }
 
     @ModelAttribute
-    public void ranking(Model model) {
+    public void ranking(Model model, Authentication authentication, HttpServletResponse response) {
+        var aliases = history.map(PreviewEloHistory::aliases).orElse(Map.of());
+        pilot.protectResponse(response);
+        if (!pilot.allows(authentication, aliases)) {
+            return;
+        }
         var current = history.map(source -> source.calculate(snapshot.asOf())).orElse(snapshot);
-        model.addAttribute("previewElo", current);
         int startStep = history.map(PreviewEloHistory::startStep).orElse(0);
-        model.addAttribute("previewEloStartStep", startStep);
-        var categories = current.rows().stream().map(Row::category).distinct();
-        model.addAttribute("previewEloCategories", (startStep > 0 ? categories : categories.sorted()).toList());
-        var byPlayer = current.rows().stream().collect(Collectors.toMap(Row::id, Function.identity()));
-        history.ifPresent(source -> source.aliases().forEach((alias, canonical) -> {
-            var row = byPlayer.get(canonical);
-            if (row != null) {
-                byPlayer.put(alias, row);
-            }
-        }));
-        model.addAttribute("previewEloByPlayer", Map.copyOf(byPlayer));
+        EloRankingView.populate(model, current, startStep, aliases);
     }
 }
