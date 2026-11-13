@@ -99,7 +99,7 @@ docker compose up -d
 
 | URL | Template | Описание |
 |-----|----------|----------|
-| `GET /players/dashboard` | React в production | Мои мероприятия |
+| `GET /players/dashboard` | `players/dashboard.html` | Кабинет игрока |
 | `GET /legacy/players/dashboard` | `players/dashboard.html` | Прежний кабинет игрока |
 | `GET /perfil` | `players/perfil.html` | Профиль |
 | `POST /perfil/actualizar` | — (redirect) | Обновление профиля |
