@@ -16,8 +16,8 @@ class PilotBoundaryTest(unittest.TestCase):
     def test_wrong_running_jar_does_not_reset_fixtures(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            (root / 'target').mkdir()
-            (root / 'target/padel-core-service-0.0.1-SNAPSHOT.jar').write_bytes(b'local-jar')
+            (root / 'padel-bootstrap/target').mkdir(parents=True)
+            (root / 'padel-bootstrap/target/padel-core-service-0.0.1-SNAPSHOT.jar').write_bytes(b'local-jar')
             client = Mock()
             client.request.return_value = json.dumps(dict(environment='preview', revision='a' * 40))
             with patch.object(pilot.preview, 'ROOT', root), \
@@ -35,8 +35,8 @@ class PilotBoundaryTest(unittest.TestCase):
             root = Path(directory)
             runtime = root / 'runtime'
             runtime.mkdir()
-            (root / 'target').mkdir()
-            (root / 'target/padel-core-service-0.0.1-SNAPSHOT.jar').write_bytes(b'local-jar')
+            (root / 'padel-bootstrap/target').mkdir(parents=True)
+            (root / 'padel-bootstrap/target/padel-core-service-0.0.1-SNAPSHOT.jar').write_bytes(b'local-jar')
             digest = hashlib.sha256(b'local-jar').hexdigest()
             client = Mock(origin='http://127.0.0.1:18114')
             client.request.side_effect = [json.dumps(dict(environment='preview', revision='a' * 40)),

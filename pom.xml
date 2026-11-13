@@ -14,13 +14,15 @@
         <relativePath/>
     </parent>
     <groupId>com.padle.core</groupId>
-    <artifactId>padel-core-service</artifactId>
+    <artifactId>padel-parent</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>padel-core-service</name>
+    <packaging>pom</packaging>
+    <name>padel-parent</name>
     <description>padel-core-service</description>
 
     <properties>
         <java.version>17</java.version>
+        <padel.root>${maven.multiModuleProjectDirectory}</padel.root>
         <org.mapstruct.version>1.6.3</org.mapstruct.version>
         <!-- JWT версии -->
         <jjwt.version>0.13.0</jjwt.version>
@@ -39,294 +41,13 @@
         <skip.frontend>false</skip.frontend>
     </properties>
 
-    <dependencies>
-        <!-- Spring Boot Starters -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-jpa</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-webmvc</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-thymeleaf</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.thymeleaf.extras</groupId>
-            <artifactId>thymeleaf-extras-springsecurity6</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-validation</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-security</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-mail</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-websocket</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>dev.caceresenzo.disposableemaildomains</groupId>
-            <artifactId>disposable-email-domains-spring-boot-starter</artifactId>
-            <version>0.5.0</version>
-        </dependency>
-
-        <!-- OAuth2 Client -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-security-oauth2-client</artifactId>
-            <!-- json-smart ≤ 2.6.0 (последняя) — обход strict-проверки через 0x1A, фикса нет (LFPT-0726).
-                 Тянется через oauth2-oidc-sdk, но в servlet-стеке Spring Security он нужен только для
-                 discovery по issuer-uri (не используем) и WebFlux-классов; разбор ошибок Bearer
-                 (OAuth2ErrorResponseErrorHandler) работает без него — проверено вход Google на фейковом провайдере. -->
-            <exclusions>
-                <exclusion>
-                    <groupId>net.minidev</groupId>
-                    <artifactId>json-smart</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>com.bucket4j</groupId>
-            <artifactId>bucket4j-core</artifactId>
-            <version>8.10.1</version>
-        </dependency>
-
-        <!-- Database -->
-        <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <!-- Boot 4: автоконфигурация Liquibase вынесена в отдельный модуль -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-liquibase</artifactId>
-        </dependency>
-
-        <!-- JWT для аутентификации -->
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-api</artifactId>
-            <version>${jjwt.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-impl</artifactId>
-            <version>${jjwt.version}</version>
-            <scope>runtime</scope>
-        </dependency>
-        <!-- JSON для jjwt через Gson: jjwt-jackson тянул Jackson 2 — второй стек Jackson рядом с Jackson 3 Boot 4 -->
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-gson</artifactId>
-            <version>${jjwt.version}</version>
-            <scope>runtime</scope>
-        </dependency>
-
-        <!-- MapStruct -->
-        <dependency>
-            <groupId>org.mapstruct</groupId>
-            <artifactId>mapstruct</artifactId>
-            <version>${org.mapstruct.version}</version>
-        </dependency>
-
-        <!-- Lombok -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <optional>true</optional>
-        </dependency>
-
-        <!-- Guava Cache для отслеживания подозрительных IP -->
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>33.0.0-jre</version>
-        </dependency>
-
-        <!-- Dev Tools -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-devtools</artifactId>
-            <scope>runtime</scope>
-            <optional>true</optional>
-        </dependency>
-
-        <!-- ========== OBSERVABILITY ========== -->
-        <!-- Prometheus metrics -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-registry-prometheus</artifactId>
-        </dependency>
-
-        <!-- Loki log aggregation (JSON format for better indexing) -->
-        <dependency>
-            <groupId>com.github.loki4j</groupId>
-            <artifactId>loki-logback-appender</artifactId>
-            <version>2.1.0</version>
-        </dependency>
-
-        <!-- Spring AOP (Boot 4: spring-boot-starter-aop → spring-boot-starter-aspectj) -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-aspectj</artifactId>
-        </dependency>
-
-        <!-- Apache POI for Excel export (temporary) -->
-        <dependency>
-            <groupId>org.apache.poi</groupId>
-            <artifactId>poi-ooxml</artifactId>
-            <version>${poi.version}</version>
-        </dependency>
-
-        <!-- Testing -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
-            <!-- json-smart исключён (см. выше); json-path в тестах работает через Gson —
-                 провайдер ставит JsonPathGsonDefaults (LauncherSessionListener) -->
-            <exclusions>
-                <exclusion>
-                    <groupId>net.minidev</groupId>
-                    <artifactId>json-smart</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.platform</groupId>
-            <artifactId>junit-platform-launcher</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <!-- Boot 4: @AutoConfigureMockMvc вынесен в модуль webmvc-test -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-webmvc-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <!-- MockMvc-проверки правил доступа через реальную цепочку фильтров (user(), csrf()) -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-security-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
+    <modules>
+        <module>padel-tournament-engines</module>
+        <module>padel-bootstrap</module>
+    </modules>
 
     <build>
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-            </resource>
-            <resource>
-                <directory>target/generated-resources/frontend</directory>
-            </resource>
-        </resources>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <!-- Общий бюджет соединений кешированных Spring-контекстов только в тестовом JVM. -->
-                    <systemPropertyVariables>
-                        <spring.test.context.cache.maxSize>8</spring.test.context.cache.maxSize>
-                        <spring.datasource.hikari.maximum-pool-size>4</spring.datasource.hikari.maximum-pool-size>
-                        <spring.datasource.hikari.minimum-idle>0</spring.datasource.hikari.minimum-idle>
-                    </systemPropertyVariables>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>com.github.eirslett</groupId>
-                <artifactId>frontend-maven-plugin</artifactId>
-                <version>${frontend-maven-plugin.version}</version>
-                <configuration>
-                    <workingDirectory>frontend</workingDirectory>
-                    <installDirectory>target/frontend-toolchain</installDirectory>
-                    <skip>${skip.frontend}</skip>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>install-node-and-pnpm</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>install-node-and-pnpm</goal>
-                        </goals>
-                        <configuration>
-                            <nodeVersion>${frontend.node.version}</nodeVersion>
-                            <pnpmVersion>${frontend.pnpm.version}</pnpmVersion>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>pnpm-install</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>pnpm</goal>
-                        </goals>
-                        <configuration>
-                            <arguments>install --frozen-lockfile</arguments>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>pnpm-build</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>pnpm</goal>
-                        </goals>
-                        <configuration>
-                            <arguments>run build</arguments>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                        </path>
-                        <path>
-                            <groupId>org.mapstruct</groupId>
-                            <artifactId>mapstruct-processor</artifactId>
-                            <version>${org.mapstruct.version}</version>
-                        </path>
-                        <path>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok-mapstruct-binding</artifactId>
-                            <version>0.2.0</version>
-                        </path>
-                    </annotationProcessorPaths>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <configuration>
-                    <excludes>
-                        <exclude>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                        </exclude>
-                    </excludes>
-                </configuration>
-            </plugin>
-
-            <!-- Плагин для разрешения конфликтов версий -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
@@ -371,9 +92,13 @@
         </plugins>
     </build>
 
-    <!-- Определение зависимостей управления версиями -->
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>com.padle.core</groupId>
+                <artifactId>padel-tournament-engines</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <!-- Apache POI -->
             <dependency>
                 <groupId>org.apache.poi</groupId>

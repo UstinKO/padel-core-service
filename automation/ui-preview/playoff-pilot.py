@@ -59,7 +59,7 @@ def main():
     status = json.loads(client.request('/api/internal/ui-preview'))
     if status.get('environment') != 'preview':
         raise ValueError('Требуется собственный preview')
-    jar = preview.ROOT / 'target/padel-core-service-0.0.1-SNAPSHOT.jar'
+    jar = preview.ROOT / 'padel-bootstrap/target/padel-core-service-0.0.1-SNAPSHOT.jar'
     checksum = hashlib.sha256(jar.read_bytes()).hexdigest()
     running = subprocess.check_output(preview.compose_arguments(state, 'exec', '-T', 'app',
         'sha256sum', '/app/app.jar'), cwd=preview.ROOT, env=preview.compose_environment(state), text=True).split()[0]

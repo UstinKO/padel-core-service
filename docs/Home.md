@@ -76,14 +76,14 @@ Bucket4j, MapStruct, Lombok
 ## Быстрый старт
 
 ```bash
-# Требует PostgreSQL на localhost:5432/player_padel_db
-./mvnw spring-boot:run
-
-# Полный стек: приложение + postgres + loki + prometheus + grafana
-docker compose up -d
-
-# Сборка без тестов
+# Сборка без тестов; обязательный verify выполняется отдельно с тестовой PostgreSQL.
 ./mvnw clean package -DskipTests
+
+# Запуск с окружением своей БД и интеграций.
+java -jar padel-bootstrap/target/padel-core-service-0.0.1-SNAPSHOT.jar
+
+# Полный стек: приложение + postgres + loki + prometheus + grafana.
+docker compose up -d
 ```
 
 Обязательные env-переменные (если не используются дефолты):

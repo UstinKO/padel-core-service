@@ -82,7 +82,7 @@ def main():
     root = preview.ROOT
     output = root / 'target/release-rehearsal'
     output.mkdir(parents=True, exist_ok=True)
-    source = root / 'target/padel-core-service-0.0.1-SNAPSHOT.jar'
+    source = root / 'padel-bootstrap/target/padel-core-service-0.0.1-SNAPSHOT.jar'
     records = {}
     probes = {}
     revision = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=root, text=True).strip()

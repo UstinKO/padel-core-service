@@ -130,7 +130,8 @@ curl -s -H "Accept-Language: ru,en;q=0.9" http://localhost:8080/ | grep 'lang='
 # Ожидаем: <html lang="es"> (пока переводов нет, это ок)
 
 # Тест 2: убедиться что Spring не падает при запуске
-./mvnw spring-boot:run
+./mvnw package -DskipTests
+java -jar padel-bootstrap/target/padel-core-service-0.0.1-SNAPSHOT.jar
 # Открыть http://localhost:8080/ — страница должна открыться нормально
 ```
 
