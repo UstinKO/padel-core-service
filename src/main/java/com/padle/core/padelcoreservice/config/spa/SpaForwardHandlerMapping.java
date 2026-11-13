@@ -9,6 +9,7 @@ import org.springframework.web.util.pattern.PathPattern;
 import org.springframework.web.util.pattern.PathPatternParser;
 
 import java.util.List;
+import java.util.function.Predicate;
 
 public final class SpaForwardHandlerMapping extends AbstractHandlerMapping {
 
@@ -17,12 +18,19 @@ public final class SpaForwardHandlerMapping extends AbstractHandlerMapping {
 
     private final List<PathPattern> routes;
     private final HttpRequestHandler forwardHandler;
+    private final Predicate<HttpServletRequest> useServerPage;
 
     public SpaForwardHandlerMapping(List<String> productionRoutes) {
         this(productionRoutes, (request, response) -> request.getRequestDispatcher(SPA_INDEX).forward(request, response));
     }
 
     public SpaForwardHandlerMapping(List<String> productionRoutes, HttpRequestHandler handler) {
+        this(productionRoutes, handler, request -> false);
+    }
+
+    public SpaForwardHandlerMapping(List<String> productionRoutes, HttpRequestHandler handler,
+                                    Predicate<HttpServletRequest> useServerPage) {
+        this.useServerPage = useServerPage;
         forwardHandler = handler;
         routes = productionRoutes.stream()
                 .map(PARSER::parse)
@@ -36,6 +44,7 @@ public final class SpaForwardHandlerMapping extends AbstractHandlerMapping {
         }
 
         var path = ServletRequestPathUtils.getParsedRequestPath(request).pathWithinApplication();
-        return routes.stream().anyMatch(route -> route.matches(path)) ? forwardHandler : null;
+        return routes.stream().anyMatch(route -> route.matches(path)) && !useServerPage.test(request)
+                ? forwardHandler : null;
     }
 }

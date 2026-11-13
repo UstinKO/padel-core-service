@@ -52,7 +52,12 @@ class SpaRoutingIntegrationTest {
         }
         mockMvc.perform(get("/players/dashboard").with(user("player").roles("PLAYER")))
                 .andExpect(status().isOk())
-                .andExpect(forwardedUrl(SPA_INDEX));
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("spa-test-shell")))
+                .andExpect(header().string("Cache-Control", "private, no-store"));
+        mockMvc.perform(head("/players/dashboard").with(user("player").roles("PLAYER")))
+                .andExpect(status().isOk())
+                .andExpect(content().string(""))
+                .andExpect(header().string("Cache-Control", "private, no-store"));
         var legacy = mockMvc.perform(get("/legacy/players/dashboard").with(user("player").roles("PLAYER")))
                 .andReturn();
         assertThat(legacy.getResponse().getForwardedUrl()).isNotEqualTo(SPA_INDEX);
