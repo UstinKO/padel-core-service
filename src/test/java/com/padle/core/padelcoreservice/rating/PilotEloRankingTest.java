@@ -2,6 +2,9 @@ package com.padle.core.padelcoreservice.rating;
 
 import com.padle.core.padelcoreservice.controller.view.RankingController;
 import com.padle.core.padelcoreservice.preview.PreviewEloRanking;
+import com.padle.core.padelcoreservice.preview.PilotEloRefresh;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.ui.ExtendedModelMap;
 import com.padle.core.padelcoreservice.service.RankingService;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.Test;
@@ -19,12 +22,15 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.times;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -51,7 +57,7 @@ class PilotEloRankingTest {
 
     private MockMvc web(boolean enabled, Set<Long> ids) throws Exception {
         var properties = new EloPilotProperties(enabled, ids, writeBundle());
-        var advice = new PilotEloRanking(mapper, properties, new EloPilotAccess(properties));
+        var advice = new PilotEloRanking(mapper, properties, new EloPilotAccess(properties), Optional.empty());
         return MockMvcBuilders.standaloneSetup(new RankingController(legacy, mapper))
                 .setControllerAdvice(advice)
                 .setSingleView((model, request, response) -> response.getWriter()
@@ -107,6 +113,24 @@ class PilotEloRankingTest {
                 .run(context -> assertThat(context).hasNotFailed().doesNotHaveBean(PilotEloRanking.class));
         runner.withPropertyValues("app.rating.pilot.enabled=true")
                 .run(context -> assertThat(context).hasFailed());
+    }
+
+    @Test
+    void refreshIsReadOnlyAfterAccessCheckAndEveryAuthorizedReadGetsCurrentResult() throws Exception {
+        var refresh = mock(PilotEloRefresh.class);
+        var properties = new EloPilotProperties(true, Set.of(1L), writeBundle());
+        var advice = new PilotEloRanking(mapper, properties, new EloPilotAccess(properties), Optional.of(refresh));
+        advice.ranking(new ExtendedModelMap(), EloPilotAccessTest.player(2), new MockHttpServletResponse());
+        advice.ranking(new ExtendedModelMap(), null, new MockHttpServletResponse());
+        verifyNoInteractions(refresh);
+        var next = new PreviewEloRanking.Snapshot(bundle().snapshot().asOf().plusDays(1), List.of(row(2), row(1)));
+        when(refresh.calculate()).thenReturn(bundle().snapshot(), next);
+        var model = new ExtendedModelMap();
+        advice.ranking(model, EloPilotAccessTest.player(1), new MockHttpServletResponse());
+        assertThat(model.get("previewElo")).isEqualTo(bundle().snapshot());
+        advice.ranking(model, EloPilotAccessTest.player(8), new MockHttpServletResponse());
+        assertThat(model.get("previewElo")).isEqualTo(next);
+        verify(refresh, times(2)).calculate();
     }
 
     @Test

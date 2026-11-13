@@ -37,7 +37,8 @@ class PreviewEloLiveEvents {
               JOIN king_of_court_round_db r ON r.id=c.round_id
               JOIN tournament_king_of_court_db k ON k.id=r.tournament_king_id
               JOIN tournaments_db t ON t.id=k.tournament_id
-             WHERE t.fecha_inicio > :cutoff AND t.is_active AND t.estado <> 'CANCELADO' AND r.is_completed
+             WHERE (t.fecha_inicio > :cutoff OR t.id IN (:managedIds))
+               AND t.is_active AND t.estado <> 'CANCELADO' AND r.is_completed
              UNION ALL
             SELECT t.id, t.nombre, t.fecha_inicio, t.categoria_nivel,
                    CASE WHEN t.tipo='AMERICANO_TEAMS' THEN 'pair' ELSE 'americano' END,
@@ -56,7 +57,8 @@ class PreviewEloLiveEvents {
               FROM americano_matches_db m
               JOIN americano_rounds_db r ON r.id=m.round_id
               JOIN tournaments_db t ON t.id=m.tournament_id
-             WHERE t.fecha_inicio > :cutoff AND t.is_active AND t.estado <> 'CANCELADO' AND m.status='COMPLETED'
+             WHERE (t.fecha_inicio > :cutoff OR t.id IN (:managedIds))
+               AND t.is_active AND t.estado <> 'CANCELADO' AND m.status='COMPLETED'
                AND ((t.tipo='AMERICANO' AND t.modalidad='INDIVIDUAL' AND r.status='COMPLETED')
                     OR (t.tipo='AMERICANO_TEAMS' AND t.modalidad='DOBLES' AND m.team1_games IS NOT NULL
                         AND m.team2_games IS NOT NULL))
@@ -75,9 +77,15 @@ class PreviewEloLiveEvents {
     record LiveHistory(List<PreviewEloReplay.Event> events, Map<Long, String> names) { }
 
     LiveHistory load(LocalDate cutoff) {
+        return load(cutoff, Set.of(), Set.of());
+    }
+
+    LiveHistory load(LocalDate cutoff, Set<Long> managedIds, Set<String> excludedEvents) {
         var nativeGames = jdbc.sql(SCORED_MATCHES).param("cutoff", cutoff)
+                .param("managedIds", managedIds.isEmpty() ? Set.of(-1L) : managedIds)
                 .query((row, index) -> map(row)).list().stream().filter(Objects::nonNull).toList();
-        var groups = nativeGames.stream().collect(Collectors.groupingBy(NativeGame::eventId));
+        var groups = nativeGames.stream().filter(item -> !excludedEvents.contains("S-" + item.eventId()))
+                .collect(Collectors.groupingBy(NativeGame::eventId));
         var events = new ArrayList<PreviewEloReplay.Event>();
         for (var tournament : groups.values()) {
             var first = tournament.get(0);

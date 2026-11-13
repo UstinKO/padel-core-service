@@ -14,6 +14,7 @@ Spring Boot монолит для управления падель-турнир
 | [Архитектура базы данных](database-architecture) | Все 21 таблица, столбцы, типы, enum-справочники, ERD, история миграций |
 | [Доменный обзор](domain-overview) | 10 доменов, каждый HTTP-эндпоинт с описанием, анализ для декомпозиции в микросервисы |
 | [Auth Flow](auth-flow) | Form Login, JWT, Google OAuth2, rate limiting, защита регистрации |
+| [Пилот рейтинга Elo](rating-pilot) | Ограничение доступа, проверенная история, автоматический пересчёт и тестовый откат |
 | [Архитектура приложения](architecture) | Слои, AOP observability, Prometheus/Loki/Grafana, Docker, CI/CD |
 | [Инфраструктурная безопасность](infrastructure-security) | Nginx, CrowdSec, UFW, Docker port isolation, SSL, runbook инцидентов. **Приватный документ — не в репозитории** (детали защиты сервера) |
 | [План перехода на микросервисы](microservices-migration-plan) | Поэтапный план: Swarm-масштабирование, выделение сервисов, мобильные API, новые продукты |
