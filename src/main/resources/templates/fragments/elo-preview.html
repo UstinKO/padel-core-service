@@ -82,6 +82,12 @@
         <p th:text="#{elo.preview.progressStats(*{tournaments},*{matches},*{wins})}"></p>
         <p th:text="#{elo.preview.progressRemaining(*{moreTournaments},*{moreMatches},*{moreWins})}"></p>
     </div>
+    <div th:each="target : ${eloRow.strongerCategories}" th:object="${target.progress}" class="elo-preview-progress">
+        <strong th:text="#{elo.preview.strongerProgress(${target.category})}"></strong>
+        <p th:text="#{elo.preview.strongerProgressStats(*{tournaments},*{matches},*{wins})}"></p>
+        <p th:text="#{elo.preview.strongerProgressRemaining(*{moreTournaments},*{moreMatches},*{moreWins})}"></p>
+        <p th:if="${target.eligibleFromOneEvent}" th:text="#{elo.preview.strongerProgressOneEvent}"></p>
+    </div>
     <a th:href="@{/ranking(category=${eloRow.category})}" th:text="#{elo.preview.viewRanking}"></a>
 </th:block>
 </body>

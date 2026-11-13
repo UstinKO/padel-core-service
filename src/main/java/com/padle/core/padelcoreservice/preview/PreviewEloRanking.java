@@ -27,8 +27,15 @@ public class PreviewEloRanking {
     public record Progress(int tournaments, int matches, int wins, int moreTournaments,
                            int moreMatches, int moreWins) { }
 
+    public record CategoryProgress(String category, Progress progress, boolean eligibleFromOneEvent) { }
+
     public record Row(long id, String name, String category, boolean confirmed, BigDecimal elo,
-                      int categoryPlace, int categorySize, Integer overallPlace, Progress progress) { }
+                      int categoryPlace, int categorySize, Integer overallPlace, Progress progress,
+                      List<CategoryProgress> strongerCategories) {
+        public Row {
+            strongerCategories = strongerCategories == null ? List.of() : List.copyOf(strongerCategories);
+        }
+    }
 
     public record Snapshot(LocalDate asOf, List<Row> rows) { }
 

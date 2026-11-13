@@ -69,6 +69,11 @@ class PreviewEloReplayTest {
         var afterFirst = replay.replay(FIRST_DAY, NAMES, List.of(initial, opponents, distant));
         assertThat(row(afterFirst, 1).category()).isEqualTo("C8");
         assertThat(row(afterFirst, 3).category()).isEqualTo("C8");
+        var progress = new PreviewEloRanking.CategoryProgress("C5",
+                new PreviewEloRanking.Progress(1, 6, 3, 1, 1, 1), false);
+        assertThat(row(afterFirst, 1).strongerCategories()).containsExactly(progress);
+        var seeded = new PreviewEloReplay(40).replay(FIRST_DAY, NAMES, List.of(initial, opponents, distant));
+        assertThat(row(seeded, 1).strongerCategories()).containsExactly(progress);
         assertThat(row(afterFirst, 1).elo()).isNotEqualTo(row(
                 replay.replay(FIRST_DAY, NAMES, List.of(initial, opponents)), 1).elo());
 
@@ -81,6 +86,7 @@ class PreviewEloReplayTest {
         var afterSecond = replay.replay(FIRST_DAY, NAMES, List.of(initial, opponents, distant, secondC5));
         assertThat(row(afterSecond, 1).category()).isEqualTo("C5");
         assertThat(row(afterSecond, 1).confirmed()).isTrue();
+        assertThat(row(afterSecond, 1).strongerCategories()).isEmpty();
     }
 
     private List<PreviewEloReplay.Game> winningRun(String prefix, int matches) {

@@ -95,6 +95,10 @@ final class PreviewEloReplay {
         boolean isConfirmed() {
             return confirmed != NO_CATEGORY;
         }
+
+        boolean eligibleFromOneEvent(int level) {
+            return level >= confirmed - 1 || !isConfirmed();
+        }
     }
 
     PreviewEloRanking.Snapshot replay(LocalDate cutoff, Map<Long, String> names, List<Event> input) {
@@ -168,8 +172,7 @@ final class PreviewEloReplay {
         total.events++;
         total.matches += evidence.matches;
         total.wins += evidence.wins;
-        boolean eligibleFromOneEvent = !player.isConfirmed() || level >= player.confirmed - 1;
-        if (eligibleFromOneEvent && evidence.wins * 2 >= evidence.matches
+        if (player.eligibleFromOneEvent(level) && evidence.wins * 2 >= evidence.matches
                 && ((champion && evidence.matches >= 5) || (finalist && evidence.matches >= 6))) {
             player.confirmed = Math.min(player.confirmed, level);
         }
@@ -193,7 +196,8 @@ final class PreviewEloReplay {
         for (var group : groups.entrySet()) {
             var sorted = group.getValue().stream().sorted(Comparator.<Player>comparingDouble(p -> p.elo)
                     .reversed().thenComparingLong(p -> p.id)).toList();
-            var category = group.getKey() == NO_CATEGORY ? "—" : "C" + group.getKey();
+            int level = group.getKey();
+            var category = level == NO_CATEGORY ? "—" : "C" + level;
             int categoryPlace = 0;
             int overallPlace = 0;
             Player priorConfirmed = null;
@@ -212,7 +216,9 @@ final class PreviewEloReplay {
                     place = overallPlace;
                 }
                 rows.add(new PreviewEloRanking.Row(player.id, names.get(player.id), category, player.isConfirmed(),
-                        BigDecimal.valueOf(player.elo), categoryPlace, sorted.size(), place, progress(player)));
+                        BigDecimal.valueOf(player.elo), categoryPlace, sorted.size(), place,
+                        player.isConfirmed() ? null : progress(player.levels.get(level)),
+                        strongerCategories(player, level)));
             }
         }
         return startStep > 0 ? rankByElo(rows) : List.copyOf(rows);
@@ -229,7 +235,7 @@ final class PreviewEloReplay {
                 place = i + 1;
             }
             result.add(new PreviewEloRanking.Row(row.id(), row.name(), row.category(), row.confirmed(), row.elo(),
-                    row.categoryPlace(), row.categorySize(), place, row.progress()));
+                    row.categoryPlace(), row.categorySize(), place, row.progress(), row.strongerCategories()));
         }
         return List.copyOf(result);
     }
@@ -238,9 +244,17 @@ final class PreviewEloReplay {
         return Math.abs(first.elo - second.elo) <= TIE_EPSILON;
     }
 
-    private PreviewEloRanking.Progress progress(Player player) {
-        var stats = player.levels.get(player.category());
-        if (player.isConfirmed() || stats == null) {
+    private List<PreviewEloRanking.CategoryProgress> strongerCategories(Player player, int currentLevel) {
+        return player.levels.entrySet().stream()
+                .filter(entry -> entry.getKey() < currentLevel)
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> new PreviewEloRanking.CategoryProgress("C" + entry.getKey(),
+                        progress(entry.getValue()), player.eligibleFromOneEvent(entry.getKey())))
+                .toList();
+    }
+
+    private PreviewEloRanking.Progress progress(Record stats) {
+        if (stats == null) {
             return null;
         }
         int tournaments = Math.max(0, 2 - stats.events);
