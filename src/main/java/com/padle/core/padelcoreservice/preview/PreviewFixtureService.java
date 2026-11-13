@@ -133,7 +133,8 @@ public class PreviewFixtureService {
                 .param("one", one).param("two", two).update();
     }
 
-    private void removeEvent(long id) {
+    @Transactional
+    void removeEvent(long id) {
         jdbc.sql("DELETE FROM marketing_events_db WHERE tournament_id=:id").param("id", id).update();
         jdbc.sql("""
                 DELETE FROM marketing_payment_progress_db WHERE payment_id IN (SELECT p.id FROM payments_db p
@@ -147,7 +148,7 @@ public class PreviewFixtureService {
     }
 
     private Fixtures save(Fixtures fixtures) {
-        jdbc.sql("UPDATE ui_preview.control SET state=CAST(:state AS jsonb) WHERE instance_id=:id")
+        jdbc.sql("UPDATE ui_preview.control SET state=COALESCE(state,'{}'::jsonb) || CAST(:state AS jsonb) WHERE instance_id=:id")
                 .param("state", json.writeValueAsString(fixtures)).param("id", properties.instanceId()).update();
         return fixtures;
     }
