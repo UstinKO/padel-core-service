@@ -78,7 +78,31 @@ final class PreviewEloReplay {
         }
     }
 
-    record History(Map<Long, String> names, List<Event> events) { }
+    record History(Map<Long, String> names, List<Event> events, Map<Long, Long> aliases) {
+        History {
+            aliases = aliases == null ? Map.of() : Map.copyOf(aliases);
+            var canonicalNames = new HashMap<>(names);
+            for (var alias : aliases.entrySet()) {
+                if (aliases.containsKey(alias.getValue()) || !names.containsKey(alias.getValue())) {
+                    throw new IllegalArgumentException("Некорректная связь профилей Elo: " + alias.getKey());
+                }
+                canonicalNames.remove(alias.getKey());
+            }
+            names = Map.copyOf(canonicalNames);
+            var links = aliases;
+            events = events.stream().map(event -> new Event(event.key(), event.day(), event.category(),
+                    event.games().stream().map(game -> new Game(game.key(), game.batch(),
+                            game.ids().stream().map(id -> links.getOrDefault(id, id)).toList(),
+                            game.left(), game.right(), game.verifiedFinal())).toList(),
+                    event.champions().stream().map(id -> links.getOrDefault(id, id)).collect(Collectors.toSet()),
+                    event.runnersUp().stream().map(id -> links.getOrDefault(id, id)).collect(Collectors.toSet()),
+                    event.title(), event.format(), event.resultsUrl())).toList();
+        }
+
+        History(Map<Long, String> names, List<Event> events) {
+            this(names, events, Map.of());
+        }
+    }
 
     private static final class Record {
         int events;

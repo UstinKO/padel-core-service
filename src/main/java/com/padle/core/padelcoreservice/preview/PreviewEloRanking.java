@@ -16,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -69,7 +70,13 @@ public class PreviewEloRanking {
         model.addAttribute("previewEloStartStep", startStep);
         var categories = current.rows().stream().map(Row::category).distinct();
         model.addAttribute("previewEloCategories", (startStep > 0 ? categories : categories.sorted()).toList());
-        model.addAttribute("previewEloByPlayer", current.rows().stream()
-                .collect(Collectors.toUnmodifiableMap(Row::id, Function.identity())));
+        var byPlayer = current.rows().stream().collect(Collectors.toMap(Row::id, Function.identity()));
+        history.ifPresent(source -> source.aliases().forEach((alias, canonical) -> {
+            var row = byPlayer.get(canonical);
+            if (row != null) {
+                byPlayer.put(alias, row);
+            }
+        }));
+        model.addAttribute("previewEloByPlayer", Map.copyOf(byPlayer));
     }
 }

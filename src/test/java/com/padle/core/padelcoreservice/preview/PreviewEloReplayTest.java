@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.within;
 
 class PreviewEloReplayTest {
@@ -16,6 +17,38 @@ class PreviewEloReplayTest {
     private static final Map<Long, String> NAMES = Map.of(1L, "One", 2L, "Two", 3L, "Three", 4L, "Four",
             5L, "Five", 6L, "Six", 7L, "Seven", 8L, "Eight");
     private final PreviewEloReplay replay = new PreviewEloReplay();
+
+    @Test
+    void mergesConfirmedIdentityBeforeReplayingAndDoesNotCountItTwice() {
+        var first = event("S-1", 0, "C7", winningRun("first", 5));
+        var second = new PreviewEloReplay.Event("S-2", FIRST_DAY.plusDays(1), "C5",
+                List.of(game("alias", 1, List.of(8L, 2L, 3L, 4L), 4, 6, false)),
+                Set.of(3L), Set.of(8L), "Second", "pair", "/torneo/2");
+        var history = new PreviewEloReplay.History(NAMES, List.of(first, second), Map.of(8L, 1L));
+        var merged = replay.replay(FIRST_DAY, history.names(), history.events());
+        assertThat(merged.rows()).noneMatch(player -> player.id() == 8L);
+        assertThat(row(merged, 1).achievements()).isEqualTo(new PreviewEloRanking.Achievements(2, 6, 1, 1));
+        assertThat(row(merged, 1).tournamentHistory()).hasSize(2);
+        assertThat(history.events().get(1).runnersUp()).containsExactly(1L);
+        assertThat(history.events().get(1).title()).isEqualTo("Second");
+        assertThat(history.events().get(1).resultsUrl()).isEqualTo("/torneo/2");
+        var manuallyUnified = new PreviewEloReplay.Event("S-2", FIRST_DAY.plusDays(1), "C5",
+                List.of(game("alias", 1, List.of(1L, 2L, 3L, 4L), 4, 6, false)),
+                Set.of(3L), Set.of(1L), "Second", "pair", "/torneo/2");
+        assertThat(merged).isEqualTo(replay.replay(FIRST_DAY, history.names(), List.of(first, manuallyUnified)));
+        assertThat(new PreviewEloReplay.History(history.names(), history.events(), history.aliases()))
+                .isEqualTo(history);
+    }
+
+    @Test
+    void rejectsAmbiguousIdentityMappingsAndSelfMatches() {
+        var games = List.of(event("S-1", 0, "C7", winningRun("conflict", 5)));
+        for (var aliases : List.of(Map.of(1L, 1L), Map.of(1L, 8L, 8L, 1L),
+                Map.of(1L, 8L, 8L, 7L), Map.of(8L, 99L), Map.of(2L, 1L))) {
+            assertThatThrownBy(() -> new PreviewEloReplay.History(NAMES, games, aliases))
+                    .isInstanceOf(IllegalArgumentException.class);
+        }
+    }
 
     @Test
     void carriesTournamentMetadataWithoutChangingRatingOrCategory() {

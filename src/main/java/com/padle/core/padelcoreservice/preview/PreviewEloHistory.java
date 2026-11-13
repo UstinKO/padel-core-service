@@ -68,6 +68,10 @@ public class PreviewEloHistory {
         return startStep;
     }
 
+    Map<Long, Long> aliases() {
+        return history.aliases();
+    }
+
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public PreviewEloRanking.Snapshot calculate(LocalDate cutoff) {
         if (!includeTestResults) {
@@ -82,7 +86,8 @@ public class PreviewEloHistory {
         events.addAll(live.events());
         var names = new HashMap<>(live.names());
         names.putAll(history.names());
-        return replay.replay(cutoff, names, events);
+        var combined = new PreviewEloReplay.History(names, events, history.aliases());
+        return replay.replay(cutoff, combined.names(), combined.events());
     }
 
     private PreviewEloReplay.Event corrected(PreviewEloReplay.Event event, Map<String, Score> corrections) {
