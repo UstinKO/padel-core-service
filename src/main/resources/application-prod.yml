@@ -68,6 +68,9 @@ server:
 
 app:
   base-url: ${APP_BASE_URL}
+  participation:
+    response-email:
+      enabled: ${PADEL_PARTICIPATION_RESPONSE_EMAIL_ENABLED:true}
   spa:
     routes: []
   # Боевые ID — только в прод-профиле; application.yml (база, все
