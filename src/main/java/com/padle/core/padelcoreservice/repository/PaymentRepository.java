@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -25,6 +26,13 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     List<Payment> findByStatus(PaymentStatus status);
 
     // Найти платежи по турниру
+    @Query("""
+            SELECT p FROM Payment p JOIN FETCH p.registration
+            WHERE p.registration.id IN :registrationIds AND p.isActive = true
+            ORDER BY p.id DESC
+            """)
+    List<Payment> findActiveForRegistrations(Collection<Long> registrationIds);
+
     @Query("SELECT p FROM Payment p WHERE p.registration.tournament.id = :tournamentId")
     List<Payment> findByTournamentId(@Param("tournamentId") Long tournamentId);
 

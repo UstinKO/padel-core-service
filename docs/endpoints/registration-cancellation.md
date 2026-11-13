@@ -26,7 +26,7 @@
 
 Контекст формируется доверенным серверным входом. ActorKind: PLAYER/OWNER/SYSTEM/UNKNOWN; Scope: PARTICIPANT/PAIR. ReasonCode: PARTICIPANT_WITHDRAWAL/PAIR_WITHDRAWAL/ORGANIZER_REMOVAL/PLAYER_DEACTIVATED/PARTICIPANT_REPLACED/LEGACY_UNKNOWN. Подписи причин находятся в i18n ES/RU/EN. Передача actorId/actorKind/reasonCode пользовательским параметром ничего не меняет.
 
-Внутренний batch-сервис forPlayer возвращает только события переданного аутентифицированного PlayerPadel в выбранных мероприятиях. forManager проверяет SUPER_ADMIN/ADMIN либо владельца/организатора события или CLUB_ADMIN соответствующего клуба через TournamentAccessService. Эти методы должны получать principal сервера; клиентский playerId не является полномочием. Новых публичных history endpoint нет: REST кабинета реализуется отдельно в #902.
+Внутренний batch-сервис forPlayer возвращает только события переданного аутентифицированного PlayerPadel в выбранных мероприятиях. forManager проверяет SUPER_ADMIN/ADMIN либо владельца/организатора события или CLUB_ADMIN соответствующего клуба через TournamentAccessService. Эти методы должны получать principal сервера; клиентский playerId не является полномочием. REST кабинета использует эту выборку. См. [Мои мероприятия](account.md#мои-мероприятия).
 
 Безопасная Entry: eventId, tournamentId, registrationId, version, cancelledAt, initiator, scope, reasonCode, organizerComment. Нет actorId, контактов, служебного текста, токенов и финансового receipt. Данные комментария доступны только затронутому участнику и управляющему мероприятием; public event/live и посторонние игроки их не получают.
 

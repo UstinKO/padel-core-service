@@ -179,6 +179,9 @@ docker compose up -d
 | PATCH | `/api/players/me/contact` | Обновление контакта (телефон / Telegram) |
 | GET | `/api/players/me/contact-status` | Проверка наличия контакта |
 | GET | `/api/players/me/tournaments` | «Мои мероприятия» (LFPT-0637) — предстоящие/история, только просмотр |
+| GET | `/api/players/me/events` | Типизированный кабинет игрока, собственные заявки, история и доступные действия |
+| POST | `/api/players/me/events/{registrationId}/withdraw` | Личный выход с версией заявки |
+| PUT | `/api/players/me/events/{registrationId}/contact-visibility` | Согласие на показ контактов при поиске партнёра |
 | GET | `/api/players/search` | Поиск партнёра для парной регистрации — по имени/фамилии/email/телефону/Telegram (LFPT-0679) |
 
 ### Tournaments API (`/api/tournaments`)
@@ -634,7 +637,7 @@ GET/HEAD `/api/public/events/{eventId}/live` и `/api/public/king-of-court/{king
 
 ### История отмен — LFPT-0900
 
-Мягкая отмена использует RegistrationCancellationService/CancellationHistoryRepository: отдельное событие, участники и cancellationVersion. История сохраняется при повторной записи; batch-чтение для своего игрока или управляемого турнира проходит проверку доступа. Существующие сроки, PairTerms, оплата и очередь сохраняются. [Модель, права, повтор и ограничения старых запросов](../docs/endpoints/registration-cancellation.md). Два optional поля старых путей: If-Registration-Version для player cancel/cancel-double и comment для организаторской отмены. Новых REST-маршрутов кабинета нет; они остаются #902.
+Мягкая отмена использует RegistrationCancellationService/CancellationHistoryRepository: отдельное событие, участники и cancellationVersion. История сохраняется при повторной записи; batch-чтение для своего игрока или управляемого турнира проходит проверку доступа. Существующие сроки, PairTerms, оплата и очередь сохраняются. [Модель, права, повтор и ограничения старых запросов](../docs/endpoints/registration-cancellation.md). Два optional поля старых путей: If-Registration-Version для player cancel/cancel-double и comment для организаторской отмены. REST-кабинет #902 использует собственную историю отмен игрока.
 
 ### Закрытый контур UI v2
 

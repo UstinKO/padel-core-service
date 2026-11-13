@@ -581,7 +581,7 @@ public class TournamentService {
         }
     }
 
-    private Optional<TournamentRegistration> findActivePairPartner(Long tournamentId,
+    Optional<TournamentRegistration> findActivePairPartner(Long tournamentId,
                                                                     TournamentRegistration registration) {
         if (!Boolean.TRUE.equals(registration.getIsDoubleRegistration())) {
             return Optional.empty();

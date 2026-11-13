@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -33,11 +34,19 @@ public class TournamentParticipationService {
     private final ParticipationRequests participationRequests;
 
     public List<RequestSummary> list(PlayerPadel actor) {
-        return requests.findCurrentForActor(actor.getId()).stream()
-                .filter(request -> ParticipationRequests.canActFor(request, actor.getId()))
-                .filter(request -> ParticipationRequests.sameCycle(request, request.getRegistration()))
+        return currentForActor(actor)
                 .map(request -> ParticipationRequests.summary(request, actor.getId()))
                 .toList();
+    }
+
+    public List<Review> currentReviews(PlayerPadel actor) {
+        return currentForActor(actor).map(request -> review(request, actor, false)).toList();
+    }
+
+    private Stream<ParticipationRequest> currentForActor(PlayerPadel actor) {
+        return requests.findCurrentForActor(actor.getId()).stream()
+                .filter(request -> ParticipationRequests.canActFor(request, actor.getId()))
+                .filter(request -> ParticipationRequests.sameCycle(request, request.getRegistration()));
     }
 
     public List<OrganizerStatus> organizerStatus(long tournamentId, Owner owner) {
