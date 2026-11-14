@@ -148,7 +148,12 @@
         <section th:unless="${eloRow.tournamentHistory.isEmpty()}" class="elo-preview-form">
             <div><p class="elo-preview-eyebrow" th:text="#{elo.preview.currentForm}"></p>
                 <strong th:text="#{elo.preview.recentWins(${#lists.size(eloRow.tournamentHistory) < 3 ? #lists.size(eloRow.tournamentHistory) : 3})}"></strong>
-                <output data-recent-wins></output></div>
+                <output data-recent-wins
+                        th:data-wins-one="#{elo.preview.recentForm.winsOne}"
+                        th:data-wins-few="#{elo.preview.recentForm.winsFew}"
+                        th:data-wins-other="#{elo.preview.recentForm.winsOther}"
+                        th:data-matches-one="#{elo.preview.recentForm.matchesOne}"
+                        th:data-matches-other="#{elo.preview.recentForm.matchesOther}"></output></div>
             <div class="elo-preview-win-ring" aria-hidden="true"><span data-win-percent></span></div>
         </section>
     <div th:if="${!eloRow.confirmed and eloRow.progress != null}" th:object="${eloRow.progress}" class="elo-preview-progress">

@@ -46,7 +46,19 @@
     const wins = recent.reduce((total, event) => total + event.wins, 0);
     const card = panel.closest('.elo-preview-card');
     const winRate = matches ? wins / matches : 0;
-    card.querySelector('[data-recent-wins]').textContent = `${percent.format(winRate)} · ${wins} / ${matches}`;
+    const summary = card.querySelector('[data-recent-wins]');
+    const plurals = new Intl.PluralRules(locale);
+    const winsForms = {
+        one: summary.dataset.winsOne,
+        few: summary.dataset.winsFew,
+        other: summary.dataset.winsOther
+    };
+    const winsWord = winsForms[plurals.select(wins)] ?? winsForms.other;
+    const matchesPattern = plurals.select(matches) === 'one'
+        ? summary.dataset.matchesOne
+        : summary.dataset.matchesOther;
+    const matchesText = matchesPattern.replace('{0}', number.format(matches));
+    summary.textContent = `${number.format(wins)} ${winsWord} ${matchesText} · ${percent.format(winRate)}`;
     card.querySelector('[data-win-percent]').textContent = percent.format(winRate);
     card.querySelector('.elo-preview-win-ring').style.setProperty('--win-angle', `${winRate * 360}deg`);
 
