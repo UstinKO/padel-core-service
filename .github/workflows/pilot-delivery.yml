@@ -1,0 +1,88 @@
+name: Pilot disabled release staging
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths: ['.github/workflows/pilot-delivery.yml']
+permissions:
+  contents: read
+concurrency:
+  group: pilot-disabled-release-staging
+  cancel-in-progress: false
+jobs:
+  staging:
+    if: github.repository == 'UstinKO/padel-core-service' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'feature/LFPT-1096-delivery'
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Prepare authorized disabled pilot release
+        env:
+          PACKAGE_COMMIT: ${{ github.event.pull_request.head.sha }}
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_KEY_NEW }}
+          envs: PACKAGE_COMMIT
+          timeout: 60s
+          command_timeout: 180s
+          script: |
+            set -eu
+            umask 077
+            python3 - <<'PYDELIVERY'
+            import base64
+            import fcntl
+            import hashlib
+            import json
+            import os
+            from pathlib import Path
+            import subprocess
+            
+            ROOT = Path('/opt/padel-app')
+            STAGE = ROOT/'.pilot-delivery-20261113-24'
+            
+            def run(args):
+                result = subprocess.run(args, capture_output=True, text=True, timeout=45)
+                if result.returncode:
+                    raise RuntimeError('Command failed: '+args[0])
+                return result.stdout
+            
+            def digest(p):
+                return hashlib.sha256(p.read_bytes()).hexdigest()
+            
+            def main():
+                with (ROOT/'release-state'/'lock').open('a') as lock:
+                    fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    before = json.loads(run(['docker','inspect','padel-core-app']))[0]
+                    config = json.loads(run(['docker','compose','--project-directory',str(ROOT),'--env-file',str(ROOT/'.env'),'-f',str(ROOT/'docker-compose.yml'),'config','--format','json']))
+                    env = config['services']['padel-app'].get('environment', {})
+                    assert env.get('APP_SPA_ROUTES','') in ('','[]',None)
+                    assert str(env.get('APP_RATING_PILOT_ENABLED','false')).lower() == 'false'
+                    assert str(env.get('APP_RATING_PILOT_AUTO_REFRESH','false')).lower() == 'false'
+                    extra_names = ['SPRING_APPLICATION_JSON','SPRING_CONFIG_LOCATION','SPRING_CONFIG_ADDITIONAL_LOCATION','JAVA_TOOL_OPTIONS','JDK_JAVA_OPTIONS']
+                    extras = [k for k in extra_names if env.get(k)]
+                    mentions = any('rating' in str(env.get(k,'')).lower() or 'app.spa' in str(env.get(k,'')).lower() for k in extra_names)
+                    assert not mentions, 'Existing configuration requires review'
+                    assert not STAGE.is_symlink()
+                    STAGE.mkdir(mode=0o700, exist_ok=True)
+                    STAGE.chmod(0o700)
+                    metadata = {'envSha256':digest(ROOT/'.env'),'composeSha256':digest(ROOT/'docker-compose.yml'),'containerId':before['Id'],'startedAt':before['State']['StartedAt']}
+                    state = STAGE/'original.json'
+                    if state.exists():
+                        assert json.loads(state.read_text()) == metadata, 'Server changed during preparation'
+                    else:
+                        state.write_text(json.dumps(metadata));state.chmod(0o600)
+                    key, certificate = STAGE/'delivery.key', STAGE/'delivery.crt'
+                    if not key.exists():
+                        run(['openssl','req','-x509','-newkey','rsa:3072','-keyout',str(key),'-out',str(certificate),'-nodes','-subj','/CN=1padel-pilot-delivery','-days','1'])
+                        key.chmod(0o600)
+                    assert certificate.is_file()
+                    print('PILOT_DELIVERY_CERT='+base64.b64encode(certificate.read_bytes()).decode())
+                    print('PILOT_DELIVERY_PREPARE='+json.dumps({'applicationUnchanged':True,'extraSettingNames':extras,'pilotOverrideMentioned':mentions,'externalConfigLocationPresent':any(env.get(k) for k in ['SPRING_CONFIG_LOCATION','SPRING_CONFIG_ADDITIONAL_LOCATION']),'containerUid':run(['docker','exec','padel-core-app','id','-u']).strip(),'containerGid':run(['docker','exec','padel-core-app','id','-g']).strip(),'serverRootUser':os.geteuid()==0}))
+            
+            if __name__ == '__main__':
+                try:
+                    main()
+                except Exception as error:
+                    print('PILOT_DELIVERY_ERROR='+type(error).__name__)
+                    raise SystemExit(1)
+            PYDELIVERY
