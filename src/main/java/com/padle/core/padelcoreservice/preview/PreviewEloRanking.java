@@ -3,6 +3,7 @@ package com.padle.core.padelcoreservice.preview;
 import com.padle.core.padelcoreservice.controller.player.PlayerDashboardController;
 import com.padle.core.padelcoreservice.controller.view.RankingController;
 import com.padle.core.padelcoreservice.rating.EloPilotAccess;
+import com.padle.core.padelcoreservice.rating.EloPilotAudience;
 import com.padle.core.padelcoreservice.rating.EloRankingView;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,7 +27,7 @@ import java.util.Optional;
 @ControllerAdvice(assignableTypes = {RankingController.class, PlayerDashboardController.class})
 @Profile("preview")
 @ConditionalOnProperty("app.preview.elo-snapshot")
-public class PreviewEloRanking {
+public class PreviewEloRanking implements EloPilotAudience {
     public record Progress(int tournaments, int matches, int wins, int moreTournaments,
                            int moreMatches, int moreWins) { }
 
@@ -66,11 +67,16 @@ public class PreviewEloRanking {
         }
     }
 
+    @Override
+    public boolean allows(Authentication authentication) {
+        return pilot.allows(authentication, history.map(PreviewEloHistory::aliases).orElse(Map.of()));
+    }
+
     @ModelAttribute
     public void ranking(Model model, Authentication authentication, HttpServletResponse response) {
         var aliases = history.map(PreviewEloHistory::aliases).orElse(Map.of());
         pilot.protectResponse(response);
-        if (!pilot.allows(authentication, aliases)) {
+        if (!allows(authentication)) {
             return;
         }
         var current = history.map(source -> source.calculate(snapshot.asOf())).orElse(snapshot);

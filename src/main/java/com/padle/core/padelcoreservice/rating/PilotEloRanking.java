@@ -22,7 +22,7 @@ import java.util.function.Supplier;
 @ControllerAdvice(assignableTypes = {RankingController.class, PlayerDashboardController.class})
 @Profile("!preview")
 @ConditionalOnProperty(name = "app.rating.pilot.enabled", havingValue = "true")
-public class PilotEloRanking {
+public class PilotEloRanking implements EloPilotAudience {
     private final EloPilotAccess access;
     private final EloPilotSnapshot snapshot;
     private final Supplier<PreviewEloRanking.Snapshot> currentSnapshot;
@@ -38,6 +38,7 @@ public class PilotEloRanking {
                 .orElse(snapshot::snapshot);
     }
 
+    @Override
     public boolean allows(Authentication authentication) {
         return access.allows(authentication, snapshot.aliases());
     }

@@ -233,3 +233,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.76-admin-registration-requests.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.77-elo-pilot-feedback.yaml
+      relativeToChangelogFile: true
