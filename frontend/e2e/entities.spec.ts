@@ -174,3 +174,43 @@ test('club navigation and club catalogue cannot be changed by a foreign club que
   await page.goBack();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(club.name);
 });
+
+test('registration checks the server after losing the response to a single submission', async ({
+  page,
+}) => {
+  let saved = false;
+  let submissions = 0;
+  await page.route('**/api/public/events/42', (route) =>
+    route.fulfill({
+      json: {
+        ...details,
+        event: { ...event, modality: 'INDIVIDUAL' },
+        phase: 'NOT_STARTED',
+        actions: [{ type: 'REGISTRATION_INFO', url: '/torneo/42' }],
+      },
+    }),
+  );
+  await page.route('**/api/auth/session', (route) =>
+    route.fulfill({
+      json: { authenticated: true, userType: 'PLAYER', id: 1, hasValidContact: true, roles: [] },
+    }),
+  );
+  await page.route('**/players/tournaments/42/my-registration', (route) =>
+    route.fulfill({
+      json: saved
+        ? { registered: true, registrationId: 1, status: 'WAITLIST', waitlistPosition: 2 }
+        : { registered: false },
+    }),
+  );
+  await page.route('**/players/tournaments/42/register', async (route) => {
+    submissions++;
+    saved = true;
+    await route.abort('failed');
+  });
+  await page.goto('/preview/torneo/42');
+  const booking = page.locator('#tournament-registration');
+  await booking.getByRole('button', { name: 'Register', exact: true }).click();
+  await expect(booking).toContainText('Waiting list position: 2');
+  await expect(booking.getByRole('button', { name: 'Register', exact: true })).toHaveCount(0);
+  expect(submissions).toBe(1);
+});

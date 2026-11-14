@@ -2,13 +2,16 @@
 <html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <head>
     <meta charset="UTF-8">
+    <meta name="referrer" content="no-referrer">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="#{accept_pair.title}">Confirmar pareja - 1-Padel</title>
     <link rel="stylesheet" th:href="@{/css/main.css}">
     <style>
         .accept-pair-container {
             max-width: 480px;
-            margin: 80px auto;
+            margin: 48px auto;
+            width: min(480px, calc(100% - 32px));
+            box-sizing: border-box;
             padding: 40px 32px;
             background: #fff;
             border-radius: 16px;
@@ -31,7 +34,7 @@
             width: 100%;
             margin-bottom: 12px;
         }
-        .btn-accept:disabled { opacity: .6; cursor: not-allowed; }
+        .btn-cancel:disabled, .btn-accept:disabled { opacity: .6; cursor: not-allowed; }
         .btn-cancel {
             display: inline-block;
             background: #f1f5f9;
@@ -44,6 +47,7 @@
             width: 100%;
             text-decoration: none;
         }
+        .accept-pair-container a { display: inline-block; margin-top: 14px; }
         #resultMsg {
             display: none;
             margin-top: 16px;
@@ -66,56 +70,18 @@
         Al aceptar, quedarán confirmados como pareja en el torneo. Esta acción no se puede deshacer.
     </p>
 
-    <button id="acceptBtn" class="btn-accept" th:data-token="${token}"
-            th:attr="data-txt-confirming=#{accept_pair.confirming},data-txt-confirmed=#{accept_pair.confirmed},data-txt-success=#{accept_pair.success},data-txt-error-default=#{accept_pair.error.default},data-txt-error-connection=#{accept_pair.error.connection}">
-        ✅ <span th:text="#{accept_pair.btn.accept}">Aceptar y confirmar pareja</span>
-    </button>
-    <a href="/" class="btn-cancel" th:text="#{accept_pair.btn.back}">Volver al inicio</a>
-
-    <div id="resultMsg"></div>
+    <button id="acceptBtn" class="btn-accept" type="button" th:text="#{accept_pair.btn.accept}"></button>
+    <button id="declineBtn" class="btn-cancel" type="button" th:text="#{accept_pair.btn.decline}"></button>
+    <a href="/" th:text="#{accept_pair.btn.back}">Volver al inicio</a>
+    <div id="resultMsg" role="status" aria-live="polite" th:attr="
+         data-confirmed=#{accept_pair.success},data-waitlist=#{accept_pair.waitlist},
+         data-declined=#{accept_pair.declined},data-resolved=#{accept_pair.resolved},
+         data-expired=#{accept_pair.expired},data-error=#{accept_pair.error.default},
+         data-connection=#{accept_pair.error.connection}"></div>
+    <span id="pairProposalToken" hidden th:data-token="${token}"></span>
 </div>
 
 <script th:src="@{/js/registration-tracking.js}"></script>
-<script>
-    document.getElementById('acceptBtn').addEventListener('click', async function () {
-        const btn = this;
-        const token = btn.getAttribute('data-token');
-        const txtConfirming = btn.getAttribute('data-txt-confirming') || 'Confirmando...';
-        const txtConfirmed  = btn.getAttribute('data-txt-confirmed')  || '✅ Confirmado';
-        const txtSuccess    = btn.getAttribute('data-txt-success')    || '¡Pareja confirmada! Ya están inscriptos juntos en el torneo.';
-        const txtErrDefault = btn.getAttribute('data-txt-error-default') || 'Error al confirmar';
-        const txtErrConn    = btn.getAttribute('data-txt-error-connection') || 'Error de conexión. Intentá de nuevo.';
-        const btnLabel      = btn.querySelector('span') ? btn.querySelector('span').textContent : '✅ Aceptar y confirmar pareja';
-        btn.disabled = true;
-        btn.textContent = txtConfirming;
-
-        try {
-            const res = await fetch('/api/tournaments/double/accept-pair?token=' + encodeURIComponent(token), {
-                method: 'POST'
-            });
-            const data = await res.json();
-            const msg = document.getElementById('resultMsg');
-            msg.style.display = 'block';
-            if (data.success) {
-                window.trackTournamentRegistrationComplete?.(null, 'CONFIRMED');
-                msg.className = 'success';
-                msg.textContent = txtSuccess;
-                btn.textContent = txtConfirmed;
-            } else {
-                msg.className = 'error';
-                msg.textContent = data.message || txtErrDefault;
-                btn.disabled = false;
-                btn.textContent = '✅ ' + btnLabel;
-            }
-        } catch (e) {
-            const msg = document.getElementById('resultMsg');
-            msg.style.display = 'block';
-            msg.className = 'error';
-            msg.textContent = txtErrConn;
-            btn.disabled = false;
-            btn.textContent = '✅ ' + btnLabel;
-        }
-    });
-</script>
+<script th:src="@{/js/pair-proposal-response.js}" defer></script>
 </body>
 </html>
