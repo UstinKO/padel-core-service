@@ -55,6 +55,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.regex.Pattern;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
@@ -87,6 +88,8 @@ public class SecurityConfig {
                 || (path.startsWith("/api/admin/players/") && path.endsWith("/activate-guest-profile"));
     }
 
+    private static final Pattern PREVIEW_EVENT = Pattern.compile("/preview/torneo/[1-9][0-9]{0,18}");
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
@@ -113,7 +116,9 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(request -> environment.acceptsProfiles(Profiles.of("preview"))
-                                && request.getServletPath().equals("/preview/players/dashboard"))
+                                && (request.getServletPath().equals("/preview/players/dashboard")
+                                || request.getServletPath().equals("/preview/perfil")
+                                || PREVIEW_EVENT.matcher(request.getServletPath()).matches()))
                         .hasAnyRole("PLAYER", "SUPER_ADMIN")
                         .requestMatchers("/preview", "/preview/**").hasRole("SUPER_ADMIN")
                         .requestMatchers(

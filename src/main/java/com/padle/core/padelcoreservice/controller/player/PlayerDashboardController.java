@@ -125,7 +125,7 @@ public class PlayerDashboardController {
         log.info("Player {} registering for tournament {}", player.getId(), tournamentId);
 
         // ПРОВЕРКА КОНТАКТОВ - возвращаем needContact, а не ошибку
-        if (!player.hasValidContact()) {
+        if (playerRepository.findById(player.getId()).filter(PlayerPadel::hasValidContact).isEmpty()) {
             log.warn("Player {} has no valid contact (phone or telegram)", player.getId());
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,

@@ -268,8 +268,9 @@ public class DoubleTournamentRegistrationController {
     @PostMapping("/accept-pair")
     public ResponseEntity<?> acceptPairProposal(@RequestParam String token) {
         try {
-            doubleRegistrationService.acceptPairProposal(token);
-            return ResponseEntity.ok(Map.of("success", true, "message", "¡Pareja confirmada!"));
+            var registration = doubleRegistrationService.acceptPairProposal(token);
+            return ResponseEntity.ok().cacheControl(org.springframework.http.CacheControl.noStore()).body(Map.of(
+                    "success", true, "message", "¡Pareja confirmada!", "status", registration.getStatus()));
         } catch (TournamentRegistrationException e) {
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
         } catch (Exception e) {
