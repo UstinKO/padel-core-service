@@ -36,7 +36,7 @@ jobs:
                 return r.stdout
             def env(c):return dict(s.split('=',1) for s in c['Config']['Env'] if '=' in s)
             def query(sql):
-                data=run(['docker','exec','padel-postgres','psql','-X','-A','-t','-v','ON_ERROR_STOP=1','-U',db['POSTGRES_USER'],'-d',db['POSTGRES_DB'],'-c',"BEGIN READ ONLY; SET LOCAL statement_timeout='30s'; SELECT COALESCE(json_agg(q),'[]'::json) FROM ("+sql+") q; COMMIT;"])
+                data=run(['docker','exec','padel-postgres','psql','-X','-A','-t','-v','ON_ERROR_STOP=1','-U',db['POSTGRES_USER'],'-d',db['POSTGRES_DB'],'-c',"BEGIN READ ONLY; SET LOCAL statement_timeout='30s'; SELECT COALESCE(jsonb_agg(q),'[]'::jsonb) FROM ("+sql+") q; COMMIT;"])
                 return json.loads(next(x for x in data.splitlines() if x.startswith('[')))
             os.umask(0o077)
             STAGE.mkdir(exist_ok=True,mode=0o700)
@@ -57,3 +57,4 @@ jobs:
             (STAGE/'audit.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))
             print('FRESH_MATCH_AUDIT='+json.dumps(report,ensure_ascii=False))
             PYPILOT
+
