@@ -29,159 +29,31 @@ jobs:
             set -eu
             umask 077
             python3 - <<'PYDELIVERY'
-            import copy
-            import fcntl
-            import hashlib
-            import io
-            import json
-            import os
+            import json,re,subprocess
             from pathlib import Path
-            import re
-            import stat
-            import subprocess
-            import tarfile
-            import tempfile
-            import urllib.request
             
-            ROOT=Path('/opt/padel-app')
-            STAGE=ROOT/'.pilot-delivery-20261113-24'
-            VERSION='2026-11-13-pilot24-5e97a1b'
-            RATINGS=ROOT/'rating-pilot'
-            TARGET=RATINGS/VERSION
-            CIPHER_SHA='6ade21a2303f40ef800f7981c8fa87c2a2d4049902a7fc4c20a8eb14bc1f9a67'
-            ARCHIVE_SHA='4234a7c895c371b91ae3688d9510d3c2a05dcc1634d71a0c03f967f98286e3d1'
-            KEYS={'APP_RATING_PILOT_ENABLED','APP_RATING_PILOT_AUTO_REFRESH','APP_RATING_PILOT_PLAYER_IDS','APP_RATING_PILOT_SNAPSHOT','APP_RATING_PILOT_HISTORY','APP_SPA_ROUTES'}
-            
-            def run(args, binary=False):
-                r=subprocess.run(args,capture_output=True,text=not binary,timeout=90)
-                if r.returncode:
-                    raise RuntimeError('Command failed: '+args[0])
+            root=Path('/opt/padel-app')
+            def run(args):
+                r=subprocess.run(args,capture_output=True,text=True,timeout=30)
+                if r.returncode: raise RuntimeError('Read failed')
                 return r.stdout
-            
-            def digest(value):
-                return hashlib.sha256(value).hexdigest()
-            
-            def config():
-                return json.loads(run(['docker','compose','--project-directory',str(ROOT),'--env-file',str(ROOT/'.env'),'-f',str(ROOT/'docker-compose.yml'),'config','--format','json']))
-            
-            def atomic(path,data,mode,uid,gid):
-                fd,name=tempfile.mkstemp(prefix='.pilot-write-',dir=path.parent)
-                try:
-                    with os.fdopen(fd,'wb') as f:
-                        os.fchmod(f.fileno(),mode);os.fchown(f.fileno(),uid,gid)
-                        f.write(data);f.flush();os.fsync(f.fileno())
-                    os.replace(name,path)
-                finally:
-                    if os.path.exists(name):os.unlink(name)
-            
-            def update_env(original,values):
-                lines=[]
-                for line in original.splitlines(keepends=True):
-                    m=re.match(r'^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=',line)
-                    if not m or m[1] not in values:lines.append(line)
-                text=''.join(lines)
-                if text and not text.endswith('\n'):text+='\n'
-                return text+''.join(k+'='+v+'\n' for k,v in values.items())
-            
-            def add_mount(original):
-                mount='/opt/padel-app/rating-pilot:/app/rating-pilot:ro'
-                if original.lstrip().startswith('{'):
-                    parsed=json.loads(original)
-                    parsed['services']['padel-app'].setdefault('volumes',[]).append(mount)
-                    return json.dumps(parsed,ensure_ascii=False,indent=2)+'\n'
-                start=re.search(r'(?m)^  padel-app:\s*(?:#.*)?$',original)
-                if not start:raise ValueError('Unrecognized app service layout')
-                tail=original[start.end():]
-                end=re.search(r'(?m)^(?:  [^\s#][^\n:]*:|[^\s#][^\n:]*:)',tail)
-                block=tail[:end.start()] if end else tail
-                volumes=list(re.finditer(r'(?m)^    volumes:[ \t]*\r?$',block))
-                if len(volumes)!=1:raise ValueError('Unrecognized app volumes layout')
-                index=start.end()+volumes[0].end()
-                return original[:index]+'\n      - '+mount+original[index:]
-            
-            def without_pilot(value):
-                value=copy.deepcopy(value)
-                for name,service in value['services'].items():
-                    for key in KEYS:service.get('environment',{}).pop(key,None)
-                    if name=='padel-app':
-                        service['volumes']=[v for v in service.get('volumes',[]) if v.get('target')!='/app/rating-pilot']
-                return value
-            
-            def main():
-                with (ROOT/'release-state'/'lock').open('a') as lock:
-                    fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
-                    expected=json.loads((STAGE/'original.json').read_text())
-                    before=json.loads(run(['docker','inspect','padel-core-app']))[0]
-                    assert before['Id']==expected['containerId'] and before['State']['StartedAt']==expected['startedAt']
-                    paths=[ROOT/'.env',ROOT/'docker-compose.yml']
-                    assert all(p.is_file() and not p.is_symlink() for p in paths)
-                    originals={p:p.read_bytes() for p in paths}
-                    metadata={p:p.stat() for p in paths}
-                    assert digest(originals[paths[0]])==expected['envSha256'] and digest(originals[paths[1]])==expected['composeSha256']
-                    before_config=config()
-                    assert not any(v.get('target')=='/app/rating-pilot' for v in before_config['services']['padel-app'].get('volumes',[]))
-                    commit=os.environ['PACKAGE_COMMIT'];assert re.fullmatch('[0-9a-f]{40}',commit)
-                    url='https://raw.githubusercontent.com/UstinKO/padel-core-service/'+commit+'/operations/pilot-delivery/payload.cms'
-                    with urllib.request.urlopen(url,timeout=45) as response:encrypted=response.read(1000000)
-                    assert digest(encrypted)==CIPHER_SHA
-                    cipher=STAGE/'payload.cms';cipher.write_bytes(encrypted);cipher.chmod(0o600)
-                    archive=run(['openssl','cms','-decrypt','-binary','-inform','DER','-in',str(cipher),'-recip',str(STAGE/'delivery.crt'),'-inkey',str(STAGE/'delivery.key')],binary=True)
-                    assert digest(archive)==ARCHIVE_SHA
-                    with tarfile.open(fileobj=io.BytesIO(archive),mode='r:gz') as tar:
-                        members=tar.getmembers()
-                        assert sorted(m.name for m in members)==['pilot-disabled.env','pilot-snapshot.json','rating-source.json']
-                        assert all(m.isfile() and m.size<3000000 for m in members)
-                        files={m.name:tar.extractfile(m).read() for m in members}
-                    snapshot=json.loads(files['pilot-snapshot.json']);source=json.loads(files['rating-source.json'])
-                    assert len(snapshot['snapshot']['rows'])==352 and snapshot['startStep']==40
-                    assert len(source['history']['events'])==112 and sum(len(e['games']) for e in source['history']['events'])==2958
-                    assert snapshot['aliases']==source['history']['aliases']
-                    values=dict(line.split('=',1) for line in files['pilot-disabled.env'].decode().splitlines() if line and not line.startswith('#'))
-                    assert set(values)==KEYS
-                    assert values['APP_RATING_PILOT_ENABLED']==values['APP_RATING_PILOT_AUTO_REFRESH']=='false'
-                    ids=set(map(int,values['APP_RATING_PILOT_PLAYER_IDS'].split(',')))
-                    assert len(ids)==24 and 927 not in ids and 272 in ids and {600,621}<=ids
-                    assert values['APP_SPA_ROUTES']=='[]'
-                    assert values['APP_RATING_PILOT_SNAPSHOT']==f'/app/rating-pilot/{VERSION}/pilot-snapshot.json'
-                    assert values['APP_RATING_PILOT_HISTORY']==f'/app/rating-pilot/{VERSION}/rating-source.json'
-                    gid=int(run(['docker','exec','padel-core-app','id','-g']).strip())
-                    assert not RATINGS.is_symlink() and not TARGET.is_symlink()
-                    for directory in [RATINGS,TARGET]:
-                        directory.mkdir(mode=0o750,exist_ok=True);os.chown(directory,os.geteuid(),gid);directory.chmod(0o750)
-                    for name in ['pilot-snapshot.json','rating-source.json']:
-                        destination=TARGET/name
-                        assert not destination.is_symlink()
-                        if destination.exists():assert destination.read_bytes()==files[name]
-                        else:atomic(destination,files[name],0o640,os.geteuid(),gid)
-                    read_command=f'test -r /app/rating-pilot/{VERSION}/pilot-snapshot.json && test -r /app/rating-pilot/{VERSION}/rating-source.json'
-                    run(['docker','run','--rm','--network','none','--read-only','--user',before['Config']['User'],'--mount',f'type=bind,source={RATINGS},target=/app/rating-pilot,readonly','--entrypoint','sh',before['Image'],'-c',read_command])
-                    prepared={paths[0]:update_env(originals[paths[0]].decode(),values).encode(),paths[1]:add_mount(originals[paths[1]].decode()).encode()}
-                    for p in paths:
-                        backup=STAGE/('env.before' if p.name=='.env' else 'compose.before')
-                        if backup.exists():assert backup.read_bytes()==originals[p]
-                        else:backup.write_bytes(originals[p]);backup.chmod(0o600)
-                    try:
-                        for p in paths:
-                            s=metadata[p];atomic(p,prepared[p],stat.S_IMODE(s.st_mode),s.st_uid,s.st_gid)
-                        after_config=config()
-                        assert without_pilot(before_config)==without_pilot(after_config), 'Unrelated configuration changed'
-                        actual=after_config['services']['padel-app']['environment']
-                        assert all(str(actual.get(k))==v for k,v in values.items())
-                        mount=[v for v in after_config['services']['padel-app']['volumes'] if v.get('target')=='/app/rating-pilot']
-                        assert len(mount)==1 and mount[0]['read_only'] and mount[0]['source']==str(RATINGS)
-                        after=json.loads(run(['docker','inspect','padel-core-app']))[0]
-                        assert before['Id']==after['Id'] and before['State']['StartedAt']==after['State']['StartedAt']
-                    except Exception:
-                        for p in paths:
-                            s=metadata[p];atomic(p,originals[p],stat.S_IMODE(s.st_mode),s.st_uid,s.st_gid)
-                        raise
-                    report={'installed':True,'pilotEnabled':False,'autoRefresh':False,'selectedPlayers':24,'ratingPlayers':352,'matches':2958,'events':112,'containerUnchanged':True,'readOnlyMountConfigured':True,'readableAsApplicationUser':True,'unrelatedConfigurationUnchanged':True,'files':{n:digest(files[n]) for n in ['pilot-snapshot.json','rating-source.json']}}
-                    (STAGE/'installed.json').write_text(json.dumps(report));(STAGE/'installed.json').chmod(0o600)
-                    print('PILOT_DISABLED_INSTALLED='+json.dumps(report,sort_keys=True))
-            
-            if __name__=='__main__':
-                try:main()
-                except Exception as error:
-                    print('PILOT_INSTALL_ERROR='+type(error).__name__)
-                    raise SystemExit(1)
+            c=json.loads(run(['docker','inspect','padel-core-app']))[0]
+            env=dict(x.split('=',1) for x in c['Config']['Env'] if '=' in x)
+            secrets=[v for k,v in env.items() if any(s in k for s in ['PASSWORD','SECRET','TOKEN','KEY']) and len(v)>3]
+            def safe(s):
+                for v in secrets:s=s.replace(v,'[redacted]')
+                s=re.sub(r'[\w.+-]+@[\w.-]+','[email]',s)
+                s=re.sub(r'(?i)(password|token|secret)(\s*[=:]\s*)\S+',r'\1\2[redacted]',s)
+                return s[:1200]
+            print('CURRENT='+json.dumps({'revision':env.get('APP_RELEASE_REVISION'),'running':c['State']['Running'],'pilot':env.get('APP_RATING_PILOT_ENABLED','absent'),'autoRefresh':env.get('APP_RATING_PILOT_AUTO_REFRESH','absent')}))
+            for file in (root/'logs').glob('*.log'):
+                with file.open('rb') as f:
+                    f.seek(max(0,file.stat().st_size-3000000)); data=f.read().decode(errors='replace')
+                selected=[l for l in data.splitlines() if any(s in l for s in ['ERROR','Caused by:','APPLICATION FAILED','Description:','Action:'])]
+                print('DIAGNOSTIC='+json.dumps({'file':file.name,'lines':[safe(l) for l in selected[-45:]]}))
+            db=json.loads(run(['docker','inspect','padel-postgres']))[0]
+            db_env=dict(x.split('=',1) for x in db['Config']['Env'] if '=' in x)
+            query="SELECT id,fecha_registro,oauth2_user FROM player_padel_db WHERE id=8 OR lower(email)='gurulev.eu1@gmail.com' ORDER BY id"
+            result=run(['docker','exec','padel-postgres','psql','-X','-A','-t','-U',db_env['POSTGRES_USER'],'-d',db_env['POSTGRES_DB'],'-c',query])
+            print('ACCOUNT_ID_AND_CREATED='+result.strip().replace('\n',';'))
             PYDELIVERY
