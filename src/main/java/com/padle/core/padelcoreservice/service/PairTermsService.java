@@ -206,14 +206,38 @@ public class PairTermsService {
     }
 
     List<TournamentRegistration> members(TournamentRegistration row) {
-        List<TournamentRegistration> rows = registrations.findByTournamentId(row.getTournament().getId());
-        return rows.stream().filter(r -> Boolean.TRUE.equals(r.getIsActive()))
-                .filter(r -> Objects.equals(r.getId(), row.getId())
-                        || (row.getPairBookingId() != null
-                                ? row.getPairBookingId().equals(r.getPairBookingId())
-                                : r.getPairBookingId() == null && row.getPartner() != null
-                                        && row.getPartner().getId().equals(r.getPlayer().getId())))
+        if (!Boolean.TRUE.equals(row.getIsActive())) return List.of();
+        if (!Boolean.TRUE.equals(row.getIsDoubleRegistration())) return List.of(row);
+
+        var matches = registrations.findByTournamentId(row.getTournament().getId()).stream()
+                .filter(other -> !Objects.equals(other.getId(), row.getId()))
+                .filter(other -> Boolean.TRUE.equals(other.getIsActive()))
+                .filter(other -> Boolean.TRUE.equals(other.getIsDoubleRegistration()))
+                .filter(other -> belongsToPair(row, other))
                 .toList();
+        if (matches.size() > 1) throw conflict("PAIR_MEMBERSHIP_AMBIGUOUS");
+        return matches.isEmpty() ? List.of(row) : List.of(row, matches.get(0));
+    }
+
+    private boolean belongsToPair(TournamentRegistration row, TournamentRegistration other) {
+        UUID booking = row.getPairBookingId();
+        if (booking != null || other.getPairBookingId() != null) {
+            return booking != null && booking.equals(other.getPairBookingId());
+        }
+
+        Long playerId = row.getPlayer().getId();
+        Long otherPlayerId = other.getPlayer().getId();
+        var partner = row.getPartner();
+        var otherPartner = other.getPartner();
+        if (partner != null && !otherPlayerId.equals(partner.getId())
+                || otherPartner != null && !playerId.equals(otherPartner.getId())) {
+            return false;
+        }
+        if (partner != null || otherPartner != null) return true;
+
+        Long main = row.getMainPlayerId();
+        return main != null && main.equals(other.getMainPlayerId())
+                && (main.equals(playerId) || main.equals(otherPlayerId));
     }
 
     Tournament lock(Long tournamentId) {
