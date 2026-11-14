@@ -4,6 +4,7 @@ import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import com.padle.core.padelcoreservice.service.TournamentService;
+import com.padle.core.padelcoreservice.repository.PlayerRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -17,7 +18,9 @@ import java.util.Optional;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -44,6 +47,9 @@ class PlayerDashboardControllerMyRegistrationTest {
     @MockitoBean
     private TournamentService tournamentService;
 
+    @MockitoBean
+    private PlayerRepository playerRepository;
+
     private static PlayerPadel player() {
         return PlayerPadel.builder()
                 .id(42L)
@@ -54,6 +60,20 @@ class PlayerDashboardControllerMyRegistrationTest {
                 .activo(true)
                 .emailConfirmado(true)
                 .build();
+    }
+
+    @Test
+    void registroUsaContactoGuardadoAunqueLaSesionSeaAnterior() throws Exception {
+        var updated = player();
+        updated.setTelefono("+5491100001201");
+        var registration = new TournamentRegistrationDto();
+        registration.setStatus(RegistrationStatus.CONFIRMED);
+        when(playerRepository.findById(42L)).thenReturn(Optional.of(updated));
+        when(tournamentService.registerPlayer(7L, 42L)).thenReturn(registration);
+
+        mockMvc.perform(post("/players/tournaments/7/register").with(user(player())).with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("CONFIRMED"));
     }
 
     @Test

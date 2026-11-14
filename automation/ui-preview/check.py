@@ -70,7 +70,7 @@ print('Сеть: внутреннее соединение работает, в�
 output = preview.ROOT / 'target/ui-preview-qa'
 output.mkdir(parents=True, exist_ok=True)
 path = preview.RUNTIME / 'browser-input.json'
-path.write_text(json.dumps(dict(origin=client.origin, gatewayPassword=state['gateway_password'], password=state['fixture_password'])))
+path.write_text(json.dumps(dict(origin=client.origin, gatewayPassword=state['gateway_password'], password=state['fixture_password'], tournamentIds=fixtures['tournamentIds'])))
 path.chmod(0o600)
 try:
     subprocess.run(['node', 'tests/browser/ui-preview.browser.mjs', str(path)], cwd=preview.ROOT, check=True)

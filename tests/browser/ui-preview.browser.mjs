@@ -41,6 +41,10 @@ try {
   const preview = await playerPage.goto(origin + '/preview/torneos');
   require(preview.status() === 403, 'Неожиданный ответ preview для игрока: HTTP ' + preview.status()
     + ', путь ' + new URL(preview.url()).pathname);
+  const booking = await playerPage.goto(origin + '/preview/torneo/' + fixture.tournamentIds[1]);
+  require(booking.status() === 200, 'Карточка React недоступна синтетическому игроку');
+  const profile = await playerPage.goto(origin + '/preview/perfil');
+  require(profile.status() === 200, 'Профиль React недоступен синтетическому игроку');
   const cabinet = await playerPage.goto(origin + '/preview/players/dashboard');
   require(cabinet.status() === 200, 'Кабинет React недоступен синтетическому игроку');
   await playerPage.getByRole('heading', {name: /Мои мероприятия|Mis eventos|My events/}).waitFor();
