@@ -5,6 +5,8 @@
     <h1 th:text="#{elo.preview.heading}">Ranking Elo</h1>
     <p th:text="#{elo.preview.asOf(${#temporals.format(previewElo.asOf, 'dd/MM/yyyy')})}"></p>
     <p th:if="${previewEloStartStep > 0}" th:text="#{elo.preview.seedStep(${previewEloStartStep})}"></p>
+    <div th:if="${@environment.getProperty('app.rating.pilot.feedback-enabled', T(java.lang.Boolean), false)}"
+         th:insert="~{fragments/elo-feedback :: invite('RANKING')}"></div>
     <form class="elo-preview-filters" hidden>
         <label>
             <span th:text="#{elo.preview.category}"></span>
@@ -87,6 +89,8 @@
             <dd data-stat="overall-place" th:text="${previewElo.rows.indexOf(eloRow) + 1}"></dd></div>
     </dl>
     </header>
+    <div th:if="${@environment.getProperty('app.rating.pilot.feedback-enabled', T(java.lang.Boolean), false)}"
+         th:insert="~{fragments/elo-feedback :: invite('DASHBOARD')}"></div>
     <section th:if="${eloRow.achievements != null}" th:object="${eloRow.achievements}"
              class="elo-preview-achievements">
         <h3 th:text="#{elo.preview.achievements}"></h3>

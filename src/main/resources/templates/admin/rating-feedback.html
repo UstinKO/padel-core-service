@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="#{elo.feedback.inbox}"></title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+<header th:replace="~{fragments/admin-header :: header(#{elo.feedback.inbox})}"></header>
+<main class="admin-main">
+    <div class="container">
+        <h1 th:text="#{elo.feedback.inbox}"></h1>
+        <p th:if="${entries.isEmpty()}" th:text="#{elo.feedback.empty}"></p>
+        <article th:each="entry : ${entries}" th:id="${entry.id}" class="stat-card">
+            <h2 th:text="${'#' + entry.id + ' · ' + entry.authorName + ' (#' + entry.playerId + ')'}"></h2>
+            <p>
+                <time th:datetime="${entry.createdAt}"
+                      th:text="${#temporals.format(entry.createdAt, 'dd/MM/yyyy HH:mm')}"></time>
+                · <span th:text="#{${'elo.feedback.source.' + entry.source}}"></span>
+                · <span th:text="#{${'elo.feedback.topic.' + entry.topic}}"></span>
+            </p>
+            <p style="white-space: pre-wrap; overflow-wrap: anywhere" th:text="${entry.message}"></p>
+            <small th:text="#{${'elo.feedback.mail.' + entry.mailStatus}}"></small>
+        </article>
+        <a th:if="${nextBefore != null}" th:href="@{/admin/rating-feedback(before=${nextBefore})}"
+           th:text="#{elo.feedback.older}"></a>
+    </div>
+</main>
+</body>
+</html>
