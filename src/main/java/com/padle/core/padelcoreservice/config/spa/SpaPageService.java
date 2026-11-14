@@ -47,6 +47,15 @@ public class SpaPageService {
 
     public boolean render(HttpServletRequest request, HttpServletResponse response) throws IOException {
         var path = request.getRequestURI().substring(request.getContextPath().length());
+        if (path.equals("/players/dashboard")) {
+            if (!index.exists()) {
+                response.sendError(503);
+            } else {
+                response.setHeader("X-Robots-Tag", "noindex, nofollow");
+                writeDocument(request, response, index.getContentAsString(StandardCharsets.UTF_8), 200);
+            }
+            return true;
+        }
         var preview = path.equals("/preview") || path.startsWith("/preview/");
         if (preview) { response.setHeader("X-Robots-Tag", "noindex, nofollow"); }
         var match = ENTITY_PATH.matcher(path);
@@ -75,14 +84,19 @@ public class SpaPageService {
         html = html.replaceAll("(?is)<title>.*?</title>", "")
                 .replaceAll("(?i)<meta[^>]*name=[\"']description[\"'][^>]*>", "");
         html = html.replace("</head>", head(metadata, preview, locale) + "</head>");
-        var bytes = html.getBytes(StandardCharsets.UTF_8);
-        response.setStatus(metadata.status());
-        response.setContentType("text/html;charset=UTF-8");
-        response.setHeader("Cache-Control", "no-store");
         if (metadata.status() >= 400) { response.setHeader("X-Robots-Tag", "noindex, nofollow"); }
+        writeDocument(request, response, html, metadata.status());
+        return true;
+    }
+
+    private void writeDocument(HttpServletRequest request, HttpServletResponse response, String html, int status)
+            throws IOException {
+        var bytes = html.getBytes(StandardCharsets.UTF_8);
+        response.setStatus(status);
+        response.setContentType("text/html;charset=UTF-8");
+        if (!response.containsHeader("Cache-Control")) { response.setHeader("Cache-Control", "no-store"); }
         response.setContentLength(bytes.length);
         if (!request.getMethod().equals("HEAD")) { response.getOutputStream().write(bytes); }
-        return true;
     }
 
     private Optional<Metadata> previewMetadata(String path, Locale locale) {

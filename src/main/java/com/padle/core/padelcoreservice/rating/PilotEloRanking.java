@@ -38,10 +38,14 @@ public class PilotEloRanking {
                 .orElse(snapshot::snapshot);
     }
 
+    public boolean allows(Authentication authentication) {
+        return access.allows(authentication, snapshot.aliases());
+    }
+
     @ModelAttribute
     public void ranking(Model model, Authentication authentication, HttpServletResponse response) {
         access.protectResponse(response);
-        if (access.allows(authentication, snapshot.aliases())) {
+        if (allows(authentication)) {
             EloRankingView.populate(model, currentSnapshot.get(),
                     snapshot.startStep(), snapshot.aliases());
         }

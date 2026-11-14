@@ -1,6 +1,11 @@
 package com.padle.core.padelcoreservice.config.spa;
 
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import com.padle.core.padelcoreservice.rating.EloPilotAccess;
+import com.padle.core.padelcoreservice.rating.PilotEloRanking;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.util.ServletRequestPathUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
@@ -23,15 +28,25 @@ public class SpaWebConfig implements WebMvcConfigurer {
     private static final List<String> PREVIEW_ROUTES = List.of("/preview", "/preview/{*path}");
 
     @Bean
-    SpaForwardHandlerMapping spaForwardHandlerMapping(SpaProperties properties, SpaPageService pages) {
+    SpaForwardHandlerMapping spaForwardHandlerMapping(SpaProperties properties, SpaPageService pages,
+            ObjectProvider<PilotEloRanking> pilot, EloPilotAccess access) {
         var routes = Stream.concat(properties.routes().stream(), PREVIEW_ROUTES.stream()).toList();
         var mapping = new SpaForwardHandlerMapping(routes, (request, response) -> {
+            if (dashboard(request)) {
+                access.protectResponse(response);
+            }
             if (!pages.render(request, response)) {
                 request.getRequestDispatcher("/web/index.html").forward(request, response);
             }
-        });
+        }, request -> dashboard(request) && pilot.stream().anyMatch(
+                ranking -> ranking.allows(SecurityContextHolder.getContext().getAuthentication())));
         mapping.setOrder(Ordered.HIGHEST_PRECEDENCE + 10);
         return mapping;
+    }
+
+    private static boolean dashboard(jakarta.servlet.http.HttpServletRequest request) {
+        return ServletRequestPathUtils.getParsedRequestPath(request).pathWithinApplication().value()
+                .equals("/players/dashboard");
     }
 
     @Override
