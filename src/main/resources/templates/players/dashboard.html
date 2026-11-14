@@ -23,6 +23,7 @@
     <!-- Custom Styles -->
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+    <link th:if="${previewElo != null}" rel="stylesheet" th:href="@{/css/elo-preview.css}">
     <link rel="stylesheet" th:href="@{/css/participation.css}">
     <link rel="stylesheet" th:href="@{/css/tournament-details.css}">
     <style>
@@ -47,7 +48,7 @@
     <th:block th:replace="~{fragments/analytics :: ga4}"></th:block>
     <th:block th:replace="~{fragments/analytics :: cookie-consent}"></th:block>
 </head>
-<body>
+<body th:classappend="${previewEloByPlayer != null and previewEloByPlayer.get(player.id) != null} ? 'elo-cabinet' : ''">
 <!-- Header con navegación para usuarios autenticados -->
 <header class="header">
     <div class="container">
@@ -105,7 +106,7 @@
 <main class="dashboard-main">
     <div class="container">
         <!-- Welcome Banner -->
-        <div class="welcome-card">
+        <div class="welcome-card" th:unless="${previewEloByPlayer != null and previewEloByPlayer.get(player.id) != null}">
             <div class="welcome-content">
                 <div class="welcome-avatar">
                     <i class="fas fa-user-circle"></i>
@@ -119,6 +120,12 @@
                 </div>
             </div>
         </div>
+
+        <th:block th:if="${previewEloByPlayer != null}"
+                  th:with="eloRow=${previewEloByPlayer.get(player.id)}">
+            <section th:if="${eloRow != null}" id="player-elo" class="elo-preview elo-preview-card"
+                     th:insert="~{fragments/elo-preview :: playerCard}"></section>
+        </th:block>
 
         <!-- Stats Cards -->
         <div class="stats-grid">
@@ -623,6 +630,7 @@
 <script th:src="@{/js/pair-terms.js}"></script>
 <script th:src="@{/js/pair-registration-response.js}"></script>
 <script th:src="@{/js/dashboard.js}"></script>
+<script th:if="${previewEloByPlayer != null}" th:src="@{/js/elo-preview-evolution.js}" defer></script>
 <script th:src="@{/js/participation.js}" defer></script>
 <script th:src="@{/js/contact-check.js}"></script>
 <script th:src="@{/js/level-check.js}"></script>
