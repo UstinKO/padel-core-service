@@ -26,147 +26,20 @@ jobs:
             set -eu
             umask 077
             python3 - <<'PYPILOT'
-            import base64,copy,fcntl,hashlib,json,os,subprocess,sys,tempfile,zipfile
+            import json,subprocess
             from pathlib import Path
-            
-            ROOT=Path('/opt/padel-app')
-            STAGE=ROOT/'.pilot-activation-20261114-24'
-            REVISION='3cb3e146a421df4adbe18cd0d5be78f8d6b6ca86'
-            VERSION='2026-11-13-pilot24-5e97a1b'
-            IDS={208,226,234,137,8,272,600,621,320,119,169,232,411,211,127,522,65,168,701,198,186,301,263,192}
-            HASHES={'pilot-snapshot.json':'6c70f3de9846b8eb4f12478f0bfe1391ecbd8f936c67ca2716b4e0c4154c7a89','rating-source.json':'4a4287e4cda6bcef4eb01807f71c8a156de2353d6c2cec3c21498f25cc96e17d'}
-            PHASE='activate'
-            CHECK_CLASS='yv66vgAAAD0CGQoAAgADBwAEDAAFAAYBABBqYXZhL2xhbmcvT2JqZWN0AQAGPGluaXQ+AQADKClWCgAIAAkHAAoMAAsADAEAJnRvb2xzL2phY2tzb24vZGF0YWJpbmQvanNvbi9Kc29uTWFwcGVyAQAHYnVpbGRlcgEAMigpTHRvb2xzL2phY2tzb24vZGF0YWJpbmQvanNvbi9Kc29uTWFwcGVyJEJ1aWxkZXI7CgAOAA8HABAMABEAEgEALnRvb2xzL2phY2tzb24vZGF0YWJpbmQvanNvbi9Kc29uTWFwcGVyJEJ1aWxkZXIBABFmaW5kQW5kQWRkTW9kdWxlcwEALCgpTHRvb2xzL2phY2tzb24vZGF0YWJpbmQvY2ZnL01hcHBlckJ1aWxkZXI7CgAOABQMABUAFgEABWJ1aWxkAQAqKClMdG9vbHMvamFja3Nvbi9kYXRhYmluZC9qc29uL0pzb25NYXBwZXI7BwAYAQARamF2YS91dGlsL0hhc2hNYXAKABcAAwcAGwEAEGphdmEvbGFuZy9TdHJpbmcLAB0AHgcAHwwAIAAhAQASamF2YS9uaW8vZmlsZS9QYXRoAQACb2YBADsoTGphdmEvbGFuZy9TdHJpbmc7W0xqYXZhL2xhbmcvU3RyaW5nOylMamF2YS9uaW8vZmlsZS9QYXRoOwoAIwAkBwAlDAAmACcBABNqYXZhL25pby9maWxlL0ZpbGVzAQAKcmVhZFN0cmluZwEAKChMamF2YS9uaW8vZmlsZS9QYXRoOylMamF2YS9sYW5nL1N0cmluZzsKAAgAKQwAKgArAQAIcmVhZFRyZWUBADUoTGphdmEvbGFuZy9TdHJpbmc7KUx0b29scy9qYWNrc29uL2RhdGFiaW5kL0pzb25Ob2RlOwgALQEAGEFQUF9SQVRJTkdfUElMT1RfRU5BQkxFRAgALwEAG0FQUF9SQVRJTkdfUElMT1RfUExBWUVSX0lEUwgAMQEAGUFQUF9SQVRJTkdfUElMT1RfU05BUFNIT1QIADMBAA5BUFBfU1BBX1JPVVRFUwsANQA2BwA3DAAgADgBAA5qYXZhL3V0aWwvTGlzdAEAWihMamF2YS9sYW5nL09iamVjdDtMamF2YS9sYW5nL09iamVjdDtMamF2YS9sYW5nL09iamVjdDtMamF2YS9sYW5nL09iamVjdDspTGphdmEvdXRpbC9MaXN0OwsANQA6DAA7ADwBAAhpdGVyYXRvcgEAFigpTGphdmEvdXRpbC9JdGVyYXRvcjsLAD4APwcAQAwAQQBCAQASamF2YS91dGlsL0l0ZXJhdG9yAQAHaGFzTmV4dAEAAygpWgsAPgBEDABFAEYBAARuZXh0AQAUKClMamF2YS9sYW5nL09iamVjdDsKAEgASQcASgwASwArAQAfdG9vbHMvamFja3Nvbi9kYXRhYmluZC9Kc29uTm9kZQEAA2dldAoASABNDABOAE8BAAhhc1N0cmluZwEAFCgpTGphdmEvbGFuZy9TdHJpbmc7CwBRAFIHAFMMAFQAVQEADWphdmEvdXRpbC9NYXABAANwdXQBADgoTGphdmEvbGFuZy9PYmplY3Q7TGphdmEvbGFuZy9PYmplY3Q7KUxqYXZhL2xhbmcvT2JqZWN0OwcAVwEAMG9yZy9zcHJpbmdmcmFtZXdvcmsvY29yZS9lbnYvU3RhbmRhcmRFbnZpcm9ubWVudAoAVgADCgBWAFoMAFsAXAEAEmdldFByb3BlcnR5U291cmNlcwEANygpTG9yZy9zcHJpbmdmcmFtZXdvcmsvY29yZS9lbnYvTXV0YWJsZVByb3BlcnR5U291cmNlczsIAF4BABBzeXN0ZW1Qcm9wZXJ0aWVzCgBgAGEHAGIMAGMAZAEAM29yZy9zcHJpbmdmcmFtZXdvcmsvY29yZS9lbnYvTXV0YWJsZVByb3BlcnR5U291cmNlcwEABnJlbW92ZQEAQShMamF2YS9sYW5nL1N0cmluZzspTG9yZy9zcHJpbmdmcmFtZXdvcmsvY29yZS9lbnYvUHJvcGVydHlTb3VyY2U7CABmAQARc3lzdGVtRW52aXJvbm1lbnQHAGgBADxvcmcvc3ByaW5nZnJhbWV3b3JrL2NvcmUvZW52L1N5c3RlbUVudmlyb25tZW50UHJvcGVydHlTb3VyY2UKAGcAagwABQBrAQAkKExqYXZhL2xhbmcvU3RyaW5nO0xqYXZhL3V0aWwvTWFwOylWCgBgAG0MAG4AbwEAB3JlcGxhY2UBAEIoTGphdmEvbGFuZy9TdHJpbmc7TG9yZy9zcHJpbmdmcmFtZXdvcmsvY29yZS9lbnYvUHJvcGVydHlTb3VyY2U7KVYKAHEAcgcAcwwASwB0AQA3b3JnL3NwcmluZ2ZyYW1ld29yay9ib290L2NvbnRleHQvcHJvcGVydGllcy9iaW5kL0JpbmRlcgEAZShMb3JnL3NwcmluZ2ZyYW1ld29yay9jb3JlL2Vudi9FbnZpcm9ubWVudDspTG9yZy9zcHJpbmdmcmFtZXdvcmsvYm9vdC9jb250ZXh0L3Byb3BlcnRpZXMvYmluZC9CaW5kZXI7CAB2AQAQYXBwLnJhdGluZy5waWxvdAcAeAEAOWNvbS9wYWRsZS9jb3JlL3BhZGVsY29yZXNlcnZpY2UvcmF0aW5nL0Vsb1BpbG90UHJvcGVydGllcwoAegB7BwB8DAAgAH0BADlvcmcvc3ByaW5nZnJhbWV3b3JrL2Jvb3QvY29udGV4dC9wcm9wZXJ0aWVzL2JpbmQvQmluZGFibGUBAE4oTGphdmEvbGFuZy9DbGFzczspTG9yZy9zcHJpbmdmcmFtZXdvcmsvYm9vdC9jb250ZXh0L3Byb3BlcnRpZXMvYmluZC9CaW5kYWJsZTsKAHEAfwwAgACBAQAEYmluZAEAjChMamF2YS9sYW5nL1N0cmluZztMb3JnL3NwcmluZ2ZyYW1ld29yay9ib290L2NvbnRleHQvcHJvcGVydGllcy9iaW5kL0JpbmRhYmxlOylMb3JnL3NwcmluZ2ZyYW1ld29yay9ib290L2NvbnRleHQvcHJvcGVydGllcy9iaW5kL0JpbmRSZXN1bHQ7CgCDAIQHAIUMAEsARgEAO29yZy9zcHJpbmdmcmFtZXdvcmsvYm9vdC9jb250ZXh0L3Byb3BlcnRpZXMvYmluZC9CaW5kUmVzdWx0CACHAQAHYXBwLnNwYQcAiQEAOGNvbS9wYWRsZS9jb3JlL3BhZGVsY29yZXNlcnZpY2UvY29uZmlnL3NwYS9TcGFQcm9wZXJ0aWVzCwA1AIsMACAAjAEAEigpTGphdmEvdXRpbC9MaXN0OwoAiACODAAFAI8BABMoTGphdmEvdXRpbC9MaXN0OylWCgCDAJEMAJIAkwEABm9yRWxzZQEAJihMamF2YS9sYW5nL09iamVjdDspTGphdmEvbGFuZy9PYmplY3Q7CgB3AJUMAJYAQgEAB2VuYWJsZWQKAHcAmAwAmQCaAQAJcGxheWVySWRzAQARKClMamF2YS91dGlsL1NldDsLAJwAnQcAngwAnwCgAQANamF2YS91dGlsL1NldAEABHNpemUBAAMoKUkKAIgAogwAowCMAQAGcm91dGVzCwA1AKUMAKYAQgEAB2lzRW1wdHkHAKgBABhqYXZhL2xhbmcvQXNzZXJ0aW9uRXJyb3IIAKoBACXQmtC+0L3RhNC40LPRg9GA0LDRhtC40Y8g0L/QuNC70L7RgtCwCgCnAKwMAAUArQEAFShMamF2YS9sYW5nL09iamVjdDspVgoAdwCvDACwALEBAAhzbmFwc2hvdAEAFigpTGphdmEvbmlvL2ZpbGUvUGF0aDsHALMBADdjb20vcGFkbGUvY29yZS9wYWRlbGNvcmVzZXJ2aWNlL3JhdGluZy9FbG9QaWxvdFNuYXBzaG90CgAIALUMALYAtwEACXJlYWRWYWx1ZQEANyhMamF2YS9sYW5nL1N0cmluZztMamF2YS9sYW5nL0NsYXNzOylMamF2YS9sYW5nL09iamVjdDsHALkBADVjb20vcGFkbGUvY29yZS9wYWRlbGNvcmVzZXJ2aWNlL3JhdGluZy9FbG9QaWxvdEFjY2VzcwoAuAC7DAAFALwBAD4oTGNvbS9wYWRsZS9jb3JlL3BhZGVsY29yZXNlcnZpY2UvcmF0aW5nL0Vsb1BpbG90UHJvcGVydGllczspVgcAvgEANmNvbS9wYWRsZS9jb3JlL3BhZGVsY29yZXNlcnZpY2UvcmF0aW5nL1BpbG90RWxvUmFua2luZwoAwADBBwDCDADDAMQBABJqYXZhL3V0aWwvT3B0aW9uYWwBAAVlbXB0eQEAFigpTGphdmEvdXRpbC9PcHRpb25hbDsKAL0AxgwABQDHAQCuKEx0b29scy9qYWNrc29uL2RhdGFiaW5kL09iamVjdE1hcHBlcjtMY29tL3BhZGxlL2NvcmUvcGFkZWxjb3Jlc2VydmljZS9yYXRpbmcvRWxvUGlsb3RQcm9wZXJ0aWVzO0xjb20vcGFkbGUvY29yZS9wYWRlbGNvcmVzZXJ2aWNlL3JhdGluZy9FbG9QaWxvdEFjY2VzcztMamF2YS91dGlsL09wdGlvbmFsOylWBwDJAQARamF2YS91dGlsL1RyZWVTZXQKAMgAywwABQDMAQAZKExqYXZhL3V0aWwvQ29sbGVjdGlvbjspVgoAsgDODADPANABAAdhbGlhc2VzAQARKClMamF2YS91dGlsL01hcDsSAAAA0gwA0wDUAQAGYWNjZXB0AQBrKExjb20vcGFkbGUvY29yZS9wYWRlbGNvcmVzZXJ2aWNlL3JhdGluZy9FbG9QaWxvdFByb3BlcnRpZXM7TGphdmEvdXRpbC9TZXQ7KUxqYXZhL3V0aWwvZnVuY3Rpb24vQmlDb25zdW1lcjsLAFEA1gwA1wDYAQAHZm9yRWFjaAEAIihMamF2YS91dGlsL2Z1bmN0aW9uL0JpQ29uc3VtZXI7KVYKAMgAAwoAIwDbDADcAN0BAAxyZWFkQWxsTGluZXMBACYoTGphdmEvbmlvL2ZpbGUvUGF0aDspTGphdmEvdXRpbC9MaXN0OwoAGgDfDADgAEIBAAdpc0JsYW5rCgDiAOMHAOQMAOUA5gEADmphdmEvbGFuZy9Mb25nAQAHdmFsdWVPZgEAJChMamF2YS9sYW5nL1N0cmluZzspTGphdmEvbGFuZy9Mb25nOwsAnADoDADpAOoBAANhZGQBABUoTGphdmEvbGFuZy9PYmplY3Q7KVoLAJwA7AwA7QDuAQALY29udGFpbnNBbGwBABkoTGphdmEvdXRpbC9Db2xsZWN0aW9uOylaBQAAAAAAAAOfCgDiAPIMAOUA8wEAEyhKKUxqYXZhL2xhbmcvTG9uZzsLAJwA9QwA9gDqAQAIY29udGFpbnMFAAAAAAAAA7oIAPoBAB/QodC/0LjRgdC+0Log0LDQutC60LDRg9C90YLQvtCyCwCcADoKAOIA/QwA/gD/AQAJbG9uZ1ZhbHVlAQADKClKBwEBAQAxY29tL3BhZGxlL2NvcmUvcGFkZWxjb3Jlc2VydmljZS9tb2RlbC9QbGF5ZXJQYWRlbAoBAAADCgEAAQQMAQUBBgEABXNldElkAQATKExqYXZhL2xhbmcvTG9uZzspVgcBCAEAT29yZy9zcHJpbmdmcmFtZXdvcmsvc2VjdXJpdHkvYXV0aGVudGljYXRpb24vVXNlcm5hbWVQYXNzd29yZEF1dGhlbnRpY2F0aW9uVG9rZW4KAQABCgwBCwEMAQAOZ2V0QXV0aG9yaXRpZXMBABgoKUxqYXZhL3V0aWwvQ29sbGVjdGlvbjsKAQcBDgwABQEPAQA9KExqYXZhL2xhbmcvT2JqZWN0O0xqYXZhL2xhbmcvT2JqZWN0O0xqYXZhL3V0aWwvQ29sbGVjdGlvbjspVgcBEQEAP29yZy9zcHJpbmdmcmFtZXdvcmsvc2VjdXJpdHkvb2F1dGgyL2NvcmUvdXNlci9EZWZhdWx0T0F1dGgyVXNlcgcBEwEAQm9yZy9zcHJpbmdmcmFtZXdvcmsvc2VjdXJpdHkvY29yZS9hdXRob3JpdHkvU2ltcGxlR3JhbnRlZEF1dGhvcml0eQgBFQEAC1JPTEVfUExBWUVSCgESARcMAAUBGAEAFShMamF2YS9sYW5nL1N0cmluZzspVgsANQEaDAAgARsBACQoTGphdmEvbGFuZy9PYmplY3Q7KUxqYXZhL3V0aWwvTGlzdDsIAR0BAANzdWIIAR8BAAVwcm9iZQgBIQEACHBsYXllcklkBQAAAAAAAAAICwBRASUMACABJgEAWShMamF2YS9sYW5nL09iamVjdDtMamF2YS9sYW5nL09iamVjdDtMamF2YS9sYW5nL09iamVjdDtMamF2YS9sYW5nL09iamVjdDspTGphdmEvdXRpbC9NYXA7CgEQASgMAAUBKQEAOihMamF2YS91dGlsL0NvbGxlY3Rpb247TGphdmEvdXRpbC9NYXA7TGphdmEvbGFuZy9TdHJpbmc7KVYHASsBAEBjb20vcGFkbGUvY29yZS9wYWRlbGNvcmVzZXJ2aWNlL3NlY3VyaXR5L29hdXRoMi9DdXN0b21PQXV0aDJVc2VyCgEqAS0MAAUBLgEAcChMb3JnL3NwcmluZ2ZyYW1ld29yay9zZWN1cml0eS9vYXV0aDIvY29yZS91c2VyL09BdXRoMlVzZXI7TGNvbS9wYWRsZS9jb3JlL3BhZGVsY29yZXNlcnZpY2UvbW9kZWwvUGxheWVyUGFkZWw7KVYKASoBCgsANQExDAAgATIBADYoTGphdmEvbGFuZy9PYmplY3Q7TGphdmEvbGFuZy9PYmplY3Q7KUxqYXZhL3V0aWwvTGlzdDsKAL0BNAwBNQE2AQAGYWxsb3dzAQA1KExvcmcvc3ByaW5nZnJhbWV3b3JrL3NlY3VyaXR5L2NvcmUvQXV0aGVudGljYXRpb247KVoSAAEBOAwBOQE6AQAXbWFrZUNvbmNhdFdpdGhDb25zdGFudHMBABUoSilMamF2YS9sYW5nL1N0cmluZzsHATwBABBQaWxvdEFjY2Vzc0NoZWNrCgE+AT8HAUAMAUEBQgEAD2phdmEvbGFuZy9DbGFzcwEADmdldENsYXNzTG9hZGVyAQAZKClMamF2YS9sYW5nL0NsYXNzTG9hZGVyOwcBRAEAKGpha2FydGEvc2VydmxldC9odHRwL0h0dHBTZXJ2bGV0UmVzcG9uc2USAAIBRgwBRwFIAQAGaW52b2tlAQA6KExqYXZhL3V0aWwvSGFzaE1hcDspTGphdmEvbGFuZy9yZWZsZWN0L0ludm9jYXRpb25IYW5kbGVyOwoBSgFLBwFMDAFNAU4BABdqYXZhL2xhbmcvcmVmbGVjdC9Qcm94eQEAEG5ld1Byb3h5SW5zdGFuY2UBAGIoTGphdmEvbGFuZy9DbGFzc0xvYWRlcjtbTGphdmEvbGFuZy9DbGFzcztMamF2YS9sYW5nL3JlZmxlY3QvSW52b2NhdGlvbkhhbmRsZXI7KUxqYXZhL2xhbmcvT2JqZWN0OwcBUAEAJ29yZy9zcHJpbmdmcmFtZXdvcmsvdWkvRXh0ZW5kZWRNb2RlbE1hcAoBTwADCgC9AVMMAVQBVQEAB3JhbmtpbmcBAH0oTG9yZy9zcHJpbmdmcmFtZXdvcmsvdWkvTW9kZWw7TG9yZy9zcHJpbmdmcmFtZXdvcmsvc2VjdXJpdHkvY29yZS9BdXRoZW50aWNhdGlvbjtMamFrYXJ0YS9zZXJ2bGV0L2h0dHAvSHR0cFNlcnZsZXRSZXNwb25zZTspVggBVwEAEnByZXZpZXdFbG9CeVBsYXllcgoBTwFZDAFaAVsBABFjb250YWluc0F0dHJpYnV0ZQEAFShMamF2YS9sYW5nL1N0cmluZzspWhIAAwE4CgFPAV4MAEsAkwsAUQFeBwFhAQA9Y29tL3BhZGxlL2NvcmUvcGFkZWxjb3Jlc2VydmljZS9wcmV2aWV3L1ByZXZpZXdFbG9SYW5raW5nJFJvdwoBYAFjDAFkAP8BAAJpZAsAUQFmDAFnAFUBAAxnZXRPckRlZmF1bHQKAWABaQwBagCMAQARdG91cm5hbWVudEhpc3RvcnkSAAQBOAgBbQEADUNhY2hlLUNvbnRyb2wKABcBXggBcAEAEXByaXZhdGUsIG5vLXN0b3JlCwA1AXIMAXMA6gEABmVxdWFscwgBdQEABFZhcnkIAXcBAAZDb29raWUIAXkBAA1BdXRob3JpemF0aW9uCwA1AOwIAXwBAAbQmtGN0YgKAQcBfgwABQF/AQAnKExqYXZhL2xhbmcvT2JqZWN0O0xqYXZhL2xhbmcvT2JqZWN0OylWCAGBAQAKUk9MRV9PV05FUggBgwEALdCd0LXQsNCy0YLQvtGA0LjQt9C+0LLQsNC90L3Ri9C5INC00L7RgdGC0YPQvwoAdwGFDAAFAYYBACcoWkxqYXZhL3V0aWwvU2V0O0xqYXZhL25pby9maWxlL1BhdGg7KVYKALgBiAwBNQGJAQBEKExvcmcvc3ByaW5nZnJhbWV3b3JrL3NlY3VyaXR5L2NvcmUvQXV0aGVudGljYXRpb247TGphdmEvdXRpbC9NYXA7KVoIAYsBABTQktGL0LrQu9GO0YfQtdC90LjQtQkBjQGOBwGPDAGQAZEBABBqYXZhL2xhbmcvU3lzdGVtAQADb3V0AQAVTGphdmEvaW8vUHJpbnRTdHJlYW07CAGTAQAIYWNjb3VudHMKAZUBlgcBlwwA5QGYAQARamF2YS9sYW5nL0ludGVnZXIBABYoSSlMamF2YS9sYW5nL0ludGVnZXI7CAGaAQAPYWxsb3dlZEFjY291bnRzCAGcAQAOZGVuaWVkQWNjb3VudHMIAZ4BABBjYW5vbmljYWxQbGF5ZXJzCAGgAQANZm9ybUFuZEdvb2dsZQoBogGjBwGkDADlAaUBABFqYXZhL2xhbmcvQm9vbGVhbgEAFihaKUxqYXZhL2xhbmcvQm9vbGVhbjsIAacBABBjb3JyZWN0QWxpYXNSb3dzCAGpAQAOY2FjaGVQcm90ZWN0ZWQIAasBAA9hbm9ueW1vdXNEZW5pZWQIAa0BAA5kaXNhYmxlZERlbmllcwsAUQGvDAAgAbABAVUoTGphdmEvbGFuZy9PYmplY3Q7TGphdmEvbGFuZy9PYmplY3Q7TGphdmEvbGFuZy9PYmplY3Q7TGphdmEvbGFuZy9PYmplY3Q7TGphdmEvbGFuZy9PYmplY3Q7TGphdmEvbGFuZy9PYmplY3Q7TGphdmEvbGFuZy9PYmplY3Q7TGphdmEvbGFuZy9PYmplY3Q7TGphdmEvbGFuZy9PYmplY3Q7TGphdmEvbGFuZy9PYmplY3Q7TGphdmEvbGFuZy9PYmplY3Q7TGphdmEvbGFuZy9PYmplY3Q7TGphdmEvbGFuZy9PYmplY3Q7TGphdmEvbGFuZy9PYmplY3Q7TGphdmEvbGFuZy9PYmplY3Q7TGphdmEvbGFuZy9PYmplY3Q7TGphdmEvbGFuZy9PYmplY3Q7TGphdmEvbGFuZy9PYmplY3Q7KUxqYXZhL3V0aWwvTWFwOwoACAGyDAGzAbQBABJ3cml0ZVZhbHVlQXNTdHJpbmcBACYoTGphdmEvbGFuZy9PYmplY3Q7KUxqYXZhL2xhbmcvU3RyaW5nOxIABQG2DAE5AbcBACYoTGphdmEvbGFuZy9TdHJpbmc7KUxqYXZhL2xhbmcvU3RyaW5nOwoBuQG6BwG7DAG8ARgBABNqYXZhL2lvL1ByaW50U3RyZWFtAQAHcHJpbnRsbgoBvgG/BwHADAHBAE8BABhqYXZhL2xhbmcvcmVmbGVjdC9NZXRob2QBAAdnZXROYW1lCAHDAQAJc2V0SGVhZGVyCgAaAXIHAcYBABNqYXZhL3V0aWwvQXJyYXlMaXN0CgHFAMsKABcAUggBygEACWFkZEhlYWRlchIABgHMDAHNAc4BAAVhcHBseQEAHygpTGphdmEvdXRpbC9mdW5jdGlvbi9GdW5jdGlvbjsKABcB0AwB0QHSAQAPY29tcHV0ZUlmQWJzZW50AQBDKExqYXZhL2xhbmcvT2JqZWN0O0xqYXZhL3V0aWwvZnVuY3Rpb24vRnVuY3Rpb247KUxqYXZhL2xhbmcvT2JqZWN0OwsANQDoCgHFAAMBAARDb2RlAQAPTGluZU51bWJlclRhYmxlAQAEbWFpbgEAFihbTGphdmEvbGFuZy9TdHJpbmc7KVYBAA1TdGFja01hcFRhYmxlBwHbAQATW0xqYXZhL2xhbmcvU3RyaW5nOwEACkV4Y2VwdGlvbnMHAd4BABNqYXZhL2xhbmcvRXhjZXB0aW9uAQANbGFtYmRhJG1haW4kMgEAZihMamF2YS91dGlsL0hhc2hNYXA7TGphdmEvbGFuZy9PYmplY3Q7TGphdmEvbGFuZy9yZWZsZWN0L01ldGhvZDtbTGphdmEvbGFuZy9PYmplY3Q7KUxqYXZhL2xhbmcvT2JqZWN0OwcB4gEAE2phdmEvbGFuZy9UaHJvd2FibGUBAA1sYW1iZGEkbWFpbiQxAQAkKExqYXZhL2xhbmcvU3RyaW5nOylMamF2YS91dGlsL0xpc3Q7AQANbGFtYmRhJG1haW4kMAEAbShMY29tL3BhZGxlL2NvcmUvcGFkZWxjb3Jlc2VydmljZS9yYXRpbmcvRWxvUGlsb3RQcm9wZXJ0aWVzO0xqYXZhL3V0aWwvU2V0O0xqYXZhL2xhbmcvTG9uZztMamF2YS9sYW5nL0xvbmc7KVYBAApTb3VyY2VGaWxlAQAVUGlsb3RBY2Nlc3NDaGVjay5qYXZhAQAQQm9vdHN0cmFwTWV0aG9kcxABfw8GAewKATsB7QwB5QHmEAHvAQAjKExqYXZhL2xhbmcvTG9uZztMamF2YS9sYW5nL0xvbmc7KVYIAfEBAA7QlNC+0YHRgtGD0L8gARAB8wEAUyhMamF2YS9sYW5nL09iamVjdDtMamF2YS9sYW5nL3JlZmxlY3QvTWV0aG9kO1tMamF2YS9sYW5nL09iamVjdDspTGphdmEvbGFuZy9PYmplY3Q7DwYB9QoBOwH2DAHfAeAIAfgBAB/QnNC+0LTQtdC70Ywg0LrQsNCx0LjQvdC10YLQsCABCAH6AQAQ0JjRgdGC0L7RgNC40Y8gAQgB/AEAD0FDQ0VTU19NQVRSSVg9ARAAkw8GAf8KATsCAAwB4wHkEAHkDwYCAwoCBAIFBwIGDAIHAggBACJqYXZhL2xhbmcvaW52b2tlL0xhbWJkYU1ldGFmYWN0b3J5AQALbWV0YWZhY3RvcnkBAMwoTGphdmEvbGFuZy9pbnZva2UvTWV0aG9kSGFuZGxlcyRMb29rdXA7TGphdmEvbGFuZy9TdHJpbmc7TGphdmEvbGFuZy9pbnZva2UvTWV0aG9kVHlwZTtMamF2YS9sYW5nL2ludm9rZS9NZXRob2RUeXBlO0xqYXZhL2xhbmcvaW52b2tlL01ldGhvZEhhbmRsZTtMamF2YS9sYW5nL2ludm9rZS9NZXRob2RUeXBlOylMamF2YS9sYW5nL2ludm9rZS9DYWxsU2l0ZTsPBgIKCgILAgwHAg0MATkCDgEAJGphdmEvbGFuZy9pbnZva2UvU3RyaW5nQ29uY2F0RmFjdG9yeQEAmChMamF2YS9sYW5nL2ludm9rZS9NZXRob2RIYW5kbGVzJExvb2t1cDtMamF2YS9sYW5nL1N0cmluZztMamF2YS9sYW5nL2ludm9rZS9NZXRob2RUeXBlO0xqYXZhL2xhbmcv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'
-            
-            def run(args,timeout=90):
-                r=subprocess.run(args,capture_output=True,text=True,timeout=timeout)
-                if r.returncode:raise RuntimeError('Operation failed: '+args[0])
-                return r.stdout
-            
-            def inspect():return json.loads(run(['docker','inspect','padel-core-app']))[0]
-            def environment(c):return dict(x.split('=',1) for x in c['Config']['Env'] if '=' in x)
-            def digest(path):return hashlib.sha256(path.read_bytes()).hexdigest()
-            
-            def protected_report(name,value):
-                path=STAGE/name
-                path.write_text(json.dumps(value,ensure_ascii=False,indent=2)+'\n');path.chmod(0o600)
-            
-            def files_and_config(c,enabled):
-                env=environment(c)
-                assert env['APP_RELEASE_REVISION']==REVISION
-                assert env['APP_RATING_PILOT_ENABLED']==enabled
-                assert env['APP_RATING_PILOT_AUTO_REFRESH']=='false'
-                assert env.get('APP_SPA_ROUTES','')==''
-                assert set(map(int,env['APP_RATING_PILOT_PLAYER_IDS'].split(',')))==IDS
-                assert env['APP_RATING_PILOT_SNAPSHOT']=='/app/rating-pilot/'+VERSION+'/pilot-snapshot.json'
-                assert env['APP_RATING_PILOT_HISTORY']=='/app/rating-pilot/'+VERSION+'/rating-source.json'
-                mounts=[m for m in c['Mounts'] if m['Destination']=='/app/rating-pilot']
-                assert len(mounts)==1 and not mounts[0]['RW'] and mounts[0]['Source']==str(ROOT/'rating-pilot')
-                for name,sha in HASHES.items():assert digest(ROOT/'rating-pilot'/VERSION/name)==sha
-                assert c['State']['Running']
-                return env
-            
-            def access_probe(c,jar):
-                probe=STAGE/'probe';probe.mkdir(exist_ok=True,mode=0o755);probe.chmod(0o755)
-                with zipfile.ZipFile(jar) as archive:
-                    for member in archive.infolist():
-                        if not member.filename.startswith(('BOOT-INF/classes/','BOOT-INF/lib/')) or member.is_dir():continue
-                        relative=Path(member.filename)
-                        assert not relative.is_absolute() and '..' not in relative.parts
-                        path=probe/relative;path.parent.mkdir(parents=True,exist_ok=True)
-                        path.write_bytes(archive.read(member));path.chmod(0o644)
-                for path in probe.rglob('*'):
-                    if path.is_dir():path.chmod(0o755)
-                classes=probe/'checks';classes.mkdir(exist_ok=True);classes.chmod(0o755)
-                (classes/'PilotAccessCheck.class').write_bytes(base64.b64decode(CHECK_CLASS));(classes/'PilotAccessCheck.class').chmod(0o644)
-                env=environment(c)
-                settings={k:env[k] for k in ['APP_RATING_PILOT_ENABLED','APP_RATING_PILOT_PLAYER_IDS','APP_RATING_PILOT_SNAPSHOT','APP_SPA_ROUTES']}
-                settings['APP_RATING_PILOT_ENABLED']='true'
-                (probe/'settings.json').write_text(json.dumps(settings));(probe/'settings.json').chmod(0o644)
-                db=json.loads(run(['docker','inspect','padel-postgres']))[0]
-                db_env=environment(db)
-                account_ids=run(['docker','exec','padel-postgres','psql','-X','-A','-t','-U',db_env['POSTGRES_USER'],'-d',db_env['POSTGRES_DB'],'-c','SELECT id FROM player_padel_db ORDER BY id'])
-                assert all(x.isdigit() for x in account_ids.splitlines() if x)
-                (probe/'accounts.txt').write_text(account_ids);(probe/'accounts.txt').chmod(0o644)
-                output=run(['docker','run','--rm','--network','none','--read-only','--memory','384m','--cpus','1','--cap-drop','ALL','--security-opt','no-new-privileges','--mount','type=bind,src='+str(probe)+',dst=/probe,readonly','--mount','type=bind,src='+str(ROOT/'rating-pilot')+',dst=/app/rating-pilot,readonly','--entrypoint','java',c['Image'],'-Xmx192m','-cp','/probe/checks:/probe/BOOT-INF/classes:/probe/BOOT-INF/lib/*','PilotAccessCheck','/probe/settings.json','/probe/accounts.txt'])
-                lines=[s for s in output.splitlines() if s.startswith('ACCESS_MATRIX=')]
-                assert len(lines)==1
-                result=json.loads(lines[0].split('=',1)[1]);assert result['allowedAccounts']==28 and result['canonicalPlayers']==24
-                return result
-            
-            def main():
-                os.umask(0o077)
-                STAGE.mkdir(exist_ok=True,mode=0o700)
-                assert not STAGE.is_symlink()
-                with tempfile.TemporaryDirectory(dir=STAGE) as modules:
-                    runner=ROOT/'temp/release-runner.pyz'
-                    assert runner.is_file() and not runner.is_symlink()
-                    with zipfile.ZipFile(runner) as archive:
-                        for name in ['artifact.py','docker_adapter.py','smoke.py','transaction.py','production.py']:
-                            (Path(modules)/name).write_bytes(archive.read(name))
-                    sys.path.insert(0,modules)
-                    from production import Production
-                    from transaction import Releases,install_signals
-                    install_signals()
-                    current=json.loads((ROOT/'release-state/current.json').read_text())
-                    assert current['revision']==REVISION
-                    current_folder=ROOT/'releases'/current['id']
-                    config=json.loads(run(['docker','compose','--project-directory',str(ROOT),'--env-file',str(current_folder/'environment'),'-f',str(current_folder/'compose.json'),'config','--format','json']))
-                    class PilotProduction(Production):
-                        def smoke(self,record):
-                            super().smoke(record)
-                            expected=json.loads((self.folder(record)/'compose.json').read_text())['services']['padel-app']['environment']['APP_RATING_PILOT_ENABLED']
-                            files_and_config(inspect(),expected)
-                            for path in ['/','/login','/ranking','/players/dashboard?playerId=8']:
-                                response=self.fetch(record)(path)
-                                assert response.status in (200,302)
-                                assert b'elo-cabinet' not in response.body and b'/css/elo-preview.css' not in response.body
-                    adapter=PilotProduction(ROOT,ROOT/'releases',config['name'],'padel-app')
-                    releases=Releases(ROOT/'release-state',adapter)
-                    with releases.locked():
-                        assert not releases.read('pending')
-                        assert releases.read('current')==current
-                        c=inspect();env=files_and_config(c,'false')
-                        adapter.validate(current)
-                        assert digest(ROOT/'.env')==current['environmentSha256']
-                        assert env==config['services']['padel-app']['environment'] or all(env.get(k)==str(v) for k,v in config['services']['padel-app']['environment'].items())
-                        access=access_probe(c,current_folder/'app.jar')
-                        if PHASE=='preflight':
-                            protected_report('preflight.json',{'recordId':current['id'],'revision':REVISION,'containerId':c['Id'],'image':c['Image'],'access':access,'files':HASHES,'pilotEnabled':False})
-                            print('PILOT_PREFLIGHT='+json.dumps({'revision':REVISION,'pilotEnabled':False,'autoRefresh':False,'access':access,'filesVerified':True,'applicationUnchanged':True}));return
-                        assert PHASE=='activate'
-                        preflight=json.loads((STAGE/'preflight.json').read_text())
-                        assert preflight['recordId']==current['id'] and preflight['containerId']==c['Id'] and preflight['image']==c['Image']
-                        text=(current_folder/'environment').read_text()
-                        lines=text.splitlines(keepends=True)
-                        matched=[i for i,line in enumerate(lines) if line.startswith('APP_RATING_PILOT_ENABLED=')]
-                        assert len(matched)==1 and lines[matched[0]].strip()=='APP_RATING_PILOT_ENABLED=false'
-                        lines[matched[0]]='APP_RATING_PILOT_ENABLED=true\n'
-                        candidate_config=copy.deepcopy(config)
-                        candidate_config['services']['padel-app']['environment']['APP_RATING_PILOT_ENABLED']='true'
-                        manifest=json.loads((current_folder/'manifest.json').read_text())
-                        candidate=adapter.prepare(current_folder/'app.jar',manifest,current['image'],candidate_config,''.join(lines).encode())
-                        assert candidate['image']==current['image']
-                        protected_report('disabled-release.json',current)
-                        releases._deploy_locked(candidate)
-                        try:
-                            active=inspect();actual=files_and_config(active,'true')
-                            assert active['Image']==c['Image']
-                            assert {k:v for k,v in actual.items() if k!='APP_RATING_PILOT_ENABLED'}=={k:v for k,v in env.items() if k!='APP_RATING_PILOT_ENABLED'}
-                            assert active['Mounts']==c['Mounts']
-                            assert digest(ROOT/'.env')==candidate['environmentSha256']
-                            assert releases.read('current')==candidate and releases.read('previous')==current
-                            verified_access=access_probe(active,adapter.folder(candidate)/'app.jar')
-                            report={'revision':REVISION,'pilotEnabled':True,'autoRefresh':False,'sameApplicationImage':True,'onlyPilotFlagChanged':True,'mountsUnchanged':True,'filesVerified':True,'databaseRatingWrites':False,'readinessVerified':True,'anonymousKeepsLegacy':True,'disabledReleaseRetained':True,'access':verified_access,'recordId':candidate['id']}
-                            protected_report('activation.json',report)
-                            print('PILOT_ACTIVATED='+json.dumps(report))
-                        except BaseException:
-                            releases._deploy_locked(current)
-                            raise
-            
-            if __name__=='__main__':
-                try:main()
-                except BaseException as error:
-                    print('PILOT_OPERATION_ERROR='+type(error).__name__)
-                    raise SystemExit(1)
+            root=Path('/opt/padel-app')
+            def run(a):
+             r=subprocess.run(a,capture_output=True,text=True,timeout=30)
+             assert r.returncode==0
+             return r.stdout
+            c=json.loads(run(['docker','inspect','padel-core-app']))[0]
+            env=dict(x.split('=',1) for x in c['Config']['Env'] if '=' in x)
+            records={k:json.loads((root/'release-state'/(k+'.json')).read_text()) for k in ['current','previous']}
+            configs={}
+            for k,r in records.items():
+             folder=root/'releases'/r['id']
+             configs[k]=json.loads(run(['docker','compose','--project-directory',str(root),'--env-file',str(folder/'environment'),'-f',str(folder/'compose.json'),'config','--format','json']))
+            a=configs['current']['services']['padel-app']['environment'];b=configs['previous']['services']['padel-app']['environment']
+            print('DIAG='+json.dumps({'currentPilot':env.get('APP_RATING_PILOT_ENABLED'),'revision':env.get('APP_RELEASE_REVISION'),'currentRecord':records['current']['id'],'previousRecord':records['previous']['id'],'recordEnvironmentDiffKeys':sorted(k for k in set(a)|set(b) if a.get(k)!=b.get(k)),'currentRuntimeVsRecordedDiffKeys':sorted(k for k in set(env)|set(a) if env.get(k)!=a.get(k)),'sameImage':records['current']['image']==records['previous']['image'],'volumesSame':configs['current']['services']['padel-app'].get('volumes')==configs['previous']['services']['padel-app'].get('volumes'),'runtimeMountOrder':[m['Destination'] for m in c['Mounts']]}))
             PYPILOT
