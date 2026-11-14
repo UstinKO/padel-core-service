@@ -1,4 +1,4 @@
-name: Enable rating feedback for the pilot
+name: Verify saved rating feedback
 on:
   pull_request:
     types: [opened, synchronize, reopened]
@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Enable and verify pilot feedback
+      - name: Verify saved feedback №1
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -23,88 +23,16 @@ jobs:
           command_timeout: 480s
           script: |
             set -eu
-            python3 - 'c983b8aab8d1ad279426b46852ce1d21e480b927' <<'PYFEEDBACK'
-            import copy
-            import hashlib
+            python3 - <<'PYFEEDBACK'
             import json
-            import os
-            from pathlib import Path
-            import sys
-            import tempfile
-            import zipfile
+            import subprocess
 
-            ROOT = Path('/opt/padel-app')
-            KEY = 'APP_RATING_PILOT_FEEDBACK_ENABLED'
-            IDS = {208,226,234,137,8,272,600,621,320,119,169,232,411,211,127,522,65,168,701,198,186,301,263,192}
-
-            def main(revision):
-                os.umask(0o077)
-                with tempfile.TemporaryDirectory(dir=ROOT/'temp') as modules:
-                    with zipfile.ZipFile(ROOT/'temp/release-runner.pyz') as archive:
-                        for name in ['artifact.py','docker_adapter.py','smoke.py','transaction.py','production.py']:
-                            (Path(modules)/name).write_bytes(archive.read(name))
-                    sys.path.insert(0, modules)
-                    from production import Production, run
-                    from transaction import Releases, install_signals
-                    install_signals()
-
-                    def inspect_config(container):
-                        return dict(line.split('=', 1) for line in container['Config']['Env'] if '=' in line)
-
-                    def verify_pilot(env):
-                        assert env.get('APP_RATING_PILOT_ENABLED') == 'true'
-                        assert env.get('APP_RATING_PILOT_AUTO_REFRESH') == 'true'
-                        assert set(map(int, env['APP_RATING_PILOT_PLAYER_IDS'].split(','))) == IDS
-                        assert all(env.get(key) for key in ['APP_RATING_PILOT_SNAPSHOT', 'APP_RATING_PILOT_HISTORY'])
-
-                    class FeedbackProduction(Production):
-                        def smoke(self, record):
-                            super().smoke(record)
-                            live = self.container()
-                            actual = inspect_config(live)
-                            verify_pilot(actual)
-                            expected = expected_env if record['id'] != current['id'] else previous_env
-                            assert actual == expected
-                            assert live['Image'] == before['Image']
-                            assert sorted(live['Mounts'], key=lambda m: m['Destination']) == sorted(before['Mounts'], key=lambda m: m['Destination'])
-                            response = self.fetch(record)('/ranking')
-                            assert response.status == 200 and b'data-elo-feedback' not in response.body
-
-                    state = ROOT/'release-state'
-                    current = json.loads((state/'current.json').read_text())
-                    assert current['managed'] and current['revision'] == revision
-                    folder = ROOT/'releases'/current['id']
-                    config = json.loads(run(['docker','compose','--project-directory',str(ROOT),'--env-file',
-                        str(folder/'environment'),'-f',str(folder/'compose.json'),'config','--format','json']))
-                    adapter = FeedbackProduction(ROOT, ROOT/'releases', config['name'], 'padel-app')
-                    releases = Releases(state, adapter)
-                    with releases.locked():
-                        assert releases.read('current') == current and not releases.read('pending')
-                        adapter.validate(current)
-                        old_dotenv = (ROOT/'.env').read_bytes()
-                        assert hashlib.sha256(old_dotenv).hexdigest() == current['environmentSha256']
-                        before = adapter.container()
-                        previous_env = inspect_config(before)
-                        verify_pilot(previous_env)
-                        assert previous_env.get(KEY, '') in ('', 'false')
-                        recipient = previous_env.get('APP_RATING_PILOT_FEEDBACK_RECIPIENT') or previous_env.get('ADMIN_EMAIL')
-                        assert not recipient or recipient.casefold() == 'eugene.g.work@gmail.com'
-                        expected_env = dict(previous_env, **{KEY: 'true'})
-                        lines = old_dotenv.decode().splitlines(keepends=True)
-                        assert sum(line.startswith(KEY+'=') for line in lines) <= 1
-                        new_dotenv = ''.join(line for line in lines if not line.startswith(KEY+'=')).rstrip('\n') + '\n' + KEY + '=true\n'
-                        candidate_config = copy.deepcopy(config)
-                        candidate_config['services']['padel-app']['environment'][KEY] = 'true'
-                        manifest = json.loads((folder/'manifest.json').read_text())
-                        candidate = adapter.prepare(folder/'app.jar', manifest, current['image'], candidate_config, new_dotenv.encode())
-                        releases._deploy_locked(candidate)
-                        print('FEEDBACK_ENABLED=' + json.dumps({'revision': revision, 'pilotPlayers': len(IDS),
-                            'autoRefresh': True, 'anonymousLegacy': True, 'sameImage': True}))
-
-            if __name__ == '__main__':
-                try:
-                    main(sys.argv[1])
-                except Exception as error:
-                    print('Проверка включения отзывов не пройдена: ' + type(error).__name__, file=sys.stderr)
-                    sys.exit(1)
+            command = ['docker', 'exec', 'padel-postgres', 'sh', '-ec',
+                'exec psql -X -A -t -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "$1"',
+                'feedback-verification',
+                "BEGIN READ ONLY; SELECT json_build_object('id',id,'playerId',player_id,'source',source,'mailStatus',mail_status,'testMarker',message LIKE 'ТЕСТ 1-Padel%после PR №1114.%') FROM elo_pilot_feedback_db WHERE id=1; COMMIT;"]
+            result = subprocess.run(command, check=True, capture_output=True, text=True)
+            record = next(json.loads(line) for line in result.stdout.splitlines() if line.startswith('{'))
+            assert record == {'id': 1, 'playerId': 8, 'source': 'DASHBOARD', 'mailStatus': 'SENT', 'testMarker': True}
+            print('FEEDBACK_VERIFIED=' + json.dumps(record))
             PYFEEDBACK
