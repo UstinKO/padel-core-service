@@ -17,6 +17,7 @@ import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -450,6 +451,82 @@ class RegistrationCancellationIntegrationTest {
         assertThat(registrations.findByTournamentIdAndPlayerId(tournament.getId(), replacement.getId())
                 .orElseThrow().getWaitlistPosition()).isEqualTo(1);
         assertThat(registrations.countConfirmedPairs(tournament.getId())).isEqualTo(1);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"CONFIRMED,true,false", "CONFIRMED,false,true", "WAITLIST,true,true", "WAITLIST,false,false"})
+    void playerCanCancelBothMembersOfLegacyPair(RegistrationStatus status, boolean initiatedByMain,
+                                                boolean reverseLinkPresent) throws Exception {
+        var event = tournament(1);
+        event.setTipo(TournamentType.AMERICANO_TEAMS);
+        event.setModalidad(Modalidad.DOBLES);
+        var main = registration(event, status);
+        var partner = registration(event, status);
+        pair(main, partner);
+        main.setPartner(null);
+        if (!reverseLinkPresent) partner.setPartner(null);
+        var nextMain = registration(event, RegistrationStatus.WAITLIST);
+        var nextPartner = registration(event, RegistrationStatus.WAITLIST);
+        pair(nextMain, nextPartner);
+        nextMain.setQueuedAt(nextMain.getRegistrationDate().plusMinutes(1));
+        nextPartner.setQueuedAt(nextMain.getQueuedAt());
+        var followingMain = registration(event, RegistrationStatus.WAITLIST);
+        var followingPartner = registration(event, RegistrationStatus.WAITLIST);
+        pair(followingMain, followingPartner);
+        followingMain.setQueuedAt(nextMain.getQueuedAt().plusMinutes(1));
+        followingPartner.setQueuedAt(followingMain.getQueuedAt());
+        var payment = payments.saveAndFlush(Payment.builder().registration(partner)
+                .amount(BigDecimal.TEN).currency("ARS").status(PaymentStatus.PAID).build());
+
+        var actor = (initiatedByMain ? main : partner).getPlayer();
+        var path = "/api/tournaments/double/" + event.getId() + "/pair-cancellation";
+        mvc.perform(get(path).with(user(actor))).andExpect(status().isOk())
+                .andExpect(jsonPath("$.canReplace").value(true));
+        var confirmation = "{\"token\":\"%s\"}".formatted(pairTerms.cancellation(event.getId(), actor.getId()).token());
+        for (int attempt = 0; attempt < 2; attempt++) {
+            mvc.perform(post(path).with(user(actor)).with(csrf())
+                            .contentType("application/json").content(confirmation))
+                    .andExpect(status().isOk());
+        }
+        entities.flush();
+        assertThat(main.getStatus()).isEqualTo(RegistrationStatus.CANCELLED);
+        assertThat(partner.getStatus()).isEqualTo(RegistrationStatus.CANCELLED);
+        assertThat(jdbc.queryForObject("""
+                SELECT COUNT(DISTINCT event_id) FROM registration_cancellation_members
+                WHERE registration_id IN (?, ?)
+                """, Integer.class, main.getId(), partner.getId())).isEqualTo(1);
+        assertThat(jdbc.queryForObject("""
+                SELECT COUNT(*) FROM registration_cancellation_members WHERE registration_id IN (?, ?)
+                """, Integer.class, main.getId(), partner.getId())).isEqualTo(2);
+        assertThat(payments.findById(payment.getId()).orElseThrow().getStatus()).isEqualTo(PaymentStatus.PAID);
+        assertThat(registrations.countConfirmedPairs(event.getId())).isEqualTo(1);
+        assertThat(nextMain.getStatus()).isEqualTo(RegistrationStatus.CONFIRMED);
+        assertThat(nextPartner.getStatus()).isEqualTo(RegistrationStatus.CONFIRMED);
+        assertThat(followingMain.getStatus()).isEqualTo(RegistrationStatus.WAITLIST);
+        assertThat(followingPartner.getStatus()).isEqualTo(RegistrationStatus.WAITLIST);
+        verifyNoInteractions(email);
+    }
+
+    @Test
+    void playerCannotCancelAnAmbiguousLegacyPair() throws Exception {
+        var event = tournament(3);
+        event.setTipo(TournamentType.AMERICANO_TEAMS);
+        event.setModalidad(Modalidad.DOBLES);
+        var main = registration(event, RegistrationStatus.CONFIRMED);
+        var second = registration(event, RegistrationStatus.CONFIRMED);
+        var third = registration(event, RegistrationStatus.CONFIRMED);
+        pair(main, second);
+        main.setPartner(null);
+        third.setPartner(main.getPlayer());
+        third.setIsDoubleRegistration(true);
+        third.setMainPlayerId(main.getPlayer().getId());
+        registrations.saveAllAndFlush(List.of(main, second, third));
+
+        mvc.perform(get("/api/tournaments/double/" + event.getId() + "/pair-cancellation")
+                        .with(user(main.getPlayer())))
+                .andExpect(status().isConflict());
+        assertThat(registrations.findByTournamentId(event.getId())).allSatisfy(row ->
+                assertThat(row.getStatus()).isEqualTo(RegistrationStatus.CONFIRMED));
     }
 
     @Test
