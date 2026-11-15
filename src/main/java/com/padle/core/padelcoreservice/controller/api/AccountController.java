@@ -56,6 +56,12 @@ public class AccountController {
         return accounts.update(authentication, request);
     }
 
+    @PatchMapping("/players/me/level")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void updateLevel(Authentication authentication, @Valid @RequestBody AccountDtos.LevelUpdate request) {
+        accounts.updateLevel(authentication, request.nivelJugador());
+    }
+
     @PostMapping("/players/me/password")
     public AccountDtos.Result password(Authentication authentication, @Valid @RequestBody AccountDtos.PasswordChange request) {
         accounts.changePassword(authentication, request);

@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -67,6 +68,14 @@ public class AccountService {
         }
         mapper.update(request, player);
         return mapper.profile(players.save(player));
+    }
+
+    @Transactional
+    public void updateLevel(Authentication authentication, Nivel nivel) {
+        var player = player(authentication);
+        if (!Nivel.isPlayerLevel(nivel)) invalid("INVALID_FIELD", "nivelJugador");
+        if (players.actualizarNivelActivo(player.getId(), nivel, LocalDateTime.now()) != 1)
+            throw new AccountException(HttpStatus.UNAUTHORIZED, "SESSION_REQUIRED");
     }
 
     @Transactional

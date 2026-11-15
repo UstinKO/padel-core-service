@@ -107,6 +107,36 @@ class AccountIntegrationTest {
         mvc.perform(get("/api/players/me").with(authentication(auth))).andExpect(status().isOk()).andExpect(jsonPath("$.id").value(p.getId()));
         mvc.perform(get("/api/auth/session").with(authentication(auth))).andExpect(status().isOk()).andExpect(jsonPath("$.authenticated").value(true));
     }
+    @Test
+    void savesPlayingLevelForGooglePlayerWithoutChangingOtherProfileFields() throws Exception {
+        var player = player();
+        player.setNivelJugador(Nivel.SIN_ESPECIFICAR);
+        players.saveAndFlush(player);
+        var oauth = new CustomOAuth2User(mock(OAuth2User.class), player);
+        var auth = new UsernamePasswordAuthenticationToken(oauth, null, oauth.getAuthorities());
+
+        mvc.perform(patch("/api/players/me/level").with(authentication(auth)).with(csrf())
+                        .contentType("application/json").content("{\"nivelJugador\":\"C6\"}"))
+                .andExpect(status().isNoContent());
+
+        assertThat(players.findNivelById(player.getId())).contains(Nivel.C6);
+        assertThat(players.findByEmail(player.getEmail())).isPresent();
+    }
+
+    @Test
+    void rejectsMissingCsrfAndNonPlayerLevelsWithoutChangingProfile() throws Exception {
+        var player = player();
+
+        mvc.perform(patch("/api/players/me/level").with(user(player))
+                        .contentType("application/json").content("{\"nivelJugador\":\"C6\"}"))
+                .andExpect(status().isForbidden());
+        mvc.perform(patch("/api/players/me/level").with(user(player)).with(csrf())
+                        .contentType("application/json").content("{\"nivelJugador\":\"SIN_ESPECIFICAR\"}"))
+                .andExpect(status().isUnprocessableEntity());
+
+        assertThat(players.findNivelById(player.getId())).contains(Nivel.C7);
+    }
+
     @Test void invalidProfileAndPasswordDoNotPartiallyMutatePlayer() throws Exception {
         var p=player();
         mvc.perform(put("/api/players/me").with(user(p)).with(csrf()).contentType("application/json")
