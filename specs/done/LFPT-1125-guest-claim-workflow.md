@@ -1,7 +1,7 @@
 # LFPT-1125. Заявки на объединение профилей
 
 ## Статус
-testing
+done
 
 [Задача #1125](https://github.com/UstinKO/padel-core-service/issues/1125) развивает [#901](https://github.com/UstinKO/padel-core-service/issues/901). Интерфейс поставляется по [#1126](https://github.com/UstinKO/padel-core-service/issues/1126).
 
