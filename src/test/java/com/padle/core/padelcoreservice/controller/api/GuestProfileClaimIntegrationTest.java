@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.controller.api;
 
+import com.padle.core.padelcoreservice.config.GuestClaimContact;
 import com.padle.core.padelcoreservice.model.Club;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.Payment;
@@ -23,6 +24,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
@@ -34,11 +36,13 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.UUID;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
@@ -71,6 +75,7 @@ class GuestProfileClaimIntegrationTest {
     @Autowired GuestProfileClaimService claims;
     @Autowired TransactionTemplate transaction;
     @MockitoBean RecaptchaService captcha;
+    @MockitoSpyBean GuestClaimContact support;
 
     @ParameterizedTest
     @CsvSource({MOBILE + ", " + LOCAL, "+7 100 000-00-01, 007 100 000 00 01"})
@@ -89,6 +94,130 @@ class GuestProfileClaimIntegrationTest {
                 .andReturn().getResponse().getContentAsString();
         assertThat(result).doesNotContain(guest.getEmail(), storedPhone);
         assertThat(players.existsByEmail(email)).isFalse();
+    }
+
+    @Test
+    void recordsRequestWhenSupportWhatsappIsNotConfigured() throws Exception {
+        doReturn(Optional.empty()).when(support).url();
+        var account = player(false, null);
+        mvc.perform(post(REQUEST).with(user(account)).with(csrf()).contentType("application/json")
+                        .content(json.writeValueAsString(new Request(MOBILE))))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.number").exists())
+                .andExpect(jsonPath("$.whatsappUrl").doesNotExist());
+        mvc.perform(get(REQUEST).with(user(account))).andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].status").value("PENDING"));
+    }
+
+    @Test
+    void repeatedRequestKeepsItsNumberAndIsVisibleWithoutOpeningWhatsapp() throws Exception {
+        var account = player(false, null);
+        var other = player(false, null);
+        var reference = request(account, MOBILE);
+        assertThat(request(account, LOCAL)).isEqualTo(reference);
+
+        var own = mvc.perform(get(REQUEST).with(user(account)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$[0]").exists())
+                .andExpect(jsonPath("$[0].reference").value(reference.toString()))
+                .andExpect(jsonPath("$[0].status").value("PENDING"))
+                .andReturn().getResponse().getContentAsString();
+        long number = json.readTree(own).path(0).path("number").asLong();
+        mvc.perform(get(REQUEST).with(user(other))).andExpect(status().isOk())
+                .andExpect(content().json("[]"));
+        mvc.perform(get("/api/admin/guest-profile-claims").param("search", Long.toString(number))
+                        .with(user(owner(OwnerRole.ORGANIZER))))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.items[0].number").exists())
+                .andExpect(jsonPath("$.items[0].accountId").exists());
+        var profiles = mvc.perform(get("/api/admin/guest-profile-claims/profiles")
+                        .param("search", account.getId().toString()).param("guest", "false")
+                        .with(user(owner(OwnerRole.ORGANIZER))))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertThat(json.readTree(profiles).path(0).path("id").asLong()).isEqualTo(account.getId());
+        mvc.perform(get("/api/admin/guest-profile-claims").with(user(owner(OwnerRole.CLUB_ADMIN))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void clarificationAndRejectionAreVisibleOnlyToTheRequester() throws Exception {
+        var guest = player(true, MOBILE);
+        var account = player(false, null);
+        var organizer = owner(OwnerRole.ORGANIZER);
+        var reference = request(account);
+        mvc.perform(post(APPROVE, reference).with(user(organizer)).with(csrf())
+                        .contentType("application/json").content("{\"verified\":false}"))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("GUEST_CLAIM_VERIFICATION_REQUIRED"));
+        approve(reference, organizer, OTHER, 409, "code", "GUEST_CLAIM_PHONE_MISMATCH");
+        mvc.perform(get(REQUEST).with(user(account))).andExpect(jsonPath("$[0].status").value("NEEDS_DETAILS"));
+        mvc.perform(post("/api/admin/guest-profile-claims/{reference}/decision", reference)
+                        .with(user(organizer)).with(csrf()).contentType("application/json")
+                        .content("{\"decision\":\"REJECTED\"}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("REJECTED"));
+        approve(reference, organizer, MOBILE, 409, "code", "GUEST_CLAIM_ALREADY_DECIDED");
+        assertThat(players.findById(guest.getId()).orElseThrow().isActivo()).isTrue();
+    }
+
+    @Test
+    void manualMergeUsesSameChecksAndKeepsContactUntilReplacementIsExplicit() throws Exception {
+        var guest = player(true, MOBILE);
+        var account = player(false, OTHER);
+        var organizer = owner(OwnerRole.ORGANIZER);
+        var URL = "/api/admin/guest-profile-claims/manual";
+        mvc.perform(get(URL).with(user(organizer)).param("guestId", guest.getId().toString())
+                        .param("accountId", account.getId().toString()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.differences[0]").value("PHONE_DIFFERS"));
+        String payload = """
+                {"guestId":%d,"accountId":%d,"verified":true,"verificationMethod":"OTHER","replacePhone":%s}
+                """;
+        mvc.perform(post(URL).with(user(organizer)).with(csrf()).contentType("application/json")
+                        .content(payload.formatted(guest.getId(), account.getId(), false)))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("GUEST_CLAIM_ACCOUNT_PHONE_DIFFERS"));
+        for (int attempt = 0; attempt < 2; attempt++) {
+            mvc.perform(post(URL).with(user(organizer)).with(csrf()).contentType("application/json")
+                            .content(payload.formatted(guest.getId(), account.getId(), true)))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.playerId").value(account.getId().intValue()));
+        }
+        assertThat(jdbc.sql("""
+                SELECT initiator || ':' || verification_method FROM guest_profile_claims WHERE guest_id = :guest
+                """).param("guest", guest.getId()).query(String.class).single()).isEqualTo("ADMIN:OTHER");
+        assertThat(players.findById(account.getId()).orElseThrow().getTelefono()).isEqualTo(MOBILE);
+    }
+
+    @Test
+    void oldServerCanSaveAndApproveAfterDatabaseMigration() throws Exception {
+        var account = player(false, null);
+        var guest = player(true, MOBILE);
+        var original = request(account);
+        var owner = owner(OwnerRole.ORGANIZER);
+        mvc.perform(post("/api/admin/guest-profile-claims/{reference}/decision", original)
+                        .with(user(owner)).with(csrf()).contentType("application/json")
+                        .content("{\"decision\":\"REJECTED\"}"))
+                .andExpect(status().isOk());
+        var legacyId = UUID.randomUUID();
+        jdbc.sql("""
+                INSERT INTO guest_profile_claims(id, account_id, phone_key)
+                VALUES (:id, :account, '1122337755')
+                ON CONFLICT (account_id) WHERE approved_at IS NULL DO UPDATE
+                SET id = EXCLUDED.id, phone_key = EXCLUDED.phone_key, created_at = CURRENT_TIMESTAMP
+                """).param("id", legacyId).param("account", account.getId()).update();
+        jdbc.sql("""
+                UPDATE guest_profile_claims SET guest_id = :guest, approved_by = :owner,
+                  approved_at = CURRENT_TIMESTAMP, resolved_player_id = :account WHERE id = :id
+                """).param("id", legacyId).param("guest", guest.getId()).param("account", account.getId())
+                .param("owner", owner.getId()).update();
+        mvc.perform(get("/api/admin/guest-profile-claims/{reference}", legacyId).with(user(owner)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("MERGED"));
+        mvc.perform(get("/api/admin/guest-profile-claims/{reference}", original).with(user(owner)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("REJECTED"));
+    }
+
+    @Test
+    void serverWorksWithExistingWhatsappReviewFormDuringDeployment() throws Exception {
+        player(true, MOBILE);
+        var account = player(false, null);
+        var reference = request(account);
+        var organizer = owner(OwnerRole.ORGANIZER);
+        mvc.perform(post(APPROVE, reference).with(user(organizer)).with(csrf())
+                        .contentType("application/json").content("{\"whatsappSenderPhone\":\"" + LOCAL + "\"}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.playerId").value(account.getId().intValue()));
     }
 
     @Test
@@ -124,6 +253,9 @@ class GuestProfileClaimIntegrationTest {
         var event = tournament();
         var guestRow = registration(event, guest, booker);
         var bookerRow = registration(event, booker, guest);
+        jdbc.sql("INSERT INTO marketing_registrations_db(registration_id) VALUES (:id) ON CONFLICT DO NOTHING")
+                .param("id", guestRow.getId()).update();
+        var originalHash = account.getPasswordHash();
         var payment = payments.saveAndFlush(Payment.builder().registration(guestRow)
                 .amount(new BigDecimal("1234.50")).status(PaymentStatus.PAID).build());
         var reference = request(account, requestPhone);
@@ -138,6 +270,10 @@ class GuestProfileClaimIntegrationTest {
         em.clear();
         assertThat(players.findById(guest.getId()).orElseThrow().isActivo()).isFalse();
         assertThat(players.findById(account.getId()).orElseThrow().getTelefono()).isEqualTo(storedPhone);
+        assertThat(players.findById(account.getId()).orElseThrow().getPasswordHash()).isEqualTo(originalHash);
+        assertThat(players.findById(account.getId()).orElseThrow().getEmail()).isEqualTo(account.getEmail());
+        assertThat(jdbc.sql("SELECT count(*) FROM marketing_registrations_db WHERE registration_id = :id")
+                .param("id", guestRow.getId()).query(Long.class).single()).isEqualTo(1);
         var moved = registrations.findById(guestRow.getId()).orElseThrow();
         assertThat(moved.getPlayer().getId()).isEqualTo(account.getId());
         assertThat(moved.getStatus()).isEqualTo(RegistrationStatus.WAITLIST);
@@ -227,7 +363,7 @@ class GuestProfileClaimIntegrationTest {
 
     private String approveInTransaction(UUID reference) {
         try {
-            claims.approve(reference, new Approval(MOBILE), 9876L);
+            claims.approve(reference, new Approval(MOBILE, true, null, null, false), 9876L);
             return "APPROVED";
         } catch (AccountException e) {
             return e.getMessage();
@@ -241,7 +377,7 @@ class GuestProfileClaimIntegrationTest {
     }
 
     private String approval(String phone) {
-        return "{\"whatsappSenderPhone\":\"" + phone + "\"}";
+        return "{\"whatsappSenderPhone\":\"" + phone + "\",\"verified\":true}";
     }
 
     private UUID request(PlayerPadel account) throws Exception {
