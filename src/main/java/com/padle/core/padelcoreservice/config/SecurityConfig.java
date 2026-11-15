@@ -83,6 +83,7 @@ public class SecurityConfig {
 
     private static boolean isGuestClaimPath(String path) {
         return path.equals("/api/players/me/guest-profile-claims")
+                || path.equals("/api/admin/guest-profile-claims")
                 || path.startsWith("/api/admin/guest-profile-claims/")
                 || (path.startsWith("/api/admin/players/") && path.endsWith("/activate-guest-profile"));
     }
