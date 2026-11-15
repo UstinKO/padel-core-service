@@ -1,7 +1,7 @@
 # LFPT-1126. Интерфейс объединения гостевого профиля
 
 ## Статус
-testing
+done
 
 [Задача #1126](https://github.com/UstinKO/padel-core-service/issues/1126) зависит от [#1125](https://github.com/UstinKO/padel-core-service/issues/1125). Используются действующие страницы профиля и списка игроков.
 
