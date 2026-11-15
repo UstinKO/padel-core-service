@@ -18,22 +18,23 @@ import java.util.UUID;
 @Repository
 @RequiredArgsConstructor
 public class GuestProfileClaimRepository {
-    private static final String COLUMNS = "id, request_number, account_id, phone_key, guest_id, resolved_player_id, status, created_at, review_reason";
+    private static final String COLUMNS = "id, request_number, coalesce(account_id, rejected_account_id) AS account_id, phone_key, " +
+            "guest_id, resolved_player_id, status, created_at, review_reason";
     private final JdbcClient jdbc;
 
     public Claim saveRequest(long accountId, String phone) {
         return jdbc.sql("""
                 INSERT INTO guest_profile_claims(id, account_id, phone_key)
                 VALUES (:reference, :account, :phone)
-                ON CONFLICT (account_id, phone_key) WHERE status IN ('PENDING','NEEDS_DETAILS') DO UPDATE
-                SET phone_key = EXCLUDED.phone_key
+                ON CONFLICT (account_id) WHERE approved_at IS NULL DO UPDATE
+                SET phone_key = guest_profile_claims.phone_key
                 RETURNING
                 """ + COLUMNS).param("reference", UUID.randomUUID()).param("account", accountId).param("phone", phone)
                 .query((rs, n) -> claim(rs)).single();
     }
 
     public Optional<Claim> request(UUID reference, boolean lock) {
-        String sql = "SELECT " + COLUMNS + " FROM guest_profile_claims WHERE id = :reference AND account_id IS NOT NULL";
+        String sql = "SELECT " + COLUMNS + " FROM guest_profile_claims WHERE id = :reference AND (account_id IS NOT NULL OR rejected_account_id IS NOT NULL)";
         return jdbc.sql(lock ? sql + " FOR UPDATE" : sql).param("reference", reference)
                 .query((rs, n) -> claim(rs)).optional();
     }
@@ -50,7 +51,7 @@ public class GuestProfileClaimRepository {
 
     public List<Claim> forAccount(long accountId) {
         return jdbc.sql("SELECT " + COLUMNS + "\n" + """
-                 FROM guest_profile_claims WHERE account_id = :account
+                 FROM guest_profile_claims WHERE account_id = :account OR rejected_account_id = :account
                  ORDER BY CASE WHEN status IN ('PENDING','NEEDS_DETAILS') THEN 0 ELSE 1 END, created_at DESC, request_number DESC
                  """).param("account", accountId)
                 .query((rs, n) -> claim(rs)).list();
@@ -58,12 +59,12 @@ public class GuestProfileClaimRepository {
 
     public List<QueueItem> queue(String search, String normalizedPhone, Status status, int limit, long offset) {
         return jdbc.sql("""
-                SELECT c.id, c.request_number, c.created_at, c.account_id, c.phone_key, c.status,
+                SELECT c.id, c.request_number, c.created_at, p.id AS account_id, c.phone_key, c.status,
                        concat_ws(' ', p.nombre, p.apellido) AS account_name
-                FROM guest_profile_claims c JOIN player_padel_db p ON p.id = c.account_id
+                FROM guest_profile_claims c JOIN player_padel_db p ON p.id = coalesce(c.account_id, c.rejected_account_id)
                 WHERE (CAST(:status AS text) IS NULL OR c.status = :status)
                   AND (:search = '' OR c.request_number::text = :search OR c.id::text = lower(:search)
-                        OR c.account_id::text = :search OR c.phone_key = :phone
+                        OR p.id::text = :search OR c.phone_key = :phone
                         OR strpos(lower(concat_ws(' ',p.nombre,p.apellido,p.email)), lower(:search)) > 0)
                 ORDER BY CASE c.status WHEN 'PENDING' THEN 0 WHEN 'NEEDS_DETAILS' THEN 1 ELSE 2 END,
                          c.created_at DESC, c.request_number DESC
@@ -102,7 +103,9 @@ public class GuestProfileClaimRepository {
     public void decide(UUID reference, Status status, long ownerId, String reason) {
         jdbc.sql("""
                 UPDATE guest_profile_claims
-                SET status = :status, reviewed_by = :owner, reviewed_at = CURRENT_TIMESTAMP, review_reason = :reason
+                SET status = :status, reviewed_by = :owner, reviewed_at = CURRENT_TIMESTAMP, review_reason = :reason,
+                    rejected_account_id = CASE WHEN :status = 'REJECTED' THEN account_id ELSE rejected_account_id END,
+                    account_id = CASE WHEN :status = 'REJECTED' THEN NULL ELSE account_id END
                 WHERE id = :reference
                 """).param("reference", reference).param("status", status.name()).param("owner", ownerId)
                 .param("reason", reason).update();

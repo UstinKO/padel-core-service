@@ -182,6 +182,45 @@ class GuestProfileClaimIntegrationTest {
     }
 
     @Test
+    void oldServerCanSaveAndApproveAfterDatabaseMigration() throws Exception {
+        var account = player(false, null);
+        var guest = player(true, MOBILE);
+        var original = request(account);
+        var owner = owner(OwnerRole.ORGANIZER);
+        mvc.perform(post("/api/admin/guest-profile-claims/{reference}/decision", original)
+                        .with(user(owner)).with(csrf()).contentType("application/json")
+                        .content("{\"decision\":\"REJECTED\"}"))
+                .andExpect(status().isOk());
+        var legacyId = UUID.randomUUID();
+        jdbc.sql("""
+                INSERT INTO guest_profile_claims(id, account_id, phone_key)
+                VALUES (:id, :account, '1122337755')
+                ON CONFLICT (account_id) WHERE approved_at IS NULL DO UPDATE
+                SET id = EXCLUDED.id, phone_key = EXCLUDED.phone_key, created_at = CURRENT_TIMESTAMP
+                """).param("id", legacyId).param("account", account.getId()).update();
+        jdbc.sql("""
+                UPDATE guest_profile_claims SET guest_id = :guest, approved_by = :owner,
+                  approved_at = CURRENT_TIMESTAMP, resolved_player_id = :account WHERE id = :id
+                """).param("id", legacyId).param("guest", guest.getId()).param("account", account.getId())
+                .param("owner", owner.getId()).update();
+        mvc.perform(get("/api/admin/guest-profile-claims/{reference}", legacyId).with(user(owner)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("MERGED"));
+        mvc.perform(get("/api/admin/guest-profile-claims/{reference}", original).with(user(owner)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("REJECTED"));
+    }
+
+    @Test
+    void serverWorksWithExistingWhatsappReviewFormDuringDeployment() throws Exception {
+        player(true, MOBILE);
+        var account = player(false, null);
+        var reference = request(account);
+        var organizer = owner(OwnerRole.ORGANIZER);
+        mvc.perform(post(APPROVE, reference).with(user(organizer)).with(csrf())
+                        .contentType("application/json").content("{\"whatsappSenderPhone\":\"" + LOCAL + "\"}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.playerId").value(account.getId().intValue()));
+    }
+
+    @Test
     void activationKeepsOriginalRegistrationAndRejectsOldCredentials() throws Exception {
         var guest = player(true, MOBILE);
         var registration = registration(tournament(), guest, null);

@@ -40,7 +40,11 @@ public class GuestProfileClaimService {
         }
         String phone = lockPhone(input.phone());
         var existing = claims.matchingRequest(account.getId(), phone, false);
-        return receipt(existing.orElseGet(() -> claims.saveRequest(account.getId(), phone)), account);
+        var claim = existing.orElseGet(() -> claims.saveRequest(account.getId(), phone));
+        if (!claim.phone().equals(phone)) {
+            throw conflict("GUEST_CLAIM_OPEN_FOR_OTHER_PHONE");
+        }
+        return receipt(claim, account);
     }
 
     public List<RequestReceipt> ownRequests(PlayerPadel account) {
@@ -125,7 +129,11 @@ public class GuestProfileClaimService {
 
     @Transactional(noRollbackFor = NeedsDetails.class)
     public Result approve(UUID reference, Approval input, long ownerId) {
-        requireVerified(input.verified());
+        // Старая форма уже требует вручную ввести фактический номер отправителя.
+        // Новая форма также передаёт явную отметку и способ проверки.
+        boolean legacyForm = input.verified() == null && input.verificationMethod() == null
+                && input.guestId() == null && !input.replacePhone() && hasText(input.whatsappSenderPhone());
+        if (!legacyForm) requireVerified(input.verified());
         var method = input.verificationMethod() == null ? Verification.WHATSAPP : input.verificationMethod();
         // Сначала блокируем телефон: ручное подтверждение и подтверждение заявки используют тот же порядок.
         var snapshot = claims.request(reference, false).orElseThrow(GuestProfileClaimService::missing);
