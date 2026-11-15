@@ -74,7 +74,7 @@
             time.dateTime = receipt.createdAt;
             time.textContent = t.date(receipt.createdAt);
             const help = { PENDING: 'pendingHelp', NEEDS_DETAILS: 'detailsHelp', MERGED: 'mergedHelp', REJECTED: 'rejectedHelp' };
-            $(item, '[data-claim-guidance]').textContent = t.get(help[receipt.status]) + ' ' + title;
+            $(item, '[data-claim-guidance]').textContent = t.get(help[receipt.status]);
             if (receipt.status === 'MERGED' || receipt.status === 'REJECTED') {
                 $(item, '[data-claim-contact]').hidden = true;
                 return item;
@@ -182,7 +182,10 @@
             check.hidden = !review.differences.includes('PHONE_DIFFERS');
             form.elements.replacePhone.required = !check.hidden;
             syncMethod();
-            if (focus) heading.focus();
+            if (focus) {
+                heading.focus({ preventScroll: true });
+                heading.scrollIntoView({ block: 'start' });
+            }
         }
 
         async function refresh(context, focus = true) {

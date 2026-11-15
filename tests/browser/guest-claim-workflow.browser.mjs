@@ -9,6 +9,7 @@ const { chromium, devices } = await import(pathToFileURL(process.env.PLAYWRIGHT_
 const password = process.env.GUEST_CLAIM_QA_PASSWORD;
 assert.ok(password, 'Set the synthetic fixture password');
 const browser = await chromium.launch({ executablePath: process.env.CHROME_EXECUTABLE });
+const screenshotStyle = 'header, .navbar { visibility: hidden !important; }';
 const evidence = resolve(process.env.GUEST_CLAIM_QA_EVIDENCE || 'target/guest-claim-browser');
 await mkdir(evidence, { recursive: true });
 const mainPhone = '011 15 2233-7755';
@@ -97,7 +98,7 @@ try {
             await expectText(reopened.locator('[data-claim-state]'), labels.pending);
             assert.equal(await reopened.locator('[data-claim-whatsapp]').getAttribute('href'), link.href);
             assert.deepEqual(session.pageErrors, []);
-            if (mobile && lang === 'ru') await section.screenshot({ path: resolve(evidence, 'profile-mobile-ru.png') });
+            if (mobile && lang === 'ru') await section.screenshot({ path: resolve(evidence, 'profile-mobile-ru.png'), style: screenshotStyle });
             await session.context.close();
 
             const admin = await login('qa-owner@example.test', lang, mobile);
@@ -144,7 +145,7 @@ try {
     await review(requestNumber);
     await expectText(comparison.locator('[data-claim-direction]'), /Attach guest profile #\d+ to account #\d+/);
     assert.equal(await comparison.locator('[data-claim-profile="guest"] [data-field="registrations"]').innerText(), '1');
-    await comparison.screenshot({ path: resolve(evidence, 'admin-review-desktop-en.png') });
+    await comparison.screenshot({ path: resolve(evidence, 'admin-review-desktop-en.png'), style: screenshotStyle });
     const merge = comparison.locator('[data-claim-merge]');
     await merge.locator('input[name=sender]').fill('+54 9 11 2233-7755');
     await merge.locator('input[name=verified]').check();

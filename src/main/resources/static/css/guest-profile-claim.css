@@ -110,3 +110,14 @@
     max-width: 100%;
     white-space: normal;
 }
+
+.guest-claim .claim-card,
+.guest-claim [data-claim-title] {
+    scroll-margin-block: 9rem 1rem;
+}
+
+.guest-claim .form-select {
+    min-height: 42px;
+    padding: .55rem .65rem;
+    font: inherit;
+}
