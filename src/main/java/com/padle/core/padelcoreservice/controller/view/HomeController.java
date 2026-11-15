@@ -3,6 +3,8 @@ package com.padle.core.padelcoreservice.controller.view;
 import tools.jackson.databind.ObjectMapper;
 import com.padle.core.padelcoreservice.dto.PlayerResponseDto;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
+import com.padle.core.padelcoreservice.model.Owner;
+import com.padle.core.padelcoreservice.security.AccountDestination;
 import com.padle.core.padelcoreservice.security.TournamentLogin;
 import com.padle.core.padelcoreservice.service.PlayerService;
 import com.padle.core.padelcoreservice.service.TournamentService;
@@ -105,9 +107,11 @@ public class HomeController {
 
         var tournament = TournamentLogin.requestedTournament(request);
         if (isAuthenticated) {
-            if (isOwner(authentication)) {
-                return "redirect:/admin";
+            if (authentication.getPrincipal() instanceof Owner) {
+                var management = AccountDestination.requested(request).flatMap(AccountDestination::tournamentManagement);
+                if (management.isPresent()) return "redirect:" + management.orElseThrow();
             }
+            if (isOwner(authentication)) return "redirect:/admin";
             return "redirect:" + tournament.map(TournamentLogin::registrationUrl).orElse("/players/dashboard");
         }
 

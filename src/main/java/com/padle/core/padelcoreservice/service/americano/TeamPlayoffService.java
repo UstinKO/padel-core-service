@@ -352,6 +352,10 @@ public class TeamPlayoffService {
                 .collect(Collectors.toList());
     }
 
+    public Set<Long> findConductIds(List<Long> tournamentIds) {
+        return tournamentIds.isEmpty() ? Set.of() : Set.copyOf(roundRepository.findTeamPlayoffConductIds(tournamentIds));
+    }
+
     public boolean isQualificationStarted(Long tournamentId) {
         return !roundRepository.findByTournamentIdAndPhase(tournamentId, TournamentPhase.QUALIFICATION).isEmpty();
     }
