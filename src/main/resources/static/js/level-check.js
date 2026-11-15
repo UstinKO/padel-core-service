@@ -66,7 +66,61 @@ const LevelCheck = (() => {
         }
     }
 
-    function show(tournamentId) {
+    function showInline(dialog, onSaved) {
+        if (dialog.open) return;
+
+        const form = document.getElementById('registrationLevelForm');
+        const select = document.getElementById('registrationLevel');
+        const save = document.getElementById('registrationLevelSave');
+        const cancel = document.getElementById('registrationLevelCancel');
+        const error = document.getElementById('registrationLevelError');
+
+        form.reset();
+        error.hidden = true;
+        document.getElementById('registrationLevelTitle').textContent = t('level.modal.title');
+        document.getElementById('registrationLevelDescription').textContent = t('level.registration.desc');
+        select.options[0].textContent = t('level.registration.select');
+        save.textContent = t('level.registration.save');
+        cancel.textContent = t('level.btn.cancel');
+        cancel.onclick = () => dialog.close();
+        dialog.oncancel = event => {
+            if (save.disabled) event.preventDefault();
+        };
+        form.onsubmit = async event => {
+            event.preventDefault();
+            if (save.disabled || !select.value) return;
+
+            const nivelJugador = select.value;
+            save.disabled = cancel.disabled = select.disabled = true;
+            error.hidden = true;
+            try {
+                const response = await fetch('/api/players/me/level', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nivelJugador })
+                });
+                if (!response.ok) throw new Error();
+            } catch {
+                error.textContent = t('level.registration.error');
+                error.hidden = false;
+                return;
+            } finally {
+                save.disabled = cancel.disabled = select.disabled = false;
+            }
+            dialog.close();
+            onSaved?.();
+        };
+
+        dialog.showModal();
+        select.focus();
+    }
+
+    function show(tournamentId, onSaved) {
+        const inlineDialog = document.getElementById('registrationLevelDialog');
+        if (inlineDialog) {
+            showInline(inlineDialog, onSaved);
+            return;
+        }
         ensureModal();
         rememberTournament(tournamentId);
         document.getElementById('levelCheckModal').style.display = 'flex';

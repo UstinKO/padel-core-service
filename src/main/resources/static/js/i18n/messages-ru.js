@@ -88,6 +88,11 @@ window.APP_MESSAGES = {
     'level.modal.desc':   'Для регистрации на турнир сначала укажите свой уровень в личном кабинете.',
     'level.btn.cancel':   'Отмена',
     'level.btn.go':       'Указать уровень',
+    'level.registration.desc': 'Укажите свой уровень игры, чтобы продолжить запись на этот турнир.',
+    'level.registration.select': 'Выберите уровень',
+    'level.registration.save': 'Сохранить уровень',
+    'level.registration.error': 'Не удалось сохранить уровень. Попробуйте ещё раз.',
+    'level.registration.saved': 'Уровень сохранён. Нажмите кнопку записи, чтобы продолжить.',
     'level.profile.return_banner': 'Теперь вы можете вернуться к незавершённой регистрации.',
     'level.profile.return_link':   'Вернуться к турниру',
 

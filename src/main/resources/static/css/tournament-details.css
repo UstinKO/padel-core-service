@@ -1688,3 +1688,45 @@ textarea.form-control {
 @media (max-width: 600px) {
     .calendar-options { position: fixed; top: auto; bottom: 1rem; left: 1rem; right: 1rem; width: auto; max-height: 70vh; max-height: 70dvh; }
 }
+
+.registration-level-dialog {
+    width: min(420px, calc(100% - 2rem));
+    max-height: calc(100% - 2rem);
+    margin: auto;
+    padding: 1.25rem;
+    border: 0;
+    border-radius: 12px;
+    color: #1e293b;
+    background: #fff;
+}
+
+.registration-level-dialog::backdrop {
+    background: rgba(0, 0, 0, .5);
+}
+
+.registration-level-dialog h3,
+.registration-level-dialog p {
+    margin: 0 0 .75rem;
+}
+
+.registration-level-dialog label {
+    display: block;
+    margin-bottom: .35rem;
+}
+
+#registrationLevelError {
+    margin-top: .75rem;
+    color: #b42318;
+}
+
+.registration-level-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: .5rem;
+    margin-top: 1rem;
+}
+
+#registrationLevelStatus:empty {
+    display: none;
+}
