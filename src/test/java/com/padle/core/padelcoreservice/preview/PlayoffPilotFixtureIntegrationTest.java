@@ -3,6 +3,7 @@ package com.padle.core.padelcoreservice.preview;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.americano.AmericanoMatch;
 import com.padle.core.padelcoreservice.model.enums.OwnerRole;
+import com.padle.core.padelcoreservice.model.enums.PlayoffStage;
 import com.padle.core.padelcoreservice.model.enums.TournamentPhase;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.preview.PlayoffPilotFixtureService.Accounts;
@@ -23,6 +24,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.mock.web.MockHttpSession;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -34,6 +37,8 @@ import tools.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;
 
 import java.util.List;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Comparator;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -50,6 +55,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
+import static org.hamcrest.Matchers.containsString;
 
 @SpringBootTest(properties = {"recaptcha.enabled=false", "app.scheduling.enabled=false", "app.auth.google-enabled=false"})
 @AutoConfigureMockMvc
@@ -193,6 +201,77 @@ class PlayoffPilotFixtureIntegrationTest {
         rejectedBoundary.set(true);
         assertThatThrownBy(fixtures::reset).hasMessage("Неверная граница preview");
         assertThat(storedState()).isEqualTo(stored);
+    }
+
+    @Test
+    void reLoginReturnsToSelectedConductAndChecksClubAccess() throws Exception {
+        var state = fixtures.seed();
+        String finished = "/tournaments/team-playoff/admin/" + scenario(state, "finished-8");
+        String unfinished = "/tournaments/team-playoff/admin/" + scenario(state, "qualified-8");
+        String finishedLogin = "/login?destination=" + URLEncoder.encode(finished, StandardCharsets.UTF_8);
+        String unfinishedLogin = "/login?destination=" + URLEncoder.encode(unfinished, StandardCharsets.UTF_8);
+
+        mvc.perform(get(finished)).andExpect(redirectedUrl(finishedLogin));
+        mvc.perform(get(unfinished)).andExpect(redirectedUrl(unfinishedLogin));
+        mvc.perform(get("/login").param("destination", finished))
+                .andExpect(content().string(containsString("value=\"" + finished + "\"")));
+        mvc.perform(post("/login").with(csrf()).param("username", "pilot-manager@example.test")
+                        .param("password", "wrong-test-password").param("destination", finished))
+                .andExpect(redirectedUrl("/login?error=true&destination="
+                        + URLEncoder.encode(finished, StandardCharsets.UTF_8)));
+
+        var session = loginManager("pilot-manager@example.test", finished);
+        mvc.perform(get(finished).session(session)).andExpect(status().isOk());
+        mvc.perform(get("/login").param("destination", unfinished).session(session))
+                .andExpect(redirectedUrl(unfinished));
+        mvc.perform(get(unfinished).session(session)).andExpect(status().isOk());
+
+        var foreign = loginManager("pilot-foreign@example.test", finished);
+        mvc.perform(get(finished).session(foreign)).andExpect(redirectedUrl("/error/403"));
+        mvc.perform(get(finished).with(user("player").roles("PLAYER"))).andExpect(redirectedUrl("/error/403"));
+    }
+
+    @Test
+    void missingFinalAndCorrectionUseTheSameTournamentWithHistory() throws Exception {
+        var state = fixtures.seed();
+        long event = scenario(state, "qualified-8");
+        long secondEvent = scenario(state, "finished-8");
+        long otherRevision = history.revision(secondEvent);
+        String adminPage = "/tournaments/team-playoff/admin/" + event;
+        playoff.initPlayoff(event);
+        for (PlayoffStage stage : List.of(PlayoffStage.QUARTER_FINAL, PlayoffStage.SEMI_FINAL)) {
+            matches.findByTournamentIdAndPlayoffStage(event, stage)
+                    .forEach(match -> playoff.submitPlayoffResult(match.getId(), 6, 3));
+        }
+        var finalMatch = matches.findByTournamentIdAndPlayoffStage(event, PlayoffStage.FINAL).get(0);
+        assertThat(finalMatch.isCompleted()).isFalse();
+        var manager = loginManager("pilot-manager@example.test", adminPage);
+        mvc.perform(get(adminPage).session(manager)).andExpect(status().isOk());
+        String result = "/tournaments/team-playoff/api/playoff-matches/" + finalMatch.getId() + "/result";
+
+        mvc.perform(post(result).session(manager).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"team1Games\":6,\"team2Games\":3}"))
+                .andExpect(status().isOk()).andExpect(content().string(containsString("\"success\":true")));
+        assertThat(tournaments.findById(event).orElseThrow().getEstado()).isEqualTo(TournamentStatus.FINALIZADO);
+        long savedRevision = history.revision(event);
+        long matchCount = matches.findByTournamentIdAndPhase(event, TournamentPhase.PLAYOFF).size();
+
+        var freshSession = loginManager("pilot-manager@example.test", adminPage);
+        mvc.perform(get(adminPage).session(freshSession)).andExpect(status().isOk());
+        mvc.perform(post(result).session(freshSession).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"team1Games\":6,\"team2Games\":4}"))
+                .andExpect(status().isOk()).andExpect(content().string(containsString("\"success\":true")));
+        var corrected = matches.findById(finalMatch.getId()).orElseThrow();
+        assertThat(corrected.getTeam2Games()).isEqualTo(4);
+        assertThat(history.revision(event)).isGreaterThan(savedRevision);
+        assertThat(matches.findByTournamentIdAndPhase(event, TournamentPhase.PLAYOFF)).hasSize((int) matchCount);
+        assertThat(history.revision(secondEvent)).isEqualTo(otherRevision);
+    }
+
+    private MockHttpSession loginManager(String email, String destination) throws Exception {
+        return (MockHttpSession) mvc.perform(post("/login").with(csrf()).param("username", email)
+                        .param("password", properties.fixturePassword()).param("destination", destination))
+                .andExpect(redirectedUrl(destination)).andReturn().getRequest().getSession(false);
     }
 
     private long scenario(PlayoffPilotFixtureService.Fixtures state, String key) {

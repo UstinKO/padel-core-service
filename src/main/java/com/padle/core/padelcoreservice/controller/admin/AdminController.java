@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Stream;
 import java.util.stream.Collectors;
 
@@ -144,14 +145,21 @@ public class AdminController {
 
         List<TournamentDto> visible = visibleTournaments(owner);
         boolean invalidPeriod = from != null && to != null && from.isAfter(to);
-        List<Map<String, Object>> rows = invalidPeriod ? List.of() : visible.stream()
+        List<TournamentDto> filtered = invalidPeriod ? List.of() : visible.stream()
                 .filter(t -> clubId == null || clubId.equals(t.getClubId()))
                 .filter(t -> format == null || format == AdminEventFormat.of(t))
                 .filter(t -> matchesPeriod(t.getFechaInicio(), from, to))
                 .filter(t -> gender == null || gender == t.getGeneroFormato())
                 .filter(t -> level == null || matchesDeclaredLevel(t.getCategoriaNivel(), level))
                 .filter(t -> status == null || status == t.getEstado())
-                .map(t -> tournamentListRow(t, owner))
+                .toList();
+        Set<Long> teamPlayoffConduct = teamPlayoffService.findConductIds(filtered.stream()
+                .filter(AdminController::canHaveTeamPlayoffConduct)
+                .filter(t -> tournamentAccessService.canManage(owner, t.getOwnerId(), t.getClubId()))
+                .map(TournamentDto::getId)
+                .toList());
+        List<Map<String, Object>> rows = filtered.stream()
+                .map(t -> tournamentListRow(t, owner, teamPlayoffConduct.contains(t.getId())))
                 .toList();
 
         model.addAttribute("tournaments", rows);
@@ -220,7 +228,13 @@ public class AdminController {
                 && Arrays.asList(declared.split("_")).contains(selected);
     }
 
-    private Map<String, Object> tournamentListRow(TournamentDto tournament, Owner owner) {
+    private static boolean canHaveTeamPlayoffConduct(TournamentDto tournament) {
+        return Boolean.TRUE.equals(tournament.getIsActive())
+                && (tournament.getTipo() == TournamentType.AMERICANO_TEAMS
+                    || (tournament.getTipo() == TournamentType.AMERICANO && tournament.getModalidad() == Modalidad.DOBLES));
+    }
+
+    private Map<String, Object> tournamentListRow(TournamentDto tournament, Owner owner, boolean teamPlayoffConduct) {
         boolean canManage = tournamentAccessService.canManage(owner, tournament.getOwnerId(), tournament.getClubId());
         String automaticName = Tournament.generateNombre(tournament.getGeneroFormato(),
                 Nivel.parseOrNull(tournament.getCategoriaNivel()));
@@ -230,6 +244,7 @@ public class AdminController {
         row.put("canCopy", !owner.isAdminRole());
         row.put("canView", canManage || owner.isAdminRole());
         row.put("format", AdminEventFormat.of(tournament));
+        row.put("teamPlayoffConduct", teamPlayoffConduct);
         row.put("customName", Objects.equals(automaticName, tournament.getNombre()) ? "" : tournament.getNombre());
         return row;
     }
@@ -370,6 +385,8 @@ public class AdminController {
             model.addAttribute("playoffTeamsCount", teamPlayoffService.getTeams(id).size());
         }
 
+        model.addAttribute("teamPlayoffConduct", canHaveTeamPlayoffConduct(tournament)
+                && teamPlayoffService.findConductIds(List.of(id)).contains(id));
         return "admin/tournaments/details";
     }
 
