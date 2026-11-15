@@ -22,6 +22,7 @@ public final class AccountDtos {
     public record Profile(Long id, String nombre, String apellido, String email, String telefono,
                           String telegramUsername, Nivel nivelJugador, String preferredLocale,
                           boolean guestAccount, boolean oauth2User) {}
+    public record LevelUpdate(@NotNull Nivel nivelJugador) {}
     public record ProfileUpdate(@NotBlank @Size(min=3,max=100) @NoBotPattern @Pattern(regexp="^[\\p{L} .'-]{3,}$") String nombre,
                                 @NotBlank @Size(min=3,max=100) @NoBotPattern @Pattern(regexp="^[\\p{L} .'-]{3,}$") String apellido,
                                 @NotBlank @Email @Size(max=150) String email,

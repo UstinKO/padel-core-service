@@ -13,6 +13,7 @@
 | POST | `/api/players/registro` | Анонимный + CSRF | RegistroRequestDto + website honeypot/destination; 201 REGISTERED, затем обычный `/login`. Правило телефон ИЛИ Telegram, email автоматически подтверждается |
 | GET | `/api/players/me` | PlayerPadel или Google-player | Собственный Profile: id/nombre/apellido/email/telefono/telegramUsername/nivelJugador/preferredLocale/guestAccount/oauth2User |
 | PUT | `/api/players/me` | PlayerPadel или Google-player + CSRF | Полный ProfileUpdate, те же редактируемые поля; email меняется только у guest; сервер не принимает id/роль/активность |
+| PATCH | `/api/players/me/level` | PlayerPadel или Google-player + CSRF | Принимает `{"nivelJugador":"C7"}`, меняет только уровень собственного активного профиля. Ответ 204. |
 | POST | `/api/players/me/password` | PlayerPadel или Google-player + CSRF | currentPassword/newPassword/confirmPassword; текущий пароль обязателен, минимальная длина нового 6 как в существующем reset; успех PASSWORD_CHANGED |
 | POST | `/api/password-reset/request` | Анонимный + CSRF | email/destination; одинаковый RESET_REQUESTED для известной и неизвестной почты |
 | GET | `/api/password-reset/validate` | Публичный | token; valid/code TOKEN_VALID или RESET_TOKEN_INVALID, без изменения токена |
