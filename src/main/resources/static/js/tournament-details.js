@@ -458,9 +458,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showModal(tournamentId) {
-        if (partnerModal) {
+        if (partnerModal && !partnerModal.classList.contains('show')) {
             partnerModal.classList.add('show');
-            window.trackClarityRegistrationStep?.(tournamentId, 'form_opened');
+            window.trackTournamentRegistrationFormOpened?.(tournamentId);
         }
     }
 
@@ -586,6 +586,33 @@ document.addEventListener('DOMContentLoaded', function() {
     const registerBtn = document.querySelector('.btn-register');
     const cancelBtn = document.querySelector('button.btn-cancel');
 
+    const registrationLevelStatus = document.getElementById('registrationLevelStatus');
+    let registrationLevelMissing = registerBtn?.dataset.registrationLevelMissing === 'true';
+
+    function askForRegistrationLevel(tournamentId, onSaved) {
+        registrationLevelMissing = true;
+        LevelCheck.show(tournamentId, () => {
+            registrationLevelMissing = false;
+            onSaved?.();
+        });
+    }
+
+    function continueSingleRegistration(button) {
+        if (registrationLevelStatus) registrationLevelStatus.textContent = t('level.registration.saved');
+        button.focus();
+    }
+
+    function openPairRegistration(tournamentId, tournamentName) {
+        ContactCheck.beforeRegister(tournamentId, tournamentName, () => {
+            const modalTournamentId = document.getElementById('modalTournamentId');
+            const modalTournamentName = document.getElementById('modalTournamentName');
+            if (modalTournamentId) modalTournamentId.value = tournamentId;
+            if (modalTournamentName) modalTournamentName.textContent = tournamentName;
+
+            showModal(tournamentId);
+        });
+    }
+
     if (registerBtn) {
         console.log('✅ Register button found');
 
@@ -599,28 +626,22 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Register clicked for tournament:', tournamentId, tournamentName);
             console.log('Tournament modalidad:', window.tournament?.modalidad);
 
-            // Проверяем, парный ли турнир
-            if (isDoubleTournament()) {
-                console.log('🎾 Double tournament - checking contacts first');
-                event.preventDefault();
-                event.stopPropagation();
+            event.preventDefault();
+            event.stopPropagation();
 
-                // Сначала проверяем контактные данные игрока,
-                // и только после — открываем форму регистрации пары.
-                ContactCheck.beforeRegister(tournamentId, tournamentName, () => {
-                    const modalTournamentId = document.getElementById('modalTournamentId');
-                    const modalTournamentName = document.getElementById('modalTournamentName');
-
-                    if (modalTournamentId) modalTournamentId.value = tournamentId;
-                    if (modalTournamentName) modalTournamentName.textContent = tournamentName;
-
-                    showModal(tournamentId);
+            const isPair = isDoubleTournament();
+            if (registrationLevelMissing) {
+                askForRegistrationLevel(tournamentId, () => {
+                    if (isPair) openPairRegistration(tournamentId, tournamentName);
+                    else continueSingleRegistration(newRegisterBtn);
                 });
-            } else {
-                console.log('🎾 Single tournament - using ContactCheck');
-                event.preventDefault();
-                event.stopPropagation();
+                return;
+            }
 
+            if (registrationLevelStatus) registrationLevelStatus.textContent = '';
+            if (isPair) {
+                openPairRegistration(tournamentId, tournamentName);
+            } else {
                 // ВСЯ ЛОГИКА РЕГИСТРАЦИИ В ContactCheck
                 if (typeof ContactCheck !== 'undefined' && ContactCheck.beforeRegister) {
                     ContactCheck.beforeRegister(tournamentId, tournamentName, async () => {
@@ -648,12 +669,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                 }
                             } else if (data.needLevel) {
                                 window.trackClarityRegistrationError?.(tournamentId, 'level_required');
-                                // Попап "указать уровень" вместо обычной ошибки
                                 btn.disabled = false;
                                 btn.innerHTML = window.tournament?.inscritosActuales >= window.tournament?.cupoMax ?
                                     `<i class="fas fa-clock"></i> ${t('details.btn.waitlist')}` :
                                     `<i class="fas fa-check-circle"></i> ${t('details.btn.register')}`;
-                                LevelCheck.show(tournamentId);
+                                askForRegistrationLevel(tournamentId, () => continueSingleRegistration(btn));
                             } else {
                                 window.trackClarityRegistrationError?.(tournamentId, 'registration_rejected');
                                 btn.disabled = false;
@@ -735,11 +755,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     showResultModal('success', t('details.success.ready'), soloMsg);
                 } else if (data.needLevel) {
                     window.trackClarityRegistrationError?.(tournamentId, 'level_required');
-                    // Попап "указать уровень" вместо обычной ошибки
-                    closeModal();
-                    LevelCheck.show(tournamentId);
                     submitPartnerBtn.disabled = false;
-                    submitPartnerBtn.innerHTML = `<i class="fas fa-check-circle"></i> <span id="submitPartnerBtnText">${t('details.mode.register_pair')}</span>`;
+                    submitPartnerBtn.innerHTML = '<i class="fas fa-check-circle"></i> <span id="submitPartnerBtnText"></span>';
+                    setRegistrationMode(mode);
+                    askForRegistrationLevel(tournamentId);
                 } else {
                     window.trackClarityRegistrationError?.(tournamentId, 'registration_rejected');
                     showInfoMessage(data.message || t('details.error.process'), 'error');
@@ -806,9 +825,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 showResultModal('success', t('details.success.registered'), message);
             } else if (data.needLevel) {
                 window.trackClarityRegistrationError?.(tournamentId, 'level_required');
-                LevelCheck.show(tournamentId);
                 submitPartnerBtn.disabled = false;
                 submitPartnerBtn.innerHTML = `<i class="fas fa-check-circle"></i> <span id="submitPartnerBtnText">${t('details.mode.register_pair')}</span>`;
+                askForRegistrationLevel(tournamentId);
             } else {
                 window.trackClarityRegistrationError?.(tournamentId, 'registration_rejected');
                 showInfoMessage(window.PairRegistrationResponse.message(response, data), 'error');

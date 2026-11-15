@@ -754,11 +754,14 @@
                     <div id="tournament-registration" class="registration-actions">
                         <button class="btn-register btn-primary btn-block"
                                 th:if="${!isRegistered && isAuthenticated && tournament.estado.toString() == 'REGISTRO_ABIERTO'}"
-                                th:attr="data-tournament-id=${tournament.id}, data-tournament-name=${tournament.nombre}"
+                                th:attr="data-tournament-id=${tournament.id}, data-tournament-name=${tournament.nombre},
+                                         data-registration-level-missing=${registrationLevelMissing}"
                                 th:data-registration-intent="${tournament.id}" id="registerButton">
                             <i class="fas fa-check-circle"></i>
                             <span th:text="${availableSpots > 0} ? #{tournament.btn.register} : #{tournament.btn.waitlist}"></span>
                         </button>
+
+                        <p id="registrationLevelStatus" role="status"></p>
 
                         <!-- Остальные кнопки без изменений -->
                         <a th:href="@{/login(tournamentId=${tournament.id})}" th:data-registration-intent="${tournament.id}"
@@ -950,6 +953,25 @@
         </div>
     </div>
 </footer>
+
+<dialog th:if="${registrationLevelMissing != null && !isRegistered && isAuthenticated && tournament.registrationOpen}"
+        id="registrationLevelDialog" class="registration-level-dialog"
+        aria-labelledby="registrationLevelTitle" aria-describedby="registrationLevelDescription">
+    <form id="registrationLevelForm">
+        <h3 id="registrationLevelTitle"></h3>
+        <p id="registrationLevelDescription"></p>
+        <label for="registrationLevel" th:text="#{perfil.field.nivel}">Nivel de juego</label>
+        <select required class="form-control" id="registrationLevel">
+            <option value=""></option>
+            <th:block th:replace="~{fragments/nivel-options :: options(null, false)}"></th:block>
+        </select>
+        <p id="registrationLevelError" role="alert" hidden></p>
+        <div class="registration-level-actions">
+            <button type="button" class="btn btn-outline" id="registrationLevelCancel"></button>
+            <button type="submit" class="btn btn-primary" id="registrationLevelSave"></button>
+        </div>
+    </form>
+</dialog>
 
 <!-- Modal para registro de pareja -->
 <div class="modal" id="partnerModal" tabindex="-1" role="dialog" aria-labelledby="partnerModalLabel" aria-hidden="true">
