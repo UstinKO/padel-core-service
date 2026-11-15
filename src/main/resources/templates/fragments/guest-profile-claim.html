@@ -1,50 +1,163 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
-<details th:fragment="request" class="profile-card" data-guest-claim="request">
-    <summary class="section-title" th:text="#{guest.claim.profile.title}">Vincular mi perfil de invitado</summary>
+<details th:fragment="request" id="guest-profile-claim" class="profile-card guest-claim" data-guest-claim="request">
+    <summary class="section-title" th:text="#{guest.claim.profile.title}"></summary>
+    <div th:replace="~{:: labels}"></div>
+    <p th:text="#{guest.claim.workflow.playerIntro}"></p>
     <form method="post" class="profile-claim-form" data-claim-request
-          th:attr="data-endpoint=@{/api/players/me/guest-profile-claims},data-whatsapp-text=#{guest.claim.profile.whatsapp_text},data-error=#{guest.claim.error}">
+          th:attr="data-endpoint=@{/api/players/me/guest-profile-claims}">
         <div class="form-group">
-            <label for="guest-claim-player-phone" th:text="#{guest.claim.phone}">Número de WhatsApp</label>
+            <label for="guest-claim-player-phone" th:text="#{guest.claim.workflow.oldPhone}"></label>
             <input type="tel" name="phone" id="guest-claim-player-phone" class="form-control"
-                   autocomplete="tel" maxlength="32" required>
+                   th:value="${guestClaimPrefillPhone}" autocomplete="tel" maxlength="32" required>
         </div>
-        <button class="btn btn-primary" type="submit" th:text="#{guest.claim.profile.submit}">Crear solicitud</button>
+        <button class="btn btn-primary" type="submit" th:text="#{guest.claim.workflow.submit}"></button>
         <p data-claim-status role="status"></p>
-        <a data-claim-whatsapp hidden target="_blank" rel="noopener noreferrer"
-           th:text="#{guest.claim.whatsapp}">Confirmar perfil por WhatsApp</a>
     </form>
+    <div class="claim-list" data-claim-player-list></div>
+    <template data-claim-player-card>
+        <article class="claim-card">
+            <h3 data-claim-number></h3>
+            <p><span data-claim-state></span> · <time></time></p>
+            <p data-claim-guidance></p>
+            <div data-claim-contact class="claim-contact">
+                <div class="claim-actions">
+                    <a data-claim-whatsapp class="btn btn-outline" hidden target="_blank" rel="noopener noreferrer"
+                       th:text="#{guest.claim.workflow.whatsapp}"></a>
+                    <button type="button" data-claim-copy class="btn btn-outline"
+                            th:text="#{guest.claim.workflow.copy}"></button>
+                </div>
+                <p data-claim-support></p>
+                <details>
+                    <summary th:text="#{guest.claim.workflow.showText}"></summary>
+                    <textarea data-claim-message class="form-control" rows="4" readonly
+                              th:attr="aria-label=#{guest.claim.workflow.showText}"></textarea>
+                </details>
+                <p data-claim-copy-status role="status"></p>
+            </div>
+        </article>
+    </template>
 </details>
-<details th:fragment="review" class="admin-card" data-guest-claim="review">
-    <summary class="admin-card-header" style="display:list-item; cursor:pointer;" th:text="#{guest.claim.admin.title}">Vincular perfil de invitado</summary>
-    <div class="admin-card-body">
-        <form method="post" data-claim-review
-              th:attr="data-endpoint=@{/api/admin/guest-profile-claims},data-error=#{guest.claim.error}">
-            <div class="form-group">
-                <label for="guest-claim-reference" th:text="#{guest.claim.admin.reference}">Número de solicitud</label>
-                <input id="guest-claim-reference" class="form-control" name="reference" required
-                       autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="36"
-                       pattern="[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}">
-            </div>
-            <button type="submit" class="btn btn-primary" th:text="#{guest.claim.admin.review}">Revisar solicitud</button>
+
+<th:block th:fragment="review">
+    <details class="admin-card guest-claim" data-guest-claim="review"
+             th:attr="data-endpoint=@{/api/admin/guest-profile-claims}">
+        <summary class="admin-card-header claim-summary"><span th:text="#{guest.claim.workflow.queueTitle}"></span>
+            <span class="claim-count" data-claim-count aria-live="polite"></span>
+        </summary>
+        <div class="admin-card-body">
+            <div th:replace="~{:: labels}"></div>
+            <form class="claim-search" data-claim-queue-search>
+                <div class="form-group">
+                    <label for="claim-search" th:text="#{guest.claim.workflow.search}"></label>
+                    <input id="claim-search" name="search" class="form-control" maxlength="150">
+                </div>
+                <div class="form-group">
+                    <label for="claim-state" th:text="#{guest.claim.workflow.status}"></label>
+                    <select name="status" id="claim-state" class="form-select">
+                        <option value="" th:text="#{guest.claim.workflow.all}"></option>
+                        <option th:each="status : ${ {'PENDING','NEEDS_DETAILS','MERGED','REJECTED'} }"
+                                th:value="${status}" th:text="#{${'guest.claim.workflow.' + status}}"></option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" type="submit" th:text="#{guest.claim.workflow.find}"></button>
+            </form>
             <p data-claim-status role="status"></p>
-        </form>
-        <form method="post" data-claim-approve hidden
-              th:attr="data-success=#{guest.claim.admin.approved},data-error=#{guest.claim.error}">
-            <p><span th:text="#{guest.claim.admin.target}">Cuenta de destino</span> <strong data-claim-account></strong></p>
-            <p th:text="#{guest.claim.admin.verify}">Verificá la cuenta con el jugador y usá el número del remitente de WhatsApp.</p>
-            <div class="form-group">
-                <label for="guest-claim-approve-phone" th:text="#{guest.claim.admin.sender}">Número del remitente de WhatsApp</label>
-                <input type="tel" name="whatsappSenderPhone" id="guest-claim-approve-phone"
-                       class="form-control" maxlength="32" required>
+            <div class="claim-list" data-claim-queue-list></div>
+            <div class="claim-actions">
+                <button data-claim-prev class="btn btn-outline" type="button" hidden th:text="#{guest.claim.workflow.prev}"></button>
+                <button data-claim-next class="btn btn-outline" type="button" hidden th:text="#{guest.claim.workflow.next}"></button>
             </div>
-            <button type="submit" class="btn btn-primary" th:text="#{guest.claim.admin.approve}">Confirmar vinculación</button>
+            <div th:replace="~{:: comparison('queue')}"></div>
+        </div>
+    </details>
+    <details class="admin-card guest-claim" data-guest-claim="manual"
+             th:attr="data-endpoint=@{/api/admin/guest-profile-claims}">
+        <summary class="admin-card-header claim-summary" th:text="#{guest.claim.workflow.manualTitle}"></summary>
+        <div class="admin-card-body">
+            <div th:replace="~{:: labels}"></div>
+            <div class="claim-profiles">
+                <div th:each="side : ${ {'guest','account'} }" class="claim-picker" th:attr="data-claim-picker=${side}">
+                    <form class="claim-search">
+                        <div class="form-group">
+                            <label th:for="${'claim-find-' + side}" th:text="#{${'guest.claim.workflow.' + side}}"></label>
+                            <input th:id="${'claim-find-' + side}" name="search" class="form-control" maxlength="150"
+                                   th:placeholder="#{guest.claim.workflow.profileSearch}" required>
+                        </div>
+                        <button class="btn btn-outline" type="submit" th:text="#{guest.claim.workflow.find}"></button>
+                    </form>
+                    <p data-claim-choice role="status"></p>
+                    <div class="claim-list" data-claim-options></div>
+                </div>
+            </div>
+            <button class="btn btn-primary" type="button" data-claim-manual-review disabled
+                    th:text="#{guest.claim.admin.review}"></button>
             <p data-claim-status role="status"></p>
-        </form>
-        <p data-claim-approved hidden role="status" th:text="#{guest.claim.admin.approved}">Perfil vinculado.</p>
+            <div th:replace="~{:: comparison('manual')}"></div>
+        </div>
+    </details>
+</th:block>
+
+<section th:fragment="comparison(kind)" class="claim-review" data-claim-detail hidden>
+    <h3 data-claim-title tabindex="-1" th:text="#{guest.claim.admin.review}"></h3>
+    <p data-claim-state></p>
+    <p data-claim-phone></p>
+    <div class="claim-profiles">
+        <article class="claim-card" th:each="side : ${ {'guest','account'} }">
+            <h4 th:text="#{${'guest.claim.workflow.' + side}}"></h4>
+            <p data-claim-no-profile th:text="#{guest.claim.workflow.noProfile}"></p>
+            <dl th:attr="data-claim-profile=${side}" hidden>
+                <th:block th:each="field : ${ {'id','name','email','phone','telegram','level','registrations','results'} }">
+                    <dt th:text="#{${'guest.claim.workflow.field.' + field}}"></dt>
+                    <dd th:attr="data-field=${field}"></dd>
+                </th:block>
+            </dl>
+        </article>
     </div>
-</details>
+    <ul data-claim-conflicts class="claim-notes"></ul>
+    <p data-claim-direction></p>
+    <form data-claim-merge hidden class="claim-merge">
+        <div class="form-group">
+            <label th:for="${'claim-method-' + kind}" th:text="#{guest.claim.workflow.method}"></label>
+            <select th:id="${'claim-method-' + kind}" name="method" class="form-select">
+                <option value="WHATSAPP" th:text="#{guest.claim.workflow.WHATSAPP}"></option>
+                <option value="IN_PERSON" th:text="#{guest.claim.workflow.IN_PERSON}"></option>
+                <option value="OTHER" th:text="#{guest.claim.workflow.OTHER}"></option>
+            </select>
+        </div>
+        <div class="form-group" data-claim-sender>
+            <label th:for="${'claim-sender-' + kind}" th:text="#{guest.claim.admin.sender}"></label>
+            <input th:id="${'claim-sender-' + kind}" type="tel" class="form-control" name="sender" maxlength="32" required>
+        </div>
+        <label class="claim-check" data-claim-replace hidden>
+            <input type="checkbox" name="replacePhone">
+            <span th:text="#{guest.claim.workflow.replacePhone}"></span>
+        </label>
+        <label class="claim-check">
+            <input type="checkbox" name="verified" required>
+            <span th:text="#{guest.claim.workflow.verified}"></span>
+        </label>
+        <button class="btn btn-primary" type="submit" th:text="#{guest.claim.workflow.merge}"></button>
+    </form>
+    <div class="claim-actions" data-claim-decisions hidden>
+        <button type="button" class="btn btn-outline" data-decision="NEEDS_DETAILS"
+                th:text="#{guest.claim.workflow.NEEDS_DETAILS}"></button>
+        <button type="button" class="btn btn-outline" data-decision="REJECTED"
+                th:text="#{guest.claim.workflow.reject}"></button>
+    </div>
+    <p data-claim-result role="status"></p>
+</section>
+
+<div th:fragment="labels" data-claim-labels hidden
+     th:attr="data-locale=${#locale.language}">
+    <span th:each="key : ${ {'PENDING','NEEDS_DETAILS','MERGED','REJECTED','pendingHelp','detailsHelp','mergedHelp','rejectedHelp','message','request','support','supportUnavailable','copied','copyFailed','empty','review','waiting','direction','submittedPhone','pick','searchHint','PHONE_DIFFERS','LEVEL_DIFFERS','TELEGRAM_DIFFERS','TOURNAMENT','invalidReview'} }"
+          th:attr="data-label=${key}" th:text="#{${'guest.claim.workflow.' + key}}"></span>
+    <span th:each="key : ${ {'GUEST_CLAIM_HISTORY_CONFLICT','GUEST_CLAIM_RANKING_CONFLICT','GUEST_CLAIM_PROFILE_CONFLICT','GUEST_CLAIM_CONTACT_CONFLICT','GUEST_CLAIM_PHONE_MISMATCH','GUEST_CLAIM_ACCOUNT_PHONE_DIFFERS'} }"
+          th:attr="data-label=${key}" th:text="#{${'account.' + key}}"></span>
+    <span data-label="error" th:text="#{guest.claim.error}"></span>
+</div>
+
 <details th:fragment="activate(playerId)" class="admin-card" data-guest-claim="activate">
     <summary class="admin-card-header" style="display:list-item; cursor:pointer;" th:text="#{guest.claim.admin.activate}">Activar perfil de invitado</summary>
     <div class="admin-card-body">
