@@ -450,7 +450,7 @@
                 </div>
 
                 <div class="info-card" th:if="${not #lists.isEmpty(registrations) or not #lists.isEmpty(tournamentTeams)}">
-                    <div class="info-card" th:if="${not #lists.isEmpty(registrations) or not #lists.isEmpty(tournamentTeams)}">
+                    <div class="info-card tournament-roster" th:if="${not #lists.isEmpty(registrations) or not #lists.isEmpty(tournamentTeams)}">
                         <h2 class="info-card-title">
                             <i class="fas fa-users"></i>
                             <th:block th:if="${tournament.modalidad.name() == 'DOBLES'}" th:text="#{tournament.participants.doubles}">Cupos inscritas</th:block>
@@ -752,24 +752,34 @@
 
                     <!-- Botones de acción -->
                     <div id="tournament-registration" class="registration-actions">
-                        <button class="btn-register btn-primary btn-block"
-                                th:if="${!isRegistered && isAuthenticated && tournament.estado.toString() == 'REGISTRO_ABIERTO'}"
-                                th:attr="data-tournament-id=${tournament.id}, data-tournament-name=${tournament.nombre},
-                                         data-registration-level-missing=${registrationLevelMissing}"
-                                th:data-registration-intent="${tournament.id}" id="registerButton">
-                            <i class="fas fa-check-circle"></i>
-                            <span th:text="${availableSpots > 0} ? #{tournament.btn.register} : #{tournament.btn.waitlist}"></span>
-                        </button>
+                        <div class="tournament-booking-panel"
+                             th:if="${!isRegistered && tournament.registrationOpen}">
+                            <span class="tournament-booking-availability"></span>
+                            <button type="button" class="btn-register btn-primary btn-block tournament-booking-action"
+                                    th:if="${isAuthenticated}"
+                                    th:attr="data-tournament-id=${tournament.id}, data-tournament-name=${tournament.nombre},
+                                             data-registration-level-missing=${registrationLevelMissing}"
+                                    th:data-registration-intent="${tournament.id}" id="registerButton">
+                                <i class="fas fa-check-circle"></i>
+                                <span class="tournament-booking-desktop-label"
+                                      th:text="${availableSpots > 0} ? #{tournament.btn.register} : #{tournament.btn.waitlist}"></span>
+                                <span class="tournament-booking-mobile-label"
+                                      th:text="${availableSpots > 0} ? #{tournament.btn.register} : #{tournament.btn.mobile_waitlist}"></span>
+                            </button>
 
-                        <p id="registrationLevelStatus" role="status"></p>
+                            <a class="btn-login btn-outline btn-block tournament-booking-action"
+                               th:unless="${isAuthenticated}"
+                               th:href="@{/login(tournamentId=${tournament.id})}"
+                               th:data-registration-intent="${tournament.id}">
+                                <i class="fas fa-sign-in-alt"></i>
+                                <span class="tournament-booking-desktop-label"
+                                      th:text="#{tournament.btn.login}">Iniciar sesión para inscribirse</span>
+                                <span class="tournament-booking-mobile-label"
+                                      th:text="${availableSpots > 0} ? #{tournament.btn.register} : #{tournament.btn.mobile_waitlist}"></span>
+                            </a>
 
-                        <!-- Остальные кнопки без изменений -->
-                        <a th:href="@{/login(tournamentId=${tournament.id})}" th:data-registration-intent="${tournament.id}"
-                           class="btn-login btn-outline btn-block"
-                           th:if="${!isAuthenticated && tournament.estado.toString() == 'REGISTRO_ABIERTO'}">
-                            <i class="fas fa-sign-in-alt"></i>
-                            <span th:text="#{tournament.btn.login}">Iniciar sesión para inscribirse</span>
-                        </a>
+                            <p id="registrationLevelStatus" role="status"></p>
+                        </div>
 
                         <button class="btn-cancel btn-outline btn-block"
                                 th:if="${isRegistered and tournament.modalidad.name() != 'DOBLES'}"
@@ -1242,6 +1252,7 @@
 </script>
 <script th:src="@{/js/pair-terms.js}"></script>
 <script th:src="@{/js/pair-registration-response.js}"></script>
+<script th:src="@{/js/tournament-availability.js}"></script>
 <script th:src="@{/js/tournament-details.js}"></script>
 <script th:src="@{/js/calendar-picker.js}"></script>
 <script>

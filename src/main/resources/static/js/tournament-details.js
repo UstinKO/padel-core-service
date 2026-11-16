@@ -648,6 +648,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         // ContactCheck вызовет этот колбэк когда контакты есть
                         // ИЛИ после сохранения контактов
                         const btn = newRegisterBtn;
+                        const originalButtonContent = btn.innerHTML;
                         btn.disabled = true;
                         btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('details.processing')}`;
                         window.trackTournamentRegistrationStart?.(tournamentId);
@@ -670,16 +671,12 @@ document.addEventListener('DOMContentLoaded', function() {
                             } else if (data.needLevel) {
                                 window.trackClarityRegistrationError?.(tournamentId, 'level_required');
                                 btn.disabled = false;
-                                btn.innerHTML = window.tournament?.inscritosActuales >= window.tournament?.cupoMax ?
-                                    `<i class="fas fa-clock"></i> ${t('details.btn.waitlist')}` :
-                                    `<i class="fas fa-check-circle"></i> ${t('details.btn.register')}`;
+                                btn.innerHTML = originalButtonContent;
                                 askForRegistrationLevel(tournamentId, () => continueSingleRegistration(btn));
                             } else {
                                 window.trackClarityRegistrationError?.(tournamentId, 'registration_rejected');
                                 btn.disabled = false;
-                                btn.innerHTML = window.tournament?.inscritosActuales >= window.tournament?.cupoMax ?
-                                    `<i class="fas fa-clock"></i> ${t('details.btn.waitlist')}` :
-                                    `<i class="fas fa-check-circle"></i> ${t('details.btn.register')}`;
+                                btn.innerHTML = originalButtonContent;
 
                                 const modalBody = document.getElementById('resultModalBody');
                                 const resultModal = document.getElementById('resultModal');
@@ -695,9 +692,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             window.trackClarityRegistrationError?.(tournamentId, 'request_failed');
                             console.error('Error registering:', error);
                             btn.disabled = false;
-                            btn.innerHTML = window.tournament?.inscritosActuales >= window.tournament?.cupoMax ?
-                                `<i class="fas fa-clock"></i> ${t('details.btn.waitlist')}` :
-                                `<i class="fas fa-check-circle"></i> ${t('details.btn.register')}`;
+                            btn.innerHTML = originalButtonContent;
                         }
                     });
                 } else {
@@ -1108,12 +1103,22 @@ function isTournamentStarted(tournament) {
     return now > start;
 }
 
+const registrationStarted = isTournamentStarted(window.tournament);
+const bookingPanel = document.querySelector('.tournament-booking-panel');
+
+if (bookingPanel && !registrationStarted && window.tournament) {
+    const status = TournamentAvailability.getStatus(window.tournament);
+    bookingPanel.querySelector('.tournament-booking-availability').textContent =
+        t(TournamentAvailability.labelKey(status));
+    bookingPanel.dataset.availability = status;
+}
+
 // Затем, в том месте где ищешь registerBtn, добавь блокировку:
 const registerBtn = document.querySelector('.btn-register');
 
 if (registerBtn) {
     // Проверяем, нужно ли заблокировать кнопку
-    if (window.tournament && isTournamentStarted(window.tournament)) {
+    if (registrationStarted) {
         // Блокируем кнопку
         registerBtn.disabled = true;
         registerBtn.style.opacity = '0.6';
@@ -1121,7 +1126,7 @@ if (registerBtn) {
         registerBtn.innerHTML = `<i class="fas fa-clock"></i> ${t('details.status.closed')}`;
 
         // Добавляем пояснение рядом
-        const parentDiv = registerBtn.parentElement;
+        const parentDiv = registerBtn.closest('.registration-actions') || registerBtn.parentElement;
         const closedMessage = document.createElement('div');
         closedMessage.className = 'registration-closed';
         closedMessage.style.marginTop = '0.5rem';
