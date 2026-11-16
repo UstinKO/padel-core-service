@@ -88,6 +88,7 @@ public class TeamPlayoffViewController {
         model.addAttribute("tournament", tournament);
         model.addAttribute("qualStarted", qualStarted);
         model.addAttribute("playoffStarted", playoffStarted);
+        model.addAttribute("earlyPlayoffStarted", playoffStarted && playoffService.hasEarlyBracket(tournamentId));
         model.addAttribute("isAuthenticated", auth != null);
         model.addAttribute("player", player);
         model.addAttribute("currentPlayerId", player != null ? player.getId() : null);
@@ -133,6 +134,7 @@ public class TeamPlayoffViewController {
         model.addAttribute("teams", teams);
         model.addAttribute("qualStarted", qualStarted);
         model.addAttribute("playoffStarted", playoffStarted);
+        model.addAttribute("earlyPlayoffStarted", playoffStarted && playoffService.hasEarlyBracket(tournamentId));
 
         if (qualStarted) {
             TeamAmericanoRankingDto ranking = playoffService.getQualRanking(tournamentId);
@@ -405,7 +407,7 @@ public class TeamPlayoffViewController {
             playoffService.submitQualResult(matchId, team1Games, team2Games);
             ra.addFlashAttribute("success", "Resultado guardado");
         } catch (InvalidStateException e) {
-            ra.addFlashAttribute("error", e.getMessage());
+            ra.addFlashAttribute("error", localMessage(e.getMessage()));
         } catch (Exception e) {
             log.error("Error submitting qual result {}: {}", matchId, e.getMessage());
             ra.addFlashAttribute("error", "Error al guardar: " + e.getMessage());
@@ -441,6 +443,38 @@ public class TeamPlayoffViewController {
     // REST API
     // ══════════════════════════════════════════════════════════════════════
 
+    public record EarlyPlayoffRequest(Long firstId, Long secondId, Integer court) {}
+    public record EarlyPlayoffSaved(boolean success, Long matchId, String message) {}
+
+    @GetMapping("/api/{tournamentId}/early-playoff")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
+    @ResponseBody
+    public TeamPlayoffService.EarlyPlayoff earlyPlayoff(@PathVariable Long tournamentId,
+            @RequestParam(required = false) Long firstId, @RequestParam(required = false) Long secondId,
+            @AuthenticationPrincipal Owner owner) {
+        tournamentAccessService.assertCanManageTournament(owner, tournamentId);
+        return playoffService.earlyPlayoff(tournamentId, firstId, secondId);
+    }
+
+    @PostMapping("/api/{tournamentId}/early-playoff")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
+    @ResponseBody
+    public ResponseEntity<EarlyPlayoffSaved> confirmEarlyPlayoff(@PathVariable Long tournamentId,
+            @RequestBody EarlyPlayoffRequest request, @AuthenticationPrincipal Owner owner) {
+        tournamentAccessService.assertCanManageTournament(owner, tournamentId);
+        try {
+            var match = playoffService.confirmEarlyPlayoff(tournamentId, request.firstId(), request.secondId(),
+                    request.court());
+            return ResponseEntity.ok(new EarlyPlayoffSaved(true, match.getId(), null));
+        } catch (InvalidStateException e) {
+            return ResponseEntity.status(409).body(new EarlyPlayoffSaved(false, null, localMessage(e.getMessage())));
+        }
+    }
+
+    private String localMessage(String key) {
+        return messageSource.getMessage(key, null, key, LocaleContextHolder.getLocale());
+    }
+
     @PostMapping("/api/{tournamentId}/qual-matches")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     @ResponseBody
@@ -459,7 +493,7 @@ public class TeamPlayoffViewController {
             result.put("match", playoffService.toMatchDto(match));
         } catch (Exception e) {
             result.put("success", false);
-            result.put("message", e.getMessage());
+            result.put("message", localMessage(e.getMessage()));
         }
         return ResponseEntity.ok(result);
     }
@@ -482,7 +516,7 @@ public class TeamPlayoffViewController {
             result.put("match", playoffService.toMatchDto(match));
         } catch (Exception e) {
             result.put("success", false);
-            result.put("message", e.getMessage());
+            result.put("message", localMessage(e.getMessage()));
         }
         return ResponseEntity.ok(result);
     }
@@ -504,7 +538,7 @@ public class TeamPlayoffViewController {
             result.put("match", playoffService.toMatchDto(match));
         } catch (Exception e) {
             result.put("success", false);
-            result.put("message", e.getMessage());
+            result.put("message", localMessage(e.getMessage()));
         }
         return ResponseEntity.ok(result);
     }
@@ -522,7 +556,7 @@ public class TeamPlayoffViewController {
             result.put("success", true);
         } catch (Exception e) {
             result.put("success", false);
-            result.put("message", e.getMessage());
+            result.put("message", localMessage(e.getMessage()));
         }
         return ResponseEntity.ok(result);
     }
@@ -544,7 +578,7 @@ public class TeamPlayoffViewController {
             result.put("match", playoffService.toMatchDto(match));
         } catch (Exception e) {
             result.put("success", false);
-            result.put("message", e.getMessage());
+            result.put("message", localMessage(e.getMessage()));
         }
         return ResponseEntity.ok(result);
     }
@@ -568,7 +602,7 @@ public class TeamPlayoffViewController {
             result.put("warning", changeResult.warning());
         } catch (Exception e) {
             result.put("success", false);
-            result.put("message", e.getMessage());
+            result.put("message", localMessage(e.getMessage()));
         }
         return ResponseEntity.ok(result);
     }
@@ -590,7 +624,7 @@ public class TeamPlayoffViewController {
             result.put("message", "Resultado guardado");
         } catch (Exception e) {
             result.put("success", false);
-            result.put("message", e.getMessage());
+            result.put("message", localMessage(e.getMessage()));
         }
         return ResponseEntity.ok(result);
     }
@@ -613,7 +647,7 @@ public class TeamPlayoffViewController {
             result.put("success", true);
         } catch (Exception e) {
             result.put("success", false);
-            result.put("message", e.getMessage());
+            result.put("message", localMessage(e.getMessage()));
         }
         return ResponseEntity.ok(result);
     }
