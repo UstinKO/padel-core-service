@@ -97,7 +97,6 @@
         <appender-ref ref="FILE"/>
         <appender-ref ref="ERROR_FILE"/>
         <appender-ref ref="JSON_FILE"/>
-        <appender-ref ref="LOKI"/>
     </logger>
 
     <!-- Логгер для ошибок (дублирует ERROR_FILE) -->
@@ -144,7 +143,6 @@
             <appender-ref ref="FILE"/>
             <appender-ref ref="ERROR_FILE"/>
             <appender-ref ref="JSON_FILE"/>
-            <appender-ref ref="LOKI"/>
             <appender-ref ref="TELEGRAM"/>
         </logger>
 
@@ -185,27 +183,33 @@
     <springProperty scope="context" name="LOKI_BATCH_SIZE" source="logging.loki.batchMaxItems" defaultValue="1000"/>
     <springProperty scope="context" name="LOKI_BATCH_TIMEOUT" source="logging.loki.batchTimeoutMs" defaultValue="5000"/>
 
-    <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
-        <http>
-            <url>${LOKI_URL}</url>
-            <auth>
-                <username>${LOKI_USERNAME:-}</username>
-                <password>${LOKI_PASSWORD:-}</password>
-            </auth>
-        </http>
-        <!-- loki4j 2.x: labels/message вынесены из <format>, <batchConfig> → <batch>, sortByTime убран -->
-        <labels>
+    <condition class="ch.qos.logback.core.boolex.PropertyEqualityCondition">
+        <key>LOKI_ENABLED</key>
+        <value>true</value>
+    </condition>
+    <if>
+        <then>
+            <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
+                <http>
+                    <url>${LOKI_URL}</url>
+                    <auth>
+                        <username>${LOKI_USERNAME:-}</username>
+                        <password>${LOKI_PASSWORD:-}</password>
+                    </auth>
+                </http>
+                <!-- loki4j 2.x: labels/message вынесены из <format>, <batchConfig> → <batch>, sortByTime убран -->
+                <labels>
             app=${APP_NAME}
             host=${HOSTNAME}
             level=%level
             environment=${ENVIRONMENT:-local}
-        </labels>
-        <readMarkers>true</readMarkers>
-        <!-- В 2.x по умолчанию шлются structured metadata (thread/logger/MDC) — выключаем, как было в 1.x -->
-        <structuredMetadata>off</structuredMetadata>
-        <message class="ch.qos.logback.classic.PatternLayout">
-            <!-- %mask вместо %msg — маскируем данные и в Loki -->
-            <pattern>{
+                </labels>
+                <readMarkers>true</readMarkers>
+                <!-- В 2.x по умолчанию шлются structured metadata (thread/logger/MDC) — выключаем, как было в 1.x -->
+                <structuredMetadata>off</structuredMetadata>
+                <message class="ch.qos.logback.classic.PatternLayout">
+                    <!-- %mask вместо %msg — маскируем данные и в Loki -->
+                    <pattern>{
                 "@timestamp": "%d{yyyy-MM-dd'T'HH:mm:ss.SSSZ}",
                 "level": "%level",
                 "logger": "%logger{36}",
@@ -216,12 +220,20 @@
                 "message": "%mask",
                 "exception": "%ex{full}"
                 }</pattern>
-        </message>
-        <batch>
-            <maxItems>${LOKI_BATCH_SIZE}</maxItems>
-            <timeoutMs>${LOKI_BATCH_TIMEOUT}</timeoutMs>
-        </batch>
-    </appender>
+                </message>
+                <batch>
+                    <maxItems>${LOKI_BATCH_SIZE}</maxItems>
+                    <timeoutMs>${LOKI_BATCH_TIMEOUT}</timeoutMs>
+                </batch>
+            </appender>
+
+            <logger name="com.padle.core">
+                <appender-ref ref="LOKI"/>
+            </logger>
+        </then>
+    </if>
+
+    <logger name="com.padle.core" level="INFO"/>
 
     <!-- ========== КОРНЕВОЙ ЛОГГЕР ========== -->
 
