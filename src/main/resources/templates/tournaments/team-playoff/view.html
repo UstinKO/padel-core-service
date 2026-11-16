@@ -327,9 +327,10 @@
                     <div class="team-name" th:text="${match.team2Player1Name}">Jugador 3</div>
                     <div class="team-name" th:if="${match.team2Player2Name != null}" th:text="${match.team2Player2Name}">Jugador 4</div>
                 </div>
-                <span class="queue-court" th:if="${match.courtNumber != null}">
-                    <span th:text="#{americano.court.prefix}">Cancha</span>
-                    <span th:text="${match.courtNumber}">1</span>
+                <span class="queue-court">
+                    <span th:if="${match.playoffStage == null}" th:text="#{team_playoff.early.qualification}">Clasificación</span>
+                    <span th:if="${match.playoffStage != null}"
+                          th:text="#{${'team_playoff.stage.' + #strings.toLowerCase(match.playoffStage)}}">Octavos de final</span>
                 </span>
             </li>
         </ol>
@@ -340,6 +341,11 @@
         <div class="section-header">
             <h3><i class="fas fa-trophy"></i> <span th:text="#{team_playoff.playoff.title}">Playoff</span></h3>
         </div>
+
+        <p th:if="${earlyPlayoffStarted and ranking != null and not ranking.finished}"
+           style="margin:.7rem 1rem;color:#475569" th:text="#{team_playoff.early.public_parallel}">
+            La clasificación sigue mientras se juegan algunos partidos de octavos de final.
+        </p>
 
         <div class="bracket-controls">
             <div class="zoom-group">
