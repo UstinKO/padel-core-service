@@ -46,6 +46,20 @@
         .team-right{text-align:right}
         .team-name{font-size:.9rem;font-weight:500;color:#1e293b;line-height:1.3}
         .team-sub{font-size:.75rem;color:#64748b}
+        #upcomingMatches > .section-header{margin-bottom:0}
+        .upcoming-matches{list-style:none;margin:0;padding:0 1rem}
+        .queue-match{display:grid;grid-template-columns:2ch minmax(0,1fr) auto minmax(0,1fr);gap:.35rem .6rem;padding:.65rem 0;align-items:start;overflow-wrap:anywhere}
+        .queue-match + .queue-match{border-top:1px solid #e2e8f0}
+        .upcoming-matches .vs-block{align-self:center}
+        .queue-team{display:grid;gap:.15rem;text-align:left}
+        .queue-team .team-name{font-weight:400}
+        .queue-position,.queue-team-number,.queue-court,.upcoming-matches .vs-block{font-size:.8rem;color:#475569}
+        .queue-court{grid-column:2 / -1}
+        @media (max-width: 480px) {
+            .upcoming-matches{padding-inline:.65rem}
+            .queue-match{column-gap:.4rem}
+        }
+        .live-update-notice{background:#fef3c7;color:#854d0e;border-radius:8px;padding:.65rem 1rem;margin:0 0 1rem;font-size:.875rem}
         .vs-block{display:flex;flex-direction:column;align-items:center;gap:.3rem}
         .vs-badge{background:#FF6B35;color:#fff;font-weight:700;font-size:.8rem;padding:.25rem .45rem;border-radius:6px}
         .score-display{font-size:1.1rem;font-weight:700;display:flex;align-items:center;gap:.3rem}
@@ -157,6 +171,9 @@
         </div>
     </div>
 
+    <p id="liveUpdateNotice" class="live-update-notice" role="status" hidden
+       th:text="#{team_playoff.queue.stale}">La información puede estar desactualizada. Reconectando…</p>
+
     <!-- Турнир ещё не начат -->
     <div th:unless="${qualStarted}" class="not-started">
         <i class="fas fa-hourglass-half"></i>
@@ -262,7 +279,7 @@
                     <span class="info-pill" th:text="${round.completedMatches} + '/' + ${round.totalMatches} + ' partidos'">0/4</span>
                 </div>
 
-                <div th:each="match : ${round.matches}" class="match-card">
+                <div th:each="match : ${round.matches}" th:id="'qual-match-' + ${match.id}" class="match-card">
                     <div class="match-header">
                         <span><span th:text="#{americano.court.prefix}">Cancha</span> <span th:text="${match.courtNumber}">1</span></span>
                     </div>
@@ -290,6 +307,33 @@
             </div>
         </div>
     </div>
+
+    <section th:if="${qualStarted and qualificationQueue != null and not qualificationQueue.isEmpty()}"
+             id="upcomingMatches" class="section-card" aria-labelledby="upcomingMatchesTitle">
+        <div class="section-header">
+            <h3 id="upcomingMatchesTitle" th:text="#{team_playoff.queue.title}">Próximos partidos</h3>
+        </div>
+        <ol class="upcoming-matches" role="list">
+            <li th:each="match : ${qualificationQueue}" th:id="'queued-match-' + ${match.id}" class="queue-match">
+                <span class="queue-position" th:text="${match.queuePosition} + '.'">1.</span>
+                <div class="queue-team">
+                    <div class="queue-team-number" th:if="${match.team1Number != null}" th:text="'№' + ${match.team1Number}">№1</div>
+                    <div class="team-name" th:text="${match.team1Player1Name}">Jugador 1</div>
+                    <div class="team-name" th:if="${match.team1Player2Name != null}" th:text="${match.team1Player2Name}">Jugador 2</div>
+                </div>
+                <span class="vs-block">vs</span>
+                <div class="queue-team">
+                    <div class="queue-team-number" th:if="${match.team2Number != null}" th:text="'№' + ${match.team2Number}">№2</div>
+                    <div class="team-name" th:text="${match.team2Player1Name}">Jugador 3</div>
+                    <div class="team-name" th:if="${match.team2Player2Name != null}" th:text="${match.team2Player2Name}">Jugador 4</div>
+                </div>
+                <span class="queue-court" th:if="${match.courtNumber != null}">
+                    <span th:text="#{americano.court.prefix}">Cancha</span>
+                    <span th:text="${match.courtNumber}">1</span>
+                </span>
+            </li>
+        </ol>
+    </section>
 
     <!-- ══ ПЛЕЙ-ОФФ: дерево QF → SF → Final ══ -->
     <div th:if="${playoffStarted}" class="section-card">
@@ -389,13 +433,7 @@
     if (window.BracketZoomExport) {
         BracketZoomExport.init({ tournamentId: [[${tournament.id}]] });
     }
-    new TeamPlayoffRealtime([[${tournament.id}]]);
-
-    let reloadTimer = null;
-    window.addEventListener('team-playoff-update', () => {
-        clearTimeout(reloadTimer);
-        reloadTimer = setTimeout(() => window.location.reload(), 1500);
-    });
+    startTeamPlayoffPublicUpdates([[${tournament.id}]]);
 </script>
 <script>
     const qRounds = Array.from(document.querySelectorAll('[id^="qround-"]'));
