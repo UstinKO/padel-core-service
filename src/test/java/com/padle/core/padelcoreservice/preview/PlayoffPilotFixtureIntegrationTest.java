@@ -1,5 +1,9 @@
 package com.padle.core.padelcoreservice.preview;
 
+import com.padle.core.padelcoreservice.dto.americano.AmericanoMatchDto;
+import com.padle.core.padelcoreservice.dto.americano.AmericanoRoundDto;
+import com.padle.core.padelcoreservice.dto.americano.TeamAmericanoRankingDto;
+import com.padle.core.padelcoreservice.dto.americano.TeamPlayoffAddTeamRequest;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.americano.AmericanoMatch;
 import com.padle.core.padelcoreservice.model.enums.OwnerRole;
@@ -37,6 +41,8 @@ import tools.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;
 
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Comparator;
@@ -272,6 +278,83 @@ class PlayoffPilotFixtureIntegrationTest {
         return (MockHttpSession) mvc.perform(post("/login").with(csrf()).param("username", email)
                         .param("password", properties.fixturePassword()).param("destination", destination))
                 .andExpect(redirectedUrl(destination)).andReturn().getRequest().getSession(false);
+    }
+
+    @Test
+    void publicQualificationFollowsSavedQueueAndCourtAssignments() throws Exception {
+        var state = fixtures.seed();
+        var roster = state.scenarios().stream().filter(item -> "roster-8".equals(item.key())).findFirst().orElseThrow();
+        long event = roster.tournamentId();
+        var teams = new ArrayList<>(roster.teamIds());
+        jdbc.sql("UPDATE tournaments_db SET cupo_max=12 WHERE id=:id").param("id", event).update();
+        for (int player = 16; player < 24; player += 2) {
+            var request = new TeamPlayoffAddTeamRequest();
+            request.setPlayer1Id(state.accounts().playerIds().get(player));
+            request.setPlayer2Id(state.accounts().playerIds().get(player + 1));
+            request.setHasPaid(true);
+            request.setAttended(true);
+            teams.add(playoff.addTeam(event, request).getId());
+        }
+        playoff.initQualification(event, 4);
+        var firstCourt = playoff.createQualificationMatch(event, teams.get(0), teams.get(1), 1);
+        for (int court = 2; court <= 4; court++) {
+            int index = 2 * (court - 1);
+            playoff.createQualificationMatch(event, teams.get(index), teams.get(index + 1), court);
+        }
+        assertPublicQueue(publicModel(event), 4);
+
+        var first = playoff.queueQualificationMatch(event, teams.get(10), teams.get(11));
+        var second = playoff.queueQualificationMatch(event, teams.get(8), teams.get(9));
+        var before = publicModel(event);
+        assertPublicQueue(before, 4, first.getId(), second.getId());
+        assertTeamState(before, teams.get(10), "QUEUED", 1);
+        assertTeamState(before, teams.get(8), "QUEUED", 2);
+
+        playoff.removeFromQueue(first.getId());
+        var readded = playoff.queueQualificationMatch(event, teams.get(10), teams.get(11));
+        assertPublicQueue(publicModel(event), 4, second.getId(), readded.getId());
+        playoff.submitQualResult(firstCourt.getId(), 6, 3);
+        playoff.assignCourtToQueuedMatch(second.getId(), 1);
+        var after = publicModel(event);
+        assertPublicQueue(after, 5, readded.getId());
+        assertTeamState(after, teams.get(8), "PLAYING", null);
+        assertTeamState(after, teams.get(10), "QUEUED", 1);
+        assertThat(publicMatches(after)).filteredOn(match -> match.getId().equals(second.getId()))
+                .singleElement().extracting(AmericanoMatchDto::getCourtNumber).isEqualTo(1);
+        playoff.removeFromQueue(readded.getId());
+        assertPublicQueue(publicModel(event), 5);
+    }
+
+    private Map<String, Object> publicModel(long event) throws Exception {
+        return mvc.perform(get("/tournaments/team-playoff/" + event)).andExpect(status().isOk())
+                .andReturn().getModelAndView().getModel();
+    }
+
+    private void assertPublicQueue(Map<String, Object> model, int matchCount, Long... ids) {
+        var queue = ((List<?>) model.get("qualificationQueue")).stream().map(AmericanoMatchDto.class::cast).toList();
+        assertThat(queue).extracting(AmericanoMatchDto::getId).containsExactly(ids);
+        assertThat(queue).allSatisfy(match -> {
+            assertThat(match.getCourtNumber()).isNull();
+            assertThat(match.getTeam1Player1Name()).isNotBlank();
+            assertThat(match.getTeam1Player2Name()).isNotBlank();
+            assertThat(match.getTeam2Player1Name()).isNotBlank();
+            assertThat(match.getTeam2Player2Name()).isNotBlank();
+        });
+        var queuedIds = List.of(ids);
+        assertThat(publicMatches(model)).hasSize(matchCount).noneMatch(match -> queuedIds.contains(match.getId()));
+    }
+
+    private List<AmericanoMatchDto> publicMatches(Map<String, Object> model) {
+        return ((List<?>) model.get("qualRounds")).stream().map(AmericanoRoundDto.class::cast)
+                .flatMap(round -> round.getMatches().stream()).toList();
+    }
+
+    private void assertTeamState(Map<String, Object> model, long teamId, String status, Integer position) {
+        var ranking = (TeamAmericanoRankingDto) model.get("ranking");
+        assertThat(ranking.getRanking()).filteredOn(team -> team.getId().equals(teamId)).singleElement().satisfies(team -> {
+            assertThat(team.getTournamentStatus()).isEqualTo(status);
+            assertThat(team.getQueuePosition()).isEqualTo(position);
+        });
     }
 
     private long scenario(PlayoffPilotFixtureService.Fixtures state, String key) {
