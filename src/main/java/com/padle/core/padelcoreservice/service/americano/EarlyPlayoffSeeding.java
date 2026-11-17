@@ -11,6 +11,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /** Рассчитывает 1/8 по всем допустимым счетам ещё не сыгранных встреч. */
@@ -63,7 +64,10 @@ final class EarlyPlayoffSeeding {
     }
 
     private List<Pairing> pairCandidates(List<Candidate> candidates, Map<Long, Set<Long>> opponents, Set<Pair> fixed) {
-        if (fixed.isEmpty()) return engine.seedRoundOf16(candidates, opponents);
+        List<Pairing> seeded = engine.seedRoundOf16(candidates, opponents);
+        if (fixed.isEmpty() || seeded.stream().map(Pair::of).collect(Collectors.toSet()).containsAll(fixed)) {
+            return seeded;
+        }
         Map<Long, Integer> seeds = new HashMap<>();
         candidates.forEach(candidate -> seeds.put(candidate.teamId(), candidate.seed()));
         Set<Long> assigned = new HashSet<>();
