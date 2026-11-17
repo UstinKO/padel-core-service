@@ -134,6 +134,14 @@ class PilotEloRankingTest {
     }
 
     @Test
+    void publicRankingCannotStartWithTheOldFormula() throws Exception {
+        var properties = new EloPilotProperties(true, Set.of(1L), writeBundle());
+        var advice = new PilotEloRanking(mapper, properties, new EloPilotAccess(properties), Optional.empty());
+        org.springframework.test.util.ReflectionTestUtils.setField(advice, "allPlayers", true);
+        assertThatThrownBy(advice::verifyPublicFormula).isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
     void publicRankingIsVisibleToVisitorsButFeedbackRequiresAnAuthenticatedPlayer() throws Exception {
         var properties = new EloPilotProperties(true, Set.of(1L), writeBundle());
         var access = new EloPilotAccess(properties);

@@ -6,6 +6,7 @@ import com.padle.core.padelcoreservice.controller.view.RankingController;
 import com.padle.core.padelcoreservice.preview.PilotEloRefresh;
 import com.padle.core.padelcoreservice.preview.PreviewEloRanking;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.annotation.PostConstruct;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.beans.factory.annotation.Value;
 import jakarta.servlet.http.HttpServletRequest;
@@ -43,6 +44,13 @@ public class PilotEloRanking implements EloPilotAudience {
         formatWeighted = refresh.map(PilotEloRefresh::isFormatWeighted).orElse(snapshot.formatWeighted());
         currentSnapshot = refresh.<Supplier<PreviewEloRanking.Snapshot>>map(service -> service::calculate)
                 .orElse(snapshot::snapshot);
+    }
+
+    @PostConstruct
+    void verifyPublicFormula() {
+        if (allPlayers && !formatWeighted) {
+            throw new IllegalStateException("Для общего доступа необходима новая формула рейтинга");
+        }
     }
 
     @Override
