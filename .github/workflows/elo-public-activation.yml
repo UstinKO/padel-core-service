@@ -31,7 +31,7 @@ jobs:
             from pathlib import Path
             ROOT=Path('/opt/padel-app')
             EXPECTED_REVISION='66a4a0aa038a1aee595018ff7ba882a0e385a9ea'
-            PHASE='preflight'
+            PHASE='activate'
             def run(cmd):
              return subprocess.run(cmd,check=True,capture_output=True,timeout=180).stdout.decode()
             def digest(path):
