@@ -132,6 +132,50 @@ class TeamPlayoffEarlyStageTest {
             }
         });
         assertThat(roundOf16.stream().filter(AmericanoMatch::isQueued)).hasSize(count - 9);
+        if (count == 16) verifyEarlySemifinal(tournament, roundOf16);
+    }
+
+    private void verifyEarlySemifinal(Long tournament, List<AmericanoMatch> roundOf16) {
+        for (var match : roundOf16) {
+            if (match.isCompleted()) continue;
+            playoffService.assignCourtToQueuedMatch(match.getId(), 1);
+            playoffService.submitPlayoffResult(match.getId(), 6, 2);
+        }
+
+        var quarters = matchRepository.findByTournamentIdAndPlayoffStage(tournament, PlayoffStage.QUARTER_FINAL);
+        assertThat(quarters).hasSize(4);
+        var history = matchRepository.findByTournamentIdOrderByRoundIdAscMatchNumberAsc(tournament);
+        var first = quarters.get(0);
+        var second = quarters.get(1);
+        var combination = java.util.stream.Stream.of(first.getTeam1Id(), first.getTeam2Id())
+                .flatMap(a -> java.util.stream.Stream.of(second.getTeam1Id(), second.getTeam2Id())
+                        .filter(b -> history.stream().filter(AmericanoMatch::isCompleted)
+                                .noneMatch(previous -> (a.equals(previous.getTeam1Id()) && b.equals(previous.getTeam2Id()))
+                                        || (b.equals(previous.getTeam1Id()) && a.equals(previous.getTeam2Id()))))
+                        .map(b -> List.of(a, b))).findFirst().orElseThrow();
+        finishQuarter(first, combination.get(0));
+        finishQuarter(second, combination.get(1));
+        var options = playoffService.earlyPlayoff(tournament, combination.get(0), combination.get(1));
+        assertThat(options.semifinal()).isTrue();
+        assertThat(options.manualStatus()).isEqualTo("safe");
+        var early = playoffService.confirmEarlyPlayoff(tournament, combination.get(0), combination.get(1), 2);
+        assertThat(early.getPlayoffStage()).isEqualTo(PlayoffStage.SEMI_FINAL);
+
+        finishQuarter(quarters.get(2), quarters.get(2).getTeam1Id());
+        finishQuarter(quarters.get(3), quarters.get(3).getTeam1Id());
+        var semifinals = matchRepository.findByTournamentIdAndPlayoffStage(tournament, PlayoffStage.SEMI_FINAL);
+        assertThat(semifinals).hasSize(2).allMatch(match -> match.getTeam1Id() != null && match.getTeam2Id() != null);
+        assertThat(semifinals).filteredOn(match -> match.getId().equals(early.getId())).singleElement().satisfies(match -> {
+            assertThat(match.getTeam1Id()).isEqualTo(combination.get(0));
+            assertThat(match.getTeam2Id()).isEqualTo(combination.get(1));
+            assertThat(match.getCourtNumber()).isEqualTo(2);
+        });
+    }
+
+    private void finishQuarter(AmericanoMatch match, Long winner) {
+        playoffService.assignCourtToQueuedMatch(match.getId(), 1);
+        boolean firstWins = winner.equals(match.getTeam1Id());
+        playoffService.submitPlayoffResult(match.getId(), firstWins ? 6 : 2, firstWins ? 2 : 6);
     }
 
     @Test
