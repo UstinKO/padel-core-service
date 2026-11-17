@@ -309,6 +309,9 @@ public class PlayoffPairExchange {
     }
 
     private static String block(AmericanoMatch match, boolean correction) {
+        if (EarlyPlayoffSeeding.OPEN_ROUND_NOTE.equals(match.getRound().getNote())) {
+            return "team_playoff.early.fixed";
+        }
         if (!correction && hasResult(match)) return MESSAGE + "completed";
         if (!correction && Boolean.TRUE.equals(match.getPlayoffPlayStarted())) return MESSAGE + "started";
         if (match.getStatus() == AmericanoRoundStatus.CANCELLED) return MESSAGE + "cancelled";

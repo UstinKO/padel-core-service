@@ -31,8 +31,12 @@ public class TeamPlayoffReadService {
         teams.findPlayoffRankingByTournamentId(eventId);
         var byRound = matches.findByTournamentIdOrderByRoundIdAscMatchNumberAsc(eventId).stream()
                 .filter(match -> !match.isQueued()).collect(Collectors.groupingBy(match -> match.getRound().getId()));
-        return source.stream().map(round -> mapper.round(round,
-                byRound.getOrDefault(round.getId(), List.of()).stream().map(playoffs::toMatchDto).toList())).toList();
+        return source.stream().map(round -> {
+            var dto = mapper.round(round,
+                    byRound.getOrDefault(round.getId(), List.of()).stream().map(playoffs::toMatchDto).toList());
+            if (EarlyPlayoffSeeding.isEarlyRoundNote(round.getNote())) dto.setNote("ROUND_OF_16");
+            return dto;
+        }).toList();
     }
 
     public void qualificationOrdinals(Long eventId, List<AmericanoRoundDto> rounds) {
