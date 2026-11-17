@@ -26,6 +26,33 @@ class PilotEloRefreshTest {
     @TempDir Path directory;
 
     @Test
+    void weightedRefreshRequiresMatchingWeightedSnapshotBeforeDatabaseRead() throws Exception {
+        var mapper = JsonMapper.builder().findAndAddModules().build();
+        var day = LocalDate.of(2026, 11, 12);
+        var game = new PreviewEloReplay.Game("pair:1", 1, List.of(1L, 2L, 3L, 4L), 6, 4, false);
+        var event = new PreviewEloReplay.Event("S-1", day, "C8", List.of(game),
+                Set.of(), Set.of(), "Pairs", "pair", null);
+        var history = new PreviewEloReplay.History(Map.of(1L, "A", 2L, "B", 3L, "C", 4L, "D"), List.of(event));
+        var source = new EloRefreshSource(history, day, Set.of(), Set.of());
+        var historyPath = directory.resolve("weighted-history.json");
+        var snapshotPath = directory.resolve("weighted-snapshot.json");
+        Files.writeString(historyPath, mapper.writeValueAsString(source));
+        var weighted = new PreviewEloReplay(40, true).replay(day, history.names(), history.events());
+        Files.writeString(snapshotPath, mapper.writeValueAsString(new EloPilotSnapshot(weighted, 40, Map.of(), true)));
+        var properties = new EloPilotProperties(true, Set.of(1L), snapshotPath);
+        var jdbc = mock(JdbcClient.class);
+        var king = mock(KingOfCourtService.class);
+        var americano = mock(AmericanoService.class);
+        var playoff = mock(TeamPlayoffService.class);
+        assertThatCode(() -> new PilotEloRefresh(mapper, properties, historyPath, jdbc, king, americano, playoff))
+                .doesNotThrowAnyException();
+        Files.writeString(snapshotPath, mapper.writeValueAsString(new EloPilotSnapshot(weighted, 40, Map.of(), false)));
+        assertThatThrownBy(() -> new PilotEloRefresh(mapper, properties, historyPath, jdbc, king, americano, playoff))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("не воспроизводит");
+        verifyNoInteractions(jdbc, king, americano, playoff);
+    }
+
+    @Test
     void requiresHistoryToReproduceSnapshotBeforeAnyDatabaseRead() throws Exception {
         var mapper = JsonMapper.builder().findAndAddModules().build();
         var day = LocalDate.of(2026, 11, 12);

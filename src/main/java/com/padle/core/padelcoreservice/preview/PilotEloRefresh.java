@@ -39,7 +39,7 @@ public class PilotEloRefresh {
         try (var input = Files.newInputStream(properties.snapshot())) {
             initial = mapper.readValue(input, EloPilotSnapshot.class);
         }
-        replay = new PreviewEloReplay(initial.startStep());
+        replay = new PreviewEloReplay(initial.startStep(), initial.formatWeighted());
         var baseline = replay.replay(initial.snapshot().asOf(), source.history().names(), source.history().events());
         if (!baseline.equals(initial.snapshot()) || !source.history().aliases().equals(initial.aliases())
                 || source.liveAfter().isAfter(initial.snapshot().asOf())) {

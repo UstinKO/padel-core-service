@@ -7,6 +7,8 @@ import com.padle.core.padelcoreservice.preview.PilotEloRefresh;
 import com.padle.core.padelcoreservice.preview.PreviewEloRanking;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.beans.factory.annotation.Value;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.core.Authentication;
 import org.springframework.ui.Model;
@@ -24,6 +26,8 @@ import java.util.function.Supplier;
 @Profile("!preview")
 @ConditionalOnProperty(name = "app.rating.pilot.enabled", havingValue = "true")
 public class PilotEloRanking implements EloPilotAudience {
+    @Value("${app.rating.pilot.all-players:false}")
+    private boolean allPlayers;
     private final EloPilotAccess access;
     private final EloPilotSnapshot snapshot;
     private final Supplier<PreviewEloRanking.Snapshot> currentSnapshot;
@@ -45,11 +49,13 @@ public class PilotEloRanking implements EloPilotAudience {
     }
 
     @ModelAttribute
-    public void ranking(Model model, Authentication authentication, HttpServletResponse response) {
+    public void ranking(Model model, Authentication authentication, HttpServletResponse response, HttpServletRequest request) {
         access.protectResponse(response);
-        if (allows(authentication)) {
+        if (allows(authentication) || (allPlayers && "/ranking".equals(request.getRequestURI()))) {
             EloRankingView.populate(model, currentSnapshot.get(),
                     snapshot.startStep(), snapshot.aliases());
+            model.addAttribute("eloFormatWeighted", snapshot.formatWeighted());
+            model.addAttribute("eloFeedbackAllowed", allows(authentication));
         }
     }
 }
