@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
@@ -72,6 +73,7 @@ class PilotEloRefreshTest {
         var playoff = mock(TeamPlayoffService.class);
         assertThatCode(() -> new PilotEloRefresh(mapper, properties, historyPath, jdbc, king, americano, playoff))
                 .doesNotThrowAnyException();
+        assertThat(new PilotEloRefresh(mapper, properties, historyPath, jdbc, king, americano, playoff, true).isFormatWeighted()).isTrue();
         Files.writeString(snapshotPath, mapper.writeValueAsString(new EloPilotSnapshot(snapshot, 80, Map.of())));
         assertThatThrownBy(() -> new PilotEloRefresh(mapper, properties, historyPath, jdbc, king, americano, playoff))
                 .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("не воспроизводит");

@@ -31,6 +31,7 @@ public class PilotEloRanking implements EloPilotAudience {
     private final EloPilotAccess access;
     private final EloPilotSnapshot snapshot;
     private final Supplier<PreviewEloRanking.Snapshot> currentSnapshot;
+    private final boolean formatWeighted;
 
     public PilotEloRanking(ObjectMapper mapper, EloPilotProperties properties, EloPilotAccess access,
                            Optional<PilotEloRefresh> refresh) throws IOException {
@@ -39,6 +40,7 @@ public class PilotEloRanking implements EloPilotAudience {
         try (var input = Files.newInputStream(path)) {
             snapshot = mapper.readValue(input, EloPilotSnapshot.class);
         }
+        formatWeighted = refresh.map(PilotEloRefresh::isFormatWeighted).orElse(snapshot.formatWeighted());
         currentSnapshot = refresh.<Supplier<PreviewEloRanking.Snapshot>>map(service -> service::calculate)
                 .orElse(snapshot::snapshot);
     }
@@ -54,7 +56,7 @@ public class PilotEloRanking implements EloPilotAudience {
         if (allows(authentication) || (allPlayers && "/ranking".equals(request.getRequestURI()))) {
             EloRankingView.populate(model, currentSnapshot.get(),
                     snapshot.startStep(), snapshot.aliases());
-            model.addAttribute("eloFormatWeighted", snapshot.formatWeighted());
+            model.addAttribute("eloFormatWeighted", formatWeighted);
             model.addAttribute("eloFeedbackAllowed", allows(authentication));
         }
     }

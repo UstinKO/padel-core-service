@@ -122,7 +122,7 @@ class PilotEloRankingTest {
         var advice = new PilotEloRanking(mapper, properties, new EloPilotAccess(properties), Optional.of(refresh));
         advice.ranking(new ExtendedModelMap(), EloPilotAccessTest.player(2), new MockHttpServletResponse(), new org.springframework.mock.web.MockHttpServletRequest());
         advice.ranking(new ExtendedModelMap(), null, new MockHttpServletResponse(), new org.springframework.mock.web.MockHttpServletRequest());
-        verifyNoInteractions(refresh);
+        verify(refresh, org.mockito.Mockito.never()).calculate();
         var next = new PreviewEloRanking.Snapshot(bundle().snapshot().asOf().plusDays(1), List.of(row(2), row(1)));
         when(refresh.calculate()).thenReturn(bundle().snapshot(), next);
         var model = new ExtendedModelMap();
