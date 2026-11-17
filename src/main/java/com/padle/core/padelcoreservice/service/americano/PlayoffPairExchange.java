@@ -192,6 +192,10 @@ public class PlayoffPairExchange {
         String otherBlock = block(other, correction);
         if (otherBlock != null) return otherBlock;
         if (other.getRound().getPhase() != TournamentPhase.PLAYOFF) return MESSAGE + "other_match";
+        if ((isOpenEarlyRound(state.source()) || isOpenEarlyRound(other))
+                && !Objects.equals(state.source().getRound().getId(), other.getRound().getId())) {
+            return MESSAGE + "other_match";
+        }
         if (correction && !scoredOrStarted(state.source()) && !scoredOrStarted(other)) return MESSAGE + "use_exchange";
         List<Long> affected = Stream.of(first.first(), first.second(), second.first(), second.second()).map(Team::id).toList();
         if (new HashSet<>(affected).size() != 4) return MESSAGE + "duplicate";
@@ -309,7 +313,7 @@ public class PlayoffPairExchange {
     }
 
     private static String block(AmericanoMatch match, boolean correction) {
-        if (EarlyPlayoffSeeding.OPEN_ROUND_NOTE.equals(match.getRound().getNote())) {
+        if (isOpenEarlyRound(match) && (correction || match.getStatus() != AmericanoRoundStatus.QUEUED)) {
             return "team_playoff.early.fixed";
         }
         if (!correction && hasResult(match)) return MESSAGE + "completed";
@@ -317,6 +321,10 @@ public class PlayoffPairExchange {
         if (match.getStatus() == AmericanoRoundStatus.CANCELLED) return MESSAGE + "cancelled";
         if (match.getTeam1Id() == null || match.getTeam2Id() == null) return MESSAGE + "incomplete";
         return null;
+    }
+
+    private static boolean isOpenEarlyRound(AmericanoMatch match) {
+        return EarlyPlayoffSeeding.OPEN_ROUND_NOTE.equals(match.getRound().getNote());
     }
 
     private static boolean hasResult(AmericanoMatch match) {
