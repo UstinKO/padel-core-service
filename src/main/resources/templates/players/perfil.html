@@ -94,6 +94,39 @@
                th:text="#{guest.claim.profile.title}">Vincular mi perfil de invitado</a>
         </div>
 
+        <section th:if="${previewElo != null}" th:with="rating=${previewEloByPlayer[player.id]}"
+                 class="profile-rating" aria-labelledby="profile-rating-title"
+                 th:attr="data-rating-state=${rating == null ? 'unrated' : (rating.confirmed ? 'confirmed' : 'provisional')}">
+            <div class="profile-rating-header">
+                <h2 id="profile-rating-title" th:text="#{elo.preview.heading}">Ranking Elo</h2>
+                <p class="profile-rating-category">
+                    <strong th:if="${rating != null}"
+                            th:text="${rating.category == 'C10'} ? #{elo.preview.beginner} : ${rating.category}"></strong>
+                    <strong th:if="${rating == null and player.nivelJugador != null
+                        and player.nivelJugador.name() != 'SIN_ESPECIFICAR'}" th:text="${player.nivelJugador.name()}"></strong>
+                    <span th:if="${rating != null}"
+                          th:text="${rating.confirmed} ? #{elo.preview.confirmed} : #{elo.preview.provisional}"></span>
+                    <span th:if="${rating == null}" th:text="${player.nivelJugador == null
+                        or player.nivelJugador.name() == 'SIN_ESPECIFICAR'}
+                        ? #{perfil.field.nivel.none} : #{perfil.rating.declared}"></span>
+                </p>
+            </div>
+            <div th:if="${rating == null}" class="profile-rating-empty">
+                <p th:text="#{perfil.rating.firstMatch}"></p>
+                <a th:href="@{/torneos}" th:text="#{nav.torneos}"></a>
+            </div>
+            <div th:if="${rating != null}">
+                <dl class="profile-rating-metrics">
+                    <div><dt>Elo</dt><dd th:text="${#numbers.formatDecimal(rating.elo, 1, 2)}"></dd></div>
+                    <div><dt th:text="#{elo.preview.categoryPlace}"></dt>
+                        <dd th:text="#{elo.preview.placeOf(${rating.categoryPlace}, ${rating.categorySize})}"></dd></div>
+                    <div><dt th:text="#{elo.preview.overallPlace}"></dt>
+                        <dd th:text="${previewElo.rows.indexOf(rating) + 1}"></dd></div>
+                </dl>
+                <a th:href="@{/ranking(category=${rating.category})}" th:text="#{elo.preview.viewRanking}"></a>
+            </div>
+        </section>
+
         <div th:unless="${player.isGuestAccount()}">
             <th:block th:replace="~{fragments/guest-profile-claim :: request}"></th:block>
         </div>
@@ -183,7 +216,7 @@
                         <div class="form-group">
                             <label for="nivelJugador">
                                 <i class="fas fa-chart-line"></i>
-                                <span th:text="#{perfil.field.nivel}">Nivel de juego</span>
+                                <span th:text="${previewElo != null} ? #{perfil.rating.declaredField} : #{perfil.field.nivel}">Nivel de juego</span>
                             </label>
                             <select id="nivelJugador" name="nivelJugador" class="form-control" required>
                                 <th:block th:replace="~{fragments/nivel-options :: options(${player.nivelJugador}, false)}"></th:block>
