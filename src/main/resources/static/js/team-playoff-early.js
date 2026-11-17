@@ -27,13 +27,13 @@
         parent.appendChild(element);
     }
 
-    function matchCard(match, courts, selectedCourt) {
+    function matchCard(match, courts, selectedCourt, override = false) {
         const card = document.createElement('div');
         card.className = 'early-suggestion';
         card.dataset.match = [match.first.id, match.second.id].sort().join(':');
         bodyText(card, text.stage + ' · ' + text.ready);
         bodyText(card, teamLabel(match.first) + ' — ' + teamLabel(match.second));
-        bodyText(card, text.safe);
+        bodyText(card, override ? text.override : text.safe);
 
         const form = document.createElement('form');
         const court = document.createElement('select');
@@ -56,7 +56,8 @@
                     body: JSON.stringify({
                         firstId: match.first.id,
                         secondId: match.second.id,
-                        court: court.value ? Number(court.value) : null
+                        court: court.value ? Number(court.value) : null,
+                        approvedOverride: override
                     })
                 });
                 const result = await response.json();
@@ -103,6 +104,10 @@
             document.getElementById('earlySummary').textContent = text.summary
                 .replace('{0}', state.finishedTeams).replace('{1}', state.remainingMatches)
                 .replace('{2}', state.matches.length).replace('{3}', state.freeCourts.length);
+            const projected = document.getElementById('earlyProjected');
+            const byes = state.projectedByes || [];
+            projected.hidden = byes.length === 0;
+            projected.textContent = text.projected.replace('{0}', byes.map(teamLabel).join(', '));
             const pending = (state.pendingMatchNumbers || []).map(number => '№' + number).join(', ');
             const waiting = state.reason === 'results' && pending
                 ? text.pending.replace('{0}', pending) : text[state.reason];
@@ -112,8 +117,16 @@
             cards.replaceChildren(...state.matches.map(match => matchCard(match, state.freeCourts,
                 selectedCourts.get([match.first.id, match.second.id].sort().join(':')))));
             const checkedCurrentPair = selection.get('firstId') === first.value && selection.get('secondId') === second.value;
-            manualResult.textContent = checkedCurrentPair && state.manualStatus
-                ? (state.manualStatus === 'results' ? waiting : text[state.manualStatus]) : '';
+            const status = checkedCurrentPair ? state.manualStatus : null;
+            const manualFirst = state.readyTeams.find(team => String(team.id) === first.value);
+            const manualSecond = state.readyTeams.find(team => String(team.id) === second.value);
+            if (status === 'override' && manualFirst && manualSecond) {
+                const previousCourt = manualResult.querySelector('select')?.value;
+                manualResult.replaceChildren(matchCard({first: manualFirst, second: manualSecond},
+                    state.freeCourts, previousCourt, true));
+            } else {
+                manualResult.textContent = status ? (status === 'results' ? waiting : text[status]) : '';
+            }
         } catch {
             if (current === requestNumber && open) showToast(text.error);
         }

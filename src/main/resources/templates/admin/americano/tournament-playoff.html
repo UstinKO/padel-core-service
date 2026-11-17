@@ -526,20 +526,20 @@
                 </div>
 
                 <!-- Доска кортов: статус каждого корта в реальном времени (T2/T3) -->
-                <div style="border-bottom:1px solid #e2e8f0">
-                    <h4 style="margin:1rem 1.5rem 0;font-size:.9rem;color:#1e293b">
+                <details style="border-bottom:1px solid #e2e8f0">
+                    <summary style="padding:1rem 1.5rem;cursor:pointer;font-weight:600">
                         <i class="fas fa-border-all" style="color:#FF6B35"></i>
                         <span th:text="#{admin.playoff.board.title}">Tablero de canchas</span>
-                    </h4>
+                    </summary>
                     <div id="courtBoardGrid" class="court-board-grid"></div>
-                </div>
+                </details>
 
                 <!-- Новый матч: координатор выбирает 2 свободные команды и корт вручную -->
-                <div class="round-content" style="border-bottom:1px solid #e2e8f0">
-                    <h4 style="margin:0 0 .75rem;font-size:.9rem;color:#1e293b">
+                <details id="qualificationNewMatch" class="round-content" style="border-bottom:1px solid #e2e8f0">
+                    <summary style="margin:0 0 .75rem;cursor:pointer;font-weight:600">
                         <i class="fas fa-table-tennis" style="color:#FF6B35"></i>
                         <span th:text="#{admin.playoff.qual.new_match.title}">Nuevo partido</span>
-                    </h4>
+                    </summary>
                     <div style="display:flex;gap:.75rem;align-items:flex-end;flex-wrap:wrap">
                         <div class="form-group" style="min-width:220px">
                             <label th:text="#{admin.playoff.qual.new_match.team1}">Equipo 1</label>
@@ -565,7 +565,7 @@
                     <p id="newMatchHint" style="margin:.5rem 0 0;font-size:.8rem;color:#94a3b8"></p>
                     <p id="qualDoneHint" style="margin:.35rem 0 0;font-size:.78rem;color:#94a3b8"></p>
                     <div id="newMatchSuggestions" style="margin-top:.5rem;display:flex;flex-direction:column;gap:.35rem"></div>
-                </div>
+                </details>
 
                 <!--/* Очередь ожидания — пары уже сформированы, корт ещё не назначен */-->
                 <div style="border-bottom:1px solid #e2e8f0">
@@ -587,6 +587,9 @@
                                   data-stage=#{team_playoff.stage.round_of_16},
                                   data-ready=#{team_playoff.early.ready},
                                   data-safe=#{team_playoff.early.manual.safe},
+                                  data-override=#{team_playoff.early.manual.override},
+                                  data-bye=#{team_playoff.early.manual.bye},
+                                  data-projected=#{team_playoff.early.projected_bye},
                                   data-results=#{team_playoff.early.manual.results},
                                   data-pending=#{team_playoff.early.pending},
                                   data-limit=#{team_playoff.early.manual.limit},
@@ -596,6 +599,7 @@
                                   data-error=#{team_playoff.early.error}">
                     <h4 id="earlyPlayoffTitle" th:text="#{team_playoff.early.title}">Playoff anticipado</h4>
                     <p id="earlySummary" aria-live="polite"></p>
+                    <p id="earlyProjected" hidden></p>
                     <p id="earlyReason" aria-live="polite"></p>
                     <div id="earlySuggestions" class="early-suggestions"></div>
                     <details id="earlyManual">
@@ -1123,6 +1127,8 @@
     }
 
     function renderCourtBoard(data) {
+        const newMatch = document.getElementById('qualificationNewMatch');
+        if (newMatch) newMatch.hidden = data.qualificationFinished === true;
         const t1Sel = document.getElementById('newMatchTeam1');
         const t2Sel = document.getElementById('newMatchTeam2');
         const courtSel = document.getElementById('newMatchCourt');
