@@ -363,12 +363,14 @@
             <div id="bracketStage" class="bracket-stage">
                 <div class="bracket" id="bracketContent">
                     <div th:each="round : ${playoffRounds}" class="bracket-col">
-                        <div class="bracket-col-title" th:switch="${round.note}">
+                        <div class="bracket-col-title" th:switch="${#lists.isEmpty(round.matches) ? round.note : (round.matches[0].playoffStage ?: round.note)}">
                             <span th:case="'ROUND_OF_16'" th:text="#{team_playoff.stage.round_of_16}">1/8 Final</span>
+                            <span th:case="'EARLY_ROUND_OF_16'" th:text="#{team_playoff.stage.round_of_16}">Octavos de final</span>
+                            <span th:case="'CONFIRMED_ROUND_OF_16'" th:text="#{team_playoff.stage.round_of_16}">Octavos de final</span>
                             <span th:case="'QUARTER_FINAL'" th:text="#{team_playoff.stage.quarter_final}">Cuartos</span>
                             <span th:case="'SEMI_FINAL'" th:text="#{team_playoff.stage.semi_final}">Semifinal</span>
                             <span th:case="'FINAL'" th:text="#{team_playoff.stage.final}">Final</span>
-                            <span th:case="*" th:text="${round.note}">Etapa</span>
+                            <span th:case="*" th:text="#{team_playoff.stage.unknown}">Etapa</span>
                         </div>
 
                         <div th:each="match : ${round.matches}" class="match-card">
