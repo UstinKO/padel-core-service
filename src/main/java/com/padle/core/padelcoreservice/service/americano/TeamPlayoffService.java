@@ -626,7 +626,7 @@ public class TeamPlayoffService {
     public record EarlyMatch(EarlyTeam first, EarlyTeam second) {}
     public record EarlyPlayoff(boolean available, int finishedTeams, int remainingMatches, List<Integer> freeCourts,
                                List<EarlyTeam> readyTeams, List<EarlyMatch> matches, List<Integer> pendingMatchNumbers,
-                               String reason, String manualStatus) {}
+                               String reason, String manualStatus, List<EarlyTeam> projectedByes) {}
 
     public EarlyPlayoff earlyPlayoff(Long tournamentId, Long firstId, Long secondId) {
         Pair manual = firstId != null && secondId != null ? Pair.of(firstId, secondId) : null;
@@ -636,7 +636,7 @@ public class TeamPlayoffService {
                 || !isQualificationStarted(tournamentId) || isQualificationDone(tournamentId)
                 || (isPlayoffStarted(tournamentId)
                     && findEarlyRound(tournamentId, EarlyPlayoffSeeding.OPEN_ROUND_NOTE).isEmpty())) {
-            return new EarlyPlayoff(false, 0, 0, List.of(), List.of(), List.of(), List.of(), null, null);
+            return new EarlyPlayoff(false, 0, 0, List.of(), List.of(), List.of(), List.of(), null, null, List.of());
         }
 
         List<AmericanoMatch> fixtures = matchRepository.findByTournamentIdOrderByRoundIdAscMatchNumberAsc(tournamentId);
@@ -684,8 +684,8 @@ public class TeamPlayoffService {
         boolean eligibleManual = manual != null && eligible.contains(manual);
         var result = completeSchedule && !remaining.isEmpty()
                 ? new EarlyPlayoffSeeding(matchingEngine).evaluate(standings(teams), remaining,
-                    qualifyingOpponents(scheduled, true), eligible, eligibleManual ? manual : null)
-                : new EarlyPlayoffSeeding.Result(Set.of(), Set.of(), false, false);
+                    qualifyingOpponents(scheduled, true), eligible, eligibleManual ? manual : null, fixedEarlyPairs(tournamentId))
+                : new EarlyPlayoffSeeding.Result(Set.of(), false, false, false);
 
         var byId = ready.stream().collect(Collectors.toMap(AmericanoTeam::getId, Function.identity()));
         var suggestions = result.stable().stream()
@@ -696,17 +696,27 @@ public class TeamPlayoffService {
         String status = manual == null ? null
                 : !eligibleManual ? "teams"
                 : result.stable().contains(manual) ? "safe"
-                : result.possible().contains(manual) || !result.exhaustive() ? reason : "seeding";
+                : result.manualBye() ? "bye"
+                : result.exhaustive() ? "override" : reason;
         var pendingMatchNumbers = scheduled.stream().filter(m -> !m.isCompleted())
                 .map(AmericanoMatch::getMatchNumber).toList();
         return new EarlyPlayoff(true, (int) teams.stream().filter(this::isSettled).count(),
                 remainingMatches, freeCourts, ready.stream().map(this::earlyTeam).toList(), suggestions,
-                pendingMatchNumbers, reason, status);
+                pendingMatchNumbers, reason, status, EarlyPlayoffSeeding.projectedByes(standings(teams)).stream()
+                        .map(id -> teams.stream().filter(team -> id.equals(team.getId())).findFirst().orElseThrow())
+                        .map(this::earlyTeam).toList());
     }
 
     @Transactional
     @ConductChange(ConductChange.Action.PLAYOFF)
     public AmericanoMatch confirmEarlyPlayoff(Long tournamentId, Long firstId, Long secondId, Integer court) {
+        return confirmEarlyPlayoff(tournamentId, firstId, secondId, court, false);
+    }
+
+    @Transactional
+    @ConductChange(ConductChange.Action.PLAYOFF)
+    public AmericanoMatch confirmEarlyPlayoff(Long tournamentId, Long firstId, Long secondId, Integer court,
+                                             boolean approvedOverride) {
         if (firstId == null || secondId == null || firstId.equals(secondId)) {
             throw new InvalidStateException("team_playoff.early.manual.teams");
         }
@@ -722,7 +732,8 @@ public class TeamPlayoffService {
         }
 
         EarlyPlayoff state = earlyPlayoff(tournamentId, firstId, secondId);
-        if (!state.available() || !"safe".equals(state.manualStatus())) {
+        if (!state.available() || !("safe".equals(state.manualStatus())
+                || (approvedOverride && "override".equals(state.manualStatus())))) {
             throw new InvalidStateException(state.manualStatus() == null ? "team_playoff.early.fixed"
                     : "team_playoff.early.manual." + state.manualStatus());
         }
@@ -815,9 +826,16 @@ public class TeamPlayoffService {
         return opponents;
     }
 
+    private Set<Pair> fixedEarlyPairs(Long tournamentId) {
+        return findEarlyRound(tournamentId, EarlyPlayoffSeeding.OPEN_ROUND_NOTE)
+                .or(() -> findEarlyRound(tournamentId, EarlyPlayoffSeeding.CLOSED_ROUND_NOTE))
+                .stream().flatMap(round -> matchRepository.findByRoundId(round.getId()).stream())
+                .map(match -> Pair.of(match.getTeam1Id(), match.getTeam2Id())).collect(Collectors.toSet());
+    }
+
     private List<PlayoffMatchingEngine.Pairing> seedRoundOf16(Long tournamentId, List<AmericanoTeam> teams) {
         var qualification = matchRepository.findByTournamentIdAndPhase(tournamentId, TournamentPhase.QUALIFICATION);
-        return new EarlyPlayoffSeeding(matchingEngine).roundOf16(standings(teams), qualifyingOpponents(qualification, false));
+        return new EarlyPlayoffSeeding(matchingEngine).roundOf16(standings(teams), qualifyingOpponents(qualification, false), fixedEarlyPairs(tournamentId));
     }
 
     private List<AmericanoMatch> placeRoundOf16Matches(AmericanoRound round, List<AmericanoTeam> ranked,
@@ -2375,7 +2393,7 @@ public class TeamPlayoffService {
                 });
     }
 
-    private boolean isQualificationDone(Long tournamentId) {
+    public boolean isQualificationDone(Long tournamentId) {
         List<AmericanoRound> quals = roundRepository.findByTournamentIdAndPhase(
                 tournamentId, TournamentPhase.QUALIFICATION);
         if (quals.isEmpty()) return false;

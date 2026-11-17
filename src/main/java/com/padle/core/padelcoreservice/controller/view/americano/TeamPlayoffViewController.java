@@ -443,7 +443,7 @@ public class TeamPlayoffViewController {
     // REST API
     // ══════════════════════════════════════════════════════════════════════
 
-    public record EarlyPlayoffRequest(Long firstId, Long secondId, Integer court) {}
+    public record EarlyPlayoffRequest(Long firstId, Long secondId, Integer court, boolean approvedOverride) {}
     public record EarlyPlayoffSaved(boolean success, Long matchId, String message) {}
 
     @GetMapping("/api/{tournamentId}/early-playoff")
@@ -464,7 +464,7 @@ public class TeamPlayoffViewController {
         tournamentAccessService.assertCanManageTournament(owner, tournamentId);
         try {
             var match = playoffService.confirmEarlyPlayoff(tournamentId, request.firstId(), request.secondId(),
-                    request.court());
+                    request.court(), request.approvedOverride());
             return ResponseEntity.ok(new EarlyPlayoffSaved(true, match.getId(), null));
         } catch (InvalidStateException e) {
             return ResponseEntity.status(409).body(new EarlyPlayoffSaved(false, null, localMessage(e.getMessage())));
@@ -689,6 +689,7 @@ public class TeamPlayoffViewController {
 
         Map<String, Object> result = new HashMap<>();
         result.put("courts", courts);
+        result.put("qualificationFinished", playoffService.isQualificationDone(tournamentId));
         result.put("availableTeams", playoffService.getAvailableTeamsForQualification(tournamentId));
         result.put("teamGroups", playoffService.getQualificationTeamGroups(tournamentId));
         result.put("queue", playoffService.getQueue(tournamentId));
