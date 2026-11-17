@@ -62,6 +62,56 @@ class TeamPlayoffEarlyStageTest {
     @Autowired
     private AmericanoMatchRepository matchRepository;
 
+    @Autowired
+    private PlayoffPairExchange exchange;
+
+    @Test
+    void exchangesQueuedEarlyMatchesAndKeepsTheNewTeamsOnCourt() {
+        long tournament = createTournament(15);
+        var teams = createTeams(tournament, 15);
+        playoffService.initQualification(tournament, 5);
+
+        for (int team = 1; team < 14; team += 2) {
+            completeQualificationMatch(tournament, teams, team, team + 1);
+        }
+        completeQualificationMatch(tournament, teams, 15, 1);
+        for (int team = 2; team <= 10; team += 2) {
+            completeQualificationMatch(tournament, teams, team, team + 1);
+        }
+        playoffService.createQualificationMatch(tournament, teams.get(11).getId(), teams.get(12).getId(), 1);
+        playoffService.createQualificationMatch(tournament, teams.get(13).getId(), teams.get(14).getId(), 2);
+
+        var first = playoffService.confirmEarlyPlayoff(tournament, teams.get(1).getId(), teams.get(4).getId(),
+                null, true);
+        var second = playoffService.confirmEarlyPlayoff(tournament, teams.get(3).getId(), teams.get(6).getId(),
+                null, true);
+        var request = new PlayoffPairExchange.Request(1, second.getId(), 2, false, false);
+        assertThat(exchange.options(first.getId(), 1, false).candidates())
+                .anyMatch(option -> option.matchId().equals(second.getId()) && option.slot() == 2
+                        && option.block() == null);
+        exchange.exchange(first.getId(), request);
+
+        assertThat(playoffService.getQueue(tournament)).extracting(match -> match.getId())
+                .contains(first.getId(), second.getId());
+        assertThat(matchRepository.findById(first.getId()).orElseThrow().getTeam1Id())
+                .isEqualTo(teams.get(6).getId());
+        assertThat(matchRepository.findById(second.getId()).orElseThrow().getTeam2Id())
+                .isEqualTo(teams.get(1).getId());
+
+        var assigned = playoffService.assignCourtToQueuedMatch(first.getId(), 3);
+        assertThat(assigned.getCourtNumber()).isEqualTo(3);
+        assertThat(assigned.getTeam1Id()).isEqualTo(teams.get(6).getId());
+        assertThat(assigned.getTeam2Id()).isEqualTo(teams.get(4).getId());
+        assertThatThrownBy(() -> exchange.exchange(first.getId(), request)).hasMessage("team_playoff.early.fixed");
+        assertThat(playoffService.getQualRanking(tournament).isFinished()).isFalse();
+    }
+
+    private void completeQualificationMatch(long tournament, List<AmericanoTeam> teams, int first, int second) {
+        var match = playoffService.createQualificationMatch(tournament, teams.get(first - 1).getId(),
+                teams.get(second - 1).getId(), 1);
+        playoffService.submitQualResult(match.getId(), 6, 4);
+    }
+
     @ParameterizedTest
     @ValueSource(ints = {12, 14, 15, 16})
     void confirmedMatchRemainsInSameBracketWhenLastQualificationScoreArrives(int count) {
