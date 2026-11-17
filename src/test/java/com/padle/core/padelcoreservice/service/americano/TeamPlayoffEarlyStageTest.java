@@ -96,8 +96,18 @@ class TeamPlayoffEarlyStageTest {
         var confirmed = playoffService.confirmEarlyPlayoff(tournament, second, first, 2);
         assertThat(playoffService.getPlayoffMatches(tournament)).hasSize(1);
         var secondSuggestion = options.matches().get(1);
+        boolean manualOverride = count == 15;
+        if (manualOverride) {
+            var current = playoffService.earlyPlayoff(tournament, null, null);
+            secondSuggestion = current.readyTeams().stream().flatMap(left -> current.readyTeams().stream()
+                            .filter(right -> left.id() < right.id())
+                            .filter(right -> "override".equals(playoffService
+                                    .earlyPlayoff(tournament, left.id(), right.id()).manualStatus()))
+                            .map(right -> new TeamPlayoffService.EarlyMatch(left, right)))
+                    .findFirst().orElseThrow();
+        }
         var queued = playoffService.confirmEarlyPlayoff(tournament, secondSuggestion.first().id(),
-                secondSuggestion.second().id(), null);
+                secondSuggestion.second().id(), null, manualOverride);
         assertThat(queued.isQueued()).isTrue();
         assertThat(playoffService.getQueue(tournament)).anyMatch(m -> m.getId().equals(queued.getId())
                 && "ROUND_OF_16".equals(m.getPlayoffStage()));
@@ -110,6 +120,7 @@ class TeamPlayoffEarlyStageTest {
         assertThat(playoffService.getQualRanking(tournament).isFinished()).isTrue();
         var roundOf16 = matchRepository.findByTournamentIdAndPlayoffStage(tournament, PlayoffStage.ROUND_OF_16);
         assertThat(roundOf16).hasSize(count - 8);
+        assertThat(roundOf16).anyMatch(match -> match.getId().equals(queued.getId()));
         assertThat(roundOf16).filteredOn(m -> m.getId().equals(confirmed.getId())).singleElement().satisfies(m -> {
             assertThat(m.getTeam1Id()).isEqualTo(first);
             assertThat(m.getTeam2Id()).isEqualTo(second);

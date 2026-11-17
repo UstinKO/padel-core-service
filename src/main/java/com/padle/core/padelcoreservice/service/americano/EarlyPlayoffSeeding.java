@@ -58,8 +58,33 @@ final class EarlyPlayoffSeeding {
                 && Math.min(first, second) < WINNING_GAMES;
     }
 
-    List<Pairing> roundOf16(List<Standing> standings, Map<Long, Set<Long>> opponents) {
-        return engine.seedRoundOf16(candidates(standings), opponents);
+    List<Pairing> roundOf16(List<Standing> standings, Map<Long, Set<Long>> opponents, Set<Pair> fixed) {
+        return pairCandidates(candidates(standings), opponents, fixed);
+    }
+
+    private List<Pairing> pairCandidates(List<Candidate> candidates, Map<Long, Set<Long>> opponents, Set<Pair> fixed) {
+        if (fixed.isEmpty()) return engine.seedRoundOf16(candidates, opponents);
+        Map<Long, Integer> seeds = new HashMap<>();
+        candidates.forEach(candidate -> seeds.put(candidate.teamId(), candidate.seed()));
+        Set<Long> assigned = new HashSet<>();
+        List<Pairing> pairs = new ArrayList<>();
+        fixed.forEach(pair -> {
+            assigned.add(pair.first());
+            assigned.add(pair.second());
+            pairs.add(new Pairing(pair.first(), pair.second()));
+        });
+        List<Candidate> remaining = candidates.stream().filter(candidate -> !assigned.contains(candidate.teamId())).toList();
+        List<Candidate> reseeded = IntStream.range(0, remaining.size())
+                .mapToObj(index -> new Candidate(remaining.get(index).teamId(), index + 1, remaining.get(index).winStreak()))
+                .toList();
+        pairs.addAll(engine.seedRoundOf16(reseeded, opponents));
+        pairs.sort(Comparator.comparingInt(pair -> Math.min(seeds.get(pair.team1Id()), seeds.get(pair.team2Id()))));
+        return pairs;
+    }
+
+    static List<Long> projectedByes(List<Standing> standings) {
+        return standings.stream().sorted(RANKING).limit(PlayoffFormat.directToQuarterFinal(standings.size()))
+                .map(Standing::id).toList();
     }
 
     private List<Candidate> candidates(List<Standing> standings) {
@@ -70,35 +95,37 @@ final class EarlyPlayoffSeeding {
                 .toList();
     }
 
-    record Result(Set<Pair> stable, Set<Pair> possible, boolean exhaustive, boolean limited) {}
+    record Result(Set<Pair> stable, boolean exhaustive, boolean limited, boolean manualBye) {}
 
     Result evaluate(List<Standing> standings, List<Fixture> remaining, Map<Long, Set<Long>> opponents,
-                    Set<Pair> eligible, Pair manual) {
+                    Set<Pair> eligible, Pair manual, Set<Pair> fixed) {
         if (eligible.isEmpty()) {
-            return new Result(Set.of(), Set.of(), true, false);
+            return new Result(Set.of(), true, false, false);
         }
         Map<Long, Integer> position = new HashMap<>();
         for (int i = 0; i < standings.size(); i++) {
             position.put(standings.get(i).id(), i);
         }
-        Search search = new Search(opponents, eligible, manual);
+        Search search = new Search(opponents, eligible, manual, fixed);
         boolean exhaustive = search.visit(new ArrayList<>(standings), position, remaining, 0);
-        return new Result(search.limit ? Set.of() : search.stable, search.possible, exhaustive, search.limit);
+        return new Result(search.limit ? Set.of() : search.stable, exhaustive, search.limit, search.manualBye);
     }
 
     private final class Search {
         private final Map<Long, Set<Long>> opponents;
         private final Set<Pair> stable;
         private final Pair manual;
-        private final Set<Pair> possible = new HashSet<>();
+        private final Set<Pair> fixed;
+        private boolean manualBye;
         private final Map<List<Candidate>, Set<Pair>> cache = new HashMap<>();
         private int scenarios;
         private boolean limit;
 
-        private Search(Map<Long, Set<Long>> opponents, Set<Pair> eligible, Pair manual) {
+        private Search(Map<Long, Set<Long>> opponents, Set<Pair> eligible, Pair manual, Set<Pair> fixed) {
             this.opponents = opponents;
             this.stable = new LinkedHashSet<>(eligible);
             this.manual = manual;
+            this.fixed = fixed;
         }
 
         private boolean visit(List<Standing> standings, Map<Long, Integer> position, List<Fixture> remaining, int index) {
@@ -107,14 +134,17 @@ final class EarlyPlayoffSeeding {
                     limit = true;
                     return false;
                 }
-                Set<Pair> pairs = cache.computeIfAbsent(candidates(standings), candidates -> {
+                List<Candidate> ranked = candidates(standings);
+                if (manual != null && ranked.stream().filter(c -> c.teamId() == manual.first() || c.teamId() == manual.second()).count() < 2) {
+                    manualBye = true;
+                }
+                Set<Pair> pairs = cache.computeIfAbsent(ranked, candidates -> {
                     Set<Pair> result = new HashSet<>();
-                    engine.seedRoundOf16(candidates, opponents).forEach(pair -> result.add(Pair.of(pair)));
+                    pairCandidates(candidates, opponents, fixed).forEach(pair -> result.add(Pair.of(pair)));
                     return result;
                 });
                 stable.retainAll(pairs);
-                possible.addAll(pairs);
-                return !stable.isEmpty() || (manual != null && !possible.contains(manual));
+                return !stable.isEmpty() || (manual != null && !manualBye);
             }
 
             Fixture fixture = remaining.get(index);
