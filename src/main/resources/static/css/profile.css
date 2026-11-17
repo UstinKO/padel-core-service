@@ -1,5 +1,87 @@
 /* ===== PROFILE PAGE STYLES ===== */
 
+.profile-rating {
+    padding: clamp(1.25rem, 3vw, 2rem);
+    margin-bottom: 1.5rem;
+    border: 1px solid #efd9cc;
+    border-radius: var(--border-radius-xl);
+    background: linear-gradient(145deg, #fff4ed, #fff 70%);
+    color: var(--color-text);
+}
+
+.profile-rating-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: .75rem 1.25rem;
+    margin-bottom: 1rem;
+}
+
+.profile-rating-header h2 {
+    margin: 0;
+    color: var(--color-secondary);
+    font-size: 1.4rem;
+}
+
+.profile-rating-category {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    margin: 0;
+    padding: .4rem .75rem;
+    border-radius: .65rem;
+    background: #f0edf6;
+    color: #4d4163;
+    font-size: .9rem;
+}
+
+.profile-rating[data-rating-state="confirmed"] .profile-rating-category {
+    background: #e6f1e8;
+    color: #275638;
+}
+
+.profile-rating[data-rating-state="provisional"] .profile-rating-category {
+    background: #fff0cf;
+    color: #674819;
+}
+
+.profile-rating-empty p {
+    margin: 0 0 .75rem;
+}
+
+.profile-rating-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(9.5rem, 100%), 1fr));
+    gap: .65rem;
+    margin: 0 0 1rem;
+}
+
+.profile-rating-metrics > div {
+    padding: .75rem .9rem;
+    border: 1px solid #eee3dc;
+    border-radius: .75rem;
+    background: #fff;
+}
+
+.profile-rating-metrics dt {
+    font-size: .875rem;
+}
+
+.profile-rating-metrics dd {
+    margin: .2rem 0 0;
+    font-size: 1.45rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.profile-rating a {
+    color: #903b22;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: .18em;
+}
+
 .profile-header {
     display: flex;
     align-items: center;

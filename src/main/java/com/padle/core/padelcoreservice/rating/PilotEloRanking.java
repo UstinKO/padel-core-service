@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.rating;
 
+import com.padle.core.padelcoreservice.controller.player.PerfilController;
 import com.padle.core.padelcoreservice.controller.player.PlayerDashboardController;
 import com.padle.core.padelcoreservice.controller.view.RankingController;
 import com.padle.core.padelcoreservice.preview.PilotEloRefresh;
@@ -19,7 +20,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-@ControllerAdvice(assignableTypes = {RankingController.class, PlayerDashboardController.class})
+@ControllerAdvice(assignableTypes = {RankingController.class, PlayerDashboardController.class, PerfilController.class})
 @Profile("!preview")
 @ConditionalOnProperty(name = "app.rating.pilot.enabled", havingValue = "true")
 public class PilotEloRanking implements EloPilotAudience {
