@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.annotation.PostConstruct;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.core.Authentication;
@@ -36,12 +37,19 @@ public class PilotEloRanking implements EloPilotAudience {
 
     public PilotEloRanking(ObjectMapper mapper, EloPilotProperties properties, EloPilotAccess access,
                            Optional<PilotEloRefresh> refresh) throws IOException {
+        this(mapper, properties, access, refresh, false);
+    }
+
+    @Autowired
+    public PilotEloRanking(ObjectMapper mapper, EloPilotProperties properties, EloPilotAccess access,
+                           Optional<PilotEloRefresh> refresh,
+                           @Value("${app.rating.pilot.format-weighted:false}") boolean formatWeighted) throws IOException {
         this.access = access;
         var path = Objects.requireNonNull(properties.snapshot(), "Для пилота нужен проверенный срез рейтинга");
         try (var input = Files.newInputStream(path)) {
             snapshot = mapper.readValue(input, EloPilotSnapshot.class);
         }
-        formatWeighted = refresh.map(PilotEloRefresh::isFormatWeighted).orElse(snapshot.formatWeighted());
+        this.formatWeighted = snapshot.formatWeighted() || (formatWeighted && refresh.isPresent());
         currentSnapshot = refresh.<Supplier<PreviewEloRanking.Snapshot>>map(service -> service::calculate)
                 .orElse(snapshot::snapshot);
     }
