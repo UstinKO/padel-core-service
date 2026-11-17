@@ -19,12 +19,16 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 /** Чтение результатов без тестовых фикстур, записей рейтинга и таблиц исправлений preview. */
 @Service
 @Profile("!preview")
 @ConditionalOnProperty(name = {"app.rating.pilot.enabled", "app.rating.pilot.auto-refresh"}, havingValue = "true")
 public class PilotEloRefresh {
+    // Tournament 189 was a production QA fixture, not a played competition.
+    private static final Set<String> VERIFIED_TEST_EVENTS = Set.of("S-189");
     private final EloRefreshSource source;
     private final PreviewEloLiveEvents live;
     private final EloPilotSnapshot initial;
@@ -66,9 +70,15 @@ public class PilotEloRefresh {
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public PreviewEloRanking.Snapshot calculate() {
-        var history = source.merge(live.load(source.liveAfter(), source.managedIds(), source.excludedEvents()));
+        var history = source.merge(live.load(source.liveAfter(), source.managedIds(), excludedEvents(source.excludedEvents())));
         var asOf = history.events().stream().map(PreviewEloReplay.Event::day).max(LocalDate::compareTo)
                 .filter(day -> day.isAfter(initial.snapshot().asOf())).orElse(initial.snapshot().asOf());
         return replay.replay(asOf, history.names(), history.events());
+    }
+
+    static Set<String> excludedEvents(Set<String> configured) {
+        var excluded = new HashSet<>(configured);
+        excluded.addAll(VERIFIED_TEST_EVENTS);
+        return Set.copyOf(excluded);
     }
 }

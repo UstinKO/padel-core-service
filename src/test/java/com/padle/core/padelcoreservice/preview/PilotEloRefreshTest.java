@@ -27,6 +27,13 @@ class PilotEloRefreshTest {
     @TempDir Path directory;
 
     @Test
+    void excludesVerifiedQaTournamentAlongsideConfiguredExclusions() {
+        assertThat(PilotEloRefresh.excludedEvents(Set.of("S-172")))
+                .containsExactlyInAnyOrder("S-172", "S-189")
+                .doesNotContain("S-188", "S-190");
+    }
+
+    @Test
     void weightedRefreshRequiresMatchingWeightedSnapshotBeforeDatabaseRead() throws Exception {
         var mapper = JsonMapper.builder().findAndAddModules().build();
         var day = LocalDate.of(2026, 11, 12);
