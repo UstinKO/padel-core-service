@@ -293,19 +293,19 @@
         <!-- ══════════════════════════════════════════════════════════════
              РАЗДЕЛ 1: Команды
         ══════════════════════════════════════════════════════════════ -->
-        <div class="section-card">
-            <div class="section-header">
-                <h3>
+        <details id="registeredTeams" class="section-card" th:open="${not qualStarted}">
+            <summary class="section-header" style="display:list-item;cursor:pointer">
+                <strong>
                     <i class="fas fa-users"></i>
                     <span th:text="#{admin.playoff.section.teams}">Equipos registrados</span>
                     (<span th:text="${#lists.size(teams)}">0</span>)
-                </h3>
-                <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+                </strong>
+            </summary>
+                <div style="display:flex;gap:.5rem;flex-wrap:wrap;padding:.75rem 1.5rem">
                     <a th:href="@{'/admin/tournaments/' + ${tournament.id} + '/payments'}" class="btn-sm btn-success">
                         <i class="fas fa-plus"></i>
                         <span th:text="#{admin.playoff.link.add_team_payments}">Agregar pareja en la página de pagos</span>
                     </a>
-                </div>
             </div>
 
             <!-- Таблица команд -->
@@ -430,7 +430,7 @@
                     </tbody>
                 </table>
             </div>
-        </div>
+        </details>
 
         <!-- ══════════════════════════════════════════════════════════════
              РАЗДЕЛ 2: Calificación
