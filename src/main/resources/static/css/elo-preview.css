@@ -257,3 +257,7 @@
 }
 .elo-feedback-dialog [role="status"] { margin: .8rem 0 0; }
 .elo-feedback-dialog [role="status"]:empty { margin: 0; }
+
+.elo-rating-explanation { margin: 1rem 0; padding: 1rem 1.15rem; background: #f3f8e7; border: 1px solid #d7e8b5; border-radius: 14px; color: #24372c; }
+.elo-rating-explanation summary { cursor: pointer; font-weight: 700; }
+.elo-rating-explanation p { margin: .75rem 0 0; line-height: 1.55; }
