@@ -313,13 +313,12 @@ public class PlayoffPairExchange {
     }
 
     private static String block(AmericanoMatch match, boolean correction) {
-        if (isOpenEarlyRound(match) && (correction || match.getStatus() != AmericanoRoundStatus.QUEUED)) {
-            return "team_playoff.early.fixed";
-        }
+        if (isOpenEarlyRound(match) && correction) return "team_playoff.early.fixed";
         if (!correction && hasResult(match)) return MESSAGE + "completed";
         if (!correction && Boolean.TRUE.equals(match.getPlayoffPlayStarted())) return MESSAGE + "started";
         if (match.getStatus() == AmericanoRoundStatus.CANCELLED) return MESSAGE + "cancelled";
         if (match.getTeam1Id() == null || match.getTeam2Id() == null) return MESSAGE + "incomplete";
+        if (isOpenEarlyRound(match) && !match.isQueued()) return MESSAGE + "early_queue_only";
         return null;
     }
 

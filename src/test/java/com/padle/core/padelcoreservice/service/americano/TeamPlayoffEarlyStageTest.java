@@ -102,7 +102,7 @@ class TeamPlayoffEarlyStageTest {
         assertThat(assigned.getCourtNumber()).isEqualTo(3);
         assertThat(assigned.getTeam1Id()).isEqualTo(teams.get(6).getId());
         assertThat(assigned.getTeam2Id()).isEqualTo(teams.get(4).getId());
-        assertThatThrownBy(() -> exchange.exchange(first.getId(), request)).hasMessage("team_playoff.early.fixed");
+        assertThatThrownBy(() -> exchange.exchange(first.getId(), request)).hasMessage("admin.playoff.swap.started");
         assertThat(playoffService.getQualRanking(tournament).isFinished()).isFalse();
     }
 
