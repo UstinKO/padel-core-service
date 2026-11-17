@@ -26,6 +26,75 @@ jobs:
             set -eu
             umask 077
             python3 - <<'PYRUN'
-            import base64
-            exec(compile(base64.b64decode('aW1wb3J0IGNvcHksaGFzaGxpYixqc29uLG9zLHN1YnByb2Nlc3Msc3lzLHRlbXBmaWxlLHppcGZpbGUscmUKZnJvbSBkYXRldGltZSBpbXBvcnQgZGF0ZXRpbWUsIGRhdGUKZnJvbSBwYXRobGliIGltcG9ydCBQYXRoClJPT1Q9UGF0aCgnL29wdC9wYWRlbC1hcHAnKQpFWFBFQ1RFRF9SRVZJU0lPTj0nNjZhNGEwYWEwMzhhMWFlZTU5NTAxOGZmN2JhODgyYTBlMzg1YTllYScKUEhBU0U9J3ByZWZsaWdodCcKZGVmIHJ1bihjbWQpOgogcmV0dXJuIHN1YnByb2Nlc3MucnVuKGNtZCxjaGVjaz1UcnVlLGNhcHR1cmVfb3V0cHV0PVRydWUsdGltZW91dD0xODApLnN0ZG91dC5kZWNvZGUoKQpkZWYgZGlnZXN0KHBhdGgpOgogcmV0dXJuIGhhc2hsaWIuc2hhMjU2KHBhdGgucmVhZF9ieXRlcygpKS5oZXhkaWdlc3QoKQp3aXRoIHRlbXBmaWxlLlRlbXBvcmFyeURpcmVjdG9yeShwcmVmaXg9J2Vsby1wdWJsaWMtY2hlY2stJykgYXMgbW9kdWxlczoKIHJ1bm5lcj1ST09ULyd0ZW1wL3JlbGVhc2UtcnVubmVyLnB5eicKIGlmIG5vdCBydW5uZXIuaXNfZmlsZSgpIG9yIHJ1bm5lci5pc19zeW1saW5rKCk6cmFpc2UgUnVudGltZUVycm9yKCdtaXNzaW5nIHJ1bm5lcicpCiB3aXRoIHppcGZpbGUuWmlwRmlsZShydW5uZXIpIGFzIHo6CiAgZm9yIG5hbWUgaW4gWydhcnRpZmFjdC5weScsJ2RvY2tlcl9hZGFwdGVyLnB5Jywnc21va2UucHknLCd0cmFuc2FjdGlvbi5weScsJ3Byb2R1Y3Rpb24ucHknXTooUGF0aChtb2R1bGVzKS9uYW1lKS53cml0ZV9ieXRlcyh6LnJlYWQobmFtZSkpCiBzeXMucGF0aC5pbnNlcnQoMCxtb2R1bGVzKQogZnJvbSBwcm9kdWN0aW9uIGltcG9ydCBQcm9kdWN0aW9uCiBmcm9tIHRyYW5zYWN0aW9uIGltcG9ydCBSZWxlYXNlcyxpbnN0YWxsX3NpZ25hbHMKIGluc3RhbGxfc2lnbmFscygpCiBjdXJyZW50PWpzb24ubG9hZHMoKFJPT1QvJ3JlbGVhc2Utc3RhdGUvY3VycmVudC5qc29uJykucmVhZF90ZXh0KCkpCiBpZiBjdXJyZW50WydyZXZpc2lvbiddIT1FWFBFQ1RFRF9SRVZJU0lPTjpyYWlzZSBSdW50aW1lRXJyb3IoJ3JldmlzaW9uIGNoYW5nZWQnKQogZm9sZGVyPVJPT1QvJ3JlbGVhc2VzJy9jdXJyZW50WydpZCddCiBjb25maWc9anNvbi5sb2FkcyhydW4oWydkb2NrZXInLCdjb21wb3NlJywnLS1wcm9qZWN0LWRpcmVjdG9yeScsc3RyKFJPT1QpLCctLWVudi1maWxlJyxzdHIoZm9sZGVyLydlbnZpcm9ubWVudCcpLCctZicsc3RyKGZvbGRlci8nY29tcG9zZS5qc29uJyksJ2NvbmZpZycsJy0tZm9ybWF0JywnanNvbiddKSkKIGNsYXNzIFB1YmxpY1Byb2R1Y3Rpb24oUHJvZHVjdGlvbik6CiAgZGVmIHNtb2tlKHNlbGYscmVjb3JkKToKICAgc3VwZXIoKS5zbW9rZShyZWNvcmQpCiAgIGVudj1qc29uLmxvYWRzKChzZWxmLmZvbGRlcihyZWNvcmQpLydjb21wb3NlLmpzb24nKS5yZWFkX3RleHQoKSlbJ3NlcnZpY2VzJ11bJ3BhZGVsLWFwcCddWydlbnZpcm9ubWVudCddCiAgIGlmIGVudi5nZXQoJ0FQUF9SQVRJTkdfUElMT1RfQUxMX1BMQVlFUlMnKT09J3RydWUnOgogICAgaWYgZW52LmdldCgnQVBQX1JBVElOR19QSUxPVF9GT1JNQVRfV0VJR0hURUQnKSE9J3RydWUnIG9yIGVudi5nZXQoJ0FQUF9SQVRJTkdfUElMT1RfQVVUT19SRUZSRVNIJykhPSd0cnVlJzpyYWlzZSBSdW50aW1lRXJyb3IoJ2luY29ycmVjdCBmb3JtdWxhIG9yIHJlZnJlc2ggZmxhZycpCiAgICBmb3IgbGFuZ3VhZ2UsbmVlZGxlIGluIFsoJ3J1Jywn0JrQsNC6INGA0LDQsdC+0YLQsNC10YIg0YDQtdC50YLQuNC90LMnKSwoJ2VzJywnQ8OzbW8gZnVuY2lvbmEgZWwgcmFua2luZycpLCgnZW4nLCdIb3cgdGhlIHJhbmtpbmcgd29ya3MnKV06CiAgICAgcmVzcG9uc2U9c2VsZi5mZXRjaChyZWNvcmQpKCcvcmFua2luZz9sYW5nPScrbGFuZ3VhZ2UpCiAgICAgaWYgcmVzcG9uc2Uuc3RhdHVzIT0yMDAgb3IgYidlbG8tbGVhZGVyYm9hcmQnIG5vdCBpbiByZXNwb25zZS5ib2R5IG9yIG5lZWRsZS5lbmNvZGUoKSBub3QgaW4gcmVzcG9uc2UuYm9keTpyYWlzZSBSdW50aW1lRXJyb3IoJ3B1YmxpYyByYW5raW5nIHNtb2tlIGZhaWxlZCcpCiAgICAgaWYgYidkYXRhLWZlZWRiYWNrLW9wZW4nIGluIHJlc3BvbnNlLmJvZHk6cmFpc2UgUnVudGltZUVycm9yKCd2aXNpdG9yIGZlZWRiYWNrIGZvcm0gdmlzaWJsZScpCiAgICAgaWYgbGVuKHJlLmZpbmRhbGwoYidkYXRhLXBsYXllci1pZD0nLHJlc3BvbnNlLmJvZHkpKTwzNTA6cmFpc2UgUnVudGltZUVycm9yKCdyYW5raW5nIG1pc3NpbmcgcGxheWVycycpCiAgICAgaWYgbGFuZ3VhZ2U9PSdydSc6CiAgICAgIG1hdGNoPXJlLnNlYXJjaCgn0KDQtdC30YPQu9GM0YLQsNGC0Ysg0YPRh9GC0LXQvdGLINC/0L4gKFswLTldezJ9L1swLTldezJ9L1swLTldezR9KScscmVzcG9uc2UuYm9keS5kZWNvZGUoKSkKICAgICAgaWYgbm90IG1hdGNoIG9yIGRhdGV0aW1lLnN0cnB0aW1lKG1hdGNoLmdyb3VwKDEpLCclZC8lbS8lWScpLmRhdGUoKTxkYXRlKDIwMjYsMTEsMTUpOnJhaXNlIFJ1bnRpbWVFcnJvcignZnJlc2ggbWF0Y2hlcyBtaXNzaW5nJykKIGFkYXB0ZXI9UHVibGljUHJvZHVjdGlvbihST09ULFJPT1QvJ3JlbGVhc2VzJyxjb25maWdbJ25hbWUnXSwncGFkZWwtYXBwJykKIHJlbGVhc2VzPVJlbGVhc2VzKFJPT1QvJ3JlbGVhc2Utc3RhdGUnLGFkYXB0ZXIpCiB3aXRoIHJlbGVhc2VzLmxvY2tlZCgpOgogIGlmIHJlbGVhc2VzLnJlYWQoJ3BlbmRpbmcnKSBvciByZWxlYXNlcy5yZWFkKCdjdXJyZW50JykhPWN1cnJlbnQ6cmFpc2UgUnVudGltZUVycm9yKCdyZWxlYXNlIGNoYW5nZWQnKQogIGFkYXB0ZXIudmFsaWRhdGUoY3VycmVudCkKICBpZiBkaWdlc3QoUk9PVC8nLmVudicpIT1jdXJyZW50WydlbnZpcm9ubWVudFNoYTI1NiddOnJhaXNlIFJ1bnRpbWVFcnJvcignZW52aXJvbm1lbnQgY2hhbmdlZCcpCiAgc2VydmljZT1jb25maWdbJ3NlcnZpY2VzJ11bJ3BhZGVsLWFwcCddOyBlbnY9c2VydmljZVsnZW52aXJvbm1lbnQnXQogIGlmIGVudi5nZXQoJ0FQUF9SQVRJTkdfUElMT1RfRU5BQkxFRCcpIT0ndHJ1ZScgb3IgZW52LmdldCgnQVBQX1JBVElOR19QSUxPVF9BVVRPX1JFRlJFU0gnKSE9J3RydWUnOnJhaXNlIFJ1bnRpbWVFcnJvcigncGlsb3Qgb3IgcmVmcmVzaCBkaXNhYmxlZCcpCiAgaWYgZW52LmdldCgnQVBQX1JBVElOR19QSUxPVF9GRUVEQkFDS19FTkFCTEVEJykhPSd0cnVlJzpyYWlzZSBSdW50aW1lRXJyb3IoJ2ZlZWRiYWNrIGRpc2FibGVkJykKICBpZiBlbnYuZ2V0KCdBUFBfUkFUSU5HX1BJTE9UX0FMTF9QTEFZRVJTJywnZmFsc2UnKSE9J2ZhbHNlJyBvciBlbnYuZ2V0KCdBUFBfUkFUSU5HX1BJTE9UX0ZPUk1BVF9XRUlHSFRFRCcsJ2ZhbHNlJykhPSdmYWxzZSc6cmFpc2UgUnVudGltZUVycm9yKCdmbGFncyBhbHJlYWR5IGNoYW5nZWQnKQogIGlmIFBIQVNFPT0ncHJlZmxpZ2h0JzoKICAgYWRhcHRlci5zbW9rZShjdXJyZW50KQogICBwcmludCgnUFVCTElDX0VMT19QUkVGTElHSFRfT0s9Jytqc29uLmR1bXBzKHsncmV2aXNpb24nOkVYUEVDVEVEX1JFVklTSU9OLCdwaWxvdEVuYWJsZWQnOlRydWUsJ2F1dG9SZWZyZXNoJzpUcnVlLCdmZWVkYmFja0VuYWJsZWQnOlRydWUsJ2ZsYWdzRGlzYWJsZWQnOlRydWV9KSkKICAgc3lzLmV4aXQoMCkKICBjYW5kaWRhdGVfY29uZmlnPWNvcHkuZGVlcGNvcHkoY29uZmlnKQogIGNoYW5nZXM9eydBUFBfUkFUSU5HX1BJTE9UX0FMTF9QTEFZRVJTJzondHJ1ZScsJ0FQUF9SQVRJTkdfUElMT1RfRk9STUFUX1dFSUdIVEVEJzondHJ1ZSd9CiAgY2FuZGlkYXRlX2NvbmZpZ1snc2VydmljZXMnXVsncGFkZWwtYXBwJ11bJ2Vudmlyb25tZW50J10udXBkYXRlKGNoYW5nZXMpCiAgbGluZXM9KGZvbGRlci8nZW52aXJvbm1lbnQnKS5yZWFkX3RleHQoKS5zcGxpdGxpbmVzKCkKICBmb3Iga2V5LHZhbHVlIGluIGNoYW5nZXMuaXRlbXMoKToKICAgaGl0cz1baSBmb3IgaSxsaW5lIGluIGVudW1lcmF0ZShsaW5lcykgaWYgbGluZS5zdGFydHN3aXRoKGtleSsnPScpXQogICBpZiBsZW4oaGl0cyk+MTpyYWlzZSBSdW50aW1lRXJyb3IoJ2R1cGxpY2F0ZSBzZXR0aW5nJykKICAgaWYgaGl0czogbGluZXNbaGl0c1swXV09a2V5Kyc9Jyt2YWx1ZQogICBlbHNlOiBsaW5lcy5hcHBlbmQoa2V5Kyc9Jyt2YWx1ZSkKICBtYW5pZmVzdD1qc29uLmxvYWRzKChmb2xkZXIvJ21hbmlmZXN0Lmpzb24nKS5yZWFkX3RleHQoKSkKICBjYW5kaWRhdGU9YWRhcHRlci5wcmVwYXJlKGZvbGRlci8nYXBwLmphcicsbWFuaWZlc3QsY3VycmVudFsnaW1hZ2UnXSxjYW5kaWRhdGVfY29uZmlnLCgnXG4nLmpvaW4obGluZXMpKydcbicpLmVuY29kZSgpKQogIGlmIGNhbmRpZGF0ZVsnaW1hZ2UnXSE9Y3VycmVudFsnaW1hZ2UnXTpyYWlzZSBSdW50aW1lRXJyb3IoJ3VuZXhwZWN0ZWQgaW1hZ2UnKQogIHJlbGVhc2VzLl9kZXBsb3lfbG9ja2VkKGNhbmRpZGF0ZSkKICB0cnk6CiAgIGFjdHVhbD1hZGFwdGVyLmNvbnRhaW5lcigpCiAgIGlmIGFjdHVhbFsnSW1hZ2UnXSE9Y3VycmVudFsnaW1hZ2UnXSBvciByZWxlYXNlcy5yZWFkKCdwcmV2aW91cycpIT1jdXJyZW50OnJhaXNlIFJ1bnRpbWVFcnJvcigncG9zdC1jaGVjayBmYWlsZWQnKQogIGV4Y2VwdCBCYXNlRXhjZXB0aW9uOgogICByZWxlYXNlcy5fZGVwbG95X2xvY2tlZChjdXJyZW50KQogICByYWlzZQogIHByaW50KCdQVUJMSUNfRUxPX1JFTEVBU0VfT0s9Jytqc29uLmR1bXBzKHsncmV2aXNpb24nOkVYUEVDVEVEX1JFVklTSU9OLCdyZWNvcmQnOmNhbmRpZGF0ZVsnaWQnXSwncHVibGljUmFua2luZyc6VHJ1ZSwnZm9ybWF0V2VpZ2h0ZWQnOlRydWUsJ2F1dG9SZWZyZXNoJzpUcnVlLCdmZWVkYmFja0ZvclBsYXllcnMnOlRydWUsJ2xhbmd1YWdlcyc6WydydScsJ2VzJywnZW4nXSwncm9sbGJhY2tBdmFpbGFibGUnOlRydWV9KSkK'), '<elo-public-operation>', 'exec'))
+            import copy,hashlib,json,os,subprocess,sys,tempfile,zipfile,re
+            from datetime import datetime, date
+            from pathlib import Path
+            ROOT=Path('/opt/padel-app')
+            EXPECTED_REVISION='66a4a0aa038a1aee595018ff7ba882a0e385a9ea'
+            PHASE='preflight'
+            def run(cmd):
+             return subprocess.run(cmd,check=True,capture_output=True,timeout=180).stdout.decode()
+            def digest(path):
+             return hashlib.sha256(path.read_bytes()).hexdigest()
+            with tempfile.TemporaryDirectory(prefix='elo-public-check-') as modules:
+             runner=ROOT/'temp/release-runner.pyz'
+             if not runner.is_file() or runner.is_symlink():raise RuntimeError('missing runner')
+             with zipfile.ZipFile(runner) as z:
+              for name in ['artifact.py','docker_adapter.py','smoke.py','transaction.py','production.py']:(Path(modules)/name).write_bytes(z.read(name))
+             sys.path.insert(0,modules)
+             from production import Production
+             from transaction import Releases,install_signals
+             install_signals()
+             current=json.loads((ROOT/'release-state/current.json').read_text())
+             if current['revision']!=EXPECTED_REVISION:raise RuntimeError('revision changed')
+             folder=ROOT/'releases'/current['id']
+             config=json.loads(run(['docker','compose','--project-directory',str(ROOT),'--env-file',str(folder/'environment'),'-f',str(folder/'compose.json'),'config','--format','json']))
+             class PublicProduction(Production):
+              def smoke(self,record):
+               super().smoke(record)
+               env=json.loads((self.folder(record)/'compose.json').read_text())['services']['padel-app']['environment']
+               if env.get('APP_RATING_PILOT_ALL_PLAYERS')=='true':
+                if env.get('APP_RATING_PILOT_FORMAT_WEIGHTED')!='true' or env.get('APP_RATING_PILOT_AUTO_REFRESH')!='true':raise RuntimeError('incorrect formula or refresh flag')
+                for language,needle in [('ru','Как работает рейтинг'),('es','Cómo funciona el ranking'),('en','How the ranking works')]:
+                 response=self.fetch(record)('/ranking?lang='+language)
+                 if response.status!=200 or b'elo-leaderboard' not in response.body or needle.encode() not in response.body:raise RuntimeError('public ranking smoke failed')
+                 if b'data-feedback-open' in response.body:raise RuntimeError('visitor feedback form visible')
+                 if len(re.findall(b'data-player-id=',response.body))<350:raise RuntimeError('ranking missing players')
+                 if language=='ru':
+                  match=re.search('Результаты учтены по ([0-9]{2}/[0-9]{2}/[0-9]{4})',response.body.decode())
+                  if not match or datetime.strptime(match.group(1),'%d/%m/%Y').date()<date(2026,11,15):raise RuntimeError('fresh matches missing')
+             adapter=PublicProduction(ROOT,ROOT/'releases',config['name'],'padel-app')
+             releases=Releases(ROOT/'release-state',adapter)
+             with releases.locked():
+              if releases.read('pending') or releases.read('current')!=current:raise RuntimeError('release changed')
+              adapter.validate(current)
+              if digest(ROOT/'.env')!=current['environmentSha256']:raise RuntimeError('environment changed')
+              service=config['services']['padel-app']; env=service['environment']
+              if env.get('APP_RATING_PILOT_ENABLED')!='true' or env.get('APP_RATING_PILOT_AUTO_REFRESH')!='true':raise RuntimeError('pilot or refresh disabled')
+              if env.get('APP_RATING_PILOT_FEEDBACK_ENABLED')!='true':raise RuntimeError('feedback disabled')
+              if env.get('APP_RATING_PILOT_ALL_PLAYERS','false')!='false' or env.get('APP_RATING_PILOT_FORMAT_WEIGHTED','false')!='false':raise RuntimeError('flags already changed')
+              if PHASE=='preflight':
+               adapter.smoke(current)
+               print('PUBLIC_ELO_PREFLIGHT_OK='+json.dumps({'revision':EXPECTED_REVISION,'pilotEnabled':True,'autoRefresh':True,'feedbackEnabled':True,'flagsDisabled':True}))
+               sys.exit(0)
+              candidate_config=copy.deepcopy(config)
+              changes={'APP_RATING_PILOT_ALL_PLAYERS':'true','APP_RATING_PILOT_FORMAT_WEIGHTED':'true'}
+              candidate_config['services']['padel-app']['environment'].update(changes)
+              lines=(folder/'environment').read_text().splitlines()
+              for key,value in changes.items():
+               hits=[i for i,line in enumerate(lines) if line.startswith(key+'=')]
+               if len(hits)>1:raise RuntimeError('duplicate setting')
+               if hits: lines[hits[0]]=key+'='+value
+               else: lines.append(key+'='+value)
+              manifest=json.loads((folder/'manifest.json').read_text())
+              candidate=adapter.prepare(folder/'app.jar',manifest,current['image'],candidate_config,('\n'.join(lines)+'\n').encode())
+              if candidate['image']!=current['image']:raise RuntimeError('unexpected image')
+              releases._deploy_locked(candidate)
+              try:
+               actual=adapter.container()
+               if actual['Image']!=current['image'] or releases.read('previous')!=current:raise RuntimeError('post-check failed')
+              except BaseException:
+               releases._deploy_locked(current)
+               raise
+              print('PUBLIC_ELO_RELEASE_OK='+json.dumps({'revision':EXPECTED_REVISION,'record':candidate['id'],'publicRanking':True,'formatWeighted':True,'autoRefresh':True,'feedbackForPlayers':True,'languages':['ru','es','en'],'rollbackAvailable':True}))
             PYRUN
