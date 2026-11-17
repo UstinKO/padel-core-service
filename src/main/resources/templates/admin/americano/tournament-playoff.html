@@ -1351,7 +1351,7 @@
                 <div class="match-body">
                     <div class="team-left">
                         <div class="team-name">${m.team1Number ? '<strong>№' + m.team1Number + '</strong> ' : ''}${queueText(m.team1Player1Name || 'TBD')}${m.team1Player2Name ? ' / ' + queueText(m.team1Player2Name) : ''}</div>
-                        ${m.playoffStage === 'QUARTER_FINAL' ? `<button type="button" class="icon-btn"
+                        ${m.playoffStage ? `<button type="button" class="icon-btn"
                             data-swap-match="${m.id}" data-swap-slot="1" title="${queueText(MSG_SWAP_TITLE)}" aria-label="${queueText(MSG_SWAP_TITLE)}">
                             <i class="fas fa-exchange-alt" aria-hidden="true"></i>
                         </button>` : ''}
@@ -1366,7 +1366,7 @@
                     <div class="vs-block"><span class="vs-badge">VS</span></div>
                     <div class="team-right">
                         <div class="team-name">${m.team2Number ? '<strong>№' + m.team2Number + '</strong> ' : ''}${queueText(m.team2Player1Name || 'TBD')}${m.team2Player2Name ? ' / ' + queueText(m.team2Player2Name) : ''}</div>
-                        ${m.playoffStage === 'QUARTER_FINAL' ? `<button type="button" class="icon-btn"
+                        ${m.playoffStage ? `<button type="button" class="icon-btn"
                             data-swap-match="${m.id}" data-swap-slot="2" title="${queueText(MSG_SWAP_TITLE)}" aria-label="${queueText(MSG_SWAP_TITLE)}">
                             <i class="fas fa-exchange-alt" aria-hidden="true"></i>
                         </button>` : ''}
