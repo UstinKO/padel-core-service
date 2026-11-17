@@ -55,7 +55,9 @@
         .team-left{text-align:left}
         .team-right{text-align:right}
         .team-name{font-size:.9rem;font-weight:500;color:#1e293b;line-height:1.3}
-        .team-sub{font-size:.75rem;color:#64748b}
+        .team-sub{display:inline;font:inherit;color:inherit}
+        .team-name,.pair-names .p1{font-weight:400}
+        .stage-details>summary{cursor:pointer;padding:.55rem 0;font-weight:600}
         .vs-block{display:flex;flex-direction:column;align-items:center;gap:.3rem}
         .vs-badge{background:#FF6B35;color:#fff;font-weight:700;font-size:.8rem;padding:.25rem .45rem;border-radius:6px}
         .score-form{display:flex;align-items:center;gap:.35rem}
@@ -102,7 +104,6 @@
             #qualRoundContent .match-header{padding:.4rem .75rem;font-size:.78rem}
             #qualRoundContent .match-body{padding:.6rem .75rem;gap:.4rem}
             #qualRoundContent .team-name{font-size:.82rem}
-            #qualRoundContent .team-sub{font-size:.7rem}
         }
         .tbd{color:#94a3b8;font-style:italic}
         .early-suggestions,.early-fields{display:flex;flex-wrap:wrap;gap:.65rem;margin:.6rem 0}
@@ -325,11 +326,11 @@
                     </thead>
                     <tbody>
                     <tr th:each="team : ${teams}">
-                        <td th:text="${team.teamNumber}">1</td>
+                        <td><strong th:text="'№' + ${team.teamNumber}">№1</strong></td>
                         <td>
                             <div class="pair-names">
                                 <span class="p1" th:text="${team.player1Name}">Jugador 1</span>
-                                <span class="p2" th:text="${team.player2Name}">Jugador 2</span>
+                                <span th:if="${team.player2Name != null}"> / <span th:text="${team.player2Name}">Jugador 2</span></span>
                             </div>
                         </td>
                         <td>
@@ -504,6 +505,7 @@
                             <td th:text="${team.qualStatus == 'TWO_WINS' ? '🟢' : (team.qualStatus == 'TWO_LOSSES' ? '🔴' : (team.qualStatus == 'SPLIT' ? '🟡' : '⏳'))}">⏳</td>
                             <td>
                                 <div class="pair-names">
+                                    <strong th:if="${team.teamNumber != null}" th:text="'№' + ${team.teamNumber}"></strong>
                                     <span class="p1" th:text="${team.displayName}">Jugador 1 / 2</span>
                                 </div>
                             </td>
@@ -589,6 +591,10 @@
                                   data-safe=#{team_playoff.early.manual.safe},
                                   data-override=#{team_playoff.early.manual.override},
                                   data-bye=#{team_playoff.early.manual.bye},
+                                  data-rematch=#{team_playoff.early.manual.rematch},
+                                  data-semifinal=#{team_playoff.early.semifinal},
+                                  data-semifinal-summary=#{team_playoff.early.semifinal.summary},
+                                  data-semifinal-stage=#{team_playoff.stage.semi_final},
                                   data-projected=#{team_playoff.early.projected_bye},
                                   data-results=#{team_playoff.early.manual.results},
                                   data-pending=#{team_playoff.early.pending},
@@ -619,7 +625,9 @@
                 </section>
 
                 <!-- Раунды квалификации -->
-                <div th:if="${not #lists.isEmpty(qualRounds)}">
+                <details id="qualificationMatches" class="stage-details round-content" th:if="${not #lists.isEmpty(qualRounds)}"
+                         th:open="${ranking == null or not ranking.finished}">
+                    <summary th:text="#{team_playoff.early.qualification_matches}"></summary>
                     <div class="rounds-tabs" id="qualTabs">
                         <button th:each="r, stat : ${qualRounds}"
                                 th:id="'qtab-' + ${stat.index}"
@@ -665,9 +673,12 @@
 
                                 <div class="match-body">
                                     <div class="team-left">
-                                        <div class="team-name"
-                                             th:text="${match.team1Number != null ? '№' + match.team1Number + ' ' + match.team1Player1Name : match.team1Player1Name}">Jugador 1</div>
-                                        <div th:replace="~{fragments/team-playoff-participant :: partner(${match}, 1)}"></div>
+                                        <div class="team-name">
+                                    <strong th:if="${match.team1Number != null}" th:text="'№' + ${match.team1Number}"></strong>
+                                    <span th:text="${match.team1Player1Name}"></span>
+                                    <span th:if="${match.team1Player2Name != null}"> / </span>
+                                    <span th:replace="~{fragments/team-playoff-participant :: partner(${match}, 1)}"></span>
+                                </div>
                                         <span th:if="${match.team1MatchOrdinal != null}" class="info-pill"
                                               th:classappend="${match.team1MatchOrdinal == 1} ? 'badge-m1' : 'badge-m2'"
                                               style="font-size:.65rem;padding:.1rem .4rem"
@@ -712,9 +723,12 @@
                                     </div>
 
                                     <div class="team-right">
-                                        <div class="team-name"
-                                             th:text="${match.team2Number != null ? '№' + match.team2Number + ' ' + match.team2Player1Name : match.team2Player1Name}">Jugador 3</div>
-                                        <div th:replace="~{fragments/team-playoff-participant :: partner(${match}, 2)}"></div>
+                                        <div class="team-name">
+                                    <strong th:if="${match.team2Number != null}" th:text="'№' + ${match.team2Number}"></strong>
+                                    <span th:text="${match.team2Player1Name}"></span>
+                                    <span th:if="${match.team2Player2Name != null}"> / </span>
+                                    <span th:replace="~{fragments/team-playoff-participant :: partner(${match}, 2)}"></span>
+                                </div>
                                         <span th:if="${match.team2MatchOrdinal != null}" class="info-pill"
                                               th:classappend="${match.team2MatchOrdinal == 1} ? 'badge-m1' : 'badge-m2'"
                                               style="font-size:.65rem;padding:.1rem .4rem"
@@ -732,7 +746,7 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                </details>
 
                 <!-- Инициализация плей-офф: квалификация полностью завершена -->
                 <div th:if="${ranking != null and ranking.finished and not playoffStarted}"
@@ -794,12 +808,12 @@
             </div>
 
             <div class="round-content">
-                <div th:each="round : ${playoffRounds}"
-                     style="margin-bottom:1.5rem">
-                    <h4 style="font-size:.9rem;font-weight:700;color:#475569;margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem">
+                <details class="stage-details" th:each="round : ${playoffRounds}"
+                         th:open="${round.status.name() == 'IN_PROGRESS'}">
+                    <summary>
                         <span class="playoff-stage-label" th:text="#{${'team_playoff.stage.' + #strings.toLowerCase(round.note)}}">SEMI_FINAL</span>
                         <span class="info-pill" th:text="${round.status}">EN CURSO</span>
-                    </h4>
+                    </summary>
 
                     <div th:each="match : ${round.matches}" class="match-card"
                          th:id="'pmatch-' + ${match.id}"
@@ -832,9 +846,12 @@
                         </div>
                         <div class="match-body">
                             <div class="team-left">
-                                <div th:if="${match.team1Player1Name != null}" class="team-name"
-                                     th:text="${match.team1Number != null ? '№' + match.team1Number + ' ' + match.team1Player1Name : match.team1Player1Name}">TBD</div>
-                                <div th:replace="~{fragments/team-playoff-participant :: partner(${match}, 1)}"></div>
+                                <div th:if="${match.team1Player1Name != null}" class="team-name">
+                                    <strong th:if="${match.team1Number != null}" th:text="'№' + ${match.team1Number}"></strong>
+                                    <span th:text="${match.team1Player1Name}"></span>
+                                    <span th:if="${match.team1Player2Name != null}"> / </span>
+                                    <span th:replace="~{fragments/team-playoff-participant :: partner(${match}, 1)}"></span>
+                                </div>
                                 <div th:if="${match.team1Player1Name == null}" class="tbd"
                                      th:text="#{admin.playoff.bracket.tbd}">TBD</div>
                                 <button th:if="${not match.isCompleted and match.playoffPlayStarted != true and match.team1Player1Name != null and match.team2Player1Name != null}"
@@ -879,9 +896,12 @@
                             </div>
 
                             <div class="team-right">
-                                <div th:if="${match.team2Player1Name != null}" class="team-name"
-                                     th:text="${match.team2Number != null ? '№' + match.team2Number + ' ' + match.team2Player1Name : match.team2Player1Name}">TBD</div>
-                                <div th:replace="~{fragments/team-playoff-participant :: partner(${match}, 2)}"></div>
+                                <div th:if="${match.team2Player1Name != null}" class="team-name">
+                                    <strong th:if="${match.team2Number != null}" th:text="'№' + ${match.team2Number}"></strong>
+                                    <span th:text="${match.team2Player1Name}"></span>
+                                    <span th:if="${match.team2Player2Name != null}"> / </span>
+                                    <span th:replace="~{fragments/team-playoff-participant :: partner(${match}, 2)}"></span>
+                                </div>
                                 <div th:if="${match.team2Player1Name == null}" class="tbd"
                                      th:text="#{admin.playoff.bracket.tbd}">TBD</div>
                                 <button th:if="${not match.isCompleted and match.playoffPlayStarted != true and match.team1Player1Name != null and match.team2Player1Name != null}"
@@ -897,7 +917,7 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                </details>
             </div>
         </div>
         </div>
@@ -1012,6 +1032,7 @@
     const MSG_WON_FIRST = /*[[#{admin.playoff.qual.new_match.won_first}]]*/ '';
     const MSG_LOST_FIRST = /*[[#{admin.playoff.qual.new_match.lost_first}]]*/ '';
     const MSG_QUAL_SCORE = /*[[#{team_playoff.early.invalid_score}]]*/ '';
+    const MSG_SWAP_TITLE = /*[[#{admin.playoff.swap.title}]]*/ 'Cambiar equipo';
     const MSG_QUAL_STAGE = /*[[#{team_playoff.early.qualification}]]*/ '';
     const STAGE_LABELS = {
         ROUND_OF_16: /*[[#{team_playoff.stage.round_of_16}]]*/ '',
@@ -1129,6 +1150,11 @@
     function renderCourtBoard(data) {
         const newMatch = document.getElementById('qualificationNewMatch');
         if (newMatch) newMatch.hidden = data.qualificationFinished === true;
+        const qualificationMatches = document.getElementById('qualificationMatches');
+        if (qualificationMatches && data.qualificationFinished && !qualificationMatches.dataset.finished) {
+            qualificationMatches.open = false;
+            qualificationMatches.dataset.finished = 'true';
+        }
         const t1Sel = document.getElementById('newMatchTeam1');
         const t2Sel = document.getElementById('newMatchTeam2');
         const courtSel = document.getElementById('newMatchCourt');
@@ -1324,8 +1350,11 @@
                 </div>
                 <div class="match-body">
                     <div class="team-left">
-                        <div class="team-name">${(m.team1Number ? '№' + m.team1Number + ' ' : '') + queueText(m.team1Player1Name || 'TBD')}</div>
-                        ${m.team1Player2Name ? '<div class="partner-name">' + queueText(m.team1Player2Name) + '</div>' : ''}
+                        <div class="team-name">${m.team1Number ? '<strong>№' + m.team1Number + '</strong> ' : ''}${queueText(m.team1Player1Name || 'TBD')}${m.team1Player2Name ? ' / ' + queueText(m.team1Player2Name) : ''}</div>
+                        ${m.playoffStage === 'QUARTER_FINAL' ? `<button type="button" class="icon-btn"
+                            data-swap-match="${m.id}" data-swap-slot="1" title="${queueText(MSG_SWAP_TITLE)}" aria-label="${queueText(MSG_SWAP_TITLE)}">
+                            <i class="fas fa-exchange-alt" aria-hidden="true"></i>
+                        </button>` : ''}
                         ${m.playoffStage ? '' : `<button type="button" class="icon-btn" onclick="toggleTeamEdit(${m.id}, 1)" title="Cambiar equipo">
                             <i class="fas fa-exchange-alt"></i>
                         </button>
@@ -1336,8 +1365,11 @@
                     </div>
                     <div class="vs-block"><span class="vs-badge">VS</span></div>
                     <div class="team-right">
-                        <div class="team-name">${(m.team2Number ? '№' + m.team2Number + ' ' : '') + queueText(m.team2Player1Name || 'TBD')}</div>
-                        ${m.team2Player2Name ? '<div class="partner-name">' + queueText(m.team2Player2Name) + '</div>' : ''}
+                        <div class="team-name">${m.team2Number ? '<strong>№' + m.team2Number + '</strong> ' : ''}${queueText(m.team2Player1Name || 'TBD')}${m.team2Player2Name ? ' / ' + queueText(m.team2Player2Name) : ''}</div>
+                        ${m.playoffStage === 'QUARTER_FINAL' ? `<button type="button" class="icon-btn"
+                            data-swap-match="${m.id}" data-swap-slot="2" title="${queueText(MSG_SWAP_TITLE)}" aria-label="${queueText(MSG_SWAP_TITLE)}">
+                            <i class="fas fa-exchange-alt" aria-hidden="true"></i>
+                        </button>` : ''}
                         ${m.playoffStage ? '' : `<button type="button" class="icon-btn" onclick="toggleTeamEdit(${m.id}, 2)" title="Cambiar equipo">
                             <i class="fas fa-exchange-alt"></i>
                         </button>
@@ -1487,7 +1519,7 @@
                 tr.innerHTML = `
                 <td><span class="${posClass}">${t.currentPosition}</span></td>
                 <td>${statusEmoji(t.qualStatus)}</td>
-                <td><div class="pair-names"><span class="p1">${t.displayName || ''}</span></div></td>
+                <td><div class="pair-names">${t.teamNumber != null ? '<strong>№' + t.teamNumber + '</strong> ' : ''}<span class="p1">${queueText(t.displayName || '')}</span></div></td>
                 <td>${matchCell(t.match1GamesWon, t.match1GamesLost)}</td>
                 <td>${matchCell(t.match2GamesWon, t.match2GamesLost)}</td>
                 <td class="positive">${t.setsWon}</td>

@@ -3,6 +3,7 @@
     if (!panel) return;
 
     const text = panel.dataset;
+    text.title = document.getElementById('earlyPlayoffTitle').textContent;
     const first = document.getElementById('earlyFirst');
     const second = document.getElementById('earlySecond');
     const manualResult = document.getElementById('earlyManualResult');
@@ -27,13 +28,23 @@
         parent.appendChild(element);
     }
 
-    function matchCard(match, courts, selectedCourt, override = false) {
+    function matchCard(match, courts, selectedCourt, override = false, semifinal = false) {
         const card = document.createElement('div');
         card.className = 'early-suggestion';
         card.dataset.match = [match.first.id, match.second.id].sort().join(':');
-        bodyText(card, text.stage + ' · ' + text.ready);
-        bodyText(card, teamLabel(match.first) + ' — ' + teamLabel(match.second));
-        bodyText(card, override ? text.override : text.safe);
+        bodyText(card, (semifinal ? text.semifinalStage : text.stage) + ' · ' + text.ready);
+        const names = document.createElement('p');
+        for (const [index, team] of [match.first, match.second].entries()) {
+            if (index) names.append(' — ');
+            if (team.number != null) {
+                const number = document.createElement('strong');
+                number.textContent = '№' + team.number;
+                names.append(number, ' ');
+            }
+            names.append(team.name);
+        }
+        card.append(names);
+        if (!semifinal) bodyText(card, override ? text.override : text.safe);
 
         const form = document.createElement('form');
         const court = document.createElement('select');
@@ -101,7 +112,8 @@
             const cards = document.getElementById('earlySuggestions');
             const selectedCourts = new Map([...cards.querySelectorAll('[data-match]')]
                 .map(card => [card.dataset.match, card.querySelector('select').value]));
-            document.getElementById('earlySummary').textContent = text.summary
+            document.getElementById('earlyPlayoffTitle').textContent = state.semifinal ? text.semifinal : text.title;
+            document.getElementById('earlySummary').textContent = (state.semifinal ? text.semifinalSummary : text.summary)
                 .replace('{0}', state.finishedTeams).replace('{1}', state.remainingMatches)
                 .replace('{2}', state.matches.length).replace('{3}', state.freeCourts.length);
             const projected = document.getElementById('earlyProjected');
@@ -115,7 +127,7 @@
             renderTeams(first, state.readyTeams);
             renderTeams(second, state.readyTeams);
             cards.replaceChildren(...state.matches.map(match => matchCard(match, state.freeCourts,
-                selectedCourts.get([match.first.id, match.second.id].sort().join(':')))));
+                selectedCourts.get([match.first.id, match.second.id].sort().join(':')), false, state.semifinal)));
             const checkedCurrentPair = selection.get('firstId') === first.value && selection.get('secondId') === second.value;
             const status = checkedCurrentPair ? state.manualStatus : null;
             const manualFirst = state.readyTeams.find(team => String(team.id) === first.value);
@@ -125,7 +137,7 @@
                 manualResult.replaceChildren(matchCard({first: manualFirst, second: manualSecond},
                     state.freeCourts, previousCourt, true));
             } else {
-                manualResult.textContent = status ? (status === 'results' ? waiting : text[status]) : '';
+                manualResult.textContent = status ? (status === 'results' ? waiting : status === 'safe' && state.semifinal ? text.ready : text[status]) : '';
             }
         } catch {
             if (current === requestNumber && open) showToast(text.error);
