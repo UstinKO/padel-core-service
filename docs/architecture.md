@@ -4,7 +4,7 @@
 исполняемый Telegram-адаптер в `automation/telegram-relay/`. Порядок отдельной активации воркера —
 [codex-migration.md](codex-migration.md); приложение и его схема развёртывания этим не меняются.
 
-План развития: [многомодульный монолит, семь согласованных модулей](modular-monolith/target-architecture.md). [Первая фаза](modular-monolith/phase-1/README.md) выделяет PlayoffMatchingEngine через рабочий reactor и отдельные исходную/итоговую e2e. Сейчас работают parent/aggregator, padel-bootstrap с единственным boot jar и пустой padel-tournament-engines. Корневой src/ компилируется только bootstrap; PlayoffMatchingEngine пока остаётся в нём. [Пути и команды reactor](modular-monolith/phase-1/reactor-delivery.md). Остальные пять целевых модулей пока не созданы. Выделение хранения — отдельная поздняя #1051.
+План развития: [многомодульный монолит, семь согласованных модулей](modular-monolith/target-architecture.md). Сейчас работают parent/aggregator, padel-bootstrap с единственным boot jar и padel-tournament-engines с PlayoffMatchingEngine и его unit-тестами. Библиотека зависит только от JDK; Spring-регистрация — один bean через `TournamentEngineConfig` в bootstrap. Остальной корневой src/ компилирует только bootstrap. [Перенос, проверки границы и мост DevTools](modular-monolith/phase-1/engine-extraction.md), [пути и команды reactor](modular-monolith/phase-1/reactor-delivery.md). Остальные пять целевых модулей пока не созданы. Итоговая ручная приёмка пилота — #1045, выделение хранения — отдельная поздняя #1051.
 
 ---
 

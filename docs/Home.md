@@ -18,7 +18,7 @@ Spring Boot монолит для управления падель-турнир
 | [Auth Flow](auth-flow) | Form Login, JWT, Google OAuth2, rate limiting, защита регистрации |
 | [Пилот рейтинга Elo](rating-pilot) | Ограничение доступа, проверенная история, автоматический пересчёт и тестовый откат |
 | [Архитектура приложения](architecture) | Слои, AOP observability, Prometheus/Loki/Grafana, Docker, CI/CD |
-| [Многомодульный монолит](modular-monolith/README.md) | Семь модулей и ADR; backend #1047, автоматизация #1048 и отдельная ручная приёмка до reactor; приложение работоспособно после каждой задачи |
+| [Многомодульный монолит](modular-monolith/README.md) | Семь целевых модулей и ADR; рабочий reactor #1049 и перенос PlayoffMatchingEngine #1050, итоговая ручная приёмка #1045; приложение работоспособно после каждой задачи |
 | [Инфраструктурная безопасность](infrastructure-security) | Nginx, CrowdSec, UFW, Docker port isolation, SSL, runbook инцидентов. **Приватный документ — не в репозитории** (детали защиты сервера) |
 | [Исторический план микросервисов](microservices-migration-plan) | Справочный материал связей и рисков; текущий план — многомодульный монолит, Swarm исследуется отдельно |
 | [Дизайн-токены as-is](design-tokens-as-is) | Аудит текущих цветов/типографики/отступов из 14 CSS-файлов перед переносом фронтенда на React |

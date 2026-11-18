@@ -6,7 +6,7 @@
 
 Корневой `pom.xml` — `com.padle.core:padel-parent`, packaging `pom`, parent/aggregator. Здесь версии, Java release 17, dependencyManagement и наследуемый Enforcer. Root не компилирует `src/`.
 
-`padel-tournament-engines` — пустой library jar без web/JPA, frontend и Spring Boot repackage. Пустота разрешена на этом этапе; физический перенос PlayoffMatchingEngine и его unit-тестов выполняется в #1050.
+В исходной #1049 `padel-tournament-engines` был пустым library jar. После #1050 он содержит PlayoffMatchingEngine и его unit/architecture-тесты, без web/JPA, frontend и Spring Boot repackage. Runtime-зависимостей нет, JUnit/AssertJ/ArchUnit — только test. [Перенос, проверки и DevTools](engine-extraction.md).
 
 `padel-bootstrap` зависит от библиотеки и единственный компилирует корневые `src/main/java`, `src/test/java`, `src/main/resources`, `src/test/resources`. Это адресное временное исключение legacy, а не общие исходники для нескольких модулей. Main class/package и component scan сохраняются. Все старые runtime/test-зависимости и processor paths остаются здесь. Maven Surefire запускает forked tests из корня, отчёты пишет в модульный target. Ошибочный `-Dtest` в bootstrap не превращается в успешный пустой прогон.
 
@@ -17,7 +17,7 @@
 ./mvnw clean verify
 
 # Один набор без пересборки frontend; остальные тесты явно не объявляются проверенными.
-./mvnw -Dskip.frontend=true -Dtest=PlayoffMatchingEngineTest test
+./mvnw -pl padel-tournament-engines -am -Dtest=PlayoffMatchingEngineTest test
 
 # Сборка и запуск единственного приложения; окружение своей среды задаётся отдельно.
 ./mvnw package -DskipTests
@@ -45,7 +45,7 @@ Frontend plugin подключён только bootstrap, выполняет fr
 
 Production Dockerfile получает три POM для dependency cache, затем оба дерева модулей и legacy src/frontend, собирает reactor и копирует только явный bootstrap jar. `.dockerignore` исключает вложенные target. Минимальный preview Docker context пропускает только этот runtime jar. Release build, preview release, rehearsal и пилот используют тот же явный путь. После общего smoke CI выдерживает 60 секунд по штатному AUTH-лимиту 10 входов в минуту и запускает `playoff-pilot.py run --rehearse` одним вызовом; повторные независимые логины не накладываются на заполненный bucket. Production-ограничения сохраняются. CI читает модульные Surefire reports, но сохраняет прежние пути evidence и release archive, поэтому deploy.yml не требует смены SCP-путей.
 
-`docs-drift.py` продолжает читать корневой src: исходники ещё не перенесены, проверка не отключена. После #1050 поиск должен учитывать moved sources отдельным изменением.
+`docs-drift.py` читает legacy src и после #1050 также `padel-*/src/main/java`; проверка не отключена и не использует `target` как исходники.
 
 ## Проверки и ограничения
 
