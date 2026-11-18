@@ -147,6 +147,14 @@
         .playoff-exchange::backdrop{background:rgba(15,23,42,.55)}
         .playoff-exchange select{width:100%;margin:.35rem 0}
         .playoff-exchange [hidden]{display:none}
+        .court-choice{display:flex;align-items:flex-start;gap:.65rem;padding:.7rem 0;border-bottom:1px solid #e2e8f0;cursor:pointer}
+        .court-choice input{width:1.1rem;height:1.1rem;flex:0 0 auto;margin-top:.2rem}
+        .court-choice span{min-width:0;overflow-wrap:anywhere}
+        .court-choice strong,.court-choice small{display:block}
+        .court-choice small{margin-top:.25rem}
+        #playoff-courts fieldset{min-width:0;padding:0;border:0}
+        #playoff-courts p{overflow-wrap:anywhere}
+        #playoff-courts .playoff-exchange-actions{flex-wrap:wrap}
         .playoff-exchange-actions{display:flex;justify-content:flex-end;gap:.5rem;margin-top:1rem}
         .inline-edit select{flex:1;border:1px solid #e2e8f0;border-radius:6px;padding:.25rem .4rem;font-size:.78rem}
         .toast-box{position:fixed;bottom:1rem;right:1rem;z-index:1000;display:flex;flex-direction:column;gap:.5rem}
@@ -660,15 +668,11 @@
                                     <span>
                                         <span th:text="#{admin.playoff.label.court}">Cancha</span>
                                         <span th:text="${match.courtNumber}">1</span>
-                                        <button th:unless="${match.isCompleted}" type="button" class="icon-btn"
-                                                th:onclick="'toggleCourtEdit(' + ${match.id} + ')'" title="Cambiar cancha">
+                                        <button type="button" class="icon-btn"
+                                                th:attr="data-court-match=${match.id},aria-label=#{admin.playoff.courts.title}" th:title="#{admin.playoff.courts.title}">
                                             <i class="fas fa-exchange-alt"></i>
                                         </button>
                                     </span>
-                                </div>
-                                <div th:unless="${match.isCompleted}" th:id="'court-edit-' + ${match.id}" class="inline-edit" style="margin:0 1rem">
-                                    <select></select>
-                                    <button type="button" class="save-btn" th:onclick="'submitCourtChange(' + ${match.id} + ')'">OK</button>
                                 </div>
 
                                 <div class="match-body">
@@ -823,17 +827,13 @@
                             <span>
                                 <span th:text="#{admin.playoff.label.court}">Cancha</span>
                                 <span th:text="${match.courtNumber}">1</span>
-                                <button th:unless="${match.isCompleted}" type="button" class="icon-btn"
-                                        th:onclick="'toggleCourtEdit(' + ${match.id} + ')'" title="Cambiar cancha">
+                                <button type="button" class="icon-btn"
+                                        th:attr="data-court-match=${match.id},aria-label=#{admin.playoff.courts.title}" th:title="#{admin.playoff.courts.title}">
                                     <i class="fas fa-exchange-alt"></i>
                                 </button>
                             </span>
                             <span th:if="${match.playoffStage != null}" class="playoff-stage-label"
                                   th:text="#{${'team_playoff.stage.' + #strings.toLowerCase(match.playoffStage)}}">SEMI_FINAL</span>
-                        </div>
-                        <div th:unless="${match.isCompleted}" th:id="'court-edit-' + ${match.id}" class="inline-edit" style="margin:0 1rem">
-                            <select></select>
-                            <button type="button" class="save-btn" th:onclick="'submitCourtChange(' + ${match.id} + ')'">OK</button>
                         </div>
 
                         <div class="playoff-start-state"
@@ -1009,6 +1009,43 @@
         </div>
     </dialog>
     <p data-start-error class="alert alert-danger" role="alert" hidden></p>
+    <dialog id="playoff-courts" class="playoff-exchange" aria-labelledby="court-assignment-title">
+        <h2 id="court-assignment-title" th:text="#{admin.playoff.courts.title}"></h2>
+        <p data-court-status role="status" aria-live="polite"></p>
+        <fieldset data-court-options th:attr="aria-label=#{admin.playoff.courts.court}"></fieldset>
+        <div data-court-preview></div>
+        <label class="court-choice">
+            <input type="checkbox" data-court-consent>
+            <span th:text="#{admin.playoff.courts.consent}"></span>
+        </label>
+        <div class="playoff-exchange-actions">
+            <button type="button" class="btn btn-outline" data-court-reload th:text="#{admin.playoff.courts.reload}"></button>
+            <button type="button" class="btn btn-outline" data-court-close th:text="#{conduct.history.cancel}"></button>
+            <button type="button" class="btn btn-primary" data-court-save disabled th:text="#{admin.playoff.courts.save}"></button>
+        </div>
+        <div hidden>
+            <span data-copy="title" th:text="#{admin.playoff.courts.title}"></span>
+            <span data-copy="court" th:text="#{admin.playoff.courts.court}"></span>
+            <span data-copy="current" th:text="#{admin.playoff.courts.current}"></span>
+            <span data-copy="occupied" th:text="#{admin.playoff.courts.occupied}"></span>
+            <span data-copy="free" th:text="#{admin.playoff.courts.free}"></span>
+            <span data-copy="qualification" th:text="#{admin.playoff.courts.qualification}"></span>
+            <span data-copy="queue" th:text="#{admin.playoff.courts.queue}"></span>
+            <span data-copy="swap" th:text="#{admin.playoff.courts.swap}"></span>
+            <span data-copy="save" th:text="#{admin.playoff.courts.save}"></span>
+            <span data-copy="historical" th:text="#{admin.playoff.courts.historical}"></span>
+            <span data-copy="occupied_hint" th:text="#{admin.playoff.courts.occupied_hint}"></span>
+            <span data-copy="loading" th:text="#{admin.playoff.courts.loading}"></span>
+            <span data-copy="error" th:text="#{admin.playoff.courts.error}"></span>
+            <span data-copy="confirm" th:text="#{admin.playoff.courts.confirm}"></span>
+            <span data-copy="saving" th:text="#{admin.playoff.courts.saving}"></span>
+            <span data-stage="ROUND_OF_16" th:text="#{team_playoff.stage.round_of_16}"></span>
+            <span data-stage="QUARTER_FINAL" th:text="#{team_playoff.stage.quarter_final}"></span>
+            <span data-stage="SEMI_FINAL" th:text="#{team_playoff.stage.semi_final}"></span>
+            <span data-stage="FINAL" th:text="#{team_playoff.stage.final}"></span>
+        </div>
+    </dialog>
+
 </main>
 
 <script th:src="@{/js/csrf.js}"></script>
@@ -1017,6 +1054,7 @@
 <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 <script th:src="@{/js/team-playoff-realtime.js}"></script>
 <script defer th:src="@{/js/team-playoff-exchange.js}"></script>
+<script defer th:src="@{/js/team-playoff-courts.js}"></script>
 <script th:inline="javascript">
     const TOURNAMENT_ID = /*[[${tournament.id}]]*/ 0;
     const QUAL_STARTED = /*[[${qualStarted}]]*/ false;
@@ -1042,6 +1080,7 @@
         SEMI_FINAL: /*[[#{team_playoff.stage.semi_final}]]*/ '',
         FINAL: /*[[#{team_playoff.stage.final}]]*/ ''
     };
+    const MSG_COURT_EDIT = /*[[#{admin.playoff.courts.title}]]*/ '';
     const MSG_QUEUE_EMPTY = /*[[#{admin.playoff.queue.empty}]]*/ '';
     const MSG_QUEUE_WAITING = /*[[#{admin.playoff.queue.waiting}]]*/ '';
     const MSG_QUEUE_ASSIGN = /*[[#{admin.playoff.queue.assign_court}]]*/ '';
@@ -1382,6 +1421,7 @@
                     </div>
                 </div>
                 <div style="display:flex;gap:.5rem;align-items:center;margin-top:.5rem;flex-wrap:wrap">
+                    <button type="button" class="btn btn-outline btn-sm" data-court-match="${m.id}">${MSG_COURT_EDIT}</button>
                     <select id="queue-court-${m.id}" class="form-control" style="width:auto">
                         ${freeCourts.length
                             ? freeCourts.map(c => `<option value="${c}">Cancha ${c}</option>`).join('')
@@ -1594,45 +1634,6 @@
     }
 
     // ── Ручное управление (T11): смена корта / замена команды ───────────
-    function toggleCourtEdit(matchId) {
-        const box = document.getElementById('court-edit-' + matchId);
-        if (!box) return;
-        const opening = !box.classList.contains('open');
-        box.classList.toggle('open', opening);
-        if (opening) {
-            fetch('/tournaments/team-playoff/api/' + TOURNAMENT_ID + '/court-board')
-                .then(r => r.json())
-                .then(data => {
-                    const free = (data.courts || []).filter(c => !c.occupied).map(c => c.courtNumber);
-                    const sel = box.querySelector('select');
-                    sel.innerHTML = free.map(c => `<option value="${c}">Cancha ${c}</option>`).join('')
-                        || '<option value="">—</option>';
-                })
-                .catch(() => {});
-        }
-    }
-
-    function submitCourtChange(matchId) {
-        const box = document.getElementById('court-edit-' + matchId);
-        const courtNumber = box?.querySelector('select')?.value;
-        if (!courtNumber) return;
-
-        conductFetch('/tournaments/team-playoff/api/matches/' + matchId + '/court', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({courtNumber: Number(courtNumber)})
-        })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    location.reload();
-                } else {
-                    showToast(data.message || 'Error');
-                }
-            })
-            .catch(() => showToast('Error de red'));
-    }
-
     function toggleTeamEdit(matchId, slot) {
         const box = document.getElementById('team-edit-' + matchId + '-' + slot);
         if (!box) return;
