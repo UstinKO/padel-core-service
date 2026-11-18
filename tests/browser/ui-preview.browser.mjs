@@ -22,6 +22,7 @@ async function csrf(context) {
   return {'X-XSRF-TOKEN': decodeURIComponent(cookie.value)};
 }
 try {
+  require(['registrations', 'playoff'].includes(fixture.fixtureSet), 'Неизвестный набор данных smoke');
   const external = await context(false);
   for (const path of ['/__preview', '/api/public/config', '/web/index.html', '/app/', '/login', '/actuator/health/readiness', '/__preview/mail']) {
     const response = await external.request.get(origin + path);
@@ -41,40 +42,44 @@ try {
   const preview = await playerPage.goto(origin + '/preview/torneos');
   require(preview.status() === 200, 'Неожиданный ответ preview для игрока: HTTP ' + preview.status()
     + ', путь ' + new URL(preview.url()).pathname);
-  const booking = await playerPage.goto(origin + '/preview/torneo/' + fixture.tournamentIds[1]);
-  require(booking.status() === 200, 'Карточка React недоступна синтетическому игроку');
-  const profile = await playerPage.goto(origin + '/preview/perfil');
-  require(profile.status() === 200, 'Профиль React недоступен синтетическому игроку');
-  const cabinet = await playerPage.goto(origin + '/preview/players/dashboard');
-  require(cabinet.status() === 200, 'Кабинет React недоступен синтетическому игроку');
-  await playerPage.getByRole('heading', {name: /Мои мероприятия|Mis eventos|My events/}).waitFor();
-  const searchCard = playerPage.locator('article').filter({has: playerPage.getByRole('heading', {name: 'Preview 3', exact: true})});
-  const consent = searchCard.getByRole('button', {name: /Показывать мои контакты|Compartir mis datos|Share my contacts/});
-  await consent.click();
-  await searchCard.getByRole('button', {name: /Показывать мои контакты|Compartir mis datos|Share my contacts/, pressed: true}).waitFor();
-  await playerPage.reload();
-  await searchCard.getByRole('button', {name: /Показывать мои контакты|Compartir mis datos|Share my contacts/, pressed: true}).click();
-  await searchCard.getByRole('button', {name: /Показывать мои контакты|Compartir mis datos|Share my contacts/, pressed: false}).waitFor();
+  if (fixture.fixtureSet === 'registrations') {
+    require(Array.isArray(fixture.tournamentIds) && fixture.tournamentIds.length === 6
+      && fixture.tournamentIds.every(Number.isSafeInteger), 'Нужны шесть ID мероприятий регистрационного набора');
+    const booking = await playerPage.goto(origin + '/preview/torneo/' + fixture.tournamentIds[1]);
+    require(booking.status() === 200, 'Карточка React недоступна синтетическому игроку');
+    const profile = await playerPage.goto(origin + '/preview/perfil');
+    require(profile.status() === 200, 'Профиль React недоступен синтетическому игроку');
+    const cabinet = await playerPage.goto(origin + '/preview/players/dashboard');
+    require(cabinet.status() === 200, 'Кабинет React недоступен синтетическому игроку');
+    await playerPage.getByRole('heading', {name: /Мои мероприятия|Mis eventos|My events/}).waitFor();
+    const searchCard = playerPage.locator('article').filter({has: playerPage.getByRole('heading', {name: 'Preview 3', exact: true})});
+    const consent = searchCard.getByRole('button', {name: /Показывать мои контакты|Compartir mis datos|Share my contacts/});
+    await consent.click();
+    await searchCard.getByRole('button', {name: /Показывать мои контакты|Compartir mis datos|Share my contacts/, pressed: true}).waitFor();
+    await playerPage.reload();
+    await searchCard.getByRole('button', {name: /Показывать мои контакты|Compartir mis datos|Share my contacts/, pressed: true}).click();
+    await searchCard.getByRole('button', {name: /Показывать мои контакты|Compartir mis datos|Share my contacts/, pressed: false}).waitFor();
 
-  const pairCard = playerPage.locator('article').filter({has: playerPage.getByRole('heading', {name: 'Preview 2', exact: true})});
-  await pairCard.getByRole('button', {name: /Отменить запись пары|Dar de baja a la pareja|Cancel the pair/}).click();
-  await playerPage.getByRole('dialog').getByRole('button', {name: /^(Подтвердить|Confirmar|Confirm)$/}).click();
-  await pairCard.waitFor({state: 'hidden'});
-  await playerPage.getByRole('button', {name: /История|Historial|History/}).click();
-  await pairCard.getByText(/Пара снялась|Se retiró la pareja|Pair withdrew/).waitFor();
-  const playerEvents = await player.request.get(origin + '/api/players/me/events');
-  const overview = await playerEvents.json();
-  require(playerEvents.status() === 200 && overview.history.some(entry => entry.event.name === 'Preview 2'
-    && entry.cancellations.some(item => item.reasonCode === 'PAIR_WITHDRAWAL')),
-  'API не сохранил отмену пары в истории');
+    const pairCard = playerPage.locator('article').filter({has: playerPage.getByRole('heading', {name: 'Preview 2', exact: true})});
+    await pairCard.getByRole('button', {name: /Отменить запись пары|Dar de baja a la pareja|Cancel the pair/}).click();
+    await playerPage.getByRole('dialog').getByRole('button', {name: /^(Подтвердить|Confirmar|Confirm)$/}).click();
+    await pairCard.waitFor({state: 'hidden'});
+    await playerPage.getByRole('button', {name: /История|Historial|History/}).click();
+    await pairCard.getByText(/Пара снялась|Se retiró la pareja|Pair withdrew/).waitFor();
+    const playerEvents = await player.request.get(origin + '/api/players/me/events');
+    const overview = await playerEvents.json();
+    require(playerEvents.status() === 200 && overview.history.some(entry => entry.event.name === 'Preview 2'
+      && entry.cancellations.some(item => item.reasonCode === 'PAIR_WITHDRAWAL')),
+    'API не сохранил отмену пары в истории');
 
-  const promoted = await context();
-  const promotedPage = await login(promoted, 'preview-player-2@example.test');
-  await promotedPage.goto(origin + '/preview/players/dashboard');
-  const promotedCard = promotedPage.locator('article').filter({has: promotedPage.getByRole('heading', {name: 'Preview 2', exact: true})});
-  await promotedCard.getByRole('button', {name: /Подтвердить участие|Confirmar participación|Confirm participation/}).click();
-  await promotedCard.getByText(/Preview Player 2 · (Подтверждено|Confirmada|Confirmed)/).waitFor();
-  console.log('Кабинет React: согласие на показ контактов, отмена пары в истории и подтверждение после продвижения из резерва проверены');
+    const promoted = await context();
+    const promotedPage = await login(promoted, 'preview-player-2@example.test');
+    await promotedPage.goto(origin + '/preview/players/dashboard');
+    const promotedCard = promotedPage.locator('article').filter({has: promotedPage.getByRole('heading', {name: 'Preview 2', exact: true})});
+    await promotedCard.getByRole('button', {name: /Подтвердить участие|Confirmar participación|Confirm participation/}).click();
+    await promotedCard.getByText(/Preview Player 2 · (Подтверждено|Confirmada|Confirmed)/).waitFor();
+    console.log('Кабинет React: согласие на показ контактов, отмена пары в истории и подтверждение после продвижения из резерва проверены');
+  }
   const admin = await context();
   const page = await login(admin, 'preview-admin@example.test');
   const status = await admin.request.get(origin + '/api/internal/ui-preview');

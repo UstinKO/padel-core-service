@@ -47,6 +47,7 @@ class PilotBoundaryTest(unittest.TestCase):
                 path = runtime / 'pilot-browser-input.json'
                 self.assertEqual(path.stat().st_mode & 0o777, 0o600)
                 self.assertEqual(json.loads(path.read_text())['password'], state['fixture_password'])
+                self.assertEqual(json.loads(path.read_text())['fixtureSet'], 'playoff')
                 raise subprocess.CalledProcessError(1, 'browser')
 
             with patch.object(pilot.preview, 'ROOT', root), patch.object(pilot.preview, 'RUNTIME', runtime), \
