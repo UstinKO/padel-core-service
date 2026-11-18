@@ -1,0 +1,34 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.79-owner-club-access
+      author: padel-core
+      changes:
+        - createTable:
+            tableName: owner_club_access_db
+            columns:
+              - column:
+                  name: owner_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: club_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: owner_club_access_db
+            columnNames: owner_id, club_id
+            constraintName: pk_owner_club_access
+        - addForeignKeyConstraint:
+            baseTableName: owner_club_access_db
+            baseColumnNames: owner_id
+            referencedTableName: owners_db
+            referencedColumnNames: id
+            constraintName: fk_owner_club_access_owner
+            onDelete: CASCADE
+        - sql:
+            sql: INSERT INTO owner_club_access_db(owner_id, club_id) SELECT id, club_id FROM owners_db WHERE role = 'CLUB_ADMIN' AND club_id IS NOT NULL
+      rollback:
+        - dropTable:
+            tableName: owner_club_access_db

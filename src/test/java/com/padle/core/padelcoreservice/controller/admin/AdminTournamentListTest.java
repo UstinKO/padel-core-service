@@ -77,7 +77,7 @@ class AdminTournamentListTest {
         Owner clubAdmin = owner(OwnerRole.CLUB_ADMIN);
         clubAdmin.setClubId(3L);
         TournamentDto own = event(1, 3, 8, FROM, TournamentType.PADEL_CLINIC, Modalidad.INDIVIDUAL);
-        when(tournaments.getTournamentsByClub(3L)).thenReturn(List.of(own));
+        when(tournaments.getTournamentsForOwner(clubAdmin.getId(), false)).thenReturn(List.of(own));
         doCallRealMethod().when(access).canManage(any(), any(), any());
 
         assertThat(listed(list(clubAdmin, null, null, null, null))).containsExactly(own);

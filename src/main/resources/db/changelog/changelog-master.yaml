@@ -239,3 +239,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.78-guest-claim-review.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.79-owner-club-access.yaml
+      relativeToChangelogFile: true

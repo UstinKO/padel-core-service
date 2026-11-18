@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.controller.admin;
 
+import com.padle.core.padelcoreservice.service.ClubAccountService;
 import com.padle.core.padelcoreservice.dto.ClubDto;
 import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
 import com.padle.core.padelcoreservice.model.Owner;
@@ -27,15 +28,14 @@ public class AdminClubController {
 
     private final ClubService clubService;
     private final OwnerService ownerService;
+    private final ClubAccountService clubAccounts;
 
     @GetMapping
     public String listClubs(Model model, @AuthenticationPrincipal Owner owner) {
         log.info("Listing all clubs for admin");
         // Клубный админ видит только свой клуб
         if (owner.isClubAdmin()) {
-            model.addAttribute("clubs", owner.getClubId() == null
-                    ? List.of()
-                    : List.of(clubService.getClubByIdForAdmin(owner.getClubId())));
+            model.addAttribute("clubs", clubAccounts.assignedClubIds(owner).stream().sorted().map(clubService::getClubByIdForAdmin).toList());
         } else {
             model.addAttribute("clubs", clubService.getAllClubsForAdmin());
         }
@@ -63,9 +63,7 @@ public class AdminClubController {
                            @AuthenticationPrincipal Owner owner,
                            RedirectAttributes redirectAttributes) {
         log.info("Viewing club details: {}", id);
-        if (owner.isClubAdmin() && !id.equals(owner.getClubId())) {
-            throw new AccessDeniedException("No tienes permiso para ver este club");
-        }
+        clubAccounts.assertCanViewClub(owner, id);
         try {
             model.addAttribute("club", clubService.getClubByIdForAdmin(id));
             model.addAttribute("isSuperAdmin", owner.isSuperAdmin());
