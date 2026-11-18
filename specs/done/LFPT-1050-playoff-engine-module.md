@@ -1,7 +1,7 @@
 # LFPT-1050: Feature многомодульный монолит, фаза 1 — выделить PlayoffMatchingEngine
 
 ## Статус
-
+done
 implemented
 
 Перенос выполнен без изменения алгоритма и Java API. Девять исходных unit-тестов, архитектурная граница, полный verify, runtime/browser и откат проверены. [Фактический отчёт и ограничения](../../docs/modular-monolith/phase-1/engine-extraction.md). Итоговая ручная приёмка остаётся в #1045.
