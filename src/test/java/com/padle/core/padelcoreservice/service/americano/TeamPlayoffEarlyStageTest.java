@@ -64,6 +64,8 @@ class TeamPlayoffEarlyStageTest {
 
     @Autowired
     private PlayoffPairExchange exchange;
+    @Autowired
+    private TeamPlayoffCourts courts;
 
     @Test
     void exchangesQueuedEarlyMatchesAndKeepsTheNewTeamsOnCourt() {
@@ -103,6 +105,55 @@ class TeamPlayoffEarlyStageTest {
         assertThat(assigned.getTeam1Id()).isEqualTo(teams.get(6).getId());
         assertThat(assigned.getTeam2Id()).isEqualTo(teams.get(4).getId());
         assertThatThrownBy(() -> exchange.exchange(first.getId(), request)).hasMessage("admin.playoff.swap.started");
+
+        var before = courts.options(first.getId());
+        assertThat(before.courts()).extracting(TeamPlayoffCourts.Court::number).containsExactly(1, 2, 3, 4, 5);
+        assertThatThrownBy(() -> courts.change(first.getId(),
+                new TeamPlayoffCourts.Change(before.version(), 5, null, false)))
+                .hasMessage("admin.playoff.courts.confirm");
+        courts.change(first.getId(), new TeamPlayoffCourts.Change(before.version(), 5, null, true));
+        assertThat(first.getCourtNumber()).isEqualTo(5);
+        assertThat(first.getTeam1Id()).isEqualTo(teams.get(6).getId());
+        assertThat(first.getTeam2Id()).isEqualTo(teams.get(4).getId());
+        assertThatThrownBy(() -> courts.change(first.getId(),
+                new TeamPlayoffCourts.Change(before.version(), 4, null, true)))
+                .hasMessage("admin.playoff.courts.stale");
+
+        var occupied = courts.options(first.getId());
+        var qualification = occupied.courts().get(0).occupants().get(0);
+        courts.change(first.getId(), new TeamPlayoffCourts.Change(occupied.version(), 1,
+                qualification.getId(), true));
+        assertThat(first.getCourtNumber()).isEqualTo(1);
+        assertThat(matchRepository.findById(qualification.getId()).orElseThrow().getCourtNumber()).isEqualTo(5);
+
+        var current = courts.options(first.getId());
+        assertThatThrownBy(() -> courts.change(first.getId(),
+                new TeamPlayoffCourts.Change(current.version(), 2, null, true)))
+                .hasMessage("admin.playoff.courts.occupied");
+        assertThatThrownBy(() -> courts.change(first.getId(),
+                new TeamPlayoffCourts.Change(current.version(), 6, null, true)))
+                .hasMessage("admin.playoff.courts.invalid");
+        assertThatThrownBy(() -> courts.change(first.getId(),
+                new TeamPlayoffCourts.Change(current.version(), null, null, true)))
+                .hasMessage("admin.playoff.courts.queue_unavailable");
+
+        var queuedVersion = courts.options(second.getId()).version();
+        courts.change(second.getId(), new TeamPlayoffCourts.Change(queuedVersion, 4, null, false));
+        assertThat(second.isInProgress()).isTrue();
+        assertThat(courts.options(second.getId()).canQueue()).isTrue();
+        courts.change(second.getId(), new TeamPlayoffCourts.Change(courts.options(second.getId()).version(),
+                null, null, true));
+        assertThat(second.isQueued()).isTrue();
+        assertThat(second.getCourtNumber()).isNull();
+
+        playoffService.submitPlayoffResult(first.getId(), 6, 4);
+        courts.change(first.getId(), new TeamPlayoffCourts.Change(courts.options(first.getId()).version(),
+                2, null, true));
+        assertThat(first.isCompleted()).isTrue();
+        assertThat(first.getTeam1Games()).isEqualTo(6);
+        assertThat(first.getTeam2Games()).isEqualTo(4);
+        assertThat(courts.options(first.getId()).courts().get(1).occupants())
+                .noneMatch(match -> match.getId().equals(first.getId()));
         assertThat(playoffService.getQualRanking(tournament).isFinished()).isFalse();
     }
 
