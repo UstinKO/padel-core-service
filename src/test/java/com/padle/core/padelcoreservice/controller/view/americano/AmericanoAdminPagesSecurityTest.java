@@ -91,9 +91,12 @@ class AmericanoAdminPagesSecurityTest {
     @Test
     void anonimo_vaAlLogin() throws Exception {
         for (String url : allPages()) {
+            String login = url.startsWith("/tournaments/team-playoff/")
+                    ? "/login?destination=%2Ftournaments%2Fteam-playoff%2Fadmin%2F" + TOURNAMENT_ID
+                    : "/login";
             mockMvc.perform(get(url))
                     .andExpect(status().is3xxRedirection())
-                    .andExpect(redirectedUrl("/login"));
+                    .andExpect(redirectedUrl(login));
         }
     }
 

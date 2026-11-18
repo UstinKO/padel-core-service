@@ -88,6 +88,11 @@ window.APP_MESSAGES = {
     'level.modal.desc':   'To register for this tournament, please set your level in your profile first.',
     'level.btn.cancel':   'Cancel',
     'level.btn.go':       'Set level',
+    'level.registration.desc': 'Choose your playing level to continue registering for this tournament.',
+    'level.registration.select': 'Choose your level',
+    'level.registration.save': 'Save level',
+    'level.registration.error': 'Could not save your level. Try again.',
+    'level.registration.saved': 'Level saved. Press the registration button to continue.',
     'level.profile.return_banner': 'You can now return to your pending registration.',
     'level.profile.return_link':   'Back to tournament',
 

@@ -4,7 +4,7 @@
 исполняемый Telegram-адаптер в `automation/telegram-relay/`. Порядок отдельной активации воркера —
 [codex-migration.md](codex-migration.md); приложение и его схема развёртывания этим не меняются.
 
-План развития: [многомодульный монолит, семь согласованных модулей](modular-monolith/target-architecture.md). [Первая фаза](modular-monolith/phase-1/README.md) выделяет PlayoffMatchingEngine через рабочий reactor и отдельные исходную/итоговую e2e. Пока приложение остаётся одним Maven jar-проектом; целевую структуру не считать уже реализованной. Выделение хранения — отдельная поздняя #1051.
+План развития: [многомодульный монолит, семь согласованных модулей](modular-monolith/target-architecture.md). Сейчас работают parent/aggregator, padel-bootstrap с единственным boot jar и padel-tournament-engines с PlayoffMatchingEngine и его unit-тестами. Библиотека зависит только от JDK; Spring-регистрация — один bean через `TournamentEngineConfig` в bootstrap. Остальной корневой src/ компилирует только bootstrap. [Перенос, проверки границы и мост DevTools](modular-monolith/phase-1/engine-extraction.md), [пути и команды reactor](modular-monolith/phase-1/reactor-delivery.md). Остальные пять целевых модулей пока не созданы. Итоговая ручная приёмка пилота — #1045, выделение хранения — отдельная поздняя #1051.
 
 ---
 
@@ -211,21 +211,21 @@ Lombok отрабатывает до MapStruct — обеспечивается 
 | `GOOGLE_CLIENT_ID` | _(из yml)_ | OAuth2 Google |
 | `GOOGLE_CLIENT_SECRET` | _(из yml)_ | OAuth2 Google |
 | `SITE_KEY` / `SECRET_KEY` | _(из yml)_ | reCAPTCHA v3 |
-| `LOKI_ENABLED` | `false` (dev) / `true` (prod) | Включить отправку логов в Loki |
+| `LOKI_ENABLED` | `false` в приложении; `true` в Docker Compose | Включает отправку логов в Loki независимо от профиля |
 | `LOKI_URL` | `http://loki:3100/...` | Адрес Loki |
 | `APP_BASE_URL` | `http://localhost:8080` | Свойство `app.base-url`: источник `siteBaseUrl` для моделей страниц и базовый URL для всех пользовательских ссылок на сайт в письмах (`EmailService`/`TournamentService`/`DoubleTournamentRegistrationService` и др. — единая точка, в шаблонах `templates/email/**` домен не хардкодится, LFPT-0618). На проде должен быть публичным доменом сайта (`https://1-padel.com`), а не серверным доменом из раздела «Сервер» ниже — это два разных адреса. |
 
 ### Локальный запуск
 
 ```bash
-# Требует PostgreSQL на localhost:5432/player_padel_db
-./mvnw spring-boot:run
-
-# Полный стек с observability
-docker compose up -d
-
-# Сборка без тестов
+# Сборка без тестов; обязательный verify выполняется отдельно с тестовой PostgreSQL.
 ./mvnw clean package -DskipTests
+
+# Запуск с окружением своей БД и интеграций.
+java -jar padel-bootstrap/target/padel-core-service-0.0.1-SNAPSHOT.jar
+
+# Полный стек: приложение + postgres + loki + prometheus + grafana.
+docker compose up -d
 ```
 
 ### Конфигурация подключений (HikariCP)
@@ -244,8 +244,12 @@ hikari:
 | `JPA_DDL_AUTO` | `none` | `validate` |
 | `THYMELEAF_CACHE` | `false` | `true` |
 | `AUTO_CONFIRM_EMAIL` | `false` | `false` |
-| `LOKI_ENABLED` | `false` | `true` |
+| `LOKI_ENABLED` | `false` | `false` |
 | `JPA_SHOW_SQL` | `false` | `false` |
+
+Для `LOKI_ENABLED` указаны умолчания приложения. В `docker-compose.yml`
+используется `${LOKI_ENABLED:-true}`, поэтому Compose по умолчанию включает Loki.
+Сам профиль `prod` или `production` отправку логов не включает.
 
 ---
 
@@ -256,7 +260,7 @@ hikari:
 - **Только Liquibase** управляет схемой (`ddl-auto = none`).
 - Файлы: `src/main/resources/db/changelog/versions/vX.XX-<description>.yaml`
 - Мастер-файл: `changelog-master.yaml` — порядок include определяет порядок выполнения.
-- Текущая версия: **v1.77**
+- Текущая версия: **v1.78**
 
 **Добавление новой миграции:**
 ```
@@ -353,6 +357,14 @@ Grafana: `https://epadel.org/grafana/`
 ### Логирование
 
 Формат — структурированный JSON: файл `*-json.log` пишет встроенный `ch.qos.logback.classic.encoder.JsonEncoder`, в Loki уходит JSON-шаблон сообщения через `loki-logback-appender` 2.x (метки `app/host/level/environment`, без structured metadata) — см. `logback-spring.xml`.
+
+В основной конфигурации `logback-spring.xml` создание, запуск и подключение
+Loki-аппендера зависят от `logging.loki.enabled`. При `false` или отсутствии
+свойства аппендер не создаётся и HTTP-запросов к Loki нет; при `true` к логгеру
+`com.padle.core` подключается один запущенный Loki-аппендер.
+При явной перезагрузке конфигурации с переходом `true → false` прежний аппендер
+останавливается, последующие сообщения в Loki не отправляются.
+Профиль `preview` использует отдельный `logback-preview.xml` с отключённым Loki.
 
 ```yaml
 logging:
@@ -652,6 +664,14 @@ services:
 ### Ресурсы и логирование тестов
 
 Maven Surefire задаёт общий бюджет тестового JVM: Hikari maximum-pool-size=4, minimum-idle=0, Spring context cache=8. Это предотвращает исчерпание соединений PostgreSQL при нескольких кешированных контекстах. `src/test/resources/logback-test.xml` выводит маскированные сообщения в консоль без Loki/Telegram и файловых аппендеров. Настройки не включаются в production jar и не меняют пулы или логирование приложения.
+
+`LokiLoggingConfigurationTest` отдельно проверяет основную конфигурацию
+`logback-spring.xml` через Spring Boot LoggingSystem в дочерних JVM,
+без PostgreSQL и внешних сервисов. Локальный HTTP-сервер подтверждает доставку
+контрольного сообщения при включённом Loki и отсутствие запросов при выключенном.
+Проверяются отсутствие свойства, значения `false` и `true` во всей матрице профилей,
+повторная загрузка с `false`, переход `true → false`, а также сохранение остальных
+аппендеров, уровня и `additivity` логгера `com.padle.core`.
 
 ## Закрытая интеграционная среда UI v2
 

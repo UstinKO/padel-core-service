@@ -1,8 +1,7 @@
 package com.padle.core.padelcoreservice.service.americano;
 
-import org.springframework.stereotype.Component;
-
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -21,7 +20,6 @@ import java.util.stream.Collectors;
  * Приоритеты сравниваются лексикографически — более высокий приоритет никогда
  * не приносится в жертву ради более низкого.
  */
-@Component
 public class PlayoffMatchingEngine {
 
     public record Candidate(Long teamId, int seed, int winStreak) {
@@ -89,6 +87,62 @@ public class PlayoffMatchingEngine {
 
         boolean allSatisfied = bestRawCost[1] == 0 && bestRawCost[2] == 0;
         return new MatchingResult(best, allSatisfied, allSatisfied ? null : buildWarning(bestRawCost));
+    }
+
+    /**
+     * Посев 1/8 финала. Анти-реванш и разведение лидеров сохраняют приоритет.
+     * При одинаковом разбросе посева предпочитается зеркальная сетка.
+     */
+    List<Pairing> seedRoundOf16(List<Candidate> candidates, Map<Long, Set<Long>> priorOpponents) {
+        int count = candidates.size();
+        int full = (1 << count) - 1;
+        Set<Long> leaders = topStreakGroup(candidates);
+        int[][] edges = new int[count][count];
+        for (int first = 0; first < count; first++) {
+            Candidate a = candidates.get(first);
+            for (int second = first + 1; second < count; second++) {
+                Candidate b = candidates.get(second);
+                int rematch = priorOpponents.getOrDefault(a.teamId(), Set.of()).contains(b.teamId()) ? 1 : 0;
+                int leadersTogether = leaders.contains(a.teamId()) && leaders.contains(b.teamId()) ? 1 : 0;
+                int spread = b.seed() - a.seed();
+                int mirrorDeviation = Math.abs(a.seed() + b.seed() - (count + 1));
+                // В 1/8 не более 8 пар, а суммарные отклонения по посеву меньше 129.
+                edges[first][second] = (((9 * rematch + leadersTogether) * 129 - spread) * 129)
+                        + mirrorDeviation;
+            }
+        }
+
+        int[] costs = new int[full + 1];
+        Arrays.fill(costs, Integer.MAX_VALUE);
+        costs[0] = 0;
+        byte[] partners = new byte[full + 1];
+        bestFirstStageCost(full, edges, costs, partners);
+
+        List<Pairing> result = new ArrayList<>(count / 2);
+        for (int remaining = full; remaining != 0; ) {
+            int first = Integer.numberOfTrailingZeros(remaining);
+            int second = partners[remaining];
+            result.add(new Pairing(candidates.get(first).teamId(), candidates.get(second).teamId()));
+            remaining ^= (1 << first) | (1 << second);
+        }
+        return result;
+    }
+
+    private int bestFirstStageCost(int remaining, int[][] edges, int[] costs, byte[] partners) {
+        if (costs[remaining] != Integer.MAX_VALUE) {
+            return costs[remaining];
+        }
+        int first = Integer.numberOfTrailingZeros(remaining);
+        int rest = remaining & (remaining - 1);
+        for (int choices = rest; choices != 0; choices &= choices - 1) {
+            int second = Integer.numberOfTrailingZeros(choices);
+            int cost = edges[first][second] + bestFirstStageCost(rest ^ (1 << second), edges, costs, partners);
+            if (cost < costs[remaining]) {
+                costs[remaining] = cost;
+                partners[remaining] = (byte) second;
+            }
+        }
+        return costs[remaining];
     }
 
     /** Переставляет [посев, разведение, реванш] под нужный порядок приоритетов, не меняя сами значения. */

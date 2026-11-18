@@ -8,11 +8,14 @@ import com.padle.core.padelcoreservice.dto.americano.AmericanoRoundDto;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.TournamentKingOfCourt;
 import com.padle.core.padelcoreservice.model.enums.AmericanoRoundStatus;
+import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
+import com.padle.core.padelcoreservice.repository.PlayerRepository;
 import com.padle.core.padelcoreservice.repository.TournamentKingOfCourtRepository;
 import com.padle.core.padelcoreservice.service.KingOfCourtService;
 import com.padle.core.padelcoreservice.service.TournamentService;
+import com.padle.core.padelcoreservice.service.TournamentLevelPolicy;
 import com.padle.core.padelcoreservice.model.enums.Modalidad;
 import com.padle.core.padelcoreservice.service.americano.AmericanoService;
 import com.padle.core.padelcoreservice.service.americano.TeamPlayoffService;
@@ -44,6 +47,7 @@ import java.util.stream.Collectors;
 public class TournamentViewController {
 
     private final TournamentService tournamentService;
+    private final PlayerRepository playerRepository;
     private final TournamentKingOfCourtRepository tournamentKingOfCourtRepository;
     private final KingOfCourtService kingOfCourtService;
     private final AmericanoService americanoService;
@@ -230,6 +234,11 @@ public class TournamentViewController {
             model.addAttribute("availableSpots", availableSpots);
             model.addAttribute("isAuthenticated", player != null);
             model.addAttribute("player", player);
+            boolean registrationLevelMissing = player != null && !isRegistered && tournament.isRegistrationOpen()
+                    && TournamentLevelPolicy.requiresLevelCheck(tournament.getTipo(),
+                            Nivel.parseOrNull(tournament.getCategoriaNivel()))
+                    && Nivel.orNullIfSinEspecificar(playerRepository.findNivelById(player.getId()).orElse(null)) == null;
+            model.addAttribute("registrationLevelMissing", registrationLevelMissing);
             model.addAttribute("currentUserIsSolo", currentUserIsSolo);
             model.addAttribute("needsPartnerReplacement", needsPartnerReplacement);
             model.addAttribute("currentUserSoloRegId", currentUserIsSolo ? userRegistration.getId() : null);

@@ -11,13 +11,14 @@ Spring Boot монолит для управления падель-турнир
 
 | Раздел | Описание |
 |--------|----------|
+| [Жизненный цикл PR](../.agents/PR_MANAGEMENT.md) | Проверка существующей работы до публикации, продолжение PR и составные интеграции; [аудит 18.11.2026](pr-audit-2026-11-18.md) |
 | [Организация бэклога](../.agents/ISSUE_ORGANIZATION.md) | Выбор Milestone при создании задачи, новый раздел при необходимости; [закреплённый индекс #1055](https://github.com/UstinKO/padel-core-service/issues/1055) |
 | [Архитектура базы данных](database-architecture) | Все 21 таблица, столбцы, типы, enum-справочники, ERD, история миграций |
 | [Доменный обзор](domain-overview) | 10 доменов, каждый HTTP-эндпоинт с описанием, анализ для декомпозиции в микросервисы |
 | [Auth Flow](auth-flow) | Form Login, JWT, Google OAuth2, rate limiting, защита регистрации |
 | [Пилот рейтинга Elo](rating-pilot) | Ограничение доступа, проверенная история, автоматический пересчёт и тестовый откат |
 | [Архитектура приложения](architecture) | Слои, AOP observability, Prometheus/Loki/Grafana, Docker, CI/CD |
-| [Многомодульный монолит](modular-monolith/README.md) | Семь модулей и ADR; backend #1047, автоматизация #1048 и отдельная ручная приёмка до reactor; приложение работоспособно после каждой задачи |
+| [Многомодульный монолит](modular-monolith/README.md) | Семь целевых модулей и ADR; рабочий reactor #1049 и перенос PlayoffMatchingEngine #1050, итоговая ручная приёмка #1045; приложение работоспособно после каждой задачи |
 | [Инфраструктурная безопасность](infrastructure-security) | Nginx, CrowdSec, UFW, Docker port isolation, SSL, runbook инцидентов. **Приватный документ — не в репозитории** (детали защиты сервера) |
 | [Исторический план микросервисов](microservices-migration-plan) | Справочный материал связей и рисков; текущий план — многомодульный монолит, Swarm исследуется отдельно |
 | [Дизайн-токены as-is](design-tokens-as-is) | Аудит текущих цветов/типографики/отступов из 14 CSS-файлов перед переносом фронтенда на React |
@@ -77,14 +78,14 @@ Bucket4j, MapStruct, Lombok
 ## Быстрый старт
 
 ```bash
-# Требует PostgreSQL на localhost:5432/player_padel_db
-./mvnw spring-boot:run
-
-# Полный стек: приложение + postgres + loki + prometheus + grafana
-docker compose up -d
-
-# Сборка без тестов
+# Сборка без тестов; обязательный verify выполняется отдельно с тестовой PostgreSQL.
 ./mvnw clean package -DskipTests
+
+# Запуск с окружением своей БД и интеграций.
+java -jar padel-bootstrap/target/padel-core-service-0.0.1-SNAPSHOT.jar
+
+# Полный стек: приложение + postgres + loki + prometheus + grafana.
+docker compose up -d
 ```
 
 Обязательные env-переменные (если не используются дефолты):

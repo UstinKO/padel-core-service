@@ -83,7 +83,7 @@ def command(action):
     bootstrap(adapter, releases, config)
     if action == 'release':
         revision = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=preview.ROOT, text=True).strip()
-        record = candidate(adapter, config, preview.ROOT / 'target/padel-core-service-0.0.1-SNAPSHOT.jar', revision)
+        record = candidate(adapter, config, preview.ROOT / 'padel-bootstrap/target/padel-core-service-0.0.1-SNAPSHOT.jar', revision)
         releases.deploy(record)
         print('Preview: выпуск принят ' + revision)
     elif action == 'rollback':

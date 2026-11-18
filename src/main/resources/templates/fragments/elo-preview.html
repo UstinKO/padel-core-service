@@ -3,9 +3,11 @@
 <body>
 <div th:fragment="leaderboard" id="elo-leaderboard" class="container elo-preview">
     <h1 th:text="#{elo.preview.heading}">Ranking Elo</h1>
-    <p th:text="#{elo.preview.asOf(${#temporals.format(previewElo.asOf, 'dd/MM/yyyy')})}"></p>
-    <p th:if="${previewEloStartStep > 0}" th:text="#{elo.preview.seedStep(${previewEloStartStep})}"></p>
-    <div th:if="${@environment.getProperty('app.rating.pilot.feedback-enabled', T(java.lang.Boolean), false)}"
+    <p th:if="${eloFormatWeighted != true}" th:text="#{elo.preview.asOf(${#temporals.format(previewElo.asOf, 'dd/MM/yyyy')})}"></p>
+    <p th:if="${eloFormatWeighted == true}" th:text="#{elo.explanation.asOf(${#temporals.format(previewElo.asOf, 'dd/MM/yyyy')})}"></p>
+    <p th:if="${previewEloStartStep > 0 and eloFormatWeighted != true}" th:text="#{elo.preview.seedStep(${previewEloStartStep})}"></p>
+    <details th:if="${eloFormatWeighted == true}" class="elo-rating-explanation"><summary th:text="#{elo.explanation.heading}">Как работает рейтинг</summary><p th:text="#{elo.explanation.body}"></p></details>
+    <div th:if="${@environment.getProperty('app.rating.pilot.feedback-enabled', T(java.lang.Boolean), false) and eloFeedbackAllowed != false}"
          th:insert="~{fragments/elo-feedback :: invite('RANKING')}"></div>
     <form class="elo-preview-filters" hidden>
         <label>
