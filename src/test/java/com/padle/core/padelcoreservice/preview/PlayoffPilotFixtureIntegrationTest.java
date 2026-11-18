@@ -140,6 +140,9 @@ class PlayoffPilotFixtureIntegrationTest {
                 .isEqualTo(json.readValue(legacyState(), PreviewFixtureService.Fixtures.class));
         assertThat(json.readValue(storedState(), LegacyFixtures.class))
                 .isEqualTo(json.readValue(legacyState(), LegacyFixtures.class));
+        for (int reset = 0; reset < 3; reset++) {
+            assertThat(qualificationResults(fixtures.reset())).isEqualTo(expectedResults);
+        }
     }
 
     @Test

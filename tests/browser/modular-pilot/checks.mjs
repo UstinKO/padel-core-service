@@ -43,8 +43,11 @@ export async function staleAndRegenerate(admin, manager, scenario) {
   assert.equal(wrong.status(), 200);
   const refusal = await wrong.json();
   assert.equal(refusal.success, false);
-  assert.match(refusal.message, /conduct.history.stale/);
-  assert.equal((await snapshot(admin, id)).metadata.conductVersion, version);
+  assert.equal(refusal.message,
+    'Состояние турнира изменилось. Обновите страницу и проверьте актуальную версию.');
+  const afterRefusal = await snapshot(admin, id);
+  assert.equal(afterRefusal.metadata.conductVersion, version);
+  assert.deepEqual(normalized(afterRefusal), normalized(before), 'Отказ сохраняет сетку и результаты');
   await clickAction(manager, id, 'regenerate-playoff');
   assert.deepEqual(normalized(await snapshot(admin, id)), normalized(before));
   return { staleVersion: { status: 302, staleHeader: true }, stalePair: { status: 200, success: false },
@@ -121,7 +124,7 @@ export async function qualificationMatch(manager, scenario, first, second, score
   return id;
 }
 
-export async function early(admin, manager, scenario) {
+export async function qualificationBoundary(admin, manager, scenario) {
   const id = scenario.tournamentId;
   await clickAction(manager, id, 'init-qualification');
   await manager.page.goto('about:blank');
@@ -130,22 +133,27 @@ export async function early(admin, manager, scenario) {
     await qualificationMatch(manager, scenario, index, index + 1);
   }
   await qualificationMatch(manager, scenario, 6, 7);
-  await clickAction(manager, id, 'init-playoff');
-  const partial = await snapshot(admin, id);
-  const qf = playoff(partial).filter(match => match.stage === 'QUARTER_FINAL');
-  const stable = qf.filter(match => match.first.number && match.second.number);
-  assert.equal(stable.length, 3);
-  assert.equal(qf.filter(match => !match.first.number && !match.second.number).length, 1);
-  await evidence(manager, 'early-tbd');
+  await manager.page.goto(input.origin + adminPath(id));
+  await expect(manager.page.locator('form[action$="/init-playoff"]')).toHaveCount(0);
+  const before = await snapshot(admin, id);
+  assert.equal(before.metadata.phase, 'QUALIFICATION');
+  assert.equal(playoff(before).length, 0, 'При незавершённой квалификации восьми пар сетки ещё нет');
+  const refusal = await formPost(manager, adminPath(id) + '/init-playoff', {});
+  assert.equal(refusal.status(), 302);
+  const after = await snapshot(admin, id);
+  assert.equal(after.metadata.conductVersion, before.metadata.conductVersion);
+  assert.deepEqual(after.rounds, before.rounds, 'Прямой POST не обходит запрет ранней сетки');
+  assert.deepEqual(after.ranking, before.ranking);
+  await evidence(manager, 'qualification-boundary');
   await manager.page.goto('about:blank');
   await qualificationMatch(manager, scenario, 6, 7, 4);
+  await clickAction(manager, id, 'init-playoff');
   const filled = await snapshot(admin, id);
-  assert.equal(playoff(filled).filter(match => match.stage === 'QUARTER_FINAL'
-    && match.first.number && match.second.number).length, 4);
-  for (const match of stable) {
-    assert.deepEqual(playoff(filled).find(item => item.id === match.id), match, 'Backfill сохраняет три готовые пары');
-  }
-  return { partial: normalized(partial), filled: normalized(filled) };
+  const quarters = playoff(filled).filter(match => match.stage === 'QUARTER_FINAL');
+  assert.equal(quarters.length, 4);
+  assert.deepEqual(quarters.flatMap(match => [match.first.number, match.second.number]).sort((a, b) => a - b),
+    [1, 2, 3, 4, 5, 6, 7, 8], 'После квалификации все восемь пар посеяны ровно один раз');
+  return { filled: normalized(filled) };
 }
 
 export async function noShow(admin, manager, scenario) {
@@ -162,15 +170,11 @@ export async function noShow(admin, manager, scenario) {
   assert.equal(data.availableTeams.length, 7);
   assert.ok(data.availableTeams.every(item => item.id !== team));
   await manager.page.goto('about:blank');
-  for (let pass = 0; pass < 20; pass++) {
-    const boardResponse = await manager.request.get(input.origin + `/tournaments/team-playoff/api/${id}/court-board`);
-    const board = await boardResponse.json();
-    if (board.teamGroups.qualificationDone.length === 7) break;
-    const suggestion = board.courts.find(court => court.suggestedNextMatch)?.suggestedNextMatch;
-    assert.ok(suggestion, 'Для семи активных пар есть следующая квалификационная встреча');
-    await qualificationMatch(manager, scenario, scenario.teamIds.indexOf(suggestion.team1.id),
-      scenario.teamIds.indexOf(suggestion.team2.id));
+  for (const [first, second] of [[0, 1], [2, 3], [4, 5], [1, 6], [3, 5], [0, 4], [2, 6]]) {
+    await qualificationMatch(manager, scenario, first, second);
   }
+  const completed = await manager.request.get(input.origin + `/tournaments/team-playoff/api/${id}/court-board`);
+  assert.equal((await completed.json()).teamGroups.qualificationDone.length, 7);
   await clickAction(manager, id, 'init-playoff');
   const live = await snapshot(admin, id);
   const seeded = new Set(playoff(live).flatMap(match => [match.first.number, match.second.number]).filter(Boolean));
