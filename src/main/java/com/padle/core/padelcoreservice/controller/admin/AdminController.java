@@ -411,6 +411,7 @@ public class AdminController {
         tournamentAccessService.assertCanManageTournament(owner, id);
 
         model.addAttribute("tournament", tournament);
+        model.addAttribute("isClubAdmin", owner.isClubAdmin());
         List<ClubDto> available = clubsForForm(owner);
         if (available.stream().noneMatch(club -> club.getId().equals(tournament.getClubId()))) {
             available = Stream.concat(available.stream(),

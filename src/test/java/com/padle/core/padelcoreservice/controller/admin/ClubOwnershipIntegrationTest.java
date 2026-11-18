@@ -100,6 +100,8 @@ class ClubOwnershipIntegrationTest {
                 .with(user(actor)).with(csrf()).header("Accept", "application/json")).andExpect(status().isForbidden());
         mvc.perform(get("/admin/tournaments/" + own.getId()).with(user(actor)))
                 .andExpect(status().isOk());
+        mvc.perform(get("/admin/tournaments/" + own.getId() + "/edit").with(user(actor)))
+                .andExpect(status().isOk()).andExpect(model().attribute("isClubAdmin", true));
         mvc.perform(get("/admin/tournaments/" + foreign.getId()).with(user(root)))
                 .andExpect(status().isOk());
         mvc.perform(get("/admin/tournaments/" + foreign.getId() + "/payments").with(user(root)))
