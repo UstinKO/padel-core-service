@@ -1,3 +1,4 @@
+import { openMenu } from './navigation';
 import { expect, test } from '@playwright/test';
 
 const club = {
@@ -96,6 +97,7 @@ test('event has server state, public participants and canonical share QR', async
   await expect(dialog).not.toBeVisible();
   await expect(share).toBeFocused();
   for (const language of ['ru', 'es', 'en']) {
+    await openMenu(page);
     await page.locator('.language-picker select').selectOption(language);
     for (const width of [320, 390, 1440]) {
       await page.setViewportSize({ width, height: 900 });

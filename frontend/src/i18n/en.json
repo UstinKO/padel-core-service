@@ -9,7 +9,8 @@
   "nav": {
     "home": "Home",
     "components": "Components",
-    "catalog": "Events"
+    "catalog": "Events",
+    "menu": "Menu"
   },
   "language": {
     "label": "Language",
@@ -240,7 +241,7 @@
   },
   "playerEvents": {
     "legacy": "Previous version of my account",
-    "title": "My events",
+    "title": "Event registrations",
     "upcoming": "Upcoming",
     "history": "History",
     "noUpcoming": "No upcoming events.",
@@ -382,7 +383,8 @@
       "ACCESS_DENIED": "You do not have access to this operation.",
       "RATE_LIMITED": "Too many requests. Wait before trying again.",
       "ACCOUNT_UNAVAILABLE": "The service is unavailable. Try again later."
-    }
+    },
+    "cabinet": "My account"
   },
   "legal": {
     "terminos": "Terms and Conditions",

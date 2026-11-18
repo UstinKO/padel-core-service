@@ -49,9 +49,14 @@ try {
     require(booking.status() === 200, 'Карточка React недоступна синтетическому игроку');
     const profile = await playerPage.goto(origin + '/preview/perfil');
     require(profile.status() === 200, 'Профиль React недоступен синтетическому игроку');
-    const cabinet = await playerPage.goto(origin + '/preview/players/dashboard');
+    await playerPage.goto(origin + '/preview/players/dashboard?lang=ru');
+    await playerPage.waitForURL(url => url.pathname === '/players/dashboard');
+    await playerPage.locator('#tabMisTorneos').waitFor();
+    require(await playerPage.locator('#root').count() === 0, 'Текущий кабинет заменён React-экраном');
+    await playerPage.locator('a[href="/preview/players/events"]').click();
+    const cabinet = await playerPage.goto(origin + '/preview/players/events');
     require(cabinet.status() === 200, 'Кабинет React недоступен синтетическому игроку');
-    await playerPage.getByRole('heading', {name: /Мои мероприятия|Mis eventos|My events/}).waitFor();
+    await playerPage.getByRole('heading', {name: /Заявки на мероприятия|Inscripciones a eventos|Event registrations/}).waitFor();
     const searchCard = playerPage.locator('article').filter({has: playerPage.getByRole('heading', {name: 'Preview 3', exact: true})});
     const consent = searchCard.getByRole('button', {name: /Показывать мои контакты|Compartir mis datos|Share my contacts/});
     await consent.click();
@@ -74,7 +79,7 @@ try {
 
     const promoted = await context();
     const promotedPage = await login(promoted, 'preview-player-2@example.test');
-    await promotedPage.goto(origin + '/preview/players/dashboard');
+    await promotedPage.goto(origin + '/preview/players/events');
     const promotedCard = promotedPage.locator('article').filter({has: promotedPage.getByRole('heading', {name: 'Preview 2', exact: true})});
     await promotedCard.getByRole('button', {name: /Подтвердить участие|Confirmar participación|Confirm participation/}).click();
     await promotedCard.getByText(/Preview Player 2 · (Подтверждено|Confirmada|Confirmed)/).waitFor();

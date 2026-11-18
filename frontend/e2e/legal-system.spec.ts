@@ -1,3 +1,4 @@
+import { openMenu } from './navigation';
 import { expect, test } from '@playwright/test';
 const anonymous = { authenticated: false, userType: null, id: null, roles: [], fullName: null };
 test.beforeEach(async ({ page, context }) => {
@@ -33,8 +34,10 @@ test('legal copy, canonical, all languages and keyboard cookie customization', a
   expect(
     (await page.context().cookies()).find((cookie) => cookie.name === 'cookieConsent')?.value,
   ).toBe('customized');
+  await openMenu(page);
   await page.getByRole('combobox', { name: /Language|Idioma|Язык/ }).selectOption('ru');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('конфиденциальности');
+  await openMenu(page);
   await page.getByRole('combobox', { name: /Language|Idioma|Язык/ }).selectOption('es');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Privacidad');
   expect(thirdParty).toEqual([]);
@@ -180,8 +183,10 @@ test('form errors have translated labels and focus the corresponding controls', 
     .getByRole('link', { name: /Security check/ })
     .click();
   await expect(page.locator('#account-recaptchaToken')).toBeFocused();
+  await openMenu(page);
   await page.getByRole('combobox', { name: /Language|Idioma|Язык/ }).selectOption('ru');
   await expect(page.getByRole('alert')).toContainText('Пройдите проверку безопасности.');
+  await openMenu(page);
   await page.getByRole('combobox', { name: /Language|Idioma|Язык/ }).selectOption('en');
   await page.route('**/api/auth/session', (route) =>
     route.fulfill({

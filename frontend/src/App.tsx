@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { AppErrorBoundary, RouteErrorPage, SystemPage } from './components/SystemState';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, redirectDocument, RouterProvider } from 'react-router-dom';
 
 import { AccountPage } from './pages/AccountPages';
 import { AppLayout } from './components/AppLayout';
@@ -68,7 +68,24 @@ const router = createBrowserRouter(
         },
         { path: 'recuperar-password', element: <AccountPage key="reset" mode="reset" /> },
         {
+          path: 'players/events',
+          element: (
+            <Suspense fallback={<p role="status">…</p>}>
+              <PlayerEventsPage />
+            </Suspense>
+          ),
+        },
+        {
           path: 'players/dashboard',
+          loader: ({ request }) => {
+            if (basename !== '/preview') return null;
+            const url = new URL(request.url);
+            const lang = url.searchParams.get('lang');
+            const query = lang && ['es', 'ru', 'en'].includes(lang) ? `?lang=${lang}` : '';
+            return redirectDocument(
+              new URL(`/players/dashboard${query}${url.hash}`, url.origin).href,
+            );
+          },
           element: (
             <Suspense fallback={<p role="status">…</p>}>
               <PlayerEventsPage />

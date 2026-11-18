@@ -9,7 +9,8 @@
   "nav": {
     "home": "Inicio",
     "components": "Componentes",
-    "catalog": "Eventos"
+    "catalog": "Eventos",
+    "menu": "Menú"
   },
   "language": {
     "label": "Idioma",
@@ -242,7 +243,7 @@
   },
   "playerEvents": {
     "legacy": "Versión anterior de mi cuenta",
-    "title": "Mis eventos",
+    "title": "Inscripciones a eventos",
     "upcoming": "Próximos",
     "history": "Historial",
     "noUpcoming": "No tenés eventos próximos.",
@@ -384,7 +385,8 @@
       "ACCESS_DENIED": "No tienes acceso a esta operación.",
       "RATE_LIMITED": "Demasiadas solicitudes. Espera antes de reintentar.",
       "ACCOUNT_UNAVAILABLE": "El servicio no está disponible. Inténtalo más tarde."
-    }
+    },
+    "cabinet": "Mi cuenta"
   },
   "legal": {
     "terminos": "Términos y Condiciones",

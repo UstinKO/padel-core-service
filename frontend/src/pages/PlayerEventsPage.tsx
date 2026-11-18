@@ -242,7 +242,7 @@ export function PlayerEventsPage() {
               <header>
                 <p className="kicker">{t(`eventFormat.${format}`, { defaultValue: event.name })}</p>
                 <h2>
-                  <a href={`/torneo/${event.id}`}>{event.name}</a>
+                  <Link to={`/torneo/${event.id}`}>{event.name}</Link>
                 </h2>
                 <div className="event-tags">
                   <span>{t(`playerEvents.registration.${entry.registrationStatus}`)}</span>
