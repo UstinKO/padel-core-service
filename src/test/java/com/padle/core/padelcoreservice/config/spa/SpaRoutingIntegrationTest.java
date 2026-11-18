@@ -44,6 +44,17 @@ class SpaRoutingIntegrationTest {
     private MockMvc mockMvc;
 
     @Test
+    void registrationPanelHasARegularPrivateDocumentStatus() throws Exception {
+        mockMvc.perform(get("/preview/players/events").with(user("tester").roles("SUPER_ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(forwardedUrl(SPA_INDEX))
+                .andExpect(header().string("X-Robots-Tag", "noindex, nofollow"));
+        mockMvc.perform(get("/preview/players/events").with(user("player").roles("PLAYER")))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/error/403"));
+    }
+
+    @Test
     void productionCabinetAndLegacyRequireAuthentication() throws Exception {
         for (var path : List.of("/players/dashboard", "/legacy/players/dashboard")) {
             mockMvc.perform(get(path))
