@@ -117,8 +117,11 @@ public class SecurityConfig {
                         .ignoringRequestMatchers("/api/auth/login", "/api/auth/refresh", "/ws/**")
                 )
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(request -> PreviewPagePolicy.allowsPublicRead(request, environment))
+                        .permitAll()
                         .requestMatchers(request -> environment.acceptsProfiles(Profiles.of("preview"))
                                 && (request.getServletPath().equals("/preview/players/dashboard")
+                                || request.getServletPath().equals("/preview/players/events")
                                 || request.getServletPath().equals("/preview/perfil")
                                 || PREVIEW_EVENT.matcher(request.getServletPath()).matches()))
                         .hasAnyRole("PLAYER", "SUPER_ADMIN")

@@ -32,7 +32,7 @@ try {
   const guest = await context();
   const guestPage = await guest.newPage();
   await guestPage.goto(origin + '/preview/torneos');
-  require(new URL(guestPage.url()).pathname === '/login', 'Preview разрешён без сессии приложения');
+  require(new URL(guestPage.url()).pathname === '/preview/torneos', 'Публичный каталог закрытого контура недоступен');
   const player = await context();
   const playerPage = await login(player, 'preview-player-0@example.test');
   const forbidden = await player.request.get(origin + '/api/internal/ui-preview');
@@ -40,7 +40,7 @@ try {
   const forbiddenReset = await player.request.post(origin + '/api/internal/ui-preview/reset', {headers: await csrf(player)});
   require(forbiddenReset.status() === 403, 'Игрок выполняет reset');
   const preview = await playerPage.goto(origin + '/preview/torneos');
-  require(preview.status() === 403, 'Неожиданный ответ preview для игрока: HTTP ' + preview.status()
+  require(preview.status() === 200, 'Неожиданный ответ preview для игрока: HTTP ' + preview.status()
     + ', путь ' + new URL(preview.url()).pathname);
   if (fixture.fixtureSet === 'registrations') {
     require(Array.isArray(fixture.tournamentIds) && fixture.tournamentIds.length === 6
