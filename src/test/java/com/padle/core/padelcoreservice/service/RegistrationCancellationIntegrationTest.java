@@ -228,10 +228,11 @@ class RegistrationCancellationIntegrationTest {
     }
 
     @Test
-    void historyIsScopedToParticipantAndManagedClub() {
+    void historyIsScopedToParticipantAndEventCreator() {
         var event=tournament(2);var row=registration(event,RegistrationStatus.CONFIRMED);
         var manager=Owner.builder().id(9000L).role(OwnerRole.CLUB_ADMIN).clubId(event.getClubId()).build();
-        var stranger=Owner.builder().id(9001L).role(OwnerRole.CLUB_ADMIN).clubId(event.getClubId()+10000).build();
+        var stranger=Owner.builder().id(9001L).role(OwnerRole.CLUB_ADMIN).clubId(event.getClubId()).build();
+        event.setOwnerId(manager.getId());
         service.adminRemovePlayerRegistration(event.getId(),row.getPlayer().getId(),manager);
         assertThat(cancellationHistory.forPlayer(player(),List.of(event.getId()))).isEmpty();
         assertThat(cancellationHistory.forPlayer(row.getPlayer(),List.of(event.getId()))).singleElement()

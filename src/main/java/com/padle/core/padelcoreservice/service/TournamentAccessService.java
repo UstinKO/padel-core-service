@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.service;
 
+import java.util.Objects;
 import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.Tournament;
@@ -19,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Единая точка принятия решения "может ли этот Owner управлять этим турниром".
  * SUPER_ADMIN/ADMIN — доступ ко всем турнирам.
- * CLUB_ADMIN — доступ только если Owner.clubId совпадает с Tournament.clubId (оба не null).
+ * CLUB_ADMIN — доступ только к собственным турнирам; площадки проверяются при создании/переносе.
  * Остальные (OWNER/ORGANIZER) — доступ только если Tournament.ownerId совпадает с Owner.id.
  * Резолверы по производным ID разворачивают их до турнира через существующие JPA-связи
  * и делегируют в основную проверку.
@@ -32,6 +33,7 @@ public class TournamentAccessService {
     private static final String ACCESS_DENIED_MESSAGE = "No tienes permiso para gestionar este torneo";
 
     private final TournamentRepository tournamentRepository;
+    private final ClubAccountService clubAccounts;
     private final MatchRepository matchRepository;
     private final TournamentKingOfCourtRepository kingRepository;
     private final KingOfCourtRoundRepository kingRoundRepository;
@@ -44,9 +46,6 @@ public class TournamentAccessService {
         if (owner.canViewAllTournaments()) {
             return true;
         }
-        if (owner.isClubAdmin()) {
-            return owner.getClubId() != null && owner.getClubId().equals(tournamentClubId);
-        }
         return tournamentOwnerId != null && tournamentOwnerId.equals(owner.getId());
     }
 
@@ -57,6 +56,9 @@ public class TournamentAccessService {
     public void assertCanManageAtClub(Owner owner, Tournament tournament, Long clubId) {
         if (!canManage(owner, tournament.getOwnerId(), clubId)) {
             throw new AccessDeniedException(ACCESS_DENIED_MESSAGE);
+        }
+        if (!Objects.equals(clubId, tournament.getClubId())) {
+            clubAccounts.assertCanCreateAt(owner, clubId);
         }
     }
 

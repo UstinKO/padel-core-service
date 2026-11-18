@@ -53,6 +53,8 @@ class AdminTournamentCreateStatusTest {
     private ClubRepository clubRepository;
     @Autowired
     private TournamentRepository tournamentRepository;
+    @Autowired
+    private com.padle.core.padelcoreservice.repository.OwnerRepository owners;
 
     @Test
     void createTournament_clubAdmin_estadoDelFormularioIgnorado_siempreRegistroAbierto() {
@@ -117,6 +119,10 @@ class AdminTournamentCreateStatusTest {
     }
 
     private Tournament submitAndFetch(TournamentDto dto, Owner owner) {
+        owner = owners.save(owner);
+        if (owner.isClubAdmin()) {
+            dto.setClubId(owner.getClubId());
+        }
         RedirectAttributes redirectAttributes = new RedirectAttributesModelMap();
         Model model = new ExtendedModelMap();
         String view = adminController.createTournament(

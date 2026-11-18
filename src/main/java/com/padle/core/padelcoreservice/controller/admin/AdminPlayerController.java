@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.controller.admin;
 
+import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.dto.PlayerResponseDto;
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
 import com.padle.core.padelcoreservice.exception.InvalidStateException;
@@ -58,10 +59,8 @@ public class AdminPlayerController {
 
         List<PlayerResponseDto> players = playerService.getAllPlayers();
         if (owner.isClubAdmin()) {
-            // Клубный админ видит только игроков с регистрацией на турнир своего клуба
-            Set<Long> clubPlayerIds = owner.getClubId() == null
-                    ? Set.of()
-                    : new HashSet<>(tournamentRegistrationRepository.findDistinctPlayerIdsByTournamentClubId(owner.getClubId()));
+            // Клубный аккаунт видит участников собственных мероприятий.
+            Set<Long> clubPlayerIds = tournamentRegistrationRepository.findPlayerIdsByTournamentOwnerId(owner.getId());
             players = players.stream()
                     .filter(p -> clubPlayerIds.contains(p.getId()))
                     .collect(Collectors.toList());
@@ -92,13 +91,18 @@ public class AdminPlayerController {
 
     @GetMapping("/{id}")
     public String viewPlayer(@PathVariable Long id, Model model, @AuthenticationPrincipal Owner owner) {
-        if (owner.isClubAdmin() && (owner.getClubId() == null
-                || !tournamentRegistrationRepository.existsByTournamentClubIdAndPlayerId(owner.getClubId(), id))) {
+        if (owner.isClubAdmin()
+                && !tournamentRegistrationRepository.existsByTournamentOwnerIdAndPlayerId(owner.getId(), id)) {
             throw new AccessDeniedException("No tienes permiso para ver este jugador");
         }
 
         PlayerResponseDto player = playerService.obtenerJugadorPorId(id);
         List<TournamentRegistrationDto> registrations = tournamentService.getActiveRegistrationsByPlayer(id);
+        if (owner.isClubAdmin()) {
+            Set<Long> ownedIds = tournamentService.getTournamentsForOwner(owner.getId(), false).stream()
+                    .map(TournamentDto::getId).collect(Collectors.toSet());
+            registrations = registrations.stream().filter(reg -> ownedIds.contains(reg.getTournamentId())).toList();
+        }
 
         model.addAttribute("player", player);
         model.addAttribute("registrations", registrations);
