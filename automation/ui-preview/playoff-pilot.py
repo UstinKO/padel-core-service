@@ -75,7 +75,7 @@ def main():
         print('Пилот подготовлен; ID и маршруты для ручной проверки — target/modular-pilot/fixture.json')
         return
     browser_input = preview.RUNTIME / 'pilot-browser-input.json'
-    browser_input.write_text(json.dumps(dict(public, origin=client.origin, gatewayPassword=state['gateway_password'],
+    browser_input.write_text(json.dumps(dict(public, fixtureSet='playoff', origin=client.origin, gatewayPassword=state['gateway_password'],
         password=state['fixture_password'], record=args.record)))
     browser_input.chmod(0o600)
     node = preview.ROOT / 'target/frontend-toolchain/node/node'
