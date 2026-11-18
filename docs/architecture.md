@@ -4,7 +4,7 @@
 исполняемый Telegram-адаптер в `automation/telegram-relay/`. Порядок отдельной активации воркера —
 [codex-migration.md](codex-migration.md); приложение и его схема развёртывания этим не меняются.
 
-План развития: [многомодульный монолит, семь согласованных модулей](modular-monolith/target-architecture.md). [Первая фаза](modular-monolith/phase-1/README.md) выделяет PlayoffMatchingEngine через рабочий reactor и отдельные исходную/итоговую e2e. Пока приложение остаётся одним Maven jar-проектом; целевую структуру не считать уже реализованной. Выделение хранения — отдельная поздняя #1051.
+План развития: [многомодульный монолит, семь согласованных модулей](modular-monolith/target-architecture.md). [Первая фаза](modular-monolith/phase-1/README.md) выделяет PlayoffMatchingEngine через рабочий reactor и отдельные исходную/итоговую e2e. Сейчас работают parent/aggregator, padel-bootstrap с единственным boot jar и пустой padel-tournament-engines. Корневой src/ компилируется только bootstrap; PlayoffMatchingEngine пока остаётся в нём. [Пути и команды reactor](modular-monolith/phase-1/reactor-delivery.md). Остальные пять целевых модулей пока не созданы. Выделение хранения — отдельная поздняя #1051.
 
 ---
 
@@ -218,14 +218,14 @@ Lombok отрабатывает до MapStruct — обеспечивается 
 ### Локальный запуск
 
 ```bash
-# Требует PostgreSQL на localhost:5432/player_padel_db
-./mvnw spring-boot:run
-
-# Полный стек с observability
-docker compose up -d
-
-# Сборка без тестов
+# Сборка без тестов; обязательный verify выполняется отдельно с тестовой PostgreSQL.
 ./mvnw clean package -DskipTests
+
+# Запуск с окружением своей БД и интеграций.
+java -jar padel-bootstrap/target/padel-core-service-0.0.1-SNAPSHOT.jar
+
+# Полный стек: приложение + postgres + loki + prometheus + grafana.
+docker compose up -d
 ```
 
 ### Конфигурация подключений (HikariCP)
