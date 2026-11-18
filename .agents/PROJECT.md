@@ -348,6 +348,8 @@ docker compose up -d
 
 ### WebSocket
 
+Восстановление истории Team Playoff после commit отправляет `STATE_UPDATED` в legacy-тему и прежний public invalidation; rollback не публикует обновление. [Доставка и проверка](../docs/endpoints/conduct-history-realtime.md).
+
 | Endpoint | Topic | Описание |
 |----------|-------|----------|
 | `/ws` (SockJS) | `/topic/tournament/{kingId}` | Real-time обновления King of Court |
