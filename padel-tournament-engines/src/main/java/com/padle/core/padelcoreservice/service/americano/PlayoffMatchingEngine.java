@@ -1,7 +1,5 @@
 package com.padle.core.padelcoreservice.service.americano;
 
-import org.springframework.stereotype.Component;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -22,7 +20,6 @@ import java.util.stream.Collectors;
  * Приоритеты сравниваются лексикографически — более высокий приоритет никогда
  * не приносится в жертву ради более низкого.
  */
-@Component
 public class PlayoffMatchingEngine {
 
     public record Candidate(Long teamId, int seed, int winStreak) {

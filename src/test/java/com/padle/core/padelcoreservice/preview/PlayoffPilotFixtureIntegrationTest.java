@@ -16,6 +16,7 @@ import com.padle.core.padelcoreservice.repository.americano.AmericanoMatchReposi
 import com.padle.core.padelcoreservice.service.TournamentAccessService;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import com.padle.core.padelcoreservice.service.americano.TeamPlayoffService;
+import com.padle.core.padelcoreservice.service.americano.PlayoffMatchingEngine;
 import com.padle.core.padelcoreservice.service.conduct.TournamentConductHistory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,6 +27,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.ApplicationContext;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.mock.web.MockHttpSession;
@@ -70,6 +72,7 @@ import static org.hamcrest.Matchers.containsString;
 @Import(PlayoffPilotFixtureIntegrationTest.Configuration.class)
 class PlayoffPilotFixtureIntegrationTest {
     @Autowired private PlayoffPilotFixtureService fixtures;
+    @Autowired private ApplicationContext context;
     @Autowired private PreviewFixtureService preview;
     @Autowired private PreviewProperties properties;
     @Autowired private JdbcClient jdbc;
@@ -111,6 +114,7 @@ class PlayoffPilotFixtureIntegrationTest {
 
     @Test
     void fixturesAreRepeatableQualifiedAndResetWithoutChangingLegacyMetadata() {
+        assertThat(context.getBeansOfType(PlayoffMatchingEngine.class)).containsOnlyKeys("playoffMatchingEngine");
         assertThat(fixtures.snapshot()).isEmpty();
         var first = fixtures.seed();
         assertThat(fixtures.seed()).isEqualTo(first);

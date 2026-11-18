@@ -18,7 +18,7 @@ Playwright. Тест жёстко использует локальную БД �
 Артефакт CI содержит JSON результата и скриншоты вымышленных тестовых данных;
 пароли, cookies и файл начальных данных в него не включаются.
 
-После перехода на reactor Surefire reports находятся в `padel-bootstrap/target/surefire-reports/`; рабочий каталог тестовой JVM остаётся корнем, поэтому browser evidence по-прежнему пишется в `target/browser-qa/`. Корневой `-Dtest` проходит через пустой engines-модуль; отсутствие указанного теста в bootstrap остаётся ошибкой.
+После перехода на reactor отчёты приложения находятся в `padel-bootstrap/target/surefire-reports/`, unit/architecture движка — в `padel-tournament-engines/target/surefire-reports/`. Рабочий каталог JVM приложения остаётся корнем, поэтому browser evidence по-прежнему пишется в `target/browser-qa/`. Корневой `-Dtest` приложения проходит через engines-модуль; отсутствие указанного теста в bootstrap остаётся ошибкой. Перенесённый engine-набор запускается отдельно: `./mvnw -pl padel-tournament-engines -am -Dtest=PlayoffMatchingEngineTest test`.
 
 ## Объединение гостевых профилей
 
