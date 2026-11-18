@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{club_access.title} + ' - 1-Padel Admin'">1-Padel Admin</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <link rel="stylesheet" th:href="@{/css/club-accounts.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
+</head>
+<body>
+<header th:replace="~{fragments/admin-header :: header(#{club_access.title})}"></header>
+<main class="admin-main club-access"><div class="container">
+    <div class="admin-header">
+        <h1 class="admin-title" th:text="#{club_access.title}"></h1>
+        <p class="admin-subtitle" th:text="#{club_access.scope}"></p>
+    </div>
+    <a href="/admin" class="btn btn-outline" th:text="#{club_access.back}"></a>
+    <p th:if="${#lists.isEmpty(accounts)}" class="alert alert-info" th:text="#{club_access.empty}"></p>
+    <div class="club-access-grid">
+        <article th:each="account : ${accounts}" class="admin-card">
+            <div class="admin-card-header"><h2 th:text="${account.fullName}"></h2></div>
+            <div class="admin-card-body">
+                <p th:text="${account.email}"></p>
+                <p th:text="${account.isActive} ? #{admin.common.status.active} : #{admin.common.status.inactive}"></p>
+                <a th:href="@{/admin/club-accounts/{id}(id=${account.id})}" class="btn btn-primary" th:text="#{club_access.manage}"></a>
+            </div>
+        </article>
+    </div>
+</div></main>
+</body></html>

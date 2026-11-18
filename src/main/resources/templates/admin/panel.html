@@ -34,7 +34,7 @@
                 <i class="fas fa-cog"></i>
                 <span th:text="#{admin.panel.title}">Panel de Control</span>
             </h1>
-            <p class="admin-subtitle" th:text="#{admin.panel.subtitle}">Gestión de jugadores y torneos 1-Padel</p>
+            <p class="admin-subtitle" th:text="${isClubAdmin} ? #{club_access.panel_subtitle} : #{admin.panel.subtitle}">Gestión de jugadores y torneos 1-Padel</p>
         </div>
 
         <!-- Estadísticas -->
@@ -44,7 +44,7 @@
                     <i class="fas fa-users"></i>
                 </div>
                 <div class="stat-content">
-                    <h3 class="stat-label" th:text="#{admin.panel.stat.players}">Total jugadores</h3>
+                    <h3 class="stat-label" th:text="${isClubAdmin} ? #{club_access.players} : #{admin.panel.stat.players}">Total jugadores</h3>
                     <p class="stat-value" th:text="${totalPlayers}">0</p>
                 </div>
             </div>
@@ -206,6 +206,10 @@
             <a th:unless="${isAdminRole}" href="/admin/tournaments/new" class="btn btn-primary">
                 <i class="fas fa-plus-circle"></i>
                 <span th:text="#{admin.common.btn.create_tournament}">Crear nuevo torneo</span>
+            </a>
+
+            <a th:if="${isSuperAdmin}" href="/admin/club-accounts" class="btn btn-outline">
+                <i class="fas fa-building"></i><span th:text="#{club_access.title}"></span>
             </a>
 
             <!-- Кнопка экспорта данных -->
