@@ -59,6 +59,28 @@ test.beforeEach(async ({ page, context }) => {
   );
 });
 
+test('preview cabinet opens the existing server page without replacing it with registrations', async ({
+  page,
+}) => {
+  let registrationReads = 0;
+  await page.route('**/api/players/me/events', (route) => {
+    registrationReads++;
+    return route.fulfill({ json: { upcoming: [], history: [] } });
+  });
+  await page.route(
+    (url) => url.pathname === '/players/dashboard',
+    (route) =>
+      route.fulfill({
+        contentType: 'text/html',
+        body: '<html><body><section id="player-elo">Existing rating cabinet</section></body></html>',
+      }),
+  );
+  await page.goto('/preview/players/dashboard?lang=ru');
+  await expect(page).toHaveURL(/\/players\/dashboard\?lang=ru$/);
+  await expect(page.locator('#player-elo')).toHaveText('Existing rating cabinet');
+  expect(registrationReads).toBe(0);
+});
+
 test('displays empty states and allows retry after a server error', async ({ page }) => {
   let available = false;
   await page.route('**/api/players/me/events', (route) =>
@@ -66,7 +88,7 @@ test('displays empty states and allows retry after a server error', async ({ pag
       ? route.fulfill({ status: 503 })
       : route.fulfill({ json: { upcoming: [], history: [] } }),
   );
-  await page.goto('/preview/players/dashboard');
+  await page.goto('/preview/players/events');
   const retry = page.getByRole('button', { name: 'Try again' });
   await expect(retry).toBeVisible();
   available = true;
@@ -78,9 +100,9 @@ test('displays empty states and allows retry after a server error', async ({ pag
 
 test('requires a fresh login after session expiry', async ({ page }) => {
   await page.route('**/api/players/me/events', (route) => route.fulfill({ status: 401 }));
-  await page.goto('/preview/players/dashboard');
+  await page.goto('/preview/players/events');
   await expect(page).toHaveURL(
-    /\/preview\/login\?expired=true&destination=%2Fpreview%2Fplayers%2Fdashboard$/,
+    /\/preview\/login\?expired=true&destination=%2Fpreview%2Fplayers%2Fevents$/,
   );
   await expect(page.getByText('Sign in again to continue.')).toBeVisible();
 });
@@ -116,7 +138,7 @@ test('withdraws only after confirmation and reconciles when the response is lost
     expect(route.request().postDataJSON()).toEqual({ version: 0 });
     await route.abort();
   });
-  await page.goto('/preview/players/dashboard');
+  await page.goto('/preview/players/events');
   await expect(page.getByText('On the waitlist')).toBeVisible();
   await page.getByRole('button', { name: 'Leave the event' }).click();
   const dialog = page.getByRole('dialog');
@@ -173,7 +195,7 @@ test('uses the participation actions for each player and updates their states', 
     item.availableActions = [];
     await route.fulfill({ json: item });
   });
-  await page.goto('/preview/players/dashboard');
+  await page.goto('/preview/players/events');
   await expect(page.getByText('Paid', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Confirm participation' }).click();
   await expect(page.getByText('Test Player · Confirmed')).toBeVisible();
@@ -210,7 +232,7 @@ test('shows the cancellation quote in USDT before cancelling the pair', async ({
     }
     await route.fulfill({ json: quote });
   });
-  await page.goto('/preview/players/dashboard');
+  await page.goto('/preview/players/events');
   await page.getByRole('button', { name: 'Cancel the pair' }).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog.getByText('5.00 USDT', { exact: true })).toBeVisible();

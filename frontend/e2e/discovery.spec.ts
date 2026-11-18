@@ -1,3 +1,4 @@
+import { openMenu } from './navigation';
 import { expect, test } from '@playwright/test';
 
 const event = {
@@ -54,8 +55,10 @@ test('home and catalogue use server counts, canonical event links and all langua
     '/preview/torneo/42',
   );
   await expect(page.getByText('1 pair', { exact: true })).toBeVisible();
+  await openMenu(page);
   await page.getByLabel('Language').selectOption('ru');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Ваша следующая игра');
+  await openMenu(page);
   await page.getByLabel('Язык').selectOption('es');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Tu próximo partido');
   for (const width of [320, 390, 1440]) {
@@ -82,6 +85,22 @@ test('filters, pagination, back and reload preserve URL state', async ({ page })
   await page.goBack();
   await expect(page).not.toHaveURL(/page=1/);
   await expect(page.getByRole('heading', { name: event.name })).toBeVisible();
+});
+
+test('compact mobile header keeps navigation and closes the menu with Escape', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/preview/torneos');
+  const toggle = page.getByRole('button', { name: 'Menu', exact: true });
+  await expect(toggle).toBeVisible();
+  await expect(page.locator('.nav')).toBeHidden();
+  await toggle.click();
+  await expect(page.locator('.nav')).toBeVisible();
+  await page.getByLabel('Language').focus();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.nav')).toBeHidden();
+  await expect(toggle).toBeFocused();
+  await page.setViewportSize({ width: 1440, height: 950 });
+  await expect(page.locator('.nav')).toBeVisible();
 });
 
 test('loading, error, retry and empty result retain filters', async ({ page }) => {

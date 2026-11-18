@@ -1,3 +1,4 @@
+import { openMenu } from './navigation';
 import { expect, test } from '@playwright/test';
 
 const anonymous = { authenticated: false, userType: null, id: null, roles: [], fullName: null };
@@ -74,6 +75,7 @@ test('registration keeps safe fields and language, exposes typed field errors an
   await expect(page.getByRole('alert')).toContainText('Correct the highlighted fields.');
   await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Maria');
   await expect(page.getByLabel('Password', { exact: true })).toHaveValue('');
+  await openMenu(page);
   await page.getByRole('combobox', { name: /Idioma|Language|Язык/ }).selectOption('ru');
   await expect(page.getByLabel('Имя', { exact: true })).toHaveValue('Maria');
   await expect(page.getByRole('alert')).toContainText('Эта почта уже используется.');
@@ -125,6 +127,7 @@ test('profile shows actual player and persists safe edits through a language cha
   await page.goto('/preview/perfil');
   await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Maria');
   await page.getByLabel('First name', { exact: true }).fill('Mariana');
+  await openMenu(page);
   await page.getByRole('combobox', { name: /Idioma|Language|Язык/ }).selectOption('ru');
   await expect(page.getByLabel('Имя', { exact: true })).toHaveValue('Mariana');
   await expect(page.getByLabel('Электронная почта', { exact: true })).toHaveAttribute(

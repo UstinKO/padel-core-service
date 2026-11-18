@@ -173,6 +173,10 @@
         <div id="pairReplacementNotices" aria-live="polite"></div>
 
         <!-- Mis torneos / Todos / Historial -->
+        <p th:if="${#arrays.contains(@environment.activeProfiles, 'preview')}">
+            <a class="btn btn-outline" th:href="@{/preview/players/events}"
+               th:text="#{dashboard.registration_actions}">Управление заявками</a>
+        </p>
         <div class="dashboard-card">
             <div class="card-header">
                 <div class="dashboard-tabs">

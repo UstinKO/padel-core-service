@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
@@ -8,6 +9,8 @@ import { LanguagePicker } from './LanguagePicker';
 
 export function AppLayout() {
   const { t } = useTranslation();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuButton = useRef<HTMLButtonElement>(null);
   const preview = window.location.pathname.startsWith('/preview');
   const markUrl = `${import.meta.env.BASE_URL}mark.svg`;
   return (
@@ -20,34 +23,64 @@ export function AppLayout() {
           {preview ? (
             <NavLink className="brand" to="/" aria-label={t('app.name')}>
               <img src={markUrl} alt="" width="34" height="34" />
-              <span>{t('app.name')}</span>
+              <span>
+                1-<span className="brand-highlight">PADEL</span>
+              </span>
             </NavLink>
           ) : (
             <a className="brand" href="/" aria-label={t('app.name')}>
               <img src={markUrl} alt="" width="34" height="34" />
-              <span>{t('app.name')}</span>
+              <span>
+                1-<span className="brand-highlight">PADEL</span>
+              </span>
             </a>
           )}
-          <nav className="nav" aria-label={t(preview ? 'app.preview' : 'app.navigation')}>
-            {preview ? (
-              <>
-                <NavLink to="/" end>
-                  {t('nav.home')}
-                </NavLink>
-                <NavLink to="/torneos">{t('nav.catalog')}</NavLink>
-                <NavLink to="/clubs">{t('clubs.title')}</NavLink>
-                <NavLink to="/components">{t('nav.components')}</NavLink>
-              </>
-            ) : (
-              <>
-                <a href="/">{t('nav.home')}</a>
-                <a href="/torneos">{t('nav.catalog')}</a>
-                <a href="/clubs">{t('clubs.title')}</a>
-              </>
-            )}
-          </nav>
-          <AccountNav />
-          <LanguagePicker />
+          <button
+            ref={menuButton}
+            type="button"
+            className="nav-toggle"
+            aria-label={t('nav.menu')}
+            aria-controls="site-navigation"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen(!menuOpen)}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 6h18M3 12h18M3 18h18" fill="none" stroke="currentColor" strokeWidth="2" />
+            </svg>
+          </button>
+          <div
+            id="site-navigation"
+            className={`topbar-menu${menuOpen ? ' topbar-menu--open' : ''}`}
+            onClick={(event) => {
+              if (event.target instanceof Element && event.target.closest('a')) setMenuOpen(false);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') {
+                setMenuOpen(false);
+                menuButton.current?.focus();
+              }
+            }}
+          >
+            <nav className="nav" aria-label={t(preview ? 'app.preview' : 'app.navigation')}>
+              {preview ? (
+                <>
+                  <NavLink to="/" end>
+                    {t('nav.home')}
+                  </NavLink>
+                  <NavLink to="/torneos">{t('nav.catalog')}</NavLink>
+                  <NavLink to="/clubs">{t('clubs.title')}</NavLink>
+                </>
+              ) : (
+                <>
+                  <a href="/">{t('nav.home')}</a>
+                  <a href="/torneos">{t('nav.catalog')}</a>
+                  <a href="/clubs">{t('clubs.title')}</a>
+                </>
+              )}
+            </nav>
+            <AccountNav />
+            <LanguagePicker />
+          </div>
         </div>
       </header>
       <SessionAndNetwork />
