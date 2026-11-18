@@ -524,5 +524,78 @@
       "ADVANCED": "Avanzó",
       "WAITING": "En espera"
     }
+  },
+  "booking": {
+    "title": "Inscripción",
+    "login": "Iniciar sesión para inscribirme",
+    "mode": "¿Cómo querés inscribirte?",
+    "submit": "Inscribirme",
+    "partner": "Compañero",
+    "existing": "Elegir jugador registrado",
+    "guest": "Ingresar invitado",
+    "search": "Buscar por nombre, teléfono o Telegram",
+    "noMatches": "No encontramos jugadores con esa búsqueda.",
+    "change": "Cambiar compañero",
+    "choosePartner": "Elegí un jugador o ingresá los datos del invitado.",
+    "addPartner": "Agregar compañero",
+    "back": "Volver",
+    "share": "Mostrar mis contactos a quienes buscan compañero",
+    "partnerName": "Compañero: {{name}}",
+    "registered": "Inscripción registrada",
+    "position": "Puesto en lista de espera: {{position}}",
+    "saved": "Tu inscripción se actualizó.",
+    "uncertain": "No pudimos verificar la inscripción. Consultá el estado antes de volver a enviar.",
+    "retrySafe": "La inscripción no cambió. Podés volver a intentar.",
+    "check": "Consultar mi inscripción",
+    "needLevel": "Indicá tu nivel en el perfil para continuar.",
+    "needContact": "Agregá WhatsApp o Telegram a tu perfil para continuar.",
+    "profile": "Abrir mi perfil",
+    "return": "Volver a la inscripción",
+    "session": "Volvé a iniciar sesión para continuar.",
+    "rejected": "No se pudo completar la inscripción. Revisá los datos.",
+    "closed": "La inscripción ya no está disponible.",
+    "conflict": "La inscripción o las condiciones cambiaron. Revisá el estado antes de continuar.",
+    "terms": "Precio por pareja: {{price}}. Cancelación sin cargo hasta {{deadline}}. Cargo por baja tardía: {{late}}.",
+    "agree": "Acepto las condiciones de inscripción",
+    "acceptRequired": "Aceptá las condiciones para continuar.",
+    "termsFailed": "No pudimos consultar las condiciones. Intentá de nuevo.",
+    "regulation": "Ver reglamento",
+    "candidates": "Jugadores que buscan compañero",
+    "propose": "Proponer pareja",
+    "proposalSent": "Propuesta enviada",
+    "proposalUncertain": "No pudimos confirmar el envío. Consultá con tu compañero antes de reenviar.",
+    "noCandidates": "Aún no hay otros jugadores buscando compañero.",
+    "modeLabel": {
+      "WITH_PARTNER": "Tengo compañero",
+      "ADD_LATER": "Agrego compañero más tarde",
+      "SEARCH": "Busco compañero"
+    },
+    "field": {
+      "nombre": "Nombre",
+      "apellido": "Apellido",
+      "telefono": "Teléfono",
+      "telegramUsername": "Telegram (opcional)"
+    },
+    "status": {
+      "CONFIRMED": "Inscripción confirmada",
+      "WAITLIST": "En lista de espera",
+      "SOLO_ADD_LATER": "Pendiente de compañero",
+      "SOLO_SEARCH": "Buscando compañero",
+      "PARTNER_INVITED": "Compañero pendiente"
+    },
+    "errors": {
+      "INVALID_PARTNER": "Revisá el nombre y el teléfono del compañero.",
+      "ALREADY_REGISTERED": "Ya estás inscripto.",
+      "PARTNER_ALREADY_REGISTERED": "Tu compañero ya está inscripto.",
+      "PARTNER_NOT_FOUND": "El jugador ya no está disponible.",
+      "PARTNER_LEVEL_REQUIRED": "Tu compañero debe indicar su nivel.",
+      "PARTNER_LEVEL_MISMATCH": "El nivel de tu compañero no coincide con la categoría.",
+      "PLAYER_LEVEL_MISMATCH": "Tu nivel no coincide con la categoría.",
+      "REGISTRATION_CLOSED": "La inscripción está cerrada.",
+      "SELF_PARTNER": "Elegí otro jugador como compañero.",
+      "NO_PENDING_PARTNER": "La solicitud ya cambió.",
+      "SIGN_IN_REQUIRED": "Volvé a iniciar sesión.",
+      "REGISTRATION_CONFLICT": "La inscripción cambió. Consultá su estado."
+    }
   }
 }

@@ -334,6 +334,10 @@ function AccountForm({ mode, initialProfile }: { mode: Mode; initialProfile?: Pr
         </div>
       )}
       {notice && <p role="status">{t(`account.${notice}`)}</p>}
+      {notice === 'saved' &&
+        /^\/preview\/torneo\/[1-9]\d{0,18}#tournament-registration$/.test(destination) && (
+          <Link to={destination.slice('/preview'.length)}>{t('booking.return')}</Link>
+        )}
       {tokenInvalid ? (
         <>
           <p role="alert">{t('account.tokenInvalid')}</p>

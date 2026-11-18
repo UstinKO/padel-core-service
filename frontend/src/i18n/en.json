@@ -522,5 +522,78 @@
       "ADVANCED": "Advanced",
       "WAITING": "Waiting"
     }
+  },
+  "booking": {
+    "title": "Registration",
+    "login": "Sign in to register",
+    "mode": "How would you like to register?",
+    "submit": "Register",
+    "partner": "Partner",
+    "existing": "Choose an existing player",
+    "guest": "Enter a guest partner",
+    "search": "Search by name, phone or Telegram",
+    "noMatches": "No matching players.",
+    "change": "Change partner",
+    "choosePartner": "Choose a player or enter your guest’s details.",
+    "addPartner": "Add partner",
+    "back": "Back",
+    "share": "Share my contacts with players looking for a partner",
+    "partnerName": "Partner: {{name}}",
+    "registered": "Registration saved",
+    "position": "Waiting list position: {{position}}",
+    "saved": "Your registration was updated.",
+    "uncertain": "We could not verify your registration. Check its status before submitting again.",
+    "retrySafe": "Your registration did not change. You can try again.",
+    "check": "Check my registration",
+    "needLevel": "Set your level in your profile to continue.",
+    "needContact": "Add WhatsApp or Telegram to your profile to continue.",
+    "profile": "Open my profile",
+    "return": "Return to registration",
+    "session": "Sign in again to continue.",
+    "rejected": "Could not complete registration. Check your details.",
+    "closed": "Registration is no longer available.",
+    "conflict": "Registration or conditions changed. Check the current status before continuing.",
+    "terms": "Pair price: {{price}}. Free cancellation until {{deadline}}. Late cancellation charge: {{late}}.",
+    "agree": "I accept the registration conditions",
+    "acceptRequired": "Accept the conditions to continue.",
+    "termsFailed": "We could not load the conditions. Please try again.",
+    "regulation": "Read the rules",
+    "candidates": "Players looking for a partner",
+    "propose": "Propose a pair",
+    "proposalSent": "Proposal sent",
+    "proposalUncertain": "We could not verify delivery. Check with your partner before sending again.",
+    "noCandidates": "No other players are looking for a partner yet.",
+    "modeLabel": {
+      "WITH_PARTNER": "I have a partner",
+      "ADD_LATER": "I will add a partner later",
+      "SEARCH": "I am looking for a partner"
+    },
+    "field": {
+      "nombre": "First name",
+      "apellido": "Last name",
+      "telefono": "Phone",
+      "telegramUsername": "Telegram (optional)"
+    },
+    "status": {
+      "CONFIRMED": "Registration confirmed",
+      "WAITLIST": "On the waiting list",
+      "SOLO_ADD_LATER": "Waiting for a partner",
+      "SOLO_SEARCH": "Looking for a partner",
+      "PARTNER_INVITED": "Partner pending"
+    },
+    "errors": {
+      "INVALID_PARTNER": "Check your partner’s name and phone number.",
+      "ALREADY_REGISTERED": "You are already registered.",
+      "PARTNER_ALREADY_REGISTERED": "Your partner is already registered.",
+      "PARTNER_NOT_FOUND": "This player is no longer available.",
+      "PARTNER_LEVEL_REQUIRED": "Your partner must set their level.",
+      "PARTNER_LEVEL_MISMATCH": "Your partner’s level does not match the category.",
+      "PLAYER_LEVEL_MISMATCH": "Your level does not match the category.",
+      "REGISTRATION_CLOSED": "Registration is closed.",
+      "SELF_PARTNER": "Choose another player as your partner.",
+      "NO_PENDING_PARTNER": "Your registration has already changed.",
+      "SIGN_IN_REQUIRED": "Sign in again.",
+      "REGISTRATION_CONFLICT": "Your registration changed. Check its status."
+    }
   }
 }

@@ -14,7 +14,7 @@ export class ApiError extends Error {
   }
 }
 
-function cookie(name: string): string | null {
+export function cookie(name: string): string | null {
   const prefix = `${name}=`;
   const value = document.cookie
     .split(';')

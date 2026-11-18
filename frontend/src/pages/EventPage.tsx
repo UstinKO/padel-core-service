@@ -11,6 +11,7 @@ import {
 import { previewLivePath } from '../api/live';
 import { ShareDialog } from '../components/ShareDialog';
 import { EntityState, NotFoundPage } from '../components/EntityState';
+import { EventBooking } from '../components/EventBooking';
 import { usePageMetadata } from '../components/PageMetadata';
 
 function Participants({ title, items }: { title: string; items: Participant[] }) {
@@ -57,6 +58,8 @@ export function EventPage() {
     }).format(new Date(value));
   const contact = safeWebUrl(details?.organizer?.whatsappUrl);
   const png = safeWebUrl(details?.pngUrl);
+  const canRegister =
+    details?.actions.some((action) => action.type === 'REGISTRATION_INFO') ?? false;
   return (
     <EntityState pending={query.isPending} error={query.error} retry={() => void query.refetch()}>
       {event && details && (
@@ -165,6 +168,7 @@ export function EventPage() {
                 <p>{t(event.registrationOpen ? 'catalog.open' : 'catalog.closed')}</p>
                 <div className="entity-actions">
                   {details.actions.map((action) => {
+                    if (action.type === 'REGISTRATION_INFO') return null;
                     const url = safeWebUrl(action.url);
                     const livePath = action.type === 'LIVE' && url ? previewLivePath(url) : null;
                     if (livePath)
@@ -186,6 +190,12 @@ export function EventPage() {
                   )}
                 </div>
               </section>
+              <EventBooking
+                key={id}
+                id={id}
+                doubles={event.modality === 'DOBLES'}
+                open={canRegister}
+              />
               <section className="card">
                 <h2>{t('details.organizer')}</h2>
                 {details.organizer?.contact ? (
