@@ -13,6 +13,7 @@
 | POST | `/api/players/registro` | Анонимный + CSRF | RegistroRequestDto + website honeypot/destination; 201 REGISTERED, затем обычный `/login`. Правило телефон ИЛИ Telegram, email автоматически подтверждается |
 | GET | `/api/players/me` | PlayerPadel или Google-player | Собственный Profile: id/nombre/apellido/email/telefono/telegramUsername/nivelJugador/preferredLocale/guestAccount/oauth2User |
 | PUT | `/api/players/me` | PlayerPadel или Google-player + CSRF | Полный ProfileUpdate, те же редактируемые поля; email меняется только у guest; сервер не принимает id/роль/активность |
+| PATCH | `/api/players/me/level` | PlayerPadel или Google-player + CSRF | Принимает `{"nivelJugador":"C7"}`, меняет только уровень собственного активного профиля. Ответ 204. |
 | POST | `/api/players/me/password` | PlayerPadel или Google-player + CSRF | currentPassword/newPassword/confirmPassword; текущий пароль обязателен, минимальная длина нового 6 как в существующем reset; успех PASSWORD_CHANGED |
 | POST | `/api/password-reset/request` | Анонимный + CSRF | email/destination; одинаковый RESET_REQUESTED для известной и неизвестной почты |
 | GET | `/api/password-reset/validate` | Публичный | token; valid/code TOKEN_VALID или RESET_TOKEN_INVALID, без изменения токена |
@@ -37,18 +38,21 @@ destination — только проверенный same-origin относите
 
 Для legal/system frontend сервер сохраняет HTTP-статус preview deep link: неизвестный route — 404, `/preview/error/401`, `/403`, `/429`, `/503` — соответствующий статус, offline — 503. Legal preview содержит canonical на действующий публичный URL. Все preview/error страницы noindex; известные auth-маршруты по-прежнему используют SPA, production allowlist не меняется.
 
-## Подтверждение гостевого профиля
+## Объединение гостевого профиля
 
 | Метод | URL | Доступ | Контракт |
 |---|---|---|---|
-| POST | `/api/players/me/guest-profile-claims` | Игрок с обычным аккаунтом + CSRF | `phone` → 201, `reference` и `whatsappUrl`. Ответ одинаков для номера с гостем и без него |
-| GET | `/api/admin/guest-profile-claims/{reference}` | ORGANIZER / SUPER_ADMIN | Целевые `accountId`, `accountEmail` и признак `approved`. Номер телефона в ответ не входит |
-| POST | `/api/admin/guest-profile-claims/{reference}/approve` | ORGANIZER / SUPER_ADMIN + CSRF | `whatsappSenderPhone` → `playerId`. Номер сверяется с заявкой и профилем, заявки живут 7 дней |
-| POST | `/api/admin/players/{guestId}/activate-guest-profile` | ORGANIZER / SUPER_ADMIN + CSRF | `whatsappSenderPhone` и `email` → прежний `playerId`. Игрок самостоятельно запускает восстановление пароля |
+| POST | `/api/players/me/guest-profile-claims` | PLAYER + CSRF | `phone` → 201, `reference`, `number`, `status`, `createdAt`, `playerName` и необязательный `whatsappUrl`. Повтор для того же контакта возвращает существующую заявку. |
+| GET | `/api/players/me/guest-profile-claims` | PLAYER | Собственные заявки с текущими статусами. |
+| GET | `/api/admin/guest-profile-claims` | ORGANIZER / SUPER_ADMIN | Очередь с `pendingCount`, `items`, `hasMore`. Фильтры `search`, `status`, `page` (с нуля). |
+| GET | `/api/admin/guest-profile-claims/{reference}` | ORGANIZER / SUPER_ADMIN | Сравнение целевого аккаунта и найденного гостя, контакты, число записей и результатов, `conflicts`, `differences` и последний `reviewReason`. |
+| POST | `/api/admin/guest-profile-claims/{reference}/decision` | ORGANIZER / SUPER_ADMIN + CSRF | `decision` со значением `NEEDS_DETAILS` или `REJECTED`. |
+| POST | `/api/admin/guest-profile-claims/{reference}/approve` | ORGANIZER / SUPER_ADMIN + CSRF | `verified: true`, `verificationMethod`, для WhatsApp `whatsappSenderPhone`, опционально `guestId` и `replacePhone` → `playerId`. |
+| GET | `/api/admin/guest-profile-claims/profiles` | ORGANIZER / SUPER_ADMIN | Поиск кандидатов по `search` и типу `guest` для ручной сверки. |
+| GET / POST | `/api/admin/guest-profile-claims/manual` | ORGANIZER / SUPER_ADMIN, POST + CSRF | GET сравнивает профили по `guestId` и `accountId`. POST подтверждает направление с теми же полями проверки и сохраняет инициатора в истории. |
+| POST | `/api/admin/players/{guestId}/activate-guest-profile` | ORGANIZER / SUPER_ADMIN + CSRF | `whatsappSenderPhone` и `email` → прежний `playerId`. Игрок самостоятельно запускает восстановление пароля. |
 
-Для занятого телефона регистрация и обновление контакта возвращают 409 `PHONE_IN_USE` и официальный `whatsappUrl` без данных другого игрока. Устаревшая заявка возвращает 404 `GUEST_CLAIM_NOT_FOUND`. При пересечении историй, неоднозначном номере или конфликте почты возвращается типизированная ошибка `GUEST_CLAIM_*`. Операции привязки не посылают коды и не меняют статус участия.
-
-Для заявок и проверки занятого телефона поддерживаются аргентинские форматы и номера с кодом `+7`. Номер `+7` сравнивается с учётом кода страны. Пробелы, скобки и дефисы не влияют на совпадение.
+Статусы заявки: `PENDING`, `NEEDS_DETAILS`, `MERGED`, `REJECTED`. Ответы помечены `Cache-Control: no-store`. Сохранение заявки и её прочтение не проверяют WhatsApp и не раскрывают совпадения игроку. Номера сравниваются после существующей нормализации, которая учитывает код страны. При несовпадении номера отправителя или при блокирующем конфликте подтверждение через заявку переводит её в `NEEDS_DETAILS` и возвращает 409.
 
 ## Мои мероприятия
 

@@ -12,7 +12,7 @@
 
 ## Движок и неизменяемая граница
 
-[PlayoffMatchingEngine.java](../../../src/main/java/com/padle/core/padelcoreservice/service/americano/PlayoffMatchingEngine.java) — 192 строки; из production-внешних зависимостей только `@Component`, остальные импорты JDK. Публичный API: Candidate(teamId, seed, winStreak), Pairing(team1Id, team2Id), MatchingResult(pairings, allConstraintsSatisfied, warning), три PriorityOrder и две перегрузки match.
+[PlayoffMatchingEngine.java](../../../padel-tournament-engines/src/main/java/com/padle/core/padelcoreservice/service/americano/PlayoffMatchingEngine.java) в историческом срезе 13.11 — 192 строки; из production-внешних зависимостей только `@Component`, остальные импорты JDK. Публичный API: Candidate(teamId, seed, winStreak), Pairing(team1Id, team2Id), MatchingResult(pairings, allConstraintsSatisfied, warning), три PriorityOrder и две перегрузки match. Текущее состояние после #1152 и переноса #1050 — в [отчёте выделения](engine-extraction.md); исторические результаты ниже не пересчитываются.
 
 Алгоритм перечисляет разбиения на пары и лексикографически сравнивает стоимость. Замена лучшего происходит только при строго меньшей стоимости; при равенстве сохраняется первый найденный вариант. Поэтому сортировка входа, порядок перечисления и выходных пар значимы. Не оптимизировать сложность и не добавлять сортировку в пилоте.
 

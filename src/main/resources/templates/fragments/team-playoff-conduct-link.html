@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<a th:fragment="link(tournament, classes)" th:class="${classes}"
+   th:href="@{/tournaments/team-playoff/admin/{id}(id=${tournament.id})}" data-team-playoff-conduct>
+    <i class="fas fa-table-tennis" aria-hidden="true"></i>
+    <span th:text="${tournament.estado.name() == 'FINALIZADO'} ? #{conduct.edit_results} : #{conduct.manage_tournament}">Gestionar torneo</span>
+</a>
+</body>
+</html>

@@ -1,6 +1,7 @@
 package com.padle.core.padelcoreservice.preview;
 
 import com.padle.core.padelcoreservice.controller.player.PlayerDashboardController;
+import com.padle.core.padelcoreservice.controller.player.PerfilController;
 import com.padle.core.padelcoreservice.controller.view.RankingController;
 import com.padle.core.padelcoreservice.rating.EloPilotAccess;
 import com.padle.core.padelcoreservice.rating.EloPilotAudience;
@@ -24,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-@ControllerAdvice(assignableTypes = {RankingController.class, PlayerDashboardController.class})
+@ControllerAdvice(assignableTypes = {RankingController.class, PlayerDashboardController.class, PerfilController.class})
 @Profile("preview")
 @ConditionalOnProperty("app.preview.elo-snapshot")
 public class PreviewEloRanking implements EloPilotAudience {

@@ -107,14 +107,18 @@ class PlayoffPilotData {
         for (int index = 0; index + 1 < teams.size(); index += 2) {
             playQualification(event, teams.get(index), teams.get(index + 1), score++);
         }
-        for (int pass = 0; pass < teams.size() * 2 && !qualified(event, teams); pass++) {
-            var suggestions = playoff.suggestSecondRoundPairings(event);
-            if (suggestions.isEmpty()) {
-                throw new IllegalStateException("Не удалось подготовить квалификацию пилота");
-            }
-            for (var suggestion : suggestions) {
-                playQualification(event, suggestion.getTeam1().getId(), suggestion.getTeam2().getId(), score++);
-            }
+        if (teams.size() == 9) {
+            playQualification(event, teams.get(1), teams.get(8), score++);
+        }
+        for (int index = 0; index + 2 < teams.size(); index += 4) {
+            playQualification(event, teams.get(index), teams.get(index + 2), score++);
+        }
+        int firstLoser = teams.size() == 9 ? 3 : 1;
+        for (int index = firstLoser; index + 2 < teams.size(); index += 4) {
+            playQualification(event, teams.get(index), teams.get(index + 2), score++);
+        }
+        if (teams.size() == 9) {
+            playQualification(event, teams.get(7), teams.get(8), score);
         }
         if (!qualified(event, teams)) {
             throw new IllegalStateException("Квалификация пилота не завершена");

@@ -7,7 +7,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public record EloPilotSnapshot(PreviewEloRanking.Snapshot snapshot, int startStep, Map<Long, Long> aliases) {
+public record EloPilotSnapshot(PreviewEloRanking.Snapshot snapshot, int startStep, Map<Long, Long> aliases, boolean formatWeighted) {
+    public EloPilotSnapshot(PreviewEloRanking.Snapshot snapshot, int startStep, Map<Long, Long> aliases) {
+        this(snapshot, startStep, aliases, false);
+    }
     public EloPilotSnapshot {
         Objects.requireNonNull(snapshot, "Отсутствует срез пилотного рейтинга");
         if (snapshot.asOf() == null || snapshot.rows() == null || snapshot.rows().isEmpty() || startStep < 0) {

@@ -1,8 +1,13 @@
 package com.padle.core.padelcoreservice.preview;
 
+import com.padle.core.padelcoreservice.dto.americano.AmericanoMatchDto;
+import com.padle.core.padelcoreservice.dto.americano.AmericanoRoundDto;
+import com.padle.core.padelcoreservice.dto.americano.TeamAmericanoRankingDto;
+import com.padle.core.padelcoreservice.dto.americano.TeamPlayoffAddTeamRequest;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.americano.AmericanoMatch;
 import com.padle.core.padelcoreservice.model.enums.OwnerRole;
+import com.padle.core.padelcoreservice.model.enums.PlayoffStage;
 import com.padle.core.padelcoreservice.model.enums.TournamentPhase;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.preview.PlayoffPilotFixtureService.Accounts;
@@ -11,6 +16,7 @@ import com.padle.core.padelcoreservice.repository.americano.AmericanoMatchReposi
 import com.padle.core.padelcoreservice.service.TournamentAccessService;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import com.padle.core.padelcoreservice.service.americano.TeamPlayoffService;
+import com.padle.core.padelcoreservice.service.americano.PlayoffMatchingEngine;
 import com.padle.core.padelcoreservice.service.conduct.TournamentConductHistory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,8 +27,11 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.ApplicationContext;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.mock.web.MockHttpSession;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -34,6 +43,10 @@ import tools.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;
 
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Comparator;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -50,12 +63,16 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
+import static org.hamcrest.Matchers.containsString;
 
 @SpringBootTest(properties = {"recaptcha.enabled=false", "app.scheduling.enabled=false", "app.auth.google-enabled=false"})
 @AutoConfigureMockMvc
 @Import(PlayoffPilotFixtureIntegrationTest.Configuration.class)
 class PlayoffPilotFixtureIntegrationTest {
     @Autowired private PlayoffPilotFixtureService fixtures;
+    @Autowired private ApplicationContext context;
     @Autowired private PreviewFixtureService preview;
     @Autowired private PreviewProperties properties;
     @Autowired private JdbcClient jdbc;
@@ -97,6 +114,7 @@ class PlayoffPilotFixtureIntegrationTest {
 
     @Test
     void fixturesAreRepeatableQualifiedAndResetWithoutChangingLegacyMetadata() {
+        assertThat(context.getBeansOfType(PlayoffMatchingEngine.class)).containsOnlyKeys("playoffMatchingEngine");
         assertThat(fixtures.snapshot()).isEmpty();
         var first = fixtures.seed();
         assertThat(fixtures.seed()).isEqualTo(first);
@@ -126,6 +144,9 @@ class PlayoffPilotFixtureIntegrationTest {
                 .isEqualTo(json.readValue(legacyState(), PreviewFixtureService.Fixtures.class));
         assertThat(json.readValue(storedState(), LegacyFixtures.class))
                 .isEqualTo(json.readValue(legacyState(), LegacyFixtures.class));
+        for (int reset = 0; reset < 3; reset++) {
+            assertThat(qualificationResults(fixtures.reset())).isEqualTo(expectedResults);
+        }
     }
 
     @Test
@@ -193,6 +214,154 @@ class PlayoffPilotFixtureIntegrationTest {
         rejectedBoundary.set(true);
         assertThatThrownBy(fixtures::reset).hasMessage("Неверная граница preview");
         assertThat(storedState()).isEqualTo(stored);
+    }
+
+    @Test
+    void reLoginReturnsToSelectedConductAndChecksClubAccess() throws Exception {
+        var state = fixtures.seed();
+        String finished = "/tournaments/team-playoff/admin/" + scenario(state, "finished-8");
+        String unfinished = "/tournaments/team-playoff/admin/" + scenario(state, "qualified-8");
+        String finishedLogin = "/login?destination=" + URLEncoder.encode(finished, StandardCharsets.UTF_8);
+        String unfinishedLogin = "/login?destination=" + URLEncoder.encode(unfinished, StandardCharsets.UTF_8);
+
+        mvc.perform(get(finished)).andExpect(redirectedUrl(finishedLogin));
+        mvc.perform(get(unfinished)).andExpect(redirectedUrl(unfinishedLogin));
+        mvc.perform(get("/login").param("destination", finished))
+                .andExpect(content().string(containsString("value=\"" + finished + "\"")));
+        mvc.perform(post("/login").with(csrf()).param("username", "pilot-manager@example.test")
+                        .param("password", "wrong-test-password").param("destination", finished))
+                .andExpect(redirectedUrl("/login?error=true&destination="
+                        + URLEncoder.encode(finished, StandardCharsets.UTF_8)));
+
+        var session = loginManager("pilot-manager@example.test", finished);
+        mvc.perform(get(finished).session(session)).andExpect(status().isOk());
+        mvc.perform(get("/login").param("destination", unfinished).session(session))
+                .andExpect(redirectedUrl(unfinished));
+        mvc.perform(get(unfinished).session(session)).andExpect(status().isOk());
+
+        var foreign = loginManager("pilot-foreign@example.test", finished);
+        mvc.perform(get(finished).session(foreign)).andExpect(redirectedUrl("/error/403"));
+        mvc.perform(get(finished).with(user("player").roles("PLAYER"))).andExpect(redirectedUrl("/error/403"));
+    }
+
+    @Test
+    void missingFinalAndCorrectionUseTheSameTournamentWithHistory() throws Exception {
+        var state = fixtures.seed();
+        long event = scenario(state, "qualified-8");
+        long secondEvent = scenario(state, "finished-8");
+        long otherRevision = history.revision(secondEvent);
+        String adminPage = "/tournaments/team-playoff/admin/" + event;
+        playoff.initPlayoff(event);
+        for (PlayoffStage stage : List.of(PlayoffStage.QUARTER_FINAL, PlayoffStage.SEMI_FINAL)) {
+            matches.findByTournamentIdAndPlayoffStage(event, stage)
+                    .forEach(match -> playoff.submitPlayoffResult(match.getId(), 6, 3));
+        }
+        var finalMatch = matches.findByTournamentIdAndPlayoffStage(event, PlayoffStage.FINAL).get(0);
+        assertThat(finalMatch.isCompleted()).isFalse();
+        var manager = loginManager("pilot-manager@example.test", adminPage);
+        mvc.perform(get(adminPage).session(manager)).andExpect(status().isOk());
+        String result = "/tournaments/team-playoff/api/playoff-matches/" + finalMatch.getId() + "/result";
+
+        mvc.perform(post(result).session(manager).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"team1Games\":6,\"team2Games\":3}"))
+                .andExpect(status().isOk()).andExpect(content().string(containsString("\"success\":true")));
+        assertThat(tournaments.findById(event).orElseThrow().getEstado()).isEqualTo(TournamentStatus.FINALIZADO);
+        long savedRevision = history.revision(event);
+        long matchCount = matches.findByTournamentIdAndPhase(event, TournamentPhase.PLAYOFF).size();
+
+        var freshSession = loginManager("pilot-manager@example.test", adminPage);
+        mvc.perform(get(adminPage).session(freshSession)).andExpect(status().isOk());
+        mvc.perform(post(result).session(freshSession).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"team1Games\":6,\"team2Games\":4}"))
+                .andExpect(status().isOk()).andExpect(content().string(containsString("\"success\":true")));
+        var corrected = matches.findById(finalMatch.getId()).orElseThrow();
+        assertThat(corrected.getTeam2Games()).isEqualTo(4);
+        assertThat(history.revision(event)).isGreaterThan(savedRevision);
+        assertThat(matches.findByTournamentIdAndPhase(event, TournamentPhase.PLAYOFF)).hasSize((int) matchCount);
+        assertThat(history.revision(secondEvent)).isEqualTo(otherRevision);
+    }
+
+    private MockHttpSession loginManager(String email, String destination) throws Exception {
+        return (MockHttpSession) mvc.perform(post("/login").with(csrf()).param("username", email)
+                        .param("password", properties.fixturePassword()).param("destination", destination))
+                .andExpect(redirectedUrl(destination)).andReturn().getRequest().getSession(false);
+    }
+
+    @Test
+    void publicQualificationFollowsSavedQueueAndCourtAssignments() throws Exception {
+        var state = fixtures.seed();
+        var roster = state.scenarios().stream().filter(item -> "roster-8".equals(item.key())).findFirst().orElseThrow();
+        long event = roster.tournamentId();
+        var teams = new ArrayList<>(roster.teamIds());
+        jdbc.sql("UPDATE tournaments_db SET cupo_max=12 WHERE id=:id").param("id", event).update();
+        for (int player = 16; player < 24; player += 2) {
+            var request = new TeamPlayoffAddTeamRequest();
+            request.setPlayer1Id(state.accounts().playerIds().get(player));
+            request.setPlayer2Id(state.accounts().playerIds().get(player + 1));
+            request.setHasPaid(true);
+            request.setAttended(true);
+            teams.add(playoff.addTeam(event, request).getId());
+        }
+        playoff.initQualification(event, 4);
+        var firstCourt = playoff.createQualificationMatch(event, teams.get(0), teams.get(1), 1);
+        for (int court = 2; court <= 4; court++) {
+            int index = 2 * (court - 1);
+            playoff.createQualificationMatch(event, teams.get(index), teams.get(index + 1), court);
+        }
+        assertPublicQueue(publicModel(event), 4);
+
+        var first = playoff.queueQualificationMatch(event, teams.get(10), teams.get(11));
+        var second = playoff.queueQualificationMatch(event, teams.get(8), teams.get(9));
+        var before = publicModel(event);
+        assertPublicQueue(before, 4, first.getId(), second.getId());
+        assertTeamState(before, teams.get(10), "QUEUED", 1);
+        assertTeamState(before, teams.get(8), "QUEUED", 2);
+
+        playoff.removeFromQueue(first.getId());
+        var readded = playoff.queueQualificationMatch(event, teams.get(10), teams.get(11));
+        assertPublicQueue(publicModel(event), 4, second.getId(), readded.getId());
+        playoff.submitQualResult(firstCourt.getId(), 6, 3);
+        playoff.assignCourtToQueuedMatch(second.getId(), 1);
+        var after = publicModel(event);
+        assertPublicQueue(after, 5, readded.getId());
+        assertTeamState(after, teams.get(8), "PLAYING", null);
+        assertTeamState(after, teams.get(10), "QUEUED", 1);
+        assertThat(publicMatches(after)).filteredOn(match -> match.getId().equals(second.getId()))
+                .singleElement().extracting(AmericanoMatchDto::getCourtNumber).isEqualTo(1);
+        playoff.removeFromQueue(readded.getId());
+        assertPublicQueue(publicModel(event), 5);
+    }
+
+    private Map<String, Object> publicModel(long event) throws Exception {
+        return mvc.perform(get("/tournaments/team-playoff/" + event)).andExpect(status().isOk())
+                .andReturn().getModelAndView().getModel();
+    }
+
+    private void assertPublicQueue(Map<String, Object> model, int matchCount, Long... ids) {
+        var queue = ((List<?>) model.get("qualificationQueue")).stream().map(AmericanoMatchDto.class::cast).toList();
+        assertThat(queue).extracting(AmericanoMatchDto::getId).containsExactly(ids);
+        assertThat(queue).allSatisfy(match -> {
+            assertThat(match.getCourtNumber()).isNull();
+            assertThat(match.getTeam1Player1Name()).isNotBlank();
+            assertThat(match.getTeam1Player2Name()).isNotBlank();
+            assertThat(match.getTeam2Player1Name()).isNotBlank();
+            assertThat(match.getTeam2Player2Name()).isNotBlank();
+        });
+        var queuedIds = List.of(ids);
+        assertThat(publicMatches(model)).hasSize(matchCount).noneMatch(match -> queuedIds.contains(match.getId()));
+    }
+
+    private List<AmericanoMatchDto> publicMatches(Map<String, Object> model) {
+        return ((List<?>) model.get("qualRounds")).stream().map(AmericanoRoundDto.class::cast)
+                .flatMap(round -> round.getMatches().stream()).toList();
+    }
+
+    private void assertTeamState(Map<String, Object> model, long teamId, String status, Integer position) {
+        var ranking = (TeamAmericanoRankingDto) model.get("ranking");
+        assertThat(ranking.getRanking()).filteredOn(team -> team.getId().equals(teamId)).singleElement().satisfies(team -> {
+            assertThat(team.getTournamentStatus()).isEqualTo(status);
+            assertThat(team.getQueuePosition()).isEqualTo(position);
+        });
     }
 
     private long scenario(PlayoffPilotFixtureService.Fixtures state, String key) {

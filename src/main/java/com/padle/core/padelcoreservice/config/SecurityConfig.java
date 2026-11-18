@@ -56,6 +56,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.List;
 import java.util.regex.Pattern;
+import java.util.Optional;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
@@ -84,6 +85,7 @@ public class SecurityConfig {
 
     private static boolean isGuestClaimPath(String path) {
         return path.equals("/api/players/me/guest-profile-claims")
+                || path.equals("/api/admin/guest-profile-claims")
                 || path.startsWith("/api/admin/guest-profile-claims/")
                 || (path.startsWith("/api/admin/players/") && path.endsWith("/activate-guest-profile"));
     }
@@ -248,7 +250,15 @@ public class SecurityConfig {
                             if (request.getRequestURI().startsWith("/api/") || AccountResponses.wantsJson(request)) {
                                 accountResponses.error(request, response, HttpStatus.UNAUTHORIZED, "SESSION_REQUIRED");
                             } else {
-                                new LoginUrlAuthenticationEntryPoint("/login").commence(request, response, exception);
+                                var management = "GET".equals(request.getMethod())
+                                        ? AccountDestination.tournamentManagement(request.getRequestURI())
+                                        : Optional.<String>empty();
+                                if (management.isPresent()) {
+                                    response.sendRedirect("/login?destination="
+                                            + URLEncoder.encode(management.orElseThrow(), StandardCharsets.UTF_8));
+                                } else {
+                                    new LoginUrlAuthenticationEntryPoint("/login").commence(request, response, exception);
+                                }
                             }
                         })
                 )
@@ -371,8 +381,11 @@ public class SecurityConfig {
 
             boolean notConfirmed = exception instanceof DisabledException
                     || exception instanceof org.springframework.security.authentication.LockedException;
+            var destination = AccountDestination.requested(request).flatMap(AccountDestination::tournamentManagement);
             response.sendRedirect(TournamentLogin.failureUrl(
-                    notConfirmed ? "not_confirmed" : "true", TournamentLogin.requestedTournament(request)));
+                    notConfirmed ? "not_confirmed" : "true", TournamentLogin.requestedTournament(request))
+                    + destination.map(value -> "&destination=" + URLEncoder.encode(value, StandardCharsets.UTF_8))
+                            .orElse(""));
         };
     }
 

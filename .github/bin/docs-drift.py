@@ -17,7 +17,7 @@ import os
 import re
 import sys
 
-JAVA = "src/main/java"
+JAVA_ROOTS = ["src/main/java"] + sorted(glob.glob("padel-*/src/main/java"))
 MIGRATIONS = "src/main/resources/db/changelog/versions"
 DB_DOC = "docs/database-architecture.md"
 ARCH_DOC = "docs/architecture.md"
@@ -32,6 +32,10 @@ MAPPING = re.compile(r"@(Get|Post|Put|Patch|Delete|Request)Mapping(?:\((.*?)\))?
 def read(path):
     with open(path, encoding="utf-8") as f:
         return f.read()
+
+
+def java_sources(pattern="**/*.java"):
+    return [path for root in JAVA_ROOTS for path in glob.glob(f"{root}/{pattern}", recursive=True)]
 
 
 def snake(name):
@@ -58,7 +62,7 @@ PROPOSAL = re.compile(r"разделить|переносится|выделит
 
 
 def check_class_references():
-    classes = {os.path.basename(p)[:-5] for p in glob.glob(f"{JAVA}/**/*.java", recursive=True)} | EXTERNAL_CLASSES
+    classes = {os.path.basename(p)[:-5] for p in java_sources()} | EXTERNAL_CLASSES
     problems = []
     for path in CURRENT_DOCS:
         names = {n for line in read(path).splitlines() if not PROPOSAL.search(line) for n in CLASS_REF.findall(line)}
@@ -87,7 +91,7 @@ def entity_columns(source):
 def check_schema_coverage():
     doc = read(DB_DOC)
     problems = []
-    for path in glob.glob(f"{JAVA}/**/*.java", recursive=True):
+    for path in java_sources():
         source = read(path)
         table = re.search(r"@Table\(\s*name\s*=\s*\"(\w+)\"", source)
         if "@Entity" not in source or not table:
@@ -106,7 +110,7 @@ def check_schema_coverage():
 def check_enum_coverage():
     doc = read(DB_DOC)
     problems = []
-    for path in glob.glob(f"{JAVA}/**/model/enums/*.java", recursive=True):
+    for path in java_sources("**/model/enums/*.java"):
         name = os.path.basename(path)[:-5]
         section = re.search(rf"### `{name}`(.*?)(?=\n### |\n## |\Z)", doc, re.S)
         if not section:
@@ -120,7 +124,7 @@ def check_enum_coverage():
 
 
 def controller_endpoints():
-    for path in glob.glob(f"{JAVA}/**/*.java", recursive=True):
+    for path in java_sources():
         source = read(path)
         if "@Controller" not in source and "@RestController" not in source:
             continue

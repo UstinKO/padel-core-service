@@ -201,6 +201,7 @@ public class PerfilController {
             }
 
         } catch (ClaimPhoneInUseException e) {
+            redirectAttributes.addFlashAttribute("guestClaimPrefillPhone", telefono);
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
             e.whatsappUrl().ifPresent(url -> redirectAttributes.addFlashAttribute("guestClaimWhatsappUrl", url));
         } catch (DataIntegrityViolationException e) {

@@ -1,6 +1,7 @@
 package com.padle.core.padelcoreservice.repository;
 
 import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.padelcoreservice.model.enums.Nivel;
 import org.springframework.data.domain.Pageable;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,6 +21,17 @@ public interface PlayerRepository extends JpaRepository<PlayerPadel, Long> {
     @Modifying
     @Query("UPDATE PlayerPadel p SET p.nombre = :nombre, p.apellido = :apellido WHERE p.id = :id")
     int actualizarNombre(@Param("id") Long id, @Param("nombre") String nombre, @Param("apellido") String apellido);
+
+    @Modifying
+    @Query("""
+            UPDATE PlayerPadel p SET p.nivelJugador = :nivel, p.fechaActualizacion = :updatedAt
+            WHERE p.id = :id AND p.activo = true
+            """)
+    int actualizarNivelActivo(@Param("id") Long id, @Param("nivel") Nivel nivel,
+                              @Param("updatedAt") LocalDateTime updatedAt);
+
+    @Query("SELECT p.nivelJugador FROM PlayerPadel p WHERE p.id = :id")
+    Optional<Nivel> findNivelById(@Param("id") Long id);
 
     Optional<PlayerPadel> findByEmail(String email);
 

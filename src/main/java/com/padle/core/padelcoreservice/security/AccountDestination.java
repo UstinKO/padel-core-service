@@ -5,10 +5,19 @@ import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 public final class AccountDestination {
     public static final String PARAMETER = "destination";
+    private static final Pattern TOURNAMENT_MANAGEMENT = Pattern.compile(
+            "/(?:admin/tournaments/[1-9][0-9]*"
+                    + "|tournaments/team-playoff/admin/[1-9][0-9]*)");
+
     private AccountDestination() {}
+
+    public static Optional<String> tournamentManagement(String path) {
+        return Optional.ofNullable(path).filter(value -> TOURNAMENT_MANAGEMENT.matcher(value).matches());
+    }
 
     public static Optional<String> safe(String value) {
         if (value == null || value.length() > 2048) return Optional.empty();
