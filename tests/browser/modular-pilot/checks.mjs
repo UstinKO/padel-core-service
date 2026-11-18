@@ -124,7 +124,7 @@ export async function qualificationMatch(manager, scenario, first, second, score
   return id;
 }
 
-export async function qualificationBoundary(admin, manager, scenario) {
+export async function prepareQualificationBoundary(manager, scenario) {
   const id = scenario.tournamentId;
   await clickAction(manager, id, 'init-qualification');
   await manager.page.goto('about:blank');
@@ -133,6 +133,11 @@ export async function qualificationBoundary(admin, manager, scenario) {
     await qualificationMatch(manager, scenario, index, index + 1);
   }
   await qualificationMatch(manager, scenario, 6, 7);
+}
+
+export async function qualificationBoundary(admin, manager, scenario) {
+  const id = scenario.tournamentId;
+  await prepareQualificationBoundary(manager, scenario);
   await manager.page.goto(input.origin + adminPath(id));
   await expect(manager.page.locator('form[action$="/init-playoff"]')).toHaveCount(0);
   const before = await snapshot(admin, id);

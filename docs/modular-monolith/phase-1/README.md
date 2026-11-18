@@ -10,6 +10,7 @@
 - [Матрица кейсов и уровней проверки](test-cases.md).
 - [Исходный backend-отчёт, артефакты и данные пилота](backend-baseline.md).
 - [Выделение движка: владелец, архитектурная граница, DevTools и проверки](engine-extraction.md).
+- [Финальная автоматизированная приёмка #1045 и откат](final-report.md), [актуальные ручные шаги и журнал](manual-final.md): автоматизация PASS, ручной проход NOT_RUN.
 - [Browser/API baseline и известные дефекты](browser-baseline.md), [эталон](browser-expectations.json), [ручной чек-лист и журнал](manual-baseline.md).
 - [Переходная раскладка и реестр — ADR-0006](../adr/0006-phase-one-layout.md).
 - [Целевая архитектура](../target-architecture.md) и [ADR](../adr/README.md).

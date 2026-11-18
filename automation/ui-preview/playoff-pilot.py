@@ -6,6 +6,7 @@ import json
 import os
 import subprocess
 import preview
+import pilot_manual
 
 
 def jwt_smoke(state, password):
@@ -47,12 +48,24 @@ def pilot_snapshots(client, fixtures):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command', choices=['prepare', 'run', 'smoke'])
+    parser.add_argument('command', choices=['prepare', 'run', 'smoke', 'extended',
+        'manual', 'resume-manual', 'end-manual'])
     parser.add_argument('--reset', action='store_true', help='Пересоздать только пять турниров пилота')
     parser.add_argument('--record', action='store_true', help='Сохранить кандидата эталона в target; не менять принятый эталон')
     parser.add_argument('--rehearse', action='store_true', help='Повторить существующую репетицию выпуска/отката и сверить сохранённые турниры')
     args = parser.parse_args()
+    if args.command in ('extended', 'resume-manual', 'end-manual') and (args.reset or args.record or args.rehearse):
+        parser.error('Эта команда не поддерживает --reset, --record и --rehearse')
+    if args.command == 'manual' and (not args.reset or args.record or args.rehearse):
+        parser.error('Первый ручной проход: manual --reset; повторное открытие: resume-manual')
     state = preview.load()
+    session = preview.RUNTIME / 'pilot-manual-session.json'
+    if args.command == 'end-manual':
+        pilot_manual.end(session, state['project'])
+        print('Блокировка снята; результаты ручных проверок этим не подтверждаются')
+        return
+    if args.command != 'resume-manual':
+        pilot_manual.ensure_idle(session)
     preview.compose(state, 'config', '--quiet')
     client = preview.Client(state)
     client.login(state)
@@ -65,6 +78,10 @@ def main():
         'sha256sum', '/app/app.jar'), cwd=preview.ROOT, env=preview.compose_environment(state), text=True).split()[0]
     if running != checksum:
         raise ValueError('Запущенный jar отличается от проверяемого артефакта')
+    if args.command == 'manual':
+        pilot_manual.begin(session, state['project'], checksum)
+    elif args.command == 'resume-manual':
+        pilot_manual.resume(session, state['project'], checksum)
     path = '/api/internal/ui-preview/playoff-pilot'
     fixtures = json.loads(client.request(path + ('/reset' if args.reset or args.command == 'run' else ''), {}))
     output = preview.ROOT / 'target/modular-pilot'
@@ -75,12 +92,30 @@ def main():
         print('Пилот подготовлен; ID и маршруты для ручной проверки — target/modular-pilot/fixture.json')
         return
     browser_input = preview.RUNTIME / 'pilot-browser-input.json'
-    browser_input.write_text(json.dumps(dict(public, origin=client.origin, gatewayPassword=state['gateway_password'],
-        password=state['fixture_password'], record=args.record)))
-    browser_input.chmod(0o600)
+    descriptor = os.open(browser_input, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    os.fchmod(descriptor, 0o600)
+    with os.fdopen(descriptor, 'w') as output_file:
+        json.dump(dict(public, origin=client.origin, gatewayPassword=state['gateway_password'],
+            password=state['fixture_password'], record=args.record), output_file)
     node = preview.ROOT / 'target/frontend-toolchain/node/node'
     module = preview.ROOT / 'frontend/node_modules/@playwright/test/index.mjs'
     try:
+        if args.command in ('manual', 'resume-manual'):
+            if args.command == 'manual':
+                subprocess.run([str(node), 'tests/browser/modular-pilot/prepare-manual.mjs', str(browser_input)],
+                    cwd=preview.ROOT, env=dict(os.environ, PLAYWRIGHT_MODULE_PATH=str(module)),
+                    check=True, timeout=300)
+            print('Ручной стенд зафиксирован. Ссылки: target/modular-pilot/manual-plan.md', flush=True)
+            subprocess.run([str(node), 'tests/browser/modular-pilot/manual.mjs', str(browser_input)],
+                cwd=preview.ROOT, env=dict(os.environ, PLAYWRIGHT_MODULE_PATH=str(module)), check=True)
+            return
+        if args.command == 'extended':
+            subprocess.run([str(node), 'tests/browser/modular-pilot/run-early.mjs', str(browser_input)], cwd=preview.ROOT,
+                env=dict(os.environ, PLAYWRIGHT_MODULE_PATH=str(module)), check=True, timeout=300)
+            if json.loads(client.request('/api/internal/ui-preview')) != status:
+                raise ValueError('Прогон изменил общие preview-данные')
+            print('Расширенная проверка раннего плей-офф завершена: target/modular-pilot/extended-report.json')
+            return
         (preview.ROOT / 'target/ui-preview-qa').mkdir(parents=True, exist_ok=True)
         subprocess.run([str(node), 'tests/browser/ui-preview.browser.mjs', str(browser_input)], cwd=preview.ROOT,
             env=dict(os.environ, PLAYWRIGHT_MODULE_PATH=str(module)), check=True, timeout=120)
