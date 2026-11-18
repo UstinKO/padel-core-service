@@ -1,11 +1,13 @@
 package com.padle.core.padelcoreservice.config.spa;
 
+import com.padle.core.padelcoreservice.model.PlayerPadel;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -53,6 +55,20 @@ class SpaRoutingDisabledIntegrationTest {
                             "utm_content=homepage_banner", "id=\"filterForm\"", "id=\"applyFilters\"")
                     .doesNotContain("public-home", "/css/home.css", "id=\"root\"");
         }
+    }
+
+    @Test
+    void signedInPlayerSeesOriginalCabinetWithParticipationPanel() throws Exception {
+        var player = PlayerPadel.builder()
+                .id(42L).nombre("Preview").apellido("Player").email("player@example.test")
+                .activo(true).emailConfirmado(true).fechaRegistro(LocalDateTime.now()).build();
+        var response = mockMvc.perform(get("/players/dashboard").with(user(player)))
+                .andExpect(status().isOk())
+                .andExpect(view().name("players/dashboard"))
+                .andReturn().getResponse();
+        assertThat(response.getContentAsString())
+                .contains("id=\"tabMisTorneos\"", "id=\"tabHistorial\"", "id=\"participationRequests\"")
+                .doesNotContain("id=\"root\"");
     }
 
     @Test

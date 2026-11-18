@@ -8,15 +8,18 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
+import java.util.List;
 
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(name = "app.release.enabled", havingValue = "true")
 public class ReleaseConfiguration {
-    public ReleaseConfiguration(SpaProperties routes) {
-        if (!routes.routes().isEmpty()) {
-            throw new IllegalStateException("Выпуск UI v2 не разрешает переключать публичные маршруты");
+    public ReleaseConfiguration(SpaProperties routes, Environment environment) {
+        if (routes.routes().isEmpty()) return;
+        if (!environment.matchesProfiles("prod") || !routes.routes().equals(List.of("/players/dashboard"))) {
+            throw new IllegalStateException("Выпуск UI v2 содержит маршрут без подтверждённой приёмки");
         }
     }
 

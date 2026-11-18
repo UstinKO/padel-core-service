@@ -55,7 +55,9 @@
         .team-left{text-align:left}
         .team-right{text-align:right}
         .team-name{font-size:.9rem;font-weight:500;color:#1e293b;line-height:1.3}
-        .team-sub{font-size:.75rem;color:#64748b}
+        .team-sub{display:inline;font:inherit;color:inherit}
+        .team-name,.pair-names .p1{font-weight:400}
+        .stage-details>summary{cursor:pointer;padding:.55rem 0;font-weight:600}
         .vs-block{display:flex;flex-direction:column;align-items:center;gap:.3rem}
         .vs-badge{background:#FF6B35;color:#fff;font-weight:700;font-size:.8rem;padding:.25rem .45rem;border-radius:6px}
         .score-form{display:flex;align-items:center;gap:.35rem}
@@ -102,9 +104,16 @@
             #qualRoundContent .match-header{padding:.4rem .75rem;font-size:.78rem}
             #qualRoundContent .match-body{padding:.6rem .75rem;gap:.4rem}
             #qualRoundContent .team-name{font-size:.82rem}
-            #qualRoundContent .team-sub{font-size:.7rem}
         }
         .tbd{color:#94a3b8;font-style:italic}
+        .early-suggestions,.early-fields{display:flex;flex-wrap:wrap;gap:.65rem;margin:.6rem 0}
+        .early-fields{align-items:end}
+        .early-fields label{flex:1 1 12rem;min-width:0}
+        .early-suggestion{flex:1 1 19rem;border:1px solid #e2e8f0;border-radius:.65rem;padding:.75rem;overflow-wrap:anywhere}
+        .early-suggestion p{margin:0 0 .35rem}
+        .early-suggestion form{display:flex;align-items:center;flex-wrap:wrap;gap:.45rem;margin:.5rem 0 0}
+        .early-suggestion select{width:auto;max-width:100%}
+        #earlyManual summary{cursor:pointer}
         .court-board-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:.75rem;padding:1rem 1.5rem}
         .court-card{border:1px solid #e2e8f0;border-radius:10px;padding:.75rem;background:#fff}
         .court-card.free{background:#f0fdf4;border-color:#bbf7d0}
@@ -284,19 +293,19 @@
         <!-- ══════════════════════════════════════════════════════════════
              РАЗДЕЛ 1: Команды
         ══════════════════════════════════════════════════════════════ -->
-        <div class="section-card">
-            <div class="section-header">
-                <h3>
+        <details id="registeredTeams" class="section-card" th:open="${not qualStarted}">
+            <summary class="section-header" style="display:list-item;cursor:pointer">
+                <strong>
                     <i class="fas fa-users"></i>
                     <span th:text="#{admin.playoff.section.teams}">Equipos registrados</span>
                     (<span th:text="${#lists.size(teams)}">0</span>)
-                </h3>
-                <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+                </strong>
+            </summary>
+                <div style="display:flex;gap:.5rem;flex-wrap:wrap;padding:.75rem 1.5rem">
                     <a th:href="@{'/admin/tournaments/' + ${tournament.id} + '/payments'}" class="btn-sm btn-success">
                         <i class="fas fa-plus"></i>
                         <span th:text="#{admin.playoff.link.add_team_payments}">Agregar pareja en la página de pagos</span>
                     </a>
-                </div>
             </div>
 
             <!-- Таблица команд -->
@@ -317,11 +326,11 @@
                     </thead>
                     <tbody>
                     <tr th:each="team : ${teams}">
-                        <td th:text="${team.teamNumber}">1</td>
+                        <td><strong th:text="'№' + ${team.teamNumber}">№1</strong></td>
                         <td>
                             <div class="pair-names">
                                 <span class="p1" th:text="${team.player1Name}">Jugador 1</span>
-                                <span class="p2" th:text="${team.player2Name}">Jugador 2</span>
+                                <span th:if="${team.player2Name != null}"> / <span th:text="${team.player2Name}">Jugador 2</span></span>
                             </div>
                         </td>
                         <td>
@@ -421,7 +430,7 @@
                     </tbody>
                 </table>
             </div>
-        </div>
+        </details>
 
         <!-- ══════════════════════════════════════════════════════════════
              РАЗДЕЛ 2: Calificación
@@ -496,6 +505,7 @@
                             <td th:text="${team.qualStatus == 'TWO_WINS' ? '🟢' : (team.qualStatus == 'TWO_LOSSES' ? '🔴' : (team.qualStatus == 'SPLIT' ? '🟡' : '⏳'))}">⏳</td>
                             <td>
                                 <div class="pair-names">
+                                    <strong th:if="${team.teamNumber != null}" th:text="'№' + ${team.teamNumber}"></strong>
                                     <span class="p1" th:text="${team.displayName}">Jugador 1 / 2</span>
                                 </div>
                             </td>
@@ -518,20 +528,20 @@
                 </div>
 
                 <!-- Доска кортов: статус каждого корта в реальном времени (T2/T3) -->
-                <div style="border-bottom:1px solid #e2e8f0">
-                    <h4 style="margin:1rem 1.5rem 0;font-size:.9rem;color:#1e293b">
+                <details style="border-bottom:1px solid #e2e8f0">
+                    <summary style="padding:1rem 1.5rem;cursor:pointer;font-weight:600">
                         <i class="fas fa-border-all" style="color:#FF6B35"></i>
                         <span th:text="#{admin.playoff.board.title}">Tablero de canchas</span>
-                    </h4>
+                    </summary>
                     <div id="courtBoardGrid" class="court-board-grid"></div>
-                </div>
+                </details>
 
                 <!-- Новый матч: координатор выбирает 2 свободные команды и корт вручную -->
-                <div class="round-content" style="border-bottom:1px solid #e2e8f0">
-                    <h4 style="margin:0 0 .75rem;font-size:.9rem;color:#1e293b">
+                <details id="qualificationNewMatch" class="round-content" style="border-bottom:1px solid #e2e8f0">
+                    <summary style="margin:0 0 .75rem;cursor:pointer;font-weight:600">
                         <i class="fas fa-table-tennis" style="color:#FF6B35"></i>
                         <span th:text="#{admin.playoff.qual.new_match.title}">Nuevo partido</span>
-                    </h4>
+                    </summary>
                     <div style="display:flex;gap:.75rem;align-items:flex-end;flex-wrap:wrap">
                         <div class="form-group" style="min-width:220px">
                             <label th:text="#{admin.playoff.qual.new_match.team1}">Equipo 1</label>
@@ -557,7 +567,7 @@
                     <p id="newMatchHint" style="margin:.5rem 0 0;font-size:.8rem;color:#94a3b8"></p>
                     <p id="qualDoneHint" style="margin:.35rem 0 0;font-size:.78rem;color:#94a3b8"></p>
                     <div id="newMatchSuggestions" style="margin-top:.5rem;display:flex;flex-direction:column;gap:.35rem"></div>
-                </div>
+                </details>
 
                 <!--/* Очередь ожидания — пары уже сформированы, корт ещё не назначен */-->
                 <div style="border-bottom:1px solid #e2e8f0">
@@ -568,8 +578,56 @@
                     <div id="queueList" style="padding:.75rem 1.5rem;display:flex;flex-direction:column;gap:.6rem"></div>
                 </div>
 
+                <section id="earlyPlayoff" class="round-content" hidden
+                         aria-labelledby="earlyPlayoffTitle"
+                         th:attr="data-url=@{'/tournaments/team-playoff/api/' + ${tournament.id} + '/early-playoff'},
+                                  data-summary=#{team_playoff.early.summary},
+                                  data-court=#{admin.playoff.label.court},
+                                  data-queued=#{team_playoff.early.queue_action},
+                                  data-confirm=#{team_playoff.early.confirm},
+                                  data-choose=#{team_playoff.early.choose},
+                                  data-stage=#{team_playoff.stage.round_of_16},
+                                  data-ready=#{team_playoff.early.ready},
+                                  data-safe=#{team_playoff.early.manual.safe},
+                                  data-override=#{team_playoff.early.manual.override},
+                                  data-bye=#{team_playoff.early.manual.bye},
+                                  data-rematch=#{team_playoff.early.manual.rematch},
+                                  data-semifinal=#{team_playoff.early.semifinal},
+                                  data-semifinal-summary=#{team_playoff.early.semifinal.summary},
+                                  data-semifinal-stage=#{team_playoff.stage.semi_final},
+                                  data-projected=#{team_playoff.early.projected_bye},
+                                  data-results=#{team_playoff.early.manual.results},
+                                  data-pending=#{team_playoff.early.pending},
+                                  data-limit=#{team_playoff.early.manual.limit},
+                                  data-schedule=#{team_playoff.early.manual.schedule},
+                                  data-seeding=#{team_playoff.early.manual.seeding},
+                                  data-teams=#{team_playoff.early.manual.teams},
+                                  data-error=#{team_playoff.early.error}">
+                    <h4 id="earlyPlayoffTitle" th:text="#{team_playoff.early.title}">Playoff anticipado</h4>
+                    <p id="earlySummary" aria-live="polite"></p>
+                    <p id="earlyProjected" hidden></p>
+                    <p id="earlyReason" aria-live="polite"></p>
+                    <div id="earlySuggestions" class="early-suggestions"></div>
+                    <details id="earlyManual">
+                        <summary th:text="#{team_playoff.early.check_pair}">Comprobar un cruce</summary>
+                        <div class="early-fields">
+                            <label><span th:text="#{admin.playoff.qual.new_match.team1}">Equipo 1</span>
+                                <select id="earlyFirst" class="form-control"></select>
+                            </label>
+                            <label><span th:text="#{admin.playoff.qual.new_match.team2}">Equipo 2</span>
+                                <select id="earlySecond" class="form-control"></select>
+                            </label>
+                            <button id="earlyCheck" type="button" class="btn btn-outline btn-sm"
+                                    th:text="#{team_playoff.early.check}">Comprobar</button>
+                        </div>
+                        <div id="earlyManualResult" aria-live="polite"></div>
+                    </details>
+                </section>
+
                 <!-- Раунды квалификации -->
-                <div th:if="${not #lists.isEmpty(qualRounds)}">
+                <details id="qualificationMatches" class="stage-details round-content" th:if="${not #lists.isEmpty(qualRounds)}"
+                         th:open="${ranking == null or not ranking.finished}">
+                    <summary th:text="#{team_playoff.early.qualification_matches}"></summary>
                     <div class="rounds-tabs" id="qualTabs">
                         <button th:each="r, stat : ${qualRounds}"
                                 th:id="'qtab-' + ${stat.index}"
@@ -615,9 +673,12 @@
 
                                 <div class="match-body">
                                     <div class="team-left">
-                                        <div class="team-name"
-                                             th:text="${match.team1Number != null ? '№' + match.team1Number + ' ' + match.team1Player1Name : match.team1Player1Name}">Jugador 1</div>
-                                        <div th:replace="~{fragments/team-playoff-participant :: partner(${match}, 1)}"></div>
+                                        <div class="team-name">
+                                    <strong th:if="${match.team1Number != null}" th:text="'№' + ${match.team1Number}"></strong>
+                                    <span th:text="${match.team1Player1Name}"></span>
+                                    <span th:if="${match.team1Player2Name != null}"> / </span>
+                                    <span th:replace="~{fragments/team-playoff-participant :: partner(${match}, 1)}"></span>
+                                </div>
                                         <span th:if="${match.team1MatchOrdinal != null}" class="info-pill"
                                               th:classappend="${match.team1MatchOrdinal == 1} ? 'badge-m1' : 'badge-m2'"
                                               style="font-size:.65rem;padding:.1rem .4rem"
@@ -651,10 +712,10 @@
                                         <!-- Ввод результата -->
                                         <div th:unless="${match.isCompleted}" class="score-form">
                                             <input type="number" class="score-inp" th:id="'qg1-' + ${match.id}"
-                                                   min="0" max="7" value="6" placeholder="A">
+                                                   min="0" max="6" value="6" placeholder="A">
                                             <span class="vs-badge">VS</span>
                                             <input type="number" class="score-inp" th:id="'qg2-' + ${match.id}"
-                                                   min="0" max="7" value="4" placeholder="B">
+                                                   min="0" max="6" value="4" placeholder="B">
                                             <button class="save-btn"
                                                     th:attr="data-match-id=${match.id},data-tid=${tournament.id}"
                                                     onclick="submitQualScore(this)">OK</button>
@@ -662,9 +723,12 @@
                                     </div>
 
                                     <div class="team-right">
-                                        <div class="team-name"
-                                             th:text="${match.team2Number != null ? '№' + match.team2Number + ' ' + match.team2Player1Name : match.team2Player1Name}">Jugador 3</div>
-                                        <div th:replace="~{fragments/team-playoff-participant :: partner(${match}, 2)}"></div>
+                                        <div class="team-name">
+                                    <strong th:if="${match.team2Number != null}" th:text="'№' + ${match.team2Number}"></strong>
+                                    <span th:text="${match.team2Player1Name}"></span>
+                                    <span th:if="${match.team2Player2Name != null}"> / </span>
+                                    <span th:replace="~{fragments/team-playoff-participant :: partner(${match}, 2)}"></span>
+                                </div>
                                         <span th:if="${match.team2MatchOrdinal != null}" class="info-pill"
                                               th:classappend="${match.team2MatchOrdinal == 1} ? 'badge-m1' : 'badge-m2'"
                                               style="font-size:.65rem;padding:.1rem .4rem"
@@ -682,7 +746,7 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                </details>
 
                 <!-- Инициализация плей-офф: квалификация полностью завершена -->
                 <div th:if="${ranking != null and ranking.finished and not playoffStarted}"
@@ -725,6 +789,7 @@
         <!-- ══════════════════════════════════════════════════════════════
              РАЗДЕЛ 3: Playoff
         ══════════════════════════════════════════════════════════════ -->
+        <div id="playoffSection" th:attr="data-early=${earlyPlayoffStarted}">
         <div th:if="${playoffStarted}" class="section-card">
             <div class="section-header">
                 <h3>
@@ -743,12 +808,12 @@
             </div>
 
             <div class="round-content">
-                <div th:each="round : ${playoffRounds}"
-                     style="margin-bottom:1.5rem">
-                    <h4 style="font-size:.9rem;font-weight:700;color:#475569;margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem">
-                        <span class="playoff-stage-label" th:text="${round.note}">SEMI_FINAL</span>
+                <details class="stage-details" th:each="round : ${playoffRounds}"
+                         th:open="${round.status.name() == 'IN_PROGRESS'}">
+                    <summary>
+                        <span class="playoff-stage-label" th:text="#{${'team_playoff.stage.' + #strings.toLowerCase(round.note)}}">SEMI_FINAL</span>
                         <span class="info-pill" th:text="${round.status}">EN CURSO</span>
-                    </h4>
+                    </summary>
 
                     <div th:each="match : ${round.matches}" class="match-card"
                          th:id="'pmatch-' + ${match.id}"
@@ -764,7 +829,7 @@
                                 </button>
                             </span>
                             <span th:if="${match.playoffStage != null}" class="playoff-stage-label"
-                                  th:text="${match.playoffStage}">SEMI_FINAL</span>
+                                  th:text="#{${'team_playoff.stage.' + #strings.toLowerCase(match.playoffStage)}}">SEMI_FINAL</span>
                         </div>
                         <div th:unless="${match.isCompleted}" th:id="'court-edit-' + ${match.id}" class="inline-edit" style="margin:0 1rem">
                             <select></select>
@@ -781,9 +846,12 @@
                         </div>
                         <div class="match-body">
                             <div class="team-left">
-                                <div th:if="${match.team1Player1Name != null}" class="team-name"
-                                     th:text="${match.team1Number != null ? '№' + match.team1Number + ' ' + match.team1Player1Name : match.team1Player1Name}">TBD</div>
-                                <div th:replace="~{fragments/team-playoff-participant :: partner(${match}, 1)}"></div>
+                                <div th:if="${match.team1Player1Name != null}" class="team-name">
+                                    <strong th:if="${match.team1Number != null}" th:text="'№' + ${match.team1Number}"></strong>
+                                    <span th:text="${match.team1Player1Name}"></span>
+                                    <span th:if="${match.team1Player2Name != null}"> / </span>
+                                    <span th:replace="~{fragments/team-playoff-participant :: partner(${match}, 1)}"></span>
+                                </div>
                                 <div th:if="${match.team1Player1Name == null}" class="tbd"
                                      th:text="#{admin.playoff.bracket.tbd}">TBD</div>
                                 <button th:if="${not match.isCompleted and match.playoffPlayStarted != true and match.team1Player1Name != null and match.team2Player1Name != null}"
@@ -812,7 +880,7 @@
                                     <i class="fas fa-edit"></i>
                                     <span th:text="#{admin.americano.btn.edit_score}">editar</span>
                                 </button>
-                                <div th:unless="${match.isCompleted or match.team1Player1Name == null or match.team2Player1Name == null}"
+                                <div th:unless="${match.isCompleted or match.courtNumber == null or match.team1Player1Name == null or match.team2Player1Name == null}"
                                      class="score-form">
                                     <input type="number" class="score-inp" th:id="'pg1-' + ${match.id}"
                                            min="0" max="7" value="6">
@@ -828,9 +896,12 @@
                             </div>
 
                             <div class="team-right">
-                                <div th:if="${match.team2Player1Name != null}" class="team-name"
-                                     th:text="${match.team2Number != null ? '№' + match.team2Number + ' ' + match.team2Player1Name : match.team2Player1Name}">TBD</div>
-                                <div th:replace="~{fragments/team-playoff-participant :: partner(${match}, 2)}"></div>
+                                <div th:if="${match.team2Player1Name != null}" class="team-name">
+                                    <strong th:if="${match.team2Number != null}" th:text="'№' + ${match.team2Number}"></strong>
+                                    <span th:text="${match.team2Player1Name}"></span>
+                                    <span th:if="${match.team2Player2Name != null}"> / </span>
+                                    <span th:replace="~{fragments/team-playoff-participant :: partner(${match}, 2)}"></span>
+                                </div>
                                 <div th:if="${match.team2Player1Name == null}" class="tbd"
                                      th:text="#{admin.playoff.bracket.tbd}">TBD</div>
                                 <button th:if="${not match.isCompleted and match.playoffPlayStarted != true and match.team1Player1Name != null and match.team2Player1Name != null}"
@@ -846,8 +917,9 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                </details>
             </div>
+        </div>
         </div>
 
     </div>
@@ -911,6 +983,8 @@
             <span data-copy="none" th:text="#{admin.playoff.swap.none}"></span>
             <span data-copy="completed" th:text="#{admin.playoff.swap.completed}"></span>
             <span data-copy="started" th:text="#{admin.playoff.swap.started}"></span>
+            <span data-copy="early_queue_only" th:text="#{admin.playoff.swap.early_queue_only}"></span>
+            <span data-copy="fixed" th:text="#{team_playoff.early.fixed}"></span>
             <span data-copy="cancelled" th:text="#{admin.playoff.swap.cancelled}"></span>
             <span data-copy="incomplete" th:text="#{admin.playoff.swap.incomplete}"></span>
             <span data-copy="duplicate" th:text="#{admin.playoff.swap.duplicate}"></span>
@@ -959,6 +1033,15 @@
     const MSG_GROUP_DONE = /*[[#{admin.playoff.qual.new_match.group_done}]]*/ '';
     const MSG_WON_FIRST = /*[[#{admin.playoff.qual.new_match.won_first}]]*/ '';
     const MSG_LOST_FIRST = /*[[#{admin.playoff.qual.new_match.lost_first}]]*/ '';
+    const MSG_QUAL_SCORE = /*[[#{team_playoff.early.invalid_score}]]*/ '';
+    const MSG_SWAP_TITLE = /*[[#{admin.playoff.swap.title}]]*/ 'Cambiar equipo';
+    const MSG_QUAL_STAGE = /*[[#{team_playoff.early.qualification}]]*/ '';
+    const STAGE_LABELS = {
+        ROUND_OF_16: /*[[#{team_playoff.stage.round_of_16}]]*/ '',
+        QUARTER_FINAL: /*[[#{team_playoff.stage.quarter_final}]]*/ '',
+        SEMI_FINAL: /*[[#{team_playoff.stage.semi_final}]]*/ '',
+        FINAL: /*[[#{team_playoff.stage.final}]]*/ ''
+    };
     const MSG_QUEUE_EMPTY = /*[[#{admin.playoff.queue.empty}]]*/ '';
     const MSG_QUEUE_WAITING = /*[[#{admin.playoff.queue.waiting}]]*/ '';
     const MSG_QUEUE_ASSIGN = /*[[#{admin.playoff.queue.assign_court}]]*/ '';
@@ -1036,6 +1119,7 @@
     // ── Новый матч квалификации: координатор сам выбирает 2 команды и корт ──
     function refreshCourtBoard() {
         if (!document.getElementById('newMatchTeam1')) return;
+        window.teamPlayoffEarly?.refresh();
         fetch('/tournaments/team-playoff/api/' + TOURNAMENT_ID + '/court-board')
             .then(r => r.json())
             .then(renderCourtBoard)
@@ -1066,6 +1150,13 @@
     }
 
     function renderCourtBoard(data) {
+        const newMatch = document.getElementById('qualificationNewMatch');
+        if (newMatch) newMatch.hidden = data.qualificationFinished === true;
+        const qualificationMatches = document.getElementById('qualificationMatches');
+        if (qualificationMatches && data.qualificationFinished && !qualificationMatches.dataset.finished) {
+            qualificationMatches.open = false;
+            qualificationMatches.dataset.finished = 'true';
+        }
         const t1Sel = document.getElementById('newMatchTeam1');
         const t2Sel = document.getElementById('newMatchTeam2');
         const courtSel = document.getElementById('newMatchCourt');
@@ -1114,7 +1205,7 @@
                 const m = c.currentMatch;
                 const t1 = (m.team1Number ? '№' + m.team1Number + ' ' : '') + (m.team1Player1Name || 'TBD') + (m.team1Player2Name ? ' / ' + m.team1Player2Name : '');
                 const t2 = (m.team2Number ? '№' + m.team2Number + ' ' : '') + (m.team2Player1Name || 'TBD') + (m.team2Player2Name ? ' / ' + m.team2Player2Name : '');
-                const stage = m.playoffStage ? m.playoffStage : 'Calificación';
+                const stage = STAGE_LABELS[m.playoffStage] || MSG_QUAL_STAGE;
                 return `<div class="court-card">
                     <div class="court-card-header">
                         <span>Cancha ${c.courtNumber}</span>
@@ -1236,6 +1327,12 @@
     }
 
     // Блок "Partidos en cola" — отсортирован по времени ожидания, с действиями по строкам.
+    function queueText(value) {
+        const span = document.createElement('span');
+        span.textContent = value || '';
+        return span.innerHTML;
+    }
+
     function renderQueueList(queue, courts) {
         const box = document.getElementById('queueList');
         if (!box) return;
@@ -1248,32 +1345,40 @@
         const freeCourts = (courts || []).filter(c => !c.occupied).map(c => c.courtNumber);
 
         box.innerHTML = queue.map(m => `
-            <div class="match-card" id="queue-match-${m.id}" style="margin:0">
+            <div class="match-card" id="queue-match-${m.id}" data-playoff="${Boolean(m.playoffStage)}" style="margin:0">
                 <div class="match-header">
-                    <span class="info-pill">#${m.queuePosition}</span>
+                    <span class="info-pill">#${m.queuePosition} · ${STAGE_LABELS[m.playoffStage] || MSG_QUAL_STAGE}</span>
                     <span style="font-size:.75rem;color:#94a3b8">${MSG_QUEUE_WAITING.replace('{0}', m.waitingMinutes)}</span>
                 </div>
                 <div class="match-body">
                     <div class="team-left">
-                        <div class="team-name">${(m.team1Number ? '№' + m.team1Number + ' ' : '') + (m.team1Player1Name || 'TBD')}</div>
-                        <button type="button" class="icon-btn" onclick="toggleTeamEdit(${m.id}, 1)" title="Cambiar equipo">
+                        <div class="team-name">${m.team1Number ? '<strong>№' + m.team1Number + '</strong> ' : ''}${queueText(m.team1Player1Name || 'TBD')}${m.team1Player2Name ? ' / ' + queueText(m.team1Player2Name) : ''}</div>
+                        ${m.playoffStage ? `<button type="button" class="icon-btn"
+                            data-swap-match="${m.id}" data-swap-slot="1" title="${queueText(MSG_SWAP_TITLE)}" aria-label="${queueText(MSG_SWAP_TITLE)}">
+                            <i class="fas fa-exchange-alt" aria-hidden="true"></i>
+                        </button>` : ''}
+                        ${m.playoffStage ? '' : `<button type="button" class="icon-btn" onclick="toggleTeamEdit(${m.id}, 1)" title="Cambiar equipo">
                             <i class="fas fa-exchange-alt"></i>
                         </button>
                         <div id="team-edit-${m.id}-1" class="inline-edit">
                             <select></select>
                             <button type="button" class="save-btn" onclick="submitTeamChange(${m.id}, 1)">OK</button>
-                        </div>
+                        </div>`}
                     </div>
                     <div class="vs-block"><span class="vs-badge">VS</span></div>
                     <div class="team-right">
-                        <div class="team-name">${(m.team2Number ? '№' + m.team2Number + ' ' : '') + (m.team2Player1Name || 'TBD')}</div>
-                        <button type="button" class="icon-btn" onclick="toggleTeamEdit(${m.id}, 2)" title="Cambiar equipo">
+                        <div class="team-name">${m.team2Number ? '<strong>№' + m.team2Number + '</strong> ' : ''}${queueText(m.team2Player1Name || 'TBD')}${m.team2Player2Name ? ' / ' + queueText(m.team2Player2Name) : ''}</div>
+                        ${m.playoffStage ? `<button type="button" class="icon-btn"
+                            data-swap-match="${m.id}" data-swap-slot="2" title="${queueText(MSG_SWAP_TITLE)}" aria-label="${queueText(MSG_SWAP_TITLE)}">
+                            <i class="fas fa-exchange-alt" aria-hidden="true"></i>
+                        </button>` : ''}
+                        ${m.playoffStage ? '' : `<button type="button" class="icon-btn" onclick="toggleTeamEdit(${m.id}, 2)" title="Cambiar equipo">
                             <i class="fas fa-exchange-alt"></i>
                         </button>
                         <div id="team-edit-${m.id}-2" class="inline-edit">
                             <select></select>
                             <button type="button" class="save-btn" onclick="submitTeamChange(${m.id}, 2)">OK</button>
-                        </div>
+                        </div>`}
                     </div>
                 </div>
                 <div style="display:flex;gap:.5rem;align-items:center;margin-top:.5rem;flex-wrap:wrap">
@@ -1286,9 +1391,9 @@
                             onclick="assignCourtFromQueue(${m.id})" title="${freeCourts.length ? '' : MSG_QUEUE_NO_COURTS}">
                         <i class="fas fa-play"></i> ${MSG_QUEUE_ASSIGN}
                     </button>
-                    <button type="button" class="btn btn-outline btn-sm" onclick="removeFromQueueAction(${m.id})">
+                    ${m.playoffStage ? '' : `<button type="button" class="btn btn-outline btn-sm" onclick="removeFromQueueAction(${m.id})">
                         <i class="fas fa-times"></i> ${MSG_QUEUE_REMOVE}
-                    </button>
+                    </button>`}
                 </div>
             </div>`).join('');
     }
@@ -1305,7 +1410,12 @@
             .then(r => r.json())
             .then(data => {
                 if (data.success) {
-                    location.reload();
+                    if (document.getElementById('queue-match-' + matchId)?.dataset.playoff === 'true') {
+                        refreshCourtBoard();
+                        window.teamPlayoffEarly?.refreshBracket();
+                    } else {
+                        location.reload();
+                    }
                 } else {
                     showToast(data.message || 'Error');
                 }
@@ -1334,10 +1444,14 @@
     function submitQualScore(btn) {
         const matchId = btn.dataset.matchId;
         const card    = document.getElementById('qmatch-' + matchId);
-        const g1 = parseInt(document.getElementById('qg1-' + matchId)?.value) || 0;
-        const g2 = parseInt(document.getElementById('qg2-' + matchId)?.value) || 0;
+        const g1 = document.getElementById('qg1-' + matchId)?.valueAsNumber;
+        const g2 = document.getElementById('qg2-' + matchId)?.valueAsNumber;
 
-        if (g1 === g2) { alert('No se permiten empates.'); return; }
+        if (!Number.isInteger(g1) || !Number.isInteger(g2)
+            || Math.max(g1, g2) !== 6 || Math.min(g1, g2) < 0 || Math.min(g1, g2) >= 6) {
+            showToast(MSG_QUAL_SCORE);
+            return;
+        }
 
         btn.disabled = true;
         btn.textContent = '...';
@@ -1362,6 +1476,7 @@
                 <button class="edit-btn" data-match-id="${matchId}" data-g1="${g1}" data-g2="${g2}"
                         onclick="showQualEdit(this)"><i class="fas fa-edit"></i> editar</button>`;
                 updateQualRanking();
+                refreshCourtBoard();
             } else {
                 alert(data.message === 'conduct.history.qualification_dependency'
                     ? document.getElementById('conduct-save-status').dataset.qualificationDependency
@@ -1380,9 +1495,9 @@
         const vs = document.getElementById('qmatch-' + matchId)?.querySelector('.vs-block');
         if (!vs) return;
         vs.innerHTML = `<div class="score-form">
-            <input type="number" class="score-inp" id="qg1-${matchId}" value="${g1}" min="0" max="7">
+            <input type="number" class="score-inp" id="qg1-${matchId}" value="${g1}" min="0" max="6">
             <span class="vs-badge">VS</span>
-            <input type="number" class="score-inp" id="qg2-${matchId}" value="${g2}" min="0" max="7">
+            <input type="number" class="score-inp" id="qg2-${matchId}" value="${g2}" min="0" max="6">
             <button class="save-btn" data-match-id="${matchId}" data-tid="${TOURNAMENT_ID}"
                     onclick="submitQualScore(this)">OK</button>
         </div>`;
@@ -1406,7 +1521,7 @@
                 tr.innerHTML = `
                 <td><span class="${posClass}">${t.currentPosition}</span></td>
                 <td>${statusEmoji(t.qualStatus)}</td>
-                <td><div class="pair-names"><span class="p1">${t.displayName || ''}</span></div></td>
+                <td><div class="pair-names">${t.teamNumber != null ? '<strong>№' + t.teamNumber + '</strong> ' : ''}<span class="p1">${queueText(t.displayName || '')}</span></div></td>
                 <td>${matchCell(t.match1GamesWon, t.match1GamesLost)}</td>
                 <td>${matchCell(t.match2GamesWon, t.match2GamesLost)}</td>
                 <td class="positive">${t.setsWon}</td>
@@ -1445,7 +1560,12 @@
             if (data.success) {
                 lsClear('pg1-' + matchId);
                 lsClear('pg2-' + matchId);
-                location.reload();
+                if (window.teamPlayoffEarly?.hasBracket()) {
+                    refreshCourtBoard();
+                    window.teamPlayoffEarly.refreshBracket(matchId);
+                } else {
+                    location.reload();
+                }
             } else {
                 alert(data.message === 'conduct.history.playoff_dependency'
                     ? document.getElementById('conduct-save-status').dataset.playoffDependency
@@ -1555,5 +1675,6 @@
 
 </script>
 <script th:src="@{/js/share-panel.js}"></script>
+<script defer th:src="@{/js/team-playoff-early.js}"></script>
 </body>
 </html>

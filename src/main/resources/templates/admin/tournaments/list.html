@@ -185,6 +185,9 @@
                 </div>
 
                 <div class="tournament-card-footer">
+                    <th:block th:if="${item.teamPlayoffConduct == true}">
+                        <a th:replace="~{fragments/team-playoff-conduct-link :: link(${item.tournament}, 'btn btn-primary btn-sm')}"></a>
+                    </th:block>
                     <!-- Кнопка копирования — не для ADMIN -->
                     <a th:if="${item.canCopy}"
                        th:href="@{'/admin/tournaments/' + ${item.tournament.id} + '/copy'}"
@@ -278,6 +281,9 @@
                     </td>
                     <td>
                         <div class="action-buttons" style="display: flex; gap: 0.25rem; flex-wrap: wrap;">
+                            <th:block th:if="${item.teamPlayoffConduct == true}">
+                                <a th:replace="~{fragments/team-playoff-conduct-link :: link(${item.tournament}, 'btn btn-primary btn-sm')}"></a>
+                            </th:block>
                             <!-- Копирование — не для ADMIN -->
                             <a th:if="${item.canCopy}"
                                th:href="@{'/admin/tournaments/' + ${item.tournament.id} + '/copy'}"

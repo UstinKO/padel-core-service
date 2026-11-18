@@ -1,0 +1,52 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.78-guest-claim-review
+      author: padel
+      changes:
+        - sql:
+            sql: |
+              ALTER TABLE guest_profile_claims
+                ADD COLUMN request_number bigint GENERATED ALWAYS AS IDENTITY,
+                ADD COLUMN rejected_account_id bigint,
+                ADD COLUMN status varchar(24) NOT NULL DEFAULT 'PENDING',
+                ADD COLUMN initiator varchar(16) NOT NULL DEFAULT 'PLAYER',
+                ADD COLUMN verification_method varchar(24),
+                ADD COLUMN reviewed_by bigint,
+                ADD COLUMN reviewed_at timestamptz,
+                ADD COLUMN review_reason varchar(64);
+              UPDATE guest_profile_claims
+                SET status = 'MERGED', verification_method = 'WHATSAPP',
+                    reviewed_by = approved_by, reviewed_at = approved_at,
+                    initiator = CASE WHEN account_id IS NULL THEN 'ADMIN' ELSE 'PLAYER' END
+                WHERE approved_at IS NOT NULL;
+              ALTER TABLE guest_profile_claims
+                ADD UNIQUE (request_number),
+                ADD CHECK (status IN ('PENDING','NEEDS_DETAILS','MERGED','REJECTED')),
+                ADD CHECK (initiator IN ('PLAYER','ADMIN')),
+                ADD CHECK ((status = 'MERGED') = (approved_at IS NOT NULL));
+              ALTER TABLE guest_profile_claims DROP CONSTRAINT guest_profile_claims_check1;
+              ALTER TABLE guest_profile_claims ADD CONSTRAINT ck_guest_profile_claim_identity
+                CHECK (guest_id IS NOT NULL OR account_id IS NOT NULL OR rejected_account_id IS NOT NULL);
+              CREATE INDEX idx_guest_profile_claim_rejected_account ON guest_profile_claims(rejected_account_id)
+                WHERE rejected_account_id IS NOT NULL;
+              CREATE INDEX idx_guest_profile_claim_status_date ON guest_profile_claims(status, created_at DESC);
+
+        - sql:
+            splitStatements: false
+            sql: |
+              CREATE FUNCTION sync_guest_claim_legacy_approval() RETURNS trigger LANGUAGE plpgsql AS $$
+              BEGIN
+                IF NEW.approved_at IS NOT NULL AND NEW.status <> 'MERGED' THEN
+                  NEW.status := 'MERGED';
+                  NEW.verification_method := 'WHATSAPP';
+                  NEW.reviewed_at := NEW.approved_at;
+                  NEW.reviewed_by := NEW.approved_by;
+                  NEW.initiator := CASE WHEN NEW.account_id IS NULL THEN 'ADMIN' ELSE NEW.initiator END;
+                  NEW.review_reason := NULL;
+                END IF;
+                RETURN NEW;
+              END;
+              $$;
+              CREATE TRIGGER sync_guest_claim_legacy_approval
+                BEFORE INSERT OR UPDATE OF approved_at ON guest_profile_claims
+                FOR EACH ROW EXECUTE FUNCTION sync_guest_claim_legacy_approval();

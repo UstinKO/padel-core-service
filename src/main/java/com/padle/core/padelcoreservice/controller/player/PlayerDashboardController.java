@@ -36,7 +36,6 @@ import java.util.Optional;
 import java.util.Set;
 
 @Controller
-@RequestMapping("/players")
 @RequiredArgsConstructor
 @Slf4j
 public class PlayerDashboardController {
@@ -52,7 +51,7 @@ public class PlayerDashboardController {
             description = "Time taken to render player dashboard",
             tags = {"service=player", "operation=dashboard"}
     )
-    @GetMapping("/dashboard")
+    @GetMapping({"/players/dashboard", "/legacy/players/dashboard"})
     public String dashboard(Model model, @AuthenticationPrincipal Object principal) {
         log.info("Accessing dashboard with principal type: {}",
                 principal != null ? principal.getClass().getName() : "null");
@@ -109,7 +108,7 @@ public class PlayerDashboardController {
         }
     }
 
-    @PostMapping("/tournaments/{tournamentId}/register")
+    @PostMapping("/players/tournaments/{tournamentId}/register")
     @ResponseBody
     public ResponseEntity<?> registerForTournament(@PathVariable Long tournamentId,
                                                    @AuthenticationPrincipal Object principal,
@@ -181,7 +180,7 @@ public class PlayerDashboardController {
         }
     }
 
-    @PostMapping("/tournaments/{tournamentId}/cancel")
+    @PostMapping("/players/tournaments/{tournamentId}/cancel")
     @ResponseBody
     public ResponseEntity<?> cancelRegistration(@PathVariable Long tournamentId,
                                                 @AuthenticationPrincipal Object principal,
@@ -259,7 +258,7 @@ public class PlayerDashboardController {
         return null;
     }
 
-    @PostMapping("/tournaments/{tournamentId}/cancel-double")
+    @PostMapping("/players/tournaments/{tournamentId}/cancel-double")
     @ResponseBody
     public ResponseEntity<?> cancelDoubleRegistration(@PathVariable Long tournamentId,
                                                       @AuthenticationPrincipal Object principal,
@@ -361,7 +360,7 @@ public class PlayerDashboardController {
         }
     }
 
-    @GetMapping("/tournaments/{tournamentId}/my-registration")
+    @GetMapping("/players/tournaments/{tournamentId}/my-registration")
     @ResponseBody
     public ResponseEntity<?> getMyRegistration(@PathVariable Long tournamentId,
                                                @AuthenticationPrincipal Object principal) {

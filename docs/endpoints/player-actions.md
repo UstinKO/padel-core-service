@@ -7,7 +7,11 @@
 
 ## GET `/players/dashboard`
 
-**Тип:** Thymeleaf view.  
+Открывает кабинет игрока на Thymeleaf. React-версия остаётся в закрытом предпросмотре и использует [API кабинета](account.md#мои-мероприятия).
+
+## GET `/legacy/players/dashboard`
+
+**Тип:** Thymeleaf view. Дополнительный адрес того же кабинета.
 **Аутентификация:** `ROLE_PLAYER` (Spring Security redirect при отсутствии).
 
 ### Алгоритм

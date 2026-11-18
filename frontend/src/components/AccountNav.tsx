@@ -10,6 +10,7 @@ import { Button } from './Button';
 export function AccountNav() {
   const { t } = useTranslation();
   const session = useSession();
+  const preview = window.location.pathname.startsWith('/preview');
   const client = useQueryClient();
   const [pending, setPending] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -21,6 +22,7 @@ export function AccountNav() {
       client.removeQueries({ queryKey: profileKey });
       await client.invalidateQueries({ queryKey: sessionKey });
       accountChanged();
+      if (!preview) window.location.assign('/');
     } catch {
       setFailed(true);
       await client.invalidateQueries({ queryKey: sessionKey });
@@ -32,13 +34,22 @@ export function AccountNav() {
     <div className="account-actions">
       {session.data?.authenticated ? (
         <>
-          <Link to="/perfil">{session.data.fullName ?? t('account.profile')}</Link>
+          {session.data.userType === 'PLAYER' && (
+            <Link to="/players/dashboard">{t('playerEvents.title')}</Link>
+          )}
+          {preview ? (
+            <Link to="/perfil">{session.data.fullName ?? t('account.profile')}</Link>
+          ) : (
+            <a href="/perfil">{session.data.fullName ?? t('account.profile')}</a>
+          )}
           <Button variant="ghost" disabled={pending} onClick={() => void logout()}>
             {t('account.logout')}
           </Button>
         </>
-      ) : (
+      ) : preview ? (
         <Link to="/login">{t('account.login')}</Link>
+      ) : (
+        <a href="/login">{t('account.login')}</a>
       )}
       {failed && <span role="alert">{t('account.logoutFailed')}</span>}
     </div>

@@ -560,6 +560,7 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 | `POST` | `/tournaments/team-playoff/api/matches/{matchId}/swap-team` | Атомарный обмен между неначатыми матчами стадии; ожидаемая версия и подтверждения. |
 | `POST` | `/tournaments/team-playoff/api/matches/{matchId}/play-start` | Отметить фактическое начало матча на корте. |
 | `POST` | `/tournaments/team-playoff/api/matches/{matchId}/correct-pair` | Подтверждённое исправление составов и счёта до заполнения следующего этапа. |
+| `GET`, `POST` | `/tournaments/team-playoff/api/{tournamentId}/early-playoff` | Проверка и подтверждение раннего плей-офф; доступ организатора. |
 | `GET` | `/tournaments/team-playoff/api/{tournamentId}/ranking` | Рейтинг квалификации, JSON. |
 | `GET` | `/tournaments/team-playoff/api/{tournamentId}/court-board` | Доска кортов: занятость, пул команд, предложенные пары 2-го тура. |
 

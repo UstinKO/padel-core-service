@@ -382,9 +382,9 @@
             <a th:if="${isTeamAmericanoInitialized == true}" class="btn btn-primary"
                th:href="@{/tournaments/team-americano/admin/{id}(id=${tournament.id})}"
                th:text="#{conduct.resume}">Continuar torneo</a>
-            <a th:if="${isPlayoffQualStarted == true}" class="btn btn-primary"
-               th:href="@{/tournaments/team-playoff/admin/{id}(id=${tournament.id})}"
-               th:text="#{conduct.resume}">Continuar torneo</a>
+            <th:block th:if="${teamPlayoffConduct == true}">
+                <a th:replace="~{fragments/team-playoff-conduct-link :: link(${tournament}, 'btn btn-primary')}"></a>
+            </th:block>
 
             <button onclick="shareAdminTournament()"
                     class="btn btn-outline"

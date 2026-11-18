@@ -10,7 +10,6 @@ import com.padle.core.padelcoreservice.model.enums.GenderFormat;
 import com.padle.core.padelcoreservice.model.enums.Modalidad;
 import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.model.enums.PlayoffStage;
-import com.padle.core.padelcoreservice.model.enums.TournamentPhase;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
 import com.padle.core.padelcoreservice.repository.ClubRepository;
@@ -19,6 +18,8 @@ import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoMatchRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoTeamRepository;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
@@ -29,14 +30,13 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-/**
- * Формирование первого этапа плей-офф до полного завершения квалификации
- * (только степень двойки команд — 8/16, без play-in).
- */
+/** Безопасные назначения 1/8 до завершения квалификации и обычный посев после неё. */
 @SpringBootTest
 @TestPropertySource(properties = {
         "spring.mail.username=test@example.com",
@@ -62,22 +62,189 @@ class TeamPlayoffEarlyStageTest {
     @Autowired
     private AmericanoMatchRepository matchRepository;
 
+    @Autowired
+    private PlayoffPairExchange exchange;
+
     @Test
-    void canInitPlayoff_falseUntilAtLeastTwoTeamsSettled() {
+    void exchangesQueuedEarlyMatchesAndKeepsTheNewTeamsOnCourt() {
+        long tournament = createTournament(15);
+        var teams = createTeams(tournament, 15);
+        playoffService.initQualification(tournament, 5);
+
+        for (int team = 1; team < 14; team += 2) {
+            completeQualificationMatch(tournament, teams, team, team + 1);
+        }
+        completeQualificationMatch(tournament, teams, 15, 1);
+        for (int team = 2; team <= 10; team += 2) {
+            completeQualificationMatch(tournament, teams, team, team + 1);
+        }
+        playoffService.createQualificationMatch(tournament, teams.get(11).getId(), teams.get(12).getId(), 1);
+        playoffService.createQualificationMatch(tournament, teams.get(13).getId(), teams.get(14).getId(), 2);
+
+        var first = playoffService.confirmEarlyPlayoff(tournament, teams.get(1).getId(), teams.get(4).getId(),
+                null, true);
+        var second = playoffService.confirmEarlyPlayoff(tournament, teams.get(3).getId(), teams.get(6).getId(),
+                null, true);
+        var request = new PlayoffPairExchange.Request(1, second.getId(), 2, false, false);
+        assertThat(exchange.options(first.getId(), 1, false).candidates())
+                .anyMatch(option -> option.matchId().equals(second.getId()) && option.slot() == 2
+                        && option.block() == null);
+        exchange.exchange(first.getId(), request);
+
+        assertThat(playoffService.getQueue(tournament)).extracting(match -> match.getId())
+                .contains(first.getId(), second.getId());
+        assertThat(matchRepository.findById(first.getId()).orElseThrow().getTeam1Id())
+                .isEqualTo(teams.get(6).getId());
+        assertThat(matchRepository.findById(second.getId()).orElseThrow().getTeam2Id())
+                .isEqualTo(teams.get(1).getId());
+
+        var assigned = playoffService.assignCourtToQueuedMatch(first.getId(), 3);
+        assertThat(assigned.getCourtNumber()).isEqualTo(3);
+        assertThat(assigned.getTeam1Id()).isEqualTo(teams.get(6).getId());
+        assertThat(assigned.getTeam2Id()).isEqualTo(teams.get(4).getId());
+        assertThatThrownBy(() -> exchange.exchange(first.getId(), request)).hasMessage("admin.playoff.swap.started");
+        assertThat(playoffService.getQualRanking(tournament).isFinished()).isFalse();
+    }
+
+    private void completeQualificationMatch(long tournament, List<AmericanoTeam> teams, int first, int second) {
+        var match = playoffService.createQualificationMatch(tournament, teams.get(first - 1).getId(),
+                teams.get(second - 1).getId(), 1);
+        playoffService.submitQualResult(match.getId(), 6, 4);
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {12, 14, 15, 16})
+    void confirmedMatchRemainsInSameBracketWhenLastQualificationScoreArrives(int count) {
+        Long tournament = createTournament(count);
+        var teams = createTeams(tournament, count);
+        playoffService.initQualification(tournament, 5);
+
+        Random scores = new Random(count <= 14 ? 8 : 2);
+        for (int i = 0; i < count - 1; i++) {
+            var fixture = playoffService.createQualificationMatch(tournament, teams.get(i).getId(),
+                    teams.get(i + 1).getId(), 1);
+            int losingGames = scores.nextInt(6);
+            boolean firstWins = scores.nextBoolean();
+            playoffService.submitQualResult(fixture.getId(), firstWins ? 6 : losingGames,
+                    firstWins ? losingGames : 6);
+        }
+        var last = playoffService.createQualificationMatch(tournament, teams.get(count - 1).getId(),
+                teams.get(0).getId(), 1);
+
+        assertThatThrownBy(() -> playoffService.submitQualResult(last.getId(), 5, 4))
+                .hasMessage("team_playoff.early.invalid_score");
+        assertThat(playoffService.canInitPlayoff(tournament)).isFalse();
+        var options = playoffService.earlyPlayoff(tournament, null, null);
+        assertThat(options.finishedTeams()).isEqualTo(count - 2);
+        assertThat(options.freeCourts()).containsExactly(2, 3, 4, 5);
+        assertThat(options.matches().size()).isGreaterThanOrEqualTo(2);
+        var suggestion = options.matches().get(0);
+        long first = suggestion.first().id();
+        long second = suggestion.second().id();
+
+        assertThat(playoffService.confirmEarlyPlayoff(tournament, first, second, 2).getCourtNumber()).isEqualTo(2);
+        var confirmed = playoffService.confirmEarlyPlayoff(tournament, second, first, 2);
+        assertThat(playoffService.getPlayoffMatches(tournament)).hasSize(1);
+        var secondSuggestion = options.matches().get(1);
+        boolean manualOverride = count == 15;
+        if (manualOverride) {
+            var current = playoffService.earlyPlayoff(tournament, null, null);
+            secondSuggestion = current.readyTeams().stream().flatMap(left -> current.readyTeams().stream()
+                            .filter(right -> left.id() < right.id())
+                            .filter(right -> "override".equals(playoffService
+                                    .earlyPlayoff(tournament, left.id(), right.id()).manualStatus()))
+                            .map(right -> new TeamPlayoffService.EarlyMatch(left, right)))
+                    .findFirst().orElseThrow();
+        }
+        var queued = playoffService.confirmEarlyPlayoff(tournament, secondSuggestion.first().id(),
+                secondSuggestion.second().id(), null, manualOverride);
+        assertThat(queued.isQueued()).isTrue();
+        assertThat(playoffService.getQueue(tournament)).anyMatch(m -> m.getId().equals(queued.getId())
+                && "ROUND_OF_16".equals(m.getPlayoffStage()));
+        assertThatThrownBy(() -> playoffService.assignCourtToQueuedMatch(queued.getId(), 1))
+                .hasMessageContaining("ocupada");
+        playoffService.submitPlayoffResult(confirmed.getId(), 6, 5);
+        assertThat(playoffService.getQualRanking(tournament).isFinished()).isFalse();
+
+        playoffService.submitQualResult(last.getId(), 5, 6);
+        assertThat(playoffService.getQualRanking(tournament).isFinished()).isTrue();
+        var roundOf16 = matchRepository.findByTournamentIdAndPlayoffStage(tournament, PlayoffStage.ROUND_OF_16);
+        assertThat(roundOf16).hasSize(count - 8);
+        assertThat(roundOf16).anyMatch(match -> match.getId().equals(queued.getId()));
+        assertThat(roundOf16).filteredOn(m -> m.getId().equals(confirmed.getId())).singleElement().satisfies(m -> {
+            assertThat(m.getTeam1Id()).isEqualTo(first);
+            assertThat(m.getTeam2Id()).isEqualTo(second);
+            assertThat(m.getTeam1Games()).isEqualTo(6);
+            assertThat(m.getTeam2Games()).isEqualTo(5);
+            if (count < 16) {
+                var next = matchRepository.findById(m.getNextMatchId()).orElseThrow();
+                assertThat(m.getNextMatchSlot() == 1 ? next.getTeam1Id() : next.getTeam2Id()).isEqualTo(first);
+            }
+        });
+        assertThat(roundOf16.stream().filter(AmericanoMatch::isQueued)).hasSize(count - 9);
+        if (count == 16) verifyEarlySemifinal(tournament, roundOf16);
+    }
+
+    private void verifyEarlySemifinal(Long tournament, List<AmericanoMatch> roundOf16) {
+        for (var match : roundOf16) {
+            if (match.isCompleted()) continue;
+            playoffService.assignCourtToQueuedMatch(match.getId(), 1);
+            playoffService.submitPlayoffResult(match.getId(), 6, 2);
+        }
+
+        var quarters = matchRepository.findByTournamentIdAndPlayoffStage(tournament, PlayoffStage.QUARTER_FINAL);
+        assertThat(quarters).hasSize(4);
+        var history = matchRepository.findByTournamentIdOrderByRoundIdAscMatchNumberAsc(tournament);
+        var first = quarters.get(0);
+        var second = quarters.get(1);
+        var combination = java.util.stream.Stream.of(first.getTeam1Id(), first.getTeam2Id())
+                .flatMap(a -> java.util.stream.Stream.of(second.getTeam1Id(), second.getTeam2Id())
+                        .filter(b -> history.stream().filter(AmericanoMatch::isCompleted)
+                                .noneMatch(previous -> (a.equals(previous.getTeam1Id()) && b.equals(previous.getTeam2Id()))
+                                        || (b.equals(previous.getTeam1Id()) && a.equals(previous.getTeam2Id()))))
+                        .map(b -> List.of(a, b))).findFirst().orElseThrow();
+        finishQuarter(first, combination.get(0));
+        finishQuarter(second, combination.get(1));
+        var options = playoffService.earlyPlayoff(tournament, combination.get(0), combination.get(1));
+        assertThat(options.semifinal()).isTrue();
+        assertThat(options.manualStatus()).isEqualTo("safe");
+        var early = playoffService.confirmEarlyPlayoff(tournament, combination.get(0), combination.get(1), 2);
+        assertThat(early.getPlayoffStage()).isEqualTo(PlayoffStage.SEMI_FINAL);
+
+        finishQuarter(quarters.get(2), quarters.get(2).getTeam1Id());
+        finishQuarter(quarters.get(3), quarters.get(3).getTeam1Id());
+        var semifinals = matchRepository.findByTournamentIdAndPlayoffStage(tournament, PlayoffStage.SEMI_FINAL);
+        assertThat(semifinals).hasSize(2).allMatch(match -> match.getTeam1Id() != null && match.getTeam2Id() != null);
+        assertThat(semifinals).filteredOn(match -> match.getId().equals(early.getId())).singleElement().satisfies(match -> {
+            assertThat(match.getTeam1Id()).isEqualTo(combination.get(0));
+            assertThat(match.getTeam2Id()).isEqualTo(combination.get(1));
+            assertThat(match.getCourtNumber()).isEqualTo(2);
+        });
+    }
+
+    private void finishQuarter(AmericanoMatch match, Long winner) {
+        playoffService.assignCourtToQueuedMatch(match.getId(), 1);
+        boolean firstWins = winner.equals(match.getTeam1Id());
+        playoffService.submitPlayoffResult(match.getId(), firstWins ? 6 : 2, firstWins ? 2 : 6);
+    }
+
+    @Test
+    void eightTeamsWaitForQualificationBeforeStartingQuarterfinals() {
         Long tournamentId = createTournament(8);
         List<AmericanoTeam> teams = createTeams(tournamentId, 8);
-
-        assertThat(playoffService.canInitPlayoff(tournamentId)).isFalse();
-
         playoffService.initQualification(tournamentId, 8);
-        assertThat(playoffService.canInitPlayoff(tournamentId))
-                .as("qualification started but nobody finished 2 matches yet")
-                .isFalse();
 
-        completeFullQualificationFor(tournamentId, teams.get(0), teams.get(1));
-        assertThat(playoffService.canInitPlayoff(tournamentId))
-                .as("one settled pair is enough")
-                .isTrue();
+        for (int i = 0; i < 6; i += 2) {
+            completeFullQualificationFor(tournamentId, teams.get(i), teams.get(i + 1));
+        }
+        assertThat(playoffService.canInitPlayoff(tournamentId)).isFalse();
+        assertThat(playoffService.earlyPlayoff(tournamentId, null, null).available()).isFalse();
+
+        completeFullQualificationFor(tournamentId, teams.get(6), teams.get(7));
+        assertThat(playoffService.canInitPlayoff(tournamentId)).isTrue();
+        playoffService.initPlayoff(tournamentId);
+        assertThat(matchRepository.findByTournamentIdAndPlayoffStage(tournamentId, PlayoffStage.QUARTER_FINAL))
+                .hasSize(4);
     }
 
     @Test
@@ -93,69 +260,6 @@ class TeamPlayoffEarlyStageTest {
                 .as("9 teams need play-in — early creation stays disabled regardless of how many teams settled")
                 .isFalse();
     }
-
-    @Test
-    void earlyInitPlayoff_eightTeams_createsPartialBracketThenBackfillsAfterQualificationCompletes() {
-        Long tournamentId = createTournament(8);
-        List<AmericanoTeam> teams = createTeams(tournamentId, 8);
-        playoffService.initQualification(tournamentId, 8);
-
-        // 6 из 8 команд полностью отыграли квалификацию (3 готовые пары), 2 команды ещё
-        // не закончили (по 1 матчу).
-        completeFullQualificationFor(tournamentId, teams.get(0), teams.get(1));
-        completeFullQualificationFor(tournamentId, teams.get(2), teams.get(3));
-        completeFullQualificationFor(tournamentId, teams.get(4), teams.get(5));
-        AmericanoMatch pendingFirstMatch = playoffService.createQualificationMatch(
-                tournamentId, teams.get(6).getId(), teams.get(7).getId(), 4);
-        playoffService.submitQualResult(pendingFirstMatch.getId(), 6, 2);
-
-        assertThat(playoffService.canInitPlayoff(tournamentId)).isTrue();
-        playoffService.initPlayoff(tournamentId);
-
-        List<AmericanoMatch> qfMatches = matchRepository.findByTournamentIdAndPlayoffStage(tournamentId, PlayoffStage.QUARTER_FINAL);
-        assertThat(qfMatches).hasSize(4);
-
-        long realMatches = qfMatches.stream().filter(m -> m.getTeam1Id() != null && m.getTeam2Id() != null).count();
-        long tbdMatches = qfMatches.stream().filter(m -> m.getTeam1Id() == null && m.getTeam2Id() == null).count();
-        assertThat(realMatches).as("3 pairs formed from the 6 settled teams").isEqualTo(3);
-        assertThat(tbdMatches).as("1 TBD slot left for the 2 not-yet-settled teams").isEqualTo(1);
-        qfMatches.stream().filter(m -> m.getTeam1Id() == null).forEach(m ->
-                assertThat(m.getNote()).isEqualTo("TBD vs TBD"));
-
-        // Следующие стадии созданы на полный размер (2 SF + 1 Final), как и при обычном посеве.
-        assertThat(matchRepository.findByTournamentIdAndPlayoffStage(tournamentId, PlayoffStage.SEMI_FINAL)).hasSize(2);
-        assertThat(matchRepository.findByTournamentIdAndPlayoffStage(tournamentId, PlayoffStage.FINAL)).hasSize(1);
-
-        // Команда 6 доигрывает квалификацию последней — это должно автоматически дозаполнить TBD-слот.
-        AmericanoMatch secondMatchTeam6 = playoffService.createQualificationMatch(
-                tournamentId, teams.get(6).getId(), teams.get(7).getId(), 4);
-        playoffService.submitQualResult(secondMatchTeam6.getId(), 6, 4);
-
-        List<AmericanoMatch> qfAfterBackfill = matchRepository.findByTournamentIdAndPlayoffStage(tournamentId, PlayoffStage.QUARTER_FINAL);
-        long realAfterBackfill = qfAfterBackfill.stream().filter(m -> m.getTeam1Id() != null && m.getTeam2Id() != null).count();
-        assertThat(realAfterBackfill).as("backfill should seed the last pending slot").isEqualTo(4);
-
-        List<Long> seededTeamIds = qfAfterBackfill.stream()
-                .flatMap(m -> java.util.stream.Stream.of(m.getTeam1Id(), m.getTeam2Id()))
-                .toList();
-        assertThat(seededTeamIds).contains(teams.get(6).getId(), teams.get(7).getId());
-
-        // Регрессия: уже созданные (реальные) матчи первого этапа не были пересобраны.
-        List<AmericanoMatch> stillSamePairs = qfAfterBackfill.stream()
-                .filter(m -> !m.getTeam1Id().equals(teams.get(6).getId()) && !m.getTeam2Id().equals(teams.get(6).getId())
-                        && !m.getTeam1Id().equals(teams.get(7).getId()) && !m.getTeam2Id().equals(teams.get(7).getId()))
-                .toList();
-        assertThat(stillSamePairs).hasSize(3);
-
-        // Турнир продолжается по стандартной сетке до конца.
-        playThroughPlayoff(tournamentId);
-        Tournament tournament = tournamentRepository.findById(tournamentId).orElseThrow();
-        assertThat(tournament.getEstado()).isEqualTo(TournamentStatus.FINALIZADO);
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════
-    // SETUP / HELPERS
-    // ═══════════════════════════════════════════════════════════════════════
 
     private Long createTournament(int teamCount) {
         String suffix = "LFPT465-" + teamCount + "-" + UUID.randomUUID();
@@ -225,21 +329,4 @@ class TeamPlayoffEarlyStageTest {
         playoffService.submitQualResult(m2.getId(), 6, 3);
     }
 
-    private void playThroughPlayoff(Long tournamentId) {
-        int guard = 0;
-        while (guard++ < 20) {
-            List<Long> inProgressIds = matchRepository.findByTournamentIdOrderByRoundIdAscMatchNumberAsc(tournamentId)
-                    .stream()
-                    .filter(AmericanoMatch::isInProgress)
-                    .filter(m -> m.getPlayoffStage() != null)
-                    .map(AmericanoMatch::getId)
-                    .toList();
-            if (inProgressIds.isEmpty()) {
-                break;
-            }
-            for (Long matchId : inProgressIds) {
-                playoffService.submitPlayoffResult(matchId, 6, 3);
-            }
-        }
-    }
 }

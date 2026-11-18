@@ -204,6 +204,14 @@
         track('tournament_registration_click', { tournament_id: id });
     }, true);
 
+    window.trackTournamentRegistrationFormOpened = function (tournamentId) {
+        const id = String(tournamentId);
+        trackClarity(id, 'form_opened');
+        if (/^[1-9][0-9]*$/.test(id) && analyticsAllowed()) {
+            track('tournament_registration_form_opened', { tournament_id: id });
+        }
+    };
+
     window.trackTournamentRegistrationStart = function (tournamentId) {
         trackClarity(tournamentId, 'submit_attempt');
         track('tournament_registration_start', {
