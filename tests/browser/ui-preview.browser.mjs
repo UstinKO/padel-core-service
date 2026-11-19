@@ -83,8 +83,35 @@ try {
     const promotedPage = await login(promoted, 'preview-player-2@example.test');
     await promotedPage.goto(origin + '/players/dashboard?lang=ru');
     const promotedCard = promotedPage.locator('.torneo-card[data-tournament-id="' + fixture.tournamentIds[2] + '"]');
+    await promotedCard.getByRole('button', {name: /Подтвердить участие|Confirmar participación|Confirm participation/}).waitFor();
+    let releaseOldRead, markReadReady, held = false, reads = 0, answers = 0;
+    const oldReadGate = new Promise(resolve => { releaseOldRead = resolve; });
+    const oldReadReady = new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('Не началось фоновое чтение статусов')), 10000);
+      markReadReady = () => { clearTimeout(timer); resolve(); };
+    });
+    await promotedPage.route('**/api/players/me/events', async route => {
+      reads++;
+      if (held) return route.continue();
+      held = true;
+      const response = await route.fetch();
+      markReadReady();
+      await oldReadGate;
+      await route.fulfill({response});
+    });
+    promotedPage.on('request', request => {
+      if (request.method() === 'POST' && new URL(request.url()).pathname.startsWith('/api/players/me/participation/')) answers++;
+    });
+    await promotedPage.evaluate(() => window.dispatchEvent(new Event('focus')));
+    await oldReadReady;
+    const answerSaved = promotedPage.waitForResponse(response => response.request().method() === 'POST'
+      && new URL(response.url()).pathname.startsWith('/api/players/me/participation/'));
     await promotedCard.getByRole('button', {name: /Подтвердить участие|Confirmar participación|Confirm participation/}).click();
+    require((await answerSaved).ok(), 'Подтверждение не сохранено');
+    releaseOldRead();
     await promotedCard.getByText(/Preview Player 2 · (Подтверждено|Confirmada|Confirmed)/).waitFor();
+    require(reads >= 2 && answers === 1, 'Запоздалое чтение не сверено с сервером либо ответ отправлен повторно');
+    await promotedPage.unroute('**/api/players/me/events');
     console.log('Привычные карточки: согласие на показ контактов, отмена пары в истории и подтверждение после продвижения из резерва проверены');
   }
   const admin = await context();

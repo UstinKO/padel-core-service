@@ -83,25 +83,32 @@
                 attention.textContent = text('attention', count);
             }
             async function load(force = false) {
-                if (loading || (busy && !force)) return;
-                loading = true;
-                retry.disabled = true;
-                try {
-                    const next = await read('/api/players/me/events');
-                    const changed = unavailable || JSON.stringify(next) !== JSON.stringify(overview);
-                    overview = next;
-                    unavailable = false;
-                    inform(notice);
-                    updateAttention();
-                    if (changed || force) onChange();
-                } catch (error) {
-                    unavailable = true;
-                    inform(error.message === 'session' ? 'session' : 'error');
-                    onChange();
-                } finally {
-                    loading = false;
-                    retry.disabled = false;
+                if (loading) {
+                    await loading;
+                    if (force) return load(true);
+                    return;
                 }
+                if (busy && !force) return;
+                retry.disabled = true;
+                loading = (async () => {
+                    try {
+                        const next = await read('/api/players/me/events');
+                        const changed = unavailable || JSON.stringify(next) !== JSON.stringify(overview);
+                        overview = next;
+                        unavailable = false;
+                        inform(notice);
+                        updateAttention();
+                        if (changed || force) onChange();
+                    } catch (error) {
+                        unavailable = true;
+                        inform(error.message === 'session' ? 'session' : 'error');
+                        onChange();
+                    } finally {
+                        loading = false;
+                        retry.disabled = false;
+                    }
+                })();
+                return loading;
             }
             async function mutate(entry, action, operation) {
                 if (busy || unavailable) return;
@@ -113,8 +120,9 @@
                 } catch (error) {
                     notice = error.message === 'session' ? 'session' : 'uncertain';
                 } finally {
-                    busy = false;
                     await load(true);
+                    busy = false;
+                    onChange();
                     const selector = '[data-tournament-id="' + entry.event.id + '"] [data-event-action="' + action + '"]';
                     const target = document.querySelector('#dashboardTorneosGrid ' + selector)
                         || document.querySelector('.dashboard-tabs .tab-btn.active');
