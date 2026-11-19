@@ -339,32 +339,20 @@
     text-decoration: underline;
 }
 
-.auth-entry-contact-help { display:block; margin:6px 4px 0; font-size:13px; line-height:1.4; color:#64748b; }
-
-
-.auth-entry-phone-row { display:grid; grid-template-columns:112px minmax(0,1fr); gap:8px; }
-.auth-entry-contact-help[hidden] { display:none; }
-.auth-entry-telegram summary { display:flex; align-items:center; min-height:44px; cursor:pointer; color:#9b3316; font-size:.85rem; font-weight:600; }
-.auth-entry-telegram summary::before { content:'+'; margin-inline-end:6px; }
-.auth-entry-telegram[open] summary::before { content:'−'; }
-.auth-entry-telegram .auth-entry-contact-help { display:none; }
-.auth-entry-telegram:focus-within .auth-entry-contact-help { display:block; }
-
-
-@media (max-width:480px) {
-    .auth-entry-register .auth-main-simple { padding:8px 0; }
-    .auth-entry-register .auth-card-title { font-size:1.4rem; }
-    .auth-entry-register .auth-card-header { margin-bottom:6px; }
-    .auth-entry-register .auth-entry-google { min-height:46px; padding:8px 12px; }
-    .auth-entry-register .auth-form { gap:6px; }
-    .auth-entry-register .auth-entry-switch a { min-height:32px; }
-    .auth-entry-register .footer { padding:8px 0 !important; }
+.auth-entry-phone-row { display:grid; grid-template-columns:84px minmax(0,1fr); gap:8px; }
+.auth-entry-dial-code {
+    position:relative; display:flex; align-items:center; justify-content:space-between;
+    min-height:46px; padding:0 10px; border:2px solid var(--color-light-gray);
+    border-radius:var(--border-radius-md); background:var(--color-white); font-size:16px;
 }
-
+.auth-entry-dial-code i { font-size:11px; color:#4c5054; }
+.auth-entry-dial-code select { position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; font-size:16px; }
+.auth-entry-dial-code:focus-within { outline:2px solid #9b3316; outline-offset:2px; }
 .auth-entry-register .form-group { position:relative; }
-.auth-entry-register #telefonoHint,
-.auth-entry-register .auth-entry-telegram .auth-entry-contact-help {
+.auth-entry-contact-help[hidden] { display:none; }
+.auth-entry-register #telefonoHint {
     position:absolute; top:100%; inset-inline:0; z-index:3; margin:3px 0 0;
-    padding:6px 8px; background:#fff8f3; border:1px solid #f0d8c9;
-    border-radius:6px; box-shadow:0 3px 8px #0001; pointer-events:none;
+    padding:6px 8px; color:#64748b; font-size:13px; line-height:1.4;
+    background:#fff8f3; border:1px solid #f0d8c9; border-radius:6px;
+    box-shadow:0 3px 8px #0001; pointer-events:none;
 }

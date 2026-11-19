@@ -13,7 +13,7 @@ window.APP_MESSAGES = {
     "contact.validation.PHONE_REQUIRED": "Enter your phone number.",
     "contact.telegram.help": "Enter your username — @ is added automatically.",
     "contact.phone.help": "For example, {0}. You can also paste a number with a country code.",
-    "contact.field.country": "Phone country",
+    "contact.field.country": "Country code",
     'pair_exit.action': "Withdraw from the tournament",
     'pair_exit.choose': "What should happen to the pair booking?",
     'pair_exit.self': "Withdraw just myself",

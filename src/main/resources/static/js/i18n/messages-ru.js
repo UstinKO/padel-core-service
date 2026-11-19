@@ -13,7 +13,7 @@ window.APP_MESSAGES = {
     "contact.validation.PHONE_REQUIRED": "Введите телефон.",
     "contact.telegram.help": "Введите имя пользователя — @ добавится автоматически.",
     "contact.phone.help": "Например, {0}. Можно вставить номер с кодом страны.",
-    "contact.field.country": "Страна номера",
+    "contact.field.country": "Код страны",
     'pair_exit.action': "Отказаться от участия",
     'pair_exit.choose': "Что сделать с записью пары?",
     'pair_exit.self': "Выйти самому",

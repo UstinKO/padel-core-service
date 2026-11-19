@@ -16,6 +16,7 @@
     country.value = libphonenumber.isSupportedCountry(country.dataset.selected) ? country.dataset.selected : 'AR';
 
     function updateExample() {
+        document.getElementById('phoneCallingCode').textContent = '+' + libphonenumber.getCountryCallingCode(country.value);
         const hint = document.getElementById('telefonoHint');
         hint.textContent = t('signup.phone.example', ContactFields.example(country.value));
         hint.hidden = document.activeElement !== phone || phone.getAttribute('aria-invalid') === 'true';
@@ -35,7 +36,6 @@
             telegram.value = result.value;
             telegram.setSelectionRange(cursor + 1, cursor + 1);
         }
-        if (result.error) document.getElementById('signupTelegram').open = true;
         fieldError(telegram, result.error ? t('contact.validation.' + result.error) : '');
         return result;
     }
