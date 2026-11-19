@@ -434,7 +434,7 @@ class MarketingIntegrationTest {
     private PlayerPadel player() {
         return players.saveAndFlush(PlayerPadel.builder().nombre("Игрок").apellido("Тест")
                 .email(UUID.randomUUID() + "@example.test").passwordHash("test-hash").activo(true)
-                .emailConfirmado(true).preferredLocale("es").nivelJugador(Nivel.C9)
+                .emailConfirmado(true).preferredLocale("es").nivelJugador(Nivel.C9).telefono("+5491123456789")
                 .telegramUsername("test" + UUID.randomUUID().toString().replace("-", "").substring(0, 10)).build());
     }
 
