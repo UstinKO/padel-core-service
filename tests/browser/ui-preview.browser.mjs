@@ -53,11 +53,12 @@ try {
     await playerPage.waitForURL(url => url.pathname === '/players/dashboard');
     await playerPage.locator('#tabMisTorneos').waitFor();
     require(await playerPage.locator('#root').count() === 0, 'Текущий кабинет заменён React-экраном');
-    await playerPage.locator('a[href="/preview/players/events"]').click();
-    const cabinet = await playerPage.goto(origin + '/preview/players/events');
+    require(await playerPage.locator('#dashboardEventActions').count() === 1, 'Действия не встроены в кабинет');
+    const cabinet = await playerPage.goto(origin + '/players/dashboard?lang=ru');
     require(cabinet.status() === 200, 'Кабинет React недоступен синтетическому игроку');
-    await playerPage.getByRole('heading', {name: /Заявки на мероприятия|Inscripciones a eventos|Event registrations/}).waitFor();
-    const searchCard = playerPage.locator('article').filter({has: playerPage.getByRole('heading', {name: 'Preview 3', exact: true})});
+    await playerPage.locator('#dashboardEventActions').waitFor({state: 'attached'});
+    const searchCard = playerPage.locator('.torneo-card[data-tournament-id="' + fixture.tournamentIds[3] + '"]');
+    await searchCard.locator('[data-registration-status]').waitFor();
     const consent = searchCard.getByRole('button', {name: /Показывать мои контакты|Compartir mis datos|Share my contacts/});
     await consent.click();
     await searchCard.getByRole('button', {name: /Показывать мои контакты|Compartir mis datos|Share my contacts/, pressed: true}).waitFor();
@@ -65,11 +66,12 @@ try {
     await searchCard.getByRole('button', {name: /Показывать мои контакты|Compartir mis datos|Share my contacts/, pressed: true}).click();
     await searchCard.getByRole('button', {name: /Показывать мои контакты|Compartir mis datos|Share my contacts/, pressed: false}).waitFor();
 
-    const pairCard = playerPage.locator('article').filter({has: playerPage.getByRole('heading', {name: 'Preview 2', exact: true})});
+    const pairCard = playerPage.locator('.torneo-card[data-tournament-id="' + fixture.tournamentIds[2] + '"]');
     await pairCard.getByRole('button', {name: /Отменить запись пары|Dar de baja a la pareja|Cancel the pair/}).click();
-    await playerPage.getByRole('dialog').getByRole('button', {name: /^(Подтвердить|Confirmar|Confirm)$/}).click();
+    await playerPage.getByRole('dialog').locator('.btn-primary').click();
+    await playerPage.getByRole('dialog').locator('.btn-primary').click();
     await pairCard.waitFor({state: 'hidden'});
-    await playerPage.getByRole('button', {name: /История|Historial|History/}).click();
+    await playerPage.locator('#tabHistorial').click();
     await pairCard.getByText(/Пара снялась|Se retiró la pareja|Pair withdrew/).waitFor();
     const playerEvents = await player.request.get(origin + '/api/players/me/events');
     const overview = await playerEvents.json();
@@ -79,11 +81,38 @@ try {
 
     const promoted = await context();
     const promotedPage = await login(promoted, 'preview-player-2@example.test');
-    await promotedPage.goto(origin + '/preview/players/events');
-    const promotedCard = promotedPage.locator('article').filter({has: promotedPage.getByRole('heading', {name: 'Preview 2', exact: true})});
+    await promotedPage.goto(origin + '/players/dashboard?lang=ru');
+    const promotedCard = promotedPage.locator('.torneo-card[data-tournament-id="' + fixture.tournamentIds[2] + '"]');
+    await promotedCard.getByRole('button', {name: /Подтвердить участие|Confirmar participación|Confirm participation/}).waitFor();
+    let releaseOldRead, markReadReady, held = false, reads = 0, answers = 0;
+    const oldReadGate = new Promise(resolve => { releaseOldRead = resolve; });
+    const oldReadReady = new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('Не началось фоновое чтение статусов')), 10000);
+      markReadReady = () => { clearTimeout(timer); resolve(); };
+    });
+    await promotedPage.route('**/api/players/me/events', async route => {
+      reads++;
+      if (held) return route.continue();
+      held = true;
+      const response = await route.fetch();
+      markReadReady();
+      await oldReadGate;
+      await route.fulfill({response});
+    });
+    promotedPage.on('request', request => {
+      if (request.method() === 'POST' && new URL(request.url()).pathname.startsWith('/api/players/me/participation/')) answers++;
+    });
+    await promotedPage.evaluate(() => window.dispatchEvent(new Event('focus')));
+    await oldReadReady;
+    const answerSaved = promotedPage.waitForResponse(response => response.request().method() === 'POST'
+      && new URL(response.url()).pathname.startsWith('/api/players/me/participation/'));
     await promotedCard.getByRole('button', {name: /Подтвердить участие|Confirmar participación|Confirm participation/}).click();
+    require((await answerSaved).ok(), 'Подтверждение не сохранено');
+    releaseOldRead();
     await promotedCard.getByText(/Preview Player 2 · (Подтверждено|Confirmada|Confirmed)/).waitFor();
-    console.log('Кабинет React: согласие на показ контактов, отмена пары в истории и подтверждение после продвижения из резерва проверены');
+    require(reads >= 2 && answers === 1, 'Запоздалое чтение не сверено с сервером либо ответ отправлен повторно');
+    await promotedPage.unroute('**/api/players/me/events');
+    console.log('Привычные карточки: согласие на показ контактов, отмена пары в истории и подтверждение после продвижения из резерва проверены');
   }
   const admin = await context();
   const page = await login(admin, 'preview-admin@example.test');

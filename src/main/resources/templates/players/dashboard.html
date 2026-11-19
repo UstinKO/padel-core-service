@@ -25,6 +25,7 @@
     <link rel="stylesheet" th:href="@{/css/dashboard.css}">
     <link th:if="${previewElo != null}" rel="stylesheet" th:href="@{/css/elo-preview.css}">
     <link rel="stylesheet" th:href="@{/css/participation.css}">
+    <link th:if="${#arrays.contains(@environment.activeProfiles, 'preview')}" rel="stylesheet" th:href="@{/css/dashboard-event-actions.css}">
     <link rel="stylesheet" th:href="@{/css/tournament-details.css}">
     <style>
         @media (max-width: 768px) {
@@ -173,10 +174,6 @@
         <div id="pairReplacementNotices" aria-live="polite"></div>
 
         <!-- Mis torneos / Todos / Historial -->
-        <p th:if="${#arrays.contains(@environment.activeProfiles, 'preview')}">
-            <a class="btn btn-outline" th:href="@{/preview/players/events}"
-               th:text="#{dashboard.registration_actions}">Управление заявками</a>
-        </p>
         <div class="dashboard-card">
             <div class="card-header">
                 <div class="dashboard-tabs">
@@ -280,8 +277,16 @@
                 <span th:text="#{dashboard.results.showing}">Mostrando</span> <span id="visibleCount">0</span> <span th:text="#{dashboard.results.of}">de</span> <span id="totalCount">0</span> <span th:text="#{dashboard.results.tournaments}">torneos</span>
             </div>
 
+            <div th:if="${#arrays.contains(@environment.activeProfiles, 'preview')}"
+                 id="dashboardEventActions" class="dashboard-event-feedback">
+                <p data-event-feedback role="status" aria-live="polite"></p>
+                <button type="button" data-event-attention class="btn btn-outline" hidden></button>
+                <button type="button" data-event-retry class="btn btn-outline" hidden></button>
+                <a data-event-login hidden th:href="@{/login(destination='/players/dashboard')}"
+                   th:text="#{login.heading}">Iniciar sesión</a>
+            </div>
             <!-- Grid турниров -->
-            <section id="participationRequests" class="participation" hidden aria-labelledby="participationTitle"
+            <section th:unless="${#arrays.contains(@environment.activeProfiles, 'preview')}" id="participationRequests" class="participation" hidden aria-labelledby="participationTitle"
                      th:data-login="@{/login(destination='/players/dashboard')}"
                      th:data-source="@{/api/players/me/participation}"
                      th:data-pending="#{participation.status.PENDING}"
@@ -633,6 +638,7 @@
 <script th:src="@{/js/main.js}"></script>
 <script th:src="@{/js/pair-terms.js}"></script>
 <script th:src="@{/js/pair-registration-response.js}"></script>
+<script th:if="${#arrays.contains(@environment.activeProfiles, 'preview')}" th:src="@{/js/dashboard-event-actions.js}"></script>
 <script th:src="@{/js/dashboard.js}"></script>
 <script th:if="${previewEloByPlayer != null}" th:src="@{/js/elo-preview-evolution.js}" defer></script>
 <script th:src="@{/js/participation.js}" defer></script>

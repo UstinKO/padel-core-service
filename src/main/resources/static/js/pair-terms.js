@@ -126,7 +126,7 @@
         });
     }
 
-    function openReplacementForm(id, { title, lines, success, submit }) {
+    function openReplacementForm(id, { title, lines, success, submit, confirmLabel }) {
         return new Promise(resolve => {
             const modal = document.createElement('dialog');
             modal.style.cssText = 'width:min(30rem,90vw);max-height:90vh;padding:1.5rem;border:0;border-radius:12px;';
@@ -143,7 +143,7 @@
             selectedView.hidden = true;
             const error = paragraph('');
             error.setAttribute('role', 'alert');
-            const confirm = button(replacementCopy('confirm'), 'btn btn-primary');
+            const confirm = button(confirmLabel || replacementCopy('confirm'), 'btn btn-primary');
             confirm.type = 'submit';
             const back = button(t('pair_terms.back'));
             const controls = document.createElement('div');
@@ -238,7 +238,11 @@
                 confirm.disabled = back.disabled = change.disabled = fields.disabled = true;
                 error.textContent = '';
                 try {
-                    await submit(replacement);
+                    if (await submit(replacement) === false) {
+                        confirm.disabled = back.disabled = change.disabled = fields.disabled = false;
+                        confirm.focus();
+                        return;
+                    }
                     modal.close('replaced');
                     await dialog(title, [success]);
                     resolve(true);
@@ -258,12 +262,14 @@
         });
     }
 
-    async function bindPartnerReplacement(control, tournamentId, showMissingPartner = false) {
+    async function bindPartnerReplacement(control, tournamentId, showMissingPartner = false, includePendingPartner = false, registrationReader) {
         const id = Number(tournamentId);
         try {
-            const response = await fetch('/players/tournaments/' + id + '/my-registration', { cache: 'no-store' });
-            if (!response.ok) return;
-            const registration = await response.json();
+            const registration = registrationReader ? await registrationReader() : await (async () => {
+                const response = await fetch('/players/tournaments/' + id + '/my-registration', { cache: 'no-store' });
+                if (!response.ok) throw new Error();
+                return response.json();
+            })();
             const base = '/api/tournaments/double/' + id + '/';
             let form;
             if (registration.canReplacePartner && registration.partnerId) {
@@ -291,6 +297,22 @@
                 const status = paragraph(exitCopy('missing') + ' ' + retained);
                 status.className = 'tournament-modalidad';
                 control.closest('.torneo-card-body')?.querySelector('.torneo-info')?.before(status);
+            }
+            if (!form && includePendingPartner && (['SOLO_ADD_LATER', 'SOLO_SEARCH'].includes(registration.status)
+                    || registration.status === 'WAITLIST' && registration.isDoubleRegistration === false && !registration.partnerId)) {
+                form = {
+                    title: t('dashboard.actions.addPartner'),
+                    confirmLabel: t('dashboard.actions.addPartner'),
+                    lines: [replacementCopy('help')],
+                    success: t('dashboard.actions.partnerAdded'),
+                    async submit(partner) {
+                        const name = [partner.nombre, partner.apellido].filter(Boolean).join(' ');
+                        const acceptance = await window.PairTerms.reviewBooking(id, name);
+                        if (acceptance === null) return false;
+                        const result = await postJson(base + 'add-partner', { ...partner, ...acceptance });
+                        if (!result.ok || !(await result.json()).success) throw new Error();
+                    }
+                };
             }
             if (!form) return;
             control.textContent = form.title;
