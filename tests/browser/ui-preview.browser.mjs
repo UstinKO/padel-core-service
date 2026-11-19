@@ -56,7 +56,7 @@ try {
     require(await playerPage.locator('#dashboardEventActions').count() === 1, 'Действия не встроены в кабинет');
     const cabinet = await playerPage.goto(origin + '/players/dashboard?lang=ru');
     require(cabinet.status() === 200, 'Кабинет React недоступен синтетическому игроку');
-    await playerPage.locator('#dashboardEventActions').waitFor();
+    await playerPage.locator('#dashboardEventActions').waitFor({state: 'attached'});
     const searchCard = playerPage.locator('.torneo-card[data-tournament-id="' + fixture.tournamentIds[3] + '"]');
     await searchCard.locator('[data-registration-status]').waitFor();
     const consent = searchCard.getByRole('button', {name: /Показывать мои контакты|Compartir mis datos|Share my contacts/});
