@@ -46,6 +46,9 @@ public class RegistroRequestDto {
     @Pattern(regexp = "^$|^[+]?[0-9\\s-]{8,20}$", message = "Formato de teléfono inválido")
     private String telefono;
 
+    @Size(max = 2)
+    private String phoneCountry = "AR";
+
     @Size(max = 33, message = "El usuario de Telegram no puede tener más de 33 caracteres")
     @Pattern(regexp = "^$|^@?[A-Za-z][A-Za-z0-9_]{4,31}$", message = "Formato de usuario de Telegram inválido")
     private String telegramUsername;
