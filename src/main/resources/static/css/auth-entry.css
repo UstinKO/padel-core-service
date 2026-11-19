@@ -338,3 +338,6 @@
     color: #9b3316;
     text-decoration: underline;
 }
+
+.auth-entry-contact-help { display:block; margin:6px 4px 0; font-size:13px; line-height:1.4; color:#64748b; }
+.auth-entry-context { margin:0 0 16px; font-size:14px; line-height:1.5; color:#64748b; }

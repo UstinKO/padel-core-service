@@ -37,3 +37,10 @@ test('country examples follow selection', () => {
     assert.equal(fields.example('AR'),'011 15-2345-6789');
     assert.equal(fields.example('RU'),'8 (912) 345-67-89');
 });
+
+test('country list has translated calling codes in all supported languages', () => {
+    for (const [locale,name] of [['ru','Аргентина'],['es','Argentina'],['en','Argentina']]) {
+        const ar = fields.countries(locale).find(country => country.code === 'AR');
+        assert.equal(ar.label, name + ' (+54)');
+    }
+});

@@ -22,5 +22,11 @@ const ContactFields = (() => {
         return libphonenumber.getExampleNumber(country, window.ContactPhoneExamples)?.formatNational()
             || '+' + libphonenumber.getCountryCallingCode(country);
     }
-    return { phone, telegram, example };
+    function countries(locale) {
+        const names = typeof Intl.DisplayNames === 'function' ? new Intl.DisplayNames([locale], {type:'region'}) : null;
+        return libphonenumber.getCountries().map(code => ({code, name:names?.of(code) || code}))
+            .sort((a,b) => a.name.localeCompare(b.name, locale))
+            .map(({code,name}) => ({code, label:`${name} (+${libphonenumber.getCountryCallingCode(code)})`}));
+    }
+    return { phone, telegram, example, countries };
 })();

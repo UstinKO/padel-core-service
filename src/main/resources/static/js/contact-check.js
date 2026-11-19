@@ -38,11 +38,8 @@ const ContactCheck = (() => {
                 </form>
               </section>
             </div>`);
-        const locale = document.documentElement.lang || 'es';
-        const names = typeof Intl.DisplayNames === 'function' ? new Intl.DisplayNames([locale], {type:'region'}) : null;
-        const countries = libphonenumber.getCountries().map(code => ({code, name:names?.of(code) || code}));
-        countries.sort((a,b) => a.name.localeCompare(b.name, locale));
-        countries.forEach(({code,name}) => el('ccCountry').add(new Option(`${name} (+${libphonenumber.getCountryCallingCode(code)})`, code)));
+        ContactFields.countries(document.documentElement.lang || 'es')
+            .forEach(({code,label}) => el('ccCountry').add(new Option(label, code)));
         el('ccCountry').value = 'AR';
         el('ccCountry').addEventListener('change', () => { updateExample(); validatePhone(); });
         el('ccPhone').addEventListener('input', validatePhone);
