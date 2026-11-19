@@ -21,6 +21,7 @@ public class PlayerContactService {
     private static final Pattern TELEGRAM = Pattern.compile("@[A-Za-z][A-Za-z0-9_]{4,31}");
     private final PlayerRepository players;
     private final PlayerService playerService;
+    private final PlayerPhoneGuard phoneGuard;
 
     public record Contact(String telefono, String telegramUsername) {}
 
@@ -74,6 +75,7 @@ public class PlayerContactService {
                 && playerService.existsByTelegramUsername(contact.telegramUsername())) {
             throw invalid("TELEGRAM_IN_USE", "telegramUsername");
         }
+        phoneGuard.requireAvailable(contact.telefono(), playerId);
         player.setTelefono(contact.telefono());
         player.setTelegramUsername(contact.telegramUsername().isEmpty() ? null : contact.telegramUsername());
         playerService.save(player);

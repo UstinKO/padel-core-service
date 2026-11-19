@@ -39,7 +39,7 @@ class PlayerContactServiceTest {
     void noMutationOnInvalidOrDuplicateTelegram() {
         var players = mock(PlayerRepository.class);
         var service = mock(PlayerService.class);
-        var contacts = new PlayerContactService(players, service);
+        var contacts = new PlayerContactService(players, service, mock(PlayerPhoneGuard.class));
         var player = PlayerPadel.builder().id(42L).telefono("original").telegramUsername("@old_user").build();
         when(players.findById(42L)).thenReturn(Optional.of(player));
         when(service.existsByTelegramUsername("@taken_user")).thenReturn(true);
