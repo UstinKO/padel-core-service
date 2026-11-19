@@ -1,6 +1,12 @@
 package com.padle.core.padelcoreservice.controller;
 
 import com.padle.core.padelcoreservice.config.RecaptchaProperties;
+import com.padle.core.padelcoreservice.exception.ContactValidationException;
+import com.padle.core.padelcoreservice.model.enums.Nivel;
+import com.padle.core.padelcoreservice.security.TournamentLogin;
+import com.padle.core.padelcoreservice.service.PlayerContactService;
+import jakarta.validation.Validator;
+import org.springframework.validation.beanvalidation.SpringValidatorAdapter;
 import com.padle.core.padelcoreservice.exception.ClaimPhoneInUseException;
 import com.padle.core.padelcoreservice.dto.PlayerResponseDto;
 import com.padle.core.padelcoreservice.dto.RegistroRequestDto;
@@ -43,9 +49,15 @@ public class PlayerPadelController {
     private final RecaptchaProperties recaptchaProperties;
     private final RateLimitFilter rateLimitFilter;
     private final MessageSource messages;
+    private final Validator validator;
 
     @GetMapping("/registro")
-    public String mostrarFormularioRegistro(Model model) {
+    public String mostrarFormularioRegistro(Model model, HttpServletRequest request) {
+        TournamentLogin.requestedTournament(request).ifPresent(id -> model.addAttribute(TournamentLogin.PARAMETER, id));
+        return registrationForm(model);
+    }
+
+    private String registrationForm(Model model) {
         if (!model.containsAttribute("registroRequest")) {
             model.addAttribute("registroRequest", new RegistroRequestDto());
         }
@@ -56,14 +68,14 @@ public class PlayerPadelController {
 
     @PostMapping("/registro")
     public String registrarJugador(
-            @Valid @ModelAttribute("registroRequest") RegistroRequestDto request,
+            @ModelAttribute("registroRequest") RegistroRequestDto request,
             BindingResult result,
             @RequestParam(value = "g-recaptcha-response", required = false) String recaptchaToken,
             Model model,
             @RequestParam(value = "website", required = false) String honeypot,
             HttpServletRequest httpRequest) {
 
-        log.info("Recibida solicitud de registro para: {}", request.getEmail());
+        TournamentLogin.requestedTournament(httpRequest).ifPresent(id -> model.addAttribute(TournamentLogin.PARAMETER, id));
         String ip = rateLimitFilter.extractIp(httpRequest);
 
         // HONEYPOT ПРОВЕРКА ПЕРВЫМ ДЕЛОМ
@@ -84,22 +96,19 @@ public class PlayerPadelController {
         if (request.getNombre() != null) request.setNombre(request.getNombre().trim());
         if (request.getApellido() != null) request.setApellido(request.getApellido().trim());
         if (request.getEmail() != null) request.setEmail(request.getEmail().trim());
-        if (request.getTelefono() != null && request.getTelefono().trim().isEmpty()) {
-            request.setTelefono(null);
+        try {
+            var contact = PlayerContactService.normalize(request.getTelefono(), request.getPhoneCountry(), request.getTelegramUsername());
+            request.setTelefono(contact.telefono());
+            request.setTelegramUsername(contact.telegramUsername().isEmpty() ? null : contact.telegramUsername());
+        } catch (ContactValidationException e) {
+            String key = e.code().equals("PHONE_REQUIRED") ? "registro.web.phone.required" : "contact.validation." + e.code();
+            result.rejectValue(e.field(), key);
+            return registrationError(model, request, registrationMessage(key));
         }
-        if (request.getTelegramUsername() != null) {
-            String telegram = request.getTelegramUsername().trim();
-            if (telegram.isEmpty()) {
-                request.setTelegramUsername(null);
-            } else {
-                request.setTelegramUsername(telegram.startsWith("@") ? telegram : "@" + telegram);
-            }
+        if (request.getNivelJugador() == null || request.getNivelJugador() == Nivel.SIN_ESPECIFICAR) {
+            result.rejectValue("nivelJugador", "registro.web.level.required");
         }
-
-        if (request.getTelefono() == null || request.getTelefono().isBlank()) {
-            result.rejectValue("telefono", "registro.web.phone.required");
-            return registrationError(model, request, registrationMessage("registro.web.phone.required"));
-        }
+        new SpringValidatorAdapter(validator).validate(request, result);
         if (!request.passwordsMatch()) {
             result.rejectValue("confirmPassword", "registro.web.password.mismatch");
         }
@@ -142,8 +151,8 @@ public class PlayerPadelController {
                 log.error("❌ No se pudo autenticar automáticamente: {}", e.getMessage());
             }
 
-            // 3. Редирект на главную
-            return "redirect:/?welcome=true";
+            return "redirect:" + TournamentLogin.requestedTournament(httpRequest)
+                    .map(TournamentLogin::registrationUrl).orElse("/?welcome=true");
 
         } catch (ClaimPhoneInUseException e) {
             e.whatsappUrl().ifPresent(url -> model.addAttribute("guestClaimWhatsappUrl", url));
@@ -160,7 +169,7 @@ public class PlayerPadelController {
         request.setConfirmPassword(null);
         request.setRecaptchaToken(null);
         model.addAttribute("errorMessage", message);
-        return mostrarFormularioRegistro(model);
+        return registrationForm(model);
     }
 
     private String registrationMessage(String key) {
