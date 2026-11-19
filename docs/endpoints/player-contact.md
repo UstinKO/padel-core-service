@@ -1,7 +1,7 @@
 # API: Контактные данные игрока — `/api/players/me/...`
 
 **Контроллер:** `PlayerContactController`  
-**Назначение:** Проверка и обновление контактных данных (телефон WhatsApp +54, Telegram username). Контактные данные обязательны для регистрации на турнир.
+**Назначение:** Проверка и обновление контактных данных (обязательный телефон, необязательный Telegram username). Контактные данные обязательны для регистрации на турнир.
 
 ---
 
@@ -10,97 +10,17 @@
 **Кто вызывает:** JavaScript модального окна "Добавить контакт" — появляется когда игрок пытается зарегистрироваться на турнир без контакта; клиент 1Padel.App (LFPT-0660) — та же форма внутри экрана индивидуальной записи.  
 **Аутентификация:** `ROLE_PLAYER`.
 
-### Алгоритм
+### Контракт и правила
 
-1. Проверяет аутентификацию.
-2. Извлекает `PlayerPadel` из principal (поддерживает `PlayerPadel`, `CustomOAuth2User`, `UserDetails`).
-3. Валидирует: хотя бы одно поле (`telefono` или `telegramUsername`) непустое.
-4. Телефон: должен начинаться с `+54` (аргентинский формат).
-5. Telegram: автоматически добавляет `@` если не указан.
-6. Сохраняет через `PlayerService.save()`.
+Телефон обязателен. Telegram необязателен и не заменяет телефон. `GET /me/contact-status` читает свежие данные игрока и возвращает `hasContact=true` только при заполненном телефоне. Исторические телефоны не перепроверяются массово.
 
-### Контракт
+`PATCH /me/contact` принимает `telefono`, необязательный ISO-код `phoneCountry` (по умолчанию `AR`), необязательный `telegramUsername`. Международный номер с `+` имеет собственный код страны. Пробелы, дефисы, точки и скобки допускаются. Libphonenumber проверяет возможную длину для страны, расширения не поддерживаются, сохранение — E.164. Это проверка формата, не владения номером или наличия WhatsApp.
 
-**Request body** `application/json`:
-```json
-{
-  "telefono": "+54911234567 (опционально, должен начинаться с +54)",
-  "telegramUsername": "miusuario (опционально, @ добавляется авт.)"
-}
-```
+Telegram допускает отсутствие `@`, сервер добавляет его. Пустой Telegram очищает необязательное поле. Имя — 5–32 латинских буквы, цифры или `_`, первая буква. Проверка всех полей и уникальности Telegram происходит до изменения сущности, сохранение выполняется транзакционно через существующую защиту дублей телефонов.
 
-**Response 200 OK**:
-```json
-{
-  "success": true,
-  "message": "Datos de contacto guardados",
-  "telefono": "+54911234567",
-  "telegramUsername": "@miusuario"
-}
-```
+Успех содержит `success`, `message`, нормализованные `telefono`, `telegramUsername`. Ошибки содержат `success=false`, локализованное `message`, `code`, `field`. Коды `PHONE_REQUIRED`, `PHONE_INVALID`, `PHONE_COUNTRY_INVALID`, `PHONE_TOO_SHORT`, `PHONE_TOO_LONG`, `TELEGRAM_INVALID`, `TELEGRAM_IN_USE` возвращаются с HTTP 400. `PHONE_IN_USE` и `CONTACT_IN_USE` — HTTP 409. Без входа — HTTP 401 `SIGN_IN_REQUIRED`. Контактные значения не логируются.
 
-**Response 400 Bad Request**:
-```json
-{
-  "success": false,
-  "message": "Debes ingresar al menos un dato de contacto"
-}
-```
-
-```json
-{
-  "success": false,
-  "message": "El número de WhatsApp debe comenzar con +54 (Argentina)"
-}
-```
-
-**Response 401 Unauthorized**:
-```json
-{
-  "success": false,
-  "message": "No autenticado" | "Usuario no encontrado"
-}
-```
-
-### Замечания (ревью)
-
-> **[закрыто, сверено с кодом 2026-10-16]** Сохранение и проверки уникальности — через `PlayerService`.
-
-> **[закрыто, сверено с кодом 2026-10-16]** Дубля в `PlayerDashboardController` больше нет — единственный эндпоинт `/api/players/me/contact`.
-
----
-
-## GET `/api/players/me/contact-status`
-
-**Кто вызывает:** JavaScript перед показом кнопки "Регистрация" на карточке турнира — определяет, нужно ли показывать модалку добавления контакта; клиент 1Padel.App (LFPT-0660) — та же проверка перед индивидуальной записью внутри приложения.  
-**Аутентификация:** `ROLE_PLAYER`.
-
-### Алгоритм
-
-1. Извлекает игрока из principal.
-2. Вызывает `player.hasValidContact()` — телефон `+54` ИЛИ непустой Telegram.
-3. Возвращает детализированный статус.
-
-### Контракт
-
-**Response 200 OK**:
-```json
-{
-  "hasContact":       true | false,
-  "hasPhone":         true | false,
-  "hasTelegram":      true | false,
-  "telefono":         "+54911234567" | "",
-  "telegramUsername": "@miusuario" | ""
-}
-```
-
-**Response 401**: `{"hasContact": false}`
-
-### Замечания (ревью)
-
-> **[MINOR]** В контроллере есть `log.info()` с форматом `ДОБАВЬ ЛОГИРОВАНИЕ` в теле комментария — это артефакт разработки. Уровень логирования для health-check статус-запроса должен быть `DEBUG`, не `INFO` (иначе загрязняет лог при активном polling'е с фронтенда).
-
-> **[закрыто, сверено с кодом 2026-10-16]** Дубль `contact-status` удалён.
+Клиенты, отправляющие международный номер без `phoneCountry`, сохраняют совместимость. Отсутствие обоих полей и Telegram без телефона больше не допускаются.
 
 ---
 

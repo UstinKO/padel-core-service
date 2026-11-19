@@ -161,12 +161,10 @@ public class PlayerPadel implements UserDetails {
 
     /**
      * Проверяет достаточно ли контактных данных для регистрации на турнир.
-     * Нужен любой телефон ИЛИ Telegram ник.
+     * Телефон обязателен, Telegram не заменяет его.
      */
     public boolean hasValidContact() {
-        boolean hasPhone = telefono != null && !telefono.isBlank();
-        boolean hasTelegram = telegramUsername != null && !telegramUsername.isBlank();
-        return hasPhone || hasTelegram;
+        return telefono != null && !telefono.isBlank();
     }
 
     private static final String GUEST_EMAIL_SUFFIX = "@1padel.guest";
