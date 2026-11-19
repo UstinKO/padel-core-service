@@ -539,6 +539,15 @@ simpMessagingTemplate.convertAndSend(
 
 ## 9. Docker и инфраструктура
 
+Актуальная инвентаризация production на 19.11.2026, ресурсный расчёт и ограничения приведены
+в [реестре Swarm](swarm/README.md), целевая схема — в [ADR-0001](swarm/adr/0001-single-vm.md).
+Владелец согласовал полный стек Swarm на одной ВМ с двумя app tasks. Сейчас проверены
+Compose и одна JVM. Допуск production требует проверки памяти и репетиции #1217.
+Текущие 3911 MiB RAM ниже предварительного бюджета 4480 MiB для двух JVM и инфраструктуры.
+Владелец выбрал планировать минимум 6 GiB RAM для стенда, изменение ВМ согласуется
+отдельно. Приняты цели стенда 15 min первичного окна, 5 min возврата приложения,
+30 min restore БД и аварийный RPO ≤24 h с обязательной проверкой.
+
 ### Сервисы docker-compose
 
 | Сервис | Image | Порт (host) | Описание |
@@ -549,7 +558,10 @@ simpMessagingTemplate.convertAndSend(
 | `prometheus` | `prom/prometheus:2.53.0` | `9090` | Сбор метрик |
 | `grafana` | `grafana/grafana:11.0.0` | `3000` | Визуализация |
 
-Все сервисы в одной Docker-сети `padel-network` (bridge). В prod все порты привязаны к `127.0.0.1` — снаружи доступен только Nginx на 443.
+В репозитории сервисы подключены к `padel-network` (bridge), порты Compose опубликованы без
+ограничения интерфейса. Read-only проверка production 19.11.2026 подтвердила loopback
+для портов приложения, PostgreSQL и мониторинга. Nginx работает на хосте на 80/443.
+Его TLS, real-IP и интеграция CrowdSec/UFW переносятся и проверяются по #1208.
 
 ### Зависимости запуска
 
@@ -574,20 +586,11 @@ prometheus
 
 ### Конфигурация Prometheus scrape
 
-```yaml
-# prometheus.yml
-scrape_configs:
-  - job_name: 'padel-core-service'
-    static_configs:
-      - targets: ['padel-app:8080']
-    metrics_path: '/actuator/prometheus'
-    scrape_interval: 15s
-
-  - job_name: 'crowdsec'
-    static_configs:
-      - targets: ['172.17.0.1:6060']   # host network для CrowdSec
-    metrics_path: '/metrics'
-```
+Текущий `prometheus.yml` опрашивает `padel-app:8080` по `/actuator/prometheus` каждые
+10 секунд. Для двух реплик #1216 вводит discovery каждой task и service/task/node/revision
+labels. Один балансируемый адрес не доказывает наличие метрик обоих процессов.
+Базовые probes уже включены, effective production health, Docker healthcheck и завершение
+активных операций проверяются по #1216.
 
 ---
 

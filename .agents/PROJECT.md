@@ -6,6 +6,8 @@
 
 ## Project Overview
 
+**Swarm (LFPT-1040/LFPT-1207, 19.11.2026)** — одна ВМ, полный стек в Swarm, две реплики padel-app. Сейчас read-only проверка подтверждает Compose и одну JVM, 2 vCPU/3911 MiB RAM. Предварительный бюджет с системным резервом — 4480 MiB для двух JVM, 5376 MiB при start-first с третьей JVM. Владелец выбрал плановые ≥6 GiB RAM для стенда, изменение ВМ согласуется отдельно. Приняты цели стенда 15 min первичного окна, 5 min возврата приложения, 30 min restore и аварийный RPO ≤24 h при исправном ежедневном backup с обязательной проверкой. Nginx переносится в Swarm. Redis для сессий/квот и RabbitMQ STOMP предложены для стенда в ADR; координация cron определяется по job, готовый claim MarketingOutbox переиспользуется. [Реестр и порядок](../docs/swarm/README.md), [ADR](../docs/swarm/adr/0001-single-vm.md). До production обязательны #1209–#1217, окно согласуется в #1218. Maven #1051 сохраняет отдельную репетицию.
+
 **padel-core-service** — Spring Boot 4.x монолит для управления падель-турнирами. Действующий UI рендерится через Thymeleaf; UI v2 поэтапно переносится в React SPA из `frontend/`, не переключая production-маршруты без отдельной задачи. Целевой рынок — Аргентина (валюта ARS, валидация телефона +54).
 
 **Stack:** Java 17 (source) / Java 21 (Docker/CI), Spring Boot 4.1 (Spring 7, Security 7, Hibernate 7, Jackson 3), PostgreSQL 15, Liquibase, Spring Security (JWT + form login + Google OAuth2), Spring WebSocket (STOMP/SockJS), React 19 + TypeScript + Vite + pnpm (`frontend/`), TanStack Query, react-i18next, Micrometer + Prometheus + Grafana + Loki, Bucket4j, MapStruct, Lombok.
