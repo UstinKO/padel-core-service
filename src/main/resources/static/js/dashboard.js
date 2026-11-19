@@ -157,10 +157,21 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('🏆 Турниров загружено:', tournaments.length);
     console.log('📋 Мои турниры:', myTournamentIds.size, 'ID:', [...myTournamentIds]);
 
+    const cardActions = window.DashboardEventActions?.create(() => {
+        if (cardActions.ready) {
+            myTournamentIds.clear();
+            cardActions.ids().forEach(id => myTournamentIds.add(id));
+        }
+        updateTabCounts();
+        applyFiltersFunction();
+    });
+
     // === Вкладки ===
     let currentTab = 'mis'; // Дефолт: мои предстоящие
 
     function getTabBaseList() {
+        if (cardActions?.ready) return cardActions.list(currentTab, tournaments, historicalTournaments)
+            .filter(item => currentTab === 'historial' || !isTournamentStarted(item));
         switch (currentTab) {
             case 'mis':
                 return tournaments.filter(t => myTournamentIds.has(t.id) && !isTournamentStarted(t));
@@ -173,14 +184,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateTabCounts() {
-        const misList    = tournaments.filter(t => myTournamentIds.has(t.id) && !isTournamentStarted(t));
-        const todosList  = tournaments.filter(t => !isTournamentStarted(t) && !myTournamentIds.has(t.id));
+        const misList    = cardActions?.ready ? cardActions.list('mis', tournaments, historicalTournaments) : tournaments.filter(t => myTournamentIds.has(t.id) && !isTournamentStarted(t));
+        const todosList  = cardActions?.ready ? cardActions.list('todos', tournaments, historicalTournaments).filter(item => !isTournamentStarted(item)) : tournaments.filter(t => !isTournamentStarted(t) && !myTournamentIds.has(t.id));
         const countMis   = document.getElementById('countMis');
         const countTodos = document.getElementById('countTodos');
         const countHist  = document.getElementById('countHistorial');
         if (countMis)   countMis.textContent   = misList.length;
         if (countTodos) countTodos.textContent  = todosList.length;
-        if (countHist)  countHist.textContent   = historicalTournaments.length;
+        if (countHist)  countHist.textContent   = cardActions?.ready ? cardActions.list('historial', tournaments, historicalTournaments).length : historicalTournaments.length;
     }
 
     window.switchTab = function(tab) {
@@ -1264,7 +1275,7 @@ document.addEventListener('DOMContentLoaded', function() {
             registerBtn.addEventListener('click', handleRegistration);
         }
 
-        if (isMyTournament && tournament.tipo === 'AMERICANO_TEAMS' && !isTournamentStarted(tournament)) {
+        if (isMyTournament && currentTab !== 'historial' && tournament.tipo === 'AMERICANO_TEAMS' && !isTournamentStarted(tournament)) {
             const terms = document.createElement('button');
             terms.type = 'button';
             terms.className = 'btn btn-outline btn-small';
@@ -1284,7 +1295,7 @@ document.addEventListener('DOMContentLoaded', function() {
             replacement.className = 'btn btn-outline btn-small';
             replacement.style.display = 'none';
             card.querySelector('.btn-cancel')?.before(terms, replacement);
-            window.PairTerms.bindPartnerReplacement(replacement, tournament.id, true);
+            window.PairTerms.bindPartnerReplacement(replacement, tournament.id, true, Boolean(cardActions), cardActions?.registration(tournament));
         }
         const cancelBtn = card.querySelector('.btn-cancel');
         if (cancelBtn) {
@@ -1292,6 +1303,7 @@ document.addEventListener('DOMContentLoaded', function() {
             cancelBtn.addEventListener('click', handleCancellation);
         }
 
+        cardActions?.decorate(card, tournament, currentTab === 'historial');
         return card;
     }
 
@@ -1422,6 +1434,7 @@ document.addEventListener('DOMContentLoaded', function() {
     filteredTournaments = getTabBaseList();
     updateTabCounts();
     renderTournaments();
+    cardActions?.load();
 
     const pairToCancel = Number(new URLSearchParams(window.location.search).get('cancelPair'));
     const pairTournament = [...tournaments, ...historicalTournaments]
