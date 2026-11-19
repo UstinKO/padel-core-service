@@ -1,223 +1,189 @@
 const ContactCheck = (() => {
     'use strict';
-
-    let pendingCallback = null;
-    let pendingTournamentId = null;
-    let pendingTournamentName = null;
+    let pending = null;
+    let busy = false;
+    let previousFocus = null;
+    const el = id => document.getElementById(id);
+    const errorKey = code => 'contact.validation.' + code;
 
     function ensureModal() {
-        if (document.getElementById('contactCheckModal')) return;
-
-        const html = `
-        <div id="contactCheckModal"
-             style="display:none; position:fixed; inset:0; z-index:9999;
-                    background:rgba(0,0,0,.5); align-items:center; justify-content:center;">
-            <div style="background:#fff; border-radius:12px; padding:2rem;
-                        max-width:440px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,.25);">
-
-                <div style="display:flex; align-items:center; gap:.75rem; margin-bottom:1rem;">
-                    <i class="fas fa-address-book" style="font-size:1.4rem; color:#FF6B35;"></i>
-                    <h3 style="margin:0; font-size:1.1rem; color:#1e293b;">
-                        ${t('contact.modal.title')}
-                    </h3>
-                </div>
-
-                <p style="color:#64748b; font-size:.9rem; margin:0 0 1.25rem;">
-                    <span id="ccTournamentName"></span>
-                </p>
-
-                <div style="margin-bottom:1rem;">
-                    <label style="display:block; font-size:.85rem; font-weight:600;
-                                  color:#1e293b; margin-bottom:.35rem;">
-                        <i class="fab fa-whatsapp" style="color:#25D366;"></i>
-                        ${t('contact.field.whatsapp')}
-                    </label>
-                    <input id="ccPhone" type="tel"
-                           placeholder="+549 11 1234-5678"
-                           style="width:100%; padding:.6rem .75rem; border:1px solid #e2e8f0;
-                                  border-radius:8px; font-size:.95rem; box-sizing:border-box;">
-                    <span id="ccPhoneError"
-                          style="display:none; color:#ef4444; font-size:.78rem; margin-top:.25rem;">
-                        ${t('contact.error.phone')}
-                    </span>
-                </div>
-
-                <div style="margin-bottom:1.5rem;">
-                    <label style="display:block; font-size:.85rem; font-weight:600;
-                                  color:#1e293b; margin-bottom:.35rem;">
-                        <i class="fab fa-telegram" style="color:#2CA5E0;"></i>
-                        ${t('contact.field.telegram')}
-                    </label>
-                    <input id="ccTelegram" type="text"
-                           placeholder="@tu_usuario"
-                           style="width:100%; padding:.6rem .75rem; border:1px solid #e2e8f0;
-                                  border-radius:8px; font-size:.95rem; box-sizing:border-box;">
-                    <span id="ccTgError"
-                          style="display:none; color:#ef4444; font-size:.78rem; margin-top:.25rem;">
-                        ${t('contact.error.telegram')}
-                    </span>
-                </div>
-
-                <div id="ccGlobalError"
-                     style="display:none; background:#fee2e2; color:#991b1b;
-                            border-radius:8px; padding:.6rem .9rem; font-size:.85rem;
-                            margin-bottom:1rem;">
-                </div>
-
-                <div style="display:flex; gap:.75rem; justify-content:flex-end;">
-                    <button id="ccCancelBtn"
-                            style="padding:.55rem 1.1rem; border:1px solid #e2e8f0;
-                                   border-radius:8px; background:#fff; cursor:pointer;
-                                   font-size:.9rem; color:#64748b;">
-                        ${t('contact.btn.cancel')}
-                    </button>
-                    <button id="ccSaveBtn"
-                            style="padding:.55rem 1.25rem; border:none; border-radius:8px;
-                                   background:#FF6B35; color:#fff; cursor:pointer;
-                                   font-size:.9rem; font-weight:600; display:flex;
-                                   align-items:center; gap:.5rem;">
-                        <i class="fas fa-save"></i> ${t('contact.btn.save')}
-                    </button>
-                </div>
-            </div>
-        </div>`;
-
-        document.body.insertAdjacentHTML('beforeend', html);
-
-        document.getElementById('contactCheckModal').addEventListener('click', e => {
-            if (e.target === e.currentTarget) closeModal();
+        if (el('contactCheckModal')) return;
+        document.body.insertAdjacentHTML('beforeend', `
+            <div id="contactCheckModal" hidden>
+              <section class="cc-dialog" role="dialog" aria-modal="true" aria-labelledby="ccTitle" aria-describedby="ccTournamentName" tabindex="-1">
+                <h3 id="ccTitle">${t('contact.modal.title')}</h3>
+                <p id="ccTournamentName"></p>
+                <form id="ccForm" novalidate>
+                  <div class="cc-field">
+                    <label for="ccCountry">${t('contact.field.country')}</label>
+                    <select id="ccCountry" autocomplete="country"></select>
+                  </div>
+                  <div class="cc-field">
+                    <label for="ccPhone">${t('contact.field.whatsapp')}</label>
+                    <input id="ccPhone" type="tel" inputmode="tel" autocomplete="tel" required class="clarity-mask" data-clarity-mask="true" aria-describedby="ccPhoneHelp ccPhoneError">
+                    <span id="ccPhoneHelp" class="cc-help"></span>
+                    <span id="ccPhoneError" class="cc-error" aria-live="polite" hidden></span>
+                  </div>
+                  <div class="cc-field">
+                    <label for="ccTelegram">${t('contact.field.telegram')}</label>
+                    <input id="ccTelegram" type="text" inputmode="text" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="@usuario" class="clarity-mask" data-clarity-mask="true" aria-describedby="ccTgHelp ccTgError">
+                    <span id="ccTgHelp" class="cc-help">${t('contact.telegram.help')}</span>
+                    <span id="ccTgError" class="cc-error" aria-live="polite" hidden></span>
+                  </div>
+                  <div id="ccGlobalError" class="cc-global" role="alert" hidden></div>
+                  <div class="cc-actions">
+                    <button id="ccCancelBtn" type="button">${t('contact.btn.cancel')}</button>
+                    <button id="ccSaveBtn" type="submit">${t('contact.btn.save')}</button>
+                  </div>
+                </form>
+              </section>
+            </div>`);
+        const locale = document.documentElement.lang || 'es';
+        const names = typeof Intl.DisplayNames === 'function' ? new Intl.DisplayNames([locale], {type:'region'}) : null;
+        const countries = libphonenumber.getCountries().map(code => ({code, name:names?.of(code) || code}));
+        countries.sort((a,b) => a.name.localeCompare(b.name, locale));
+        countries.forEach(({code,name}) => el('ccCountry').add(new Option(`${name} (+${libphonenumber.getCountryCallingCode(code)})`, code)));
+        el('ccCountry').value = 'AR';
+        el('ccCountry').addEventListener('change', () => { updateExample(); validatePhone(); });
+        el('ccPhone').addEventListener('input', validatePhone);
+        el('ccPhone').addEventListener('blur', () => {
+            const result = validatePhone();
+            if (!result.error) {
+                el('ccPhone').value = result.display;
+                el('ccCountry').value = result.country;
+                updateExample();
+            }
         });
-        document.getElementById('ccCancelBtn').addEventListener('click', closeModal);
+        el('ccTelegram').addEventListener('input', () => {
+            const field = el('ccTelegram');
+            const result = ContactFields.telegram(field.value);
+            if (field.value && !field.value.startsWith('@')) {
+                const cursor = field.selectionStart;
+                field.value = result.value;
+                field.setSelectionRange(cursor + 1, cursor + 1);
+            }
+            showFieldError('ccTelegram', 'ccTgError', result.error);
+        });
+        el('ccForm').addEventListener('submit', save);
+        el('ccCancelBtn').addEventListener('click', closeModal);
+        el('contactCheckModal').addEventListener('click', event => { if (event.target === event.currentTarget) closeModal(); });
+        el('contactCheckModal').addEventListener('keydown', event => {
+            if (event.key === 'Escape') { event.preventDefault(); closeModal(); }
+            if (event.key !== 'Tab') return;
+            const fields = [...el('contactCheckModal').querySelectorAll('input,select,button')].filter(field => !field.disabled);
+            const first = fields[0], last = fields[fields.length - 1];
+            if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+            else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+        });
+    }
+
+    function updateExample() {
+        const example = ContactFields.example(el('ccCountry').value);
+        el('ccPhone').placeholder = example;
+        el('ccPhoneHelp').textContent = t('contact.phone.help', example);
+    }
+
+    function showFieldError(field, target, code) {
+        el(field).setAttribute('aria-invalid', String(!!code));
+        el(target).hidden = !code;
+        el(target).textContent = code ? t(errorKey(code)) : '';
+    }
+
+    function validatePhone() {
+        const result = ContactFields.phone(el('ccPhone').value, el('ccCountry').value);
+        showFieldError('ccPhone', 'ccPhoneError', result.error);
+        return result;
+    }
+
+    function showGlobalError(message) {
+        el('ccGlobalError').textContent = message;
+        el('ccGlobalError').hidden = false;
     }
 
     function closeModal() {
-        const m = document.getElementById('contactCheckModal');
-        if (m) m.style.display = 'none';
-        pendingCallback = null;
-        pendingTournamentId = null;
-        pendingTournamentName = null;
-
-        ['ccPhone', 'ccTelegram'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.value = '';
-        });
-        ['ccPhoneError', 'ccTgError', 'ccGlobalError'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.style.display = 'none';
-        });
-    }
-
-    function showGlobalError(msg) {
-        const el = document.getElementById('ccGlobalError');
-        if (el) { el.textContent = msg; el.style.display = 'block'; }
+        if (busy) return;
+        el('contactCheckModal').hidden = true;
+        pending = null;
+        previousFocus?.focus();
     }
 
     async function beforeRegister(tournamentId, tournamentName, onReady) {
+        if (busy) return;
+        let data;
         try {
-            const res = await fetch('/api/players/me/contact-status');
-            if (!res.ok) {
-                onReady();
-                return;
-            }
-            const data = await res.json();
-
-            // Контакты уже есть — сразу вызываем колбэк
-            if (data.hasContact) {
-                onReady();
-                return;
-            }
-
-            // Контактов нет — показываем форму
-            ensureModal();
-
-            pendingCallback = onReady;
-            pendingTournamentId = tournamentId;
-            pendingTournamentName = tournamentName;
-
-            document.getElementById('ccTournamentName').innerHTML = t('contact.modal.desc', `<strong>${tournamentName}</strong>`);
-            document.getElementById('contactCheckModal').style.display = 'flex';
-            window.trackClarityRegistrationStep?.(tournamentId, 'contact_form_opened');
-
-            if (data.telefono) document.getElementById('ccPhone').value = data.telefono;
-            if (data.telegramUsername) document.getElementById('ccTelegram').value = data.telegramUsername;
-
-            const saveBtn = document.getElementById('ccSaveBtn');
-            const newSaveBtn = saveBtn.cloneNode(true);
-            saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
-
-            newSaveBtn.addEventListener('click', async () => {
-                if (newSaveBtn.disabled) return;
-
-                const phone = document.getElementById('ccPhone').value.trim();
-                const telegram = document.getElementById('ccTelegram').value.trim();
-
-                document.getElementById('ccPhoneError').style.display = 'none';
-                document.getElementById('ccTgError').style.display = 'none';
-                document.getElementById('ccGlobalError').style.display = 'none';
-
-                if (!phone && !telegram) {
-                    window.trackClarityRegistrationError?.(tournamentId, 'contact_required');
-                    showGlobalError(t('contact.error.empty'));
-                    return;
-                }
-
-                if (phone && (!/^\+[0-9]{7,20}$/.test(phone.replace(/[\s\-\(\)]/g, '')))) {
-                    window.trackClarityRegistrationError?.(tournamentId, 'contact_invalid');
-                    document.getElementById('ccPhoneError').style.display = 'block';
-                    return;
-                }
-
-                if (telegram && !telegram.startsWith('@')) {
-                    window.trackClarityRegistrationError?.(tournamentId, 'contact_invalid');
-                    document.getElementById('ccTgError').style.display = 'block';
-                    return;
-                }
-
-                newSaveBtn.disabled = true;
-                newSaveBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('contact.saving')}`;
-
-                try {
-                    const patchRes = await fetch('/api/players/me/contact', {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            telefono: phone || null,
-                            telegramUsername: telegram || null
-                        })
-                    });
-
-                    const patchData = await patchRes.json();
-
-                    if (!patchData.success) {
-                        window.trackClarityRegistrationError?.(tournamentId, 'contact_save_rejected');
-                        showGlobalError(patchData.message || t('contact.error.save'));
-                        newSaveBtn.disabled = false;
-                        newSaveBtn.innerHTML = `<i class="fas fa-save"></i> ${t('contact.btn.save')}`;
-                        return;
-                    }
-
-                    // Сохраняем колбэк до closeModal (который его обнуляет)
-                    const cb = pendingCallback;
-                    closeModal();
-
-                    if (cb) {
-                        cb();
-                    }
-
-                } catch (err) {
-                    window.trackClarityRegistrationError?.(tournamentId, 'contact_request_failed');
-                    console.error('Error saving contact:', err);
-                    showGlobalError(t('contact.error.connection'));
-                    newSaveBtn.disabled = false;
-                    newSaveBtn.innerHTML = `<i class="fas fa-save"></i> ${t('contact.btn.save')}`;
-                }
-            });
-
-        } catch (err) {
-            console.error('ContactCheck error:', err);
-            onReady();
+            const response = await fetch('/api/players/me/contact-status');
+            if (!response.ok) throw new Error('Contact status unavailable');
+            data = await response.json();
+        } catch {
+            window.trackClarityRegistrationError?.(tournamentId, 'contact_request_failed');
+            window.alert(t('contact.error.connection'));
+            return;
         }
+        if (data.hasContact) { onReady(); return; }
+        ensureModal();
+        previousFocus = document.activeElement;
+        pending = { tournamentId, onReady };
+        el('ccTournamentName').textContent = t('contact.modal.desc', tournamentName);
+        el('ccPhone').value = data.telefono || '';
+        el('ccTelegram').value = data.telegramUsername ? ContactFields.telegram(data.telegramUsername).value : '';
+        const existingPhone = ContactFields.phone(el('ccPhone').value, 'AR');
+        el('ccCountry').value = existingPhone.country || 'AR';
+        updateExample();
+        showFieldError('ccPhone', 'ccPhoneError');
+        showFieldError('ccTelegram', 'ccTgError');
+        el('ccGlobalError').hidden = true;
+        el('contactCheckModal').hidden = false;
+        window.trackClarityRegistrationStep?.(tournamentId, 'contact_form_opened');
+        el('ccPhone').focus();
     }
 
+    async function save(event) {
+        event.preventDefault();
+        if (busy || !pending) return;
+        const phone = validatePhone();
+        const telegram = ContactFields.telegram(el('ccTelegram').value);
+        el('ccTelegram').value = telegram.value;
+        showFieldError('ccTelegram', 'ccTgError', telegram.error);
+        el('ccGlobalError').hidden = true;
+        const code = phone.error || telegram.error;
+        if (code) {
+            window.trackClarityRegistrationError?.(pending.tournamentId, 'contact_' + code.toLowerCase());
+            el(phone.error ? 'ccPhone' : 'ccTelegram').focus();
+            return;
+        }
+        busy = true;
+        el('ccSaveBtn').disabled = true;
+        el('ccCancelBtn').disabled = true;
+        el('ccSaveBtn').textContent = t('contact.saving');
+        let callback;
+        try {
+            const response = await fetch('/api/players/me/contact', {
+                method:'PATCH', headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({telefono:phone.number, phoneCountry:phone.country, telegramUsername:telegram.value || null})
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) {
+                const knownCode = ['PHONE_REQUIRED','PHONE_INVALID','PHONE_COUNTRY_INVALID','PHONE_TOO_SHORT','PHONE_TOO_LONG','TELEGRAM_INVALID','TELEGRAM_IN_USE','PHONE_IN_USE'].includes(data.code);
+                if (knownCode && data.field === 'telefono') showFieldError('ccPhone', 'ccPhoneError', data.code);
+                else if (knownCode && data.field === 'telegramUsername') showFieldError('ccTelegram', 'ccTgError', data.code);
+                else showGlobalError(data.message || t('contact.error.save'));
+                window.trackClarityRegistrationError?.(pending.tournamentId, knownCode ? 'contact_' + data.code.toLowerCase() : 'contact_save_rejected');
+                el(data.field === 'telegramUsername' ? 'ccTelegram' : 'ccPhone').focus();
+                return;
+            }
+            callback = pending.onReady;
+            busy = false;
+            closeModal();
+        } catch {
+            window.trackClarityRegistrationError?.(pending.tournamentId, 'contact_request_failed');
+            showGlobalError(t('contact.error.connection'));
+        } finally {
+            busy = false;
+            el('ccSaveBtn').disabled = false;
+            el('ccCancelBtn').disabled = false;
+            el('ccSaveBtn').textContent = t('contact.btn.save');
+        }
+        callback?.();
+    }
     return { beforeRegister };
 })();

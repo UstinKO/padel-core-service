@@ -1,0 +1,20 @@
+#contactCheckModal { position:fixed; inset:0; z-index:9999; background:#0008; display:flex; align-items:center; justify-content:center; padding:16px; }
+#contactCheckModal[hidden] { display:none; }
+.cc-dialog { background:#fff; color:#1e293b; border-radius:16px; padding:24px; width:100%; max-width:440px; max-height:calc(100dvh - 32px); overflow:auto; box-shadow:0 20px 60px #0004; box-sizing:border-box; }
+.cc-dialog h3 { font-size:20px; margin:0 0 12px; }
+.cc-dialog p { color:#64748b; font-size:14px; margin:0 0 20px; }
+.cc-field { margin-bottom:16px; }
+.cc-field label { display:block; font-size:14px; font-weight:600; margin-bottom:6px; }
+.cc-field input, .cc-field select { width:100%; min-width:0; min-height:46px; padding:10px 12px; border:1px solid #cbd5e1; border-radius:8px; background:#fff; color:#1e293b; font-size:16px; box-sizing:border-box; }
+.cc-field input:focus-visible, .cc-field select:focus-visible, .cc-dialog button:focus-visible { outline:3px solid #ff6b3570; outline-offset:2px; }
+.cc-field input[aria-invalid=true] { border-color:#dc2626; }
+.cc-help, .cc-error { display:block; font-size:13px; line-height:1.4; margin-top:6px; }
+.cc-help { color:#64748b; }
+.cc-error { color:#b91c1c; }
+.cc-error[hidden], .cc-global[hidden] { display:none; }
+.cc-global { padding:10px 12px; background:#fee2e2; color:#991b1b; border-radius:8px; font-size:14px; margin-bottom:16px; }
+.cc-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:20px; }
+.cc-dialog button { padding:12px 16px; min-height:46px; border:1px solid #cbd5e1; border-radius:8px; background:white; color:#475569; cursor:pointer; font-size:15px; }
+.cc-dialog #ccSaveBtn { flex:1; background:#ff6b35; border-color:#ff6b35; color:white; font-weight:600; }
+.cc-dialog button:disabled { opacity:.65; cursor:wait; }
+@media(max-height:600px) { #contactCheckModal { align-items:flex-start; } }
