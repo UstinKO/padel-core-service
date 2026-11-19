@@ -26,7 +26,7 @@ const ContactFields = (() => {
         const names = typeof Intl.DisplayNames === 'function' ? new Intl.DisplayNames([locale], {type:'region'}) : null;
         return libphonenumber.getCountries().map(code => ({code, name:names?.of(code) || code}))
             .sort((a,b) => a.name.localeCompare(b.name, locale))
-            .map(({code,name}) => ({code, label:`${name} (+${libphonenumber.getCountryCallingCode(code)})`}));
+            .map(({code,name}) => ({code, name, label:`${name} (+${libphonenumber.getCountryCallingCode(code)})`}));
     }
     return { phone, telegram, example, countries };
 })();

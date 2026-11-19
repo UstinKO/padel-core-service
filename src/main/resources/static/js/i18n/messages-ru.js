@@ -1,4 +1,5 @@
 window.APP_MESSAGES = {
+    'signup.phone.example': 'Например, {0}',
     "contact.validation.SAVED": "Контакты сохранены",
     "contact.validation.SIGN_IN_REQUIRED": "Войдите, чтобы продолжить.",
     "contact.validation.CONTACT_IN_USE": "Этот контакт уже используется.",

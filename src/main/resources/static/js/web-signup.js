@@ -12,16 +12,19 @@
     const telegram = document.getElementById('telegramUsername');
 
     ContactFields.countries(document.documentElement.lang || 'es')
-        .forEach(({code,label}) => country.add(new Option(label, code)));
+        .forEach(({code,name}) => country.add(new Option(`+${libphonenumber.getCountryCallingCode(code)} ${name}`, code)));
     country.value = libphonenumber.isSupportedCountry(country.dataset.selected) ? country.dataset.selected : 'AR';
 
     function updateExample() {
-        document.getElementById('telefonoHint').textContent = t('contact.phone.help', ContactFields.example(country.value));
+        const hint = document.getElementById('telefonoHint');
+        hint.textContent = t('signup.phone.example', ContactFields.example(country.value));
+        hint.hidden = document.activeElement !== phone || phone.getAttribute('aria-invalid') === 'true';
     }
 
     function validatePhone() {
         const result = ContactFields.phone(phone.value, country.value);
         fieldError(phone, result.error ? t('contact.validation.' + result.error) : '');
+        updateExample();
         return result;
     }
 
@@ -32,13 +35,16 @@
             telegram.value = result.value;
             telegram.setSelectionRange(cursor + 1, cursor + 1);
         }
+        if (result.error) document.getElementById('signupTelegram').open = true;
         fieldError(telegram, result.error ? t('contact.validation.' + result.error) : '');
         return result;
     }
 
+    phone.addEventListener('focus', updateExample);
     phone.addEventListener('input', validatePhone);
     phone.addEventListener('blur', () => {
         const result = validatePhone();
+        document.getElementById('telefonoHint').hidden = true;
         if (result.error) return;
         phone.value = result.display;
         country.value = result.country;

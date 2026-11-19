@@ -45,7 +45,6 @@
                 <div class="auth-card-header">
                     <h1 class="auth-card-title" th:text="#{registro.heading}">Crear cuenta</h1>
                 </div>
-                <p th:if="${tournamentId != null}" class="auth-entry-context" th:text="#{registro.tournament.continue}"></p>
                 <div th:replace="~{fragments/auth-entry :: google(${tournamentId})}"></div>
                 <p class="auth-entry-divider" th:text="#{registro.or_email}">o crea una cuenta con email</p>
 
@@ -116,23 +115,26 @@
                                th:text="${#fields.hasErrors('email') ? #fields.errors('email')[0] : ''}" aria-live="polite"></small>
                     </div>
                     <div class="form-group">
-                        <div class="auth-entry-inset">
-                            <select id="phoneCountry" name="phoneCountry" class="form-control" required autocomplete="country"
-                                    th:attr="data-selected=*{phoneCountry}"></select>
-                            <label for="phoneCountry" th:text="#{registro.phone.country}"></label>
+                        <div class="auth-entry-phone-row">
+                            <div class="auth-entry-inset">
+                                <select id="phoneCountry" name="phoneCountry" class="form-control" required autocomplete="country"
+                                        th:attr="data-selected=*{phoneCountry}"></select>
+                                <label for="phoneCountry" th:text="#{registro.phone.country}"></label>
+                            </div>
+                            <div class="auth-entry-inset">
+                                <input type="tel" id="telefono" name="telefono" class="form-control" placeholder=" "
+                                       th:field="*{telefono}" aria-describedby="telefonoHint telefonoError"
+                                       th:attr="aria-invalid=${#fields.hasErrors('telefono')}" required maxlength="80" autocomplete="tel" inputmode="tel">
+                                <label for="telefono"><span th:text="#{registro.field.telefono}"></span><small th:text="#{auth.entry.required}"></small></label>
+                            </div>
                         </div>
-                    </div>
-                    <div class="form-group">
-                        <div class="auth-entry-inset">
-                            <input type="tel" id="telefono" name="telefono"
-                                   class="form-control"
-                                   placeholder=" " th:field="*{telefono}" aria-describedby="telefonoHint telefonoError" th:attr="aria-invalid=${#fields.hasErrors('telefono')}" required maxlength="80" autocomplete="tel" inputmode="tel">
-                            <label for="telefono"><span th:text="#{registro.field.telefono}"></span><small th:text="#{auth.entry.required}"></small></label>
-                        </div>
-                        <small id="telefonoHint" class="auth-entry-contact-help"></small>
+                        <small id="telefonoHint" class="auth-entry-contact-help" hidden></small>
                         <small class="registration-field-error" id="telefonoError"
                                th:text="${#fields.hasErrors('telefono') ? #fields.errors('telefono')[#fields.errors('telefono').size() - 1] : ''}" aria-live="polite"></small>
                     </div>
+                    <details id="signupTelegram" class="auth-entry-telegram"
+                             th:open="${!#strings.isEmpty(registroRequest.telegramUsername) or #fields.hasErrors('telegramUsername')}">
+                        <summary th:text="#{registro.telegram.add}"></summary>
                     <div class="form-group">
                         <div class="auth-entry-inset">
                             <input type="text" id="telegramUsername" name="telegramUsername"
@@ -144,6 +146,7 @@
                         <small class="registration-field-error" id="telegramUsernameError"
                                th:text="${#fields.hasErrors('telegramUsername') ? #fields.errors('telegramUsername')[0] : ''}" aria-live="polite"></small>
                     </div>
+                    </details>
                     <div class="form-group">
                         <div class="auth-entry-inset">
                             <select id="nivelJugador" name="nivelJugador" class="form-control" required th:field="*{nivelJugador}" aria-describedby="nivelJugadorError" th:attr="aria-invalid=${#fields.hasErrors('nivelJugador')}">
@@ -171,7 +174,7 @@
                                        class="form-control"
                                        placeholder=" "
                                        required
-                                       minlength="8" aria-describedby="passwordError passwordRules" th:attr="aria-invalid=${#fields.hasErrors('password')}" autocomplete="new-password" maxlength="100">
+                                       minlength="8" aria-describedby="passwordError passwordHint" th:attr="aria-invalid=${#fields.hasErrors('password')}" autocomplete="new-password" maxlength="100">
                                 <label for="password"><span th:text="#{registro.field.password}"></span></label>
                                 <button type="button" class="toggle-password" data-target="password"
                                         th:attr="aria-label=#{registro.field.password.toggle}" aria-pressed="false">
@@ -197,7 +200,6 @@
                                    th:text="${#fields.hasErrors('confirmPassword') ? #fields.errors('confirmPassword')[0] : ''}" aria-live="polite"></small>
                         </div>
                     </div>
-                    <p class="auth-entry-password-rules" id="passwordRules" th:text="#{registro.field.password.hint}"></p>
 
                     <!-- Условия использования -->
                     <div class="form-checkbox">
