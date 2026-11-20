@@ -78,3 +78,5 @@ design-screenshots/
 __pycache__/
 /automation/telegram-relay/runtime/
 /automation/ui-preview/runtime/
+
+/automation/swarm/runtime/
