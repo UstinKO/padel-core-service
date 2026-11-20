@@ -1,0 +1,31 @@
+.club-access .club-access-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.club-access .admin-card { min-width: 0; }
+.club-access p, .club-access h2, .club-access-option span { overflow-wrap: anywhere; }
+.club-access-fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.club-access-fieldset legend { font-size: 1.15rem; font-weight: 600; }
+.club-access-option {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px;
+    border: 1px solid #dbe2ea;
+    border-radius: 12px;
+    cursor: pointer;
+    min-height: 76px;
+}
+.club-access-option:has(input:checked) { border-color: #ff6b35; background: #fff5ef; }
+.club-access-option input { width: 22px; height: 22px; flex: 0 0 22px; accent-color: #ff6b35; }
+.club-access-option span > * { display: block; }
+.club-access-option input:focus-visible, .club-access .btn:focus-visible { outline: 3px solid #db4a16; outline-offset: 4px; }
+.club-access-note { margin: 20px 0; color: #475569; }
+.club-access-actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: flex-end; }
+.club-access .btn { min-height: 44px; white-space: normal; text-align: center; }
+@media (max-width: 480px) {
+    .club-access-actions .btn { width: 100%; }
+    .club-access .admin-title { font-size: 1.7rem; }
+}

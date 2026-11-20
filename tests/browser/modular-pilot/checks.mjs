@@ -150,9 +150,24 @@ export async function qualificationBoundary(admin, manager, scenario) {
   assert.deepEqual(after.rounds, before.rounds, 'Прямой POST не обходит запрет ранней сетки');
   assert.deepEqual(after.ranking, before.ranking);
   await evidence(manager, 'qualification-boundary');
-  await manager.page.goto('about:blank');
-  await qualificationMatch(manager, scenario, 6, 7, 4);
-  await clickAction(manager, id, 'init-playoff');
+  const last = await successful(manager, `/tournaments/team-playoff/api/${id}/qual-matches`,
+    { team1Id: scenario.teamIds[6], team2Id: scenario.teamIds[7], courtNumber: 4 });
+  const matchId = last.body.match.id;
+  await manager.page.goto(input.origin + adminPath(id));
+  const start = manager.page.locator('#playoffStartSection form[action$="/init-playoff"] button');
+  await expect(start).toHaveCount(0);
+  const marker = await manager.page.evaluate(() => window.qualificationPageMarker = crypto.randomUUID());
+  await manager.page.locator(`#qg1-${matchId}`).fill('6');
+  await manager.page.locator(`#qg2-${matchId}`).fill('4');
+  await manager.page.locator(`#qmatch-${matchId} button[onclick="submitQualScore(this)"]`).click();
+  await expect(start).toBeVisible();
+  assert.equal(await manager.page.evaluate(() => window.qualificationPageMarker), marker,
+    'Кнопка старта появилась в той же странице без навигации');
+  const started = manager.page.waitForResponse(item => item.request().method() === 'POST'
+    && new URL(item.url()).pathname.endsWith('/init-playoff'));
+  await start.click();
+  assert.equal((await started).status(), 302);
+  await expect.poll(async () => (await snapshot(admin, id)).metadata.phase).toBe('PLAYOFF');
   const filled = await snapshot(admin, id);
   const quarters = playoff(filled).filter(match => match.stage === 'QUARTER_FINAL');
   assert.equal(quarters.length, 4);

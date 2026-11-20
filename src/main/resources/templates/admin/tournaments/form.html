@@ -81,6 +81,8 @@
                                         th:value="${club.id}"
                                         th:text="${club.nombre}"></option>
                             </select>
+                            <p th:if="${isClubAdmin}" class="form-text" th:text="#{club_access.form_help}"></p>
+                            <p th:if="${isClubAdmin == true and #lists.isEmpty(clubs)}" class="alert alert-warning" th:text="#{club_access.no_venues}"></p>
                             <div class="invalid-feedback" th:if="${#fields.hasErrors('clubId')}"
                                  th:errors="*{clubId}" th:text="#{admin.tournaments.form.error.field}">Error en el campo</div>
                         </div>

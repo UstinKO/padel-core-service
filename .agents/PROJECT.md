@@ -6,6 +6,8 @@
 
 ## Project Overview
 
+**Swarm (LFPT-1040/LFPT-1207, 19.11.2026)** — одна ВМ, полный стек в Swarm, две реплики padel-app. Сейчас read-only проверка подтверждает Compose и одну JVM, 2 vCPU/3911 MiB RAM. Предварительный бюджет с системным резервом — 4480 MiB для двух JVM, 5376 MiB при start-first с третьей JVM. Владелец выбрал плановые ≥6 GiB RAM для стенда, изменение ВМ согласуется отдельно. Приняты цели стенда 15 min первичного окна, 5 min возврата приложения, 30 min restore и аварийный RPO ≤24 h при исправном ежедневном backup с обязательной проверкой. Nginx переносится в Swarm. Redis для сессий/квот и RabbitMQ STOMP предложены для стенда в ADR; координация cron определяется по job, готовый claim MarketingOutbox переиспользуется. [Реестр и порядок](../docs/swarm/README.md), [ADR](../docs/swarm/adr/0001-single-vm.md). До production обязательны #1209–#1217, окно согласуется в #1218. Maven #1051 сохраняет отдельную репетицию.
+
 **padel-core-service** — Spring Boot 4.x монолит для управления падель-турнирами. Действующий UI рендерится через Thymeleaf; UI v2 поэтапно переносится в React SPA из `frontend/`, не переключая production-маршруты без отдельной задачи. Целевой рынок — Аргентина (валюта ARS, валидация телефона +54).
 
 **Stack:** Java 17 (source) / Java 21 (Docker/CI), Spring Boot 4.1 (Spring 7, Security 7, Hibernate 7, Jackson 3), PostgreSQL 15, Liquibase, Spring Security (JWT + form login + Google OAuth2), Spring WebSocket (STOMP/SockJS), React 19 + TypeScript + Vite + pnpm (`frontend/`), TanStack Query, react-i18next, Micrometer + Prometheus + Grafana + Loki, Bucket4j, MapStruct, Lombok.
@@ -348,6 +350,8 @@ docker compose up -d
 
 ### WebSocket
 
+Восстановление истории Team Playoff после commit отправляет `STATE_UPDATED` в legacy-тему и прежний public invalidation; rollback не публикует обновление. [Доставка и проверка](../docs/endpoints/conduct-history-realtime.md).
+
 | Endpoint | Topic | Описание |
 |----------|-------|----------|
 | `/ws` (SockJS) | `/topic/tournament/{kingId}` | Real-time обновления King of Court |
@@ -648,6 +652,12 @@ GET/HEAD `/api/public/events/{eventId}/live` и `/api/public/king-of-court/{king
 
 ### Данные пилота модульного монолита
 
+В legacy-управлении Team Playoff успешное AJAX-сохранение квалификационного результата перечитывает только серверный блок `playoffStartSection`. Кнопка старта появляется по действующим Thymeleaf-условиям без навигации страницы; при отказе сохранения блок остаётся прежним. Нового API и клиентского правила допуска нет.
+
 Браузерные проверки: `automation/ui-preview/playoff-pilot.py` и `tests/browser/modular-pilot/`. Команда `run` проверяет итоговый jar, прежние UI/API и реальные WS по [текущему эталону от 18.11](../docs/modular-monolith/phase-1/browser-expectations-2026-11-18.json); пересоздаёт только пилот. `extended` добавляет ранние 9/16/SF; `smoke --rehearse` сверяет пять snapshots через существующий выпуск/откат. `manual --reset` готовит отдельные ручные случаи и видимое окно с настоящими подтверждениями; `resume-manual` открывает без сброса, `end-manual` снимает локальную блокировку пилотных команд/check.py, не подтверждая результат. [Исходный отчёт](../docs/modular-monolith/phase-1/browser-baseline.md), [итоговая автоматизация #1045](../docs/modular-monolith/phase-1/final-report.md), [текущие ручные шаги и журнал](../docs/modular-monolith/phase-1/manual-final.md), [перенос движка #1050](../docs/modular-monolith/phase-1/engine-extraction.md). Исходная #1048 принята и влита через #1070: ручные 8/9 пар и полная автоматизация. Итоговая автоматизация #1045 прошла; ручной сеанс 18.11 завершён с PARTIAL: #1195 (legacy после restore), #1196 (кнопка старта после квалификации), Expo API 401 в preview и явные ограничения покрытия. Restart/rollback и ручное участие подтверждены; расширение переноса — NO_GO, #1045 открыта. Сборка reactor — #1049.
 
 `PlayoffPilotController`, `PlayoffPilotFixtureService` и `PlayoffPilotData` существуют только в профиле `preview`. Защищённые seed/read/reset пилота используют существующие проверки имени БД/UUID и блокировку control-row; пять турниров 8/9/16 команд формируются настоящим TeamPlayoffService. Метаданные сохраняются отдельным ключом JSON в существующем preview control, без Liquibase. [Контракт](../docs/endpoints/ui-preview.md), [backend baseline](../docs/modular-monolith/phase-1/backend-baseline.md). PlayoffMatchingEngine компилирует только engines; сервис/fixtures и остальные legacy-исходники — bootstrap.
+
+## Клубные аккаунты
+
+`ClubAccountService` / `AdminClubAccountController`: несколько назначенных площадок для создания мероприятий, управление существующими событиями по ownerId. Схема v1.79, контракт — [docs/endpoints/club-accounts.md](../docs/endpoints/club-accounts.md).

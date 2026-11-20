@@ -13,6 +13,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.Optional;
 
 @Repository
@@ -34,6 +35,15 @@ public interface TournamentRegistrationRepository extends JpaRepository<Tourname
     List<Long> findDistinctPlayerIdsByTournamentClubId(@Param("clubId") Long clubId);
 
     boolean existsByTournamentClubIdAndPlayerId(Long clubId, Long playerId);
+
+    @Query("SELECT DISTINCT tr.player.id FROM TournamentRegistration tr WHERE tr.tournament.ownerId = :ownerId")
+    Set<Long> findPlayerIdsByTournamentOwnerId(@Param("ownerId") Long ownerId);
+
+    boolean existsByTournamentOwnerIdAndPlayerId(Long ownerId, Long playerId);
+
+    @Query("SELECT COUNT(tr) FROM TournamentRegistration tr WHERE tr.status = 'WAITLIST' " +
+            "AND tr.isActive = true AND tr.tournament.ownerId = :ownerId")
+    long countWaitlistByTournamentOwnerId(@Param("ownerId") Long ownerId);
 
     // Bug #4 fix: добавлен фильтр isActive = true, чтобы исключить "мусорные" отменённые
     // записи с некорректными статусами (возможны после миграции данных между серверами).

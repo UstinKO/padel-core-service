@@ -42,6 +42,7 @@ import com.padle.core.padelcoreservice.service.cancellation.RegistrationCancella
 import com.padle.core.padelcoreservice.service.cancellation.CancellationContext;
 import com.padle.core.padelcoreservice.dto.CancellationHistory.*;
 import lombok.RequiredArgsConstructor;
+import com.padle.core.padelcoreservice.repository.OwnerRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
@@ -82,6 +83,8 @@ public class TournamentService {
     private final TournamentKingOfCourtRepository tournamentKingOfCourtRepository;
     private final EmailService emailService;
     private final TournamentAccessService tournamentAccessService;
+    private final ClubAccountService clubAccounts;
+    private final OwnerRepository ownerRepository;
 
     // Добавляем репозитории Americano
     private final AmericanoPlayerRepository americanoPlayerRepository;
@@ -916,6 +919,12 @@ public class TournamentService {
     )
     @Transactional
     public TournamentDto createTournament(TournamentDto tournamentDto, Long createdBy) {
+        ownerRepository.findById(createdBy).ifPresent(owner -> {
+            clubAccounts.assertCanCreateAt(owner, tournamentDto.getClubId());
+            if (owner.isClubAdmin()) {
+                tournamentDto.setEstado(TournamentStatus.REGISTRO_ABIERTO);
+            }
+        });
         if (tournamentDto.getFechaInicio().isBefore(java.time.LocalDate.now())) {
             throw new IllegalArgumentException("Tournament start date cannot be in the past");
         }
@@ -1742,6 +1751,14 @@ public class TournamentService {
     }
 
     @Transactional(readOnly = true)
+    public long countActiveForOwner(Long ownerId) {
+        return tournamentRepository.countByOwnerIdAndIsActiveTrue(ownerId);
+    }
+
+    public List<TournamentDto> recentForOwner(Long ownerId) {
+        return mapToDtoWithDetails(tournamentRepository.findTop5ByOwnerIdOrderByCreatedAtDesc(ownerId));
+    }
+
     public List<TournamentDto> getTournamentsForOwner(Long ownerId, boolean isSuperAdmin) {
         if (isSuperAdmin) {
             return getAllTournaments();
