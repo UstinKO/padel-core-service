@@ -6,6 +6,10 @@ import com.padle.core.padelcoreservice.repository.*;
 import com.padle.core.padelcoreservice.service.*;
 import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2User;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import com.padle.core.padelcoreservice.dto.RegistroRequestDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -69,6 +73,71 @@ class AccountIntegrationTest {
                         .param("password", "Fixture-Password1!").param("confirmPassword", "Fixture-Password1!"))
                 .andExpect(redirectedUrl("/?welcome=true"));
         assertThat(players.existsByEmail(emailAddress)).isTrue();
+    }
+
+    @ParameterizedTest
+    @CsvSource({"011 15-6100-8899,AR,+5491161008899", "8 (912) 555-11-99,RU,+79125551199"})
+    void webSignupReturnsToTournamentAndNormalizesPhone(String phone, String country, String normalized) throws Exception {
+        when(captcha.verify(null)).thenReturn(true);
+        var address = UUID.randomUUID() + "@gmail.com";
+        mvc.perform(post("/players/registro").with(csrf())
+                        .param("nombre", "Maria").param("apellido", "Garcia").param("email", address)
+                        .param("nivelJugador", "C7").param("telefono", phone).param("phoneCountry", country)
+                        .param("tournamentId", "48").param("destination", "https://example.org/")
+                        .param("password", "Fixture-Password1!").param("confirmPassword", "Fixture-Password1!"))
+                .andExpect(redirectedUrl("/torneo/48#tournament-registration"));
+        var saved = players.findByEmail(address).orElseThrow();
+        assertThat(saved.getTelefono()).isEqualTo(normalized);
+        assertThat(saved.getNivelJugador()).isEqualTo(Nivel.C7);
+        assertThat(saved.getTelegramUsername()).isNull();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", "SIN_ESPECIFICAR"})
+    void webSignupStillRequiresChosenLevel(String level) throws Exception {
+        when(captcha.verify(null)).thenReturn(true);
+        var address = UUID.randomUUID() + "@gmail.com";
+        mvc.perform(post("/players/registro").with(csrf())
+                        .param("nombre", "Maria").param("apellido", "Garcia").param("email", address)
+                        .param("nivelJugador", level).param("telefono", "+79125551200").param("tournamentId", "48")
+                        .param("password", "Fixture-Password1!").param("confirmPassword", "Fixture-Password1!"))
+                .andExpect(view().name("registro"))
+                .andExpect(model().attributeHasFieldErrorCode("registroRequest", "nivelJugador", "registro.web.level.required"))
+                .andExpect(model().attribute("tournamentId", 48L));
+        assertThat(players.existsByEmail(address)).isFalse();
+    }
+
+    @Test
+    void webSignupErrorRetainsCountryAndTournamentButClearsSecrets() throws Exception {
+        when(captcha.verify(null)).thenReturn(true);
+        var address = UUID.randomUUID() + "@gmail.com";
+        var result = mvc.perform(post("/players/registro").with(csrf())
+                        .param("nombre", "Maria").param("apellido", "Garcia").param("email", address)
+                        .param("nivelJugador", "C7").param("telefono", "123").param("phoneCountry", "RU")
+                        .param("tournamentId", "48")
+                        .param("password", "Fixture-Password1!").param("confirmPassword", "Fixture-Password1!"))
+                .andExpect(view().name("registro"))
+                .andExpect(model().attributeHasFieldErrorCode("registroRequest", "telefono", "contact.validation.PHONE_TOO_SHORT"))
+                .andExpect(model().attribute("tournamentId", 48L)).andReturn();
+        var input = (RegistroRequestDto) result.getModelAndView().getModel().get("registroRequest");
+        assertThat(input.getPhoneCountry()).isEqualTo("RU");
+        assertThat(input.getTelefono()).isEqualTo("123");
+        assertThat(input.getPassword()).isNull();
+        assertThat(input.getConfirmPassword()).isNull();
+        assertThat(players.existsByEmail(address)).isFalse();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"-1", "0", "https://example.org", "99999999999999999999"})
+    void signupIgnoresInvalidTournamentTargets(String target) throws Exception {
+        when(captcha.verify(null)).thenReturn(true);
+        mvc.perform(get("/players/registro").param("tournamentId", target))
+                .andExpect(model().attributeDoesNotExist("tournamentId"));
+        mvc.perform(post("/players/registro").with(csrf())
+                        .param("nombre", "Maria").param("apellido", "Garcia").param("email", UUID.randomUUID() + "@gmail.com")
+                        .param("nivelJugador", "C7").param("telefono", "+79125551200").param("tournamentId", target)
+                        .param("password", "Fixture-Password1!").param("confirmPassword", "Fixture-Password1!"))
+                .andExpect(redirectedUrl("/?welcome=true"));
     }
 
     @Test void realLoginSessionRotationProfileRefreshAndLogout() throws Exception {

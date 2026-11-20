@@ -122,14 +122,15 @@ public class PlayerDashboardController {
             ));
         }
 
+        player = playerRepository.findById(player.getId()).orElse(player);
         log.info("Player {} registering for tournament {}", player.getId(), tournamentId);
 
         // ПРОВЕРКА КОНТАКТОВ - возвращаем needContact, а не ошибку
         if (!player.hasValidContact()) {
-            log.warn("Player {} has no valid contact (phone or telegram)", player.getId());
+            log.warn("Player {} has no phone", player.getId());
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
-                    "message", "Para inscribirte en un torneo necesitas tener al menos un dato de contacto: WhatsApp o Telegram",
+                    "message", messageSource.getMessage("contact.validation.PHONE_REQUIRED", null, LocaleContextHolder.getLocale()),
                     "needContact", true
             ));
         }

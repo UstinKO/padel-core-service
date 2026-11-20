@@ -50,6 +50,8 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 @Transactional
 @AutoConfigureMockMvc
 class MarketingIntegrationTest {
+    private static final java.util.concurrent.atomic.AtomicLong PHONE_SEQUENCE =
+            new java.util.concurrent.atomic.AtomicLong(10000000);
     @Autowired MarketingContextService context;
     @Autowired MarketingOutbox outbox;
     @Autowired MarketingJournal journal;
@@ -434,7 +436,7 @@ class MarketingIntegrationTest {
     private PlayerPadel player() {
         return players.saveAndFlush(PlayerPadel.builder().nombre("Игрок").apellido("Тест")
                 .email(UUID.randomUUID() + "@example.test").passwordHash("test-hash").activo(true)
-                .emailConfirmado(true).preferredLocale("es").nivelJugador(Nivel.C9)
+                .emailConfirmado(true).preferredLocale("es").nivelJugador(Nivel.C9).telefono("+54911" + PHONE_SEQUENCE.incrementAndGet())
                 .telegramUsername("test" + UUID.randomUUID().toString().replace("-", "").substring(0, 10)).build());
     }
 
