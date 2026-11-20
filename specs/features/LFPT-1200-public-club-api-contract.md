@@ -2,7 +2,9 @@
 
 ## Статус
 
-approved
+implemented
+
+Реализация — [PR #1238](https://github.com/UstinKO/padel-core-service/pull/1238); [границы и результаты проверок](../../docs/modular-monolith/phase-2/contract-adoption.md). CI и ручной мерж учитываются отдельно.
 
 ## Источник
 
@@ -25,12 +27,12 @@ approved
 Канонический OpenAPI JSON двух путей и используемых схем — в contract-модуле. Существующий public-discovery.openapi.json и его frontend/CI-потребители должны ссылаться на этот источник либо получать воспроизводимо собранное представление; две независимо редактируемые копии запрещены. Generated Java — Maven generate-sources в target, не Git. MapStruct domain → API — в текущем web-адаптере legacy bootstrap, не в application. Старый PublicClubResponse удалять только после проверки всех потребителей.
 
 ## Критерии приёмки
-- [ ] Версии и параметры берутся из отчёта пробы; contract не зависит от application/engines/bootstrap/Spring MVC/Data/JPA/HTTP-клиента и не вносит Jackson 2 databind/core.
-- [ ] Модели генерируются детерминированно, Java 17, Jackson 3/Jakarta; приложение имеет прежний единственный boot jar.
-- [ ] Девять wire-полей Club, null/отсутствие, порядок массива, canonicalUrl и ProblemDetail/fieldErrors/HTTP/headers сохраняются по golden/интеграционным тестам на исходном и новом артефактах.
-- [ ] Application не получает зависимость на API DTO; маппинг типизированный MapStruct, enum домена не импортируются contract-модулем.
-- [ ] Frontend-проверки контракта и существующие потребители OpenAPI проходят после изменения владения. Прямое чтение старого JSON не ломается; каноничность проверяется автоматически.
-- [ ] Корневой verify, packaging ресурсов/frontend, реальный browser smoke и возврат к прежнему jar на тех же данных проходят.
+- [x] Версии и параметры берутся из отчёта пробы; contract не зависит от application/engines/bootstrap/Spring MVC/Data/JPA/HTTP-клиента и не вносит Jackson 2 databind/core.
+- [x] Модели генерируются детерминированно, Java 17, Jackson 3/Jakarta; приложение имеет прежний единственный boot jar.
+- [x] Девять wire-полей Club, null/отсутствие, порядок массива, canonicalUrl и ProblemDetail/fieldErrors/HTTP/headers сохраняются по golden/интеграционным тестам на исходном и новом артефактах.
+- [x] Application не получает зависимость на API DTO; маппинг типизированный MapStruct, enum домена не импортируются contract-модулем.
+- [x] Frontend-проверки контракта и существующие потребители OpenAPI проходят после изменения владения. Прямое чтение старого JSON не ломается; каноничность проверяется автоматически.
+- [x] Корневой verify, packaging ресурсов/frontend, реальный browser smoke и возврат к прежнему jar на тех же данных проходят.
 
 ## Границы
 Без новых endpoint/полей/прав, генерации серверных интерфейсов/клиентов/TS, массовой замены DTO, переноса каталога или внутренних моделей. Миграций нет.
@@ -47,7 +49,7 @@ Java release 17; бизнес-правила MASTER, HTTP/JSON/WS, ES/RU/EN, п�
 ## Изменения в системе
 
 ### API
-Существующие GET /api/public/clubs и /api/public/clubs/{id}; контракт сохраняется. В задаче технической пробы endpoints не переключаются.
+Существующие GET /api/public/clubs и /api/public/clubs/{id}; контракт сохраняется. Два клубных GET используют generated Club из contract; остальные endpoints и модели сохраняются.
 
 ### БД
 Без миграций/переноса данных. PostgreSQL и Liquibase принадлежат поздней #1051.

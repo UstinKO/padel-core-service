@@ -47,3 +47,17 @@ python3 .github/bin/verify-club-generation.py
 Artifact guard требует ровно одну contract library, только Club.class, bytecode Java 17 и отсутствие shadow-классов/ссылок на запрещённые слои. Отрицательные тесты проверяют shadow copy, отсутствие библиотеки, новую версию bytecode и запрещённые ссылки. Чистая повторная Maven-генерация сравнивается с предыдущей по SHA-256 Java-исходника.
 
 Модульные проверки фиксируют все девять полей, Unicode, null и нормализацию отсутствующих nullable-полей в явные ключи, Jakarta required/non-nullable и точную проекцию OpenAPI. Существующие PublicDiscoveryIntegrationTest, PublicClubApplicationIntegrationTest и SEO/PublicEventIntegrationTest проходят через реальные endpoint/MapStruct/Jackson и отдельную PostgreSQL. Финальные результаты API/browser/общего smoke/отката записываются в машинной сводке рядом с этим документом; независимая приёмка #1201 остаётся следующим шагом.
+
+## Результат 20.11.2026
+
+[Машинная сводка](contract-adoption-qa-2026-11-20.json). Implementation revision — `7d13bf9420fb1265334c5b30a0450cbb1a3114b9`; последующий коммит фиксирует только документацию и QA. Jar SHA-256 — `b31648aa1333f85b09dc872f3ff54f3dd8c238756d73e0e215a5bf6ef3c3aa6f`.
+
+- Корневой verify с frontend и отдельной PostgreSQL: **1118 тестов**, 0 failures/errors, 2 штатных пропуска (contract 4, engines 10, application 3, bootstrap 1101). Frontend-ресурсы присутствуют в конечном jar; frontend job CI технического head также прошёл.
+- Две чистые генерации дали один Club.java с одинаковым SHA-256, один class-file Java 17. Отдельная повторная генерация очищает только target contract-модуля и сохраняет результаты frontend/root. Пять тестов guard, 48 relay, docs-drift, agent-migration, YAML/локальные ссылки/diff и локальное ревью — успешно.
+- Прежняя изолированная OpenAPI-проба прошла: 12 тестов, обе генерации детерминированы; ожидаемые upstream-отказы native/nullable validation сохранились. Канонический клубный раздел точно совпал с прежним discovery JSON, который остался побайтово прежним.
+- Production Dockerfile собран на Java 21; извлечённый jar прошёл guards contract/application/engines. SHA-256 этого jar — `d233d9ed4589896c96450b46c7f3a32565b17dae904c590959473d5a2593eb24`. Различие двух сборок jar не выдаётся за побайтовую воспроизводимость jar: детерминизм проверяется для generated Java.
+- На одной синтетической БД сравнили старый application-артефакт `930c5605` / `0b9dbea3…` и новый contract-артефакт. Список, карточка, неизвестный и нечисловой ID: JSON/status/Content-Type/Cache-Control в RU/ES/EN совпали. Реальное переключение на старый jar и штатный rollback сохранили пять snapshots, схему и Liquibase.
+- Chromium: 1440/390 × RU/ES/EN, список/карточка, refresh и фильтр каталога — шесть случаев PASS, JavaScript errors — 0. Общий legacy/React/session/CSRF/роли/участие/JWT smoke, турниры 8/9/16, квалификация и оба restore UI прошли. Expo отрисовал события через прежний QA-адаптер, обычный preview сохраняет Basic 401.
+- Репетиция двух синтетических выпусков, старого lazy chunk, HTTP-ошибок chunk/readiness, rollback и восстановления журнала прошла с сохранением пяти snapshots.
+
+Runtime, доступы, полные baseline-ответы и снимки остаются только в собственном локальном preview/target. Исходный ручной стенд не изменён. Новый ручной PASS владельца не заявляется; принятые ограничения #1045 сохраняются, независимая приёмка #1201 остаётся следующей задачей. CI последнего коммита и ручной мерж PR учитываются отдельно.
