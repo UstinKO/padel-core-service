@@ -2,7 +2,7 @@
   "date": "2026-11-20",
   "task": "LFPT-1045",
   "technicalResult": "PASS",
-  "ownerAcceptance": "PENDING",
+  "ownerAcceptance": "ACCEPTED_WITH_LIMITATIONS",
   "baseMaster": "150b52d7",
   "sourceRevision": "8a9ee29e2e29aa60970ad3201455e42da187533e",
   "jarSha256": "5126f460d3771e22fc7fd7f22922476d5d17138f99d272bf7977f4ff7efd700c",
@@ -156,5 +156,7 @@
     "обычный Expo в preview сохраняет Basic 401; функциональная проверка использует QA-адаптер",
     "прежний текстовый дефект #1067 сохраняется"
   ],
-  "runtimeExtractionAllowed": false
+  "runtimeExtractionAllowed": true,
+  "ownerDecisionDate": "2026-11-20",
+  "ownerDecision": "принимаем, повторять не будем"
 }
