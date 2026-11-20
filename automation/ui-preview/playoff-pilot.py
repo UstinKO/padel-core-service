@@ -119,6 +119,8 @@ def main():
         (preview.ROOT / 'target/ui-preview-qa').mkdir(parents=True, exist_ok=True)
         subprocess.run([str(node), 'tests/browser/ui-preview.browser.mjs', str(browser_input)], cwd=preview.ROOT,
             env=dict(os.environ, PLAYWRIGHT_MODULE_PATH=str(module)), check=True, timeout=120)
+        subprocess.run([str(node), 'tests/browser/modular-pilot/expo-smoke.mjs', str(browser_input)], cwd=preview.ROOT,
+            env=dict(os.environ, PLAYWRIGHT_MODULE_PATH=str(module)), check=True, timeout=120)
         if args.command == 'run':
             subprocess.run([str(node), 'tests/browser/modular-pilot/run.mjs', str(browser_input)], cwd=preview.ROOT,
                 env=dict(os.environ, PLAYWRIGHT_MODULE_PATH=str(module)), check=True, timeout=300)
