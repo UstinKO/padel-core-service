@@ -178,5 +178,101 @@
     "pr": 1180,
     "ownerDecisionDate": "2026-11-20",
     "limitsPreserved": true
+  },
+  "masterIntegration": {
+    "baseRevision": "35927dcfb292e29205399b5c10f3e47b0754b728",
+    "mergeRevision": "930c56056d0e102ad02e820ca85d376e80d247c1",
+    "dependencyPullRequest": 1180,
+    "dependencyMerged": true,
+    "conflicts": "Только карта проекта и архив принятой приёмки; сохранены актуальные сведения обеих веток.",
+    "backendVerify": {
+      "tests": 1114,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 2
+    },
+    "artifactGuards": "PASS",
+    "artifactGuardTests": 5,
+    "relayTests": 48,
+    "docsDrift": 0,
+    "agentMigration": 0,
+    "sameJarSha256": true,
+    "runtimeCompare": {
+      "result": "PASS",
+      "currentRevision": "930c56056d0e102ad02e820ca85d376e80d247c1",
+      "previousRevision": "8a9ee29e2e29aa60970ad3201455e42da187533e",
+      "currentJarSha256": "0b9dbea3d26c13a423d0767a333ec96ed9c8381112a30b9b9ca2d3ff214d0751",
+      "previousJarSha256": "5126f460d3771e22fc7fd7f22922476d5d17138f99d272bf7977f4ff7efd700c",
+      "locales": [
+        "ru",
+        "es",
+        "en"
+      ],
+      "comparedCases": [
+        "list",
+        "card",
+        "unknown",
+        "invalid"
+      ],
+      "sameHttpJsonHeaders": true,
+      "nativeRollback": true,
+      "snapshotsPreserved": 5,
+      "schemaAndLiquibasePreserved": true
+    },
+    "browser": {
+      "result": "PASS",
+      "cases": [
+        {
+          "width": 1440,
+          "language": "ru",
+          "list": true,
+          "card": true,
+          "refresh": true,
+          "clubFilter": true
+        },
+        {
+          "width": 1440,
+          "language": "es",
+          "list": true,
+          "card": true,
+          "refresh": true,
+          "clubFilter": true
+        },
+        {
+          "width": 1440,
+          "language": "en",
+          "list": true,
+          "card": true,
+          "refresh": true,
+          "clubFilter": true
+        },
+        {
+          "width": 390,
+          "language": "ru",
+          "list": true,
+          "card": true,
+          "refresh": true,
+          "clubFilter": true
+        },
+        {
+          "width": 390,
+          "language": "es",
+          "list": true,
+          "card": true,
+          "refresh": true,
+          "clubFilter": true
+        },
+        {
+          "width": 390,
+          "language": "en",
+          "list": true,
+          "card": true,
+          "refresh": true,
+          "clubFilter": true
+        }
+      ],
+      "javaScriptErrors": 0
+    },
+    "browserObservation": "Первый плотный прогон получил штатный 429 каталога. Повтор с паузами и соблюдением Retry-After прошёл; конфигурация и код защиты не менялись."
   }
 }
