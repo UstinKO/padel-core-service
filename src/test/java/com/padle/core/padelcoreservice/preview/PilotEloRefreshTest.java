@@ -36,7 +36,7 @@ class PilotEloRefreshTest {
                 Set.of(), Set.of(), "Tournament", "pair", null);
         var history = new PreviewEloReplay.History(Map.of(166L, "Yulia", 407L, "Irina", 225L, "Tony", 221L, "Arina", 461L, "Alesia"), List.of(event));
         var corrected = PilotEloRefresh.correctJuneQuarterfinal(history);
-        assertThat(corrected.events().getFirst().games()).containsExactly(played,
+        assertThat(corrected.events().get(0).games()).containsExactly(played,
                 new PreviewEloReplay.Game("B-1297006686:N4:N5", 4, List.of(166L, 407L, 225L, 221L), 2, 6, false));
         assertThat(new PreviewEloReplay(40, true).replay(day, corrected.names(), corrected.events()).rows())
                 .extracting(PreviewEloRanking.Row::id).doesNotContain(461L).contains(166L, 407L, 225L, 221L);
