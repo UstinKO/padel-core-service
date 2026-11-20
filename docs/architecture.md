@@ -4,7 +4,7 @@
 исполняемый Telegram-адаптер в `automation/telegram-relay/`. Порядок отдельной активации воркера —
 [codex-migration.md](codex-migration.md); приложение и его схема развёртывания этим не меняются.
 
-План развития: [многомодульный монолит, семь согласованных модулей](modular-monolith/target-architecture.md). Сейчас работают parent/aggregator, padel-bootstrap с единственным boot jar и padel-tournament-engines с PlayoffMatchingEngine и его unit-тестами. Библиотека зависит только от JDK; Spring-регистрация — один bean через `TournamentEngineConfig` в bootstrap. Остальной корневой src/ компилирует только bootstrap. [Перенос, проверки границы и мост DevTools](modular-monolith/phase-1/engine-extraction.md), [пути и команды reactor](modular-monolith/phase-1/reactor-delivery.md). Остальные пять целевых модулей пока не созданы. Итоговая ручная приёмка пилота — #1045, выделение хранения — отдельная поздняя #1051.
+План развития: [многомодульный монолит, семь согласованных модулей](modular-monolith/target-architecture.md). Сейчас работают parent/aggregator, api-contract (generated Club), tournament-engines (PlayoffMatchingEngine), application (PublicClubQuery/ClubReadPort) и bootstrap с единственным boot jar. [Application-срез](modular-monolith/phase-2/application-club-read.md), [источник API-контракта и сборка](modular-monolith/phase-2/contract-adoption.md). Остальной корневой src/ компилирует только bootstrap. Три целевых модуля пока не созданы. Приёмка пилота #1045 принята 20.11 с ограничениями; хранение остаётся отдельной поздней #1051.
 
 ---
 
@@ -103,7 +103,7 @@ Expo web-клиентом 1Padel.App. REST API выставлен паралле
 
 ## 2. Слои приложения
 
-Reactor включает `padel-tournament-engines`, `padel-application` и `padel-bootstrap`; исполняемым остаётся только bootstrap. Первый application-срез — публичное чтение клубов: собственные record/порт/сценарий, service/readOnly-транзакция и явная регистрация из bootstrap. JPA-адаптер и оба MapStruct-маппера остаются в legacy. [Граница, переходные мосты и проверки](modular-monolith/phase-2/application-club-read.md). Catalog/home, прежний HTTP DTO и MVC клуба сохраняются.
+Reactor включает `padel-api-contract`, `padel-tournament-engines`, `padel-application` и `padel-bootstrap`; исполняемым остаётся только bootstrap. Первый application-срез — публичное чтение клубов: собственные record/порт/сценарий, service/readOnly-транзакция и явная регистрация из bootstrap. JPA-адаптер и оба MapStruct-маппера остаются в legacy. [Граница, переходные мосты и проверки](modular-monolith/phase-2/application-club-read.md). Catalog/home и MVC клуба сохраняются; два клубных GET используют generated Club из api-contract. [Контракт и сборка](modular-monolith/phase-2/contract-adoption.md).
 
 ### Структура пакетов
 

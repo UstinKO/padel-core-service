@@ -18,3 +18,5 @@
 Application не зависит от generated HTTP DTO, JPA или legacy-типов. Его порт возвращает собственную read-модель; адаптер пока остаётся под bootstrap. Contract не зависит от application. Маппинг выполняется MapStruct в соответствующих адаптерах. Поздняя #1051, физическая PostgreSQL и Swarm не запускаются этим срезом.
 
 Реализация #1199: [чтение клубов, wiring, карта переходных мостов и проверки](application-club-read.md). Application подключён третьим дочерним модулем reactor и второй library, HTTP record сохраняется до #1200. Verify — 1114 тестов без ошибок; HTTP baseline старого/нового jar, браузер, общий smoke, production Dockerfile и rollback прошли. Stack относительно #1180 отделяет принятый протокол пилота от backend-переноса.
+
+Реализация #1200: [канонический клубный OpenAPI, generated DTO и сборка](contract-adoption.md). Contract — четвёртый дочерний модуль и третья library; application не получает зависимости на HTTP DTO. Прежний discovery JSON доступен по старому пути как автоматически проверяемое представление клубного среза.

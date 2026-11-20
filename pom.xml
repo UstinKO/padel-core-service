@@ -42,6 +42,7 @@
     </properties>
 
     <modules>
+        <module>padel-api-contract</module>
         <module>padel-tournament-engines</module>
         <module>padel-application</module>
         <module>padel-bootstrap</module>
@@ -95,6 +96,11 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>com.padle.core</groupId>
+                <artifactId>padel-api-contract</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <dependency>
                 <groupId>com.padle.core</groupId>
                 <artifactId>padel-tournament-engines</artifactId>

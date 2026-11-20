@@ -33,3 +33,7 @@
 [#1198](https://github.com/UstinKO/padel-core-service/issues/1198) проверяет OpenAPI Generator 7.26.0, `java/restclient`, только модели, Jackson 3/Jakarta/release 17 и MapStruct 1.6.3. Две чистые генерации детерминированы. Локальный `beanValidation.mustache` исправляет ошибочный `@NotNull` на required-nullable полях; исходный отказ сохранён проверкой. Параметры, фактическое dependency tree, 12 тестов и ограничения — в [отчёте](../phase-2/generator-probe.md).
 
 Выбор ограничен первым Club response. Native oneOf не компилируется без клиентского supporting-кода; restclient oneOf без discriminator, readOnly/writeOnly и различение absent/null не получили общего разрешения на перенос. Успешная проба не означает пригодность генератора для всех существующих DTO. Production-контракт, reactor и endpoints этой задачей не переключаются; последующая runtime-интеграция требует завершения #1045 и отдельных #1199/#1200.
+
+## Подключение Club response 20.11.2026
+
+После включения #1199 создаётся padel-api-contract: один generated Club, только два GET публичных клубов. Используется проверенная конфигурация 7.26.0/restclient и шаблон required-nullable. Канонический OAS 3.1 находится в модуле, прежний discovery JSON сохраняется проверяемой проекцией для прямых потребителей. MapStruct и адаптация URI остаются в web-адаптере, application не зависит от contract. Problem остаётся Spring ProblemDetail, остальные DTO не переключаются. [Фактическая конфигурация и сборка](../phase-2/contract-adoption.md).

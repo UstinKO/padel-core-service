@@ -5,7 +5,7 @@ import com.padle.core.padelcoreservice.annotation.Timed;
 import com.padle.core.padelcoreservice.dto.PublicCatalogFilter;
 import com.padle.core.padelcoreservice.dto.PublicCatalogPage;
 import com.padle.core.padelcoreservice.dto.PublicHomeResponse;
-import com.padle.core.padelcoreservice.dto.PublicClubResponse;
+import com.padle.core.contract.clubs.Club;
 import com.padle.core.padelcoreservice.exception.PublicDiscoveryException;
 import com.padle.core.padelcoreservice.mapper.PublicClubMapper;
 import com.padle.core.padelcoreservice.mapper.PublicTournamentMapper;
@@ -58,12 +58,12 @@ public class PublicDiscoveryService {
     }
 
     @Timed(name = "public.clubs.time", tags = {"service=public-discovery", "operation=clubs"})
-    public List<PublicClubResponse> clubs() {
+    public List<Club> clubs() {
         return clubQuery.clubs().stream()
                 .map(club -> clubMapper.toPublicDto(club, baseUrl)).toList();
     }
 
-    public PublicClubResponse club(Long id) {
+    public Club club(Long id) {
         return clubQuery.club(id).map(club -> clubMapper.toPublicDto(club, baseUrl))
                 .orElseThrow(() -> new PublicDiscoveryException("CLUB_NOT_FOUND"));
     }
