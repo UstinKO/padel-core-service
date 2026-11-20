@@ -1,0 +1,162 @@
+{
+  "date": "2026-11-20",
+  "task": "LFPT-1045",
+  "technicalResult": "PASS",
+  "ownerAcceptance": "ACCEPTED_WITH_LIMITATIONS",
+  "baseMaster": "150b52d7",
+  "sourceRevision": "8a9ee29e2e29aa60970ad3201455e42da187533e",
+  "jarSha256": "5126f460d3771e22fc7fd7f22922476d5d17138f99d272bf7977f4ff7efd700c",
+  "backendVerify": {
+    "tests": 1105,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 2
+  },
+  "cases": [
+    {
+      "key": "qualified-8",
+      "result": "PASS",
+      "knownDefect": null
+    },
+    {
+      "key": "qualified-9",
+      "result": "PASS",
+      "knownDefect": 1067
+    },
+    {
+      "key": "qualified-16",
+      "result": "PASS",
+      "knownDefect": null
+    }
+  ],
+  "security": {
+    "ownAdmin": 200,
+    "foreignAdmin": 403,
+    "anonymousAdmin": 302,
+    "missingCsrf": 403,
+    "foreignMutation": 403,
+    "publicCard": 200,
+    "unchanged": true
+  },
+  "stale": {
+    "staleVersion": {
+      "status": 302,
+      "staleHeader": true
+    },
+    "stalePair": {
+      "status": 200,
+      "success": false
+    },
+    "unchangedAfterRefusal": true,
+    "regeneratePreservedPairs": true
+  },
+  "realtime": {
+    "legacySubscription": true,
+    "publicSubscription": true,
+    "legacyMessage": true,
+    "publicInvalidation": true,
+    "bothViewsUpdated": true,
+    "repeated": {
+      "status": 200,
+      "success": false,
+      "replayHeader": true
+    },
+    "concurrentSameKey": {
+      "accepted": 1,
+      "rejected": 1
+    },
+    "restorePreservedLinksAndResult": true,
+    "restoreLegacyMessage": true,
+    "restorePublicInvalidation": true,
+    "restoreBothViewsUpdated": true,
+    "restoreIdsPreserved": true,
+    "reactRestoreWithoutNavigation": true
+  },
+  "qualificationBoundary": {
+    "blockedBeforeQualification": true,
+    "directPostUnchanged": true,
+    "invalidScoreNotSent": true,
+    "missingCsrfRejected": {
+      "status": 302,
+      "destination": "/error/403"
+    },
+    "noStartAfterRefusal": true,
+    "startWithoutNavigation": true,
+    "allTeamsSeededAfterQualification": true,
+    "finished": true
+  },
+  "noShow": {
+    "activeTeams": 7,
+    "absentNumber": 8,
+    "excludedFromAvailableAndSeeding": true,
+    "publicRankingContainsAbsent": true
+  },
+  "jwt": {
+    "login": 200,
+    "me": 200,
+    "events": 200,
+    "anonymousMe": 401,
+    "transport": "inside-own-preview-container"
+  },
+  "commonBrowserSmoke": "PASS",
+  "artifactVerified": true,
+  "extended": {
+    "sourceRevision": "8a9ee29e2e29aa60970ad3201455e42da187533e",
+    "jarSha256": "5126f460d3771e22fc7fd7f22922476d5d17138f99d272bf7977f4ff7efd700c",
+    "automated": true,
+    "manual": "NOT_RUN",
+    "cases": [
+      {
+        "key": "early-9",
+        "tournamentId": 28,
+        "result": "PASS",
+        "repeatedPairPreservedId": true,
+        "invalidQualificationRefused": true,
+        "lastQualificationPreservedPairAndResult": true,
+        "linkedWinner": true,
+        "semifinal": null,
+        "finished": true
+      },
+      {
+        "key": "early-16",
+        "tournamentId": 29,
+        "result": "PASS",
+        "repeatedPairPreservedId": true,
+        "invalidQualificationRefused": true,
+        "lastQualificationPreservedPairAndResult": true,
+        "linkedWinner": false,
+        "semifinal": {
+          "confirmedBeforeOtherQuarterfinals": true,
+          "pairAndCourtPreserved": true
+        },
+        "finished": true
+      }
+    ],
+    "result": "PASS"
+  },
+  "rollback": {
+    "result": "PASS",
+    "scenarios": 5,
+    "statePreserved": true
+  },
+  "expo": {
+    "ordinaryPreviewApi": 401,
+    "gatewayBasicChallenge": true,
+    "qaAdapterApi": 200,
+    "events": 10,
+    "rendered": true,
+    "externalRequestsBlocked": true,
+    "ordinaryPreviewLimitationPreserved": true
+  },
+  "newOwnerManualActions": "NOT_RUN",
+  "historicalManualJournal": "manual-final.md",
+  "retainedLimits": [
+    "concurrent ACCEPTED_LIMITED 18.11 без нового ручного измерения",
+    "HTTP/WS/JWT и исходные регистрации выполнены агентом",
+    "обычный Expo в preview сохраняет Basic 401; функциональная проверка использует QA-адаптер",
+    "прежний текстовый дефект #1067 сохраняется"
+  ],
+  "runtimeExtractionAllowed": true,
+  "ownerDecisionDate": "2026-11-20",
+  "ownerDecision": "принимаем, повторять не будем"
+}

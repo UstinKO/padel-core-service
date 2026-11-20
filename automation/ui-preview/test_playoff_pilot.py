@@ -20,7 +20,7 @@ class PilotBoundaryTest(unittest.TestCase):
             (root / 'padel-bootstrap/target/padel-core-service-0.0.1-SNAPSHOT.jar').write_bytes(b'local-jar')
             client = Mock()
             client.request.return_value = json.dumps(dict(environment='preview', revision='a' * 40))
-            with patch.object(pilot.preview, 'ROOT', root), \
+            with patch.object(pilot.preview, 'ROOT', root), patch.object(pilot.preview, 'RUNTIME', root / 'runtime'), \
                     patch.object(pilot.preview, 'load', return_value=dict(project='own-preview')), \
                     patch.object(pilot.preview, 'compose'), patch.object(pilot.preview, 'Client', return_value=client), \
                     patch.object(pilot.preview, 'compose_environment', return_value={}), \
@@ -62,6 +62,32 @@ class PilotBoundaryTest(unittest.TestCase):
             public = (root / 'target/modular-pilot/fixture.json').read_text()
             self.assertNotIn(state['gateway_password'], public)
             self.assertNotIn(state['fixture_password'], public)
+
+    def test_manual_session_blocks_automatic_run_before_compose_or_login(self):
+        with tempfile.TemporaryDirectory() as directory:
+            runtime = Path(directory)
+            pilot.pilot_manual.begin(runtime / 'pilot-manual-session.json', 'own-preview', 'jar')
+            with patch.object(pilot.preview, 'RUNTIME', runtime), \
+                    patch.object(pilot.preview, 'load', return_value=dict(project='own-preview')), \
+                    patch.object(pilot.preview, 'compose') as compose, \
+                    patch.object(pilot.preview, 'Client') as client, \
+                    patch('sys.argv', ['playoff-pilot.py', 'run']):
+                with self.assertRaisesRegex(ValueError, 'ручная приёмка'):
+                    pilot.main()
+                compose.assert_not_called()
+                client.assert_not_called()
+
+    def test_extended_rejects_mutating_flags_before_loading_runtime(self):
+        import contextlib
+        import io
+        for flag in ['--reset', '--record', '--rehearse']:
+            with self.subTest(flag=flag), patch.object(pilot.preview, 'load') as load, \
+                    patch('sys.argv', ['playoff-pilot.py', 'extended', flag]), \
+                    contextlib.redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit) as failure:
+                    pilot.main()
+                self.assertEqual(failure.exception.code, 2)
+                load.assert_not_called()
 
 
 if __name__ == '__main__':

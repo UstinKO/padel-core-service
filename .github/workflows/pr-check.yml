@@ -143,6 +143,7 @@ jobs:
           # Разделяем независимые наборы по штатному AUTH-лимиту 10 входов в минуту.
           sleep 60
           python3 automation/ui-preview/playoff-pilot.py run --rehearse
+          python3 automation/ui-preview/playoff-pilot.py extended
           python3 automation/ui-preview/preview.py stop
           python3 automation/ui-preview/preview.py up
 
@@ -153,6 +154,8 @@ jobs:
           name: modular-pilot-qa
           path: |
             target/modular-pilot/report.json
+            target/modular-pilot/extended-report.json
+            target/modular-pilot/expo-smoke.json
             target/modular-pilot/rollback.json
             target/modular-pilot/jwt-smoke.json
             target/release-rehearsal/report.json
