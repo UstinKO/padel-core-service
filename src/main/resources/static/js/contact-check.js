@@ -41,13 +41,12 @@ const ContactCheck = (() => {
         ContactFields.countries(document.documentElement.lang || 'es')
             .forEach(({code,label}) => el('ccCountry').add(new Option(label, code)));
         el('ccCountry').value = 'AR';
-        el('ccCountry').addEventListener('change', () => { updateExample(); validatePhone(); });
-        el('ccPhone').addEventListener('input', validatePhone);
+        ContactFields.bindPhone(el('ccPhone'), el('ccCountry'), () => { updateExample(); validatePhone(); });
         el('ccPhone').addEventListener('blur', () => {
             const result = validatePhone();
             if (!result.error) {
-                el('ccPhone').value = result.display;
                 el('ccCountry').value = result.country;
+                ContactFields.formatPhoneInput(el('ccPhone'), el('ccCountry').value);
                 updateExample();
             }
         });
@@ -125,6 +124,7 @@ const ContactCheck = (() => {
         el('ccTelegram').value = data.telegramUsername ? ContactFields.telegram(data.telegramUsername).value : '';
         const existingPhone = ContactFields.phone(el('ccPhone').value, 'AR');
         el('ccCountry').value = existingPhone.country || 'AR';
+        ContactFields.formatPhoneInput(el('ccPhone'), el('ccCountry').value);
         updateExample();
         showFieldError('ccPhone', 'ccPhoneError');
         showFieldError('ccTelegram', 'ccTgError');

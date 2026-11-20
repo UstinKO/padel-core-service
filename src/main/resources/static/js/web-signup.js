@@ -41,16 +41,15 @@
     }
 
     phone.addEventListener('focus', updateExample);
-    phone.addEventListener('input', validatePhone);
+    ContactFields.bindPhone(phone, country, validatePhone);
     phone.addEventListener('blur', () => {
         const result = validatePhone();
         document.getElementById('telefonoHint').hidden = true;
         if (result.error) return;
-        phone.value = result.display;
         country.value = result.country;
+        ContactFields.formatPhoneInput(phone, country.value);
         updateExample();
     });
-    country.addEventListener('change', () => { updateExample(); validatePhone(); });
     telegram.addEventListener('input', validateTelegram);
     updateExample();
 

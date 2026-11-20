@@ -44,3 +44,79 @@ test('country list has translated calling codes in all supported languages', () 
         assert.equal(ar.label, name + ' (+54)');
     }
 });
+
+test('phone digits acquire country-specific separators without changing the saved number', () => {
+    for (const [digits,country,display,number] of [
+        ['0111523456789','AR','011 15-2345-6789','+5491123456789'],
+        ['89123456789','RU','8 (912) 345-67-89','+79123456789'],
+        ['2025550123','US','(202) 555-0123','+12025550123'],
+        ['+79123456789','AR','+7 912 345 67 89','+79123456789']
+    ]) {
+        assert.equal(fields.formatPhone(digits,country),display);
+        assert.equal(fields.phone(display,country).number,number);
+    }
+    assert.equal(fields.formatPhone('  +7 (912) 345-67-89  ','AR'),'+7 912 345 67 89');
+});
+
+test('formatting never turns text or an extension into another plausible phone', () => {
+    for (const value of ['call +79123456789','+79123456789 ext 123','++79123456789','+7 912 345 67 89#123']) {
+        assert.equal(fields.formatPhone(value,'RU'),value);
+        assert.equal(fields.phone(value,'RU').error,'PHONE_INVALID');
+    }
+});
+
+function phoneField(value = '') {
+    return {
+        value, selectionStart:value.length, selectionEnd:value.length, selectionDirection:'none',
+        listeners:{},
+        addEventListener(type, listener) { this.listeners[type] = listener; },
+        setSelectionRange(start,end,direction = 'none') {
+            this.selectionStart = start; this.selectionEnd = end; this.selectionDirection = direction;
+        }
+    };
+}
+function editPhone(field, inputType, text = '') {
+    field.listeners.beforeinput({target:field, inputType});
+    let start = field.selectionStart, end = field.selectionEnd;
+    if (start === end && inputType === 'deleteContentBackward') start = Math.max(0,start - 1);
+    if (start === end && inputType === 'deleteContentForward') end = Math.min(field.value.length,end + 1);
+    field.value = field.value.slice(0,start) + text + field.value.slice(end);
+    field.setSelectionRange(start + text.length,start + text.length);
+    field.listeners.input({target:field,inputType});
+}
+
+test('typing, deleting separators, replacing a selection and clearing work in the same field', () => {
+    const input = phoneField(), country = phoneField(); country.value = 'RU';
+    fields.bindPhone(input,country,() => {});
+    for (const digit of '9123456789') editPhone(input,'insertText',digit);
+    assert.equal(input.value,'912 345-67-89');
+    assert.equal(input.selectionStart,input.value.length);
+    input.setSelectionRange(8,8);
+    editPhone(input,'deleteContentBackward');
+    assert.equal(input.value.replace(/\D/g,''),'912346789');
+    assert.equal(input.selectionStart,6);
+    input.value = '912 345-67-89'; input.setSelectionRange(3,3);
+    editPhone(input,'deleteContentForward');
+    assert.equal(input.value.replace(/\D/g,''),'912456789');
+    input.setSelectionRange(0,input.value.length);
+    editPhone(input,'insertFromPaste','+54 (9) 11-2345-6789');
+    assert.equal(input.value,'+54 9 11 2345 6789');
+    input.setSelectionRange(0,input.value.length);
+    editPhone(input,'deleteContentBackward');
+    assert.equal(input.value,'');
+    assert.equal(input.selectionStart,0);
+});
+
+test('country changes reformat digits and composition is not interrupted', () => {
+    const input = phoneField('2025550123'), country = phoneField(); country.value = 'US';
+    fields.bindPhone(input,country,() => {});
+    country.listeners.change();
+    assert.equal(input.value,'(202) 555-0123');
+    country.value = 'AR'; country.listeners.change();
+    assert.equal(input.value,'202 555-0123');
+    input.value = '0111523456789'; input.setSelectionRange(13,13);
+    input.listeners.input({isComposing:true});
+    assert.equal(input.value,'0111523456789');
+    input.listeners.compositionend({isComposing:false});
+    assert.equal(input.value,'011 15-2345-6789');
+});
