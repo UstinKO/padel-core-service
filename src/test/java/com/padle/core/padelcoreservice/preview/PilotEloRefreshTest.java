@@ -27,6 +27,21 @@ class PilotEloRefreshTest {
     @TempDir Path directory;
 
     @Test
+    void disputedQuarterfinalIsExcludedBeforeEloReplay() {
+        var day = LocalDate.of(2026, 6, 14);
+        var played = new PreviewEloReplay.Game("other", 1, List.of(1L, 2L, 3L, 4L), 6, 4, false);
+        var disputed = new PreviewEloReplay.Game("B-1297006686:N4:N5", 4,
+                List.of(1L, 461L, 3L, 4L), 2, 6, false);
+        var event = new PreviewEloReplay.Event("B-1297006686", day, "D7", List.of(played, disputed),
+                Set.of(), Set.of(), "Tournament", "pair", null);
+        var history = new PreviewEloReplay.History(Map.of(1L, "A", 2L, "B", 3L, "C", 4L, "D", 461L, "Alesia"), List.of(event));
+        var corrected = PilotEloRefresh.excludeDisputedMatch(history);
+        assertThat(corrected.events().getFirst().games()).containsExactly(played);
+        assertThat(new PreviewEloReplay(40, true).replay(day, corrected.names(), corrected.events()).rows())
+                .extracting(PreviewEloRanking.Row::id).doesNotContain(461L).contains(1L, 2L, 3L, 4L);
+    }
+
+    @Test
     void excludesVerifiedQaTournamentAlongsideConfiguredExclusions() {
         assertThat(PilotEloRefresh.excludedEvents(Set.of("S-172")))
                 .containsExactlyInAnyOrder("S-172", "S-189")

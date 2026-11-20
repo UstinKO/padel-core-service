@@ -70,10 +70,21 @@ public class PilotEloRefresh {
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public PreviewEloRanking.Snapshot calculate() {
-        var history = source.merge(live.load(source.liveAfter(), source.managedIds(), excludedEvents(source.excludedEvents())));
+        var history = excludeDisputedMatch(source.merge(live.load(source.liveAfter(), source.managedIds(), excludedEvents(source.excludedEvents()))));
         var asOf = history.events().stream().map(PreviewEloReplay.Event::day).max(LocalDate::compareTo)
                 .filter(day -> day.isAfter(initial.snapshot().asOf())).orElse(initial.snapshot().asOf());
         return replay.replay(asOf, history.names(), history.events());
+    }
+
+    static PreviewEloReplay.History excludeDisputedMatch(PreviewEloReplay.History history) {
+        var events = history.events().stream().map(event -> {
+            if (!event.key().equals("B-1297006686")) return event;
+            var games = event.games().stream()
+                    .filter(game -> !game.key().equals("B-1297006686:N4:N5")).toList();
+            return new PreviewEloReplay.Event(event.key(), event.day(), event.category(), games,
+                    event.champions(), event.runnersUp(), event.title(), event.format(), event.resultsUrl());
+        }).toList();
+        return new PreviewEloReplay.History(history.names(), events, history.aliases());
     }
 
     static Set<String> excludedEvents(Set<String> configured) {
