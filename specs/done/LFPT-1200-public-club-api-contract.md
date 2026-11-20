@@ -1,7 +1,7 @@
 # LFPT-1200: Feature контракт API — подключить generated DTO к публичному чтению клубов
 
 ## Статус
-
+done
 implemented
 
 Реализация — [PR #1238](https://github.com/UstinKO/padel-core-service/pull/1238); [границы и результаты проверок](../../docs/modular-monolith/phase-2/contract-adoption.md). CI и ручной мерж учитываются отдельно.
