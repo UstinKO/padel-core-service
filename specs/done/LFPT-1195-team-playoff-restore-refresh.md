@@ -1,7 +1,7 @@
 # LFPT-1195: Fix восстановление истории Team Playoff — обновлять открытое legacy-табло
 
 ## Статус
-
+done
 in-progress
 
 ## Источник
