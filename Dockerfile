@@ -8,11 +8,13 @@ WORKDIR /app
 COPY pom.xml .
 COPY padel-bootstrap/pom.xml padel-bootstrap/pom.xml
 COPY padel-tournament-engines/pom.xml padel-tournament-engines/pom.xml
+COPY padel-application/pom.xml padel-application/pom.xml
 RUN mvn dependency:go-offline -B
 
 COPY frontend ./frontend
 COPY padel-bootstrap ./padel-bootstrap
 COPY padel-tournament-engines ./padel-tournament-engines
+COPY padel-application ./padel-application
 COPY src ./src
 RUN mvn clean package -DskipTests
 

@@ -125,6 +125,9 @@ jobs:
       - name: Check extracted engine artifact
         run: python3 .github/bin/check-engine-artifact.py
 
+      - name: Проверить библиотеку application в конечном jar
+        run: python3 .github/bin/check-application-artifact.py
+
       - name: Check immutable release package
         run: |
           python3 automation/releases/build.py --revision "$(git rev-parse HEAD)"

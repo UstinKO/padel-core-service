@@ -16,6 +16,10 @@
             <groupId>com.padle.core</groupId>
             <artifactId>padel-tournament-engines</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.padle.core</groupId>
+            <artifactId>padel-application</artifactId>
+        </dependency>
         <!-- Spring Boot Starters -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
