@@ -1,7 +1,7 @@
 # LFPT-1198: Feature контракт API — проверить генерацию Java DTO из OpenAPI
 
 ## Статус
-
+done
 approved
 
 ## Источник
