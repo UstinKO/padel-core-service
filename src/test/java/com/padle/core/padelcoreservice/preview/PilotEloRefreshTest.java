@@ -27,6 +27,22 @@ class PilotEloRefreshTest {
     @TempDir Path directory;
 
     @Test
+    void correctsQuarterfinalToConfirmedPlayerBeforeEloReplay() {
+        var day = LocalDate.of(2026, 6, 14);
+        var played = new PreviewEloReplay.Game("other", 1, List.of(166L, 407L, 225L, 221L), 6, 4, false);
+        var disputed = new PreviewEloReplay.Game("B-1297006686:N4:N5", 4,
+                List.of(166L, 461L, 225L, 221L), 2, 6, false);
+        var event = new PreviewEloReplay.Event("B-1297006686", day, "D7", List.of(played, disputed),
+                Set.of(), Set.of(), "Tournament", "pair", null);
+        var history = new PreviewEloReplay.History(Map.of(166L, "Yulia", 407L, "Irina", 225L, "Tony", 221L, "Arina", 461L, "Alesia"), List.of(event));
+        var corrected = PilotEloRefresh.correctJuneQuarterfinal(history);
+        assertThat(corrected.events().get(0).games()).containsExactly(played,
+                new PreviewEloReplay.Game("B-1297006686:N4:N5", 4, List.of(166L, 407L, 225L, 221L), 2, 6, false));
+        assertThat(new PreviewEloReplay(40, true).replay(day, corrected.names(), corrected.events()).rows())
+                .extracting(PreviewEloRanking.Row::id).doesNotContain(461L).contains(166L, 407L, 225L, 221L);
+    }
+
+    @Test
     void excludesVerifiedQaTournamentAlongsideConfiguredExclusions() {
         assertThat(PilotEloRefresh.excludedEvents(Set.of("S-172")))
                 .containsExactlyInAnyOrder("S-172", "S-189")

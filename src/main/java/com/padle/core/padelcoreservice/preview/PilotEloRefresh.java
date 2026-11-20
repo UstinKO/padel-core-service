@@ -20,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /** Чтение результатов без тестовых фикстур, записей рейтинга и таблиц исправлений preview. */
@@ -70,10 +71,27 @@ public class PilotEloRefresh {
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public PreviewEloRanking.Snapshot calculate() {
-        var history = source.merge(live.load(source.liveAfter(), source.managedIds(), excludedEvents(source.excludedEvents())));
+        var history = correctJuneQuarterfinal(source.merge(live.load(source.liveAfter(), source.managedIds(), excludedEvents(source.excludedEvents()))));
         var asOf = history.events().stream().map(PreviewEloReplay.Event::day).max(LocalDate::compareTo)
                 .filter(day -> day.isAfter(initial.snapshot().asOf())).orElse(initial.snapshot().asOf());
         return replay.replay(asOf, history.names(), history.events());
+    }
+
+    static PreviewEloReplay.History correctJuneQuarterfinal(PreviewEloReplay.History history) {
+        var events = history.events().stream().map(event -> {
+            if (!event.key().equals("B-1297006686")) return event;
+            var games = event.games().stream().map(game -> {
+                if (!game.key().equals("B-1297006686:N4:N5")) return game;
+                if (!game.ids().equals(List.of(166L, 461L, 225L, 221L))) {
+                    throw new IllegalStateException("Unexpected lineup in corrected June quarterfinal");
+                }
+                return new PreviewEloReplay.Game(game.key(), game.batch(), List.of(166L, 407L, 225L, 221L),
+                        game.left(), game.right(), game.verifiedFinal());
+            }).toList();
+            return new PreviewEloReplay.Event(event.key(), event.day(), event.category(), games,
+                    event.champions(), event.runnersUp(), event.title(), event.format(), event.resultsUrl());
+        }).toList();
+        return new PreviewEloReplay.History(history.names(), events, history.aliases());
     }
 
     static Set<String> excludedEvents(Set<String> configured) {
