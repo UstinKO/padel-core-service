@@ -47,6 +47,7 @@
     </style>
     <th:block th:replace="~{fragments/analytics :: ga4}"></th:block>
     <th:block th:replace="~{fragments/analytics :: cookie-consent}"></th:block>
+    <link rel="stylesheet" th:href="@{/css/contact-check.css}">
 </head>
 <body th:classappend="${previewEloByPlayer != null and previewEloByPlayer.get(player.id) != null} ? 'elo-cabinet' : ''">
 <!-- Header con navegación para usuarios autenticados -->
@@ -632,6 +633,9 @@
 <script th:src="@{/js/dashboard.js}"></script>
 <script th:if="${previewEloByPlayer != null}" th:src="@{/js/elo-preview-evolution.js}" defer></script>
 <script th:src="@{/js/participation.js}" defer></script>
+<script th:src="@{/js/vendor/libphonenumber/libphonenumber-max.js}"></script>
+<script th:src="@{/js/vendor/libphonenumber/examples.mobile.js}"></script>
+<script th:src="@{/js/contact-fields.js}"></script>
 <script th:src="@{/js/contact-check.js}"></script>
 <script th:src="@{/js/level-check.js}"></script>
 <script th:if="${previewEloByPlayer != null}" th:src="@{/js/elo-feedback.js}" defer></script>
