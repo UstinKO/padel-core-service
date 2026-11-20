@@ -156,7 +156,7 @@ public class SpaPageService {
             return new Metadata(details.event().name(), plain(details.event().description()), details.canonicalUrl(), 200);
         }
         var club = clubs.club(id);
-        return new Metadata(club.name(), plain(club.description()), club.canonicalUrl(), 200);
+        return new Metadata(club.getName(), plain(club.getDescription()), club.getCanonicalUrl().toString(), 200);
     }
 
     private String head(Metadata metadata, boolean preview, Locale locale) {

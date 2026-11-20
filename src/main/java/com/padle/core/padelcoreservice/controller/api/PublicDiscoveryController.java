@@ -3,7 +3,7 @@ package com.padle.core.padelcoreservice.controller.api;
 import com.padle.core.padelcoreservice.dto.PublicCatalogFilter;
 import com.padle.core.padelcoreservice.dto.PublicCatalogPage;
 import com.padle.core.padelcoreservice.dto.PublicHomeResponse;
-import com.padle.core.padelcoreservice.dto.PublicClubResponse;
+import com.padle.core.contract.clubs.Club;
 import com.padle.core.padelcoreservice.model.enums.GenderFormat;
 import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.model.enums.Modalidad;
@@ -41,10 +41,10 @@ public class PublicDiscoveryController {
     public ResponseEntity<PublicHomeResponse> home() { return response(service.home()); }
 
     @GetMapping("/clubs")
-    public ResponseEntity<List<PublicClubResponse>> clubs() { return response(service.clubs()); }
+    public ResponseEntity<List<Club>> clubs() { return response(service.clubs()); }
 
     @GetMapping("/clubs/{id}")
-    public ResponseEntity<PublicClubResponse> club(@PathVariable Long id) { return response(service.club(id)); }
+    public ResponseEntity<Club> club(@PathVariable Long id) { return response(service.club(id)); }
 
     private static <T> ResponseEntity<T> response(T body) {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(body);

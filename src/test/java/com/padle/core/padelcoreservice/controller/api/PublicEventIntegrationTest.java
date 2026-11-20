@@ -11,7 +11,8 @@ import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import com.padle.core.padelcoreservice.service.PublicEventStateService;
 import com.padle.core.padelcoreservice.service.PublicDiscoveryService;
-import com.padle.core.padelcoreservice.dto.PublicClubResponse;
+import com.padle.core.contract.clubs.Club;
+import java.net.URI;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -104,7 +105,8 @@ class PublicEventIntegrationTest {
 
     @Test
     void clubMetadataAndHeadPreserveCanonicalAndNoindex() throws Exception {
-        when(clubs.club(7L)).thenReturn(new PublicClubResponse(7L, "Club <&>", "Street", "City", "Description", null, null, null, "https://public.example.test/clubs/7"));
+        when(clubs.club(7L)).thenReturn(new Club().id(7L).name("Club <&>").address("Street").city("City").description("Description")
+                .canonicalUrl(URI.create("https://public.example.test/clubs/7")));
         var html = mvc.perform(get("/preview/clubs/7").with(user("admin").roles("SUPER_ADMIN")))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         assertThat(html).contains("https://public.example.test/clubs/7", "Club &lt;&amp;&gt;");

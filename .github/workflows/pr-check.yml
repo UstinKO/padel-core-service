@@ -33,6 +33,9 @@ jobs:
           cache-dependency-path: frontend/pnpm-lock.yaml
       - name: Install frontend dependencies
         run: pnpm --dir frontend install --frozen-lockfile
+      - name: Сверить канонический клубный OpenAPI
+        run: python3 .github/bin/sync-public-club-contract.py
+
       - name: Check frontend
         run: pnpm --dir frontend check
       - name: Install Chromium
@@ -127,6 +130,12 @@ jobs:
 
       - name: Проверить библиотеку application в конечном jar
         run: python3 .github/bin/check-application-artifact.py
+
+      - name: Проверить контракт и детерминизм генерации
+        run: |
+          python3 .github/bin/check-contract-artifact.py
+          python3 .github/bin/verify-club-generation.py
+          python3 -m unittest discover -s .github/bin -p test_contract_artifact.py
 
       - name: Check immutable release package
         run: |
