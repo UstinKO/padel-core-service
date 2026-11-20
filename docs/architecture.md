@@ -598,6 +598,8 @@ labels. Один балансируемый адрес не доказывает
 
 ### GitHub Actions
 
+В PR Check после сборки приложения отдельно запускается `python3 automation/openapi-probe/verify.py`: два ожидаемых отказа исходных шаблонов, две чистые генерации Java DTO, JSON/MapStruct/Jakarta-проверки, сравнение исходников, Java 17 bytecode и дерево зависимостей. Evidence публикуется артефактом `openapi-dto-probe`. Проба не входит в reactor или выпускаемый jar. [Конфигурация и ограничения](modular-monolith/phase-2/generator-probe.md).
+
 Пуш в `master` → `.github/workflows/deploy.yml`:
 
 1. CI собирает jar с React/Expo, проверяет Vite graph и SHA-256 каждого ресурса; собирает закреплённый runtime-образ с метками revision/jar SHA.

@@ -98,6 +98,21 @@ jobs:
               print('::error title=Test failure cause::' + escaped)
           PYCODE
 
+      - name: Проверить генерацию Java DTO из OpenAPI
+        run: python3 automation/openapi-probe/verify.py
+
+      - name: Сохранить результаты пробы OpenAPI
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi-dto-probe
+          path: |
+            target/openapi-probe-evidence/
+            automation/openapi-probe/target/input-sha256.json
+            automation/openapi-probe/target/surefire-reports/
+          if-no-files-found: ignore
+          retention-days: 3
+
       - name: Check agent instructions and pipeline automation
         run: |
           python3 -m unittest discover -s .github/bin -p 'test_*.py'
