@@ -752,6 +752,7 @@
                     </div>
                 </details>
 
+                <div id="playoffStartSection">
                 <!-- Инициализация плей-офф: квалификация полностью завершена -->
                 <div th:if="${ranking != null and ranking.finished and not playoffStarted}"
                      style="padding:1rem 1.5rem;background:#fef9c3;border-top:1px solid #fcd34d">
@@ -786,6 +787,7 @@
                             <span th:text="#{admin.playoff.btn.start_playoff}">Iniciar Playoff</span>
                         </button>
                     </form>
+                </div>
                 </div>
             </div>
         </div>
@@ -1480,7 +1482,23 @@
 
     window.addEventListener('team-playoff-update', refreshCourtBoard);
 
-    // ── Сохранение результата квалификации ────────────────────────────
+    let playoffStartRequest = 0;
+
+    async function refreshPlayoffStart() {
+        const section = document.getElementById('playoffStartSection');
+        if (!section) return;
+        const current = ++playoffStartRequest;
+        try {
+            const response = await fetch(location.pathname + location.search, {cache: 'no-store'});
+            if (!response.ok) return;
+            const page = new DOMParser().parseFromString(await response.text(), 'text/html');
+            const next = page.getElementById('playoffStartSection');
+            if (next && current === playoffStartRequest) section.replaceChildren(...next.childNodes);
+        } catch {
+            // При недоступном чтении сохраняем последнее подтверждённое состояние блока.
+        }
+    }
+
     function submitQualScore(btn) {
         const matchId = btn.dataset.matchId;
         const card    = document.getElementById('qmatch-' + matchId);
@@ -1516,6 +1534,7 @@
                 <button class="edit-btn" data-match-id="${matchId}" data-g1="${g1}" data-g2="${g2}"
                         onclick="showQualEdit(this)"><i class="fas fa-edit"></i> editar</button>`;
                 updateQualRanking();
+                refreshPlayoffStart();
                 refreshCourtBoard();
             } else {
                 alert(data.message === 'conduct.history.qualification_dependency'
