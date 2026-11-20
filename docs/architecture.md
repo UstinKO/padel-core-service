@@ -103,6 +103,8 @@ Expo web-клиентом 1Padel.App. REST API выставлен паралле
 
 ## 2. Слои приложения
 
+Reactor включает `padel-tournament-engines`, `padel-application` и `padel-bootstrap`; исполняемым остаётся только bootstrap. Первый application-срез — публичное чтение клубов: собственные record/порт/сценарий, service/readOnly-транзакция и явная регистрация из bootstrap. JPA-адаптер и оба MapStruct-маппера остаются в legacy. [Граница, переходные мосты и проверки](modular-monolith/phase-2/application-club-read.md). Catalog/home, прежний HTTP DTO и MVC клуба сохраняются.
+
 ### Структура пакетов
 
 ```
