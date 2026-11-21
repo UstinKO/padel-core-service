@@ -17,9 +17,17 @@
     </section>
     <section class="rr-section">
         <h2 th:text="#{rr.circle_matches}">Матчи кругового этапа</h2>
-        <details th:each="round : ${rounds}" th:open="${round.status.name() != 'COMPLETED'}" class="rr-round">
+        <details th:each="round : ${rounds}" th:open="${round.status.name() != 'COMPLETED'}" class="rr-round"
+                 th:with="playingCaptains=${round.matches.![team1Player1Id]},opposingCaptains=${round.matches.![team2Player1Id]}">
             <summary><span th:text="#{rr.round}">Раунд</span> <strong th:text="${round.roundNumber}">1</strong>
                 <span th:text="${round.completedMatches} + '/' + ${round.totalMatches}">0/2</span></summary>
+            <th:block th:each="team : ${ranking.ranking}">
+                <p class="rr-rest" th:if="${team.player1Id != null and not #lists.contains(playingCaptains, team.player1Id) and not #lists.contains(opposingCaptains, team.player1Id)}"
+                   th:attr="data-rr-rest-team=${team.id}">
+                    <span th:text="#{rr.resting}">В этом раунде отдыхает:</span>
+                    <span><strong th:text="'№' + ${team.teamNumber}">№1</strong> <span th:text="${team.displayName}">Пара</span></span>
+                </p>
+            </th:block>
             <div th:each="match : ${round.matches}" class="rr-game">
                 <div th:replace="~{fragments/round-robin :: game(${match.id}, ${match.team1Player1Name + ' / ' + match.team1Player2Name}, ${match.team2Player1Name + ' / ' + match.team2Player2Name}, ${match.team1Score}, ${match.team2Score}, ${match.courtNumber}, ${admin}, ${ranking.pointsPerMatch}, ${sets})}"></div>
             </div>
