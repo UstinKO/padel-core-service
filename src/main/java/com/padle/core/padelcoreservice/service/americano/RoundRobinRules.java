@@ -56,7 +56,6 @@ public final class RoundRobinRules {
         var sporting = mode == RoundRobinScoringMode.SETS
                 ? Comparator.comparing(AmericanoTeam::getMatchesWon).reversed()
                     .thenComparing(Comparator.comparing(AmericanoTeam::getGameDifference).reversed())
-                    .thenComparing(Comparator.comparing(AmericanoTeam::getGamesWon).reversed())
                 : Comparator.comparing(AmericanoTeam::getTotalScore).reversed()
                     .thenComparing(Comparator.comparing(AmericanoTeam::getMatchesWon).reversed())
                     .thenComparing(Comparator.comparing(AmericanoTeam::getPointDifference).reversed())
@@ -64,7 +63,7 @@ public final class RoundRobinRules {
         return sporting.thenComparing(AmericanoTeam::getTeamNumber).thenComparing(AmericanoTeam::getId);
     }
 
-    public static List<RoundRobinStandingDto> finalOrder(List<AmericanoTeam> circle, List<AmericanoMatch> extra) {
+    public static List<RoundRobinStandingDto> finalOrder(List<RoundRobinStandings.Ranked> circle, List<AmericanoMatch> extra) {
         Map<Integer, Long> assigned = new HashMap<>();
         extra.stream().filter(AmericanoMatch::isCompleted).filter(m -> m.getPlacementStart() != null)
                 .forEach(m -> {
@@ -72,11 +71,16 @@ public final class RoundRobinRules {
                     assigned.put(m.getPlacementStart(), firstWon ? m.getTeam1Id() : m.getTeam2Id());
                     assigned.put(m.getPlacementStart() + 1, firstWon ? m.getTeam2Id() : m.getTeam1Id());
                 });
-        var remaining = circle.stream().filter(t -> !assigned.containsValue(t.getId())).iterator();
-        var teams = circle.stream().collect(java.util.stream.Collectors.toMap(AmericanoTeam::getId, t -> t));
+        var remaining = circle.stream().filter(t -> !assigned.containsValue(t.team().getId())).toList();
+        var slots = IntStream.rangeClosed(1, circle.size()).filter(p -> !assigned.containsKey(p)).boxed().toList();
+        var tiedPlaces = IntStream.range(0, remaining.size()).boxed().collect(java.util.stream.Collectors.toMap(
+                i -> remaining.get(i).position(), slots::get, Math::min));
+        var bySlot = IntStream.range(0, remaining.size()).boxed().collect(java.util.stream.Collectors.toMap(slots::get, remaining::get));
+        var teams = circle.stream().collect(java.util.stream.Collectors.toMap(t -> t.team().getId(), t -> t.team()));
         return IntStream.rangeClosed(1, circle.size()).mapToObj(position -> {
-            var team = assigned.containsKey(position) ? teams.get(assigned.get(position)) : remaining.next();
-            return new RoundRobinStandingDto(team.getId(), team.getTeamNumber(), team.getDisplayName(), position);
+            var team = assigned.containsKey(position) ? teams.get(assigned.get(position)) : bySlot.get(position).team();
+            int place = assigned.containsKey(position) ? position : tiedPlaces.get(bySlot.get(position).position());
+            return new RoundRobinStandingDto(team.getId(), team.getTeamNumber(), team.getDisplayName(), place);
         }).toList();
     }
 

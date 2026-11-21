@@ -31,7 +31,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Service
@@ -485,13 +484,10 @@ public class TeamAmericanoService {
         var mode = roundRepository.findByTournamentIdOrderByRoundNumberAsc(tournamentId).stream()
                 .filter(r -> r.getPhase() == null).findFirst().map(RoundRobinRules::mode)
                 .orElse(RoundRobinScoringMode.POINTS);
-        List<AmericanoTeam> teams = teamRepository.findByTournamentId(tournamentId).stream()
-                .sorted(RoundRobinRules.order(mode)).toList();
-        AtomicInteger pos = new AtomicInteger(1);
-        teams.forEach(t -> {
-            t.setCurrentPosition(pos.getAndIncrement());
-            teamRepository.save(t);
-        });
+        var standings = RoundRobinStandings.rank(teamRepository.findByTournamentId(tournamentId),
+                matchRepository.findByTournamentIdOrderByRoundIdAscMatchNumberAsc(tournamentId), mode);
+        standings.forEach(entry -> entry.team().setCurrentPosition(entry.position()));
+        teamRepository.saveAll(standings.stream().map(RoundRobinStandings.Ranked::team).toList());
     }
 
     public List<AmericanoTeamDto> getTeams(Long tournamentId) {
@@ -648,16 +644,16 @@ public class TeamAmericanoService {
                                                  List<AmericanoRound> rounds) {
         var circle = rounds.stream().filter(r -> r.getPhase() == null).toList();
         var mode = circle.stream().findFirst().map(RoundRobinRules::mode).orElse(RoundRobinScoringMode.POINTS);
-        teams = teams.stream().sorted(RoundRobinRules.order(mode)).toList();
+        var allMatches = matchRepository.findByTournamentIdOrderByRoundIdAscMatchNumberAsc(tournament.getId());
+        var standings = RoundRobinStandings.rank(teams, allMatches, mode);
         long total = circle.size();
         long completed = circle.stream().filter(AmericanoRound::isCompleted).count();
         boolean finished = total > 0 && rounds.stream().allMatch(AmericanoRound::isCompleted);
 
-        AtomicInteger pos = new AtomicInteger(1);
-        List<AmericanoTeamDto> ranking = teams.stream()
-                .map(t -> {
-                    AmericanoTeamDto dto = toDto(t);
-                    dto.setCurrentPosition(pos.getAndIncrement());
+        List<AmericanoTeamDto> ranking = standings.stream()
+                .map(entry -> {
+                    AmericanoTeamDto dto = toDto(entry.team());
+                    dto.setCurrentPosition(entry.position());
                     return dto;
                 })
                 .collect(Collectors.toList());
@@ -674,8 +670,8 @@ public class TeamAmericanoService {
                 .courts(circle.stream().findFirst().map(AmericanoRound::getCourts).orElse(1))
                 .roundRobinComplete(total > 0 && completed == total)
                 .additionalMatches(additionalMatches.list(tournament.getId()))
-                .finalRanking(RoundRobinRules.finalOrder(teams,
-                        matchRepository.findByTournamentIdAndPhase(tournament.getId(), TournamentPhase.PLACEMENT)))
+                .finalRanking(RoundRobinRules.finalOrder(standings,
+                        allMatches.stream().filter(RoundRobinRules::additional).toList()))
                 .ranking(ranking)
                 .build();
     }
