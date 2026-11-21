@@ -124,6 +124,7 @@
                     </span>
                 </div>
 
+                <p th:if="${isTeamAmericanoInitialized == true}"><a class="btn btn-primary" th:href="@{'/tournaments/team-americano/' + ${tournament.id}}" th:text="#{rr.results}">Результаты турнира</a></p>
                 <!-- Кнопка быстрого доступа к сетке — только когда турнир инициализирован -->
                 <div th:if="${kingOfCourtActive or (tournament.tipo.name() == 'AMERICANO' and tournament.modalidad.name() != 'DOBLES' and isInitialized) or (isTeamPlayoffFormat == true and isPlayoffQualStarted == true)}"
                      style="margin-top: 1rem;">
