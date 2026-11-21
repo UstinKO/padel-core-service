@@ -71,7 +71,7 @@ public class TeamAmericanoViewControllerRankingTest {
                 .mostrarNivel(true).build();
         var team = AmericanoTeamDto.builder()
                 .id(1L).teamNumber(7).currentPosition(1).displayName("Alpha / Beta")
-                .totalScore(36).matchesPlayed(3).matchesWon(2).matchesLost(1).pointDifference(4)
+                .totalScore(36).matchesPlayed(3).matchesWon(2).matchesLost(1).pointDifference(4).gameDifference(4)
                 .player1Email("hidden@example.test").player1Phone("private-contact").build();
         var standing = new RoundRobinStandingDto(1L, 7, "Alpha / Beta", 1);
         var extra = new RoundRobinAdditionalMatchDto(

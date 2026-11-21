@@ -1,23 +1,30 @@
 <!doctype html><html xmlns:th="http://www.thymeleaf.org"><body>
-<div th:fragment="content(admin)" class="rr" th:if="${ranking != null}"
+<div th:fragment="content(admin)" class="rr" th:classappend="${not admin} ? 'rr-public' : ''" th:if="${ranking != null}"
      th:with="sets=${ranking.scoringMode != null and ranking.scoringMode.name() == 'SETS'}">
     <div class="rr-banner"><strong th:text="#{rr.title}">Круговой турнир</strong><span th:text="${sets} ? #{rr.sets} : #{rr.points}">Подсчёт</span></div>
     <section class="rr-section">
         <h2 th:text="#{rr.circle_table}">Круговая таблица</h2>
         <p th:text="${sets} ? #{rr.set_rule} : #{rr.points_rule}">Правила мест</p>
-        <div class="rr-table-scroll"><table class="table">
-            <thead><tr><th>#</th><th th:text="#{rr.team}">Пара</th><th th:if="${tournament.mostrarNivel}" th:text="#{team_americano.table.level}">Уровень</th><th th:text="${sets} ? #{rr.games} : #{rr.score}">Очки</th>
-                <th th:text="#{rr.played}">И</th><th th:text="#{rr.wins}">В</th><th th:text="#{rr.losses}">П</th><th th:text="#{rr.diff}">Разница</th></tr></thead>
+        <div class="rr-table-scroll"><table class="table" th:classappend="${sets} ? 'rr-standings-sets' : ''">
+            <colgroup th:if="${sets}"><col class="rr-col-position"><col><col class="rr-col-wins"><col class="rr-col-difference"></colgroup>
+            <thead><tr><th scope="col">#</th><th scope="col" th:text="#{rr.team}">Пара</th>
+                <th scope="col" th:if="${sets}" th:text="#{rr.wins_full}">Победы</th><th scope="col" th:if="${sets}" th:text="#{rr.game_difference}">Разница геймов</th>
+                <th th:if="${not sets and tournament.mostrarNivel}" th:text="#{team_americano.table.level}">Уровень</th>
+                <th th:unless="${sets}" th:text="#{rr.score}">Очки</th><th th:unless="${sets}" th:text="#{rr.played}">И</th>
+                <th th:unless="${sets}" th:text="#{rr.wins}">В</th><th th:unless="${sets}" th:text="#{rr.losses}">П</th><th th:unless="${sets}" th:text="#{rr.diff}">Разница</th></tr></thead>
             <tbody><tr th:each="team : ${ranking.ranking}">
-                <td th:text="${team.currentPosition}">1</td><td><strong th:text="'№' + ${team.teamNumber}">№1</strong> <span th:text="${team.displayName}">Игрок / Игрок</span></td>
-                <td th:if="${tournament.mostrarNivel}" th:text="${(team.player1Nivel != null ? team.player1Nivel.display : '—') + ' / ' + (team.player2Nivel != null ? team.player2Nivel.display : '—')}">—</td><td th:text="${team.totalScore}">0</td><td th:text="${team.matchesPlayed}">0</td><td th:text="${team.matchesWon}">0</td>
-                <td th:text="${team.matchesLost}">0</td><td th:text="${team.pointDifference}">0</td>
+                <td th:text="${team.currentPosition}">1</td><td><strong th:text="'№' + ${team.teamNumber}">№1</strong> <span th:text="${team.displayName}">Игрок / Игрок</span>
+                    <small th:if="${sets and tournament.mostrarNivel}" class="rr-team-level" th:text="${(team.player1Nivel != null ? team.player1Nivel.display : '—') + ' / ' + (team.player2Nivel != null ? team.player2Nivel.display : '—')}">—</small></td>
+                <td th:if="${sets}" th:text="${team.matchesWon}">0</td><td th:if="${sets}" th:text="${team.gameDifference > 0 ? '+' : ''} + ${team.gameDifference}">0</td>
+                <td th:if="${not sets and tournament.mostrarNivel}" th:text="${(team.player1Nivel != null ? team.player1Nivel.display : '—') + ' / ' + (team.player2Nivel != null ? team.player2Nivel.display : '—')}">—</td>
+                <td th:unless="${sets}" th:text="${team.totalScore}">0</td><td th:unless="${sets}" th:text="${team.matchesPlayed}">0</td><td th:unless="${sets}" th:text="${team.matchesWon}">0</td>
+                <td th:unless="${sets}" th:text="${team.matchesLost}">0</td><td th:unless="${sets}" th:text="${team.pointDifference}">0</td>
             </tr></tbody>
         </table></div>
     </section>
     <section class="rr-section">
         <h2 th:text="#{rr.circle_matches}">Матчи кругового этапа</h2>
-        <details th:each="round : ${rounds}" th:open="${round.status.name() != 'COMPLETED'}" class="rr-round"
+        <details th:each="round : ${rounds}" th:open="${not admin or round.status.name() != 'COMPLETED'}" class="rr-round"
                  th:with="playingCaptains=${round.matches.![team1Player1Id]},opposingCaptains=${round.matches.![team2Player1Id]}">
             <summary><span th:text="#{rr.round}">Раунд</span> <strong th:text="${round.roundNumber}">1</strong>
                 <span th:text="${round.completedMatches} + '/' + ${round.totalMatches}">0/2</span></summary>
@@ -74,7 +81,11 @@
 </div>
 <div th:fragment="game(id, first, second, score1, score2, court, admin, limit, sets)">
     <p class="rr-court"><span th:text="#{rr.court}">Корт</span> <strong th:text="${court}">1</strong></p>
-    <div class="rr-pairing"><span th:text="${first}">Пара 1</span><strong th:text="${score1 == null ? '—' : score1} + ':' + ${score2 == null ? '—' : score2}">—:—</strong><span th:text="${second}">Пара 2</span></div>
+    <div th:if="${admin}" class="rr-pairing"><span th:text="${first}">Пара 1</span><strong th:text="${score1 == null ? '—' : score1} + ':' + ${score2 == null ? '—' : score2}">—:—</strong><span th:text="${second}">Пара 2</span></div>
+    <div th:unless="${admin}" class="rr-public-pairing">
+        <div><span th:text="${first}">Пара 1</span><strong th:text="${score1 == null ? '—' : score1}">—</strong></div>
+        <div><span th:text="${second}">Пара 2</span><strong th:text="${score2 == null ? '—' : score2}">—</strong></div>
+    </div>
     <form th:if="${admin}" data-rr-score th:id="'rr-score-' + ${id}" th:attr="data-id=${id},data-error=#{rr.save_error}" class="rr-score-form">
         <label><span th:text="#{rr.score1}">Счёт команды 1</span><input class="form-control" type="number" name="team1Score" min="0" th:max="${sets} ? 6 : ${limit}" th:value="${score1 == null ? 0 : score1}" required></label>
         <label><span th:text="#{rr.score2}">Счёт команды 2</span><input class="form-control" type="number" name="team2Score" min="0" th:max="${sets} ? 6 : ${limit}" th:value="${score2 == null ? 0 : score2}" required></label>

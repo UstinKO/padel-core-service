@@ -160,6 +160,18 @@ class TeamAmericanoGuestPartnerDisplayTest {
         teamAmericanoService.submitMatchResult(rounds.get(0).getMatches().get(0).getId(), firstScore, secondScore);
         assertThat(restingTeams(publicHtml(tournamentId, language)))
                 .containsExactlyInAnyOrderElementsOf(restingBefore);
+        rounds.stream().flatMap(round -> round.getMatches().stream())
+                .forEach(match -> teamAmericanoService.submitMatchResult(match.getId(), firstScore, secondScore));
+        String completed = publicHtml(tournamentId, language);
+        var roundTags = Pattern.compile("<details\\b[^>]*>").matcher(completed).results()
+                .map(result -> result.group()).filter(tag -> tag.contains("rr-round")).toList();
+        assertThat(roundTags).hasSize(rounds.size()).allSatisfy(tag -> assertThat(tag).contains("open"));
+        assertThat(completed).contains("rr-public-pairing");
+        if (mode.equals("SETS")) {
+            var header = Pattern.compile("<thead>(.*?)</thead>", Pattern.DOTALL).matcher(completed);
+            assertThat(header.find()).isTrue();
+            assertThat(Pattern.compile("<th\\b").matcher(header.group(1)).results().count()).isEqualTo(4);
+        }
     }
 
     private String publicHtml(Long tournamentId, String language) throws Exception {
