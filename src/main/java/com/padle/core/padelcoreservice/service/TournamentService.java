@@ -1031,6 +1031,16 @@ public class TournamentService {
     }
 
     @Transactional
+    public void setTestTournament(Long id, boolean testTournament, Owner owner) {
+        if (owner == null || !owner.isSuperAdmin()) throw new org.springframework.security.access.AccessDeniedException("Super admin required");
+        Tournament tournament = tournamentRepository.lockById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Tournament not found"));
+        tournament.setTestTournament(testTournament);
+        tournamentRepository.save(tournament);
+        log.info("Tournament {} test status set to {} by administrator {}", id, testTournament, owner.getId());
+    }
+
+    @Transactional
     public Optional<TournamentDto> updateTournamentStatus(Long id, TournamentStatus newStatus, Long updatedBy) {
         return tournamentRepository.findById(id)
                 .map(tournament -> {
