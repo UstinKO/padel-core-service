@@ -319,6 +319,7 @@
             .reg-table tbody td { padding: .45rem .5rem; }
         }
     </style>
+<link rel="stylesheet" th:href="@{/css/round-robin.css}">
 </head>
 <body>
 <header th:replace="~{fragments/admin-header :: header(#{admin.tournaments.details.header})}"></header>
@@ -404,7 +405,7 @@
                             ? '/tournaments/king-of-court/' + kingOfCourtId
                             : (tournament.tipo.name() == 'AMERICANO' and tournament.modalidad.name() == 'INDIVIDUAL' and isInitialized == true)
                                 ? '/tournaments/americano/' + tournament.id
-                            : (tournament.tipo.name() == 'AMERICANO' and tournament.modalidad.name() == 'DOBLES' and isTeamAmericanoInitialized == true)
+                            : (isTeamAmericanoInitialized == true)
                                 ? '/tournaments/team-americano/' + tournament.id
                             : (tournament.tipo.name() == 'AMERICANO_TEAMS' and isPlayoffQualStarted == true)
                                 ? '/tournaments/team-playoff/' + tournament.id
@@ -1010,13 +1011,17 @@
                     </div>
                 </div>
                 <!-- ── конец AMERICANO ── -->
+                <div th:if="${(tournament.tipo.name() == 'AMERICANO_TEAMS' or (tournament.tipo.name() == 'AMERICANO' and tournament.modalidad.name() == 'DOBLES')) and isPlayoffQualStarted != true}">
+                    <section th:replace="~{fragments/round-robin-start :: start}"></section>
+                </div>
+
 
                 <!-- ═══════════════════════════════════════════════════════════
                      AMERICANO PAREJAS (AMERICANO + DOBLES)
                      Формат: Квалификация (2 матча/команда) + Плей-офф
                      LEGACY: если уже запущен Round Robin → старый путь
                 ═══════════════════════════════════════════════════════════ -->
-                <div th:if="${tournament.tipo.name() == 'AMERICANO' and tournament.modalidad.name() == 'DOBLES'}"
+                <div th:if="${tournament.tipo.name() == 'AMERICANO' and tournament.modalidad.name() == 'DOBLES' and isTeamAmericanoInitialized != true}"
                      class="admin-card americano-card">
                     <div class="admin-card-header">
                         <h2>
@@ -1152,7 +1157,7 @@
                 <!-- ═══════════════════════════════════════════════════════════
                      AMERICANO_TEAMS (tipo explícito — mismo formato que Dobles)
                 ═══════════════════════════════════════════════════════════ -->
-                <div th:if="${tournament.tipo.name() == 'AMERICANO_TEAMS'}"
+                <div th:if="${tournament.tipo.name() == 'AMERICANO_TEAMS' and isTeamAmericanoInitialized != true}"
                      class="admin-card americano-card">
                     <div class="admin-card-header">
                         <h2>
