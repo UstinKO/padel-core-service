@@ -27,6 +27,20 @@ class PilotEloRefreshTest {
     @TempDir Path directory;
 
     @Test
+    void markedTestTournamentDisappearsFromReplayedHistoryAndCanBeRestored() {
+        var day = LocalDate.of(2026, 11, 14);
+        var game = new PreviewEloReplay.Game("pair:1", 1, List.of(1L, 2L, 3L, 4L), 6, 4, false);
+        var event = new PreviewEloReplay.Event("S-123", day, "C8", List.of(game), Set.of(), Set.of(), "Test", "pair", null);
+        var history = new PreviewEloReplay.History(Map.of(1L, "A", 2L, "B", 3L, "C", 4L, "D"), List.of(event));
+        var replay = new PreviewEloReplay(40, true);
+        assertThat(replay.replay(day, history.names(), history.events()).rows()).hasSize(4);
+        var excluded = PilotEloRefresh.excludeTestTournaments(history, Set.of(123L));
+        assertThat(replay.replay(day, excluded.names(), excluded.events()).rows()).isEmpty();
+        var restored = PilotEloRefresh.excludeTestTournaments(history, Set.of());
+        assertThat(replay.replay(day, restored.names(), restored.events()).rows()).hasSize(4);
+    }
+
+    @Test
     void correctsQuarterfinalToConfirmedPlayerBeforeEloReplay() {
         var day = LocalDate.of(2026, 6, 14);
         var played = new PreviewEloReplay.Game("other", 1, List.of(166L, 407L, 225L, 221L), 6, 4, false);
@@ -40,13 +54,6 @@ class PilotEloRefreshTest {
                 new PreviewEloReplay.Game("B-1297006686:N4:N5", 4, List.of(166L, 407L, 225L, 221L), 2, 6, false));
         assertThat(new PreviewEloReplay(40, true).replay(day, corrected.names(), corrected.events()).rows())
                 .extracting(PreviewEloRanking.Row::id).doesNotContain(461L).contains(166L, 407L, 225L, 221L);
-    }
-
-    @Test
-    void excludesVerifiedQaTournamentAlongsideConfiguredExclusions() {
-        assertThat(PilotEloRefresh.excludedEvents(Set.of("S-172")))
-                .containsExactlyInAnyOrder("S-172", "S-189")
-                .doesNotContain("S-188", "S-190");
     }
 
     @Test

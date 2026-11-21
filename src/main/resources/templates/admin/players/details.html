@@ -149,14 +149,16 @@
                 <div class="admin-card-body">
                     <div class="stats-grid-mini">
                         <div class="stat-mini-item">
-                            <div class="stat-mini-value" th:text="0">0</div>
+                            <div class="stat-mini-value" th:text="${adminEloRow != null and adminEloRow.achievements != null} ? ${adminEloRow.achievements.tournaments} : '—'">—</div>
                             <div class="stat-mini-label" th:text="#{admin.players.details.stat.played}">Torneos jugados</div>
                         </div>
                         <div class="stat-mini-item">
-                            <div class="stat-mini-value" th:text="0">0</div>
+                            <div class="stat-mini-value" th:text="${adminEloRow != null and adminEloRow.achievements != null} ? ${adminEloRow.achievements.titles} : '—'">—</div>
                             <div class="stat-mini-label" th:text="#{admin.players.details.stat.won}">Torneos ganados</div>
                         </div>
                     </div>
+                    <p th:if="${adminEloRow != null}" th:text="#{admin.players.elo.statistics_note}"></p>
+                    <p th:unless="${adminEloRow != null}" th:text="#{admin.players.elo.statistics_unavailable}"></p>
                 </div>
             </div>
 

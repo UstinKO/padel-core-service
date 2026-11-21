@@ -72,6 +72,23 @@ class ClubOwnershipIntegrationTest {
     }
 
     @Test
+    void testTournamentFlagRequiresSuperAdminAndCanBeReversed() throws Exception {
+        TournamentDto own = tournaments.createTournament(form(first), actor.getId());
+        mvc.perform(post("/admin/tournaments/" + own.getId() + "/test-status")
+                .with(user(actor)).with(csrf()).param("testTournament", "true").header("Accept", "application/json"))
+                .andExpect(status().isForbidden());
+        assertThat(events.findById(own.getId()).orElseThrow().getTestTournament()).isFalse();
+        mvc.perform(post("/admin/tournaments/" + own.getId() + "/test-status")
+                .with(user(root)).with(csrf()).param("testTournament", "true"))
+                .andExpect(status().is3xxRedirection());
+        assertThat(events.findById(own.getId()).orElseThrow().getTestTournament()).isTrue();
+        mvc.perform(post("/admin/tournaments/" + own.getId() + "/test-status")
+                .with(user(root)).with(csrf()).param("testTournament", "false"))
+                .andExpect(status().is3xxRedirection());
+        assertThat(events.findById(own.getId()).orElseThrow().getTestTournament()).isFalse();
+    }
+
+    @Test
     void creationUsesSelectedAssignedClubAndRejectsUnassignedOrInactive() {
         TournamentDto one = tournaments.createTournament(form(first), actor.getId());
         TournamentDto two = tournaments.createTournament(form(second), actor.getId());
