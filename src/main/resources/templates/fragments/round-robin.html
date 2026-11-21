@@ -4,7 +4,7 @@
     <div class="rr-banner"><strong th:text="#{rr.title}">Круговой турнир</strong><span th:text="${sets} ? #{rr.sets} : #{rr.points}">Подсчёт</span></div>
     <section class="rr-section">
         <h2 th:text="#{rr.circle_table}">Круговая таблица</h2>
-        <p th:text="${sets} ? #{rr.set_rule} : #{rr.points_rule}">Правила мест</p>
+        <p th:text="${sets} ? #{rr.table_set_order} : #{rr.points_rule}" th:title="${sets} ? #{rr.set_rule} : #{rr.points_rule}">Правила мест</p>
         <div class="rr-table-scroll"><table class="table" th:classappend="${sets} ? 'rr-standings-sets' : ''">
             <colgroup th:if="${sets}"><col class="rr-col-position"><col><col class="rr-col-wins"><col class="rr-col-difference"></colgroup>
             <thead><tr><th scope="col">#</th><th scope="col" th:text="#{rr.team}">Пара</th>

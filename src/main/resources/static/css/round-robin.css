@@ -278,7 +278,7 @@
     line-height: 1.25;
   }
   .rr-col-wins {
-    width: 3.75rem;
+    width: 4.5rem;
   }
   .rr-col-difference {
     width: 4.5rem;
@@ -286,4 +286,8 @@
   .rr-public .rr-section {
     margin: 0.7rem 0;
   }
+}
+
+.rr .rr-standings-sets th:nth-child(3) {
+  white-space: nowrap;
 }
