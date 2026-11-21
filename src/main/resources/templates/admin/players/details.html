@@ -192,6 +192,41 @@
             </div>
         </div>
 
+        <section class="admin-card" th:if="${isSuperAdmin and eloHistoryAvailable}">
+            <div class="admin-card-header"><h2><i class="fas fa-chart-line"></i>
+                <span th:text="#{admin.players.elo.history}">Historial Elo</span></h2></div>
+            <div class="admin-card-body">
+                <p th:if="${adminEloRow == null}" th:text="#{admin.players.elo.empty}">Sin partidos para el ranking.</p>
+                <div th:if="${adminEloRow != null}">
+                    <p><strong th:text="${#numbers.formatDecimal(adminEloRow.elo, 1, 2)} + ' Elo'"></strong>
+                        · <span th:text="${adminEloRow.category}"></span></p>
+                    <div style="overflow-x:auto">
+                        <table class="admin-table">
+                            <thead><tr>
+                                <th th:text="#{admin.players.elo.date}">Fecha</th>
+                                <th th:text="#{admin.players.elo.tournament}">Torneo</th>
+                                <th th:text="#{admin.players.elo.category}">Categoría</th>
+                                <th th:text="#{admin.players.elo.matches}">Partidos</th>
+                                <th th:text="#{admin.players.elo.wins}">Victorias</th>
+                                <th th:text="#{admin.players.elo.change}">Cambio Elo</th>
+                                <th th:text="#{admin.players.elo.after}">Elo después</th>
+                            </tr></thead>
+                            <tbody><tr th:each="event : ${adminEloRow.tournamentHistory}">
+                                <td th:text="${#temporals.format(event.day, 'dd/MM/yyyy')}"></td>
+                                <td><a th:if="${event.resultsUrl != null}" th:href="${event.resultsUrl}"
+                                       th:text="${event.title != null ? event.title : event.format}"></a>
+                                    <span th:unless="${event.resultsUrl != null}" th:text="${event.title != null ? event.title : event.format}"></span></td>
+                                <td th:text="${event.category}"></td>
+                                <td th:text="${event.matches}"></td><td th:text="${event.wins}"></td>
+                                <td th:text="${(event.change > 0 ? '+' : '') + #numbers.formatDecimal(event.change, 1, 2)}"></td>
+                                <td th:text="${#numbers.formatDecimal(event.elo, 1, 2)}"></td>
+                            </tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <div th:if="${isGuestAccount and player.activo}" sec:authorize="hasAnyRole('ORGANIZER','SUPER_ADMIN')">
             <th:block th:replace="~{fragments/guest-profile-claim :: activate(${player.id})}"></th:block>
         </div>
