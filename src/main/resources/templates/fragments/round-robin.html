@@ -6,11 +6,11 @@
         <h2 th:text="#{rr.circle_table}">Круговая таблица</h2>
         <p th:text="${sets} ? #{rr.set_rule} : #{rr.points_rule}">Правила мест</p>
         <div class="rr-table-scroll"><table class="table">
-            <thead><tr><th>#</th><th th:text="#{rr.team}">Пара</th><th th:text="${sets} ? #{rr.games} : #{rr.score}">Очки</th>
+            <thead><tr><th>#</th><th th:text="#{rr.team}">Пара</th><th th:if="${tournament.mostrarNivel}" th:text="#{team_americano.table.level}">Уровень</th><th th:text="${sets} ? #{rr.games} : #{rr.score}">Очки</th>
                 <th th:text="#{rr.played}">И</th><th th:text="#{rr.wins}">В</th><th th:text="#{rr.losses}">П</th><th th:text="#{rr.diff}">Разница</th></tr></thead>
             <tbody><tr th:each="team : ${ranking.ranking}">
                 <td th:text="${team.currentPosition}">1</td><td><strong th:text="'№' + ${team.teamNumber}">№1</strong> <span th:text="${team.displayName}">Игрок / Игрок</span></td>
-                <td th:text="${team.totalScore}">0</td><td th:text="${team.matchesPlayed}">0</td><td th:text="${team.matchesWon}">0</td>
+                <td th:if="${tournament.mostrarNivel}" th:text="${(team.player1Nivel != null ? team.player1Nivel.display : '—') + ' / ' + (team.player2Nivel != null ? team.player2Nivel.display : '—')}">—</td><td th:text="${team.totalScore}">0</td><td th:text="${team.matchesPlayed}">0</td><td th:text="${team.matchesWon}">0</td>
                 <td th:text="${team.matchesLost}">0</td><td th:text="${team.pointDifference}">0</td>
             </tr></tbody>
         </table></div>

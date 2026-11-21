@@ -50,5 +50,38 @@
 <p th:text="#{rr.results}">Результаты турнира</p>
 <div th:if="${isInitialized}" th:replace="~{fragments/round-robin :: content(false)}"></div>
 <p th:unless="${isInitialized}" th:text="#{rr.no_results}">Результаты ещё не сохранены.</p>
-</div></main><script th:src="@{/js/main.js}"></script>
+</div></main>
+<footer class="footer">
+    <div class="container">
+        <div class="footer-grid">
+            <div class="footer-info">
+                <div class="footer-logo">
+                    <img th:src="@{/images/2.svg}" alt="1-Padel Logo" class="footer-logo-img" width="36" height="36">
+                    <span>1-PADEL</span>
+                </div>
+                <div class="footer-social">
+                    <a href="https://www.instagram.com/e.padel.torneos" class="social-link" aria-label="Instagram">
+                        <i class="fab fa-instagram"></i>
+                    </a>
+                    <a href="https://wa.me/5491158985854" class="social-link whatsapp" aria-label="WhatsApp" target="_blank">
+                        <i class="fab fa-whatsapp"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="footer-links">
+                <h4 class="footer-title">Legal</h4>
+                <ul class="footer-menu">
+                    <li><a href="/terminos"><i class="fas fa-file-contract"></i> Términos</a></li>
+                    <li><a href="/privacidad"><i class="fas fa-shield-alt"></i> Privacidad</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div class="footer-copyright" th:text="#{footer.copyright}">
+                © 2026 1-Padel. Todos los derechos reservados.
+            </div>
+        </div>
+    </div>
+</footer>
+<script th:src="@{/js/main.js}"></script>
 </body></html>
