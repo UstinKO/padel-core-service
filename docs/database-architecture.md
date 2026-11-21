@@ -1,7 +1,7 @@
 # Архитектура базы данных — padel-core-service
 
 > **СУБД:** PostgreSQL 15  
-> **Версия схемы:** v1.79
+> **Версия схемы:** v1.80
 > **Миграции:** Liquibase (YAML), файлы в `src/main/resources/db/changelog/versions/`  
 > **ddl-auto:** `none` — схема управляется только через Liquibase
 
@@ -605,6 +605,7 @@ tournaments_db
 | `is_doubles` | `BOOLEAN` | NOT NULL | — | `true` — парный раунд |
 | `courts` | `INTEGER` | NULL | — | Количество активных кортов в раунде |
 | `note` | `VARCHAR(255)` | NULL | — | Заметка |
+| `scoring_mode` | `VARCHAR(16)` | NULL | — | POINTS/SETS; NULL у прежних раундов означает POINTS |
 | `phase` | `VARCHAR(20)` | NULL | — | Фаза: `QUALIFICATION` / `PLAYOFF` |
 | `created_at` | `TIMESTAMP` | NOT NULL | now() | — |
 | `updated_at` | `TIMESTAMP` | NOT NULL | now() | — |
@@ -627,6 +628,8 @@ tournaments_db
 | `team2_player2_id` | `BIGINT` | NULL | — | FK → `player_padel_db.id` (парный) |
 | `team1_score` | `INTEGER` | NULL | — | Очки команды 1 |
 | `team2_score` | `INTEGER` | NULL | — | Очки команды 2 |
+| `placement_start` | `INTEGER` | NULL | — | Первое из двух разыгрываемых мест; NULL — отдельная встреча без назначения мест |
+| `round_robin_request_id` | `UUID` | NULL, UNIQUE для непустых | — | Ключ повторной отправки дополнительной встречи |
 | `team1_games` | `INTEGER` | NULL | — | Геймы команды 1 (Team Americano сетовый формат) |
 | `team2_games` | `INTEGER` | NULL | — | Геймы команды 2 |
 | `is_doubles` | `BOOLEAN` | NOT NULL | — | Парный матч |
@@ -1033,3 +1036,5 @@ PK `(registration_id, version)` исключает два факта одног�
 | `responded_at` | TIMESTAMPTZ | Время ответа |
 | `responded_by` | BIGINT | Кто ответил |
 | `superseded_at` | TIMESTAMPTZ | Время закрытия старого запроса |
+
+Миграция v1.80: режим счёта кругового этапа и дополнительные встречи PLACEMENT. Строки прежних проведений не переписываются.

@@ -52,6 +52,7 @@ public class TournamentViewController {
     private final KingOfCourtService kingOfCourtService;
     private final AmericanoService americanoService;
     private final TeamPlayoffService teamPlayoffService;
+    private final com.padle.core.padelcoreservice.service.americano.TeamAmericanoService teamAmericanoService;
 
     @GetMapping("/{id}")
     public String viewTournament(@PathVariable Long id,
@@ -160,7 +161,9 @@ public class TournamentViewController {
                     tournament.getTipo() == TournamentType.AMERICANO_TEAMS
                     || (tournament.getTipo() == TournamentType.AMERICANO
                         && tournament.getModalidad() == Modalidad.DOBLES);
-            if (isTeamPlayoffFormat) {
+            boolean roundRobin = isTeamPlayoffFormat && teamAmericanoService.isInitialized(id);
+            model.addAttribute("isTeamAmericanoInitialized", roundRobin);
+            if (isTeamPlayoffFormat && !roundRobin) {
                 boolean qualStarted  = teamPlayoffService.isQualificationStarted(id);
                 boolean playoffStarted = teamPlayoffService.isPlayoffStarted(id);
                 model.addAttribute("isTeamPlayoffFormat", true);
