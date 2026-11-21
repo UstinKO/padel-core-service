@@ -317,6 +317,14 @@ public class AdminController {
         return "admin/tournaments/form";
     }
 
+    @PostMapping("/tournaments/{id}/test-status")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public String setTestTournament(@PathVariable Long id, @RequestParam boolean testTournament,
+                                    @AuthenticationPrincipal Owner owner) {
+        tournamentService.setTestTournament(id, testTournament, owner);
+        return "redirect:/admin/tournaments/" + id;
+    }
+
     @Timed(
             name = "admin.tournament.details.time",
             description = "Time taken to load admin tournament details page",

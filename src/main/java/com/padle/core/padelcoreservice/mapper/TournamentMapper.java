@@ -17,6 +17,7 @@ public interface TournamentMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "isActive", constant = "true")
+    @Mapping(target = "testTournament", ignore = true)
     @Mapping(target = "ownerId", source = "ownerId") // Добавляем маппинг ownerId
     Tournament toEntity(TournamentDto tournamentDto);
 }
