@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+<button th:fragment="publicationButton(item, levelLabel)" type="button"
+        th:if="${item.canView and item.tournament.isActive and item.tournament.estado.name() != 'BORRADOR' and item.tournament.estado.name() != 'CANCELADO'}"
+        class="btn btn-outline btn-sm tournament-publication-link"
+        aria-haspopup="dialog" aria-controls="tournamentPublicationDialog"
+        th:attr="data-publication-id=${item.tournament.id},data-publication-name=#{__${'admin.tournaments.list.format.' + item.format.name()}__},data-publication-level=${item.tournament.categoriaNivel == 'TODOS' ? #messages.msg('calendar.level.TODOS') : levelLabel},data-publication-date=${#temporals.format(item.tournament.fechaInicio, 'dd/MM/yyyy')},data-publication-time=${item.tournament.horaInicio != null ? #temporals.format(item.tournament.horaInicio, 'HH:mm') : ''},data-publication-club=${item.tournament.clubNombre}">
+    <i class="fas fa-link" aria-hidden="true"></i>
+    <span th:text="#{admin.publicationLink.button}">Enlace para publicar</span>
+</button>
+
+<dialog th:fragment="publicationDialog" id="tournamentPublicationDialog" class="publication-link-dialog"
+        aria-labelledby="publicationLinkTitle" aria-describedby="publicationLinkEvent publicationLinkDetails"
+        th:attr="data-site-base-url=${siteBaseUrl},data-copied=#{admin.publicationLink.copied},data-ready=#{admin.publicationLink.ready},data-manual=#{admin.publicationLink.manual}">
+    <div class="publication-link-dialog__heading">
+        <h2 id="publicationLinkTitle" th:text="#{admin.publicationLink.button}">Enlace para publicar</h2>
+        <button type="button" class="publication-link-dialog__close" data-publication-close
+                th:aria-label="#{admin.publicationLink.close}" autofocus>
+            <i class="fas fa-times" aria-hidden="true"></i>
+        </button>
+    </div>
+    <div class="publication-link-dialog__event">
+        <strong id="publicationLinkEvent"></strong>
+        <p id="publicationLinkDetails"></p>
+    </div>
+    <fieldset class="publication-link-dialog__choice">
+        <legend th:text="#{admin.publicationLink.channel}">¿Dónde publicamos?</legend>
+        <div class="publication-link-dialog__channels">
+            <button type="button" data-publication-channel="telegram" aria-pressed="true">
+                <i class="fab fa-telegram-plane" aria-hidden="true"></i> Telegram
+            </button>
+            <button type="button" data-publication-channel="stories" aria-pressed="false">
+                <i class="fab fa-instagram" aria-hidden="true"></i> Instagram Stories
+            </button>
+        </div>
+    </fieldset>
+    <label for="publicationLinkUrl" th:text="#{admin.publicationLink.url}">Enlace listo</label>
+    <textarea id="publicationLinkUrl" class="publication-link-dialog__url" readonly rows="3"
+              spellcheck="false" autocapitalize="off" dir="ltr"></textarea>
+    <p class="publication-link-dialog__hint" th:text="#{admin.publicationLink.hint}"></p>
+    <button type="button" class="btn btn-primary publication-link-dialog__copy" data-publication-copy>
+        <i class="fas fa-copy" aria-hidden="true"></i>
+        <span th:text="#{admin.publicationLink.copy}">Copiar enlace</span>
+    </button>
+    <p class="publication-link-dialog__feedback" role="status" aria-live="polite" aria-atomic="true"></p>
+</dialog>
+</body>
+</html>
