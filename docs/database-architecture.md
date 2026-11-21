@@ -209,6 +209,7 @@ owners_db ───────────────────────�
 | `updated_at` | `TIMESTAMP` | NOT NULL | now() | Дата обновления |
 | `created_by` | `BIGINT` | NULL | — | ID владельца (owners_db), создавшего клуб |
 | `is_active` | `BOOLEAN` | NOT NULL | `true` | Мягкое удаление |
+| `is_test_tournament` | `BOOLEAN` | NOT NULL | `false` | Тестовое мероприятие исключено из рейтинга Elo (v1.80) |
 
 **Индексы / ограничения:**
 - `UNIQUE (nombre)`
@@ -254,6 +255,7 @@ owners_db ───────────────────────�
 | `updated_at` | `TIMESTAMP` | NOT NULL | now() | Дата обновления |
 | `created_by` | `BIGINT` | NULL | — | ID создателя (owners_db) |
 | `is_active` | `BOOLEAN` | NOT NULL | `true` | Мягкое удаление |
+| `is_test_tournament` | `BOOLEAN` | NOT NULL | `false` | Тестовое мероприятие исключено из рейтинга Elo (v1.80) |
 | `owner_id` | `BIGINT` | NULL | — | ID владельца-организатора |
 | `pair_reminder_sent_at` | `TIMESTAMP` | NULL | — | Когда ушло email-напоминание за 5 ч до старта парного турнира; не NULL — повторно не шлётся (LFPT-437) |
 | `start_reminder_sent_at` | `TIMESTAMP` | NULL | — | То же для индивидуальных форматов (AMERICANO, KING_OF_COURT) и Cancha Abierta (LFPT-443) |
@@ -287,6 +289,7 @@ owners_db ───────────────────────�
 | `waitlist_confirmation_token` | `VARCHAR(64)` | NULL | — | Одноразовый токен ссылки `/waitlist/confirm` вместо угадываемого id (issue #194), индекс |
 | `updated_at` | `TIMESTAMP` | NULL | — | Дата последнего обновления |
 | `is_active` | `BOOLEAN` | NOT NULL | `true` | Мягкое удаление |
+| `is_test_tournament` | `BOOLEAN` | NOT NULL | `false` | Тестовое мероприятие исключено из рейтинга Elo (v1.80) |
 | `attended` | `BOOLEAN` | NOT NULL | `false` | Игрок явился на турнир |
 | `participation_confirmed` | `BOOLEAN` | NOT NULL | `false` | Участие подтверждено организатором |
 | `is_double_registration` | `BOOLEAN` | NOT NULL | `false` | Флаг парной регистрации |
@@ -357,6 +360,7 @@ owners_db ───────────────────────�
 | `created_at` | `TIMESTAMP` | NOT NULL | now() | Дата создания записи |
 | `updated_at` | `TIMESTAMP` | NOT NULL | now() | Дата обновления |
 | `is_active` | `BOOLEAN` | NOT NULL | `true` | Мягкое удаление |
+| `is_test_tournament` | `BOOLEAN` | NOT NULL | `false` | Тестовое мероприятие исключено из рейтинга Elo (v1.80) |
 
 ---
 
