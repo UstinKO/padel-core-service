@@ -245,3 +245,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.80-test-tournament-rating.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.81-round-robin.yaml
+      relativeToChangelogFile: true

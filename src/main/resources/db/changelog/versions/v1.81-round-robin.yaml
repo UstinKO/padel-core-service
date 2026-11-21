@@ -1,0 +1,19 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.81-round-robin
+      author: padel-core
+      changes:
+        - sql:
+            sql: |
+              ALTER TABLE americano_rounds_db ADD COLUMN scoring_mode VARCHAR(16);
+              ALTER TABLE americano_rounds_db ADD CONSTRAINT chk_round_robin_scoring CHECK (scoring_mode IN ('POINTS', 'SETS'));
+              ALTER TABLE americano_matches_db ADD COLUMN placement_start INTEGER;
+              ALTER TABLE americano_matches_db ADD COLUMN round_robin_request_id UUID;
+              ALTER TABLE americano_matches_db ADD CONSTRAINT chk_round_robin_placement CHECK (placement_start >= 1);
+              CREATE UNIQUE INDEX uq_round_robin_request ON americano_matches_db(round_robin_request_id) WHERE round_robin_request_id IS NOT NULL;
+      rollback:
+        - sql:
+            sql: |
+              DROP INDEX uq_round_robin_request;
+              ALTER TABLE americano_matches_db DROP COLUMN round_robin_request_id, DROP COLUMN placement_start;
+              ALTER TABLE americano_rounds_db DROP COLUMN scoring_mode;

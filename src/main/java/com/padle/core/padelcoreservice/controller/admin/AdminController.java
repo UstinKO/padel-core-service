@@ -380,7 +380,9 @@ public class AdminController {
         }
 
         if (tournament.getTipo() == TournamentType.AMERICANO_TEAMS) {
-            model.addAttribute("isTeamAmericanoInitialized", false);
+            var roundRobin = teamAmericanoService.isInitialized(id);
+            model.addAttribute("isTeamAmericanoInitialized", roundRobin);
+            if (roundRobin) model.addAttribute("teamAmericanoRanking", teamAmericanoService.getRanking(id));
             boolean qualStarted   = teamPlayoffService.isQualificationStarted(id);
             boolean playoffStarted = teamPlayoffService.isPlayoffStarted(id);
             model.addAttribute("isPlayoffQualStarted", qualStarted);
