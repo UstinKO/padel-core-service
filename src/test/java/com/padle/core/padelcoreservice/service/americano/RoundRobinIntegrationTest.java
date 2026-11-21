@@ -139,6 +139,38 @@ class RoundRobinIntegrationTest {
         assertThat(additional.list(id)).hasSize(1);
     }
 
+    @Test
+    void tiedTeamsUseTheirSavedMeetingAndCorrectionIsReversible() {
+        var id = fixture(4);
+        service.initialize(id, config(RoundRobinScoringMode.SETS));
+        var initial = service.getRanking(id).getRanking();
+        var a = initial.get(0).getId(); var b = initial.get(1).getId();
+        var c = initial.get(2).getId(); var d = initial.get(3).getId();
+        scorePair(id, a, b, 6, 4); scorePair(id, a, c, 6, 4); scorePair(id, d, a, 6, 2);
+        scorePair(id, b, c, 6, 5); scorePair(id, b, d, 6, 5); scorePair(id, c, d, 6, 4);
+        assertThat(service.getRanking(id).getRanking().stream().map(AmericanoTeamDto::getId))
+                .containsExactly(a, b, d, c);
+        var owner = Owner.builder().id(99999L).role(OwnerRole.SUPER_ADMIN).build();
+        var version = history.list(id, owner).get(0).id();
+        scorePair(id, a, b, 4, 6);
+        assertThat(service.getRanking(id).getRanking().get(0).getId()).isEqualTo(b);
+        em.flush(); em.clear();
+        var preview = history.preview(id, version, owner);
+        history.restore(id, version, preview.latestVersion(), owner);
+        em.flush(); em.clear();
+        var finished = service.finishTournament(id);
+        assertThat(finished.getRanking().stream().map(AmericanoTeamDto::getId)).containsExactly(a, b, d, c);
+        assertThat(finished.getFinalRanking().stream().map(RoundRobinStandingDto::position)).containsExactly(1, 2, 3, 4);
+    }
+
+    private void scorePair(Long id, Long first, Long second, int score1, int score2) {
+        var match = matches.findByTournamentIdOrderByRoundIdAscMatchNumberAsc(id).stream()
+                .filter(m -> java.util.Set.of(first, second).equals(java.util.Set.of(m.getTeam1Id(), m.getTeam2Id())))
+                .findFirst().orElseThrow();
+        boolean sameOrder = first.equals(match.getTeam1Id());
+        service.submitMatchResult(match.getId(), sameOrder ? score1 : score2, sameOrder ? score2 : score1);
+    }
+
     private void scoreCircle(Long id, RoundRobinScoringMode mode) {
         matches.findByTournamentIdOrderByRoundIdAscMatchNumberAsc(id).stream()
                 .filter(m -> m.getRound().getPhase() == null).forEach(m -> score(m.getId(), mode, true));

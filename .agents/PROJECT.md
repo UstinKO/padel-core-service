@@ -671,4 +671,4 @@ Endpoint/fan-out реализуется отдельно в #1211. [Runbook](../
 
 `ClubAccountService` / `AdminClubAccountController`: несколько назначенных площадок для создания мероприятий, управление существующими событиями по ownerId. Схема v1.79, контракт — [docs/endpoints/club-accounts.md](../docs/endpoints/club-accounts.md).
 
-Круговой парный формат: `RoundRobinRules` — правила очков/сетов и итоговых мест; `RoundRobinAdditionalMatches` — дополнительные встречи, `RoundRobinActionsController` — защищённые действия. См. `docs/endpoints/americano.md`, LFPT-1243/1244.
+Круговой парный формат: `RoundRobinRules` — правила очков/сетов и итоговых мест; `RoundRobinStandings` — общая таблица, мини-таблица личных встреч и разделённые места; `RoundRobinAdditionalMatches` — дополнительные встречи, `RoundRobinActionsController` — защищённые действия. См. `docs/endpoints/americano.md`, LFPT-1243/1244.
