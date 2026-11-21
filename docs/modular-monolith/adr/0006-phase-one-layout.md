@@ -1,6 +1,6 @@
 # ADR-0006: переходная физическая раскладка первой фазы
 
-Статус: **Техническое решение плана фазы 1**, основано на согласованных семи целевых модулях и требовании отложить хранение. Конкретная Maven-конфигурация должна быть доказана #1049 до готовности PR; это не утверждение, что reactor уже реализован. Дата: 13.11.2026.
+Статус: **Принято; reactor реализован в #1049, движок выделен в #1050**. Семь целевых модулей и позднее хранение согласованы владельцем; фактически созданы parent/aggregator, bootstrap и engines с PlayoffMatchingEngine. [Сборка](../phase-1/reactor-delivery.md), [перенос, проверки и DevTools](../phase-1/engine-extraction.md). Решение от 13.11.2026, реализация уточнена 18.11.2026.
 
 ## Контекст
 
@@ -18,6 +18,7 @@
 | Root src/main/resources, в том числе db/changelog | Только bootstrap resource packaging | Ресурсы переезжают по владельцам; persistence/Liquibase в #1051 с сохранением classpath |
 | Старый Java package движка в новом engines | Публичный тип у TeamPlayoffService | Самостоятельный rename при доказанной пользе; не обязательное условие пилота |
 | Единственный @Bean PlayoffMatchingEngine в bootstrap | TeamPlayoffService constructor | Целевая конфигурация, не временная двойная реализация; не удалять без нового wiring |
+| Общий runtime package библиотеки и legacy при DevTools | restart.include только для jar engines; нужен package-private вызову seedRoundOf16 | Пересмотреть при отдельном изменении package/API; в обычном boot jar classloader общий |
 
 Фактические классы/пути и оставшиеся потребители фиксируются в каждом PR. Если #1049 выявляет невыполнимость external source roots/working directory, скорректировать техническую раскладку отдельным рабочим решением в том же scope; не оставлять сборку сломанной и не выделять storage незаметно.
 

@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.80-test-tournament-rating
+      author: padel-core
+      changes:
+        - addColumn:
+            tableName: tournaments_db
+            columns:
+              - column:
+                  name: is_test_tournament
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+        - update:
+            tableName: tournaments_db
+            columns:
+              - column:
+                  name: is_test_tournament
+                  valueBoolean: true
+            where: id = 189

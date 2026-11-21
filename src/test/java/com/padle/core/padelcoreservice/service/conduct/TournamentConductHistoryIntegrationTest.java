@@ -3,6 +3,8 @@ package com.padle.core.padelcoreservice.service.conduct;
 import com.padle.core.padelcoreservice.dto.CourtDTO;
 import com.padle.core.padelcoreservice.dto.KingOfCourtStateDTO;
 import com.padle.core.padelcoreservice.dto.PlayerStatsDTO;
+import com.padle.core.padelcoreservice.dto.WebSocketMessage;
+import com.padle.core.padelcoreservice.dto.live.PublicLiveDtos.Invalidation;
 import com.padle.core.padelcoreservice.dto.americano.RankingCriteria;
 import com.padle.core.padelcoreservice.service.conduct.AdditionalPointsService.Change;
 import com.padle.core.padelcoreservice.dto.americano.AmericanoConfigDto;
@@ -37,6 +39,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.transaction.TestTransaction;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,6 +54,10 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @SpringBootTest
 @TestPropertySource(properties = {
@@ -75,6 +84,7 @@ class TournamentConductHistoryIntegrationTest {
     @Autowired private TournamentRegistrationRepository registrations;
     @Autowired private AmericanoTeamRepository teams;
     @Autowired private EntityManager entityManager;
+    @MockitoBean private SimpMessagingTemplate broker;
 
     private final Owner owner = Owner.builder().id(90001L).firstName("Test").role(OwnerRole.SUPER_ADMIN).build();
 
@@ -337,6 +347,45 @@ class TournamentConductHistoryIntegrationTest {
         playoff.assignCourtToQueuedMatch(match.getId(), 1);
         playoff.submitQualResult(match.getId(), 6, 3);
         assertThat(playoff.getQueue(event)).isEmpty();
+    }
+
+    @Test
+    void teamPlayoffRestorePublishesBothTopicsOnlyAfterCommit() {
+        long event = event(TournamentType.AMERICANO_TEAMS, Modalidad.DOBLES, 4);
+        var first = addTeam(event);
+        var second = addTeam(event);
+        var match = playoff.queueQualificationMatch(event, first.getId(), second.getId());
+        long queued = version(event, ConductChange.Action.QUEUE_MATCH);
+        playoff.assignCourtToQueuedMatch(match.getId(), 1);
+        playoff.submitQualResult(match.getId(), 6, 3);
+
+        restore(event, queued);
+        assertThat(playoff.getQueue(event)).singleElement()
+                .satisfies(restored -> assertThat(restored.getTeam1Games()).isNull());
+        verifyNoInteractions(broker);
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+
+        verify(broker).convertAndSend(eq("/topic/team-playoff/" + event),
+                argThat((WebSocketMessage message) -> message.getType().equals("STATE_UPDATED")
+                        && message.getTournamentId().equals(event) && message.getData() == null));
+        verify(broker).convertAndSend("/topic/public/live/" + event, new Invalidation(event, "CHANGED"));
+    }
+
+    @Test
+    void rolledBackTeamPlayoffRestoreDoesNotPublishEitherTopic() {
+        long event = event(TournamentType.AMERICANO_TEAMS, Modalidad.DOBLES, 4);
+        var first = addTeam(event);
+        var second = addTeam(event);
+        playoff.queueQualificationMatch(event, first.getId(), second.getId());
+        restore(event, version(event, ConductChange.Action.QUEUE_MATCH));
+        verifyNoInteractions(broker);
+
+        TestTransaction.flagForRollback();
+        TestTransaction.end();
+
+        verifyNoInteractions(broker);
     }
 
     @Test

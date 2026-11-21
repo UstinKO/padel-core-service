@@ -88,6 +88,11 @@ window.APP_MESSAGES = {
     'level.modal.desc':   'Para inscribirte en este torneo primero tenés que indicar tu nivel en tu perfil.',
     'level.btn.cancel':   'Cancelar',
     'level.btn.go':       'Indicar nivel',
+    'level.registration.desc': 'Indicá tu nivel de juego para continuar con la inscripción a este torneo.',
+    'level.registration.select': 'Elegí tu nivel',
+    'level.registration.save': 'Guardar nivel',
+    'level.registration.error': 'No se pudo guardar el nivel. Intentá de nuevo.',
+    'level.registration.saved': 'Nivel guardado. Volvé a pulsar el botón de inscripción para continuar.',
     'level.profile.return_banner': 'Ahora podés volver a tu inscripción pendiente.',
     'level.profile.return_link':   'Volver al torneo',
 

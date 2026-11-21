@@ -24,6 +24,7 @@
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" th:href="@{/css/admin.css}">
     <link rel="stylesheet" th:href="@{/css/admin-tournament-list.css}">
+    <link rel="stylesheet" th:href="@{/css/admin-publication-link.css}">
 </head>
 <body>
 <header th:replace="~{fragments/admin-header :: header(#{admin.tournaments.list.title})}"></header>
@@ -185,6 +186,10 @@
                 </div>
 
                 <div class="tournament-card-footer">
+                    <th:block th:replace="~{fragments/tournament-publication-link :: publicationButton(${item}, ${levelLabel})}"></th:block>
+                    <th:block th:if="${item.teamPlayoffConduct == true}">
+                        <a th:replace="~{fragments/team-playoff-conduct-link :: link(${item.tournament}, 'btn btn-primary btn-sm')}"></a>
+                    </th:block>
                     <!-- Кнопка копирования — не для ADMIN -->
                     <a th:if="${item.canCopy}"
                        th:href="@{'/admin/tournaments/' + ${item.tournament.id} + '/copy'}"
@@ -278,6 +283,10 @@
                     </td>
                     <td>
                         <div class="action-buttons" style="display: flex; gap: 0.25rem; flex-wrap: wrap;">
+                            <th:block th:replace="~{fragments/tournament-publication-link :: publicationButton(${item}, ${levelLabel})}"></th:block>
+                            <th:block th:if="${item.teamPlayoffConduct == true}">
+                                <a th:replace="~{fragments/team-playoff-conduct-link :: link(${item.tournament}, 'btn btn-primary btn-sm')}"></a>
+                            </th:block>
                             <!-- Копирование — не для ADMIN -->
                             <a th:if="${item.canCopy}"
                                th:href="@{'/admin/tournaments/' + ${item.tournament.id} + '/copy'}"
@@ -332,9 +341,12 @@
     </div>
 </main>
 
+<th:block th:replace="~{fragments/tournament-publication-link :: publicationDialog}"></th:block>
+
 <footer th:replace="~{fragments/admin-footer :: footer}"></footer>
 <script th:src="@{/js/csrf.js}"></script>
 <script th:src="@{/js/admin.js}"></script>
 <script th:src="@{/js/admin-tournament-list.js}" defer></script>
+<script th:src="@{/js/admin-publication-link.js}" defer></script>
 </body>
 </html>

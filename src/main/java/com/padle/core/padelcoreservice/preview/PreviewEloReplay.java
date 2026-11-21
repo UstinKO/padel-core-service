@@ -21,13 +21,19 @@ final class PreviewEloReplay {
     private static final double TIE_EPSILON = 1e-9;
     private static final int NO_CATEGORY = 99;
     private final int startStep;
+    private final boolean formatWeighted;
 
     PreviewEloReplay() {
         this(0);
     }
 
     PreviewEloReplay(int startStep) {
+        this(startStep, false);
+    }
+
+    PreviewEloReplay(int startStep, boolean formatWeighted) {
         this.startStep = startStep;
+        this.formatWeighted = formatWeighted;
     }
 
     record Game(String key, int batch, List<Long> ids, int left, int right, boolean verifiedFinal) {
@@ -167,9 +173,16 @@ final class PreviewEloReplay {
                 .thenComparing(event -> eventSortKey(event.key()))).toList();
         for (var day : events.stream().collect(Collectors.groupingBy(Event::day, LinkedHashMap::new, Collectors.toList())).values()) {
             for (var event : day) {
+                if (formatWeighted && (event.format() == null || !Set.of("pair", "king", "americano").contains(event.format()))) {
+                    throw new IllegalArgumentException("Для расчёта необходимо указать формат турнира: " + event.key());
+                }
                 double start = event.level() == NO_CATEGORY ? START : START + startStep * (8 - event.level());
+                if (formatWeighted && !"pair".equals(event.format())) {
+                    start -= 40;
+                }
+                final double initialRating = start;
                 event.games().forEach(game -> game.ids().forEach(id -> players.computeIfAbsent(id,
-                        key -> new Player(key, start))));
+                        key -> new Player(key, initialRating))));
             }
             for (var event : day) {
                 applyEvent(event, players);
@@ -201,7 +214,7 @@ final class PreviewEloReplay {
             for (var game : batch) {
                 var sides = game.ids().stream().map(players::get).toList();
                 sides.forEach(player -> before.putIfAbsent(player.id, player.elo));
-                applyGame(game, sides, changes, stats);
+                applyGame(game, sides, changes, stats, formatWeighted && "pair".equals(event.format()) ? 1.5 : 1.0);
                 if (game.verifiedFinal()) {
                     finalists.addAll(game.ids());
                     int winningSide = game.left() > game.right() ? 0 : 2;
@@ -231,9 +244,9 @@ final class PreviewEloReplay {
         }
     }
 
-    private void applyGame(Game game, List<Player> sides, Map<Player, Double> changes, Map<Long, Record> stats) {
+    private void applyGame(Game game, List<Player> sides, Map<Player, Double> changes, Map<Long, Record> stats, double weight) {
         double gap = sides.get(2).elo + sides.get(3).elo - sides.get(0).elo - sides.get(1).elo;
-        double change = K * (game.outcome() - 1 / (1 + Math.pow(10, gap / 800)));
+        double change = K * weight * (game.outcome() - 1 / (1 + Math.pow(10, gap / 800)));
         for (int i = 0; i < sides.size(); i++) {
             var player = sides.get(i);
             changes.merge(player, i < 2 ? change : -change, Double::sum);

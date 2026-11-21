@@ -120,7 +120,8 @@ public class PublicLiveService {
                 .collect(Collectors.toMap(AmericanoMatch::getId,Function.identity()));
         var rounds = Stream.concat(playoffRead.qualificationWaves(qual).stream().map(round -> mapper.round(round,entities,"QUALIFICATION")),
                 knockout.stream().map(round -> mapper.round(round,entities,"PLAYOFF"))).toList();
-        var queue = playoff.getQueue(event.getId()).stream().map(match -> mapper.match(match,entities,"QUALIFICATION")).toList();
+        var queue = playoff.getQueue(event.getId()).stream().map(match -> mapper.match(match,entities,
+                match.getPlayoffStage() == null ? "QUALIFICATION" : "PLAYOFF")).toList();
         return new Playoff(metadata(event,state,event.getId()),Format.TEAM_PLAYOFF,rounds,ranking,queue);
     }
 

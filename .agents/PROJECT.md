@@ -6,6 +6,8 @@
 
 ## Project Overview
 
+**Swarm (LFPT-1040/LFPT-1207, 19.11.2026)** — одна ВМ, полный стек в Swarm, две реплики padel-app. Сейчас read-only проверка подтверждает Compose и одну JVM, 2 vCPU/3911 MiB RAM. Владелец выбрал исходные 4 GiB RAM. Оценка второй JVM и Redis оставляет около 1231 MiB MemAvailable до расходов REST; достаточность проверяется нагрузкой. Первый режим обновления — stop-first, parallelism=1. Start-first с третьей JVM требует отдельного ресурсного допуска. Приняты цели стенда 15 min первичного окна, 5 min возврата приложения, 30 min restore и аварийный RPO ≤24 h при исправном ежедневном backup с обязательной проверкой. Nginx переносится в Swarm. Пересмотр 20.11.2026 исключает RabbitMQ: Redis — сессии/квоты, REST между app tasks — live-события (#1211), браузерный WS/STOMP сохранён; координация cron определяется по job, готовый claim MarketingOutbox переиспользуется. [Реестр и порядок](../docs/swarm/README.md), [ADR](../docs/swarm/adr/0001-single-vm.md). До production обязательны #1209–#1217, окно согласуется в #1218. Maven #1051 сохраняет отдельную репетицию.
+
 **padel-core-service** — Spring Boot 4.x монолит для управления падель-турнирами. Действующий UI рендерится через Thymeleaf; UI v2 поэтапно переносится в React SPA из `frontend/`, не переключая production-маршруты без отдельной задачи. Целевой рынок — Аргентина (валюта ARS, валидация телефона +54).
 
 **Stack:** Java 17 (source) / Java 21 (Docker/CI), Spring Boot 4.1 (Spring 7, Security 7, Hibernate 7, Jackson 3), PostgreSQL 15, Liquibase, Spring Security (JWT + form login + Google OAuth2), Spring WebSocket (STOMP/SockJS), React 19 + TypeScript + Vite + pnpm (`frontend/`), TanStack Query, react-i18next, Micrometer + Prometheus + Grafana + Loki, Bucket4j, MapStruct, Lombok.
@@ -14,11 +16,13 @@
 
 **Git-flow и код-ревью:** задача = GitHub issue с заголовком `LFPT-XXXX: <Fix|Feature> <что> — <что делаем>` на русском (номер issue с нулями до 4 цифр; заголовок issue = коммит = PR, в описании PR `Closes #N`), метки тип + `frontend`/`backend` + `format:*`, фронт и бэк — отдельными задачами ([GIT_WORKFLOW.md §1](GIT_WORKFLOW.md)); ветка от `master` вида `feature/LFPT-XXXX`, обязательная локальная проверка перед коммитом, коммит, push и PR после проверок и локального ревью; пользователь принимает решение о мерже — [.agents/GIT_WORKFLOW.md](GIT_WORKFLOW.md). Стандарты качества кода (DRY/KISS/SOLID, соответствие ТЗ, известные архитектурные ловушки проекта) — [.agents/CODE_REVIEW.md](CODE_REVIEW.md). Стиль Java-кода (современный Java 17: `Optional` вместо `null`, Stream API, `record`, switch-выражения, без `catch (Exception)`) — [.agents/CODE_STYLE.md](CODE_STYLE.md), обязателен для любого нового и изменяемого кода.
 
+**Жизненный цикл PR:** общий preflight, продолжение открытого PR, составные интеграции и проверка зависимостей — [PR_MANAGEMENT.md](PR_MANAGEMENT.md). [Аудит 18.11.2026](../docs/pr-audit-2026-11-18.md) фиксирует исходный срез и закрытие уже включённой цепочки Elo; это не живой список.
+
 **Spec-Driven Development:** проект разрабатывается по спекам, не по интуиции. [specs/MASTER.md](../specs/MASTER.md) — единый источник истины по бизнес-логике продукта (роли, форматы турниров, статусы регистрации, инварианты). Любая новая фича начинается со спеки в `specs/features/LFPT-XXX-*.md` (шаблон — `specs/features/_template.md`), согласованной с MASTER.md, и только потом переходит в код. Клиентские запросы на доработку оформляются в `specs/requests/` по шаблону `specs/requests/_template.md` и перерабатываются в полную фиче-спеку до начала реализации. Перед любой задачей по фиче — сначала прочитать соответствующую спеку и MASTER.md, не додумывать поведение системы. Есть автономный конвейер `$develop-feature` (Analyst → Developer → Tester → Architect, роли в `.agents/roles/`), который проводит фичу от клиентского запроса до PR — см. [.agents/GIT_WORKFLOW.md §8](GIT_WORKFLOW.md) про его права/ограничения.
 
 **Документация `docs/`** (в репозитории с LFPT-0602) — контекст приложения для конвейера и людей: [docs/Home.md](../docs/Home.md) — оглавление; архитектура и деплой (`architecture.md`), БД (`database-architecture.md`), домены и все эндпоинты (`domain-overview.md`, `endpoints/`), аутентификация (`auth-flow.md`), i18n (`i18n/`), переход на React (`frontend-react/`), автономный конвейер (`pipeline-autonomy.md`). Перед задачей в незнакомой области — прочитать соответствующий раздел, но источник истины по бизнес-логике — `specs/MASTER.md`, по поведению — код: если документ расходится с кодом, верить коду и поправить документ в том же PR. Пометки `[SECURITY — закрыто/актуально на <дата>]` и `[закрыто, сверено с кодом <дата>]` в `docs/endpoints/*` — результат сверки с кодом на указанную дату. **Документация обновляется в том же PR, что и код** — карта «что изменил → какой документ» в [docs/Home.md § Как поддерживать актуальность](../docs/Home.md#как-поддерживать-актуальность); механические расхождения (версия схемы, колонки, enum, эндпоинты, классы) проверяет `python3 .github/bin/docs-drift.py`, сверено до 0 на 2026-10-16 (LFPT-0615). `docs/infrastructure-security.md` и `docs/telegram-ai-pipeline.md` — приватные (в `.gitignore`), в облачном клоне их нет и не должно быть; IP сервера, доверенные IP, SSH-доступы и идентификаторы роутины в `docs/` и любые публичные файлы не писать.
 
-**Многомодульный монолит (LFPT-1041, решение владельца 13.11.2026):** приняты семь целевых модулей: api-contract, tournament-engines, application, persistence, web, integrations, bootstrap. Spring service/transaction в application разрешён; domain/engines без инфраструктурных зависимостей. Текущее приложение пока один Maven jar-проект; первая фаза готовит рабочий reactor и переносит только PlayoffMatchingEngine. [План и анализ](../docs/modular-monolith/phase-1/README.md): #1047 → #1048 → #1049 → #1050 → #1045. Каждый PR сохраняет запуск/сценарии/контракты и проходит собственные проверки. Выделение persistence/Liquibase — отдельная поздняя #1051, в конце миграции или согласованном окне Swarm #1040; физическая PostgreSQL при необходимости ставится отдельно. Внутренний HTTP/микросервисы сейчас не создаются. [Исторический план](../docs/microservices-migration-plan.md) — справочные связи/риски возможного будущего. До реализации #1049 действуют существующие команды/пути; изменение их в инструкции выполняется вместе с рабочим reactor.
+**Многомодульный монолит (LFPT-1041, решение владельца 13.11.2026):** семь целевых модулей: api-contract, tournament-engines, application, persistence, web, integrations, bootstrap. Reactor содержит api-contract, engines, application и bootstrap; исполняемым остаётся только bootstrap. Engines владеет PlayoffMatchingEngine и зависит от JDK, bean задаёт TournamentEngineConfig. В application выделен только PublicClubQuery с собственными PublicClub/ClubReadPort и readOnly-транзакцией; явный @Import из PublicClubApplicationConfiguration сохраняет общий scan. LegacyClubReadAdapter и ClubReadModelMapper остаются в корневом src под bootstrap до поздней #1051; PublicClubMapper строит generated Club/canonicalUrl из канонического OpenAPI в api-contract; [владение и генерация](../docs/modular-monolith/phase-2/contract-adoption.md). Каталог/главная, MVC клуба, остальные API DTO и хранение не перенесены. [Срез, wiring и мосты](../docs/modular-monolith/phase-2/application-club-read.md), [исходная сборка](../docs/modular-monolith/phase-1/reactor-delivery.md), [движок/DevTools](../docs/modular-monolith/phase-1/engine-extraction.md). Приёмка #1045 принята 20.11 с ограничениями; #1199 включена через #1234 после принятого протокола #1180; generated Club подключается отдельной #1200. Каждый PR сохраняет работоспособность. Persistence/Liquibase — поздняя #1051; физическая PostgreSQL и Swarm не включаются. Внутреннего HTTP между Maven-модулями нет; REST между репликами монолита относится к отдельной #1211. [Исторический план](../docs/microservices-migration-plan.md) сохраняет справочные связи и риски. Остальные три целевых модуля пока не выделены.
 
 ---
 
@@ -31,8 +35,8 @@
 # Run all tests (requires PostgreSQL)
 ./mvnw clean verify
 
-# Run locally (uses application.yml defaults: localhost:5432/player_padel_db)
-./mvnw spring-boot:run
+# Запуск после package; переменные БД и интеграций задаются для своей среды
+java -jar padel-bootstrap/target/padel-core-service-0.0.1-SNAPSHOT.jar
 
 # Frontend Phase 0
 pnpm --dir frontend install --frozen-lockfile
@@ -115,7 +119,7 @@ docker compose up -d
 | URL | Template | Описание |
 |-----|----------|----------|
 | `GET /admin` | `admin/panel.html` | Главная панель |
-| `GET /admin/tournaments` | `admin/tournaments/list.html` | Список турниров |
+| `GET /admin/tournaments` | `admin/tournaments/list.html` | Список турниров; локальный диалог ссылки публикации Telegram/Stories, без нового HTTP-маршрута |
 | `GET /admin/tournaments/new` | `admin/tournaments/form.html` | Форма создания турнира |
 | `GET /admin/tournaments/{id}` | `admin/tournaments/details.html` | Детали турнира + список участников |
 | `GET/POST /admin/tournaments/{id}/additional-points` | Редактор ручных очков и история, включая отдельный путь `finished-results/additional-points` |
@@ -345,6 +349,8 @@ docker compose up -d
 | POST | `/admin/tournaments/{tournamentId}/payments/save` | Зафиксировать платёж вручную (админом) |
 
 ### WebSocket
+
+Восстановление истории Team Playoff после commit отправляет `STATE_UPDATED` в legacy-тему и прежний public invalidation; rollback не публикует обновление. [Доставка и проверка](../docs/endpoints/conduct-history-realtime.md).
 
 | Endpoint | Topic | Описание |
 |----------|-------|----------|
@@ -646,6 +652,21 @@ GET/HEAD `/api/public/events/{eventId}/live` и `/api/public/king-of-court/{king
 
 ### Данные пилота модульного монолита
 
-Браузерные проверки: `automation/ui-preview/playoff-pilot.py` и `tests/browser/modular-pilot/`. Команда `run` проверяет итоговый jar, прежние UI/API и реальные WS по [принятому эталону](../docs/modular-monolith/phase-1/browser-expectations.json); пересоздаёт только пилот. `prepare --reset` готовит ручной набор; `smoke --rehearse` сверяет пять snapshots через существующий выпуск/откат. [Отчёт](../docs/modular-monolith/phase-1/browser-baseline.md), [ручной журнал](../docs/modular-monolith/phase-1/manual-baseline.md). Автоматизация не закрывает человеческую приёмку и не разрешает начать reactor при незавершённой #1048.
+В legacy-управлении Team Playoff успешное AJAX-сохранение квалификационного результата перечитывает только серверный блок `playoffStartSection`. Кнопка старта появляется по действующим Thymeleaf-условиям без навигации страницы; при отказе сохранения блок остаётся прежним. Нового API и клиентского правила допуска нет.
 
-`PlayoffPilotController`, `PlayoffPilotFixtureService` и `PlayoffPilotData` существуют только в профиле `preview`. Защищённые seed/read/reset пилота используют существующие проверки имени БД/UUID и блокировку control-row; пять турниров 8/9/16 команд формируются настоящим TeamPlayoffService. Метаданные сохраняются отдельным ключом JSON в существующем preview control, без Liquibase. [Контракт](../docs/endpoints/ui-preview.md), [backend baseline](../docs/modular-monolith/phase-1/backend-baseline.md). Сборка и движок пока остаются в корневом модуле.
+Браузерные проверки: `automation/ui-preview/playoff-pilot.py` и `tests/browser/modular-pilot/`. Команда `run` проверяет итоговый jar, прежние UI/API и реальные WS по [текущему эталону от 18.11](../docs/modular-monolith/phase-1/browser-expectations-2026-11-18.json); пересоздаёт только пилот. `extended` добавляет ранние 9/16/SF; `smoke --rehearse` сверяет пять snapshots через существующий выпуск/откат. `manual --reset` готовит отдельные ручные случаи и видимое окно с настоящими подтверждениями; `resume-manual` открывает без сброса, `end-manual` снимает локальную блокировку пилотных команд/check.py, не подтверждая результат. [Исходный отчёт](../docs/modular-monolith/phase-1/browser-baseline.md), [итоговая автоматизация #1045](../docs/modular-monolith/phase-1/final-report.md), [текущие ручные шаги и журнал](../docs/modular-monolith/phase-1/manual-final.md), [перенос движка #1050](../docs/modular-monolith/phase-1/engine-extraction.md). Исходная #1048 принята и влита через #1070: ручные 8/9 пар и полная автоматизация. Ручной сеанс #1045 от 18.11 сохранён с PARTIAL и принятыми ограничениями. #1195/#1196 уже в master; [повтор 20.11](../docs/modular-monolith/phase-1/followup-2026-11-20.md) отдельно проверяет restore MESSAGE/конечный UI, отрицательные случаи квалификации и функциональный Expo через QA-адаптер. 20.11 владелец принял совокупный результат с ограничениями без новых ручных повторов; #1045 завершена, допускается #1199. Сборка reactor — #1049.
+
+`PlayoffPilotController`, `PlayoffPilotFixtureService` и `PlayoffPilotData` существуют только в профиле `preview`. Защищённые seed/read/reset пилота используют существующие проверки имени БД/UUID и блокировку control-row; пять турниров 8/9/16 команд формируются настоящим TeamPlayoffService. Метаданные сохраняются отдельным ключом JSON в существующем preview control, без Liquibase. [Контракт](../docs/endpoints/ui-preview.md), [backend baseline](../docs/modular-monolith/phase-1/backend-baseline.md). PlayoffMatchingEngine компилирует только engines; сервис/fixtures и остальные legacy-исходники — bootstrap.
+
+## Изолированный Swarm-стенд — LFPT-1208
+
+`automation/swarm/` поднимает полный стек внутри собственного Docker-in-Docker
+Engine (4 GiB / 2 CPU), без Swarm на хосте и без production-данных.
+Одна app replica, профиль preview, versioned secrets/configs, digest-образы,
+TLS/WS и private overlay `events`, резерв REST-ключа, запрет `/internal/**` на proxy.
+Восемь сервисов без RabbitMQ; переносимый render не требует вложенного Engine.
+Endpoint/fan-out реализуется отдельно в #1211. [Runbook](../docs/swarm/lab.md).
+
+## Клубные аккаунты
+
+`ClubAccountService` / `AdminClubAccountController`: несколько назначенных площадок для создания мероприятий, управление существующими событиями по ownerId. Схема v1.79, контракт — [docs/endpoints/club-accounts.md](../docs/endpoints/club-accounts.md).

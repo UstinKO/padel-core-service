@@ -1,6 +1,6 @@
 (() => {
     const leaderboard = document.querySelector('#elo-leaderboard');
-    const form = leaderboard.querySelector('form');
+    const form = leaderboard.querySelector('.elo-preview-filters');
     const { category, status, player } = form.elements;
     const rows = [...leaderboard.querySelectorAll('tbody tr')];
     const count = leaderboard.querySelector('output');

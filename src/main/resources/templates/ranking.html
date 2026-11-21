@@ -176,5 +176,6 @@
 <script th:src="@{/js/main.js}"></script>
 <script th:unless="${previewElo != null}" th:src="@{/js/ranking.js}"></script>
 <script th:if="${previewElo != null}" th:src="@{/js/elo-preview.js}" defer></script>
+<script th:if="${previewElo != null}" th:src="@{/js/elo-feedback.js}" defer></script>
 </body>
 </html>

@@ -19,6 +19,38 @@ class PreviewEloReplayTest {
     private final PreviewEloReplay replay = new PreviewEloReplay();
 
     @Test
+    void appliesFormatWeightAndStartingOffsetOnlyWhenExplicitlyEnabled() {
+        var match = game("test", 1, List.of(1L, 2L, 3L, 4L), 6, 4, false);
+        var pair = new PreviewEloReplay.Event("S-1", FIRST_DAY, "C8", List.of(match),
+                Set.of(), Set.of(), "Pair", "pair", null);
+        var individual = new PreviewEloReplay.Event("S-1", FIRST_DAY, "C8", List.of(match),
+                Set.of(), Set.of(), "King", "king", null);
+        var weighted = new PreviewEloReplay(40, true);
+        assertThat(row(weighted.replay(FIRST_DAY, NAMES, List.of(pair)), 1).elo().doubleValue()).isCloseTo(1518, within(0.001));
+        assertThat(row(weighted.replay(FIRST_DAY, NAMES, List.of(pair)), 3).elo().doubleValue()).isCloseTo(1482, within(0.001));
+        assertThat(row(weighted.replay(FIRST_DAY, NAMES, List.of(individual)), 1).elo().doubleValue()).isCloseTo(1472, within(0.001));
+        assertThat(row(new PreviewEloReplay(40).replay(FIRST_DAY, NAMES, List.of(pair)), 1).elo().doubleValue()).isCloseTo(1512, within(0.001));
+    }
+
+    @Test
+    void weightedReplayRecalculatesAfterANewMatchAndAnOlderScoreCorrection() {
+        var first = game("historical", 1, List.of(1L, 2L, 3L, 4L), 6, 4, false);
+        var later = game("later", 1, List.of(1L, 5L, 6L, 7L), 6, 4, false);
+        var e1 = new PreviewEloReplay.Event("S-1", FIRST_DAY, "C8", List.of(first), Set.of(), Set.of(), "Pair", "pair", null);
+        var e2 = new PreviewEloReplay.Event("S-2", FIRST_DAY.plusDays(1), "C8", List.of(later), Set.of(), Set.of(), "King", "king", null);
+        var weighted = new PreviewEloReplay(40, true);
+        var old = weighted.replay(FIRST_DAY, NAMES, List.of(e1));
+        var withNew = weighted.replay(FIRST_DAY, NAMES, List.of(e1, e2));
+        assertThat(row(withNew, 1).elo()).isGreaterThan(row(old, 1).elo());
+        var corrected = new PreviewEloReplay.Event("S-1", FIRST_DAY, "C8", List.of(first.withScore(4, 6)),
+                Set.of(), Set.of(), "Pair", "pair", null);
+        var afterCorrection = weighted.replay(FIRST_DAY, NAMES, List.of(corrected, e2));
+        assertThat(row(afterCorrection, 1).elo()).isLessThan(row(withNew, 1).elo());
+        assertThat(row(afterCorrection, 5).elo()).isNotEqualTo(row(withNew, 5).elo());
+        assertThat(weighted.replay(FIRST_DAY, NAMES, List.of(e1, e2))).isEqualTo(withNew);
+    }
+
+    @Test
     void mergesConfirmedIdentityBeforeReplayingAndDoesNotCountItTwice() {
         var first = event("S-1", 0, "C7", winningRun("first", 5));
         var second = new PreviewEloReplay.Event("S-2", FIRST_DAY.plusDays(1), "C5",

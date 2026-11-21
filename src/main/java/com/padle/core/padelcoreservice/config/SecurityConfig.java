@@ -55,6 +55,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
@@ -83,6 +84,7 @@ public class SecurityConfig {
 
     private static boolean isGuestClaimPath(String path) {
         return path.equals("/api/players/me/guest-profile-claims")
+                || path.equals("/api/admin/guest-profile-claims")
                 || path.startsWith("/api/admin/guest-profile-claims/")
                 || (path.startsWith("/api/admin/players/") && path.endsWith("/activate-guest-profile"));
     }
@@ -199,7 +201,8 @@ public class SecurityConfig {
                         .requestMatchers("/players/lista").authenticated()
                         .requestMatchers("/players/perfil/**").authenticated()
                         .requestMatchers("/players/mis-torneos").authenticated()
-                        .requestMatchers("/admin/marketing/qr", "/admin/marketing/registration-sources").hasRole("SUPER_ADMIN")
+                        .requestMatchers("/admin/marketing/qr", "/admin/marketing/registration-sources",
+                                "/admin/rating-feedback", "/admin/rating-feedback/**").hasRole("SUPER_ADMIN")
                         .requestMatchers("/admin/**").hasAnyRole("OWNER", "SUPER_ADMIN", "ORGANIZER", "ADMIN", "CLUB_ADMIN")
                         // Внутренний тестовый инструментарий организатора (JDBC-based, см. PROJECT.md) —
                         // доступен только владельцу платформы, не ORGANIZER/ADMIN.
@@ -242,7 +245,15 @@ public class SecurityConfig {
                             if (request.getRequestURI().startsWith("/api/") || AccountResponses.wantsJson(request)) {
                                 accountResponses.error(request, response, HttpStatus.UNAUTHORIZED, "SESSION_REQUIRED");
                             } else {
-                                new LoginUrlAuthenticationEntryPoint("/login").commence(request, response, exception);
+                                var management = "GET".equals(request.getMethod())
+                                        ? AccountDestination.tournamentManagement(request.getRequestURI())
+                                        : Optional.<String>empty();
+                                if (management.isPresent()) {
+                                    response.sendRedirect("/login?destination="
+                                            + URLEncoder.encode(management.orElseThrow(), StandardCharsets.UTF_8));
+                                } else {
+                                    new LoginUrlAuthenticationEntryPoint("/login").commence(request, response, exception);
+                                }
                             }
                         })
                 )
@@ -365,8 +376,11 @@ public class SecurityConfig {
 
             boolean notConfirmed = exception instanceof DisabledException
                     || exception instanceof org.springframework.security.authentication.LockedException;
+            var destination = AccountDestination.requested(request).flatMap(AccountDestination::tournamentManagement);
             response.sendRedirect(TournamentLogin.failureUrl(
-                    notConfirmed ? "not_confirmed" : "true", TournamentLogin.requestedTournament(request)));
+                    notConfirmed ? "not_confirmed" : "true", TournamentLogin.requestedTournament(request))
+                    + destination.map(value -> "&destination=" + URLEncoder.encode(value, StandardCharsets.UTF_8))
+                            .orElse(""));
         };
     }
 

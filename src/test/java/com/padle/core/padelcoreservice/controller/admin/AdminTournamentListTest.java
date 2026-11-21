@@ -11,6 +11,7 @@ import com.padle.core.padelcoreservice.model.enums.TournamentType;
 import com.padle.core.padelcoreservice.service.ClubService;
 import com.padle.core.padelcoreservice.service.TournamentAccessService;
 import com.padle.core.padelcoreservice.service.TournamentService;
+import com.padle.core.padelcoreservice.service.americano.TeamPlayoffService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -21,6 +22,7 @@ import org.springframework.ui.ExtendedModelMap;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -36,6 +38,7 @@ class AdminTournamentListTest {
     @Mock private TournamentService tournaments;
     @Mock private TournamentAccessService access;
     @Mock private ClubService clubs;
+    @Mock private TeamPlayoffService playoff;
     @InjectMocks private AdminController controller;
 
     @Test
@@ -74,7 +77,7 @@ class AdminTournamentListTest {
         Owner clubAdmin = owner(OwnerRole.CLUB_ADMIN);
         clubAdmin.setClubId(3L);
         TournamentDto own = event(1, 3, 8, FROM, TournamentType.PADEL_CLINIC, Modalidad.INDIVIDUAL);
-        when(tournaments.getTournamentsByClub(3L)).thenReturn(List.of(own));
+        when(tournaments.getTournamentsForOwner(clubAdmin.getId(), false)).thenReturn(List.of(own));
         doCallRealMethod().when(access).canManage(any(), any(), any());
 
         assertThat(listed(list(clubAdmin, null, null, null, null))).containsExactly(own);
@@ -124,6 +127,25 @@ class AdminTournamentListTest {
                 GenderFormat.MASCULINO, Nivel.C7, TournamentStatus.REGISTRO_ABIERTO);
         assertThat(listed(model)).containsExactly(single, upper);
         assertThat(model.get("resultCount")).isEqualTo(2);
+    }
+
+    @Test
+    void completedTournamentKeepsConductActionOnlyWhenPlayoffWasSaved() {
+        Owner organizer = owner(OwnerRole.ORGANIZER);
+        TournamentDto finished = pair(1, "C6", GenderFormat.MASCULINO, TournamentStatus.FINALIZADO, true);
+        TournamentDto withoutConduct = pair(2, "C6", GenderFormat.MASCULINO, TournamentStatus.FINALIZADO, true);
+        TournamentDto deactivated = pair(3, "C6", GenderFormat.MASCULINO, TournamentStatus.FINALIZADO, false);
+        TournamentDto foreign = pair(4, "C6", GenderFormat.MASCULINO, TournamentStatus.FINALIZADO, true);
+        finished.setFechaInicio(LocalDate.of(2024, 1, 1));
+        foreign.setOwnerId(9L);
+        when(tournaments.getAllTournaments()).thenReturn(List.of(finished, withoutConduct, deactivated, foreign));
+        doCallRealMethod().when(access).canManage(any(), any(), any());
+        when(playoff.findConductIds(List.of(1L, 2L))).thenReturn(Set.of(1L));
+
+        var model = list(organizer, null, null, null, null);
+        assertThat(listed(model)).containsExactly(finished, withoutConduct, deactivated);
+        assertThat((List<?>) model.get("tournaments")).extracting(row -> (Boolean) ((Map<?, ?>) row).get("teamPlayoffConduct"))
+                .containsExactly(true, false, false);
     }
 
     private static TournamentDto pair(long id, String level, GenderFormat gender, TournamentStatus status, boolean active) {

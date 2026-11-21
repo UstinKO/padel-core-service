@@ -44,6 +44,10 @@
                             <i class="fas fa-users"></i> <span th:text="#{admin.nav.players}">Jugadores</span>
                         </a>
                         <a sec:authorize="hasRole('SUPER_ADMIN')"
+                           th:if="${@environment.getProperty('app.rating.pilot.feedback-enabled', T(java.lang.Boolean), false)}"
+                           th:href="@{/admin/rating-feedback}" class="btn btn-outline btn-sm"
+                           th:text="#{elo.feedback.inbox}"></a>
+                        <a sec:authorize="hasRole('SUPER_ADMIN')"
                            href="/admin/marketing/registration-sources" class="btn btn-outline btn-sm">
                             <span th:text="#{admin.sources.title}"></span>
                         </a>

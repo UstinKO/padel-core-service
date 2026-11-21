@@ -1,0 +1,22 @@
+# Фаза 2: публичное чтение клубов
+
+Подготовка [#1197](https://github.com/UstinKO/padel-core-service/issues/1197) утверждена 18.11.2026. Первый срез — существующие `GET /api/public/clubs` и `GET /api/public/clubs/{id}`. Каталог, главная, клубные назначения, хранение и остальные сценарии сюда не входят.
+
+| Порядок | Задача | Условие и результат |
+|---|---|---|
+| 1 | [#1198](https://github.com/UstinKO/padel-core-service/issues/1198) | Изолированная проба Java DTO; [результаты и ограничения](generator-probe.md) |
+| 2 | [#1199](https://github.com/UstinKO/padel-core-service/issues/1199) | После #1198 и завершения #1045: чтение клубов в application, свой порт и один legacy-адаптер |
+| 3 | [#1200](https://github.com/UstinKO/padel-core-service/issues/1200) | После #1199: contract-модуль и generated DTO только двух клубных GET |
+| 4 | [#1201](https://github.com/UstinKO/padel-core-service/issues/1201) | После #1200: независимые HTTP/browser-проверки и откат конечного артефакта |
+
+## Состояние 20.11.2026
+
+Проба #1198 воспроизводится отдельной командой и не подключена в reactor приложения. Выбран ограниченный способ генерации клубного response. Общая совместимость всех схем не заявляется: nullable-валидация требует малого шаблона, а presence/readOnly/writeOnly и live oneOf имеют явно проверенные ограничения.
+
+Исправления пилота #1195/#1196 включены в master через PR #1202/#1203; #1198 включена через #1232. Итоговая приёмка #1045 принята владельцем 20.11 без новых ручных повторов: [решение и ограничения](../phase-1/followup-2026-11-20.md). Протокол и регрессия оформлены в [#1180](https://github.com/UstinKO/padel-core-service/pull/1180); условие начала #1199 снято. Исходные ручные результаты, принятый ограниченный concurrent и ограничение Expo в preview сохраняются.
+
+Application не зависит от generated HTTP DTO, JPA или legacy-типов. Его порт возвращает собственную read-модель; адаптер пока остаётся под bootstrap. Contract не зависит от application. Маппинг выполняется MapStruct в соответствующих адаптерах. Поздняя #1051, физическая PostgreSQL и Swarm не запускаются этим срезом.
+
+Реализация #1199: [чтение клубов, wiring, карта переходных мостов и проверки](application-club-read.md). Application подключён третьим дочерним модулем reactor и второй library, HTTP record сохраняется до #1200. Verify — 1114 тестов без ошибок; HTTP baseline старого/нового jar, браузер, общий smoke, production Dockerfile и rollback прошли. Stack относительно #1180 отделяет принятый протокол пилота от backend-переноса.
+
+Реализация #1200: [канонический клубный OpenAPI, generated DTO и сборка](contract-adoption.md). Contract — четвёртый дочерний модуль и третья library; application не получает зависимости на HTTP DTO. Прежний discovery JSON доступен по старому пути как автоматически проверяемое представление клубного среза.

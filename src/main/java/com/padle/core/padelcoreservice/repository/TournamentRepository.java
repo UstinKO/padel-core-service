@@ -49,6 +49,10 @@ public interface TournamentRepository extends JpaRepository<Tournament, Long>, J
 
     long countByIsActiveTrue();
 
+    long countByOwnerIdAndIsActiveTrue(Long ownerId);
+
+    List<Tournament> findTop5ByOwnerIdOrderByCreatedAtDesc(Long ownerId);
+
     @Query("SELECT t FROM Tournament t ORDER BY t.createdAt DESC LIMIT :limit")
     List<Tournament> findTopByOrderByCreatedAtDesc(@Param("limit") int limit);
 

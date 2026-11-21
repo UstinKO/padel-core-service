@@ -358,6 +358,17 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 | `GET` | `/double-registration/accept-pair` | HTML | — | Страница из письма-предложения (`?token=...`), шаблон `accept-pair.html`. |
 | `POST` | `/api/tournaments/double/accept-pair` | JSON | — | Принять предложение пары по токену. |
 
+#### Ссылка для публикации мероприятия
+
+В `/admin/tournaments` таблица и мобильные карточки используют общий диалог
+«Ссылка для публикации». Для активного мероприятия с `canView`, кроме черновиков
+и отменённых, можно скопировать публичный `${siteBaseUrl}/torneo/ID`. Telegram
+помечается `telegram / social + telegram_posts`, Instagram Stories —
+`instagram / social + instagram_stories`; `utm_content=torneo_ID`. Текущий query
+админки не переносится. Клиентская операция не меняет данные и не отправляет
+событие регистрации. При отказе Clipboard API ссылка выделяется для ручного
+копирования. Новых HTTP-маршрутов и полномочий нет.
+
 #### Admin: управление регистрациями
 
 | Метод | URL | Тип | Auth | Описание |
@@ -560,6 +571,7 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 | `POST` | `/tournaments/team-playoff/api/matches/{matchId}/swap-team` | Атомарный обмен между неначатыми матчами стадии; ожидаемая версия и подтверждения. |
 | `POST` | `/tournaments/team-playoff/api/matches/{matchId}/play-start` | Отметить фактическое начало матча на корте. |
 | `POST` | `/tournaments/team-playoff/api/matches/{matchId}/correct-pair` | Подтверждённое исправление составов и счёта до заполнения следующего этапа. |
+| `GET`, `POST` | `/tournaments/team-playoff/api/{tournamentId}/early-playoff` | Проверка и подтверждение раннего плей-офф; доступ организатора. |
 | `GET` | `/tournaments/team-playoff/api/{tournamentId}/ranking` | Рейтинг квалификации, JSON. |
 | `GET` | `/tournaments/team-playoff/api/{tournamentId}/court-board` | Доска кортов: занятость, пул команд, предложенные пары 2-го тура. |
 

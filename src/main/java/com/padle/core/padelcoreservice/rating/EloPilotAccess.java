@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.Map;
 import java.util.Optional;
@@ -16,6 +17,9 @@ import java.util.Optional;
 @EnableConfigurationProperties(EloPilotProperties.class)
 public class EloPilotAccess {
     private final EloPilotProperties properties;
+
+    @Value("${app.rating.pilot.all-players:false}")
+    private boolean allPlayers;
 
     public boolean enabled() {
         return properties.enabled();
@@ -29,7 +33,7 @@ public class EloPilotAccess {
                 .map(SecurityUtils::extractPlayer)
                 .map(PlayerPadel::getId)
                 .map(id -> aliases.getOrDefault(id, id))
-                .filter(properties.playerIds()::contains)
+                .filter(id -> allPlayers || properties.playerIds().contains(id))
                 .isPresent();
     }
 

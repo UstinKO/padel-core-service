@@ -1,0 +1,52 @@
+{
+  "date": "2026-11-18",
+  "sourceRevision": "c145ad5bbb6367ace121d2c80247d12c5d4792e2",
+  "jarSha256": "4f56f40125f07114c9b62d73c0eee4c394f941636893a546bb8de68352c100cf",
+  "decision": "NO_GO",
+  "scope": "Расширение переноса; полный PASS первой фазы не получен",
+  "manualCoverage": "PARTIAL",
+  "issueRemainsOpen": true,
+  "cases": {
+    "M01": {"result": "PASS", "actor": "owner", "finishedMatches": 7, "champion": 1, "runnerUp": 5},
+    "M02": {"result": "PASS", "actor": "owner", "finishedMatches": 8, "champion": 5, "runnerUp": 1},
+    "M03": {"result": "PASS", "actor": "owner", "finishedMatches": 15, "champion": 1, "runnerUp": 5},
+    "M04A": {"result": "PARTIAL", "defect": 1196, "humanObservationBeforeLastQualification": "NOT_CONFIRMED"},
+    "M04B": {"result": "PASS", "actor": "owner", "finishedMatches": 8, "champion": 4, "runnerUp": 5},
+    "M04C": {"result": "PASS", "actor": "owner", "finishedMatches": 15, "champion": 5, "runnerUp": 10, "earlySemifinalPreserved": true},
+    "M05": {"result": "PASS", "actor": "owner", "noShowTeam": 8, "semifinals": [[1, 4], [3, 2]]},
+    "M06": {
+      "staleVersion": "PASS",
+      "stalePair": "PASS",
+      "sequentialReplay": "PASS",
+      "actor": "owner",
+      "concurrent": {"result": "ACCEPTED_LIMITED", "acceptedBy": "owner", "savedResults": 1, "versionDelta": 1, "overlapMeasured": false, "bothResponsesCaptured": false, "repeatDeclined": true}
+    },
+    "M07": {"result": "PASS", "technicalActor": "agent", "ownerSawForeignDeniedPage": true, "ownAdmin": 200, "foreignAdmin": 403, "foreignMutation": 403, "anonymousAdmin": 302, "publicCard": 200, "missingCsrf": 403, "statePreserved": true},
+    "M08": {
+      "result": "PARTIAL",
+      "mutationsBy": "owner",
+      "observationBy": "agent",
+      "newResultBothViews": "PASS",
+      "newResultBothTopics": "PASS",
+      "restoreServerState": "PASS",
+      "restoreLegacyMessage": "FAIL",
+      "restoreLegacyUi": "FAIL",
+      "restoreReactMessage": "PASS",
+      "restoreReactUi": "NOT_CONFIRMED",
+      "defect": 1195
+    },
+    "M09": {
+      "result": "PARTIAL",
+      "restartAndRollback": {"result": "PASS", "operator": "agent", "observation": "owner", "snapshotsPreserved": 8, "schemaAndLiquibasePreserved": true, "finalRelease": "module"},
+      "participation": {"pairCancellation": "PASS", "promotionFromWaitlist": "PASS", "onePromotedPlayerConfirmation": "PASS", "actionsBy": "owner", "initialRegistrationsBy": "agent", "manualInitialRegistration": "NOT_RUN"},
+      "commonPages": {"actor": "agent", "rendered": ["/", "/web/index.html", "/preview/torneos", "/app/"]},
+      "expo": {"shell": "PASS", "functionalSchedule": "NOT_CONFIRMED", "sameOriginApiStatus": 401, "externalRequestsBlocked": true},
+      "jwt": {"result": "PASS", "actor": "agent", "sessionCookieUsed": false, "login": 200, "me": 200, "events": 200, "anonymousMe": 401}
+    }
+  },
+  "defects": [1195, 1196],
+  "knownEarlierDefect": 1067,
+  "regressionFromEngineExtractionEstablished": false,
+  "historicalAutomatedReport": "final-automated-2026-11-18.json",
+  "journal": "manual-final.md"
+}

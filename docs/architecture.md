@@ -4,7 +4,7 @@
 исполняемый Telegram-адаптер в `automation/telegram-relay/`. Порядок отдельной активации воркера —
 [codex-migration.md](codex-migration.md); приложение и его схема развёртывания этим не меняются.
 
-План развития: [многомодульный монолит, семь согласованных модулей](modular-monolith/target-architecture.md). [Первая фаза](modular-monolith/phase-1/README.md) выделяет PlayoffMatchingEngine через рабочий reactor и отдельные исходную/итоговую e2e. Пока приложение остаётся одним Maven jar-проектом; целевую структуру не считать уже реализованной. Выделение хранения — отдельная поздняя #1051.
+План развития: [многомодульный монолит, семь согласованных модулей](modular-monolith/target-architecture.md). Сейчас работают parent/aggregator, api-contract (generated Club), tournament-engines (PlayoffMatchingEngine), application (PublicClubQuery/ClubReadPort) и bootstrap с единственным boot jar. [Application-срез](modular-monolith/phase-2/application-club-read.md), [источник API-контракта и сборка](modular-monolith/phase-2/contract-adoption.md). Остальной корневой src/ компилирует только bootstrap. Три целевых модуля пока не созданы. Приёмка пилота #1045 принята 20.11 с ограничениями; хранение остаётся отдельной поздней #1051.
 
 ---
 
@@ -102,6 +102,8 @@ Expo web-клиентом 1Padel.App. REST API выставлен паралле
 ---
 
 ## 2. Слои приложения
+
+Reactor включает `padel-api-contract`, `padel-tournament-engines`, `padel-application` и `padel-bootstrap`; исполняемым остаётся только bootstrap. Первый application-срез — публичное чтение клубов: собственные record/порт/сценарий, service/readOnly-транзакция и явная регистрация из bootstrap. JPA-адаптер и оба MapStruct-маппера остаются в legacy. [Граница, переходные мосты и проверки](modular-monolith/phase-2/application-club-read.md). Catalog/home и MVC клуба сохраняются; два клубных GET используют generated Club из api-contract. [Контракт и сборка](modular-monolith/phase-2/contract-adoption.md).
 
 ### Структура пакетов
 
@@ -211,21 +213,21 @@ Lombok отрабатывает до MapStruct — обеспечивается 
 | `GOOGLE_CLIENT_ID` | _(из yml)_ | OAuth2 Google |
 | `GOOGLE_CLIENT_SECRET` | _(из yml)_ | OAuth2 Google |
 | `SITE_KEY` / `SECRET_KEY` | _(из yml)_ | reCAPTCHA v3 |
-| `LOKI_ENABLED` | `false` (dev) / `true` (prod) | Включить отправку логов в Loki |
+| `LOKI_ENABLED` | `false` в приложении; `true` в Docker Compose | Включает отправку логов в Loki независимо от профиля |
 | `LOKI_URL` | `http://loki:3100/...` | Адрес Loki |
 | `APP_BASE_URL` | `http://localhost:8080` | Свойство `app.base-url`: источник `siteBaseUrl` для моделей страниц и базовый URL для всех пользовательских ссылок на сайт в письмах (`EmailService`/`TournamentService`/`DoubleTournamentRegistrationService` и др. — единая точка, в шаблонах `templates/email/**` домен не хардкодится, LFPT-0618). На проде должен быть публичным доменом сайта (`https://1-padel.com`), а не серверным доменом из раздела «Сервер» ниже — это два разных адреса. |
 
 ### Локальный запуск
 
 ```bash
-# Требует PostgreSQL на localhost:5432/player_padel_db
-./mvnw spring-boot:run
-
-# Полный стек с observability
-docker compose up -d
-
-# Сборка без тестов
+# Сборка без тестов; обязательный verify выполняется отдельно с тестовой PostgreSQL.
 ./mvnw clean package -DskipTests
+
+# Запуск с окружением своей БД и интеграций.
+java -jar padel-bootstrap/target/padel-core-service-0.0.1-SNAPSHOT.jar
+
+# Полный стек: приложение + postgres + loki + prometheus + grafana.
+docker compose up -d
 ```
 
 ### Конфигурация подключений (HikariCP)
@@ -244,8 +246,12 @@ hikari:
 | `JPA_DDL_AUTO` | `none` | `validate` |
 | `THYMELEAF_CACHE` | `false` | `true` |
 | `AUTO_CONFIRM_EMAIL` | `false` | `false` |
-| `LOKI_ENABLED` | `false` | `true` |
+| `LOKI_ENABLED` | `false` | `false` |
 | `JPA_SHOW_SQL` | `false` | `false` |
+
+Для `LOKI_ENABLED` указаны умолчания приложения. В `docker-compose.yml`
+используется `${LOKI_ENABLED:-true}`, поэтому Compose по умолчанию включает Loki.
+Сам профиль `prod` или `production` отправку логов не включает.
 
 ---
 
@@ -256,7 +262,7 @@ hikari:
 - **Только Liquibase** управляет схемой (`ddl-auto = none`).
 - Файлы: `src/main/resources/db/changelog/versions/vX.XX-<description>.yaml`
 - Мастер-файл: `changelog-master.yaml` — порядок include определяет порядок выполнения.
-- Текущая версия: **v1.76**
+- Текущая версия: **v1.79**
 
 **Добавление новой миграции:**
 ```
@@ -353,6 +359,14 @@ Grafana: `https://epadel.org/grafana/`
 ### Логирование
 
 Формат — структурированный JSON: файл `*-json.log` пишет встроенный `ch.qos.logback.classic.encoder.JsonEncoder`, в Loki уходит JSON-шаблон сообщения через `loki-logback-appender` 2.x (метки `app/host/level/environment`, без structured metadata) — см. `logback-spring.xml`.
+
+В основной конфигурации `logback-spring.xml` создание, запуск и подключение
+Loki-аппендера зависят от `logging.loki.enabled`. При `false` или отсутствии
+свойства аппендер не создаётся и HTTP-запросов к Loki нет; при `true` к логгеру
+`com.padle.core` подключается один запущенный Loki-аппендер.
+При явной перезагрузке конфигурации с переходом `true → false` прежний аппендер
+останавливается, последующие сообщения в Loki не отправляются.
+Профиль `preview` использует отдельный `logback-preview.xml` с отключённым Loki.
 
 ```yaml
 logging:
@@ -527,6 +541,25 @@ simpMessagingTemplate.convertAndSend(
 
 ## 9. Docker и инфраструктура
 
+Актуальная инвентаризация production на 19.11.2026, ресурсный расчёт и ограничения приведены
+в [реестре Swarm](swarm/README.md), целевая схема — в [ADR-0001](swarm/adr/0001-single-vm.md).
+
+Изолированный локальный полный стек LFPT-1208 запускается через
+`automation/swarm/lab.py`: отдельный Engine 4 GiB / 2 CPU, одна app replica,
+синтетическая PostgreSQL, private overlay, digest-образы и Swarm secrets/configs.
+[Запуск и границы проверок](swarm/lab.md).
+RabbitMQ исключён пересмотром 20.11.2026: выбран внутренний REST между app tasks,
+без изменения браузерного WS/STOMP-контракта. Сеть `events` и резерв ключа готовы;
+endpoint, after-commit fan-out/retry/dedup и восстановление пропусков — #1211.
+gRPC рассмотрен и отложен; результаты одной JVM не доказывают достаточность двух.
+Владелец согласовал полный стек Swarm на одной ВМ с двумя app tasks. Сейчас проверены
+Compose и одна JVM. Допуск production требует проверки памяти и репетиции #1217.
+Владелец выбрал текущие 4 GiB RAM (3911 MiB по ОС) для стенда. Добавочная оценка
+второй JVM и Redis оставляет около 1231 MiB MemAvailable до расходов REST. Достаточность
+проверяется нагрузкой; первый режим обновления — stop-first, parallelism=1.
+Приняты цели стенда 15 min первичного окна, 5 min возврата приложения,
+30 min restore БД и аварийный RPO ≤24 h с обязательной проверкой.
+
 ### Сервисы docker-compose
 
 | Сервис | Image | Порт (host) | Описание |
@@ -537,7 +570,10 @@ simpMessagingTemplate.convertAndSend(
 | `prometheus` | `prom/prometheus:2.53.0` | `9090` | Сбор метрик |
 | `grafana` | `grafana/grafana:11.0.0` | `3000` | Визуализация |
 
-Все сервисы в одной Docker-сети `padel-network` (bridge). В prod все порты привязаны к `127.0.0.1` — снаружи доступен только Nginx на 443.
+В репозитории сервисы подключены к `padel-network` (bridge), порты Compose опубликованы без
+ограничения интерфейса. Read-only проверка production 19.11.2026 подтвердила loopback
+для портов приложения, PostgreSQL и мониторинга. Nginx работает на хосте на 80/443.
+Его TLS, real-IP и интеграция CrowdSec/UFW переносятся и проверяются по #1208.
 
 ### Зависимости запуска
 
@@ -562,26 +598,21 @@ prometheus
 
 ### Конфигурация Prometheus scrape
 
-```yaml
-# prometheus.yml
-scrape_configs:
-  - job_name: 'padel-core-service'
-    static_configs:
-      - targets: ['padel-app:8080']
-    metrics_path: '/actuator/prometheus'
-    scrape_interval: 15s
-
-  - job_name: 'crowdsec'
-    static_configs:
-      - targets: ['172.17.0.1:6060']   # host network для CrowdSec
-    metrics_path: '/metrics'
-```
+Текущий `prometheus.yml` опрашивает `padel-app:8080` по `/actuator/prometheus` каждые
+10 секунд. Для двух реплик #1216 вводит discovery каждой task и service/task/node/revision
+labels. Один балансируемый адрес не доказывает наличие метрик обоих процессов.
+Базовые probes уже включены, effective production health, Docker healthcheck и завершение
+активных операций проверяются по #1216.
 
 ---
 
 ## 10. CI/CD и деплой
 
 ### GitHub Actions
+
+В PR Check после сборки приложения отдельно запускается `python3 automation/openapi-probe/verify.py`: два ожидаемых отказа исходных шаблонов, две чистые генерации Java DTO, JSON/MapStruct/Jakarta-проверки, сравнение исходников, Java 17 bytecode и дерево зависимостей. Evidence публикуется артефактом `openapi-dto-probe`. Проба не входит в reactor или выпускаемый jar. [Конфигурация и ограничения](modular-monolith/phase-2/generator-probe.md).
+
+Браузерная матрица модульного пилота проверяет отдельные restore MESSAGE и конечный UI legacy/React, переход после квалификации с отрицательными случаями и функциональный API Expo через явно обозначенный QA-адаптер шлюза. После выпуска/отката выполняются ранние 9/16/SF; результаты сохранены в `modular-pilot-qa`. [Границы приёмки](modular-monolith/phase-1/followup-2026-11-20.md).
 
 Пуш в `master` → `.github/workflows/deploy.yml`:
 
@@ -652,6 +683,14 @@ services:
 ### Ресурсы и логирование тестов
 
 Maven Surefire задаёт общий бюджет тестового JVM: Hikari maximum-pool-size=4, minimum-idle=0, Spring context cache=8. Это предотвращает исчерпание соединений PostgreSQL при нескольких кешированных контекстах. `src/test/resources/logback-test.xml` выводит маскированные сообщения в консоль без Loki/Telegram и файловых аппендеров. Настройки не включаются в production jar и не меняют пулы или логирование приложения.
+
+`LokiLoggingConfigurationTest` отдельно проверяет основную конфигурацию
+`logback-spring.xml` через Spring Boot LoggingSystem в дочерних JVM,
+без PostgreSQL и внешних сервисов. Локальный HTTP-сервер подтверждает доставку
+контрольного сообщения при включённом Loki и отсутствие запросов при выключенном.
+Проверяются отсутствие свойства, значения `false` и `true` во всей матрице профилей,
+повторная загрузка с `false`, переход `true → false`, а также сохранение остальных
+аппендеров, уровня и `additivity` логгера `com.padle.core`.
 
 ## Закрытая интеграционная среда UI v2
 

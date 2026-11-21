@@ -1,10 +1,11 @@
 import { readFile } from 'node:fs/promises';
 import { actor, assert, browser, clickAction, csrf, evidence, finish, input, normalized,
   snapshot, write } from './support.mjs';
-import { early, noShow, realtimeAndRestore, security, staleAndRegenerate } from './checks.mjs';
+import { qualificationBoundary, noShow, realtimeAndRestore, security, staleAndRegenerate } from './checks.mjs';
 
 const report = { sourceRevision: input.sourceRevision, jarSha256: input.jarSha256,
   automated: true, manual: 'NOT_RUN', cases: [],
+  expectations: input.record ? 'CANDIDATE' : 'browser-expectations-2026-11-18.json',
   knownDefects: ['https://github.com/UstinKO/padel-core-service/issues/1067'] };
 const actual = {};
 try {
@@ -35,9 +36,12 @@ try {
     console.log(key + ': завершён и повторно прочитан');
   }
   const roster = input.fixtures.scenarios.find(item => item.key === 'roster-8');
-  actual.early = await early(admin, manager, roster);
-  actual.early.finished = await finish(manager, roster);
-  console.log('Ранняя сетка/TBD/backfill и финал: проверены');
+  actual.qualificationBoundary = await qualificationBoundary(admin, manager, roster);
+  actual.qualificationBoundary.finished = await finish(manager, roster);
+  report.qualificationBoundary = { blockedBeforeQualification: true, directPostUnchanged: true,
+    invalidScoreNotSent: true, missingCsrfRejected: { status: 302, destination: '/error/403' }, noStartAfterRefusal: true,
+    startWithoutNavigation: true, allTeamsSeededAfterQualification: true, finished: true };
+  console.log('Запрет ранней сетки для восьми пар, посев после квалификации и финал: проверены');
   const reset = await admin.request.post(input.origin + '/api/internal/ui-preview/playoff-pilot/reset', {
     headers: await csrf(admin),
   });
@@ -50,8 +54,9 @@ try {
   await write('actual', actual);
   if (input.record) await write('expectations-candidate', actual);
   else {
-    const expected = JSON.parse(await readFile('docs/modular-monolith/phase-1/browser-expectations.json', 'utf8'));
-    assert.deepEqual(actual, expected, 'Исходные пары/слоты/результаты сохранены');
+    const expected = JSON.parse(await readFile(
+      'docs/modular-monolith/phase-1/' + report.expectations, 'utf8'));
+    assert.deepEqual(actual, expected, 'Пары/слоты/результаты соответствуют текущему эталону master');
   }
   report.result = 'PASS';
 } catch (error) {

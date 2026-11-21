@@ -39,6 +39,8 @@ export async function csrf(user) {
 }
 
 export async function snapshot(user, id) {
+  // Публичный API пополняет общий для IP лимит со скоростью один запрос в секунду.
+  await setTimeout(1100);
   const response = await user.request.get(input.origin + `/api/public/events/${id}/live`);
   assert.equal(response.status(), 200, 'Публичный snapshot доступен');
   assert.match(response.headers()['cache-control'], /no-store/);

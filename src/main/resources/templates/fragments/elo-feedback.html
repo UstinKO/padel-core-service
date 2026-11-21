@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<section th:fragment="invite(source)" class="elo-feedback" data-elo-feedback>
+    <div>
+        <strong th:text="#{elo.feedback.pilot}"></strong>
+        <p th:text="#{elo.feedback.invite}"></p>
+    </div>
+    <button type="button" class="elo-feedback-open" data-feedback-open aria-haspopup="dialog"
+            th:title="#{elo.feedback.invite}">
+        <span class="elo-feedback-ball" aria-hidden="true"></span>
+        <span th:text="#{elo.feedback.open}"></span>
+    </button>
+    <dialog class="elo-feedback-dialog" aria-labelledby="elo-feedback-title"
+            th:data-saved-message="#{elo.feedback.saved}" th:data-error-message="#{elo.feedback.error}">
+        <form th:action="@{/api/rating/feedback}" method="post">
+            <div class="elo-feedback-dialog-header">
+                <h2 id="elo-feedback-title" th:text="#{elo.feedback.title}"></h2>
+                <button type="button" data-feedback-close th:aria-label="#{elo.feedback.close}">×</button>
+            </div>
+            <input type="hidden" name="source" th:value="${source}">
+            <input type="hidden" name="requestKey">
+            <fieldset>
+                <label>
+                    <span th:text="#{elo.feedback.topic}"></span>
+                    <select name="topic" required>
+                        <option th:each="topic : ${ {'QUESTION', 'IDEA', 'ERROR', 'OTHER'} }"
+                                th:value="${topic}" th:text="#{${'elo.feedback.topic.' + topic}}"></option>
+                    </select>
+                </label>
+                <label>
+                    <span th:text="#{elo.feedback.message}"></span>
+                    <textarea name="message" rows="4" maxlength="2000" required autofocus
+                              th:placeholder="#{elo.feedback.placeholder}"></textarea>
+                </label>
+                <button type="submit" class="elo-feedback-open" th:text="#{elo.feedback.send}"></button>
+            </fieldset>
+            <p role="status" data-feedback-status></p>
+        </form>
+    </dialog>
+</section>
+</body>
+</html>

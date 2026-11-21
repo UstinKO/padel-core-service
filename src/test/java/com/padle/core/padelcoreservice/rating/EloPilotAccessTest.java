@@ -32,6 +32,15 @@ class EloPilotAccessTest {
     }
 
     @Test
+    void enablesAllAuthenticatedPlayersWithoutGrantingOwnerOrAnonymousAccess() {
+        org.springframework.test.util.ReflectionTestUtils.setField(access, "allPlayers", true);
+        assertThat(access.allows(player(2), Map.of())).isTrue();
+        assertThat(access.allows(null, Map.of())).isFalse();
+        assertThat(access.allows(new UsernamePasswordAuthenticationToken(player(1).getPrincipal(), null,
+                List.of(new SimpleGrantedAuthority("ROLE_OWNER"))), Map.of())).isFalse();
+    }
+
+    @Test
     void allowsGoogleLoginUsingVerifiedPlayerIdentityRatherThanGoogleAttributes() {
         var google = new DefaultOAuth2User(List.of(new SimpleGrantedAuthority("ROLE_PLAYER")),
                 Map.of("sub", "google", "playerId", 1L), "sub");

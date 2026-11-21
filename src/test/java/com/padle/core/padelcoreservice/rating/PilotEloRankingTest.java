@@ -55,6 +55,18 @@ class PilotEloRankingTest {
         return path;
     }
 
+    @Test
+    void adminLookupUsesCurrentReplayAndResolvesLinkedProfiles() throws Exception {
+        var refresh = mock(PilotEloRefresh.class);
+        var properties = new EloPilotProperties(true, Set.of(1L), writeBundle());
+        var advice = new PilotEloRanking(mapper, properties, new EloPilotAccess(properties), Optional.of(refresh));
+        var fresh = new PreviewEloRanking.Snapshot(bundle().snapshot().asOf().plusDays(1), List.of(row(1), row(2)));
+        when(refresh.calculate()).thenReturn(fresh);
+        assertThat(advice.playerRow(8L)).contains(row(1));
+        assertThat(advice.playerRow(99L)).isEmpty();
+        verify(refresh, times(2)).calculate();
+    }
+
     private MockMvc web(boolean enabled, Set<Long> ids) throws Exception {
         var properties = new EloPilotProperties(enabled, ids, writeBundle());
         var advice = new PilotEloRanking(mapper, properties, new EloPilotAccess(properties), Optional.empty());
@@ -120,17 +132,43 @@ class PilotEloRankingTest {
         var refresh = mock(PilotEloRefresh.class);
         var properties = new EloPilotProperties(true, Set.of(1L), writeBundle());
         var advice = new PilotEloRanking(mapper, properties, new EloPilotAccess(properties), Optional.of(refresh));
-        advice.ranking(new ExtendedModelMap(), EloPilotAccessTest.player(2), new MockHttpServletResponse());
-        advice.ranking(new ExtendedModelMap(), null, new MockHttpServletResponse());
-        verifyNoInteractions(refresh);
+        advice.ranking(new ExtendedModelMap(), EloPilotAccessTest.player(2), new MockHttpServletResponse(), new org.springframework.mock.web.MockHttpServletRequest());
+        advice.ranking(new ExtendedModelMap(), null, new MockHttpServletResponse(), new org.springframework.mock.web.MockHttpServletRequest());
+        verify(refresh, org.mockito.Mockito.never()).calculate();
         var next = new PreviewEloRanking.Snapshot(bundle().snapshot().asOf().plusDays(1), List.of(row(2), row(1)));
         when(refresh.calculate()).thenReturn(bundle().snapshot(), next);
         var model = new ExtendedModelMap();
-        advice.ranking(model, EloPilotAccessTest.player(1), new MockHttpServletResponse());
+        advice.ranking(model, EloPilotAccessTest.player(1), new MockHttpServletResponse(), new org.springframework.mock.web.MockHttpServletRequest());
         assertThat(model.get("previewElo")).isEqualTo(bundle().snapshot());
-        advice.ranking(model, EloPilotAccessTest.player(8), new MockHttpServletResponse());
+        advice.ranking(model, EloPilotAccessTest.player(8), new MockHttpServletResponse(), new org.springframework.mock.web.MockHttpServletRequest());
         assertThat(model.get("previewElo")).isEqualTo(next);
         verify(refresh, times(2)).calculate();
+    }
+
+    @Test
+    void publicRankingCannotStartWithTheOldFormula() throws Exception {
+        var properties = new EloPilotProperties(true, Set.of(1L), writeBundle());
+        var advice = new PilotEloRanking(mapper, properties, new EloPilotAccess(properties), Optional.empty());
+        org.springframework.test.util.ReflectionTestUtils.setField(advice, "allPlayers", true);
+        assertThatThrownBy(advice::verifyPublicFormula).isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void publicRankingIsVisibleToVisitorsButFeedbackRequiresAnAuthenticatedPlayer() throws Exception {
+        var properties = new EloPilotProperties(true, Set.of(1L), writeBundle());
+        var access = new EloPilotAccess(properties);
+        org.springframework.test.util.ReflectionTestUtils.setField(access, "allPlayers", true);
+        var advice = new PilotEloRanking(mapper, properties, access, Optional.empty());
+        org.springframework.test.util.ReflectionTestUtils.setField(advice, "allPlayers", true);
+        var request = new org.springframework.mock.web.MockHttpServletRequest("GET", "/ranking");
+        var model = new ExtendedModelMap();
+        advice.ranking(model, null, new MockHttpServletResponse(), request);
+        assertThat(model.get("previewElo")).isNotNull();
+        assertThat(model.get("eloFeedbackAllowed")).isEqualTo(false);
+        var playerModel = new ExtendedModelMap();
+        advice.ranking(playerModel, EloPilotAccessTest.player(2), new MockHttpServletResponse(), request);
+        assertThat(playerModel.get("previewElo")).isNotNull();
+        assertThat(playerModel.get("eloFeedbackAllowed")).isEqualTo(true);
     }
 
     @Test

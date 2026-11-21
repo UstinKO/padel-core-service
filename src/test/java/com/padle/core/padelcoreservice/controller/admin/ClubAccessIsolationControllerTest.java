@@ -80,6 +80,8 @@ class ClubAccessIsolationControllerTest {
         Long tournamentId = createTournament(clubA.getId()).getId();
 
         Owner clubAdminA = createOwner(clubA.getId());
+        Tournament owned = tournamentRepository.findById(tournamentId).orElseThrow();
+        owned.setOwnerId(clubAdminA.getId());
         Owner clubAdminB = createOwner(clubB.getId());
 
         // Эндпоинт гасит отказ доступа внутри себя и отвечает 200 с success:false — не 200
@@ -106,6 +108,8 @@ class ClubAccessIsolationControllerTest {
         Long tournamentId = createTournament(clubA.getId()).getId();
 
         Owner clubAdminA = createOwner(clubA.getId());
+        Tournament owned = tournamentRepository.findById(tournamentId).orElseThrow();
+        owned.setOwnerId(clubAdminA.getId());
         Owner clubAdminB = createOwner(clubB.getId());
 
         Model foreignModel = new ExtendedModelMap();
@@ -125,6 +129,8 @@ class ClubAccessIsolationControllerTest {
         Long tournamentId = createTournament(clubA.getId()).getId();
 
         Owner clubAdminA = createOwner(clubA.getId());
+        Tournament owned = tournamentRepository.findById(tournamentId).orElseThrow();
+        owned.setOwnerId(clubAdminA.getId());
         Owner clubAdminB = createOwner(clubB.getId());
 
         MatchDto matchDto = new MatchDto();
