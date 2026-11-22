@@ -11,6 +11,7 @@ import uuid
 ROOT = Path('/opt/padel-app/backups/black-cleanup-1260')
 EVENTS = '191,193'
 CONTAINER = 'padel-postgres'
+APP_CONTAINER = 'padel-core-app'
 
 
 def ident(value):
@@ -151,7 +152,7 @@ def clean(session, expected=None, commit=False):
 
 
 def rating_state():
-    inspected = subprocess.run(['docker', 'inspect', 'padel-app', '--format', '{{json .Config.Env}}'], check=True, capture_output=True, text=True)
+    inspected = subprocess.run(['docker', 'inspect', APP_CONTAINER, '--format', '{{json .Config.Env}}'], check=True, capture_output=True, text=True)
     env = dict(item.split('=', 1) for item in json.loads(inspected.stdout) if '=' in item)
     enabled = env.get('APP_RATING_PILOT_ENABLED', '').lower() == 'true'
     automatic = env.get('APP_RATING_PILOT_AUTO_REFRESH', '').lower() == 'true'
@@ -160,7 +161,7 @@ def rating_state():
         assert automatic
         path = env.get('APP_RATING_PILOT_HISTORY')
         assert path
-        container_file = subprocess.run(['docker', 'exec', 'padel-app', 'cat', path], check=True, capture_output=True, text=True)
+        container_file = subprocess.run(['docker', 'exec', APP_CONTAINER, 'cat', path], check=True, capture_output=True, text=True)
         source = json.loads(container_file.stdout)
         managed = set(source['managedEvents'])
         base = {event['key'] for event in source['history']['events']}
