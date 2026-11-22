@@ -48,6 +48,7 @@ def query(sql):
 
 
 if __name__ == '__main__':
+    print('BLACK_AUDIT_PYTHON_STARTED', flush=True)
     try:
         data = query(SQL)
         assert data['owner']['id'] == 5 and data['owner']['role'] == 'CLUB_ADMIN' and data['owner']['active']

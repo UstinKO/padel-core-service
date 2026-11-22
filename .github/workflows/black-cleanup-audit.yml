@@ -31,8 +31,17 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_KEY_NEW }}
           command_timeout: 480s
+          script_stop: true
           script: |
             set -eu
             echo BLACK_AUDIT_STARTED
-            python3 -u /opt/padel-app/temp/black-cleanup-1260/audit.py
+            wc -c /opt/padel-app/temp/black-cleanup-1260/audit.py
+            sha256sum /opt/padel-app/temp/black-cleanup-1260/audit.py
+            python3 --version
+            if python3 -u /opt/padel-app/temp/black-cleanup-1260/audit.py; then
+              echo BLACK_AUDIT_PYTHON_OK
+            else
+              echo BLACK_AUDIT_PYTHON_FAILED
+              exit 1
+            fi
             echo BLACK_AUDIT_FINISHED
