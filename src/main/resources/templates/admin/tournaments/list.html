@@ -24,6 +24,7 @@
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" th:href="@{/css/admin.css}">
     <link rel="stylesheet" th:href="@{/css/admin-tournament-list.css}">
+    <link rel="stylesheet" th:href="@{/css/admin-event-calendar.css}">
     <link rel="stylesheet" th:href="@{/css/admin-publication-link.css}">
 </head>
 <body>
@@ -57,6 +58,13 @@
                 <span th:text="#{admin.tournaments.list.btn.new}">Nuevo Torneo</span>
             </a>
         </div>
+
+        <nav class="event-view-switch" th:aria-label="#{admin.calendar.view}">
+            <a id="eventListSwitch" class="btn btn-outline" th:href="@{/admin/tournaments}"
+               th:text="#{admin.calendar.list}"></a>
+            <a id="eventCalendarSwitch" class="btn btn-outline" th:href="@{/admin/tournaments(view='calendar')}"
+               th:text="#{admin.calendar.calendar}"></a>
+        </nav>
 
         <form method="get" th:action="@{/admin/tournaments}" class="tournament-list-filters"
               id="tournamentListFilters" th:aria-label="#{admin.tournaments.list.filter.title}">
@@ -127,6 +135,7 @@
             </div>
         </form>
 
+        <section id="eventListView">
         <p th:unless="${invalidPeriod}" class="tournament-list-count"
            th:text="#{admin.tournaments.list.filter.count(${resultCount})}"></p>
         <div th:if="${resultCount == 0 and !invalidPeriod}" class="admin-empty">
@@ -338,6 +347,32 @@
                 </tbody>
             </table>
         </div>
+        </section>
+        <section id="eventCalendarView" class="event-calendar" hidden
+                 th:aria-label="#{admin.calendar.title}"
+                 th:attr="data-all-clubs=#{admin.calendar.allClubs},data-all-formats=#{admin.calendar.allFormats},data-title=#{admin.calendar.title},data-loading=#{admin.calendar.loading},data-error=#{admin.calendar.error},data-empty=#{admin.calendar.empty},data-filtered=#{admin.calendar.filtered},data-no-day=#{admin.calendar.noDay},data-more=#{admin.calendar.more},data-events=#{admin.calendar.events},data-all-levels=#{calendar.level.TODOS},data-beginner=#{calendar.level.PRINCIPIANTES},data-continues=#{admin.calendar.continues},data-to=#{admin.calendar.to},data-day-label=#{admin.calendar.day}">
+            <div class="event-calendar__toolbar">
+                <button type="button" id="calendarPrevious" class="btn btn-outline"
+                        th:aria-label="#{admin.calendar.previous}">‹</button>
+                <h2 id="calendarMonth" aria-live="polite"></h2>
+                <button type="button" id="calendarNext" class="btn btn-outline"
+                        th:aria-label="#{admin.calendar.next}">›</button>
+                <button type="button" id="calendarToday" class="btn btn-outline"
+                        th:text="#{admin.calendar.today}"></button>
+            </div>
+            <p id="calendarMessage" role="status" aria-live="polite"></p>
+            <div id="calendarError" role="alert" hidden>
+                <p th:text="#{admin.calendar.error}"></p>
+                <button type="button" id="calendarRetry" class="btn btn-outline" th:text="#{admin.calendar.retry}"></button>
+            </div>
+            <a id="calendarReset" href="#" hidden th:text="#{admin.tournaments.list.filter.reset}"></a>
+            <div id="calendarWeekdays" class="event-calendar__weekdays" aria-hidden="true"></div>
+            <div id="calendarGrid" class="event-calendar__grid"></div>
+            <section id="calendarDay" class="event-calendar__day" aria-labelledby="calendarDayTitle">
+                <h3 id="calendarDayTitle" tabindex="-1"></h3>
+                <div id="calendarDayEvents"></div>
+            </section>
+        </section>
     </div>
 </main>
 
@@ -348,5 +383,6 @@
 <script th:src="@{/js/admin.js}"></script>
 <script th:src="@{/js/admin-tournament-list.js}" defer></script>
 <script th:src="@{/js/admin-publication-link.js}" defer></script>
+<script type="module" th:src="@{/js/admin-event-calendar.js}"></script>
 </body>
 </html>

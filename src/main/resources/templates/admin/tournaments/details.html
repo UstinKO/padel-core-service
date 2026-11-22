@@ -326,6 +326,8 @@
 
 <main class="admin-main">
     <div class="container">
+        <a id="calendarReturn" class="btn btn-outline" hidden style="display:none" th:text="#{admin.calendar.return}"></a>
+
         <!-- Сообщения об успехе/ошибке -->
         <div th:if="${successMessage}" class="alert alert-success">
             <i class="fas fa-check-circle"></i>
@@ -1907,5 +1909,6 @@
     /*]]>*/
 </script>
 <script th:src="@{/js/admin-tournament-list.js}" defer></script>
+<script th:src="@{/js/admin-calendar-return.js}" defer></script>
 </body>
 </html>

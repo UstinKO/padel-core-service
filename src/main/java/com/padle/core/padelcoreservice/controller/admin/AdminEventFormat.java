@@ -10,7 +10,7 @@ public enum AdminEventFormat {
     CANCHA_ABIERTA,
     PADEL_CLINIC;
 
-    static AdminEventFormat of(TournamentDto tournament) {
+    public static AdminEventFormat of(TournamentDto tournament) {
         return switch (tournament.getTipo()) {
             case KING_OF_COURT -> KING_OF_COURT;
             case AMERICANO -> tournament.getModalidad() == Modalidad.DOBLES
