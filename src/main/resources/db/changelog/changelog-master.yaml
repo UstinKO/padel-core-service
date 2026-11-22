@@ -248,3 +248,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.81-round-robin.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.82-solo-roster.yaml
+      relativeToChangelogFile: true

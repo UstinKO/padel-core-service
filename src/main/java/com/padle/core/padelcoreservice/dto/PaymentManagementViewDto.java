@@ -56,4 +56,8 @@ public class PaymentManagementViewDto {
 
     /** true — регистрация в резерве (WAITLIST), а не в основном составе. */
     private boolean isReserve;
+
+    private boolean solo;
+    private String registrationStatus;
+    private String playerLevel;
 }
