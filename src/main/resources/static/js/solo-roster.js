@@ -11,6 +11,13 @@
     let board = {singles: [], cancelled: [], history: []};
     let action, source, selected, preview, command, busy = false, dirty = false, searchTimer, searchVersion = 0, trigger, submitted = false;
     const mode = get('mode');
+    const disclosureKey = 'solo-roster-expanded:' + host.dataset.eventId;
+    try { host.open = sessionStorage.getItem(disclosureKey) === 'true'; }
+    catch { /* Без хранилища блок по умолчанию остаётся свёрнутым. */ }
+    host.addEventListener('toggle', () => {
+        try { sessionStorage.setItem(disclosureKey, String(host.open)); }
+        catch { /* Недоступное хранилище не мешает обычному сворачиванию. */ }
+    });
     const say = (id, value) => { get(id).textContent = value || ''; };
     const node = (tag, text, cls) => {
         const element = document.createElement(tag);
@@ -69,6 +76,8 @@
     async function load() {
         try {
             board = await api('');
+            say('count', '(' + board.singles.length + ')');
+            get('count').hidden = false;
             get('list').replaceChildren(...board.singles.map(row => person(row, true)));
             if (!board.singles.length) get('list').append(node('p', m.empty));
             get('cancelled').replaceChildren(...board.cancelled.map(row => person(row, false)));
@@ -80,7 +89,7 @@
                     people.map(row => row.name).join(' / ')].filter(Boolean).join(' · '));
             }));
             say('notice','');
-        } catch (error) { say('notice', error.message); }
+        } catch (error) { host.open = true; say('notice', error.message); }
     }
     function busyState(value) {
         busy = value;

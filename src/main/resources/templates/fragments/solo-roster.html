@@ -1,13 +1,19 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"><body>
 <th:block th:fragment="roster" th:if="${tournament.modalidad != null and tournament.modalidad.name() == 'DOBLES'}">
-<section id="solo-roster" class="solo-roster" aria-labelledby="solo-title" th:data-event-id="${tournament.id}">
-    <header class="solo-header"><div><h2 id="solo-title" th:text="#{solo.ui.title}"></h2><p th:text="#{solo.ui.description}"></p></div>
+<details id="solo-roster" class="solo-roster" aria-labelledby="solo-title" th:data-event-id="${tournament.id}">
+    <summary class="solo-summary">
+        <h2 id="solo-title"><span th:text="#{solo.ui.title}"></span><span id="solo-count" class="solo-count" aria-live="polite" hidden></span></h2>
+        <span class="solo-summary-action"><span class="solo-expand" th:text="#{solo.ui.expand}"></span><span class="solo-collapse" th:text="#{solo.ui.collapse}"></span></span>
+    </summary>
+    <div class="solo-content">
+    <header class="solo-header"><div><p th:text="#{solo.ui.description}"></p></div>
         <button type="button" class="btn btn-primary" data-roster-action="ADD" th:text="#{solo.ui.add}"></button></header>
     <p id="solo-notice" role="status" aria-live="polite"></p>
     <div id="solo-list" class="solo-list" aria-live="polite"></div>
     <details class="solo-archive"><summary th:text="#{solo.ui.archive}"></summary><div id="solo-cancelled" class="solo-list"></div><ol id="solo-history"></ol></details>
-</section>
+    </div>
+</details>
 <dialog id="solo-dialog" class="solo-dialog" aria-labelledby="solo-dialog-title">
     <div class="solo-header"><h2 id="solo-dialog-title"></h2><button type="button" class="solo-close" data-roster-close th:aria-label="#{solo.ui.close}">×</button></div>
     <p class="solo-event" th:text="${tournament.nombre}"></p>
