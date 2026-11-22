@@ -1,7 +1,7 @@
 (() => {
     const listPath = '/admin/tournaments';
     const storageKey = 'adminTournamentListFilters';
-    const filterNames = ['from', 'to', 'format', 'clubId', 'gender', 'level', 'status'];
+    const filterNames = ['from', 'to', 'format', 'clubId', 'gender', 'level', 'status', 'view', 'month', 'day'];
 
     function listFilters(search) {
         const source = new URLSearchParams(search);
@@ -17,7 +17,12 @@
 
     try {
         if (document.getElementById('tournamentListFilters')) {
-            sessionStorage.setItem(storageKey, listFilters(window.location.search).toString());
+            const remember = () => {
+                try { sessionStorage.setItem(storageKey, listFilters(window.location.search).toString()); }
+                catch (error) { if (!(error instanceof DOMException)) throw error; }
+            };
+            remember();
+            window.addEventListener('pagehide', remember);
             return;
         }
 
