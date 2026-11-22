@@ -33,4 +33,6 @@ jobs:
           command_timeout: 480s
           script: |
             set -eu
-            python3 /opt/padel-app/temp/black-cleanup-1260/audit.py
+            echo BLACK_AUDIT_STARTED
+            python3 -u /opt/padel-app/temp/black-cleanup-1260/audit.py
+            echo BLACK_AUDIT_FINISHED
