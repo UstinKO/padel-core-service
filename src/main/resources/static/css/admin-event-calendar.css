@@ -1,0 +1,51 @@
+#eventCalendarView[hidden], #eventListView[hidden], .event-calendar [hidden], .tournament-list-filters [hidden] {display:none!important}
+.event-view-switch {display:flex;gap:.5rem;margin:0 0 1rem;flex-wrap:wrap}
+.event-view-switch [aria-current="page"] {background:var(--admin-primary);color:white}
+.event-calendar {background:white;border:1px solid var(--admin-border);border-radius:16px;padding:1rem;color:var(--admin-dark)}
+.event-calendar__toolbar {display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem}
+.event-calendar__toolbar h2 {margin:0 auto;font-size:1.5rem;text-transform:capitalize}
+.event-calendar__toolbar button {min-width:44px;min-height:44px;padding:.5rem .85rem}
+.event-calendar__weekdays,.event-calendar__grid {display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
+.event-calendar__weekdays span {text-align:center;padding:.65rem;font-size:.85rem;font-weight:600}
+.event-calendar__cell {min-width:0;min-height:104px;border:1px solid var(--admin-border);padding:.35rem;position:relative}
+.event-calendar__cell.is-outside {background:var(--admin-light);color:#64748b}
+.event-calendar__cell.is-today {box-shadow:inset 0 0 0 2px var(--admin-primary)}
+.event-calendar__cell.is-selected {background:#fff4ed}
+.event-calendar__date {min-width:36px;min-height:36px;border:0;border-radius:50%;background:transparent;color:inherit;font:inherit;cursor:pointer}
+.is-today .event-calendar__date {background:var(--admin-primary);color:white;font-weight:700}
+.is-selected .event-calendar__date {outline:2px solid var(--admin-primary);outline-offset:1px}
+.event-calendar__event {display:flex;flex-direction:column;gap:.2rem;padding:.55rem .5rem;margin-top:.35rem;background:#f8fafc;border:1px solid var(--admin-border);border-left:3px solid var(--admin-primary);border-radius:7px;color:var(--admin-dark);text-decoration:none;overflow-wrap:anywhere;line-height:1.35}
+.event-calendar__event:hover {background:#fff4ed;border-color:var(--admin-primary)}
+.event-calendar__event-title {font-size:.88rem;font-weight:600}
+.event-calendar__event-meta,.event-calendar__event-status {font-size:.78rem}
+.event-calendar__event--king_of_court {border-left-color:#7b2cbf}
+.event-calendar__event--cancha_abierta {border-left-color:#02836b}
+.event-calendar__event--padel_clinic {border-left-color:#2563eb}
+.event-calendar__count {display:none}
+.event-calendar__more {border:0;background:transparent;color:#bc421d;min-height:36px;text-align:left;cursor:pointer;font:inherit;font-size:.85rem}
+.event-calendar__day {margin-top:1.5rem;border-top:1px solid var(--admin-border);padding-top:.75rem;scroll-margin-top:1rem}
+#calendarDayEvents {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.6rem}
+.event-calendar button:focus-visible,.event-calendar a:focus-visible,.event-view-switch a:focus-visible {outline:3px solid #1e293b;outline-offset:3px}
+@media(max-width:767px) {
+ .event-calendar {padding:.65rem}
+ .event-calendar__toolbar h2 {font-size:1.15rem}
+ .event-calendar__toolbar {gap:.35rem}
+ .event-calendar__toolbar button {font-size:.9rem}
+ .event-calendar__weekdays span {padding:.5rem 0;font-size:.78rem}
+ .event-calendar__cell {min-height:62px;padding:2px;text-align:center}
+ .event-calendar__date {min-width:36px;min-height:36px}
+ .event-calendar__preview {display:none}
+ .event-calendar__count {display:block;width:19px;height:19px;line-height:19px;margin:0 auto;background:#ff6b35;color:white;border-radius:50%;font-size:.7rem}
+ #calendarDayEvents {grid-template-columns:1fr}
+ .event-calendar__day h3 {font-size:1.1rem}
+ .event-calendar__event-title {font-size:1rem}
+ .event-calendar__event-meta,.event-calendar__event-status {font-size:.85rem}
+}
+@media(prefers-reduced-motion:reduce) {.event-view-switch .btn {transition:none}}
+.event-view-switch .btn {width:auto;min-height:44px}
+.event-calendar__toolbar .btn {width:auto}
+@media(max-width:767px) {
+ .event-calendar__toolbar {display:grid;grid-template-columns:44px minmax(0,1fr) 44px}
+ .event-calendar__toolbar h2 {text-align:center;margin:0;font-size:1.1rem}
+ #calendarToday {grid-column:1 / -1}
+}
