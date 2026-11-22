@@ -648,6 +648,23 @@ public class TournamentService {
         }
     }
 
+    RegistrationStatus previewPairStatus(Tournament tournament, List<TournamentRegistration> pair) {
+        if (pair.stream().anyMatch(TournamentRegistration::isConfirmed)) return RegistrationStatus.CONFIRMED;
+        int available = tournament.getCupoMax() - Math.toIntExact(registrationRepository.countConfirmedPairs(tournament.getId()));
+        var earliest = pair.stream().map(TournamentRegistration::queueTime).filter(Objects::nonNull)
+                .min(Comparator.naturalOrder()).orElseGet(LocalDateTime::now);
+        long smallestId = pair.stream().map(TournamentRegistration::getId).filter(Objects::nonNull)
+                .min(Comparator.naturalOrder()).orElse(Long.MAX_VALUE);
+        long ahead = readyReservePairs(tournament.getId()).stream().filter(waiting -> waiting.stream()
+                .noneMatch(row -> pair.stream().anyMatch(member -> Objects.equals(member.getId(), row.getId()))))
+                .filter(waiting -> {
+                    var time = waiting.stream().map(TournamentRegistration::queueTime).min(Comparator.naturalOrder()).orElseThrow();
+                    long firstId = waiting.stream().mapToLong(TournamentRegistration::getId).min().orElseThrow();
+                    return time.isBefore(earliest) || (time.equals(earliest) && firstId < smallestId);
+                }).count();
+        return ahead < available ? RegistrationStatus.CONFIRMED : RegistrationStatus.WAITLIST;
+    }
+
     private void processDoublesWaitlist(Tournament tournament, Set<Long> deferred) {
         registrationRepository.flush();
         Long tournamentId = tournament.getId();
@@ -1028,6 +1045,16 @@ public class TournamentService {
 
                     return mapToDtoWithDetails(updated);
                 });
+    }
+
+    @Transactional
+    public void setTestTournament(Long id, boolean testTournament, Owner owner) {
+        if (owner == null || !owner.isSuperAdmin()) throw new org.springframework.security.access.AccessDeniedException("Super admin required");
+        Tournament tournament = tournamentRepository.lockById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Tournament not found"));
+        tournament.setTestTournament(testTournament);
+        tournamentRepository.save(tournament);
+        log.info("Tournament {} test status set to {} by administrator {}", id, testTournament, owner.getId());
     }
 
     @Transactional

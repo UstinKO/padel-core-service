@@ -119,7 +119,7 @@ docker compose up -d
 | URL | Template | Описание |
 |-----|----------|----------|
 | `GET /admin` | `admin/panel.html` | Главная панель |
-| `GET /admin/tournaments` | `admin/tournaments/list.html` | Список турниров |
+| `GET /admin/tournaments` | `admin/tournaments/list.html` | Список турниров; локальный диалог ссылки публикации Telegram/Stories, без нового HTTP-маршрута |
 | `GET /admin/tournaments/new` | `admin/tournaments/form.html` | Форма создания турнира |
 | `GET /admin/tournaments/{id}` | `admin/tournaments/details.html` | Детали турнира + список участников |
 | `GET/POST /admin/tournaments/{id}/additional-points` | Редактор ручных очков и история, включая отдельный путь `finished-results/additional-points` |
@@ -670,3 +670,5 @@ Endpoint/fan-out реализуется отдельно в #1211. [Runbook](../
 ## Клубные аккаунты
 
 `ClubAccountService` / `AdminClubAccountController`: несколько назначенных площадок для создания мероприятий, управление существующими событиями по ownerId. Схема v1.79, контракт — [docs/endpoints/club-accounts.md](../docs/endpoints/club-accounts.md).
+
+Круговой парный формат: `RoundRobinRules` — правила очков/сетов и итоговых мест; `RoundRobinStandings` — общая таблица, мини-таблица личных встреч и разделённые места; `RoundRobinAdditionalMatches` — дополнительные встречи, `RoundRobinActionsController` — защищённые действия. См. `docs/endpoints/americano.md`, LFPT-1243/1244.

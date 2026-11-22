@@ -59,6 +59,10 @@ public class AmericanoRound {
     @Column(name = "phase", length = 20)
     private TournamentPhase phase;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "scoring_mode", length = 16)
+    private com.padle.core.padelcoreservice.model.enums.RoundRobinScoringMode scoringMode;
+
     @OneToMany(mappedBy = "round", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @OrderBy("courtNumber ASC")
     @Builder.Default

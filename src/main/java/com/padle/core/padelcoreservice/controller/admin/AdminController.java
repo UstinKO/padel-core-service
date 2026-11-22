@@ -317,6 +317,14 @@ public class AdminController {
         return "admin/tournaments/form";
     }
 
+    @PostMapping("/tournaments/{id}/test-status")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public String setTestTournament(@PathVariable Long id, @RequestParam boolean testTournament,
+                                    @AuthenticationPrincipal Owner owner) {
+        tournamentService.setTestTournament(id, testTournament, owner);
+        return "redirect:/admin/tournaments/" + id;
+    }
+
     @Timed(
             name = "admin.tournament.details.time",
             description = "Time taken to load admin tournament details page",
@@ -372,7 +380,9 @@ public class AdminController {
         }
 
         if (tournament.getTipo() == TournamentType.AMERICANO_TEAMS) {
-            model.addAttribute("isTeamAmericanoInitialized", false);
+            var roundRobin = teamAmericanoService.isInitialized(id);
+            model.addAttribute("isTeamAmericanoInitialized", roundRobin);
+            if (roundRobin) model.addAttribute("teamAmericanoRanking", teamAmericanoService.getRanking(id));
             boolean qualStarted   = teamPlayoffService.isQualificationStarted(id);
             boolean playoffStarted = teamPlayoffService.isPlayoffStarted(id);
             model.addAttribute("isPlayoffQualStarted", qualStarted);

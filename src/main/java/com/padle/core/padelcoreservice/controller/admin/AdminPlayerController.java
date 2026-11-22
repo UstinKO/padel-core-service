@@ -8,6 +8,7 @@ import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
+import com.padle.core.padelcoreservice.rating.PilotEloRanking;
 import com.padle.core.padelcoreservice.service.PlayerService;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -48,6 +50,7 @@ public class AdminPlayerController {
     private final TournamentService tournamentService;
     private final TournamentRegistrationRepository tournamentRegistrationRepository;
     private final MessageSource messageSource;
+    private final Optional<PilotEloRanking> eloRanking;
 
     private String msg(String key) {
         return messageSource.getMessage(key, null, LocaleContextHolder.getLocale());
@@ -109,6 +112,10 @@ public class AdminPlayerController {
         model.addAttribute("isSuperAdmin", owner.isSuperAdmin());
         model.addAttribute("hasRegistrations", playerService.hasTournamentRegistrations(id));
         model.addAttribute("isGuestAccount", PlayerPadel.isGuestEmail(player.getEmail()));
+        if (owner.isSuperAdmin() && eloRanking.isPresent()) {
+            model.addAttribute("eloHistoryAvailable", true);
+            eloRanking.get().playerRow(id).ifPresent(row -> model.addAttribute("adminEloRow", row));
+        }
 
         return "admin/players/details";
     }

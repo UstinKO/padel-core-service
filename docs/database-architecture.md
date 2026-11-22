@@ -1,7 +1,7 @@
 # Архитектура базы данных — padel-core-service
 
 > **СУБД:** PostgreSQL 15  
-> **Версия схемы:** v1.79
+> **Версия схемы:** v1.82
 > **Миграции:** Liquibase (YAML), файлы в `src/main/resources/db/changelog/versions/`  
 > **ddl-auto:** `none` — схема управляется только через Liquibase
 
@@ -254,6 +254,7 @@ owners_db ───────────────────────�
 | `updated_at` | `TIMESTAMP` | NOT NULL | now() | Дата обновления |
 | `created_by` | `BIGINT` | NULL | — | ID создателя (owners_db) |
 | `is_active` | `BOOLEAN` | NOT NULL | `true` | Мягкое удаление |
+| `is_test_tournament` | `BOOLEAN` | NOT NULL | `false` | Тестовое мероприятие исключено из рейтинга Elo (v1.80) |
 | `owner_id` | `BIGINT` | NULL | — | ID владельца-организатора |
 | `pair_reminder_sent_at` | `TIMESTAMP` | NULL | — | Когда ушло email-напоминание за 5 ч до старта парного турнира; не NULL — повторно не шлётся (LFPT-437) |
 | `start_reminder_sent_at` | `TIMESTAMP` | NULL | — | То же для индивидуальных форматов (AMERICANO, KING_OF_COURT) и Cancha Abierta (LFPT-443) |
@@ -288,6 +289,7 @@ owners_db ───────────────────────�
 | `updated_at` | `TIMESTAMP` | NULL | — | Дата последнего обновления |
 | `is_active` | `BOOLEAN` | NOT NULL | `true` | Мягкое удаление |
 | `attended` | `BOOLEAN` | NOT NULL | `false` | Игрок явился на турнир |
+| `partner_attended` | `BOOLEAN` | NOT NULL | `false` | Отдельная явка текстового гостевого партнёра |
 | `participation_confirmed` | `BOOLEAN` | NOT NULL | `false` | Участие подтверждено организатором |
 | `is_double_registration` | `BOOLEAN` | NOT NULL | `false` | Флаг парной регистрации |
 | `main_player_id` | `BIGINT` | NULL | — | ID инициатора парной регистрации |
@@ -605,6 +607,7 @@ tournaments_db
 | `is_doubles` | `BOOLEAN` | NOT NULL | — | `true` — парный раунд |
 | `courts` | `INTEGER` | NULL | — | Количество активных кортов в раунде |
 | `note` | `VARCHAR(255)` | NULL | — | Заметка |
+| `scoring_mode` | `VARCHAR(16)` | NULL | — | POINTS/SETS; NULL у прежних раундов означает POINTS |
 | `phase` | `VARCHAR(20)` | NULL | — | Фаза: `QUALIFICATION` / `PLAYOFF` |
 | `created_at` | `TIMESTAMP` | NOT NULL | now() | — |
 | `updated_at` | `TIMESTAMP` | NOT NULL | now() | — |
@@ -627,6 +630,8 @@ tournaments_db
 | `team2_player2_id` | `BIGINT` | NULL | — | FK → `player_padel_db.id` (парный) |
 | `team1_score` | `INTEGER` | NULL | — | Очки команды 1 |
 | `team2_score` | `INTEGER` | NULL | — | Очки команды 2 |
+| `placement_start` | `INTEGER` | NULL | — | Первое из двух разыгрываемых мест; NULL — отдельная встреча без назначения мест |
+| `round_robin_request_id` | `UUID` | NULL, UNIQUE для непустых | — | Ключ повторной отправки дополнительной встречи |
 | `team1_games` | `INTEGER` | NULL | — | Геймы команды 1 (Team Americano сетовый формат) |
 | `team2_games` | `INTEGER` | NULL | — | Геймы команды 2 |
 | `is_doubles` | `BOOLEAN` | NOT NULL | — | Парный матч |
@@ -1033,3 +1038,9 @@ PK `(registration_id, version)` исключает два факта одног�
 | `responded_at` | TIMESTAMPTZ | Время ответа |
 | `responded_by` | BIGINT | Кто ответил |
 | `superseded_at` | TIMESTAMPTZ | Время закрытия старого запроса |
+
+Миграция v1.81: режим счёта кругового этапа и дополнительные встречи PLACEMENT. Строки прежних проведений не переписываются.
+
+### Одиночные заявки и действия состава
+
+`solo_roster_operations_db`: составной ключ `tournament_id`, `request_id`; `actor_id`, `action`, `request_hash`, `result`, `before_state`, `after_state`, `created_at`. Журнал и постоянная защита повторного запроса; удаляется вместе с турниром. `tournament_registrations_db.partner_attended` — отдельная явка текстового гостевого партнёра, false по умолчанию; существующие отметки основного игрока не копируются.
