@@ -236,6 +236,7 @@ public class SecurityConfig {
                                 "/api/tournaments/double/decline-pair"
                         ).permitAll()
                         .requestMatchers("/api/admin/marketing/qr-stats", "/api/admin/marketing/qr-summary", "/api/admin/marketing/registration-sources").hasRole("SUPER_ADMIN")
+                        .requestMatchers("/api/admin/events/calendar").hasAnyRole("OWNER", "SUPER_ADMIN", "ORGANIZER", "ADMIN", "CLUB_ADMIN")
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().authenticated()
                 )
