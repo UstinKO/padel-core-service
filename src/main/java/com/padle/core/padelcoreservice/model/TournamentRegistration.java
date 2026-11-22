@@ -99,6 +99,10 @@ public class TournamentRegistration {
     @Builder.Default
     private Boolean attended = false;
 
+    @Column(name = "partner_attended", nullable = false)
+    @Builder.Default
+    private Boolean partnerAttended = false;
+
     @Column(name = "participation_confirmed", nullable = false)
     @Builder.Default
     private Boolean participationConfirmed = false;

@@ -10,6 +10,7 @@ import com.padle.core.padelcoreservice.mapper.PaymentMapper;
 import com.padle.core.padelcoreservice.model.Payment;
 import com.padle.core.padelcoreservice.model.TournamentRegistration;
 import com.padle.core.padelcoreservice.model.enums.PaymentMethod;
+import com.padle.core.padelcoreservice.model.enums.Modalidad;
 import com.padle.core.padelcoreservice.model.enums.PaymentStatus;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import com.padle.core.padelcoreservice.repository.PaymentRepository;
@@ -200,12 +201,18 @@ public class PaymentService {
         List<PaymentManagementViewDto> result = new java.util.ArrayList<>();
 
         registrations.stream()
+                .filter(reg -> Boolean.TRUE.equals(reg.getIsActive()))
                 .filter(reg -> reg.getStatus() == RegistrationStatus.CONFIRMED
                         || reg.getStatus() == RegistrationStatus.PARTNER_INVITED
-                        || reg.getStatus() == RegistrationStatus.WAITLIST)
+                        || reg.getStatus() == RegistrationStatus.PAIR_REGISTERED
+                        || reg.getStatus() == RegistrationStatus.WAITLIST
+                        || reg.getStatus() == RegistrationStatus.SOLO_SEARCH
+                        || reg.getStatus() == RegistrationStatus.SOLO_ADD_LATER)
                 .forEach(reg -> {
 
-                    boolean isReserve = reg.getStatus() == RegistrationStatus.WAITLIST;
+                    boolean isReserve = reg.getStatus() == RegistrationStatus.WAITLIST
+                            || reg.getStatus() == RegistrationStatus.SOLO_SEARCH
+                            || reg.getStatus() == RegistrationStatus.SOLO_ADD_LATER;
                     boolean isDouble = Boolean.TRUE.equals(reg.getIsDoubleRegistration());
                     boolean isMainPlayer = !isDouble
                             || (reg.getMainPlayerId() != null
@@ -234,6 +241,10 @@ public class PaymentService {
                     dto.setMainRow(isMainPlayer);
                     dto.setDoubleRegistration(isDouble);
                     dto.setReserve(isReserve);
+                    dto.setSolo(reg.getTournament().getModalidad() == Modalidad.DOBLES
+                            && SoloRosterService.single(reg));
+                    dto.setRegistrationStatus(reg.getStatus().name());
+                    dto.setPlayerLevel(reg.getPlayer().getNivelJugador() == null ? "SIN_ESPECIFICAR" : reg.getPlayer().getNivelJugador().name());
 
                     // Платёж — без маркера PARTNER_PAYMENT (у каждого своя запись)
                     payments.stream()
@@ -280,7 +291,7 @@ public class PaymentService {
                         partnerDto.setPosition(reg.getPosition());
                         partnerDto.setWaitlistPosition(reg.getWaitlistPosition());
                         partnerDto.setPairGroupId(reg.getPlayer().getId());
-                        partnerDto.setAttended(false);
+                        partnerDto.setAttended(Boolean.TRUE.equals(reg.getPartnerAttended()));
                         partnerDto.setParticipationConfirmed(false);
                         partnerDto.setReserve(isReserve);
 
@@ -394,6 +405,9 @@ public class PaymentService {
                 registration.setAttended(dto.isAttended());
                 registration.setParticipationConfirmed(dto.isParticipationConfirmed());
                 registrationRepository.save(registration);
+            } else {
+                registration.setPartnerAttended(dto.isAttended());
+                registrationRepository.save(registration);
             }
 
             // Для партнёра добавляем маркер в notes
@@ -495,14 +509,9 @@ public class PaymentService {
                         dto.getRegistrationId(), dto.isPartnerRow());
             }
 
-            // Если по этой регистрации уже есть AmericanoTeam (Team Playoff), синхронизируем
-            // её hasPaid/attended с только что сохранённым статусом — иначе команда, добавленная
-            // в турнир до того, как на этой странице отметили оплату, осталась бы неотмеченной.
-            if (!dto.isPartnerRow()) {
-                teamPlayoffService.syncPaymentStatusForRegistration(tournamentId, dto.getRegistrationId(),
-                        dto.getPaymentStatus() == PaymentStatus.PAID, dto.isAttended());
-            }
         }
+        // Обновляем готовность команд после сохранения всех индивидуальных строк.
+        teamPlayoffService.syncPaymentStatusForTournament(tournamentId);
     }
 
     static boolean isOwnPayment(Payment payment, TournamentRegistration registration) {

@@ -1,7 +1,7 @@
 # Архитектура базы данных — padel-core-service
 
 > **СУБД:** PostgreSQL 15  
-> **Версия схемы:** v1.81
+> **Версия схемы:** v1.82
 > **Миграции:** Liquibase (YAML), файлы в `src/main/resources/db/changelog/versions/`  
 > **ddl-auto:** `none` — схема управляется только через Liquibase
 
@@ -289,6 +289,7 @@ owners_db ───────────────────────�
 | `updated_at` | `TIMESTAMP` | NULL | — | Дата последнего обновления |
 | `is_active` | `BOOLEAN` | NOT NULL | `true` | Мягкое удаление |
 | `attended` | `BOOLEAN` | NOT NULL | `false` | Игрок явился на турнир |
+| `partner_attended` | `BOOLEAN` | NOT NULL | `false` | Отдельная явка текстового гостевого партнёра |
 | `participation_confirmed` | `BOOLEAN` | NOT NULL | `false` | Участие подтверждено организатором |
 | `is_double_registration` | `BOOLEAN` | NOT NULL | `false` | Флаг парной регистрации |
 | `main_player_id` | `BIGINT` | NULL | — | ID инициатора парной регистрации |
@@ -1039,3 +1040,7 @@ PK `(registration_id, version)` исключает два факта одног�
 | `superseded_at` | TIMESTAMPTZ | Время закрытия старого запроса |
 
 Миграция v1.81: режим счёта кругового этапа и дополнительные встречи PLACEMENT. Строки прежних проведений не переписываются.
+
+### Одиночные заявки и действия состава
+
+`solo_roster_operations_db`: составной ключ `tournament_id`, `request_id`; `actor_id`, `action`, `request_hash`, `result`, `before_state`, `after_state`, `created_at`. Журнал и постоянная защита повторного запроса; удаляется вместе с турниром. `tournament_registrations_db.partner_attended` — отдельная явка текстового гостевого партнёра, false по умолчанию; существующие отметки основного игрока не копируются.
