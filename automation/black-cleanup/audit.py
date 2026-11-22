@@ -55,7 +55,11 @@ if __name__ == '__main__':
         assert {r['id'] for r in data['targets']} == {191, 193}
         assert all(r['owner_id'] == 5 for r in data['targets'])
         assert len(data['registrations']) == 52 and len(data['profiles']) == 52
-        print('BLACK_CLEANUP_AUDIT=' + json.dumps(data, ensure_ascii=True, separators=(',', ':')))
+        payload = json.dumps(data, ensure_ascii=True, separators=(',', ':'))
+        print('BLACK_CLEANUP_AUDIT_BEGIN', flush=True)
+        for offset in range(0, len(payload), 8000):
+            print('BLACK_CLEANUP_AUDIT_PART=' + payload[offset:offset + 8000], flush=True)
+        print('BLACK_CLEANUP_AUDIT_END', flush=True)
     except subprocess.CalledProcessError as error:
         print('Сверка не выполнена: ошибка SQL, код ' + str(error.returncode))
         raise SystemExit(1)
