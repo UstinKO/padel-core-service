@@ -52,10 +52,12 @@ class Session:
 
 
 def schema(session):
-    return session.json("""SELECT jsonb_build_object(
+    data = session.json("""SELECT jsonb_build_object(
       'tables',(SELECT jsonb_agg(c.relname ORDER BY c.relname) FROM pg_class c WHERE c.relnamespace='public'::regnamespace AND c.relkind='r'),
       'event_tables',(SELECT jsonb_agg(table_name ORDER BY table_name) FROM information_schema.columns WHERE table_schema='public' AND column_name='tournament_id'),
       'foreign_keys',(SELECT jsonb_agg(jsonb_build_object('child',c.conrelid::regclass::text,'parent',c.confrelid::regclass::text)) FROM pg_constraint c WHERE c.contype='f' AND c.connamespace='public'::regnamespace));""")
+    data['foreign_keys'].sort(key=lambda row: (row['child'], row['parent']))
+    return data
 
 
 def selectors(metadata):
@@ -131,8 +133,9 @@ def deletion_order(metadata, chosen):
     return result
 
 
-def rehearse(session, expected=None):
+def clean(session, expected=None, commit=False):
     session.sql('BEGIN ISOLATION LEVEL REPEATABLE READ; SET LOCAL statement_timeout=\'60s\'; SET LOCAL lock_timeout=\'5s\';')
+    session.sql('SELECT pg_advisory_xact_lock(1260); SELECT id FROM tournaments_db WHERE id IN (' + EVENTS + ') ORDER BY id FOR UPDATE;')
     before, metadata, chosen = plan(session)
     if expected:
         assert before['fingerprint'] == expected['fingerprint']
@@ -141,9 +144,29 @@ def rehearse(session, expected=None):
         assert count == before['selected'][table]['count']
     for table in metadata['tables']:
         assert digest(session, table) == before['outside'][table], table
-    session.sql('ROLLBACK;')
-    assert guard(session) == before['guard']
+    session.sql('COMMIT;' if commit else 'ROLLBACK;')
+    if not commit:
+        assert guard(session) == before['guard']
     return before
+
+
+def rating_state():
+    inspected = subprocess.run(['docker', 'inspect', 'padel-app', '--format', '{{json .Config.Env}}'], check=True, capture_output=True, text=True)
+    env = dict(item.split('=', 1) for item in json.loads(inspected.stdout) if '=' in item)
+    enabled = env.get('APP_RATING_PILOT_ENABLED', '').lower() == 'true'
+    automatic = env.get('APP_RATING_PILOT_AUTO_REFRESH', '').lower() == 'true'
+    result = {'enabled': enabled, 'automatic': automatic, 'retained_archived_targets': []}
+    if enabled:
+        assert automatic
+        path = env.get('APP_RATING_PILOT_HISTORY')
+        assert path
+        container_file = subprocess.run(['docker', 'exec', 'padel-app', 'cat', path], check=True, capture_output=True, text=True)
+        source = json.loads(container_file.stdout)
+        managed = set(source['managedEvents'])
+        base = {event['key'] for event in source['history']['events']}
+        result['retained_archived_targets'] = sorted((base - managed) & {'S-191', 'S-193'})
+        assert not result['retained_archived_targets']
+    return result
 
 
 def backup_restore(directory, container=CONTAINER, source=''):
@@ -185,7 +208,7 @@ def main():
     archive, clone = backup_restore(directory)
     trial = Session(clone)
     try:
-        report = rehearse(trial)
+        report = clean(trial)
     finally:
         trial.close()
         subprocess.run(docker('dropdb', [clone]), check=True, stderr=subprocess.DEVNULL, timeout=30)
@@ -194,7 +217,9 @@ def main():
         for chunk in iter(lambda: stream.read(1024 * 1024), b''):
             archive_hash.update(chunk)
     report.update({'backup': str(archive), 'backup_sha256': archive_hash.hexdigest(),
+                   'rating': rating_state(),
                    'restore_verified': True, 'rehearsal_verified': True, 'profiles_deleted': 0})
+    shutil.copyfile(__file__, directory / 'verified-helper.py')
     (directory / 'prepared.json').write_text(json.dumps(report, indent=2) + '\n')
     print('BLACK_CLEANUP_PREPARED=' + json.dumps(report, sort_keys=True, separators=(',', ':')), flush=True)
 
