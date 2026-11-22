@@ -702,6 +702,18 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    if (window.location.hash === '#tournament-registration' && registerBtn
+            && isDoubleTournament() && !isTournamentStarted(window.tournament)) {
+        window.history.replaceState(window.history.state, '', window.location.pathname + window.location.search);
+        const tournamentId = registerBtn.dataset.tournamentId;
+        const tournamentName = registerBtn.dataset.tournamentName;
+        if (registrationLevelMissing) {
+            askForRegistrationLevel(tournamentId, () => openPairRegistration(tournamentId, tournamentName));
+        } else {
+            openPairRegistration(tournamentId, tournamentName);
+        }
+    }
+
     if (cancelBtn) {
         cancelBtn.addEventListener('click', handleCancellation);
     }
