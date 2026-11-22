@@ -187,6 +187,16 @@ class SoloRosterIntegrationTest {
         assertThat(registrations.findByTournamentId(e.getId())).hasSize(1);
     }
 
+    @Test void multipleGuestsWithoutTelegramCanBeAddedIndependently() {
+        var o=admin();var e=event(2,o);
+        for(int i=1;i<=2;i++) {
+            var guest=new PlayerInput(null,"Гость","Без Telegram "+i,"+549117654322"+i,i==1?null:"");
+            var result=apply(e,o,new Command(UUID.randomUUID(),Action.ADD,null,null,guest,Kind.ADD_LATER,false,null));
+            assertThat(registrations.findById(result.registrationId()).orElseThrow().getPlayer().getTelegramUsername()).isNull();
+        }
+        assertThat(registrations.findByTournamentId(e.getId())).hasSize(2);
+    }
+
     @Test void removalKeepsPaymentsProfileAndHistoryAndRestoringDoesNotReuseOldPayment() {
         var o=admin();var e=event(2,o);var a=single(e,RegistrationStatus.SOLO_SEARCH);var p=paid(a,"USD");
         apply(e,o,new Command(UUID.randomUUID(),Action.REMOVE,a.getId(),null,null,null,false,null));
@@ -208,6 +218,13 @@ class SoloRosterIntegrationTest {
         var fresh=checked(e,o,c);service.apply(e.getId(),o,fresh);
         var conflict=new Command(c.requestId(),Action.REMOVE,a.getId(),null,null,null,false,null);
         assertThatThrownBy(()->service.apply(e.getId(),o,conflict)).hasMessage("solo.error.request");
+    }
+
+    @Test void changingEventRequirementsInvalidatesAnEarlierPreview() {
+        var o=admin();var e=event(2,o);var a=single(e,RegistrationStatus.SOLO_SEARCH);var b=single(e,RegistrationStatus.SOLO_SEARCH);
+        var c=checked(e,o,pairing(a,b));e.setCategoriaNivel(Nivel.C7);events.saveAndFlush(e);
+        assertThatThrownBy(()->service.apply(e.getId(),o,c)).hasMessage("solo.error.stale");
+        assertThat(a.getPartner()).isNull();
     }
 
     @ParameterizedTest @EnumSource(value=OwnerRole.class,names={"SUPER_ADMIN","ADMIN","ORGANIZER","CLUB_ADMIN"})
@@ -241,7 +258,7 @@ class SoloRosterIntegrationTest {
             var o = admin(); var e = event(1,o);
             var a = single(e,RegistrationStatus.SOLO_SEARCH);var b = single(e,RegistrationStatus.SOLO_ADD_LATER);
             paid(a,"ARS");paid(b,"USD");
-            return new long[]{o.getId(),e.getId(),a.getId(),b.getId()};
+            return new long[]{o.getId(),e.getId(),a.getId(),b.getId(),a.getPlayer().getId(),b.getPlayer().getId(),e.getClubId()};
         });
         var command = new Command(UUID.randomUUID(),Action.PAIR,ids[2],ids[3],null,null,false,null);
         var checked = tx.execute(status -> checked(events.findById(ids[1]).orElseThrow(),owners.findById(ids[0]).orElseThrow(),command));
@@ -279,6 +296,8 @@ class SoloRosterIntegrationTest {
                 jdbc.update("DELETE FROM marketing_paid_slots_db WHERE registration_id IN (SELECT id FROM tournament_registrations_db WHERE tournament_id=?)",e.getId());
                 jdbc.update("DELETE FROM marketing_registrations_db WHERE registration_id IN (SELECT id FROM tournament_registrations_db WHERE tournament_id=?)",e.getId());
                 tournamentService.deleteTournament(e.getId());
+                players.deleteById(ids[4]);players.deleteById(ids[5]);
+                owners.deleteById(ids[0]);clubs.deleteById(ids[6]);
             });
         }
     }

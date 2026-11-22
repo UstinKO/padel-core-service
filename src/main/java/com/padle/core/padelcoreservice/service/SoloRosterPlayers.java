@@ -52,7 +52,7 @@ public class SoloRosterPlayers {
         }
         return matches.stream().findFirst().or(() -> byTelegram).orElseGet(() -> PlayerPadel.builder()
                 .nombre(input.firstName().strip()).apellido(input.lastName().strip())
-                .telefono(input.phone().strip()).telegramUsername(telegram)
+                .telefono(input.phone().strip()).telegramUsername(telegram.isBlank() ? null : telegram)
                 .nivelJugador(Nivel.SIN_ESPECIFICAR).activo(true).build());
     }
 

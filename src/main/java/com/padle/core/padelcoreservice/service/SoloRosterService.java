@@ -309,7 +309,8 @@ public class SoloRosterService {
                         payment.getStatus(), payment.getAmount(), payment.getCurrency())).toList();
         var games = matches.findByTournamentIdOrderByRoundIdAscMatchNumberAsc(p.event().getId()).stream()
                 .map(match -> List.of(match.getId(), match.getStatus(), String.valueOf(match.getUpdatedAt()))).toList();
-        return digest(json.writeValueAsString(List.of(p.event().getEstado(), p.event().getCupoMax(), rows, money, games,
+        return digest(json.writeValueAsString(List.of(p.event().getEstado(), p.event().getCupoMax(), String.valueOf(p.event().getUpdatedAt()),
+                p.event().getTipo(), p.event().getCategoriaNivel(), p.event().getGeneroFormato(), rows, money, games,
                 p.candidate().map(player -> String.valueOf(player.getId()) + ":" + player.getNivelJugador()).orElse(""))));
     }
 
