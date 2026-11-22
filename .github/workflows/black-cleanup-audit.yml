@@ -2,7 +2,7 @@ name: Разовая сверка учебных турниров клуба
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-    paths: ['.github/workflows/black-cleanup-audit.yml', 'automation/black-cleanup/audit.py']
+    paths: ['.github/workflows/black-cleanup-audit.yml', 'automation/black-cleanup/*.py']
 permissions:
   contents: read
 concurrency:
@@ -21,7 +21,7 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_KEY_NEW }}
-          source: automation/black-cleanup/audit.py
+          source: automation/black-cleanup/audit.py,automation/black-cleanup/prepare.py
           target: /opt/padel-app/temp/black-cleanup-1260/
           strip_components: 2
       - name: Сверить состав без изменения данных
@@ -45,3 +45,14 @@ jobs:
               exit 1
             fi
             echo BLACK_AUDIT_FINISHED
+      - name: Создать закрытую копию и отрепетировать очистку отдельно
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_KEY_NEW }}
+          command_timeout: 480s
+          script_stop: true
+          script: |
+            set -eu
+            python3 -u /opt/padel-app/temp/black-cleanup-1260/prepare.py
