@@ -219,7 +219,6 @@ window.APP_MESSAGES = {
     'ranking.trend.stable': 'Stable',
 
     // ── tournament-details.js ───────────────────────────────────────────────
-    'details.mode.choose': 'Choose how to register',
     'details.mode.register_pair':    'Register pair',
     'details.mode.search':           'Find a partner',
     'details.mode.later':            'Register without a partner',

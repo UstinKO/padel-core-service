@@ -129,6 +129,10 @@ public class Tournament {
     @Builder.Default
     private Boolean isActive = true;
 
+    @Column(name = "is_test_tournament", nullable = false)
+    @Builder.Default
+    private Boolean testTournament = false;
+
     @Column(name = "owner_id")
     private Long ownerId;
 

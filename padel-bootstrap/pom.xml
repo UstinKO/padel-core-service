@@ -14,7 +14,15 @@
     <dependencies>
         <dependency>
             <groupId>com.padle.core</groupId>
+            <artifactId>padel-api-contract</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.padle.core</groupId>
             <artifactId>padel-tournament-engines</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.padle.core</groupId>
+            <artifactId>padel-application</artifactId>
         </dependency>
         <!-- Spring Boot Starters -->
         <dependency>

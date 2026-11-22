@@ -1,0 +1,278 @@
+{
+  "task": "LFPT-1199",
+  "date": "2026-11-20",
+  "result": "PASS",
+  "implementationRevision": "08d6dd96f4f48df291eb016f1dd7567957a036ae",
+  "jarSha256": "0b9dbea3d26c13a423d0767a333ec96ed9c8381112a30b9b9ca2d3ff214d0751",
+  "backendVerify": {
+    "tests": 1114,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 2,
+    "bootstrap": 1101,
+    "application": 3,
+    "engines": 10
+  },
+  "architectureRechecked": true,
+  "artifactGuardTests": 5,
+  "relayTests": 48,
+  "browser": {
+    "result": "PASS",
+    "cases": [
+      {
+        "width": 1440,
+        "language": "ru",
+        "list": true,
+        "card": true,
+        "refresh": true,
+        "clubFilter": true
+      },
+      {
+        "width": 1440,
+        "language": "es",
+        "list": true,
+        "card": true,
+        "refresh": true,
+        "clubFilter": true
+      },
+      {
+        "width": 1440,
+        "language": "en",
+        "list": true,
+        "card": true,
+        "refresh": true,
+        "clubFilter": true
+      },
+      {
+        "width": 390,
+        "language": "ru",
+        "list": true,
+        "card": true,
+        "refresh": true,
+        "clubFilter": true
+      },
+      {
+        "width": 390,
+        "language": "es",
+        "list": true,
+        "card": true,
+        "refresh": true,
+        "clubFilter": true
+      },
+      {
+        "width": 390,
+        "language": "en",
+        "list": true,
+        "card": true,
+        "refresh": true,
+        "clubFilter": true
+      }
+    ],
+    "javaScriptErrors": 0
+  },
+  "contractAndNativeRollback": {
+    "result": "PASS",
+    "currentRevision": "08d6dd96f4f48df291eb016f1dd7567957a036ae",
+    "previousRevision": "8a9ee29e2e29aa60970ad3201455e42da187533e",
+    "currentJarSha256": "0b9dbea3d26c13a423d0767a333ec96ed9c8381112a30b9b9ca2d3ff214d0751",
+    "previousJarSha256": "5126f460d3771e22fc7fd7f22922476d5d17138f99d272bf7977f4ff7efd700c",
+    "locales": [
+      "ru",
+      "es",
+      "en"
+    ],
+    "comparedCases": [
+      "list",
+      "card",
+      "unknown",
+      "invalid"
+    ],
+    "sameHttpJsonHeaders": true,
+    "nativeRollback": true,
+    "snapshotsPreserved": 5,
+    "schemaAndLiquibasePreserved": true
+  },
+  "commonSmoke": {
+    "cases": [
+      {
+        "key": "qualified-8",
+        "result": "PASS",
+        "knownDefect": null
+      },
+      {
+        "key": "qualified-9",
+        "result": "PASS",
+        "knownDefect": 1067
+      },
+      {
+        "key": "qualified-16",
+        "result": "PASS",
+        "knownDefect": null
+      }
+    ],
+    "result": "PASS",
+    "jwt": {
+      "login": 200,
+      "me": 200,
+      "events": 200,
+      "anonymousMe": 401,
+      "transport": "inside-own-preview-container"
+    },
+    "restore": {
+      "legacySubscription": true,
+      "publicSubscription": true,
+      "legacyMessage": true,
+      "publicInvalidation": true,
+      "bothViewsUpdated": true,
+      "repeated": {
+        "status": 200,
+        "success": false,
+        "replayHeader": true
+      },
+      "concurrentSameKey": {
+        "accepted": 1,
+        "rejected": 1
+      },
+      "restorePreservedLinksAndResult": true,
+      "restoreLegacyMessage": true,
+      "restorePublicInvalidation": true,
+      "restoreBothViewsUpdated": true,
+      "restoreIdsPreserved": true,
+      "reactRestoreWithoutNavigation": true
+    },
+    "qualification": {
+      "blockedBeforeQualification": true,
+      "directPostUnchanged": true,
+      "invalidScoreNotSent": true,
+      "missingCsrfRejected": {
+        "status": 302,
+        "destination": "/error/403"
+      },
+      "noStartAfterRefusal": true,
+      "startWithoutNavigation": true,
+      "allTeamsSeededAfterQualification": true,
+      "finished": true
+    },
+    "expo": {
+      "ordinaryPreviewApi": 401,
+      "gatewayBasicChallenge": true,
+      "qaAdapterApi": 200,
+      "events": 10,
+      "rendered": true,
+      "externalRequestsBlocked": true,
+      "ordinaryPreviewLimitationPreserved": true
+    },
+    "releaseRollback": {
+      "result": "PASS",
+      "scenarios": 5,
+      "statePreserved": true
+    }
+  },
+  "productionDockerBuild": true,
+  "productionJarSha256": "aaf24351f5e06d6a4aed7604720d18ea67e3d35f5bf9b05424302dadd2982d0e",
+  "productionArtifactGuards": "PASS",
+  "databaseMigrationsAdded": false,
+  "newOwnerManualAcceptance": "NOT_RUN",
+  "acceptedPilot": {
+    "issue": 1045,
+    "pr": 1180,
+    "ownerDecisionDate": "2026-11-20",
+    "limitsPreserved": true
+  },
+  "masterIntegration": {
+    "baseRevision": "35927dcfb292e29205399b5c10f3e47b0754b728",
+    "mergeRevision": "930c56056d0e102ad02e820ca85d376e80d247c1",
+    "dependencyPullRequest": 1180,
+    "dependencyMerged": true,
+    "conflicts": "Только карта проекта и архив принятой приёмки; сохранены актуальные сведения обеих веток.",
+    "backendVerify": {
+      "tests": 1114,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 2
+    },
+    "artifactGuards": "PASS",
+    "artifactGuardTests": 5,
+    "relayTests": 48,
+    "docsDrift": 0,
+    "agentMigration": 0,
+    "sameJarSha256": true,
+    "runtimeCompare": {
+      "result": "PASS",
+      "currentRevision": "930c56056d0e102ad02e820ca85d376e80d247c1",
+      "previousRevision": "8a9ee29e2e29aa60970ad3201455e42da187533e",
+      "currentJarSha256": "0b9dbea3d26c13a423d0767a333ec96ed9c8381112a30b9b9ca2d3ff214d0751",
+      "previousJarSha256": "5126f460d3771e22fc7fd7f22922476d5d17138f99d272bf7977f4ff7efd700c",
+      "locales": [
+        "ru",
+        "es",
+        "en"
+      ],
+      "comparedCases": [
+        "list",
+        "card",
+        "unknown",
+        "invalid"
+      ],
+      "sameHttpJsonHeaders": true,
+      "nativeRollback": true,
+      "snapshotsPreserved": 5,
+      "schemaAndLiquibasePreserved": true
+    },
+    "browser": {
+      "result": "PASS",
+      "cases": [
+        {
+          "width": 1440,
+          "language": "ru",
+          "list": true,
+          "card": true,
+          "refresh": true,
+          "clubFilter": true
+        },
+        {
+          "width": 1440,
+          "language": "es",
+          "list": true,
+          "card": true,
+          "refresh": true,
+          "clubFilter": true
+        },
+        {
+          "width": 1440,
+          "language": "en",
+          "list": true,
+          "card": true,
+          "refresh": true,
+          "clubFilter": true
+        },
+        {
+          "width": 390,
+          "language": "ru",
+          "list": true,
+          "card": true,
+          "refresh": true,
+          "clubFilter": true
+        },
+        {
+          "width": 390,
+          "language": "es",
+          "list": true,
+          "card": true,
+          "refresh": true,
+          "clubFilter": true
+        },
+        {
+          "width": 390,
+          "language": "en",
+          "list": true,
+          "card": true,
+          "refresh": true,
+          "clubFilter": true
+        }
+      ],
+      "javaScriptErrors": 0
+    },
+    "browserObservation": "Первый плотный прогон получил штатный 429 каталога. Повтор с паузами и соблюдением Retry-After прошёл; конфигурация и код защиты не менялись."
+  }
+}

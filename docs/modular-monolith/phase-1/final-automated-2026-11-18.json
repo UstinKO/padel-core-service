@@ -1,0 +1,154 @@
+{
+  "date": "2026-11-18",
+  "sourceRevision": "c145ad5bbb6367ace121d2c80247d12c5d4792e2",
+  "jarSha256": "4f56f40125f07114c9b62d73c0eee4c394f941636893a546bb8de68352c100cf",
+  "automated": "PASS",
+  "manual": "NOT_RUN",
+  "baseline": {
+    "sourceRevision": "c145ad5bbb6367ace121d2c80247d12c5d4792e2",
+    "jarSha256": "4f56f40125f07114c9b62d73c0eee4c394f941636893a546bb8de68352c100cf",
+    "automated": true,
+    "manual": "NOT_RUN",
+    "cases": [
+      {
+        "key": "qualified-8",
+        "result": "PASS",
+        "knownDefect": null
+      },
+      {
+        "key": "qualified-9",
+        "result": "PASS",
+        "knownDefect": 1067
+      },
+      {
+        "key": "qualified-16",
+        "result": "PASS",
+        "knownDefect": null
+      }
+    ],
+    "expectations": "browser-expectations-2026-11-18.json",
+    "knownDefects": [
+      "https://github.com/UstinKO/padel-core-service/issues/1067"
+    ],
+    "security": {
+      "ownAdmin": 200,
+      "foreignAdmin": 403,
+      "anonymousAdmin": 302,
+      "missingCsrf": 403,
+      "foreignMutation": 403,
+      "publicCard": 200,
+      "unchanged": true
+    },
+    "stale": {
+      "staleVersion": {
+        "status": 302,
+        "staleHeader": true
+      },
+      "stalePair": {
+        "status": 200,
+        "success": false
+      },
+      "unchangedAfterRefusal": true,
+      "regeneratePreservedPairs": true
+    },
+    "realtime": {
+      "legacySubscription": true,
+      "publicSubscription": true,
+      "legacyMessage": true,
+      "publicInvalidation": true,
+      "bothViewsUpdated": true,
+      "repeated": {
+        "status": 200,
+        "success": false,
+        "replayHeader": true
+      },
+      "concurrentSameKey": {
+        "accepted": 1,
+        "rejected": 1
+      },
+      "restorePreservedLinksAndResult": true
+    },
+    "qualificationBoundary": {
+      "blockedBeforeQualification": true,
+      "directPostUnchanged": true,
+      "allTeamsSeededAfterQualification": true,
+      "finished": true
+    },
+    "noShow": {
+      "activeTeams": 7,
+      "absentNumber": 8,
+      "excludedFromAvailableAndSeeding": true,
+      "publicRankingContainsAbsent": true
+    },
+    "result": "PASS",
+    "artifactVerified": true,
+    "commonBrowserSmoke": "PASS",
+    "jwt": {
+      "login": 200,
+      "me": 200,
+      "events": 200,
+      "anonymousMe": 401,
+      "transport": "inside-own-preview-container"
+    }
+  },
+  "extended": {
+    "sourceRevision": "c145ad5bbb6367ace121d2c80247d12c5d4792e2",
+    "jarSha256": "4f56f40125f07114c9b62d73c0eee4c394f941636893a546bb8de68352c100cf",
+    "automated": true,
+    "manual": "NOT_RUN",
+    "cases": [
+      {
+        "key": "early-9",
+        "result": "PASS",
+        "repeatedPairPreservedId": true,
+        "invalidQualificationRefused": true,
+        "lastQualificationPreservedPairAndResult": true,
+        "linkedWinner": true,
+        "semifinal": null,
+        "finished": true
+      },
+      {
+        "key": "early-16",
+        "result": "PASS",
+        "repeatedPairPreservedId": true,
+        "invalidQualificationRefused": true,
+        "lastQualificationPreservedPairAndResult": true,
+        "linkedWinner": false,
+        "semifinal": {
+          "confirmedBeforeOtherQuarterfinals": true,
+          "pairAndCourtPreserved": true
+        },
+        "finished": true
+      }
+    ],
+    "result": "PASS"
+  },
+  "releaseRehearsal": {
+    "result": "PASS",
+    "scenarios": 5,
+    "statePreserved": true
+  },
+  "moduleRollback": {
+    "result": "PASS",
+    "previousRevision": "0adbdf2e29dd904985be2c862f73886e599b76fd",
+    "previousJarSha256": "bd9f7f897de5a5614e1c26d6575079667d939e54523af0c8c17ffa1073152b47",
+    "moduleJarSha256": "4f56f40125f07114c9b62d73c0eee4c394f941636893a546bb8de68352c100cf",
+    "scenarios": 7,
+    "oldToModule": true,
+    "moduleToOldRollback": true,
+    "currentRestored": true,
+    "snapshotsPreserved": true,
+    "schemaAndLiquibasePreserved": true
+  },
+  "backendEvidence": {
+    "pr": 1177,
+    "head": "2040346601340e40f39b015ef51a6201cff7d404",
+    "verifyTests": 1094,
+    "skipped": 2,
+    "failures": 0,
+    "ciRun": 44284554706
+  },
+  "localUnitTests": 10,
+  "pythonTests": 102,
+  "pythonSkipped": 1
+}

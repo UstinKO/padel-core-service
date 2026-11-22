@@ -118,6 +118,12 @@ public class AmericanoMatch {
     @Column(name = "next_match_slot")
     private Integer nextMatchSlot;
 
+    @Column(name = "placement_start")
+    private Integer placementStart;
+
+    @Column(name = "round_robin_request_id")
+    private java.util.UUID roundRobinRequestId;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

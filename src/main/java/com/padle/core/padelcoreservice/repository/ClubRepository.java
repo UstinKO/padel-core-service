@@ -13,6 +13,8 @@ import java.util.Optional;
 @Repository
 public interface ClubRepository extends JpaRepository<Club, Long> {
 
+    boolean existsByIdAndIsActiveTrue(Long id);
+
     List<Club> findByIsActiveTrue(Sort sort);
 
     long countByIsActiveTrue();

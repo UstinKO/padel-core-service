@@ -1,5 +1,7 @@
 package com.padle.core.padelcoreservice.controller.admin;
 
+import com.padle.core.padelcoreservice.service.TournamentAccessService;
+import com.padle.core.padelcoreservice.service.ClubAccountService;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
 import com.padle.core.padelcoreservice.model.Owner;
@@ -24,6 +26,8 @@ public class AdminTournamentCopyController {
 
     private final TournamentService tournamentService;
     private final ClubService clubService;
+    private final TournamentAccessService tournamentAccessService;
+    private final ClubAccountService clubAccounts;
 
     @GetMapping("/{id}/copy")
     public String copyTournament(@PathVariable Long id, Model model,
@@ -33,6 +37,7 @@ public class AdminTournamentCopyController {
             redirectAttributes.addFlashAttribute("errorMessage", "No tienes permiso para copiar torneos");
             return "redirect:/admin/tournaments";
         }
+        tournamentAccessService.assertCanManageTournament(owner, id);
         log.info("Copying tournament with id: {}", id);
 
         // Получаем существующий турнир
@@ -68,7 +73,7 @@ public class AdminTournamentCopyController {
 
         // Добавляем данные в модель
         model.addAttribute("tournament", newTournament);
-        model.addAttribute("clubs", clubService.getAllClubs());
+        model.addAttribute("clubs", clubAccounts.availableClubs(owner));
         model.addAttribute("genderFormats", GenderFormat.values());
         // Legacy-значение исходного турнира сохраняется в копии (не пропадает из <select>),
         // но другие legacy-значения не предлагаются.

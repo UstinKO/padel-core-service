@@ -158,6 +158,10 @@ public class TeamPlayoffService {
         Tournament tournament = tournamentRepository.lockById(tournamentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tournament not found: " + tournamentId));
         validateTournamentType(tournament);
+        if (roundRepository.existsByTournamentIdAndPhaseIsNull(tournamentId)) {
+            throw new InvalidStateException("round_robin.error.format");
+        }
+
 
         PlayerPadel player1 = resolvePlayerForNewTeam(req.getPlayer1Id(), req.getPlayer1Nombre(),
                 req.getPlayer1Apellido(), req.getPlayer1Telefono(), "Jugador 1");
@@ -398,6 +402,10 @@ public class TeamPlayoffService {
     @Transactional
     @ConductChange(ConductChange.Action.QUALIFICATION)
     public AmericanoRound initQualification(Long tournamentId, int courts) {
+        if (roundRepository.existsByTournamentIdAndPhaseIsNull(tournamentId)) {
+            throw new InvalidStateException("round_robin.error.format");
+        }
+
         Tournament tournament = getTournament(tournamentId);
         validateTournamentType(tournament);
 

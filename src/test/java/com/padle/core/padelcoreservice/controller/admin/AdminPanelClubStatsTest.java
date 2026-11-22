@@ -228,7 +228,7 @@ class AdminPanelClubStatsTest {
 
     private Owner createClubAdmin(Long clubId) {
         String suffix = "LFPT0546-" + UUID.randomUUID();
-        return ownerRepository.save(Owner.builder()
+        Owner owner = ownerRepository.save(Owner.builder()
                 .email(suffix + "@example.com")
                 .password("irrelevant-hash")
                 .firstName("Test")
@@ -237,6 +237,10 @@ class AdminPanelClubStatsTest {
                 .clubId(clubId)
                 .isActive(true)
                 .build());
+        if (clubId != null) {
+            tournamentRepository.findByClubId(clubId).forEach(t -> t.setOwnerId(owner.getId()));
+        }
+        return owner;
     }
 
     private Owner createSuperAdmin() {

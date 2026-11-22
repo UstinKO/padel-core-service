@@ -358,6 +358,17 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 | `GET` | `/double-registration/accept-pair` | HTML | — | Страница из письма-предложения (`?token=...`), шаблон `accept-pair.html`. |
 | `POST` | `/api/tournaments/double/accept-pair` | JSON | — | Принять предложение пары по токену. |
 
+#### Ссылка для публикации мероприятия
+
+В `/admin/tournaments` таблица и мобильные карточки используют общий диалог
+«Ссылка для публикации». Для активного мероприятия с `canView`, кроме черновиков
+и отменённых, можно скопировать публичный `${siteBaseUrl}/torneo/ID`. Telegram
+помечается `telegram / social + telegram_posts`, Instagram Stories —
+`instagram / social + instagram_stories`; `utm_content=torneo_ID`. Текущий query
+админки не переносится. Клиентская операция не меняет данные и не отправляет
+событие регистрации. При отказе Clipboard API ссылка выделяется для ручного
+копирования. Новых HTTP-маршрутов и полномочий нет.
+
 #### Admin: управление регистрациями
 
 | Метод | URL | Тип | Auth | Описание |

@@ -19,6 +19,15 @@ import com.padle.core.padelcoreservice.repository.TournamentRegistrationReposito
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import com.padle.core.padelcoreservice.service.americano.TeamAmericanoService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.test.web.servlet.MockMvc;
+import com.padle.core.padelcoreservice.model.enums.RoundRobinScoringMode;
+import java.nio.charset.StandardCharsets;
+import java.util.regex.Pattern;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
@@ -41,6 +50,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * не должна терять партнёра в отображении матчей публичной страницы турнира.
  */
 @SpringBootTest
+@AutoConfigureMockMvc
 @TestPropertySource(properties = {
         "spring.mail.username=test@example.com",
         "spring.mail.password=test-password",
@@ -52,6 +62,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Transactional
 class TeamAmericanoGuestPartnerDisplayTest {
 
+    @Autowired
+    private MockMvc mockMvc;
     @Autowired
     private TeamAmericanoViewController controller;
     @Autowired
@@ -103,6 +115,73 @@ class TeamAmericanoGuestPartnerDisplayTest {
         String registeredSideP2 = team1IsGuestTeam ? match.getTeam2Player2Name() : match.getTeam1Player2Name();
         assertThat(registeredSideP1).isEqualTo("Opponent One");
         assertThat(registeredSideP2).isEqualTo("Opponent Two");
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "5,2,5,ru,SETS,В этом раунде отдыхает:",
+            "5,2,5,es,SETS,Descansa en esta ronda:",
+            "5,2,5,en,POINTS,Resting this round:",
+            "4,2,0,ru,SETS,В этом раунде отдыхает:",
+            "5,1,30,ru,SETS,В этом раунде отдыхает:",
+            "2,1,0,en,POINTS,Resting this round:"
+    })
+    void publicRoundsShowEveryRestingPairWithoutChangingAfterResults(
+            int pairs, int courts, int expectedResting, String language, String mode, String label) throws Exception {
+        Long tournamentId = createTournament();
+        PlayerPadel captain = createPlayer(tournamentId, "Registered", "Captain");
+        registerPairWithGuestPartner(tournamentId, captain, "Invitado", "SinCuenta", "+5491100000000");
+        for (int i = 1; i < pairs; i++) {
+            registerFullyRegisteredPair(tournamentId,
+                    createPlayer(tournamentId, "Pair" + i, "First"),
+                    createPlayer(tournamentId, "Pair" + i, "Second"));
+        }
+        var config = new TeamAmericanoConfigDto();
+        config.setCourts(courts);
+        config.setPointsPerMatch(24);
+        config.setScoringMode(RoundRobinScoringMode.valueOf(mode));
+        teamAmericanoService.initialize(tournamentId, config);
+        String before = publicHtml(tournamentId, language);
+        var restingBefore = restingTeams(before);
+        assertThat(restingBefore).hasSize(expectedResting);
+        assertThat(before).contains("Invitado SinCuenta").doesNotContain("data-rr-score");
+        if (expectedResting > 0) {
+            assertThat(before).contains(label);
+            assertThat(restingBefore.stream().distinct().count()).isEqualTo(pairs);
+        } else {
+            assertThat(before).doesNotContain(label);
+        }
+        Model model = new ExtendedModelMap();
+        controller.viewTournament(tournamentId, model, null);
+        @SuppressWarnings("unchecked")
+        var rounds = (List<AmericanoRoundDto>) model.getAttribute("rounds");
+        int firstScore = mode.equals("SETS") ? 6 : 14;
+        int secondScore = mode.equals("SETS") ? 3 : 10;
+        teamAmericanoService.submitMatchResult(rounds.get(0).getMatches().get(0).getId(), firstScore, secondScore);
+        assertThat(restingTeams(publicHtml(tournamentId, language)))
+                .containsExactlyInAnyOrderElementsOf(restingBefore);
+        rounds.stream().flatMap(round -> round.getMatches().stream())
+                .forEach(match -> teamAmericanoService.submitMatchResult(match.getId(), firstScore, secondScore));
+        String completed = publicHtml(tournamentId, language);
+        var roundTags = Pattern.compile("<details\\b[^>]*>").matcher(completed).results()
+                .map(result -> result.group()).filter(tag -> tag.contains("rr-round")).toList();
+        assertThat(roundTags).hasSize(rounds.size()).allSatisfy(tag -> assertThat(tag).contains("open"));
+        assertThat(completed).contains("rr-public-pairing");
+        if (mode.equals("SETS")) {
+            var header = Pattern.compile("<thead>(.*?)</thead>", Pattern.DOTALL).matcher(completed);
+            assertThat(header.find()).isTrue();
+            assertThat(Pattern.compile("<th\\b").matcher(header.group(1)).results().count()).isEqualTo(4);
+        }
+    }
+
+    private String publicHtml(Long tournamentId, String language) throws Exception {
+        return mockMvc.perform(get("/tournaments/team-americano/" + tournamentId).param("lang", language))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+    }
+
+    private List<String> restingTeams(String html) {
+        return Pattern.compile("data-rr-rest-team=\"(\\d+)\"").matcher(html).results()
+                .map(result -> result.group(1)).toList();
     }
 
     private Long createTournament() {

@@ -33,6 +33,9 @@ jobs:
           cache-dependency-path: frontend/pnpm-lock.yaml
       - name: Install frontend dependencies
         run: pnpm --dir frontend install --frozen-lockfile
+      - name: Сверить канонический клубный OpenAPI
+        run: python3 .github/bin/sync-public-club-contract.py
+
       - name: Check frontend
         run: pnpm --dir frontend check
       - name: Install Chromium
@@ -98,6 +101,21 @@ jobs:
               print('::error title=Test failure cause::' + escaped)
           PYCODE
 
+      - name: Проверить генерацию Java DTO из OpenAPI
+        run: python3 automation/openapi-probe/verify.py
+
+      - name: Сохранить результаты пробы OpenAPI
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi-dto-probe
+          path: |
+            target/openapi-probe-evidence/
+            automation/openapi-probe/target/input-sha256.json
+            automation/openapi-probe/target/surefire-reports/
+          if-no-files-found: ignore
+          retention-days: 3
+
       - name: Check agent instructions and pipeline automation
         run: |
           python3 -m unittest discover -s .github/bin -p 'test_*.py'
@@ -109,6 +127,15 @@ jobs:
 
       - name: Check extracted engine artifact
         run: python3 .github/bin/check-engine-artifact.py
+
+      - name: Проверить библиотеку application в конечном jar
+        run: python3 .github/bin/check-application-artifact.py
+
+      - name: Проверить контракт и детерминизм генерации
+        run: |
+          python3 .github/bin/check-contract-artifact.py
+          python3 .github/bin/verify-club-generation.py
+          python3 -m unittest discover -s .github/bin -p test_contract_artifact.py
 
       - name: Check immutable release package
         run: |
@@ -128,6 +155,7 @@ jobs:
           # Разделяем независимые наборы по штатному AUTH-лимиту 10 входов в минуту.
           sleep 60
           python3 automation/ui-preview/playoff-pilot.py run --rehearse
+          python3 automation/ui-preview/playoff-pilot.py extended
           python3 automation/ui-preview/preview.py stop
           python3 automation/ui-preview/preview.py up
 
@@ -138,6 +166,8 @@ jobs:
           name: modular-pilot-qa
           path: |
             target/modular-pilot/report.json
+            target/modular-pilot/extended-report.json
+            target/modular-pilot/expo-smoke.json
             target/modular-pilot/rollback.json
             target/modular-pilot/jwt-smoke.json
             target/release-rehearsal/report.json

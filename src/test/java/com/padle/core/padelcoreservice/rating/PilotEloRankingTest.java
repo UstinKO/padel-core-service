@@ -55,6 +55,18 @@ class PilotEloRankingTest {
         return path;
     }
 
+    @Test
+    void adminLookupUsesCurrentReplayAndResolvesLinkedProfiles() throws Exception {
+        var refresh = mock(PilotEloRefresh.class);
+        var properties = new EloPilotProperties(true, Set.of(1L), writeBundle());
+        var advice = new PilotEloRanking(mapper, properties, new EloPilotAccess(properties), Optional.of(refresh));
+        var fresh = new PreviewEloRanking.Snapshot(bundle().snapshot().asOf().plusDays(1), List.of(row(1), row(2)));
+        when(refresh.calculate()).thenReturn(fresh);
+        assertThat(advice.playerRow(8L)).contains(row(1));
+        assertThat(advice.playerRow(99L)).isEmpty();
+        verify(refresh, times(2)).calculate();
+    }
+
     private MockMvc web(boolean enabled, Set<Long> ids) throws Exception {
         var properties = new EloPilotProperties(enabled, ids, writeBundle());
         var advice = new PilotEloRanking(mapper, properties, new EloPilotAccess(properties), Optional.empty());

@@ -39,7 +39,8 @@ try {
   actual.qualificationBoundary = await qualificationBoundary(admin, manager, roster);
   actual.qualificationBoundary.finished = await finish(manager, roster);
   report.qualificationBoundary = { blockedBeforeQualification: true, directPostUnchanged: true,
-    allTeamsSeededAfterQualification: true, finished: true };
+    invalidScoreNotSent: true, missingCsrfRejected: { status: 302, destination: '/error/403' }, noStartAfterRefusal: true,
+    startWithoutNavigation: true, allTeamsSeededAfterQualification: true, finished: true };
   console.log('Запрет ранней сетки для восьми пар, посев после квалификации и финал: проверены');
   const reset = await admin.request.post(input.origin + '/api/internal/ui-preview/playoff-pilot/reset', {
     headers: await csrf(admin),

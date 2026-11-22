@@ -94,7 +94,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('.form-control').forEach(input => {
                 input.classList.remove('is-invalid');
             });
-            setRegistrationMode('');
+            setRegistrationMode('WITH_PARTNER');
         }
     }
 
@@ -112,13 +112,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         [modeWithPartner, modeSearch, modeLater].forEach(b => b && b.classList.remove('mode-btn--active'));
 
-        submitPartnerBtn.disabled = !mode;
-        if (!mode) {
-            withPartnerSection.style.display = 'none';
-            searchSection.style.display = 'none';
-            addLaterSection.style.display = 'none';
-            if (submitBtnText) submitBtnText.textContent = t('details.mode.choose');
-        } else if (mode === 'WITH_PARTNER') {
+        if (mode === 'WITH_PARTNER') {
             withPartnerSection && (withPartnerSection.style.display = '');
             searchSection      && (searchSection.style.display      = 'none');
             addLaterSection    && (addLaterSection.style.display     = 'none');
@@ -465,7 +459,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function showModal(tournamentId) {
         if (partnerModal && !partnerModal.classList.contains('show')) {
-            setRegistrationMode('');
             partnerModal.classList.add('show');
             window.trackTournamentRegistrationFormOpened?.(tournamentId);
         }
@@ -709,7 +702,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Якорь выставляет существующий маршрут возврата после входа.
     if (window.location.hash === '#tournament-registration' && registerBtn
             && isDoubleTournament() && !isTournamentStarted(window.tournament)) {
         window.history.replaceState(window.history.state, '', window.location.pathname + window.location.search);
@@ -742,7 +734,6 @@ document.addEventListener('DOMContentLoaded', function() {
     async function handleDoubleRegistration() {
         const tournamentId = document.getElementById('modalTournamentId').value;
         const mode = document.getElementById('registrationMode').value;
-        if (!mode) return;
 
         submitPartnerBtn.disabled = true;
         submitPartnerBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('details.processing')}`;

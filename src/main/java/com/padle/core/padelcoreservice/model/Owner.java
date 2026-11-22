@@ -12,6 +12,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "owners_db")
@@ -50,6 +52,12 @@ public class Owner implements UserDetails {
     // сырой Long без FK — тот же паттерн, что Tournament.clubId (см. PROJECT.md)
     @Column(name = "club_id")
     private Long clubId;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "owner_club_access_db", joinColumns = @JoinColumn(name = "owner_id"))
+    @Column(name = "club_id", nullable = false)
+    @Builder.Default
+    private Set<Long> clubIds = new HashSet<>();
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

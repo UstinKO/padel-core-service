@@ -20,7 +20,7 @@ public interface AmericanoRoundRepository extends JpaRepository<AmericanoRound, 
     @Query("""
             SELECT DISTINCT ar.tournament.id
             FROM AmericanoRound ar
-            WHERE ar.tournament.id IN :tournamentIds AND ar.phase IS NOT NULL
+            WHERE ar.tournament.id IN :tournamentIds AND ar.phase IN ('QUALIFICATION', 'PLAYOFF')
             """)
     List<Long> findTeamPlayoffConductIds(@Param("tournamentIds") List<Long> tournamentIds);
 

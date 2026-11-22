@@ -124,6 +124,7 @@
                     </span>
                 </div>
 
+                <p th:if="${isTeamAmericanoInitialized == true}"><a class="btn btn-primary" th:href="@{'/tournaments/team-americano/' + ${tournament.id}}" th:text="#{rr.results}">Результаты турнира</a></p>
                 <!-- Кнопка быстрого доступа к сетке — только когда турнир инициализирован -->
                 <div th:if="${kingOfCourtActive or (tournament.tipo.name() == 'AMERICANO' and tournament.modalidad.name() != 'DOBLES' and isInitialized) or (isTeamPlayoffFormat == true and isPlayoffQualStarted == true)}"
                      style="margin-top: 1rem;">
@@ -1000,7 +1001,7 @@
                 <form id="partnerForm">
                     <input type="hidden" id="modalTournamentId">
                     <input type="hidden" id="selectedPartnerId">
-                    <input type="hidden" id="registrationMode" value="">
+                    <input type="hidden" id="registrationMode" value="WITH_PARTNER">
 
                     <!-- Шаг 0: выбор режима регистрации -->
                     <div id="registrationModeStep" style="margin-bottom:1.25rem;">
@@ -1008,7 +1009,7 @@
                             ¿Cómo querés registrarte?
                         </p>
                         <div style="display:flex; flex-direction:column; gap:.5rem;">
-                            <button type="button" class="mode-btn" id="modeWithPartner"
+                            <button type="button" class="mode-btn mode-btn--active" id="modeWithPartner"
                                     onclick="setRegistrationMode('WITH_PARTNER')">
                                 <i class="fas fa-user-friends"></i>
                                 <span th:text="#{modal.partner.mode.with}">Tengo compañero</span>
@@ -1027,7 +1028,7 @@
                     </div>
 
                     <!-- Режим WITH_PARTNER: поиск + ручной ввод -->
-                    <div id="withPartnerSection" style="display:none;">
+                    <div id="withPartnerSection">
                         <div class="form-group">
                             <label for="partnerSearch">
                                 <i class="fas fa-search"></i>
@@ -1153,9 +1154,9 @@
                     <i class="fas fa-times"></i>
                     <span th:text="#{modal.partner.btn.cancel}">Cancelar</span>
                 </button>
-                <button type="button" class="btn btn-primary" id="submitPartnerBtn" disabled>
+                <button type="button" class="btn btn-primary" id="submitPartnerBtn">
                     <i class="fas fa-check-circle"></i>
-                    <span id="submitPartnerBtnText" th:text="#{modal.partner.mode.choose}">Registrar pareja</span>
+                    <span id="submitPartnerBtnText" th:text="#{modal.partner.btn.submit}">Registrar pareja</span>
                 </button>
             </div>
         </div>

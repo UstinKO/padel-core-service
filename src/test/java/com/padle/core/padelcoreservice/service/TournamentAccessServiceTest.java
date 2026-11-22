@@ -110,6 +110,7 @@ class TournamentAccessServiceTest {
         Club club = createClub();
         Tournament tournament = createTournament(club.getId(), null);
         Owner clubAdmin = createOwner(OwnerRole.CLUB_ADMIN, club.getId());
+        tournament.setOwnerId(clubAdmin.getId());
 
         assertThatCode(() -> tournamentAccessService.assertCanManageTournament(clubAdmin, tournament.getId()))
                 .doesNotThrowAnyException();
@@ -172,6 +173,7 @@ class TournamentAccessServiceTest {
                 .build());
 
         Owner clubAdminA = createOwner(OwnerRole.CLUB_ADMIN, clubA.getId());
+        tournament.setOwnerId(clubAdminA.getId());
         Owner clubAdminB = createOwner(OwnerRole.CLUB_ADMIN, clubB.getId());
 
         assertThatCode(() -> tournamentAccessService.assertCanManageMatch(clubAdminA, match.getId()))
@@ -197,6 +199,7 @@ class TournamentAccessServiceTest {
         TournamentKingOfCourt king = kingRepository.save(newKing);
 
         Owner clubAdminA = createOwner(OwnerRole.CLUB_ADMIN, clubA.getId());
+        tournament.setOwnerId(clubAdminA.getId());
         Owner clubAdminB = createOwner(OwnerRole.CLUB_ADMIN, clubB.getId());
 
         assertThatCode(() -> tournamentAccessService.assertCanManageKing(clubAdminA, king.getId()))
@@ -229,6 +232,7 @@ class TournamentAccessServiceTest {
                 .build());
 
         Owner clubAdminA = createOwner(OwnerRole.CLUB_ADMIN, clubA.getId());
+        tournament.setOwnerId(clubAdminA.getId());
         Owner clubAdminB = createOwner(OwnerRole.CLUB_ADMIN, clubB.getId());
 
         assertThatCode(() -> tournamentAccessService.assertCanManageAmericanoMatch(clubAdminA, match.getId()))
@@ -251,6 +255,7 @@ class TournamentAccessServiceTest {
                 .build());
 
         Owner clubAdminA = createOwner(OwnerRole.CLUB_ADMIN, clubA.getId());
+        tournament.setOwnerId(clubAdminA.getId());
         Owner clubAdminB = createOwner(OwnerRole.CLUB_ADMIN, clubB.getId());
 
         assertThatCode(() -> tournamentAccessService.assertCanManageAmericanoTeam(clubAdminA, team.getId()))
@@ -266,8 +271,8 @@ class TournamentAccessServiceTest {
         Club club = createClub();
         Owner clubAdmin = createOwner(OwnerRole.CLUB_ADMIN, club.getId());
 
-        assertThat(tournamentAccessService.canManage(clubAdmin, null, club.getId())).isTrue();
-        assertThat(tournamentAccessService.canManage(clubAdmin, null, club.getId() + 1)).isFalse();
+        assertThat(tournamentAccessService.canManage(clubAdmin, clubAdmin.getId(), club.getId())).isTrue();
+        assertThat(tournamentAccessService.canManage(clubAdmin, clubAdmin.getId() + 1, club.getId())).isFalse();
     }
 
     // ==================== helpers ====================
