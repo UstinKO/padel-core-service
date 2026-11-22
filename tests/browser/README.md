@@ -35,3 +35,13 @@ Playwright. Тест жёстко использует локальную БД �
 и ссылки после обновления, очередь, блокировку конфликта, объединение по заявке
 и ручное объединение. Проверяются ES, RU и EN в Chromium на компьютере и в
 эмуляции iPhone. Запуск: `node tests/browser/guest-claim-workflow.browser.mjs`.
+
+## Приёмка публичных клубов
+
+`club-read.browser.mjs` запускается наблюдателем
+`automation/ui-preview/club-acceptance.py` только в собственном preview.
+Он проверяет реальные Club API и DOM в RU/ES/EN при 1440/390 px, nullable-поля,
+пустую выдачу, отсутствие приватных контактов, переход каталог → событие → клуб,
+фильтр и unknown/inactive 404. Вход с временными доступами хранится mode 0600 в
+игнорируемом runtime и удаляется; JSON-отчёты пишутся в target/club-acceptance.
+[Baseline, границы и команды](../../docs/modular-monolith/phase-2/baseline.md).

@@ -1,6 +1,6 @@
 # Проба Java DTO из OpenAPI — LFPT-1198
 
-Дата: 20.11.2026. Основание — [issue #1198](https://github.com/UstinKO/padel-core-service/issues/1198), [спецификация](../../../specs/features/LFPT-1198-openapi-java-dto-probe.md) и [ADR-0002](../adr/0002-openapi-contract-first.md). Исходный master `647389a4` уже содержит оба исправления пилота. Результат относится к генерации моделей; production endpoints и reactor не переключены.
+Дата: 20.11.2026. Основание — [issue #1198](https://github.com/UstinKO/padel-core-service/issues/1198), [спецификация](../../../specs/done/LFPT-1198-openapi-java-dto-probe.md) и [ADR-0002](../adr/0002-openapi-contract-first.md). Исходный master `647389a4` уже содержит оба исправления пилота. Результат относится к генерации моделей; production endpoints и reactor не переключены.
 
 ## Воспроизведение
 
