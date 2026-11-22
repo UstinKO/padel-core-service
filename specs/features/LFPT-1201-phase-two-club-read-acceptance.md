@@ -6,6 +6,8 @@ implemented
 
 [Техническая приёмка](../../docs/modular-monolith/phase-2/acceptance.md) завершена 20.11.2026 агентом на отдельном preview. Новый ручной сеанс владельца не заявляется. CI и мерж учитываются отдельно.
 
+Актуализирована 22.11.2026 после включения master `15b0816b` в существующий PR #1240: полный verify, HTTP/browser, общий smoke и rollback повторены; [отдельная сводка](../../docs/modular-monolith/phase-2/acceptance-2026-11-22.json). Production-код относительно master не меняется; исторические результаты и ручные ограничения сохранены.
+
 ## Источник
 
 [Issue #1201](https://github.com/UstinKO/padel-core-service/issues/1201), родитель [#1197](https://github.com/UstinKO/padel-core-service/issues/1197); утверждённая владельцем подготовка второй фазы. Техническая постановка без отдельного клиентского запроса.
