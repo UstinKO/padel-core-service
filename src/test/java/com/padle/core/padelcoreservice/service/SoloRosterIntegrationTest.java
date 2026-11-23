@@ -14,6 +14,7 @@ import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -195,6 +196,151 @@ class SoloRosterIntegrationTest {
             assertThat(registrations.findById(result.registrationId()).orElseThrow().getPlayer().getTelegramUsername()).isNull();
         }
         assertThat(registrations.findByTournamentId(e.getId())).hasSize(2);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "+12025550171,+12025550171",
+            "+12025550171,+1 (202) 555-0171",
+            "+5491176543210,011 15-7654-3210",
+            "+79123456789,+7 (912) 345-67-89"
+    })
+    void guestPhonePreviewAndApplyPreserveEveryExistingProfileField(String storedPhone, String enteredPhone) {
+        var owner = admin();
+        var event = event(2, owner);
+        var existing = player();
+        existing.setTelefono(storedPhone);
+        existing.setTelegramUsername("original_guest");
+        existing.setPlayingSide(PlayingSide.RIGHT);
+        players.saveAndFlush(existing);
+        var history = single(event(2, owner), RegistrationStatus.SOLO_SEARCH);
+        history.setPlayer(existing);
+        registrations.saveAndFlush(history);
+        var payment = paid(history, "USD");
+        String before = profileSnapshot(existing.getId());
+        long count = players.count();
+        var input = new PlayerInput(null, "Другое", "Имя", enteredPhone, "@incoming_guest", PlayingSide.LEFT);
+        var command = new Command(UUID.randomUUID(), Action.ADD, null, null, input, Kind.SEARCH, false, null);
+
+        assertThat(service.preview(event.getId(), owner, command).participants()).singleElement().satisfies(person -> {
+            assertThat(person.playerId()).isEqualTo(existing.getId());
+            assertThat(person.name()).isEqualTo(existing.getNombreCompleto());
+            assertThat(person.playingSide()).isEqualTo(PlayingSide.RIGHT);
+        });
+        var checked = checked(event, owner, command);
+        var result = service.apply(event.getId(), owner, checked);
+        assertThat(service.apply(event.getId(), owner, checked)).isEqualTo(result);
+        assertThat(apply(event, owner, commandWithNewRequest(command)).existing()).isTrue();
+        entities.flush();
+        entities.clear();
+
+        assertThat(profileSnapshot(existing.getId())).isEqualTo(before);
+        assertThat(players.count()).isEqualTo(count);
+        assertThat(registrations.findByTournamentId(event.getId())).singleElement()
+                .satisfies(row -> assertThat(row.getPlayer().getId()).isEqualTo(existing.getId()));
+        assertThat(payments.findById(payment.getId()).orElseThrow().getRegistration().getId()).isEqualTo(history.getId());
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void addingExistingPlayerAsGuestDoesNotFillAnUnknownSide(boolean guestAccount) {
+        var owner = admin();
+        var event = event(2, owner);
+        var existing = player();
+        existing.setTelefono("+12025550172");
+        if (guestAccount) existing.setEmail("guest." + UUID.randomUUID() + "@1padel.guest");
+        players.saveAndFlush(existing);
+        String before = profileSnapshot(existing.getId());
+        var input = new PlayerInput(null, "Новый", "Гость", existing.getTelefono(), "new_telegram", PlayingSide.LEFT);
+
+        apply(event, owner, new Command(UUID.randomUUID(), Action.ADD, null, null, input, Kind.ADD_LATER, false, null));
+        entities.flush();
+        entities.clear();
+        assertThat(profileSnapshot(existing.getId())).isEqualTo(before);
+    }
+
+    @Test void aNewGuestReceivesSideAndTelegramOnlyAtCreation() {
+        var owner = admin();
+        var event = event(2, owner);
+        var input = new PlayerInput(null, "Новый", "Гость", "+12025550173", "@created_guest", PlayingSide.EITHER);
+        var result = apply(event, owner, new Command(UUID.randomUUID(), Action.ADD, null, null, input, Kind.SEARCH, false, null));
+        entities.clear();
+        var created = registrations.findById(result.registrationId()).orElseThrow().getPlayer();
+        assertThat(created.isGuestAccount()).isTrue();
+        assertThat(created.getPlayingSide()).isEqualTo(PlayingSide.EITHER);
+        assertThat(created.getTelegramUsername()).isEqualTo("created_guest");
+        String before = profileSnapshot(created.getId());
+        var changed = new PlayerInput(null, "Другое", "Имя", "+1 (202) 555-0173", null, null);
+        assertThat(apply(event, owner, new Command(UUID.randomUUID(), Action.ADD, null, null, changed, Kind.SEARCH, false, null)).existing()).isTrue();
+        entities.flush();
+        assertThat(profileSnapshot(created.getId())).isEqualTo(before);
+    }
+
+    @Test void guestPartnerUsesTheSameExistingProfileWithoutOverwritingSide() {
+        var owner = admin();
+        var event = event(2, owner);
+        var source = single(event, RegistrationStatus.SOLO_SEARCH);
+        var existing = player();
+        existing.setTelefono("+12025550174");
+        existing.setPlayingSide(PlayingSide.RIGHT);
+        players.saveAndFlush(existing);
+        String before = profileSnapshot(existing.getId());
+        var input = new PlayerInput(null, "Чужое", "Имя", "+1 (202) 555-0174", "new_partner", PlayingSide.LEFT);
+        var result = apply(event, owner, new Command(UUID.randomUUID(), Action.PAIR, source.getId(), null, input, null, false, null));
+        entities.flush();
+        entities.clear();
+        assertThat(registrations.findById(result.registrationId()).orElseThrow().getPartner().getId()).isEqualTo(existing.getId());
+        assertThat(profileSnapshot(existing.getId())).isEqualTo(before);
+    }
+
+    @Test void conflictingAndAmbiguousGuestContactsAreRejectedBeforeWriting() {
+        var owner = admin();
+        var event = event(2, owner);
+        var first = player();
+        first.setTelefono("+12025550175");
+        players.saveAndFlush(first);
+        var second = player();
+        second.setTelefono("+1 (202) 555-0175");
+        second.setTelegramUsername("another_profile");
+        players.saveAndFlush(second);
+        long count = players.count();
+        var input = new PlayerInput(null, "Новый", "Гость", first.getTelefono(), null, PlayingSide.LEFT);
+        assertThatThrownBy(() -> service.preview(event.getId(), owner,
+                new Command(UUID.randomUUID(), Action.ADD, null, null, input, Kind.SEARCH, false, null)))
+                .hasMessage("solo.error.contact");
+        second.setTelefono("+12025550176");
+        players.saveAndFlush(second);
+        var conflict = new PlayerInput(null, "Новый", "Гость", first.getTelefono(), "another_profile", PlayingSide.LEFT);
+        assertThatThrownBy(() -> service.preview(event.getId(), owner,
+                new Command(UUID.randomUUID(), Action.ADD, null, null, conflict, Kind.SEARCH, false, null)))
+                .hasMessage("solo.error.contact");
+        assertThat(players.count()).isEqualTo(count);
+        assertThat(registrations.findByTournamentId(event.getId())).isEmpty();
+    }
+
+    @Test void aProfileCreatedAfterGuestPreviewRequiresARecheckWithoutOverwritingIt() {
+        var owner = admin();
+        var event = event(2, owner);
+        var input = new PlayerInput(null, "Новый", "Гость", "+12025550177", null, PlayingSide.LEFT);
+        var command = checked(event, owner, new Command(UUID.randomUUID(), Action.ADD, null, null, input, Kind.SEARCH, false, null));
+        var existing = player();
+        existing.setTelefono(input.phone());
+        existing.setPlayingSide(PlayingSide.RIGHT);
+        players.saveAndFlush(existing);
+        String before = profileSnapshot(existing.getId());
+        assertThatThrownBy(() -> service.apply(event.getId(), owner, command)).hasMessage("solo.error.stale");
+        entities.flush();
+        assertThat(profileSnapshot(existing.getId())).isEqualTo(before);
+        assertThat(registrations.findByTournamentId(event.getId())).isEmpty();
+    }
+
+    private String profileSnapshot(Long id) {
+        return jdbc.queryForObject("SELECT to_jsonb(p)::text FROM player_padel_db p WHERE id=?", String.class, id);
+    }
+
+    private Command commandWithNewRequest(Command command) {
+        return new Command(UUID.randomUUID(), command.action(), command.registrationId(), command.partnerRegistrationId(),
+                command.player(), command.kind(), command.overrideLevel(), null);
     }
 
     @Test void removalKeepsPaymentsProfileAndHistoryAndRestoringDoesNotReuseOldPayment() {
