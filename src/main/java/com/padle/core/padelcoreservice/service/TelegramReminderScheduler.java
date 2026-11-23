@@ -1,6 +1,7 @@
 package com.padle.core.padelcoreservice.service;
 
 import com.padle.core.padelcoreservice.logging.TelegramAlertQueue;
+import com.padle.core.padelcoreservice.config.PlayerTelegramProperties;
 import com.padle.core.padelcoreservice.model.Club;
 import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.TournamentRegistration;
@@ -33,6 +34,7 @@ import java.util.stream.Collectors;
 public class TelegramReminderScheduler {
 
     private final TelegramService telegramService;
+    private final PlayerTelegramProperties playerProperties;
     private final TournamentRepository tournamentRepository;
     private final TournamentRegistrationRepository registrationRepository;
     private final ClubRepository clubRepository;
@@ -93,6 +95,9 @@ public class TelegramReminderScheduler {
     }
 
     private void sendReminderForTournament(Tournament tournament) {
+        if (playerProperties.enabled()) {
+            return;
+        }
         String clubName = clubRepository.findById(tournament.getClubId())
                 .map(Club::getNombre)
                 .orElse("el club");

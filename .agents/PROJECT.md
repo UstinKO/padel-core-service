@@ -674,3 +674,5 @@ Endpoint/fan-out реализуется отдельно в #1211. [Runbook](../
 Круговой парный формат: `RoundRobinRules` — правила очков/сетов и итоговых мест; `RoundRobinStandings` — общая таблица, мини-таблица личных встреч и разделённые места; `RoundRobinAdditionalMatches` — дополнительные встречи, `RoundRobinActionsController` — защищённые действия. См. `docs/endpoints/americano.md`, LFPT-1243/1244.
 
 Календарь админки: `GET /api/admin/events/calendar` — `AdminCalendarController` / `AdminCalendarService`, права на события и фильтры, локальные дата/время с зоной, все события месяца. [Контракт](../docs/endpoints/admin-event-calendar.md).
+
+Telegram для игроков: PlayerTelegramController, TelegramParticipationCoordinator и пакет telegram/. Контракт и включение: [player-telegram](../docs/endpoints/player-telegram.md). Флаг telegram.players.enabled до согласованного выпуска выключен.

@@ -86,6 +86,17 @@ public class TournamentParticipationService {
     }
 
     @Transactional
+    public Review confirmTelegram(UUID id, PlayerPadel actor, long expectedStart) {
+        long tournamentId = requests.findTournamentId(id).orElseThrow(TournamentParticipationService::notFound);
+        var tournament = tournaments.lockById(tournamentId).orElseThrow(TournamentParticipationService::notFound);
+        if (!TelegramParticipationCoordinator.upcoming(tournament)
+                || TelegramParticipationCoordinator.startsAt(tournament).getEpochSecond() != expectedStart) {
+            throw new AccountException(HttpStatus.CONFLICT, "PARTICIPATION_RESPONSE_UNAVAILABLE");
+        }
+        return answer(id, actor, Decision.CONFIRM, true);
+    }
+
+    @Transactional
     public void setReplacementSearch(long tournamentId, PlayerPadel actor, boolean enabled) {
         tournaments.lockById(tournamentId).orElseThrow(TournamentParticipationService::notFound);
         var row = registrations.findByTournamentIdAndPlayerId(tournamentId, actor.getId())

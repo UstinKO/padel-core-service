@@ -1,7 +1,7 @@
 # Архитектура базы данных — padel-core-service
 
 > **СУБД:** PostgreSQL 15  
-> **Версия схемы:** v1.84
+> **Версия схемы:** v1.85
 > **Миграции:** Liquibase (YAML), файлы в `src/main/resources/db/changelog/versions/`  
 > **ddl-auto:** `none` — схема управляется только через Liquibase
 
@@ -1052,3 +1052,7 @@ PK `(registration_id, version)` исключает два факта одног�
 ## Предпочтительная сторона
 
 `player_padel_db.playing_side` — nullable varchar(8), CHECK LEFT/RIGHT/EITHER; NULL означает отсутствие ответа. `playing_side_prompt_after` — nullable timestamptz, следующая допустимая дата показа опроса для аккаунта. Старые профили не заполняются автоматически.
+
+## Telegram для игроков: v1.85
+
+player_telegram_connections хранит проверенную связь player_id и Telegram user_id/chat_id. player_telegram_tokens хранит только SHA-256 одноразовой ссылки и expires_at. player_telegram_deliveries хранит dedupe_key, связи с турниром/регистрацией, состояние и message_id. player_telegram_poll хранит next_offset, lease_id и lease_until. Прежний telegram_chat_id не подтверждает личность. Для ParticipationRequest разрешена причина ORGANIZER, индекс одного текущего запроса сохранён. Оплаты не меняются.

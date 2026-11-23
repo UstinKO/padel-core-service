@@ -1,9 +1,10 @@
 package com.padle.core.padelcoreservice.service;
 
 import com.padle.core.padelcoreservice.config.TelegramProperties;
+import com.padle.core.padelcoreservice.config.PlayerTelegramProperties;
+import com.padle.core.padelcoreservice.telegram.PlayerTelegramPoller;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
@@ -28,15 +29,20 @@ public class TelegramBotPoller {
     private static final String SEND_URL    = "https://api.telegram.org/bot%s/sendMessage";
 
     private final TelegramProperties properties;
+    private final PlayerTelegramProperties playerProperties;
+    private final PlayerTelegramPoller playerPoller;
     private final PlayerRepository playerRepository;
     private final RestTemplate restTemplate;
 
     private final AtomicLong lastUpdateId = new AtomicLong(0);
 
     @Scheduled(fixedDelay = 5_000)
-    @Transactional
     @SuppressWarnings("unchecked")
     public void pollUpdates() {
+        if (playerProperties.enabled()) {
+            playerPoller.poll();
+            return;
+        }
         if (!properties.isEnabled() || properties.getBotToken() == null || properties.getBotToken().isBlank()) {
             return;
         }
