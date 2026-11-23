@@ -1,7 +1,7 @@
 # LFPT-1279: Feature многомодульный монолит — выделить движок подбора пар King of Court
 
 ## Статус
-
+done
 implemented
 
 ## Источник
