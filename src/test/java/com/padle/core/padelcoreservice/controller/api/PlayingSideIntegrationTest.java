@@ -3,6 +3,13 @@ package com.padle.core.padelcoreservice.controller.api;
 import com.padle.core.padelcoreservice.model.*;
 import com.padle.core.padelcoreservice.model.enums.*;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
+import com.padle.core.padelcoreservice.repository.ClubRepository;
+import com.padle.core.padelcoreservice.repository.TournamentRepository;
+import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
+import com.padle.core.padelcoreservice.mapper.TournamentRegistrationMapper;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import com.padle.core.padelcoreservice.service.*;
 import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2User;
 import com.padle.core.padelcoreservice.dto.GuestProfileClaimDtos.*;
@@ -194,4 +201,46 @@ class PlayingSideIntegrationTest {
         } finally { pool.shutdownNow(); players.deleteById(p.getId()); }
     }
     @Autowired ApplicationContext context;
+
+    @Autowired ClubRepository clubs;
+    @Autowired TournamentRepository tournaments;
+    @Autowired TournamentRegistrationRepository registrations;
+    @Autowired TournamentRegistrationMapper registrationMapper;
+
+    private Tournament event() {
+        var club = clubs.save(Club.builder().nombre("Fixture "+UUID.randomUUID()).isActive(true).build());
+        return tournaments.save(Tournament.builder().clubId(club.getId()).ownerId(987L).nombre("Fixture")
+                .fechaInicio(LocalDate.now().plusDays(1)).horaInicio(LocalTime.NOON).generoFormato(GenderFormat.MIXTO)
+                .categoriaNivel(Nivel.TODOS).tipo(TournamentType.AMERICANO_TEAMS).modalidad(Modalidad.DOBLES)
+                .cupoMax(8).precio(BigDecimal.ZERO).estado(TournamentStatus.REGISTRO_ABIERTO)
+                .contactoOrganizador("fixture@example.test").mostrarNivel(false).isActive(true).build());
+    }
+
+    @Test void rosterRequiresOwnershipAndOmitsContactData() throws Exception {
+        var event = event(); var p = player(false, PlayingSide.LEFT);
+        registrations.saveAndFlush(TournamentRegistration.builder().tournament(event).player(p)
+                .status(RegistrationStatus.SOLO_SEARCH).isActive(true).build());
+        var own = Owner.builder().id(987L).email("club@example.test").role(OwnerRole.CLUB_ADMIN).build();
+        String url = "/api/admin/events/"+event.getId()+"/participant-preferences";
+        mvc.perform(get(url).with(user(own))).andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].playingSide").value("LEFT"))
+                .andExpect(jsonPath("$[0].email").doesNotExist()).andExpect(jsonPath("$[0].telefono").doesNotExist());
+        var other = Owner.builder().id(988L).email("other@example.test").role(OwnerRole.CLUB_ADMIN).build();
+        mvc.perform(get(url).with(user(other))).andExpect(status().isForbidden());
+        mvc.perform(get(url).with(user(p))).andExpect(status().isForbidden());
+        var root = Owner.builder().id(999L).email("root@example.test").role(OwnerRole.SUPER_ADMIN).build();
+        mvc.perform(get(url).with(user(root))).andExpect(status().isOk());
+    }
+
+    @Test void publicPartnerSearchRespectsEventVisibility() {
+        var event = event(); var p = player(false, PlayingSide.RIGHT);p.setNivelJugador(Nivel.C7);
+        var row = TournamentRegistration.builder().tournament(event).player(p).shareContacts(false).build();
+        assertThat(registrationMapper.toLookingDto(row).getPlayingSide()).isNull();
+        assertThat(registrationMapper.toLookingDto(row).getNivel()).isNull();
+        event.setMostrarNivel(true);
+        var visible = registrationMapper.toLookingDto(row);
+        assertThat(visible.getPlayingSide()).isEqualTo(PlayingSide.RIGHT);
+        assertThat(visible.getNivel()).isEqualTo("C7");
+        assertThat(visible.getTelefono()).isNull();
+    }
 }

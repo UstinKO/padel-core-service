@@ -72,3 +72,5 @@ destination — только проверенный same-origin относите
 | POST | `/admin/players/{id}/playing-side` | SUPER_ADMIN + CSRF | Изменение стороны в рамках существующих прав редактирования профиля. |
 
 Account Profile и регистрация поддерживают playingSide. Оплаты и scoped SoloRoster возвращают сторону каждого игрока; создание гостя допускает отсутствие ответа и не перезаписывает существующий профиль. При объединении профилей ответ входит в сравнение, PLAYING_SIDE_DIFFERS требует sideChoice ACCOUNT/GUEST, иначе GUEST_CLAIM_PLAYING_SIDE_CONFLICT до переноса. Внутренние legacy DTO-поля стороны не сериализуются в общий JSON; PublicLive Participant маскирует поле при выключенном mostrarNivel.
+
+`GET /api/admin/events/{id}/participant-preferences` — действующая служебная роль и право управления конкретным турниром. Минимальный список playerId/level/playingSide без контактов; для динамических сведений участника в проведении. Чужой турнир запрещён на сервере. Поиск партнёра также маскирует уровень/сторону при выключенном mostrarNivel.
