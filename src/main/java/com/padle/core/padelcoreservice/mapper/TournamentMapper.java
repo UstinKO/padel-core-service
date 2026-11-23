@@ -2,6 +2,7 @@ package com.padle.core.padelcoreservice.mapper;
 
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.model.Tournament;
+import com.padle.core.padelcoreservice.model.enums.Nivel;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
@@ -20,4 +21,9 @@ public interface TournamentMapper {
     @Mapping(target = "testTournament", ignore = true)
     @Mapping(target = "ownerId", source = "ownerId") // Добавляем маппинг ownerId
     Tournament toEntity(TournamentDto tournamentDto);
+
+    default Nivel toNivel(String value) {
+        // MapStruct сохраняет NULL для отсутствующего необязательного значения.
+        return value == null ? null : Nivel.fromValue(value);
+    }
 }

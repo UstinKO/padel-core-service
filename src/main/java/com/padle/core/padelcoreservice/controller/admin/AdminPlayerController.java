@@ -212,7 +212,7 @@ public class AdminPlayerController {
             // nivel_jugador — NOT NULL в БД: админ по-прежнему может «очистить» уровень игрока
             // (исправление данных), но это означает присвоить sentinel SIN_ESPECIFICAR,
             // а не настоящий NULL.
-            Nivel nivelParsed = (nivel != null && !nivel.isBlank()) ? Nivel.valueOf(nivel) : Nivel.SIN_ESPECIFICAR;
+            Nivel nivelParsed = (nivel != null && !nivel.isBlank()) ? Nivel.fromValue(nivel) : Nivel.SIN_ESPECIFICAR;
             if (!Nivel.isPlayerLevel(nivelParsed) && nivelParsed != Nivel.SIN_ESPECIFICAR) {
                 throw new IllegalArgumentException("Nivel no aplicable a un jugador: " + nivel);
             }

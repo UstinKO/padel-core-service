@@ -1487,7 +1487,7 @@ public class TournamentService {
         existing.setDurationMinutes(dto.getDurationMinutes());
         existing.setTimeZone(EventSchedule.zone(dto.getTimeZone()).getId());
         existing.setGeneroFormato(dto.getGeneroFormato());
-        existing.setCategoriaNivel(Nivel.valueOf(dto.getCategoriaNivel()));
+        existing.setCategoriaNivel(Nivel.fromValue(dto.getCategoriaNivel()));
         // nombre всегда пересобирается из уже обновлённых выше generoFormato/categoriaNivel —
         // вручную в форме не вводится.
         existing.setNombre(Tournament.generateNombre(existing.getGeneroFormato(), existing.getCategoriaNivel()));

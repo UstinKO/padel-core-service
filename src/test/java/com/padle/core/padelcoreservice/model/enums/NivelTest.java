@@ -1,6 +1,8 @@
 package com.padle.core.padelcoreservice.model.enums;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.util.List;
 
@@ -15,13 +17,13 @@ class NivelTest {
     @Test
     void mascalino_contieneEscalaIndividualCompleta() {
         assertThat(Nivel.C9.getGeneroAplicable()).isEqualTo(GenderFormat.MASCULINO);
-        assertThat(List.of(Nivel.C9, Nivel.C8, Nivel.C7, Nivel.C6, Nivel.C5, Nivel.C4))
+        assertThat(List.of(Nivel.C9, Nivel.C8, Nivel.C7, Nivel.C6, Nivel.C5, Nivel.C4, Nivel.C3))
                 .allMatch(nivel -> nivel.getGeneroAplicable() == GenderFormat.MASCULINO);
     }
 
     @Test
     void masculino_contieneTodasLasParejasAdyacentes() {
-        assertThat(List.of(Nivel.C9_C8, Nivel.C8_C7, Nivel.C7_C6, Nivel.C6_C5, Nivel.C5_C4))
+        assertThat(List.of(Nivel.C9_C8, Nivel.C8_C7, Nivel.C7_C6, Nivel.C6_C5, Nivel.C5_C4, Nivel.C4_C3))
                 .allMatch(nivel -> nivel.getGeneroAplicable() == GenderFormat.MASCULINO);
     }
 
@@ -84,6 +86,22 @@ class NivelTest {
     @Test
     void parseOrNull_valorValido_devuelveElNivel() {
         assertThat(Nivel.parseOrNull("C7")).isEqualTo(Nivel.C7);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"C3,C3", "С3,C3", "с3,C3", "C4_C3,C4_C3", "С3/С4,C4_C3", "C3–C4,C4_C3"})
+    void aliasesHaveOnlyOneCanonicalValue(String input, Nivel expected) {
+        assertThat(Nivel.fromValue(input)).isEqualTo(expected);
+        assertThat(Nivel.parseOrNull(input)).isEqualTo(expected);
+    }
+
+    @Test
+    void c3IsAPlayerLevelButItsRangeIsOnlyAnEventCategory() {
+        assertThat(Nivel.isPlayerLevel(Nivel.C3)).isTrue();
+        assertThat(Nivel.isPlayerLevel(Nivel.C4_C3)).isFalse();
+        assertThat(Nivel.playerLevels()).containsSubsequence(Nivel.C5, Nivel.C4, Nivel.C3);
+        assertThat(Nivel.forTournamentForm(null)).contains(Nivel.C3, Nivel.C4_C3);
+        assertThat(Integer.parseInt(Nivel.C3.getOrden())).isEqualTo(3);
     }
 
     @Test

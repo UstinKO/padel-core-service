@@ -1,7 +1,7 @@
 # Архитектура базы данных — padel-core-service
 
 > **СУБД:** PostgreSQL 15  
-> **Версия схемы:** v1.83
+> **Версия схемы:** v1.84
 > **Миграции:** Liquibase (YAML), файлы в `src/main/resources/db/changelog/versions/`  
 > **ddl-auto:** `none` — схема управляется только через Liquibase
 
@@ -789,7 +789,7 @@ tournaments_db
 ### `Nivel` — уровень игроков
 Значения с привязкой к гендерному формату турнира (`Nivel.genderFormat`):
 
-- мужские (`MASCULINO`): `C9`, `C8`, `C7`, `C6`, `C5`, `C4`, `C9_C8`, `C8_C7`, `C7_C6`, `C6_C5`, `C5_C4`
+- мужские (`MASCULINO`): `C9`, `C8`, `C7`, `C6`, `C5`, `C4`, `C3`, `C9_C8`, `C8_C7`, `C7_C6`, `C6_C5`, `C5_C4`, `C4_C3`
 - женские (`FEMENINO`): `D9`, `D8`, `D7`, `D6`, `D5`, `D4`, `D9_D8`, `D7_D8`, `D7_D6`, `D6_D5`, `D5_D4`
 - микст, сумма категорий пары (`MIXTO`): `SUMA_16`, `SUMA_15`, `SUMA_14`, `SUMA_13`, `SUMA_12`, `SUMA_11`, `SUMA_10`
 - любой формат: `TODOS`, `PRINCIPIANTES`, `SIN_ESPECIFICAR` (дефолт `player_padel_db.nivel_jugador`)
@@ -919,6 +919,8 @@ tournaments_db
 | v1.67 | `v1.67-event-calendar` | Точная длительность и IANA-зона мероприятия, CHECK положительной длительности |
 | v1.68 | `v1.68-additional-points` | Знаковые ручные корректировки по игроку и этапу проведения |
 | v1.69 | `v1.69-playoff-match-start` | Отметки фактического начала и изменения состава матча Team Playoff |
+
+| v1.84 | `v1.84-nivel-c3` | CHECK категорий турнира расширен C3 и C4_C3; существующие значения сохранены |
 
 ## QR-переходы Reby
 

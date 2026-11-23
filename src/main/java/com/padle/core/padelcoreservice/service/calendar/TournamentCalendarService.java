@@ -58,7 +58,7 @@ public class TournamentCalendarService {
         boolean openFormat = event.getTipo() == TournamentType.CANCHA_ABIERTA || event.getTipo() == TournamentType.PADEL_CLINIC;
         String category = openFormat ? "" : Optional.ofNullable(event.getCategoriaNivel())
                 .filter(level -> !level.isBlank())
-                .map(level -> level.matches("[CD][4-9](?:_[CD][4-9])?") ? level.replace('_', '/')
+                .map(level -> level.matches("[CD][3-9](?:_[CD][3-9])?") ? level.replace('_', '/')
                         : levelLabel(level, locale))
                 .map(level -> " " + level).orElse("");
         String pairs = !openFormat && event.getModalidad() == Modalidad.DOBLES ? " · " + message("calendar.pairs", locale) : "";
