@@ -635,5 +635,7 @@
 <script th:src="@{/js/contact-check.js}"></script>
 <script th:src="@{/js/level-check.js}"></script>
 <script th:if="${previewEloByPlayer != null}" th:src="@{/js/elo-feedback.js}" defer></script>
+<th:block th:replace="~{fragments/playing-side :: survey}"></th:block>
+<th:block th:replace="~{fragments/playing-side :: assets}"></th:block>
 </body>
 </html>

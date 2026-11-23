@@ -354,7 +354,7 @@
                             <span th:text="${player.playerName} + ' ' + ${player.playerLastName}"></span><i th:if="${player.playerId == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i>
                             <span th:if="${player.position == 1}" class="crown-icon"><i class="fas fa-crown"></i></span>
                         </td>
-                        <td th:if="${tournament.mostrarNivel}" th:text="${player.playerNivel != null ? player.playerNivel.display : '—'}">—</td>
+                        <td th:if="${tournament.mostrarNivel}"><span th:replace="~{fragments/playing-side :: info(${player.playerNivel != null ? player.playerNivel.display : null}, ${player.playerPlayingSide}, false)}"></span></td>
                         <td th:text="${player.matchPoints}">120</td>
                         <td th:replace="~{fragments/additional-points :: cell(${player.additionalPoints})}"></td>
                         <td class="points" th:text="${player.totalScore}">120</td>
@@ -480,5 +480,6 @@
         }
     });
 </script>
+<th:block th:replace="~{fragments/playing-side :: assets}"></th:block>
 </body>
 </html>

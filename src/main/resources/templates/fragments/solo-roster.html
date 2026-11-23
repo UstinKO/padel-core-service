@@ -29,6 +29,7 @@
                 <label for="solo-first" th:text="#{solo.ui.first}"></label><input id="solo-first" autocomplete="given-name" maxlength="100">
                 <label for="solo-last" th:text="#{solo.ui.last}"></label><input id="solo-last" autocomplete="family-name" maxlength="100">
                 <label for="solo-phone" th:text="#{solo.ui.phone}"></label><input id="solo-phone" type="tel" autocomplete="tel" maxlength="30">
+                <label for="solo-side" th:text="#{playingSide.label}"></label><select id="solo-side"><th:block th:replace="~{fragments/playing-side :: options(null)}"></th:block></select><small th:text="#{playingSide.hint}"></small>
                 <label for="solo-telegram" th:text="#{solo.ui.telegram}"></label><input id="solo-telegram" autocomplete="off" maxlength="33">
             </div>
             <div id="solo-kind-pane"><label for="solo-kind" th:text="#{solo.ui.kind}"></label><select id="solo-kind"><option value="ADD_LATER" th:text="#{solo.ui.later}"></option><option value="SEARCH" th:text="#{solo.ui.looking}"></option></select></div>

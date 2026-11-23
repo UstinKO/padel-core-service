@@ -104,6 +104,7 @@
                             th:text="${rating.category == 'C10'} ? #{elo.preview.beginner} : ${rating.category}"></strong>
                     <strong th:if="${rating == null and player.nivelJugador != null
                         and player.nivelJugador.name() != 'SIN_ESPECIFICAR'}" th:text="${player.nivelJugador.name()}"></strong>
+                    <span data-my-playing-side th:text="${player.playingSide != null} ? #{${player.playingSide.messageKey}} : ''"></span>
                     <span th:if="${rating != null}"
                           th:text="${rating.confirmed} ? #{elo.preview.confirmed} : #{elo.preview.provisional}"></span>
                     <span th:if="${rating == null}" th:text="${player.nivelJugador == null
@@ -219,10 +220,12 @@
                                 <span th:text="${previewElo != null} ? #{perfil.rating.declaredField} : #{perfil.field.nivel}">Nivel de juego</span>
                             </label>
                             <select id="nivelJugador" name="nivelJugador" class="form-control" required>
+                                <option th:if="${player.nivelJugador == null or player.nivelJugador.name() == 'SIN_ESPECIFICAR'}" value="" selected disabled th:text="#{perfil.field.nivel.none}"></option>
                                 <th:block th:replace="~{fragments/nivel-options :: options(${player.nivelJugador}, false)}"></th:block>
                             </select>
                         </div>
 
+                        <th:block th:replace="~{fragments/playing-side :: editor(${player.playingSide})}"></th:block>
                         <div class="form-group">
                             <label for="preferredLocale" class="form-label" th:text="#{perfil.language.label}">Idioma</label>
                             <select id="preferredLocale" name="preferredLocale" class="form-control">
@@ -359,5 +362,7 @@
 <script th:src="@{/js/profile.js}"></script>
 <script th:src="@{/js/csrf.js}"></script>
 <script th:src="@{/js/guest-profile-claim.js}" defer></script>
+<th:block th:replace="~{fragments/playing-side :: survey}"></th:block>
+<th:block th:replace="~{fragments/playing-side :: assets}"></th:block>
 </body>
 </html>

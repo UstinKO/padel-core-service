@@ -441,7 +441,7 @@
                               th:class="${player.position == 1 ? 'pos-1' : (player.position == 2 ? 'pos-2' : (player.position == 3 ? 'pos-3' : ''))}">1</span>
                         </td>
                         <td>
-                            <span th:text="${player.playerName} + ' ' + ${player.playerLastName}">Jugador</span>
+                            <span th:text="${player.playerName} + ' ' + ${player.playerLastName}">Jugador</span><br><small th:replace="~{fragments/playing-side :: info(${player.playerNivel != null ? player.playerNivel.display : null}, ${player.playerPlayingSide}, true)}"></small>
                             <button th:unless="${tournament.estado.name() == 'FINALIZADO'}"
                                     type="button" class="btn btn-outline btn-sm" data-open-points
                                     th:attr="data-player-id=${player.playerId}"

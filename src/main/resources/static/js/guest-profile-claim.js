@@ -165,10 +165,11 @@
                 data.hidden = !profile;
                 $(data.parentElement, '[data-claim-no-profile]').hidden = Boolean(profile);
                 nodes(data, '[data-field]').forEach(field => {
-                    field.textContent = profile?.[field.dataset.field] ?? '—';
+                    field.textContent = field.dataset.field === 'playingSide' ? t.get(profile?.playingSide || 'sideUnknown') : (profile?.[field.dataset.field] ?? '—');
                 });
             }
-            const notes = [...new Set([...review.conflicts, ...review.differences, review.reviewReason].filter(Boolean))];
+            const notes = [...new Set([...review.conflicts, ...review.differences, review.reviewReason].filter(Boolean))]
+                .filter(note => review.status !== 'MERGED' || note !== 'PLAYING_SIDE_DIFFERS');
             $(detail, '[data-claim-conflicts]').replaceChildren(...notes.map(note => {
                 if (note.startsWith('TOURNAMENT:')) return line('li', t.get('TOURNAMENT', { id: note.split(':')[1] }));
                 return line('li', t.get(note));
@@ -181,6 +182,9 @@
             form.reset();
             check.hidden = !review.differences.includes('PHONE_DIFFERS');
             form.elements.replacePhone.required = !check.hidden;
+            const sideConflict = review.differences.includes('PLAYING_SIDE_DIFFERS');
+            form.querySelector('[data-claim-side]').hidden = !sideConflict;
+            form.elements.sideChoice.required = sideConflict;
             syncMethod();
             if (focus) {
                 heading.focus({ preventScroll: true });
@@ -203,7 +207,7 @@
                     guestId: review.guest.id, verified: form.elements.verified.checked,
                     verificationMethod: form.elements.method.value,
                     whatsappSenderPhone: form.elements.sender.value || null,
-                    replacePhone: form.elements.replacePhone.checked
+                    replacePhone: form.elements.replacePhone.checked, sideChoice: form.elements.sideChoice.value || null
                 };
                 if (!context.reference) data.accountId = review.account.id;
                 try {

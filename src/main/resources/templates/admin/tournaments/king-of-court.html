@@ -28,7 +28,7 @@
 <body>
 <header th:replace="~{fragments/admin-header :: header(#{admin.koc.title})}"></header>
 
-<main class="admin-main">
+<main th:attr="data-preferences-event-id=${tournament.id}" class="admin-main">
     <div class="container">
         <!-- Mensajes de éxito/error -->
         <div th:if="${successMessage}" class="alert alert-success">
@@ -247,5 +247,6 @@
     /*]]>*/
 </script>
 <script th:src="@{/js/share-panel.js}"></script>
+<th:block th:replace="~{fragments/playing-side :: assets}"></th:block>
 </body>
 </html>

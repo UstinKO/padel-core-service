@@ -153,6 +153,11 @@
                         <small class="registration-field-error" id="nivelJugadorError"
                                th:text="${#fields.hasErrors('nivelJugador') ? #fields.errors('nivelJugador')[0] : ''}" aria-live="polite"></small>
                     </div>
+                    <div class="form-group">
+                        <label for="playingSide" th:text="#{playingSide.question}"></label>
+                        <select id="playingSide" th:field="*{playingSide}" class="form-control" aria-describedby="signup-side-hint"><th:block th:replace="~{fragments/playing-side :: options(${registroRequest.playingSide})}"></th:block></select>
+                        <small id="signup-side-hint" class="form-text" th:text="#{playingSide.hint}"></small>
+                    </div>
                     <div class="auth-entry-pair auth-entry-passwords">
                         <div class="form-group">
                             <div class="auth-entry-inset auth-entry-password">
