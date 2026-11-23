@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<section th:fragment="profile" th:if="${@environment.getProperty('telegram.players.enabled') == 'true'}"
+         class="telegram-panel" data-tg-profile
+         th:attr="data-loading=#{telegram.ui.loading},data-error=#{telegram.ui.error},data-unavailable=#{telegram.ui.unavailable},data-connected=#{telegram.ui.connected},data-disconnected=#{telegram.ui.disconnected},data-open-hint=#{telegram.ui.openHint}">
+    <h2 th:text="#{telegram.ui.title}"></h2>
+    <p th:text="#{telegram.ui.description}"></p>
+    <p data-tg-status role="status" aria-live="polite" th:text="#{telegram.ui.loading}"></p>
+    <div class="telegram-actions">
+        <button type="button" class="btn btn-primary" data-tg-connect disabled th:text="#{telegram.ui.connect}"></button>
+        <a class="btn btn-primary" data-tg-open target="_blank" rel="noopener noreferrer" hidden th:text="#{telegram.ui.open}"></a>
+        <button type="button" class="btn btn-outline" data-tg-disconnect hidden th:text="#{telegram.ui.disconnect}"></button>
+        <button type="button" class="btn btn-outline" data-tg-refresh th:text="#{telegram.ui.refresh}"></button>
+    </div>
+</section>
+<section th:fragment="admin" th:if="${@environment.getProperty('telegram.players.enabled') == 'true'}"
+         class="telegram-panel" data-tg-admin
+         th:attr="data-tournament-id=${tournament.id},data-loading=#{telegram.ui.loading},data-error=#{telegram.ui.error},data-sent=#{telegram.ui.requestSent},data-summary-sent=#{telegram.ui.summarySent},data-confirmed=#{telegram.ui.confirmed},data-pending=#{telegram.ui.pending},data-not-required=#{telegram.ui.notRequired},data-declined=#{telegram.ui.declined},data-no-telegram=#{telegram.ui.noTelegram},data-delivery-error=#{telegram.ui.deliveryError}">
+    <h2 th:text="#{telegram.ui.adminTitle}"></h2>
+    <p th:text="#{telegram.ui.adminDescription}"></p>
+    <div class="telegram-actions">
+        <button type="button" class="btn btn-primary" data-tg-request th:text="#{telegram.ui.request}"></button>
+        <button type="button" class="btn btn-outline" data-tg-refresh th:text="#{telegram.ui.refresh}"></button>
+        <button sec:authorize="hasRole('SUPER_ADMIN')" type="button" class="btn btn-outline" data-tg-summary th:text="#{telegram.ui.summary}"></button>
+    </div>
+    <p data-tg-status role="status" aria-live="polite" th:text="#{telegram.ui.loading}"></p>
+    <div class="telegram-counters">
+        <span><strong data-tg-total>0</strong> <span th:text="#{telegram.ui.total}"></span></span>
+        <span><strong data-tg-confirmed>0</strong> <span th:text="#{telegram.ui.confirmed}"></span></span>
+        <span><strong data-tg-pending>0</strong> <span th:text="#{telegram.ui.pending}"></span></span>
+        <span><strong data-tg-missing>0</strong> <span th:text="#{telegram.ui.noTelegram}"></span></span>
+    </div>
+    <ul class="telegram-participants" data-tg-participants></ul>
+</section>
+<th:block th:fragment="assets" th:if="${@environment.getProperty('telegram.players.enabled') == 'true'}">
+    <link rel="stylesheet" th:href="@{/css/player-telegram.css}">
+    <script th:src="@{/js/player-telegram.js}" defer></script>
+</th:block>
+</body>
+</html>

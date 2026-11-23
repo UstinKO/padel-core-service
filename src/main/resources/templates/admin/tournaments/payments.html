@@ -93,6 +93,8 @@
                 </article>
             </section>
 
+            <th:block th:replace="~{fragments/player-telegram :: admin}"></th:block>
+
             <!-- Статистика -->
             <div class="summary-stats" th:if="${players != null and not #lists.isEmpty(players)}">
                 <div class="stat-item">
@@ -548,5 +550,6 @@
 </script>
 <script th:src="@{/js/payment-management.js}"></script>
 <th:block th:replace="~{fragments/playing-side :: assets}"></th:block>
+<th:block th:replace="~{fragments/player-telegram :: assets}"></th:block>
 </body>
 </html>

@@ -132,6 +132,8 @@
             <th:block th:replace="~{fragments/guest-profile-claim :: request}"></th:block>
         </div>
 
+        <th:block th:replace="~{fragments/player-telegram :: profile}"></th:block>
+
         <!-- Formulario de perfil -->
         <div class="profile-card">
             <form th:action="@{/perfil/actualizar}" method="post" th:object="${player}" class="profile-form">
@@ -364,5 +366,6 @@
 <script th:src="@{/js/guest-profile-claim.js}" defer></script>
 <th:block th:replace="~{fragments/playing-side :: survey}"></th:block>
 <th:block th:replace="~{fragments/playing-side :: assets}"></th:block>
+<th:block th:replace="~{fragments/player-telegram :: assets}"></th:block>
 </body>
 </html>
