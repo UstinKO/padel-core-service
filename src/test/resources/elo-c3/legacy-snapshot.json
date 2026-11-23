@@ -1,0 +1,162 @@
+{
+  "snapshot": {
+    "asOf": "2026-11-12",
+    "rows": [
+      {
+        "id": 1,
+        "name": "A",
+        "category": "C5",
+        "confirmed": false,
+        "elo": 1632.0,
+        "categoryPlace": 1,
+        "categorySize": 4,
+        "overallPlace": 1,
+        "progress": {
+          "tournaments": 1,
+          "matches": 1,
+          "wins": 1,
+          "moreTournaments": 1,
+          "moreMatches": 5,
+          "moreWins": 2
+        },
+        "strongerCategories": [],
+        "achievements": {
+          "tournaments": 1,
+          "matches": 1,
+          "titles": 0,
+          "secondPlaces": 0
+        },
+        "tournamentHistory": [
+          {
+            "day": "2026-11-12",
+            "category": "C5",
+            "elo": 1632.0,
+            "change": 12.0,
+            "matches": 1,
+            "wins": 1,
+            "title": "Legacy",
+            "format": "pair",
+            "resultsUrl": null
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "name": "B",
+        "category": "C5",
+        "confirmed": false,
+        "elo": 1632.0,
+        "categoryPlace": 1,
+        "categorySize": 4,
+        "overallPlace": 1,
+        "progress": {
+          "tournaments": 1,
+          "matches": 1,
+          "wins": 1,
+          "moreTournaments": 1,
+          "moreMatches": 5,
+          "moreWins": 2
+        },
+        "strongerCategories": [],
+        "achievements": {
+          "tournaments": 1,
+          "matches": 1,
+          "titles": 0,
+          "secondPlaces": 0
+        },
+        "tournamentHistory": [
+          {
+            "day": "2026-11-12",
+            "category": "C5",
+            "elo": 1632.0,
+            "change": 12.0,
+            "matches": 1,
+            "wins": 1,
+            "title": "Legacy",
+            "format": "pair",
+            "resultsUrl": null
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "name": "C",
+        "category": "C5",
+        "confirmed": false,
+        "elo": 1608.0,
+        "categoryPlace": 3,
+        "categorySize": 4,
+        "overallPlace": 3,
+        "progress": {
+          "tournaments": 1,
+          "matches": 1,
+          "wins": 0,
+          "moreTournaments": 1,
+          "moreMatches": 5,
+          "moreWins": 3
+        },
+        "strongerCategories": [],
+        "achievements": {
+          "tournaments": 1,
+          "matches": 1,
+          "titles": 0,
+          "secondPlaces": 0
+        },
+        "tournamentHistory": [
+          {
+            "day": "2026-11-12",
+            "category": "C5",
+            "elo": 1608.0,
+            "change": -12.0,
+            "matches": 1,
+            "wins": 0,
+            "title": "Legacy",
+            "format": "pair",
+            "resultsUrl": null
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "name": "D",
+        "category": "C5",
+        "confirmed": false,
+        "elo": 1608.0,
+        "categoryPlace": 3,
+        "categorySize": 4,
+        "overallPlace": 3,
+        "progress": {
+          "tournaments": 1,
+          "matches": 1,
+          "wins": 0,
+          "moreTournaments": 1,
+          "moreMatches": 5,
+          "moreWins": 3
+        },
+        "strongerCategories": [],
+        "achievements": {
+          "tournaments": 1,
+          "matches": 1,
+          "titles": 0,
+          "secondPlaces": 0
+        },
+        "tournamentHistory": [
+          {
+            "day": "2026-11-12",
+            "category": "C5",
+            "elo": 1608.0,
+            "change": -12.0,
+            "matches": 1,
+            "wins": 0,
+            "title": "Legacy",
+            "format": "pair",
+            "resultsUrl": null
+          }
+        ]
+      }
+    ]
+  },
+  "startStep": 40,
+  "aliases": {},
+  "formatWeighted": false
+}

@@ -164,26 +164,28 @@ class SpaSessionControllerIntegrationTest {
     }
 
     @Test
+    @Transactional
     void rememberMePlayerUsesSameExactSessionContract() throws Exception {
-        var player = PlayerPadel.builder()
-                .id(61L)
+        var player = players.saveAndFlush(PlayerPadel.builder()
+                .nivelJugador(Nivel.SIN_ESPECIFICAR)
+                .passwordHash("must-not-leak")
                 .nombre("Marta")
                 .apellido("López")
-                .email("marta@example.com")
+                .email("marta-" + UUID.randomUUID() + "@example.test")
                 .preferredLocale("es")
                 .telefono("+5491112345678")
                 .activo(true)
                 .emailConfirmado(true)
-                .build();
+                .build());
         var rememberMe = new RememberMeAuthenticationToken("test-key", player, player.getAuthorities());
 
         var result = mockMvc.perform(get("/api/auth/session").with(authentication(rememberMe)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.authenticated").value(true))
                 .andExpect(jsonPath("$.userType").value("PLAYER"))
-                .andExpect(jsonPath("$.id").value(61))
+                .andExpect(jsonPath("$.id").value(player.getId()))
                 .andExpect(jsonPath("$.fullName").value("Marta López"))
-                .andExpect(jsonPath("$.email").value("marta@example.com"))
+                .andExpect(jsonPath("$.email").value(player.getEmail()))
                 .andExpect(jsonPath("$.roles[0]").value("ROLE_PLAYER"))
                 .andExpect(jsonPath("$.clubId").value(nullValue()))
                 .andExpect(jsonPath("$.hasValidContact").value(true))
