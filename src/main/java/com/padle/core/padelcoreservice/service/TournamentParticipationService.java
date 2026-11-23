@@ -93,7 +93,7 @@ public class TournamentParticipationService {
                 || TelegramParticipationCoordinator.startsAt(tournament).getEpochSecond() != expectedStart) {
             throw new AccountException(HttpStatus.CONFLICT, "PARTICIPATION_RESPONSE_UNAVAILABLE");
         }
-        return answer(id, actor, Decision.CONFIRM, true);
+        return answer(id, actor, Decision.CONFIRM, false);
     }
 
     @Transactional
