@@ -15,16 +15,15 @@
     <button type="button" class="btn btn-outline" data-side-save th:text="#{playingSide.saveSide}"></button>
     <span data-side-status role="status" aria-live="polite"></span>
 </div>
-<dialog th:fragment="survey" id="playing-side-dialog" class="playing-side-dialog" aria-labelledby="playing-side-title" aria-describedby="playing-side-description" data-playing-side-survey>
+<dialog th:fragment="survey" id="playing-side-dialog" class="playing-side-dialog" aria-labelledby="playing-side-title" data-playing-side-survey>
     <header><h2 id="playing-side-title" th:text="#{playingSide.title}"></h2><button type="button" data-side-later class="playing-side-close" th:aria-label="#{playingSide.close}">×</button></header>
-    <p id="playing-side-description" th:text="#{playingSide.description}"></p>
     <form id="playing-side-answer">
-        <fieldset><legend th:text="#{playingSide.question}"></legend><p class="playing-side-hint" th:text="#{playingSide.hint}"></p>
+        <fieldset aria-labelledby="playing-side-title"><p class="playing-side-hint" th:text="#{playingSide.hint}"></p>
             <label th:each="side : ${T(com.padle.core.padelcoreservice.model.enums.PlayingSide).values()}" class="playing-side-option">
-                <input type="radio" name="playingSide" th:value="${side}" required><span><span th:text="#{${side.messageKey}}"></span><small th:if="${side.name() == 'EITHER'}" th:text="#{playingSide.eitherHint}"></small></span>
+                <input type="radio" name="playingSide" th:value="${side}" required><span><span th:text="#{${side.messageKey}}"></span></span>
             </label>
         </fieldset>
-        <div data-side-level hidden class="form-group"><label for="playing-side-level" th:text="#{playingSide.level}"></label><select id="playing-side-level" class="form-control" name="nivelJugador"><th:block th:replace="~{fragments/nivel-options :: options(null, true)}"></th:block></select></div>
+        <div data-side-level hidden class="form-group"><label for="playing-side-level" th:text="#{playingSide.level}"></label><select id="playing-side-level" class="form-control" name="nivelJugador" required disabled><option value="" selected disabled th:text="#{perfil.field.nivel.none}"></option><th:block th:replace="~{fragments/nivel-options :: options(null, false)}"></th:block></select></div>
         <p data-side-error role="alert" aria-live="assertive"></p>
         <footer><button type="button" data-side-later class="btn btn-outline" th:text="#{playingSide.later}"></button><button type="submit" class="btn btn-primary" th:text="#{playingSide.save}"></button></footer>
     </form>

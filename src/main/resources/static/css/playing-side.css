@@ -23,3 +23,4 @@
 .playing-side-dialog h2{font-size:1.25rem}
 }
 
+.playing-side-dialog [hidden]{display:none!important}

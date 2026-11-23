@@ -31,7 +31,7 @@ class PlayingSideUiIntegrationTest {
     @MockitoBean RecaptchaService captcha;
 
     @ParameterizedTest
-    @CsvSource({"ru,Справа,С какой стороны ты играешь?", "es,Derecha,¿De qué lado jugás?", "en,Right,Which side do you play on?"})
+    @CsvSource({"ru,Справа,С какой стороны ты предпочитаешь играть?", "es,Derecha,¿De qué lado preferís jugar?", "en,Right,Which side do you prefer to play on?"})
     void profileKeepsSavedAnswerAndSurveyHasNoPreselectedAnswer(String language, String side, String title) throws Exception {
         var p = players.save(PlayerPadel.builder().nombre("Fixture").apellido("Player").email(UUID.randomUUID()+"@example.test")
                 .passwordHash("unused").nivelJugador(Nivel.SIN_ESPECIFICAR).playingSide(PlayingSide.RIGHT)
@@ -41,7 +41,8 @@ class PlayingSideUiIntegrationTest {
         var options = select(response,"playingSide");
         assertThat(Pattern.compile("<option(?=[^>]*value=\"RIGHT\")(?=[^>]*selected)[^>]*>\\s*"+Pattern.quote(side)+"\\s*</option>").matcher(options).find()).isTrue();
         var dialog = response.substring(response.indexOf("id=\"playing-side-dialog\""),response.indexOf("</dialog>"));
-        assertThat(dialog).doesNotContain("checked=").contains(title);
+        assertThat(dialog).doesNotContain("checked=", "playing-side-description", "<legend").contains(title);
+        assertThat(select(response,"playing-side-level")).contains("required", "disabled", "value=\"\"").doesNotContain("SIN_ESPECIFICAR");
         assertThat(select(response,"nivelJugador")).contains("value=\"\"", "disabled", "selected");
         assertThat(response).doesNotContain("??playingSide.");
     }

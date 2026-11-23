@@ -74,6 +74,7 @@
     }});
     form.addEventListener('submit', event => {
         event.preventDefault();
+        if (!form.reportValidity()) return;
         action(async () => {
             const data = new FormData(form); const body = {playingSide:data.get('playingSide')};
             const level = data.get('nivelJugador');
@@ -86,6 +87,8 @@
     request('/visit').then(state => {
         if (!state.ask) return;
         dialog.querySelector('[data-side-level]').hidden = !state.levelMissing;
+        form.elements.nivelJugador.disabled = !state.levelMissing;
+        form.elements.nivelJugador.required = state.levelMissing;
         dialog.showModal();
     }).catch(() => { /* Опрос не мешает работе кабинета при недоступности сервера. */ });
 })();
