@@ -257,3 +257,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.84-nivel-c3.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.86-organizer-organization.yaml
+      relativeToChangelogFile: true
