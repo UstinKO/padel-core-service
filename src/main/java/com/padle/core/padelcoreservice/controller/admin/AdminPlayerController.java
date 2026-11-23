@@ -1,5 +1,7 @@
 package com.padle.core.padelcoreservice.controller.admin;
 
+import com.padle.core.padelcoreservice.model.enums.PlayingSide;
+
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.dto.PlayerResponseDto;
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
@@ -172,6 +174,14 @@ public class AdminPlayerController {
         } catch (IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("playerNameInvalid", true);
         }
+        return "redirect:/admin/players/" + id;
+    }
+
+    @PostMapping("/{id}/playing-side")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public String updatePlayingSide(@PathVariable Long id,
+            @RequestParam PlayingSide playingSide) {
+        playerService.actualizarLadoJugador(id, playingSide);
         return "redirect:/admin/players/" + id;
     }
 

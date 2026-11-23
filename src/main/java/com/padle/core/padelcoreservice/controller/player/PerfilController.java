@@ -36,7 +36,7 @@ public class PerfilController {
 
         log.info("Viendo perfil de jugador: {}", player.getEmail());
 
-        model.addAttribute("player", player);
+        model.addAttribute("player", playerService.getPlayerById(player.getId()).orElseThrow());
         return "players/perfil";
     }
 

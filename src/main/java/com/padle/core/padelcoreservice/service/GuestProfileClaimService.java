@@ -97,6 +97,7 @@ public class GuestProfileClaimService {
         var differences = new ArrayList<String>();
         if (guest != null) {
             if (differentPhone(guest, account)) differences.add("PHONE_DIFFERS");
+            if (sideConflict(guest, account)) differences.add("PLAYING_SIDE_DIFFERS");
             if (guest.getNivelJugador() != null && account.getNivelJugador() != guest.getNivelJugador()) {
                 differences.add("LEVEL_DIFFERS");
             }
@@ -113,7 +114,7 @@ public class GuestProfileClaimService {
         var counts = history.counts(player.getId());
         return new Profile(player.getId(), player.getNombreCompleto(), player.getEmail(), player.getTelefono(),
                 player.getTelegramUsername(), player.getNivelJugador() == null ? null : player.getNivelJugador().name(),
-                counts.registrations(), counts.results());
+                counts.registrations(), counts.results(), player.getPlayingSide());
     }
 
     @Transactional
@@ -156,7 +157,7 @@ public class GuestProfileClaimService {
         if (differentPhone(profiles.guest(), profiles.account()) && !input.replacePhone()) {
             throw needDetails(reference, ownerId, "GUEST_CLAIM_ACCOUNT_PHONE_DIFFERS");
         }
-        merge(profiles);
+        merge(profiles, input.sideChoice());
         claims.approve(reference, guestId, request.accountId(), ownerId, method, false);
         return new Result(request.accountId());
     }
@@ -180,7 +181,7 @@ public class GuestProfileClaimService {
         if (differentPhone(pair.guest(), pair.account()) && !input.replacePhone()) {
             throw conflict("GUEST_CLAIM_ACCOUNT_PHONE_DIFFERS");
         }
-        merge(pair);
+        merge(pair, input.sideChoice());
         if (openClaim.isPresent()) {
             claims.approve(openClaim.get().reference(), input.guestId(), input.accountId(), ownerId,
                     input.verificationMethod(), true);
@@ -232,14 +233,23 @@ public class GuestProfileClaimService {
                         .orElseThrow(GuestProfileClaimService::missing));
     }
 
-    private void merge(ProfilePair pair) {
+    private void merge(ProfilePair pair, SideChoice sideChoice) {
         var guest = pair.guest();
         var account = pair.account();
+        if (sideConflict(guest, account) && sideChoice == null) throw conflict("GUEST_CLAIM_PLAYING_SIDE_CONFLICT");
+        if (account.getPlayingSide() == null || (sideConflict(guest, account) && sideChoice == SideChoice.GUEST)) {
+            account.setPlayingSide(guest.getPlayingSide());
+        }
         history.transfer(guest.getId(), account.getId(), account.getEmail());
         var phone = guest.getTelefono();
         retireGuest(guest);
         players.flush(); // Освобождаем уникальный контакт гостя до записи его основному аккаунту.
         account.setTelefono(phone);
+    }
+
+    private boolean sideConflict(PlayerPadel guest, PlayerPadel account) {
+        return guest.getPlayingSide() != null && account.getPlayingSide() != null
+                && guest.getPlayingSide() != account.getPlayingSide();
     }
 
     private boolean differentPhone(PlayerPadel guest, PlayerPadel account) {

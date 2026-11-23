@@ -8,6 +8,8 @@ import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import com.padle.core.padelcoreservice.repository.PaymentRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
 import org.junit.jupiter.api.Test;
+import org.mapstruct.factory.Mappers;
+import com.padle.core.padelcoreservice.mapper.PaymentMapper;
 
 import java.util.List;
 
@@ -24,7 +26,7 @@ class PaymentServiceReserveTest {
     private final PaymentRepository paymentRepository = mock(PaymentRepository.class);
 
     private final PaymentService paymentService = new PaymentService(
-            paymentRepository, registrationRepository, null, null, null);
+            paymentRepository, registrationRepository, Mappers.getMapper(PaymentMapper.class), null, null);
 
     @Test
     void getPaymentManagementData_incluyeParejaEnReservaConFlagIsReserve() {

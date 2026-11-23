@@ -1,5 +1,7 @@
 package com.padle.core.padelcoreservice.dto;
 
+import com.padle.core.padelcoreservice.model.enums.PlayingSide;
+
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -15,14 +17,18 @@ public final class SoloRoster {
     public enum Kind { SEARCH, ADD_LATER }
     public record PlayerInput(@Positive Long id, @Size(max = 100) String firstName,
                               @Size(max = 100) String lastName, @Size(max = 30) String phone,
-                              @Size(max = 33) String telegram) {}
+                              @Size(max = 33) String telegram, PlayingSide playingSide) {
+        public PlayerInput(Long id, String firstName, String lastName, String phone, String telegram) {
+            this(id, firstName, lastName, phone, telegram, null);
+        }
+    }
     public record Command(@NotNull UUID requestId, @NotNull Action action, @Positive Long registrationId,
                           @Positive Long partnerRegistrationId, @Valid PlayerInput player, Kind kind,
                           boolean overrideLevel, @Size(max = 64) String expectedState) {}
     public record Money(Long id, BigDecimal amount, String currency, String status, String method,
                         String transactionId, String notes) {}
     public record Participant(Long registrationId, Long playerId, String name, String level, String status,
-                              boolean reserve, boolean attended, List<Money> payments) {}
+                              boolean reserve, boolean attended, List<Money> payments, PlayingSide playingSide) {}
     public record Preview(String state, List<Participant> participants, String resultingStatus,
                           boolean levelOverrideRequired, Long existingRegistrationId, String existingPair) {}
     public record Result(UUID requestId, Long registrationId, Long partnerRegistrationId,
@@ -31,5 +37,5 @@ public final class SoloRoster {
                           String before, String after) {}
     public record Board(List<Participant> singles, List<Participant> cancelled, List<History> history) {}
     public record Found(Long playerId, String name, String level, Long registrationId,
-                        boolean single, String pair, String status) {}
+                        boolean single, String pair, String status, PlayingSide playingSide) {}
 }

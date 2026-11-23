@@ -1,5 +1,9 @@
 package com.padle.core.padelcoreservice.dto.americano;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import com.padle.core.padelcoreservice.model.enums.PlayingSide;
+
 import com.padle.core.padelcoreservice.dto.AdditionalPointsDto;
 import com.padle.core.padelcoreservice.model.enums.AmericanoPlayerStatus;
 import lombok.AllArgsConstructor;
@@ -44,4 +48,7 @@ public class AmericanoPlayerDto {
     private Boolean isActive;
     private Long matchPoints;
     private AdditionalPointsDto additionalPoints;
+
+    @JsonIgnore
+    private PlayingSide playerPlayingSide;
 }

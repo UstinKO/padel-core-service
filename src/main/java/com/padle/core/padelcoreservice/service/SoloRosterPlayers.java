@@ -53,13 +53,14 @@ public class SoloRosterPlayers {
         return matches.stream().findFirst().or(() -> byTelegram).orElseGet(() -> PlayerPadel.builder()
                 .nombre(input.firstName().strip()).apellido(input.lastName().strip())
                 .telefono(input.phone().strip()).telegramUsername(telegram.isBlank() ? null : telegram)
-                .nivelJugador(Nivel.SIN_ESPECIFICAR).activo(true).build());
+                .nivelJugador(Nivel.SIN_ESPECIFICAR).playingSide(input.playingSide()).activo(true).build());
     }
 
     public PlayerPadel materialize(PlayerPadel player) {
         if (player.getId() != null) return player;
         var guest = service.resolverJugadorPorTelefonoOCrearInvitado(player.getNombre(), player.getApellido(), player.getTelefono());
         guest.setTelegramUsername(player.getTelegramUsername());
+        guest.setPlayingSide(player.getPlayingSide());
         return players.save(guest);
     }
 

@@ -1,6 +1,9 @@
 package com.padle.core.padelcoreservice.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import com.padle.core.padelcoreservice.model.enums.PlayingSide;
+
 import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import lombok.Data;
@@ -48,4 +51,10 @@ public class TournamentRegistrationDto {
     private Boolean partnerRegistered;
     private String partnerRegistrationToken;
     private LocalDateTime partnerTokenExpiry;
+
+    @JsonIgnore
+    private PlayingSide playerPlayingSide;
+
+    @JsonIgnore
+    private PlayingSide partnerPlayingSide;
 }

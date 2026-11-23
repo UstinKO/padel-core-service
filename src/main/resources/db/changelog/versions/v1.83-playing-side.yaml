@@ -1,0 +1,16 @@
+databaseChangeLog:
+  - changeSet:
+      id: player-playing-side
+      author: codex
+      changes:
+        - sql:
+            sql: |
+              ALTER TABLE player_padel_db ADD COLUMN playing_side varchar(8);
+              ALTER TABLE player_padel_db ADD COLUMN playing_side_prompt_after timestamptz;
+              ALTER TABLE player_padel_db ADD CONSTRAINT player_playing_side_check
+                CHECK (playing_side IS NULL OR playing_side IN ('LEFT', 'RIGHT', 'EITHER'));
+      rollback:
+        - sql:
+            sql: |
+              ALTER TABLE player_padel_db DROP COLUMN playing_side_prompt_after;
+              ALTER TABLE player_padel_db DROP COLUMN playing_side;

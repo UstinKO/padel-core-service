@@ -65,7 +65,7 @@ public class SoloRosterService {
                     var row = active(rows, player.getId());
                     return new Found(player.getId(), player.getNombreCompleto(), player.getNivelJugador().name(),
                             row.map(TournamentRegistration::getId).orElse(null), row.map(SoloRosterService::single).orElse(false),
-                            row.map(this::pairName).orElse(""), row.map(r -> r.getStatus().name()).orElse(""));
+                            row.map(this::pairName).orElse(""), row.map(r -> r.getStatus().name()).orElse(""), player.getPlayingSide());
                 }).toList();
     }
 
@@ -269,11 +269,11 @@ public class SoloRosterService {
                 .filter(payment -> Boolean.TRUE.equals(payment.getIsActive()))
                 .filter(payment -> PaymentService.isOwnPayment(payment, row))
                 .map(payment -> new Money(payment.getId(), payment.getAmount(), payment.getCurrency(), payment.getStatus().name(),
-                        payment.getPaymentMethod() == null ? "" : payment.getPaymentMethod().name(), payment.getTransactionId(), payment.getNotes())).toList());
+                        payment.getPaymentMethod() == null ? "" : payment.getPaymentMethod().name(), payment.getTransactionId(), payment.getNotes())).toList(), row.getPlayer().getPlayingSide());
     }
 
     private Participant candidate(PlayerPadel player) {
-        return new Participant(null, player.getId(), player.getNombreCompleto(), player.getNivelJugador().name(), "NEW", true, false, List.of());
+        return new Participant(null, player.getId(), player.getNombreCompleto(), player.getNivelJugador().name(), "NEW", true, false, List.of(), player.getPlayingSide());
     }
 
     private TournamentRegistration requireSingle(List<TournamentRegistration> rows, Long id) {

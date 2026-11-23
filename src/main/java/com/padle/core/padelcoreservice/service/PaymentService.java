@@ -244,6 +244,7 @@ public class PaymentService {
                     dto.setSolo(reg.getTournament().getModalidad() == Modalidad.DOBLES
                             && SoloRosterService.single(reg));
                     dto.setRegistrationStatus(reg.getStatus().name());
+                    paymentMapper.participantSide(reg.getPlayer(), dto);
                     dto.setPlayerLevel(reg.getPlayer().getNivelJugador() == null ? "SIN_ESPECIFICAR" : reg.getPlayer().getNivelJugador().name());
 
                     // Платёж — без маркера PARTNER_PAYMENT (у каждого своя запись)

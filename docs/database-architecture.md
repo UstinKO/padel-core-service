@@ -1,7 +1,7 @@
 # Архитектура базы данных — padel-core-service
 
 > **СУБД:** PostgreSQL 15  
-> **Версия схемы:** v1.82
+> **Версия схемы:** v1.83
 > **Миграции:** Liquibase (YAML), файлы в `src/main/resources/db/changelog/versions/`  
 > **ddl-auto:** `none` — схема управляется только через Liquibase
 
@@ -127,6 +127,8 @@ owners_db ───────────────────────�
 | `provider` | `VARCHAR(50)` | NULL | — | OAuth2-провайдер (`google`) |
 | `password_changed_at` | `TIMESTAMP` | NULL | — | Момент последней смены пароля |
 | `nivel_jugador` | `VARCHAR(20)` | NOT NULL | `SIN_ESPECIFICAR` | Уровень игрока (enum `Nivel`; NOT NULL с v1.44) |
+| `playing_side` | `VARCHAR(8)` | NULL | — | LEFT/RIGHT/EITHER, отсутствие ответа отдельно |
+| `playing_side_prompt_after` | `TIMESTAMPTZ` | NULL | — | Следующий показ опроса для аккаунта |
 | `preferred_locale` | `VARCHAR(5)` | NULL | `es` | Язык писем (`es`/`ru`/`en`) |
 
 **Индексы / ограничения:**
@@ -1044,3 +1046,7 @@ PK `(registration_id, version)` исключает два факта одног�
 ### Одиночные заявки и действия состава
 
 `solo_roster_operations_db`: составной ключ `tournament_id`, `request_id`; `actor_id`, `action`, `request_hash`, `result`, `before_state`, `after_state`, `created_at`. Журнал и постоянная защита повторного запроса; удаляется вместе с турниром. `tournament_registrations_db.partner_attended` — отдельная явка текстового гостевого партнёра, false по умолчанию; существующие отметки основного игрока не копируются.
+
+## Предпочтительная сторона
+
+`player_padel_db.playing_side` — nullable varchar(8), CHECK LEFT/RIGHT/EITHER; NULL означает отсутствие ответа. `playing_side_prompt_after` — nullable timestamptz, следующая допустимая дата показа опроса для аккаунта. Старые профили не заполняются автоматически.

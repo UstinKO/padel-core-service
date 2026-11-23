@@ -21,6 +21,7 @@ public interface PlayerMapper {
     @Mapping(target = "oauth2User", ignore = true)
     @Mapping(target = "provider", ignore = true)
     @Mapping(target = "passwordChangedAt", ignore = true)
+    @Mapping(target = "playingSidePromptAfter", ignore = true)
     PlayerPadel registroRequestToEntity(RegistroRequestDto request);
 
     @Mapping(target = "nombreCompleto", expression = "java(player.getNombreCompleto())")
