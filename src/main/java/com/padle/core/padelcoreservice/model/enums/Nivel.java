@@ -1,11 +1,13 @@
 package com.padle.core.padelcoreservice.model.enums;
 
 import lombok.Getter;
+import com.fasterxml.jackson.annotation.JsonCreator;
 
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 @Getter
@@ -17,6 +19,7 @@ public enum Nivel {
     C6("6", GenderFormat.MASCULINO),
     C5("5", GenderFormat.MASCULINO),
     C4("4", GenderFormat.MASCULINO),
+    C3("3", GenderFormat.MASCULINO),
 
     // Masculino — соседние категории
     C9_C8("C9/C8", GenderFormat.MASCULINO),
@@ -24,6 +27,7 @@ public enum Nivel {
     C7_C6("C7/C6", GenderFormat.MASCULINO),
     C6_C5("C6/C5", GenderFormat.MASCULINO),
     C5_C4("C5/C4", GenderFormat.MASCULINO),
+    C4_C3("C4/C3", GenderFormat.MASCULINO),
 
     // Femenino — individual
     D9("D9", GenderFormat.FEMENINO),
@@ -114,7 +118,7 @@ public enum Nivel {
             return null;
         }
         try {
-            return valueOf(value);
+            return fromValue(value);
         } catch (IllegalArgumentException e) {
             return null;
         }
@@ -123,7 +127,19 @@ public enum Nivel {
     // Уровни, реально применимые к игроку (players/perfil.html, admin/players/details.html).
     // Остальные значения Nivel — категории турниров (составные/комбинированные), их
     // нельзя присваивать игроку напрямую.
-    private static final Set<Nivel> PLAYER_LEVELS = EnumSet.of(C9, C8, C7, C6, C5, D9, D7, D8, D6, C4);
+    private static final Set<Nivel> PLAYER_LEVELS = EnumSet.of(C9, C8, C7, C6, C5, D9, D7, D8, D6, C4, C3);
+
+    /** Приводит ввод API, форм и импорта к единственному внутреннему значению категории. */
+    @JsonCreator
+    public static Nivel fromValue(String value) {
+        String canonical = value.strip().toUpperCase(Locale.ROOT).replace('С', 'C')
+                .replaceAll("\\s*[/–-]\\s*", "_");
+        return valueOf("C3_C4".equals(canonical) ? "C4_C3" : canonical);
+    }
+
+    public static List<Nivel> playerLevels() {
+        return Arrays.stream(values()).filter(PLAYER_LEVELS::contains).toList();
+    }
 
     public static boolean isPlayerLevel(Nivel nivel) {
         return nivel != null && PLAYER_LEVELS.contains(nivel);

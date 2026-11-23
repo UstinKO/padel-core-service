@@ -6,6 +6,8 @@ import com.padle.core.padelcoreservice.repository.*;
 import com.padle.core.padelcoreservice.service.*;
 import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2User;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -43,6 +45,19 @@ class AccountIntegrationTest {
     }
     private String update(PlayerPadel p) {
         return "{\"nombre\":\"Changed\",\"apellido\":\"Garcia\",\"email\":\""+p.getEmail()+"\",\"telefono\":\"\",\"telegramUsername\":\""+p.getTelegramUsername()+"\",\"nivelJugador\":\"C7\",\"preferredLocale\":\"ru\"}";
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"C3", "С3"})
+    void signupKeepsTheCanonicalNewLevel(String level) throws Exception {
+        when(captcha.verify(null)).thenReturn(true);
+        String address = UUID.randomUUID()+"@gmail.com";
+        mvc.perform(post("/players/registro").with(csrf())
+                        .param("nombre", "Учебный").param("apellido", "Участник")
+                        .param("email", address).param("nivelJugador", level).param("telefono", "+5491199994567")
+                        .param("password", "Fixture-Password1!").param("confirmPassword", "Fixture-Password1!"))
+                .andExpect(status().is3xxRedirection());
+        assertThat(players.findByEmail(address)).get().extracting(PlayerPadel::getNivelJugador).isEqualTo(Nivel.C3);
     }
     @Test
     void webSignupRequiresPhoneEvenWhenTelegramIsPresent() throws Exception {

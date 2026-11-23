@@ -74,6 +74,8 @@ final class PreviewEloReplay {
 
         int level() {
             return switch (category == null ? "" : category) {
+                case "C3" -> 3;
+                case "C4" -> 4;
                 case "C5" -> 5;
                 case "C6" -> 6;
                 case "C7" -> 7;
@@ -91,6 +93,7 @@ final class PreviewEloReplay {
                 case "C7_C6", "C7/C6" -> "C7";
                 case "C6_C5", "C6/C5" -> "C6";
                 case "C5_C4", "C5/C4" -> "C5";
+                case "C4_C3", "C4/C3" -> "C4";
                 case "D9_D8", "D9/D8" -> "D9";
                 case "D7_D8", "D7/D8" -> "D8";
                 case "D7_D6", "D7/D6" -> "D7";
@@ -340,7 +343,7 @@ final class PreviewEloReplay {
         if (currentLevel == NO_CATEGORY) {
             return List.of();
         }
-        return IntStream.iterate(currentLevel - 1, level -> level >= 5, level -> level - 1)
+        return IntStream.iterate(currentLevel - 1, level -> level >= 3, level -> level - 1)
                 .filter(level -> level == currentLevel - 1 || player.levels.containsKey(level))
                 .mapToObj(level -> new PreviewEloRanking.CategoryProgress("C" + level,
                         progress(player.levels.getOrDefault(level, new Record())), player.eligibleFromOneEvent(level)))

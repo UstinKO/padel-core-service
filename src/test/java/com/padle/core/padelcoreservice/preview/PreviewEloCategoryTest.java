@@ -28,7 +28,7 @@ class PreviewEloCategoryTest {
 
     @ParameterizedTest
     @CsvSource({"C9_C8,C9,1472", "C8_C7,C8,1512", "C7_C6,C7,1552", "C6_C5,C6,1592",
-            "C5_C4,C5,1632", "D9_D8,D9,1432", "D7_D8,D8,1472", "D7_D6,D7,1512"})
+            "C5_C4,C5,1632", "C4_C3,C4,1672", "D9_D8,D9,1432", "D7_D8,D8,1472", "D7_D6,D7,1512"})
     void rangeAndSingleCategoryGiveIdenticalStartProgressAndConfirmation(String range, String single, int elo) {
         for (var label : List.of(range, range.replace('_', '/'))) {
             var first = event(label, 1, 1);
@@ -54,5 +54,17 @@ class PreviewEloCategoryTest {
         assertThat(event.category()).isEqualTo(category);
         var result = replay.replay(day, names, List.of(event));
         assertThat(result.rows()).allMatch(row -> row.category().equals("—") && !row.confirmed());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"C3,1712", "C4,1672"})
+    void strongCategoriesUseTheSameFormulaAndConfirmationRules(String category, int expectedElo) {
+        var first = replay.replay(day, names, List.of(event(category, 1, 1)));
+        assertThat(first.rows().get(0).category()).isEqualTo(category);
+        assertThat(first.rows().get(0).elo()).isEqualByComparingTo(BigDecimal.valueOf(expectedElo));
+        var confirmed = replay.replay(day, names, List.of(event(category, 1, 3), event(category, 2, 3)));
+        assertThat(confirmed.rows().get(0).confirmed()).isTrue();
+        assertThat(confirmed.rows().get(0).strongerCategories()).extracting(PreviewEloRanking.CategoryProgress::category)
+                .containsExactly(category.equals("C3") ? new String[]{} : new String[]{"C3"});
     }
 }

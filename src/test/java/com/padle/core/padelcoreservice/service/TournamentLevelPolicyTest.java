@@ -22,6 +22,7 @@ class TournamentLevelPolicyTest {
             "C7, C8", "C7, C7", "C7, C6",
             "C6, C7", "C6, C6", "C6, C5",
             "C4, C5", "C4, C4",
+            "C3, C3", "C3, C4", "C4, C3",
             "D9, D9", "D9, D8",
             "D6, D7", "D6, D6",
     })
@@ -37,6 +38,7 @@ class TournamentLevelPolicyTest {
             "C8, C6", "C8, C5",
             "C7, C9", "C7, C5",
             "C6, C8", "C6, C4",
+            "C3, C5", "C5, C3", "C3, D6", "D6, C3",
     })
     void masDeUnaCategoriaDeDiferencia_bloqueaConMensajeDeNivelLejano(Nivel jugador, Nivel categoria) {
         TournamentLevelPolicy.Result result =
@@ -58,13 +60,13 @@ class TournamentLevelPolicyTest {
     }
 
     @Test
-    void jugadorExtremoC4_soloTieneDosCategoriasPermitidas() {
+    void c4IncludesItsNewStrongerNeighbour() {
         TournamentLevelPolicy.Result result =
                 TournamentLevelPolicy.evaluate(TournamentType.AMERICANO, Nivel.C6, Nivel.C4);
 
         // Расчётный уровень C4 (4) слишком далёк от любой женской категории (D6 — самая
         // слабая, допустимая для турниров, расчёт 7) — список остаётся только мужским.
-        assertThat(result.allowedLevels()).containsExactly(Nivel.C5, Nivel.C4);
+        assertThat(result.allowedLevels()).containsExactly(Nivel.C5, Nivel.C4, Nivel.C3);
     }
 
     @Test
@@ -141,7 +143,7 @@ class TournamentLevelPolicyTest {
 
     @ParameterizedTest
     @EnumSource(value = Nivel.class, names = {"TODOS", "PRINCIPIANTES", "SIN_ESPECIFICAR",
-            "C9_C8", "C7_C6", "D7_D8", "D5_D4", "SUMA_13", "SUMA_16", "D5", "D4"})
+            "C9_C8", "C7_C6", "C4_C3", "D7_D8", "D5_D4", "SUMA_13", "SUMA_16", "D5", "D4"})
     void categoriasNoSimples_noAplicanElChequeoIndependientementeDelNivelDelJugador(Nivel categoria) {
         // Ни одна из этих категорий не Nivel.isPlayerLevel — проверка не применяется даже
         // для игрока без указанного уровня (SUMA_*, диапазоны, TODOS, PRINCIPIANTES и D5/D4
