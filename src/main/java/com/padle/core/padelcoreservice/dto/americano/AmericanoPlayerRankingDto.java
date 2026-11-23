@@ -1,5 +1,9 @@
 package com.padle.core.padelcoreservice.dto.americano;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import com.padle.core.padelcoreservice.model.enums.PlayingSide;
+
 import com.padle.core.padelcoreservice.dto.AdditionalPointsDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -35,4 +39,7 @@ public class AmericanoPlayerRankingDto {
     private Long totalScore;        // набранные очки (главный критерий режима "по очкам")
     private Long matchPoints;
     private AdditionalPointsDto additionalPoints;
+
+    @JsonIgnore
+    private PlayingSide playerPlayingSide;
 }

@@ -1,5 +1,9 @@
 package com.padle.core.padelcoreservice.dto.americano;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import com.padle.core.padelcoreservice.model.enums.PlayingSide;
+
 import lombok.Data;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
@@ -79,4 +83,10 @@ public class AmericanoTeamDto {
     private Boolean hasPaid;
     private Boolean attended;
     private String adminComment;
+
+    @JsonIgnore
+    private PlayingSide player1PlayingSide;
+
+    @JsonIgnore
+    private PlayingSide player2PlayingSide;
 }

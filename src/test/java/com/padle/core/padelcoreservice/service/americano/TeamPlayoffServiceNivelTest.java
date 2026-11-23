@@ -15,6 +15,8 @@ import com.padle.core.padelcoreservice.service.PlayerService;
 import com.padle.core.padelcoreservice.service.SoloRosterTeams;
 import com.padle.core.padelcoreservice.service.WebSocketService;
 import org.junit.jupiter.api.Test;
+import org.mapstruct.factory.Mappers;
+import com.padle.core.padelcoreservice.mapper.TeamPlayingSideMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -27,6 +29,7 @@ import static org.mockito.Mockito.mock;
 class TeamPlayoffServiceNivelTest {
 
     private final TeamPlayoffService service = new TeamPlayoffService(
+            Mappers.getMapper(TeamPlayingSideMapper.class),
             mock(TournamentRepository.class),
             mock(AmericanoTeamRepository.class),
             mock(AmericanoRoundRepository.class),

@@ -20,6 +20,8 @@ import com.padle.core.padelcoreservice.service.SoloRosterTeams;
 import com.padle.core.padelcoreservice.service.WebSocketService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mapstruct.factory.Mappers;
+import com.padle.core.padelcoreservice.mapper.TeamPlayingSideMapper;
 
 import java.util.List;
 import java.util.Optional;
@@ -44,6 +46,7 @@ class TeamPlayoffServiceNoShowTest {
     private final TournamentRepository tournamentRepository = mock(TournamentRepository.class);
 
     private final TeamPlayoffService service = new TeamPlayoffService(
+            Mappers.getMapper(TeamPlayingSideMapper.class),
             tournamentRepository,
             teamRepository,
             roundRepository,

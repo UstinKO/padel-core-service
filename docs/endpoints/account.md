@@ -61,3 +61,14 @@ destination — только проверенный same-origin относите
 - `PUT /api/players/me/events/{registrationId}/contact-visibility` — собственное согласие на показ контактов в списке поиска партнёра (`version`, `shareContacts`). Обновление разрешено в доступном поиске партнёра. Оба изменения возвращают 204, при недоступном действии или изменении версии — 409. Чужая или неизвестная заявка возвращает 404.
 
 Маршруты требуют роль PLAYER. Ответы помечены `Cache-Control: no-store`. Для запросов из браузера действует CSRF. Подтверждение участия, отказ после перевода из резерва и полная отмена пары используют существующие маршруты и условия. Старая выдача для мобильного приложения сохраняет свой формат.
+
+## Предпочтительная сторона
+
+| Метод | URL | Доступ | Действие |
+|---|---|---|---|
+| PATCH | `/api/players/me/playing-side` | Игрок/Google + CSRF | Answer: playingSide LEFT/RIGHT/EITHER, необязательный nivelJugador. Только свой активный профиль; side/level сохраняются независимо. |
+| POST | `/api/players/me/playing-side/visit` | Игрок/Google + CSRF | State: playingSide, nivelJugador, ask, levelMissing. Показ резервируется в БД на 24 часа под блокировкой профиля. Вызывается только в кабинете. |
+| POST | `/api/players/me/playing-side/defer` | Игрок/Google + CSRF | Отсрочка с момента закрытия на 24 часа. |
+| POST | `/admin/players/{id}/playing-side` | SUPER_ADMIN + CSRF | Изменение стороны в рамках существующих прав редактирования профиля. |
+
+Account Profile и регистрация поддерживают playingSide. Оплаты и scoped SoloRoster возвращают сторону каждого игрока; создание гостя допускает отсутствие ответа и не перезаписывает существующий профиль. При объединении профилей ответ входит в сравнение, PLAYING_SIDE_DIFFERS требует sideChoice ACCOUNT/GUEST, иначе GUEST_CLAIM_PLAYING_SIDE_CONFLICT до переноса. Внутренние legacy DTO-поля стороны не сериализуются в общий JSON; PublicLive Participant маскирует поле при выключенном mostrarNivel.

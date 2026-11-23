@@ -251,3 +251,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.82-solo-roster.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.83-playing-side.yaml
+      relativeToChangelogFile: true

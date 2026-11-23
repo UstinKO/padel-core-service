@@ -1,5 +1,7 @@
 package com.padle.core.padelcoreservice.controller.test;
 
+import com.padle.core.padelcoreservice.model.enums.PlayingSide;
+
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
@@ -1175,7 +1177,12 @@ public class TestTournamentController {
         return ResponseEntity.ok(result);
     }
 
-    public record ManualPlayer(Long id, String nombre, String apellido, String telefono) {}
+    public record ManualPlayer(Long id, String nombre, String apellido, String telefono,
+                               PlayingSide playingSide) {
+        public ManualPlayer(Long id, String nombre, String apellido, String telefono) {
+            this(id, nombre, apellido, telefono, null);
+        }
+    }
     public record ManualPair(ManualPlayer player1, ManualPlayer player2) {}
     public record SelectedPair(List<Long> playerIds) {}
 
@@ -1438,8 +1445,8 @@ public class TestTournamentController {
         String email = "guest." + UUID.randomUUID() + "@1padel.guest";
         try (PreparedStatement statement = conn.prepareStatement("""
                 INSERT INTO player_padel_db (nombre, apellido, email, telefono, password_hash,
-                    activo, email_confirmado, fecha_registro)
-                VALUES (?, ?, ?, NULLIF(?, ''), ?, true, true, NOW())
+                    activo, email_confirmado, fecha_registro, playing_side)
+                VALUES (?, ?, ?, NULLIF(?, ''), ?, true, true, NOW(), ?)
                 RETURNING id
                 """)) {
             statement.setString(1, player.nombre().strip());
@@ -1447,6 +1454,7 @@ public class TestTournamentController {
             statement.setString(3, email);
             statement.setString(4, phone);
             statement.setString(5, passwordEncoder.encode(UUID.randomUUID().toString()));
+            statement.setString(6, player.playingSide() == null ? null : player.playingSide().name());
             try (ResultSet row = statement.executeQuery()) {
                 if (row.next()) return row.getLong(1);
             }

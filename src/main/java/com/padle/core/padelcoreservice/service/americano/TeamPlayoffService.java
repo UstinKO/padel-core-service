@@ -1,5 +1,7 @@
 package com.padle.core.padelcoreservice.service.americano;
 
+import com.padle.core.padelcoreservice.mapper.TeamPlayingSideMapper;
+
 import com.padle.core.padelcoreservice.dto.americano.AmericanoMatchDto;
 import com.padle.core.padelcoreservice.service.americano.EarlyPlayoffSeeding.Fixture;
 import com.padle.core.padelcoreservice.service.americano.EarlyPlayoffSeeding.Pair;
@@ -54,6 +56,7 @@ public class TeamPlayoffService {
     /** Совпадает с DEFAULT в колонке americano_rounds_db.courts (v1.23) — используется, когда раунд создаётся лениво без явного числа кортов. */
     private static final int DEFAULT_COURTS = 2;
 
+    private final TeamPlayingSideMapper playingSideMapper;
     private final TournamentRepository tournamentRepository;
     private final AmericanoTeamRepository teamRepository;
     private final AmericanoRoundRepository roundRepository;
@@ -2747,6 +2750,7 @@ public class TeamPlayoffService {
 
     public AmericanoTeamDto toDto(AmericanoTeam t) {
         AmericanoTeamDto dto = new AmericanoTeamDto();
+        playingSideMapper.fill(t, dto);
         dto.setId(t.getId());
         dto.setTournamentId(t.getTournament().getId());
         dto.setTeamNumber(t.getTeamNumber());

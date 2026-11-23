@@ -1,5 +1,7 @@
 package com.padle.core.padelcoreservice.dto;
 
+import com.padle.core.padelcoreservice.model.enums.PlayingSide;
+
 import com.padle.core.padelcoreservice.validation.NotDisposableEmail;
 import com.padle.core.padelcoreservice.validation.ValidDomain;
 import jakarta.validation.constraints.Email;
@@ -20,13 +22,22 @@ public final class GuestProfileClaimDtos {
     public enum Status { PENDING, NEEDS_DETAILS, MERGED, REJECTED }
     public enum Verification { WHATSAPP, IN_PERSON, OTHER }
     public enum Decision { NEEDS_DETAILS, REJECTED }
+    public enum SideChoice { ACCOUNT, GUEST }
 
     public record Approval(@Size(max = 32) String whatsappSenderPhone, Boolean verified,
-                           Verification verificationMethod, @Positive Long guestId, boolean replacePhone) {}
+                           Verification verificationMethod, @Positive Long guestId, boolean replacePhone, SideChoice sideChoice) {
+        public Approval(String phone, Boolean verified, Verification method, Long guestId, boolean replacePhone) {
+            this(phone, verified, method, guestId, replacePhone, null);
+        }
+    }
 
     public record ManualMerge(@Positive long guestId, @Positive long accountId, @NotNull Boolean verified,
                               @NotNull Verification verificationMethod, @Size(max = 32) String whatsappSenderPhone,
-                              boolean replacePhone) {}
+                              boolean replacePhone, SideChoice sideChoice) {
+        public ManualMerge(long guestId, long accountId, Boolean verified, Verification method, String phone, boolean replacePhone) {
+            this(guestId, accountId, verified, method, phone, replacePhone, null);
+        }
+    }
 
     public record ReviewDecision(@NotNull Decision decision) {}
 
@@ -45,7 +56,7 @@ public final class GuestProfileClaimDtos {
     public record ProfileChoice(long id, String name) {}
 
     public record Profile(long id, String name, String email, String phone, String telegram, String level,
-                          long registrations, long results) {}
+                          long registrations, long results, PlayingSide playingSide) {}
 
     public record Review(long accountId, String accountEmail, boolean approved, long number, Status status,
                          String submittedPhone, Profile account, Profile guest, List<String> conflicts,

@@ -30,6 +30,8 @@ public interface TournamentRegistrationMapper {
     @Mapping(target = "partnerRegistered", expression = "java(registration.getPartner() != null)")
     @Mapping(source = "shareContacts", target = "shareContacts")
     @Mapping(source = "pairableSolo", target = "pairableSolo")
+    @Mapping(source = "player.playingSide", target = "playerPlayingSide")
+    @Mapping(source = "partner.playingSide", target = "partnerPlayingSide")
     TournamentRegistrationDto toDto(TournamentRegistration registration);
 
     TournamentRegistration toEntity(TournamentRegistrationDto dto);

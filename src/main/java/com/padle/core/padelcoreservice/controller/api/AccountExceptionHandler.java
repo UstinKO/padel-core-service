@@ -20,7 +20,7 @@ import java.util.Locale;
 
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @RestControllerAdvice(assignableTypes = {AccountController.class, PublicAccountConfigController.class, GuestProfileClaimController.class, ParticipationController.class,
-        PlayerEventsController.class})
+        PlayerEventsController.class, PlayingSideController.class})
 @RequiredArgsConstructor
 public class AccountExceptionHandler {
     private final AccountResponses responses;

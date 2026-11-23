@@ -1,5 +1,7 @@
 package com.padle.core.padelcoreservice.service.americano;
 
+import com.padle.core.padelcoreservice.mapper.TeamPlayingSideMapper;
+
 import com.padle.core.padelcoreservice.dto.americano.AmericanoTeamDto;
 import com.padle.core.padelcoreservice.dto.americano.TeamAmericanoConfigDto;
 import com.padle.core.padelcoreservice.dto.americano.TeamAmericanoRankingDto;
@@ -39,6 +41,7 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class TeamAmericanoService {
 
+    private final TeamPlayingSideMapper playingSideMapper;
     private final TournamentRepository tournamentRepository;
     private final TournamentRegistrationRepository registrationRepository;
     private final AmericanoTeamRepository teamRepository;
@@ -678,6 +681,7 @@ public class TeamAmericanoService {
 
     private AmericanoTeamDto toDto(AmericanoTeam t) {
         AmericanoTeamDto dto = new AmericanoTeamDto();
+        playingSideMapper.fill(t, dto);
         dto.setId(t.getId());
         dto.setTournamentId(t.getTournament().getId());
         dto.setTeamNumber(t.getTeamNumber());
