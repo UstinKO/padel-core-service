@@ -31,7 +31,7 @@ class PreviewEloLiveEvents {
                    m.id AS match_id, r.round_number AS batch, false AS final_match,
                    m.winners_score AS left_score, m.losers_score AS right_score,
                    m.winner1_id AS a, m.winner2_id AS b, m.loser1_id AS c, m.loser2_id AS d,
-                   NULL::bigint AS qualification_id
+                   NULL::bigint AS qualification_id, false AS round_robin
               FROM king_of_court_match_result_db m
               JOIN king_of_court_court_db c ON c.id=m.court_id
               JOIN king_of_court_round_db r ON r.id=c.round_id
@@ -41,27 +41,36 @@ class PreviewEloLiveEvents {
                AND t.is_active AND t.estado <> 'CANCELADO' AND r.is_completed
              UNION ALL
             SELECT t.id, t.nombre, t.fecha_inicio, t.categoria_nivel,
-                   CASE WHEN t.tipo='AMERICANO_TEAMS' THEN 'pair' ELSE 'americano' END,
+                   CASE WHEN t.modalidad='DOBLES' THEN 'pair' ELSE 'americano' END,
                    t.id, t.estado='FINALIZADO', t.americano_final_order, m.id,
-                   CASE WHEN t.tipo='AMERICANO_TEAMS' THEN
+                   CASE WHEN t.modalidad='DOBLES' AND (r.phase IS NULL OR m.round_robin_request_id IS NOT NULL)
+                       THEN r.round_number
+                       WHEN t.tipo='AMERICANO_TEAMS' THEN
                        CASE m.playoff_stage WHEN 'ROUND_OF_16' THEN 3 WHEN 'QUARTER_FINAL' THEN 4
                            WHEN 'SEMI_FINAL' THEN 5 WHEN 'FINAL' THEN 6
                            ELSE LEAST(r.round_number, 2) END
                        ELSE r.round_number END,
-                   COALESCE(t.tipo='AMERICANO_TEAMS' AND m.playoff_stage='FINAL',false),
-                   CASE WHEN t.tipo='AMERICANO_TEAMS' THEN m.team1_games ELSE m.team1_score END,
-                   CASE WHEN t.tipo='AMERICANO_TEAMS' THEN m.team2_games ELSE m.team2_score END,
+                   COALESCE((t.tipo='AMERICANO_TEAMS' AND m.playoff_stage='FINAL')
+                       OR (m.round_robin_request_id IS NOT NULL AND m.placement_start=1),false),
+                   CASE WHEN t.tipo='AMERICANO_TEAMS' AND r.phase IS NOT NULL AND m.round_robin_request_id IS NULL
+                       THEN m.team1_games ELSE m.team1_score END,
+                   CASE WHEN t.tipo='AMERICANO_TEAMS' AND r.phase IS NOT NULL AND m.round_robin_request_id IS NULL
+                       THEN m.team2_games ELSE m.team2_score END,
                    m.team1_player1_id,m.team1_player2_id,m.team2_player1_id,m.team2_player2_id,
                    CASE WHEN t.tipo='AMERICANO_TEAMS' AND r.phase='QUALIFICATION' AND m.playoff_stage IS NULL
-                       THEN m.id END
+                       THEN m.id END,
+                   COALESCE(t.modalidad='DOBLES' AND (r.phase IS NULL OR m.round_robin_request_id IS NOT NULL),false)
               FROM americano_matches_db m
               JOIN americano_rounds_db r ON r.id=m.round_id
               JOIN tournaments_db t ON t.id=m.tournament_id
              WHERE (t.fecha_inicio > :cutoff OR t.id IN (:managedIds))
                AND t.is_active AND t.estado <> 'CANCELADO' AND m.status='COMPLETED'
                AND ((t.tipo='AMERICANO' AND t.modalidad='INDIVIDUAL' AND r.status='COMPLETED')
-                    OR (t.tipo='AMERICANO_TEAMS' AND t.modalidad='DOBLES' AND m.team1_games IS NOT NULL
-                        AND m.team2_games IS NOT NULL))
+                    OR (t.tipo='AMERICANO_TEAMS' AND t.modalidad='DOBLES' AND r.phase IS NOT NULL
+                        AND m.round_robin_request_id IS NULL AND m.team1_games IS NOT NULL AND m.team2_games IS NOT NULL)
+                    OR (t.tipo IN ('AMERICANO','AMERICANO_TEAMS') AND t.modalidad='DOBLES'
+                        AND (r.phase IS NULL OR (m.round_robin_request_id IS NOT NULL AND m.placement_start IS NOT NULL))
+                        AND m.team1_score IS NOT NULL AND m.team2_score IS NOT NULL))
              ORDER BY fecha_inicio,event_id,batch,match_id
             """;
 
@@ -71,7 +80,7 @@ class PreviewEloLiveEvents {
     private final TeamPlayoffService playoff;
 
     private record NativeGame(long eventId, String title, LocalDate day, String category, String format,
-                              long formatId, boolean finished, String finalOrder, Long qualificationId,
+                              long formatId, boolean finished, String finalOrder, Long qualificationId, boolean roundRobin,
                               PreviewEloReplay.Game game) { }
 
     record LiveHistory(List<PreviewEloReplay.Event> events, Map<Long, String> names) { }
@@ -95,7 +104,7 @@ class PreviewEloLiveEvents {
                     Set.copyOf(podium.stream().skip(1).limit(1).toList()), first.title(), first.format(),
                     switch (first.format()) {
                         case "king" -> "/torneo/" + first.eventId() + "/king-of-court";
-                        case "pair" -> "/tournaments/team-playoff/" + first.eventId();
+                        case "pair" -> (first.roundRobin() ? "/tournaments/team-americano/" : "/tournaments/team-playoff/") + first.eventId();
                         default -> "/tournaments/americano/" + first.eventId();
                     }));
         }
@@ -157,6 +166,7 @@ class PreviewEloLiveEvents {
                 left, right, row.getBoolean("final_match"));
         return new NativeGame(row.getLong("event_id"), row.getString("event_title"), row.getObject("fecha_inicio", LocalDate.class),
                 row.getString("categoria_nivel"), format, row.getLong("game_tournament"),
-                row.getBoolean("finished"), row.getString("final_order"), row.getObject("qualification_id", Long.class), game);
+                row.getBoolean("finished"), row.getString("final_order"), row.getObject("qualification_id", Long.class),
+                row.getBoolean("round_robin"), game);
     }
 }
