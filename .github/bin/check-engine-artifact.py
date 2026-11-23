@@ -1,15 +1,25 @@
 #!/usr/bin/env python3
-"""Проверка размещения выделенного движка в исполняемом jar."""
+"""Проверка единственного владельца выделенных движков в исполняемом jar."""
 import argparse
 import io
 import zipfile
 
 
-ENGINE = 'com/padle/core/padelcoreservice/service/americano/PlayoffMatchingEngine'
+ENGINES = (
+    'com/padle/core/padelcoreservice/service/americano/PlayoffMatchingEngine',
+    'com/padle/core/padelcoreservice/service/KingOfCourtPairingEngine',
+)
+NESTED_TYPES = {
+    ENGINES[0]: ('Candidate', 'Pairing', 'MatchingResult', 'PriorityOrder'),
+    ENGINES[1]: ('PartnershipKey', 'PartnershipStats', 'PlayedCourt'),
+}
+REQUIRED_CLASSES = tuple(engine + '.class' for engine in ENGINES) + tuple(
+    engine + '$' + nested + '.class' for engine, names in NESTED_TYPES.items() for nested in names)
 
 
 def engine_class(name):
-    return name == ENGINE + '.class' or (name.startswith(ENGINE + '$') and name.endswith('.class'))
+    return any(name == engine + '.class' or (name.startswith(engine + '$') and name.endswith('.class'))
+               for engine in ENGINES)
 
 
 def check_archive(path):
@@ -24,8 +34,8 @@ def check_archive(path):
             raise ValueError('Дубликат движка в BOOT-INF/classes')
         with zipfile.ZipFile(io.BytesIO(application.read(libraries[0]))) as library:
             entries = library.namelist()
-            if ENGINE + '.class' not in entries:
-                raise ValueError('Движок отсутствует в библиотеке')
+            if any(name not in entries for name in REQUIRED_CLASSES):
+                raise ValueError('Движок или его вложенный тип отсутствует в библиотеке')
             if any(name.startswith('BOOT-INF/') for name in entries):
                 raise ValueError('Library jar не должен быть перепакован Spring Boot')
             for name in entries:
