@@ -51,6 +51,15 @@ public interface PlayerRepository extends JpaRepository<PlayerPadel, Long> {
             """, nativeQuery = true)
     List<PlayerPadel> findClaimPhoneMatches(@Param("key") String key);
 
+    @Query(value = """
+            SELECT p.* FROM player_padel_db p
+            WHERE p.activo = true AND (
+                player_claim_phone(p.telefono) = player_claim_phone(:phone)
+                OR regexp_replace(p.telefono, '[^0-9]', '', 'g') = :digits)
+            ORDER BY p.id
+            """, nativeQuery = true)
+    List<PlayerPadel> findRosterPhoneMatches(@Param("phone") String phone, @Param("digits") String digits);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT p FROM PlayerPadel p WHERE p.id IN :ids ORDER BY p.id")
     List<PlayerPadel> lockPlayers(@Param("ids") List<Long> ids);

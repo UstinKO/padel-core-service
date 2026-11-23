@@ -399,11 +399,20 @@ public class PlayerService {
     }
 
     private PlayerPadel crearJugadorInvitado(String nombre, String apellido, String telefono) {
+        return crearJugadorInvitado(nombre, apellido, telefono, null, null);
+    }
+
+    /** Создаёт новый профиль; данные существующего игрока этим методом не обновляются. */
+    @Transactional
+    public PlayerPadel crearJugadorInvitado(String nombre, String apellido, String telefono,
+                                            String telegram, PlayingSide playingSide) {
         String email = "guest." + UUID.randomUUID() + "@1padel.guest";
         PlayerPadel player = PlayerPadel.builder()
                 .nombre(nombre)
                 .apellido(apellido)
                 .telefono(telefono)
+                .telegramUsername(telegram)
+                .playingSide(playingSide)
                 .email(email)
                 .passwordHash(passwordEncoder.encode(generarPasswordAleatoria()))
                 .emailConfirmado(true)

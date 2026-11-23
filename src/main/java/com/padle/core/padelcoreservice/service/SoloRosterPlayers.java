@@ -21,10 +21,13 @@ public class SoloRosterPlayers {
     public void lock(PlayerInput input) {
         if (input == null || input.id() != null) return;
         var keys = new ArrayList<String>();
-        if (input.phone() != null) players.claimPhoneKey(input.phone()).ifPresent(key -> keys.add("partner-phone:" + key));
+        if (!blank(input.phone())) {
+            players.claimPhoneKey(input.phone()).ifPresent(key -> keys.add(PlayerPhoneGuard.LOCK_PREFIX + key));
+            keys.add(PlayerPhoneGuard.LOCK_PREFIX + input.phone().replaceAll("\\D", ""));
+        }
         String username = telegram(input.telegram());
         if (!username.isBlank()) keys.add("roster-telegram:" + username.toLowerCase(Locale.ROOT));
-        keys.stream().sorted().forEach(players::acquireContactLock);
+        keys.stream().distinct().sorted().forEach(players::acquireContactLock);
     }
 
     public PlayerPadel resolve(PlayerInput input) {
@@ -41,8 +44,7 @@ public class SoloRosterPlayers {
         if (!telegram.isBlank() && !telegram.matches("[A-Za-z][A-Za-z0-9_]{4,31}")) {
             throw new SoloRosterException("solo.error.guest");
         }
-        List<PlayerPadel> matches = players.claimPhoneKey(input.phone())
-                .map(players::findClaimPhoneMatches).orElseGet(List::of);
+        List<PlayerPadel> matches = players.findRosterPhoneMatches(input.phone(), input.phone().replaceAll("\\D", ""));
         var telegramMatches = telegram.isBlank() ? List.<PlayerPadel>of()
                 : players.findAllByTelegramUsernameIgnoreCaseAndActivoTrue(telegram);
         Optional<PlayerPadel> byTelegram = telegramMatches.stream().findFirst();
@@ -58,10 +60,8 @@ public class SoloRosterPlayers {
 
     public PlayerPadel materialize(PlayerPadel player) {
         if (player.getId() != null) return player;
-        var guest = service.resolverJugadorPorTelefonoOCrearInvitado(player.getNombre(), player.getApellido(), player.getTelefono());
-        guest.setTelegramUsername(player.getTelegramUsername());
-        guest.setPlayingSide(player.getPlayingSide());
-        return players.save(guest);
+        return service.crearJugadorInvitado(player.getNombre(), player.getApellido(), player.getTelefono(),
+                player.getTelegramUsername(), player.getPlayingSide());
     }
 
     private boolean blank(String value) { return value == null || value.isBlank(); }
