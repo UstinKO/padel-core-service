@@ -904,7 +904,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const nivel = preference ? `<span class="lp-card-nivel">${escapeHtml(preference)}</span>` : '';
                     return `<div class="lp-card">
                         <i class="fas fa-user-circle" style="color:#3b82f6; font-size:1.2rem;"></i>
-                        <div style="flex:1;">
+                        <div class="lp-card-person" style="flex:1;">
                             <div class="lp-card-name">${escapeHtml(p.playerName)}</div>
                             ${nivel}
                         </div>

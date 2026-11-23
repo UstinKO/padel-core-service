@@ -4,6 +4,7 @@ import { fireEvent, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 
 const code = readFileSync(resolve('../src/main/resources/static/js/solo-roster.js'), 'utf8');
+const sideCode = readFileSync(resolve('../src/main/resources/static/js/playing-side.js'), 'utf8');
 const fragment = readFileSync(
   resolve('../src/main/resources/templates/fragments/solo-roster.html'),
   'utf8',
@@ -13,6 +14,7 @@ const a = {
   playerId: 101,
   name: 'Ana <script>',
   level: 'C7',
+  playingSide: 'RIGHT',
   status: 'SOLO_SEARCH',
   reserve: true,
   attended: true,
@@ -48,6 +50,15 @@ beforeEach(async () => {
     '<form id="paymentForm"><input name="amount"><button type="submit">Save</button></form>';
   document.getElementById('solo-roster')!.dataset.eventId = '99';
   Object.assign(window, { soloRosterMessages: new Proxy({}, { get: (_, key) => String(key) }) });
+  Object.assign(window, {
+    playingSideMessages: {
+      LEFT: 'Слева',
+      RIGHT: 'Справа',
+      EITHER: 'Обе стороны',
+      missing: 'Сторона не указана',
+    },
+  });
+  new Function(sideCode)();
   HTMLDialogElement.prototype.showModal = function () {
     this.open = true;
   };
@@ -74,6 +85,8 @@ beforeEach(async () => {
         if (failWrite) throw new Error('Connection lost');
         return response({ status: 'WAITLIST' });
       }
+      if (path.includes('/search?'))
+        return response([{ ...b, single: true, name: 'Bea <img onerror=alert(1)>' }]);
       return response({ singles: [a, b], cancelled: [], history: [] });
     }),
   );
@@ -153,4 +166,74 @@ test('a preview error preserves guest fields and does not submit a mutation', as
   expect(document.querySelector<HTMLInputElement>('#solo-first')!.value).toBe('Nora');
   expect(document.querySelector<HTMLInputElement>('#solo-phone')!.value).toBe('bad number');
   expect(calls.filter((call) => call.body && !call.path.endsWith('/preview'))).toHaveLength(0);
+});
+
+test('the source and single candidate retain their level and side before preview', async () => {
+  fireEvent.click(document.querySelector('#solo-list article button:nth-child(2)')!);
+  expect(document.getElementById('solo-source')).toHaveTextContent('Ana <script> · C7 · Справа');
+  const candidate = document.querySelector<HTMLOptionElement>('#solo-single option[value="2"]')!;
+  expect(candidate).toHaveTextContent('Bea · C7 · Справа · looking');
+  fireEvent.change(document.getElementById('solo-single')!, { target: { value: '2' } });
+  expect(document.getElementById('solo-single-selected')).toHaveTextContent('Bea · C7 · Справа');
+  await reviewPair();
+  expect(document.querySelectorAll('#solo-preview-people article')).toHaveLength(2);
+  expect(document.getElementById('solo-level-warning')).toHaveAttribute('hidden');
+  expect(document.getElementById('solo-preview-people')).toHaveTextContent('100 · ARS');
+  expect(document.getElementById('solo-preview-people')).toHaveTextContent('20 · USD');
+  expect(calls.at(-1)?.body).toMatchObject({
+    action: 'PAIR',
+    partnerRegistrationId: 2,
+    player: null,
+  });
+});
+
+test.each([
+  ['ru', { LEFT: 'Слева', RIGHT: 'Справа', EITHER: 'Обе стороны', missing: 'Сторона не указана' }],
+  [
+    'es',
+    { LEFT: 'Izquierda', RIGHT: 'Derecha', EITHER: 'Ambos lados', missing: 'Lado sin indicar' },
+  ],
+  ['en', { LEFT: 'Left', RIGHT: 'Right', EITHER: 'Either side', missing: 'Side not specified' }],
+])('search and selected profile use the shared side formatter in %s', async (_, labels) => {
+  Object.assign(window, { playingSideMessages: labels });
+  new Function(sideCode)();
+  fireEvent.click(document.querySelector('#solo-list article button')!);
+  fireEvent.input(document.getElementById('solo-search')!, { target: { value: 'Bea' } });
+  await waitFor(() =>
+    expect(document.getElementById('solo-search-results')).toHaveTextContent(
+      `C7 · ${labels.RIGHT}`,
+    ),
+  );
+  expect(document.querySelector('#solo-search-results img')).toBeNull();
+  fireEvent.click(document.querySelector('#solo-search-results button')!);
+  expect(document.getElementById('solo-selected')).toHaveTextContent(
+    `Bea <img onerror=alert(1)> · C7 · ${labels.RIGHT}`,
+  );
+  fireEvent.submit(document.getElementById('solo-form')!);
+  await waitFor(() =>
+    expect(document.getElementById('solo-preview')).not.toHaveAttribute('hidden'),
+  );
+  expect(calls.at(-1)?.body?.player).toEqual({ id: 102 });
+});
+
+test.each([
+  ['LEFT', 'Слева'],
+  ['RIGHT', 'Справа'],
+  ['EITHER', 'Обе стороны'],
+  [null, 'Сторона не указана'],
+])('a candidate with side %s preserves its own preference label', async (side, label) => {
+  const original = b.playingSide;
+  Object.assign(b, { playingSide: side });
+  try {
+    fireEvent.click(document.querySelector('#solo-list article button:nth-child(2)')!);
+    expect(document.querySelector('#solo-single option[value="2"]')).toHaveTextContent(
+      `C7 · ${label}`,
+    );
+    if (side === null)
+      expect(document.querySelector('#solo-single option[value="2"]')).not.toHaveTextContent(
+        'Обе стороны',
+      );
+  } finally {
+    Object.assign(b, { playingSide: original });
+  }
 });

@@ -36,12 +36,19 @@
         return [payment.amount, payment.currency || 'ARS', m['payment_' + payment.status] || payment.status,
             m['method_' + payment.method] || payment.method, payment.transactionId, payment.notes].filter(Boolean).join(' · ');
     }
+    function preference(row) {
+        return window.PadelPlayingSide?.format(row.level, row.playingSide, true)
+            || (row.level && row.level !== 'SIN_ESPECIFICAR' ? row.level : m.unknown);
+    }
+    function playerLabel(row) {
+        return [row.name, preference(row)].filter(Boolean).join(' · ');
+    }
     function person(row, actions) {
         const card = node('article', undefined, 'solo-person');
         card.append(node('h3', row.name));
         card.append(node('span', status(row.status), 'solo-tag'));
         if (row.status.startsWith('SOLO_') || row.status === 'NEW') card.append(node('span', m.unplaced, 'solo-tag'));
-        card.append(node('p', (window.PadelPlayingSide?.format(row.level, row.playingSide, true) || m.unknown) + ' · ' + (row.attended ? m.present : m.absent)));
+        card.append(node('p', preference(row) + ' · ' + (row.attended ? m.present : m.absent)));
         if (!row.payments.length) card.append(node('p', m.unpaid));
         row.payments.forEach(payment => card.append(node('p', money(payment))));
         if (actions) {
@@ -111,6 +118,7 @@
         get('kind-pane').hidden = action !== 'ADD';
         get('mode').querySelector('option[value=single]').disabled = action === 'ADD';
         get('search-results').replaceChildren();say('selected','');
+        say('single-selected','');
     }
     function open(nextAction, row, nextMode, opener) {
         if (dirty) {
@@ -121,11 +129,11 @@
         get('form').reset();resetPreview();mode.value = nextMode;updateMode();
         get('single').replaceChildren(node('option', m.choose));get('single').firstChild.value = '';
         board.singles.filter(candidate => candidate.registrationId !== row?.registrationId).forEach(candidate => {
-            const option = node('option',candidate.name + ' · ' + status(candidate.status));option.value = candidate.registrationId;
+            const option = node('option',playerLabel(candidate) + ' · ' + status(candidate.status));option.value = candidate.registrationId;
             get('single').append(option);
         });
         say('dialog-title', action === 'ADD' ? m.add : action === 'REMOVE' ? m.remove : m.partner);
-        say('source', row?.name || '');
+        say('source', row ? playerLabel(row) : '');
         get('picker').hidden = action === 'REMOVE';get('remove-note').hidden = action !== 'REMOVE';
         dialog.showModal();
         (action === 'REMOVE' ? get('review') : get(nextMode === 'single' ? 'single' : 'search')).focus();
@@ -173,6 +181,10 @@
         finally { busyState(false); }
     }
     mode.addEventListener('change',updateMode);
+    get('single').addEventListener('change', () => {
+        const candidate = board.singles.find(row => String(row.registrationId) === get('single').value);
+        say('single-selected', candidate ? playerLabel(candidate) + ' · ' + status(candidate.status) : '');
+    });
     get('form').addEventListener('submit',review);
     get('confirm').addEventListener('click',confirm);
     get('back').addEventListener('click',resetPreview);
@@ -188,9 +200,9 @@
                 const found=await api('/search?q='+encodeURIComponent(query));
                 if(version !== searchVersion) return;
                 get('search-results').replaceChildren(...found.filter(player => player.playerId !== source?.playerId).map(player =>
-                    button(player.name + ' · ' + (player.level==='SIN_ESPECIFICAR'?m.unknown:player.level)
+                    button(playerLabel(player)
                         + (player.registrationId ? ' · '+(player.single?status(player.status):player.pair) : ''), () => {
-                        selected=player;say('selected',m.selected+' '+player.name);get('search-results').replaceChildren();
+                        selected=player;say('selected',m.selected+' '+playerLabel(player));get('search-results').replaceChildren();
                     },'solo-search-option')));
                 if(!found.length) get('search-results').append(node('p',m.noResults));
             } catch(error) {if(version===searchVersion) say('error',error.message);}

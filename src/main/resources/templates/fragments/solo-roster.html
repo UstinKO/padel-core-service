@@ -24,7 +24,7 @@
             <label for="solo-mode" th:text="#{solo.ui.source}"></label>
             <select id="solo-mode"><option value="search" th:text="#{solo.ui.searchMode}"></option><option value="single" th:text="#{solo.ui.merge}"></option><option value="guest" th:text="#{solo.ui.guestMode}"></option></select>
             <div id="solo-search-pane"><label for="solo-search" th:text="#{solo.ui.search}"></label><input id="solo-search" type="search" autocomplete="off" maxlength="100" aria-controls="solo-search-results"><div id="solo-search-results" class="solo-search-results" aria-live="polite"></div><p id="solo-selected"></p></div>
-            <div id="solo-single-pane" hidden><label for="solo-single" th:text="#{solo.ui.selectSingle}"></label><select id="solo-single"></select></div>
+            <div id="solo-single-pane" hidden><label for="solo-single" th:text="#{solo.ui.selectSingle}"></label><select id="solo-single" aria-describedby="solo-single-selected"></select><p id="solo-single-selected" class="solo-event" aria-live="polite"></p></div>
             <div id="solo-guest-pane" class="solo-guest" hidden>
                 <label for="solo-first" th:text="#{solo.ui.first}"></label><input id="solo-first" autocomplete="given-name" maxlength="100">
                 <label for="solo-last" th:text="#{solo.ui.last}"></label><input id="solo-last" autocomplete="family-name" maxlength="100">
