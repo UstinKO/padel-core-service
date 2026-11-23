@@ -8,7 +8,7 @@ function initialize() {
     const locale = document.documentElement.lang || 'es';
     const text = root.dataset;
     const byId = id => document.getElementById(id);
-    const compatible = ['clubId', 'format', 'gender', 'level', 'status', 'lang'];
+    const compatible = ['clubId', 'format', 'gender', 'level', 'status', 'organizerId', 'lang'];
     const fields = ['view', 'month', 'day'].map(name => {
         const input = document.createElement('input'); input.type = 'hidden'; input.name = name;
         form.append(input); return input;
@@ -57,6 +57,7 @@ function initialize() {
     }
     function mode() {
         byId('eventListView').hidden = state.calendar; root.hidden = !state.calendar;
+        document.body.classList.toggle('event-calendar-page', state.calendar);
         links();
         if (state.calendar) {
             document.querySelector('.admin-title span').textContent = text.title;
@@ -87,6 +88,7 @@ function initialize() {
             if (selected && !select.value) {
                 const unavailable = new Option('—', selected); unavailable.selected = true; select.append(unavailable);
             }
+            setOrganizerOptions(data.organizers);
             message.textContent = data.events.length ? text.events.replace('{0}',data.events.length)
                 : data.periodCount ? text.filtered : text.empty;
             const filtersApplied = compatible.some(key => key !== 'lang' && new URLSearchParams(location.search).get(key));
@@ -111,10 +113,15 @@ function initialize() {
         const query = new URLSearchParams({lang:locale,calendarReturn:url(true)});
         link.href = `/admin/tournaments/${event.id}?${query}`;
         const time = event.date < day ? text.continues : (event.time || '').slice(0,5);
-        link.append(element('span','event-calendar__event-title',`${time} · ${formats[event.format] || event.format}`));
-        link.append(element('span','event-calendar__event-meta',`${genders[event.gender] || ''} · ${level(event)}`));
-        link.append(element('span','event-calendar__event-meta',event.clubName || ''));
-        link.append(element('span','event-calendar__event-status',statuses[event.status] || event.status));
+        const gender = event.gender === 'MASCULINO' ? '' : genders[event.gender];
+        link.append(element('span','event-calendar__event-title',[time,level(event),gender].filter(Boolean).join(' · ')));
+        link.append(element('span','event-calendar__event-format',formats[event.format] || event.format));
+        link.append(element('span','event-calendar__event-meta',`📍 ${event.clubName || '—'}`));
+        link.append(element('span','event-calendar__event-meta',event.organizer?.name
+            ? `${text.organizerShort} ${event.organizer.name}` : text.unknownOrganizer));
+        if (event.status !== 'REGISTRO_ABIERTO') {
+            link.append(element('span','event-calendar__event-status',statuses[event.status] || event.status));
+        }
         if (!compact && event.endDate && event.endDate > event.date) {
             link.append(element('span','event-calendar__event-meta',`${event.date} — ${event.endDate} ${(event.endTime || '').slice(0,5)}`));
         }
@@ -145,11 +152,7 @@ function initialize() {
             if (events.length) {
                 cell.append(element('span','event-calendar__count',String(events.length)));
                 const preview = element('div','event-calendar__preview');
-                events.slice(0,2).forEach(event => preview.append(eventLink(event,day,true)));
-                if (events.length > 2) {
-                    const more = element('button','event-calendar__more',text.more.replace('{0}',events.length - 2));
-                    more.type = 'button'; more.addEventListener('click',() => selectDay(day,true)); preview.append(more);
-                }
+                events.forEach(event => preview.append(eventLink(event,day,true)));
                 cell.append(preview);
             }
             return cell;
@@ -161,6 +164,64 @@ function initialize() {
     function navigate(month, day = `${month}-01`) {
         state.month = month; state.day = day; history.pushState(null,'',url(true)); links(); load();
     }
+    function organizationLabel(organization) {
+        return organization.name || text.unknownOrganizerId.replace('{0}',organization.id);
+    }
+    function setOrganizerOptions(organizations) {
+        const select = form.elements.organizerId;
+        const selected = new URLSearchParams(location.search).get('organizerId') || '';
+        select.replaceChildren(new Option(text.allOrganizers,''),
+            ...organizations.map(organization => new Option(organizationLabel(organization),String(organization.id))));
+        select.value = selected;
+        if (selected && !select.value) {
+            const unavailable = new Option('—',selected); unavailable.selected = true; select.append(unavailable);
+        }
+    }
+    const organizationDetails = byId('calendarOrganizationSettings');
+    const organizationForm = byId('calendarOrganizationForm');
+    const organizationAccount = byId('organizationAccount');
+    const organizationName = byId('organizationName');
+    const organizationSave = byId('organizationSave');
+    const organizationMessage = byId('organizationMessage');
+    let organizations;
+    let organizationLoading = false;
+    function selectedOrganization() {
+        organizationName.value = organizations?.find(item => String(item.id) === organizationAccount.value)?.organizationName || '';
+    }
+    organizationDetails.addEventListener('toggle',async () => {
+        if (!organizationDetails.open || organizations || organizationLoading) return;
+        organizationLoading = true; organizationMessage.textContent = text.loading;
+        try {
+            const result = await fetch('/api/admin/organizers/organizations',{cache:'no-store',headers:{Accept:'application/json'}});
+            if (!result.ok || !result.headers.get('content-type')?.includes('application/json')) throw new Error('organization-load');
+            const data = await result.json(); organizations = data.accounts;
+            organizationAccount.replaceChildren(...organizations.map(item => new Option(item.accountName,String(item.id))));
+            organizationAccount.value = String(data.accountId); selectedOrganization();
+            organizationAccount.disabled = organizationName.disabled = organizationSave.disabled = false;
+            organizationMessage.textContent = '';
+        } catch {
+            organizationMessage.textContent = text.organizationError;
+        } finally {organizationLoading = false;}
+    });
+    organizationAccount.addEventListener('change',selectedOrganization);
+    organizationForm.addEventListener('submit',async event => {
+        event.preventDefault();
+        if (organizationSave.disabled) return;
+        organizationSave.disabled = organizationAccount.disabled = organizationName.disabled = true;
+        organizationMessage.textContent = text.loading;
+        try {
+            const result = await fetch(`/api/admin/organizers/${organizationAccount.value}/organization`,{
+                method:'PUT',headers:{'Content-Type':'application/json',Accept:'application/json'},
+                body:JSON.stringify({name:organizationName.value})});
+            if (!result.ok || !result.headers.get('content-type')?.includes('application/json')) throw new Error('organization-save');
+            const saved = await result.json(); organizations = organizations.map(item => item.id === saved.id ? {...item,organizationName:saved.name} : item);
+            selectedOrganization();
+            organizationMessage.textContent = text.organizationSaved;
+            load();
+        } catch {
+            organizationMessage.textContent = text.organizationError;
+        } finally {organizationSave.disabled = organizationAccount.disabled = organizationName.disabled = false;}
+    });
     byId('calendarPrevious').addEventListener('click',() => navigate(shiftMonth(state.month,-1)));
     byId('calendarNext').addEventListener('click',() => navigate(shiftMonth(state.month,1)));
     byId('calendarToday').addEventListener('click',() => navigate(today.slice(0,7),today));
