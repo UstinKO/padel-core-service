@@ -482,8 +482,7 @@
                                             <i th:if="${reg.playerId == currentUserPlayerId and currentUserPlayerId != null}"
                                                class="fas fa-circle-check verified-me"></i>
                                         </td>
-                                        <td th:if="${tournament.mostrarNivel}" style="padding:.55rem .75rem; color:#495057;"
-                                            th:text="${reg.playerNivel != null ? reg.playerNivel.display : '—'}">—</td>
+                                        <td th:if="${tournament.mostrarNivel}" style="padding:.55rem .75rem; color:#495057;"><span th:replace="~{fragments/playing-side :: info(${reg.playerNivel != null ? reg.playerNivel.display : null}, ${reg.playerPlayingSide}, false)}"></span></td>
                                     </tr>
                                 </th:block>
                                 </tbody>
@@ -550,8 +549,7 @@
                                                         <span style="color:#adb5bd; font-style:italic; font-size:.85rem;" th:text="#{tournament.partner.none}">sin pareja asignada</span>
                                                     </th:block>
                                                 </td>
-                                                <td th:if="${tournament.mostrarNivel}" style="padding:.6rem .75rem; color:#495057;"
-                                                    th:text="${(reg.playerNivel != null ? reg.playerNivel.display : '—') + ' / ' + (reg.partnerNivel != null ? reg.partnerNivel.display : '—')}">—</td>
+                                                <td th:if="${tournament.mostrarNivel}" style="padding:.6rem .75rem; color:#495057;"><span th:replace="~{fragments/playing-side :: info(${reg.playerNivel != null ? reg.playerNivel.display : null}, ${reg.playerPlayingSide}, false)}"></span><br><span th:replace="~{fragments/playing-side :: info(${reg.partnerNivel != null ? reg.partnerNivel.display : null}, ${reg.partnerPlayingSide}, false)}"></span></td>
                                             </tr>
                                         </th:block>
                                     </th:block>
@@ -588,8 +586,7 @@
                                                         </span><i th:if="${reg.partnerId == currentUserPlayerId and currentUserPlayerId != null}" class="fas fa-circle-check verified-me"></i>
                                                     </th:block>
                                                 </td>
-                                                <td th:if="${tournament.mostrarNivel}" style="padding:.6rem .75rem; color:#495057;"
-                                                    th:text="${(reg.playerNivel != null ? reg.playerNivel.display : '—') + ' / ' + (reg.partnerNivel != null ? reg.partnerNivel.display : '—')}">—</td>
+                                                <td th:if="${tournament.mostrarNivel}" style="padding:.6rem .75rem; color:#495057;"><span th:replace="~{fragments/playing-side :: info(${reg.playerNivel != null ? reg.playerNivel.display : null}, ${reg.playerPlayingSide}, false)}"></span><br><span th:replace="~{fragments/playing-side :: info(${reg.partnerNivel != null ? reg.partnerNivel.display : null}, ${reg.partnerPlayingSide}, false)}"></span></td>
                                             </tr>
                                         </th:block>
                                     </th:block>
@@ -623,8 +620,7 @@
                                                     </button>
                                                 </th:block>
                                             </td>
-                                            <td th:if="${tournament.mostrarNivel}" style="padding:.6rem .75rem; color:#495057;"
-                                                th:text="${reg.playerNivel != null ? reg.playerNivel.display : '—'} + ' / —'">—</td>
+                                            <td th:if="${tournament.mostrarNivel}" style="padding:.6rem .75rem; color:#495057;"><span th:replace="~{fragments/playing-side :: info(${reg.playerNivel != null ? reg.playerNivel.display : null}, ${reg.playerPlayingSide}, false)}"></span></td>
                                         </tr>
                                     </th:block>
                                     </tbody>
@@ -1286,5 +1282,6 @@
         });
     }
 </script>
+<th:block th:replace="~{fragments/playing-side :: assets}"></th:block>
 </body>
 </html>

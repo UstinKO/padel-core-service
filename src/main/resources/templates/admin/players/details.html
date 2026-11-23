@@ -194,7 +194,7 @@
             </div>
         </div>
 
-        <section class="admin-card" th:if="${isSuperAdmin and eloHistoryAvailable}">
+        <section class="admin-card" th:if="${isSuperAdmin and eloHistoryAvailable == true}">
             <div class="admin-card-header"><h2><i class="fas fa-chart-line"></i>
                 <span th:text="#{admin.players.elo.history}">Historial Elo</span></h2></div>
             <div class="admin-card-body">
@@ -340,6 +340,9 @@
             </div>
         </div>
     </div>
+<div class="container"><section class="admin-card"><div class="admin-card-body"><h3 id="admin-playing-side-label" th:text="#{playingSide.label}"></h3>
+    <span th:text="${player.playingSide != null} ? #{${player.playingSide.messageKey}} : #{playingSide.missing}"></span>
+    <form th:if="${isSuperAdmin}" th:action="@{/admin/players/{id}/playing-side(id=${player.id})}" method="post"><select name="playingSide" class="form-control" required aria-labelledby="admin-playing-side-label"><th:block th:replace="~{fragments/playing-side :: options(${player.playingSide})}"></th:block></select><button class="btn btn-primary" th:text="#{playingSide.save}"></button></form></div></section></div>
 </main>
 
 <footer th:replace="~{fragments/admin-footer :: footer}"></footer>
@@ -394,5 +397,6 @@
     }
     /*]]>*/
 </script>
+
 </body>
 </html>

@@ -41,7 +41,7 @@
         card.append(node('h3', row.name));
         card.append(node('span', status(row.status), 'solo-tag'));
         if (row.status.startsWith('SOLO_') || row.status === 'NEW') card.append(node('span', m.unplaced, 'solo-tag'));
-        card.append(node('p', (row.level === 'SIN_ESPECIFICAR' ? m.unknown : row.level) + ' · ' + (row.attended ? m.present : m.absent)));
+        card.append(node('p', (window.PadelPlayingSide?.format(row.level, row.playingSide, true) || m.unknown) + ' · ' + (row.attended ? m.present : m.absent)));
         if (!row.payments.length) card.append(node('p', m.unpaid));
         row.payments.forEach(payment => card.append(node('p', money(payment))));
         if (actions) {
@@ -133,7 +133,7 @@
     function close() { if (!busy) { dialog.close();trigger?.focus(); } }
     function input() {
         if (action === 'REMOVE') return null;
-        if (mode.value === 'guest') return {firstName:get('first').value.trim(),lastName:get('last').value.trim(),phone:get('phone').value.trim(),telegram:get('telegram').value.trim()};
+        if (mode.value === 'guest') return {firstName:get('first').value.trim(),lastName:get('last').value.trim(),phone:get('phone').value.trim(),telegram:get('telegram').value.trim(),playingSide:get('side').value || null};
         if (mode.value === 'single') return null;
         if (!selected) throw new Error(m.choose);
         return {id:selected.playerId};

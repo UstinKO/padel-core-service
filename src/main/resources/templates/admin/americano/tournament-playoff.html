@@ -340,6 +340,7 @@
                                 <span class="p1" th:text="${team.player1Name}">Jugador 1</span>
                                 <span th:if="${team.player2Name != null}"> / <span th:text="${team.player2Name}">Jugador 2</span></span>
                             </div>
+                            <small><span th:replace="~{fragments/playing-side :: info(${team.player1Nivel != null ? team.player1Nivel.display : null}, ${team.player1PlayingSide}, true)}"></span> / <span th:replace="~{fragments/playing-side :: info(${team.player2Nivel != null ? team.player2Nivel.display : null}, ${team.player2PlayingSide}, true)}"></span></small>
                         </td>
                         <td>
                             <span th:if="${team.registrationSource != null}"

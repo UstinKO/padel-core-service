@@ -217,8 +217,7 @@
                             <strong th:if="${team.teamNumber != null}" style="margin-right:.25rem" th:text="'№' + ${team.teamNumber}">№1</strong><span class="p1" th:text="${team.player1Name}">Jugador 1</span><i th:if="${team.player1Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i><span style="color:#adb5bd;margin:0 .25rem">/</span><span class="p1" th:text="${team.player2Name}">Jugador 2</span><i th:if="${team.player2Id == currentPlayerId and currentPlayerId != null}" class="fas fa-circle-check verified-me"></i>
                         </div>
                     </td>
-                    <td th:if="${tournament.mostrarNivel}"
-                        th:text="${(team.player1Nivel != null ? team.player1Nivel.display : '—') + ' / ' + (team.player2Nivel != null ? team.player2Nivel.display : '—')}">—</td>
+                    <td th:if="${tournament.mostrarNivel}"><span th:replace="~{fragments/playing-side :: info(${team.player1Nivel != null ? team.player1Nivel.display : null}, ${team.player1PlayingSide}, false)}"></span><br><span th:replace="~{fragments/playing-side :: info(${team.player2Nivel != null ? team.player2Nivel.display : null}, ${team.player2PlayingSide}, false)}"></span></td>
                     <td th:switch="${team.tournamentStatus}">
                         <span th:case="'PLAYING'" class="status-pill playing">🎾 <span th:text="#{team_playoff.status.playing}">Jugando</span></span>
                         <span th:case="'QUEUED'" class="status-pill queued"
@@ -469,5 +468,6 @@
         }
     });
 </script>
+<th:block th:replace="~{fragments/playing-side :: assets}"></th:block>
 </body>
 </html>

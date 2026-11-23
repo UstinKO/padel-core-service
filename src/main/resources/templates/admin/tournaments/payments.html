@@ -344,7 +344,7 @@
                                     <span class="player-name" th:text="${player.playerName}">Juan Pérez</span>
                                     <span th:if="${player.solo}" class="solo-tag"
                                           th:text="${player.registrationStatus == 'SOLO_SEARCH'} ? #{solo.ui.looking} : (${player.registrationStatus == 'SOLO_ADD_LATER'} ? #{solo.ui.later} : #{solo.ui.needsPartner})"></span>
-                                    <span th:if="${player.solo and player.playerLevel != 'SIN_ESPECIFICAR'}" class="solo-tag" th:text="${player.playerLevel}"></span>
+                                    <small th:replace="~{fragments/playing-side :: info(${player.playerLevel}, ${player.playerPlayingSide}, true)}"></small>
                                     <!--/* Резерв (WAITLIST) — плашка вместо полного скрытия строки */-->
                                     <span th:if="${player.reserve}" class="badge-in-tournament"
                                           style="background:#fff3cd;color:#92400e;"
@@ -547,5 +547,6 @@
     });
 </script>
 <script th:src="@{/js/payment-management.js}"></script>
+<th:block th:replace="~{fragments/playing-side :: assets}"></th:block>
 </body>
 </html>

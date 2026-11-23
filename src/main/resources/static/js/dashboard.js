@@ -448,7 +448,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function dashSelectPartner(player) {
         dashSelectedId.value = player.id;
         document.getElementById('selectedPartnerName').textContent  = player.nombreCompleto;
-        document.getElementById('selectedPartnerLevel').textContent = player.nivelJugador || '';
+        document.getElementById('selectedPartnerLevel').textContent = window.PadelPlayingSide ? window.PadelPlayingSide.format(player.nivelJugador, player.playingSide) : (player.nivelJugador || '');
         document.getElementById('partnerFirstName').value = '';
         document.getElementById('partnerLastName').value = '';
         document.getElementById('partnerTelegram').value = '';
@@ -495,10 +495,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 name.style.fontWeight = '500';
                 name.textContent = p.nombreCompleto;
                 li.appendChild(name);
-                if (p.nivelJugador) {
+                if (p.nivelJugador || p.playingSide) {
                     const level = document.createElement('div');
                     level.style.cssText = 'font-size:.82rem; color:#6b7280;';
-                    level.textContent = p.nivelJugador;
+                    level.textContent = window.PadelPlayingSide?.format(p.nivelJugador, p.playingSide) ?? p.nivelJugador;
                     li.appendChild(level);
                 }
                 li.addEventListener('mousedown', () => dashSelectPartner(p));

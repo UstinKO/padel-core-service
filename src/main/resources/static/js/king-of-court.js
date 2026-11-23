@@ -489,6 +489,7 @@ class KingOfCourt {
                        data-player-name="${tournamentPoints.escape(player.playerName)}">
                         ${tournamentPoints.escape(player.playerName || t('koc.viewer.unknown_player'))}
                     </a>
+                    ${this.isAdmin ? `<small class="playing-side-info" data-playing-side-player="${Number(player.playerId)}"></small>` : ''}
                     ${this.isAdmin && !this.isFinished ? tournamentPoints.action(player.playerId) : ''}
                 </td>
                 <td>${player.matchPoints ?? 0}</td>

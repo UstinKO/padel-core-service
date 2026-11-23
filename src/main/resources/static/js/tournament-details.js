@@ -265,10 +265,10 @@ document.addEventListener('DOMContentLoaded', function() {
             name.style.fontWeight = '500';
             name.textContent = p.nombreCompleto;
             li.appendChild(name);
-            if (p.nivelJugador) {
+            if (p.nivelJugador || p.playingSide) {
                 const level = document.createElement('div');
                 level.style.cssText = 'font-size:.82rem; color:#6b7280;';
-                level.textContent = p.nivelJugador;
+                level.textContent = window.PadelPlayingSide?.format(p.nivelJugador, p.playingSide) ?? p.nivelJugador;
                 li.appendChild(level);
             }
             li.addEventListener('click', () => selectPartner(p));
@@ -338,7 +338,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function selectPartner(player) {
         selectedPartnerIdInput.value = player.id;
         document.getElementById('selectedPartnerName').textContent  = player.nombreCompleto;
-        document.getElementById('selectedPartnerLevel').textContent = player.nivelJugador || '';
+        document.getElementById('selectedPartnerLevel').textContent = window.PadelPlayingSide ? window.PadelPlayingSide.format(player.nivelJugador, player.playingSide) : (player.nivelJugador || '');
         document.getElementById('partnerFirstName').value = '';
         document.getElementById('partnerLastName').value = '';
         document.getElementById('partnerTelegram').value = '';
@@ -441,10 +441,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 name.style.fontWeight = '500';
                 name.textContent = p.nombreCompleto;
                 li.appendChild(name);
-                if (p.nivelJugador) {
+                if (p.nivelJugador || p.playingSide) {
                     const level = document.createElement('div');
                     level.style.cssText = 'font-size:.82rem; color:#6b7280;';
-                    level.textContent = p.nivelJugador;
+                    level.textContent = window.PadelPlayingSide?.format(p.nivelJugador, p.playingSide) ?? p.nivelJugador;
                     li.appendChild(level);
                 }
                 li.addEventListener('mousedown', () => selectPartner(p));
@@ -900,7 +900,8 @@ document.addEventListener('DOMContentLoaded', function() {
                                <i class="fas fa-handshake"></i> ${t('details.proposal.btn')}
                            </button>`
                         : '';
-                    const nivel = p.nivel ? `<span class="lp-card-nivel">${p.nivel}</span>` : '';
+                    const preference = window.PadelPlayingSide?.format(p.nivel, p.playingSide) ?? p.nivel;
+                    const nivel = preference ? `<span class="lp-card-nivel">${escapeHtml(preference)}</span>` : '';
                     return `<div class="lp-card">
                         <i class="fas fa-user-circle" style="color:#3b82f6; font-size:1.2rem;"></i>
                         <div style="flex:1;">
