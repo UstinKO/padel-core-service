@@ -22,6 +22,7 @@ final class PreviewEloReplay {
     private static final int NO_CATEGORY = 99;
     private final int startStep;
     private final boolean formatWeighted;
+    private final int strongestLevel;
 
     PreviewEloReplay() {
         this(0);
@@ -32,8 +33,22 @@ final class PreviewEloReplay {
     }
 
     PreviewEloReplay(int startStep, boolean formatWeighted) {
+        this(startStep, formatWeighted, 3);
+    }
+
+    private PreviewEloReplay(int startStep, boolean formatWeighted, int strongestLevel) {
         this.startStep = startStep;
         this.formatWeighted = formatWeighted;
+        this.strongestLevel = strongestLevel;
+    }
+
+    /** Только для точного воспроизведения сохранённых срезов прежней шкалы. */
+    static PreviewEloReplay forLegacySnapshot(int startStep, boolean formatWeighted) {
+        return new PreviewEloReplay(startStep, formatWeighted, 5);
+    }
+
+    private int level(Event event) {
+        return event.level() < strongestLevel ? NO_CATEGORY : event.level();
     }
 
     record Game(String key, int batch, List<Long> ids, int left, int right, boolean verifiedFinal) {
@@ -179,7 +194,7 @@ final class PreviewEloReplay {
                 if (formatWeighted && (event.format() == null || !Set.of("pair", "king", "americano").contains(event.format()))) {
                     throw new IllegalArgumentException("Для расчёта необходимо указать формат турнира: " + event.key());
                 }
-                double start = event.level() == NO_CATEGORY ? START : START + startStep * (8 - event.level());
+                double start = level(event) == NO_CATEGORY ? START : START + startStep * (8 - level(event));
                 if (formatWeighted && !"pair".equals(event.format())) {
                     start -= 40;
                 }
@@ -241,8 +256,8 @@ final class PreviewEloReplay {
                 player.secondPlaces++;
             }
         });
-        if (event.level() != NO_CATEGORY) {
-            stats.forEach((id, evidence) -> recordEvent(players.get(id), event.level(), evidence,
+        if (level(event) != NO_CATEGORY) {
+            stats.forEach((id, evidence) -> recordEvent(players.get(id), level(event), evidence,
                     finalists.contains(id), champions.contains(id)));
         }
     }
@@ -343,7 +358,7 @@ final class PreviewEloReplay {
         if (currentLevel == NO_CATEGORY) {
             return List.of();
         }
-        return IntStream.iterate(currentLevel - 1, level -> level >= 3, level -> level - 1)
+        return IntStream.iterate(currentLevel - 1, level -> level >= strongestLevel, level -> level - 1)
                 .filter(level -> level == currentLevel - 1 || player.levels.containsKey(level))
                 .mapToObj(level -> new PreviewEloRanking.CategoryProgress("C" + level,
                         progress(player.levels.getOrDefault(level, new Record())), player.eligibleFromOneEvent(level)))

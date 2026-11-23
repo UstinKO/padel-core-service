@@ -55,7 +55,11 @@ public class PilotEloRefresh {
         }
         var originalReplay = new PreviewEloReplay(initial.startStep(), initial.formatWeighted());
         var baseline = originalReplay.replay(initial.snapshot().asOf(), source.history().names(), source.history().events());
-        if (!baseline.equals(initial.snapshot()) || !source.history().aliases().equals(initial.aliases())
+        boolean matches = baseline.equals(initial.snapshot()) || PreviewEloReplay
+                .forLegacySnapshot(initial.startStep(), initial.formatWeighted())
+                .replay(initial.snapshot().asOf(), source.history().names(), source.history().events())
+                .equals(initial.snapshot());
+        if (!matches || !source.history().aliases().equals(initial.aliases())
                 || source.liveAfter().isAfter(initial.snapshot().asOf())) {
             throw new IllegalArgumentException("История не воспроизводит проверенный срез пилота Elo");
         }
