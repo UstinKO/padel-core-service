@@ -153,3 +153,18 @@ test('an explicit URL language updates the shared server cookie on first load', 
     'ru',
   );
 });
+
+test('C3 stays selected in a loaded profile and is available at registration', async ({ page }) => {
+  await page.route('**/api/auth/session', (route) => route.fulfill({ json: player }));
+  await page.route('**/api/players/me', (route) =>
+    route.fulfill({ json: { ...profile, nivelJugador: 'C3' } }),
+  );
+  await page.goto('/preview/perfil');
+  await expect(page.locator('#account-nivelJugador')).toHaveValue('C3');
+  await page.reload();
+  await expect(page.locator('#account-nivelJugador')).toHaveValue('C3');
+  await page.route('**/api/auth/session', (route) => route.fulfill({ json: anonymous }));
+  await page.goto('/preview/players/registro');
+  await page.locator('#account-nivelJugador').selectOption('C3');
+  await expect(page.locator('#account-nivelJugador')).toHaveValue('C3');
+});
