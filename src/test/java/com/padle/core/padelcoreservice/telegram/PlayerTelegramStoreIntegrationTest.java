@@ -21,7 +21,7 @@ class PlayerTelegramStoreIntegrationTest {
     private PlayerPadel player() {
         return players.saveAndFlush(PlayerPadel.builder().nombre("Fixture").apellido("Telegram")
                 .email(UUID.randomUUID()+"@gmail.com").passwordHash("fixture-hash")
-                .nivelJugador(Nivel.C7).activo(true).emailConfirmado(true).build());
+                .nivelJugador(Nivel.C7).preferredLocale("es").activo(true).emailConfirmado(true).build());
     }
     @Test void tokenIsConsumedAndTelegramCannotBeStolenByAnotherProfile() {
         var first = player(); var second = player();
