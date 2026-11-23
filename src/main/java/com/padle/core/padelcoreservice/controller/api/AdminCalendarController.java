@@ -34,10 +34,11 @@ public class AdminCalendarController {
             @RequestParam(required = false) AdminEventFormat format,
             @RequestParam(required = false) GenderFormat gender,
             @RequestParam(required = false) Nivel level,
-            @RequestParam(required = false) TournamentStatus status) {
+            @RequestParam(required = false) TournamentStatus status,
+            @RequestParam(required = false) Long organizerId) {
         YearMonth selected = Optional.ofNullable(month).map(YearMonth::parse)
                 .orElseGet(() -> YearMonth.now(EventSchedule.zone(EventSchedule.DEFAULT_ZONE)));
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(calendar.month(owner, selected,
-                new AdminCalendarService.Filters(clubId, format, gender, level, status)));
+                new AdminCalendarService.Filters(clubId, format, gender, level, status, organizerId)));
     }
 }
