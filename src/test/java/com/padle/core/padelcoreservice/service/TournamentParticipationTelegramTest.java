@@ -44,6 +44,16 @@ class TournamentParticipationTelegramTest {
         assertThat(registration.getParticipationConfirmed()).isFalse();
         assertThat(registration.getPayments()).isEmpty();
     }
+    @Test void verifiedTelegramCanAnswerAfterTheEmailLinkExpired() {
+        request = new ParticipationRequest(registration, null, ParticipationRequest.Trigger.ORGANIZER,
+                OffsetDateTime.now().minusDays(8));
+        when(requests.findTournamentId(request.getId())).thenReturn(Optional.of(10L));
+        when(requests.findById(request.getId())).thenReturn(Optional.of(request));
+        long start = TelegramParticipationCoordinator.startsAt(tournament).getEpochSecond();
+        assertThat(service.confirmTelegram(request.getId(), player, start).status())
+                .isEqualTo(ParticipationStatus.CONFIRMED);
+    }
+
     @Test void movedEventCannotBeConfirmedFromAnOldButton() {
         long obsoleteStart = TelegramParticipationCoordinator.startsAt(tournament).minusSeconds(3600).getEpochSecond();
         assertThatThrownBy(() -> service.confirmTelegram(request.getId(), player, obsoleteStart)).isInstanceOf(AccountException.class);
