@@ -126,6 +126,7 @@ jobs:
           python3 -m unittest discover -s automation/codex-worker -p 'test_*.py'
           python3 -m unittest discover -s automation/ui-preview -p 'test_*.py'
           python3 -m unittest discover -s automation/releases -p 'test_*.py'
+          python3 -m unittest discover -s automation/swarm -p 'test_*.py'
 
       - name: Check extracted engine artifact
         run: python3 .github/bin/check-engine-artifact.py

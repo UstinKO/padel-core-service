@@ -15,6 +15,7 @@ import time
 import urllib.request
 import urllib.error
 import uuid
+from data_volumes import external_volumes, validate_mapping
 
 DIRECTORY = Path(__file__).resolve().parent
 ROOT = DIRECTORY.parents[1]
@@ -26,7 +27,7 @@ DOCKER = []
 
 
 def run(arguments, **kwargs):
-    return subprocess.check_output(arguments, text=True, **kwargs).strip()
+    return subprocess.check_output(arguments, text=True, encoding="utf-8", **kwargs).strip()
 
 
 def host(*arguments, **kwargs):
@@ -130,7 +131,7 @@ def file_source(kind, name, item):
     return DIRECTORY / Path(item["file"]).name
 
 
-def render(images, app_image, revision, local_files=False):
+def render(images, app_image, revision, local_files=False, volume_map=None):
     data = json.loads((DIRECTORY / "stack.json").read_text(encoding="utf-8"))
     replacements = dict(images, app=app_image, revision=revision)
 
@@ -155,7 +156,7 @@ def render(images, app_image, revision, local_files=False):
     if local_files:
         for port in data["services"]["gateway"]["ports"]:
             port["published"] = {80: 18080, 443: 18443}[port["target"]]
-    return data
+    return external_volumes(data, volume_map) if volume_map is not None else data
 
 
 def deploy(images, jar):
@@ -282,7 +283,10 @@ def main():
     parser.add_argument("--context", default="desktop-linux" if os.name == "nt" else "default")
     parser.add_argument("--jar", type=Path, default=ROOT / "padel-bootstrap/target/padel-core-service-0.0.1-SNAPSHOT.jar")
     parser.add_argument("--app-image", help="Неизменяемый образ для render: repository@sha256:... либо sha256:...")
+    parser.add_argument("--volume-map", type=Path, help="Карта четырёх существующих томов для переносимого render")
     args = parser.parse_args()
+    if args.volume_map and args.action != "render":
+        parser.error("--volume-map разрешён только для render; локальный deploy не подключает внешние данные")
     images = json.loads((DIRECTORY / "images.lock.json").read_text(encoding="utf-8"))
     if args.action == "init":
         initialize()
@@ -290,9 +294,12 @@ def main():
     if args.action == "render":
         if not args.app_image or not re.fullmatch(r"(?:[^\s]+@)?sha256:[0-9a-f]{64}", args.app_image):
             parser.error("render требует --app-image с sha256 digest")
+        mapping = json.loads(args.volume_map.read_text(encoding="utf-8")) if args.volume_map else None
+        if args.volume_map:
+            validate_mapping(mapping)
         prepare_rest_secret()
         revision = run(["git", "-C", str(ROOT), "rev-parse", "HEAD"])
-        data = render(images, args.app_image, revision, local_files=True)
+        data = render(images, args.app_image, revision, local_files=True, volume_map=mapping)
         output = RUNTIME / "stack.local.json"
         output.write_text(json.dumps(data, indent=2), encoding="utf-8")
         print(output)

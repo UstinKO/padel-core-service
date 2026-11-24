@@ -266,3 +266,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.87-player-contact-preference.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.88-restore-phone-function-schema.yaml
+      relativeToChangelogFile: true

@@ -477,7 +477,7 @@ repository/
 
 ### Database Migrations
 
-Все изменения схемы — YAML-файлы в `src/main/resources/db/changelog/versions/`, подключены через `changelog-master.yaml`. Текущая версия: v1.84. `ddl-auto = none` — только Liquibase. Новые файлы добавлять с инкрементальным номером и регистрировать в `changelog-master.yaml`.
+Все изменения схемы — YAML-файлы в `src/main/resources/db/changelog/versions/`, подключены через `changelog-master.yaml`. Текущая версия: v1.88. `ddl-auto = none` — только Liquibase. Новые файлы добавлять с инкрементальным номером и регистрировать в `changelog-master.yaml`.
 
 ### Email Templates
 
@@ -669,6 +669,21 @@ Engine (4 GiB / 2 CPU), без Swarm на хосте и без production-дан
 TLS/WS и private overlay `events`, резерв REST-ключа, запрет `/internal/**` на proxy.
 Восемь сервисов без RabbitMQ; переносимый render не требует вложенного Engine.
 Endpoint/fan-out реализуется отдельно в #1211. [Runbook](../docs/swarm/lab.md).
+
+### Сохранение данных — LFPT-1209
+
+`automation/swarm/rehearse_data.py` / `data_volumes.py`: синтетическая репетиция
+Compose → Swarm → Compose с custom pg_dump/restore, external volume map,
+контролем UID/GID/прав и одного писателя. Принудительное пересоздание PostgreSQL
+подтверждает новый task ID, прежний том и сохранённую запись из Swarm. Независимые
+остановки Stack/Compose/restore сохраняют lease при неподтверждённом отсутствии writers.
+Карта и backup остаются runtime,
+production не подключается. `lab.py render --volume-map` выводит явные existing
+имена без автоматического deploy. v1.88 квалифицирует helper индексной функции
+телефона для ограниченного search_path pg_restore, сохраняя AR/+7-семантику.
+[Runbook](../docs/swarm/data-recovery.md). Фактические production volumes,
+расшифровка offsite и ресурсный допуск остаются условиями #1217/#1218.
+
 
 ## Клубные аккаунты
 

@@ -1,5 +1,9 @@
 # LFPT-1208 · Стенд без отдельного брокера
 
+Для карты существующих volumes, backup/restore и репетиции Compose ↔ Swarm
+использовать [runbook LFPT-1209](data-recovery.md). Переносимый render поддерживает
+`--volume-map <private.json>`; source/target имена обязательно сверяются с Engine.
+
 Редакция 20.11.2026 заменяет прежний стенд с RabbitMQ.
 Восемь сервисов: PostgreSQL, padel-app, Nginx, Redis, Prometheus, Grafana, Loki,
 Mailpit. Одна app replica. Redis пока только подготовлен для #1210/#1212;
