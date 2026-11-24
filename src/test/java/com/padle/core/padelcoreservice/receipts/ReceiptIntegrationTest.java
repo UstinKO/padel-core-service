@@ -18,6 +18,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.UUID;
 import static org.assertj.core.api.Assertions.*;
+import static org.hamcrest.Matchers.containsString;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -120,5 +121,15 @@ class ReceiptIntegrationTest {
         assertThatThrownBy(() -> intake.attach(upload.id(),foreign.getPlayer().getId(),34567,
                 row.getId(),row.getCancellationVersion(),FILE)).isInstanceOf(AccountException.class);
         assertThat(store.list(row.getTournament().getId())).isEmpty();
+    }
+
+    @Test void paymentPageRendersTheRealReceiptFragmentWithLocalizedLabels() throws Exception {
+        var owner = owner(); var row = row(owner);
+        mvc.perform(get("/admin/tournaments/"+row.getTournament().getId()+"/payments?lang=ru").with(user(owner)))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("id=\"payment-receipts\"")))
+                .andExpect(content().string(containsString("Чеки участников")))
+                .andExpect(content().string(containsString("Подтвердить оплату")))
+                .andExpect(content().string(containsString("data-receipt-registration=\""+row.getId()+"\"")));
     }
 }

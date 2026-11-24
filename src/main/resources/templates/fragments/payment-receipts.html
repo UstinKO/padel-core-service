@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<section th:fragment="receipts" id="payment-receipts" class="payment-receipts"
+         th:data-receipts-url="@{/api/admin/tournaments/{id}/receipts(id=${tournament.id})}"
+         aria-labelledby="receipts-title">
+    <div class="receipts-heading">
+        <h2 id="receipts-title" th:text="#{receipt.ui.title}">Comprobantes</h2>
+        <div class="receipts-controls">
+            <label><input type="checkbox" data-receipts-pending> <span th:text="#{receipt.ui.onlyPending}">Pendientes</span></label>
+            <button type="button" class="btn btn-secondary btn-sm" data-receipts-refresh th:text="#{receipt.ui.refresh}">Actualizar</button>
+        </div>
+    </div>
+    <p class="receipts-note" th:text="#{receipt.ui.note}">Recibir un comprobante no confirma el pago.</p>
+    <p data-receipts-status role="status" aria-live="polite"></p>
+    <div data-receipts-list></div>
+    <button type="button" class="btn btn-secondary" data-receipts-reload hidden th:text="#{receipt.ui.reload}">Recargar la página</button>
+    <template data-receipts-copy>
+        <span data-key="empty" th:text="#{receipt.ui.empty}"></span>
+        <span data-key="loading" th:text="#{receipt.ui.loading}"></span>
+        <span data-key="failed" th:text="#{receipt.ui.failed}"></span>
+        <span data-key="session" th:text="#{receipt.ui.session}"></span>
+        <span data-key="conflict" th:text="#{receipt.ui.conflict}"></span>
+        <span data-key="unavailable" th:text="#{receipt.ui.unavailable}"></span>
+        <span data-key="dirty" th:text="#{receipt.ui.dirty}"></span>
+        <span data-key="pending" th:text="#{receipt.ui.pending}"></span>
+        <span data-key="accepted" th:text="#{receipt.ui.accepted}"></span>
+        <span data-key="rejected" th:text="#{receipt.ui.rejected}"></span>
+        <span data-key="outdated" th:text="#{receipt.ui.outdated}"></span>
+        <span data-key="view" th:text="#{receipt.ui.view}"></span>
+        <span data-key="download" th:text="#{receipt.ui.download}"></span>
+        <span data-key="amount" th:text="#{receipt.ui.amount}"></span>
+        <span data-key="currency" th:text="#{receipt.ui.currency}"></span>
+        <span data-key="method" th:text="#{receipt.ui.method}"></span>
+        <span data-key="select" th:text="#{receipt.ui.select}"></span>
+        <span data-key="accept" th:text="#{receipt.ui.accept}"></span>
+        <span data-key="reject" th:text="#{receipt.ui.reject}"></span>
+        <span data-key="reason" th:text="#{receipt.ui.reason}"></span>
+        <span data-key="saved" th:text="#{receipt.ui.saved}"></span>
+        <span data-key="reload" th:text="#{receipt.ui.reloadNote}"></span>
+        <span data-key="row" th:text="#{receipt.ui.row}"></span>
+        <span data-key="imageError" th:text="#{receipt.ui.imageError}"></span>
+    </template>
+    <template data-receipts-methods>
+        <select><option value="" th:text="#{receipt.ui.select}"></option>
+            <option th:each="method : ${paymentMethods}" th:value="${method.name()}"
+                    th:text="#{__${'enum.paymentMethod.' + method.name()}__}"></option>
+        </select>
+    </template>
+</section>
+</body>
+</html>

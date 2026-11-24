@@ -1,0 +1,39 @@
+.payment-receipts {
+    margin: 1rem 0; padding: 1rem; border: 1px solid #cbd5e1;
+    border-radius: .65rem; background: #f8fafc; color: #0f172a;
+}
+.receipts-heading, .receipts-controls, .receipt-card-header, .receipt-actions {
+    display: flex; align-items: center; flex-wrap: wrap; gap: .65rem;
+}
+.receipts-heading { justify-content: space-between; }
+.receipts-heading h2 { margin: 0; font-size: 1.1rem; }
+.receipts-note { color: #475569; margin: .5rem 0; font-size: .9rem; }
+.receipt-card { padding: 1rem; background: white; border: 1px solid #cbd5e1; border-radius: .5rem; margin-top: .75rem; scroll-margin-top: 5rem; }
+.receipt-card-header { justify-content: space-between; align-items: flex-start; }
+.receipt-card h3 { margin: 0; font-size: 1rem; overflow-wrap: anywhere; }
+.receipt-card time { display: block; font-size: .8rem; color: #64748b; margin-top: .3rem; }
+.receipt-state { padding: .25rem .6rem; border-radius: 1rem; font-size: .8rem; background: #fef3c7; color: #854d0e; }
+.receipt-state.accepted { background: #dcfce7; color: #166534; }
+.receipt-state.rejected, .receipt-outdated, .receipts-error { color: #9f1239; }
+.receipt-state.rejected { background: #ffe4e6; }
+.receipt-actions { margin: .75rem 0; }
+.receipt-actions a, .receipt-row-link { color: #047857; text-decoration: underline; }
+.receipt-preview { display: block; max-width: 100%; max-height: 640px; object-fit: contain; margin: .75rem 0; border: 1px solid #e2e8f0; }
+.receipt-review { display: grid; grid-template-columns: minmax(8rem, 1fr) minmax(6rem, .7fr) minmax(10rem, 1fr); align-items: end; gap: .65rem; max-width: 48rem; }
+.receipt-review label, .receipt-reject label { display: grid; gap: .25rem; font-size: .85rem; font-weight: 500; }
+.receipt-review input, .receipt-review select, .receipt-reject textarea { width: 100%; min-height: 42px; padding: .5rem; border: 1px solid #94a3b8; border-radius: .35rem; background: white; color: #0f172a; box-sizing: border-box; font: inherit; }
+.receipt-review button { grid-column: 1 / -1; justify-self: start; }
+.receipt-reject { max-width: 48rem; margin-top: 1rem; }
+.receipt-reject summary { cursor: pointer; color: #9f1239; padding: .25rem 0; }
+.receipt-reject form { display: grid; gap: .5rem; margin-top: .5rem; }
+.receipt-reject button { justify-self: start; }
+.receipt-reason { white-space: pre-wrap; overflow-wrap: anywhere; }
+.payment-receipts button:disabled { opacity: .55; cursor: wait; }
+.payment-receipts [hidden], .receipt-row-link[hidden] { display: none !important; }
+@media (max-width: 600px) {
+    .payment-receipts { padding: .75rem; }
+    .receipt-card { padding: .75rem; }
+    .receipt-review { grid-template-columns: 1fr; }
+    .receipt-review button { width: 100%; justify-content: center; }
+    .receipts-controls { width: 100%; justify-content: space-between; }
+}

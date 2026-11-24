@@ -16,6 +16,7 @@
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" th:href="@{/css/admin.css}">
     <link rel="stylesheet" th:href="@{/css/payment-management.css}">
+    <link rel="stylesheet" th:href="@{/css/payment-receipts.css}">
     <link rel="stylesheet" th:href="@{/css/team-playoff-player-search.css}">
     <link rel="stylesheet" th:href="@{/css/solo-roster.css}">
     <script th:src="@{/js/csrf.js}" defer></script>
@@ -286,6 +287,10 @@
             <th:block th:replace="~{fragments/solo-roster :: roster}"></th:block>
 
             <!-- Форма -->
+            <div th:if="${@environment.getProperty('telegram.players.receipts.enabled') == 'true'}">
+                <section th:replace="~{fragments/payment-receipts :: receipts}"></section>
+            </div>
+
             <form th:action="@{'/admin/tournaments/' + ${tournament.id} + '/payments/save'}"
                   method="post"
                   id="paymentForm">
@@ -344,6 +349,8 @@
                                        class="fas fa-user-friends pi-icon"
                                        title="Compañero no registrado"></i>
                                     <span class="player-name" th:text="${player.playerName}">Juan Pérez</span>
+                                    <a th:if="${!player.partnerRow}" href="#payment-receipts" hidden
+                                       class="receipt-row-link" th:data-receipt-registration="${player.registrationId}"></a>
                                     <span th:if="${player.solo}" class="solo-tag"
                                           th:text="${player.registrationStatus == 'SOLO_SEARCH'} ? #{solo.ui.looking} : (${player.registrationStatus == 'SOLO_ADD_LATER'} ? #{solo.ui.later} : #{solo.ui.needsPartner})"></span>
                                     <small th:replace="~{fragments/playing-side :: info(${player.playerLevel}, ${player.playerPlayingSide}, true)}"></small>
@@ -549,6 +556,7 @@
     });
 </script>
 <script th:src="@{/js/payment-management.js}"></script>
+<script th:src="@{/js/payment-receipts.js}"></script>
 <th:block th:replace="~{fragments/playing-side :: assets}"></th:block>
 <th:block th:replace="~{fragments/player-telegram :: assets}"></th:block>
 </body>
