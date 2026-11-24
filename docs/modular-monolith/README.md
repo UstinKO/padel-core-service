@@ -1,6 +1,6 @@
 # Многомодульный монолит: анализ и план перехода
 
-Задача подготовки: [LFPT-1041](https://github.com/UstinKO/padel-core-service/issues/1041), решения от 13.11.2026. Семь модулей и пилот PlayoffMatchingEngine приняты владельцем. Фактическое состояние после клубного среза и #1279: parent и четыре дочерних Maven-модуля; PlayoffMatchingEngine и KingOfCourtPairingEngine с unit-тестами находятся в engines, чтение публичных клубов — в application, клубный API DTO генерируется в api-contract, приложение собирает bootstrap. [Реализация переноса и проверки](phase-1/engine-extraction.md). Остальные три модуля ещё не выделены; #1045 принята владельцем 20.11 с ограничениями. [Первый application-срез](phase-2/application-club-read.md).
+Задача подготовки: [LFPT-1041](https://github.com/UstinKO/padel-core-service/issues/1041), решения от 13.11.2026. Семь модулей и пилот PlayoffMatchingEngine приняты владельцем. Фактическое состояние после клубного среза, #1279 и #1332: parent и четыре дочерних Maven-модуля; PlayoffMatchingEngine, KingOfCourtPairingEngine, AmericanoScheduleEngine и AmericanoScheduleValidator с unit-тестами находятся в engines, чтение публичных клубов — в application, клубный API DTO генерируется в api-contract, приложение собирает bootstrap. [Реализация переноса и проверки](phase-1/engine-extraction.md). Остальные три модуля ещё не выделены; #1045 принята владельцем 20.11 с ограничениями. [Первый application-срез](phase-2/application-club-read.md).
 
 Цель — облегчить сопровождение через Maven-модули и гексагональные границы; количество не ограничено пятью. Сохраняются один процесс приложения, один выпускаемый Spring Boot jar и существующая PostgreSQL. Разделение на технические модули дополняется доменными пакетами внутри них.
 
@@ -14,7 +14,7 @@
 | [ADR](adr/README.md) | Принятые решения, альтернативы и последствия |
 | [Первая фаза](phase-1/README.md) | Подробный анализ, TC01–TC25, задачи #1047 → #1048 → #1049 → #1050 → #1045 |
 | [Вторая фаза](phase-2/README.md) | Проба Java DTO #1198 и подготовленная последовательность чтения клубов #1199 → #1200 → #1201 |
-| [Следующий движок](phase-3/README.md) | Перенос KingOfCourtPairingEngine #1279; Americano остаётся отдельным следующим срезом |
+| [Продолжение переноса движков](phase-3/README.md) | KingOfCourtPairingEngine #1279 и [расписание Americano #1332](phase-3/americano-extraction.md) |
 | [Пилот и e2e](pilot-and-e2e.md) | Подтверждённый пилот, исходная #1048 и итоговая #1045 |
 | [Вопросы и риски](questions-and-risks.md) | Решения до реализации и неизвестные, требующие исследования |
 | [Фиче-спецификация](../../specs/features/LFPT-1041-modular-monolith-analysis.md) | Объём подготовительной задачи и критерии её завершения |

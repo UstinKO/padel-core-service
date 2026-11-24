@@ -8,10 +8,14 @@ import zipfile
 ENGINES = (
     'com/padle/core/padelcoreservice/service/americano/PlayoffMatchingEngine',
     'com/padle/core/padelcoreservice/service/KingOfCourtPairingEngine',
+    'com/padle/core/padelcoreservice/service/americano/AmericanoScheduleEngine',
+    'com/padle/core/padelcoreservice/service/americano/AmericanoScheduleValidator',
 )
 NESTED_TYPES = {
     ENGINES[0]: ('Candidate', 'Pairing', 'MatchingResult', 'PriorityOrder'),
     ENGINES[1]: ('PartnershipKey', 'PartnershipStats', 'PlayedCourt'),
+    ENGINES[2]: ('MatchSlot',),
+    ENGINES[3]: ('ScheduleReport',),
 }
 REQUIRED_CLASSES = tuple(engine + '.class' for engine in ENGINES) + tuple(
     engine + '$' + nested + '.class' for engine, names in NESTED_TYPES.items() for nested in names)

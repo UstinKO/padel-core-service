@@ -4,7 +4,7 @@
 исполняемый Telegram-адаптер в `automation/telegram-relay/`. Порядок отдельной активации воркера —
 [codex-migration.md](codex-migration.md); приложение и его схема развёртывания этим не меняются.
 
-План развития: [многомодульный монолит, семь согласованных модулей](modular-monolith/target-architecture.md). Сейчас работают parent/aggregator, api-contract (generated Club), tournament-engines (PlayoffMatchingEngine и KingOfCourtPairingEngine), application (PublicClubQuery/ClubReadPort) и bootstrap с единственным boot jar. [Application-срез](modular-monolith/phase-2/application-club-read.md), [источник API-контракта и сборка](modular-monolith/phase-2/contract-adoption.md). Остальной корневой src/ компилирует только bootstrap. Три целевых модуля пока не созданы. Приёмка пилота #1045 принята 20.11 с ограничениями; хранение остаётся отдельной поздней #1051.
+План развития: [многомодульный монолит, семь согласованных модулей](modular-monolith/target-architecture.md). Сейчас работают parent/aggregator, api-contract (generated Club), tournament-engines (PlayoffMatchingEngine, KingOfCourtPairingEngine, AmericanoScheduleEngine и AmericanoScheduleValidator), application (PublicClubQuery/ClubReadPort) и bootstrap с единственным boot jar. [Application-срез](modular-monolith/phase-2/application-club-read.md), [источник API-контракта и сборка](modular-monolith/phase-2/contract-adoption.md). [Перенос расписания Americano](modular-monolith/phase-3/americano-extraction.md) сохраняет статический API и алгоритм. Остальной корневой src/ компилирует только bootstrap. Три целевых модуля пока не созданы. Приёмка пилота #1045 принята 20.11 с ограничениями; хранение остаётся отдельной поздней #1051.
 
 ---
 

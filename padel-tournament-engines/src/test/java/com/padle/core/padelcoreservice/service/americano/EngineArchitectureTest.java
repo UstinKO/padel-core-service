@@ -28,6 +28,22 @@ class EngineArchitectureTest {
                 .hasMessageContaining(LegacyServiceProbe.class.getName());
     }
 
+    @Test
+    void primitiveArraysAreAllowed() {
+        var primitive = new ClassFileImporter().importClasses(PrimitiveArrayDependency.class);
+
+        boundary(productionClasses()).check(primitive);
+    }
+
+    @Test
+    void arrayOfLegacyClassesIsRejected() {
+        var forbidden = new ClassFileImporter().importClasses(LegacyArrayDependency.class);
+
+        assertThatThrownBy(() -> boundary(productionClasses()).check(forbidden))
+                .isInstanceOf(AssertionError.class)
+                .hasMessageContaining(LegacyServiceProbe.class.getName());
+    }
+
     private JavaClasses productionClasses() {
         return new ClassFileImporter()
                 .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
@@ -42,13 +58,22 @@ class EngineArchitectureTest {
                 while (target.isArray()) {
                     target = target.getComponentType();
                 }
-                return target.getPackageName().startsWith("java.") || production.contain(target.getName());
+                return target.isPrimitive() || target.getPackageName().startsWith("java.")
+                        || production.contain(target.getName());
             }
         });
     }
 
     private static class ForbiddenDependency {
         private LegacyServiceProbe legacy;
+    }
+
+    private static class LegacyArrayDependency {
+        private LegacyServiceProbe[][] legacyArray;
+    }
+
+    private static class PrimitiveArrayDependency {
+        private int[][] values;
     }
 
     private static class LegacyServiceProbe {
