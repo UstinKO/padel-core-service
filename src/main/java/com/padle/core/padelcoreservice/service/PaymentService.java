@@ -14,6 +14,9 @@ import com.padle.core.padelcoreservice.model.enums.Modalidad;
 import com.padle.core.padelcoreservice.model.enums.PaymentStatus;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import com.padle.core.padelcoreservice.repository.PaymentRepository;
+import com.padle.core.padelcoreservice.receipts.ReceiptModels.Accept;
+import com.padle.core.padelcoreservice.exception.AccountException;
+import org.springframework.http.HttpStatus;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import com.padle.core.padelcoreservice.service.americano.TeamPlayoffService;
@@ -156,6 +159,54 @@ public class PaymentService {
     }
 
     // ==================== Для офлайн платежей (ручной ввод) ====================
+
+    @Transactional
+    public long confirmReceiptPayment(TournamentRegistration row, Accept decision, long ownerId) {
+        var existing = paymentRepository.findByRegistrationId(row.getId()).stream()
+                .filter(p -> Boolean.TRUE.equals(p.getIsActive()) && isOwnPayment(p, row)).toList();
+        if (existing.size() > 1 || decision.amount() == null || decision.amount().signum() <= 0
+                || decision.amount().precision() > 10 || decision.amount().scale() > 2
+                || !List.of("ARS", "USD", "USDT").contains(decision.currency()) || decision.method() == null) {
+            throw receiptPaymentConflict();
+        }
+        var payment = existing.stream().findFirst();
+        payment.ifPresent(p -> validateReceiptPayment(p, row, decision));
+        if (payment.filter(p -> p.getStatus() == PaymentStatus.PAID).isPresent()) {
+            return payment.orElseThrow().getId();
+        }
+        var update = new PaymentUpdateDto();
+        update.setRegistrationId(row.getId());
+        update.setAmount(decision.amount());
+        update.setCurrency(decision.currency());
+        update.setPaymentMethod(decision.method());
+        update.setPaymentStatus(PaymentStatus.PAID);
+        update.setAttended(Boolean.TRUE.equals(row.getAttended()));
+        update.setParticipationConfirmed(Boolean.TRUE.equals(row.getParticipationConfirmed()));
+        payment.ifPresent(p -> {
+            update.setHasPayment(true);
+            update.setPaymentId(p.getId());
+            update.setTransactionId(p.getTransactionId());
+            update.setNotes(p.getNotes());
+        });
+        savePaymentManagementData(row.getTournament().getId(), List.of(update), ownerId);
+        return paymentRepository.findByRegistrationId(row.getId()).stream()
+                .filter(p -> Boolean.TRUE.equals(p.getIsActive()) && isOwnPayment(p, row))
+                .findFirst().orElseThrow(PaymentService::receiptPaymentConflict).getId();
+    }
+
+    private void validateReceiptPayment(Payment payment, TournamentRegistration row, Accept decision) {
+        if ((row.getCancellationDate() != null && payment.getCreatedAt().isBefore(row.getCancellationDate()))
+                || (payment.getStatus() != PaymentStatus.PENDING && payment.getStatus() != PaymentStatus.PROCESSING
+                    && payment.getStatus() != PaymentStatus.FAILED && payment.getStatus() != PaymentStatus.PAID)
+                || (payment.getStatus() == PaymentStatus.PAID && (payment.getAmount().compareTo(decision.amount()) != 0
+                    || !decision.currency().equals(payment.getCurrency()) || decision.method() != payment.getPaymentMethod()))) {
+            throw receiptPaymentConflict();
+        }
+    }
+
+    private static AccountException receiptPaymentConflict() {
+        return new AccountException(HttpStatus.CONFLICT, "RECEIPT_PAYMENT_CONFLICT");
+    }
 
     @Transactional
     public PaymentDto registerOfflinePayment(Long registrationId, BigDecimal amount,
