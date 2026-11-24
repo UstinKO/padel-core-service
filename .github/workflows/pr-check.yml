@@ -252,8 +252,8 @@ jobs:
           path: |
             target/browser-qa/report.json
             target/browser-qa/*.png
-            target/telegram-browser-qa/report.json
-            target/telegram-browser-qa/browser.log
+            target/telegram-browser-qa/*.json
+            target/telegram-browser-qa/*.log
             target/telegram-browser-qa/*.png
           if-no-files-found: ignore
           retention-days: 3

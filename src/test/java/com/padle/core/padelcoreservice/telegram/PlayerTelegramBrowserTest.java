@@ -145,7 +145,8 @@ class PlayerTelegramBrowserTest {
         var club = clubs.saveAndFlush(Club.builder().nombre("Telegram Browser QA " + suffix).isActive(true).build());
         var connected = player("connected", suffix, password, 299);
         store.token(connected.getId(), "browser-verified-token", OffsetDateTime.now().plusMinutes(10), "es");
-        store.bind("browser-verified-token", 7770000299L, 7770000299L).orElseThrow();
+        long chatId = 7_770_000_000L + Integer.toUnsignedLong(suffix.hashCode());
+        store.bind("browser-verified-token", chatId, chatId).orElseThrow();
         var languages = List.of("es", "ru", "en");
         var scenarios = IntStream.range(0, languages.size()).mapToObj(index -> {
             var player = player(languages.get(index), suffix, password, 201 + index);
