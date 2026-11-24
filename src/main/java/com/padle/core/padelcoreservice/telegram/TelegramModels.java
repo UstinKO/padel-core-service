@@ -44,5 +44,8 @@ public final class TelegramModels {
     public record Send(@JsonProperty("chat_id") long chatId, String text,
                        @JsonProperty("reply_markup") Keyboard keyboard) {}
     public record Acknowledge(@JsonProperty("callback_query_id") String id, String text) {}
+    public record EditKeyboard(@JsonProperty("chat_id") long chatId,
+                               @JsonProperty("message_id") long messageId,
+                               @JsonProperty("reply_markup") Keyboard keyboard) {}
     public record Result(String state, Long messageId) {}
 }
