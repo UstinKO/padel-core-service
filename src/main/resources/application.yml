@@ -238,6 +238,18 @@ telegram:
   bot-token: ${TELEGRAM_BOT_TOKEN:}
   chat-id: ${TELEGRAM_CHAT_ID:}
   enabled: ${TELEGRAM_ENABLED:false}
+  players:
+    pilot-enabled: ${TELEGRAM_PLAYERS_PILOT_ENABLED:true}
+    pilot-player-id: ${TELEGRAM_PLAYERS_PILOT_PLAYER_ID:}
+    pilot-tournament-id: ${TELEGRAM_PLAYERS_PILOT_TOURNAMENT_ID:}
+    enabled: ${TELEGRAM_PLAYERS_ENABLED:false}
+    bot-token: ${TELEGRAM_PLAYERS_BOT_TOKEN:}
+    bot-username: ${TELEGRAM_PLAYERS_BOT_USERNAME:}
+    automatic-enabled: ${TELEGRAM_PLAYERS_AUTOMATIC_ENABLED:false}
+    confirmation-hours: ${TELEGRAM_PLAYERS_CONFIRMATION_HOURS:24}
+    reminder-hours: ${TELEGRAM_PLAYERS_REMINDER_HOURS:3}
+    daily-summary-enabled: ${TELEGRAM_PLAYERS_DAILY_SUMMARY_ENABLED:false}
+    summary-cron: ${TELEGRAM_PLAYERS_SUMMARY_CRON:0 0 10 * * *}
   # thread-id, notifications-chat-id, notifications-thread-id задаются в профильных yml или env-переменными
 
 # ------ SDD-КОНВЕЙЕР ЧЕРЕЗ TELEGRAM (scripts/telegram-relay/) ------
