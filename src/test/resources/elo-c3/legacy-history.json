@@ -1,0 +1,41 @@
+{
+  "history": {
+    "names": {
+      "1": "A",
+      "2": "B",
+      "3": "C",
+      "4": "D"
+    },
+    "events": [
+      {
+        "key": "S-1",
+        "day": "2026-11-12",
+        "category": "C5",
+        "games": [
+          {
+            "key": "pair:1",
+            "batch": 1,
+            "ids": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "left": 6,
+            "right": 4,
+            "verifiedFinal": false
+          }
+        ],
+        "champions": [],
+        "runnersUp": [],
+        "title": "Legacy",
+        "format": "pair",
+        "resultsUrl": null
+      }
+    ],
+    "aliases": {}
+  },
+  "liveAfter": "2026-11-12",
+  "managedEvents": [],
+  "excludedEvents": []
+}

@@ -1,6 +1,10 @@
 package com.padle.core.padelcoreservice.service.calendar;
 
 import com.padle.core.padelcoreservice.annotation.Timed;
+import com.padle.core.padelcoreservice.dto.calendar.OrganizerOrganization;
+import com.padle.core.padelcoreservice.service.OrganizerOrganizationService;
+import java.util.Map;
+import java.util.function.Function;
 import com.padle.core.padelcoreservice.controller.admin.AdminEventFormat;
 import com.padle.core.padelcoreservice.dto.calendar.AdminCalendarMonth;
 import com.padle.core.padelcoreservice.dto.calendar.AdminCalendarMonth.Event;
@@ -34,18 +38,23 @@ public class AdminCalendarService {
     private final TournamentService tournaments;
     private final ClubAccountService clubAccounts;
     private final AdminCalendarMapper mapper;
+    private final OrganizerOrganizationService organizations;
 
     @Timed(name = "admin.calendar.month", tags = {"type=calendar"})
     public AdminCalendarMonth month(Owner owner, YearMonth month, Filters filters) {
         List<TournamentDto> visible = tournaments.getTournamentsForOwner(owner.getId(), owner.canViewAllTournaments());
+        Map<Long, OrganizerOrganization> organizers = organizations.forEvents(visible).stream().collect(Collectors.toMap(OrganizerOrganization::id, Function.identity()));
         List<Event> period = visible.stream().filter(event -> event.getFechaInicio() != null)
-                .map(this::event).filter(event -> overlaps(event, month))
+                .map(source -> event(source, organizers)).filter(event -> overlaps(event, month))
                 .sorted(Comparator.comparing(Event::date)
                         .thenComparing(Event::time, Comparator.nullsLast(Comparator.naturalOrder()))
                         .thenComparing(Event::id)).toList();
         List<Event> selected = period.stream().filter(filters::matches).toList();
         return new AdminCalendarMonth(month.toString(), LocalDate.now(EventSchedule.zone(EventSchedule.DEFAULT_ZONE)),
-                period.size(), selected, venues(owner, visible));
+                period.size(), selected, venues(owner, visible), organizers.values().stream()
+                        .sorted(Comparator.comparing(OrganizerOrganization::name,
+                                        Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER))
+                                .thenComparing(OrganizerOrganization::id)).toList());
     }
 
     private List<Venue> venues(Owner owner, List<TournamentDto> visible) {
@@ -59,8 +68,8 @@ public class AdminCalendarService {
                 .sorted(Comparator.comparing(Venue::name, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER))).toList();
     }
 
-    private Event event(TournamentDto source) {
-        Event event = mapper.toEvent(source);
+    private Event event(TournamentDto source, Map<Long, OrganizerOrganization> organizers) {
+        Event event = mapper.toEvent(source, organizers);
         if (source.getHoraInicio() == null) {
             return event;
         }
@@ -68,7 +77,7 @@ public class AdminCalendarService {
             var end = source.getFechaInicio().atTime(source.getHoraInicio()).plus(duration);
             return new Event(event.id(), event.date(), event.time(), end.toLocalDate(), end.toLocalTime(),
                     event.timeZone(), event.clubId(), event.clubName(), event.format(), event.gender(),
-                    event.level(), event.status(), event.active());
+                    event.level(), event.status(), event.active(), event.organizer());
         }).orElse(event);
     }
 
@@ -80,9 +89,10 @@ public class AdminCalendarService {
         return !event.date().isAfter(month.atEndOfMonth()) && !lastDay.isBefore(month.atDay(1));
     }
 
-    public record Filters(Long clubId, AdminEventFormat format, GenderFormat gender, Nivel level, TournamentStatus status) {
+    public record Filters(Long clubId, AdminEventFormat format, GenderFormat gender, Nivel level, TournamentStatus status, Long organizerId) {
         boolean matches(Event event) {
-            return (clubId == null || clubId.equals(event.clubId()))
+            return (organizerId == null || event.organizer() != null && organizerId.equals(event.organizer().id()))
+                    && (clubId == null || clubId.equals(event.clubId()))
                     && (format == null || format == event.format())
                     && (gender == null || gender == event.gender())
                     && (level == null || matchesLevel(event.level(), level))

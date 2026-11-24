@@ -5,6 +5,11 @@ import com.padle.core.padelcoreservice.controller.admin.AdminEventFormat;
 import com.padle.core.padelcoreservice.service.calendar.EventSchedule;
 import com.padle.core.padelcoreservice.dto.calendar.AdminCalendarMonth.Event;
 import org.mapstruct.Mapper;
+import org.mapstruct.Context;
+import com.padle.core.padelcoreservice.model.Owner;
+import com.padle.core.padelcoreservice.dto.calendar.OrganizerOrganization;
+import com.padle.core.padelcoreservice.dto.calendar.OrganizationAccount;
+import java.util.Map;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 
@@ -22,5 +27,12 @@ public interface AdminCalendarMapper {
     @Mapping(target = "level", source = "categoriaNivel")
     @Mapping(target = "status", source = "estado")
     @Mapping(target = "active", source = "isActive", defaultValue = "false")
-    Event toEvent(TournamentDto event);
+    @Mapping(target = "organizer", expression = "java(organizers.get(event.getOwnerId()))")
+    Event toEvent(TournamentDto event, @Context Map<Long, OrganizerOrganization> organizers);
+
+    @Mapping(target = "name", source = "organizationName")
+    OrganizerOrganization toOrganizer(Owner owner);
+
+    @Mapping(target = "accountName", source = "fullName")
+    OrganizationAccount toOrganizationAccount(Owner owner);
 }

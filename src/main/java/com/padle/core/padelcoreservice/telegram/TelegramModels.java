@@ -3,6 +3,7 @@ package com.padle.core.padelcoreservice.telegram;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.NotNull;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -10,10 +11,15 @@ import java.util.UUID;
 public final class TelegramModels {
     private TelegramModels() {}
     public record Connection(long playerId, long userId, long chatId, boolean enabled) {}
-    public record LinkStatus(boolean available, boolean connected) {}
+    public enum ContactPreference { UNSPECIFIED, TELEGRAM, WHATSAPP }
+    public record PreferenceChange(@NotNull ContactPreference preference) {}
+    public record LinkStatus(boolean available, boolean connected, ContactPreference preference) {}
     public record Link(String url, OffsetDateTime expiresAt) {}
     public record Recipient(long registrationId, long playerId, String name, String response,
-                            boolean connected, String delivery) {}
+                            boolean connected, String delivery, ContactPreference preference) {
+        @JsonProperty("manualContact")
+        public boolean manualContact() { return !connected; }
+    }
     public record Summary(long tournamentId, String name, List<Recipient> participants) {}
     public record Delivery(UUID id, String key, long registrationId, String state) {}
     @JsonIgnoreProperties(ignoreUnknown = true)

@@ -676,3 +676,7 @@ Endpoint/fan-out реализуется отдельно в #1211. [Runbook](../
 Календарь админки: `GET /api/admin/events/calendar` — `AdminCalendarController` / `AdminCalendarService`, права на события и фильтры, локальные дата/время с зоной, все события месяца. [Контракт](../docs/endpoints/admin-event-calendar.md).
 
 Telegram для игроков: PlayerTelegramController, TelegramParticipationCoordinator и пакет telegram/. Контракт и включение: [player-telegram](../docs/endpoints/player-telegram.md). Флаг telegram.players.enabled до согласованного выпуска выключен.
+
+Предпочтение связи игрока: `player_contact_preferences`, схема v1.87. `PUT /api/players/me/telegram/preference` меняет только текущий профиль; WhatsApp отключает Telegram и старые ссылки, автоматической WA-отправки нет. Сводка содержит предпочтение и ручные контакты. Язык текущего сайта сохраняется для сообщений при создании ссылки подключения.
+
+Организации календаря: Owner.organizationName, схема v1.86. AdminOrganizationController / OrganizerOrganizationService — отдельное название аккаунта; GET /api/admin/organizers/organizations, PUT /api/admin/organizers/{id}/organization. Календарь содержит organizer и доступный список organizers, фильтр organizerId. См. docs/endpoints/admin-event-calendar.md.

@@ -9,6 +9,7 @@ import com.padle.core.padelcoreservice.model.enums.OwnerRole;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
 import com.padle.core.padelcoreservice.service.ClubService;
+import com.padle.core.padelcoreservice.service.OrganizerOrganizationService;
 import com.padle.core.padelcoreservice.service.TournamentAccessService;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import com.padle.core.padelcoreservice.service.americano.TeamPlayoffService;
@@ -39,6 +40,7 @@ class AdminTournamentListTest {
     @Mock private TournamentAccessService access;
     @Mock private ClubService clubs;
     @Mock private TeamPlayoffService playoff;
+    @Mock private OrganizerOrganizationService organizations;
     @InjectMocks private AdminController controller;
 
     @Test
@@ -148,6 +150,20 @@ class AdminTournamentListTest {
                 .containsExactly(true, false, false);
     }
 
+    @Test
+    void organizerFilterUsesEventOwnerTogetherWithExistingFilters() {
+        Owner admin = owner(OwnerRole.SUPER_ADMIN);
+        TournamentDto selected = event(1, 3, 8, FROM, TournamentType.PADEL_CLINIC, Modalidad.INDIVIDUAL);
+        when(tournaments.getAllTournaments()).thenReturn(List.of(selected,
+                event(2, 3, 9, FROM, TournamentType.PADEL_CLINIC, Modalidad.INDIVIDUAL)));
+        var model = new ExtendedModelMap();
+        controller.listTournaments(model, admin, 3L, AdminEventFormat.PADEL_CLINIC, FROM, TO,
+                null, null, null, 8L);
+        assertThat(listed(model)).containsExactly(selected);
+        assertThat(model.get("selectedOrganizerId")).isEqualTo(8L);
+        assertThat(model.get("filtersActive")).isEqualTo(true);
+    }
+
     private static TournamentDto pair(long id, String level, GenderFormat gender, TournamentStatus status, boolean active) {
         TournamentDto event = event(id, 3, 8, FROM, TournamentType.AMERICANO_TEAMS, Modalidad.DOBLES);
         event.setCategoriaNivel(level);
@@ -164,7 +180,7 @@ class AdminTournamentListTest {
     private ExtendedModelMap list(Owner owner, Long clubId, AdminEventFormat format, LocalDate from, LocalDate to,
                                   GenderFormat gender, Nivel level, TournamentStatus status) {
         var model = new ExtendedModelMap();
-        controller.listTournaments(model, owner, clubId, format, from, to, gender, level, status);
+        controller.listTournaments(model, owner, clubId, format, from, to, gender, level, status, null);
         return model;
     }
 

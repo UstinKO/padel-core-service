@@ -1,7 +1,7 @@
 # Архитектура базы данных — padel-core-service
 
 > **СУБД:** PostgreSQL 15  
-> **Версия схемы:** v1.85
+> **Версия схемы:** v1.87
 > **Миграции:** Liquibase (YAML), файлы в `src/main/resources/db/changelog/versions/`  
 > **ddl-auto:** `none` — схема управляется только через Liquibase
 
@@ -146,6 +146,7 @@ owners_db ───────────────────────�
 | `id` | `BIGSERIAL` | NOT NULL | auto | PK |
 | `email` | `VARCHAR(255)` | NOT NULL | — | Уникальный логин |
 | `password` | `VARCHAR(255)` | NOT NULL | — | BCrypt-хэш |
+| `organization_name` | `VARCHAR(120)` | NULL | — | Отображаемое название организации |
 | `first_name` | `VARCHAR(255)` | NOT NULL | — | Имя |
 | `last_name` | `VARCHAR(255)` | NOT NULL | — | Фамилия |
 | `phone` | `VARCHAR(255)` | NULL | — | Телефон |
@@ -921,6 +922,7 @@ tournaments_db
 | v1.69 | `v1.69-playoff-match-start` | Отметки фактического начала и изменения состава матча Team Playoff |
 
 | v1.84 | `v1.84-nivel-c3` | CHECK категорий турнира расширен C3 и C4_C3; существующие значения сохранены |
+| v1.86 | `v1.86-organizer-organization` | Отдельное nullable название организации служебного аккаунта |
 
 ## QR-переходы Reby
 
@@ -1056,3 +1058,7 @@ PK `(registration_id, version)` исключает два факта одног�
 ## Telegram для игроков: v1.85
 
 player_telegram_connections хранит проверенную связь player_id и Telegram user_id/chat_id. player_telegram_tokens хранит только SHA-256 одноразовой ссылки и expires_at. player_telegram_deliveries хранит dedupe_key, связи с турниром/регистрацией, состояние и message_id. player_telegram_poll хранит next_offset, lease_id и lease_until. Прежний telegram_chat_id не подтверждает личность. Для ParticipationRequest разрешена причина ORGANIZER, индекс одного текущего запроса сохранён. Оплаты не меняются.
+
+Организации организаторов: owners_db.organization_name VARCHAR(120) NULL, новая миграция v1.86. Имя аккаунта и привязки клубов не меняются; исходные значения остаются NULL.
+
+Предпочтение связи: v1.87, `player_contact_preferences` — одна строка на игрока, UNSPECIFIED / TELEGRAM / WHATSAPP. WhatsApp не создаёт автоматических сообщений.

@@ -100,6 +100,9 @@ document.addEventListener('DOMContentLoaded', function() {
             'C8': t('enum.nivel.c8'),
             'C7': t('enum.nivel.c7'),
             'C6': t('enum.nivel.c6'),
+            'C4': t('enum.nivel.c4'),
+            'C3': t('enum.nivel.c3'),
+            'C4_C3': t('enum.nivel.c4_c3'),
             'C5': t('enum.nivel.c5'),
             'PRINCIPIANTES': t('enum.nivel.principiantes')
         },
@@ -250,27 +253,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
 
-            // ИСПРАВЛЕНО: Фильтр по уровню с маппингом значений
+            // Фильтр учитывает отдельные уровни и границы диапазонов.
             if (filters.nivel !== 'todos') {
-                // Маппинг значений фильтра на значения в БД
-                const nivelMap = {
-                    'Principiante': 'PRINCIPIANTES',
-                    'C9': 'C9',
-                    'C8': 'C8',
-                    'C7': 'C7',
-                    'C6': 'C6',
-                    'C5': 'C5',
-                    'C4': 'C4',
-                    'D9': 'D9',
-                    'D8': 'D8',
-                    'D7': 'D7',
-                    'D6': 'D6',
-                    'SUMA_15': 'SUMA_15',
-                    'SUMA_14': 'SUMA_14',
-                    'SUMA_13': 'SUMA_13',
-                };
-                const dbValue = nivelMap[filters.nivel];
-                if (tournament.categoriaNivel !== dbValue) {
+                if (!window.PadelLevels.matches(tournament.categoriaNivel, filters.nivel)) {
                     return false;
                 }
             }
@@ -1187,7 +1172,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Получаем отображаемые тексты
         const generoDisplay = displayMaps.genero[tournament.generoFormato] || tournament.generoFormato || 'N/A';
-        const nivelDisplay = tournament.categoriaNivel || 'N/A';
+        const nivelDisplay = (tournament.categoriaNivel || 'N/A').replace('C4_C3', 'C4/C3');
         const tipoDisplay = displayMaps.tipo[tournament.tipo] || tournament.tipo || 'N/A';
         // Заголовок карточки — формат мероприятия (как на главной странице, home.js),
         // а не автогенерированное название турнира, дублирующее пол/категорию.

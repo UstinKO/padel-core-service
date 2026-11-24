@@ -8,13 +8,51 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Repository
 @RequiredArgsConstructor
 public class PlayerTelegramStore {
     private final JdbcTemplate jdbc;
+
+    public ContactPreference preference(long playerId) {
+        return jdbc.query("SELECT preference FROM player_contact_preferences WHERE player_id = ?",
+                (r, n) -> ContactPreference.valueOf(r.getString("preference")), playerId)
+                .stream().findFirst().orElse(ContactPreference.UNSPECIFIED);
+    }
+
+    public Map<Long, ContactPreference> preferences(List<Long> playerIds) {
+        if (playerIds.isEmpty()) return Map.of();
+        String placeholders = String.join(",", Collections.nCopies(playerIds.size(), "?"));
+        return jdbc.query("SELECT player_id, preference FROM player_contact_preferences WHERE player_id IN ("
+                        + placeholders + ")", (r, n) -> Map.entry(r.getLong("player_id"),
+                        ContactPreference.valueOf(r.getString("preference"))), playerIds.toArray())
+                .stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    @Transactional
+    public void preference(long playerId, ContactPreference preference) {
+        lockConnections();
+        savePreference(playerId, preference);
+        if (preference == ContactPreference.WHATSAPP) {
+            removeConnection(playerId);
+        }
+    }
+
+    private void savePreference(long playerId, ContactPreference preference) {
+        jdbc.update("""
+                INSERT INTO player_contact_preferences(player_id, preference) VALUES (?, ?)
+                ON CONFLICT (player_id) DO UPDATE SET preference = EXCLUDED.preference
+                """, playerId, preference.name());
+    }
+
+    private void lockConnections() {
+        jdbc.execute("SELECT pg_advisory_xact_lock(1294001)");
+    }
 
     public Optional<Connection> connection(long playerId) {
         return jdbc.query("SELECT * FROM player_telegram_connections WHERE player_id = ?",
@@ -29,7 +67,10 @@ public class PlayerTelegramStore {
     }
 
     @Transactional
-    public void token(long playerId, String hash, OffsetDateTime expiresAt) {
+    public void token(long playerId, String hash, OffsetDateTime expiresAt, String locale) {
+        lockConnections();
+        savePreference(playerId, ContactPreference.TELEGRAM);
+        jdbc.update("UPDATE player_padel_db SET preferred_locale = ? WHERE id = ?", locale, playerId);
         jdbc.update("""
                 INSERT INTO player_telegram_tokens(player_id, token_hash, expires_at) VALUES (?, ?, ?)
                 ON CONFLICT (player_id) DO UPDATE SET token_hash = EXCLUDED.token_hash,
@@ -39,7 +80,7 @@ public class PlayerTelegramStore {
 
     @Transactional
     public Optional<Long> bind(String hash, long userId, long chatId) {
-        jdbc.execute("SELECT pg_advisory_xact_lock(1294001)");
+        lockConnections();
         var player = jdbc.queryForList("""
                 SELECT t.player_id FROM player_telegram_tokens t JOIN player_padel_db p ON p.id = t.player_id
                 WHERE t.token_hash = ? AND t.expires_at > CURRENT_TIMESTAMP AND p.activo = true
@@ -55,12 +96,18 @@ public class PlayerTelegramStore {
                         linked_at = CURRENT_TIMESTAMP
                     """, id, userId, chatId);
             jdbc.update("DELETE FROM player_telegram_tokens WHERE player_id = ?", id);
+            savePreference(id, ContactPreference.TELEGRAM);
             return id;
         });
     }
 
     @Transactional
     public void disconnect(long playerId) {
+        lockConnections();
+        removeConnection(playerId);
+    }
+
+    private void removeConnection(long playerId) {
         jdbc.update("DELETE FROM player_telegram_connections WHERE player_id = ?", playerId);
         jdbc.update("DELETE FROM player_telegram_tokens WHERE player_id = ?", playerId);
     }

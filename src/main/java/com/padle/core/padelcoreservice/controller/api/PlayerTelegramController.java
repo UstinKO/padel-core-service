@@ -7,6 +7,8 @@ import com.padle.core.padelcoreservice.service.TelegramParticipationCoordinator;
 import com.padle.core.padelcoreservice.telegram.*;
 import com.padle.core.padelcoreservice.telegram.TelegramModels.*;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
+import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -38,8 +40,14 @@ public class PlayerTelegramController {
 
     @PostMapping("/players/me/telegram/link")
     @PreAuthorize("hasRole('PLAYER')")
-    public Link link(Authentication auth) {
-        return links.issue(accounts.player(auth));
+    public Link link(Authentication auth, Locale locale) {
+        return links.issue(accounts.player(auth), locale);
+    }
+
+    @PutMapping("/players/me/telegram/preference")
+    @PreAuthorize("hasRole('PLAYER')")
+    public LinkStatus preference(Authentication auth, @Valid @RequestBody PreferenceChange change) {
+        return links.preference(accounts.player(auth), change.preference());
     }
 
     @DeleteMapping("/players/me/telegram")

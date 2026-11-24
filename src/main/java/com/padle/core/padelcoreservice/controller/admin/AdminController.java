@@ -15,6 +15,7 @@ import com.padle.core.padelcoreservice.service.ClubService;
 import com.padle.core.padelcoreservice.service.DoubleTournamentRegistrationService;
 import com.padle.core.padelcoreservice.service.MatchService;
 import com.padle.core.padelcoreservice.service.OwnerService;
+import com.padle.core.padelcoreservice.service.OrganizerOrganizationService;
 import com.padle.core.padelcoreservice.service.PlayerService;
 import com.padle.core.padelcoreservice.service.TournamentAccessService;
 import com.padle.core.padelcoreservice.service.TournamentService;
@@ -62,6 +63,7 @@ public class AdminController {
     private final ClubService clubService;
     private final PlayerService playerService;
     private final OwnerService ownerService;
+    private final OrganizerOrganizationService organizations;
     private final MatchService matchService;
     private final TournamentKingOfCourtRepository tournamentKingOfCourtRepository;
     private final AmericanoService americanoService;
@@ -139,12 +141,14 @@ public class AdminController {
                                   @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
                                   @RequestParam(required = false) GenderFormat gender,
                                   @RequestParam(required = false) Nivel level,
-                                  @RequestParam(required = false) TournamentStatus status) {
+                                  @RequestParam(required = false) TournamentStatus status,
+                                  @RequestParam(required = false) Long organizerId) {
         log.info("Listing tournaments for owner: {}", owner.getEmail());
 
         List<TournamentDto> visible = visibleTournaments(owner);
         boolean invalidPeriod = from != null && to != null && from.isAfter(to);
         List<TournamentDto> filtered = invalidPeriod ? List.of() : visible.stream()
+                .filter(t -> organizerId == null || organizerId.equals(t.getOwnerId()))
                 .filter(t -> clubId == null || clubId.equals(t.getClubId()))
                 .filter(t -> format == null || format == AdminEventFormat.of(t))
                 .filter(t -> matchesPeriod(t.getFechaInicio(), from, to))
@@ -170,6 +174,8 @@ public class AdminController {
             model.addAttribute("clubs", activeClubs);
         }
         model.addAttribute("filterClubs", filterClubs(activeClubs, visible));
+        model.addAttribute("filterOrganizers", organizations.forEvents(visible));
+        model.addAttribute("selectedOrganizerId", organizerId);
         model.addAttribute("selectedClubId", clubId);
         model.addAttribute("selectedFormat", format);
         model.addAttribute("eventFormats", AdminEventFormat.values());
@@ -185,7 +191,7 @@ public class AdminController {
         model.addAttribute("dateTo", to);
         model.addAttribute("invalidPeriod", invalidPeriod);
         model.addAttribute("filtersActive", clubId != null || format != null || from != null || to != null
-                || gender != null || level != null || status != null);
+                || gender != null || level != null || status != null || organizerId != null);
 
         return "admin/tournaments/list";
     }
