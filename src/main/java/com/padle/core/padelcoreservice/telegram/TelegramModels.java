@@ -13,7 +13,7 @@ public final class TelegramModels {
     public record Connection(long playerId, long userId, long chatId, boolean enabled) {}
     public enum ContactPreference { UNSPECIFIED, TELEGRAM, WHATSAPP }
     public record PreferenceChange(@NotNull ContactPreference preference) {}
-    public record LinkStatus(boolean available, boolean connected, ContactPreference preference) {}
+    public record LinkStatus(boolean available, boolean connected, ContactPreference preference, boolean eligible) {}
     public record Link(String url, OffsetDateTime expiresAt) {}
     public record Recipient(long registrationId, long playerId, String name, String response,
                             boolean connected, String delivery, ContactPreference preference) {

@@ -14,7 +14,9 @@ public record PlayerTelegramProperties(
         @DefaultValue("3") int reminderHours,
         Long organizerOwnerId, Long organizerChatId,
         @DefaultValue("false") boolean dailySummaryEnabled,
-        @DefaultValue("") String botToken) {
+        @DefaultValue("") String botToken,
+        @DefaultValue("true") boolean pilotEnabled,
+        Long pilotPlayerId, Long pilotTournamentId) {
     public PlayerTelegramProperties {
         if (confirmationHours < 1 || confirmationHours > 72 || reminderHours < 1
                 || reminderHours >= confirmationHours) {

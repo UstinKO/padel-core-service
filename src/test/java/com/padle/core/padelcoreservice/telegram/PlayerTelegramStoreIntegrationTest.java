@@ -20,7 +20,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest(properties = {"telegram.enabled=false", "telegram.players.enabled=true"})
+@SpringBootTest(properties = {"telegram.enabled=false", "telegram.players.enabled=true", "telegram.players.pilot-enabled=false"})
 @AutoConfigureMockMvc
 @Transactional
 class PlayerTelegramStoreIntegrationTest {

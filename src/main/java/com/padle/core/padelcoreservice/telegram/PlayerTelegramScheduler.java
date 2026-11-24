@@ -21,6 +21,7 @@ public class PlayerTelegramScheduler {
     private final TelegramParticipationCoordinator participation;
     private final PlayerTelegramNotifications notifications;
     private final PlayerTelegramSummary summary;
+    private final PlayerTelegramAccess access;
 
     @Scheduled(fixedDelay = 60_000)
     public void tick() {
@@ -31,6 +32,7 @@ public class PlayerTelegramScheduler {
         var dates = IntStream.rangeClosed(-1, 4).mapToObj(today::plusDays).toList();
         var now = Instant.now();
         tournaments.findByFechaInicioInAndActive(dates).stream()
+                .filter(t -> access.allowsEvent(t.getId()))
                 .filter(TelegramParticipationCoordinator::upcoming)
                 .filter(t -> Duration.between(now, TelegramParticipationCoordinator.startsAt(t)).toMinutes()
                         <= properties.confirmationHours() * 60L)

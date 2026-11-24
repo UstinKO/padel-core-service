@@ -25,14 +25,17 @@ public class PlayerTelegramLinks {
     private final PlayerTelegramProperties properties;
     private final PlayerTelegramApi api;
     private final PlayerTelegramStore store;
+    private final PlayerTelegramAccess access;
 
     public LinkStatus status(PlayerPadel player) {
-        return new LinkStatus(available(), store.connection(player.getId()).filter(Connection::enabled).isPresent(),
-                store.preference(player.getId()));
+        boolean eligible = access.allowsPlayer(player.getId()) && player.isActivo() && !player.isGuestAccount();
+        return new LinkStatus(eligible && available(),
+                eligible && store.connection(player.getId()).filter(Connection::enabled).isPresent(),
+                store.preference(player.getId()), eligible);
     }
 
     public LinkStatus preference(PlayerPadel player, ContactPreference preference) {
-        if (!properties.enabled() || !player.isActivo() || player.isGuestAccount()) {
+        if (!access.allowsPlayer(player.getId()) || !player.isActivo() || player.isGuestAccount()) {
             throw new AccountException(HttpStatus.CONFLICT, "TELEGRAM_UNAVAILABLE");
         }
         store.preference(player.getId(), preference);
@@ -45,7 +48,7 @@ public class PlayerTelegramLinks {
     }
 
     public Link issue(PlayerPadel player, Locale locale) {
-        if (!available() || !player.isActivo() || player.isGuestAccount()) {
+        if (!available() || !access.allowsPlayer(player.getId()) || !player.isActivo() || player.isGuestAccount()) {
             throw new AccountException(HttpStatus.CONFLICT, "TELEGRAM_UNAVAILABLE");
         }
         byte[] bytes = new byte[24];
@@ -58,7 +61,7 @@ public class PlayerTelegramLinks {
     }
 
     public Optional<Long> bind(String token, long userId, long chatId) {
-        if (userId <= 0 || chatId != userId || !token.matches("[A-Za-z0-9_-]{32}")) {
+        if (!available() || userId <= 0 || chatId != userId || !token.matches("[A-Za-z0-9_-]{32}")) {
             return Optional.empty();
         }
         return store.bind(hash(token), userId, chatId);

@@ -27,6 +27,7 @@ public class PlayerTelegramNotifications {
     private final PlayerTelegramStore store;
     private final PlayerTelegramMessages messages;
     private final PlayerTelegramDelivery delivery;
+    private final PlayerTelegramAccess access;
     @Value("${app.base-url:http://localhost:8080}")
     private String baseUrl;
 
@@ -34,13 +35,14 @@ public class PlayerTelegramNotifications {
     public void send(long registrationId, boolean reminder) {
         registrations.findById(registrationId)
                 .filter(row -> Boolean.TRUE.equals(row.getIsActive()) && row.isConfirmed())
+                .filter(row -> access.allowsEvent(row.getTournament().getId()))
                 .filter(row -> TelegramParticipationCoordinator.upcoming(row.getTournament()))
                 .ifPresent(row -> recipient(row).ifPresent(player -> send(row, player, reminder)));
     }
 
     private Optional<PlayerPadel> recipient(TournamentRegistration row) {
         return participation.recipient(row, participation.current(row)).flatMap(players::findById)
-                .filter(PlayerPadel::isActivo).filter(player -> !player.isGuestAccount());
+                .filter(player -> access.allowsPlayer(player.getId())).filter(PlayerPadel::isActivo).filter(player -> !player.isGuestAccount());
     }
 
     private void send(TournamentRegistration row, PlayerPadel player, boolean reminder) {

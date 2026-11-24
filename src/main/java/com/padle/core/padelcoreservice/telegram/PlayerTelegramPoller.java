@@ -3,6 +3,7 @@ package com.padle.core.padelcoreservice.telegram;
 import com.padle.core.padelcoreservice.dto.ParticipationDtos.Decision;
 import com.padle.core.padelcoreservice.exception.AccountException;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
+import com.padle.core.padelcoreservice.repository.ParticipationRequestRepository;
 import com.padle.core.padelcoreservice.service.TournamentParticipationService;
 import com.padle.core.padelcoreservice.telegram.TelegramModels.*;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,8 @@ public class PlayerTelegramPoller {
     private final PlayerTelegramDelivery delivery;
     private final TournamentParticipationService participation;
     private final PlayerTelegramSummary summary;
+    private final PlayerTelegramAccess access;
+    private final ParticipationRequestRepository requests;
 
     public void poll() {
         if (!api.available()) {
@@ -66,9 +69,19 @@ public class PlayerTelegramPoller {
 
     private void command(long updateId, Message message) {
         String text = Optional.ofNullable(message.text()).orElse("").strip();
+        if (access.pilot() && !text.startsWith("/start ") && store.byUser(message.from().id())
+                .filter(c -> access.allowsPlayer(c.playerId())).isEmpty()) {
+            return;
+        }
         if (text.equals("/stop")) {
-            store.byUser(message.from().id()).ifPresent(c -> store.disconnect(c.playerId()));
-            reply(updateId, message, "stopped", Locale.forLanguageTag("es"));
+            var connection = store.byUser(message.from().id());
+            var locale = connection.flatMap(c -> players.findById(c.playerId()))
+                    .map(p -> p.getLocale()).orElse(Locale.forLanguageTag("es"));
+            try {
+                reply(updateId, message, "stopped", locale);
+            } finally {
+                connection.ifPresent(c -> store.disconnect(c.playerId()));
+            }
         } else if (text.startsWith("/start ")) {
             var linked = links.bind(text.substring(7).strip(), message.from().id(), message.chat().id());
             var locale = linked.flatMap(players::findById).map(p -> p.getLocale()).orElse(Locale.forLanguageTag("es"));
@@ -91,7 +104,10 @@ public class PlayerTelegramPoller {
             return;
         }
         var player = store.byUser(callback.from().id()).flatMap(c -> players.findById(c.playerId()))
-                .filter(p -> p.isActivo());
+                .filter(p -> p.isActivo() && access.allowsPlayer(p.getId()));
+        if (access.pilot() && player.isEmpty()) {
+            return;
+        }
         var locale = player.map(p -> p.getLocale()).orElse(Locale.forLanguageTag("es"));
         String response = messages.text("unavailable", locale);
         try {
@@ -102,7 +118,7 @@ public class PlayerTelegramPoller {
             }
             var id = UUID.fromString(parts[1]);
             long expectedStart = Long.parseLong(parts[2], 36);
-            if (player.isPresent()) {
+            if (player.isPresent() && requests.findTournamentId(id).filter(access::allowsEvent).isPresent()) {
                 var review = participation.confirmTelegram(id, player.orElseThrow(), expectedStart);
                 response = messages.text(review.status().name().equals("CONFIRMED") && !review.outdated()
                         ? "confirmed" : "unavailable", locale);

@@ -23,7 +23,7 @@ class PlayerTelegramApiTest {
         api = new PlayerTelegramApi(properties, rest);
     }
     private PlayerTelegramProperties properties(boolean enabled, String token) {
-        return new PlayerTelegramProperties(enabled, "OnePadelQaBot", false, 24, 3, null, null, false, token);
+        return new PlayerTelegramProperties(enabled, "OnePadelQaBot", false, 24, 3, null, null, false, token, false, null, null);
     }
     @Test void playerBotRequiresItsOwnTokenAndAnExplicitFeatureFlag() {
         assertThat(new PlayerTelegramApi(properties(true, ""), new RestTemplate()).available()).isFalse();

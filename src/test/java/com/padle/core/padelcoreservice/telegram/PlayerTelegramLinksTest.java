@@ -15,8 +15,8 @@ import static org.mockito.Mockito.*;
 class PlayerTelegramLinksTest {
     private final PlayerTelegramApi api = mock(PlayerTelegramApi.class);
     private final PlayerTelegramStore store = mock(PlayerTelegramStore.class);
-    private final PlayerTelegramProperties properties = new PlayerTelegramProperties(true, "OnePadelTestBot", false, 24, 3, null, null, false, "fixture-token");
-    private final PlayerTelegramLinks links = new PlayerTelegramLinks(properties, api, store);
+    private final PlayerTelegramProperties properties = new PlayerTelegramProperties(true, "OnePadelTestBot", false, 24, 3, null, null, false, "fixture-token", false, null, null);
+    private final PlayerTelegramLinks links = new PlayerTelegramLinks(properties, api, store, new PlayerTelegramAccess(properties));
 
     @Test void linkIsOpaqueExpiresAndDoesNotStoreItsBearerToken() {
         when(api.available()).thenReturn(true);
@@ -37,6 +37,7 @@ class PlayerTelegramLinksTest {
     }
 
     @Test void absenceOfUsernameDoesNotBlockLinking() {
+        when(api.available()).thenReturn(true);
         when(store.bind(anyString(), eq(99L), eq(99L))).thenReturn(Optional.of(42L));
         assertThat(links.bind("a".repeat(32), 99, 99)).contains(42L);
     }

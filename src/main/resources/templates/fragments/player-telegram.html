@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <body>
 <section th:fragment="profile" th:if="${@environment.getProperty('telegram.players.enabled') == 'true'}"
-         class="telegram-panel" data-tg-profile
+         class="telegram-panel" data-tg-profile hidden
          th:attr="data-loading=#{telegram.ui.loading},data-error=#{telegram.ui.error},data-unavailable=#{telegram.ui.unavailable},data-connected=#{telegram.ui.connected},data-disconnected=#{telegram.ui.disconnected},data-open-hint=#{telegram.ui.openHint},data-whatsapp-saved=#{telegram.ui.whatsappSaved}">
     <h2 th:text="#{telegram.ui.title}"></h2>
     <p th:text="#{telegram.ui.description}"></p>
@@ -40,7 +40,7 @@
         <a th:href="@{/perfil}" data-tg-profile-link hidden th:text="#{telegram.ui.changePreference}"></a>
     </section>
 </template>
-<section th:fragment="admin" th:if="${@environment.getProperty('telegram.players.enabled') == 'true'}"
+<section th:fragment="admin" th:if="${@playerTelegramAccess.allowsEvent(tournament.id)}"
          class="telegram-panel" data-tg-admin
          th:attr="data-tournament-id=${tournament.id},data-loading=#{telegram.ui.loading},data-error=#{telegram.ui.error},data-sent=#{telegram.ui.requestSent},data-summary-sent=#{telegram.ui.summarySent},data-confirmed=#{telegram.ui.confirmed},data-pending=#{telegram.ui.pending},data-not-required=#{telegram.ui.notRequired},data-declined=#{telegram.ui.declined},data-no-telegram=#{telegram.ui.noTelegram},data-delivery-error=#{telegram.ui.deliveryError},data-whatsapp-manual=#{telegram.ui.whatsappManual},data-manual-contact=#{telegram.ui.manualContact}">
     <h2 th:text="#{telegram.ui.adminTitle}"></h2>

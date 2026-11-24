@@ -1,6 +1,8 @@
 package com.padle.core.padelcoreservice.telegram;
 
 import com.padle.core.padelcoreservice.model.*;
+import com.padle.core.padelcoreservice.config.PlayerTelegramProperties;
+import org.junit.jupiter.api.BeforeEach;
 import com.padle.core.padelcoreservice.model.enums.*;
 import com.padle.core.padelcoreservice.repository.*;
 import com.padle.core.padelcoreservice.service.EmailService;
@@ -58,8 +60,16 @@ class PlayerTelegramBrowserTest {
     @Autowired PlatformTransactionManager transactions;
     @Autowired ObjectMapper json;
     @MockitoBean PlayerTelegramApi api;
+    @MockitoBean PlayerTelegramProperties properties;
     @MockitoBean EmailService email;
     @MockitoBean TournamentNotificationService notifications;
+
+    @BeforeEach void configure() {
+        when(api.available()).thenReturn(true);
+        when(properties.enabled()).thenReturn(true);
+        when(properties.pilotEnabled()).thenReturn(false);
+        when(properties.botUsername()).thenReturn("OnePadelQaBot");
+    }
 
     record Scenario(String language, String email, long playerId, long eventId, long reserveId) {}
     record Fixture(String baseUrl, String adminEmail, String password, List<Scenario> scenarios,
@@ -89,6 +99,35 @@ class PlayerTelegramBrowserTest {
                 assertThat(registrations.findByTournamentIdAndPlayerId(scenario.reserveId(), scenario.playerId()).orElseThrow().getStatus())
                         .isEqualTo(RegistrationStatus.WAITLIST);
             });
+            verify(api, never()).send(anyLong(), anyString(), anyList());
+            verify(api, never()).updates(anyLong());
+        } finally {
+            Files.deleteIfExists(input);
+            Files.deleteIfExists(directory);
+        }
+    }
+
+    @Test void pilotIsVisibleOnlyToTheSelectedAccountAndEvent() throws Exception {
+        Fixture fixture = new TransactionTemplate(transactions).execute(status -> seed());
+        assertThat(fixture).isNotNull();
+        var selected = fixture.scenarios().get(0);
+        when(properties.pilotEnabled()).thenReturn(true);
+        when(properties.pilotPlayerId()).thenReturn(selected.playerId());
+        when(properties.pilotTournamentId()).thenReturn(selected.eventId());
+        Path directory = Files.createTempDirectory("padel-telegram-pilot-browser-");
+        Path input = directory.resolve("fixture.json");
+        Path output = Path.of("target/telegram-browser-qa");
+        Files.createDirectories(output);
+        Files.writeString(input, json.writeValueAsString(fixture));
+        try {
+            var process = new ProcessBuilder("node", "tests/browser/player-telegram-pilot.browser.mjs", input.toString())
+                    .redirectErrorStream(true).redirectOutput(output.resolve("pilot-browser.log").toFile()).start();
+            boolean completed = process.waitFor(120, TimeUnit.SECONDS);
+            if (!completed) process.destroyForcibly();
+            assertThat(completed).as("Проверка ограниченного пилота завершилась вовремя").isTrue();
+            assertThat(process.exitValue()).as(Files.readString(output.resolve("pilot-browser.log"))).isZero();
+            assertThat(store.preference(selected.playerId())).isEqualTo(TelegramModels.ContactPreference.TELEGRAM);
+            assertThat(store.preference(fixture.scenarios().get(1).playerId())).isEqualTo(TelegramModels.ContactPreference.UNSPECIFIED);
             verify(api, never()).send(anyLong(), anyString(), anyList());
             verify(api, never()).updates(anyLong());
         } finally {

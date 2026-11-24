@@ -3,7 +3,7 @@
 .telegram-panel p { margin: .5rem 0 1rem; overflow-wrap: anywhere; }
 .telegram-actions { display: flex; flex-wrap: wrap; gap: .6rem; }
 .telegram-actions .btn { max-width: 100%; white-space: normal; text-align: center; min-height: 44px; }
-.telegram-panel [hidden], .telegram-registration [hidden] { display: none !important; }
+.telegram-panel[hidden], .telegram-panel [hidden], .telegram-registration [hidden] { display: none !important; }
 .telegram-panel [data-tg-status] { font-size: .95rem; color: #4f4c61; }
 .telegram-panel [data-tg-status][data-error="true"] { color: #a02525; }
 .telegram-counters { display: flex; flex-wrap: wrap; gap: .6rem 1rem; padding: .75rem 0; }

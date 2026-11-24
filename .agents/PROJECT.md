@@ -682,3 +682,5 @@ Telegram для игроков: PlayerTelegramController, TelegramParticipationC
 Telegram UI: `fragments/player-telegram` / `player-telegram.js` / `player-telegram.css`. Фрагмент `registration` вызывается после успешной записи в кабинете и карточке события, сохраняет прежний результат/условия и исключает подключённых/WhatsApp. Профиль редактирует предпочтение, админка показывает ручную связь. Тексты ES/RU/EN берут текущую серверную locale. [Проверки и ограничения](../docs/player-telegram-interface.md).
 
 Организации календаря: Owner.organizationName, схема v1.86. AdminOrganizationController / OrganizerOrganizationService — отдельное название аккаунта; GET /api/admin/organizers/organizations, PUT /api/admin/organizers/{id}/organization. Календарь содержит organizer и доступный список organizers, фильтр organizerId. См. docs/endpoints/admin-event-calendar.md.
+
+Telegram-пилот: `telegram.players.pilot-enabled=true` по умолчанию, один `pilot-player-id` и один `pilot-tournament-id`. Пустые ID закрывают доступ. Ограничение применяется к подключению, запросам/ответам, отправке и сводке; остальные аккаунты сохраняют старые уведомления.

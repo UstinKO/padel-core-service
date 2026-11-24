@@ -39,6 +39,7 @@
         const whatsapp = profile.querySelector('[data-tg-whatsapp]');
         const refreshButton = profile.querySelector('[data-tg-refresh]');
         const render = state => {
+            profile.hidden = state.eligible !== true;
             profile.dataset.available = String(state.available);
             connect.hidden = state.connected;
             if (disconnect) disconnect.hidden = !state.connected;
@@ -99,7 +100,7 @@
                 const body = modal.querySelector('.modal-body');
                 const content = body?.firstElementChild;
                 const state = await request('/api/players/me/telegram');
-                if (!body || !state.available || state.connected || state.preference === 'WHATSAPP') return false;
+                if (!body || !state.eligible || !state.available || state.connected || state.preference === 'WHATSAPP') return false;
                 if (!modal.isConnected || !modal.classList.contains('show')) return false;
                 if (body.firstElementChild !== content) return false;
                 if (body.querySelector('[data-tg-prompt]')) return true;

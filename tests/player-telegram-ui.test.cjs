@@ -30,7 +30,7 @@ async function fixture(kind, handler) {
     await settle(); await settle();
     return { dom, panel, calls };
 }
-const response = data => ({ ok: true, status: 200, json: async () => data });
+const response = data => ({ ok: true, status: 200, json: async () => ({ eligible: true, ...data }) });
 test('profile link requires an explicit click and a double click issues one token with CSRF', async () => {
     const f = await fixture('profile', async (url, options) => options.method === 'POST'
         ? response({ url: 'https://t.me/FixtureBot?start=fixture', expiresAt: new Date(Date.now() + 600000).toISOString() })
@@ -197,5 +197,22 @@ test('a late status response cannot attach the offer to a closed or replaced res
     resolveStatus(response({available:true,connected:false,preference:'UNSPECIFIED'}));
     assert.equal(await pending, false);
     assert.equal(modal.querySelector('[data-tg-prompt]'), null);
+    f.dom.window.close();
+});
+
+test('a profile outside the pilot remains hidden and registration never offers Telegram', async () => {
+    const hidden = await fixture('profile', async () => response({ eligible: false, available: false, connected: false }));
+    assert.equal(hidden.panel.hidden, true);
+    assert.equal(hidden.calls.length, 1);
+    hidden.dom.window.close();
+    const f = await fixture('registration', async () => response({ eligible: false, available: false, connected: false }));
+    const modal = registrationModal(f);
+    assert.equal(await f.dom.window.PlayerTelegramRegistration.mount(modal), false);
+    assert.equal(modal.querySelector('[data-tg-prompt]'), null);
+    f.dom.window.close();
+});
+test('eligible profile is shown only after a successful eligibility read', async () => {
+    const f = await fixture('profile', async () => response({ eligible: true, available: true, connected: false }));
+    assert.equal(f.panel.hidden, false);
     f.dom.window.close();
 });
