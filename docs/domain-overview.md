@@ -826,6 +826,8 @@ Thymeleaf admin/qr-report, static/js/qr-report.js, static/css/qr-report.css.
 
 `PublicDiscoveryController` → `PublicDiscoveryService`: `GET /api/public/home`, `/api/public/catalog`, `/api/public/clubs`, `/api/public/clubs/{id}`. Типизированные публичные DTO, пагинация в БД, без мутаций. [Контракт](endpoints/public-schedule.md#публичные-данные-ui-v2).
 
+`PublicCalendarController` / `PersonalCalendarController` → `PublicCalendarService`: GET `/api/public/calendar`, `/api/public/calendar/catalog`, `/api/players/me/calendar`. Полные публичные данные периода и отдельные статусы текущего игрока без административных сведений. [Контракт](endpoints/public-calendar.md).
+
 
 `PublicEventController` → `PublicEventService`/`PublicEventStateService`: `GET /api/public/events/{id}` — типизированная карточка события, опубликованный контакт организатора, формат/фаза сохранённого проведения и read-only ссылки. [Контракт](endpoints/public-schedule.md#веб-карточка-мероприятия-и-серверный-seo-контракт).
 

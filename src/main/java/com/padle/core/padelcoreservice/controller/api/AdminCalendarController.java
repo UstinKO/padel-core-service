@@ -1,6 +1,6 @@
 package com.padle.core.padelcoreservice.controller.api;
 
-import com.padle.core.padelcoreservice.controller.admin.AdminEventFormat;
+import com.padle.core.padelcoreservice.model.enums.EventFormat;
 import com.padle.core.padelcoreservice.dto.calendar.AdminCalendarMonth;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.enums.GenderFormat;
@@ -31,7 +31,7 @@ public class AdminCalendarController {
     public ResponseEntity<AdminCalendarMonth> month(@AuthenticationPrincipal Owner owner,
             @RequestParam(required = false) String month,
             @RequestParam(required = false) Long clubId,
-            @RequestParam(required = false) AdminEventFormat format,
+            @RequestParam(required = false) EventFormat format,
             @RequestParam(required = false) GenderFormat gender,
             @RequestParam(required = false) Nivel level,
             @RequestParam(required = false) TournamentStatus status,

@@ -185,6 +185,7 @@ docker compose up -d
 | GET | `/api/players/me/contact-status` | Проверка наличия контакта |
 | GET | `/api/players/me/tournaments` | «Мои мероприятия» (LFPT-0637) — предстоящие/история, только просмотр |
 | GET | `/api/players/me/events` | Типизированный кабинет игрока, собственные заявки, история и доступные действия |
+| GET | `/api/players/me/calendar` | Собственные действующие публичные регистрации, без оплат и контактов |
 | POST | `/api/players/me/events/{registrationId}/withdraw` | Личный выход с версией заявки |
 | PUT | `/api/players/me/events/{registrationId}/contact-visibility` | Согласие на показ контактов при поиске партнёра |
 | GET | `/api/players/search` | Поиск партнёра для парной регистрации — по имени/фамилии/email/телефону/Telegram (LFPT-0679) |
@@ -605,6 +606,8 @@ Thymeleaf admin/qr-report, static/js/qr-report.js, static/css/qr-report.css.
 ### Публичный API UI v2
 
 `PublicDiscoveryController` / `PublicDiscoveryService`: `GET /api/public/home`, `/api/public/catalog`, `/api/public/clubs`, `/api/public/clubs/{id}`. Каталог использует `PublicCatalogSpecification`, пагинацию БД и пакетный маппинг `TournamentService`. Мобильный `/api/public/tournaments` сохранён. [Контракт](../docs/endpoints/public-schedule.md#публичные-данные-ui-v2).
+
+`PublicCalendarController` / `PublicCalendarService`: GET `/api/public/calendar`, `/api/public/calendar/catalog` — публичный месяц без усечения и безопасный карточный каталог. GET `/api/players/me/calendar` — отдельные статусы только текущего PLAYER. Общие формат и уровни, локальные даты, названия организаций и публичные справочники. [Контракт](../docs/endpoints/public-calendar.md).
 
 
 React UI v2: `/preview/` — главная, `/preview/torneos` — каталог с URL-фильтрами и серверной пагинацией. `frontend/src/api/discovery.ts` соответствует публичному API; `Catalogue` и `EventCard` отображают серверную вместимость. Служебный фундамент — `/preview/foundation`.

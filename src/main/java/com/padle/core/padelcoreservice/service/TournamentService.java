@@ -5,6 +5,7 @@ import com.padle.core.padelcoreservice.repository.PublicCatalogSpecification;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import java.time.ZoneId;
 import com.padle.core.padelcoreservice.service.calendar.EventSchedule;
@@ -1513,6 +1514,13 @@ public class TournamentService {
     @Transactional(readOnly = true)
     public Page<TournamentDto> getPublicCatalog(PublicCatalogFilter filter, Pageable pageable) {
         return publicCatalogPage(PublicCatalogSpecification.matching(filter), pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public List<TournamentDto> getPublicCalendarEvents(LocalDate from, LocalDate to) {
+        var filter = new PublicCatalogFilter(null, null, null, null, null, null, from, to);
+        return mapToDtoWithDetails(tournamentRepository.findAll(PublicCatalogSpecification.matching(filter),
+                Sort.by("fechaInicio", "horaInicio", "id")));
     }
 
     @Transactional(readOnly = true)
