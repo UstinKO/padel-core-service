@@ -64,6 +64,15 @@ public class PlayerTelegramApi {
         }
     }
 
+    public void editKeyboard(long chatId, long messageId, List<List<Button>> buttons) {
+        try {
+            http.postForEntity(url("editMessageReplyMarkup"),
+                    new EditKeyboard(chatId, messageId, new Keyboard(buttons)), String.class);
+        } catch (RestClientException exception) {
+            // Участие уже сохранено. Повторное нажатие может восстановить кнопки без повторной отправки сообщения.
+        }
+    }
+
     private String url(String method) {
         return "https://api.telegram.org/bot" + properties.botToken() + "/" + method;
     }

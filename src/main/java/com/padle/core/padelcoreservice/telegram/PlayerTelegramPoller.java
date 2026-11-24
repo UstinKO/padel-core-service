@@ -1,6 +1,6 @@
 package com.padle.core.padelcoreservice.telegram;
 
-import com.padle.core.padelcoreservice.dto.ParticipationDtos.Decision;
+import com.padle.core.padelcoreservice.model.enums.ParticipationStatus;
 import com.padle.core.padelcoreservice.exception.AccountException;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
 import com.padle.core.padelcoreservice.repository.ParticipationRequestRepository;
@@ -29,6 +29,7 @@ public class PlayerTelegramPoller {
     private final PlayerTelegramSummary summary;
     private final PlayerTelegramAccess access;
     private final ParticipationRequestRepository requests;
+    private final PlayerTelegramConfirmation confirmation;
 
     public void poll() {
         if (!api.available()) {
@@ -120,8 +121,11 @@ public class PlayerTelegramPoller {
             long expectedStart = Long.parseLong(parts[2], 36);
             if (player.isPresent() && requests.findTournamentId(id).filter(access::allowsEvent).isPresent()) {
                 var review = participation.confirmTelegram(id, player.orElseThrow(), expectedStart);
-                response = messages.text(review.status().name().equals("CONFIRMED") && !review.outdated()
-                        ? "confirmed" : "unavailable", locale);
+                if (review.status() == ParticipationStatus.CONFIRMED && !review.outdated()) {
+                    api.acknowledge(callback.id(), messages.text("confirmed", locale));
+                    confirmation.show(review, player.orElseThrow().getId(), locale, expectedStart, callback.message());
+                    return;
+                }
             }
         } catch (AccountException | IllegalArgumentException exception) {
             response = messages.text("unavailable", locale);

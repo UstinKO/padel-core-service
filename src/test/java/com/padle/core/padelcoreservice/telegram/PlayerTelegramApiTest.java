@@ -4,6 +4,7 @@ import com.padle.core.padelcoreservice.config.PlayerTelegramProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.ResourceAccessException;
@@ -57,5 +58,30 @@ class PlayerTelegramApiTest {
             assertThat(update.updateId()).isEqualTo(15);
             assertThat(update.message().from().id()).isEqualTo(123);
         });
+    }
+
+    @Test void editsTheOriginalMessageWithOnlyWebsiteLinks() {
+        server.expect(requestTo("https://api.telegram.org/botfixture-token/editMessageReplyMarkup"))
+                .andExpect(method(HttpMethod.POST))
+                .andExpect(jsonPath("$.chat_id").value(123))
+                .andExpect(jsonPath("$.message_id").value(8))
+                .andExpect(jsonPath("$.reply_markup.inline_keyboard[0][1].url").value("https://padel.example/players/dashboard"))
+                .andExpect(jsonPath("$.reply_markup.inline_keyboard[0][2]").doesNotExist())
+                .andExpect(jsonPath("$.reply_markup.inline_keyboard[0][0].url").value("https://padel.example/torneo/10"))
+                .andExpect(jsonPath("$.reply_markup.inline_keyboard[0][0].callback_data").doesNotExist())
+                .andRespond(withSuccess("{\"ok\":true,\"result\":true}", MediaType.APPLICATION_JSON));
+        api.editKeyboard(123, 8, List.of(List.of(
+                TelegramModels.Button.link("View", "https://padel.example/torneo/10"),
+                TelegramModels.Button.link("Cannot attend", "https://padel.example/players/dashboard"))));
+        server.verify();
+    }
+
+    @Test void keyboardNetworkFailureOrUnchangedMarkupDoNotUndoConfirmation() {
+        server.expect(anything()).andRespond(request -> { throw new ResourceAccessException("fixture timeout"); });
+        assertThatCode(() -> api.editKeyboard(123, 8, List.of())).doesNotThrowAnyException();
+        server.verify(); server.reset();
+        server.expect(anything()).andRespond(withStatus(HttpStatus.BAD_REQUEST));
+        assertThatCode(() -> api.editKeyboard(123, 8, List.of())).doesNotThrowAnyException();
+        server.verify();
     }
 }
