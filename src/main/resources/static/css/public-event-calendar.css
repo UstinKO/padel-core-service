@@ -27,8 +27,13 @@
 .pc .pc-nav h2 { font-size:21px; margin:0; text-transform:capitalize; }
 .pc .pc-weekdays,.pc .pc-grid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); }
 .pc .pc-weekdays { text-align:center; color:#64748b; font-size:13px; padding-bottom:8px; }
+.pc .pc-weekdays span { padding:4px 0; }
+.pc .pc-weekdays span:nth-child(n+6) { color:#a64728; background:#fff8f3; border-radius:6px; font-weight:600; }
 .pc .pc-grid { gap:3px; }
 .pc .pc-day { min-width:0; border:1px solid #e2e8f0; background:#fff; height:136px; border-radius:7px; padding:7px; text-align:left; display:flex; flex-direction:column; align-items:stretch; gap:4px; color:#1e293b; }
+.pc .pc-day:nth-child(7n+6),.pc .pc-day:nth-child(7n) { background:#fff8f3; border-color:#f0dfd5; }
+.pc .pc-day:nth-child(7n+6):not(.pc-out):not(.pc-today) .pc-number,
+.pc .pc-day:nth-child(7n):not(.pc-out):not(.pc-today) .pc-number { color:#a64728; }
 .pc .pc-day:hover { background:#fff7f2; }
 .pc .pc-day.pc-out { background:#f8fafc; color:#94a3b8; }
 .pc .pc-day[aria-pressed=true] { border:2px solid #ff6b35; padding:6px; background:#fff4ed; }
