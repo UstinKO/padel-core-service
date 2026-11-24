@@ -49,10 +49,10 @@ try {
     const response = page.waitForResponse(r => new URL(r.url()).pathname === '/players/tournaments/' + outsider.eventId + '/register');
     await page.locator('#registerButton').click();
     assert.equal((await response).status(), 200);
-    await page.waitForFunction(() => document.querySelector('#resultModal')?.classList.contains('show'));
+    await page.waitForFunction(() => document.querySelector('#registrationConfirmModal')?.classList.contains('show'));
     // Ждём серверную проверку предложения, а не произвольную задержку.
     await page.waitForFunction(() => window.PlayerTelegramRegistration !== undefined);
-    const mounted = await page.evaluate(() => window.PlayerTelegramRegistration.mount(document.querySelector('#resultModal')));
+    const mounted = await page.evaluate(() => window.PlayerTelegramRegistration.mount(document.querySelector('#registrationConfirmModal')));
     assert.equal(mounted, false);
     assert.equal(await page.locator('[data-tg-prompt]').count(), 0);
     checks.push('Другой аккаунт: профиль скрыт, API 409, обычная запись доступна без предложения');
