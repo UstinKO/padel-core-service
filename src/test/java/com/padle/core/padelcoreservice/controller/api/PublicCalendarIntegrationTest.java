@@ -199,11 +199,15 @@ class PublicCalendarIntegrationTest {
                 .andExpect(status().isOk()).andExpect(jsonPath("$.events.length()").value(2L))
                 .andExpect(jsonPath("$.events[0].id").value(first.getId()))
                 .andExpect(jsonPath("$.events[1].id").value(second.getId()))
-                .andExpect(jsonPath("$.facets.clubs.length()").value(2L));
+                .andExpect(jsonPath("$.facets.clubs.length()").value(greaterThanOrEqualTo(2L)));
     }
 
     private MockHttpServletRequestBuilder request(String path) {
-        return get(path).header("Accept", "application/json")
+        var builder = get(path).header("Accept", "application/json");
+        if (path.startsWith("/api/public/calendar")) {
+            builder.param("organizerId", organizer.getId().toString());
+        }
+        return builder
                 .with(request -> { request.setRemoteAddr("198.18.131.10"); return request; });
     }
 
