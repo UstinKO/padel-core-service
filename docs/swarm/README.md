@@ -2,6 +2,8 @@
 
 [Локальный изолированный стенд LFPT-1208: запуск, проверка и очистка](lab.md).
 
+[LFPT-1209: карта томов, backup/restore, репетиция и возврат данных](data-recovery.md).
+
 Срез кода `315df3f5be7d008bd2751dc9597f849d5bf2ae40`, инвентаризация 19.11.2026, 10:24–10:27 UTC.
 Работа выполнена по [LFPT-1207](https://github.com/UstinKO/padel-core-service/issues/1207)
 в рамках [LFPT-1040](https://github.com/UstinKO/padel-core-service/issues/1040).

@@ -77,6 +77,19 @@ class GuestProfileClaimIntegrationTest {
     @MockitoBean RecaptchaService captcha;
     @MockitoSpyBean GuestClaimContact support;
 
+    @Test
+    void phoneClaimIndexAndNormalizationWorkWithRestoreSearchPath() {
+        jdbc.sql("CREATE TEMP TABLE restore_phone_probe(phone text) ON COMMIT DROP").update();
+        jdbc.sql("INSERT INTO restore_phone_probe VALUES ('+54 9 11 2233-7755'), ('+7 100 000-00-01')").update();
+        jdbc.sql("SET LOCAL search_path TO pg_catalog").update();
+        jdbc.sql("CREATE INDEX restore_phone_probe_idx ON pg_temp.restore_phone_probe (public.player_claim_phone(phone))").update();
+
+        assertThat(jdbc.sql("SELECT public.player_claim_phone(:phone)").param("phone", MOBILE)
+                .query(String.class).single()).isEqualTo("1122337755");
+        assertThat(jdbc.sql("SELECT public.player_claim_phone(:phone)").param("phone", "+7 100 000-00-01")
+                .query(String.class).single()).isEqualTo("71000000001");
+    }
+
     @ParameterizedTest
     @CsvSource({MOBILE + ", " + LOCAL, "+7 100 000-00-01, 007 100 000 00 01"})
     void duplicateSignupOffersWhatsAppWithoutExposingGuest(String storedPhone, String signupPhone) throws Exception {

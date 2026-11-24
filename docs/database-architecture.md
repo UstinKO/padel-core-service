@@ -1,11 +1,17 @@
 # Архитектура базы данных — padel-core-service
 
 > **СУБД:** PostgreSQL 15  
-> **Версия схемы:** v1.87
+> **Версия схемы:** v1.88
 > **Миграции:** Liquibase (YAML), файлы в `src/main/resources/db/changelog/versions/`  
 > **ddl-auto:** `none` — схема управляется только через Liquibase
 
 ---
+
+Миграция v1.88 сохраняет нормализацию телефонов, но квалифицирует вызов
+`public.player_claim_phone_argentina` внутри `public.player_claim_phone`.
+Это позволяет pg_restore создать индекс `idx_player_claim_phone` при ограниченном
+search_path. Новых таблиц/колонок нет; прежние JAR совместимы. SQL rollback
+сохраняет безопасную квалификацию функции, не возвращая дефект восстановления.
 
 ## Содержание
 

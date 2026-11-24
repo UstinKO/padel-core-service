@@ -262,7 +262,7 @@ hikari:
 - **Только Liquibase** управляет схемой (`ddl-auto = none`).
 - Файлы: `src/main/resources/db/changelog/versions/vX.XX-<description>.yaml`
 - Мастер-файл: `changelog-master.yaml` — порядок include определяет порядок выполнения.
-- Текущая версия: **v1.87**
+- Текущая версия: **v1.88**
 
 **Добавление новой миграции:**
 ```
@@ -548,6 +548,12 @@ simpMessagingTemplate.convertAndSend(
 `automation/swarm/lab.py`: отдельный Engine 4 GiB / 2 CPU, одна app replica,
 синтетическая PostgreSQL, private overlay, digest-образы и Swarm secrets/configs.
 [Запуск и границы проверок](swarm/lab.md).
+
+LFPT-1209 добавляет [репетицию сохранения данных](swarm/data-recovery.md):
+явные external volumes, custom backup PostgreSQL, отдельный restore volume,
+остановленные копии Grafana/Prometheus/Loki, проверка одного писателя и возврат
+Compose на актуальные тома после Swarm. v1.88 устраняет зависимость индексной
+функции телефона от search_path при pg_restore без изменения нормализации.
 RabbitMQ исключён пересмотром 20.11.2026: выбран внутренний REST между app tasks,
 без изменения браузерного WS/STOMP-контракта. Сеть `events` и резерв ключа готовы;
 endpoint, after-commit fan-out/retry/dedup и восстановление пропусков — #1211.
