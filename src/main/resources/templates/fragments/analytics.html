@@ -8,6 +8,7 @@
      одним включением (тот же приём, что и в fragments/admin-header.html). */-->
 <th:block th:fragment="ga4" th:if="${not #strings.isEmpty(@environment.getProperty('app.analytics.ga4-id'))}"
           th:with="ga4Id=${@environment.getProperty('app.analytics.ga4-id')}">
+    <script th:src="@{/js/analytics-traffic.js}"></script>
     <script th:src="${'https://www.googletagmanager.com/gtag/js?id=' + ga4Id}" async></script>
     <script th:inline="javascript">
         (function () {
@@ -41,8 +42,19 @@
             var url = new URL(window.location.href);
             SENSITIVE_PARAMS.forEach(function (param) { url.searchParams.delete(param); });
 
+            var traffic = typeof window.PadelAnalyticsTraffic === 'function' ? window.PadelAnalyticsTraffic(
+                /*[[${analyticsTraffic != null ? analyticsTraffic.group : 'unclassified'}]]*/ 'unclassified',
+                /*[[${analyticsTraffic != null ? analyticsTraffic.reason : 'missing_context'}]]*/ 'missing_context',
+                url
+            ) : { traffic_group: 'unclassified', traffic_reason: 'missing_context', traffic_type: 'unclassified' };
+            url.searchParams.delete('analytics_test');
+            gtag('set', traffic);
+
             gtag('js', new Date());
             gtag('config', /*[[${ga4Id}]]*/ 'G-XXXXXXXXXX', {
+                'traffic_group': traffic.traffic_group,
+                'traffic_reason': traffic.traffic_reason,
+                'traffic_type': traffic.traffic_type,
                 'page_location': url.toString(),
                 'page_path': url.pathname + url.search
             });
