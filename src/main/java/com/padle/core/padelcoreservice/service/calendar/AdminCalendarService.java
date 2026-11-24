@@ -5,7 +5,7 @@ import com.padle.core.padelcoreservice.dto.calendar.OrganizerOrganization;
 import com.padle.core.padelcoreservice.service.OrganizerOrganizationService;
 import java.util.Map;
 import java.util.function.Function;
-import com.padle.core.padelcoreservice.controller.admin.AdminEventFormat;
+import com.padle.core.padelcoreservice.model.enums.EventFormat;
 import com.padle.core.padelcoreservice.dto.calendar.AdminCalendarMonth;
 import com.padle.core.padelcoreservice.dto.calendar.AdminCalendarMonth.Event;
 import com.padle.core.padelcoreservice.dto.calendar.AdminCalendarMonth.Venue;
@@ -23,7 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.YearMonth;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -89,7 +88,7 @@ public class AdminCalendarService {
         return !event.date().isAfter(month.atEndOfMonth()) && !lastDay.isBefore(month.atDay(1));
     }
 
-    public record Filters(Long clubId, AdminEventFormat format, GenderFormat gender, Nivel level, TournamentStatus status, Long organizerId) {
+    public record Filters(Long clubId, EventFormat format, GenderFormat gender, Nivel level, TournamentStatus status, Long organizerId) {
         boolean matches(Event event) {
             return (organizerId == null || event.organizer() != null && organizerId.equals(event.organizer().id()))
                     && (clubId == null || clubId.equals(event.clubId()))
@@ -100,8 +99,7 @@ public class AdminCalendarService {
         }
 
         private static boolean matchesLevel(String declared, Nivel level) {
-            return level.name().equals(declared) || (declared != null && level.name().matches("[CD][0-9]")
-                    && Arrays.asList(declared.split("_")).contains(level.name()));
+            return DeclaredEventLevel.matches(declared, level);
         }
     }
 }

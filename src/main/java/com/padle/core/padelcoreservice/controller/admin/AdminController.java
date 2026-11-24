@@ -1,5 +1,7 @@
 package com.padle.core.padelcoreservice.controller.admin;
 
+import com.padle.core.padelcoreservice.model.enums.EventFormat;
+
 import java.util.Comparator;
 import com.padle.core.padelcoreservice.annotation.Timed;
 import com.padle.core.padelcoreservice.dto.ClubDto;
@@ -23,6 +25,7 @@ import com.padle.core.padelcoreservice.service.americano.AmericanoService;
 import com.padle.core.padelcoreservice.service.americano.TeamAmericanoService;
 import com.padle.core.padelcoreservice.service.americano.TeamPlayoffService;
 import com.padle.core.padelcoreservice.service.calendar.EventSchedule;
+import com.padle.core.padelcoreservice.service.calendar.DeclaredEventLevel;
 import jakarta.validation.Valid;
 import com.padle.core.padelcoreservice.service.ClubAccountService;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
@@ -136,7 +139,7 @@ public class AdminController {
     @GetMapping("/tournaments")
     public String listTournaments(Model model, @AuthenticationPrincipal Owner owner,
                                   @RequestParam(required = false) Long clubId,
-                                  @RequestParam(required = false) AdminEventFormat format,
+                                  @RequestParam(required = false) EventFormat format,
                                   @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
                                   @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
                                   @RequestParam(required = false) GenderFormat gender,
@@ -150,7 +153,7 @@ public class AdminController {
         List<TournamentDto> filtered = invalidPeriod ? List.of() : visible.stream()
                 .filter(t -> organizerId == null || organizerId.equals(t.getOwnerId()))
                 .filter(t -> clubId == null || clubId.equals(t.getClubId()))
-                .filter(t -> format == null || format == AdminEventFormat.of(t))
+                .filter(t -> format == null || format == EventFormat.of(t.getTipo(), t.getModalidad()))
                 .filter(t -> matchesPeriod(t.getFechaInicio(), from, to))
                 .filter(t -> gender == null || gender == t.getGeneroFormato())
                 .filter(t -> level == null || matchesDeclaredLevel(t.getCategoriaNivel(), level))
@@ -178,7 +181,7 @@ public class AdminController {
         model.addAttribute("selectedOrganizerId", organizerId);
         model.addAttribute("selectedClubId", clubId);
         model.addAttribute("selectedFormat", format);
-        model.addAttribute("eventFormats", AdminEventFormat.values());
+        model.addAttribute("eventFormats", EventFormat.values());
         model.addAttribute("eventGenders", GenderFormat.values());
         model.addAttribute("eventLevels", Arrays.stream(Nivel.values())
                 .filter(value -> value != Nivel.SIN_ESPECIFICAR)
@@ -224,13 +227,7 @@ public class AdminController {
     }
 
     private static boolean matchesDeclaredLevel(String declared, Nivel level) {
-        String selected = level.name();
-        if (selected.equals(declared)) {
-            return true;
-        }
-        // Для одиночной категории ищем её среди явно перечисленных уровней мероприятия.
-        return declared != null && selected.matches("[CD][0-9]")
-                && Arrays.asList(declared.split("_")).contains(selected);
+        return DeclaredEventLevel.matches(declared, level);
     }
 
     private static boolean canHaveTeamPlayoffConduct(TournamentDto tournament) {
@@ -248,7 +245,7 @@ public class AdminController {
         row.put("isOwner", canManage);
         row.put("canCopy", !owner.isAdminRole());
         row.put("canView", canManage || owner.isAdminRole());
-        row.put("format", AdminEventFormat.of(tournament));
+        row.put("format", EventFormat.of(tournament.getTipo(), tournament.getModalidad()));
         row.put("teamPlayoffConduct", teamPlayoffConduct);
         row.put("customName", Objects.equals(automaticName, tournament.getNombre()) ? "" : tournament.getNombre());
         return row;

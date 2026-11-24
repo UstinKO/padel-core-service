@@ -1,5 +1,7 @@
 package com.padle.core.padelcoreservice.controller.admin;
 
+import com.padle.core.padelcoreservice.model.enums.EventFormat;
+
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.enums.GenderFormat;
@@ -54,7 +56,7 @@ class AdminTournamentListTest {
                 event(5, 3, 8, TO.plusDays(1), TournamentType.AMERICANO_TEAMS, Modalidad.DOBLES)));
         doCallRealMethod().when(access).canManage(any(), any(), any());
 
-        var model = list(admin, 3L, AdminEventFormat.AMERICANO_PAIRS, FROM, TO);
+        var model = list(admin, 3L, EventFormat.AMERICANO_PAIRS, FROM, TO);
         assertThat(listed(model)).containsExactly(first, last);
         assertThat(model.get("resultCount")).isEqualTo(2);
     }
@@ -125,7 +127,7 @@ class AdminTournamentListTest {
                 .containsExactly(lower);
         assertThat(listed(list(admin, null, null, null, null, null, null, TournamentStatus.REGISTRO_ABIERTO)))
                 .contains(past);
-        var model = list(admin, 3L, AdminEventFormat.AMERICANO_PAIRS, FROM, TO,
+        var model = list(admin, 3L, EventFormat.AMERICANO_PAIRS, FROM, TO,
                 GenderFormat.MASCULINO, Nivel.C7, TournamentStatus.REGISTRO_ABIERTO);
         assertThat(listed(model)).containsExactly(single, upper);
         assertThat(model.get("resultCount")).isEqualTo(2);
@@ -157,7 +159,7 @@ class AdminTournamentListTest {
         when(tournaments.getAllTournaments()).thenReturn(List.of(selected,
                 event(2, 3, 9, FROM, TournamentType.PADEL_CLINIC, Modalidad.INDIVIDUAL)));
         var model = new ExtendedModelMap();
-        controller.listTournaments(model, admin, 3L, AdminEventFormat.PADEL_CLINIC, FROM, TO,
+        controller.listTournaments(model, admin, 3L, EventFormat.PADEL_CLINIC, FROM, TO,
                 null, null, null, 8L);
         assertThat(listed(model)).containsExactly(selected);
         assertThat(model.get("selectedOrganizerId")).isEqualTo(8L);
@@ -173,11 +175,11 @@ class AdminTournamentListTest {
         return event;
     }
 
-    private ExtendedModelMap list(Owner owner, Long clubId, AdminEventFormat format, LocalDate from, LocalDate to) {
+    private ExtendedModelMap list(Owner owner, Long clubId, EventFormat format, LocalDate from, LocalDate to) {
         return list(owner, clubId, format, from, to, null, null, null);
     }
 
-    private ExtendedModelMap list(Owner owner, Long clubId, AdminEventFormat format, LocalDate from, LocalDate to,
+    private ExtendedModelMap list(Owner owner, Long clubId, EventFormat format, LocalDate from, LocalDate to,
                                   GenderFormat gender, Nivel level, TournamentStatus status) {
         var model = new ExtendedModelMap();
         controller.listTournaments(model, owner, clubId, format, from, to, gender, level, status, null);

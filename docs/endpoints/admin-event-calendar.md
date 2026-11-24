@@ -1,6 +1,6 @@
 # Календарь административных мероприятий
 
-`GET /api/admin/events/calendar` — служебные роли, не PLAYER и не аноним. Параметры: `month=YYYY-MM`, `clubId`, `format` (AdminEventFormat), `gender`, `level`, `status` (действующие enum).
+`GET /api/admin/events/calendar` — служебные роли, не PLAYER и не аноним. Параметры: `month=YYYY-MM`, `clubId`, `format` (EventFormat), `gender`, `level`, `status` (действующие enum).
 
 Ответ `no-store`: month, today (Buenos Aires), periodCount до фильтров, events, clubs. Событие: id, date/time локальные, timeZone, nullable endDate/endTime, clubId/clubName, format, gender, level, status, active. Нет регистраций, контактов и оплат. Не передавать даты через часовой пояс устройства. Все пересекающие месяц доступные события включены, включая продолжение с предыдущего дня/месяца. Исключительный конец ровно в полночь не создаёт дополнительный день.
 

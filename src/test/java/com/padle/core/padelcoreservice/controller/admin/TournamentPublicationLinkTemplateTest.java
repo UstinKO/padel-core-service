@@ -1,5 +1,7 @@
 package com.padle.core.padelcoreservice.controller.admin;
 
+import com.padle.core.padelcoreservice.model.enums.EventFormat;
+
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import org.junit.jupiter.api.Test;
@@ -98,7 +100,7 @@ class TournamentPublicationLinkTemplateTest {
         var webContext = new WebContext(exchange,
                 Locale.forLanguageTag(language), Map.of(
                 "siteBaseUrl", "https://configured.example/padel", "levelLabel", "TODOS",
-                "item", Map.of("tournament", tournament, "canView", canView, "format", AdminEventFormat.PADEL_CLINIC)));
+                "item", Map.of("tournament", tournament, "canView", canView, "format", EventFormat.PADEL_CLINIC)));
         return buttonOnly
                 ? engine.process("fragments/tournament-publication-link", Set.of("publicationButton"), webContext)
                 : engine.process("fragments/tournament-publication-link", webContext);
