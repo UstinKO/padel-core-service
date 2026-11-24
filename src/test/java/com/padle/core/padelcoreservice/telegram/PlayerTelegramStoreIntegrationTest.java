@@ -80,9 +80,9 @@ class PlayerTelegramStoreIntegrationTest {
         mvc.perform(put(url).with(user(first)).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"preference\":\"WHATSAPP\"}")).andExpect(status().isForbidden());
         mvc.perform(put(url).with(user(first)).with(csrf()).contentType(MediaType.APPLICATION_JSON)
-                .content("{\"preference\":\"INVALID\"}")).andExpect(status().isBadRequest());
+                .content("{\"preference\":\"INVALID\"}")).andExpect(status().isUnprocessableEntity());
         mvc.perform(put(url).with(user(first)).with(csrf()).contentType(MediaType.APPLICATION_JSON)
-                .content("{}")).andExpect(status().isBadRequest());
+                .content("{}")).andExpect(status().isUnprocessableEntity());
         mvc.perform(put(url).with(user(first)).with(csrf()).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"preference\":\"WHATSAPP\",\"playerId\":" + second.getId() + "}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.preference").value("WHATSAPP"))
