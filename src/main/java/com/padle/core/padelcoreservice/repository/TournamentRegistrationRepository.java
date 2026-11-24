@@ -18,6 +18,10 @@ import java.util.Optional;
 
 @Repository
 public interface TournamentRegistrationRepository extends JpaRepository<TournamentRegistration, Long> {
+    @Query("SELECT r FROM TournamentRegistration r JOIN FETCH r.tournament JOIN FETCH r.player "
+            + "WHERE r.player.id = :playerId AND r.isActive = true ORDER BY r.registrationDate DESC")
+    List<TournamentRegistration> findReceiptChoices(@Param("playerId") long playerId);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT r FROM TournamentRegistration r WHERE r.id = :id")
     Optional<TournamentRegistration> lockById(@Param("id") Long id);
