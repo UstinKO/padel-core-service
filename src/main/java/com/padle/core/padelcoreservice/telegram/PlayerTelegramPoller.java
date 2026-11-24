@@ -30,6 +30,7 @@ public class PlayerTelegramPoller {
     private final PlayerTelegramAccess access;
     private final ParticipationRequestRepository requests;
     private final PlayerTelegramConfirmation confirmation;
+    private final PlayerTelegramReceipts receipts;
 
     public void poll() {
         if (!api.available()) {
@@ -93,6 +94,8 @@ public class PlayerTelegramPoller {
             var locale = store.byUser(message.from().id()).flatMap(c -> players.findById(c.playerId()))
                     .map(p -> p.getLocale()).orElse(Locale.forLanguageTag("es"));
             reply(updateId, message, "help", locale);
+        } else {
+            receipts.message(updateId, message);
         }
     }
 
@@ -101,6 +104,9 @@ public class PlayerTelegramPoller {
     }
 
     private void confirm(Callback callback) {
+        if (receipts.callback(callback)) {
+            return;
+        }
         if (callback.data() == null || !callback.data().startsWith("c:")) {
             return;
         }

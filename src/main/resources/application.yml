@@ -239,6 +239,8 @@ telegram:
   chat-id: ${TELEGRAM_CHAT_ID:}
   enabled: ${TELEGRAM_ENABLED:false}
   players:
+    receipts:
+      enabled: ${TELEGRAM_PLAYERS_RECEIPTS_ENABLED:false}
     pilot-enabled: ${TELEGRAM_PLAYERS_PILOT_ENABLED:true}
     pilot-player-id: ${TELEGRAM_PLAYERS_PILOT_PLAYER_ID:}
     pilot-tournament-id: ${TELEGRAM_PLAYERS_PILOT_TOURNAMENT_ID:}

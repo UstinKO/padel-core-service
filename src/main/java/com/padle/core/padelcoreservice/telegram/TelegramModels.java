@@ -29,7 +29,19 @@ public final class TelegramModels {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Chat(long id, String type) {}
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record Message(@JsonProperty("message_id") long messageId, User from, Chat chat, String text) {}
+    public record Message(@JsonProperty("message_id") long messageId, User from, Chat chat, String text,
+                          List<Photo> photo, Document document) {
+        public Message(long messageId, User from, Chat chat, String text) {
+            this(messageId, from, chat, text, List.of(), null);
+        }
+    }
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record Photo(@JsonProperty("file_id") String fileId, int width, int height,
+                        @JsonProperty("file_size") Long fileSize) {}
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record Document(@JsonProperty("file_id") String fileId,
+                           @JsonProperty("mime_type") String mimeType,
+                           @JsonProperty("file_size") Long fileSize) {}
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Callback(String id, User from, Message message, String data) {}
     @JsonIgnoreProperties(ignoreUnknown = true)

@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +29,7 @@ public class PlayerTelegramNotifications {
     private final PlayerTelegramMessages messages;
     private final PlayerTelegramDelivery delivery;
     private final PlayerTelegramAccess access;
+    private final PlayerTelegramReceipts receipts;
     @Value("${app.base-url:http://localhost:8080}")
     private String baseUrl;
 
@@ -61,6 +63,9 @@ public class PlayerTelegramNotifications {
             String when = tournament.getFechaHoraInicioCompleta().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
             String text = messages.text(reminder ? "reminder" : "request", locale,
                     row.getPlayer().getNombreCompleto(), tournament.getNombre(), when, clubName, address);
+            if (!receipts.buttons(row, locale).isEmpty()) {
+                text += "\n\n" + messages.text("receipt.instruction", locale);
+            }
             var buttons = buttons(row, player, request.filter(r -> pending));
             String key = row.getId() + ":" + row.getCancellationVersion() + ":" + player.getId()
                     + ":" + (reminder ? "REMINDER" : "REQUEST") + ":"
@@ -74,9 +79,10 @@ public class PlayerTelegramNotifications {
         var locale = player.getLocale();
         var links = List.of(Button.link(messages.text("view", locale), baseUrl + "/torneo/" + row.getTournament().getId()),
                 Button.link(messages.text("cancel", locale), baseUrl + "/players/dashboard"));
-        return pending.map(request -> List.of(
+        var original = pending.map(request -> List.of(
                 List.of(Button.action(messages.text("confirm", locale), "c:" + request.getId() + ":" + Long.toString(
                         TelegramParticipationCoordinator.startsAt(row.getTournament()).getEpochSecond(), 36))), links))
                 .orElseGet(() -> List.of(links));
+        return Stream.concat(original.stream(), receipts.buttons(row, locale).stream()).toList();
     }
 }

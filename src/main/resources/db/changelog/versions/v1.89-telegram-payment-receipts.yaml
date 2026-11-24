@@ -1,0 +1,36 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.89-telegram-payment-receipts
+      author: codex
+      changes:
+        - sql:
+            sql: |
+              CREATE TABLE telegram_receipt_uploads (
+                id UUID PRIMARY KEY,
+                source_update BIGINT NOT NULL UNIQUE,
+                player_id BIGINT NOT NULL REFERENCES player_padel_db(id),
+                chat_id BIGINT NOT NULL CHECK (chat_id > 0),
+                file_id VARCHAR(1024) NOT NULL,
+                expires_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP + INTERVAL '20 minutes',
+                receipt_id UUID
+              );
+              CREATE TABLE payment_receipts (
+                id UUID PRIMARY KEY,
+                registration_id BIGINT NOT NULL REFERENCES tournament_registrations_db(id),
+                registration_version BIGINT NOT NULL,
+                player_id BIGINT NOT NULL REFERENCES player_padel_db(id),
+                content_type VARCHAR(32) NOT NULL CHECK (content_type IN ('image/jpeg','image/png','application/pdf')),
+                content BYTEA NOT NULL CHECK (octet_length(content) BETWEEN 1 AND 5242880),
+                sha256 CHAR(64) NOT NULL,
+                state VARCHAR(16) NOT NULL DEFAULT 'PENDING' CHECK (state IN ('PENDING','ACCEPTED','REJECTED')),
+                created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                reviewed_at TIMESTAMPTZ,
+                reviewed_by BIGINT REFERENCES owners_db(id),
+                rejection_reason VARCHAR(500),
+                payment_id BIGINT REFERENCES payments_db(id),
+                UNIQUE (registration_id, registration_version, sha256)
+              );
+              ALTER TABLE telegram_receipt_uploads ADD CONSTRAINT fk_receipt_upload_result
+                FOREIGN KEY (receipt_id) REFERENCES payment_receipts(id);
+              CREATE INDEX idx_receipt_upload_expiry ON telegram_receipt_uploads(expires_at);
+              CREATE INDEX idx_payment_receipts_registration ON payment_receipts(registration_id, created_at);
