@@ -20,7 +20,7 @@ class PlayerTelegramSummaryTest {
         source.setDefaultEncoding("UTF-8");
         var summary = new PlayerTelegramSummary(mock(PlayerTelegramProperties.class), mock(PlayerTelegramApi.class),
                 mock(OwnerRepository.class), mock(TournamentRepository.class), mock(TelegramParticipationCoordinator.class),
-                mock(PlayerTelegramDelivery.class), new PlayerTelegramMessages(source));
+                mock(PlayerTelegramDelivery.class), new PlayerTelegramMessages(source), mock(PlayerTelegramAccess.class));
         String result = summary.format(new Summary(42L, "Fixture", List.of(
                 new Recipient(1, 1, "Ana", "PENDING", false, "NOT_SENT", ContactPreference.WHATSAPP),
                 new Recipient(2, 2, "Beto", "CONFIRMED", true, "SENT", ContactPreference.TELEGRAM),

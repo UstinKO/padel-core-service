@@ -7,6 +7,9 @@ import com.padle.core.padelcoreservice.repository.ParticipationRequestRepository
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import com.padle.core.padelcoreservice.telegram.PlayerTelegramStore;
+import com.padle.core.padelcoreservice.telegram.PlayerTelegramAccess;
+import com.padle.core.padelcoreservice.exception.AccountException;
+import org.springframework.http.HttpStatus;
 import com.padle.core.padelcoreservice.telegram.TelegramModels.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -27,20 +30,29 @@ public class TelegramParticipationCoordinator {
     private final ParticipationRequests participation;
     private final TournamentAccessService access;
     private final PlayerTelegramStore store;
+    private final PlayerTelegramAccess telegramAccess;
 
     @Transactional
     public List<Long> request(long tournamentId, Owner owner) {
         access.assertCanManageTournament(owner, tournamentId);
+        if (!telegramAccess.allowsEvent(tournamentId)) {
+            throw new AccountException(HttpStatus.CONFLICT, "TELEGRAM_UNAVAILABLE");
+        }
         return prepare(tournamentId);
     }
 
     @Transactional
     public List<Long> prepare(long tournamentId) {
+        if (!telegramAccess.allowsEvent(tournamentId)) {
+            return List.of();
+        }
         var tournament = tournaments.lockById(tournamentId).orElseThrow();
         if (!upcoming(tournament)) {
             return List.of();
         }
-        var rows = activeRows(tournamentId);
+        var rows = activeRows(tournamentId).stream()
+                .filter(row -> !telegramAccess.pilot() || telegramAccess.allowsPlayer(row.getPlayer().getId()))
+                .toList();
         rows.forEach(row -> participation.openTelegram(row, Trigger.ORGANIZER));
         return rows.stream().map(TournamentRegistration::getId).toList();
     }
@@ -48,7 +60,9 @@ public class TelegramParticipationCoordinator {
     public Summary summary(long tournamentId, Owner owner) {
         access.assertCanManageTournament(owner, tournamentId);
         var tournament = tournaments.findById(tournamentId).orElseThrow();
-        var rows = activeRows(tournamentId);
+        var rows = activeRows(tournamentId).stream()
+                .filter(row -> !telegramAccess.pilot() || (telegramAccess.allowsEvent(tournamentId)
+                        && telegramAccess.allowsPlayer(row.getPlayer().getId()))).toList();
         var current = participation.current(rows);
         var deliveries = store.deliveries(tournamentId);
         var preferences = store.preferences(rows.stream().map(row -> row.getPlayer().getId()).distinct().toList());

@@ -13,12 +13,15 @@ import java.util.concurrent.locks.LockSupport;
 public class PlayerTelegramDelivery {
     private final PlayerTelegramStore store;
     private final PlayerTelegramApi api;
+    private final PlayerTelegramAccess access;
     private final Map<Long, Long> lastSent = new HashMap<>();
     private long nextSend;
 
     public void sendOnce(String key, Long tournamentId, Long registrationId,
                          long chatId, String text, List<List<Button>> buttons) {
-        if (!api.available() || !store.claim(key, tournamentId, registrationId, chatId)) {
+        if (!api.available() || (access.pilot() && store.byUser(chatId)
+                .filter(c -> access.allowsPlayer(c.playerId())).isEmpty())
+                || (tournamentId != null && !access.allowsEvent(tournamentId)) || !store.claim(key, tournamentId, registrationId, chatId)) {
             return;
         }
         var result = pacedSend(chatId, text, buttons);

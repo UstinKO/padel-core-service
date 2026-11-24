@@ -3,6 +3,7 @@ package com.padle.core.padelcoreservice.service;
 import com.padle.core.padelcoreservice.config.TelegramProperties;
 import com.padle.core.padelcoreservice.config.PlayerTelegramProperties;
 import com.padle.core.padelcoreservice.telegram.PlayerTelegramPoller;
+import com.padle.core.padelcoreservice.telegram.PlayerTelegramAccess;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,7 @@ public class TelegramBotPoller {
     private final TelegramProperties properties;
     private final PlayerTelegramProperties playerProperties;
     private final PlayerTelegramPoller playerPoller;
+    private final PlayerTelegramAccess playerAccess;
     private final PlayerRepository playerRepository;
     private final RestTemplate restTemplate;
 
@@ -41,7 +43,6 @@ public class TelegramBotPoller {
     public void pollUpdates() {
         if (playerProperties.enabled()) {
             playerPoller.poll();
-            return;
         }
         if (!properties.isEnabled() || properties.getBotToken() == null || properties.getBotToken().isBlank()) {
             return;
@@ -97,6 +98,9 @@ public class TelegramBotPoller {
 
         if (found.isPresent()) {
             PlayerPadel player = found.get();
+            if (playerAccess.allowsPlayer(player.getId())) {
+                return;
+            }
             player.setTelegramChatId(chatId);
             playerRepository.save(player);
             log.info("Telegram chat_id={} привязан к игроку id={} ({})", chatId, player.getId(), player.getEmail());

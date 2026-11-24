@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PlayerTelegramStore {
     private final JdbcTemplate jdbc;
+    private final PlayerTelegramAccess access;
 
     public ContactPreference preference(long playerId) {
         return jdbc.query("SELECT preference FROM player_contact_preferences WHERE player_id = ?",
@@ -86,7 +87,7 @@ public class PlayerTelegramStore {
                 WHERE t.token_hash = ? AND t.expires_at > CURRENT_TIMESTAMP AND p.activo = true
                 FOR UPDATE OF t
                 """, Long.class, hash).stream().findFirst();
-        return player.filter(id -> jdbc.queryForObject("""
+        return player.filter(access::allowsPlayer).filter(id -> jdbc.queryForObject("""
                 SELECT COUNT(*) FROM player_telegram_connections WHERE user_id = ? AND player_id <> ?
                 """, Long.class, userId, id) == 0).map(id -> {
             jdbc.update("""

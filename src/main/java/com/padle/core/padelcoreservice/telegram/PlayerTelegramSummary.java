@@ -32,6 +32,7 @@ public class PlayerTelegramSummary {
     private final TelegramParticipationCoordinator participation;
     private final PlayerTelegramDelivery delivery;
     private final PlayerTelegramMessages messages;
+    private final PlayerTelegramAccess access;
 
     public void forBot(long userId) {
         if (properties.enabled() && properties.organizerChatId() != null && userId == properties.organizerChatId()) {
@@ -64,6 +65,7 @@ public class PlayerTelegramSummary {
         var today = LocalDate.now(ZoneId.of("America/Argentina/Buenos_Aires"));
         var dates = IntStream.range(0, 8).mapToObj(today::plusDays).toList();
         var events = tournaments.findByFechaInicioInAndActive(dates).stream()
+                .filter(t -> access.allowsEvent(t.getId()))
                 .filter(TelegramParticipationCoordinator::upcoming).toList();
         if (events.isEmpty()) {
             delivery.sendOnce("summary:" + cycle + ":empty", null, null, properties.organizerChatId(),

@@ -1,7 +1,7 @@
 package com.padle.core.padelcoreservice.service;
 
 import com.padle.core.padelcoreservice.logging.TelegramAlertQueue;
-import com.padle.core.padelcoreservice.config.PlayerTelegramProperties;
+import com.padle.core.padelcoreservice.telegram.PlayerTelegramAccess;
 import com.padle.core.padelcoreservice.model.Club;
 import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.TournamentRegistration;
@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 public class TelegramReminderScheduler {
 
     private final TelegramService telegramService;
-    private final PlayerTelegramProperties playerProperties;
+    private final PlayerTelegramAccess playerAccess;
     private final TournamentRepository tournamentRepository;
     private final TournamentRegistrationRepository registrationRepository;
     private final ClubRepository clubRepository;
@@ -95,9 +95,6 @@ public class TelegramReminderScheduler {
     }
 
     private void sendReminderForTournament(Tournament tournament) {
-        if (playerProperties.enabled()) {
-            return;
-        }
         String clubName = clubRepository.findById(tournament.getClubId())
                 .map(Club::getNombre)
                 .orElse("el club");
@@ -139,7 +136,7 @@ public class TelegramReminderScheduler {
         int dmSent = 0;
         for (TournamentRegistration reg : confirmed) {
             Long playerChatId = reg.getPlayer().getTelegramChatId();
-            if (playerChatId != null) {
+            if (playerChatId != null && !playerAccess.allowsPlayer(reg.getPlayer().getId())) {
                 telegramService.sendDm(playerChatId, text.toString(), keyboard);
                 dmSent++;
             }

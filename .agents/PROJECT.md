@@ -680,3 +680,5 @@ Telegram для игроков: PlayerTelegramController, TelegramParticipationC
 Предпочтение связи игрока: `player_contact_preferences`, схема v1.87. `PUT /api/players/me/telegram/preference` меняет только текущий профиль; WhatsApp отключает Telegram и старые ссылки, автоматической WA-отправки нет. Сводка содержит предпочтение и ручные контакты. Язык текущего сайта сохраняется для сообщений при создании ссылки подключения.
 
 Организации календаря: Owner.organizationName, схема v1.86. AdminOrganizationController / OrganizerOrganizationService — отдельное название аккаунта; GET /api/admin/organizers/organizations, PUT /api/admin/organizers/{id}/organization. Календарь содержит organizer и доступный список organizers, фильтр organizerId. См. docs/endpoints/admin-event-calendar.md.
+
+Telegram-пилот: `telegram.players.pilot-enabled=true` по умолчанию, один `pilot-player-id` и один `pilot-tournament-id`. Пустые ID закрывают доступ. Ограничение применяется к подключению, запросам/ответам, отправке и сводке; остальные аккаунты сохраняют старые уведомления.

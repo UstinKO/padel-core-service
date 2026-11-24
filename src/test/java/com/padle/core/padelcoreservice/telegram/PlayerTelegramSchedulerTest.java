@@ -17,7 +17,9 @@ class PlayerTelegramSchedulerTest {
     private final PlayerTelegramNotifications notifications = mock(PlayerTelegramNotifications.class);
     private PlayerTelegramScheduler scheduler(boolean automatic) {
         return new PlayerTelegramScheduler(new PlayerTelegramProperties(true, "OnePadelTestBot", automatic, 24, 3,
-                null, null, false, "fixture-token"), links, tournaments, participation, notifications, mock(PlayerTelegramSummary.class));
+                null, null, false, "fixture-token", false, null, null), links, tournaments, participation, notifications, mock(PlayerTelegramSummary.class),
+                new PlayerTelegramAccess(new PlayerTelegramProperties(true, "OnePadelTestBot", automatic, 24, 3,
+                        null, null, false, "fixture-token", false, null, null)));
     }
     private Tournament event(int hours, TournamentStatus status) {
         var start = Instant.now().plusSeconds(hours * 3600L).atZone(ZoneId.of("America/Argentina/Buenos_Aires"));
