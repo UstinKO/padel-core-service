@@ -38,6 +38,8 @@ jobs:
 
       - name: Check frontend
         run: pnpm --dir frontend check
+      - name: Проверить публичный и административный календарь
+        run: node --test tests/public-event-calendar.test.mjs tests/admin-event-calendar.test.mjs
       - name: Install Chromium
         run: pnpm --dir frontend exec playwright install chromium
       - name: Check preview in desktop and mobile browsers

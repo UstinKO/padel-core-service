@@ -102,6 +102,7 @@
 <main class="tournament-main">
     <div class="container">
         <!-- Breadcrumb -->
+        <p id="publicCalendarReturn" hidden></p>
         <div class="breadcrumb">
             <a href="/" class="breadcrumb-link" th:text="#{breadcrumb.home}">Inicio</a>
             <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
@@ -1252,6 +1253,7 @@
 <script th:src="@{/js/tournament-availability.js}"></script>
 <script th:src="@{/js/tournament-details.js}"></script>
 <script th:src="@{/js/calendar-picker.js}"></script>
+<script type="module" th:src="@{/js/public-calendar-return.mjs}"></script>
 <script>
     (function() {
         const url  = window.location.href;

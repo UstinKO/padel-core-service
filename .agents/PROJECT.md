@@ -687,3 +687,5 @@ Telegram UI: `fragments/player-telegram` / `player-telegram.js` / `player-telegr
 Организации календаря: Owner.organizationName, схема v1.86. AdminOrganizationController / OrganizerOrganizationService — отдельное название аккаунта; GET /api/admin/organizers/organizations, PUT /api/admin/organizers/{id}/organization. Календарь содержит organizer и доступный список organizers, фильтр organizerId. См. docs/endpoints/admin-event-calendar.md.
 
 Telegram-пилот: `telegram.players.pilot-enabled=true` по умолчанию, один `pilot-player-id` и один `pilot-tournament-id`. Пустые ID закрывают доступ. Ограничение применяется к подключению, запросам/ответам, отправке и сводке; остальные аккаунты сохраняют старые уведомления.
+
+Публичный календарь legacy `/torneos`: `public-event-calendar.mjs`, безопасные общие ссылки и чистые вычисления `public-event-calendar-state.mjs`, возврат `public-calendar-return.mjs`. Главная не меняется. Проверки: `node --test tests/public-event-calendar.test.mjs tests/admin-event-calendar.test.mjs`. Мобильная сетка — только даты/счётчики, личные статусы только в памяти текущей сессии. См. [контракт](../docs/endpoints/public-calendar.md).
