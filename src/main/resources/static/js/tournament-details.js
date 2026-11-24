@@ -72,6 +72,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (modal === partnerModal) {
                     closeModal();
                 } else if (modal) {
+                    if (modal.dataset.reloadAfterClose === 'true') {
+                        window.location.reload();
+                        return;
+                    }
                     modal.classList.remove('show');
                     modal.style.removeProperty('display');
                 }
@@ -483,11 +487,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function showResultModal(type, title, message) {
+    let resultTimer;
+    let resultVersion = 0;
+    function showResultModal(type, title, message, registration = false) {
+        const version = ++resultVersion;
+        clearTimeout(resultTimer);
         const resultModal = document.getElementById('resultModal');
         const resultModalBody = document.getElementById('resultModalBody');
 
         if (!resultModal || !resultModalBody) return;
+        resultModal.dataset.reloadAfterClose = String(type === 'success');
 
         let icon = '';
         switch(type) {
@@ -510,10 +519,14 @@ document.addEventListener('DOMContentLoaded', function() {
         resultModal.classList.add('show');
 
         if (type === 'success') {
-            setTimeout(() => {
-                resultModal.classList.remove('show');
-                window.location.reload();
-            }, 3000);
+            const prompt = registration && window.PlayerTelegramRegistration?.mount(resultModal);
+            Promise.resolve(prompt).then(shown => {
+                if (shown || version !== resultVersion) return;
+                resultTimer = setTimeout(() => {
+                    resultModal.classList.remove('show');
+                    window.location.reload();
+                }, 3000);
+            });
         }
     }
 
@@ -572,6 +585,7 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
 
         modal.classList.add('show');
+        window.PlayerTelegramRegistration?.mount(modal);
     }
 
     const registrationConfirmModalOkBtn = document.getElementById('registrationConfirmModalOkBtn');
@@ -666,7 +680,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 if (data.status === 'CONFIRMED') {
                                     showRegistrationConfirmModal(window.tournament?.tipo, window.tournament?.cancellationDeadlineFormatted);
                                 } else {
-                                    showResultModal('success', t('details.success.registered'), t('details.success.waitlist_added'));
+                                    showResultModal('success', t('details.success.registered'), t('details.success.waitlist_added'), true);
                                 }
                             } else if (data.needLevel) {
                                 window.trackClarityRegistrationError?.(tournamentId, 'level_required');
@@ -759,7 +773,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     closeModal();
                     loadLookingForPartner(tournamentId);
                     const soloMsg = mode === 'SEARCH' ? t('details.success.solo_search') : t('details.success.solo_later');
-                    showResultModal('success', t('details.success.ready'), soloMsg);
+                    showResultModal('success', t('details.success.ready'), soloMsg, true);
                 } else if (data.needLevel) {
                     window.trackClarityRegistrationError?.(tournamentId, 'level_required');
                     submitPartnerBtn.disabled = false;
@@ -829,7 +843,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 else if (data.status === 'CONFIRMED')  message = t('details.success.partner_confirmed');
                 else if (data.status === 'WAITLIST')   message = t('details.success.waitlist_pair');
                 else message = t('details.success.pair_complete');
-                showResultModal('success', t('details.success.registered'), message);
+                showResultModal('success', t('details.success.registered'), message, true);
             } else if (data.needLevel) {
                 window.trackClarityRegistrationError?.(tournamentId, 'level_required');
                 submitPartnerBtn.disabled = false;

@@ -385,7 +385,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             if (data.status === 'CONFIRMED') {
                                 showRegistrationConfirmModal(tournament?.tipo, tournament?.cancellationDeadlineFormatted);
                             } else {
-                                showResultModal('success', t('details.success.waitlist_added'));
+                                showResultModal('success', t('details.success.waitlist_added'), true);
                             }
                             myTournamentIds.add(parseInt(tournamentId));
                             updateTabCounts();
@@ -659,7 +659,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     closePartnerModal();
                     myTournamentIds.add(parseInt(tournamentId));
                     updateTabCounts();
-                    showResultModal('success', t('details.success.pair_complete'));
+                    showResultModal('success', t('details.success.pair_complete'), true);
                     applyFiltersFunction();
                 } else if (data.needLevel) {
                     // Попап "указать уровень" вместо обычной ошибки
@@ -731,7 +731,7 @@ document.addEventListener('DOMContentLoaded', function() {
             closePartnerModal();
             myTournamentIds.add(parseInt(tournamentId));
             updateTabCounts();
-            showResultModal('success', t('dashboard.success.pair_registered'));
+            showResultModal('success', t('dashboard.success.pair_registered'), true);
             applyFiltersFunction();
 
         } catch (error) {
@@ -742,7 +742,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Показать модальное окно с результатом (успех/ошибка)
-    function showResultModal(type, message) {
+    let resultTimer;
+    let resultVersion = 0;
+    function showResultModal(type, message, registration = false) {
+        const version = ++resultVersion;
+        clearTimeout(resultTimer);
         const modal = document.getElementById('resultModal');
         if (!modal) return;
 
@@ -760,12 +764,15 @@ document.addEventListener('DOMContentLoaded', function() {
         modal.classList.add('show');
         toggleModalAriaHidden(modal, true);
 
-        // Автоматически закрываем через 3 секунды
-        setTimeout(() => {
-            toggleModalAriaHidden(modal, false);
-            modal.style.display = 'none';
-            modal.classList.remove('show');
-        }, 3000);
+        const prompt = registration && window.PlayerTelegramRegistration?.mount(modal);
+        Promise.resolve(prompt).then(shown => {
+            if (shown || version !== resultVersion) return;
+            resultTimer = setTimeout(() => {
+                toggleModalAriaHidden(modal, false);
+                modal.style.display = 'none';
+                modal.classList.remove('show');
+            }, 3000);
+        });
     }
 
     // Окно подтверждения успешной ИНДИВИДУАЛЬНОЙ регистрации (status=CONFIRMED),
@@ -825,6 +832,7 @@ document.addEventListener('DOMContentLoaded', function() {
         modal.style.display = 'block';
         modal.classList.add('show');
         toggleModalAriaHidden(modal, true);
+        window.PlayerTelegramRegistration?.mount(modal);
     }
 
     const registrationConfirmModalOkBtn = document.getElementById('registrationConfirmModalOkBtn');
