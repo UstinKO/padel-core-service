@@ -13,6 +13,7 @@ ENGINES = (
     'com/padle/core/padelcoreservice/service/americano/QualificationPairing',
     'com/padle/core/padelcoreservice/service/americano/PlayoffFormat',
     'com/padle/core/padelcoreservice/service/americano/EarlyPlayoffSeeding',
+    'com/padle/core/padelcoreservice/service/americano/RoundRobinSetStandingsEngine',
 )
 NESTED_TYPES = {
     ENGINES[0]: ('Candidate', 'Pairing', 'MatchingResult', 'PriorityOrder'),
@@ -22,6 +23,7 @@ NESTED_TYPES = {
     ENGINES[4]: ('Pairing',),
     ENGINES[5]: (),
     ENGINES[6]: ('Standing', 'Fixture', 'Pair', 'Result', 'Search'),
+    ENGINES[7]: ('Team', 'Match', 'Ranked', 'Meetings'),
 }
 REQUIRED_CLASSES = tuple(engine + '.class' for engine in ENGINES) + tuple(
     engine + '$' + nested + '.class' for engine, names in NESTED_TYPES.items() for nested in names)
