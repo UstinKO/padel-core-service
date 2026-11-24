@@ -1,4 +1,12 @@
 window.APP_MESSAGES = {
+    "public_calendar.heading": "Event calendar",
+    "public_calendar.page_title": "Event calendar | 1-Padel",
+    "public_calendar.tournaments": "Tournaments",
+    "public_calendar.training": "Training",
+    "public_calendar.americano_all": "Americano — all formats",
+    "public_calendar.remove_filter": "Remove filter: {0}",
+    "public_calendar.menu": "Menu",
+
     "public_calendar.price": "Price",
     "public_calendar.register": "Register",
     "public_calendar.join_waitlist": "Join waitlist",
@@ -30,7 +38,7 @@ window.APP_MESSAGES = {
     "public_calendar.personal_error": "Could not check your bookings. Please retry.",
     "public_calendar.retry": "Retry",
     "public_calendar.details": "Details",
-    "public_calendar.return": "Back to events",
+    "public_calendar.return": "Back to calendar",
     "public_calendar.unavailable_club": "Selected club — no events this period",
     "public_calendar.unavailable_organizer": "Selected organization — no events this period",
     "public_calendar.all_levels": "All levels",

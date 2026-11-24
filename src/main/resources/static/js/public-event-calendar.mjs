@@ -1,18 +1,14 @@
 import {readState, commonUrl, filterKeys, dateValue, addDays, shiftMonth, monthDays,
-    dayEvents, extraCount, visibleEvents, cardOrder} from './public-event-calendar-state.mjs';
+    dayEvents, extraCount, visibleEvents, calendarQuery} from './public-event-calendar-state.mjs';
 
 const root = document.getElementById('publicCalendar');
 const $ = id => document.getElementById(id);
 const tr = (key, ...args) => window.t(`public_calendar.${key}`, ...args);
 const escape = value => String(value ?? '').replace(/[&<>"']/g, char =>
     ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
-const storage = {
-    get(key) { try { return localStorage.getItem(key); } catch { return ''; } },
-    set(key, value) { try { localStorage.setItem(key, value); } catch { /* Настройка необязательна. */ } }
-};
 const lang = ['es','ru','en'].includes(document.documentElement.lang) ? document.documentElement.lang : 'es';
 const locale = {es:'es-AR', ru:'ru-RU', en:'en-GB'}[lang];
-let state = readState(location.search, storage.get('padel.public.view'));
+let state = readState(location.search);
 state.lang = lang;
 let feed, own = new Map(), myOnly = false, actor = '', controller, generation = 0;
 const dateText = (day, options) => new Intl.DateTimeFormat(locale, {...options, timeZone:'UTC'}).format(dateValue(day));
@@ -30,18 +26,11 @@ function saveState(push = false) {
     if (`${location.pathname}${location.search}` !== url) {
         history[push ? 'pushState' : 'replaceState']({publicCalendar:true}, '', url);
     }
-    storage.set('padel.public.view', state.view);
 }
 async function json(url, signal) {
     const response = await fetch(url, {signal, cache:'no-store', credentials:'same-origin', headers:{Accept:'application/json'}});
     if (!response.ok || !(response.headers.get('content-type') || '').includes('json')) throw new Error('calendar-read');
     return response.json();
-}
-function query() {
-    const params = new URLSearchParams();
-    for (const key of filterKeys.filter(key => key !== 'status')) if (state[key]) params.set(key, state[key]);
-    if (state.view === 'calendar' && state.month) params.set('month', state.month);
-    return params.toString();
 }
 async function refresh() {
     const current = ++generation;
@@ -53,7 +42,7 @@ async function refresh() {
     $('pcRetry').hidden = true; $('pcPersonalNotice').hidden = true; $('pcMineLabel').hidden = true;
     try {
         const [data, sessionResult] = await Promise.all([
-            json(`/api/public/calendar${state.view === 'cards' ? '/catalog' : ''}?${query()}`, signal),
+            json(`/api/public/calendar?${calendarQuery(state)}`, signal),
             json('/api/auth/session', signal).then(value => ({value}), () => ({error:true}))
         ]);
         if (current !== generation) return;
@@ -68,7 +57,7 @@ async function refresh() {
         if (actor) {
             $('pcMineLabel').hidden = false;
             try {
-                const personalQuery = state.view === 'calendar' ? `?month=${state.month}` : '';
+                const personalQuery = `?month=${state.month}`;
                 const personal = await json(`/api/players/me/calendar${personalQuery}`, signal);
                 if (current !== generation) return;
                 if (String(personal.playerId) !== actor) throw new Error('calendar-account-changed');
@@ -98,7 +87,8 @@ function renderFilters() {
     const facets = feed.facets;
     const options = {
         level: facets.levels.map(value => [value, levelText(value)]),
-        format: facets.formats.map(value => [value, tr(`format.${value}`)]),
+        format: [['TOURNAMENTS', tr('tournaments')], ['AMERICANO_ALL', tr('americano_all')],
+            ...facets.formats.map(value => [value, tr(`format.${value}`)])],
         gender: facets.genders.map(value => [value, tr(`gender.${value}`)]),
         clubId: facets.clubs.map(value => [String(value.id), value.name]),
         organizerId: facets.organizers.map(value => [String(value.id), value.name]),
@@ -113,18 +103,26 @@ function renderFilters() {
     });
     const extra = filterKeys.filter(key => key !== 'level' && state[key]).length;
     $('pcFiltersToggle').textContent = `${tr('filters')}${extra ? ` · ${extra}` : ''}`;
+    const quick = ['', 'TOURNAMENTS', 'PADEL_CLINIC', 'CANCHA_ABIERTA'];
+    const selectedGroup = ['KING_OF_COURT','AMERICANO_INDIVIDUAL','AMERICANO_PAIRS','AMERICANO_ALL'].includes(state.format)
+        ? 'TOURNAMENTS' : state.format;
+    root.querySelectorAll('[data-quick-format]').forEach(button =>
+        button.setAttribute('aria-pressed', button.dataset.quickFormat === selectedGroup));
+    $('pcActiveFilters').innerHTML = filterKeys.filter(key => state[key] &&
+        (key !== 'format' || !quick.includes(state.format))).map(key => {
+            const label = options[key].find(([value]) => value === state[key])?.[1] || state[key];
+            return `<button type="button" class="pc-filter-chip" data-clear-filter="${key}" aria-label="${escape(tr('remove_filter', label))}">
+                ${escape(label)} <span aria-hidden="true">×</span></button>`;
+        }).join('');
+    $('pcReset').hidden = !filterKeys.some(key => state[key]) && !myOnly;
+    $('pcActiveRow').hidden = $('pcReset').hidden;
 }
 function render() {
-    const events = visibleEvents(feed.events, own, myOnly, state.status);
-    root.querySelectorAll('[data-view]').forEach(button => button.setAttribute('aria-pressed', button.dataset.view === state.view));
-    $('pcCatalog').hidden = state.view !== 'cards'; $('pcCalendar').hidden = state.view !== 'calendar';
-    if (state.view === 'cards') {
-        $('pcCatalogCount').textContent = countText(events.length);
-        $('pcCards').innerHTML = cardOrder(events, feed.today).map(event => card(event, true)).join('') || empty('empty_catalog');
-    } else renderCalendar(events);
+    const events = visibleEvents(feed.events, own, myOnly, state.status, state.format);
+    renderCalendar(events);
 }
 function empty(key) { return `<p class="pc-message">${escape(tr(key))}</p>`; }
-function card(event, withDate = false) {
+function card(event) {
     const title = `${(event.time || '').slice(0,5)} · ${tr(`format.${event.format}`)}`;
     const back = commonUrl(state);
     const path = `/torneo/${Number(event.id)}?publicCalendarReturn=${encodeURIComponent(back)}`;
@@ -133,14 +131,11 @@ function card(event, withDate = false) {
         <div class="pc-badges"><span class="pc-badge">${escape(levelText(event.level))}</span>
             <span class="pc-badge">${escape(tr(`gender.${event.gender}`))}</span></div>
         <h3>${escape(title)}</h3>
-        ${withDate ? `<p>${escape(dateText(event.date, {day:'numeric',month:'long',year:'numeric'}))}</p>
-            <p>${escape(tr('price'))}: ${escape(event.price ?? '0')} ${escape(event.currency || '')}</p>` : ''}
         <p><span class="pc-meta">${escape(tr('club'))}:</span> ${escape(event.club?.name || '—')}</p>
         <p><span class="pc-meta">${escape(tr('organizer'))}:</span> ${escape(event.organizer?.name || '—')}</p>
         <p><span class="pc-availability ${escape(event.availability)}">${escape(tr(`availability.${event.availability}`))}</span></p>
         ${personal ? `<p class="pc-personal">${escape(tr(`personal.${personal}`))}</p>` : ''}
-        <div class="pc-actions"><a class="pc-details" href="${escape(path)}" data-event="${Number(event.id)}">${escape(tr('details'))}</a>
-        ${withDate && event.availability !== 'CLOSED' ? `<a class="pc-details pc-register" href="${escape(path)}" data-event="${Number(event.id)}" data-registration-intent="${Number(event.id)}">${escape(tr(event.availability === 'WAITLIST' ? 'join_waitlist' : 'register'))}</a>` : ''}</div>
+        <a class="pc-details" href="${escape(path)}" data-event="${Number(event.id)}">${escape(tr('details'))}</a>
     </article>`;
 }
 function renderCalendar(events) {
@@ -171,9 +166,11 @@ function selectDay(day, focus = false) {
     if (focus) root.querySelector(`[data-day="${day}"]`)?.focus();
 }
 root.addEventListener('click', event => {
-    const view = event.target.closest('[data-view]');
-    if (view && state.view !== view.dataset.view) {
-        state.view = view.dataset.view; saveState(true); refresh();
+    const quick = event.target.closest('[data-quick-format]');
+    const clear = event.target.closest('[data-clear-filter]');
+    if (quick || clear) {
+        state[clear ? clear.dataset.clearFilter : 'format'] = clear ? '' : quick.dataset.quickFormat;
+        saveState(true); refresh();
     }
     const day = event.target.closest('[data-day]');
     if (day) selectDay(day.dataset.day, true);
@@ -192,7 +189,7 @@ $('pcGrid').addEventListener('keydown', event => {
     const steps = {ArrowLeft:-1,ArrowRight:1,ArrowUp:-7,ArrowDown:7};
     if (event.key in steps) { event.preventDefault(); selectDay(addDays(day, steps[event.key]), true); }
 });
-$('pcMine').addEventListener('change', event => { myOnly = event.target.checked; render(); });
+$('pcMine').addEventListener('change', event => { myOnly = event.target.checked; renderFilters(); render(); });
 $('pcReset').addEventListener('click', () => {
     filterKeys.forEach(key => { state[key] = ''; }); myOnly = false; saveState(true); refresh();
 });
@@ -213,7 +210,7 @@ $('pcToday').addEventListener('click', () => {
 $('pcRetry').addEventListener('click', refresh);
 $('pcShare').addEventListener('click', async () => {
     const url = new URL(commonUrl(state), location.origin).href;
-    try { await navigator.clipboard.writeText(url); $('pcShare').textContent = tr('copied'); }
+    try { await navigator.clipboard.writeText(url); $('pcShare').setAttribute('aria-label', tr('copied')); $('pcShare').title = tr('copied'); $('pcShareNotice').textContent = tr('copied'); }
     catch { $('pcShareField').value = url; $('pcShareField').hidden = false; $('pcShareField').select(); }
 });
 window.addEventListener('popstate', () => { state = readState(location.search); state.lang = lang; refresh(); });

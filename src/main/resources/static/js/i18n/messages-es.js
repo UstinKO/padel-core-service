@@ -1,4 +1,12 @@
 window.APP_MESSAGES = {
+    "public_calendar.heading": "Calendario de eventos",
+    "public_calendar.page_title": "Calendario de eventos | 1-Padel",
+    "public_calendar.tournaments": "Torneos",
+    "public_calendar.training": "Entrenamientos",
+    "public_calendar.americano_all": "Americano — todos los formatos",
+    "public_calendar.remove_filter": "Quitar filtro: {0}",
+    "public_calendar.menu": "Menú",
+
     "public_calendar.price": "Precio",
     "public_calendar.register": "Inscribirme",
     "public_calendar.join_waitlist": "Lista de espera",
@@ -30,7 +38,7 @@ window.APP_MESSAGES = {
     "public_calendar.personal_error": "No se pudieron consultar tus inscripciones. Reintentá.",
     "public_calendar.retry": "Reintentar",
     "public_calendar.details": "Ver detalles",
-    "public_calendar.return": "Volver a los eventos",
+    "public_calendar.return": "Volver al calendario",
     "public_calendar.unavailable_club": "Club seleccionado — sin eventos en este período",
     "public_calendar.unavailable_organizer": "Organización seleccionada — sin eventos en este período",
     "public_calendar.all_levels": "Todos los niveles",

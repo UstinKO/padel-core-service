@@ -5,10 +5,9 @@ const commonKeys = ['view', 'month', 'day', ...filterKeys, 'lang'];
 const validDay = value => /^\d{4}-\d{2}-\d{2}$/.test(value || '') &&
     Number(value.slice(0, 4)) >= 100 && Number(value.slice(0, 4)) < 9999 &&
     !Number.isNaN(dateValue(value).valueOf()) && dateValue(value).toISOString().slice(0, 10) === value;
-export function readState(search, preferredView = 'cards') {
+export function readState(search) {
     const params = new URLSearchParams(search);
-    const state = {view: preferredView === 'calendar' ? 'calendar' : 'cards', month: '', day: ''};
-    if (['cards', 'calendar'].includes(params.get('view'))) state.view = params.get('view');
+    const state = {view: 'calendar', month: '', day: ''};
     if (validDay(`${params.get('month')}-01`)) state.month = params.get('month');
     if (validDay(params.get('day'))) state.day = params.get('day');
     for (const key of filterKeys) {
@@ -34,14 +33,31 @@ export function safeReturn(value, origin) {
 export const dayEvents = (events, day) => events.filter(event => event.date === day)
     .sort((a, b) => (a.time || '99:99').localeCompare(b.time || '99:99') || a.id - b.id);
 export const extraCount = events => Math.max(events.length - 3, 0);
-export function visibleEvents(events, personal, myOnly, status) {
-    return events.filter(event => (!myOnly || personal.has(event.id)) && (!status || event.status === status));
+export const groupedFormats = Object.freeze({
+    TOURNAMENTS: ['KING_OF_COURT', 'AMERICANO_INDIVIDUAL', 'AMERICANO_PAIRS'],
+    AMERICANO_ALL: ['AMERICANO_INDIVIDUAL', 'AMERICANO_PAIRS']
+});
+export function matchesFormat(event, format) {
+    return !format || (groupedFormats[format] || [format]).includes(event.format);
 }
-export function cardOrder(events, today) {
-    return [...events].sort((a, b) => {
-        const aPast = a.date < today, bPast = b.date < today;
-        if (aPast !== bPast) return aPast ? 1 : -1;
-        const chronological = a.date.localeCompare(b.date) || (a.time || '').localeCompare(b.time || '') || a.id - b.id;
-        return aPast ? -chronological : chronological;
-    });
+export function visibleEvents(events, personal, myOnly, status, format = '') {
+    return events.filter(event => (!myOnly || personal.has(event.id)) && (!status || event.status === status)
+        && matchesFormat(event, format));
+}
+export function calendarQuery(state) {
+    const params = new URLSearchParams();
+    for (const key of filterKeys) {
+        if (!state[key] || key === 'status' || key === 'format' && groupedFormats[state.format]) continue;
+        params.set(key, state[key]);
+    }
+    if (state.month) params.set('month', state.month);
+    return params.toString();
+}
+export function homeCalendarState({level, gender, type, modality}, lang) {
+    const formats = {KING_OF_COURT:'KING_OF_COURT',AMERICANO_TEAMS:'AMERICANO_PAIRS',
+        CANCHA_ABIERTA:'CANCHA_ABIERTA',PADEL_CLINIC:'PADEL_CLINIC'};
+    const americano = modality === 'DOBLES' ? 'AMERICANO_PAIRS' :
+        modality === 'INDIVIDUAL' ? 'AMERICANO_INDIVIDUAL' : 'AMERICANO_ALL';
+    return readState(new URLSearchParams({level:level || '',gender:gender || '',lang,
+        format: type === 'AMERICANO' ? americano : (formats[type] || '')}).toString());
 }

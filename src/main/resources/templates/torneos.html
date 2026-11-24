@@ -10,7 +10,7 @@
     <meta name="description" content="1-Padel - Todos los torneos de pádel">
     <meta name="theme-color" content="#FF6B35">
     <!-- ✅ ИСПРАВЛЕНО: Padel Core → 1-Padel -->
-    <title th:text="#{torneos.title}">Todos los Torneos | 1-Padel</title>
+    <title th:text="#{public_calendar.page_title}">Todos los Torneos | 1-Padel</title>
 
     <!-- ✅ ДОБАВЛЕН Favicon -->
     <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
@@ -43,7 +43,7 @@
                 <span class="navbar-brand-text">1-<span class="brand-highlight">PADEL</span></span>
             </a>
 
-            <button class="navbar-toggler" id="navbarToggler" type="button">
+            <button class="navbar-toggler" id="navbarToggler" type="button" th:aria-label="#{public_calendar.menu}">
                 <span class="navbar-toggler-icon"></span>
                 <span class="navbar-toggler-icon"></span>
                 <span class="navbar-toggler-icon"></span>
@@ -55,7 +55,7 @@
                         <a href="/" class="nav-link" th:text="#{nav.home}">Inicio</a>
                     </li>
                     <li class="nav-item">
-                        <a href="/torneos" class="nav-link active" th:text="#{nav.torneos}">Torneos</a>
+                        <a href="/torneos" class="nav-link active" th:text="#{public_calendar.calendar}">Torneos</a>
                     </li>
                     <li class="nav-item">
                         <a href="/ranking" class="nav-link" th:text="#{nav.ranking}">Ranking</a>
@@ -97,24 +97,23 @@
 
 <main class="torneos-main pc" id="publicCalendar">
     <div class="container">
-        <div class="page-header">
-            <h1 class="page-title" th:text="#{torneos.heading}">Torneos</h1>
-            <p class="page-description" th:text="#{torneos.description}"></p>
+        <div class="pc-heading">
+            <h1><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M16 3v4M8 3v4M3 11h18"/></svg><span th:text="#{public_calendar.heading}">Calendario de eventos</span></h1>
+            <button type="button" class="pc-button pc-icon-button" id="pcShare" th:aria-label="#{public_calendar.share}" th:title="#{public_calendar.share}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7 .2l3-3a5 5 0 0 0-7-7l-2 2M14 11a5 5 0 0 0-7-.2l-3 3a5 5 0 0 0 7 7l2-2"/></svg></button>
         </div>
-        <div class="pc-top">
-            <div class="pc-switch" role="group" th:aria-label="#{public_calendar.calendar}">
-                <button type="button" data-view="cards" aria-pressed="true" th:text="#{public_calendar.cards}"></button>
-                <button type="button" data-view="calendar" aria-pressed="false" th:text="#{public_calendar.calendar}"></button>
-            </div>
-            <button type="button" class="pc-button" id="pcShare" th:text="#{public_calendar.share}"></button>
+        <div class="pc-format-tabs" role="group" th:aria-label="#{public_calendar.format}">
+            <button type="button" data-quick-format="" aria-pressed="true" th:text="#{public_calendar.all}"></button>
+            <button type="button" data-quick-format="TOURNAMENTS" aria-pressed="false" th:text="#{public_calendar.tournaments}"></button>
+            <button type="button" data-quick-format="PADEL_CLINIC" aria-pressed="false" th:text="#{public_calendar.training}"></button>
+            <button type="button" data-quick-format="CANCHA_ABIERTA" aria-pressed="false" th:text="#{public_calendar.format.CANCHA_ABIERTA}"></button>
         </div>
+        <span id="pcShareNotice" class="pc-sr-only" role="status"></span>
         <input id="pcShareField" class="pc-share-field" readonly hidden th:aria-label="#{public_calendar.share}">
         <div class="pc-filters">
             <div class="pc-filter-main">
                 <label class="pc-level"><span th:text="#{public_calendar.level}"></span><select data-filter="level"></select></label>
                 <button type="button" class="pc-button pc-extra-toggle" id="pcFiltersToggle" aria-expanded="false" aria-controls="pcExtra" th:text="#{public_calendar.filters}"></button>
                 <label class="pc-mine" id="pcMineLabel" hidden><input type="checkbox" id="pcMine"><span th:text="#{public_calendar.mine}"></span></label>
-                <button type="button" class="pc-button" id="pcReset" th:text="#{public_calendar.reset}"></button>
             </div>
             <div class="pc-extra" id="pcExtra" data-collapsed="true">
                 <label><span th:text="#{public_calendar.format}"></span><select data-filter="format"></select></label>
@@ -124,12 +123,12 @@
                 <label><span th:text="#{public_calendar.status}"></span><select data-filter="status"></select></label>
             </div>
         </div>
+        <div id="pcActiveRow" class="pc-active-row" hidden><div id="pcActiveFilters" class="pc-active-filters" aria-live="polite"></div><button type="button" class="pc-button" id="pcReset" th:text="#{public_calendar.reset}"></button></div>
         <div id="pcNotice" class="pc-message" role="status" aria-live="polite" th:text="#{public_calendar.loading}"></div>
         <div id="pcPersonalNotice" class="pc-message pc-error" role="status" hidden></div>
         <button type="button" class="pc-button" id="pcRetry" hidden th:text="#{public_calendar.retry}"></button>
         <div id="pcContent" hidden>
-            <div id="pcCatalog"><p class="pc-count" id="pcCatalogCount"></p><div class="pc-cards" id="pcCards"></div></div>
-            <div id="pcCalendar" class="pc-layout" hidden>
+            <div id="pcCalendar" class="pc-layout">
                 <section class="pc-month" th:aria-label="#{public_calendar.calendar}">
                     <div class="pc-nav">
                         <h2 id="pcMonthTitle"></h2>

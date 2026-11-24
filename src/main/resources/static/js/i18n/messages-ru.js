@@ -1,4 +1,12 @@
 window.APP_MESSAGES = {
+    "public_calendar.heading": "Календарь мероприятий",
+    "public_calendar.page_title": "Календарь мероприятий | 1-Padel",
+    "public_calendar.tournaments": "Турниры",
+    "public_calendar.training": "Тренировки",
+    "public_calendar.americano_all": "Американо — все форматы",
+    "public_calendar.remove_filter": "Убрать фильтр: {0}",
+    "public_calendar.menu": "Меню",
+
     "public_calendar.price": "Стоимость",
     "public_calendar.register": "Записаться",
     "public_calendar.join_waitlist": "В резерв",
@@ -30,7 +38,7 @@ window.APP_MESSAGES = {
     "public_calendar.personal_error": "Не удалось проверить ваши записи. Повторите загрузку.",
     "public_calendar.retry": "Повторить",
     "public_calendar.details": "Подробнее",
-    "public_calendar.return": "Вернуться к мероприятиям",
+    "public_calendar.return": "Вернуться к календарю",
     "public_calendar.unavailable_club": "Выбранный клуб — нет событий в этом периоде",
     "public_calendar.unavailable_organizer": "Выбранный организатор — нет событий в этом периоде",
     "public_calendar.all_levels": "Все уровни",
