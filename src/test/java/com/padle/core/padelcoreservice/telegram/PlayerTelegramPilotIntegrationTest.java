@@ -65,6 +65,6 @@ class PlayerTelegramPilotIntegrationTest {
     private PlayerPadel player() {
         return players.saveAndFlush(PlayerPadel.builder().nombre("Pilot").apellido("Fixture")
                 .email(UUID.randomUUID() + "@example.test").passwordHash("fixture-hash")
-                .nivelJugador(Nivel.C9).activo(true).emailConfirmado(true).build());
+                .nivelJugador(Nivel.C9).preferredLocale("es").activo(true).emailConfirmado(true).build());
     }
 }
