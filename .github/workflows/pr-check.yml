@@ -223,7 +223,7 @@ jobs:
       - name: Install isolated browser tools
         run: npm install --prefix /tmp/padel-browser-qa --no-save --package-lock=false playwright@1.64.1
       - name: Check real browsers against isolated test server
-        run: ./mvnw -Dbrowser.qa=true -Dtest=RegistrationSourceBrowserTest,PlayerTelegramBrowserTest test
+        run: ./mvnw -Dbrowser.qa=true -Dtest=RegistrationSourceBrowserTest,PlayerTelegramBrowserTest,AnalyticsTrafficTemplateTest test
       - name: Report browser failure
         if: failure()
         run: |
