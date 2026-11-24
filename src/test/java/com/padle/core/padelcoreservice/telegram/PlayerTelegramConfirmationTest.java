@@ -6,6 +6,7 @@ import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.enums.ParticipationStatus;
 import com.padle.core.padelcoreservice.repository.ParticipationRequestRepository;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
+import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
 import com.padle.core.padelcoreservice.service.TournamentParticipationService;
 import com.padle.core.padelcoreservice.telegram.TelegramModels.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,10 +57,12 @@ class PlayerTelegramConfirmationTest {
 
     private PlayerTelegramPoller poller() {
         var delivery = new PlayerTelegramDelivery(store, api, access);
-        var confirmation = new PlayerTelegramConfirmation(delivery, api, messages);
+        var receipts = mock(PlayerTelegramReceipts.class);
+        var confirmation = new PlayerTelegramConfirmation(delivery, api, messages,
+                mock(TournamentRegistrationRepository.class), receipts);
         ReflectionTestUtils.setField(confirmation, "baseUrl", "https://padel.example");
         return new PlayerTelegramPoller(api, store, mock(PlayerTelegramLinks.class), players, messages,
-                delivery, participation, mock(PlayerTelegramSummary.class), access, requests, confirmation);
+                delivery, participation, mock(PlayerTelegramSummary.class), access, requests, confirmation, receipts);
     }
 
     private Review review(ParticipationStatus status, boolean outdated) {
