@@ -1,0 +1,172 @@
+{
+  "task": "LFPT-1332",
+  "date": "2026-11-24",
+  "result": "PASS",
+  "testedWorkingTreeBaseRevision": "e00e8014d045fdf6009364978e38835207b5c58d",
+  "localJarBuiltBeforeCommit": true,
+  "backendCleanVerify": {
+    "padel-api-contract": {
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "padel-tournament-engines": {
+      "tests": 46,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "padel-application": {
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "padel-bootstrap": {
+      "tests": 1310,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 4
+    },
+    "total": {
+      "tests": 1363,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 4
+    }
+  },
+  "enginesTests": 46,
+  "americanoEngineOriginalTests": 12,
+  "americanoValidatorOriginalTests": 8,
+  "kingOriginalTests": 13,
+  "playoffOriginalTests": 9,
+  "architectureTests": 4,
+  "unchangedSourceSha256": {
+    "AmericanoScheduleEngine.java": "d0192b890b44744bd815dae23afda5941b12766037bd364e09955e672619d213",
+    "AmericanoScheduleValidator.java": "3f03641f76391a201c5e1f7cfcf5aa71b2b95d3311761950cb3b9851c60c371c",
+    "AmericanoScheduleEngineTest.java": "060fec8b9610946b250bf1734b40a0c330d996e44d4fde71187254cf6df16e71",
+    "AmericanoScheduleValidatorTest.java": "ead2b11da40747aa4a8a5d683f3c8bb9bcd598af08e69a28cdd39420ed4aeeb7"
+  },
+  "javaRuntime": 21,
+  "javaRelease": 17,
+  "artifacts": {
+    "engines": "PASS",
+    "application": "PASS",
+    "contract": "PASS",
+    "calculationClasses": 4,
+    "publicNestedTypes": 9
+  },
+  "artifactGuardTests": 7,
+  "automationTests": {
+    "github": 27,
+    "relay": 48,
+    "worker": 5,
+    "workerSkipped": 1,
+    "preview": 12,
+    "releases": 22
+  },
+  "americano": {
+    "result": "PASS",
+    "players": 8,
+    "courts": 2,
+    "rounds": 7,
+    "matches": 14,
+    "uniquePartnerPairs": 28,
+    "uiInitialization": true,
+    "uiResults": 2,
+    "firstRoundCompleted": true,
+    "displayedNextRound": 2,
+    "rankingPlayers": 8,
+    "views": [
+      {
+        "width": 1440,
+        "language": "ru",
+        "adminAndPublic": true,
+        "rounds": 7,
+        "refresh": true
+      },
+      {
+        "width": 1440,
+        "language": "es",
+        "adminAndPublic": true,
+        "rounds": 7,
+        "refresh": true
+      },
+      {
+        "width": 1440,
+        "language": "en",
+        "adminAndPublic": true,
+        "rounds": 7,
+        "refresh": true
+      },
+      {
+        "width": 390,
+        "language": "ru",
+        "adminAndPublic": true,
+        "rounds": 7,
+        "refresh": true
+      },
+      {
+        "width": 390,
+        "language": "es",
+        "adminAndPublic": true,
+        "rounds": 7,
+        "refresh": true
+      },
+      {
+        "width": 390,
+        "language": "en",
+        "adminAndPublic": true,
+        "rounds": 7,
+        "refresh": true
+      }
+    ],
+    "conductHistoryPage": true,
+    "javaScriptErrors": 0
+  },
+  "rollback": {
+    "result": "PASS",
+    "scheduleScoresRankingPreserved": true,
+    "schemaAndLiquibasePreserved": true,
+    "baselineRevision": "e00e8014d045fdf6009364978e38835207b5c58d",
+    "baselineJarSha256": "84782ae2c5d81ed01d9574131d37505ee293c88843fad3ad9d3b37fe339de9a6",
+    "currentJarSha256": "554cebe9547920f43dc46b604119db652f57b63c9134d994f832d31c04c78ff3"
+  },
+  "common": {
+    "result": "PASS",
+    "scheduleScoresRankingPreserved": true,
+    "schemaAndLiquibasePreserved": true,
+    "jwt": {
+      "login": 200,
+      "me": 200,
+      "events": 200,
+      "anonymousMe": 401,
+      "transport": "inside-own-preview-container"
+    },
+    "releaseRehearsal": {
+      "result": "PASS",
+      "scenarios": 5,
+      "statePreserved": true
+    },
+    "expo": {
+      "ordinaryPreviewApi": 401,
+      "gatewayBasicChallenge": true,
+      "qaAdapterApi": 200,
+      "events": 9,
+      "rendered": true,
+      "externalRequestsBlocked": true,
+      "ordinaryPreviewLimitationPreserved": true
+    }
+  },
+  "rankingComparison": "Все поля DTO по playerId; порядок критериев отдельно проверен, порядок полностью равных строк не фиксируется",
+  "docsDrift": "PASS",
+  "agentMigration": "PASS",
+  "humanManual": "NOT_RUN",
+  "validationSourcesSha256": {
+    ".github/bin/check-engine-artifact.py": "1bc29eb45f2a5bb62fc8e8b98d7c6737a55913ca04d705c5903f7b5c2c2aa5b1",
+    ".github/bin/test_engine_artifact.py": "cdf1ad884ac2301ad2ab3a3d0355ea9003d6244d33c4a55491061279559fcba1",
+    "padel-tournament-engines/src/test/java/com/padle/core/padelcoreservice/service/americano/EngineArchitectureTest.java": "e936cfc6a319dfc4ea3756eb97473aef90ab4877bc61dcf9ff99e7f244fee393",
+    "tests/browser/modular-pilot/americano-engine.mjs": "6ad26149ca85eaa13eae5b160c1304defeb0bd03c0b284926785471c69abbb79"
+  }
+}
