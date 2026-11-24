@@ -2,6 +2,7 @@ package com.padle.core.padelcoreservice.telegram;
 
 import com.padle.core.padelcoreservice.config.PlayerTelegramProperties;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,6 +65,6 @@ class PlayerTelegramPilotIntegrationTest {
     private PlayerPadel player() {
         return players.saveAndFlush(PlayerPadel.builder().nombre("Pilot").apellido("Fixture")
                 .email(UUID.randomUUID() + "@example.test").passwordHash("fixture-hash")
-                .activo(true).emailConfirmado(true).build());
+                .nivelJugador(Nivel.C9).activo(true).emailConfirmado(true).build());
     }
 }

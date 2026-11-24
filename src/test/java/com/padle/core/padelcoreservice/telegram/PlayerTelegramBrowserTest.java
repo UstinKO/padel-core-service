@@ -142,7 +142,7 @@ class PlayerTelegramBrowserTest {
         var admin = owners.saveAndFlush(Owner.builder().email("tg-admin-" + suffix + "@example.test")
                 .password(passwords.encode(password)).firstName("Telegram").lastName("QA")
                 .role(OwnerRole.SUPER_ADMIN).isActive(true).build());
-        var club = clubs.saveAndFlush(Club.builder().nombre("Telegram Browser QA").isActive(true).build());
+        var club = clubs.saveAndFlush(Club.builder().nombre("Telegram Browser QA " + suffix).isActive(true).build());
         var connected = player("connected", suffix, password, 299);
         store.token(connected.getId(), "browser-verified-token", OffsetDateTime.now().plusMinutes(10), "es");
         store.bind("browser-verified-token", 7770000299L, 7770000299L).orElseThrow();
@@ -163,7 +163,7 @@ class PlayerTelegramBrowserTest {
         return players.saveAndFlush(PlayerPadel.builder().nombre("Telegram").apellido(name)
                 .email("tg-" + name + "-" + suffix + "@example.test").passwordHash(passwords.encode(password))
                 .activo(true).emailConfirmado(true).preferredLocale("es").nivelJugador(Nivel.C9)
-                .telefono("+5491155550" + phoneSuffix).build());
+                .telefono("+54911" + (10000000 + Math.floorMod(suffix.hashCode(), 8000000) + phoneSuffix)).build());
     }
 
     private Tournament event(Club club, Owner admin, int capacity) {
