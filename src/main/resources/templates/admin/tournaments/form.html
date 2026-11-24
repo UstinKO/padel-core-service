@@ -189,7 +189,7 @@
                                         th:unless="${nivel.name() == 'TODOS'}"
                                         th:value="${nivel}"
                                         th:attr="data-genero=${nivel.generoAplicableNombre}"
-                                        th:text="${nivel.display}"></option>
+                                        th:text="${#strings.replace(nivel.display, 'C4_C3', 'C4/C3')}"></option>
                                 <option value="TODOS"
                                         th:with="openClinic=${tournament.generoFormato?.name() == 'MIXTO' and tournament.tipo?.name() == 'PADEL_CLINIC' and tournament.modalidad?.name() == 'INDIVIDUAL'}"
                                         th:attr="data-legacy-todos=${!openClinic and tournament.categoriaNivel == 'TODOS'}"

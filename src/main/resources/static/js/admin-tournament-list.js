@@ -1,7 +1,7 @@
 (() => {
     const listPath = '/admin/tournaments';
     const storageKey = 'adminTournamentListFilters';
-    const filterNames = ['from', 'to', 'format', 'clubId', 'gender', 'level', 'status', 'view', 'month', 'day'];
+    const filterNames = ['from', 'to', 'format', 'clubId', 'gender', 'level', 'status', 'organizerId', 'view', 'month', 'day'];
 
     function listFilters(search) {
         const source = new URLSearchParams(search);

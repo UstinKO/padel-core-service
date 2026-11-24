@@ -15,6 +15,8 @@ import java.time.OffsetDateTime;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.Optional;
+import java.util.Locale;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -25,7 +27,16 @@ public class PlayerTelegramLinks {
     private final PlayerTelegramStore store;
 
     public LinkStatus status(PlayerPadel player) {
-        return new LinkStatus(available(), store.connection(player.getId()).filter(Connection::enabled).isPresent());
+        return new LinkStatus(available(), store.connection(player.getId()).filter(Connection::enabled).isPresent(),
+                store.preference(player.getId()));
+    }
+
+    public LinkStatus preference(PlayerPadel player, ContactPreference preference) {
+        if (!properties.enabled() || !player.isActivo() || player.isGuestAccount()) {
+            throw new AccountException(HttpStatus.CONFLICT, "TELEGRAM_UNAVAILABLE");
+        }
+        store.preference(player.getId(), preference);
+        return status(player);
     }
 
     public boolean available() {
@@ -33,7 +44,7 @@ public class PlayerTelegramLinks {
                 && properties.botUsername().matches("[A-Za-z0-9_]{5,32}");
     }
 
-    public Link issue(PlayerPadel player) {
+    public Link issue(PlayerPadel player, Locale locale) {
         if (!available() || !player.isActivo() || player.isGuestAccount()) {
             throw new AccountException(HttpStatus.CONFLICT, "TELEGRAM_UNAVAILABLE");
         }
@@ -41,7 +52,8 @@ public class PlayerTelegramLinks {
         RANDOM.nextBytes(bytes);
         String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
         var expiry = OffsetDateTime.now().plusMinutes(10);
-        store.token(player.getId(), hash(token), expiry);
+        String language = Set.of("es", "ru", "en").contains(locale.getLanguage()) ? locale.getLanguage() : "es";
+        store.token(player.getId(), hash(token), expiry, language);
         return new Link("https://t.me/" + properties.botUsername() + "?start=" + token, expiry);
     }
 

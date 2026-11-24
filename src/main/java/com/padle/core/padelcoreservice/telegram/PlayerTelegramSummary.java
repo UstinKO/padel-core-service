@@ -83,7 +83,12 @@ public class PlayerTelegramSummary {
         long errors = rows.stream().filter(r -> List.of("FAILED", "BLOCKED", "UNKNOWN").contains(r.delivery())).count();
         String pending = rows.stream().filter(r -> !"CONFIRMED".equals(r.response())).limit(20)
                 .map(r -> r.name().substring(0, Math.min(r.name().length(), 100))).collect(Collectors.joining(", "));
+        String manual = rows.stream().filter(Recipient::manualContact).limit(20)
+                .map(r -> r.name().substring(0, Math.min(r.name().length(), 100))
+                        + (r.preference() == ContactPreference.WHATSAPP ? " (WhatsApp)" : ""))
+                .collect(Collectors.joining(", "));
         return messages.text("summary.event", Locale.forLanguageTag("ru"), summary.name(), summary.tournamentId(),
-                rows.size(), confirmed, rows.size() - confirmed, missing, errors, pending.isBlank() ? "—" : pending);
+                rows.size(), confirmed, rows.size() - confirmed, missing, errors, pending.isBlank() ? "—" : pending)
+                + "\n" + messages.text("summary.manual", Locale.forLanguageTag("ru"), manual.isBlank() ? "—" : manual);
     }
 }

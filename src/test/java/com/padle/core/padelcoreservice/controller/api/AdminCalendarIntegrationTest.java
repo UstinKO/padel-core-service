@@ -23,7 +23,12 @@ import java.util.HashSet;
 import java.util.UUID;
 import static org.hamcrest.Matchers.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.assertj.core.api.Assertions.assertThat;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import java.util.concurrent.atomic.AtomicInteger;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
@@ -40,6 +45,8 @@ class AdminCalendarIntegrationTest {
     @Autowired OwnerRepository owners;
     @Autowired ClubRepository clubs;
     @Autowired TournamentRepository tournaments;
+    private static final AtomicInteger TEST_IP = new AtomicInteger();
+    private String requestIp;
     Owner clubOwner;
     Owner other;
     Club venue;
@@ -50,6 +57,7 @@ class AdminCalendarIntegrationTest {
 
     @BeforeEach
     void prepare() {
+        requestIp = "198.18.0." + TEST_IP.incrementAndGet();
         venue = venue("Calendar Norte"); second = venue("Calendar Sur"); foreign = venue("Private venue");
         clubOwner = account(OwnerRole.CLUB_ADMIN);
         clubOwner.setClubIds(new HashSet<>(Set.of(venue.getId(), second.getId())));
@@ -158,6 +166,92 @@ class AdminCalendarIntegrationTest {
         mvc.perform(get("/api/admin/events/calendar")).andExpect(status().isUnauthorized());
         mvc.perform(get("/api/admin/events/calendar").with(user("player").roles("PLAYER")))
             .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void organizationComesFromOwnerAndFilterCannotExpandClubScope() throws Exception {
+        clubOwner.setOrganizationName("Black Padel QA"); owners.save(clubOwner);
+        other.setOrganizationName("E-Padel QA"); owners.save(other);
+        own.setCreatedBy(other.getId()); tournaments.save(own);
+        mvc.perform(get("/api/admin/events/calendar").param("month", "2040-02").with(user(clubOwner)))
+            .andExpect(jsonPath("$.events[0].organizer.id").value(clubOwner.getId()))
+            .andExpect(jsonPath("$.events[0].organizer.name").value("Black Padel QA"))
+            .andExpect(jsonPath("$.organizers.length()").value(1L))
+            .andExpect(content().string(not(containsString("E-Padel QA"))));
+        mvc.perform(get("/api/admin/events/calendar").param("month", "2040-02")
+                .param("organizerId", other.getId().toString()).with(user(clubOwner)))
+            .andExpect(jsonPath("$.events.length()").value(0L))
+            .andExpect(jsonPath("$.organizers.length()").value(1L));
+        mvc.perform(get("/api/admin/events/calendar").param("month", "2040-02")
+                .param("organizerId", other.getId().toString()).param("clubId", venue.getId().toString())
+                .param("format", "AMERICANO_PAIRS").param("gender", "MASCULINO").param("level", "C7")
+                .param("status", "PUBLICADO").with(user(account(OwnerRole.SUPER_ADMIN))))
+            .andExpect(jsonPath("$.events.length()").value(1L))
+            .andExpect(jsonPath("$.events[0].id").value(foreignEvent.getId()));
+    }
+
+    @ParameterizedTest
+    @EnumSource(OwnerRole.class)
+    void everyManagingRoleCanSaveOnlyOrganizationAndReadFreshValue(OwnerRole role) throws Exception {
+        Owner actor = account(role);
+        mvc.perform(put("/api/admin/organizers/" + actor.getId() + "/organization").with(user(actor)).with(csrf())
+                .contentType("application/json").content("{\"name\":\"  Organization QA  \"}"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.name").value("Organization QA"));
+        mvc.perform(get("/api/admin/organizers/organizations").with(user(actor)))
+            .andExpect(status().isOk()).andExpect(header().string("Cache-Control", "no-store"))
+            .andExpect(content().string(containsString("Organization QA")))
+            .andExpect(content().string(not(containsString(actor.getEmail()))))
+            .andExpect(content().string(not(containsString("test-password"))));
+        Owner persisted = owners.findById(actor.getId()).orElseThrow();
+        assertThat(persisted.getFirstName()).isEqualTo("Calendar");
+        assertThat(persisted.getRole()).isEqualTo(role);
+        mvc.perform(put("/api/admin/organizers/" + actor.getId() + "/organization").with(user(actor)).with(csrf())
+                .contentType("application/json").content("{\"name\":\"   \"}"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.name").isEmpty());
+    }
+
+    @Test
+    void organizationSettingsProtectForeignAccountsCsrfAndLength() throws Exception {
+        String endpoint = "/api/admin/organizers/" + other.getId() + "/organization";
+        mvc.perform(get("/api/admin/organizers/organizations").with(user(clubOwner)))
+            .andExpect(jsonPath("$.accounts.length()").value(1L))
+            .andExpect(jsonPath("$.accounts[0].id").value(clubOwner.getId()));
+        mvc.perform(put(endpoint).with(user(clubOwner)).with(csrf()).contentType("application/json")
+                .content("{\"name\":\"forbidden\"}"))
+            .andExpect(status().isForbidden());
+        mvc.perform(put(endpoint).with(user(other)).contentType("application/json")
+                .content("{\"name\":\"missing csrf\"}"))
+            .andExpect(status().isForbidden());
+        mvc.perform(put(endpoint).with(user(other)).with(csrf()).contentType("application/json")
+                .content("{\"name\":\"" + "x".repeat(121) + "\"}"))
+            .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("INVALID_ORGANIZATION_NAME"));
+        assertThat(owners.findById(other.getId()).orElseThrow().getOrganizationName()).isNull();
+        mvc.perform(put(endpoint).with(user(account(OwnerRole.SUPER_ADMIN))).with(csrf())
+                .contentType("application/json").content("{\"name\":\"Managed QA\"}"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.name").value("Managed QA"));
+        mvc.perform(get("/api/admin/organizers/organizations")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/admin/organizers/organizations").with(user("player").roles("PLAYER")))
+            .andExpect(status().isForbidden());
+        mvc.perform(put(endpoint).with(user("player").roles("PLAYER")).with(csrf())
+                .contentType("application/json").content("{\"name\":\"forbidden\"}"))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void missingOrganizationIsNotReplacedWithClubOrPersonalName() throws Exception {
+        mvc.perform(get("/api/admin/events/calendar").param("month", "2040-02").with(user(clubOwner)))
+            .andExpect(jsonPath("$.events[0].organizer.id").value(clubOwner.getId()))
+            .andExpect(jsonPath("$.events[0].organizer.name").isEmpty());
+        own.setOwnerId(null); tournaments.save(own);
+        mvc.perform(get("/api/admin/events/calendar").param("month", "2040-02").with(user(account(OwnerRole.SUPER_ADMIN))))
+            .andExpect(jsonPath("$.events[0].organizer").isEmpty());
+    }
+
+    private MockHttpServletRequestBuilder get(String path) {
+        return MockMvcRequestBuilders.get(path).with(request -> {
+            request.setRemoteAddr(requestIp);
+            return request;
+        });
     }
 
     private Club venue(String name) {

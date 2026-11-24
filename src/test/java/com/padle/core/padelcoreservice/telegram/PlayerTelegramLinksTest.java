@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import java.time.OffsetDateTime;
 import java.util.Optional;
+import java.util.Locale;
+import com.padle.core.padelcoreservice.telegram.TelegramModels.ContactPreference;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -19,11 +21,11 @@ class PlayerTelegramLinksTest {
     @Test void linkIsOpaqueExpiresAndDoesNotStoreItsBearerToken() {
         when(api.available()).thenReturn(true);
         var player = PlayerPadel.builder().id(42L).activo(true).email("fixture@example.test").build();
-        var link = links.issue(player);
+        var link = links.issue(player, Locale.forLanguageTag("ru"));
         String token = link.url().substring(link.url().indexOf("start=") + 6);
         assertThat(token).matches("[A-Za-z0-9_-]{32}");
         var hash = ArgumentCaptor.forClass(String.class);
-        verify(store).token(eq(42L), hash.capture(), eq(link.expiresAt()));
+        verify(store).token(eq(42L), hash.capture(), eq(link.expiresAt()), eq("ru"));
         assertThat(hash.getValue()).hasSize(64).isNotEqualTo(token).isEqualTo(PlayerTelegramLinks.hash(token));
         assertThat(link.expiresAt()).isBetween(OffsetDateTime.now().plusMinutes(9), OffsetDateTime.now().plusMinutes(11));
     }
@@ -41,7 +43,24 @@ class PlayerTelegramLinksTest {
 
     @Test void disabledIntegrationCannotIssueALink() {
         var player = PlayerPadel.builder().id(42L).activo(true).email("fixture@example.test").build();
-        assertThatThrownBy(() -> links.issue(player)).isInstanceOf(AccountException.class);
+        assertThatThrownBy(() -> links.issue(player, Locale.forLanguageTag("ru"))).isInstanceOf(AccountException.class);
         verifyNoInteractions(store);
+    }
+
+    @Test void preferenceIsSavedForTheAuthenticatedPlayerWithoutRequiringABotToken() {
+        var player = PlayerPadel.builder().id(42L).activo(true).email("fixture@example.test").build();
+        when(store.connection(42L)).thenReturn(Optional.empty());
+        when(store.preference(42L)).thenReturn(ContactPreference.WHATSAPP);
+        var status = links.preference(player, ContactPreference.WHATSAPP);
+        verify(store).preference(42L, ContactPreference.WHATSAPP);
+        assertThat(status.preference()).isEqualTo(ContactPreference.WHATSAPP);
+        assertThat(status.connected()).isFalse();
+    }
+
+    @Test void unsupportedLinkLanguageFallsBackToSpanish() {
+        when(api.available()).thenReturn(true);
+        var player = PlayerPadel.builder().id(42L).activo(true).email("fixture@example.test").build();
+        links.issue(player, Locale.FRENCH);
+        verify(store).token(eq(42L), anyString(), any(), eq("es"));
     }
 }

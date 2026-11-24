@@ -36,6 +36,21 @@ class PlayerTelegramTemplateTest {
         Files.writeString(Path.of("target/telegram-ui/profile-" + language + ".html"), rendered);
     }
     private String render(String language, boolean enabled) throws Exception {
+        return render(language, enabled, "profile");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"ru, Пользуюсь WhatsApp", "es, Uso WhatsApp", "en, I use WhatsApp"})
+    void registrationOfferAndItsDynamicMessagesUseTheCurrentSiteLanguage(String language, String label) throws Exception {
+        String rendered = render(language, true, "registration");
+        assertThat(rendered).contains(label, "data-whatsapp-saved=", "data-prompt-title=", "data-tg-prompt-template");
+        assertThat(rendered).doesNotContain("??telegram", "th:attr=");
+        assertThat(render(language, false, "registration")).doesNotContain("data-tg-prompt-template");
+        Files.createDirectories(Path.of("target/telegram-ui"));
+        Files.writeString(Path.of("target/telegram-ui/registration-" + language + ".html"), rendered);
+    }
+
+    private String render(String language, boolean enabled, String fragment) throws Exception {
         var properties = new Properties();
         try (var stream = getClass().getResourceAsStream("/i18n/messages_" + language + ".properties")) {
             properties.load(new InputStreamReader(stream, StandardCharsets.UTF_8));
@@ -55,7 +70,7 @@ class PlayerTelegramTemplateTest {
             var context = new WebContext(exchange, Locale.forLanguageTag(language));
             context.setVariable(ThymeleafEvaluationContext.THYMELEAF_EVALUATION_CONTEXT_CONTEXT_VARIABLE_NAME,
                     new ThymeleafEvaluationContext(application, new DefaultConversionService()));
-            return engine.process("fragments/player-telegram", Set.of("profile"), context);
+            return engine.process("fragments/player-telegram", Set.of(fragment), context);
         }
     }
 }

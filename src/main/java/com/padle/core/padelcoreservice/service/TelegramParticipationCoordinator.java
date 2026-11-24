@@ -51,6 +51,7 @@ public class TelegramParticipationCoordinator {
         var rows = activeRows(tournamentId);
         var current = participation.current(rows);
         var deliveries = store.deliveries(tournamentId);
+        var preferences = store.preferences(rows.stream().map(row -> row.getPlayer().getId()).distinct().toList());
         var participants = rows.stream().map(row -> {
             var request = Optional.ofNullable(current.get(row.getId()));
             var recipient = recipient(row, request);
@@ -61,7 +62,7 @@ public class TelegramParticipationCoordinator {
                     .map(Delivery::state).findFirst().orElse("NOT_SENT");
             return new Recipient(row.getId(), row.getPlayer().getId(), row.getPlayer().getNombreCompleto(),
                     request.map(ParticipationRequest::getStatus).orElse(ParticipationStatus.NOT_REQUIRED).name(),
-                    connected, state);
+                    connected, state, preferences.getOrDefault(row.getPlayer().getId(), ContactPreference.UNSPECIFIED));
         }).toList();
         return new Summary(tournamentId, tournament.getNombre(), participants);
     }
