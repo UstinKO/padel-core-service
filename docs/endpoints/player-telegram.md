@@ -15,7 +15,7 @@ response: NOT_REQUIRED/PENDING/CONFIRMED/DECLINED. delivery: NOT_SENT/IN_FLIGHT/
 
 ## Настройка выпуска
 
-Используется существующий TELEGRAM_BOT_TOKEN, отдельно от токена SDD-конвейера. TELEGRAM_PLAYERS_ENABLED=true переключает poller и напоминания на новую реализацию. При выключенном флаге сохранено прежнее поведение. TELEGRAM_PLAYERS_BOT_USERNAME — без @. Прежние связи по username не переносятся автоматически: игрок подключает профиль новой ссылкой.
+Игрокам выделен отдельный бот и `TELEGRAM_PLAYERS_BOT_TOKEN`. Автоматического fallback на технический `TELEGRAM_BOT_TOKEN` нет: без собственного токена подключение недоступно. Технический бот и SDD-конвейер сохраняют свои настройки. TELEGRAM_PLAYERS_ENABLED=true переключает player poller и напоминания на новую реализацию. При выключенном флаге сохранено прежнее поведение. TELEGRAM_PLAYERS_BOT_USERNAME — username нового бота без @. Прежние связи по username не переносятся автоматически: игрок подключает профиль новой ссылкой.
 
 TELEGRAM_PLAYERS_AUTOMATIC_ENABLED по умолчанию false. Интервалы TELEGRAM_PLAYERS_CONFIRMATION_HOURS и TELEGRAM_PLAYERS_REMINDER_HOURS по умолчанию 24/3 часа. Дата и время интерпретируются в IANA-зоне мероприятия. Скрытые события получают уведомления только своим участникам.
 

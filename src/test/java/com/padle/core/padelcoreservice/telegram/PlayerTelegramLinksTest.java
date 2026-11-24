@@ -15,7 +15,7 @@ import static org.mockito.Mockito.*;
 class PlayerTelegramLinksTest {
     private final PlayerTelegramApi api = mock(PlayerTelegramApi.class);
     private final PlayerTelegramStore store = mock(PlayerTelegramStore.class);
-    private final PlayerTelegramProperties properties = new PlayerTelegramProperties(true, "OnePadelTestBot", false, 24, 3, null, null, false);
+    private final PlayerTelegramProperties properties = new PlayerTelegramProperties(true, "OnePadelTestBot", false, 24, 3, null, null, false, "fixture-token");
     private final PlayerTelegramLinks links = new PlayerTelegramLinks(properties, api, store);
 
     @Test void linkIsOpaqueExpiresAndDoesNotStoreItsBearerToken() {

@@ -1,6 +1,6 @@
 package com.padle.core.padelcoreservice.telegram;
 
-import com.padle.core.padelcoreservice.config.TelegramProperties;
+import com.padle.core.padelcoreservice.config.PlayerTelegramProperties;
 import com.padle.core.padelcoreservice.telegram.TelegramModels.*;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.ParameterizedTypeReference;
@@ -15,17 +15,17 @@ import java.util.Optional;
 
 @Component
 public class PlayerTelegramApi {
-    private final TelegramProperties properties;
+    private final PlayerTelegramProperties properties;
     private final RestTemplate http;
 
-    public PlayerTelegramApi(TelegramProperties properties,
+    public PlayerTelegramApi(PlayerTelegramProperties properties,
                              @Qualifier("telegramRestTemplate") RestTemplate http) {
         this.properties = properties;
         this.http = http;
     }
 
     public boolean available() {
-        return properties.isEnabled() && properties.getBotToken() != null && !properties.getBotToken().isBlank();
+        return properties.enabled() && properties.botToken() != null && !properties.botToken().isBlank();
     }
 
     public List<Update> updates(long offset) {
@@ -65,6 +65,6 @@ public class PlayerTelegramApi {
     }
 
     private String url(String method) {
-        return "https://api.telegram.org/bot" + properties.getBotToken() + "/" + method;
+        return "https://api.telegram.org/bot" + properties.botToken() + "/" + method;
     }
 }

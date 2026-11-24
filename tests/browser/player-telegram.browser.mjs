@@ -8,6 +8,7 @@ assert.equal(origin.protocol, 'http:');
 const output = 'target/telegram-browser-qa';
 await mkdir(output, { recursive: true });
 const checks = [], errors = [], browsers = [];
+let activePage;
 const labels = {
     es: { connect: 'Conectar Telegram', whatsapp: 'Uso WhatsApp', manual: 'WhatsApp — contactar manualmente' },
     ru: { connect: 'Подключить Telegram', whatsapp: 'Пользуюсь WhatsApp', manual: 'WhatsApp — связаться вручную' },
@@ -29,12 +30,14 @@ async function pageFor(ctx) {
     const page = await ctx.newPage();
     page.setDefaultTimeout(15000);
     page.on('pageerror', error => errors.push(String(error)));
+    activePage = page;
     return page;
 }
 async function login(page, email, destination) {
     await page.goto(fixture.baseUrl + '/login');
     const banner = page.locator('#cookieConsentBanner .cookie-btn-reject');
-    if (await banner.isVisible()) await banner.click();
+    await banner.waitFor({state:'visible'});
+    await banner.click();
     await page.locator('#username').fill(email);
     await page.locator('#password').fill(fixture.password);
     await Promise.all([
@@ -85,9 +88,17 @@ try {
             await page.screenshot({ path: `${output}/${language}-${width}.png`, fullPage: true });
             record(`${language}: registration offer fits ${width}px`);
         }
-        const saved = page.waitForResponse(r => new URL(r.url()).pathname.endsWith('/telegram/preference') && r.request().method() === 'PUT');
-        await prompt.locator('[data-tg-whatsapp]').click();
-        assert.equal((await saved).status(), 200);
+        console.log('WhatsApp control', await prompt.locator('[data-tg-whatsapp]').evaluate(element => {
+            const rect = element.getBoundingClientRect();
+            const target = document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2);
+            return {disabled:element.disabled, x:rect.x, y:rect.y, height:rect.height,
+                target:target?.outerHTML.slice(0,500), cookieBanner:document.querySelector('#cookieConsentBanner')?.style.display};
+        }));
+        const [saved] = await Promise.all([
+            page.waitForResponse(r => new URL(r.url()).pathname.endsWith('/telegram/preference') && r.request().method() === 'PUT', {timeout:30000}),
+            prompt.locator('[data-tg-whatsapp]').click({timeout:10000})
+        ]);
+        assert.equal(saved.status(), 200);
         await prompt.locator('[data-tg-profile-link]').waitFor({ state: 'visible' });
         assert.equal(await prompt.locator('[data-tg-connect]').isVisible(), false);
         await page.locator('#registrationConfirmModalOkBtn').click();
@@ -136,6 +147,7 @@ try {
     await writeFile(output + '/report.json', JSON.stringify({ok:true,checks},null,2));
 } catch(error) {
     console.error(error);
+    if (activePage && !activePage.isClosed()) await activePage.screenshot({path:output+'/failure.png',fullPage:true}).catch(() => {});
     await writeFile(output + '/report.json', JSON.stringify({ok:false,checks,error:String(error),errors},null,2));
     process.exitCode = 1;
 } finally {
