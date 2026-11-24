@@ -7,6 +7,7 @@ import com.padle.core.padelcoreservice.model.ParticipationRequest;
 import com.padle.core.padelcoreservice.model.ParticipationRequest.Trigger;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.TournamentRegistration;
+import com.padle.core.padelcoreservice.model.enums.Modalidad;
 import com.padle.core.padelcoreservice.model.enums.ParticipationStatus;
 import com.padle.core.padelcoreservice.repository.ParticipationRequestRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -119,13 +121,17 @@ public class TournamentParticipationService {
         var current = outdated ? requests.findByRegistrationIdAndSupersededAtIsNull(row.getId())
                 .filter(request -> ParticipationRequests.sameCycle(request, row))
                 .filter(request -> ParticipationRequests.canActFor(request, actor.getId()))
-                .orElse(null) : requested;
+                : Optional.of(requested);
         boolean expired = fromEmail && !requested.getExpiresAt().isAfter(OffsetDateTime.now());
-        var status = current == null ? ParticipationStatus.NOT_REQUIRED : current.getStatus();
+        var status = current.map(ParticipationRequest::getStatus).orElse(ParticipationStatus.NOT_REQUIRED);
         boolean open = !outdated && !expired && Boolean.TRUE.equals(row.getIsActive())
-                && row.isConfirmed() && pairTerms.isCancellable(tournament);
-        boolean canRespond = open && status == ParticipationStatus.PENDING;
-        boolean canDecline = open && (status == ParticipationStatus.PENDING || status == ParticipationStatus.CONFIRMED)
+                && row.isConfirmed();
+        boolean pairCancellation = pairTerms.isCancellable(tournament);
+        boolean canConfirm = pairCancellation || tournament.getModalidad() == Modalidad.INDIVIDUAL
+                && TelegramParticipationCoordinator.upcoming(tournament);
+        boolean canRespond = open && canConfirm && status == ParticipationStatus.PENDING;
+        boolean canDecline = open && pairCancellation
+                && (status == ParticipationStatus.PENDING || status == ParticipationStatus.CONFIRMED)
                 && (requested.getTrigger() == Trigger.RESERVE
                     || PairTermsService.accepted(row) || tournament.canCancelRegistration());
         return new Review(requested.getId(), tournament.getId(), tournament.getNombre(),
