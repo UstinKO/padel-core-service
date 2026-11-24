@@ -99,7 +99,16 @@ class PlayerTelegramReceiptsTest {
     @Test void aDelegatedGuestConfirmationDoesNotOfferAnUnusableReceiptButton() {
         var guest = row(101,"Гостевая запись");
         guest.setPlayer(PlayerPadel.builder().id(99L).email("fixture@1padel.guest").activo(true).build());
-        assertThat(handler.buttons(guest,player.getLocale())).isEmpty();
-        assertThat(handler.buttons(row(100,"Собственная запись"),player.getLocale())).hasSize(1);
+        assertThat(handler.buttons(guest,player.getId(),player.getLocale())).isEmpty();
+        assertThat(handler.buttons(row(100,"Собственная запись"),player.getId(),player.getLocale())).hasSize(1);
+    }
+
+    @Test void buttonsDoNotInitializeADetachedPlayerProfile() {
+        var detached = mock(PlayerPadel.class);
+        when(detached.getId()).thenReturn(42L);
+        doThrow(new IllegalStateException("Профиль недоступен вне транзакции")).when(detached).isGuestAccount();
+        var registration = row(100,"Собственная запись"); registration.setPlayer(detached);
+        assertThat(handler.buttons(registration,42,player.getLocale())).hasSize(1);
+        verify(detached,never()).isGuestAccount();
     }
 }

@@ -38,8 +38,8 @@ public class PlayerTelegramReceipts {
     private final PlayerTelegramDelivery delivery;
     private final PlayerTelegramMessages messages;
 
-    public List<List<Button>> buttons(TournamentRegistration row, Locale locale) {
-        if (!registrations.enabled() || row.getPlayer().isGuestAccount()) {
+    public List<List<Button>> buttons(TournamentRegistration row, long recipientId, Locale locale) {
+        if (!registrations.enabled() || row.getPlayer().getId() != recipientId) {
             return List.of();
         }
         return List.of(List.of(Button.action(messages.text("receipt.button", locale), "r:" + number(row.getId())

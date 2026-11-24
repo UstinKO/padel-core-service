@@ -63,7 +63,7 @@ public class PlayerTelegramNotifications {
             String when = tournament.getFechaHoraInicioCompleta().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
             String text = messages.text(reminder ? "reminder" : "request", locale,
                     row.getPlayer().getNombreCompleto(), tournament.getNombre(), when, clubName, address);
-            if (!receipts.buttons(row, locale).isEmpty()) {
+            if (!receipts.buttons(row, player.getId(), locale).isEmpty()) {
                 text += "\n\n" + messages.text("receipt.instruction", locale);
             }
             var buttons = buttons(row, player, request.filter(r -> pending));
@@ -83,6 +83,6 @@ public class PlayerTelegramNotifications {
                 List.of(Button.action(messages.text("confirm", locale), "c:" + request.getId() + ":" + Long.toString(
                         TelegramParticipationCoordinator.startsAt(row.getTournament()).getEpochSecond(), 36))), links))
                 .orElseGet(() -> List.of(links));
-        return Stream.concat(original.stream(), receipts.buttons(row, locale).stream()).toList();
+        return Stream.concat(original.stream(), receipts.buttons(row, player.getId(), locale).stream()).toList();
     }
 }

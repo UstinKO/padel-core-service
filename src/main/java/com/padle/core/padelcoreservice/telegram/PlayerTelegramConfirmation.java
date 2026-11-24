@@ -36,7 +36,7 @@ public class PlayerTelegramConfirmation {
                     Button.link(messages.text("view", locale), baseUrl + "/torneo/" + review.tournamentId()),
                     Button.link(messages.text("cancel", locale), baseUrl + "/players/dashboard")));
             var upload = registrations.findByTournamentIdAndPlayerId(review.tournamentId(), playerId)
-                    .map(row -> receipts.buttons(row, locale)).orElseGet(List::of);
+                    .map(row -> receipts.buttons(row, playerId, locale)).orElseGet(List::of);
             api.editKeyboard(original.chat().id(), original.messageId(),
                     Stream.concat(links.stream(), upload.stream()).toList());
         }
