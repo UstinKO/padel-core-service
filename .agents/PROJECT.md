@@ -119,7 +119,7 @@ docker compose up -d
 | URL | Template | Описание |
 |-----|----------|----------|
 | `GET /admin` | `admin/panel.html` | Главная панель |
-| `GET /admin/tournaments` | `admin/tournaments/list.html` | Список турниров; локальный диалог ссылки публикации Telegram/Stories, без нового HTTP-маршрута |
+| `GET /admin/tournaments` | `admin/tournaments/list.html` | Общий/клубный список: ближайшие даты и время, затем прошедшие от свежих; область ownerId сохраняется. Локальный диалог ссылки публикации Telegram/Stories |
 | `GET /admin/tournaments/new` | `admin/tournaments/form.html` | Форма создания турнира |
 | `GET /admin/tournaments/{id}` | `admin/tournaments/details.html` | Детали турнира + список участников |
 | `GET/POST /admin/tournaments/{id}/additional-points` | Редактор ручных очков и история, включая отдельный путь `finished-results/additional-points` |

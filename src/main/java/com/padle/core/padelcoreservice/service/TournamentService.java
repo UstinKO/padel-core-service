@@ -101,19 +101,8 @@ public class TournamentService {
     // ==================== Базовые методы для турниров ====================
 
     public List<TournamentDto> getAllTournaments() {
-        LocalDate today = LocalDate.now();
-        Comparator<TournamentDto> byDateFromToday = (a, b) -> {
-            LocalDate da = a.getFechaInicio();
-            LocalDate db = b.getFechaInicio();
-            boolean aUpcoming = da != null && !da.isBefore(today);
-            boolean bUpcoming = db != null && !db.isBefore(today);
-            if (aUpcoming && bUpcoming) return da.compareTo(db);   // оба предстоящие → ASC
-            if (!aUpcoming && !bUpcoming) return db.compareTo(da); // оба прошедшие  → DESC (свежее первым)
-            return aUpcoming ? -1 : 1;                             // предстоящий перед прошедшим
-        };
-        List<TournamentDto> dtos = mapToDtoWithDetails(tournamentRepository.findAll());
-        dtos.sort(byDateFromToday);
-        return dtos;
+        return TournamentListOrder.sort(mapToDtoWithDetails(tournamentRepository.findAll()),
+                LocalDate.now(EventSchedule.zone(null)));
     }
 
     /**
@@ -1790,7 +1779,8 @@ public class TournamentService {
         if (isSuperAdmin) {
             return getAllTournaments();
         }
-        return mapToDtoWithDetails(tournamentRepository.findByOwnerId(ownerId));
+        return TournamentListOrder.sort(mapToDtoWithDetails(tournamentRepository.findByOwnerId(ownerId)),
+                LocalDate.now(EventSchedule.zone(null)));
     }
 
     private String resolveClubName(Long clubId) {
