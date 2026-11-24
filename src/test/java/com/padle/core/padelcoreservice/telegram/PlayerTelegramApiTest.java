@@ -1,6 +1,6 @@
 package com.padle.core.padelcoreservice.telegram;
 
-import com.padle.core.padelcoreservice.config.TelegramProperties;
+import com.padle.core.padelcoreservice.config.PlayerTelegramProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -17,11 +17,18 @@ class PlayerTelegramApiTest {
     private MockRestServiceServer server;
     private PlayerTelegramApi api;
     @BeforeEach void setup() {
-        var properties = new TelegramProperties();
-        properties.setEnabled(true); properties.setBotToken("fixture-token");
+        var properties = properties(true, "fixture-token");
         var rest = new RestTemplate();
         server = MockRestServiceServer.bindTo(rest).build();
         api = new PlayerTelegramApi(properties, rest);
+    }
+    private PlayerTelegramProperties properties(boolean enabled, String token) {
+        return new PlayerTelegramProperties(enabled, "OnePadelQaBot", false, 24, 3, null, null, false, token);
+    }
+    @Test void playerBotRequiresItsOwnTokenAndAnExplicitFeatureFlag() {
+        assertThat(new PlayerTelegramApi(properties(true, ""), new RestTemplate()).available()).isFalse();
+        assertThat(new PlayerTelegramApi(properties(false, "fixture-token"), new RestTemplate()).available()).isFalse();
+        assertThat(api.available()).isTrue();
     }
     @Test void successfulResponseCarriesActualMessageId() {
         server.expect(requestTo("https://api.telegram.org/botfixture-token/sendMessage"))

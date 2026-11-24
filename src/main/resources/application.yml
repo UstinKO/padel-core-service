@@ -240,6 +240,7 @@ telegram:
   enabled: ${TELEGRAM_ENABLED:false}
   players:
     enabled: ${TELEGRAM_PLAYERS_ENABLED:false}
+    bot-token: ${TELEGRAM_PLAYERS_BOT_TOKEN:}
     bot-username: ${TELEGRAM_PLAYERS_BOT_USERNAME:}
     automatic-enabled: ${TELEGRAM_PLAYERS_AUTOMATIC_ENABLED:false}
     confirmation-hours: ${TELEGRAM_PLAYERS_CONFIRMATION_HOURS:24}
