@@ -95,4 +95,11 @@ class PlayerTelegramReceiptsTest {
         handler.callback(choose(100));
         verifyNoInteractions(files,intake,delivery);
     }
+
+    @Test void aDelegatedGuestConfirmationDoesNotOfferAnUnusableReceiptButton() {
+        var guest = row(101,"Гостевая запись");
+        guest.setPlayer(PlayerPadel.builder().id(99L).email("fixture@1padel.guest").activo(true).build());
+        assertThat(handler.buttons(guest,player.getLocale())).isEmpty();
+        assertThat(handler.buttons(row(100,"Собственная запись"),player.getLocale())).hasSize(1);
+    }
 }

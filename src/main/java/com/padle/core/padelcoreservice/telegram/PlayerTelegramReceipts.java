@@ -39,7 +39,7 @@ public class PlayerTelegramReceipts {
     private final PlayerTelegramMessages messages;
 
     public List<List<Button>> buttons(TournamentRegistration row, Locale locale) {
-        if (!registrations.enabled()) {
+        if (!registrations.enabled() || row.getPlayer().isGuestAccount()) {
             return List.of();
         }
         return List.of(List.of(Button.action(messages.text("receipt.button", locale), "r:" + number(row.getId())
