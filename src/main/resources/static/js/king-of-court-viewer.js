@@ -166,48 +166,11 @@ class KingOfCourtViewer {
 
     renderLeaderboard(ranking) {
         if (!this.leaderboard) return;
-
-        this.leaderboard.innerHTML = '';
-
-        const mostrarNivel = window.tournamentData?.mostrarNivel;
-
-        if (ranking.length === 0) {
-            this.leaderboard.innerHTML = `<tr><td colspan="${mostrarNivel ? 9 : 8}" class="text-center">${t('koc.viewer.no_data')}</td></tr>`;
-            return;
-        }
-
-        const meId = window.tournamentData?.currentPlayerId;
-        ranking.forEach(player => {
-            const isMe = meId && player.playerId === meId;
-            const row = document.createElement('tr');
-            const badgeHtml = isMe ? '<i class="fas fa-circle-check" style="color:#1d9bf0;font-size:.85em;margin-left:.3rem;vertical-align:middle"></i>' : '';
-            const nivelCell = mostrarNivel ? `<td>${player.playerNivel || '—'}</td>` : '';
-            row.innerHTML = `
-                <td><strong>#${player.rank || '-'}</strong></td>
-                <td>
-                    <a href="#" class="view-history-btn"
-                       data-player-id="${player.playerId || ''}"
-                       data-player-name="${tournamentPoints.escape(player.playerName)}">
-                        ${tournamentPoints.escape(player.playerName || t('koc.viewer.unknown_player'))}${badgeHtml}
-                    </a>
-                </td>
-                ${nivelCell}
-                <td>${player.matchPoints ?? 0}</td>
-                <td><span class="bonus-points">+${player.bonusPoints || 0}</span></td>
-                ${tournamentPoints.cell(player.additionalPoints)}
-                <td><strong>${player.totalPoints || 0}</strong></td>
-                <td>${player.gamesPlayed || 0}</td>
-                <td>${player.wins || 0}/${player.losses || 0}</td>
-            `;
-            this.leaderboard.appendChild(row);
+        IndividualRanking.render(this.leaderboard, ranking, {
+            king: true, publicView: true, currentPlayerId: window.tournamentData?.currentPlayerId
         });
-
-        // Добавляем обработчики для истории
-        this.leaderboard.querySelectorAll('.view-history-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.openHistoryModal(btn.dataset.playerId, btn.dataset.playerName);
-            });
+        this.leaderboard.querySelectorAll('.view-history-btn').forEach(button => {
+            button.addEventListener('click', () => this.openHistoryModal(button.dataset.playerId, button.dataset.playerName));
         });
     }
 

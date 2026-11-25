@@ -6,7 +6,7 @@
 
 В padel-application выделен второй прикладной срез после PublicClubQuery: чтение круговой таблицы и итоговых мест постоянных пар. Собственные read-модели/порт и композиция результата отделены от JPA/DTO. Engines остаётся владельцем чистых вычислений, legacy-адаптеры связывают данные и действующие ответы.
 
-В #1377 [перенесён read-срез](application-query.md): application владеет композицией круговой таблицы и итоговых мест наряду с клубным сценарием. Фаза ещё требует независимой приёмки #1378; все семь модулей не объявляются готовыми. В engines десять вычислительных классов: [finalOrder выделен в #1376](final-order-extraction.md), прежний Java API сохранён через MapStruct-адаптер.
+В #1377 [перенесён read-срез](application-query.md): application владеет композицией круговой таблицы и итоговых мест наряду с клубным сценарием. [Независимая техническая приёмка #1378](acceptance.md) включена через PR #1398, read-фаза завершена. Следующая [фаза 5 / #1402](../phase-5/README.md) готовит сохранение позиций и завершение. Все семь модулей не объявляются готовыми. В engines десять вычислительных классов: [finalOrder выделен в #1376](final-order-extraction.md), прежний Java API сохранён через MapStruct-адаптер.
 
 ## Рабочие задачи
 
@@ -17,11 +17,11 @@
 | 3 | [#1377](https://github.com/UstinKO/padel-core-service/issues/1377) | backend | Read-модели/порт/query application и wiring | #1376 и результаты #1375 |
 | 4 | [#1378](https://github.com/UstinKO/padel-core-service/issues/1378) | frontend | Независимая клиентская/runtime-приёмка | #1377 |
 
-Спецификации: [координация](../../../specs/features/LFPT-1374-round-robin-application-phase.md), [baseline](../../../specs/done/LFPT-1375-round-robin-query-baseline.md), [итоговые места](../../../specs/done/LFPT-1376-round-robin-final-order-engine.md), [application](../../../specs/features/LFPT-1377-round-robin-application-query.md), [приёмка](../../../specs/features/LFPT-1378-round-robin-application-acceptance.md).
+Спецификации: [координация](../../../specs/done/LFPT-1374-round-robin-application-phase.md), [baseline](../../../specs/done/LFPT-1375-round-robin-query-baseline.md), [итоговые места](../../../specs/done/LFPT-1376-round-robin-final-order-engine.md), [application](../../../specs/done/LFPT-1377-round-robin-application-query.md), [приёмка](../../../specs/done/LFPT-1378-round-robin-application-acceptance.md).
 
-Первый шаг #1375 включён через PR #1379: [application-контракт](application-contract.md), полные wire-эталоны и проверки транзакций уточняют #1377/#1378. Их постановки переведены в approved, зависимости сохранены. В #1376 / PR #1381 выделен final-order engine; в #1377 перенесена read-композиция. Следующий шаг — независимая приёмка #1378. Отдельные PR сохраняют порядок backend → frontend и работоспособность после каждого шага. Переноса application в #1375 нет.
+Первый шаг #1375 включён через PR #1379: [application-контракт](application-contract.md), полные wire-эталоны и проверки транзакций уточняют #1377/#1378. Их постановки переведены в approved, зависимости сохранены. В #1376 / PR #1381 выделен final-order engine; в #1377 перенесена read-композиция. Независимая техническая приёмка #1378 принята отдельным завершающим PR #1398; ручные/физические ограничения сохранены. Отдельные PR сохраняют порядок backend → frontend и работоспособность после каждого шага. Переноса application в #1375 нет.
 
-[Результаты baseline #1375](baseline.md), [безопасная QA-сводка](baseline-qa-2026-11-25.json).
+[Результаты baseline #1375](baseline.md), [безопасная QA-сводка](baseline-qa-2026-11-25.json). [Итоговая приёмка #1378](acceptance.md) подтверждает wire-эталоны, реальный браузер и полный сохранённый контекст после restart/прежних jar/возврата.
 
 ## Основные границы
 

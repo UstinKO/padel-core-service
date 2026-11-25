@@ -13,7 +13,7 @@
                 const byId = new Map(rows.map(row => [String(row.playerId), row]));
                 const update = () => roster.querySelectorAll('[data-playing-side-player]').forEach(node => {
                     const row = byId.get(node.dataset.playingSidePlayer);
-                    const value = row ? format(row.level, row.playingSide, true) : '';
+                    const value = row ? format(row.level, row.playingSide, !node.hasAttribute('data-playing-side-compact')) : '';
                     if (node.textContent !== value) node.textContent = value;
                 });
                 update();new MutationObserver(update).observe(roster,{childList:true,subtree:true});
