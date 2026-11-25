@@ -1,12 +1,17 @@
 package com.padle.core.padelcoreservice.service.americano;
 
-import com.padle.core.application.roundrobin.RoundRobinRankingQuery;
+import com.padle.core.application.roundrobin.RoundRobinFinishCommand;
+import com.padle.core.application.roundrobin.RoundRobinNotFound;
 import com.padle.core.application.roundrobin.RoundRobinPositionCommand;
+import com.padle.core.application.roundrobin.RoundRobinRankingQuery;
+import com.padle.core.padelcoreservice.adapter.roundrobin.LegacyRoundRobinFinishAdapter;
 import com.padle.core.padelcoreservice.adapter.roundrobin.LegacyRoundRobinPositionAdapter;
 import com.padle.core.padelcoreservice.adapter.roundrobin.LegacyRoundRobinReadAdapter;
 import com.padle.core.padelcoreservice.dto.americano.TeamAmericanoRankingDto;
 import com.padle.core.padelcoreservice.exception.InvalidStateException;
+import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
 import com.padle.core.padelcoreservice.mapper.americano.RoundRobinRankingMapper;
+import com.padle.core.padelcoreservice.mapper.americano.RoundRobinFinishMapper;
 import com.padle.core.padelcoreservice.mapper.americano.RoundRobinPositionMapper;
 import jakarta.persistence.EntityManager;
 import com.padle.core.padelcoreservice.model.Tournament;
@@ -56,12 +61,18 @@ class RoundRobinWriteOrderTest {
     @Mock AmericanoRoundRepository rounds;
     @Mock AmericanoMatchRepository matches;
     private final Map<Long, AmericanoTeam> managed = new HashMap<>();
+    private Tournament managedEvent;
     private TeamAmericanoService service;
 
     @BeforeEach
     void connectTheRealCommandAndAdapter() {
         var entities = mock(EntityManager.class, invocation -> {
             if (invocation.getMethod().getName().equals("getReference")) {
+                if (invocation.getArgument(0) == Tournament.class) {
+                    assertThat(managedEvent).isNotNull();
+                    assertThat(managedEvent.getId()).isEqualTo((Long) invocation.getArgument(1));
+                    return managedEvent;
+                }
                 var team = managed.get(invocation.getArgument(1));
                 assertThat(team).isNotNull();
                 return team;
@@ -70,7 +81,11 @@ class RoundRobinWriteOrderTest {
         });
         var adapter = new LegacyRoundRobinPositionAdapter(rounds, teams, matches,
                 Mappers.getMapper(RoundRobinPositionMapper.class), entities);
-        service = new TeamAmericanoService(query, new RoundRobinPositionCommand(adapter), read, mapper,
+        var positions = new RoundRobinPositionCommand(adapter);
+        var finish = new LegacyRoundRobinFinishAdapter(tournaments, rounds, teams,
+                Mappers.getMapper(RoundRobinFinishMapper.class), entities);
+        var finishCommand = new RoundRobinFinishCommand(finish, positions, query);
+        service = new TeamAmericanoService(query, positions, finishCommand, read, mapper,
                 tournaments, registrations, teams, rounds, matches);
     }
 
@@ -209,6 +224,38 @@ class RoundRobinWriteOrderTest {
         calls.verifyNoMoreInteractions();
     }
 
+    @Test
+    void missingEventInTheCommandRetainsTheFacadeErrorAndDoesNotReadRounds() {
+        assertThatThrownBy(() -> service.finishTournament(ID)).isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Tournament not found: 42");
+        verify(tournaments).findById(ID);
+        verifyNoMoreInteractions(tournaments);
+        verifyNoInteractions(rounds, teams, matches, query, mapper);
+    }
+
+    @Test
+    void missingMaximumFallsBackToZeroWithoutClampingTheRemainingCount() {
+        when(tournaments.findById(ID)).thenReturn(Optional.of(event(TournamentStatus.CERRADO)));
+        when(rounds.countCompletedRounds(ID)).thenReturn(2);
+        assertThatThrownBy(() -> service.finishTournament(ID)).isInstanceOf(InvalidStateException.class)
+                .hasMessage("No se puede finalizar. Quedan -2 rondas sin completar.");
+        verifyNoInteractions(teams, matches, query, mapper);
+    }
+
+    @Test
+    void missingRankingAfterTheStateChangeRetainsTheFacadeError() {
+        var event = event(TournamentStatus.CERRADO);
+        when(tournaments.findById(ID)).thenReturn(Optional.of(event));
+        when(rounds.existsByTournamentIdAndPhaseIsNull(ID)).thenReturn(true);
+        when(teams.findByTournamentId(ID)).thenReturn(List.of(team(1, 1)));
+        when(query.ranking(ID)).thenThrow(new RoundRobinNotFound(ID));
+        assertThatThrownBy(() -> service.finishTournament(ID)).isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Tournament not found: 42");
+        assertThat(event.getEstado()).isEqualTo(TournamentStatus.FINALIZADO);
+        verify(tournaments).save(event);
+        verifyNoInteractions(mapper);
+    }
+
     private AmericanoTeam team(long id, int number) {
         var team = AmericanoTeam.builder().id(id).teamNumber(number).currentPosition(9).build();
         managed.put(id, team);
@@ -216,6 +263,7 @@ class RoundRobinWriteOrderTest {
     }
 
     private Tournament event(TournamentStatus state) {
-        return Tournament.builder().id(ID).estado(state).build();
+        managedEvent = Tournament.builder().id(ID).estado(state).build();
+        return managedEvent;
     }
 }

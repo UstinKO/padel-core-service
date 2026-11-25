@@ -1,7 +1,9 @@
 package com.padle.core.padelcoreservice.service.americano;
 
-import com.padle.core.application.roundrobin.RoundRobinRankingQuery;
+import com.padle.core.application.roundrobin.RoundRobinFinishCommand;
 import com.padle.core.application.roundrobin.RoundRobinPositionCommand;
+import com.padle.core.application.roundrobin.RoundRobinRankingQuery;
+import com.padle.core.padelcoreservice.adapter.roundrobin.LegacyRoundRobinFinishAdapter;
 import com.padle.core.padelcoreservice.adapter.roundrobin.LegacyRoundRobinPositionAdapter;
 import com.padle.core.padelcoreservice.dto.americano.RoundRobinAdditionalMatchRequest;
 import com.padle.core.padelcoreservice.dto.americano.TeamAmericanoConfigDto;
@@ -105,6 +107,8 @@ class RoundRobinWriteBaselineTest {
     @Autowired RoundRobinAdditionalMatches additional;
     @Autowired RoundRobinRankingQuery query;
     @Autowired RoundRobinPositionCommand positionCommand;
+    @Autowired RoundRobinFinishCommand finishCommand;
+    @MockitoSpyBean LegacyRoundRobinFinishAdapter finishAdapter;
     @MockitoSpyBean LegacyRoundRobinPositionAdapter positionAdapter;
     @Autowired TournamentConductHistory history;
     @Autowired TournamentRepository tournaments;
@@ -128,6 +132,8 @@ class RoundRobinWriteBaselineTest {
     private volatile Fault fault = Fault.NONE;
     private volatile long faultId;
     private volatile boolean observing;
+    private Tournament finishEvent;
+    private boolean markingFinished;
     private final AtomicBoolean reached = new AtomicBoolean();
     private final AtomicBoolean paused = new AtomicBoolean();
     private volatile CountDownLatch entered = new CountDownLatch(0);
@@ -155,6 +161,20 @@ class RoundRobinWriteBaselineTest {
         observe(rounds, "rounds");
         observe(query, "query");
         observe(positionCommand, "position-command");
+        observe(finishCommand, "finish-command");
+        doAnswer(invocation -> {
+            captureContext("finish-port.findEvent");
+            return invocation.callRealMethod();
+        }).when(finishAdapter).findEvent(any(Long.class));
+        doAnswer(invocation -> {
+            captureContext("finish-port.markFinished");
+            markingFinished = observing;
+            try {
+                return invocation.callRealMethod();
+            } finally {
+                markingFinished = false;
+            }
+        }).when(finishAdapter).markFinished(any(Long.class));
         doAnswer(invocation -> {
             captureContext("position-port.load");
             return invocation.callRealMethod();
@@ -233,6 +253,8 @@ class RoundRobinWriteBaselineTest {
         assertThat(teamFields(fixture.id())).isEqualTo(fields);
         assertThat(sent).containsExactly(new Sent(fixture.id(), "FINALIZADO"));
         assertSingleWriteContext();
+        assertFinishBoundaries(true);
+        assertThat(contexts).extracting(Context::boundary).containsSubsequence("event.save", "query.ranking");
     }
 
     @ParameterizedTest
@@ -251,6 +273,7 @@ class RoundRobinWriteBaselineTest {
         assertThat(stored(fixture.id())).isEqualTo(before);
         assertThat(sent).isEmpty();
         assertSingleWriteContext();
+        assertFinishBoundaries(boundary != Fault.POSITIONS);
     }
 
     @Test
@@ -482,6 +505,12 @@ class RoundRobinWriteBaselineTest {
         MethodInterceptor interceptor = invocation -> {
             String method = invocation.getMethod().getName();
             captureContext(name + "." + method);
+            if (markingFinished && name.equals("event") && method.equals("save")) {
+                Tournament event = (Tournament) invocation.getArguments()[0];
+                assertThat(event).isSameAs(finishEvent);
+                assertThat(entities.contains(event)).isTrue();
+                assertThat(event.getEstado()).isEqualTo(TournamentStatus.FINALIZADO);
+            }
             if (name.equals("query") && method.equals("ranking")) {
                 if (fault == Fault.QUERY) {
                     failAfterFlush(Fault.QUERY);
@@ -492,6 +521,10 @@ class RoundRobinWriteBaselineTest {
                 }
             }
             Object result = invocation.proceed();
+            if (observing && name.equals("event") && method.equals("findById")
+                    && result instanceof java.util.Optional<?> found && found.isPresent()) {
+                finishEvent = (Tournament) found.get();
+            }
             if (name.equals("teams") && method.equals("saveAll") && fault == Fault.POSITIONS) {
                 failAfterFlush(Fault.POSITIONS);
             }
@@ -518,6 +551,7 @@ class RoundRobinWriteBaselineTest {
     private void observeOnlyScenario() {
         sent.clear();
         contexts.clear();
+        finishEvent = null;
         observing = true;
     }
 
@@ -530,6 +564,17 @@ class RoundRobinWriteBaselineTest {
             assertThat(context.manager()).isSameAs(first);
             assertThat(context.readOnly()).isFalse();
         });
+    }
+
+    private void assertFinishBoundaries(boolean reachedStateSave) {
+        var boundaries = contexts.stream().map(Context::boundary).toList();
+        assertThat(boundaries).containsSubsequence("finish-command.finish", "finish-port.findEvent",
+                "position-command.update", "position-port.savePositions");
+        if (reachedStateSave) {
+            assertThat(boundaries).containsSubsequence("position-port.savePositions", "finish-port.markFinished", "event.save");
+        } else {
+            assertThat(boundaries).doesNotContain("finish-port.markFinished", "query.ranking");
+        }
     }
 
     private void captureContext(String boundary) {
