@@ -349,8 +349,9 @@
                                        class="fas fa-user-friends pi-icon"
                                        title="Compañero no registrado"></i>
                                     <span class="player-name" th:text="${player.playerName}">Juan Pérez</span>
-                                    <a th:if="${!player.partnerRow}" href="#payment-receipts" hidden
-                                       class="receipt-row-link" th:data-receipt-registration="${player.registrationId}"></a>
+                                    <button th:if="${!player.partnerRow}" type="button" hidden
+                                            class="receipt-row-link" th:data-receipt-registration="${player.registrationId}"
+                                            aria-haspopup="dialog" aria-controls="receipt-review-dialog"></button>
                                     <span th:if="${player.solo}" class="solo-tag"
                                           th:text="${player.registrationStatus == 'SOLO_SEARCH'} ? #{solo.ui.looking} : (${player.registrationStatus == 'SOLO_ADD_LATER'} ? #{solo.ui.later} : #{solo.ui.needsPartner})"></span>
                                     <small th:replace="~{fragments/playing-side :: info(${player.playerLevel}, ${player.playerPlayingSide}, true)}"></small>

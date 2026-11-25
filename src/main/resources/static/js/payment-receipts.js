@@ -7,14 +7,22 @@
         const copy = Object.fromEntries(Array.from(root.querySelector('[data-receipts-copy]').content.children)
             .map(node => [node.dataset.key, node.textContent]));
         const list = root.querySelector('[data-receipts-list]');
-        const status = root.querySelector('[data-receipts-status]');
+        const statuses = root.querySelectorAll('[data-receipts-status]');
         const filter = root.querySelector('[data-receipts-pending]');
-        const reload = root.querySelector('[data-receipts-reload]');
+        const clearFilter = root.querySelector('[data-receipts-clear]');
+        const all = root.querySelector('[data-receipts-all]');
+        const reloads = root.querySelectorAll('[data-receipts-reload]');
+        const dialog = root.querySelector('[data-receipts-dialog]');
+        const close = root.querySelector('[data-receipts-close]');
+        const rowButtons = document.querySelectorAll('[data-receipt-registration]');
         const paymentForm = document.getElementById('paymentForm');
         const initialPayments = paymentForm ? JSON.stringify(Array.from(new FormData(paymentForm))) : '';
         let receipts = [];
         let busy = false;
         let needsReload = false;
+        let onlyPending = false;
+        let selectedRegistration = null;
+        let opener = null;
 
         function element(tag, text, className) {
             const node = document.createElement(tag);
@@ -24,8 +32,10 @@
         }
 
         function report(text, error = false) {
-            status.textContent = text;
-            status.classList.toggle('receipts-error', error);
+            statuses.forEach(status => {
+                status.textContent = text;
+                status.classList.toggle('receipts-error', error);
+            });
         }
 
         function errorText(error) {
@@ -50,13 +60,17 @@
 
         function setBusy(value) {
             busy = value;
-            root.querySelectorAll('button').forEach(button => { button.disabled = value || needsReload; });
-            reload.disabled = false;
+            root.querySelectorAll('button').forEach(button => {
+                button.disabled = !button.matches('[data-receipts-close], [data-receipts-reload]') && (value || needsReload);
+            });
+            rowButtons.forEach(button => { button.disabled = value || needsReload; });
+            filter.disabled = value || needsReload || (!pending().length && !onlyPending);
+            all.disabled = value || needsReload || !receipts.length;
         }
 
         function lockPaymentForm() {
             needsReload = true;
-            reload.hidden = false;
+            reloads.forEach(button => { button.hidden = false; });
             if (paymentForm) Array.from(paymentForm.elements).forEach(field => { field.disabled = true; });
         }
 
@@ -73,6 +87,7 @@
                 receipts = receipts.map(item => item.id === updated.id ? updated : item);
                 render();
                 report(copy.saved);
+                close.focus();
                 if (action === 'accept') window.location.reload();
             } catch (error) {
                 report(errorText(error) + (needsReload ? ' ' + copy.reload : ''), true);
@@ -167,29 +182,66 @@
             return article;
         }
 
-        function rowLinks() {
-            document.querySelectorAll('[data-receipt-registration]').forEach(link => {
-                const own = receipts.filter(receipt => String(receipt.registrationId) === link.dataset.receiptRegistration);
-                link.hidden = own.length === 0;
-                link.textContent = copy.row + ': ' + own.length;
-                if (own.length) link.href = '#receipt-' + own[0].id;
-                link.onclick = () => { filter.checked = false; render(); };
-            });
+        function pending() {
+            return receipts.filter(receipt => receipt.state === 'PENDING' && receipt.currentCycle);
+        }
+
+        function ownReceipts(registration) {
+            return receipts.filter(receipt => String(receipt.registrationId) === registration);
+        }
+
+        function renderDialog() {
+            list.replaceChildren();
+            const visible = selectedRegistration === null ? receipts : ownReceipts(selectedRegistration);
+            const title = root.querySelector('[data-receipts-dialog-title]');
+            title.textContent = copy.title + (selectedRegistration !== null && visible.length ? ' · ' + visible[0].playerName : '');
+            if (!visible.length) list.append(element('p', copy.empty));
+            visible.forEach(receipt => list.append(card(receipt)));
+        }
+
+        function openDialog(button, registration = null) {
+            opener = button;
+            selectedRegistration = registration;
+            renderDialog();
+            setBusy(busy);
+            if (!dialog.open) dialog.showModal();
+            close.focus();
         }
 
         function render() {
-            list.replaceChildren();
-            const visible = receipts.filter(receipt => !filter.checked || receipt.state === 'PENDING');
-            if (!visible.length) list.append(element('p', copy.empty));
-            visible.forEach(receipt => list.append(card(receipt)));
-            rowLinks();
+            const waiting = pending();
+            const waitingIds = new Set(waiting.map(receipt => String(receipt.registrationId)));
+            root.querySelector('[data-receipts-count]').textContent = waiting.length;
+            root.querySelector('[data-receipts-total]').textContent = receipts.length;
+            filter.setAttribute('aria-pressed', String(onlyPending));
+            clearFilter.hidden = !onlyPending;
+            root.querySelector('[data-receipts-empty-filter]').hidden = !onlyPending || waiting.length > 0;
+            if (paymentForm) paymentForm.querySelectorAll('tr[data-registration-id]').forEach(row => {
+                row.classList.toggle('receipt-filtered-out', onlyPending && !waitingIds.has(row.dataset.registrationId));
+            });
+            rowButtons.forEach(button => {
+                const own = ownReceipts(button.dataset.receiptRegistration);
+                button.hidden = own.length === 0;
+                if (!own.length) return;
+                const current = own.filter(receipt => receipt.currentCycle);
+                const recent = current.find(receipt => receipt.state === 'PENDING') || current[0];
+                const state = recent ? recent.state.toLowerCase() : 'history';
+                const label = state === 'accepted' ? copy.acceptedShort : state === 'rejected' ? copy.rejectedShort : copy[state];
+                button.className = 'receipt-row-link receipt-row-' + state;
+                button.textContent = '🧾 ' + label + (own.length > 1 ? ' · ' + own.length : '');
+                button.setAttribute('aria-label', copy.row + ': ' + own.length + ' · ' + label + ' · ' + own[0].playerName);
+                button.title = button.getAttribute('aria-label');
+            });
+            if (dialog.open) renderDialog();
+            setBusy(busy);
         }
 
         async function load() {
             if (busy || needsReload) return;
             setBusy(true); report(copy.loading);
             try {
-                receipts = await request(); render(); report('');
+                receipts = (await request()).sort((a, b) => b.createdAt.localeCompare(a.createdAt) || b.id.localeCompare(a.id));
+                render(); report('');
             } catch (error) {
                 report(errorText(error), true);
             } finally { setBusy(false); }
@@ -199,8 +251,18 @@
             if (needsReload) { event.preventDefault(); report(copy.reload, true); }
         });
         root.querySelector('[data-receipts-refresh]').addEventListener('click', load);
-        reload.addEventListener('click', () => window.location.reload());
-        filter.addEventListener('change', render);
+        reloads.forEach(button => button.addEventListener('click', () => window.location.reload()));
+        filter.addEventListener('click', () => { onlyPending = !onlyPending; render(); });
+        clearFilter.addEventListener('click', () => { onlyPending = false; render(); });
+        all.addEventListener('click', () => openDialog(all));
+        rowButtons.forEach(button => button.addEventListener('click', () => openDialog(button, button.dataset.receiptRegistration)));
+        close.addEventListener('click', () => dialog.close());
+        dialog.addEventListener('close', () => {
+            list.replaceChildren();
+            if (needsReload) reloads[0].focus();
+            else if (opener && opener.getClientRects().length && !opener.disabled) opener.focus();
+            else (clearFilter.hidden ? filter : clearFilter).focus();
+        });
         load();
     }
 
