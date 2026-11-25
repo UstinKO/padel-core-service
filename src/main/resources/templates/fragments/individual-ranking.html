@@ -1,0 +1,75 @@
+<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org"><body>
+<div th:fragment="rankingTable(king, bodyId)" class="individual-ranking-wrap">
+    <table class="individual-ranking" th:aria-label="#{individual.ranking.title}">
+        <thead><tr>
+            <th class="ir-rank" scope="col" th:text="#{individual.ranking.rank}"></th>
+            <th class="ir-player" scope="col" th:text="#{individual.ranking.player}"></th>
+            <th class="ir-total" scope="col" th:text="#{individual.ranking.total}"></th>
+            <th class="ir-secondary" scope="col" th:text="#{individual.ranking.matchShort}"></th>
+            <th th:if="${king}" class="ir-secondary" scope="col" th:text="#{individual.ranking.bonusShort}"></th>
+            <th class="ir-secondary" scope="col" th:text="#{individual.ranking.additionalShort}"></th>
+            <th class="ir-secondary" scope="col" th:text="#{individual.ranking.gamesShort}"></th>
+            <th class="ir-secondary" scope="col"><details class="ir-help"><summary th:text="#{individual.ranking.wl}"></summary><p th:text="#{individual.ranking.wlHelp}"></p></details></th>
+        </tr></thead>
+        <tbody th:id="${bodyId}"></tbody>
+    </table>
+</div>
+<div th:fragment="publicTable(king, bodyId, players, currentPlayerId)" class="individual-ranking-wrap">
+    <table class="individual-ranking ir-public" th:aria-label="#{individual.ranking.title}">
+        <thead><tr>
+            <th class="ir-rank" scope="col" th:text="#{individual.ranking.rank}"></th>
+            <th class="ir-player" scope="col" th:text="#{individual.ranking.player}"></th>
+            <th class="ir-total" scope="col" th:text="#{individual.ranking.total}"></th>
+        </tr></thead>
+        <tbody th:id="${bodyId}" data-ranking-columns="3">
+            <th:block th:each="player : ${players}" th:with="name=${king ? player.playerName : #strings.trim(player.playerName + ' ' + (player.playerLastName ?: ''))},detailsId=${bodyId + '-details-' + player.playerId}">
+                <tr th:attr="data-ranking-row=${player.playerId}">
+                    <td class="ir-rank" th:text="${king ? player.rank : player.position}"></td>
+                    <td class="ir-player"><button type="button" class="ir-toggle" aria-expanded="false"
+                            th:attr="data-ranking-toggle=${player.playerId},aria-controls=${detailsId}">
+                        <span><span th:text="${name}"></span><span th:if="${currentPlayerId != null and currentPlayerId == player.playerId}" class="ir-me" th:aria-label="#{individual.ranking.me}"> ✓</span></span>
+                        <span aria-hidden="true" class="ir-chevron">⌄</span><span class="ir-sr-only" th:text="#{individual.ranking.details}"></span>
+                    </button></td>
+                    <td class="ir-total" th:text="${king ? player.totalPoints : player.totalScore}"></td>
+                </tr>
+                <tr class="ir-detail-row" th:attr="data-ranking-details=${player.playerId}" hidden><td colspan="3" th:id="${detailsId}">
+                    <div class="ir-detail-content"><dl>
+                        <th:block th:replace="~{:: metric(#{additional.points.match}, ${player.matchPoints}, false)}"></th:block>
+                        <th:block th:if="${king}"><th:block th:replace="~{:: metric(#{additional.points.bonus}, ${player.bonusPoints}, true)}"></th:block></th:block>
+                        <th:block th:replace="~{:: metric(#{additional.points.title}, ${player.additionalPoints.total}, true)}"></th:block>
+                        <th:block th:replace="~{:: metric(#{individual.ranking.games}, ${king ? player.gamesPlayed : player.matchesPlayed}, false)}"></th:block>
+                        <th:block th:replace="~{:: metric(#{individual.ranking.wins}, ${king ? player.wins : player.matchesWon}, false)}"></th:block>
+                        <th:block th:replace="~{:: metric(#{individual.ranking.losses}, ${king ? player.losses : player.matchesLost}, false)}"></th:block>
+                        <th:block th:unless="${king}">
+                            <th:block th:replace="~{:: metric(#{individual.ranking.draws}, ${player.matchesDrawn}, false)}"></th:block>
+                            <th:block th:replace="~{:: metric(#{individual.ranking.difference}, ${player.pointDifference}, true)}"></th:block>
+                            <th:block th:replace="~{:: metric(#{individual.ranking.byes}, ${player.byeCount}, false)}"></th:block>
+                            <th:block th:replace="~{:: metric(#{individual.ranking.partners}, ${player.uniquePartners}, false)}"></th:block>
+                            <th:block th:replace="~{:: metric(#{individual.ranking.opponents}, ${player.uniqueOpponents}, false)}"></th:block>
+                        </th:block>
+                    </dl>
+                    <details class="ir-stages"><summary th:text="#{individual.ranking.stages}"></summary><dl>
+                        <th:block th:each="stage : ${player.additionalPoints.stages}">
+                            <th:block th:replace="~{:: metric(${stage.roundNumber == 0 ? #messages.msg('additional.points.before') : #messages.msg('additional.points.round') + ' ' + stage.roundNumber}, ${stage.points}, true)}"></th:block>
+                        </th:block>
+                        <th:block th:replace="~{:: metric(#{additional.points.title}, ${player.additionalPoints.total}, true)}"></th:block>
+                    </dl></details>
+                    <div th:if="${king}" class="ir-detail-actions"><button type="button" class="btn btn-outline btn-sm view-history-btn"
+                            th:attr="data-player-id=${player.playerId},data-player-name=${name}" th:text="#{individual.ranking.history}"></button></div>
+                    </div>
+                </td></tr>
+            </th:block>
+            <tr th:if="${#lists.isEmpty(players)}"><td colspan="3" th:text="#{individual.ranking.empty}"></td></tr>
+        </tbody>
+    </table>
+</div>
+<th:block th:fragment="metric(label, value, signed)"><dt th:text="${label}"></dt><dd th:text="${value == null ? 0 : signed and value > 0 ? '+' + value : value}"></dd></th:block>
+<th:block th:fragment="assets">
+    <div hidden data-individual-ranking-copy th:attr="data-me=#{individual.ranking.me},data-details=#{individual.ranking.details},data-match=#{additional.points.match},
+        data-bonus=#{additional.points.bonus},data-additional=#{additional.points.title},data-games=#{individual.ranking.games},
+        data-wins=#{individual.ranking.wins},data-losses=#{individual.ranking.losses},data-draws=#{individual.ranking.draws},
+        data-difference=#{individual.ranking.difference},data-byes=#{individual.ranking.byes},data-partners=#{individual.ranking.partners},
+        data-opponents=#{individual.ranking.opponents},data-stages=#{individual.ranking.stages},data-history=#{individual.ranking.history},data-empty=#{individual.ranking.empty}"></div>
+    <script th:src="@{/js/individual-ranking.js}"></script>
+</th:block>
+</body></html>

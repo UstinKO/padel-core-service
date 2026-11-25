@@ -1,0 +1,528 @@
+{
+  "task": "LFPT-1378",
+  "date": "2026-11-25",
+  "result": "PASS",
+  "testedAcceptedBackendRevision": "174f54f6308d1c5b387044c487b97c0aa6f6e4a2",
+  "testedIntegrationMasterRevision": "9e87bba11fa82685e9ef4e74470b6a0c50ab7011",
+  "localJarBuiltBeforeFinalAcceptanceCommit": true,
+  "currentJarSha256": "2f12c9e6aed88073c56bd577b210e9692e0b5a0dac70721cae8b07f8f863ff14",
+  "productionSourcesPomsContractsSchemaUiUnchanged": true,
+  "productionClassProof": {
+    "result": "PASS",
+    "acceptedMasterRevision": "9e87bba11fa82685e9ef4e74470b6a0c50ab7011",
+    "acceptedMasterJarSha256": "cbc1f46d923aadd96c5da6e8a866538f8c9e9d1ddf43ef92a073ddc85b007b8a",
+    "currentJarSha256": "2f12c9e6aed88073c56bd577b210e9692e0b5a0dac70721cae8b07f8f863ff14",
+    "identicalProductionClasses": 961,
+    "acceptedQueryJarSha256": "dc85e170f5e298b649170060787b541fbaaac1d07696e57f8c0aa40c3d2f3d5a",
+    "unchangedReadSliceClasses": 84
+  },
+  "javaRuntime": 21,
+  "javaRelease": 17,
+  "backendCleanVerify": {
+    "padel-api-contract": {
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "padel-tournament-engines": {
+      "tests": 141,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "padel-application": {
+      "tests": 21,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "padel-bootstrap": {
+      "tests": 1433,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 4
+    },
+    "total": {
+      "tests": 1599,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 4
+    }
+  },
+  "baselineTests": 12,
+  "goldenResponses": 11,
+  "baselineSourceAndGoldenSha256": {
+    "src/test/resources/contracts/round-robin-query/sets-played-final.json": "c1153a1894dc9988d6ffac2053dac2b1438541c26246aa09b849523968e3a772",
+    "src/test/resources/contracts/round-robin-query/empty.json": "01e8fff5c9d96f2dc0b0b972c1f84285dec750ff8419e0b7b73b2d2b4b7dd250",
+    "src/test/resources/contracts/round-robin-query/points-draw.json": "d90924e559f6cfe112e0c39cebd49fbbe156c62152e06884e89c233543bcf09e",
+    "src/test/resources/contracts/round-robin-query/sets-pending-final.json": "f71c7355a0cd1caf99ba98436f0802390ffc06f6839b0cef41b1c0d1aa9b88de",
+    "src/test/resources/contracts/round-robin-query/sets-circle.json": "fb88389b25a03b571c5ac0f78c392db1569933a2a66b9fe19d4f2646fe36c128",
+    "src/test/resources/contracts/round-robin-query/points-initial.json": "72df3b1730cf6d226230db9de0c9d4b82687b571e52eb8ed12b01db4df686933",
+    "src/test/resources/contracts/round-robin-query/points-pending-final.json": "7c15872522289a555b3fc1d8ed5f826ba5ba78ab046dc3a566dc5df05021da67",
+    "src/test/resources/contracts/round-robin-query/points-played-final.json": "36a1489a0e031da36890ecde1ea539339cc8d7db86ad093b415274f6403e2c78",
+    "src/test/resources/contracts/round-robin-query/sets-initial.json": "186f200c6bbd6a56061d364b16fd392320b1093718179e782acd6f7eef887f79",
+    "src/test/resources/contracts/round-robin-query/guest.json": "4e7552c519a7979569452e609acb09058779122a3f9a39c4a75b8c22995ee1ae",
+    "src/test/resources/contracts/round-robin-query/points-circle.json": "e4a4349e889f6a5f5a8d9ab1d001560cd316b147f5b7236b0c887e3942885ac8",
+    "src/test/java/com/padle/core/padelcoreservice/service/americano/RoundRobinRankingBaselineTest.java": "e55c53d8907c536b822d687afcd5785efacb71a7da8c97a0cee08a8f1b7fdb55"
+  },
+  "artifacts": {
+    "engines": "PASS",
+    "application": "PASS",
+    "contract": "PASS",
+    "calculationClasses": 10,
+    "requiredNestedTypes": 24,
+    "allowedEngineTypes": 11,
+    "requiredApplicationClasses": 23
+  },
+  "automationTests": {
+    "github": 31,
+    "relay": 48,
+    "worker": 5,
+    "workerSkipped": 1,
+    "preview": 15,
+    "newPreviewScopeTests": 3,
+    "releases": 22
+  },
+  "coreRoundRobin": {
+    "result": "PASS",
+    "cases": [
+      {
+        "mode": "SETS",
+        "teams": 4,
+        "rounds": 3,
+        "circleMatches": 6,
+        "circleOrder": [
+          1,
+          2,
+          4,
+          3
+        ],
+        "sharedInitialPlaces": true,
+        "headToHeadCorrectionAndReturn": true,
+        "additionalFinal": true,
+        "pointsTiesByWinsAndNumber": false,
+        "scoreCorrectionAndReturn": true,
+        "additionalCorrectionAndReturn": true,
+        "circleStatsPreserved": true,
+        "finished": true,
+        "historyPage": true,
+        "views": 12,
+        "refresh": true
+      },
+      {
+        "mode": "POINTS",
+        "teams": 4,
+        "rounds": 3,
+        "circleMatches": 6,
+        "circleOrder": [
+          4,
+          1,
+          2,
+          3
+        ],
+        "sharedInitialPlaces": false,
+        "headToHeadCorrectionAndReturn": false,
+        "additionalFinal": true,
+        "pointsTiesByWinsAndNumber": true,
+        "scoreCorrectionAndReturn": true,
+        "additionalCorrectionAndReturn": true,
+        "circleStatsPreserved": true,
+        "finished": true,
+        "historyPage": true,
+        "views": 12,
+        "refresh": true
+      }
+    ],
+    "javaScriptErrors": 0
+  },
+  "queryContract": {
+    "result": "PASS",
+    "cases": [
+      {
+        "mode": "SETS",
+        "anonymousJson": 401,
+        "anonymousHtml": 302,
+        "authenticatedJson": 200,
+        "anonymousPublicPage": 200,
+        "adminCard": 200,
+        "exactRootAndRowFields": true,
+        "finalAndCircleDifferent": true
+      },
+      {
+        "mode": "POINTS",
+        "anonymousJson": 401,
+        "anonymousHtml": 302,
+        "authenticatedJson": 200,
+        "anonymousPublicPage": 200,
+        "adminCard": 200,
+        "exactRootAndRowFields": true,
+        "finalAndCircleDifferent": true
+      }
+    ],
+    "javaScriptErrors": 0,
+    "missingTournament": {
+      "authenticatedStatus": 500,
+      "existingUnhandledResourceNotFound": true
+    }
+  },
+  "extendedRoundRobin": {
+    "result": "PASS",
+    "readonly": false,
+    "cases": [
+      {
+        "kind": "extended",
+        "mode": "SETS",
+        "views": 12,
+        "refresh": true,
+        "exactFields": true,
+        "statisticsMatchApi": true,
+        "partial": true,
+        "circle": true,
+        "final": true,
+        "bronze": true,
+        "otherPlace": true,
+        "unplaced": true,
+        "pendingFinishDisabled": true,
+        "historyRestore": true,
+        "circleStatisticsPreserved": true
+      },
+      {
+        "kind": "extended",
+        "mode": "POINTS",
+        "views": 12,
+        "refresh": true,
+        "exactFields": true,
+        "statisticsMatchApi": true,
+        "partial": true,
+        "circle": true,
+        "final": true,
+        "bronze": true,
+        "otherPlace": true,
+        "unplaced": true,
+        "pendingFinishDisabled": true,
+        "historyRestore": true,
+        "circleStatisticsPreserved": true
+      },
+      {
+        "kind": "guest",
+        "mode": "SETS",
+        "views": 12,
+        "refresh": true,
+        "exactFields": true,
+        "statisticsMatchApi": true,
+        "guest": true,
+        "nullableLevels": true,
+        "sideVisibleInHtmlOnly": true
+      },
+      {
+        "kind": "guest",
+        "mode": "POINTS",
+        "views": 12,
+        "refresh": true,
+        "exactFields": true,
+        "statisticsMatchApi": true,
+        "guest": true,
+        "nullableLevels": true,
+        "sideVisibleInHtmlOnly": true
+      },
+      {
+        "kind": "empty",
+        "mode": "POINTS",
+        "defaults": true,
+        "publicAndAdminCard": true
+      }
+    ],
+    "javaScriptErrors": 0,
+    "sameOriginOnly": true
+  },
+  "postRestartReadOnly": {
+    "result": "PASS",
+    "readonly": true,
+    "cases": [
+      {
+        "kind": "extended",
+        "mode": "SETS",
+        "views": 12,
+        "refresh": true,
+        "exactFields": true,
+        "statisticsMatchApi": true,
+        "circleAndFinalVerified": true
+      },
+      {
+        "kind": "extended",
+        "mode": "POINTS",
+        "views": 12,
+        "refresh": true,
+        "exactFields": true,
+        "statisticsMatchApi": true,
+        "circleAndFinalVerified": true
+      },
+      {
+        "kind": "guest",
+        "mode": "SETS",
+        "views": 12,
+        "refresh": true,
+        "exactFields": true,
+        "statisticsMatchApi": true,
+        "guest": true,
+        "nullableLevels": true,
+        "sideVisibleInHtmlOnly": true
+      },
+      {
+        "kind": "guest",
+        "mode": "POINTS",
+        "views": 12,
+        "refresh": true,
+        "exactFields": true,
+        "statisticsMatchApi": true,
+        "guest": true,
+        "nullableLevels": true,
+        "sideVisibleInHtmlOnly": true
+      },
+      {
+        "kind": "empty",
+        "mode": "POINTS",
+        "defaults": true,
+        "publicAndAdminCard": true
+      }
+    ],
+    "javaScriptErrors": 0,
+    "sameOriginOnly": true
+  },
+  "readOnlyDatabaseProof": {
+    "result": "PASS",
+    "cases": 7,
+    "allRowsHistoryAndSchemaPreserved": true,
+    "finishedPositionsMatchApi": true,
+    "guestStoredSentinelPreserved": true
+  },
+  "uniqueMatrixViews": 72,
+  "newReadOnlyMatrixViews": 48,
+  "stopUp": {
+    "result": "PASS",
+    "allResponsesRowsHistorySchemaPreserved": true
+  },
+  "restart": {
+    "result": "PASS",
+    "roundRobinCases": 7,
+    "pilotCases": 5,
+    "allResponsesRowsHistorySchemaPreserved": true,
+    "browserReopened": true
+  },
+  "rollbacks": [
+    {
+      "result": "PASS",
+      "savedTeamRowsPreserved": true,
+      "roundRobinAndPilotPreserved": true,
+      "scheduleScoresRankingPreserved": true,
+      "schemaAndLiquibasePreserved": true,
+      "baselineRevision": "18cefcbc0b1faae9fcf28e7b99621ae57bee0bf8",
+      "baselineJarSha256": "c96d4369d9cb36614ef29d70ee5e63005496156153deb4b08f1e337cf35e2ece",
+      "currentJarSha256": "2f12c9e6aed88073c56bd577b210e9692e0b5a0dac70721cae8b07f8f863ff14",
+      "allRowsHistoryAndSchemaPreserved": true,
+      "roundRobinCases": 7
+    },
+    {
+      "result": "PASS",
+      "savedTeamRowsPreserved": true,
+      "roundRobinAndPilotPreserved": true,
+      "scheduleScoresRankingPreserved": true,
+      "schemaAndLiquibasePreserved": true,
+      "baselineRevision": "4e8dc571b39a15d0819f1cdd115a15dfb1fe238f",
+      "baselineJarSha256": "e5f078da3c6d6aeb84cc74ec53e74c8d59bc8ada23ce099c4bd1d15fa20c77b1",
+      "currentJarSha256": "2f12c9e6aed88073c56bd577b210e9692e0b5a0dac70721cae8b07f8f863ff14",
+      "allRowsHistoryAndSchemaPreserved": true,
+      "roundRobinCases": 7
+    }
+  ],
+  "pilot": {
+    "sourceRevision": "fba751db99968a838b4766f7412f458d84262a94",
+    "jarSha256": "2f12c9e6aed88073c56bd577b210e9692e0b5a0dac70721cae8b07f8f863ff14",
+    "automated": true,
+    "manual": "NOT_RUN",
+    "cases": [
+      {
+        "key": "qualified-8",
+        "result": "PASS",
+        "knownDefect": null
+      },
+      {
+        "key": "qualified-9",
+        "result": "PASS",
+        "knownDefect": 1067
+      },
+      {
+        "key": "qualified-16",
+        "result": "PASS",
+        "knownDefect": null
+      }
+    ],
+    "expectations": "browser-expectations-2026-11-18.json",
+    "knownDefects": [
+      "https://github.com/UstinKO/padel-core-service/issues/1067"
+    ],
+    "security": {
+      "ownAdmin": 200,
+      "foreignAdmin": 403,
+      "anonymousAdmin": 302,
+      "missingCsrf": 403,
+      "foreignMutation": 403,
+      "publicCard": 200,
+      "unchanged": true
+    },
+    "stale": {
+      "staleVersion": {
+        "status": 302,
+        "staleHeader": true
+      },
+      "stalePair": {
+        "status": 200,
+        "success": false
+      },
+      "unchangedAfterRefusal": true,
+      "regeneratePreservedPairs": true
+    },
+    "realtime": {
+      "legacySubscription": true,
+      "publicSubscription": true,
+      "legacyMessage": true,
+      "publicInvalidation": true,
+      "bothViewsUpdated": true,
+      "repeated": {
+        "status": 200,
+        "success": false,
+        "replayHeader": true
+      },
+      "concurrentSameKey": {
+        "accepted": 1,
+        "rejected": 1
+      },
+      "restorePreservedLinksAndResult": true,
+      "restoreLegacyMessage": true,
+      "restorePublicInvalidation": true,
+      "restoreBothViewsUpdated": true,
+      "restoreIdsPreserved": true,
+      "reactRestoreWithoutNavigation": true
+    },
+    "qualificationBoundary": {
+      "blockedBeforeQualification": true,
+      "directPostUnchanged": true,
+      "invalidScoreNotSent": true,
+      "missingCsrfRejected": {
+        "status": 302,
+        "destination": "/error/403"
+      },
+      "noStartAfterRefusal": true,
+      "startWithoutNavigation": true,
+      "allTeamsSeededAfterQualification": true,
+      "finished": true
+    },
+    "noShow": {
+      "activeTeams": 7,
+      "absentNumber": 8,
+      "excludedFromAvailableAndSeeding": true,
+      "publicRankingContainsAbsent": true
+    },
+    "result": "PASS",
+    "artifactVerified": true,
+    "commonBrowserSmoke": "PASS",
+    "jwt": {
+      "login": 200,
+      "me": 200,
+      "events": 200,
+      "anonymousMe": 401,
+      "transport": "inside-own-preview-container"
+    }
+  },
+  "extended": {
+    "sourceRevision": "fba751db99968a838b4766f7412f458d84262a94",
+    "jarSha256": "2f12c9e6aed88073c56bd577b210e9692e0b5a0dac70721cae8b07f8f863ff14",
+    "automated": true,
+    "manual": "NOT_RUN",
+    "cases": [
+      {
+        "key": "early-9",
+        "result": "PASS",
+        "repeatedPairPreservedId": true,
+        "invalidQualificationRefused": true,
+        "lastQualificationPreservedPairAndResult": true,
+        "linkedWinner": true,
+        "semifinal": null,
+        "finished": true
+      },
+      {
+        "key": "early-16",
+        "result": "PASS",
+        "repeatedPairPreservedId": true,
+        "invalidQualificationRefused": true,
+        "lastQualificationPreservedPairAndResult": true,
+        "linkedWinner": false,
+        "semifinal": {
+          "confirmedBeforeOtherQuarterfinals": true,
+          "pairAndCourtPreserved": true
+        },
+        "finished": true
+      }
+    ],
+    "result": "PASS"
+  },
+  "jwt": {
+    "login": 200,
+    "me": 200,
+    "events": 200,
+    "anonymousMe": 401,
+    "transport": "inside-own-preview-container"
+  },
+  "expo": {
+    "ordinaryPreviewApi": 401,
+    "gatewayBasicChallenge": true,
+    "qaAdapterApi": 200,
+    "events": 10,
+    "rendered": true,
+    "externalRequestsBlocked": true,
+    "ordinaryPreviewLimitationPreserved": true
+  },
+  "releaseRehearsal": {
+    "result": "PASS",
+    "scenarios": 5,
+    "statePreserved": true
+  },
+  "rateLimit": {
+    "initialHarnessGeneralQuotaEncountered": true,
+    "configuredGeneralPerMinute": 200,
+    "betweenMatricesSeconds": 60,
+    "finalRunNewQuotaEvents": 0,
+    "productionLimitsChanged": false
+  },
+  "sourceSha256": {
+    "tests/browser/modular-pilot/round-robin-acceptance.mjs": "6e2f7d59ab7bb274808ad4cc2a116f29e24b5ac47eacfa068f706844f8b9b98e",
+    "automation/ui-preview/round-robin-acceptance.py": "4106349628a21acf31ffa969e68bb14012a81fbd873c817fce7ad39ae9cf44d1",
+    "automation/ui-preview/test_round_robin_acceptance.py": "9400562748ebbf8b6cb81991e1d6c2447f775f499756912e6af13f69c5759c4f",
+    ".github/workflows/pr-check.yml": "383cce2578d9171a9410df00a3f950cf48400af7b45c18c2aac53793f6767d78"
+  },
+  "screenshotsLocalSha256": {
+    "target/round-robin-acceptance/extended-points-admin.png": "db9cadff5da45a16b6d563a2505c6ce54df8c19af03f993e91f2a4001ce60eeb",
+    "target/round-robin-acceptance/extended-points-public.png": "b642ef19780a52ea3eb7175946bc6229abda0d64027181da0cd54a94a21273da",
+    "target/round-robin-acceptance/extended-sets-admin.png": "e7f722f64c3ec97b384d7a76a32b7dfd935fd4e91261b5575bd43a6e8bac5b0b",
+    "target/round-robin-acceptance/extended-sets-public.png": "b27b4f1988c4eb712fdb6a4643ba98cf069707b1577f85d8b70217cdf267055a",
+    "target/round-robin-acceptance/guest-points-admin.png": "2bdffb07966a8627c5878bf9fc14df85904bd225e2e1e81cf595bafccd8f4d65",
+    "target/round-robin-acceptance/guest-points-public.png": "d52d948d830d617d07c21f37c2be7da526a70bac9f45ec007193885b493a0339",
+    "target/round-robin-acceptance/guest-sets-admin.png": "a24abf0c8737ef5bc204716a571f1d6a153665bd03f338c9c8bc715a4f252a1f",
+    "target/round-robin-acceptance/guest-sets-public.png": "176bdb9f7b792d5feefe6e96969f69e2dcab6fc12d0ea9e300dab0b55f835aae"
+  },
+  "docsDrift": "PASS",
+  "agentMigration": "PASS",
+  "knownIssues": [
+    445,
+    453,
+    1067
+  ],
+  "devtoolsRepeated": false,
+  "acceptedDevtoolsEvidenceUnchanged": true,
+  "humanManual": "NOT_RUN",
+  "physicalDevices": "NOT_RUN",
+  "voiceOver": "NOT_RUN",
+  "multiReplicaConcurrency": "NOT_RUN",
+  "publicationBaseRevision": "086b9b40d00f9e6580cb0f5e80b468f63a54d353"
+}

@@ -4,6 +4,9 @@ import com.padle.core.padelcoreservice.config.PlayerTelegramProperties;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
+import com.padle.core.padelcoreservice.repository.ParticipationRequestRepository;
+import tools.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -26,10 +29,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 class PlayerTelegramPilotIntegrationTest {
     @MockitoBean PlayerTelegramProperties properties;
+    @MockitoBean PlayerTelegramApi api;
     @Autowired PlayerRepository players;
+    @Autowired ParticipationRequestRepository requests;
     @Autowired PlayerTelegramLinks links;
     @Autowired PlayerTelegramStore store;
+    @Autowired PlayerTelegramScheduler scheduler;
+    @Autowired ObjectMapper json;
     @Autowired MockMvc mvc;
+
+    @BeforeEach void transportIsSimulated() { when(api.available()).thenReturn(true); }
 
     @Test void pilotRejectsAnotherSessionAndOldTokenButLinksAndDisconnectsTheTester() throws Exception {
         var tester = player();
@@ -60,6 +69,36 @@ class PlayerTelegramPilotIntegrationTest {
                 .andExpect(status().isNoContent());
         assertThat(store.connection(tester.getId())).isEmpty();
         assertThat(links.bind(token, 456L, 456L)).isEmpty();
+    }
+
+    @Test void generalManualModeLinksSeveralAccountsWithoutSendingOrOpeningParticipationRequests() throws Exception {
+        when(properties.enabled()).thenReturn(true);
+        when(properties.pilotEnabled()).thenReturn(false);
+        when(properties.automaticEnabled()).thenReturn(false);
+        when(properties.dailySummaryEnabled()).thenReturn(false);
+        when(properties.botUsername()).thenReturn("OnePadelTestBot");
+        long before = requests.count();
+        for (int index = 0; index < 3; index++) {
+            var player = player();
+            mvc.perform(get("/api/players/me/telegram").with(user(player)))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.eligible").value(true))
+                    .andExpect(jsonPath("$.connected").value(false));
+            String content = mvc.perform(post("/api/players/me/telegram/link").with(user(player)).with(csrf()))
+                    .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+            var link = json.readValue(content, TelegramModels.Link.class);
+            String token = link.url().substring(link.url().indexOf("start=") + 6);
+            long chat = 6_661_000_000L + player.getId();
+            assertThat(links.bind(token, chat, chat)).contains(player.getId());
+            mvc.perform(get("/api/players/me/telegram").with(user(player)))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.connected").value(true));
+            mvc.perform(delete("/api/players/me/telegram").with(user(player)).with(csrf()))
+                    .andExpect(status().isNoContent());
+            assertThat(store.connection(player.getId())).isEmpty();
+        }
+        scheduler.tick(); scheduler.daily();
+        assertThat(requests.count()).isEqualTo(before);
+        verify(api, never()).send(anyLong(), anyString(), anyList());
+        verify(api, never()).updates(anyLong());
     }
 
     private PlayerPadel player() {

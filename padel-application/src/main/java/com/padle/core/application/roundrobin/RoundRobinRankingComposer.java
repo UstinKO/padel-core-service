@@ -1,8 +1,6 @@
 package com.padle.core.application.roundrobin;
 
 import com.padle.core.padelcoreservice.service.americano.RoundRobinFinalOrderEngine;
-import com.padle.core.padelcoreservice.service.americano.RoundRobinPointsStandingsEngine;
-import com.padle.core.padelcoreservice.service.americano.RoundRobinSetStandingsEngine;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -18,7 +16,8 @@ public final class RoundRobinRankingComposer {
         var circle = values.rounds().stream().filter(round -> round.phase() == null).toList();
         var first = circle.stream().findFirst();
         var mode = first.map(Round::scoringMode).orElse(ScoringMode.POINTS);
-        var ranking = standings(values.rankingTeams(), values.allMatches(), mode);
+        var ranking = RoundRobinStandingsCalculation.rankRead(values.rankingTeams(), values.allMatches(), mode).stream()
+                .map(row -> new RankedTeam(values.rankingTeams().get(row.index()), row.position())).toList();
         int completed = (int) circle.stream().filter(round -> round.status() == Status.COMPLETED).count();
         var inputs = IntStream.range(0, ranking.size()).mapToObj(index -> new RoundRobinFinalOrderEngine.Standing(
                 index, ranking.get(index).team().id(), ranking.get(index).position())).toList();
@@ -35,31 +34,6 @@ public final class RoundRobinRankingComposer {
                         .allMatch(round -> round.status() == Status.COMPLETED), mode,
                 first.map(Round::pointsPerMatch).orElse(32), first.map(Round::courts).orElse(1),
                 !circle.isEmpty() && completed == circle.size(), ranking, additional(values), finalRanking);
-    }
-
-    private static List<RankedTeam> standings(List<Team> teams, List<Match> matches, ScoringMode mode) {
-        if (mode == ScoringMode.POINTS) {
-            var inputs = IntStream.range(0, teams.size()).mapToObj(index -> {
-                var team = teams.get(index);
-                var stats = team.statistics();
-                return new RoundRobinPointsStandingsEngine.Team(index, team.id(), team.number(), stats.totalScore(),
-                        stats.wins(), stats.pointsScored(), stats.pointsConceded(), stats.losses());
-            }).toList();
-            return RoundRobinPointsStandingsEngine.rank(inputs).stream()
-                    .map(row -> new RankedTeam(teams.get(row.index()), row.position())).toList();
-        }
-        if (teams.isEmpty()) return List.of();
-        var inputs = IntStream.range(0, teams.size()).mapToObj(index -> {
-            var team = teams.get(index);
-            return new RoundRobinSetStandingsEngine.Team(index, team.id(), team.number(),
-                    team.statistics().wins(), team.statistics().gameDifference());
-        }).toList();
-        var completed = matches.stream().filter(match -> match.status() == Status.COMPLETED)
-                .filter(match -> match.phase() == null && match.firstScore() != null && match.secondScore() != null)
-                .map(match -> new RoundRobinSetStandingsEngine.Match(match.firstId(), match.secondId(),
-                        match.firstScore(), match.secondScore())).toList();
-        return RoundRobinSetStandingsEngine.rank(inputs, completed).stream()
-                .map(row -> new RankedTeam(teams.get(row.index()), row.position())).toList();
     }
 
     private static List<AdditionalMatch> additional(RoundRobinReadSet values) {

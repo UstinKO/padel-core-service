@@ -1,7 +1,11 @@
 package com.padle.core.padelcoreservice.service.americano;
 
-import com.padle.core.application.roundrobin.RoundRobinRankingQuery;
+import com.padle.core.application.roundrobin.RoundRobinFinishCancelled;
+import com.padle.core.application.roundrobin.RoundRobinFinishCommand;
+import com.padle.core.application.roundrobin.RoundRobinFinishIncomplete;
 import com.padle.core.application.roundrobin.RoundRobinNotFound;
+import com.padle.core.application.roundrobin.RoundRobinPositionCommand;
+import com.padle.core.application.roundrobin.RoundRobinRankingQuery;
 import com.padle.core.padelcoreservice.adapter.roundrobin.LegacyRoundRobinReadAdapter;
 import com.padle.core.padelcoreservice.mapper.americano.RoundRobinRankingMapper;
 
@@ -44,6 +48,8 @@ import java.util.stream.Collectors;
 public class TeamAmericanoService {
 
     private final RoundRobinRankingQuery rankingQuery;
+    private final RoundRobinPositionCommand positionCommand;
+    private final RoundRobinFinishCommand finishCommand;
     private final LegacyRoundRobinReadAdapter rankingReadAdapter;
     private final RoundRobinRankingMapper rankingMapper;
     private final TournamentRepository tournamentRepository;
@@ -487,13 +493,7 @@ public class TeamAmericanoService {
 
     @Transactional
     public void updateTeamPositions(Long tournamentId) {
-        var mode = roundRepository.findByTournamentIdOrderByRoundNumberAsc(tournamentId).stream()
-                .filter(r -> r.getPhase() == null).findFirst().map(RoundRobinRules::mode)
-                .orElse(RoundRobinScoringMode.POINTS);
-        var standings = RoundRobinStandings.rank(teamRepository.findByTournamentId(tournamentId),
-                matchRepository.findByTournamentIdOrderByRoundIdAscMatchNumberAsc(tournamentId), mode);
-        standings.forEach(entry -> entry.team().setCurrentPosition(entry.position()));
-        teamRepository.saveAll(standings.stream().map(RoundRobinStandings.Ranked::team).toList());
+        positionCommand.update(tournamentId);
     }
 
     public List<AmericanoTeamDto> getTeams(Long tournamentId) {
@@ -512,23 +512,16 @@ public class TeamAmericanoService {
     @Transactional
     @ConductChange(ConductChange.Action.FINISH)
     public TeamAmericanoRankingDto finishTournament(Long tournamentId) {
-        Tournament tournament = getTournament(tournamentId);
-
-        if (tournament.getEstado() == TournamentStatus.CANCELADO) RoundRobinRules.fail("finished");
-        long total     = roundRepository.findMaxRoundNumber(tournamentId).orElse(0);
-        long completed = roundRepository.countCompletedRounds(tournamentId);
-
-        if (!isInitialized(tournamentId) || completed < total) {
+        try {
+            return rankingMapper.toDto(finishCommand.finish(tournamentId));
+        } catch (RoundRobinNotFound missing) {
+            throw new ResourceNotFoundException(missing.getMessage());
+        } catch (RoundRobinFinishCancelled cancelled) {
+            throw new InvalidStateException("round_robin.error.finished");
+        } catch (RoundRobinFinishIncomplete incomplete) {
             throw new InvalidStateException(
-                    "No se puede finalizar. Quedan " + (total - completed) + " rondas sin completar.");
+                    "No se puede finalizar. Quedan " + incomplete.remaining() + " rondas sin completar.");
         }
-
-        updateTeamPositions(tournamentId);
-
-        tournament.setEstado(TournamentStatus.FINALIZADO);
-        tournamentRepository.save(tournament);
-
-        return getRanking(tournamentId);
     }
 
     // ═══════════════════════════════════════════════════════════════════════

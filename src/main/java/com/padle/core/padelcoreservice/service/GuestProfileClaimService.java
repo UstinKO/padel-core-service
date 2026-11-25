@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -73,7 +74,7 @@ public class GuestProfileClaimService {
         }
         var candidates = candidates(request.phone(), account.getId());
         var guest = candidates.size() == 1 && candidates.get(0).isGuestAccount() ? candidates.get(0) : null;
-        var blockers = guest == null ? List.of("GUEST_CLAIM_CONTACT_CONFLICT") : blockers(guest, account, request.phone());
+        var blockers = guest == null ? List.of(candidateFailure(candidates)) : blockers(guest, account, request.phone());
         return comparison(request.number(), request.status(), request.phone(), account, guest, blockers, request.reviewReason());
     }
 
@@ -89,13 +90,18 @@ public class GuestProfileClaimService {
             return comparison(0, Status.MERGED, null, account, guest, List.of(), null);
         }
         String phone = players.claimPhoneKey(guest.getTelefono()).orElse(null);
-        return comparison(0, Status.PENDING, phone, account, guest, blockers(guest, account, phone), null);
+        return comparison(0, Status.PENDING, phone, account, guest, profileBlockers(guest, account), null);
     }
 
     private Review comparison(long number, Status status, String phone, PlayerPadel account, PlayerPadel guest,
                               List<String> blockers, String reviewReason) {
         var differences = new ArrayList<String>();
         if (guest != null) {
+            if (!hasText(guest.getTelefono())) differences.add("GUEST_PHONE_MISSING");
+            else if (players.claimPhoneKey(guest.getTelefono()).isEmpty()) differences.add("GUEST_PHONE_INVALID");
+            else if (candidates(players.claimPhoneKey(guest.getTelefono()).orElseThrow(), account.getId()).size() > 1) {
+                differences.add("GUEST_PHONE_AMBIGUOUS");
+            }
             if (differentPhone(guest, account)) differences.add("PHONE_DIFFERS");
             if (sideConflict(guest, account)) differences.add("PLAYING_SIDE_DIFFERS");
             if (guest.getNivelJugador() != null && account.getNivelJugador() != guest.getNivelJugador()) {
@@ -107,14 +113,22 @@ public class GuestProfileClaimService {
             }
         }
         return new Review(account.getId(), account.getEmail(), status == Status.MERGED, number, status, phone,
-                profile(account), guest == null ? null : profile(guest), blockers, List.copyOf(differences), reviewReason);
+                profile(account), guest == null ? null : profile(guest), blockers, List.copyOf(differences), reviewReason,
+                readiness(status, guest, blockers, differences));
+    }
+
+    private Readiness readiness(Status status, PlayerPadel guest, List<String> blockers, List<String> differences) {
+        if (status == Status.MERGED) return Readiness.COMPLETED;
+        if (status == Status.REJECTED || guest == null || !blockers.isEmpty()) return Readiness.FORBIDDEN;
+        return differences.stream().anyMatch(List.of("PHONE_DIFFERS", "GUEST_PHONE_INVALID", "GUEST_PHONE_MISSING",
+                "PLAYING_SIDE_DIFFERS", "GUEST_PHONE_AMBIGUOUS")::contains) ? Readiness.NEEDS_RESOLUTION : Readiness.AVAILABLE;
     }
 
     private Profile profile(PlayerPadel player) {
         var counts = history.counts(player.getId());
         return new Profile(player.getId(), player.getNombreCompleto(), player.getEmail(), player.getTelefono(),
                 player.getTelegramUsername(), player.getNivelJugador() == null ? null : player.getNivelJugador().name(),
-                counts.registrations(), counts.results(), player.getPlayingSide());
+                counts.registrations(), counts.results(), player.getPlayingSide(), player.isGuestAccount(), player.isActivo());
     }
 
     @Transactional
@@ -145,7 +159,7 @@ public class GuestProfileClaimService {
         requireSender(reference, method, input.whatsappSenderPhone(), phone, ownerId);
         var matches = candidates(phone, request.accountId());
         if (matches.size() != 1 || !matches.get(0).isGuestAccount()) {
-            throw needDetails(reference, ownerId, "GUEST_CLAIM_CONTACT_CONFLICT");
+            throw needDetails(reference, ownerId, candidateFailure(matches));
         }
         long guestId = matches.get(0).getId();
         if (input.guestId() != null && input.guestId() != guestId) {
@@ -165,31 +179,58 @@ public class GuestProfileClaimService {
     @Transactional
     public Result manualMerge(ManualMerge input, long ownerId) {
         requireVerified(input.verified());
-        if (input.guestId() == input.accountId()) throw conflict("GUEST_CLAIM_PROFILE_CONFLICT");
+        if (input.guestId() == input.accountId()) throw conflict("GUEST_CLAIM_SAME_PROFILE");
         var guest = players.findById(input.guestId()).orElseThrow(GuestProfileClaimService::missing);
         var previous = claims.resolved(input.guestId());
-        if (previous.filter(id -> id == input.accountId()).isPresent()) return new Result(input.accountId());
-        String phone = lockPhone(guest.getTelefono());
-        var openClaim = claims.matchingRequest(input.accountId(), phone, true)
-                .filter(claim -> claim.status() == Status.PENDING || claim.status() == Status.NEEDS_DETAILS);
+        if (previous.isPresent()) return alreadyMerged(previous.orElseThrow(), input.accountId());
+        String phone = players.claimPhoneKey(guest.getTelefono()).orElse(null);
+        if (phone != null) players.acquireContactLock(PlayerPhoneGuard.LOCK_PREFIX + phone);
+        var openClaim = phone == null ? Optional.<Claim>empty()
+                : claims.matchingRequest(input.accountId(), phone, true)
+                    .filter(claim -> claim.status() == Status.PENDING || claim.status() == Status.NEEDS_DETAILS);
         var pair = lockPair(input.guestId(), input.accountId());
         previous = claims.resolved(input.guestId());
-        if (previous.filter(id -> id == input.accountId()).isPresent()) return new Result(input.accountId());
-        requireSender(null, input.verificationMethod(), input.whatsappSenderPhone(), phone, ownerId);
-        var blockers = blockers(pair.guest(), pair.account(), phone);
-        if (!blockers.isEmpty()) throw conflict(blockers.get(0));
-        if (differentPhone(pair.guest(), pair.account()) && !input.replacePhone()) {
-            throw conflict("GUEST_CLAIM_ACCOUNT_PHONE_DIFFERS");
+        if (previous.isPresent()) return alreadyMerged(previous.orElseThrow(), input.accountId());
+        if (!Objects.equals(phone, players.claimPhoneKey(pair.guest().getTelefono()).orElse(null))) {
+            throw conflict("GUEST_CLAIM_REVIEW_CHANGED");
         }
-        merge(pair, input.sideChoice());
+        var blockers = profileBlockers(pair.guest(), pair.account());
+        if (!blockers.isEmpty()) throw conflict(blockers.get(0));
+        ContactChoice choice = manualContact(input, pair, phone);
+        if (input.verificationMethod() == Verification.WHATSAPP && phone == null) {
+            throw conflict("GUEST_CLAIM_PHONE_VERIFICATION_UNAVAILABLE");
+        }
+        requireSender(null, input.verificationMethod(), input.whatsappSenderPhone(), phone, ownerId);
+        String keptPhone = choice == ContactChoice.KEEP_ACCOUNT ? pair.account().getTelefono() : pair.guest().getTelefono();
+        merge(pair, input.sideChoice(), keptPhone);
         if (openClaim.isPresent()) {
-            claims.approve(openClaim.get().reference(), input.guestId(), input.accountId(), ownerId,
+            claims.approve(openClaim.orElseThrow().reference(), input.guestId(), input.accountId(), ownerId,
                     input.verificationMethod(), true);
         } else {
             claims.recordManual(input.guestId(), input.accountId(), input.accountId(), phone, ownerId,
                     input.verificationMethod());
         }
+        claims.contactResolution(input.guestId(), choice);
         return new Result(input.accountId());
+    }
+
+    private Result alreadyMerged(long resolvedId, long accountId) {
+        if (resolvedId != accountId) throw conflict("GUEST_CLAIM_ALREADY_MERGED");
+        return new Result(accountId);
+    }
+
+    private ContactChoice manualContact(ManualMerge input, ProfilePair pair, String phone) {
+        ContactChoice choice = input.contactChoice();
+        if (choice == ContactChoice.KEEP_ACCOUNT) return choice;
+        if (phone == null) throw conflict("GUEST_CLAIM_CONTACT_CHOICE_REQUIRED");
+        var matches = candidates(phone, pair.account().getId());
+        if (!matches.stream().map(PlayerPadel::getId).toList().equals(List.of(pair.guest().getId()))) {
+            throw conflict("GUEST_CLAIM_PHONE_AMBIGUOUS");
+        }
+        if (differentPhone(pair.guest(), pair.account()) && !input.replacePhone()) {
+            throw conflict("GUEST_CLAIM_ACCOUNT_PHONE_DIFFERS");
+        }
+        return ContactChoice.USE_GUEST_PHONE;
     }
 
     private void requireVerified(Boolean verified) {
@@ -208,16 +249,32 @@ public class GuestProfileClaimService {
         return new NeedsDetails(reason);
     }
 
-    private List<String> blockers(PlayerPadel guest, PlayerPadel account, String phone) {
-        if (Objects.equals(guest.getId(), account.getId()) || !guest.isActivo() || !guest.isGuestAccount()
-                || !account.isActivo() || account.isGuestAccount()) {
-            return List.of("GUEST_CLAIM_PROFILE_CONFLICT");
-        }
-        if (phone == null || !players.claimPhoneKey(guest.getTelefono()).filter(phone::equals).isPresent()
-                || !candidates(phone, account.getId()).stream().map(PlayerPadel::getId).toList().equals(List.of(guest.getId()))) {
-            return List.of("GUEST_CLAIM_CONTACT_CONFLICT");
-        }
+    private List<String> profileBlockers(PlayerPadel guest, PlayerPadel account) {
+        if (Objects.equals(guest.getId(), account.getId())) return List.of("GUEST_CLAIM_SAME_PROFILE");
+        if (!guest.isGuestAccount()) return List.of("GUEST_CLAIM_NOT_GUEST");
+        if (!guest.isActivo()) return List.of("GUEST_CLAIM_GUEST_INACTIVE");
+        if (account.isGuestAccount()) return List.of("GUEST_CLAIM_ACCOUNT_IS_GUEST");
+        if (!account.isActivo()) return List.of("GUEST_CLAIM_ACCOUNT_INACTIVE");
         return history.conflicts(guest.getId(), account.getId());
+    }
+
+    private List<String> blockers(PlayerPadel guest, PlayerPadel account, String phone) {
+        var profiles = profileBlockers(guest, account);
+        if (!profiles.isEmpty()) return profiles;
+        if (phone == null || !players.claimPhoneKey(guest.getTelefono()).filter(phone::equals).isPresent()) {
+            return List.of("GUEST_CLAIM_PHONE_INVALID");
+        }
+        var matches = candidates(phone, account.getId());
+        if (!matches.stream().map(PlayerPadel::getId).toList().equals(List.of(guest.getId()))) {
+            return List.of(candidateFailure(matches));
+        }
+        return List.of();
+    }
+
+    private String candidateFailure(List<PlayerPadel> matches) {
+        if (matches.isEmpty()) return "GUEST_CLAIM_GUEST_NOT_FOUND";
+        if (matches.size() > 1) return "GUEST_CLAIM_PHONE_AMBIGUOUS";
+        return "GUEST_CLAIM_NOT_GUEST";
     }
 
     private List<PlayerPadel> candidates(String phone, Long accountId) {
@@ -234,6 +291,10 @@ public class GuestProfileClaimService {
     }
 
     private void merge(ProfilePair pair, SideChoice sideChoice) {
+        merge(pair, sideChoice, pair.guest().getTelefono());
+    }
+
+    private void merge(ProfilePair pair, SideChoice sideChoice, String phone) {
         var guest = pair.guest();
         var account = pair.account();
         if (sideConflict(guest, account) && sideChoice == null) throw conflict("GUEST_CLAIM_PLAYING_SIDE_CONFLICT");
@@ -241,7 +302,6 @@ public class GuestProfileClaimService {
             account.setPlayingSide(guest.getPlayingSide());
         }
         history.transfer(guest.getId(), account.getId(), account.getEmail());
-        var phone = guest.getTelefono();
         retireGuest(guest);
         players.flush(); // Освобождаем уникальный контакт гостя до записи его основному аккаунту.
         account.setTelefono(phone);
@@ -299,7 +359,7 @@ public class GuestProfileClaimService {
         var matches = players.findClaimPhoneMatches(phone).stream()
                 .filter(player -> !Objects.equals(player.getId(), allowedAccountId)).toList();
         if (matches.size() != 1 || !matches.get(0).isGuestAccount()) {
-            throw conflict("GUEST_CLAIM_CONTACT_CONFLICT");
+            throw conflict(candidateFailure(matches));
         }
         return matches.get(0);
     }

@@ -23,6 +23,8 @@ public final class GuestProfileClaimDtos {
     public enum Verification { WHATSAPP, IN_PERSON, OTHER }
     public enum Decision { NEEDS_DETAILS, REJECTED }
     public enum SideChoice { ACCOUNT, GUEST }
+    public enum ContactChoice { KEEP_ACCOUNT, USE_GUEST_PHONE }
+    public enum Readiness { AVAILABLE, NEEDS_RESOLUTION, FORBIDDEN, COMPLETED }
 
     public record Approval(@Size(max = 32) String whatsappSenderPhone, Boolean verified,
                            Verification verificationMethod, @Positive Long guestId, boolean replacePhone, SideChoice sideChoice) {
@@ -33,9 +35,13 @@ public final class GuestProfileClaimDtos {
 
     public record ManualMerge(@Positive long guestId, @Positive long accountId, @NotNull Boolean verified,
                               @NotNull Verification verificationMethod, @Size(max = 32) String whatsappSenderPhone,
-                              boolean replacePhone, SideChoice sideChoice) {
+                              boolean replacePhone, SideChoice sideChoice, ContactChoice contactChoice) {
         public ManualMerge(long guestId, long accountId, Boolean verified, Verification method, String phone, boolean replacePhone) {
-            this(guestId, accountId, verified, method, phone, replacePhone, null);
+            this(guestId, accountId, verified, method, phone, replacePhone, null, null);
+        }
+        public ManualMerge(long guestId, long accountId, Boolean verified, Verification method, String phone,
+                           boolean replacePhone, SideChoice sideChoice) {
+            this(guestId, accountId, verified, method, phone, replacePhone, sideChoice, null);
         }
     }
 
@@ -56,11 +62,11 @@ public final class GuestProfileClaimDtos {
     public record ProfileChoice(long id, String name) {}
 
     public record Profile(long id, String name, String email, String phone, String telegram, String level,
-                          long registrations, long results, PlayingSide playingSide) {}
+                          long registrations, long results, PlayingSide playingSide, boolean guest, boolean active) {}
 
     public record Review(long accountId, String accountEmail, boolean approved, long number, Status status,
                          String submittedPhone, Profile account, Profile guest, List<String> conflicts,
-                         List<String> differences, String reviewReason) {}
+                         List<String> differences, String reviewReason, Readiness readiness) {}
 
     public record Result(long playerId) {}
 }
