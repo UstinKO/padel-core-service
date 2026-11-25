@@ -1,0 +1,48 @@
+.individual-ranking-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.5rem; margin-top: 1.5rem; }
+.individual-ranking-layout > *, .individual-ranking-card { min-width: 0; }
+@media (min-width: 1600px) {
+    .individual-ranking-layout { grid-template-columns: minmax(0, 2fr) minmax(20rem, 1fr); }
+}
+.individual-ranking-card .individual-ranking-wrap { padding: .5rem; overflow: visible; }
+table.individual-ranking { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: .95rem; color: #1e293b; }
+.individual-ranking :is(th, td) { padding: .5rem .4rem; border-bottom: 1px solid #e2e8f0; text-align: end; vertical-align: middle; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.individual-ranking th { color: #475569; background: #f8fafc; font-size: .85rem; font-weight: 600; text-transform: none; white-space: normal; }
+.individual-ranking .ir-rank { width: 3.6rem; text-align: center; font-weight: 700; }
+.individual-ranking .ir-player { width: 30%; text-align: start; position: relative; }
+.individual-ranking .ir-total { width: 12%; color: #c2410c; background: #fff5ef; font-weight: 800; font-size: 1.1rem; }
+.individual-ranking th.ir-total { font-size: .95rem; }
+.individual-ranking .ir-secondary { min-width: 0; }
+.individual-ranking .ir-has-action { padding-inline-end: 2.7rem; }
+.ir-toggle { display: flex; align-items: center; gap: .3rem; width: 100%; min-height: 2.25rem; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; font-weight: 500; text-align: start; cursor: pointer; }
+.ir-toggle > span:first-child { overflow-wrap: anywhere; min-width: 0; }
+.ir-chevron { margin-inline-start: auto; flex: 0 0 auto; color: #c2410c; }
+.ir-toggle[aria-expanded="true"] .ir-chevron { transform: rotate(180deg); }
+.individual-ranking .playing-side-info { display: block; margin: .1rem 0 0; font-size: .8rem; color: #64748b; font-weight: 400; white-space: normal; }
+.ir-edit { position: absolute; inset-inline-end: .3rem; top: 50%; transform: translateY(-50%); min-width: 2.25rem; min-height: 2.25rem; border: 1px solid #fdba74; border-radius: .4rem; background: #fff; color: #c2410c; font: inherit; cursor: pointer; }
+.individual-ranking :is(button, summary):focus-visible { outline: 2px solid #c2410c; outline-offset: 2px; }
+.individual-ranking .additional-points-cell { min-width: 0; }
+.ir-detail-row[hidden] { display: none; }
+.individual-ranking .ir-detail-row > td { padding: .75rem; text-align: start; background: #f8fafc; }
+.ir-detail-content { min-width: 0; }
+.ir-detail-content dl { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .35rem 1rem; max-width: 34rem; margin: .65rem 0; font-size: .95rem; }
+.ir-detail-content :is(dt, dd) { margin: 0; }
+.ir-detail-content dd { text-align: end; font-weight: 600; }
+.ir-detail-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }
+.ir-stages summary { cursor: pointer; padding: .35rem 0; }
+.ir-help { display: inline-block; text-align: start; }
+.ir-help summary { cursor: pointer; min-height: 2rem; }
+.ir-help[open] { position: relative; }
+.ir-help p { position: absolute; z-index: 2; inset-inline-end: 0; width: 12rem; padding: .65rem; margin: .2rem 0; border: 1px solid #e2e8f0; border-radius: .4rem; background: white; color: #1e293b; box-shadow: 0 3px 12px #0002; font-weight: 400; }
+.ir-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+@media (max-width: 899px) {
+    .individual-ranking .ir-secondary { display: none; }
+    .individual-ranking .ir-player { width: auto; }
+    .individual-ranking .ir-has-action { padding-inline-end: .4rem; }
+    .individual-ranking .ir-edit { display: none; }
+    .individual-ranking :is(th, td) { padding: .45rem .3rem; }
+    table.individual-ranking, .individual-ranking :is(thead, tbody) { display: block; width: 100%; }
+    .individual-ranking thead > tr, .individual-ranking tr[data-ranking-row] { display: grid; grid-template-columns: 3.5rem minmax(0, 1fr) 4.5rem; }
+    .individual-ranking :is(th, td) { display: block; min-width: 0; }
+    .individual-ranking .ir-total, .individual-ranking .ir-rank { width: auto; }
+    .individual-ranking .ir-detail-row:not([hidden]) { display: block; }
+}

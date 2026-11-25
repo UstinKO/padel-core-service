@@ -1,0 +1,25 @@
+<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org"><body>
+<div th:fragment="table(king, bodyId)" class="individual-ranking-wrap">
+    <table class="individual-ranking" th:aria-label="#{individual.ranking.title}">
+        <thead><tr>
+            <th class="ir-rank" scope="col" th:text="#{individual.ranking.rank}"></th>
+            <th class="ir-player" scope="col" th:text="#{individual.ranking.player}"></th>
+            <th class="ir-total" scope="col" th:text="#{individual.ranking.total}"></th>
+            <th class="ir-secondary" scope="col" th:text="#{individual.ranking.matchShort}"></th>
+            <th th:if="${king}" class="ir-secondary" scope="col" th:text="#{individual.ranking.bonusShort}"></th>
+            <th class="ir-secondary" scope="col" th:text="#{individual.ranking.additionalShort}"></th>
+            <th class="ir-secondary" scope="col" th:text="#{individual.ranking.gamesShort}"></th>
+            <th class="ir-secondary" scope="col"><details class="ir-help"><summary th:text="#{individual.ranking.wl}"></summary><p th:text="#{individual.ranking.wlHelp}"></p></details></th>
+        </tr></thead>
+        <tbody th:id="${bodyId}"></tbody>
+    </table>
+</div>
+<th:block th:fragment="assets">
+    <div hidden data-individual-ranking-copy th:attr="data-details=#{individual.ranking.details},data-match=#{additional.points.match},
+        data-bonus=#{additional.points.bonus},data-additional=#{additional.points.title},data-games=#{individual.ranking.games},
+        data-wins=#{individual.ranking.wins},data-losses=#{individual.ranking.losses},data-draws=#{individual.ranking.draws},
+        data-difference=#{individual.ranking.difference},data-byes=#{individual.ranking.byes},data-partners=#{individual.ranking.partners},
+        data-opponents=#{individual.ranking.opponents},data-stages=#{individual.ranking.stages},data-history=#{individual.ranking.history},data-empty=#{individual.ranking.empty}"></div>
+    <script th:src="@{/js/individual-ranking.js}"></script>
+</th:block>
+</body></html>

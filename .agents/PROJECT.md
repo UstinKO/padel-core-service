@@ -710,3 +710,5 @@ Telegram-пилот: `telegram.players.pilot-enabled=true` по умолчани
 Ручное объединение профилей по ID: `GuestProfileClaimService.manualReview/manualMerge`, readiness и contactChoice; [контракт](../docs/guest-profile-merge.md). Телефонная заявка проверяется независимо; миграция v1.90, аудит contact_resolution.
 
 Экран ручного объединения: явная готовность, contactChoice и отключённая кнопка с причиной; `GuestProfileMergeBrowserTest` проверяет настоящий UI на отдельной базе и входит в browser job.
+
+Индивидуальные пульты используют общий `individual-ranking.js`/CSS и фрагмент: итог рядом с именем, раскрытие статистики и прежних действий на телефоне; серверный контракт сохраняется. [Спецификация](../specs/features/LFPT-1401-compact-individual-ranking.md).

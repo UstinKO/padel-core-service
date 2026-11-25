@@ -24,6 +24,7 @@
     <link rel="stylesheet" th:href="@{/css/admin.css}">
     <link rel="stylesheet" th:href="@{/css/king-of-court.css}">
     <link rel="stylesheet" th:href="@{/css/additional-points.css}">
+    <link rel="stylesheet" th:href="@{/css/individual-ranking.css}">
 </head>
 <body>
 <header th:replace="~{fragments/admin-header :: header(#{admin.koc.title})}"></header>
@@ -128,34 +129,16 @@
         </div>
 
         <!-- Ranking e historial en dos columnas -->
-        <div class="admin-grid-two" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
+        <div class="individual-ranking-layout">
             <!-- Ranking en vivo -->
-            <div class="admin-card">
+            <div class="admin-card individual-ranking-card">
                 <div class="admin-card-header">
                     <h2><i class="fas fa-chart-line"></i> <span th:text="#{admin.koc.section.ranking}">Clasificación en vivo</span></h2>
                     <a href="#" onclick="window.kingOfCourt?.loadData()" class="btn-icon" title="Actualizar">
                         <i class="fas fa-sync-alt"></i>
                     </a>
                 </div>
-                <div class="admin-card-body additional-points-scroll">
-                    <table class="admin-table">
-                        <thead>
-                        <tr>
-                            <th>#</th>
-                            <th th:text="#{admin.koc.col.player}">Jugador</th>
-                            <th th:text="#{additional.points.match}">Puntos de partidos</th>
-                            <th th:text="#{additional.points.bonus}">Bono de cancha</th>
-                            <th th:text="#{additional.points.title}">Puntos adicionales</th>
-                            <th th:text="#{additional.points.total}">Total</th>
-                            <th th:text="#{admin.koc.col.games}">Juegos</th>
-                            <th th:text="#{admin.koc.col.wins_losses}">V/D</th>
-                        </tr>
-                        </thead>
-                        <tbody id="leaderboard">
-                        <!-- Carga dinámica via JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
+                <div th:replace="~{fragments/individual-ranking :: table(true, 'leaderboard')}"></div>
             </div>
 
             <!-- Historial de partidos -->
@@ -235,6 +218,7 @@
 <div th:replace="~{fragments/additional-points :: copy}"></div>
 <dialog th:if="${admin}" th:insert="~{fragments/additional-points :: editor(${tournament.id}, ${kingTournament.isFinished})}" th:remove="tag"></dialog>
 <script th:src="@{/js/additional-points.js}"></script>
+<th:block th:replace="~{fragments/individual-ranking :: assets}"></th:block>
 <script th:src="@{/js/king-of-court.js}"></script>
 <script th:inline="javascript">
     /*<![CDATA[*/

@@ -136,11 +136,12 @@
         }
     </style>
     <link rel="stylesheet" th:href="@{/css/additional-points.css}">
+    <link rel="stylesheet" th:href="@{/css/individual-ranking.css}">
 </head>
 <body>
 <header th:replace="~{fragments/admin-header :: header(#{admin.americano.title})}"></header>
 
-<main class="admin-main">
+<main class="admin-main" th:attr="data-preferences-event-id=${tournament.id}">
     <div class="container">
         <div th:replace="~{fragments/conduct-history :: link(${tournament.id})}"></div>
         <div th:replace="~{fragments/conduct-history :: saveStatus}"></div>
@@ -382,7 +383,7 @@
         </div>
 
         <!--/* ══════════════ ТАБЛИЦА РЕЙТИНГА ══════════════ */-->
-        <div class="ranking-card" style="margin-top:2rem">
+        <div class="ranking-card individual-ranking-card" style="margin-top:2rem">
             <button th:if="${tournament.estado.name() == 'FINALIZADO'}" type="button" class="btn btn-outline"
                     data-open-points th:text="#{additional.points.edit_results}">Editar resultados</button>
             <div class="ranking-header">
@@ -415,54 +416,7 @@
                 </div>
             </div>
 
-            <div style="overflow-x:auto">
-                <table class="table">
-                    <thead>
-                    <tr>
-                        <th>#</th>
-                        <th th:text="#{admin.americano.col.player}">Jugador</th>
-                        <th th:text="#{additional.points.match}">Puntos de partidos</th>
-                        <th th:text="#{additional.points.title}">Puntos adicionales</th>
-                        <th th:text="#{additional.points.total}">Total</th>
-                        <th th:title="#{admin.americano.col.played}" th:text="#{admin.americano.col.played}">PJ</th>
-                        <th th:title="#{admin.americano.col.wins}" th:text="#{admin.americano.col.wins}">V</th>
-                        <th th:title="#{admin.americano.col.losses}" th:text="#{admin.americano.col.losses}">D</th>
-                        <th th:title="#{admin.americano.col.draws}" th:text="#{admin.americano.col.draws}">E</th>
-                        <th th:title="#{admin.americano.col.diff}" th:text="#{admin.americano.col.diff}">Dif.</th>
-                        <th th:title="#{admin.americano.col.bye}" th:text="#{admin.americano.col.bye}">Bye</th>
-                        <th th:title="#{admin.americano.col.pairs}" th:text="#{admin.americano.col.pairs}">Pares</th>
-                        <th th:title="#{admin.americano.col.rivals}" th:text="#{admin.americano.col.rivals}">Rivales</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr th:each="player, stat : ${ranking != null ? ranking.ranking : #lists.empty()}">
-                        <td>
-                        <span th:text="${player.position}"
-                              th:class="${player.position == 1 ? 'pos-1' : (player.position == 2 ? 'pos-2' : (player.position == 3 ? 'pos-3' : ''))}">1</span>
-                        </td>
-                        <td>
-                            <span th:text="${player.playerName} + ' ' + ${player.playerLastName}">Jugador</span><br><small th:replace="~{fragments/playing-side :: info(${player.playerNivel != null ? player.playerNivel.display : null}, ${player.playerPlayingSide}, true)}"></small>
-                            <button th:unless="${tournament.estado.name() == 'FINALIZADO'}"
-                                    type="button" class="btn btn-outline btn-sm" data-open-points
-                                    th:attr="data-player-id=${player.playerId}"
-                                    th:text="#{additional.points.action}">± Puntos</button>
-                        </td>
-                        <td th:text="${player.matchPoints}">120</td>
-                        <td th:replace="~{fragments/additional-points :: cell(${player.additionalPoints})}"></td>
-                        <td class="points" th:text="${player.totalScore}">120</td>
-                        <td th:text="${player.matchesPlayed}">8</td>
-                        <td th:text="${player.matchesWon}">6</td>
-                        <td th:text="${player.matchesLost}">1</td>
-                        <td th:text="${player.matchesDrawn}">1</td>
-                        <td th:classappend="${player.pointDifference > 0 ? 'positive' : (player.pointDifference < 0 ? 'negative' : 'neutral')}"
-                            th:text="${player.pointDifference > 0 ? '+' : ''} + ${player.pointDifference}">+24</td>
-                        <td th:text="${player.byeCount}">0</td>
-                        <td th:text="${player.uniquePartners}">5</td>
-                        <td th:text="${player.uniqueOpponents}">7</td>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
+            <div th:replace="~{fragments/individual-ranking :: table(false, 'individual-americano-ranking')}"></div>
         </div>
 
         <!-- Завершить турнир -->
@@ -492,8 +446,10 @@
 <div th:replace="~{fragments/additional-points :: copy}"></div>
 <dialog th:replace="~{fragments/additional-points :: editor(${tournament.id}, ${tournament.estado.name() == 'FINALIZADO'})}"></dialog>
 <script th:src="@{/js/additional-points.js}"></script>
+<th:block th:replace="~{fragments/individual-ranking :: assets}"></th:block>
 <script th:inline="javascript">
     const TOURNAMENT_ID = /*[[${tournament.id}]]*/ 0;
+    const INITIAL_INDIVIDUAL_RANKING = /*[[${ranking != null ? ranking.ranking : {}}]]*/ [];
     const AMERICANO_FINISHED = /*[[${tournament.estado.name() == 'FINALIZADO'}]]*/ false;
     document.addEventListener('additional-points-saved', () => updateRankingTable());
 
@@ -804,51 +760,11 @@
     }
 
     function updateRankingTableDOM(ranking) {
-        const tbody = document.querySelector('.ranking-card .table tbody');
-        if (!tbody) return;
-
-        // Очищаем таблицу
-        tbody.innerHTML = '';
-
-        // Заполняем новыми данными
-        ranking.forEach(player => {
-            const row = document.createElement('tr');
-
-            // Определяем класс для позиции
-            let positionClass = '';
-            if (player.position === 1) positionClass = 'pos-1';
-            else if (player.position === 2) positionClass = 'pos-2';
-            else if (player.position === 3) positionClass = 'pos-3';
-
-            // Определяем класс для разницы очков
-            let diffClass = 'neutral';
-            let diffSign = '';
-            if (player.pointDifference > 0) {
-                diffClass = 'positive';
-                diffSign = '+';
-            } else if (player.pointDifference < 0) {
-                diffClass = 'negative';
-            }
-
-            row.innerHTML = `
-            <td><span class="${positionClass}">${player.position}</span></td>
-            <td>${tournamentPoints.escape(player.playerName)} ${tournamentPoints.escape(player.playerLastName)}
-                ${AMERICANO_FINISHED ? '' : tournamentPoints.action(player.playerId)}</td>
-            <td>${player.matchPoints}</td>
-            ${tournamentPoints.cell(player.additionalPoints)}
-            <td class="points">${player.totalScore}</td>
-            <td>${player.matchesPlayed}</td>
-            <td>${player.matchesWon}</td>
-            <td>${player.matchesLost}</td>
-            <td>${player.matchesDrawn}</td>
-            <td class="${diffClass}">${diffSign}${player.pointDifference}</td>
-            <td>${player.byeCount}</td>
-            <td>${player.uniquePartners}</td>
-            <td>${player.uniqueOpponents}</td>
-        `;
-            tbody.appendChild(row);
+        IndividualRanking.render(document.getElementById('individual-americano-ranking'), ranking, {
+            canEdit: !AMERICANO_FINISHED
         });
     }
+    updateRankingTableDOM(INITIAL_INDIVIDUAL_RANKING);
 
     // ─── Round controls ────────────────────────────────────────────────────
     function startRound(roundId) {
@@ -1154,5 +1070,6 @@
     /*]]>*/
 </script>
 <script th:src="@{/js/share-panel.js}"></script>
+<th:block th:replace="~{fragments/playing-side :: assets}"></th:block>
 </body>
 </html>
