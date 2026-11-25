@@ -9,6 +9,11 @@ import com.padle.core.padelcoreservice.telegram.CampaignModels.*;
 import com.padle.core.padelcoreservice.telegram.TelegramAudienceModels.*;
 import com.padle.core.padelcoreservice.telegram.TelegramModels.Result;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import com.padle.core.padelcoreservice.receipts.ReceiptProperties;
+import com.padle.core.padelcoreservice.receipts.ReceiptRegistrations;
+import com.padle.core.padelcoreservice.receipts.ReceiptIntake;
+import com.padle.core.padelcoreservice.receipts.ReceiptModels;
 import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
@@ -36,6 +41,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(properties={"app.scheduling.enabled=false","telegram.enabled=false"})
 @AutoConfigureMockMvc
 class TelegramCampaignIntegrationTest {
+    @Autowired PlayerTelegramLinks personalLinks;
+    @Autowired PlayerTelegramScheduler automatic;
+    @Autowired ParticipationRequestRepository participationRequests;
+    @Autowired PaymentRepository payments;
+    @Autowired ReceiptRegistrations receiptChoices;
+    @Autowired ReceiptIntake receiptIntake;
+    @MockitoBean ReceiptProperties receiptFlags;
     @Autowired TelegramCampaignService campaigns;
     @Autowired TelegramCampaignStore store;
     @Autowired TelegramCampaignWorker worker;
@@ -202,6 +214,69 @@ class TelegramCampaignIntegrationTest {
         assertThatThrownBy(()->campaigns.confirm(admin,global.campaignId())).isInstanceOf(AccountException.class);
         verify(api,never()).send(anyLong(),anyString(),anyList());
     }
+    @Test void generalLinkingAndManualCampaignKeepReceiptsInTheirIndependentPilot() throws Exception {
+        var owner = owner(OwnerRole.ORGANIZER);
+        var event = event(owner);
+        var allowed = player();
+        var outsideReceiptPilot = player();
+        var allowedRow = row(event, allowed);
+        var otherRow = row(event, outsideReceiptPilot);
+        when(properties.botUsername()).thenReturn("OnePadelQaBot");
+        connectThroughPersonalLink(allowed);
+        connectThroughPersonalLink(outsideReceiptPilot);
+        when(receiptFlags.enabled()).thenReturn(true);
+        when(receiptFlags.pilotEnabled()).thenReturn(true);
+        when(receiptFlags.pilotPlayerId()).thenReturn(allowed.getId());
+        when(receiptFlags.pilotTournamentId()).thenReturn(event.getId());
+        when(properties.automaticEnabled()).thenReturn(false);
+        when(properties.dailySummaryEnabled()).thenReturn(false);
+        long requestsBefore = participationRequests.count();
+        automatic.tick();
+        automatic.daily();
+        var draft = campaigns.prepare(owner, prepare(event.getId(), Set.of(Group.ALL), Set.of()));
+        assertThat(draft.recipients()).extracting(Candidate::playerId)
+                .containsExactlyInAnyOrder(allowed.getId(), outsideReceiptPilot.getId());
+        worker.tick();
+        verify(api, never()).send(anyLong(), anyString(), anyList());
+        campaigns.confirm(owner, draft.campaignId());
+        worker.tick();
+        verify(api).send(chat(allowed), "Тестовое сообщение", List.of());
+        verify(api).send(chat(outsideReceiptPilot), "Тестовое сообщение", List.of());
+        assertReceiptPilotStillClosed(allowedRow, otherRow);
+        mvc.perform(delete("/api/players/me/telegram").with(user(outsideReceiptPilot)).with(csrf()))
+                .andExpect(status().isNoContent());
+        var afterStop = campaigns.prepare(owner, prepare(event.getId(), Set.of(Group.ALL), Set.of()));
+        assertThat(afterStop.recipients()).extracting(Candidate::playerId).containsExactly(allowed.getId());
+        assertThat(participationRequests.count()).isEqualTo(requestsBefore);
+        worker.tick();
+        verify(api, times(2)).send(anyLong(), anyString(), anyList());
+    }
+
+    private void connectThroughPersonalLink(PlayerPadel player) throws Exception {
+        var response = mvc.perform(post("/api/players/me/telegram/link").with(user(player)).with(csrf()))
+                .andExpect(status().isOk()).andReturn().getResponse();
+        var link = json.readValue(response.getContentAsString(), TelegramModels.Link.class);
+        String token = link.url().substring(link.url().indexOf("?start=") + 7);
+        assertThat(personalLinks.bind(token, chat(player), chat(player))).contains(player.getId());
+        mvc.perform(get("/api/players/me/telegram").with(user(player)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.connected").value(true));
+    }
+
+    private void assertReceiptPilotStillClosed(TournamentRegistration allowed, TournamentRegistration other) {
+        assertThat(receiptChoices.choices(allowed.getPlayer().getId()))
+                .extracting(TournamentRegistration::getId).containsExactly(allowed.getId());
+        assertThat(receiptChoices.choices(other.getPlayer().getId())).isEmpty();
+        assertThatThrownBy(() -> receiptIntake.receive(9_000_000 + other.getId(), other.getPlayer().getId(),
+                chat(other.getPlayer()), "fixture-file")).isInstanceOf(AccountException.class);
+        var upload = receiptIntake.receive(9_000_000 + allowed.getId(), allowed.getPlayer().getId(),
+                chat(allowed.getPlayer()), "fixture-file");
+        var file = new ReceiptModels.File("application/pdf", "%PDF-1.7\nsynthetic receipt".getBytes(StandardCharsets.US_ASCII));
+        var receipt = receiptIntake.attach(upload.id(), allowed.getPlayer().getId(), chat(allowed.getPlayer()),
+                allowed.getId(), allowed.getCancellationVersion(), file);
+        assertThat(receipt.state()).isEqualTo(ReceiptModels.State.PENDING);
+        assertThat(payments.findByRegistrationId(allowed.getId())).isEmpty();
+    }
+
     private Prepare prepare(Long event,Set<Group> groups,Set<Long> ids) {
         return new Prepare(UUID.randomUUID(),new Selection(event,groups,Set.of(),ids,Set.of(),"Тестовое сообщение"));
     }

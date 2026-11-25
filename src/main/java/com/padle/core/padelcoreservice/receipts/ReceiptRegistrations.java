@@ -26,7 +26,7 @@ public class ReceiptRegistrations {
     public boolean enabled() { return properties.enabled(); }
 
     public List<TournamentRegistration> choices(long playerId) {
-        if (!enabled() || !access.allowsPlayer(playerId)) {
+        if (!allowsPlayer(playerId)) {
             return List.of();
         }
         return registrations.findReceiptChoices(playerId).stream().filter(this::eligible).toList();
@@ -50,12 +50,22 @@ public class ReceiptRegistrations {
 
     private boolean eligible(TournamentRegistration row) {
         var tournament = row.getTournament();
-        return enabled() && access.allowsPlayer(row.getPlayer().getId()) && access.allowsEvent(tournament.getId())
+        return allows(row.getPlayer().getId(), tournament.getId())
                 && row.getPlayer().isActivo() && !row.getPlayer().isGuestAccount()
                 && Boolean.TRUE.equals(row.getIsActive())
                 && (row.getStatus() == RegistrationStatus.CONFIRMED || row.getStatus() == RegistrationStatus.PAIR_REGISTERED)
                 && Boolean.TRUE.equals(tournament.getIsActive())
                 && tournament.getEstado() != TournamentStatus.BORRADOR && tournament.getEstado() != TournamentStatus.CANCELADO;
+    }
+
+    public boolean allows(long playerId, Long tournamentId) {
+        return allowsPlayer(playerId) && access.allowsEvent(tournamentId)
+                && (!properties.pilotEnabled() || Objects.equals(properties.pilotTournamentId(), tournamentId));
+    }
+
+    private boolean allowsPlayer(long playerId) {
+        return enabled() && access.allowsPlayer(playerId)
+                && (!properties.pilotEnabled() || Objects.equals(properties.pilotPlayerId(), playerId));
     }
 
     public static AccountException unavailable() {
