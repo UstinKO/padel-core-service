@@ -66,3 +66,22 @@ Selection: tournamentId (необязательно), groups (`ALL`, `MAIN`, `RE
 Audience содержит tournamentId/name/globalAccess/candidates; candidate — playerId/name/category/groups/availability. Preview — text/recipients/unavailable/selectedCount/sendingAvailable=false. Причины: AVAILABLE/NOT_CONNECTED/WHATSAPP/GUEST/INACTIVE/OUTSIDE_PILOT/DISABLED. Контакты, Telegram ID и токены не выдаются. Гости не переадресуются делегату. Это расчёт возможных получателей, не отчёт о доставке.
 
 Страницы `TelegramMessagesPageController` активируются только при наличии шаблона `admin/telegram-messages.html` из зависимого интерфейса. Без него новые страницы не регистрируются; существующий сайт работает как прежде. Предпросмотр не создаёт ссылок, запросов участия, доставок или платежей, не обращается к Telegram. Общая очередь, шаблоны и история рассылок в этот этап не входят.
+
+## Кампании: сохранённый предпросмотр, отправка и история
+
+Сервер `TelegramCampaignService` / `TelegramCampaignController`, очередь `TelegramCampaignStore` / `TelegramCampaignWorker` / `TelegramCampaignDispatch`. Флаг `telegram.players.campaigns.enabled` (TELEGRAM_PLAYERS_CAMPAIGNS_ENABLED) по умолчанию false, отдельно от прежних подтверждений и чеков. Настройки production этим этапом не меняются.
+
+| Метод | Маршрут | Результат |
+|---|---|---|
+| POST | `/api/admin/telegram/messages/campaigns` | Prepare: requestId UUID + selection прежнего предпросмотра; неизменяемый черновик |
+| GET | `/api/admin/telegram/messages/campaigns` | История: tournamentId необязательно (без него только SUPER_ADMIN), page от 0, 20 записей |
+| GET | `/api/admin/telegram/messages/campaigns/{id}` | Текст, автор, состояние и результаты без внутренних идентификаторов Telegram |
+| POST | `/api/admin/telegram/messages/campaigns/{id}/confirm` | confirmed=true, запуск сохранённого черновика только автором |
+| POST | `/api/admin/telegram/messages/campaigns/{id}/test` | requestId UUID + confirmed=true; отдельная проба настроенному главному организатору |
+| POST | `/api/admin/telegram/messages/campaigns/{id}/retry` | requestId UUID + confirmed=true; только достоверные FAILED |
+
+Все операции проверяют актуального активного Owner и текущие права события/общей аудитории. Чтение чужого глобального сообщения запрещено, подтверждение чужого черновика запрещено и SUPER_ADMIN. POST требует CSRF; подготовка не отправляет. requestId связывается с содержимым и автором; повтор не дописывает новых адресатов. Prepared совместим по полям text/recipients/unavailable/selectedCount с Preview, дополнен campaignId/canTest/expiresAt; sendingAvailable учитывает отдельный флаг. View: id/tournamentId/author/text/kind/state/createdAt/recipients/canConfirm/canRetry. Recipient: playerId/name/state/reason/attempt.
+
+Черновик действует 15 минут. Снимок адресатов и текста неизменяем. Потеря прав, отмена регистрации, /stop/WhatsApp/перепривязка или изменение пилота перед отправкой дают SKIPPED. Поколение связи не позволяет старой очереди возобновиться после подключения. Неизвестный исход не повторяется; повтор FAILED — отдельное идемпотентное действие. Проба использует только существующую конфигурацию organizer-owner-id/organizer-chat-id и фактическую личную связь; произвольный chat ID контракт не принимает. Без такой настройки canTest=false.
+
+Очередь захватывает запись через SKIP LOCKED, сохраняет попытку до внешнего вызова, использует прежний transport/ledger. Старый IN_FLIGHT после двух минут сверяется с ledger; без подтверждённого результата — UNKNOWN. SENT — принятие Telegram, не прочтение. Ограничение скорости пока на процесс, общая координация Swarm остаётся #1213. Ошибки: 409 при выключенной функции, истёкшем/изменённом черновике или недоступной пробе; 403 при нарушении прав; 404 для отсутствующего ID. Чтение не меняет оплату, участие или доставку.

@@ -272,3 +272,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.89-telegram-payment-receipts.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.91-telegram-campaigns.yaml
+      relativeToChangelogFile: true

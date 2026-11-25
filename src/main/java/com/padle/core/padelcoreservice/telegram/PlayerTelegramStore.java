@@ -55,6 +55,14 @@ public class PlayerTelegramStore {
         jdbc.execute("SELECT pg_advisory_xact_lock(1294001)");
     }
 
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void guardConnections() { lockConnections(); }
+
+    public Optional<Result> deliveryResult(String key) {
+        return jdbc.query("SELECT state,message_id FROM player_telegram_deliveries WHERE dedupe_key=?",
+                (r,n) -> new Result(r.getString(1),r.getObject(2,Long.class)),key).stream().findFirst();
+    }
+
     public Optional<Connection> connection(long playerId) {
         return jdbc.query("SELECT * FROM player_telegram_connections WHERE player_id = ?",
                 (r, n) -> new Connection(r.getLong("player_id"), r.getLong("user_id"),
