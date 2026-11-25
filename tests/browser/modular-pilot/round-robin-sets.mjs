@@ -131,6 +131,14 @@ try {
     const withExtra = await read(base);
     assert.deepEqual(withExtra.ranking, beforeExtra);
     assert.equal(withExtra.finalRanking[0].teamId, teams[2].id);
+    await saveScore(extra.id, ...(fixture.mode === 'SETS' ? [5, 6] : [14, 18]));
+    const correctedExtra = await read(base);
+    assert.equal(correctedExtra.finalRanking[0].teamId, teams[3].id);
+    assert.deepEqual(correctedExtra.ranking, beforeExtra);
+    await saveScore(extra.id, ...(fixture.mode === 'SETS' ? [6, 5] : [18, 14]));
+    const restoredExtra = await read(base);
+    assert.deepEqual(restoredExtra.finalRanking, withExtra.finalRanking);
+    assert.deepEqual(restoredExtra.ranking, beforeExtra);
     await Promise.all([page.waitForNavigation({ waitUntil: 'domcontentloaded' }), page.locator('.rr-finish button').click()]);
     await expect(page.locator('.rr-places li')).toHaveCount(4);
     const finished = await read(base);
@@ -162,6 +170,7 @@ try {
       circleOrder: expected, sharedInitialPlaces: fixture.mode === 'SETS',
       headToHeadCorrectionAndReturn: fixture.mode === 'SETS', additionalFinal: true,
       pointsTiesByWinsAndNumber: fixture.mode === 'POINTS', scoreCorrectionAndReturn: true,
+      additionalCorrectionAndReturn: true,
       circleStatsPreserved: true, finished: true, historyPage: true, views, refresh: true });
     console.log('Round Robin ' + fixture.mode + ': круг, места, финал, завершение, история и 12 страниц — PASS');
   }

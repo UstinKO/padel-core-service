@@ -1,6 +1,6 @@
 # Контракт application-среза после исходных проверок
 
-Подготовлено в [#1375](https://github.com/UstinKO/padel-core-service/issues/1375) для [#1377](https://github.com/UstinKO/padel-core-service/issues/1377). Ниже — конкретная техническая постановка будущего переноса, не уже созданные production-классы. Исходная реализация остаётся на master `0dc4069a`; [wire-эталоны](../../../src/test/resources/contracts/round-robin-query/README.md) проверены на ней.
+Подготовлено в [#1375](https://github.com/UstinKO/padel-core-service/issues/1375) для [#1377](https://github.com/UstinKO/padel-core-service/issues/1377). Ниже — конкретная техническая постановка будущего application-переноса. Final-order engine реализован в [#1376](final-order-extraction.md); application-классы ещё не созданы. Исходная реализация baseline проверялась на master `0dc4069a`; [wire-эталоны](../../../src/test/resources/contracts/round-robin-query/README.md) проверены на ней.
 
 ## Пакет и входной порт
 
@@ -68,9 +68,9 @@ Application получает Maven-зависимость на padel-tournament-
 |---|---|
 | RoundRobinSetStandingsEngine | Сам класс, $Team, $Match, $Ranked; private $Meetings не нужен |
 | RoundRobinPointsStandingsEngine | Сам класс, $Team, $Ranked |
-| RoundRobinFinalOrderEngine (#1376) | Планируемые сам класс, $Standing, $Match, $Ranked; фактический API сверить после #1376 |
+| RoundRobinFinalOrderEngine (#1376) | Фактические сам класс, $Standing, $Match, $Ranked; API подтверждён #1376 |
 
-Для final-order предлагаются Standing(index, teamId, position), Match(firstId, secondId, firstScore, secondScore, completed, placementStart) и Ranked(index, position). Record Match сохраняет исходные фильтры completed/placement и счёт, а не привносит отдельную политику выбора победителя. #1376 проверяет этот контракт characterization-набором до включения в allowlist.
+Final-order #1376 использует Standing(index, teamId, position), Match(firstId, secondId, firstScore, secondScore, completed, placementStart) и Ranked(index, position). Record Match сохраняет исходные фильтры completed/placement и счёт, а не привносит отдельную политику выбора победителя. #1376 проверил этот контракт неизменённым characterization-набором до/после переноса. Включение точных типов в application allowlist остаётся задачей #1377.
 
 ArchUnit проверяет точные имена импортированных типов, включая массивы/вложенные типы. Artifact guard не должен просто вырезать разрешённые префиксы из bytecode: это разрешило бы класс RoundRobinPointsStandingsEngineBackdoor. Разрешение применяется только к полному извлечённому имени type reference; остальные legacy-префиксы остаются запрещены. Все существующие ограничения JPA/JDBC/Web/Security/Jackson сохраняются.
 
