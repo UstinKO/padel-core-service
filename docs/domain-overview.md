@@ -364,7 +364,8 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 «Ссылка для публикации». Для активного мероприятия с `canView`, кроме черновиков
 и отменённых, можно скопировать публичный `${siteBaseUrl}/torneo/ID`. Telegram
 помечается `telegram / social + telegram_posts`, Instagram Stories —
-`instagram / social + instagram_stories`; `utm_content=torneo_ID`. Текущий query
+`instagram / social + instagram_stories`, Flobi —
+`flobi / referral + flobi_tournaments`; `utm_content=torneo_ID`. Текущий query
 админки не переносится. Клиентская операция не меняет данные и не отправляет
 событие регистрации. При отказе Clipboard API ссылка выделяется для ручного
 копирования. Новых HTTP-маршрутов и полномочий нет.

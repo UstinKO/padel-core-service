@@ -19,6 +19,8 @@ import org.thymeleaf.web.servlet.JakartaServletWebApplication;
 
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Locale;
@@ -35,7 +37,8 @@ class TournamentPublicationLinkTemplateTest {
         String html = render(language, TournamentStatus.REGISTRO_ABIERTO, true, true);
         assertThat(html).contains(label, "data-publication-id=\"185\"",
                 "data-publication-time=\"13:30\"", "data-site-base-url=\"https://configured.example/padel\"",
-                "data-publication-channel=\"telegram\"", "data-publication-channel=\"stories\"");
+                "data-publication-channel=\"telegram\"", "data-publication-channel=\"stories\"",
+                "data-publication-channel=\"flobi\"", ">Flobi</span>");
         assertThat(html).doesNotContain("??", "utm_campaign=admin", "playerEmail");
     }
 
@@ -63,6 +66,25 @@ class TournamentPublicationLinkTemplateTest {
         assertThat(render("ru", TournamentStatus.REGISTRO_ABIERTO, true, true, true))
                 .contains("data-publication-id=\"185\"")
                 .doesNotContain("data-publication-close", "data-publication-channel", "<dialog");
+    }
+
+    @Test
+    void rendersActualDialogForBrowserVerification() throws Exception {
+        var directory = Path.of("target/publication-link");
+        Files.createDirectories(directory);
+        for (String language : Set.of("ru", "es", "en")) {
+            String html = render(language, TournamentStatus.REGISTRO_ABIERTO, true, true);
+            String secondButton = render(language, TournamentStatus.REGISTRO_ABIERTO, true, true, true)
+                    .replace("data-publication-id=\"185\"", "data-publication-id=\"196\"");
+            html = html.replace("<body>", """
+                    <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+                    <link rel="stylesheet" href="/css/style.css"><link rel="stylesheet" href="/css/admin.css">
+                    <link rel="stylesheet" href="/css/admin-publication-link.css"></head><body>
+                    """).replace("</body>", secondButton + """
+                    <script src="/js/admin-publication-link.js"></script></body>
+                    """);
+            Files.writeString(directory.resolve(language + ".html"), html);
+        }
     }
 
     private String render(String language, TournamentStatus status, boolean active, boolean canView) throws Exception {
