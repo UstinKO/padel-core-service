@@ -1,6 +1,9 @@
 package com.padle.core.padelcoreservice.service.americano;
 
-import com.padle.core.padelcoreservice.mapper.TeamPlayingSideMapper;
+import com.padle.core.application.roundrobin.RoundRobinRankingQuery;
+import com.padle.core.application.roundrobin.RoundRobinNotFound;
+import com.padle.core.padelcoreservice.adapter.roundrobin.LegacyRoundRobinReadAdapter;
+import com.padle.core.padelcoreservice.mapper.americano.RoundRobinRankingMapper;
 
 import com.padle.core.padelcoreservice.dto.americano.AmericanoTeamDto;
 import com.padle.core.padelcoreservice.dto.americano.TeamAmericanoConfigDto;
@@ -15,7 +18,6 @@ import com.padle.core.padelcoreservice.model.americano.AmericanoTeam;
 import com.padle.core.padelcoreservice.model.enums.AmericanoPlayerStatus;
 import com.padle.core.padelcoreservice.model.enums.AmericanoRoundStatus;
 import com.padle.core.padelcoreservice.model.enums.Modalidad;
-import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
@@ -41,13 +43,14 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class TeamAmericanoService {
 
-    private final TeamPlayingSideMapper playingSideMapper;
+    private final RoundRobinRankingQuery rankingQuery;
+    private final LegacyRoundRobinReadAdapter rankingReadAdapter;
+    private final RoundRobinRankingMapper rankingMapper;
     private final TournamentRepository tournamentRepository;
     private final TournamentRegistrationRepository registrationRepository;
     private final AmericanoTeamRepository teamRepository;
     private final AmericanoRoundRepository roundRepository;
     private final AmericanoMatchRepository matchRepository;
-    private final RoundRobinAdditionalMatches additionalMatches;
 
     // ═══════════════════════════════════════════════════════════════════════
     // ИНИЦИАЛИЗАЦИЯ ТУРНИРА
@@ -475,11 +478,11 @@ public class TeamAmericanoService {
     // ═══════════════════════════════════════════════════════════════════════
 
     public TeamAmericanoRankingDto getRanking(Long tournamentId) {
-        Tournament tournament = getTournament(tournamentId);
-        List<AmericanoTeam> teams = teamRepository.findRankingByTournamentId(tournamentId);
-        List<AmericanoRound> rounds = roundRepository
-                .findByTournamentIdOrderByRoundNumberAsc(tournamentId);
-        return buildRanking(tournament, teams, rounds);
+        try {
+            return rankingMapper.toDto(rankingQuery.ranking(tournamentId));
+        } catch (RoundRobinNotFound missing) {
+            throw new ResourceNotFoundException(missing.getMessage());
+        }
     }
 
     @Transactional
@@ -645,83 +648,6 @@ public class TeamAmericanoService {
     private TeamAmericanoRankingDto buildRanking(Tournament tournament,
                                                  List<AmericanoTeam> teams,
                                                  List<AmericanoRound> rounds) {
-        var circle = rounds.stream().filter(r -> r.getPhase() == null).toList();
-        var mode = circle.stream().findFirst().map(RoundRobinRules::mode).orElse(RoundRobinScoringMode.POINTS);
-        var allMatches = matchRepository.findByTournamentIdOrderByRoundIdAscMatchNumberAsc(tournament.getId());
-        var standings = RoundRobinStandings.rank(teams, allMatches, mode);
-        long total = circle.size();
-        long completed = circle.stream().filter(AmericanoRound::isCompleted).count();
-        boolean finished = total > 0 && rounds.stream().allMatch(AmericanoRound::isCompleted);
-
-        List<AmericanoTeamDto> ranking = standings.stream()
-                .map(entry -> {
-                    AmericanoTeamDto dto = toDto(entry.team());
-                    dto.setCurrentPosition(entry.position());
-                    return dto;
-                })
-                .collect(Collectors.toList());
-
-        return TeamAmericanoRankingDto.builder()
-                .tournamentId(tournament.getId())
-                .tournamentName(tournament.getNombre())
-                .totalRounds((int) total)
-                .completedRounds((int) completed)
-                .totalTeams(teams.size())
-                .isFinished(finished)
-                .scoringMode(mode)
-                .pointsPerMatch(circle.stream().findFirst().map(AmericanoRound::getPointsPerMatch).orElse(32))
-                .courts(circle.stream().findFirst().map(AmericanoRound::getCourts).orElse(1))
-                .roundRobinComplete(total > 0 && completed == total)
-                .additionalMatches(additionalMatches.list(tournament.getId()))
-                .finalRanking(RoundRobinRules.finalOrder(standings,
-                        allMatches.stream().filter(RoundRobinRules::additional).toList()))
-                .ranking(ranking)
-                .build();
-    }
-
-    private AmericanoTeamDto toDto(AmericanoTeam t) {
-        AmericanoTeamDto dto = new AmericanoTeamDto();
-        playingSideMapper.fill(t, dto);
-        dto.setId(t.getId());
-        dto.setTournamentId(t.getTournament().getId());
-        dto.setTeamNumber(t.getTeamNumber());
-        dto.setCurrentPosition(t.getCurrentPosition());
-        dto.setStatus(t.getStatus().name());
-        dto.setDisplayName(t.getDisplayName());
-
-        if (t.getPlayer1() != null) {
-            dto.setPlayer1Id(t.getPlayer1().getId());
-            dto.setPlayer1Name(t.getPlayer1().getNombre() + " " + t.getPlayer1().getApellido());
-            dto.setPlayer1Email(t.getPlayer1().getEmail());
-            dto.setPlayer1Phone(t.getPlayer1().getTelefono());
-            dto.setPlayer1Nivel(Nivel.orNullIfSinEspecificar(t.getPlayer1().getNivelJugador()));
-        }
-
-        if (t.getPlayer2() != null) {
-            dto.setPlayer2Id(t.getPlayer2().getId());
-            dto.setPlayer2Name(t.getPlayer2().getNombre() + " " + t.getPlayer2().getApellido());
-            dto.setPlayer2Email(t.getPlayer2().getEmail());
-            dto.setPlayer2Phone(t.getPlayer2().getTelefono());
-            dto.setPlayer2Nivel(Nivel.orNullIfSinEspecificar(t.getPlayer2().getNivelJugador()));
-        } else {
-            dto.setPlayer2Name(t.getPlayer2Name());
-            dto.setPlayer2Phone(t.getPlayer2Phone());
-        }
-
-        dto.setTotalScore(t.getTotalScore());
-        dto.setMatchesPlayed(t.getMatchesPlayed());
-        dto.setMatchesWon(t.getMatchesWon());
-        dto.setMatchesLost(t.getMatchesLost());
-        dto.setMatchesDrawn(t.getMatchesDrawn());
-        dto.setPointsScored(t.getPointsScored());
-        dto.setPointsConceded(t.getPointsConceded());
-        dto.setPointDifference(t.getPointDifference());
-        dto.setSetsWon(t.getSetsWon());
-        dto.setSetsLost(t.getSetsLost());
-        dto.setGamesWon(t.getGamesWon());
-        dto.setGamesLost(t.getGamesLost());
-        dto.setGameDifference(t.getGameDifference());
-
-        return dto;
+        return rankingMapper.toDto(rankingQuery.compose(rankingReadAdapter.fromLoaded(tournament, teams, rounds)));
     }
 }
