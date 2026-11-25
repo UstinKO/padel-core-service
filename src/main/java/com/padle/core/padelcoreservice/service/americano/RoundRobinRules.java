@@ -3,6 +3,7 @@ package com.padle.core.padelcoreservice.service.americano;
 import com.padle.core.padelcoreservice.dto.americano.RoundRobinStandingDto;
 import com.padle.core.padelcoreservice.dto.americano.TeamAmericanoConfigDto;
 import com.padle.core.padelcoreservice.exception.InvalidStateException;
+import com.padle.core.padelcoreservice.mapper.americano.RoundRobinFinalOrderMapper;
 import com.padle.core.padelcoreservice.mapper.americano.RoundRobinPointsStandingsMapper;
 import com.padle.core.padelcoreservice.model.americano.*;
 import com.padle.core.padelcoreservice.model.enums.RoundRobinScoringMode;
@@ -14,6 +15,7 @@ import org.mapstruct.factory.Mappers;
 /** Правила счёта и мест кругового этапа, независимые от хранения. */
 public final class RoundRobinRules {
     private static final RoundRobinPointsStandingsMapper POINTS_MAPPER = Mappers.getMapper(RoundRobinPointsStandingsMapper.class);
+    private static final RoundRobinFinalOrderMapper FINAL_MAPPER = Mappers.getMapper(RoundRobinFinalOrderMapper.class);
     private RoundRobinRules() {}
 
     public static RoundRobinScoringMode mode(AmericanoRound round) {
@@ -66,24 +68,11 @@ public final class RoundRobinRules {
     }
 
     public static List<RoundRobinStandingDto> finalOrder(List<RoundRobinStandings.Ranked> circle, List<AmericanoMatch> extra) {
-        Map<Integer, Long> assigned = new HashMap<>();
-        extra.stream().filter(AmericanoMatch::isCompleted).filter(m -> m.getPlacementStart() != null)
-                .forEach(m -> {
-                    boolean firstWon = m.getTeam1Score() > m.getTeam2Score();
-                    assigned.put(m.getPlacementStart(), firstWon ? m.getTeam1Id() : m.getTeam2Id());
-                    assigned.put(m.getPlacementStart() + 1, firstWon ? m.getTeam2Id() : m.getTeam1Id());
-                });
-        var remaining = circle.stream().filter(t -> !assigned.containsValue(t.team().getId())).toList();
-        var slots = IntStream.rangeClosed(1, circle.size()).filter(p -> !assigned.containsKey(p)).boxed().toList();
-        var tiedPlaces = IntStream.range(0, remaining.size()).boxed().collect(java.util.stream.Collectors.toMap(
-                i -> remaining.get(i).position(), slots::get, Math::min));
-        var bySlot = IntStream.range(0, remaining.size()).boxed().collect(java.util.stream.Collectors.toMap(slots::get, remaining::get));
-        var teams = circle.stream().collect(java.util.stream.Collectors.toMap(t -> t.team().getId(), t -> t.team()));
-        return IntStream.rangeClosed(1, circle.size()).mapToObj(position -> {
-            var team = assigned.containsKey(position) ? teams.get(assigned.get(position)) : bySlot.get(position).team();
-            int place = assigned.containsKey(position) ? position : tiedPlaces.get(bySlot.get(position).position());
-            return new RoundRobinStandingDto(team.getId(), team.getTeamNumber(), team.getDisplayName(), place);
-        }).toList();
+        var standings = IntStream.range(0, circle.size())
+                .mapToObj(index -> FINAL_MAPPER.toStanding(circle.get(index), index)).toList();
+        var matches = extra.stream().map(FINAL_MAPPER::toMatch).toList();
+        return RoundRobinFinalOrderEngine.rank(standings, matches).stream()
+                .map(ranked -> FINAL_MAPPER.toDto(circle.get(ranked.index()).team(), ranked.position())).toList();
     }
 
     public static void fail(String reason) {
