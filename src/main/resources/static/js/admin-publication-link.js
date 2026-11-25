@@ -11,8 +11,9 @@
     const feedback = dialog.querySelector('[role="status"]');
     const channelButtons = [...dialog.querySelectorAll('[data-publication-channel]')];
     const channels = {
-        telegram: {source: 'telegram', campaign: 'telegram_posts'},
-        stories: {source: 'instagram', campaign: 'instagram_stories'}
+        telegram: {source: 'telegram', medium: 'social', campaign: 'telegram_posts'},
+        stories: {source: 'instagram', medium: 'social', campaign: 'instagram_stories'},
+        flobi: {source: 'flobi', medium: 'referral', campaign: 'flobi_tournaments'}
     };
     let eventId;
     let opener;
@@ -31,7 +32,7 @@
         base.search = '';
         base.hash = '';
         base.searchParams.set('utm_source', tags.source);
-        base.searchParams.set('utm_medium', 'social');
+        base.searchParams.set('utm_medium', tags.medium);
         base.searchParams.set('utm_campaign', tags.campaign);
         base.searchParams.set('utm_content', `torneo_${eventId}`);
         urlField.value = base.href;
