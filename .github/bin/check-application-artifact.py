@@ -18,6 +18,13 @@ REQUIRED.update(READ_PREFIX + name + '.class' for name in [
     'RoundRobinReadSet$ScoringMode', 'RoundRobinReadSet$Phase', 'RoundRobinReadSet$Status',
     'RoundRobinReadSet$TeamStatus', 'RoundRobinReadSet$Side', 'RoundRobinRanking',
     'RoundRobinRanking$RankedTeam', 'RoundRobinRanking$AdditionalMatch', 'RoundRobinRanking$FinalStanding'])
+REQUIRED.update(READ_PREFIX + name + '.class' for name in [
+    'RoundRobinPosition', 'RoundRobinPositionInput', 'RoundRobinPositionInput$PositionTeam',
+    'RoundRobinPositionInput$PositionMatch', 'RoundRobinPositionPort', 'RoundRobinPositionCommand',
+    'RoundRobinStandingsCalculation'])
+REQUIRED.update(READ_PREFIX + name + '.class' for name in [
+    'RoundRobinFinishCommand', 'RoundRobinFinishPort', 'RoundRobinFinishEvent',
+    'RoundRobinFinishCancelled', 'RoundRobinFinishIncomplete'])
 ENGINE_PREFIX = 'com/padle/core/padelcoreservice/service/americano/'
 ALLOWED_ENGINES = {ENGINE_PREFIX + name for name in [
     'RoundRobinSetStandingsEngine', 'RoundRobinSetStandingsEngine$Team',

@@ -241,6 +241,9 @@ telegram:
   players:
     receipts:
       enabled: ${TELEGRAM_PLAYERS_RECEIPTS_ENABLED:false}
+      pilot-enabled: ${TELEGRAM_PLAYERS_RECEIPTS_PILOT_ENABLED:true}
+      pilot-player-id: ${TELEGRAM_PLAYERS_RECEIPTS_PILOT_PLAYER_ID:${TELEGRAM_PLAYERS_PILOT_PLAYER_ID:}}
+      pilot-tournament-id: ${TELEGRAM_PLAYERS_RECEIPTS_PILOT_TOURNAMENT_ID:${TELEGRAM_PLAYERS_PILOT_TOURNAMENT_ID:}}
     pilot-enabled: ${TELEGRAM_PLAYERS_PILOT_ENABLED:true}
     pilot-player-id: ${TELEGRAM_PLAYERS_PILOT_PLAYER_ID:}
     pilot-tournament-id: ${TELEGRAM_PLAYERS_PILOT_TOURNAMENT_ID:}
