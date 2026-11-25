@@ -1,7 +1,7 @@
 # Архитектура базы данных — padel-core-service
 
 > **СУБД:** PostgreSQL 15  
-> **Версия схемы:** v1.89
+> **Версия схемы:** v1.90
 > **Миграции:** Liquibase (YAML), файлы в `src/main/resources/db/changelog/versions/`  
 > **ddl-auto:** `none` — схема управляется только через Liquibase
 
@@ -1070,3 +1070,5 @@ player_telegram_connections хранит проверенную связь playe
 Предпочтение связи: v1.87, `player_contact_preferences` — одна строка на игрока, UNSPECIFIED / TELEGRAM / WHATSAPP. WhatsApp не создаёт автоматических сообщений.
 
 Чеки: v1.89, `payment_receipts` привязывает ограниченный BYTEA (JPEG/PNG/PDF до 5 МиБ) к регистрационному ID и версии отмены. Статусы PENDING/ACCEPTED/REJECTED отделены от платежей; принятие хранит payment_id, организатора и время, отклонение — причину. Уникальность (registration_id, registration_version, sha256) исключает повторное хранение одного файла. `telegram_receipt_uploads` хранит отдельный выбор мероприятия для каждого Telegram update; срок выбора — 20 минут. Непривязанные просроченные контексты очищаются при следующем приёме.
+
+Ручное объединение: v1.90, `guest_profile_claims.contact_resolution` фиксирует выбор KEEP_ACCOUNT/USE_GUEST_PHONE. NULL phone_key допустим только у завершённого ADMIN-объединения с IN_PERSON/OTHER.
