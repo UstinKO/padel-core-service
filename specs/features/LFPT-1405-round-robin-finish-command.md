@@ -1,7 +1,7 @@
 # LFPT-1405: Feature многомодульный монолит, фаза 5 — перенести завершение кругового турнира в application
 
 ## Статус
-approved
+done
 
 ## Источник
 
@@ -52,15 +52,15 @@ Java source/release 17 при CI/Docker 21. Один процесс/один boo
 
 ### Документация
 
-[План фазы](../../docs/modular-monolith/phase-5/README.md), [анализ кода](../../docs/modular-monolith/phase-5/code-analysis.md), [W01–W18](../../docs/modular-monolith/phase-5/test-cases.md), docs/modular-monolith/README.md и plan.md, docs/architecture.md, .agents/PROJECT.md. Первый baseline уточняет конкретные модели/порт, fixtures и измеренные ожидания; каждый следующий PR обновляет фактические мосты и результаты.
+[План фазы](../../docs/modular-monolith/phase-5/README.md), [анализ кода](../../docs/modular-monolith/phase-5/code-analysis.md), [W01–W18](../../docs/modular-monolith/phase-5/test-cases.md), docs/modular-monolith/README.md и plan.md, docs/architecture.md, .agents/PROJECT.md. [Реализация #1405 и результаты](../../docs/modular-monolith/phase-5/finish-command.md) фиксируют границу команды, адаптеры и переходные мосты.
 
 ## Критерии приёмки
 
-- [ ] В application находится проверка и последовательность завершения, а не фасад над старым legacy finish.
-- [ ] Готовый/неполный/неинициализированный/CANCELADO/missing, PLACEMENT, разрывы номеров и повторы совпали с baseline; currentPosition/finalRanking различаются как раньше.
-- [ ] Позиции, FINALIZADO и history атомарны; faults/query/history и stale/replay не оставляют частичных записей/уведомлений после rollback.
-- [ ] Один write EntityManager/transaction и реальный application bean подтверждены; query видит свои записи до commit и сохраняет прежний DTO.
-- [ ] Полный verify/guards и runtime/browser, restart/прежний jar/возврат прошли; ни start/score/history-платформа, ни схема/данные production не перенесены.
+- [x] В application находится проверка и последовательность завершения, а не фасад над старым legacy finish.
+- [x] Готовый/неполный/неинициализированный/CANCELADO/missing, PLACEMENT, разрывы номеров и повторы совпали с baseline; currentPosition/finalRanking различаются как раньше.
+- [x] Позиции, FINALIZADO и history атомарны; faults/query/history и stale/replay не оставляют частичных записей/уведомлений после rollback.
+- [x] Один write EntityManager/transaction и реальный application bean подтверждены; query видит свои записи до commit и сохраняет прежний DTO.
+- [x] Полный verify/guards и runtime/browser, restart/прежний jar/возврат прошли; ни start/score/history-платформа, ни схема/данные production не перенесены.
 
 ## Edge cases
 
@@ -68,4 +68,4 @@ Java source/release 17 при CI/Docker 21. Один процесс/один boo
 
 ## Открытые вопросы
 
-Бизнес-вопросов нет: текущие результаты/ошибки/эффекты сохраняются. Конкретный контракт портов и исходные ожидания закреплены в [baseline #1403](../../docs/modular-monolith/phase-5/baseline.md) и [command-contract](../../docs/modular-monolith/phase-5/command-contract.md); до production-переноса требуется включение его PR. Если characterization обнаружит расхождение MASTER с текущим поведением, не исправлять его скрытно в переносе: зафиксировать и отдельно согласовать изменение инварианта. Подготовка не является PASS будущей реализации. Обычная сессия, без pipeline:ready/автомержа/production-деплоя.
+Бизнес-вопросов нет: текущие результаты/ошибки/эффекты сохраняются. Конкретный контракт портов и исходные ожидания закреплены в [baseline #1403](../../docs/modular-monolith/phase-5/baseline.md) и [command-contract](../../docs/modular-monolith/phase-5/command-contract.md). Реализация использует принятую команду позиций #1404 из PR #1409. Независимая клиентская приёмка проводится в #1406 после включения этого backend-среза.

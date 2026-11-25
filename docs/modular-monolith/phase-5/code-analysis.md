@@ -1,6 +1,6 @@
 # Анализ первого командного среза
 
-Анализ ниже сохраняет исторический граф до переноса. Актуальное изменение #1404 описано в [реализации position-команды](position-command.md): updateTeamPositions делегирует application, общий calculation используется query/write, у RoundRobinStandings.rank больше нет production-callers. Finish и прочие caller-эффекты пока прежние.
+Анализ ниже сохраняет исторический граф до переноса. Актуальное изменение #1404 описано в [реализации position-команды](position-command.md): updateTeamPositions делегирует application, общий calculation используется query/write, у RoundRobinStandings.rank больше нет production-callers. Сценарий finish теперь выполняется в [application-команде #1405](finish-command.md). Ниже зафиксирован исходный порядок legacy-вызовов.
 
 Срез кода: master `02200f09eeac5cb5eff15f7608889f3b9ee4e051`, после включения [PR #1398](https://github.com/UstinKO/padel-core-service/pull/1398). [Фаза 4](../phase-4/README.md) технически завершена: application владеет чтением круговой таблицы/итоговых мест, engines — десятью вычислениями. Новый командный срез ещё не реализован.
 

@@ -4,7 +4,7 @@
 
 ## Состояние
 
-Предыдущая read-фаза принята. Application содержит PublicClubQuery, RoundRobinRankingQuery и [RoundRobinPositionCommand / #1404](position-command.md); engines — десять вычислительных классов. [Baseline #1403](baseline.md) включён через PR #1408. Команда позиций и query используют общую подготовку standings; finish остаётся в legacy до #1405. Независимая приёмка #1406 и координационная #1402 остаются открытыми.
+Предыдущая read-фаза принята. Application содержит PublicClubQuery, RoundRobinRankingQuery и [RoundRobinPositionCommand / #1404](position-command.md); engines — десять вычислительных классов. [Baseline #1403](baseline.md) включён через PR #1408. Команда позиций и query используют общую подготовку standings. [RoundRobinFinishCommand / #1405](finish-command.md) выполняет проверку допуска и последовательность завершения внутри транзакции прежнего фасада. Независимая приёмка #1406 и координационная #1402 остаются открытыми.
 
 ## Последовательность
 
@@ -15,9 +15,9 @@
 | 3 | [#1405](https://github.com/UstinKO/padel-core-service/issues/1405) | backend | Application orchestration завершения с прежней транзакционной оболочкой | #1404 |
 | 4 | [#1406](https://github.com/UstinKO/padel-core-service/issues/1406) | frontend | Независимая клиентская/runtime-приёмка конечного jar и возврата | #1405 |
 
-Baseline #1403 включён через PR #1408; реализация #1404 и её [результаты проверок](position-command.md) подготовлены отдельно. Следующий перенос — #1405 после включения #1404. Закрытия координационной #1402 рабочие задачи не ждут. Каждая реализация — отдельный PR, работоспособный без будущих задач. Depends-On в PR указывает на настоящий PR зависимости, не на номер issue; в исходных issues сохраняется последовательность задач. Автомерж/production-деплой в подготовку не входят.
+Baseline #1403 включён через PR #1408, сохранение позиций #1404 — через PR #1409. После включения завершения #1405 следует независимая приёмка #1406. Закрытия координационной #1402 рабочие задачи не ждут. Каждая реализация — отдельный PR, работоспособный без будущих задач. Depends-On в PR указывает на настоящий PR зависимости, не на номер issue; в исходных issues сохраняется последовательность задач. Автомерж/production-деплой в подготовку не входят.
 
-Спецификации: [координация](../../../specs/features/LFPT-1402-round-robin-write-phase.md), [baseline](../../../specs/done/LFPT-1403-round-robin-write-baseline.md), [позиции](../../../specs/features/LFPT-1404-round-robin-position-command.md), [завершение](../../../specs/features/LFPT-1405-round-robin-finish-command.md), [приёмка](../../../specs/features/LFPT-1406-round-robin-write-acceptance.md).
+Спецификации: [координация](../../../specs/features/LFPT-1402-round-robin-write-phase.md), [baseline](../../../specs/done/LFPT-1403-round-robin-write-baseline.md), [позиции](../../../specs/done/LFPT-1404-round-robin-position-command.md), [завершение](../../../specs/features/LFPT-1405-round-robin-finish-command.md), [приёмка](../../../specs/features/LFPT-1406-round-robin-write-acceptance.md).
 
 ## Почему такой срез
 
@@ -35,7 +35,7 @@ Baseline #1403 включён через PR #1408; реализация #1404 и
 
 Application владеет решениями и последовательностью действий, своими значениями/портами, командами и общей подготовкой SETS/POINTS standings к engines. Порт, который просто вызывает старый finish целиком, не считается выделением сценария. Legacy-адаптеры и MapStruct связывают managed-данные с новыми значениями и прежними DTO; JPA/Repository/ConductChange/Servlet/Principal/DTO в application запрещены.
 
-TeamAmericanoService.finishTournament пока остаётся единственным production-входом с прежними @Transactional/@ConductChange. В #1405 новая finish-команда будет вызывать уже выделенную position-команду и ranking query в том же write-контексте. Legacy updateTeamPositions — адресный совместимый делегат. Нужны реальные proxy/DI и один EntityManager, а не надежда на аннотацию при self-invocation.
+TeamAmericanoService.finishTournament сохраняет внешний вход с @Transactional/@ConductChange и переводом ошибок и DTO. RoundRobinFinishCommand вызывает position-команду и ranking query в том же write-контексте. Legacy updateTeamPositions служит делегатом для прежних вызовов из обработки счёта.
 
 Начисление/отмена статистики счёта, автозавершение как caller, инициализация/preview/loadPairs/расписание, дополнительные встречи и платформа history/restore остаются в legacy. RoundRobinStandings и другие мосты учитываются по фактическим потребителям и условию удаления. Persistence/web/integrations, generated ranking DTO и физическая PostgreSQL/Swarm не выделяются; #1051 не становится готовой только от двух новых портов.
 

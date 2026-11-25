@@ -1,10 +1,10 @@
 # Контракт первого командного среза
 
-Исходная реализация — master `63dc0611029ec950e1587151b3b8b0cf89e046b6` (production-код совпадает с принятым #1398). Characterization #1403 задаёт требования для #1404/#1405. [Позиции #1404 реализованы](position-command.md); finish-классы/порт ниже остаются контрактом будущей #1405.
+Исходная реализация — master `63dc0611029ec950e1587151b3b8b0cf89e046b6` (production-код совпадает с принятым #1398). Characterization #1403 задаёт требования для #1404/#1405. [Позиции #1404](position-command.md) и [завершение #1405](finish-command.md) используют описанные ниже порты.
 
 ## Сохранение позиций: #1404
 
-В application реализован RoundRobinPositionCommand с write REQUIRED и методом update(Long tournamentId). Существующий TeamAmericanoService.updateTeamPositions сохраняется как совместимый делегат. Вызовы из tryAutoCompleteRound и finish остаются в прежних точках. Самостоятельный update открывает write-транзакцию без истории; вложенный присоединяется к RESULT/FINISH.
+В application реализован RoundRobinPositionCommand с write REQUIRED и методом update(Long tournamentId). Существующий TeamAmericanoService.updateTeamPositions сохраняется как совместимый делегат. tryAutoCompleteRound вызывает прежний делегат, RoundRobinFinishCommand вызывает position bean напрямую. Самостоятельный update открывает write-транзакцию без истории; вложенный присоединяется к RESULT/FINISH.
 
 RoundRobinPositionPort задаёт две операции:
 
@@ -30,7 +30,7 @@ MapStruct маппит entity в минимальные значения; пол
 
 ## Завершение: #1405
 
-RoundRobinFinishCommand с write REQUIRED возвращает собственный RoundRobinRanking. Legacy facade остаётся единственным production-входом с @Transactional/@ConductChange(FINISH); MapStruct DTO и перевод ошибок выполняются внутри этой же внешней транзакции.
+RoundRobinFinishCommand.finish(Long) с write REQUIRED возвращает собственный RoundRobinRanking. Legacy facade остаётся единственным production-входом с @Transactional/@ConductChange(FINISH); MapStruct DTO и перевод ошибок выполняются внутри этой же внешней транзакции.
 
 RoundRobinFinishPort содержит операции по сценарию, а не один вызов старого finish:
 
@@ -43,7 +43,7 @@ boolean hasTeams(Long tournamentId);
 void markFinished(Long tournamentId);
 ```
 
-RoundRobinFinishEvent содержит id и признак cancelled. В приложении не нужна копия всего Tournament/всех enum хранения. Отсутствие события и отказ завершения выражаются собственными типизированными ошибками; они не зависят от старого ResourceNotFoundException/InvalidStateException. Ошибка незавершённого состояния сохраняет числовой remaining, не обрезая его новым max(0,...).
+RoundRobinFinishEvent содержит id и признак cancelled. В приложении не нужна копия всего Tournament/всех enum хранения. RoundRobinNotFound обозначает отсутствие события или результата чтения. RoundRobinFinishCancelled и RoundRobinFinishIncomplete обозначают отказ завершения. Ошибка незавершённого состояния сохраняет числовой remaining, не обрезая его новым max(0,...).
 
 Последовательность в application:
 
@@ -73,6 +73,6 @@ RoundRobinWriteOrderTest фиксирует порядок repository-вызов
 
 После операции полные строки читаются независимо. Наблюдатель транспорта читает estado через отдельное JDBC-соединение: FINALIZADO должен быть уже виден после commit. Проверка конкуренции удерживает первый вызов до query и подтверждает ожидание второго через pg_blocking_pids; после release второй получает stale. Это два контекста одного процесса, не приёмка двух production-реплик #1214.
 
-До включения соответствующего backend PR будущий контракт не объявляется реализованным. #1404 повторяет старые unit/integration/JSON ожидания; #1405 — также fault/key/version/concurrency; #1406 независимо повторяет клиентов и возврат конечного артефакта. Start/score/additional/history и поздняя #1051 сохраняют свои границы.
+Отчёт #1405 фиксирует повтор исходных unit/integration/JSON ожиданий, четырёх отказов, key/version и конкурентного finish. #1406 независимо повторяет клиентские сценарии и возврат конечного артефакта. Start/score/additional/history и поздняя #1051 сохраняют свои границы.
 
 В новых write-тестах при появлении команд допускается адаптация только тестовой сборки DI/подключения наблюдателя к новой границе, без смены ожидаемых мест, I/O, отказов или history/transport-эффектов. Старые 12 read-baseline и 11 JSON не меняются. Исполнитель не заменяет проверку реальных managed-объектов прохождением unit с новым fake-портом.
