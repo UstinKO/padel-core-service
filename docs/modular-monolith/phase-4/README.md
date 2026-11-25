@@ -17,7 +17,7 @@
 | 3 | [#1377](https://github.com/UstinKO/padel-core-service/issues/1377) | backend | Read-модели/порт/query application и wiring | #1376 и результаты #1375 |
 | 4 | [#1378](https://github.com/UstinKO/padel-core-service/issues/1378) | frontend | Независимая клиентская/runtime-приёмка | #1377 |
 
-Спецификации: [координация](../../../specs/features/LFPT-1374-round-robin-application-phase.md), [baseline](../../../specs/done/LFPT-1375-round-robin-query-baseline.md), [итоговые места](../../../specs/done/LFPT-1376-round-robin-final-order-engine.md), [application](../../../specs/done/LFPT-1377-round-robin-application-query.md), [приёмка](../../../specs/done/LFPT-1378-round-robin-application-acceptance.md).
+Спецификации: [координация](../../../specs/done/LFPT-1374-round-robin-application-phase.md), [baseline](../../../specs/done/LFPT-1375-round-robin-query-baseline.md), [итоговые места](../../../specs/done/LFPT-1376-round-robin-final-order-engine.md), [application](../../../specs/done/LFPT-1377-round-robin-application-query.md), [приёмка](../../../specs/done/LFPT-1378-round-robin-application-acceptance.md).
 
 Первый шаг #1375 включён через PR #1379: [application-контракт](application-contract.md), полные wire-эталоны и проверки транзакций уточняют #1377/#1378. Их постановки переведены в approved, зависимости сохранены. В #1376 / PR #1381 выделен final-order engine; в #1377 перенесена read-композиция. Независимая техническая приёмка #1378 принята отдельным завершающим PR #1398; ручные/физические ограничения сохранены. Отдельные PR сохраняют порядок backend → frontend и работоспособность после каждого шага. Переноса application в #1375 нет.
 

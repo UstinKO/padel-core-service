@@ -1,6 +1,10 @@
 # LFPT-1085: Feature плашка Мендосы — добавить событие клика в GA4
 
-[Задача #1085](https://github.com/UstinKO/padel-core-service/issues/1085) дополняет [плашку #992](../done/LFPT-0992-mendoza-home.md).
+## Статус
+
+done
+
+[Задача #1085](https://github.com/UstinKO/padel-core-service/issues/1085) дополняет [плашку #992](LFPT-0992-mendoza-home.md).
 
 - Активация ссылки «Подробнее» на главной отправляет `mendoza_homepage_banner_click` в GA4 основного сайта 1-Padel при действующем согласии на аналитику. Параметры события `campaign_name=mendoza_2026` и `placement=homepage_banner` фиксированы.
 - Ссылка сохраняет локализованный адрес кемпа, UTM и открытие в новой вкладке. Клик работает и без аналитики.

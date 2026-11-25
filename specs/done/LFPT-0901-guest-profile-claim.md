@@ -1,7 +1,7 @@
 # LFPT-0901: Подтверждение гостевого профиля через WhatsApp
 
 ## Статус
-testing
+done
 
 ## Источник
 [GitHub #901](https://github.com/UstinKO/padel-core-service/issues/901) и решение владельца продукта от 12.11.2026.

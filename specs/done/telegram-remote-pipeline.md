@@ -69,7 +69,7 @@ GitHub (padel-core-service) → PR → пользователь ревьюит �
 
 ### Этап 0 — Валидация окружения (блокирующий, ничего дальше не делаем без него) ✅ done
 
-Результат: [specs/done/telegram-remote-pipeline-stage0-validation.md](../done/telegram-remote-pipeline-stage0-validation.md). Docker Hub заблокирован сетевой политикой (не блокер — Postgres поднимается через предустановленный локальный сервис), `./mvnw verify` реально прошёл (50/50), Playwright подтверждён рабочим против localhost. Три поправки к плану внесены (профиль `cloud`, готовность по логу, не Docker для Postgres).
+Результат: [specs/done/telegram-remote-pipeline-stage0-validation.md](telegram-remote-pipeline-stage0-validation.md). Docker Hub заблокирован сетевой политикой (не блокер — Postgres поднимается через предустановленный локальный сервис), `./mvnw verify` реально прошёл (50/50), Playwright подтверждён рабочим против localhost. Три поправки к плану внесены (профиль `cloud`, готовность по логу, не Docker для Postgres).
 
 - **Я:** подготовлю точный текст промпта и (если понадобится) содержимое setup-скрипта для тестового прогона — "подними Postgres через `docker compose`, прогони `./mvnw verify`, пришли результат".
 - **Ты:** создаёшь роутину на `claude.ai/code/routines` (веб-интерфейс, я туда доступа не имею), подключаешь репозиторий `padel-core-service` (GitHub App), настраиваешь окружение (сетевой доступ минимум "Trusted"), вставляешь мой промпт, жмёшь "Run now".
@@ -80,7 +80,7 @@ GitHub (padel-core-service) → PR → пользователь ревьюит �
 
 ### Этап 1 — Адаптация Tester под headless-режим ✅ done
 
-Результат: [specs/done/telegram-remote-pipeline-stage2-e2e-pilot.md](../done/telegram-remote-pipeline-stage2-e2e-pilot.md) (фактически объединился с пилотом целого конвейера — Playwright-режим `tester.md`/`developer.md` проверен не изолированно, а под реальной нагрузкой LFPT-317 в трёх раундах, включая живую регрессию через curl/Playwright и самостоятельное устранение окружных трений тестировщиком). Решение по определению режима: единый файл `tester.md` с веткой `local`/`cloud` внутри, отдельный `tester-cloud.md` не понадобился.
+Результат: [specs/done/telegram-remote-pipeline-stage2-e2e-pilot.md](telegram-remote-pipeline-stage2-e2e-pilot.md) (фактически объединился с пилотом целого конвейера — Playwright-режим `tester.md`/`developer.md` проверен не изолированно, а под реальной нагрузкой LFPT-317 в трёх раундах, включая живую регрессию через curl/Playwright и самостоятельное устранение окружных трений тестировщиком). Решение по определению режима: единый файл `tester.md` с веткой `local`/`cloud` внутри, отдельный `tester-cloud.md` не понадобился.
 
 ### Этап 2 — Telegram-бот и релей ✅ done
 
@@ -96,7 +96,7 @@ GitHub (padel-core-service) → PR → пользователь ревьюит �
 
 ### Этап 4 — Сквозной тест ✅ done
 
-[LFPT-328](../done/LFPT-328-team-americano-flash-messages.md) — первая реальная фича, прошедшая путь Telegram-сообщение → спека → PR [#333](https://github.com/UstinKO/padel-core-service/pull/333) → деплой → архивация целиком через конвейер. Найдены и починены швы по пути (см. Этап 3). Финальная проверка (простое сообщение "тест") прошла уже полностью без участия терминала с обеих сторон — только прод-релей и веб-интерфейс Telegram.
+[LFPT-328](LFPT-328-team-americano-flash-messages.md) — первая реальная фича, прошедшая путь Telegram-сообщение → спека → PR [#333](https://github.com/UstinKO/padel-core-service/pull/333) → деплой → архивация целиком через конвейер. Найдены и починены швы по пути (см. Этап 3). Финальная проверка (простое сообщение "тест") прошла уже полностью без участия терминала с обеих сторон — только прод-релей и веб-интерфейс Telegram.
 
 ### Этап 5 — Перевод в рабочий режим ✅ done
 

@@ -8,7 +8,7 @@ done
 
 ## Источник
 
-[Запрос владельца](../requests/LFPT-1041-modular-monolith-analysis.md), [issue #1041](https://github.com/UstinKO/padel-core-service/issues/1041). Дополнительное требование: каждая реализованная задача сохраняет работоспособность приложения в целом.
+[Запрос владельца](requests/LFPT-1041-modular-monolith-analysis.md), [issue #1041](https://github.com/UstinKO/padel-core-service/issues/1041). Дополнительное требование: каждая реализованная задача сохраняет работоспособность приложения в целом.
 
 ## Контекст / зачем
 
