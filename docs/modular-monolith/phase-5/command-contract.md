@@ -1,10 +1,10 @@
 # Контракт первого командного среза
 
-Исходная реализация — master `63dc0611029ec950e1587151b3b8b0cf89e046b6` (production-код совпадает с принятым #1398). Characterization #1403 задаёт требования для #1404/#1405; перечисленные ниже новые классы/порты **ещё не добавляются в production**.
+Исходная реализация — master `63dc0611029ec950e1587151b3b8b0cf89e046b6` (production-код совпадает с принятым #1398). Characterization #1403 задаёт требования для #1404/#1405. [Позиции #1404 реализованы](position-command.md); finish-классы/порт ниже остаются контрактом будущей #1405.
 
 ## Сохранение позиций: #1404
 
-В application вводится RoundRobinPositionCommand с write REQUIRED и методом update(Long tournamentId). Существующий TeamAmericanoService.updateTeamPositions сохраняется как совместимый делегат. Вызовы из tryAutoCompleteRound и finish остаются в прежних точках. Самостоятельный update открывает write-транзакцию без истории; вложенный присоединяется к RESULT/FINISH.
+В application реализован RoundRobinPositionCommand с write REQUIRED и методом update(Long tournamentId). Существующий TeamAmericanoService.updateTeamPositions сохраняется как совместимый делегат. Вызовы из tryAutoCompleteRound и finish остаются в прежних точках. Самостоятельный update открывает write-транзакцию без истории; вложенный присоединяется к RESULT/FINISH.
 
 RoundRobinPositionPort задаёт две операции:
 
@@ -22,7 +22,7 @@ void savePositions(List<RoundRobinPosition> positions);
 
 Общая чистая RoundRobinStandingsCalculation в application готовит разрешённые входы SETS/POINTS engines и возвращает positions. Read-композиция использует ту же подготовку/вычисление, сопоставляя результат со **своим** rankingTeams; write — со **своим** findByTournamentId. Различие входного порядка не устраняется. Формулы принадлежат engines, расширять allowlist ради legacy helper не требуется.
 
-Legacy-адаптер load читает в порядке: rounds ASC → первый круговой mode/fallback POINTS → teams без ORDER BY → все matches ASC. У standalone update отсутствует проверка существования Tournament/инициализации. Пустой вход даёт пустой saveAll. Для SETS учитываются только COMPLETED circle matches с обоими score; PLACEMENT игнорируется. Общее/личное полное равенство сохраняет разделённые места.
+Legacy-адаптер load читает в порядке: rounds ASC → первый круговой mode/fallback POINTS → teams без ORDER BY → все matches ASC. У standalone update отсутствует проверка существования Tournament/инициализации. Пустой вход даёт пустой saveAll. Для POINTS сохраняется запрос всех matches, но их неиспользуемые значения и gameDifference не вычисляются. Для пустого SETS matches также не материализуются. Для SETS учитываются только COMPLETED circle matches с обоими score; PLACEMENT игнорируется. Общее/личное полное равенство сохраняет разделённые места.
 
 MapStruct маппит entity в минимальные значения; полная read-модель с lazy-профилями не используется как замена минимального position-input. Адаптер применяет только currentPosition к исходным managed-командам и вызывает saveAll в вычисленном порядке. Ссылки по уже загруженным id допустимы внутри того же EntityManager; повторный SELECT, ThreadLocal-кэш или передача entity/Supplier в application не являются способом скрыть потерю контекста.
 

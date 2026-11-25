@@ -1,6 +1,8 @@
 package com.padle.core.padelcoreservice.service.americano;
 
 import com.padle.core.application.roundrobin.RoundRobinRankingQuery;
+import com.padle.core.application.roundrobin.RoundRobinPositionCommand;
+import com.padle.core.padelcoreservice.adapter.roundrobin.LegacyRoundRobinPositionAdapter;
 import com.padle.core.padelcoreservice.dto.americano.RoundRobinAdditionalMatchRequest;
 import com.padle.core.padelcoreservice.dto.americano.TeamAmericanoConfigDto;
 import com.padle.core.padelcoreservice.exception.InvalidStateException;
@@ -102,6 +104,8 @@ class RoundRobinWriteBaselineTest {
     @Autowired TeamAmericanoService service;
     @Autowired RoundRobinAdditionalMatches additional;
     @Autowired RoundRobinRankingQuery query;
+    @Autowired RoundRobinPositionCommand positionCommand;
+    @MockitoSpyBean LegacyRoundRobinPositionAdapter positionAdapter;
     @Autowired TournamentConductHistory history;
     @Autowired TournamentRepository tournaments;
     @Autowired ClubRepository clubs;
@@ -150,6 +154,15 @@ class RoundRobinWriteBaselineTest {
         observe(tournaments, "event");
         observe(rounds, "rounds");
         observe(query, "query");
+        observe(positionCommand, "position-command");
+        doAnswer(invocation -> {
+            captureContext("position-port.load");
+            return invocation.callRealMethod();
+        }).when(positionAdapter).load(any(Long.class));
+        doAnswer(invocation -> {
+            captureContext("position-port.savePositions");
+            return invocation.callRealMethod();
+        }).when(positionAdapter).savePositions(any());
     }
 
     @AfterEach
@@ -468,12 +481,7 @@ class RoundRobinWriteBaselineTest {
         var target = (Advised) bean;
         MethodInterceptor interceptor = invocation -> {
             String method = invocation.getMethod().getName();
-            if (observing) {
-                var holder = (EntityManagerHolder) TransactionSynchronizationManager.getResource(entities.getEntityManagerFactory());
-                assertThat(holder).isNotNull();
-                contexts.add(new Context(name + "." + method, holder.getEntityManager(),
-                        TransactionSynchronizationManager.isCurrentTransactionReadOnly()));
-            }
+            captureContext(name + "." + method);
             if (name.equals("query") && method.equals("ranking")) {
                 if (fault == Fault.QUERY) {
                     failAfterFlush(Fault.QUERY);
@@ -515,11 +523,22 @@ class RoundRobinWriteBaselineTest {
 
     private void assertSingleWriteContext() {
         assertThat(contexts).isNotEmpty();
+        assertThat(contexts).extracting(Context::boundary)
+                .contains("position-command.update", "position-port.load", "position-port.savePositions");
         var first = contexts.element().manager();
         assertThat(contexts).allSatisfy(context -> {
             assertThat(context.manager()).isSameAs(first);
             assertThat(context.readOnly()).isFalse();
         });
+    }
+
+    private void captureContext(String boundary) {
+        if (observing) {
+            var holder = (EntityManagerHolder) TransactionSynchronizationManager.getResource(entities.getEntityManagerFactory());
+            assertThat(holder).isNotNull();
+            contexts.add(new Context(boundary, holder.getEntityManager(),
+                    TransactionSynchronizationManager.isCurrentTransactionReadOnly()));
+        }
     }
 
     private Fixture fixture(int count, RoundRobinScoringMode mode, boolean complete) {
