@@ -41,6 +41,7 @@ public class KingOfCourtViewController {
         model.addAttribute("kingData", viewData);
         model.addAttribute("tournamentId", king.getTournament().getId());
         model.addAttribute("tournamentName", king.getTournament().getNombre());
+        model.addAttribute("analyticsTestTournament", Boolean.TRUE.equals(king.getTournament().getTestTournament()));
         model.addAttribute("isViewer", true);
         model.addAttribute("currentPlayerId", player != null ? player.getId() : null);
         // Видимость колонки «Уровень» в таблицах рейтинга.
@@ -79,6 +80,7 @@ public class KingOfCourtViewController {
         model.addAttribute("kingData", viewData);
         model.addAttribute("tournamentId", tournamentId);
         model.addAttribute("tournamentName", king.getTournament().getNombre());
+        model.addAttribute("analyticsTestTournament", Boolean.TRUE.equals(king.getTournament().getTestTournament()));
         model.addAttribute("isViewer", true);
         model.addAttribute("currentPlayerId", player != null ? player.getId() : null);
         // Видимость колонки «Уровень» в таблицах рейтинга.

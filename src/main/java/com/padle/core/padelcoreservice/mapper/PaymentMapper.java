@@ -1,6 +1,10 @@
 package com.padle.core.padelcoreservice.mapper;
 
 import com.padle.core.padelcoreservice.dto.PaymentDto;
+import com.padle.core.padelcoreservice.dto.PaymentManagementViewDto;
+import com.padle.core.padelcoreservice.model.PlayerPadel;
+import org.mapstruct.BeanMapping;
+import org.mapstruct.MappingTarget;
 import com.padle.core.padelcoreservice.model.Payment;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -20,4 +24,8 @@ public interface PaymentMapper {
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "isActive", constant = "true")
     Payment toEntity(PaymentDto paymentDto);
+    @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "playerPlayingSide", source = "playingSide")
+    void participantSide(PlayerPadel player,
+                         @MappingTarget PaymentManagementViewDto target);
 }

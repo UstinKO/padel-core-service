@@ -16,7 +16,10 @@
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" th:href="@{/css/admin.css}">
     <link rel="stylesheet" th:href="@{/css/payment-management.css}">
+    <link rel="stylesheet" th:href="@{/css/payment-receipts.css}">
     <link rel="stylesheet" th:href="@{/css/team-playoff-player-search.css}">
+    <link rel="stylesheet" th:href="@{/css/solo-roster.css}">
+    <script th:src="@{/js/csrf.js}" defer></script>
 </head>
 <body>
 <header th:replace="~{fragments/admin-header :: header(#{admin.payments.title})}"></header>
@@ -90,6 +93,8 @@
                     </form>
                 </article>
             </section>
+
+            <th:block th:replace="~{fragments/player-telegram :: admin}"></th:block>
 
             <!-- Статистика -->
             <div class="summary-stats" th:if="${players != null and not #lists.isEmpty(players)}">
@@ -174,6 +179,7 @@
                         <i class="fas fa-plus"></i>
                         <span th:text="#{admin.payments.btn.add_team_manual}">+ Agregar pareja manualmente</span>
                     </button>
+                    <button type="button" class="btn-sm btn-success" data-roster-action="ADD" th:text="#{solo.ui.add}"></button>
                 </div>
                 <div id="manualAddTeamForm" style="display:none;border-top:1px solid #e2e8f0">
                     <div class="add-team-form">
@@ -278,7 +284,13 @@
                 </div>
             </div>
 
+            <th:block th:replace="~{fragments/solo-roster :: roster}"></th:block>
+
             <!-- Форма -->
+            <div th:if="${@environment.getProperty('telegram.players.receipts.enabled') == 'true'}">
+                <section th:replace="~{fragments/payment-receipts :: receipts}"></section>
+            </div>
+
             <form th:action="@{'/admin/tournaments/' + ${tournament.id} + '/payments/save'}"
                   method="post"
                   id="paymentForm">
@@ -309,6 +321,7 @@
                         </thead>
                         <tbody>
                         <tr th:each="player, iterStat : ${players}"
+                            th:data-registration-id="${player.registrationId}"
                             th:classappend="${(player.partnerRow ? 'partner-row' : ('pm-' + (player.paymentMethod != null ? #strings.toLowerCase(player.paymentMethod.name()) : 'none'))) + (player.reserve ? ' reserve-row' : '')}">
 
                             <input type="hidden"
@@ -336,6 +349,12 @@
                                        class="fas fa-user-friends pi-icon"
                                        title="Compañero no registrado"></i>
                                     <span class="player-name" th:text="${player.playerName}">Juan Pérez</span>
+                                    <button th:if="${!player.partnerRow}" type="button" hidden
+                                            class="receipt-row-link" th:data-receipt-registration="${player.registrationId}"
+                                            aria-haspopup="dialog" aria-controls="receipt-review-dialog"></button>
+                                    <span th:if="${player.solo}" class="solo-tag"
+                                          th:text="${player.registrationStatus == 'SOLO_SEARCH'} ? #{solo.ui.looking} : (${player.registrationStatus == 'SOLO_ADD_LATER'} ? #{solo.ui.later} : #{solo.ui.needsPartner})"></span>
+                                    <small th:replace="~{fragments/playing-side :: info(${player.playerLevel}, ${player.playerPlayingSide}, true)}"></small>
                                     <!--/* Резерв (WAITLIST) — плашка вместо полного скрытия строки */-->
                                     <span th:if="${player.reserve}" class="badge-in-tournament"
                                           style="background:#fff3cd;color:#92400e;"
@@ -538,5 +557,8 @@
     });
 </script>
 <script th:src="@{/js/payment-management.js}"></script>
+<script th:src="@{/js/payment-receipts.js}"></script>
+<th:block th:replace="~{fragments/playing-side :: assets}"></th:block>
+<th:block th:replace="~{fragments/player-telegram :: assets}"></th:block>
 </body>
 </html>

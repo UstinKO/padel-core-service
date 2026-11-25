@@ -46,7 +46,7 @@ public final class TournamentLevelPolicy {
     }
 
     // Правило применяется только к "простым" категориям, напрямую сопоставимым с уровнем
-    // игрока (Nivel.isPlayerLevel — те же 10 значений, что и PlayerPadel.nivelJugador).
+    // игрока (Nivel.isPlayerLevel — те же значения, что и PlayerPadel.nivelJugador).
     // Диапазоны (C9_C8, D7_D8...), TODOS, PRINCIPIANTES, SUMA_* и D5/D4 (ещё не назначаемые
     // игроку) — структурно "непростые" категории и остаются без ограничения.
     public static boolean requiresLevelCheck(TournamentType tipo, Nivel categoriaNivel) {

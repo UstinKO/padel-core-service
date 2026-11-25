@@ -1,19 +1,17 @@
 package com.padle.core.padelcoreservice.mapper;
 
-import com.padle.core.padelcoreservice.dto.PublicClubResponse;
-import com.padle.core.padelcoreservice.model.Club;
+import com.padle.core.contract.clubs.Club;
+import com.padle.core.application.clubs.PublicClub;
 import org.mapstruct.Mapper;
 import org.mapstruct.Context;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
+import java.net.URI;
+
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR,
+        imports = URI.class)
 public interface PublicClubMapper {
-    @Mapping(target = "name", source = "nombre")
-    @Mapping(target = "address", source = "direccion")
-    @Mapping(target = "city", source = "zonaCiudad")
-    @Mapping(target = "description", source = "descripcion")
-    @Mapping(target = "mapUrl", source = "mapaUrl")
-    @Mapping(target = "canonicalUrl", expression = "java(baseUrl.replaceAll(\"/+$\", \"\") + \"/clubs/\" + club.getId())")
-    PublicClubResponse toPublicDto(Club club, @Context String baseUrl);
+    @Mapping(target = "canonicalUrl", expression = "java(URI.create(baseUrl.replaceAll(\"/+$\", \"\") + \"/clubs/\" + club.id()))")
+    Club toPublicDto(PublicClub club, @Context String baseUrl);
 }

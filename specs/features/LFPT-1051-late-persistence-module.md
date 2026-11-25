@@ -8,7 +8,7 @@ draft
 
 ## Источник
 
-[Issue #1051](https://github.com/UstinKO/padel-core-service/issues/1051), родитель [LFPT-1041](LFPT-1041-modular-monolith-analysis.md), прямое поручение владельца сформировать первую фазу после анализа кода. Техническая постановка из issue, без промежуточного клиентского запроса.
+[Issue #1051](https://github.com/UstinKO/padel-core-service/issues/1051), родитель [LFPT-1041](../done/LFPT-1041-modular-monolith-analysis.md), прямое поручение владельца сформировать первую фазу после анализа кода. Техническая постановка из issue, без промежуточного клиентского запроса.
 
 ## Контекст / зачем
 

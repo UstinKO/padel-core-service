@@ -63,6 +63,15 @@ class TournamentCalendarServiceTest {
     }
 
     @ParameterizedTest
+    @ValueSource(strings = {"ru", "es", "en"})
+    void newRangeIsReadableInEveryCalendarExport(String language) {
+        tournament.setCategoriaNivel("C4_C3");
+        assertThat(service.getEvent(42L, Locale.forLanguageTag(language)).title()).contains("C4/C3");
+        tournament.setCategoriaNivel("C3");
+        assertThat(service.getEvent(42L, Locale.forLanguageTag(language)).title()).contains("C3");
+    }
+
+    @ParameterizedTest
     @EnumSource(TournamentType.class)
     void allFormatsSupportBothEntryModes(TournamentType type) {
         tournament.setTipo(type);

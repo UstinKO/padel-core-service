@@ -1,0 +1,232 @@
+{
+  "task": "LFPT-1201",
+  "testedApplicationRevision": "ad4da10cc2d75a2ade343b570c402d92a64d0eb8",
+  "backendVerify": {
+    "tests": 1118,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 2
+  },
+  "frontend": {
+    "unitTests": 44,
+    "e2eTests": 62,
+    "check": "PASS"
+  },
+  "http": {
+    "result": "PASS",
+    "currentRevision": "ad4da10cc2d75a2ade343b570c402d92a64d0eb8",
+    "currentJarSha256": "a4787cd5468e92efa1e12f70128c05d86d2949f9b73000e14f8392a7c3bd0b8f",
+    "baselineRevision": "8a9ee29e2e29aa60970ad3201455e42da187533e",
+    "baselineJarSha256": "5126f460d3771e22fc7fd7f22922476d5d17138f99d272bf7977f4ff7efd700c",
+    "locales": [
+      "ru",
+      "es",
+      "en"
+    ],
+    "cases": [
+      "list",
+      "full",
+      "nullable",
+      "inactive",
+      "unknown",
+      "zero",
+      "negative",
+      "invalid",
+      "empty"
+    ],
+    "exactHttpJsonHeaders": true,
+    "arrayOrder": "nombre,id",
+    "nullKeysPreserved": true,
+    "privateFieldsAbsent": true,
+    "restart": true,
+    "nativeRollback": true,
+    "schemaAndLiquibasePreserved": true,
+    "clubDataPreserved": true,
+    "tournamentSnapshotsPreserved": 5
+  },
+  "browser": {
+    "normal": {
+      "result": "PASS",
+      "label": "current",
+      "empty": false,
+      "cases": [
+        {
+          "width": 1440,
+          "language": "ru",
+          "listOrder": true,
+          "nullableCard": true,
+          "escapedPublicText": true,
+          "privateFieldsAbsent": true,
+          "canonicalUrl": true,
+          "deepLinkAndRefresh": true,
+          "clubFilter": true,
+          "catalogueToEventToClub": true,
+          "inactiveAndUnknown404": true
+        },
+        {
+          "width": 1440,
+          "language": "es",
+          "listOrder": true,
+          "nullableCard": true,
+          "escapedPublicText": true,
+          "privateFieldsAbsent": true,
+          "canonicalUrl": true,
+          "deepLinkAndRefresh": true,
+          "clubFilter": true,
+          "catalogueToEventToClub": true,
+          "inactiveAndUnknown404": true
+        },
+        {
+          "width": 1440,
+          "language": "en",
+          "listOrder": true,
+          "nullableCard": true,
+          "escapedPublicText": true,
+          "privateFieldsAbsent": true,
+          "canonicalUrl": true,
+          "deepLinkAndRefresh": true,
+          "clubFilter": true,
+          "catalogueToEventToClub": true,
+          "inactiveAndUnknown404": true
+        },
+        {
+          "width": 390,
+          "language": "ru",
+          "listOrder": true,
+          "nullableCard": true,
+          "escapedPublicText": true,
+          "privateFieldsAbsent": true,
+          "canonicalUrl": true,
+          "deepLinkAndRefresh": true,
+          "clubFilter": true,
+          "catalogueToEventToClub": true,
+          "inactiveAndUnknown404": true
+        },
+        {
+          "width": 390,
+          "language": "es",
+          "listOrder": true,
+          "nullableCard": true,
+          "escapedPublicText": true,
+          "privateFieldsAbsent": true,
+          "canonicalUrl": true,
+          "deepLinkAndRefresh": true,
+          "clubFilter": true,
+          "catalogueToEventToClub": true,
+          "inactiveAndUnknown404": true
+        },
+        {
+          "width": 390,
+          "language": "en",
+          "listOrder": true,
+          "nullableCard": true,
+          "escapedPublicText": true,
+          "privateFieldsAbsent": true,
+          "canonicalUrl": true,
+          "deepLinkAndRefresh": true,
+          "clubFilter": true,
+          "catalogueToEventToClub": true,
+          "inactiveAndUnknown404": true
+        }
+      ],
+      "javaScriptErrors": 0,
+      "rateLimitRetries": 0,
+      "externalRequestsBlocked": true
+    },
+    "empty": {
+      "result": "PASS",
+      "label": "current",
+      "empty": true,
+      "cases": [
+        {
+          "width": 1440,
+          "language": "ru",
+          "emptyServerList": true
+        },
+        {
+          "width": 1440,
+          "language": "es",
+          "emptyServerList": true
+        },
+        {
+          "width": 1440,
+          "language": "en",
+          "emptyServerList": true
+        },
+        {
+          "width": 390,
+          "language": "ru",
+          "emptyServerList": true
+        },
+        {
+          "width": 390,
+          "language": "es",
+          "emptyServerList": true
+        },
+        {
+          "width": 390,
+          "language": "en",
+          "emptyServerList": true
+        }
+      ],
+      "javaScriptErrors": 0,
+      "rateLimitRetries": 0,
+      "externalRequestsBlocked": true
+    }
+  },
+  "artifactGuards": {
+    "contract": "PASS",
+    "application": "PASS",
+    "engines": "PASS",
+    "tests": 15
+  },
+  "generator": {
+    "deterministic": true,
+    "classesJava17": 1,
+    "existingProbeTests": 12
+  },
+  "relayTests": 48,
+  "humanManual": "NOT_RUN",
+  "agentBrowser": "AUTOMATED",
+  "privacy": "Полные baseline JSON, runtime и доступы не включены; опубликована только безопасная сводка.",
+  "result": "PASS",
+  "common": {
+    "result": "PASS",
+    "pilotSnapshotsPreservedAcrossCommonSmoke": 5,
+    "clubDataPreserved": true,
+    "schemaAndLiquibasePreserved": true,
+    "tournamentMutationData": "Отдельные preview fixtures участия; пять контрольных турниров не пересоздавались.",
+    "jwt": {
+      "login": 200,
+      "me": 200,
+      "events": 200,
+      "anonymousMe": 401,
+      "transport": "inside-own-preview-container"
+    },
+    "expo": {
+      "ordinaryPreviewApi": 401,
+      "gatewayBasicChallenge": true,
+      "qaAdapterApi": 200,
+      "events": 10,
+      "rendered": true,
+      "externalRequestsBlocked": true,
+      "ordinaryPreviewLimitationPreserved": true
+    },
+    "releaseRehearsal": {
+      "result": "PASS",
+      "scenarios": 5,
+      "statePreserved": true
+    },
+    "legacyReactSessionCsrfRolesParticipation": "PASS",
+    "oldChunkChunkAndReadinessFailuresJournalRecovery": "PASS"
+  },
+  "baselinePrivateJsonSha256": "593a98f844523050bf3b6dcf003ac43ef218b41943d562a3af7f6d4b3701ccc8",
+  "scope": "Техническая приёмка клубного среза агентом; не новый ручной сеанс владельца.",
+  "newProductRegressions": [],
+  "preservedLimitations": [
+    "Expo: обычный preview Basic 401; фактический 200 и расписание через same-origin QA-адаптер.",
+    "Concurrent первой фазы остаётся ACCEPTED_LIMITED; нового измерения перекрытия нет.",
+    "Прежний текстовый дефект #1067 не исправляется приёмкой.",
+    "Chromium при 390 px не является физическим мобильным устройством/VoiceOver."
+  ]
+}

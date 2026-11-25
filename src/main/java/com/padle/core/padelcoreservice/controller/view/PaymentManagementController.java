@@ -127,6 +127,7 @@ public class PaymentManagementController {
 
             boolean hasPaid = row.getPaymentStatus() == PaymentStatus.PAID;
             teamPlayoffService.addTeamFromRegistration(tournamentId, registrationId, hasPaid, row.isAttended());
+            teamPlayoffService.syncPaymentStatusForTournament(tournamentId);
             redirectAttributes.addFlashAttribute("successMessage", "Pagos guardados y equipo agregado al torneo");
         } catch (Exception e) {
             log.error("Error adding team from registration {} for tournament {}", registrationId, tournamentId, e);
@@ -145,7 +146,7 @@ public class PaymentManagementController {
      */
     private void markTeamPlayoffEligibility(Long tournamentId, List<PaymentManagementViewDto> players) {
         players.stream()
-                .filter(p -> p.isMainRow() && !p.isPartnerRow() && p.isDoubleRegistration() && !p.isReserve())
+                .filter(p -> p.isMainRow() && !p.isPartnerRow() && p.isDoubleRegistration() && !p.isReserve() && !p.isSolo())
                 .forEach(p -> {
                     boolean already = teamPlayoffService.isRegisteredAsTeam(tournamentId, p.getPlayerId());
                     p.setCanAddToTeamPlayoff(!already);

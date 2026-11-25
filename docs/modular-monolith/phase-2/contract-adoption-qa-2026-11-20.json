@@ -1,0 +1,221 @@
+{
+  "task": "LFPT-1200",
+  "date": "2026-11-20",
+  "implementationRevision": "7d13bf9420fb1265334c5b30a0450cbb1a3114b9",
+  "backendVerify": {
+    "tests": 1118,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 2,
+    "contract": 4,
+    "engines": 10,
+    "application": 3,
+    "bootstrap": 1101
+  },
+  "artifactGuardTests": 5,
+  "relayTests": 48,
+  "generation": {
+    "deterministic": true,
+    "javaFiles": 1,
+    "bytecodeRelease": 17,
+    "clubJavaSha256": "f31a2f5d57e1bb161058481eb45da0bbd1d57d86558e99a50bc2561e1a4e1425"
+  },
+  "existingProbe": {
+    "result": "PASS",
+    "tests": 12,
+    "deterministic": true,
+    "expectedUpstreamFailuresPreserved": true
+  },
+  "runtimeCompare": {
+    "result": "PASS",
+    "currentRevision": "7d13bf9420fb1265334c5b30a0450cbb1a3114b9",
+    "previousRevision": "930c56056d0e102ad02e820ca85d376e80d247c1",
+    "currentJarSha256": "b31648aa1333f85b09dc872f3ff54f3dd8c238756d73e0e215a5bf6ef3c3aa6f",
+    "previousJarSha256": "0b9dbea3d26c13a423d0767a333ec96ed9c8381112a30b9b9ca2d3ff214d0751",
+    "locales": [
+      "ru",
+      "es",
+      "en"
+    ],
+    "comparedCases": [
+      "list",
+      "card",
+      "unknown",
+      "invalid"
+    ],
+    "sameHttpJsonHeaders": true,
+    "nativeRollback": true,
+    "snapshotsPreserved": 5,
+    "schemaAndLiquibasePreserved": true
+  },
+  "browser": {
+    "result": "PASS",
+    "cases": [
+      {
+        "width": 1440,
+        "language": "ru",
+        "list": true,
+        "card": true,
+        "refresh": true,
+        "clubFilter": true
+      },
+      {
+        "width": 1440,
+        "language": "es",
+        "list": true,
+        "card": true,
+        "refresh": true,
+        "clubFilter": true
+      },
+      {
+        "width": 1440,
+        "language": "en",
+        "list": true,
+        "card": true,
+        "refresh": true,
+        "clubFilter": true
+      },
+      {
+        "width": 390,
+        "language": "ru",
+        "list": true,
+        "card": true,
+        "refresh": true,
+        "clubFilter": true
+      },
+      {
+        "width": 390,
+        "language": "es",
+        "list": true,
+        "card": true,
+        "refresh": true,
+        "clubFilter": true
+      },
+      {
+        "width": 390,
+        "language": "en",
+        "list": true,
+        "card": true,
+        "refresh": true,
+        "clubFilter": true
+      }
+    ],
+    "javaScriptErrors": 0
+  },
+  "productionDockerfile": {
+    "result": "PASS",
+    "javaVersion": 21,
+    "jarSha256": "d233d9ed4589896c96450b46c7f3a32565b17dae904c590959473d5a2593eb24",
+    "contractGuard": "PASS",
+    "applicationGuard": "PASS",
+    "engineGuard": "PASS"
+  },
+  "documentation": {
+    "docsDrift": 0,
+    "agentMigration": 0
+  },
+  "manualAcceptance": "Не выполнялась; независимая #1201 остаётся отдельной задачей.",
+  "result": "PASS",
+  "commonRuntimeSmoke": {
+    "artifactVerified": true,
+    "result": "PASS",
+    "cases": [
+      {
+        "key": "qualified-8",
+        "result": "PASS",
+        "knownDefect": null
+      },
+      {
+        "key": "qualified-9",
+        "result": "PASS",
+        "knownDefect": 1067
+      },
+      {
+        "key": "qualified-16",
+        "result": "PASS",
+        "knownDefect": null
+      }
+    ],
+    "security": {
+      "ownAdmin": 200,
+      "foreignAdmin": 403,
+      "anonymousAdmin": 302,
+      "missingCsrf": 403,
+      "foreignMutation": 403,
+      "publicCard": 200,
+      "unchanged": true
+    },
+    "stale": {
+      "staleVersion": {
+        "status": 302,
+        "staleHeader": true
+      },
+      "stalePair": {
+        "status": 200,
+        "success": false
+      },
+      "unchangedAfterRefusal": true,
+      "regeneratePreservedPairs": true
+    },
+    "realtime": {
+      "legacySubscription": true,
+      "publicSubscription": true,
+      "legacyMessage": true,
+      "publicInvalidation": true,
+      "bothViewsUpdated": true,
+      "repeated": {
+        "status": 200,
+        "success": false,
+        "replayHeader": true
+      },
+      "concurrentSameKey": {
+        "accepted": 1,
+        "rejected": 1
+      },
+      "restorePreservedLinksAndResult": true,
+      "restoreLegacyMessage": true,
+      "restorePublicInvalidation": true,
+      "restoreBothViewsUpdated": true,
+      "restoreIdsPreserved": true,
+      "reactRestoreWithoutNavigation": true
+    },
+    "qualificationBoundary": {
+      "blockedBeforeQualification": true,
+      "directPostUnchanged": true,
+      "invalidScoreNotSent": true,
+      "missingCsrfRejected": {
+        "status": 302,
+        "destination": "/error/403"
+      },
+      "noStartAfterRefusal": true,
+      "startWithoutNavigation": true,
+      "allTeamsSeededAfterQualification": true,
+      "finished": true
+    },
+    "jwt": {
+      "login": 200,
+      "me": 200,
+      "events": 200,
+      "anonymousMe": 401,
+      "transport": "inside-own-preview-container"
+    },
+    "expo": {
+      "ordinaryPreviewApi": 401,
+      "gatewayBasicChallenge": true,
+      "qaAdapterApi": 200,
+      "events": 10,
+      "rendered": true,
+      "externalRequestsBlocked": true,
+      "ordinaryPreviewLimitationPreserved": true
+    }
+  },
+  "releaseRehearsal": {
+    "result": "PASS",
+    "snapshotsPreserved": 5,
+    "statePreserved": true,
+    "twoReleases": true,
+    "oldLazyChunk": true,
+    "chunkAndReadinessHttpFailures": true,
+    "rollbackAndJournalRecovery": true
+  }
+}

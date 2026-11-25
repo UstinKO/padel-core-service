@@ -1630,6 +1630,20 @@ textarea.form-control {
     transition: opacity .2s;
 }
 .lp-propose-btn:disabled { opacity: .6; cursor: not-allowed; }
+@media (max-width: 600px) {
+    .lp-card {
+        display: grid;
+        grid-template-columns: 1.25rem minmax(0, 1fr);
+        align-items: start;
+        gap: .55rem .65rem;
+        padding: .75rem;
+    }
+    .lp-card > i { grid-column: 1; grid-row: 1; margin-top: .15rem; }
+    .lp-card-person { grid-column: 2; min-width: 0; overflow-wrap: anywhere; }
+    .lp-card-nivel { font-size: .875rem; }
+    .lp-card-contacts { grid-column: 2; flex-wrap: wrap; }
+    .lp-propose-btn { grid-column: 2; justify-content: center; min-height: 44px; width: 100%; }
+}
 .lp-no-contact-hint {
     position: relative;
     display: inline-flex; align-items: center;

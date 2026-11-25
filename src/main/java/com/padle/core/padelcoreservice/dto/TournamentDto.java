@@ -66,6 +66,7 @@ public class TournamentDto {
     private LocalDateTime updatedAt;
     private Long createdBy;
     private Boolean isActive;
+    private Boolean testTournament;
     private Boolean mostrarNivel;
     private TournamentVisibility visibilidad;
 

@@ -1,5 +1,7 @@
 package com.padle.core.padelcoreservice.dto;
 
+import com.padle.core.padelcoreservice.model.enums.PlayingSide;
+
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.padle.core.padelcoreservice.model.enums.Nivel;
 import lombok.AllArgsConstructor;
@@ -38,4 +40,6 @@ public class PlayerResponseDto {
     private String nombreCompleto;
 
     private Nivel nivelJugador;
+
+    private PlayingSide playingSide;
 }

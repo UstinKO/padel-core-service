@@ -10,7 +10,7 @@
     <meta name="description" content="1-Padel - Todos los torneos de pádel">
     <meta name="theme-color" content="#FF6B35">
     <!-- ✅ ИСПРАВЛЕНО: Padel Core → 1-Padel -->
-    <title th:text="#{torneos.title}">Todos los Torneos | 1-Padel</title>
+    <title th:text="#{public_calendar.page_title}">Todos los Torneos | 1-Padel</title>
 
     <!-- ✅ ДОБАВЛЕН Favicon -->
     <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
@@ -26,6 +26,7 @@
     <!-- Custom Styles -->
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" th:href="@{/css/torneos.css}">
+    <link rel="stylesheet" th:href="@{/css/public-event-calendar.css}">
     <th:block th:replace="~{fragments/analytics :: ga4}"></th:block>
     <th:block th:replace="~{fragments/analytics :: cookie-consent}"></th:block>
     <th:block th:replace="~{fragments/analytics :: clarity}"></th:block>
@@ -42,7 +43,7 @@
                 <span class="navbar-brand-text">1-<span class="brand-highlight">PADEL</span></span>
             </a>
 
-            <button class="navbar-toggler" id="navbarToggler" type="button">
+            <button class="navbar-toggler" id="navbarToggler" type="button" th:aria-label="#{public_calendar.menu}">
                 <span class="navbar-toggler-icon"></span>
                 <span class="navbar-toggler-icon"></span>
                 <span class="navbar-toggler-icon"></span>
@@ -54,7 +55,7 @@
                         <a href="/" class="nav-link" th:text="#{nav.home}">Inicio</a>
                     </li>
                     <li class="nav-item">
-                        <a href="/torneos" class="nav-link active" th:text="#{nav.torneos}">Torneos</a>
+                        <a href="/torneos" class="nav-link active" th:text="#{public_calendar.calendar}">Torneos</a>
                     </li>
                     <li class="nav-item">
                         <a href="/ranking" class="nav-link" th:text="#{nav.ranking}">Ranking</a>
@@ -94,132 +95,60 @@
     </div>
 </header>
 
-<main class="torneos-main">
+<main class="torneos-main pc" id="publicCalendar">
     <div class="container">
-        <!-- Cabecera de la página -->
-        <div class="page-header">
-            <h1 class="page-title">
-                <i class="fas fa-trophy"></i>
-                <span th:text="#{torneos.heading}">Todos los Torneos</span>
-            </h1>
-            <p class="page-description" th:text="#{torneos.description}">
-                Explora todos los torneos disponibles y encuentra el perfecto para ti
-            </p>
+        <div class="pc-heading">
+            <h1><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M16 3v4M8 3v4M3 11h18"/></svg><span th:text="#{public_calendar.heading}">Calendario de eventos</span></h1>
+            <button type="button" class="pc-button pc-icon-button" id="pcShare" th:aria-label="#{public_calendar.share}" th:title="#{public_calendar.share}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7 .2l3-3a5 5 0 0 0-7-7l-2 2M14 11a5 5 0 0 0-7-.2l-3 3a5 5 0 0 0 7 7l2-2"/></svg></button>
         </div>
-
-        <!-- Filtros mejorados -->
-        <div class="filters-card">
-            <div class="filters-header">
-                <h3>
-                    <i class="fas fa-sliders-h"></i>
-                    <span th:text="#{filter.title}">Filtros de búsqueda</span>
-                </h3>
-                <span class="filters-toggle" id="filtersToggle">
-                    <i class="fas fa-chevron-up"></i>
-                    <span th:text="#{filter.hide}">Ocultar filtros</span>
-                </span>
+        <div class="pc-format-tabs" role="group" th:aria-label="#{public_calendar.format}">
+            <button type="button" data-quick-format="" aria-pressed="true" th:text="#{public_calendar.all}"></button>
+            <button type="button" data-quick-format="TOURNAMENTS" aria-pressed="false" th:text="#{public_calendar.tournaments}"></button>
+            <button type="button" data-quick-format="PADEL_CLINIC" aria-pressed="false" th:text="#{public_calendar.training}"></button>
+            <button type="button" data-quick-format="CANCHA_ABIERTA" aria-pressed="false" th:text="#{public_calendar.format.CANCHA_ABIERTA}"></button>
+        </div>
+        <span id="pcShareNotice" class="pc-sr-only" role="status"></span>
+        <input id="pcShareField" class="pc-share-field" readonly hidden th:aria-label="#{public_calendar.share}">
+        <div class="pc-filters">
+            <div class="pc-filter-main">
+                <label class="pc-level"><span th:text="#{public_calendar.level}"></span><select data-filter="level"></select></label>
+                <button type="button" class="pc-button pc-extra-toggle" id="pcFiltersToggle" aria-expanded="false" aria-controls="pcExtra" th:text="#{public_calendar.filters}"></button>
+                <label class="pc-mine" id="pcMineLabel" hidden><input type="checkbox" id="pcMine"><span th:text="#{public_calendar.mine}"></span></label>
             </div>
-
-            <form id="filterForm" class="filters-form" onsubmit="return false;">
-                <div class="filters-grid">
-                    <div class="filter-group">
-                        <label for="generoFilter" class="filter-label">
-                            <i class="fas fa-venus-mars"></i> <span th:text="#{filter.genero}">Género</span>
-                        </label>
-                        <select id="generoFilter" class="filter-select">
-                            <option value="todos" th:text="#{filter.genero.all}">Todos</option>
-                            <option value="MASCULINO" th:text="#{filter.genero.m}">Masculino</option>
-                            <option value="FEMENINO" th:text="#{filter.genero.f}">Femenino</option>
-                            <option value="MIXTO" th:text="#{filter.genero.mix}">Mixto</option>
-                        </select>
-                    </div>
-
-                    <div class="filter-group">
-                        <label for="nivelFilter" class="filter-label">
-                            <i class="fas fa-chart-line"></i> <span th:text="#{filter.nivel}">Nivel</span>
-                        </label>
-                        <select id="nivelFilter" class="filter-select">
-                            <option value="todos" th:text="#{filter.nivel.all}">Todos</option>
-                            <option value="C9">C9 (Principiante)</option>
-                            <option value="C8">C8 (Intermedio)</option>
-                            <option value="C7">C7 (Avanzado)</option>
-                            <option value="C6">C6 (Profesional)</option>
-                            <option value="C5">C5 (Élite)</option>
-                        </select>
-                    </div>
-
-                    <div class="filter-group">
-                        <label for="tipoFilter" class="filter-label">
-                            <i class="fas fa-users"></i> <span th:text="#{filter.tipo}">Tipo</span>
-                        </label>
-                        <select id="tipoFilter" class="filter-select">
-                            <option value="todos" th:text="#{filter.tipo.all}">Todos</option>
-                            <option value="KING_OF_COURT" th:text="#{filter.tipo.koc}">King of Court</option>
-                            <option value="AMERICANO" th:text="#{filter.tipo.americano}">Americano</option>
-                            <option value="AMERICANO_TEAMS" th:text="#{filter.tipo.americano_teams}">Americano Equipos</option>
-                            <option value="CANCHA_ABIERTA" th:text="#{filter.tipo.cancha_abierta}">Cancha Abierta</option>
-                            <option value="PADEL_CLINIC" th:text="#{filter.tipo.padel_clinic}">Clínica de pádel</option>
-                        </select>
-                    </div>
-
-                    <div class="filter-group">
-                        <label for="estadoFilter" class="filter-label">
-                            <i class="fas fa-info-circle"></i> <span th:text="#{filter.estado}">Estado</span>
-                        </label>
-                        <select id="estadoFilter" class="filter-select">
-                            <option value="todos" th:text="#{filter.estado.all}">Todos</option>
-                            <option value="REGISTRO_ABIERTO" th:text="#{filter.estado.open}">Inscripción abierta</option>
-                            <option value="PUBLICADO" th:text="#{filter.estado.upcoming}">Próximamente</option>
-                            <option value="CERRADO" th:text="#{filter.estado.closed}">Cerrado</option>
-                            <option value="FINALIZADO" th:text="#{filter.estado.finished}">Finalizado</option>
-                        </select>
-                    </div>
-
-                    <div class="filter-group filter-group-button">
-                        <button type="button" id="applyFilters" class="btn btn-primary btn-block">
-                            <i class="fas fa-search"></i> <span th:text="#{filter.apply}">Aplicar filtros</span>
-                        </button>
-                    </div>
-
-                    <div class="filter-group filter-group-button">
-                        <button type="button" id="clearFilters" class="btn btn-outline btn-block">
-                            <i class="fas fa-undo"></i> <span th:text="#{filter.clear}">Limpiar</span>
-                        </button>
-                    </div>
-                </div>
-            </form>
+            <div class="pc-extra" id="pcExtra" data-collapsed="true">
+                <label><span th:text="#{public_calendar.format}"></span><select data-filter="format"></select></label>
+                <label><span th:text="#{public_calendar.club}"></span><select data-filter="clubId"></select></label>
+                <label><span th:text="#{public_calendar.organizer}"></span><select data-filter="organizerId"></select></label>
+                <label><span th:text="#{public_calendar.gender}"></span><select data-filter="gender"></select></label>
+                <label><span th:text="#{public_calendar.status}"></span><select data-filter="status"></select></label>
+            </div>
         </div>
-
-        <!-- Contador de resultados -->
-        <div class="results-counter">
-            <span th:text="#{torneos.results.showing}">Mostrando</span> <span id="visibleCount">0</span> <span th:text="#{torneos.results.of}">de</span> <span id="totalCount">0</span> <span th:text="#{torneos.results.tournaments}">torneos</span>
+        <div id="pcActiveRow" class="pc-active-row" hidden><div id="pcActiveFilters" class="pc-active-filters" aria-live="polite"></div><button type="button" class="pc-button" id="pcReset" th:text="#{public_calendar.reset}"></button></div>
+        <div id="pcNotice" class="pc-message" role="status" aria-live="polite" th:text="#{public_calendar.loading}"></div>
+        <div id="pcPersonalNotice" class="pc-message pc-error" role="status" hidden></div>
+        <button type="button" class="pc-button" id="pcRetry" hidden th:text="#{public_calendar.retry}"></button>
+        <div id="pcContent" hidden>
+            <div id="pcCalendar" class="pc-layout">
+                <section class="pc-month" th:aria-label="#{public_calendar.calendar}">
+                    <div class="pc-nav">
+                        <h2 id="pcMonthTitle"></h2>
+                        <div class="pc-tools">
+                            <button type="button" class="pc-button" id="pcPrevious" th:aria-label="#{public_calendar.previous}">‹</button>
+                            <button type="button" class="pc-button" id="pcToday" th:text="#{public_calendar.today}"></button>
+                            <button type="button" class="pc-button" id="pcNext" th:aria-label="#{public_calendar.next}">›</button>
+                        </div>
+                    </div>
+                    <div class="pc-weekdays" id="pcWeekdays" aria-hidden="true"></div>
+                    <div class="pc-grid" id="pcGrid" role="group" aria-labelledby="pcMonthTitle"></div>
+                    <p class="pc-legend" th:text="#{public_calendar.legend}"></p>
+                </section>
+                <section class="pc-day-list" id="pcDayList" aria-labelledby="pcDayTitle" tabindex="-1">
+                    <h2 id="pcDayTitle"></h2><p class="pc-count" id="pcDayCount" aria-live="polite"></p>
+                    <div id="pcDayEvents"></div>
+                </section>
+            </div>
         </div>
-
-        <!-- Grid de Torneos -->
-        <div class="torneos-grid" id="torneosGrid">
-            <!-- Los torneos se renderizarán aquí mediante JavaScript -->
-        </div>
-
-        <!-- Mensaje cuando no hay torneos -->
-        <div class="empty-state" id="noTournamentsMessage" style="display: none;">
-            <i class="fas fa-calendar-times empty-icon"></i>
-            <h3 th:text="#{filter.empty.title}">No hay torneos con esos filtros</h3>
-            <p th:text="#{filter.empty.desc}">Prueba con otros criterios de búsqueda</p>
-            <button class="btn btn-primary" id="clearFiltersEmpty">
-                <i class="fas fa-undo"></i> <span th:text="#{filter.clear}">Limpiar filtros</span>
-            </button>
-        </div>
-
-        <!-- Paginación (opcional) -->
-        <div class="pagination" id="pagination" style="display: none;">
-            <button class="pagination-prev" id="paginationPrev" disabled>
-                <i class="fas fa-chevron-left"></i> <span th:text="#{torneos.pagination.prev}">Anterior</span>
-            </button>
-            <div class="pagination-pages" id="paginationPages"></div>
-            <button class="pagination-next" id="paginationNext">
-                <span th:text="#{torneos.pagination.next}">Siguiente</span> <i class="fas fa-chevron-right"></i>
-            </button>
-        </div>
+        <noscript><p th:text="#{public_calendar.javascript}"></p></noscript>
     </div>
 </main>
 
@@ -319,18 +248,12 @@
 <script th:src="@{/js/logger.js}"></script>
 <script th:src="${'/js/i18n/messages-' + #locale.language + '.js'}"></script>
 <script th:src="@{/js/i18n/t.js}"></script>
-<script th:inline="javascript">
-    /*<![CDATA[*/
-    var tournamentData = /*[(${tournamentsJson})]*/ [];
-    var isAuthenticated = /*[(${isAuthenticated})]*/ false;
-    console.log('🏆 Torneos cargados:', tournamentData.length);
-    console.log('🔐 Usuario autenticado:', isAuthenticated);
-    /*]]>*/
-</script>
+
 
 <!-- JavaScript -->
 <script th:src="@{/js/main.js}"></script>
 <script th:src="@{/js/registration-tracking.js}"></script>
-<script th:src="@{/js/torneos.js}"></script>
+<script th:src="@{/js/level-utils.js}"></script>
+<script type="module" th:src="@{/js/public-event-calendar.mjs}"></script>
 </body>
 </html>

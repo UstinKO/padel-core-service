@@ -42,3 +42,7 @@ bash docs/frontend-react/contract/tools/run.sh   # из корня репози�
 - `gen_api.py` — таблица существующих эндпоинтов; результат вклеивается в `api.md` §1 вручную (остальные разделы `api.md` — ручные).
 
 Скрипты — эвристика на регулярках, не парсер Java: после перегенерации пролистать дифф глазами.
+
+## Источник клубного OpenAPI
+
+Клубные paths и схемы Club/Problem в `public-discovery.openapi.json` — совместимое представление [канонического источника](../../../padel-api-contract/src/main/openapi/public-clubs.openapi.json). Клубный раздел редактируется только в contract-модуле; остальные разделы discovery пока остаются здесь. Прямое чтение прежнего JSON сохраняется. После правки источника выполните `python3 .github/bin/sync-public-club-contract.py --write`; проверка без `--write`, Maven verify и frontend job PR Check отклоняют расхождения. [Параметры генерации, владельцы и границы](../../modular-monolith/phase-2/contract-adoption.md).

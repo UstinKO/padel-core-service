@@ -2,6 +2,7 @@ package com.padle.core.padelcoreservice.controller.api;
 
 import com.padle.core.padelcoreservice.model.*;
 import com.padle.core.padelcoreservice.model.enums.Nivel;
+import com.padle.core.padelcoreservice.model.enums.PlayingSide;
 import com.padle.core.padelcoreservice.repository.*;
 import com.padle.core.padelcoreservice.service.*;
 import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2User;
@@ -48,6 +49,19 @@ class AccountIntegrationTest {
     private String update(PlayerPadel p) {
         return "{\"nombre\":\"Changed\",\"apellido\":\"Garcia\",\"email\":\""+p.getEmail()+"\",\"telefono\":\"\",\"telegramUsername\":\""+p.getTelegramUsername()+"\",\"nivelJugador\":\"C7\",\"preferredLocale\":\"ru\"}";
     }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"C3", "С3"})
+    void signupKeepsTheCanonicalNewLevel(String level) throws Exception {
+        when(captcha.verify(null)).thenReturn(true);
+        String address = UUID.randomUUID()+"@gmail.com";
+        mvc.perform(post("/players/registro").with(csrf())
+                        .param("nombre", "Учебный").param("apellido", "Участник")
+                        .param("email", address).param("nivelJugador", level).param("telefono", "+5491199994567")
+                        .param("password", "Fixture-Password1!").param("confirmPassword", "Fixture-Password1!"))
+                .andExpect(status().is3xxRedirection());
+        assertThat(players.findByEmail(address)).get().extracting(PlayerPadel::getNivelJugador).isEqualTo(Nivel.C3);
+    }
     @Test
     void webSignupRequiresPhoneEvenWhenTelegramIsPresent() throws Exception {
         when(captcha.verify(null)).thenReturn(true);
@@ -76,19 +90,21 @@ class AccountIntegrationTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"011 15-6100-8899,AR,+5491161008899", "8 (912) 555-11-99,RU,+79125551199"})
-    void webSignupReturnsToTournamentAndNormalizesPhone(String phone, String country, String normalized) throws Exception {
+    @CsvSource({"011 15-6100-8899,AR,+5491161008899,LEFT", "8 (912) 555-11-99,RU,+79125551199,RIGHT", "+79125551201,AR,+79125551201,EITHER"})
+    void webSignupReturnsToTournamentAndNormalizesPhone(String phone, String country, String normalized, PlayingSide side) throws Exception {
         when(captcha.verify(null)).thenReturn(true);
         var address = UUID.randomUUID() + "@gmail.com";
         mvc.perform(post("/players/registro").with(csrf())
                         .param("nombre", "Maria").param("apellido", "Garcia").param("email", address)
                         .param("nivelJugador", "C7").param("telefono", phone).param("phoneCountry", country)
+                        .param("playingSide", side.name())
                         .param("tournamentId", "48").param("destination", "https://example.org/")
                         .param("password", "Fixture-Password1!").param("confirmPassword", "Fixture-Password1!"))
                 .andExpect(redirectedUrl("/torneo/48#tournament-registration"));
         var saved = players.findByEmail(address).orElseThrow();
         assertThat(saved.getTelefono()).isEqualTo(normalized);
         assertThat(saved.getNivelJugador()).isEqualTo(Nivel.C7);
+        assertThat(saved.getPlayingSide()).isEqualTo(side);
         assertThat(saved.getTelegramUsername()).isNull();
     }
 
@@ -114,6 +130,7 @@ class AccountIntegrationTest {
         var result = mvc.perform(post("/players/registro").with(csrf())
                         .param("nombre", "Maria").param("apellido", "Garcia").param("email", address)
                         .param("nivelJugador", "C7").param("telefono", "123").param("phoneCountry", "RU")
+                        .param("playingSide", "LEFT")
                         .param("tournamentId", "48")
                         .param("password", "Fixture-Password1!").param("confirmPassword", "Fixture-Password1!"))
                 .andExpect(view().name("registro"))
@@ -122,6 +139,7 @@ class AccountIntegrationTest {
         var input = (RegistroRequestDto) result.getModelAndView().getModel().get("registroRequest");
         assertThat(input.getPhoneCountry()).isEqualTo("RU");
         assertThat(input.getTelefono()).isEqualTo("123");
+        assertThat(input.getPlayingSide()).isEqualTo(PlayingSide.LEFT);
         assertThat(input.getPassword()).isNull();
         assertThat(input.getConfirmPassword()).isNull();
         assertThat(players.existsByEmail(address)).isFalse();

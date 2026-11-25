@@ -1,5 +1,7 @@
 package com.padle.core.padelcoreservice.dto;
 
+import com.padle.core.padelcoreservice.model.enums.PlayingSide;
+
 import com.padle.core.padelcoreservice.model.enums.PaymentMethod;
 import com.padle.core.padelcoreservice.model.enums.PaymentStatus;
 import lombok.Data;
@@ -56,4 +58,10 @@ public class PaymentManagementViewDto {
 
     /** true — регистрация в резерве (WAITLIST), а не в основном составе. */
     private boolean isReserve;
+
+    private boolean solo;
+    private String registrationStatus;
+    private String playerLevel;
+
+    private PlayingSide playerPlayingSide;
 }

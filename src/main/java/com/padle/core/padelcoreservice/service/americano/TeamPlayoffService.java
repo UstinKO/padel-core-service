@@ -1,5 +1,7 @@
 package com.padle.core.padelcoreservice.service.americano;
 
+import com.padle.core.padelcoreservice.mapper.TeamPlayingSideMapper;
+
 import com.padle.core.padelcoreservice.dto.americano.AmericanoMatchDto;
 import com.padle.core.padelcoreservice.service.americano.EarlyPlayoffSeeding.Fixture;
 import com.padle.core.padelcoreservice.service.americano.EarlyPlayoffSeeding.Pair;
@@ -26,6 +28,7 @@ import com.padle.core.padelcoreservice.repository.americano.AmericanoMatchReposi
 import com.padle.core.padelcoreservice.repository.americano.AmericanoRoundRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoTeamRepository;
 import com.padle.core.padelcoreservice.service.PlayerService;
+import com.padle.core.padelcoreservice.service.SoloRosterTeams;
 import com.padle.core.padelcoreservice.service.RegistrationPairPositions;
 import com.padle.core.padelcoreservice.service.WebSocketService;
 import com.padle.core.padelcoreservice.service.conduct.ConductChange;
@@ -53,6 +56,7 @@ public class TeamPlayoffService {
     /** Совпадает с DEFAULT в колонке americano_rounds_db.courts (v1.23) — используется, когда раунд создаётся лениво без явного числа кортов. */
     private static final int DEFAULT_COURTS = 2;
 
+    private final TeamPlayingSideMapper playingSideMapper;
     private final TournamentRepository tournamentRepository;
     private final AmericanoTeamRepository teamRepository;
     private final AmericanoRoundRepository roundRepository;
@@ -62,6 +66,7 @@ public class TeamPlayoffService {
     private final TournamentRegistrationRepository registrationRepository;
     private final WebSocketService webSocketService;
     private final PlayoffMatchingEngine matchingEngine;
+    private final SoloRosterTeams soloRosterTeams;
 
     public HistoricalParticipant historicalParticipant(Long matchId, int side) {
         AmericanoMatch match = getHistoricalMatch(matchId);
@@ -158,6 +163,10 @@ public class TeamPlayoffService {
         Tournament tournament = tournamentRepository.lockById(tournamentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tournament not found: " + tournamentId));
         validateTournamentType(tournament);
+        if (roundRepository.existsByTournamentIdAndPhaseIsNull(tournamentId)) {
+            throw new InvalidStateException("round_robin.error.format");
+        }
+
 
         PlayerPadel player1 = resolvePlayerForNewTeam(req.getPlayer1Id(), req.getPlayer1Nombre(),
                 req.getPlayer1Apellido(), req.getPlayer1Telefono(), "Jugador 1");
@@ -398,6 +407,10 @@ public class TeamPlayoffService {
     @Transactional
     @ConductChange(ConductChange.Action.QUALIFICATION)
     public AmericanoRound initQualification(Long tournamentId, int courts) {
+        if (roundRepository.existsByTournamentIdAndPhaseIsNull(tournamentId)) {
+            throw new InvalidStateException("round_robin.error.format");
+        }
+
         Tournament tournament = getTournament(tournamentId);
         validateTournamentType(tournament);
 
@@ -1868,12 +1881,13 @@ public class TeamPlayoffService {
     }
 
     /**
-     * Единственное условие "команда может играть матч прямо сейчас" — явка (attended).
+     * Готовая команда может играть после отметки явки обоих участников.
      * Оплата (hasPaid) — информационное поле в таблице команд и на доступность не влияет:
      * координатор отмечает присутствие по факту в день турнира.
      */
     private boolean isAttended(AmericanoTeam t) {
-        return Boolean.TRUE.equals(t.getAttended());
+        return Boolean.TRUE.equals(t.getAttended()) && (t.getPlayer2() != null
+                || (t.getPlayer2Name() != null && !t.getPlayer2Name().isBlank()));
     }
 
     private void validateCourtFree(Long tournamentId, int courtNumber) {
@@ -2508,6 +2522,7 @@ public class TeamPlayoffService {
         List<TournamentRegistration> allRegs = registrationRepository
                 .findByTournamentIdOrderByPositionAscWaitlistPositionAsc(tournamentId)
                 .stream()
+                .filter(r -> Boolean.TRUE.equals(r.getIsActive()))
                 .filter(r -> Boolean.TRUE.equals(r.getIsDoubleRegistration())
                         && (r.getStatus() == RegistrationStatus.CONFIRMED
                         || r.getStatus() == RegistrationStatus.PARTNER_INVITED
@@ -2542,6 +2557,7 @@ public class TeamPlayoffService {
             // и повторной регистрации) — проверяем и партнёра, чтобы не создать дубль команды.
             Long partnerId = partnerReg != null ? partnerReg.getPlayer().getId()
                     : (mainReg.getPartner() != null ? mainReg.getPartner().getId() : null);
+            if (partnerId == null && (mainReg.getPartnerFirstName() == null || mainReg.getPartnerFirstName().isBlank())) continue;
             if (isPlayerAlreadyOnActiveTeam(tournamentId, partnerId)) {
                 log.warn("Skipping import of pair (main player {}) for tournament {}: partner {} already on another team",
                         mainPlayerId, tournamentId, partnerId);
@@ -2563,29 +2579,10 @@ public class TeamPlayoffService {
         return teamRepository.existsByTournamentIdAndPlayer1Id(tournamentId, mainPlayerId);
     }
 
-    /**
-     * Переносит оплату и присутствие со страницы оплат в уже добавленную AmericanoTeam: сама
-     * команда не связана с TournamentRegistration/Payment, и без этой синхронизации изменения
-     * на странице оплат после добавления команды до неё не доходили бы. Вызывается из
-     * PaymentService.savePaymentManagementData на каждое сохранение; если команда ещё
-     * не добавлена — no-op (findByTournamentIdAndPlayer1Id ничего не найдёт).
-     */
+    /** Синхронизирует команды после сохранения всех строк оплат и явки участников. */
     @Transactional
-    public void syncPaymentStatusForRegistration(Long tournamentId, Long registrationId,
-                                                  boolean hasPaid, boolean attended) {
-        TournamentRegistration reg = registrationRepository.findById(registrationId).orElse(null);
-        if (reg == null || !Boolean.TRUE.equals(reg.getIsDoubleRegistration())) {
-            return;
-        }
-        Long mainPlayerId = reg.getMainPlayerId() != null ? reg.getMainPlayerId() : reg.getPlayer().getId();
-        if (!reg.getPlayer().getId().equals(mainPlayerId)) {
-            return; // регистрация партнёра, а не главного игрока — команда привязана к player1 (главному)
-        }
-        teamRepository.findByTournamentIdAndPlayer1Id(tournamentId, mainPlayerId).ifPresent(team -> {
-            team.setHasPaid(hasPaid);
-            team.setAttended(attended);
-            teamRepository.save(team);
-        });
+    public void syncPaymentStatusForTournament(Long tournamentId) {
+        soloRosterTeams.refresh(tournamentId);
     }
 
     /**
@@ -2631,6 +2628,9 @@ public class TeamPlayoffService {
         // этой регистрации уже player1/player2 другой команды.
         Long partnerId = partnerReg != null ? partnerReg.getPlayer().getId()
                 : (mainReg.getPartner() != null ? mainReg.getPartner().getId() : null);
+        if (partnerId == null && (mainReg.getPartnerFirstName() == null || mainReg.getPartnerFirstName().isBlank())) {
+            throw new InvalidStateException("solo.error.single");
+        }
         if (isPlayerAlreadyOnActiveTeam(tournamentId, partnerId)) {
             throw new InvalidStateException("El compañero ya fue agregado a otro equipo de este torneo");
         }
@@ -2750,6 +2750,7 @@ public class TeamPlayoffService {
 
     public AmericanoTeamDto toDto(AmericanoTeam t) {
         AmericanoTeamDto dto = new AmericanoTeamDto();
+        playingSideMapper.fill(t, dto);
         dto.setId(t.getId());
         dto.setTournamentId(t.getTournament().getId());
         dto.setTeamNumber(t.getTeamNumber());

@@ -172,7 +172,8 @@ class PreviewEloReplayTest {
         var afterSecond = replay.replay(FIRST_DAY, NAMES, List.of(initial, opponents, distant, secondC5));
         assertThat(row(afterSecond, 1).category()).isEqualTo("C5");
         assertThat(row(afterSecond, 1).confirmed()).isTrue();
-        assertThat(row(afterSecond, 1).strongerCategories()).isEmpty();
+        assertThat(row(afterSecond, 1).strongerCategories()).extracting(PreviewEloRanking.CategoryProgress::category)
+                .containsExactly("C4");
     }
 
     private List<PreviewEloReplay.Game> winningRun(String prefix, int matches) {

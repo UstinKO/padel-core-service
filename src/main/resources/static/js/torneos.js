@@ -17,6 +17,9 @@ class TorneosPage {
             'C8': t('enum.nivel.c8'),
             'C7': t('enum.nivel.c7'),
             'C6': t('enum.nivel.c6'),
+            'C4': t('enum.nivel.c4'),
+            'C3': t('enum.nivel.c3'),
+            'C4_C3': t('enum.nivel.c4_c3'),
             'C5': t('enum.nivel.c5')
         };
 
@@ -172,9 +175,9 @@ class TorneosPage {
                 matchesGenero = tGenero === genero;
             }
 
-            // Фильтр по уровню - сравниваем напрямую с enum значениями (C9, C8, C7, C6, C5)
+            // Фильтр учитывает отдельные уровни и границы диапазонов.
             if (nivel !== 'todos') {
-                matchesNivel = tNivel === nivel;
+                matchesNivel = window.PadelLevels.matches(tNivel, nivel);
             }
 
             // Фильтр по типу

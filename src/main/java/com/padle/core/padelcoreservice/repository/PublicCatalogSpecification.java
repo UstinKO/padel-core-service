@@ -2,6 +2,7 @@ package com.padle.core.padelcoreservice.repository;
 
 import com.padle.core.padelcoreservice.dto.PublicCatalogFilter;
 import com.padle.core.padelcoreservice.model.Tournament;
+import com.padle.core.padelcoreservice.service.calendar.DeclaredEventLevel;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentVisibility;
 import jakarta.persistence.criteria.Predicate;
@@ -32,7 +33,7 @@ public final class PublicCatalogSpecification {
                 predicates.add(builder.equal(root.get("generoFormato"), filter.gender()));
             }
             if (filter.level() != null) {
-                predicates.add(builder.equal(root.get("categoriaNivel"), filter.level()));
+                predicates.add(root.get("categoriaNivel").in(DeclaredEventLevel.including(filter.level())));
             }
             if (filter.status() != null) {
                 predicates.add(builder.equal(root.get("estado"), filter.status()));
@@ -45,5 +46,11 @@ public final class PublicCatalogSpecification {
             }
             return builder.and(predicates.toArray(Predicate[]::new));
         };
+    }
+
+    public static boolean publiclyListed(Tournament event) {
+        return Boolean.TRUE.equals(event.getIsActive())
+                && event.getEstado() != TournamentStatus.BORRADOR
+                && event.getVisibilidad() != TournamentVisibility.SOLO_POR_ENLACE;
     }
 }

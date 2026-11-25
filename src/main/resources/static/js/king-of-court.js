@@ -464,41 +464,8 @@ class KingOfCourt {
     }
 
     renderLeaderboard(ranking) {
-        const tbody = document.getElementById('leaderboard');
-        if (!tbody) {
-            console.error('Leaderboard tbody not found');
-            return;
-        }
-
-        console.log('Rendering leaderboard with', ranking.length, 'players');
-
-        tbody.innerHTML = '';
-
-        if (ranking.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="8" class="text-center">${t('koc.admin.no_data')}</td></tr>`;
-            return;
-        }
-
-        ranking.forEach(player => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td><strong>#${player.rank || '-'}</strong></td>
-                <td>
-                    <a href="#" class="view-history-btn" 
-                       data-player-id="${player.playerId || ''}"
-                       data-player-name="${tournamentPoints.escape(player.playerName)}">
-                        ${tournamentPoints.escape(player.playerName || t('koc.viewer.unknown_player'))}
-                    </a>
-                    ${this.isAdmin && !this.isFinished ? tournamentPoints.action(player.playerId) : ''}
-                </td>
-                <td>${player.matchPoints ?? 0}</td>
-                <td><span class="bonus-points">+${player.bonusPoints || 0}</span></td>
-                ${tournamentPoints.cell(player.additionalPoints)}
-                <td><strong>${player.totalPoints || 0}</strong></td>
-                <td>${player.gamesPlayed || 0}</td>
-                <td>${player.wins || 0}/${player.losses || 0}</td>
-            `;
-            tbody.appendChild(row);
+        IndividualRanking.render(document.getElementById('leaderboard'), ranking, {
+            king: true, canEdit: this.isAdmin && !this.isFinished
         });
     }
 

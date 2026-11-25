@@ -1,11 +1,17 @@
 # Архитектура базы данных — padel-core-service
 
 > **СУБД:** PostgreSQL 15  
-> **Версия схемы:** v1.79
+> **Версия схемы:** v1.90
 > **Миграции:** Liquibase (YAML), файлы в `src/main/resources/db/changelog/versions/`  
 > **ddl-auto:** `none` — схема управляется только через Liquibase
 
 ---
+
+Миграция v1.88 сохраняет нормализацию телефонов, но квалифицирует вызов
+`public.player_claim_phone_argentina` внутри `public.player_claim_phone`.
+Это позволяет pg_restore создать индекс `idx_player_claim_phone` при ограниченном
+search_path. Новых таблиц/колонок нет; прежние JAR совместимы. SQL rollback
+сохраняет безопасную квалификацию функции, не возвращая дефект восстановления.
 
 ## Содержание
 
@@ -127,6 +133,8 @@ owners_db ───────────────────────�
 | `provider` | `VARCHAR(50)` | NULL | — | OAuth2-провайдер (`google`) |
 | `password_changed_at` | `TIMESTAMP` | NULL | — | Момент последней смены пароля |
 | `nivel_jugador` | `VARCHAR(20)` | NOT NULL | `SIN_ESPECIFICAR` | Уровень игрока (enum `Nivel`; NOT NULL с v1.44) |
+| `playing_side` | `VARCHAR(8)` | NULL | — | LEFT/RIGHT/EITHER, отсутствие ответа отдельно |
+| `playing_side_prompt_after` | `TIMESTAMPTZ` | NULL | — | Следующий показ опроса для аккаунта |
 | `preferred_locale` | `VARCHAR(5)` | NULL | `es` | Язык писем (`es`/`ru`/`en`) |
 
 **Индексы / ограничения:**
@@ -144,6 +152,7 @@ owners_db ───────────────────────�
 | `id` | `BIGSERIAL` | NOT NULL | auto | PK |
 | `email` | `VARCHAR(255)` | NOT NULL | — | Уникальный логин |
 | `password` | `VARCHAR(255)` | NOT NULL | — | BCrypt-хэш |
+| `organization_name` | `VARCHAR(120)` | NULL | — | Отображаемое название организации |
 | `first_name` | `VARCHAR(255)` | NOT NULL | — | Имя |
 | `last_name` | `VARCHAR(255)` | NOT NULL | — | Фамилия |
 | `phone` | `VARCHAR(255)` | NULL | — | Телефон |
@@ -254,6 +263,7 @@ owners_db ───────────────────────�
 | `updated_at` | `TIMESTAMP` | NOT NULL | now() | Дата обновления |
 | `created_by` | `BIGINT` | NULL | — | ID создателя (owners_db) |
 | `is_active` | `BOOLEAN` | NOT NULL | `true` | Мягкое удаление |
+| `is_test_tournament` | `BOOLEAN` | NOT NULL | `false` | Тестовое мероприятие исключено из рейтинга Elo (v1.80) |
 | `owner_id` | `BIGINT` | NULL | — | ID владельца-организатора |
 | `pair_reminder_sent_at` | `TIMESTAMP` | NULL | — | Когда ушло email-напоминание за 5 ч до старта парного турнира; не NULL — повторно не шлётся (LFPT-437) |
 | `start_reminder_sent_at` | `TIMESTAMP` | NULL | — | То же для индивидуальных форматов (AMERICANO, KING_OF_COURT) и Cancha Abierta (LFPT-443) |
@@ -288,6 +298,7 @@ owners_db ───────────────────────�
 | `updated_at` | `TIMESTAMP` | NULL | — | Дата последнего обновления |
 | `is_active` | `BOOLEAN` | NOT NULL | `true` | Мягкое удаление |
 | `attended` | `BOOLEAN` | NOT NULL | `false` | Игрок явился на турнир |
+| `partner_attended` | `BOOLEAN` | NOT NULL | `false` | Отдельная явка текстового гостевого партнёра |
 | `participation_confirmed` | `BOOLEAN` | NOT NULL | `false` | Участие подтверждено организатором |
 | `is_double_registration` | `BOOLEAN` | NOT NULL | `false` | Флаг парной регистрации |
 | `main_player_id` | `BIGINT` | NULL | — | ID инициатора парной регистрации |
@@ -605,6 +616,7 @@ tournaments_db
 | `is_doubles` | `BOOLEAN` | NOT NULL | — | `true` — парный раунд |
 | `courts` | `INTEGER` | NULL | — | Количество активных кортов в раунде |
 | `note` | `VARCHAR(255)` | NULL | — | Заметка |
+| `scoring_mode` | `VARCHAR(16)` | NULL | — | POINTS/SETS; NULL у прежних раундов означает POINTS |
 | `phase` | `VARCHAR(20)` | NULL | — | Фаза: `QUALIFICATION` / `PLAYOFF` |
 | `created_at` | `TIMESTAMP` | NOT NULL | now() | — |
 | `updated_at` | `TIMESTAMP` | NOT NULL | now() | — |
@@ -627,6 +639,8 @@ tournaments_db
 | `team2_player2_id` | `BIGINT` | NULL | — | FK → `player_padel_db.id` (парный) |
 | `team1_score` | `INTEGER` | NULL | — | Очки команды 1 |
 | `team2_score` | `INTEGER` | NULL | — | Очки команды 2 |
+| `placement_start` | `INTEGER` | NULL | — | Первое из двух разыгрываемых мест; NULL — отдельная встреча без назначения мест |
+| `round_robin_request_id` | `UUID` | NULL, UNIQUE для непустых | — | Ключ повторной отправки дополнительной встречи |
 | `team1_games` | `INTEGER` | NULL | — | Геймы команды 1 (Team Americano сетовый формат) |
 | `team2_games` | `INTEGER` | NULL | — | Геймы команды 2 |
 | `is_doubles` | `BOOLEAN` | NOT NULL | — | Парный матч |
@@ -782,7 +796,7 @@ tournaments_db
 ### `Nivel` — уровень игроков
 Значения с привязкой к гендерному формату турнира (`Nivel.genderFormat`):
 
-- мужские (`MASCULINO`): `C9`, `C8`, `C7`, `C6`, `C5`, `C4`, `C9_C8`, `C8_C7`, `C7_C6`, `C6_C5`, `C5_C4`
+- мужские (`MASCULINO`): `C9`, `C8`, `C7`, `C6`, `C5`, `C4`, `C3`, `C9_C8`, `C8_C7`, `C7_C6`, `C6_C5`, `C5_C4`, `C4_C3`
 - женские (`FEMENINO`): `D9`, `D8`, `D7`, `D6`, `D5`, `D4`, `D9_D8`, `D7_D8`, `D7_D6`, `D6_D5`, `D5_D4`
 - микст, сумма категорий пары (`MIXTO`): `SUMA_16`, `SUMA_15`, `SUMA_14`, `SUMA_13`, `SUMA_12`, `SUMA_11`, `SUMA_10`
 - любой формат: `TODOS`, `PRINCIPIANTES`, `SIN_ESPECIFICAR` (дефолт `player_padel_db.nivel_jugador`)
@@ -913,6 +927,9 @@ tournaments_db
 | v1.68 | `v1.68-additional-points` | Знаковые ручные корректировки по игроку и этапу проведения |
 | v1.69 | `v1.69-playoff-match-start` | Отметки фактического начала и изменения состава матча Team Playoff |
 
+| v1.84 | `v1.84-nivel-c3` | CHECK категорий турнира расширен C3 и C4_C3; существующие значения сохранены |
+| v1.86 | `v1.86-organizer-organization` | Отдельное nullable название организации служебного аккаунта |
+
 ## QR-переходы Reby
 
 ### `marketing_qr_daily_db`
@@ -1033,3 +1050,25 @@ PK `(registration_id, version)` исключает два факта одног�
 | `responded_at` | TIMESTAMPTZ | Время ответа |
 | `responded_by` | BIGINT | Кто ответил |
 | `superseded_at` | TIMESTAMPTZ | Время закрытия старого запроса |
+
+Миграция v1.81: режим счёта кругового этапа и дополнительные встречи PLACEMENT. Строки прежних проведений не переписываются.
+
+### Одиночные заявки и действия состава
+
+`solo_roster_operations_db`: составной ключ `tournament_id`, `request_id`; `actor_id`, `action`, `request_hash`, `result`, `before_state`, `after_state`, `created_at`. Журнал и постоянная защита повторного запроса; удаляется вместе с турниром. `tournament_registrations_db.partner_attended` — отдельная явка текстового гостевого партнёра, false по умолчанию; существующие отметки основного игрока не копируются.
+
+## Предпочтительная сторона
+
+`player_padel_db.playing_side` — nullable varchar(8), CHECK LEFT/RIGHT/EITHER; NULL означает отсутствие ответа. `playing_side_prompt_after` — nullable timestamptz, следующая допустимая дата показа опроса для аккаунта. Старые профили не заполняются автоматически.
+
+## Telegram для игроков: v1.85
+
+player_telegram_connections хранит проверенную связь player_id и Telegram user_id/chat_id. player_telegram_tokens хранит только SHA-256 одноразовой ссылки и expires_at. player_telegram_deliveries хранит dedupe_key, связи с турниром/регистрацией, состояние и message_id. player_telegram_poll хранит next_offset, lease_id и lease_until. Прежний telegram_chat_id не подтверждает личность. Для ParticipationRequest разрешена причина ORGANIZER, индекс одного текущего запроса сохранён. Оплаты не меняются.
+
+Организации организаторов: owners_db.organization_name VARCHAR(120) NULL, новая миграция v1.86. Имя аккаунта и привязки клубов не меняются; исходные значения остаются NULL.
+
+Предпочтение связи: v1.87, `player_contact_preferences` — одна строка на игрока, UNSPECIFIED / TELEGRAM / WHATSAPP. WhatsApp не создаёт автоматических сообщений.
+
+Чеки: v1.89, `payment_receipts` привязывает ограниченный BYTEA (JPEG/PNG/PDF до 5 МиБ) к регистрационному ID и версии отмены. Статусы PENDING/ACCEPTED/REJECTED отделены от платежей; принятие хранит payment_id, организатора и время, отклонение — причину. Уникальность (registration_id, registration_version, sha256) исключает повторное хранение одного файла. `telegram_receipt_uploads` хранит отдельный выбор мероприятия для каждого Telegram update; срок выбора — 20 минут. Непривязанные просроченные контексты очищаются при следующем приёме.
+
+Ручное объединение: v1.90, `guest_profile_claims.contact_resolution` фиксирует выбор KEEP_ACCOUNT/USE_GUEST_PHONE. NULL phone_key допустим только у завершённого ADMIN-объединения с IN_PERSON/OTHER.

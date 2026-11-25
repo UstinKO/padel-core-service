@@ -222,7 +222,7 @@ public class SecurityConfig {
                                 "/api/internal/telegram-pipeline/status",
                                 // Публичное расписание для мобильного приложения —
                                 // анонимное чтение, те же правила видимости, что у /torneo/{id}.
-                                "/api/public/config", "/api/public/events/*",
+                                "/api/public/config", "/api/public/events/*", "/api/public/calendar", "/api/public/calendar/catalog",
                                 "/api/public/events/*/live", "/api/public/king-of-court/*/live", "/api/public/home", "/api/public/catalog", "/api/public/clubs", "/api/public/clubs/*",
                                 "/api/public/tournaments",
                                 "/api/public/tournaments/*",
@@ -236,6 +236,7 @@ public class SecurityConfig {
                                 "/api/tournaments/double/decline-pair"
                         ).permitAll()
                         .requestMatchers("/api/admin/marketing/qr-stats", "/api/admin/marketing/qr-summary", "/api/admin/marketing/registration-sources").hasRole("SUPER_ADMIN")
+                        .requestMatchers("/api/admin/events/calendar", "/api/admin/organizers/**").hasAnyRole("OWNER", "SUPER_ADMIN", "ORGANIZER", "ADMIN", "CLUB_ADMIN")
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().authenticated()
                 )

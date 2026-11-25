@@ -1,5 +1,7 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.padelcoreservice.model.enums.PlayingSide;
+
 import com.padle.core.padelcoreservice.dto.PlayerResponseDto;
 import com.padle.core.padelcoreservice.dto.RegistroRequestDto;
 import com.padle.core.padelcoreservice.exception.InvalidStateException;
@@ -242,6 +244,12 @@ public class PlayerService {
     }
 
     @Transactional
+    public void actualizarLadoJugador(Long id, PlayingSide side) {
+        var player = playerRepository.lockPlayers(List.of(id)).stream().findFirst().orElseThrow();
+        player.setPlayingSide(side);
+    }
+
+    @Transactional
     public void actualizarNivelJugador(Long id, Nivel nivel) {
         PlayerPadel player = playerRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Jugador no encontrado con ID: " + id));
@@ -311,6 +319,10 @@ public class PlayerService {
     @Transactional
     public void actualizarJugador(PlayerPadel player) {
         requireAvailableChangedPhone(player);
+        playerRepository.lockPlayers(List.of(player.getId())).stream().findFirst().ifPresent(current -> {
+            player.setPlayingSide(current.getPlayingSide());
+            player.setPlayingSidePromptAfter(current.getPlayingSidePromptAfter());
+        });
         playerRepository.save(player);
         log.info("Jugador actualizado con ID: {}", player.getId());
     }
@@ -387,11 +399,20 @@ public class PlayerService {
     }
 
     private PlayerPadel crearJugadorInvitado(String nombre, String apellido, String telefono) {
+        return crearJugadorInvitado(nombre, apellido, telefono, null, null);
+    }
+
+    /** Создаёт новый профиль; данные существующего игрока этим методом не обновляются. */
+    @Transactional
+    public PlayerPadel crearJugadorInvitado(String nombre, String apellido, String telefono,
+                                            String telegram, PlayingSide playingSide) {
         String email = "guest." + UUID.randomUUID() + "@1padel.guest";
         PlayerPadel player = PlayerPadel.builder()
                 .nombre(nombre)
                 .apellido(apellido)
                 .telefono(telefono)
+                .telegramUsername(telegram)
+                .playingSide(playingSide)
                 .email(email)
                 .passwordHash(passwordEncoder.encode(generarPasswordAleatoria()))
                 .emailConfirmado(true)

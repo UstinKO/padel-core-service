@@ -17,16 +17,19 @@ import java.util.stream.IntStream;
 @Mapper(componentModel = "spring", imports = {Nivel.class, Participant.class})
 public interface PublicLiveMapper {
     @Mapping(target="playerNivel", expression="java(showLevels ? source.getPlayerNivel() : null)")
+    @Mapping(target="playingSide", expression="java(showLevels ? source.getPlayerPlayingSide() : null)")
     KingRank kingRank(PlayerStatsDTO source, @Context boolean showLevels);
 
     @Mapping(target="playerName", expression="java(name(source.getPlayerName(),source.getPlayerLastName()))")
     @Mapping(target="playerNivel", expression="java(showLevels ? source.getPlayerNivel() : null)")
+    @Mapping(target="playingSide", expression="java(showLevels ? source.getPlayerPlayingSide() : null)")
     AmericanoRank americanoRank(AmericanoPlayerRankingDto source, @Context boolean showLevels);
 
-    @Mapping(target="player1", expression="java(new Participant(source.getPlayer1Id(), source.getPlayer1Name(), showLevels ? source.getPlayer1Nivel() : null))")
-    @Mapping(target="player2", expression="java(new Participant(source.getPlayer2Id(), source.getPlayer2Name(), showLevels ? source.getPlayer2Nivel() : null))")
+    @Mapping(target="player1", expression="java(new Participant(source.getPlayer1Id(), source.getPlayer1Name(), showLevels ? source.getPlayer1Nivel() : null, showLevels ? source.getPlayer1PlayingSide() : null))")
+    @Mapping(target="player2", expression="java(new Participant(source.getPlayer2Id(), source.getPlayer2Name(), showLevels ? source.getPlayer2Nivel() : null, showLevels ? source.getPlayer2PlayingSide() : null))")
     TeamRank teamRank(AmericanoTeamDto source, @Context boolean showLevels);
 
+    @Mapping(target="playingSide", ignore=true)
     @Mapping(target="level", ignore=true)
     Participant participant(PlayerInfoDTO source);
 

@@ -92,7 +92,7 @@
                 </div>
             </div>
             <button class="btn btn-primary" type="button" data-claim-manual-review disabled
-                    th:text="#{guest.claim.admin.review}"></button>
+                    th:text="#{guest.claim.workflow.reviewProfiles}"></button>
             <p data-claim-status role="status"></p>
             <div th:replace="~{:: comparison('manual')}"></div>
         </div>
@@ -102,13 +102,14 @@
 <section th:fragment="comparison(kind)" class="claim-review" data-claim-detail hidden>
     <h3 data-claim-title tabindex="-1" th:text="#{guest.claim.admin.review}"></h3>
     <p data-claim-state></p>
+    <p data-claim-readiness class="claim-readiness" role="status" aria-live="polite"></p>
     <p data-claim-phone></p>
     <div class="claim-profiles">
         <article class="claim-card" th:each="side : ${ {'guest','account'} }">
             <h4 th:text="#{${'guest.claim.workflow.' + side}}"></h4>
             <p data-claim-no-profile th:text="#{guest.claim.workflow.noProfile}"></p>
             <dl th:attr="data-claim-profile=${side}" hidden>
-                <th:block th:each="field : ${ {'id','name','email','phone','telegram','level','registrations','results'} }">
+                <th:block th:each="field : ${ {'id','name','profileType','profileState','email','phone','telegram','level','playingSide','registrations','results'} }">
                     <dt th:text="#{${'guest.claim.workflow.field.' + field}}"></dt>
                     <dd th:attr="data-field=${field}"></dd>
                 </th:block>
@@ -117,10 +118,26 @@
     </div>
     <ul data-claim-conflicts class="claim-notes"></ul>
     <p data-claim-direction></p>
+    <div class="claim-outcome" data-claim-outcome hidden>
+        <h4 th:text="#{guest.claim.workflow.outcomeTitle}"></h4>
+        <p th:text="#{guest.claim.workflow.transferHelp}"></p>
+        <p data-claim-keep-account></p>
+        <p data-claim-contact-outcome></p>
+    </div>
     <form data-claim-merge hidden class="claim-merge">
+        <fieldset data-claim-resolution-fields>
+        <div class="form-group" data-claim-contact-choice hidden>
+            <label th:for="${'claim-contact-' + kind}" th:text="#{guest.claim.workflow.contactChoice}"></label>
+            <select th:id="${'claim-contact-' + kind}" name="contactChoice" class="form-select">
+                <option value="" th:text="#{guest.claim.workflow.chooseContact}"></option>
+                <option value="KEEP_ACCOUNT" th:text="#{guest.claim.workflow.keepContact}"></option>
+                <option value="USE_GUEST_PHONE" th:text="#{guest.claim.workflow.useGuestPhone}"></option>
+            </select>
+        </div>
         <div class="form-group">
             <label th:for="${'claim-method-' + kind}" th:text="#{guest.claim.workflow.method}"></label>
-            <select th:id="${'claim-method-' + kind}" name="method" class="form-select">
+            <select th:id="${'claim-method-' + kind}" name="method" class="form-select" required>
+                <option value="" th:text="#{guest.claim.workflow.chooseMethod}"></option>
                 <option value="WHATSAPP" th:text="#{guest.claim.workflow.WHATSAPP}"></option>
                 <option value="IN_PERSON" th:text="#{guest.claim.workflow.IN_PERSON}"></option>
                 <option value="OTHER" th:text="#{guest.claim.workflow.OTHER}"></option>
@@ -130,6 +147,9 @@
             <label th:for="${'claim-sender-' + kind}" th:text="#{guest.claim.admin.sender}"></label>
             <input th:id="${'claim-sender-' + kind}" type="tel" class="form-control" name="sender" maxlength="32" required>
         </div>
+        <div data-claim-side hidden class="form-group"><label th:for="${'claim-side-' + kind}" th:text="#{playingSide.resolution}"></label>
+            <select name="sideChoice" th:id="${'claim-side-' + kind}" class="form-control"><option value="" th:text="#{playingSide.resolution}"></option><option value="ACCOUNT" th:text="#{playingSide.keepAccount}"></option><option value="GUEST" th:text="#{playingSide.useGuest}"></option></select>
+        </div>
         <label class="claim-check" data-claim-replace hidden>
             <input type="checkbox" name="replacePhone">
             <span th:text="#{guest.claim.workflow.replacePhone}"></span>
@@ -138,6 +158,8 @@
             <input type="checkbox" name="verified" required>
             <span th:text="#{guest.claim.workflow.verified}"></span>
         </label>
+        </fieldset>
+        <p data-claim-next-step role="status"></p>
         <button class="btn btn-primary" type="submit" th:text="#{guest.claim.workflow.merge}"></button>
     </form>
     <div class="claim-actions" data-claim-decisions hidden>
@@ -151,10 +173,11 @@
 
 <div th:fragment="labels" data-claim-labels hidden
      th:attr="data-locale=${#locale.language}">
-    <span th:each="key : ${ {'PENDING','NEEDS_DETAILS','MERGED','REJECTED','pendingHelp','detailsHelp','mergedHelp','rejectedHelp','message','request','support','supportUnavailable','copied','copyFailed','empty','review','waiting','direction','submittedPhone','pick','searchHint','PHONE_DIFFERS','LEVEL_DIFFERS','TELEGRAM_DIFFERS','TOURNAMENT','invalidReview'} }"
+    <span th:each="key : ${ {'PENDING','NEEDS_DETAILS','MERGED','REJECTED','pendingHelp','detailsHelp','mergedHelp','rejectedHelp','message','request','support','supportUnavailable','copied','copyFailed','empty','review','waiting','direction','submittedPhone','pick','searchHint','PLAYING_SIDE_DIFFERS','PHONE_DIFFERS','LEVEL_DIFFERS','TELEGRAM_DIFFERS','TOURNAMENT','invalidReview','AVAILABLE','NEEDS_RESOLUTION','FORBIDDEN','COMPLETED','GUEST_PHONE_MISSING','GUEST_PHONE_INVALID','GUEST_PHONE_AMBIGUOUS','keepAccountHelp','keepContactHelp','useGuestPhoneHelp','contactUndecided','chooseContact','chooseMethod','verifyHelp','senderHelp','replaceHelp','sideHelp','profileGuest','profileAccount','profileActive','profileInactive','manualReviewTitle'} }"
           th:attr="data-label=${key}" th:text="#{${'guest.claim.workflow.' + key}}"></span>
-    <span th:each="key : ${ {'GUEST_CLAIM_HISTORY_CONFLICT','GUEST_CLAIM_RANKING_CONFLICT','GUEST_CLAIM_PROFILE_CONFLICT','GUEST_CLAIM_CONTACT_CONFLICT','GUEST_CLAIM_PHONE_MISMATCH','GUEST_CLAIM_ACCOUNT_PHONE_DIFFERS'} }"
+    <span th:each="key : ${ {'GUEST_CLAIM_HISTORY_CONFLICT','GUEST_CLAIM_RANKING_CONFLICT','GUEST_CLAIM_PROFILE_CONFLICT','GUEST_CLAIM_CONTACT_CONFLICT','GUEST_CLAIM_PHONE_MISMATCH','GUEST_CLAIM_ACCOUNT_PHONE_DIFFERS','GUEST_CLAIM_GUEST_NOT_FOUND','GUEST_CLAIM_PHONE_AMBIGUOUS','GUEST_CLAIM_NOT_GUEST','GUEST_CLAIM_SAME_PROFILE','GUEST_CLAIM_GUEST_INACTIVE','GUEST_CLAIM_ACCOUNT_INACTIVE','GUEST_CLAIM_ACCOUNT_IS_GUEST','GUEST_CLAIM_ALREADY_MERGED','GUEST_CLAIM_REVIEW_CHANGED','GUEST_CLAIM_CONTACT_CHOICE_REQUIRED','GUEST_CLAIM_PHONE_VERIFICATION_UNAVAILABLE','GUEST_CLAIM_PHONE_INVALID'} }"
           th:attr="data-label=${key}" th:text="#{${'account.' + key}}"></span>
+    <span th:each="side : ${ {'LEFT','RIGHT','EITHER'} }" th:attr="data-label=${side}" th:text="#{${'playingSide.' + #strings.toLowerCase(side)}}"></span><span data-label="sideUnknown" th:text="#{playingSide.missing}"></span>
     <span data-label="error" th:text="#{guest.claim.error}"></span>
 </div>
 

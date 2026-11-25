@@ -1,0 +1,41 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.85-player-telegram
+      author: codex
+      changes:
+        - sql:
+            sql: |
+              CREATE TABLE player_telegram_connections (
+                player_id BIGINT PRIMARY KEY REFERENCES player_padel_db(id) ON DELETE CASCADE,
+                user_id BIGINT NOT NULL UNIQUE CHECK (user_id > 0),
+                chat_id BIGINT NOT NULL UNIQUE CHECK (chat_id = user_id),
+                enabled BOOLEAN NOT NULL DEFAULT TRUE,
+                linked_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+              );
+              CREATE TABLE player_telegram_tokens (
+                player_id BIGINT PRIMARY KEY REFERENCES player_padel_db(id) ON DELETE CASCADE,
+                token_hash VARCHAR(64) NOT NULL UNIQUE,
+                expires_at TIMESTAMPTZ NOT NULL
+              );
+              CREATE TABLE player_telegram_deliveries (
+                id UUID PRIMARY KEY,
+                dedupe_key VARCHAR(255) NOT NULL UNIQUE,
+                tournament_id BIGINT REFERENCES tournaments_db(id) ON DELETE SET NULL,
+                registration_id BIGINT REFERENCES tournament_registrations_db(id) ON DELETE SET NULL,
+                chat_id BIGINT NOT NULL,
+                state VARCHAR(20) NOT NULL,
+                message_id BIGINT,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+              );
+              CREATE INDEX idx_player_telegram_deliveries_tournament ON player_telegram_deliveries(tournament_id, created_at);
+              CREATE TABLE player_telegram_poll (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                next_offset BIGINT NOT NULL DEFAULT 0,
+                lease_id UUID,
+                lease_until TIMESTAMPTZ
+              );
+              INSERT INTO player_telegram_poll(id) VALUES (1);
+              ALTER TABLE participation_requests_db DROP CONSTRAINT participation_requests_db_trigger_kind_check;
+              ALTER TABLE participation_requests_db ADD CONSTRAINT participation_requests_db_trigger_kind_check
+                CHECK (trigger_kind IN ('RESERVE', 'REPLACEMENT', 'ORGANIZER'));

@@ -1,0 +1,95 @@
+<!doctype html><html xmlns:th="http://www.thymeleaf.org"><body>
+<div th:fragment="content(admin)" class="rr" th:classappend="${not admin} ? 'rr-public' : ''" th:if="${ranking != null}"
+     th:with="sets=${ranking.scoringMode != null and ranking.scoringMode.name() == 'SETS'}">
+    <div class="rr-banner"><strong th:text="#{rr.title}">Круговой турнир</strong><span th:text="${sets} ? #{rr.sets} : #{rr.points}">Подсчёт</span></div>
+    <section class="rr-section">
+        <h2 th:text="#{rr.circle_table}">Круговая таблица</h2>
+        <p th:text="${sets} ? #{rr.table_set_order} : #{rr.points_rule}" th:title="${sets} ? #{rr.set_rule} : #{rr.points_rule}">Правила мест</p>
+        <div class="rr-table-scroll"><table class="table" th:classappend="${sets} ? 'rr-standings-sets' : ''">
+            <colgroup th:if="${sets}"><col class="rr-col-position"><col><col class="rr-col-wins"><col class="rr-col-difference"></colgroup>
+            <thead><tr><th scope="col">#</th><th scope="col" th:text="#{rr.team}">Пара</th>
+                <th scope="col" th:if="${sets}" th:text="#{rr.wins_full}">Победы</th><th scope="col" th:if="${sets}" th:text="#{rr.game_difference}">Разница геймов</th>
+                <th th:if="${not sets and (admin or tournament.mostrarNivel)}" th:text="#{team_americano.table.level}">Уровень</th>
+                <th th:unless="${sets}" th:text="#{rr.score}">Очки</th><th th:unless="${sets}" th:text="#{rr.played}">И</th>
+                <th th:unless="${sets}" th:text="#{rr.wins}">В</th><th th:unless="${sets}" th:text="#{rr.losses}">П</th><th th:unless="${sets}" th:text="#{rr.diff}">Разница</th></tr></thead>
+            <tbody><tr th:each="team : ${ranking.ranking}">
+                <td th:text="${team.currentPosition}">1</td><td><strong th:text="'№' + ${team.teamNumber}">№1</strong> <span th:text="${team.displayName}">Игрок / Игрок</span>
+                    <small th:if="${sets and (admin or tournament.mostrarNivel)}" class="rr-team-level"><span th:replace="~{fragments/playing-side :: info(${team.player1Nivel != null ? team.player1Nivel.display : null}, ${team.player1PlayingSide}, ${admin})}"></span><br><span th:replace="~{fragments/playing-side :: info(${team.player2Nivel != null ? team.player2Nivel.display : null}, ${team.player2PlayingSide}, ${admin})}"></span></small></td>
+                <td th:if="${sets}" th:text="${team.matchesWon}">0</td><td th:if="${sets}" th:text="${team.gameDifference > 0 ? '+' : ''} + ${team.gameDifference}">0</td>
+                <td th:if="${not sets and (admin or tournament.mostrarNivel)}"><span th:replace="~{fragments/playing-side :: info(${team.player1Nivel != null ? team.player1Nivel.display : null}, ${team.player1PlayingSide}, ${admin})}"></span><br><span th:replace="~{fragments/playing-side :: info(${team.player2Nivel != null ? team.player2Nivel.display : null}, ${team.player2PlayingSide}, ${admin})}"></span></td>
+                <td th:unless="${sets}" th:text="${team.totalScore}">0</td><td th:unless="${sets}" th:text="${team.matchesPlayed}">0</td><td th:unless="${sets}" th:text="${team.matchesWon}">0</td>
+                <td th:unless="${sets}" th:text="${team.matchesLost}">0</td><td th:unless="${sets}" th:text="${team.pointDifference}">0</td>
+            </tr></tbody>
+        </table></div>
+    </section>
+    <section class="rr-section">
+        <h2 th:text="#{rr.circle_matches}">Матчи кругового этапа</h2>
+        <details th:each="round : ${rounds}" th:open="${not admin or round.status.name() != 'COMPLETED'}" class="rr-round"
+                 th:with="playingCaptains=${round.matches.![team1Player1Id]},opposingCaptains=${round.matches.![team2Player1Id]}">
+            <summary><span th:text="#{rr.round}">Раунд</span> <strong th:text="${round.roundNumber}">1</strong>
+                <span th:text="${round.completedMatches} + '/' + ${round.totalMatches}">0/2</span></summary>
+            <th:block th:each="team : ${ranking.ranking}">
+                <p class="rr-rest" th:if="${team.player1Id != null and not #lists.contains(playingCaptains, team.player1Id) and not #lists.contains(opposingCaptains, team.player1Id)}"
+                   th:attr="data-rr-rest-team=${team.id}">
+                    <span th:text="#{rr.resting}">В этом раунде отдыхает:</span>
+                    <span><strong th:text="'№' + ${team.teamNumber}">№1</strong> <span th:text="${team.displayName}">Пара</span></span>
+                </p>
+            </th:block>
+            <div th:each="match : ${round.matches}" class="rr-game">
+                <div th:replace="~{fragments/round-robin :: game(${match.id}, ${match.team1Player1Name + ' / ' + match.team1Player2Name}, ${match.team2Player1Name + ' / ' + match.team2Player2Name}, ${match.team1Score}, ${match.team2Score}, ${match.courtNumber}, ${admin}, ${ranking.pointsPerMatch}, ${sets})}"></div>
+            </div>
+        </details>
+    </section>
+    <section class="rr-section" th:if="${not #lists.isEmpty(ranking.additionalMatches)}">
+        <h2 th:text="#{rr.additional}">Дополнительные матчи</h2>
+        <p th:text="#{rr.separate}">Не изменяют очки кругового этапа.</p>
+        <div th:each="match : ${ranking.additionalMatches}" class="rr-game">
+            <h3 th:if="${match.placementStart == 1}" th:text="#{rr.final}">Финал</h3>
+            <h3 th:if="${match.placementStart == 3}" th:text="#{rr.bronze}">За третье место</h3>
+            <h3 th:if="${match.placementStart != null and match.placementStart != 1 and match.placementStart != 3}"><span th:text="#{rr.places}">За места</span> <span th:text="${match.placementStart} + '–' + ${match.placementStart + 1}">5–6</span></h3>
+            <h3 th:if="${match.placementStart == null}" th:text="${#strings.isEmpty(match.label)} ? #{rr.match} : ${match.label}">Встреча</h3>
+            <div th:replace="~{fragments/round-robin :: game(${match.id}, ${'№' + match.team1Number + ' ' + match.team1Name}, ${'№' + match.team2Number + ' ' + match.team2Name}, ${match.team1Score}, ${match.team2Score}, ${match.courtNumber}, ${admin}, ${ranking.pointsPerMatch}, ${sets})}"></div>
+        </div>
+    </section>
+    <section th:if="${admin and ranking.roundRobinComplete and tournament.estado.name() != 'FINALIZADO' and tournament.estado.name() != 'CANCELADO'}" class="rr-section">
+        <h2 th:text="#{rr.after_circle}">Круговой этап завершён</h2>
+        <p th:text="#{rr.choice}">Можно завершить турнир или добавить встречу вручную.</p>
+        <details class="rr-round"><summary th:text="#{rr.add_match}">Добавить матч</summary>
+            <form data-rr-add th:attr="data-url=@{'/tournaments/team-americano/api/round-robin/' + ${tournament.id} + '/additional'},data-error=#{rr.save_error}" class="rr-add-form">
+                <input type="hidden" name="requestId">
+                <label><span th:text="#{rr.team1}">Команда 1</span><select name="team1Id" class="form-control" required><option value="" th:text="#{rr.choose}">Выберите</option><option th:each="team : ${ranking.ranking}" th:value="${team.id}" th:text="'№' + ${team.teamNumber} + ' ' + ${team.displayName}"></option></select></label>
+                <label><span th:text="#{rr.team2}">Команда 2</span><select name="team2Id" class="form-control" required><option value="" th:text="#{rr.choose}">Выберите</option><option th:each="team : ${ranking.ranking}" th:value="${team.id}" th:text="'№' + ${team.teamNumber} + ' ' + ${team.displayName}"></option></select></label>
+                <label><span th:text="#{rr.court}">Корт</span><select name="courtNumber" class="form-control" required><option th:each="court : ${#numbers.sequence(1, ranking.courts)}" th:value="${court}" th:text="${court}"></option></select></label>
+                <label><span th:text="#{rr.purpose}">Назначение</span><select name="placementStart" class="form-control">
+                    <option value="1" th:text="#{rr.final}">Финал</option><option th:if="${ranking.totalTeams >= 4}" value="3" th:text="#{rr.bronze}">За третье место</option>
+                    <option th:if="${ranking.totalTeams >= 6}" th:each="place : ${#numbers.sequence(5, ranking.totalTeams - 1)}" th:value="${place}" th:text="#{rr.places} + ' ' + ${place} + '–' + ${place + 1}"></option>
+                    <option value="" th:text="#{rr.other}">Без назначения мест</option>
+                </select></label>
+                <label><span th:text="#{rr.label}">Название, необязательно</span><input class="form-control" type="text" name="label" maxlength="80"></label>
+                <p role="alert" data-rr-error></p><button class="btn btn-primary" type="submit" th:text="#{rr.add_match}">Добавить матч</button>
+            </form>
+        </details>
+        <form th:action="@{'/tournaments/team-americano/admin/' + ${tournament.id} + '/finish'}" method="post" class="rr-finish">
+            <button class="btn btn-primary" type="submit" th:disabled="${!ranking.finished}" th:text="#{rr.finish}">Завершить турнир</button>
+            <p th:unless="${ranking.finished}" th:text="#{rr.finish_pending}">Сначала сохраните результаты назначенных встреч.</p>
+        </form>
+    </section>
+    <section class="rr-section" th:if="${tournament.estado.name() == 'FINALIZADO' and not #lists.isEmpty(ranking.finalRanking)}">
+        <h2 th:text="#{rr.final_table}">Итоговые места</h2>
+        <ol class="rr-places"><li th:each="team : ${ranking.finalRanking}"><span class="rr-place" th:text="${team.position} + '.'">1.</span><strong th:text="'№' + ${team.teamNumber}">№1</strong> <span th:text="${team.displayName}">Пара</span></li></ol>
+    </section>
+</div>
+<div th:fragment="game(id, first, second, score1, score2, court, admin, limit, sets)">
+    <p class="rr-court"><span th:text="#{rr.court}">Корт</span> <strong th:text="${court}">1</strong></p>
+    <div th:if="${admin}" class="rr-pairing"><span th:text="${first}">Пара 1</span><strong th:text="${score1 == null ? '—' : score1} + ':' + ${score2 == null ? '—' : score2}">—:—</strong><span th:text="${second}">Пара 2</span></div>
+    <div th:unless="${admin}" class="rr-public-pairing">
+        <div><span th:text="${first}">Пара 1</span><strong th:text="${score1 == null ? '—' : score1}">—</strong></div>
+        <div><span th:text="${second}">Пара 2</span><strong th:text="${score2 == null ? '—' : score2}">—</strong></div>
+    </div>
+    <form th:if="${admin}" data-rr-score th:id="'rr-score-' + ${id}" th:attr="data-id=${id},data-error=#{rr.save_error}" class="rr-score-form">
+        <label><span th:text="#{rr.score1}">Счёт команды 1</span><input class="form-control" type="number" name="team1Score" min="0" th:max="${sets} ? 6 : ${limit}" th:value="${score1 == null ? 0 : score1}" required></label>
+        <label><span th:text="#{rr.score2}">Счёт команды 2</span><input class="form-control" type="number" name="team2Score" min="0" th:max="${sets} ? 6 : ${limit}" th:value="${score2 == null ? 0 : score2}" required></label>
+        <button class="btn btn-primary" type="submit" th:text="#{rr.save}">Сохранить</button><p data-rr-error role="alert"></p>
+    </form>
+</div>
+</body></html>

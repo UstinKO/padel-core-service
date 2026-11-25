@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { buenosAiresToday, catalogParams } from './discovery';
+import { buenosAiresToday, catalogParams, levels } from './discovery';
 
 describe('catalog URL contract', () => {
+  it('keeps C3 and its combined range in filters without converting them to pair sums', () => {
+    expect(levels).toContain('C3');
+    expect(levels).toContain('C4_C3');
+    for (const level of ['C3', 'C4_C3']) {
+      expect(catalogParams(new URLSearchParams({ level })).get('level')).toBe(level);
+    }
+  });
   it('uses the Buenos Aires date across the UTC day boundary', () => {
     expect(buenosAiresToday(new Date('2026-11-11T01:00:00Z'))).toBe('2026-11-10');
   });
