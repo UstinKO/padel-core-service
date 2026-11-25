@@ -15,6 +15,7 @@
 | [Первая фаза](phase-1/README.md) | Подробный анализ, TC01–TC25, задачи #1047 → #1048 → #1049 → #1050 → #1045 |
 | [Вторая фаза](phase-2/README.md) | Проба Java DTO #1198 и подготовленная последовательность чтения клубов #1199 → #1200 → #1201 |
 | [Продолжение переноса движков](phase-3/README.md) | King of Court #1279, [Americano #1332](phase-3/americano-extraction.md), [квалификация #1338](phase-3/team-playoff-qualification-extraction.md), [ранний плей-офф #1343](phase-3/early-playoff-extraction.md), [круговые места SETS #1350](phase-3/round-robin-sets-extraction.md), [POINTS #1371](phase-3/round-robin-points-extraction.md) |
+| [Четвёртая фаза](phase-4/README.md) | Подготовлена #1374: baseline #1375 → итоговые места #1376 → application read-сценарий #1377 → приёмка #1378; реализация ещё не выполнена |
 | [Пилот и e2e](pilot-and-e2e.md) | Подтверждённый пилот, исходная #1048 и итоговая #1045 |
 | [Вопросы и риски](questions-and-risks.md) | Решения до реализации и неизвестные, требующие исследования |
 | [Фиче-спецификация](../../specs/features/LFPT-1041-modular-monolith-analysis.md) | Объём подготовительной задачи и критерии её завершения |

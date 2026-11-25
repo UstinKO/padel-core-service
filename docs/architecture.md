@@ -8,6 +8,8 @@
 
 [Места кругового POINTS](modular-monolith/phase-3/round-robin-points-extraction.md) и компаратор RoundRobinRules.order также вычисляет engines; MapStruct связывает результат с исходными командами по индексу строки.
 
+Подготовлена [фаза 4](modular-monolith/phase-4/README.md), #1374: baseline #1375 → finalOrder #1376 → application read-сценарий #1377 → приёмка #1378. Это следующие задачи; в application пока выделено только чтение клубов. [Анализ](modular-monolith/phase-4/code-analysis.md) учитывает ответы initialize/finish внутри write-транзакции и точечные разрешения engines в guards.
+
 ---
 
 ## Содержание
