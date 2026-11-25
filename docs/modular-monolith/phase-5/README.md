@@ -4,7 +4,7 @@
 
 ## Состояние
 
-Предыдущая read-фаза принята. Application содержит PublicClubQuery, RoundRobinRankingQuery и [RoundRobinPositionCommand / #1404](position-command.md); engines — десять вычислительных классов. [Baseline #1403](baseline.md) включён через PR #1408. Команда позиций и query используют общую подготовку standings. [RoundRobinFinishCommand / #1405](finish-command.md) выполняет проверку допуска и последовательность завершения внутри транзакции прежнего фасада. Независимая приёмка #1406 и координационная #1402 остаются открытыми.
+Предыдущая read-фаза принята. Application содержит PublicClubQuery, RoundRobinRankingQuery и [RoundRobinPositionCommand / #1404](position-command.md); engines — десять вычислительных классов. [Baseline #1403](baseline.md) включён через PR #1408. Команда позиций и query используют общую подготовку standings. [RoundRobinFinishCommand / #1405](finish-command.md) выполняет проверку допуска и последовательность завершения внутри транзакции прежнего фасада. [Независимая приёмка #1406](acceptance.md) повторена на принятом JAR из master после #1411. Вместе с приёмочным PR завершается координационная #1402.
 
 ## Последовательность
 
@@ -15,9 +15,9 @@
 | 3 | [#1405](https://github.com/UstinKO/padel-core-service/issues/1405) | backend | Application orchestration завершения с прежней транзакционной оболочкой | #1404 |
 | 4 | [#1406](https://github.com/UstinKO/padel-core-service/issues/1406) | frontend | Независимая клиентская/runtime-приёмка конечного jar и возврата | #1405 |
 
-Baseline #1403 включён через PR #1408, сохранение позиций #1404 — через PR #1409. После включения завершения #1405 следует независимая приёмка #1406. Закрытия координационной #1402 рабочие задачи не ждут. Каждая реализация — отдельный PR, работоспособный без будущих задач. Depends-On в PR указывает на настоящий PR зависимости, не на номер issue; в исходных issues сохраняется последовательность задач. Автомерж/production-деплой в подготовку не входят.
+Baseline #1403 включён через PR #1408, сохранение позиций #1404 — через PR #1409. Завершение #1405 включено через PR #1411. #1406 проверяет принятый срез через действующих клиентов. Закрытия координационной #1402 рабочие задачи не ждут. Каждая реализация — отдельный PR, работоспособный без будущих задач. Depends-On в PR указывает на настоящий PR зависимости, не на номер issue; в исходных issues сохраняется последовательность задач. Автомерж/production-деплой в подготовку не входят.
 
-Спецификации: [координация](../../../specs/features/LFPT-1402-round-robin-write-phase.md), [baseline](../../../specs/done/LFPT-1403-round-robin-write-baseline.md), [позиции](../../../specs/done/LFPT-1404-round-robin-position-command.md), [завершение](../../../specs/features/LFPT-1405-round-robin-finish-command.md), [приёмка](../../../specs/features/LFPT-1406-round-robin-write-acceptance.md).
+Спецификации: [координация](../../../specs/features/LFPT-1402-round-robin-write-phase.md), [baseline](../../../specs/done/LFPT-1403-round-robin-write-baseline.md), [позиции](../../../specs/done/LFPT-1404-round-robin-position-command.md), [завершение](../../../specs/done/LFPT-1405-round-robin-finish-command.md), [приёмка](../../../specs/features/LFPT-1406-round-robin-write-acceptance.md).
 
 ## Почему такой срез
 
@@ -41,7 +41,7 @@ TeamAmericanoService.finishTournament сохраняет внешний вход
 
 ## Проверки
 
-[W01–W18](test-cases.md) — проверяемая программа, не текущий PASS. Первый baseline добавил characterization до production-переноса, включая контролируемые отказы на настоящей отдельной PostgreSQL и независимое чтение после завершения транзакции. Последующие задачи повторяют исходные ожидания. Сохраняются 12 read-baseline/11 JSON и браузерная автоматизация фазы 4.
+[W01–W18](test-cases.md) задают программу. Измеренные результаты прогона принятых команд приведены в [отчёте #1406](acceptance.md). Первый baseline добавил characterization до production-переноса, включая контролируемые отказы на настоящей отдельной PostgreSQL и независимое чтение после завершения транзакции. Последующие задачи повторяют исходные ожидания. Сохраняются 12 read-baseline/11 JSON и браузерная автоматизация фазы 4.
 
 Каждый PR проходит [общие условия](../plan.md#условия-приёмки-каждой-реализационной-задачи): полный verify с frontend, guards/negative cases, конечный jar/runtime/браузер, общий пилот/репетицию выпуска и прежний jar/возврат. После новых writes сравниваются связанные строки/история/схема и ответы после restart/возврата. Новые ручные/физические/многорепличные результаты заявляются только по факту. Ограничения #445/#453/#1067 и Expo сохраняются.
 

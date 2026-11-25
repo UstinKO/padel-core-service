@@ -1,7 +1,7 @@
 # LFPT-1402: Feature многомодульный монолит, фаза 5 — выделить сохранение позиций и завершение кругового турнира
 
 ## Статус
-approved
+done
 
 ## Источник
 
@@ -54,12 +54,12 @@ Java source/release 17 при CI/Docker 21. Один процесс/один boo
 
 ## Критерии приёмки
 
-- [ ] Baseline и обе реализации выполнены отдельными backend PR; независимая frontend-приёмка — отдельным следующим PR.
-- [ ] В application один владелец сохранения позиций и завершения; нет вызова старого finish через порт вместо переноса orchestration, entity/repository/ConductChange в application не передаются.
-- [ ] Сохранены текущие MAX(roundNumber), count COMPLETED всех фаз, short-circuit initialized и поведение повторов; currentPosition остаётся круговым.
-- [ ] Реальные proxy/порт/EntityManager подтверждают одну write-транзакцию, общий rollback позиций/статуса/истории и отсутствие invalidation после rollback; прежний lock/version/key порядок сохранён.
-- [ ] Исходные 12 read-baseline/11 JSON не ослаблены; конечный jar, браузер, restart/прежний jar/возврат прошли, ограничения перечислены.
-- [ ] Остаток start/score/additional/history/persistence адресно учтён; все семь модулей готовыми и #1051 разблокированной не объявляются.
+- [x] Baseline и обе реализации выполнены отдельными backend PR; независимая frontend-приёмка — отдельным следующим PR.
+- [x] В application один владелец сохранения позиций и завершения; нет вызова старого finish через порт вместо переноса orchestration, entity/repository/ConductChange в application не передаются.
+- [x] Сохранены текущие MAX(roundNumber), count COMPLETED всех фаз, short-circuit initialized и поведение повторов; currentPosition остаётся круговым.
+- [x] Реальные proxy/порт/EntityManager подтверждают одну write-транзакцию, общий rollback позиций/статуса/истории и отсутствие invalidation после rollback; прежний lock/version/key порядок сохранён.
+- [x] Исходные 12 read-baseline/11 JSON не ослаблены; конечный jar, браузер, restart/прежний jar/возврат прошли, ограничения перечислены.
+- [x] Остаток start/score/additional/history/persistence адресно учтён; все семь модулей готовыми и #1051 разблокированной не объявляются.
 
 ## Edge cases
 
@@ -67,4 +67,4 @@ Java source/release 17 при CI/Docker 21. Один процесс/один boo
 
 ## Открытые вопросы
 
-Бизнес-вопросов нет: текущие результаты/ошибки/эффекты сохраняются. [Baseline #1403](../../docs/modular-monolith/phase-5/baseline.md) и [контракт](../../docs/modular-monolith/phase-5/command-contract.md) закреплены отдельной первой задачей; оставшиеся команды и итоговая приёмка ещё не реализованы. Если characterization обнаружит расхождение MASTER с текущим поведением, не исправлять его скрытно в переносе: зафиксировать и отдельно согласовать изменение инварианта. Подготовка не является PASS будущей реализации. Обычная сессия, без pipeline:ready/автомержа/production-деплоя.
+Бизнес-вопросов нет: текущие результаты/ошибки/эффекты сохраняются. [Baseline #1403](../../docs/modular-monolith/phase-5/baseline.md) и [контракт](../../docs/modular-monolith/phase-5/command-contract.md) закреплены отдельной первой задачей. #1404 и #1405 включены через #1409 и #1411. [Отчёт #1406](../../docs/modular-monolith/phase-5/acceptance.md) фиксирует итоговую независимую проверку и остаток перехода. Если characterization обнаружит расхождение MASTER с текущим поведением, не исправлять его скрытно в переносе: зафиксировать и отдельно согласовать изменение инварианта. Подготовка не является PASS будущей реализации. Обычная сессия, без pipeline:ready/автомержа/production-деплоя.

@@ -162,6 +162,7 @@ jobs:
           # Круговой read-срез: отдельные синтетические данные и собственный AUTH-интервал.
           sleep 60
           python3 automation/ui-preview/round-robin-acceptance.py run
+          python3 automation/ui-preview/round-robin-write-http.py
           python3 automation/ui-preview/round-robin-acceptance.py capture
           python3 automation/ui-preview/preview.py stop
           python3 automation/ui-preview/preview.py up
@@ -182,6 +183,7 @@ jobs:
             target/round-robin-acceptance/browser.json
             target/round-robin-acceptance/read-only-browser.json
             target/round-robin-acceptance/read-only.json
+            target/round-robin-acceptance/write-http.json
           if-no-files-found: ignore
           retention-days: 3
 
