@@ -46,3 +46,12 @@ table.individual-ranking { width: 100%; table-layout: fixed; border-collapse: co
     .individual-ranking .ir-total, .individual-ranking .ir-rank { width: auto; }
     .individual-ranking .ir-detail-row:not([hidden]) { display: block; }
 }
+
+.individual-ranking.ir-public .ir-player { width: auto; }
+.individual-ranking.ir-public .ir-total { width: 6rem; }
+.individual-ranking.ir-public :is(th, td) { padding-block: .3rem; }
+.individual-ranking.ir-public .ir-toggle { min-height: 2.75rem; }
+.ir-me { color: #2563eb; font-weight: 600; }
+@media (max-width: 899px) {
+    .individual-ranking.ir-public .ir-total { width: auto; }
+}

@@ -1,6 +1,7 @@
 package com.padle.core.padelcoreservice.controller.api;
 
 import com.padle.core.padelcoreservice.dto.americano.AmericanoConfigDto;
+import com.padle.core.padelcoreservice.dto.americano.RankingCriteria;
 import com.padle.core.padelcoreservice.dto.americano.AmericanoMatchResultDto;
 import com.padle.core.padelcoreservice.model.*;
 import com.padle.core.padelcoreservice.model.enums.*;
@@ -63,7 +64,8 @@ class IndividualRankingBrowserTest {
 
     record Account(String email, String role) {}
     record Events(long kingEvent, long kingId, long americanoEvent) {}
-    record Fixture(String baseUrl, String password, List<Account> accounts, Events clubEvents, Events organizerEvents) {}
+    record PublicScenario(int count, Events events, boolean finished, long playerId, String playerEmail) {}
+    record Fixture(String baseUrl, String password, List<Account> accounts, Events clubEvents, Events organizerEvents, List<PublicScenario> publicScenarios) {}
 
     @Test void standingsWorkAcrossFormatsWidthsLanguagesAndExistingRights() throws Exception {
         Fixture fixture = new TransactionTemplate(transactions).execute(status -> seed());
@@ -76,7 +78,7 @@ class IndividualRankingBrowserTest {
         try {
             var process = new ProcessBuilder("node", "tests/browser/individual-ranking.browser.mjs", input.toString())
                     .redirectErrorStream(true).redirectOutput(output.resolve("browser.log").toFile()).start();
-            boolean completed = process.waitFor(360, TimeUnit.SECONDS);
+            boolean completed = process.waitFor(600, TimeUnit.SECONDS);
             if (!completed) process.destroyForcibly();
             assertThat(completed).as("Браузерная проверка рейтинга завершилась вовремя").isTrue();
             assertThat(process.exitValue()).as(Files.readString(output.resolve("browser.log"))).isZero();
@@ -102,13 +104,24 @@ class IndividualRankingBrowserTest {
                 .playingSide(index % 4 == 0 ? null : PlayingSide.values()[index % 3]).build())).toList();
         var clubEvents = events(club, accounts.get(2), roster);
         var organizerEvents = events(club, accounts.get(3), roster);
+        var publicRoster = IntStream.range(0, 24).mapToObj(index -> players.saveAndFlush(PlayerPadel.builder()
+                .nombre(index == 23 ? "Александр-Максимилиан" : "Public Player " + index)
+                .apellido(index == 23 ? "Константинопольский-Фернандес" : "Example")
+                .email("public" + index + suffix + "@example.test").passwordHash(passwords.encode(password))
+                .activo(true).emailConfirmado(true).preferredLocale("es").nivelJugador(Nivel.C7)
+                .playingSide(PlayingSide.RIGHT).build())).toList();
+        var publicScenarios = List.of(16, 20, 24, 8).stream().map(count -> {
+            var run = events(club, accounts.get(2), publicRoster.subList(0, count));
+            if (count == 8) finish(run, accounts.get(2));
+            return new PublicScenario(count, run, count == 8, publicRoster.get(0).getId(), publicRoster.get(0).getEmail());
+        }).toList();
         return new Fixture("http://127.0.0.1:" + port, password,
-                accounts.stream().map(owner -> new Account(owner.getEmail(), owner.getRole().name())).toList(), clubEvents, organizerEvents);
+                accounts.stream().map(owner -> new Account(owner.getEmail(), owner.getRole().name())).toList(), clubEvents, organizerEvents, publicScenarios);
     }
 
     private Events events(Club club, Owner owner, List<PlayerPadel> roster) {
         var kingEvent = event(club, owner, TournamentType.KING_OF_COURT, roster);
-        long kingId = king.initializeTournament(owner, kingEvent.getId(), 2, 0).getId();
+        long kingId = king.initializeTournament(owner, kingEvent.getId(), roster.size() / 4, 0).getId();
         var state = king.getCurrentState(kingId);
         var court = state.getCourts().get(0);
         king.saveMatchResult(state.getCurrentRoundId(), court.getCourtNumber(),
@@ -118,7 +131,7 @@ class IndividualRankingBrowserTest {
         points.add(kingEvent.getId(), false, new AdditionalPointsService.Change(roster.get(1).getId(), 0, 5, "QA positive"), owner);
         var americanoEvent = event(club, owner, TournamentType.AMERICANO, roster);
         americano.initializeAmericanoTournament(americanoEvent.getId(),
-                AmericanoConfigDto.builder().courts(2).totalRounds(3).pointsPerMatch(21).build(), owner);
+                AmericanoConfigDto.builder().courts(roster.size() / 4).totalRounds(3).pointsPerMatch(21).build(), owner);
         var round = americano.getRounds(americanoEvent.getId()).get(0);
         var match = americano.getMatchesByRound(round.getId()).get(0);
         americano.submitMatchResult(AmericanoMatchResultDto.builder().matchId(match.getId()).team1Score(12).team2Score(9).build(), owner);
@@ -127,11 +140,26 @@ class IndividualRankingBrowserTest {
         return new Events(kingEvent.getId(), kingId, americanoEvent.getId());
     }
 
+    private void finish(Events run, Owner owner) {
+        var state = king.getCurrentState(run.kingId());
+        state.getCourts().stream().filter(court -> !Boolean.TRUE.equals(court.getHasResult())).forEach(court ->
+                king.saveMatchResult(state.getCurrentRoundId(), court.getCourtNumber(),
+                        court.getTeams().get(0).getPlayers().stream().map(player -> player.getId()).toList(),
+                        court.getTeams().get(1).getPlayers().stream().map(player -> player.getId()).toList(), 12, 9, true));
+        king.finishTournament(run.kingId());
+        for (var round : americano.getRounds(run.americanoEvent())) {
+            if (round.getStatus() == AmericanoRoundStatus.PENDING) americano.startRound(round.getId(), owner);
+            americano.getMatchesByRound(round.getId()).forEach(match -> americano.submitMatchResult(
+                    AmericanoMatchResultDto.builder().matchId(match.getId()).team1Score(12).team2Score(9).build(), owner));
+        }
+        americano.finishTournament(run.americanoEvent(), RankingCriteria.builder().sortBy("score").build(), owner);
+    }
+
     private Tournament event(Club club, Owner owner, TournamentType type, List<PlayerPadel> roster) {
         var event = tournaments.saveAndFlush(Tournament.builder().nombre("Ranking QA " + type)
                 .clubId(club.getId()).ownerId(owner.getId()).fechaInicio(LocalDate.now().plusDays(7)).horaInicio(LocalTime.NOON)
                 .generoFormato(GenderFormat.MIXTO).categoriaNivel(Nivel.C7).tipo(type).modalidad(Modalidad.INDIVIDUAL)
-                .contactoOrganizador("qa@example.test").cupoMax(8).precio(BigDecimal.ZERO).estado(TournamentStatus.CERRADO).isActive(true).build());
+                .contactoOrganizador("qa@example.test").cupoMax(roster.size()).mostrarNivel(true).precio(BigDecimal.ZERO).estado(TournamentStatus.CERRADO).isActive(true).build());
         IntStream.range(0, roster.size()).forEach(index -> registrations.saveAndFlush(TournamentRegistration.builder()
                 .tournament(event).player(roster.get(index)).status(RegistrationStatus.CONFIRMED).position(index + 1).build()));
         entityManager.flush();

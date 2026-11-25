@@ -8,8 +8,10 @@
         ? String(player.playerNivel).replaceAll('_', '/') : '';
 
     window.IndividualRanking = {
-        render(tbody, ranking, {king = false, canEdit = false} = {}) {
+        render(tbody, ranking, {king = false, canEdit = false, publicView = false, currentPlayerId} = {}) {
             if (!tbody) return;
+            canEdit = canEdit && !publicView;
+            tbody.closest('table').classList.toggle('ir-public', publicView);
             const expanded = new Set([...tbody.querySelectorAll('[data-ranking-toggle][aria-expanded="true"]')]
                 .map(button => button.dataset.rankingToggle));
             const focused = tbody.contains(document.activeElement) ? document.activeElement : null;
@@ -20,7 +22,7 @@
             const openBreakdown = new Set([...tbody.querySelectorAll('[data-ranking-row], [data-ranking-details]')]
                 .filter(row => row.querySelector('.additional-points-breakdown[open]'))
                 .map(row => (row.hasAttribute('data-ranking-details') ? 'detail-' : 'row-') + (row.dataset.rankingRow || row.dataset.rankingDetails)));
-            const columns = king ? 8 : 7;
+            const columns = publicView ? 3 : king ? 8 : 7;
             tbody.dataset.rankingColumns = String(columns);
             const visibleColumns = narrow.matches ? 3 : columns;
             tbody.innerHTML = ranking.map(player => {
@@ -32,7 +34,7 @@
                 const wins = king ? player.wins : player.matchesWon;
                 const losses = king ? player.losses : player.matchesLost;
                 const detailsId = `${tbody.id}-details-${id}`;
-                const metadata = `<small class="playing-side-info" data-playing-side-player="${escape(id)}" data-playing-side-compact>${escape(level(player))}</small>`;
+                const metadata = publicView ? '' : `<small class="playing-side-info" data-playing-side-player="${escape(id)}" data-playing-side-compact>${escape(level(player))}</small>`;
                 const action = canEdit ? `<button type="button" class="ir-edit" data-open-points data-player-id="${escape(id)}"
                     aria-label="${escape(tournamentPoints.copy.action)}: ${escape(name)}">±<span class="ir-sr-only"> ${escape(tournamentPoints.copy.action)}</span></button>` : '';
                 const breakdown = tournamentPoints.cell(player.additionalPoints);
@@ -42,20 +44,21 @@
                     <td class="ir-rank">${escape(rank ?? '—')}</td>
                     <td class="ir-player ${canEdit ? 'ir-has-action' : ''}">
                         <button type="button" class="ir-toggle" data-ranking-toggle="${escape(id)}" aria-controls="${detailsId}" aria-expanded="${expanded.has(id)}">
-                            <span>${escape(name)}</span><span aria-hidden="true" class="ir-chevron">⌄</span><span class="ir-sr-only"> — ${escape(copy.details)}</span>
+                            <span>${escape(name)}${Number(currentPlayerId) === Number(id) ? `<span class="ir-me" aria-label="${escape(copy.me)}"> ✓</span>` : ''}</span><span aria-hidden="true" class="ir-chevron">⌄</span><span class="ir-sr-only"> — ${escape(copy.details)}</span>
                         </button>${metadata}${action}
                     </td>
                     <td class="ir-total">${escape(total ?? 0)}</td>
+                    ${publicView ? '' : `
                     <td class="ir-secondary">${escape(player.matchPoints ?? 0)}</td>
                     ${king ? `<td class="ir-secondary">${escape(sign(player.bonusPoints))}</td>` : ''}
                     ${breakdown.replace('class="additional-points-cell"', 'class="additional-points-cell ir-secondary"')}
                     <td class="ir-secondary">${escape(games ?? 0)}</td>
-                    <td class="ir-secondary">${escape(wins ?? 0)}/${escape(losses ?? 0)}</td>
+                    <td class="ir-secondary">${escape(wins ?? 0)}/${escape(losses ?? 0)}</td>`}
                 </tr>
                 <tr class="ir-detail-row" data-ranking-details="${escape(id)}" ${expanded.has(id) ? '' : 'hidden'}>
                     <td colspan="${visibleColumns}" id="${detailsId}">
                         <div class="ir-detail-content">
-                            <small class="playing-side-info" data-playing-side-player="${escape(id)}">${escape(level(player))}</small>
+                            ${publicView ? '' : `<small class="playing-side-info" data-playing-side-player="${escape(id)}">${escape(level(player))}</small>`}
                             <dl>${value(copy.match, player.matchPoints)}${king ? value(copy.bonus, sign(player.bonusPoints)) : ''}
                                 ${value(copy.additional, sign(player.additionalPoints?.total))}${value(copy.games, games)}
                                 ${value(copy.wins, wins)}${value(copy.losses, losses)}${extras}</dl>

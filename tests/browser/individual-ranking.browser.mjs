@@ -10,6 +10,7 @@ const browser = await chromium.launch({executablePath: process.env.CHROME_EXECUT
 const output = resolve('target/individual-ranking-qa');
 await mkdir(output, {recursive:true});
 const report = [];
+let publicReference;
 const labels = {ru:['Итого','За корт','Победы / поражения'],es:['Total','Cancha','Victorias / derrotas'],en:['Total','Court','Wins / losses']};
 async function login(account, language) {
     const context = await browser.newContext({viewport:{width:1440,height:1100}});
@@ -26,8 +27,11 @@ async function login(account, language) {
 }
 function path(events, king) {return king ? `/admin/tournaments/king-of-court/${events.kingId}` : `/tournaments/americano/admin/${events.americanoEvent}`;}
 function api(events, king) {return king ? `/api/king-of-court/tournaments/${events.kingId}/state` : `/api/tournaments/americano/${events.americanoEvent}/ranking`;}
-async function sync(page, events, king) {
-    const data = await (await page.request.get(new URL(api(events,king),base).href)).json();
+async function sync(page, events, king, reference = page.request) {
+    const response = await reference.get(new URL(api(events,king),base).href);
+    assert.equal(response.status(),200);
+    const data = await response.json();
+    assert.ok(Array.isArray(data.ranking));
     await page.waitForFunction(({rows,king}) => rows.every(player=>{
         const row=document.querySelector(`[data-ranking-row="${player.playerId}"]`);
         return row && Number(row.querySelector('.ir-total').textContent) === (king?player.totalPoints:player.totalScore);
@@ -152,6 +156,89 @@ async function corrections(page,events,king) {
     await dialog.locator('form[method=dialog] button').click();
     report.push({format:king?'king':'americano',correction:true,edit:true,draftPreserved:true});
 }
+function publicPath(events, king) {return king ? `/tournaments/king-of-court/${events.kingId}` : `/tournaments/americano/${events.americanoEvent}`;}
+async function publicSession(account) {
+    const context=await browser.newContext({viewport:{width:390,height:1000}});
+    await context.route('**/*',route=>new URL(route.request().url()).origin===base.origin?route.continue():route.abort());
+    await context.addCookies([{name:'cookieConsent',value:'rejected',url:base.href}]);
+    const page=await context.newPage();
+    const errors=[];page.on('pageerror',error=>errors.push(error.message));
+    if(account) {
+        await page.goto(new URL('/login?lang=ru',base).href);
+        await page.locator('#username').fill(account.playerEmail);
+        await page.locator('#password').fill(fixture.password);
+        await Promise.all([page.waitForURL(url=>url.pathname!=='/login'),page.locator('form.auth-form button[type=submit]').click()]);
+    }
+    return {context,page,errors};
+}
+async function verifyPublic(page,scenario,king,language,width,loggedIn=false) {
+    await page.setViewportSize({width,height:1000});
+    const response=await page.goto(new URL(publicPath(scenario.events,king)+'?lang='+language,base).href);
+    assert.equal(response.status(),200);
+    const html=await response.text();
+    assert.equal((html.match(/data-ranking-row="/g)||[]).length,scenario.count,'Full roster is already in server-rendered HTML');
+    await page.waitForFunction(count=>document.querySelectorAll('.ir-public [data-ranking-row]').length===count,scenario.count);
+    const table=page.locator('.individual-ranking.ir-public');
+    assert.equal(await table.locator('thead th').count(),3);
+    assert.equal(await table.locator('thead th').nth(2).innerText(),labels[language][0]);
+    assert.equal(await table.locator('.playing-side-info').count(),0);
+    assert.equal(await table.locator('[data-ranking-row]').filter({hasText:'C7'}).count(),0);
+    assert.equal(await page.locator('[data-open-points], #additional-points-editor, [data-entry-form]').count(),0);
+    assert.equal((await table.textContent()).includes('QA negative'),false);
+    assert.equal(html.includes('QA negative'),false);
+    if(!king) assert.equal(html.includes('"playerNivel"'),false,'Hidden level is not serialized into public inline data');
+    const data=await sync(page,scenario.events,king,publicReference);
+    const last=data.ranking.at(-1);
+    const toggle=table.locator(`[data-ranking-toggle="${last.playerId}"]`);
+    await toggle.click();
+    const detail=table.locator(`[data-ranking-details="${last.playerId}"]`);
+    assert.equal(await detail.isVisible(),true);
+    assert.equal(await detail.locator('dl').first().locator('dt').count(),king?6:10);
+    await detail.locator('.ir-stages > summary').click();
+    if(king) {
+        await page.evaluate(()=>window.kingOfCourtViewer.loadData());
+    } else {
+        await page.evaluate(({ranking,currentPlayerId})=>IndividualRanking.render(document.getElementById('public-americano-ranking'),ranking,{publicView:true,canEdit:true,currentPlayerId}),{ranking:data.ranking,currentPlayerId:loggedIn?scenario.playerId:null});
+    }
+    assert.equal(await table.locator(`[data-ranking-toggle="${last.playerId}"]`).getAttribute('aria-expanded'),'true');
+    assert.equal(await table.locator(`[data-ranking-details="${last.playerId}"] .ir-stages`).getAttribute('open'),'');
+    assert.equal(await page.locator('[data-open-points], #additional-points-editor').count(),0);
+    assert.equal(await table.locator('.ir-me').count(),loggedIn?1:0);
+    const geometry=await table.evaluate(el=>({scroll:el.scrollWidth,width:el.clientWidth,inside:[...el.querySelectorAll('[data-ranking-row]')].every(row=>{
+        const rect=row.getBoundingClientRect();return rect.left>=0 && rect.right<=innerWidth+1;
+    }),unlimited:[el,el.parentElement,el.closest('.individual-ranking-card')].filter(Boolean).every(node=>getComputedStyle(node).maxHeight==='none')}));
+    assert.equal(geometry.inside,true,JSON.stringify({width,geometry}));
+    assert.ok(geometry.scroll<=geometry.width+1,JSON.stringify({width,geometry}));
+    assert.equal(geometry.unlimited,true);
+    if(scenario.count===24 && language==='ru' && [390,1440].includes(width)) {
+        await table.locator(`[data-ranking-toggle="${last.playerId}"]`).click();
+        await table.screenshot({path:resolve(output,`public-${king?'king':'americano'}-${width}.png`),style:'body > header { visibility:hidden!important; }'});
+    }
+    report.push({public:true,format:king?'king':'americano',language,width,count:scenario.count,finished:scenario.finished,loggedIn,fullRoster:true,readOnly:true});
+}
+async function publicLiveChange(admin, participant, scenario) {
+    await participant.goto(new URL(publicPath(scenario.events,true)+'?lang=ru',base).href);
+    const before=await sync(participant,scenario.events,true,publicReference);
+    const player=before.ranking.at(-1);
+    await participant.locator(`[data-ranking-toggle="${player.playerId}"]`).click();
+    await participant.locator(`[data-ranking-details="${player.playerId}"] .ir-stages > summary`).click();
+    await admin.goto(new URL(path(scenario.events,true)+'?lang=ru',base).href);
+    await admin.locator(`[data-ranking-row="${player.playerId}"] .ir-edit`).click();
+    const form=admin.locator('#additional-points-editor [data-entry-form]');
+    await form.waitFor();
+    await form.locator('[name=amount]').fill('7');
+    await form.locator('[name=note]').fill('QA public live private');
+    await form.locator('button[type=submit]').click();
+    await admin.locator('.additional-points-entry').filter({hasText:'QA public live private'}).waitFor();
+    await participant.evaluate(()=>window.kingOfCourtViewer.loadData());
+    const after=await sync(participant,scenario.events,true,publicReference);
+    assert.equal(after.ranking.find(row=>row.playerId===player.playerId).totalPoints,player.totalPoints+7);
+    assert.equal(await participant.locator(`[data-ranking-toggle="${player.playerId}"]`).getAttribute('aria-expanded'),'true');
+    assert.equal(await participant.locator(`[data-ranking-details="${player.playerId}"] .ir-stages`).getAttribute('open'),'');
+    assert.equal((await participant.locator('.ir-public').textContent()).includes('QA public live private'),false);
+    assert.equal(await participant.locator('[data-open-points]').count(),0);
+    report.push({public:true,liveChange:true,totalUpdated:true,expandedPreserved:true,privateNoteAbsent:true});
+}
 try {
     for(const language of ['ru','es','en']) {
         const {context,page,errors}=await login(fixture.accounts[0],language);
@@ -183,6 +270,36 @@ try {
         report.push({role:account.role,ownAccess:true,foreignDenied:['ORGANIZER','CLUB_ADMIN'].includes(account.role)});
         await context.close();
     }
+    const publicAdmin=await login(fixture.accounts[0],'ru');
+    publicReference=publicAdmin.page.request;
+    const anonymous=await publicSession();
+    for(const language of ['ru','es','en']) {
+        for(const width of [320,390,768,1440]) {
+            for(const scenario of fixture.publicScenarios) {
+                for(const king of [true,false]) await verifyPublic(anonymous.page,scenario,king,language,width);
+            }
+        }
+    }
+    assert.deepEqual(anonymous.errors,[]);
+    await anonymous.context.close();
+    const scenario=fixture.publicScenarios.find(item=>item.count===24);
+    const participant=await publicSession(scenario);
+    for(const king of [true,false]) await verifyPublic(participant.page,scenario,king,'ru',390,true);
+    assert.deepEqual(participant.errors,[]);
+    await publicLiveChange(publicAdmin.page,participant.page,scenario);
+    await participant.context.close();
+    await publicAdmin.context.close();
+    const noScript=await browser.newContext({javaScriptEnabled:false,viewport:{width:390,height:1000}});
+    await noScript.route('**/*',route=>new URL(route.request().url()).origin===base.origin?route.continue():route.abort());
+    const serverPage=await noScript.newPage();
+    for(const king of [true,false]) {
+        assert.equal((await serverPage.goto(new URL(publicPath(scenario.events,king),base).href)).status(),200);
+        assert.equal(await serverPage.locator('[data-ranking-row]').count(),24);
+        assert.equal(await serverPage.locator('.ir-public thead th').count(),3);
+        assert.equal(await serverPage.locator('[data-open-points], #additional-points-editor').count(),0);
+        report.push({public:true,format:king?'king':'americano',javaScript:false,count:24,fullRoster:true});
+    }
+    await noScript.close();
     await writeFile(resolve(output,'report.json'),JSON.stringify(report,null,2));
     console.log(JSON.stringify({passed:report.length}));
 } finally {await browser.close();}
