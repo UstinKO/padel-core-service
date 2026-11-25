@@ -43,7 +43,23 @@ try{
  await page.goto(f.baseUrl+'/admin/tournaments/'+f.eventId+'/telegram/messages');
  await page.locator('[data-candidates] input').first().waitFor();
  await page.locator(`[data-player-id="${f.alphaId}"]`).check();
- const draft=await prepare('Проба и рассылка');assert.equal(draft.canTest,true);assert.equal(draft.recipients.length,1);
+ let draft=await prepare('Проба и рассылка');assert.equal(draft.canTest,true);assert.equal(draft.recipients.length,1);
+ const expiredId=draft.campaignId;let dispatchPosts=0;
+ const watch=r=>{if(r.method()==='POST'&&/\/(confirm|test)$/.test(new URL(r.url()).pathname))dispatchPosts++;};
+ page.on('request',watch);
+ await page.route('**/campaigns/'+expiredId,async route=>{
+  const response=await route.fetch();const view=await response.json();
+  await route.fulfill({response,json:{...view,canConfirm:false}});
+ },{times:1});
+ await page.locator('[data-send]').click();
+ await page.locator('[data-compose-status]').filter({hasText:/Этот предпросмотр больше нельзя отправить/}).waitFor();
+ assert.equal(await page.locator('[data-send-dialog]').isVisible(),false);
+ assert.equal(await page.locator('[data-preview-result]').isVisible(),false);
+ assert.equal(await page.locator('[data-message-text]').inputValue(),draft.text);
+ assert.equal(await page.locator(`[data-player-id="${f.alphaId}"]`).isChecked(),true);
+ assert.equal(dispatchPosts,0);page.off('request',watch);
+ draft=await prepare(draft.text);assert.notEqual(draft.campaignId,expiredId);
+ checks.push('Недоступный снимок: понятное сообщение, текст и выбор сохранены, новый предпросмотр с новым ID без автоматической отправки');
  const testResponse=page.waitForResponse(r=>new URL(r.url()).pathname.endsWith('/test'));
  await page.locator('[data-test]').click();const test=await(await testResponse).json();assert.equal(test.kind,'TEST');
  assert.equal((await finished(test.id)).recipients[0].state,'SENT');

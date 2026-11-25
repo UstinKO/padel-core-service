@@ -202,8 +202,11 @@
         if (!prepared || sending || uncertain || sessionRequired) return;
         try {
             const campaign = await request('campaigns/' + prepared.campaignId);
-            if (prepared?.campaignId === campaign.id && campaign.canConfirm) openConfirmation(campaign, 'confirm');
-            else { element('send').disabled = true; refreshHistory(); }
+            if (prepared?.campaignId !== campaign.id) return;
+            if (campaign.canConfirm) openConfirmation(campaign, 'confirm');
+            else {
+                invalidate(); status(ct('previewUnavailable'), true); element('preview').focus(); refreshHistory();
+            }
         } catch (error) { reportError(error); }
     });
     element('confirm-cancel').addEventListener('click', () => element('send-dialog').close());
