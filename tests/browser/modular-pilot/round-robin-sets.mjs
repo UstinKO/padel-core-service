@@ -73,18 +73,21 @@ try {
       second: byId.get(match.team2Id) ?? byCaptain.get(match.team2Player1Id),
     }));
     assert.equal(matches.length, 6);
-    const scores = new Map([['1:2', [6, 4]], ['1:3', [6, 4]], ['1:4', [2, 6]],
-      ['2:3', [6, 5]], ['2:4', [6, 5]], ['3:4', [6, 4]]]);
+    const scores = fixture.mode === 'SETS'
+      ? new Map([['1:2', [6, 4]], ['1:3', [6, 4]], ['1:4', [2, 6]],
+        ['2:3', [6, 5]], ['2:4', [6, 5]], ['3:4', [6, 4]]])
+      : new Map([['1:2', [18, 14]], ['1:3', [16, 16]], ['1:4', [12, 20]],
+        ['2:3', [16, 16]], ['2:4', [16, 16]], ['3:4', [14, 18]]]);
     for (const match of matches) {
       assert.ok(match.first && match.second, 'Матч связан с постоянными парами');
       const key = [match.first, match.second].sort((a, b) => a - b).join(':');
-      const canonical = fixture.mode === 'SETS' ? scores.get(key) : [18, 14];
+      const canonical = scores.get(key);
       match.scores = match.first < match.second ? canonical : [...canonical].reverse();
       await saveScore(match.id, ...match.scores);
     }
     let circle = await read(base);
     assert.equal(circle.roundRobinComplete, true);
-    const expected = fixture.mode === 'SETS' ? [1, 2, 4, 3] : [1, 2, 3, 4];
+    const expected = fixture.mode === 'SETS' ? [1, 2, 4, 3] : [4, 1, 2, 3];
     assert.deepEqual(circle.ranking.map(team => team.teamNumber), expected);
     if (fixture.mode === 'SETS') {
       const first = circle.ranking.find(team => team.teamNumber === 1);
@@ -94,6 +97,17 @@ try {
       const direct = matches.find(match => [match.first, match.second].sort().join(':') === '1:2');
       await saveScore(direct.id, ...[...direct.scores].reverse());
       assert.equal((await read(base)).ranking[0].teamNumber, 2);
+      await saveScore(direct.id, ...direct.scores);
+      circle = await read(base);
+      assert.deepEqual(circle.ranking.map(team => team.teamNumber), expected);
+    } else {
+      const tied = circle.ranking.filter(team => team.teamNumber !== 4);
+      assert.deepEqual(tied.map(team => team.totalScore), [46, 46, 46]);
+      assert.deepEqual(tied.map(team => team.matchesWon), [1, 0, 0]);
+      assert.deepEqual(circle.ranking.map(team => team.currentPosition), [1, 2, 3, 4]);
+      const direct = matches.find(match => [match.first, match.second].sort().join(':') === '1:2');
+      await saveScore(direct.id, ...[...direct.scores].reverse());
+      assert.deepEqual((await read(base)).ranking.map(team => team.teamNumber), [4, 2, 3, 1]);
       await saveScore(direct.id, ...direct.scores);
       circle = await read(base);
       assert.deepEqual(circle.ranking.map(team => team.teamNumber), expected);
@@ -147,6 +161,7 @@ try {
     report.cases.push({ mode: fixture.mode, teams: 4, rounds: 3, circleMatches: 6,
       circleOrder: expected, sharedInitialPlaces: fixture.mode === 'SETS',
       headToHeadCorrectionAndReturn: fixture.mode === 'SETS', additionalFinal: true,
+      pointsTiesByWinsAndNumber: fixture.mode === 'POINTS', scoreCorrectionAndReturn: true,
       circleStatsPreserved: true, finished: true, historyPage: true, views, refresh: true });
     console.log('Round Robin ' + fixture.mode + ': круг, места, финал, завершение, история и 12 страниц — PASS');
   }

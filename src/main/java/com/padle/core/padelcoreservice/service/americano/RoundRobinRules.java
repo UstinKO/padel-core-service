@@ -3,14 +3,17 @@ package com.padle.core.padelcoreservice.service.americano;
 import com.padle.core.padelcoreservice.dto.americano.RoundRobinStandingDto;
 import com.padle.core.padelcoreservice.dto.americano.TeamAmericanoConfigDto;
 import com.padle.core.padelcoreservice.exception.InvalidStateException;
+import com.padle.core.padelcoreservice.mapper.americano.RoundRobinPointsStandingsMapper;
 import com.padle.core.padelcoreservice.model.americano.*;
 import com.padle.core.padelcoreservice.model.enums.RoundRobinScoringMode;
 import com.padle.core.padelcoreservice.model.enums.TournamentPhase;
 import java.util.*;
 import java.util.stream.IntStream;
+import org.mapstruct.factory.Mappers;
 
 /** Правила счёта и мест кругового этапа, независимые от хранения. */
 public final class RoundRobinRules {
+    private static final RoundRobinPointsStandingsMapper POINTS_MAPPER = Mappers.getMapper(RoundRobinPointsStandingsMapper.class);
     private RoundRobinRules() {}
 
     public static RoundRobinScoringMode mode(AmericanoRound round) {
@@ -53,14 +56,13 @@ public final class RoundRobinRules {
     }
 
     public static Comparator<AmericanoTeam> order(RoundRobinScoringMode mode) {
-        var sporting = mode == RoundRobinScoringMode.SETS
-                ? Comparator.comparing(AmericanoTeam::getMatchesWon).reversed()
+        if (mode == RoundRobinScoringMode.SETS) {
+            return Comparator.comparing(AmericanoTeam::getMatchesWon).reversed()
                     .thenComparing(Comparator.comparing(AmericanoTeam::getGameDifference).reversed())
-                : Comparator.comparing(AmericanoTeam::getTotalScore).reversed()
-                    .thenComparing(Comparator.comparing(AmericanoTeam::getMatchesWon).reversed())
-                    .thenComparing(Comparator.comparing(AmericanoTeam::getPointDifference).reversed())
-                    .thenComparing(AmericanoTeam::getMatchesLost);
-        return sporting.thenComparing(AmericanoTeam::getTeamNumber).thenComparing(AmericanoTeam::getId);
+                    .thenComparing(AmericanoTeam::getTeamNumber).thenComparing(AmericanoTeam::getId);
+        }
+        var pointsOrder = RoundRobinPointsStandingsEngine.order();
+        return (first, second) -> pointsOrder.compare(POINTS_MAPPER.toTeam(first, 0), POINTS_MAPPER.toTeam(second, 0));
     }
 
     public static List<RoundRobinStandingDto> finalOrder(List<RoundRobinStandings.Ranked> circle, List<AmericanoMatch> extra) {
