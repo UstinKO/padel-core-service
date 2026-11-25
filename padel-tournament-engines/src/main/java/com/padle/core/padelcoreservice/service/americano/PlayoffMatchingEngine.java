@@ -1,0 +1,246 @@
+package com.padle.core.padelcoreservice.service.americano;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+/**
+ * Универсальный движок подбора соперников для стадий плей-офф (1/8, 1/4, 1/2) —
+ * не привязан к конкретной стадии.
+ * <p>
+ * Перебирает все варианты разбиения кандидатов на пары и выбирает лучший по строгим
+ * приоритетам. Порядок приоритетов зависит от стадии: в четвертьфинале посев важнее
+ * разведения сильнейших, в полуфинале — наоборот, разведение сильнейших и анти-реванш
+ * важнее посева. См. {@link PriorityOrder}.
+ * <p>
+ * Приоритеты сравниваются лексикографически — более высокий приоритет никогда
+ * не приносится в жертву ради более низкого.
+ */
+public class PlayoffMatchingEngine {
+
+    public record Candidate(Long teamId, int seed, int winStreak) {
+    }
+
+    public record Pairing(Long team1Id, Long team2Id) {
+    }
+
+    public record MatchingResult(List<Pairing> pairings, boolean allConstraintsSatisfied, String warning) {
+    }
+
+    public enum PriorityOrder {
+        /** Посев ("сильный слабому") → разведение сильнейших → анти-реванш. Для четвертьфинала. */
+        SEED_FIRST,
+        /** Разведение сильнейших → анти-реванш → посев. Для полуфинала. */
+        STRENGTH_FIRST,
+        /**
+         * Анти-реванш → разведение групп по результату квалификации (2-0/1-1/0-2) → посев.
+         * Для посева четвертьфинала/play-in сразу из квалификации
+         * (в отличие от {@link #SEED_FIRST}, где посев важнее анти-реванша).
+         */
+        REMATCH_FIRST
+    }
+
+    /** Эквивалентно {@code match(candidates, priorOpponents, PriorityOrder.SEED_FIRST)} — приоритеты общего плей-офф (§53/§11). */
+    public MatchingResult match(List<Candidate> candidates, Map<Long, Set<Long>> priorOpponents) {
+        return match(candidates, priorOpponents, PriorityOrder.SEED_FIRST);
+    }
+
+    /**
+     * @param candidates      команды, которые нужно разбить на пары (чётное количество)
+     * @param priorOpponents  история встреч: teamId -> множество teamId, с которыми команда уже играла
+     * @param priorityOrder   в каком порядке сравнивать критерии — общий плей-офф (QF) или полуфинал
+     */
+    public MatchingResult match(List<Candidate> candidates, Map<Long, Set<Long>> priorOpponents,
+                                 PriorityOrder priorityOrder) {
+        if (candidates.size() % 2 != 0) {
+            throw new IllegalArgumentException(
+                    "Matching requires an even number of candidates, got " + candidates.size());
+        }
+        if (candidates.isEmpty()) {
+            return new MatchingResult(List.of(), true, null);
+        }
+
+        Map<Long, Candidate> byId = candidates.stream()
+                .collect(Collectors.toMap(Candidate::teamId, c -> c));
+        Set<Long> strongGroup = topStreakGroup(candidates);
+        int idealSeedDistance = idealSeedDistance(candidates);
+
+        List<List<Pairing>> allMatchings = new ArrayList<>();
+        enumerateMatchings(new ArrayList<>(candidates), new ArrayList<>(), allMatchings);
+
+        List<Pairing> best = null;
+        int[] bestRawCost = null;
+        int[] bestOrderedCost = null;
+        for (List<Pairing> matching : allMatchings) {
+            int[] rawCost = costOf(matching, byId, strongGroup, idealSeedDistance, priorOpponents);
+            int[] orderedCost = applyPriorityOrder(rawCost, priorityOrder);
+            if (bestOrderedCost == null || compareCost(orderedCost, bestOrderedCost) < 0) {
+                bestOrderedCost = orderedCost;
+                bestRawCost = rawCost;
+                best = matching;
+            }
+        }
+
+        boolean allSatisfied = bestRawCost[1] == 0 && bestRawCost[2] == 0;
+        return new MatchingResult(best, allSatisfied, allSatisfied ? null : buildWarning(bestRawCost));
+    }
+
+    /**
+     * Посев 1/8 финала. Анти-реванш и разведение лидеров сохраняют приоритет.
+     * При одинаковом разбросе посева предпочитается зеркальная сетка.
+     */
+    List<Pairing> seedRoundOf16(List<Candidate> candidates, Map<Long, Set<Long>> priorOpponents) {
+        int count = candidates.size();
+        int full = (1 << count) - 1;
+        Set<Long> leaders = topStreakGroup(candidates);
+        int[][] edges = new int[count][count];
+        for (int first = 0; first < count; first++) {
+            Candidate a = candidates.get(first);
+            for (int second = first + 1; second < count; second++) {
+                Candidate b = candidates.get(second);
+                int rematch = priorOpponents.getOrDefault(a.teamId(), Set.of()).contains(b.teamId()) ? 1 : 0;
+                int leadersTogether = leaders.contains(a.teamId()) && leaders.contains(b.teamId()) ? 1 : 0;
+                int spread = b.seed() - a.seed();
+                int mirrorDeviation = Math.abs(a.seed() + b.seed() - (count + 1));
+                // В 1/8 не более 8 пар, а суммарные отклонения по посеву меньше 129.
+                edges[first][second] = (((9 * rematch + leadersTogether) * 129 - spread) * 129)
+                        + mirrorDeviation;
+            }
+        }
+
+        int[] costs = new int[full + 1];
+        Arrays.fill(costs, Integer.MAX_VALUE);
+        costs[0] = 0;
+        byte[] partners = new byte[full + 1];
+        bestFirstStageCost(full, edges, costs, partners);
+
+        List<Pairing> result = new ArrayList<>(count / 2);
+        for (int remaining = full; remaining != 0; ) {
+            int first = Integer.numberOfTrailingZeros(remaining);
+            int second = partners[remaining];
+            result.add(new Pairing(candidates.get(first).teamId(), candidates.get(second).teamId()));
+            remaining ^= (1 << first) | (1 << second);
+        }
+        return result;
+    }
+
+    private int bestFirstStageCost(int remaining, int[][] edges, int[] costs, byte[] partners) {
+        if (costs[remaining] != Integer.MAX_VALUE) {
+            return costs[remaining];
+        }
+        int first = Integer.numberOfTrailingZeros(remaining);
+        int rest = remaining & (remaining - 1);
+        for (int choices = rest; choices != 0; choices &= choices - 1) {
+            int second = Integer.numberOfTrailingZeros(choices);
+            int cost = edges[first][second] + bestFirstStageCost(rest ^ (1 << second), edges, costs, partners);
+            if (cost < costs[remaining]) {
+                costs[remaining] = cost;
+                partners[remaining] = (byte) second;
+            }
+        }
+        return costs[remaining];
+    }
+
+    /** Переставляет [посев, разведение, реванш] под нужный порядок приоритетов, не меняя сами значения. */
+    private int[] applyPriorityOrder(int[] rawCost, PriorityOrder order) {
+        return switch (order) {
+            case SEED_FIRST -> rawCost; // [посев, разведение, реванш]
+            case STRENGTH_FIRST -> new int[]{rawCost[1], rawCost[2], rawCost[0]}; // [разведение, реванш, посев]
+            case REMATCH_FIRST -> new int[]{rawCost[2], rawCost[1], rawCost[0]}; // [реванш, разведение, посев]
+        };
+    }
+
+    /** Рекурсивно перечисляет все варианты разбиения на пары: фиксируем первого кандидата и перебираем его партнёра. */
+    private void enumerateMatchings(List<Candidate> remaining, List<Pairing> current, List<List<Pairing>> results) {
+        if (remaining.isEmpty()) {
+            results.add(new ArrayList<>(current));
+            return;
+        }
+        Candidate first = remaining.get(0);
+        for (int i = 1; i < remaining.size(); i++) {
+            Candidate partner = remaining.get(i);
+            List<Candidate> next = new ArrayList<>(remaining);
+            next.remove(i);
+            next.remove(0);
+
+            current.add(new Pairing(first.teamId(), partner.teamId()));
+            enumerateMatchings(next, current, results);
+            current.remove(current.size() - 1);
+        }
+    }
+
+    /** [посевное отклонение, нарушений разведения сильнейших, повторных встреч] — сравниваются лексикографически. */
+    private int[] costOf(List<Pairing> matching, Map<Long, Candidate> byId, Set<Long> strongGroup,
+                          int idealSeedDistance, Map<Long, Set<Long>> priorOpponents) {
+        int actualSeedDistance = 0;
+        int streakViolations = 0;
+        int rematchViolations = 0;
+
+        for (Pairing p : matching) {
+            Candidate a = byId.get(p.team1Id());
+            Candidate b = byId.get(p.team2Id());
+            actualSeedDistance += Math.abs(a.seed() - b.seed());
+
+            if (strongGroup.contains(p.team1Id()) && strongGroup.contains(p.team2Id())) {
+                streakViolations++;
+            }
+            if (priorOpponents.getOrDefault(p.team1Id(), Set.of()).contains(p.team2Id())) {
+                rematchViolations++;
+            }
+        }
+
+        int seedingDeviation = idealSeedDistance - actualSeedDistance; // 0 = максимально возможный разброс посева
+        return new int[]{seedingDeviation, streakViolations, rematchViolations};
+    }
+
+    private int compareCost(int[] a, int[] b) {
+        for (int i = 0; i < a.length; i++) {
+            int cmp = Integer.compare(a[i], b[i]);
+            if (cmp != 0) return cmp;
+        }
+        return 0;
+    }
+
+    /**
+     * "Сильнейшие" — верхняя половина кандидатов по серии побед (столько же, сколько будет пар),
+     * чтобы в идеальном случае в каждой паре оказывалось не больше одного из них.
+     */
+    private Set<Long> topStreakGroup(List<Candidate> candidates) {
+        int groupSize = candidates.size() / 2;
+        return candidates.stream()
+                .sorted(Comparator.comparingInt(Candidate::winStreak).reversed()
+                        .thenComparingInt(Candidate::seed))
+                .limit(groupSize)
+                .map(Candidate::teamId)
+                .collect(Collectors.toSet());
+    }
+
+    /**
+     * Максимально достижимая сумма |seed_a - seed_b| по всем парам — достигается зеркальным
+     * разбиением отсортированных посевов (самый сильный с самым слабым и т.д.), что и является
+     * математическим определением "сильный против слабого" для любого набора посевов.
+     */
+    private int idealSeedDistance(List<Candidate> candidates) {
+        List<Integer> seeds = candidates.stream()
+                .map(Candidate::seed)
+                .sorted()
+                .toList();
+        int n = seeds.size();
+        int total = 0;
+        for (int i = 0; i < n / 2; i++) {
+            total += seeds.get(n - 1 - i) - seeds.get(i);
+        }
+        return total;
+    }
+
+    private String buildWarning(int[] cost) {
+        if (cost[2] > 0) {
+            return "Полностью исключить повторные матчи невозможно. Предложен вариант с минимальным количеством повторений.";
+        }
+        return "Не удалось развести всех сильнейших команд по разным парам. Предложен наиболее сбалансированный вариант.";
+    }
+}

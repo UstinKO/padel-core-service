@@ -358,6 +358,18 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 | `GET` | `/double-registration/accept-pair` | HTML | — | Страница из письма-предложения (`?token=...`), шаблон `accept-pair.html`. |
 | `POST` | `/api/tournaments/double/accept-pair` | JSON | — | Принять предложение пары по токену. |
 
+#### Ссылка для публикации мероприятия
+
+В `/admin/tournaments` таблица и мобильные карточки используют общий диалог
+«Ссылка для публикации». Для активного мероприятия с `canView`, кроме черновиков
+и отменённых, можно скопировать публичный `${siteBaseUrl}/torneo/ID`. Telegram
+помечается `telegram / social + telegram_posts`, Instagram Stories —
+`instagram / social + instagram_stories`, Flobi —
+`flobi / referral + flobi_tournaments`; `utm_content=torneo_ID`. Текущий query
+админки не переносится. Клиентская операция не меняет данные и не отправляет
+событие регистрации. При отказе Clipboard API ссылка выделяется для ручного
+копирования. Новых HTTP-маршрутов и полномочий нет.
+
 #### Admin: управление регистрациями
 
 | Метод | URL | Тип | Auth | Описание |
@@ -560,6 +572,7 @@ BORRADOR → PUBLICADO → REGISTRO_ABIERTO → CERRADO → FINALIZADO
 | `POST` | `/tournaments/team-playoff/api/matches/{matchId}/swap-team` | Атомарный обмен между неначатыми матчами стадии; ожидаемая версия и подтверждения. |
 | `POST` | `/tournaments/team-playoff/api/matches/{matchId}/play-start` | Отметить фактическое начало матча на корте. |
 | `POST` | `/tournaments/team-playoff/api/matches/{matchId}/correct-pair` | Подтверждённое исправление составов и счёта до заполнения следующего этапа. |
+| `GET`, `POST` | `/tournaments/team-playoff/api/{tournamentId}/early-playoff` | Проверка и подтверждение раннего плей-офф; доступ организатора. |
 | `GET` | `/tournaments/team-playoff/api/{tournamentId}/ranking` | Рейтинг квалификации, JSON. |
 | `GET` | `/tournaments/team-playoff/api/{tournamentId}/court-board` | Доска кортов: занятость, пул команд, предложенные пары 2-го тура. |
 
@@ -814,6 +827,8 @@ Thymeleaf admin/qr-report, static/js/qr-report.js, static/css/qr-report.css.
 
 `PublicDiscoveryController` → `PublicDiscoveryService`: `GET /api/public/home`, `/api/public/catalog`, `/api/public/clubs`, `/api/public/clubs/{id}`. Типизированные публичные DTO, пагинация в БД, без мутаций. [Контракт](endpoints/public-schedule.md#публичные-данные-ui-v2).
 
+`PublicCalendarController` / `PersonalCalendarController` → `PublicCalendarService`: GET `/api/public/calendar`, `/api/public/calendar/catalog`, `/api/players/me/calendar`. Полные публичные данные периода и отдельные статусы текущего игрока без административных сведений. [Контракт](endpoints/public-calendar.md).
+
 
 `PublicEventController` → `PublicEventService`/`PublicEventStateService`: `GET /api/public/events/{id}` — типизированная карточка события, опубликованный контакт организатора, формат/фаза сохранённого проведения и read-only ссылки. [Контракт](endpoints/public-schedule.md#веб-карточка-мероприятия-и-серверный-seo-контракт).
 
@@ -826,3 +841,9 @@ GET/HEAD `/api/public/events/{eventId}/live` и `/api/public/king-of-court/{king
 ## Структурированная история отмен — LFPT-0900
 
 [Контекст, совместимость API, версия заявки, права и ограничения](endpoints/registration-cancellation.md). Текущая регистрационная строка и платежи сохраняются; событие отмены не стирается при повторной записи. Существующие входы используют общий переход в той же транзакции, письма — после commit. Публичный кабинет и его новые маршруты остаются #902.
+
+### Календарь административных мероприятий
+
+| Метод | URL | Назначение |
+|---|---|---|
+| GET | `/api/admin/events/calendar` | Все доступные события выбранного месяца и клубы, без записи данных; [контракт](endpoints/admin-event-calendar.md) |

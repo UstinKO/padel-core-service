@@ -1,13 +1,20 @@
 package com.padle.core.padelcoreservice.controller.admin;
 
+import com.padle.core.padelcoreservice.model.enums.EventFormat;
+
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.model.Owner;
+import com.padle.core.padelcoreservice.model.enums.GenderFormat;
 import com.padle.core.padelcoreservice.model.enums.Modalidad;
+import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.model.enums.OwnerRole;
+import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
 import com.padle.core.padelcoreservice.service.ClubService;
+import com.padle.core.padelcoreservice.service.OrganizerOrganizationService;
 import com.padle.core.padelcoreservice.service.TournamentAccessService;
 import com.padle.core.padelcoreservice.service.TournamentService;
+import com.padle.core.padelcoreservice.service.americano.TeamPlayoffService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -18,6 +25,7 @@ import org.springframework.ui.ExtendedModelMap;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -33,6 +41,8 @@ class AdminTournamentListTest {
     @Mock private TournamentService tournaments;
     @Mock private TournamentAccessService access;
     @Mock private ClubService clubs;
+    @Mock private TeamPlayoffService playoff;
+    @Mock private OrganizerOrganizationService organizations;
     @InjectMocks private AdminController controller;
 
     @Test
@@ -46,7 +56,7 @@ class AdminTournamentListTest {
                 event(5, 3, 8, TO.plusDays(1), TournamentType.AMERICANO_TEAMS, Modalidad.DOBLES)));
         doCallRealMethod().when(access).canManage(any(), any(), any());
 
-        var model = list(admin, 3L, AdminEventFormat.AMERICANO_PAIRS, FROM, TO);
+        var model = list(admin, 3L, EventFormat.AMERICANO_PAIRS, FROM, TO);
         assertThat(listed(model)).containsExactly(first, last);
         assertThat(model.get("resultCount")).isEqualTo(2);
     }
@@ -71,7 +81,7 @@ class AdminTournamentListTest {
         Owner clubAdmin = owner(OwnerRole.CLUB_ADMIN);
         clubAdmin.setClubId(3L);
         TournamentDto own = event(1, 3, 8, FROM, TournamentType.PADEL_CLINIC, Modalidad.INDIVIDUAL);
-        when(tournaments.getTournamentsByClub(3L)).thenReturn(List.of(own));
+        when(tournaments.getTournamentsForOwner(clubAdmin.getId(), false)).thenReturn(List.of(own));
         doCallRealMethod().when(access).canManage(any(), any(), any());
 
         assertThat(listed(list(clubAdmin, null, null, null, null))).containsExactly(own);
@@ -93,9 +103,86 @@ class AdminTournamentListTest {
         assertThat(listed(list(organizer, 9L, null, null, null))).isEmpty();
     }
 
-    private ExtendedModelMap list(Owner owner, Long clubId, AdminEventFormat format, LocalDate from, LocalDate to) {
+    @Test
+    void matchesDeclaredLevelsAndCombinesAllFilters() {
+        Owner admin = owner(OwnerRole.SUPER_ADMIN);
+        TournamentDto single = pair(1, "C7", GenderFormat.MASCULINO, TournamentStatus.REGISTRO_ABIERTO, true);
+        TournamentDto upper = pair(2, "C8_C7", GenderFormat.MASCULINO, TournamentStatus.REGISTRO_ABIERTO, true);
+        TournamentDto lower = pair(3, "C7_C6", GenderFormat.MASCULINO, TournamentStatus.CANCELADO, false);
+        TournamentDto adjacent = pair(4, "C6", GenderFormat.MASCULINO, TournamentStatus.REGISTRO_ABIERTO, true);
+        TournamentDto female = pair(5, "D7_D8", GenderFormat.FEMENINO, TournamentStatus.REGISTRO_ABIERTO, true);
+        TournamentDto sum = pair(6, "SUMA_16", GenderFormat.MIXTO, TournamentStatus.REGISTRO_ABIERTO, true);
+        TournamentDto all = pair(7, "TODOS", GenderFormat.MIXTO, TournamentStatus.REGISTRO_ABIERTO, true);
+        TournamentDto past = pair(8, "C7", GenderFormat.MASCULINO, TournamentStatus.REGISTRO_ABIERTO, true);
+        past.setFechaInicio(LocalDate.of(2020, 1, 1));
+        when(tournaments.getAllTournaments()).thenReturn(List.of(single, upper, lower, adjacent, female, sum, all, past));
+        doCallRealMethod().when(access).canManage(any(), any(), any());
+
+        assertThat(listed(list(admin, null, null, null, null, null, Nivel.C7, null)))
+                .containsExactly(single, upper, lower, past);
+        assertThat(listed(list(admin, null, null, null, null, null, Nivel.D7, null))).containsExactly(female);
+        assertThat(listed(list(admin, null, null, null, null, null, Nivel.TODOS, null))).containsExactly(all);
+        assertThat(listed(list(admin, null, null, null, null, null, Nivel.C7_C6, null))).containsExactly(lower);
+        assertThat(listed(list(admin, null, null, null, null, null, null, TournamentStatus.CANCELADO)))
+                .containsExactly(lower);
+        assertThat(listed(list(admin, null, null, null, null, null, null, TournamentStatus.REGISTRO_ABIERTO)))
+                .contains(past);
+        var model = list(admin, 3L, EventFormat.AMERICANO_PAIRS, FROM, TO,
+                GenderFormat.MASCULINO, Nivel.C7, TournamentStatus.REGISTRO_ABIERTO);
+        assertThat(listed(model)).containsExactly(single, upper);
+        assertThat(model.get("resultCount")).isEqualTo(2);
+    }
+
+    @Test
+    void completedTournamentKeepsConductActionOnlyWhenPlayoffWasSaved() {
+        Owner organizer = owner(OwnerRole.ORGANIZER);
+        TournamentDto finished = pair(1, "C6", GenderFormat.MASCULINO, TournamentStatus.FINALIZADO, true);
+        TournamentDto withoutConduct = pair(2, "C6", GenderFormat.MASCULINO, TournamentStatus.FINALIZADO, true);
+        TournamentDto deactivated = pair(3, "C6", GenderFormat.MASCULINO, TournamentStatus.FINALIZADO, false);
+        TournamentDto foreign = pair(4, "C6", GenderFormat.MASCULINO, TournamentStatus.FINALIZADO, true);
+        finished.setFechaInicio(LocalDate.of(2024, 1, 1));
+        foreign.setOwnerId(9L);
+        when(tournaments.getAllTournaments()).thenReturn(List.of(finished, withoutConduct, deactivated, foreign));
+        doCallRealMethod().when(access).canManage(any(), any(), any());
+        when(playoff.findConductIds(List.of(1L, 2L))).thenReturn(Set.of(1L));
+
+        var model = list(organizer, null, null, null, null);
+        assertThat(listed(model)).containsExactly(finished, withoutConduct, deactivated);
+        assertThat((List<?>) model.get("tournaments")).extracting(row -> (Boolean) ((Map<?, ?>) row).get("teamPlayoffConduct"))
+                .containsExactly(true, false, false);
+    }
+
+    @Test
+    void organizerFilterUsesEventOwnerTogetherWithExistingFilters() {
+        Owner admin = owner(OwnerRole.SUPER_ADMIN);
+        TournamentDto selected = event(1, 3, 8, FROM, TournamentType.PADEL_CLINIC, Modalidad.INDIVIDUAL);
+        when(tournaments.getAllTournaments()).thenReturn(List.of(selected,
+                event(2, 3, 9, FROM, TournamentType.PADEL_CLINIC, Modalidad.INDIVIDUAL)));
         var model = new ExtendedModelMap();
-        controller.listTournaments(model, owner, clubId, format, from, to);
+        controller.listTournaments(model, admin, 3L, EventFormat.PADEL_CLINIC, FROM, TO,
+                null, null, null, 8L);
+        assertThat(listed(model)).containsExactly(selected);
+        assertThat(model.get("selectedOrganizerId")).isEqualTo(8L);
+        assertThat(model.get("filtersActive")).isEqualTo(true);
+    }
+
+    private static TournamentDto pair(long id, String level, GenderFormat gender, TournamentStatus status, boolean active) {
+        TournamentDto event = event(id, 3, 8, FROM, TournamentType.AMERICANO_TEAMS, Modalidad.DOBLES);
+        event.setCategoriaNivel(level);
+        event.setGeneroFormato(gender);
+        event.setEstado(status);
+        event.setIsActive(active);
+        return event;
+    }
+
+    private ExtendedModelMap list(Owner owner, Long clubId, EventFormat format, LocalDate from, LocalDate to) {
+        return list(owner, clubId, format, from, to, null, null, null);
+    }
+
+    private ExtendedModelMap list(Owner owner, Long clubId, EventFormat format, LocalDate from, LocalDate to,
+                                  GenderFormat gender, Nivel level, TournamentStatus status) {
+        var model = new ExtendedModelMap();
+        controller.listTournaments(model, owner, clubId, format, from, to, gender, level, status, null);
         return model;
     }
 

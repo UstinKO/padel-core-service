@@ -7,7 +7,9 @@ import threading
 import urllib.error
 import uuid
 import preview
+import pilot_manual
 
+pilot_manual.ensure_idle(preview.RUNTIME / 'pilot-manual-session.json')
 state = preview.load()
 client = preview.Client(state)
 client.login(state)

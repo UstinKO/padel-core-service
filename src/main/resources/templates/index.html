@@ -34,6 +34,7 @@
     <!-- Custom Styles -->
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" th:href="@{/css/home-intro.css}">
+    <link rel="stylesheet" th:href="@{/css/public-calendar-entry.css}">
     <th:block th:replace="~{fragments/analytics :: ga4}"></th:block>
     <th:block th:replace="~{fragments/analytics :: cookie-consent}"></th:block>
     <th:block th:replace="~{fragments/analytics :: clarity}"></th:block>
@@ -155,7 +156,7 @@
                     <strong th:text="#{home.mendoza.title}">Campamento de pádel en Mendoza</strong>
                     <span class="home-camp__date" th:text="#{home.mendoza.dates}">10–13 de diciembre</span>
                 </div>
-                <a class="home-camp__link"
+                <a class="home-camp__link" data-mendoza-banner-link
                    target="_blank" rel="noopener"
                    th:href="|https://camp-mendoza.1-padel.com#{home.mendoza.path}?utm_source=1-padel.com&amp;utm_medium=referral&amp;utm_campaign=mendoza_2026&amp;utm_content=homepage_banner|">
                     <span th:text="#{home.mendoza.details}">Más información</span>
@@ -166,6 +167,7 @@
                 <h2 class="section-title" th:text="#{home.section.upcoming}">
                     Próximos Torneos
                 </h2>
+                <a href="/torneos?view=calendar" id="publicCalendarEntry" class="home-calendar-entry" th:aria-label="#{public_calendar.heading}" th:title="#{public_calendar.heading}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M16 3v4M8 3v4M3 11h18"/></svg></a>
             </div>
 
             <!-- Filters (без изменений) -->
@@ -208,6 +210,8 @@
                                 <option value="C6">C6</option>
                                 <option value="C5">C5</option>
                                 <option value="C4">C4</option>
+                                <option value="C3">C3</option>
+                                <option value="C4_C3">C4/C3</option>
                                 <option value="D9">D9</option>
                                 <option value="D8">D8</option>
                                 <option value="D7">D7</option>
@@ -591,7 +595,10 @@
 <script th:src="@{/js/notifications.js}"></script>
 <script th:src="@{/js/main.js}"></script>
 <script th:src="@{/js/registration-tracking.js}"></script>
+<script th:src="@{/js/tournament-availability.js}"></script>
+<script th:src="@{/js/level-utils.js}"></script>
 <script th:src="@{/js/home.js}"></script>
+<script type="module" th:src="@{/js/public-calendar-entry.mjs}"></script>
 <script th:src="@{/js/password-reset.js}"></script>
 </body>
 </html>

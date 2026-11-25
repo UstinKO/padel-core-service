@@ -17,6 +17,13 @@ public interface AmericanoRoundRepository extends JpaRepository<AmericanoRound, 
 
     boolean existsByTournamentIdAndPhase(Long tournamentId, TournamentPhase phase);
 
+    @Query("""
+            SELECT DISTINCT ar.tournament.id
+            FROM AmericanoRound ar
+            WHERE ar.tournament.id IN :tournamentIds AND ar.phase IN ('QUALIFICATION', 'PLAYOFF')
+            """)
+    List<Long> findTeamPlayoffConductIds(@Param("tournamentIds") List<Long> tournamentIds);
+
     boolean existsByTournamentIdAndPhaseIsNull(Long tournamentId);
 
     @EntityGraph(attributePaths = {"matches", "matches.team1Player1", "matches.team1Player2", "matches.team2Player1", "matches.team2Player2"})

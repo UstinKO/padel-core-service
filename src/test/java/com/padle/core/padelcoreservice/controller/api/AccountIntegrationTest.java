@@ -6,6 +6,8 @@ import com.padle.core.padelcoreservice.repository.*;
 import com.padle.core.padelcoreservice.service.*;
 import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2User;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -43,6 +45,19 @@ class AccountIntegrationTest {
     }
     private String update(PlayerPadel p) {
         return "{\"nombre\":\"Changed\",\"apellido\":\"Garcia\",\"email\":\""+p.getEmail()+"\",\"telefono\":\"\",\"telegramUsername\":\""+p.getTelegramUsername()+"\",\"nivelJugador\":\"C7\",\"preferredLocale\":\"ru\"}";
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"C3", "С3"})
+    void signupKeepsTheCanonicalNewLevel(String level) throws Exception {
+        when(captcha.verify(null)).thenReturn(true);
+        String address = UUID.randomUUID()+"@gmail.com";
+        mvc.perform(post("/players/registro").with(csrf())
+                        .param("nombre", "Учебный").param("apellido", "Участник")
+                        .param("email", address).param("nivelJugador", level).param("telefono", "+5491199994567")
+                        .param("password", "Fixture-Password1!").param("confirmPassword", "Fixture-Password1!"))
+                .andExpect(status().is3xxRedirection());
+        assertThat(players.findByEmail(address)).get().extracting(PlayerPadel::getNivelJugador).isEqualTo(Nivel.C3);
     }
     @Test
     void webSignupRequiresPhoneEvenWhenTelegramIsPresent() throws Exception {
@@ -107,6 +122,36 @@ class AccountIntegrationTest {
         mvc.perform(get("/api/players/me").with(authentication(auth))).andExpect(status().isOk()).andExpect(jsonPath("$.id").value(p.getId()));
         mvc.perform(get("/api/auth/session").with(authentication(auth))).andExpect(status().isOk()).andExpect(jsonPath("$.authenticated").value(true));
     }
+    @Test
+    void savesPlayingLevelForGooglePlayerWithoutChangingOtherProfileFields() throws Exception {
+        var player = player();
+        player.setNivelJugador(Nivel.SIN_ESPECIFICAR);
+        players.saveAndFlush(player);
+        var oauth = new CustomOAuth2User(mock(OAuth2User.class), player);
+        var auth = new UsernamePasswordAuthenticationToken(oauth, null, oauth.getAuthorities());
+
+        mvc.perform(patch("/api/players/me/level").with(authentication(auth)).with(csrf())
+                        .contentType("application/json").content("{\"nivelJugador\":\"C6\"}"))
+                .andExpect(status().isNoContent());
+
+        assertThat(players.findNivelById(player.getId())).contains(Nivel.C6);
+        assertThat(players.findByEmail(player.getEmail())).isPresent();
+    }
+
+    @Test
+    void rejectsMissingCsrfAndNonPlayerLevelsWithoutChangingProfile() throws Exception {
+        var player = player();
+
+        mvc.perform(patch("/api/players/me/level").with(user(player))
+                        .contentType("application/json").content("{\"nivelJugador\":\"C6\"}"))
+                .andExpect(status().isForbidden());
+        mvc.perform(patch("/api/players/me/level").with(user(player)).with(csrf())
+                        .contentType("application/json").content("{\"nivelJugador\":\"SIN_ESPECIFICAR\"}"))
+                .andExpect(status().isUnprocessableEntity());
+
+        assertThat(players.findNivelById(player.getId())).contains(Nivel.C7);
+    }
+
     @Test void invalidProfileAndPasswordDoNotPartiallyMutatePlayer() throws Exception {
         var p=player();
         mvc.perform(put("/api/players/me").with(user(p)).with(csrf()).contentType("application/json")

@@ -1,5 +1,10 @@
 package com.padle.core.padelcoreservice.service.americano;
 
+import com.padle.core.application.roundrobin.RoundRobinRankingQuery;
+import com.padle.core.application.roundrobin.RoundRobinNotFound;
+import com.padle.core.padelcoreservice.adapter.roundrobin.LegacyRoundRobinReadAdapter;
+import com.padle.core.padelcoreservice.mapper.americano.RoundRobinRankingMapper;
+
 import com.padle.core.padelcoreservice.dto.americano.AmericanoTeamDto;
 import com.padle.core.padelcoreservice.dto.americano.TeamAmericanoConfigDto;
 import com.padle.core.padelcoreservice.dto.americano.TeamAmericanoRankingDto;
@@ -13,10 +18,11 @@ import com.padle.core.padelcoreservice.model.americano.AmericanoTeam;
 import com.padle.core.padelcoreservice.model.enums.AmericanoPlayerStatus;
 import com.padle.core.padelcoreservice.model.enums.AmericanoRoundStatus;
 import com.padle.core.padelcoreservice.model.enums.Modalidad;
-import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
+import com.padle.core.padelcoreservice.model.enums.TournamentPhase;
+import com.padle.core.padelcoreservice.model.enums.RoundRobinScoringMode;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoMatchRepository;
@@ -29,7 +35,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,6 +43,9 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class TeamAmericanoService {
 
+    private final RoundRobinRankingQuery rankingQuery;
+    private final LegacyRoundRobinReadAdapter rankingReadAdapter;
+    private final RoundRobinRankingMapper rankingMapper;
     private final TournamentRepository tournamentRepository;
     private final TournamentRegistrationRepository registrationRepository;
     private final AmericanoTeamRepository teamRepository;
@@ -61,7 +69,9 @@ public class TeamAmericanoService {
         log.info("Initializing Team Americano: tournamentId={}, courts={}, points={}",
                 tournamentId, config.getCourts(), config.getPointsPerMatch());
 
-        Tournament tournament = getTournament(tournamentId);
+        RoundRobinRules.validateConfig(config);
+        Tournament tournament = tournamentRepository.lockById(tournamentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tournament not found"));
         validateForInit(tournament);
 
         // Загружаем подтверждённые пары
@@ -74,26 +84,7 @@ public class TeamAmericanoService {
 
         log.info("Found {} confirmed pairs", pairs.size());
 
-        // Создаём AmericanoTeam для каждой пары
-        List<AmericanoTeam> teams = new ArrayList<>();
-        int teamNum = 1;
-        for (PairData pair : pairs) {
-            AmericanoTeam team = AmericanoTeam.builder()
-                    .tournament(tournament)
-                    .player1(pair.player1)
-                    .player2(pair.player2)
-                    .player2Name(pair.player2Name)
-                    .player2Phone(pair.player2Phone)
-                    .teamNumber(teamNum++)
-                    .currentPosition(0)
-                    .status(AmericanoPlayerStatus.ACTIVE)
-                    .build();
-            teams.add(team);
-        }
-        teamRepository.saveAll(teams);
-        log.info("Saved {} teams", teams.size());
-        teamRepository.saveAll(teams);
-        log.info("Saved {} teams", teams.size());
+        List<AmericanoTeam> teams = prepareTeams(tournament, pairs);
 
         // Генерируем Round Robin расписание
         List<AmericanoRound> rounds = generateRoundRobin(tournament, teams, config);
@@ -113,6 +104,24 @@ public class TeamAmericanoService {
         return buildRanking(tournament, teams, rounds);
     }
 
+    private List<AmericanoTeam> prepareTeams(Tournament tournament, List<PairData> pairs) {
+        var existing = teamRepository.findByTournamentId(tournament.getId());
+        if (!existing.isEmpty()) {
+            boolean sameRoster = existing.size() == pairs.size() && pairs.stream().allMatch(pair ->
+                    existing.stream().anyMatch(team -> team.getPlayer1().getId().equals(pair.player1.getId())
+                            && Objects.equals(Optional.ofNullable(team.getPlayer2()).map(p -> p.getId()),
+                                    Optional.ofNullable(pair.player2).map(p -> p.getId()))));
+            if (!sameRoster) RoundRobinRules.fail("roster");
+            return existing.stream().sorted(Comparator.comparing(AmericanoTeam::getTeamNumber)).toList();
+        }
+        return teamRepository.saveAll(java.util.stream.IntStream.range(0, pairs.size()).mapToObj(index -> {
+            var pair = pairs.get(index);
+            return AmericanoTeam.builder().tournament(tournament).player1(pair.player1).player2(pair.player2)
+                    .player2Name(pair.player2Name).player2Phone(pair.player2Phone).teamNumber(index + 1)
+                    .currentPosition(0).status(AmericanoPlayerStatus.ACTIVE).build();
+        }).toList());
+    }
+
     /**
      * Генерирует превью Round Robin расписания без сохранения в БД.
      * Использует те же пары что и initialize() — из TournamentRegistration.
@@ -123,6 +132,7 @@ public class TeamAmericanoService {
 
         log.info("Previewing Team Americano rounds: tournamentId={}", tournamentId);
 
+        RoundRobinRules.validateConfig(config);
         Tournament tournament = getTournament(tournamentId);
 
         // Загружаем подтверждённые пары (та же логика что в initialize)
@@ -165,7 +175,7 @@ public class TeamAmericanoService {
             roundDto.setTournamentId(tournamentId);
             roundDto.setStatus(AmericanoRoundStatus.valueOf("PENDING"));
             roundDto.setCourts(Math.min(slot.size(), config.getCourts()));
-            roundDto.setPointsPerMatch(config.getPointsPerMatch());
+            roundDto.setPointsPerMatch(config.getScoringMode() == RoundRobinScoringMode.SETS ? 6 : config.getPointsPerMatch());
             roundDto.setNote("Ronda " + (r + 1) + " (preview)");
             roundDto.setTotalMatches(slot.size());
             roundDto.setCompletedMatches(0);
@@ -240,7 +250,7 @@ public class TeamAmericanoService {
                                                     TeamAmericanoConfigDto config) {
         int T = teams.size();
         int courts = config.getCourts();
-        int points = config.getPointsPerMatch();
+        int points = config.getScoringMode() == RoundRobinScoringMode.SETS ? 6 : config.getPointsPerMatch();
 
         // Генерируем все пары матчей через circle method
         List<long[]> allMatchPairs = circleMethodPairs(teams); // [team1Idx, team2Idx]
@@ -265,8 +275,9 @@ public class TeamAmericanoService {
                     .roundNumber(r + 1)
                     .status(AmericanoRoundStatus.PENDING)
                     .pointsPerMatch(points)
+                    .scoringMode(config.getScoringMode())
                     .isDoubles(true)
-                    .courts(Math.min(slot.size(), courts))
+                    .courts(courts)
                     .note("Ronda " + (r + 1))
                     .build();
 
@@ -282,6 +293,7 @@ public class TeamAmericanoService {
                         .round(savedRound)
                         .tournament(tournament)
                         .matchNumber(c + 1)
+                        .team1Id(t1.getId()).team2Id(t2.getId())
                         .team1Player1(t1.getPlayer1())
                         .team1Player2(t1.getPlayer2())
                         .team2Player1(t2.getPlayer1())
@@ -390,25 +402,22 @@ public class TeamAmericanoService {
                 .orElseThrow(() -> new ResourceNotFoundException("Match not found: " + matchId));
 
         Long tournamentId = match.getTournament().getId();
-        int limit = match.getRound().getPointsPerMatch();
-
-        if (team1Score + team2Score != limit) {
-            throw new InvalidStateException(String.format(
-                    "La suma de puntos debe ser %d. Actual: %d", limit, team1Score + team2Score));
-        }
+        if (!isInitialized(tournamentId) || (match.getRound().getPhase() != null
+                && !RoundRobinRules.additional(match))) RoundRobinRules.fail("format");
+        RoundRobinRules.validateScore(match, team1Score, team2Score);
 
         if (match.isCompleted()) {
             if (Objects.equals(match.getTeam1Score(), team1Score) && Objects.equals(match.getTeam2Score(), team2Score)) {
                 return match;
             }
-            revertTeamStats(match, tournamentId);
+            if (!RoundRobinRules.additional(match)) revertTeamStats(match, tournamentId);
         }
 
         match.complete(team1Score, team2Score);
         matchRepository.save(match);
 
         // Применяем новый результат
-        applyTeamStats(match, tournamentId);
+        if (!RoundRobinRules.additional(match)) applyTeamStats(match, tournamentId);
 
         // Автозавершение раунда
         tryAutoCompleteRound(match.getRound().getId());
@@ -421,10 +430,10 @@ public class TeamAmericanoService {
         int s2 = match.getTeam2Score();
 
         findTeamByPlayer(tournamentId, match.getTeam1Player1())
-                .ifPresent(t -> { t.addMatchResult(s1, s2); teamRepository.save(t); });
+                .ifPresent(t -> { RoundRobinRules.apply(t, s1, s2, RoundRobinRules.mode(match.getRound()), 1); teamRepository.save(t); });
 
         findTeamByPlayer(tournamentId, match.getTeam2Player1())
-                .ifPresent(t -> { t.addMatchResult(s2, s1); teamRepository.save(t); });
+                .ifPresent(t -> { RoundRobinRules.apply(t, s2, s1, RoundRobinRules.mode(match.getRound()), 1); teamRepository.save(t); });
     }
 
     private void revertTeamStats(AmericanoMatch match, Long tournamentId) {
@@ -432,10 +441,10 @@ public class TeamAmericanoService {
         int s2 = match.getTeam2Score();
 
         findTeamByPlayer(tournamentId, match.getTeam1Player1())
-                .ifPresent(t -> { t.revertMatchResult(s1, s2); teamRepository.save(t); });
+                .ifPresent(t -> { RoundRobinRules.apply(t, s1, s2, RoundRobinRules.mode(match.getRound()), -1); teamRepository.save(t); });
 
         findTeamByPlayer(tournamentId, match.getTeam2Player1())
-                .ifPresent(t -> { t.revertMatchResult(s2, s1); teamRepository.save(t); });
+                .ifPresent(t -> { RoundRobinRules.apply(t, s2, s1, RoundRobinRules.mode(match.getRound()), -1); teamRepository.save(t); });
     }
 
     /**
@@ -469,30 +478,31 @@ public class TeamAmericanoService {
     // ═══════════════════════════════════════════════════════════════════════
 
     public TeamAmericanoRankingDto getRanking(Long tournamentId) {
-        Tournament tournament = getTournament(tournamentId);
-        List<AmericanoTeam> teams = teamRepository.findRankingByTournamentId(tournamentId);
-        List<AmericanoRound> rounds = roundRepository
-                .findByTournamentIdOrderByRoundNumberAsc(tournamentId);
-        return buildRanking(tournament, teams, rounds);
+        try {
+            return rankingMapper.toDto(rankingQuery.ranking(tournamentId));
+        } catch (RoundRobinNotFound missing) {
+            throw new ResourceNotFoundException(missing.getMessage());
+        }
     }
 
     @Transactional
     public void updateTeamPositions(Long tournamentId) {
-        List<AmericanoTeam> teams = teamRepository.findRankingByTournamentId(tournamentId);
-        AtomicInteger pos = new AtomicInteger(1);
-        teams.forEach(t -> {
-            t.setCurrentPosition(pos.getAndIncrement());
-            teamRepository.save(t);
-        });
+        var mode = roundRepository.findByTournamentIdOrderByRoundNumberAsc(tournamentId).stream()
+                .filter(r -> r.getPhase() == null).findFirst().map(RoundRobinRules::mode)
+                .orElse(RoundRobinScoringMode.POINTS);
+        var standings = RoundRobinStandings.rank(teamRepository.findByTournamentId(tournamentId),
+                matchRepository.findByTournamentIdOrderByRoundIdAscMatchNumberAsc(tournamentId), mode);
+        standings.forEach(entry -> entry.team().setCurrentPosition(entry.position()));
+        teamRepository.saveAll(standings.stream().map(RoundRobinStandings.Ranked::team).toList());
     }
 
     public List<AmericanoTeamDto> getTeams(Long tournamentId) {
-        return teamRepository.findRankingByTournamentId(tournamentId)
-                .stream().map(this::toDto).collect(Collectors.toList());
+        return getRanking(tournamentId).getRanking();
     }
 
     public boolean isInitialized(Long tournamentId) {
-        return !teamRepository.findByTournamentId(tournamentId).isEmpty();
+        return roundRepository.existsByTournamentIdAndPhaseIsNull(tournamentId)
+                && !teamRepository.findByTournamentId(tournamentId).isEmpty();
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -504,10 +514,11 @@ public class TeamAmericanoService {
     public TeamAmericanoRankingDto finishTournament(Long tournamentId) {
         Tournament tournament = getTournament(tournamentId);
 
+        if (tournament.getEstado() == TournamentStatus.CANCELADO) RoundRobinRules.fail("finished");
         long total     = roundRepository.findMaxRoundNumber(tournamentId).orElse(0);
         long completed = roundRepository.countCompletedRounds(tournamentId);
 
-        if (completed < total) {
+        if (!isInitialized(tournamentId) || completed < total) {
             throw new InvalidStateException(
                     "No se puede finalizar. Quedan " + (total - completed) + " rondas sin completar.");
         }
@@ -612,7 +623,7 @@ public class TeamAmericanoService {
     }
 
     private void validateForInit(Tournament tournament) {
-        if (tournament.getTipo() != TournamentType.AMERICANO) {
+        if (tournament.getTipo() != TournamentType.AMERICANO && tournament.getTipo() != TournamentType.AMERICANO_TEAMS) {
             throw new InvalidStateException("El torneo no es de tipo AMERICANO");
         }
         if (tournament.getModalidad() != Modalidad.DOBLES) {
@@ -623,7 +634,7 @@ public class TeamAmericanoService {
                     "El torneo debe estar en estado CERRADO para inicializarlo. Actual: "
                             + tournament.getEstado());
         }
-        if (isInitialized(tournament.getId())) {
+        if (!roundRepository.findByTournamentIdOrderByRoundNumberAsc(tournament.getId()).isEmpty()) {
             throw new InvalidStateException("El torneo ya fue inicializado");
         }
     }
@@ -637,67 +648,6 @@ public class TeamAmericanoService {
     private TeamAmericanoRankingDto buildRanking(Tournament tournament,
                                                  List<AmericanoTeam> teams,
                                                  List<AmericanoRound> rounds) {
-        long total     = rounds.size();
-        long completed = rounds.stream().filter(AmericanoRound::isCompleted).count();
-        boolean finished = total > 0 && completed == total;
-
-        AtomicInteger pos = new AtomicInteger(1);
-        List<AmericanoTeamDto> ranking = teams.stream()
-                .map(t -> {
-                    AmericanoTeamDto dto = toDto(t);
-                    dto.setCurrentPosition(pos.getAndIncrement());
-                    return dto;
-                })
-                .collect(Collectors.toList());
-
-        return TeamAmericanoRankingDto.builder()
-                .tournamentId(tournament.getId())
-                .tournamentName(tournament.getNombre())
-                .totalRounds((int) total)
-                .completedRounds((int) completed)
-                .totalTeams(teams.size())
-                .isFinished(finished)
-                .ranking(ranking)
-                .build();
-    }
-
-    private AmericanoTeamDto toDto(AmericanoTeam t) {
-        AmericanoTeamDto dto = new AmericanoTeamDto();
-        dto.setId(t.getId());
-        dto.setTournamentId(t.getTournament().getId());
-        dto.setTeamNumber(t.getTeamNumber());
-        dto.setCurrentPosition(t.getCurrentPosition());
-        dto.setStatus(t.getStatus().name());
-        dto.setDisplayName(t.getDisplayName());
-
-        if (t.getPlayer1() != null) {
-            dto.setPlayer1Id(t.getPlayer1().getId());
-            dto.setPlayer1Name(t.getPlayer1().getNombre() + " " + t.getPlayer1().getApellido());
-            dto.setPlayer1Email(t.getPlayer1().getEmail());
-            dto.setPlayer1Phone(t.getPlayer1().getTelefono());
-            dto.setPlayer1Nivel(Nivel.orNullIfSinEspecificar(t.getPlayer1().getNivelJugador()));
-        }
-
-        if (t.getPlayer2() != null) {
-            dto.setPlayer2Id(t.getPlayer2().getId());
-            dto.setPlayer2Name(t.getPlayer2().getNombre() + " " + t.getPlayer2().getApellido());
-            dto.setPlayer2Email(t.getPlayer2().getEmail());
-            dto.setPlayer2Phone(t.getPlayer2().getTelefono());
-            dto.setPlayer2Nivel(Nivel.orNullIfSinEspecificar(t.getPlayer2().getNivelJugador()));
-        } else {
-            dto.setPlayer2Name(t.getPlayer2Name());
-            dto.setPlayer2Phone(t.getPlayer2Phone());
-        }
-
-        dto.setTotalScore(t.getTotalScore());
-        dto.setMatchesPlayed(t.getMatchesPlayed());
-        dto.setMatchesWon(t.getMatchesWon());
-        dto.setMatchesLost(t.getMatchesLost());
-        dto.setMatchesDrawn(t.getMatchesDrawn());
-        dto.setPointsScored(t.getPointsScored());
-        dto.setPointsConceded(t.getPointsConceded());
-        dto.setPointDifference(t.getPointDifference());
-
-        return dto;
+        return rankingMapper.toDto(rankingQuery.compose(rankingReadAdapter.fromLoaded(tournament, teams, rounds)));
     }
 }

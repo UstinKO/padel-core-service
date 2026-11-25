@@ -99,6 +99,10 @@ public class TournamentRegistration {
     @Builder.Default
     private Boolean attended = false;
 
+    @Column(name = "partner_attended", nullable = false)
+    @Builder.Default
+    private Boolean partnerAttended = false;
+
     @Column(name = "participation_confirmed", nullable = false)
     @Builder.Default
     private Boolean participationConfirmed = false;
@@ -262,6 +266,19 @@ public class TournamentRegistration {
         return Boolean.TRUE.equals(isActive) && !Boolean.TRUE.equals(isDoubleRegistration) && partner == null
                 && (status == RegistrationStatus.SOLO_SEARCH || status == RegistrationStatus.SOLO_ADD_LATER
                     || status == RegistrationStatus.WAITLIST);
+    }
+
+    @Column(name = "replacement_search", nullable = false)
+    @Builder.Default
+    private boolean replacementSearch = false;
+
+    public boolean needsReplacementInMain() {
+        return isConfirmed() && Boolean.TRUE.equals(isActive) && Boolean.TRUE.equals(isDoubleRegistration)
+                && partner == null && mainPlayerId != null;
+    }
+
+    public boolean canFormPairThroughSearch() {
+        return isPairableSolo() || (needsReplacementInMain() && replacementSearch);
     }
 
     public boolean isPairComplete() {

@@ -120,7 +120,9 @@ export function SessionAndNetwork() {
       const destination =
         safeDestination(`${prefix}${location.pathname}${location.search}${location.hash}`) ??
         '/torneos';
-      void navigate(`/login?expired=true&destination=${encodeURIComponent(destination)}`);
+      const login = `/login?expired=true&destination=${encodeURIComponent(destination)}`;
+      if (!prefix && location.pathname === '/players/dashboard') window.location.assign(login);
+      else void navigate(login);
     };
     window.addEventListener('one-padel:session-expired', expired);
     return () => window.removeEventListener('one-padel:session-expired', expired);

@@ -36,7 +36,7 @@ public class PerfilController {
 
         log.info("Viendo perfil de jugador: {}", player.getEmail());
 
-        model.addAttribute("player", player);
+        model.addAttribute("player", playerService.getPlayerById(player.getId()).orElseThrow());
         return "players/perfil";
     }
 
@@ -122,7 +122,7 @@ public class PerfilController {
             }
             Nivel nivelParsed;
             try {
-                nivelParsed = Nivel.valueOf(nivelJugador);
+                nivelParsed = Nivel.fromValue(nivelJugador);
             } catch (IllegalArgumentException e) {
                 redirectAttributes.addFlashAttribute("errorMessage",
                         "Nivel de juego inválido");
@@ -201,6 +201,7 @@ public class PerfilController {
             }
 
         } catch (ClaimPhoneInUseException e) {
+            redirectAttributes.addFlashAttribute("guestClaimPrefillPhone", telefono);
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
             e.whatsappUrl().ifPresent(url -> redirectAttributes.addFlashAttribute("guestClaimWhatsappUrl", url));
         } catch (DataIntegrityViolationException e) {

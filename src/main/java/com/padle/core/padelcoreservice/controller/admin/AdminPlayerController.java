@@ -1,5 +1,8 @@
 package com.padle.core.padelcoreservice.controller.admin;
 
+import com.padle.core.padelcoreservice.model.enums.PlayingSide;
+
+import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.dto.PlayerResponseDto;
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
 import com.padle.core.padelcoreservice.exception.InvalidStateException;
@@ -7,6 +10,7 @@ import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
+import com.padle.core.padelcoreservice.rating.PilotEloRanking;
 import com.padle.core.padelcoreservice.service.PlayerService;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +38,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -47,6 +52,7 @@ public class AdminPlayerController {
     private final TournamentService tournamentService;
     private final TournamentRegistrationRepository tournamentRegistrationRepository;
     private final MessageSource messageSource;
+    private final Optional<PilotEloRanking> eloRanking;
 
     private String msg(String key) {
         return messageSource.getMessage(key, null, LocaleContextHolder.getLocale());
@@ -58,10 +64,8 @@ public class AdminPlayerController {
 
         List<PlayerResponseDto> players = playerService.getAllPlayers();
         if (owner.isClubAdmin()) {
-            // Клубный админ видит только игроков с регистрацией на турнир своего клуба
-            Set<Long> clubPlayerIds = owner.getClubId() == null
-                    ? Set.of()
-                    : new HashSet<>(tournamentRegistrationRepository.findDistinctPlayerIdsByTournamentClubId(owner.getClubId()));
+            // Клубный аккаунт видит участников собственных мероприятий.
+            Set<Long> clubPlayerIds = tournamentRegistrationRepository.findPlayerIdsByTournamentOwnerId(owner.getId());
             players = players.stream()
                     .filter(p -> clubPlayerIds.contains(p.getId()))
                     .collect(Collectors.toList());
@@ -92,19 +96,28 @@ public class AdminPlayerController {
 
     @GetMapping("/{id}")
     public String viewPlayer(@PathVariable Long id, Model model, @AuthenticationPrincipal Owner owner) {
-        if (owner.isClubAdmin() && (owner.getClubId() == null
-                || !tournamentRegistrationRepository.existsByTournamentClubIdAndPlayerId(owner.getClubId(), id))) {
+        if (owner.isClubAdmin()
+                && !tournamentRegistrationRepository.existsByTournamentOwnerIdAndPlayerId(owner.getId(), id)) {
             throw new AccessDeniedException("No tienes permiso para ver este jugador");
         }
 
         PlayerResponseDto player = playerService.obtenerJugadorPorId(id);
         List<TournamentRegistrationDto> registrations = tournamentService.getActiveRegistrationsByPlayer(id);
+        if (owner.isClubAdmin()) {
+            Set<Long> ownedIds = tournamentService.getTournamentsForOwner(owner.getId(), false).stream()
+                    .map(TournamentDto::getId).collect(Collectors.toSet());
+            registrations = registrations.stream().filter(reg -> ownedIds.contains(reg.getTournamentId())).toList();
+        }
 
         model.addAttribute("player", player);
         model.addAttribute("registrations", registrations);
         model.addAttribute("isSuperAdmin", owner.isSuperAdmin());
         model.addAttribute("hasRegistrations", playerService.hasTournamentRegistrations(id));
         model.addAttribute("isGuestAccount", PlayerPadel.isGuestEmail(player.getEmail()));
+        if (owner.isSuperAdmin() && eloRanking.isPresent()) {
+            model.addAttribute("eloHistoryAvailable", true);
+            eloRanking.get().playerRow(id).ifPresent(row -> model.addAttribute("adminEloRow", row));
+        }
 
         return "admin/players/details";
     }
@@ -164,6 +177,14 @@ public class AdminPlayerController {
         return "redirect:/admin/players/" + id;
     }
 
+    @PostMapping("/{id}/playing-side")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public String updatePlayingSide(@PathVariable Long id,
+            @RequestParam PlayingSide playingSide) {
+        playerService.actualizarLadoJugador(id, playingSide);
+        return "redirect:/admin/players/" + id;
+    }
+
     @PostMapping("/{id}/nivel")
     public Object updatePlayerNivel(@PathVariable Long id,
                                      @RequestParam(required = false) String nivel,
@@ -191,7 +212,7 @@ public class AdminPlayerController {
             // nivel_jugador — NOT NULL в БД: админ по-прежнему может «очистить» уровень игрока
             // (исправление данных), но это означает присвоить sentinel SIN_ESPECIFICAR,
             // а не настоящий NULL.
-            Nivel nivelParsed = (nivel != null && !nivel.isBlank()) ? Nivel.valueOf(nivel) : Nivel.SIN_ESPECIFICAR;
+            Nivel nivelParsed = (nivel != null && !nivel.isBlank()) ? Nivel.fromValue(nivel) : Nivel.SIN_ESPECIFICAR;
             if (!Nivel.isPlayerLevel(nivelParsed) && nivelParsed != Nivel.SIN_ESPECIFICAR) {
                 throw new IllegalArgumentException("Nivel no aplicable a un jugador: " + nivel);
             }

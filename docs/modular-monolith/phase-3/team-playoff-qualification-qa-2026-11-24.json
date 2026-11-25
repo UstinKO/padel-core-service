@@ -1,0 +1,249 @@
+{
+  "task": "LFPT-1338",
+  "date": "2026-11-24",
+  "result": "PASS",
+  "testedWorkingTreeBaseRevision": "dc5cb1cab053afe6ab8a47f468ff9851838d3809",
+  "localJarBuiltBeforeCommit": true,
+  "backendCleanVerify": {
+    "padel-api-contract": {
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "padel-tournament-engines": {
+      "tests": 63,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "padel-application": {
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "padel-bootstrap": {
+      "tests": 1294,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 4
+    },
+    "total": {
+      "tests": 1364,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 4
+    }
+  },
+  "enginesTests": 63,
+  "qualificationPairingOriginalTests": 6,
+  "playoffFormatOriginalTests": 11,
+  "previousAlgorithmTests": 42,
+  "architectureTests": 4,
+  "unchangedSourceSha256": {
+    "QualificationPairing.java": "2c000e2966a0e46bc2c061e43ad2d370045c4a163b423be886966373dd13fd7d",
+    "QualificationPairingTest.java": "51d9c443528e1d8f018d7e3f76279503b2c4b7bfa54752770c45e9144af71bf2",
+    "PlayoffFormat.java": "edde83b2bdc50396d0b38708a1d142fb9bcdd9f9172dabb2c80b91b2c006aad0",
+    "PlayoffFormatTest.java": "9682cfb36e30c80c8284693f53fe9e339a25f3ae3a33f038bfa42340ab462ef7"
+  },
+  "javaRuntime": 21,
+  "javaRelease": 17,
+  "artifacts": {
+    "engines": "PASS",
+    "application": "PASS",
+    "contract": "PASS",
+    "calculationClasses": 6,
+    "requiredNestedTypes": 10,
+    "publicNestedTypes": 9
+  },
+  "artifactGuardTests": 7,
+  "automationTests": {
+    "github": 27,
+    "relay": 48,
+    "worker": 5,
+    "workerSkipped": 1,
+    "preview": 12,
+    "releases": 22
+  },
+  "pilot": {
+    "sourceRevision": "dc5cb1cab053afe6ab8a47f468ff9851838d3809",
+    "jarSha256": "2399b0cfe186c7f6f1c50e43743aff41c58855f28315844f6f4beff925bbd859",
+    "automated": true,
+    "manual": "NOT_RUN",
+    "cases": [
+      {
+        "key": "qualified-8",
+        "result": "PASS",
+        "knownDefect": null
+      },
+      {
+        "key": "qualified-9",
+        "result": "PASS",
+        "knownDefect": 1067
+      },
+      {
+        "key": "qualified-16",
+        "result": "PASS",
+        "knownDefect": null
+      }
+    ],
+    "expectations": "browser-expectations-2026-11-18.json",
+    "knownDefects": [
+      "https://github.com/UstinKO/padel-core-service/issues/1067"
+    ],
+    "security": {
+      "ownAdmin": 200,
+      "foreignAdmin": 403,
+      "anonymousAdmin": 302,
+      "missingCsrf": 403,
+      "foreignMutation": 403,
+      "publicCard": 200,
+      "unchanged": true
+    },
+    "stale": {
+      "staleVersion": {
+        "status": 302,
+        "staleHeader": true
+      },
+      "stalePair": {
+        "status": 200,
+        "success": false
+      },
+      "unchangedAfterRefusal": true,
+      "regeneratePreservedPairs": true
+    },
+    "realtime": {
+      "legacySubscription": true,
+      "publicSubscription": true,
+      "legacyMessage": true,
+      "publicInvalidation": true,
+      "bothViewsUpdated": true,
+      "repeated": {
+        "status": 200,
+        "success": false,
+        "replayHeader": true
+      },
+      "concurrentSameKey": {
+        "accepted": 1,
+        "rejected": 1
+      },
+      "restorePreservedLinksAndResult": true,
+      "restoreLegacyMessage": true,
+      "restorePublicInvalidation": true,
+      "restoreBothViewsUpdated": true,
+      "restoreIdsPreserved": true,
+      "reactRestoreWithoutNavigation": true
+    },
+    "qualificationBoundary": {
+      "blockedBeforeQualification": true,
+      "directPostUnchanged": true,
+      "invalidScoreNotSent": true,
+      "missingCsrfRejected": {
+        "status": 302,
+        "destination": "/error/403"
+      },
+      "noStartAfterRefusal": true,
+      "startWithoutNavigation": true,
+      "allTeamsSeededAfterQualification": true,
+      "finished": true
+    },
+    "noShow": {
+      "activeTeams": 7,
+      "absentNumber": 8,
+      "excludedFromAvailableAndSeeding": true,
+      "publicRankingContainsAbsent": true
+    },
+    "result": "PASS",
+    "artifactVerified": true,
+    "commonBrowserSmoke": "PASS",
+    "jwt": {
+      "login": 200,
+      "me": 200,
+      "events": 200,
+      "anonymousMe": 401,
+      "transport": "inside-own-preview-container"
+    }
+  },
+  "extended": {
+    "sourceRevision": "dc5cb1cab053afe6ab8a47f468ff9851838d3809",
+    "jarSha256": "2399b0cfe186c7f6f1c50e43743aff41c58855f28315844f6f4beff925bbd859",
+    "automated": true,
+    "manual": "NOT_RUN",
+    "cases": [
+      {
+        "key": "early-9",
+        "result": "PASS",
+        "repeatedPairPreservedId": true,
+        "invalidQualificationRefused": true,
+        "lastQualificationPreservedPairAndResult": true,
+        "linkedWinner": true,
+        "semifinal": null,
+        "finished": true
+      },
+      {
+        "key": "early-16",
+        "result": "PASS",
+        "repeatedPairPreservedId": true,
+        "invalidQualificationRefused": true,
+        "lastQualificationPreservedPairAndResult": true,
+        "linkedWinner": false,
+        "semifinal": {
+          "confirmedBeforeOtherQuarterfinals": true,
+          "pairAndCourtPreserved": true
+        },
+        "finished": true
+      }
+    ],
+    "result": "PASS"
+  },
+  "devtools": {
+    "result": "PASS",
+    "starts": 2,
+    "sameRestartLoader": true,
+    "qualificationPairing": true,
+    "playoffFormat": true,
+    "negativeControl": "EXPECTED_ILLEGAL_ACCESS_ERROR",
+    "springBootDevTools": true,
+    "probeOnlyContext": true,
+    "applicationServiceSharesLoader": true
+  },
+  "devtoolsProbeSourceSha256": "0fc3f658cc3b2e01f69936b3465c0d095957aa5772cd9edabb75856fb3372dc7",
+  "jwt": {
+    "login": 200,
+    "me": 200,
+    "events": 200,
+    "anonymousMe": 401,
+    "transport": "inside-own-preview-container"
+  },
+  "expo": {
+    "ordinaryPreviewApi": 401,
+    "gatewayBasicChallenge": true,
+    "qaAdapterApi": 200,
+    "events": 10,
+    "rendered": true,
+    "externalRequestsBlocked": true,
+    "ordinaryPreviewLimitationPreserved": true
+  },
+  "releaseRehearsal": {
+    "result": "PASS",
+    "scenarios": 5,
+    "statePreserved": true
+  },
+  "rollback": {
+    "result": "PASS",
+    "scheduleScoresRankingPreserved": true,
+    "schemaAndLiquibasePreserved": true,
+    "baselineRevision": "dc5cb1cab053afe6ab8a47f468ff9851838d3809",
+    "baselineJarSha256": "98f7cf39b7ca0625e8f33f106a1de0160f6b80bb467f4dad3f67166d39ca80db",
+    "currentJarSha256": "2399b0cfe186c7f6f1c50e43743aff41c58855f28315844f6f4beff925bbd859"
+  },
+  "docsDrift": "PASS",
+  "agentMigration": "PASS",
+  "humanManual": "NOT_RUN",
+  "multiReplicaConcurrency": "NOT_RUN",
+  "validationSourcesSha256": {
+    ".github/bin/check-engine-artifact.py": "282b9114521a0c3d9d7aa0d4c8ba38f77fa18dcdec9fcb0222232b824f4187ee",
+    ".github/bin/test_engine_artifact.py": "cdf1ad884ac2301ad2ab3a3d0355ea9003d6244d33c4a55491061279559fcba1"
+  }
+}

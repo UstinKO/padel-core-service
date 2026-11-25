@@ -1,5 +1,7 @@
 package com.padle.core.padelcoreservice.dto;
 
+import com.padle.core.padelcoreservice.model.enums.PlayingSide;
+
 import com.padle.core.padelcoreservice.model.enums.Nivel;
 import jakarta.validation.constraints.*;
 import java.util.List;
@@ -21,7 +23,8 @@ public final class AccountDtos {
                                  @NotBlank @Size(max=100) String confirmPassword) {}
     public record Profile(Long id, String nombre, String apellido, String email, String telefono,
                           String telegramUsername, Nivel nivelJugador, String preferredLocale,
-                          boolean guestAccount, boolean oauth2User) {}
+                          boolean guestAccount, boolean oauth2User, PlayingSide playingSide) {}
+    public record LevelUpdate(@NotNull Nivel nivelJugador) {}
     public record ProfileUpdate(@NotBlank @Size(min=3,max=100) @NoBotPattern @Pattern(regexp="^[\\p{L} .'-]{3,}$") String nombre,
                                 @NotBlank @Size(min=3,max=100) @NoBotPattern @Pattern(regexp="^[\\p{L} .'-]{3,}$") String apellido,
                                 @NotBlank @Email @Size(max=150) String email,

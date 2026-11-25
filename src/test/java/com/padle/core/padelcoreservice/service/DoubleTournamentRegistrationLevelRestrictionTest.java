@@ -58,6 +58,8 @@ class DoubleTournamentRegistrationLevelRestrictionTest {
     @Mock private MessageSource messageSource;
     @Mock private PasswordEncoder passwordEncoder;
 
+    @Mock private ParticipationRequests participationRequests;
+    @Mock private com.padle.core.padelcoreservice.repository.PairProposalResponseRepository proposalResponses;
     @Mock private PairTermsService pairTerms;
     @Spy
     private RegistrationCancellationService cancellations = new RegistrationCancellationService(
@@ -115,6 +117,7 @@ class DoubleTournamentRegistrationLevelRestrictionTest {
     void companeroExistenteFueraDeRango_bloqueaAntesDeRegistrar() {
         PlayerPadel partner = PlayerPadel.builder()
                 .id(PARTNER_ID)
+                .activo(true)
                 .email("partner@example.com")
                 .nivelJugador(Nivel.C9) // C9 vs C6 — demasiado lejos
                 .build();
@@ -125,11 +128,31 @@ class DoubleTournamentRegistrationLevelRestrictionTest {
         partnerDto.setExistingUserId(PARTNER_ID);
 
         when(playerRepository.findById(PARTNER_ID)).thenReturn(Optional.of(partner));
-        when(messageSource.getMessage(eq("tournament.register.level_mismatch"), any(), any(Locale.class)))
-                .thenReturn("nivel lejano");
-
         assertThatThrownBy(() -> service.registerForDoubleTournament(tournamentDto, MAIN_PLAYER_ID, partnerDto))
-                .isInstanceOf(TournamentRegistrationException.class);
+                .hasMessage("PARTNER_LEVEL_MISMATCH");
+    }
+
+    @Test
+    void selectedPartnerWithoutLevelDoesNotAskTheBookerToUpdateTheirProfile() {
+        var partner = PlayerPadel.builder().id(PARTNER_ID).activo(true).email("guest.qa@1padel.guest")
+                .nivelJugador(Nivel.SIN_ESPECIFICAR).build();
+        when(playerRepository.findById(PARTNER_ID)).thenReturn(Optional.of(partner));
+
+        assertThatThrownBy(() -> service.registerForDoubleTournament(tournamentDto, MAIN_PLAYER_ID,
+                PartnerRegistrationDto.builder().existingUserId(PARTNER_ID).build()))
+                .isInstanceOf(com.padle.core.padelcoreservice.exception.PairRegistrationException.class)
+                .hasMessage("PARTNER_LEVEL_REQUIRED");
+        org.mockito.Mockito.verifyNoInteractions(tournamentService, notificationService);
+    }
+
+    @Test
+    void missingSelectedPartnerDoesNotCreateAnotherPlayer() {
+        assertThatThrownBy(() -> service.registerForDoubleTournament(tournamentDto, MAIN_PLAYER_ID,
+                PartnerRegistrationDto.builder().existingUserId(PARTNER_ID).build()))
+                .isInstanceOf(com.padle.core.padelcoreservice.exception.PairRegistrationException.class)
+                .hasMessage("PARTNER_NOT_FOUND");
+        org.mockito.Mockito.verify(playerRepository, org.mockito.Mockito.never()).save(any());
+        org.mockito.Mockito.verifyNoInteractions(tournamentService, notificationService);
     }
 
     @Test

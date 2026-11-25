@@ -1,6 +1,11 @@
 package com.padle.core.padelcoreservice.service.americano;
 
+import com.padle.core.padelcoreservice.mapper.TeamPlayingSideMapper;
+
 import com.padle.core.padelcoreservice.dto.americano.AmericanoMatchDto;
+import com.padle.core.padelcoreservice.service.americano.EarlyPlayoffSeeding.Fixture;
+import com.padle.core.padelcoreservice.service.americano.EarlyPlayoffSeeding.Pair;
+import com.padle.core.padelcoreservice.service.americano.EarlyPlayoffSeeding.Standing;
 import com.padle.core.padelcoreservice.dto.americano.AmericanoMatchSuggestionDto;
 import com.padle.core.padelcoreservice.dto.americano.AmericanoTeamDto;
 import com.padle.core.padelcoreservice.dto.americano.TeamAmericanoRankingDto;
@@ -23,6 +28,7 @@ import com.padle.core.padelcoreservice.repository.americano.AmericanoMatchReposi
 import com.padle.core.padelcoreservice.repository.americano.AmericanoRoundRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoTeamRepository;
 import com.padle.core.padelcoreservice.service.PlayerService;
+import com.padle.core.padelcoreservice.service.SoloRosterTeams;
 import com.padle.core.padelcoreservice.service.RegistrationPairPositions;
 import com.padle.core.padelcoreservice.service.WebSocketService;
 import com.padle.core.padelcoreservice.service.conduct.ConductChange;
@@ -50,6 +56,7 @@ public class TeamPlayoffService {
     /** Совпадает с DEFAULT в колонке americano_rounds_db.courts (v1.23) — используется, когда раунд создаётся лениво без явного числа кортов. */
     private static final int DEFAULT_COURTS = 2;
 
+    private final TeamPlayingSideMapper playingSideMapper;
     private final TournamentRepository tournamentRepository;
     private final AmericanoTeamRepository teamRepository;
     private final AmericanoRoundRepository roundRepository;
@@ -59,6 +66,7 @@ public class TeamPlayoffService {
     private final TournamentRegistrationRepository registrationRepository;
     private final WebSocketService webSocketService;
     private final PlayoffMatchingEngine matchingEngine;
+    private final SoloRosterTeams soloRosterTeams;
 
     public HistoricalParticipant historicalParticipant(Long matchId, int side) {
         AmericanoMatch match = getHistoricalMatch(matchId);
@@ -155,6 +163,10 @@ public class TeamPlayoffService {
         Tournament tournament = tournamentRepository.lockById(tournamentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tournament not found: " + tournamentId));
         validateTournamentType(tournament);
+        if (roundRepository.existsByTournamentIdAndPhaseIsNull(tournamentId)) {
+            throw new InvalidStateException("round_robin.error.format");
+        }
+
 
         PlayerPadel player1 = resolvePlayerForNewTeam(req.getPlayer1Id(), req.getPlayer1Nombre(),
                 req.getPlayer1Apellido(), req.getPlayer1Telefono(), "Jugador 1");
@@ -258,6 +270,9 @@ public class TeamPlayoffService {
         AmericanoTeam team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new ResourceNotFoundException("Team not found: " + teamId));
 
+        if (req.getPlayer2Id() != null || req.getPlayer2Name() != null || Boolean.FALSE.equals(req.getAttended())) {
+            protectEarlyQualification(team.getTournament().getId());
+        }
         if (req.getPlayer2Id() != null) {
             PlayerPadel player2 = playerRepository.findById(req.getPlayer2Id())
                     .orElseThrow(() -> new ResourceNotFoundException("Player2 not found"));
@@ -292,6 +307,7 @@ public class TeamPlayoffService {
         AmericanoTeam team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new ResourceNotFoundException("Team not found: " + teamId));
 
+        protectEarlyQualification(team.getTournament().getId());
         boolean hasMatches = !matchRepository
                 .findByTournamentIdOrderByRoundIdAscMatchNumberAsc(team.getTournament().getId())
                 .stream()
@@ -315,6 +331,7 @@ public class TeamPlayoffService {
     @ConductChange(value = ConductChange.Action.ROSTER, subject = ConductChange.Subject.AMERICANO_TEAM)
     public AmericanoTeam markNoShow(Long teamId) {
         AmericanoTeam team = getActiveTeam(teamId);
+        protectEarlyQualification(team.getTournament().getId());
 
         if (!getTeamQualMatches(team.getTournament().getId(), teamId).isEmpty()) {
             throw new InvalidStateException(
@@ -333,6 +350,7 @@ public class TeamPlayoffService {
     public AmericanoTeam cancelNoShow(Long teamId) {
         AmericanoTeam team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new ResourceNotFoundException("Team not found: " + teamId));
+        protectEarlyQualification(team.getTournament().getId());
         if (team.getStatus() != AmericanoPlayerStatus.NO_SHOW) {
             throw new InvalidStateException("El equipo " + team.getDisplayName() + " no está marcado como no presentado");
         }
@@ -352,6 +370,10 @@ public class TeamPlayoffService {
                 .collect(Collectors.toList());
     }
 
+    public Set<Long> findConductIds(List<Long> tournamentIds) {
+        return tournamentIds.isEmpty() ? Set.of() : Set.copyOf(roundRepository.findTeamPlayoffConductIds(tournamentIds));
+    }
+
     public boolean isQualificationStarted(Long tournamentId) {
         return !roundRepository.findByTournamentIdAndPhase(tournamentId, TournamentPhase.QUALIFICATION).isEmpty();
     }
@@ -360,28 +382,10 @@ public class TeamPlayoffService {
         return !roundRepository.findByTournamentIdAndPhase(tournamentId, TournamentPhase.PLAYOFF).isEmpty();
     }
 
-    /**
-     * Можно ли уже вызвать {@link #initPlayoff}, не дожидаясь, пока все команды закончат
-     * квалификацию. Разрешено только когда число команд — точная степень двойки (8/16, без
-     * play-in): для 9–15 команд граница "кто идёт напрямую в 1/4, а кто — в play-in" зависит
-     * от итогового рейтинга и может измениться, пока квалификация не закончена, а пересобирать
-     * уже созданные матчи нельзя. Для степени двойки такой границы нет — первая стадия зависит
-     * только от общего числа команд.
-     */
+    /** Первичный посев после квалификации. Раннее назначение 1/8 выполняется отдельно для каждой пары. */
     public boolean canInitPlayoff(Long tournamentId) {
-        if (isPlayoffStarted(tournamentId) || !isQualificationStarted(tournamentId)) {
-            return false;
-        }
-        List<AmericanoTeam> ranked = activePlayoffRanking(tournamentId);
-        int total = ranked.size();
-        if (total < 2) {
-            return false;
-        }
-        if (largestPowerOf2(total) != total) {
-            return isQualificationDone(tournamentId);
-        }
-        long settled = ranked.stream().filter(this::isSettled).count();
-        return settled >= 2;
+        return !isPlayoffStarted(tournamentId) && isQualificationDone(tournamentId)
+                && activePlayoffRanking(tournamentId).size() >= 2;
     }
 
     /** Команда отыграла оба квалификационных матча — её группа (2-0/1-1/0-2) окончательно известна. */
@@ -403,6 +407,10 @@ public class TeamPlayoffService {
     @Transactional
     @ConductChange(ConductChange.Action.QUALIFICATION)
     public AmericanoRound initQualification(Long tournamentId, int courts) {
+        if (roundRepository.existsByTournamentIdAndPhaseIsNull(tournamentId)) {
+            throw new InvalidStateException("round_robin.error.format");
+        }
+
         Tournament tournament = getTournament(tournamentId);
         validateTournamentType(tournament);
 
@@ -432,6 +440,7 @@ public class TeamPlayoffService {
     public AmericanoMatch createQualificationMatch(Long tournamentId, Long team1Id, Long team2Id, int courtNumber) {
         Tournament tournament = getTournament(tournamentId);
         validateTournamentType(tournament);
+        protectEarlyQualification(tournamentId);
 
         if (team1Id.equals(team2Id)) {
             throw new InvalidStateException("Un equipo no puede jugar contra sí mismo");
@@ -465,6 +474,7 @@ public class TeamPlayoffService {
     public AmericanoMatch queueQualificationMatch(Long tournamentId, Long team1Id, Long team2Id) {
         Tournament tournament = getTournament(tournamentId);
         validateTournamentType(tournament);
+        protectEarlyQualification(tournamentId);
 
         if (team1Id.equals(team2Id)) {
             throw new InvalidStateException("Un equipo no puede jugar contra sí mismo");
@@ -500,11 +510,22 @@ public class TeamPlayoffService {
             throw new InvalidStateException("Este partido no está en la cola de espera");
         }
         Long tournamentId = match.getTournament().getId();
+        if (match.getPlayoffStage() != null) {
+            validateConfiguredCourt(tournamentId, courtNumber);
+            var first = getActiveTeam(match.getTeam1Id());
+            var second = getActiveTeam(match.getTeam2Id());
+            if (!isAttended(first) || !isAttended(second)) {
+                throw new InvalidStateException("team_playoff.early.manual.teams");
+            }
+        }
         validateCourtFree(tournamentId, courtNumber);
 
         match.setCourtNumber(courtNumber);
         match.setStatus(AmericanoRoundStatus.IN_PROGRESS);
         match.setStartedAt(LocalDateTime.now());
+        if (match.getPlayoffStage() != null) {
+            match.setPlayoffPlayStarted(true);
+        }
         AmericanoMatch saved = matchRepository.save(match);
         log.info("Queued match {} assigned to court {} (LFPT-367)", matchId, courtNumber);
         webSocketService.notifyTeamPlayoffMatchUpdated(tournamentId, toMatchDto(saved));
@@ -524,22 +545,26 @@ public class TeamPlayoffService {
             throw new InvalidStateException("Este partido no está en la cola de espera");
         }
         Long tournamentId = match.getTournament().getId();
+        protectEarlyQualification(tournamentId);
+        if (match.getPlayoffStage() != null) {
+            throw new InvalidStateException("team_playoff.early.fixed");
+        }
         matchRepository.delete(match);
         log.info("Queued match {} removed from queue (LFPT-367)", matchId);
         webSocketService.notifyTeamPlayoffMatchRemoved(tournamentId, matchId);
     }
 
     /**
-     * Матчи квалификации в очереди по времени ожидания — дольше всех ждущая пара первой.
+     * Матчи турнира в общей очереди по времени ожидания — дольше всех ждущая пара первой.
      * Считается здесь, а не в {@link #toMatchDto}, потому что {@code queuePosition}/{@code waitingMinutes}
      * зависят от порядка всей очереди, а не от самого матча.
      */
     public List<AmericanoMatchDto> getQueue(Long tournamentId) {
         List<AmericanoMatch> queued = matchRepository
-                .findByTournamentIdAndPhase(tournamentId, TournamentPhase.QUALIFICATION)
+                .findByTournamentIdOrderByRoundIdAscMatchNumberAsc(tournamentId)
                 .stream()
                 .filter(AmericanoMatch::isQueued)
-                .sorted(Comparator.comparing(AmericanoMatch::getCreatedAt))
+                .sorted(Comparator.comparing(this::queueEnteredAt))
                 .toList();
 
         List<AmericanoMatchDto> result = new ArrayList<>();
@@ -548,10 +573,17 @@ public class TeamPlayoffService {
             AmericanoMatch m = queued.get(i);
             AmericanoMatchDto dto = toMatchDto(m);
             dto.setQueuePosition(i + 1);
-            dto.setWaitingMinutes(Duration.between(m.getCreatedAt(), now).toMinutes());
+            dto.setWaitingMinutes(Duration.between(queueEnteredAt(m), now).toMinutes());
             result.add(dto);
         }
         return result;
+    }
+
+    private LocalDateTime queueEnteredAt(AmericanoMatch match) {
+        if (match.getPlayoffStage() == null || match.getPlayoffStage() == PlayoffStage.ROUND_OF_16) {
+            return match.getCreatedAt();
+        }
+        return Optional.ofNullable(match.getUpdatedAt()).orElse(match.getCreatedAt());
     }
 
     /**
@@ -568,14 +600,17 @@ public class TeamPlayoffService {
             throw new InvalidStateException("Este partido no tiene equipos asignados");
         }
 
-        if (team1Games == team2Games) {
-            throw new InvalidStateException("No se permiten empates en el formato por sets");
+        if (match.getRound().getPhase() != TournamentPhase.QUALIFICATION) {
+            throw new InvalidStateException("team_playoff.early.invalid_fixture");
         }
 
+        if (match.isCompleted() && sameScore(match, team1Games, team2Games)) {
+            return match;
+        }
+        if (!EarlyPlayoffSeeding.validScore(team1Games, team2Games)) {
+            throw new InvalidStateException("team_playoff.early.invalid_score");
+        }
         if (match.isCompleted()) {
-            if (sameScore(match, team1Games, team2Games)) {
-                return match;
-            }
             if (isPlayoffStarted(match.getTournament().getId())) {
                 throw new InvalidStateException("conduct.history.qualification_dependency");
             }
@@ -599,6 +634,344 @@ public class TeamPlayoffService {
     // ═══════════════════════════════════════════════════════════════════════
     // ПЛЕЙ-ОФФ
     // ═══════════════════════════════════════════════════════════════════════
+
+    public record EarlyTeam(long id, Integer number, String name) {}
+    public record EarlyMatch(EarlyTeam first, EarlyTeam second) {}
+    public record EarlyPlayoff(boolean available, int finishedTeams, int remainingMatches, List<Integer> freeCourts,
+                               List<EarlyTeam> readyTeams, List<EarlyMatch> matches, List<Integer> pendingMatchNumbers,
+                               String reason, String manualStatus, List<EarlyTeam> projectedByes, boolean semifinal) {}
+
+    public EarlyPlayoff earlyPlayoff(Long tournamentId, Long firstId, Long secondId) {
+        Pair manual = firstId != null && secondId != null ? Pair.of(firstId, secondId) : null;
+        List<AmericanoTeam> teams = activePlayoffRanking(tournamentId);
+        int total = teams.size();
+        if (isQualificationDone(tournamentId)) {
+            return earlySemifinal(tournamentId, manual);
+        }
+        if (total <= PlayoffFormat.MIN_TEAMS_WITH_TABLE || total > PlayoffFormat.MAX_TEAMS_WITH_TABLE
+                || !isQualificationStarted(tournamentId) || isQualificationDone(tournamentId)
+                || (isPlayoffStarted(tournamentId)
+                    && findEarlyRound(tournamentId, EarlyPlayoffSeeding.OPEN_ROUND_NOTE).isEmpty())) {
+            return new EarlyPlayoff(false, 0, 0, List.of(), List.of(), List.of(), List.of(), null, null, List.of(), false);
+        }
+
+        List<AmericanoMatch> fixtures = matchRepository.findByTournamentIdOrderByRoundIdAscMatchNumberAsc(tournamentId);
+        var activeIds = teams.stream().map(AmericanoTeam::getId).collect(Collectors.toSet());
+        var scheduled = fixtures.stream()
+                .filter(m -> m.getRound().getPhase() == TournamentPhase.QUALIFICATION)
+                .filter(m -> m.isCompleted() || m.isActive())
+                .filter(m -> m.getTeam1Id() != null && m.getTeam2Id() != null)
+                .toList();
+        List<Fixture> remaining = scheduled.stream().filter(m -> !m.isCompleted())
+                .filter(m -> activeIds.contains(m.getTeam1Id()) && activeIds.contains(m.getTeam2Id()))
+                .map(m -> new Fixture(m.getId(), m.getTeam1Id(), m.getTeam2Id())).toList();
+        Map<Long, Long> plannedCount = scheduled.stream()
+                .filter(m -> m.isCompleted() || (activeIds.contains(m.getTeam1Id()) && activeIds.contains(m.getTeam2Id())))
+                .flatMap(m -> Stream.of(m.getTeam1Id(), m.getTeam2Id()))
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+        int remainingMatches = (int) teams.stream().mapToLong(t -> Math.max(0, 2 - t.getMatchesPlayed())).sum() / 2;
+
+        var busy = fixtures.stream().filter(m -> m.isActive() || m.getPlayoffStage() != null)
+                .flatMap(m -> Stream.of(m.getTeam1Id(), m.getTeam2Id())).filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        var busyPlayers = fixtures.stream().filter(AmericanoMatch::isActive)
+                .flatMap(m -> Stream.of(m.getTeam1Player1(), m.getTeam1Player2(),
+                        m.getTeam2Player1(), m.getTeam2Player2()))
+                .filter(Objects::nonNull).map(PlayerPadel::getId).collect(Collectors.toSet());
+        var occupiedCourts = fixtures.stream().filter(AmericanoMatch::isInProgress)
+                .map(AmericanoMatch::getCourtNumber).filter(Objects::nonNull).collect(Collectors.toSet());
+        var freeCourts = IntStream.rangeClosed(1, getConfiguredCourts(tournamentId))
+                .filter(court -> !occupiedCourts.contains(court)).boxed().toList();
+        var ready = teams.stream().filter(this::isSettled).filter(this::isAttended)
+                .filter(t -> t.getPlayer1() != null && (t.getPlayer2() != null || t.getPlayer2Name() != null))
+                .filter(t -> !busy.contains(t.getId()))
+                .filter(t -> Stream.of(t.getPlayer1(), t.getPlayer2()).filter(Objects::nonNull)
+                        .noneMatch(p -> busyPlayers.contains(p.getId()))).toList();
+        var eligible = new LinkedHashSet<Pair>();
+        for (int i = 0; i < ready.size(); i++) {
+            for (int j = i + 1; j < ready.size(); j++) {
+                if (!sharePlayer(ready.get(i), ready.get(j))) {
+                    eligible.add(Pair.of(ready.get(i).getId(), ready.get(j).getId()));
+                }
+            }
+        }
+
+        boolean completeSchedule = teams.stream().allMatch(t -> plannedCount.getOrDefault(t.getId(), 0L) == 2);
+        boolean eligibleManual = manual != null && eligible.contains(manual);
+        var result = completeSchedule && !remaining.isEmpty()
+                ? new EarlyPlayoffSeeding(matchingEngine).evaluate(standings(teams), remaining,
+                    qualifyingOpponents(scheduled, true), eligible, eligibleManual ? manual : null, fixedEarlyPairs(tournamentId))
+                : new EarlyPlayoffSeeding.Result(Set.of(), false, false, false);
+
+        var byId = ready.stream().collect(Collectors.toMap(AmericanoTeam::getId, Function.identity()));
+        var suggestions = result.stable().stream().filter(pair -> !previousMeeting(fixtures, pair))
+                .map(pair -> new EarlyMatch(earlyTeam(byId.get(pair.first())), earlyTeam(byId.get(pair.second()))))
+                .toList();
+        String reason = !completeSchedule ? "schedule" : eligible.isEmpty() ? "teams"
+                : result.limited() ? "limit" : "results";
+        String status = manual == null ? null
+                : !eligibleManual ? "teams"
+                : result.manualBye() ? "bye"
+                : previousMeeting(fixtures, manual) ? "rematch"
+                : result.stable().contains(manual) ? "safe"
+                : result.exhaustive() ? "override" : reason;
+        var pendingMatchNumbers = scheduled.stream().filter(m -> !m.isCompleted())
+                .map(AmericanoMatch::getMatchNumber).toList();
+        return new EarlyPlayoff(true, (int) teams.stream().filter(this::isSettled).count(),
+                remainingMatches, freeCourts, ready.stream().map(this::earlyTeam).toList(), suggestions,
+                pendingMatchNumbers, reason, status, EarlyPlayoffSeeding.projectedByes(standings(teams)).stream()
+                        .map(id -> teams.stream().filter(team -> id.equals(team.getId())).findFirst().orElseThrow())
+                        .map(this::earlyTeam).toList(), false);
+    }
+
+    private boolean previousMeeting(List<AmericanoMatch> matches, Pair pair) {
+        return matches.stream().anyMatch(match -> match.isCompleted()
+                && match.getTeam1Id() != null && match.getTeam2Id() != null
+                && pair.equals(Pair.of(match.getTeam1Id(), match.getTeam2Id())));
+    }
+
+    private EarlyPlayoff earlySemifinal(Long tournamentId, Pair manual) {
+        var quarters = matchRepository.findByTournamentIdAndPlayoffStage(tournamentId, PlayoffStage.QUARTER_FINAL);
+        var semifinals = matchRepository.findByTournamentIdAndPlayoffStage(tournamentId, PlayoffStage.SEMI_FINAL);
+        int pending = (int) quarters.stream().filter(match -> !match.isCompleted()).count();
+        boolean available = quarters.size() == 4 && pending > 0 && pending <= 2
+                && semifinals.size() == 2 && semifinals.stream().allMatch(match -> match.getTeam1Id() == null
+                        && match.getTeam2Id() == null);
+        if (!available) {
+            return new EarlyPlayoff(false, 0, 0, List.of(), List.of(), List.of(), List.of(), null, null, List.of(), false);
+        }
+        var ready = quarters.stream().filter(AmericanoMatch::isCompleted).map(this::winnerOf).filter(Objects::nonNull)
+                .filter(this::isAttended).toList();
+        var played = matchRepository.findByTournamentIdOrderByRoundIdAscMatchNumberAsc(tournamentId);
+        var occupied = getActiveMatches(tournamentId).stream().map(AmericanoMatch::getCourtNumber).collect(Collectors.toSet());
+        var courts = IntStream.rangeClosed(1, getConfiguredCourts(tournamentId))
+                .filter(court -> !occupied.contains(court)).boxed().toList();
+        var pairs = new ArrayList<EarlyMatch>();
+        String status = manual == null ? null : "teams";
+        for (int first = 0; first < ready.size(); first++) {
+            for (int second = first + 1; second < ready.size(); second++) {
+                AmericanoTeam a = ready.get(first);
+                AmericanoTeam b = ready.get(second);
+                if (sharePlayer(a, b)) continue;
+                Pair pair = Pair.of(a.getId(), b.getId());
+                boolean rematch = previousMeeting(played, pair);
+                if (pair.equals(manual)) status = rematch ? "rematch" : "safe";
+                if (!rematch) pairs.add(new EarlyMatch(earlyTeam(a), earlyTeam(b)));
+            }
+        }
+        return new EarlyPlayoff(true, ready.size(), pending, courts, ready.stream().map(this::earlyTeam).toList(),
+                pairs, List.of(), pairs.isEmpty() ? "rematch" : null, status, List.of(), true);
+    }
+
+    @Transactional
+    @ConductChange(ConductChange.Action.PLAYOFF)
+    public AmericanoMatch confirmEarlyPlayoff(Long tournamentId, Long firstId, Long secondId, Integer court) {
+        return confirmEarlyPlayoff(tournamentId, firstId, secondId, court, false);
+    }
+
+    @Transactional
+    @ConductChange(ConductChange.Action.PLAYOFF)
+    public AmericanoMatch confirmEarlyPlayoff(Long tournamentId, Long firstId, Long secondId, Integer court,
+                                             boolean approvedOverride) {
+        if (firstId == null || secondId == null || firstId.equals(secondId)) {
+            throw new InvalidStateException("team_playoff.early.manual.teams");
+        }
+        Tournament tournament = getTournament(tournamentId);
+        validateTournamentType(tournament);
+        var round = findEarlyRound(tournamentId, EarlyPlayoffSeeding.OPEN_ROUND_NOTE);
+        var prior = round.or(() -> findEarlyRound(tournamentId, EarlyPlayoffSeeding.CLOSED_ROUND_NOTE))
+                .stream().flatMap(value -> matchRepository.findByRoundId(value.getId()).stream())
+                .filter(match -> Pair.of(match.getTeam1Id(), match.getTeam2Id()).equals(Pair.of(firstId, secondId)))
+                .findFirst();
+        if (prior.isPresent()) return prior.get();
+        if (isQualificationDone(tournamentId)) {
+            var previous = matchRepository.findByTournamentIdAndPlayoffStage(tournamentId, PlayoffStage.SEMI_FINAL)
+                    .stream().filter(match -> match.getTeam1Id() != null && match.getTeam2Id() != null
+                            && Pair.of(firstId, secondId).equals(Pair.of(match.getTeam1Id(), match.getTeam2Id())))
+                    .findFirst();
+            if (previous.isPresent()) return previous.get();
+        }
+
+        EarlyPlayoff state = earlyPlayoff(tournamentId, firstId, secondId);
+        if (!state.available() || !("safe".equals(state.manualStatus())
+                || (approvedOverride && "override".equals(state.manualStatus())))) {
+            throw new InvalidStateException(state.manualStatus() == null ? "team_playoff.early.fixed"
+                    : "team_playoff.early.manual." + state.manualStatus());
+        }
+        if (court != null) {
+            validateConfiguredCourt(tournamentId, court);
+            validateCourtFree(tournamentId, court);
+        }
+
+        AmericanoTeam first = getActiveTeam(firstId);
+        AmericanoTeam second = getActiveTeam(secondId);
+        AmericanoMatch match;
+        if (state.semifinal()) {
+            match = matchRepository.findByTournamentIdAndPlayoffStage(tournamentId, PlayoffStage.SEMI_FINAL)
+                    .stream().filter(slot -> slot.getTeam1Id() == null && slot.getTeam2Id() == null)
+                    .findFirst().orElseThrow();
+            match.setTeam1Id(firstId);
+            match.setTeam1Player1(first.getPlayer1());
+            match.setTeam1Player2(first.getPlayer2());
+            match.setTeam2Id(secondId);
+            match.setTeam2Player1(second.getPlayer1());
+            match.setTeam2Player2(second.getPlayer2());
+            match.setNote(first.getDisplayName() + " vs " + second.getDisplayName());
+            match.getRound().setStatus(AmericanoRoundStatus.IN_PROGRESS);
+            roundRepository.save(match.getRound());
+        } else {
+            AmericanoRound bracket = round.orElseGet(() -> createRoundOf16(tournament,
+                    roundRepository.findMaxRoundNumber(tournamentId).orElse(0) + 1,
+                    PlayoffFormat.playInTeams(activePlayoffRanking(tournamentId).size()) / 2,
+                    EarlyPlayoffSeeding.OPEN_ROUND_NOTE));
+            match = newRoundOf16Match(bracket, first, second, nextMatchNumber(bracket.getId()));
+        }
+        match.setCourtNumber(court);
+        if (court == null) {
+            queuePlayoffMatch(match);
+        } else {
+            match.start();
+            match.setPlayoffPlayStarted(true);
+        }
+        AmericanoMatch saved = matchRepository.save(match);
+        var update = toMatchDto(saved);
+        AfterCommit.run(() -> webSocketService.notifyTeamPlayoffMatchCreated(tournamentId, update));
+        return saved;
+    }
+
+    private boolean sharePlayer(AmericanoTeam first, AmericanoTeam second) {
+        return Stream.of(first.getPlayer1(), first.getPlayer2()).filter(Objects::nonNull)
+                .map(PlayerPadel::getId)
+                .anyMatch(id -> Stream.of(second.getPlayer1(), second.getPlayer2()).filter(Objects::nonNull)
+                        .map(PlayerPadel::getId).anyMatch(id::equals));
+    }
+
+    public boolean hasEarlyBracket(Long tournamentId) {
+        return roundRepository.findByTournamentIdAndPhase(tournamentId, TournamentPhase.PLAYOFF).stream()
+                .anyMatch(round -> EarlyPlayoffSeeding.isEarlyRoundNote(round.getNote()));
+    }
+
+    private EarlyTeam earlyTeam(AmericanoTeam team) {
+        return new EarlyTeam(team.getId(), team.getTeamNumber(), team.getDisplayName());
+    }
+
+    private Optional<AmericanoRound> findEarlyRound(Long tournamentId, String note) {
+        return roundRepository.findByTournamentIdAndPhase(tournamentId, TournamentPhase.PLAYOFF).stream()
+                .filter(round -> note.equals(round.getNote())).findFirst();
+    }
+
+    private void protectEarlyQualification(Long tournamentId) {
+        if (findEarlyRound(tournamentId, EarlyPlayoffSeeding.OPEN_ROUND_NOTE).isPresent()) {
+            throw new InvalidStateException("team_playoff.early.fixed");
+        }
+    }
+
+    private void validateConfiguredCourt(Long tournamentId, int court) {
+        if (court < 1 || court > getConfiguredCourts(tournamentId)) {
+            throw new InvalidStateException("team_playoff.early.court");
+        }
+    }
+
+    private AmericanoRound createRoundOf16(Tournament tournament, int number, int matchCount, String note) {
+        return roundRepository.save(AmericanoRound.builder().tournament(tournament).roundNumber(number)
+                .status(AmericanoRoundStatus.IN_PROGRESS).pointsPerMatch(1).isDoubles(true).courts(matchCount)
+                .phase(TournamentPhase.PLAYOFF).note(note).build());
+    }
+
+    private AmericanoMatch newRoundOf16Match(AmericanoRound round, AmericanoTeam first, AmericanoTeam second,
+                                             int matchNumber) {
+        return AmericanoMatch.builder().round(round).tournament(round.getTournament()).matchNumber(matchNumber)
+                .team1Id(first.getId()).team2Id(second.getId())
+                .team1Player1(first.getPlayer1()).team1Player2(first.getPlayer2())
+                .team2Player1(second.getPlayer1()).team2Player2(second.getPlayer2())
+                .isDoubles(true).playoffStage(PlayoffStage.ROUND_OF_16).priority(true)
+                .note(first.getDisplayName() + " vs " + second.getDisplayName()).build();
+    }
+
+    private List<Standing> standings(List<AmericanoTeam> teams) {
+        return teams.stream().map(t -> new Standing(t.getId(), t.getSetsWon(), t.getGamesWon(), t.getGamesLost()))
+                .toList();
+    }
+
+    private Map<Long, Set<Long>> qualifyingOpponents(List<AmericanoMatch> matches, boolean includeScheduled) {
+        Map<Long, Set<Long>> opponents = new HashMap<>();
+        matches.stream().filter(m -> m.isCompleted() || includeScheduled)
+                .filter(m -> m.getTeam1Id() != null && m.getTeam2Id() != null).forEach(m -> {
+                    opponents.computeIfAbsent(m.getTeam1Id(), id -> new HashSet<>()).add(m.getTeam2Id());
+                    opponents.computeIfAbsent(m.getTeam2Id(), id -> new HashSet<>()).add(m.getTeam1Id());
+                });
+        return opponents;
+    }
+
+    private Set<Pair> fixedEarlyPairs(Long tournamentId) {
+        return findEarlyRound(tournamentId, EarlyPlayoffSeeding.OPEN_ROUND_NOTE)
+                .or(() -> findEarlyRound(tournamentId, EarlyPlayoffSeeding.CLOSED_ROUND_NOTE))
+                .stream().flatMap(round -> matchRepository.findByRoundId(round.getId()).stream())
+                .map(match -> Pair.of(match.getTeam1Id(), match.getTeam2Id())).collect(Collectors.toSet());
+    }
+
+    private List<PlayoffMatchingEngine.Pairing> seedRoundOf16(Long tournamentId, List<AmericanoTeam> teams) {
+        var qualification = matchRepository.findByTournamentIdAndPhase(tournamentId, TournamentPhase.QUALIFICATION);
+        return new EarlyPlayoffSeeding(matchingEngine).roundOf16(standings(teams), qualifyingOpponents(qualification, false), fixedEarlyPairs(tournamentId));
+    }
+
+    private List<AmericanoMatch> placeRoundOf16Matches(AmericanoRound round, List<AmericanoTeam> ranked,
+            List<PlayoffMatchingEngine.Pairing> pairs, boolean reuse) {
+        var teams = ranked.stream().collect(Collectors.toMap(AmericanoTeam::getId, Function.identity()));
+        var existing = new HashMap<Pair, AmericanoMatch>();
+        if (reuse) {
+            matchRepository.findByRoundId(round.getId()).forEach(
+                    match -> existing.put(Pair.of(match.getTeam1Id(), match.getTeam2Id()), match));
+            if (!pairs.stream().map(Pair::of).collect(Collectors.toSet()).containsAll(existing.keySet())) {
+                throw new InvalidStateException("team_playoff.early.fixed");
+            }
+        }
+        List<AmericanoMatch> matches = new ArrayList<>();
+        int nextNumber = existing.values().stream().mapToInt(AmericanoMatch::getMatchNumber).max().orElse(0) + 1;
+        for (var pair : pairs) {
+            var confirmed = existing.get(Pair.of(pair));
+            if (confirmed != null) {
+                matches.add(confirmed);
+                continue;
+            }
+            var match = newRoundOf16Match(round, teams.get(pair.team1Id()), teams.get(pair.team2Id()),
+                    reuse ? nextNumber++ : matches.size() + 1);
+            if (reuse) {
+                queuePlayoffMatch(match);
+            } else {
+                match.setStatus(AmericanoRoundStatus.IN_PROGRESS);
+                match.setCourtNumber(match.getMatchNumber());
+            }
+            matches.add(match);
+        }
+        return matches;
+    }
+
+    private void finishEarlyBracket(AmericanoRound round, List<AmericanoTeam> ranked) {
+        round.setNote(EarlyPlayoffSeeding.CLOSED_ROUND_NOTE);
+        roundRepository.save(round);
+        Tournament tournament = round.getTournament();
+        if (ranked.size() < PlayoffFormat.MAX_TEAMS_WITH_TABLE) {
+            initPlayoffWithPlayIn(tournament, ranked, round.getRoundNumber(), round);
+        } else {
+            var completedBracket = placeRoundOf16Matches(round, ranked, seedRoundOf16(tournament.getId(), ranked), true);
+            matchRepository.saveAll(completedBracket);
+            createTbdPlayoffRounds(tournament, PlayoffStage.QUARTER_FINAL, round.getRoundNumber() + 1, 4);
+        }
+    }
+
+    private void queuePlayoffMatch(AmericanoMatch match) {
+        match.setCourtNumber(null);
+        match.setStatus(AmericanoRoundStatus.QUEUED);
+    }
+
+    private void makePlayoffMatchReady(AmericanoMatch match) {
+        if (findEarlyRound(match.getTournament().getId(), EarlyPlayoffSeeding.CLOSED_ROUND_NOTE).isPresent()) {
+            queuePlayoffMatch(match);
+        } else {
+            match.setStatus(AmericanoRoundStatus.IN_PROGRESS);
+        }
+    }
 
     /**
      * Инициализирует плей-офф на основе квалификационного рейтинга.
@@ -626,7 +999,7 @@ public class TeamPlayoffService {
         // Для 9–15 команд часть проходит в 1/4 напрямую, остальные — через play-in
         // (1/8 финала). 8 и 16 команд — точные степени двойки, укладываются в схему ниже.
         if (total > PlayoffFormat.MIN_TEAMS_WITH_TABLE && total < PlayoffFormat.MAX_TEAMS_WITH_TABLE) {
-            initPlayoffWithPlayIn(tournament, ranked, roundNumber);
+            initPlayoffWithPlayIn(tournament, ranked, roundNumber, null);
             return;
         }
 
@@ -657,6 +1030,7 @@ public class TeamPlayoffService {
     public void regeneratePlayoff(Long tournamentId) {
         Tournament tournament = getTournament(tournamentId);
         validateTournamentType(tournament);
+        protectEarlyQualification(tournamentId);
 
         if (!isPlayoffStarted(tournamentId)) {
             throw new InvalidStateException("El playoff aún no fue inicializado");
@@ -686,15 +1060,15 @@ public class TeamPlayoffService {
      * ожидания всей стадии, как в {@link #tryFormNextPlayoffStage}).
      * Четвертьфинал всегда даёт ровно 8 слотов: direct + playInTeams/2 == 8.
      */
-    private void initPlayoffWithPlayIn(Tournament tournament, List<AmericanoTeam> ranked, int roundNumber) {
+    private void initPlayoffWithPlayIn(Tournament tournament, List<AmericanoTeam> ranked, int roundNumber,
+                                           AmericanoRound existingRound) {
         Long tournamentId = tournament.getId();
         int total = ranked.size();
         int direct = PlayoffFormat.directToQuarterFinal(total);
         List<AmericanoTeam> directTeams = ranked.subList(0, direct);
-        List<AmericanoTeam> playInTeams = ranked.subList(direct, total);
-
-        log.info("Playoff con play-in (T13): {} equipos, {} directo a 1/4, {} en 1/8 ({} partidos)",
-                total, direct, playInTeams.size(), playInTeams.size() / 2);
+        int playInCount = PlayoffFormat.playInTeams(total);
+        log.info("Playoff con play-in: {} equipos, {} directo a 1/4, {} en 1/8 ({} partidos)",
+                total, direct, playInCount, playInCount / 2);
 
         // 8 виртуальных посевных слотов: 1..direct — реальные команды, остальные — TBD (победитель 1/8).
         AmericanoTeam[] slotTeam = new AmericanoTeam[9]; // индексы 1..8
@@ -755,6 +1129,13 @@ public class TeamPlayoffService {
             qfMatchBySlot.put(seedB, match);
             qfSlotNumBySlot.put(seedB, 2);
         }
+        if (existingRound != null) {
+            qfMatches.stream().filter(AmericanoMatch::isInProgress).forEach(this::queuePlayoffMatch);
+            if (qfMatches.stream().anyMatch(AmericanoMatch::isQueued)) {
+                qfRound.setStatus(AmericanoRoundStatus.IN_PROGRESS);
+                roundRepository.save(qfRound);
+            }
+        }
         matchRepository.saveAll(qfMatches);
         if (qfMatches.stream().anyMatch(AmericanoMatch::isInProgress)) {
             qfRound.setStatus(AmericanoRoundStatus.IN_PROGRESS);
@@ -764,59 +1145,24 @@ public class TeamPlayoffService {
         // Play-in (1/8 финала): пары — тем же движком, что и обычный QF-посев (анти-реванш, посев).
         // Победитель каждой пары привязывается к конкретному QF-слоту: сильнейшая play-in-команда
         // получает лучший из оставшихся слотов.
-        List<PlayoffMatchingEngine.Pairing> playInPairings = seedPlayoffPairs(tournamentId, playInTeams);
-        Map<Long, Integer> localSeedById = new HashMap<>();
-        for (int i = 0; i < playInTeams.size(); i++) {
-            localSeedById.put(playInTeams.get(i).getId(), i + 1);
-        }
-        List<PlayoffMatchingEngine.Pairing> orderedPairings = playInPairings.stream()
-                .sorted(Comparator.comparingInt(p ->
-                        Math.min(localSeedById.get(p.team1Id()), localSeedById.get(p.team2Id()))))
-                .toList();
+        List<PlayoffMatchingEngine.Pairing> orderedPairings = seedRoundOf16(tournamentId, ranked);
 
-        AmericanoRound playInRound = AmericanoRound.builder()
-                .tournament(tournament)
-                .roundNumber(roundNumber)
-                .status(AmericanoRoundStatus.IN_PROGRESS)
-                .pointsPerMatch(1)
-                .isDoubles(true)
-                .courts(orderedPairings.size())
-                .phase(TournamentPhase.PLAYOFF)
-                .note(PlayoffStage.ROUND_OF_16.name())
-                .build();
-        playInRound = roundRepository.save(playInRound);
+        AmericanoRound playInRound = existingRound == null
+                ? createRoundOf16(tournament, roundNumber, orderedPairings.size(), PlayoffStage.ROUND_OF_16.name())
+                : existingRound;
 
-        List<AmericanoMatch> playInMatches = new ArrayList<>();
-        for (int i = 0; i < orderedPairings.size(); i++) {
-            PlayoffMatchingEngine.Pairing pairing = orderedPairings.get(i);
-            AmericanoTeam t1 = teamRepository.findById(pairing.team1Id()).orElseThrow();
-            AmericanoTeam t2 = teamRepository.findById(pairing.team2Id()).orElseThrow();
-
-            int targetSeed = direct + 1 + i;
-            AmericanoMatch targetQfMatch = qfMatchBySlot.get(targetSeed);
-            int targetSlot = qfSlotNumBySlot.get(targetSeed);
-
-            playInMatches.add(AmericanoMatch.builder()
-                    .round(playInRound)
-                    .tournament(tournament)
-                    .matchNumber(i + 1)
-                    .team1Id(t1.getId())
-                    .team2Id(t2.getId())
-                    .team1Player1(t1.getPlayer1())
-                    .team1Player2(t1.getPlayer2())
-                    .team2Player1(t2.getPlayer1())
-                    .team2Player2(t2.getPlayer2())
-                    .isDoubles(true)
-                    .status(AmericanoRoundStatus.IN_PROGRESS)
-                    .courtNumber(i + 1)
-                    .playoffStage(PlayoffStage.ROUND_OF_16)
-                    .priority(true)
-                    .nextMatchId(targetQfMatch.getId())
-                    .nextMatchSlot(targetSlot)
-                    .note(t1.getDisplayName() + " vs " + t2.getDisplayName())
-                    .build());
+        List<AmericanoMatch> playInMatches = placeRoundOf16Matches(playInRound, ranked, orderedPairings,
+                existingRound != null);
+        for (int i = 0; i < playInMatches.size(); i++) {
+            int seed = direct + 1 + i;
+            AmericanoMatch match = playInMatches.get(i);
+            match.setNextMatchId(qfMatchBySlot.get(seed).getId());
+            match.setNextMatchSlot(qfSlotNumBySlot.get(seed));
         }
         matchRepository.saveAll(playInMatches);
+        if (existingRound != null) {
+            playInMatches.stream().filter(AmericanoMatch::isCompleted).forEach(this::advanceToLinkedSlot);
+        }
 
         // Полуфинал и финал — полностью TBD, как и в обычной схеме; заполняются движком после QF
         // (см. tryFormNextPlayoffStage/seedNextPlayoffStage — эта часть цепочки не меняется).
@@ -871,8 +1217,14 @@ public class TeamPlayoffService {
     }
 
     private AmericanoMatch savePlayoffResult(AmericanoMatch match, int team1Games, int team2Games) {
+        if (match.getPlayoffStage() == null || match.getRound().getPhase() != TournamentPhase.PLAYOFF) {
+            throw new InvalidStateException("team_playoff.early.invalid_playoff");
+        }
         if (team1Games == team2Games) {
             throw new InvalidStateException("No se permiten empates en playoff");
+        }
+        if (!match.isCompleted() && !match.isInProgress()) {
+            throw new InvalidStateException("team_playoff.early.play_on_court");
         }
 
         boolean correction = match.isCompleted();
@@ -895,6 +1247,9 @@ public class TeamPlayoffService {
         webSocketService.notifyTeamPlayoffMatchCompleted(match.getTournament().getId(), toMatchDto(match));
 
         if (sameWinner) {
+            return match;
+        }
+        if (EarlyPlayoffSeeding.OPEN_ROUND_NOTE.equals(match.getRound().getNote())) {
             return match;
         }
         if (match.getNextMatchId() != null) {
@@ -956,7 +1311,7 @@ public class TeamPlayoffService {
         nextMatch.setNote(buildMatchNote(nextMatch, "TBD — Ganador 1/8"));
 
         if (nextMatch.getTeam1Id() != null && nextMatch.getTeam2Id() != null) {
-            nextMatch.setStatus(AmericanoRoundStatus.IN_PROGRESS);
+            makePlayoffMatchReady(nextMatch);
             AmericanoRound round = nextMatch.getRound();
             if (round.getStatus() == AmericanoRoundStatus.PENDING) {
                 round.setStatus(AmericanoRoundStatus.IN_PROGRESS);
@@ -1029,7 +1384,7 @@ public class TeamPlayoffService {
         var teams = teamRepository.findPlayoffRankingByTournamentId(tournamentId);
         var allMatches = matchRepository.findByTournamentIdOrderByRoundIdAscMatchNumberAsc(tournamentId);
         var rounds = roundRepository.findByTournamentIdAndPhase(tournamentId, TournamentPhase.QUALIFICATION);
-        var queue = getQueue(tournamentId);
+        var queue = getQueue(tournamentId).stream().filter(m -> m.getPlayoffStage() == null).toList();
         var byId = teams.stream().collect(Collectors.toMap(AmericanoTeam::getId, Function.identity()));
         var ranking = IntStream.range(0, teams.size()).mapToObj(index -> {
             var team = teams.get(index);
@@ -1332,6 +1687,12 @@ public class TeamPlayoffService {
         }
         Long tournamentId = match.getTournament().getId();
 
+        if (match.getPlayoffStage() != null && hasEarlyBracket(tournamentId)) {
+            validateConfiguredCourt(tournamentId, newCourtNumber);
+        }
+        if (match.isQueued()) {
+            throw new InvalidStateException("team_playoff.early.use_queue");
+        }
         boolean occupiedByAnother = matchRepository.findByTournamentIdOrderByRoundIdAscMatchNumberAsc(tournamentId)
                 .stream()
                 .anyMatch(m -> !m.getId().equals(matchId) && m.isInProgress()
@@ -1366,6 +1727,7 @@ public class TeamPlayoffService {
             throw new InvalidStateException("admin.playoff.swap.use_exchange");
         }
         Long tournamentId = match.getTournament().getId();
+        protectEarlyQualification(tournamentId);
         AmericanoTeam newTeam = getActiveTeam(newTeamId);
 
         Long otherTeamId = slot == 1 ? match.getTeam2Id() : match.getTeam1Id();
@@ -1519,12 +1881,13 @@ public class TeamPlayoffService {
     }
 
     /**
-     * Единственное условие "команда может играть матч прямо сейчас" — явка (attended).
+     * Готовая команда может играть после отметки явки обоих участников.
      * Оплата (hasPaid) — информационное поле в таблице команд и на доступность не влияет:
      * координатор отмечает присутствие по факту в день турнира.
      */
     private boolean isAttended(AmericanoTeam t) {
-        return Boolean.TRUE.equals(t.getAttended());
+        return Boolean.TRUE.equals(t.getAttended()) && (t.getPlayer2() != null
+                || (t.getPlayer2Name() != null && !t.getPlayer2Name().isBlank()));
     }
 
     private void validateCourtFree(Long tournamentId, int courtNumber) {
@@ -1619,7 +1982,10 @@ public class TeamPlayoffService {
                     log.info("Qualification phase auto-completed for tournament {}", tournamentId);
                 });
 
-        if (isPlayoffStarted(tournamentId)) {
+        var earlyRound = findEarlyRound(tournamentId, EarlyPlayoffSeeding.OPEN_ROUND_NOTE);
+        if (earlyRound.isPresent()) {
+            finishEarlyBracket(earlyRound.get(), activePlayoffRanking(tournamentId));
+        } else if (isPlayoffStarted(tournamentId)) {
             backfillFirstPlayoffStage(tournamentId);
         }
     }
@@ -1790,19 +2156,16 @@ public class TeamPlayoffService {
                                      List<AmericanoTeam> seeded,
                                      PlayoffStage stage,
                                      int startRoundNumber) {
-        // Если вызвано до полного завершения квалификации (canInitPlayoff допускает это только
-        // для степени двойки), часть команд ещё не "определилась" (не отыграла оба
-        // квалификационных матча) — такие команды не участвуют в посеве сейчас, их позиции
-        // становятся TBD-заглушками и дозаполняются позже (см. backfillFirstPlayoffStage).
-        // Если квалификация завершена, pending пуст.
+        // Слоты сохраняются для совместимости с ранее начатыми сетками и нестандартными составами.
         List<AmericanoTeam> settled = new ArrayList<>(seeded.stream().filter(this::isSettled).toList());
         List<AmericanoTeam> pending = new ArrayList<>(seeded.stream().filter(t -> !isSettled(t)).toList());
         if (settled.size() % 2 != 0) {
             pending.add(settled.remove(settled.size() - 1));
         }
 
-        List<PlayoffMatchingEngine.Pairing> pairs = settled.isEmpty()
-                ? List.of() : seedPlayoffPairs(tournament.getId(), settled);
+        List<PlayoffMatchingEngine.Pairing> pairs = stage == PlayoffStage.ROUND_OF_16 && settled.size() == 16
+                ? seedRoundOf16(tournament.getId(), settled)
+                : settled.isEmpty() ? List.of() : seedPlayoffPairs(tournament.getId(), settled);
         int totalSlots = seeded.size() / 2;
 
         AmericanoRound round = AmericanoRound.builder()
@@ -1968,6 +2331,12 @@ public class TeamPlayoffService {
                 .map(this::winnerOf)
                 .filter(Objects::nonNull)
                 .toList();
+        if (nextStage == PlayoffStage.SEMI_FINAL) {
+            var assigned = matchRepository.findByTournamentIdAndPlayoffStage(match.getTournament().getId(), nextStage)
+                    .stream().flatMap(slot -> Stream.of(slot.getTeam1Id(), slot.getTeam2Id()))
+                    .filter(Objects::nonNull).collect(Collectors.toSet());
+            winners = winners.stream().filter(team -> !assigned.contains(team.getId())).toList();
+        }
         if (winners.size() < 2) return;
 
         seedNextPlayoffStage(match.getTournament(), winners, nextStage);
@@ -2038,6 +2407,12 @@ public class TeamPlayoffService {
                 .collect(Collectors.toMap(AmericanoTeam::getId, t -> t));
         List<AmericanoMatch> nextMatches = matchRepository.findByTournamentIdAndPlayoffStage(
                 tournament.getId(), nextStage);
+        boolean hasEarlySemifinal = nextStage == PlayoffStage.SEMI_FINAL
+                && nextMatches.stream().anyMatch(slot -> slot.getTeam1Id() != null);
+        if (nextStage == PlayoffStage.SEMI_FINAL) {
+            nextMatches = nextMatches.stream()
+                    .filter(slot -> slot.getTeam1Id() == null && slot.getTeam2Id() == null).toList();
+        }
         List<PlayoffMatchingEngine.Pairing> pairings = result.pairings();
 
         for (int i = 0; i < pairings.size() && i < nextMatches.size(); i++) {
@@ -2052,7 +2427,8 @@ public class TeamPlayoffService {
             nextMatch.setTeam2Id(t2.getId());
             nextMatch.setTeam2Player1(t2.getPlayer1());
             nextMatch.setTeam2Player2(t2.getPlayer2());
-            nextMatch.setStatus(AmericanoRoundStatus.IN_PROGRESS);
+            if (hasEarlySemifinal) queuePlayoffMatch(nextMatch);
+            else makePlayoffMatchReady(nextMatch);
             nextMatch.setNote(t1.getDisplayName() + " vs " + t2.getDisplayName());
 
             AmericanoRound nextRound = nextMatch.getRound();
@@ -2108,7 +2484,7 @@ public class TeamPlayoffService {
                 });
     }
 
-    private boolean isQualificationDone(Long tournamentId) {
+    public boolean isQualificationDone(Long tournamentId) {
         List<AmericanoRound> quals = roundRepository.findByTournamentIdAndPhase(
                 tournamentId, TournamentPhase.QUALIFICATION);
         if (quals.isEmpty()) return false;
@@ -2139,12 +2515,14 @@ public class TeamPlayoffService {
     @Transactional
     @ConductChange(ConductChange.Action.ROSTER)
     public int importFromRegistrations(Long tournamentId) {
+        protectEarlyQualification(tournamentId);
         Tournament tournament = getTournament(tournamentId);
         validateTournamentType(tournament);
 
         List<TournamentRegistration> allRegs = registrationRepository
                 .findByTournamentIdOrderByPositionAscWaitlistPositionAsc(tournamentId)
                 .stream()
+                .filter(r -> Boolean.TRUE.equals(r.getIsActive()))
                 .filter(r -> Boolean.TRUE.equals(r.getIsDoubleRegistration())
                         && (r.getStatus() == RegistrationStatus.CONFIRMED
                         || r.getStatus() == RegistrationStatus.PARTNER_INVITED
@@ -2179,6 +2557,7 @@ public class TeamPlayoffService {
             // и повторной регистрации) — проверяем и партнёра, чтобы не создать дубль команды.
             Long partnerId = partnerReg != null ? partnerReg.getPlayer().getId()
                     : (mainReg.getPartner() != null ? mainReg.getPartner().getId() : null);
+            if (partnerId == null && (mainReg.getPartnerFirstName() == null || mainReg.getPartnerFirstName().isBlank())) continue;
             if (isPlayerAlreadyOnActiveTeam(tournamentId, partnerId)) {
                 log.warn("Skipping import of pair (main player {}) for tournament {}: partner {} already on another team",
                         mainPlayerId, tournamentId, partnerId);
@@ -2200,29 +2579,10 @@ public class TeamPlayoffService {
         return teamRepository.existsByTournamentIdAndPlayer1Id(tournamentId, mainPlayerId);
     }
 
-    /**
-     * Переносит оплату и присутствие со страницы оплат в уже добавленную AmericanoTeam: сама
-     * команда не связана с TournamentRegistration/Payment, и без этой синхронизации изменения
-     * на странице оплат после добавления команды до неё не доходили бы. Вызывается из
-     * PaymentService.savePaymentManagementData на каждое сохранение; если команда ещё
-     * не добавлена — no-op (findByTournamentIdAndPlayer1Id ничего не найдёт).
-     */
+    /** Синхронизирует команды после сохранения всех строк оплат и явки участников. */
     @Transactional
-    public void syncPaymentStatusForRegistration(Long tournamentId, Long registrationId,
-                                                  boolean hasPaid, boolean attended) {
-        TournamentRegistration reg = registrationRepository.findById(registrationId).orElse(null);
-        if (reg == null || !Boolean.TRUE.equals(reg.getIsDoubleRegistration())) {
-            return;
-        }
-        Long mainPlayerId = reg.getMainPlayerId() != null ? reg.getMainPlayerId() : reg.getPlayer().getId();
-        if (!reg.getPlayer().getId().equals(mainPlayerId)) {
-            return; // регистрация партнёра, а не главного игрока — команда привязана к player1 (главному)
-        }
-        teamRepository.findByTournamentIdAndPlayer1Id(tournamentId, mainPlayerId).ifPresent(team -> {
-            team.setHasPaid(hasPaid);
-            team.setAttended(attended);
-            teamRepository.save(team);
-        });
+    public void syncPaymentStatusForTournament(Long tournamentId) {
+        soloRosterTeams.refresh(tournamentId);
     }
 
     /**
@@ -2234,6 +2594,7 @@ public class TeamPlayoffService {
     @ConductChange(ConductChange.Action.ROSTER)
     public AmericanoTeam addTeamFromRegistration(Long tournamentId, Long registrationId,
                                                   boolean hasPaid, boolean attended) {
+        protectEarlyQualification(tournamentId);
         Tournament tournament = getTournament(tournamentId);
         validateTournamentType(tournament);
 
@@ -2267,6 +2628,9 @@ public class TeamPlayoffService {
         // этой регистрации уже player1/player2 другой команды.
         Long partnerId = partnerReg != null ? partnerReg.getPlayer().getId()
                 : (mainReg.getPartner() != null ? mainReg.getPartner().getId() : null);
+        if (partnerId == null && (mainReg.getPartnerFirstName() == null || mainReg.getPartnerFirstName().isBlank())) {
+            throw new InvalidStateException("solo.error.single");
+        }
         if (isPlayerAlreadyOnActiveTeam(tournamentId, partnerId)) {
             throw new InvalidStateException("El compañero ya fue agregado a otro equipo de este torneo");
         }
@@ -2386,6 +2750,7 @@ public class TeamPlayoffService {
 
     public AmericanoTeamDto toDto(AmericanoTeam t) {
         AmericanoTeamDto dto = new AmericanoTeamDto();
+        playingSideMapper.fill(t, dto);
         dto.setId(t.getId());
         dto.setTournamentId(t.getTournament().getId());
         dto.setTeamNumber(t.getTeamNumber());

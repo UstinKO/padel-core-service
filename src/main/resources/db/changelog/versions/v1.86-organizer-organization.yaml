@@ -1,0 +1,15 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.86-organizer-organization
+      author: padel-core
+      changes:
+        - addColumn:
+            tableName: owners_db
+            columns:
+              - column:
+                  name: organization_name
+                  type: varchar(120)
+      rollback:
+        - dropColumn:
+            tableName: owners_db
+            columnName: organization_name

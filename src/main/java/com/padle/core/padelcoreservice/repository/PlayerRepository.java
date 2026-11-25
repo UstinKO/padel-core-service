@@ -1,6 +1,7 @@
 package com.padle.core.padelcoreservice.repository;
 
 import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.padelcoreservice.model.enums.Nivel;
 import org.springframework.data.domain.Pageable;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,6 +21,17 @@ public interface PlayerRepository extends JpaRepository<PlayerPadel, Long> {
     @Modifying
     @Query("UPDATE PlayerPadel p SET p.nombre = :nombre, p.apellido = :apellido WHERE p.id = :id")
     int actualizarNombre(@Param("id") Long id, @Param("nombre") String nombre, @Param("apellido") String apellido);
+
+    @Modifying
+    @Query("""
+            UPDATE PlayerPadel p SET p.nivelJugador = :nivel, p.fechaActualizacion = :updatedAt
+            WHERE p.id = :id AND p.activo = true
+            """)
+    int actualizarNivelActivo(@Param("id") Long id, @Param("nivel") Nivel nivel,
+                              @Param("updatedAt") LocalDateTime updatedAt);
+
+    @Query("SELECT p.nivelJugador FROM PlayerPadel p WHERE p.id = :id")
+    Optional<Nivel> findNivelById(@Param("id") Long id);
 
     Optional<PlayerPadel> findByEmail(String email);
 
@@ -37,6 +50,15 @@ public interface PlayerRepository extends JpaRepository<PlayerPadel, Long> {
             ORDER BY p.id
             """, nativeQuery = true)
     List<PlayerPadel> findClaimPhoneMatches(@Param("key") String key);
+
+    @Query(value = """
+            SELECT p.* FROM player_padel_db p
+            WHERE p.activo = true AND (
+                player_claim_phone(p.telefono) = player_claim_phone(:phone)
+                OR regexp_replace(p.telefono, '[^0-9]', '', 'g') = :digits)
+            ORDER BY p.id
+            """, nativeQuery = true)
+    List<PlayerPadel> findRosterPhoneMatches(@Param("phone") String phone, @Param("digits") String digits);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT p FROM PlayerPadel p WHERE p.id IN :ids ORDER BY p.id")
@@ -57,6 +79,19 @@ public interface PlayerRepository extends JpaRepository<PlayerPadel, Long> {
     List<PlayerPadel> findAllByOrderByFechaRegistroDesc();
 
     Optional<PlayerPadel> findByTelegramUsername(String telegramUsername);
+
+    List<PlayerPadel> findAllByTelegramUsernameIgnoreCaseAndActivoTrue(String telegramUsername);
+
+    @Query(value = """
+            SELECT p.* FROM player_padel_db p WHERE p.activo = true AND (
+              unaccent(lower(concat_ws(' ',p.nombre,p.apellido))) LIKE unaccent(lower('%' || :query || '%'))
+              OR lower(p.email) LIKE lower('%' || :query || '%')
+              OR (length(:digits) >= 4 AND regexp_replace(coalesce(p.telefono,''),'\\D','','g') LIKE '%' || :digits || '%')
+              OR lower(replace(coalesce(p.telegram_username,''),'@','')) LIKE lower('%' || :telegram || '%'))
+            ORDER BY p.nombre,p.apellido,p.id LIMIT 20
+            """, nativeQuery = true)
+    List<PlayerPadel> searchRosterCandidates(@Param("query") String query, @Param("digits") String digits,
+                                           @Param("telegram") String telegram);
 
     boolean existsByTelegramUsernameIgnoreCase(String telegramUsername);
 

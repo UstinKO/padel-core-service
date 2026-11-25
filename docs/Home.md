@@ -11,12 +11,19 @@ Spring Boot монолит для управления падель-турнир
 
 | Раздел | Описание |
 |--------|----------|
+| [Жизненный цикл PR](../.agents/PR_MANAGEMENT.md) | Проверка существующей работы до публикации, продолжение PR и составные интеграции; [аудит 18.11.2026](pr-audit-2026-11-18.md) |
+| [Организация бэклога](../.agents/ISSUE_ORGANIZATION.md) | Выбор Milestone при создании задачи, новый раздел при необходимости; [закреплённый индекс #1055](https://github.com/UstinKO/padel-core-service/issues/1055) |
 | [Архитектура базы данных](database-architecture) | Все 21 таблица, столбцы, типы, enum-справочники, ERD, история миграций |
 | [Доменный обзор](domain-overview) | 10 доменов, каждый HTTP-эндпоинт с описанием, анализ для декомпозиции в микросервисы |
+| [Публичный календарь](endpoints/public-calendar.md) | Полный месяц, общий каталог, безопасные личные статусы и общие фильтры |
+| [Клубные аккаунты](endpoints/club-accounts.md) | Собственные мероприятия, несколько площадок и назначение доступа |
 | [Auth Flow](auth-flow) | Form Login, JWT, Google OAuth2, rate limiting, защита регистрации |
+| [Пилот рейтинга Elo](rating-pilot) | Ограничение доступа, проверенная история, автоматический пересчёт и тестовый откат |
 | [Архитектура приложения](architecture) | Слои, AOP observability, Prometheus/Loki/Grafana, Docker, CI/CD |
+| [Многомодульный монолит](modular-monolith/README.md) | Семь целевых модулей и ADR; рабочий reactor, десять вычислений engines и два read-среза application; read-фаза 4 принята, фаза 5 готовит позиции/завершение; приложение работоспособно после каждой задачи |
 | [Инфраструктурная безопасность](infrastructure-security) | Nginx, CrowdSec, UFW, Docker port isolation, SSL, runbook инцидентов. **Приватный документ — не в репозитории** (детали защиты сервера) |
-| [План перехода на микросервисы](microservices-migration-plan) | Поэтапный план: Swarm-масштабирование, выделение сервисов, мобильные API, новые продукты |
+| [Swarm на одной ВМ](swarm/README.md) | Инвентаризация 19.11.2026, схемы, ADR, ресурсы, риски и порядок #1207–#1218 |
+| [Исторический план микросервисов](microservices-migration-plan) | Справочный материал связей и рисков; текущий план — многомодульный монолит, Swarm исследуется отдельно |
 | [Дизайн-токены as-is](design-tokens-as-is) | Аудит текущих цветов/типографики/отступов из 14 CSS-файлов перед переносом фронтенда на React |
 | [Архетипы экранов](screen-archetypes) | 56 Thymeleaf-шаблонов сгруппированы в 13 layout-архетипов для захвата в Figma |
 | [Переход на React](frontend-react/README) | **Актуально (2026-09-28):** ADR, поэтапный план, контракт текущего UI (экраны, API, сквозные механизмы, находки) |
@@ -74,14 +81,14 @@ Bucket4j, MapStruct, Lombok
 ## Быстрый старт
 
 ```bash
-# Требует PostgreSQL на localhost:5432/player_padel_db
-./mvnw spring-boot:run
-
-# Полный стек: приложение + postgres + loki + prometheus + grafana
-docker compose up -d
-
-# Сборка без тестов
+# Сборка без тестов; обязательный verify выполняется отдельно с тестовой PostgreSQL.
 ./mvnw clean package -DskipTests
+
+# Запуск с окружением своей БД и интеграций.
+java -jar padel-bootstrap/target/padel-core-service-0.0.1-SNAPSHOT.jar
+
+# Полный стек: приложение + postgres + loki + prometheus + grafana.
+docker compose up -d
 ```
 
 Обязательные env-переменные (если не используются дефолты):
@@ -130,3 +137,9 @@ SITE_KEY, SECRET_KEY
 - [Выпуск и восстановление UI v2](ui-v2-release.md) — артефакт, проверки, снимки и rollback.
 - [Закрытый тестовый контур UI v2](ui-v2-preview.md) — локальный запуск, синтетический seed, изоляция, проверка и отключение.
 - [Диагностика и reset preview](endpoints/ui-preview.md) — контракт только для SUPER_ADMIN закрытого контура.
+
+## Аналитика аудитории
+
+[Разделение служебного и тестового трафика](analytics-traffic.md) — обезличенные признаки MVC-страниц и границы чистого периода GA4.
+
+Объединение выбранных профилей: [контракт, конфликты и аудит](guest-profile-merge.md).

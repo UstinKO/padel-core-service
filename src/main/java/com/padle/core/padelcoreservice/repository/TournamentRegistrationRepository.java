@@ -13,10 +13,15 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.Optional;
 
 @Repository
 public interface TournamentRegistrationRepository extends JpaRepository<TournamentRegistration, Long> {
+    @Query("SELECT r FROM TournamentRegistration r JOIN FETCH r.tournament JOIN FETCH r.player "
+            + "WHERE r.player.id = :playerId AND r.isActive = true ORDER BY r.registrationDate DESC")
+    List<TournamentRegistration> findReceiptChoices(@Param("playerId") long playerId);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT r FROM TournamentRegistration r WHERE r.id = :id")
     Optional<TournamentRegistration> lockById(@Param("id") Long id);
@@ -34,6 +39,15 @@ public interface TournamentRegistrationRepository extends JpaRepository<Tourname
     List<Long> findDistinctPlayerIdsByTournamentClubId(@Param("clubId") Long clubId);
 
     boolean existsByTournamentClubIdAndPlayerId(Long clubId, Long playerId);
+
+    @Query("SELECT DISTINCT tr.player.id FROM TournamentRegistration tr WHERE tr.tournament.ownerId = :ownerId")
+    Set<Long> findPlayerIdsByTournamentOwnerId(@Param("ownerId") Long ownerId);
+
+    boolean existsByTournamentOwnerIdAndPlayerId(Long ownerId, Long playerId);
+
+    @Query("SELECT COUNT(tr) FROM TournamentRegistration tr WHERE tr.status = 'WAITLIST' " +
+            "AND tr.isActive = true AND tr.tournament.ownerId = :ownerId")
+    long countWaitlistByTournamentOwnerId(@Param("ownerId") Long ownerId);
 
     // Bug #4 fix: добавлен фильтр isActive = true, чтобы исключить "мусорные" отменённые
     // записи с некорректными статусами (возможны после миграции данных между серверами).
@@ -59,6 +73,18 @@ public interface TournamentRegistrationRepository extends JpaRepository<Tourname
 
     @Query("SELECT COUNT(tr) FROM TournamentRegistration tr WHERE tr.status = 'WAITLIST' AND tr.isActive = true")
     long countTotalWaitlist();
+
+    @Query("""
+            SELECT tr FROM TournamentRegistration tr JOIN FETCH tr.tournament LEFT JOIN FETCH tr.partner
+            WHERE tr.player.id = :playerId
+            """)
+    List<TournamentRegistration> findForPlayerEvents(long playerId);
+
+    @Query("""
+            SELECT tr.tournament.id FROM TournamentRegistration tr
+            WHERE tr.id = :registrationId AND tr.player.id = :playerId
+            """)
+    Optional<Long> findOwnedEventId(long registrationId, long playerId);
 
     // Клубная статистика главной админ-панели — CLUB_ADMIN видит только лист
     // ожидания турниров своего клуба.
@@ -258,8 +284,9 @@ public interface TournamentRegistrationRepository extends JpaRepository<Tourname
 
     @Query("SELECT tr FROM TournamentRegistration tr " +
             "WHERE tr.tournament.id = :tournamentId " +
-            "AND tr.status = 'SOLO_SEARCH' " +
-            "AND tr.isActive = true")
+            "AND (tr.status = 'SOLO_SEARCH' OR (tr.status = 'CONFIRMED' " +
+            "AND tr.isDoubleRegistration = true AND tr.partner IS NULL AND tr.mainPlayerId IS NOT NULL " +
+            "AND tr.replacementSearch = true)) AND tr.isActive = true")
     List<TournamentRegistration> findLookingForPartnerByTournamentId(@Param("tournamentId") Long tournamentId);
 
     @Query("SELECT COUNT(tr) FROM TournamentRegistration tr " +

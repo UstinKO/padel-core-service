@@ -1,0 +1,20 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.76-admin-registration-requests
+      author: padel
+      changes:
+        - sql:
+            sql: |
+              CREATE TABLE admin_registration_requests_db (
+                tournament_id bigint NOT NULL REFERENCES tournaments_db(id) ON DELETE CASCADE,
+                request_key uuid NOT NULL,
+                fingerprint char(64) NOT NULL,
+                first_player_id bigint NOT NULL,
+                second_player_id bigint,
+                first_version bigint NOT NULL,
+                second_version bigint,
+                PRIMARY KEY (tournament_id, request_key)
+              );
+      rollback:
+        - dropTable:
+            tableName: admin_registration_requests_db

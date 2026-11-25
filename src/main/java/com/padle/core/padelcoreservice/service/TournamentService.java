@@ -5,6 +5,7 @@ import com.padle.core.padelcoreservice.repository.PublicCatalogSpecification;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import java.time.ZoneId;
 import com.padle.core.padelcoreservice.service.calendar.EventSchedule;
@@ -20,6 +21,9 @@ import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
 import com.padle.core.padelcoreservice.exception.TournamentRegistrationException;
 import com.padle.core.padelcoreservice.mapper.TournamentMapper;
 import com.padle.core.padelcoreservice.mapper.TournamentRegistrationMapper;
+import com.padle.core.padelcoreservice.model.ParticipationRequest;
+import com.padle.core.padelcoreservice.model.ParticipationRequest.Trigger;
+import com.padle.core.padelcoreservice.model.enums.ParticipationStatus;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.Tournament;
@@ -39,6 +43,7 @@ import com.padle.core.padelcoreservice.service.cancellation.RegistrationCancella
 import com.padle.core.padelcoreservice.service.cancellation.CancellationContext;
 import com.padle.core.padelcoreservice.dto.CancellationHistory.*;
 import lombok.RequiredArgsConstructor;
+import com.padle.core.padelcoreservice.repository.OwnerRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
@@ -79,6 +84,8 @@ public class TournamentService {
     private final TournamentKingOfCourtRepository tournamentKingOfCourtRepository;
     private final EmailService emailService;
     private final TournamentAccessService tournamentAccessService;
+    private final ClubAccountService clubAccounts;
+    private final OwnerRepository ownerRepository;
 
     // Добавляем репозитории Americano
     private final AmericanoPlayerRepository americanoPlayerRepository;
@@ -87,6 +94,7 @@ public class TournamentService {
     private final AmericanoTeamRepository americanoTeamRepository;
     private final MessageSource messageSource;
     private final PairTermsService pairTerms;
+    private final ParticipationRequests participationRequests;
 
     @Value("${app.base-url:http://localhost:8080}")
     private String baseUrl;
@@ -94,19 +102,8 @@ public class TournamentService {
     // ==================== Базовые методы для турниров ====================
 
     public List<TournamentDto> getAllTournaments() {
-        LocalDate today = LocalDate.now();
-        Comparator<TournamentDto> byDateFromToday = (a, b) -> {
-            LocalDate da = a.getFechaInicio();
-            LocalDate db = b.getFechaInicio();
-            boolean aUpcoming = da != null && !da.isBefore(today);
-            boolean bUpcoming = db != null && !db.isBefore(today);
-            if (aUpcoming && bUpcoming) return da.compareTo(db);   // оба предстоящие → ASC
-            if (!aUpcoming && !bUpcoming) return db.compareTo(da); // оба прошедшие  → DESC (свежее первым)
-            return aUpcoming ? -1 : 1;                             // предстоящий перед прошедшим
-        };
-        List<TournamentDto> dtos = mapToDtoWithDetails(tournamentRepository.findAll());
-        dtos.sort(byDateFromToday);
-        return dtos;
+        return TournamentListOrder.sort(mapToDtoWithDetails(tournamentRepository.findAll()),
+                LocalDate.now(EventSchedule.zone(null)));
     }
 
     /**
@@ -231,7 +228,15 @@ public class TournamentService {
      * собственной регистрации игрока (не инварианты статуса самого турнира).
      */
     public record MyTournamentEntry(TournamentDto tournament, RegistrationStatus registrationStatus,
-                                     Integer waitlistPosition, LocalDateTime registrationDate) {}
+                                     Integer waitlistPosition, LocalDateTime registrationDate,
+                                     ParticipationStatus participationStatus,
+                                     boolean replacementNeeded) {
+        public MyTournamentEntry(TournamentDto tournament, RegistrationStatus registrationStatus,
+                                 Integer waitlistPosition, LocalDateTime registrationDate) {
+            this(tournament, registrationStatus, waitlistPosition, registrationDate,
+                    ParticipationStatus.NOT_REQUIRED, false);
+        }
+    }
 
     /**
      * Обзор «Мои мероприятия» для клиента 1Padel.App — только чтение, то же разбиение
@@ -258,12 +263,16 @@ public class TournamentService {
                 upcomingRegistrations.stream().map(TournamentRegistration::getTournament).toList())
                 .stream()
                 .collect(Collectors.toMap(TournamentDto::getId, dto -> dto));
+        var requests = participationRequests.current(upcomingRegistrations);
         List<MyTournamentEntry> upcoming = upcomingRegistrations.stream()
                 .map(r -> new MyTournamentEntry(
                         upcomingDtosByTournamentId.get(r.getTournament().getId()),
                         r.getStatus(),
                         r.getWaitlistPosition(),
-                        r.getRegistrationDate()))
+                        r.getRegistrationDate(),
+                        Optional.ofNullable(requests.get(r.getId())).map(ParticipationRequest::getStatus)
+                                .orElse(ParticipationStatus.NOT_REQUIRED),
+                        r.needsReplacementInMain()))
                 .sorted(Comparator.comparing(e -> e.tournament().getFechaInicio()))
                 .collect(Collectors.toList());
 
@@ -516,10 +525,29 @@ public class TournamentService {
             throw new TournamentRegistrationException("Cannot cancel registration after deadline");
         }
 
+        withdrawParticipant(tournament, registration, remainingPartner, playerId, reason);
+    }
+
+    void declineParticipation(TournamentRegistration row, long actorId) {
+        Tournament tournament = row.getTournament();
+        var remaining = findActivePairPartner(tournament.getId(), row);
+        if (remaining.isEmpty() && PairTermsService.accepted(row)) {
+            var quote = pairTerms.cancellation(tournament, row);
+            pairTerms.saveCancellation(row, actorId, quote);
+            cancelPairMembers(tournament, List.of(row), null, quote,
+                    CancellationContext.participant(actorId, Scope.PAIR, Reason.PAIR_WITHDRAWAL));
+            return;
+        }
+        withdrawParticipant(tournament, row, remaining, actorId, null);
+    }
+
+    private void withdrawParticipant(Tournament tournament, TournamentRegistration registration,
+                                     Optional<TournamentRegistration> remainingPartner, long actorId, String reason) {
+        Long tournamentId = tournament.getId();
         RegistrationStatus oldStatus = registration.getStatus();
 
         // Отменяем регистрацию
-        cancellations.cancel(List.of(registration),CancellationContext.participant(playerId,Scope.PARTICIPANT,Reason.PARTICIPANT_WITHDRAWAL),reason);
+        cancellations.cancel(List.of(registration),CancellationContext.participant(actorId,Scope.PARTICIPANT,Reason.PARTICIPANT_WITHDRAWAL),reason);
         registrationRepository.save(registration);
         remainingPartner.ifPresent(this::retainIncompletePair);
 
@@ -546,7 +574,7 @@ public class TournamentService {
         }
     }
 
-    private Optional<TournamentRegistration> findActivePairPartner(Long tournamentId,
+    Optional<TournamentRegistration> findActivePairPartner(Long tournamentId,
                                                                     TournamentRegistration registration) {
         if (!Boolean.TRUE.equals(registration.getIsDoubleRegistration())) {
             return Optional.empty();
@@ -573,6 +601,7 @@ public class TournamentService {
         partner.setPartnerEmail(null);
         partner.setPartnerTelegram(null);
         partner.setMainPlayerId(partner.getPlayer().getId());
+        partner.setReplacementSearch(false);
         if (partner.getStatus() == RegistrationStatus.WAITLIST) {
             partner.setIsDoubleRegistration(false);
             partner.setWaitlistPosition(null);
@@ -609,6 +638,23 @@ public class TournamentService {
         }
     }
 
+    RegistrationStatus previewPairStatus(Tournament tournament, List<TournamentRegistration> pair) {
+        if (pair.stream().anyMatch(TournamentRegistration::isConfirmed)) return RegistrationStatus.CONFIRMED;
+        int available = tournament.getCupoMax() - Math.toIntExact(registrationRepository.countConfirmedPairs(tournament.getId()));
+        var earliest = pair.stream().map(TournamentRegistration::queueTime).filter(Objects::nonNull)
+                .min(Comparator.naturalOrder()).orElseGet(LocalDateTime::now);
+        long smallestId = pair.stream().map(TournamentRegistration::getId).filter(Objects::nonNull)
+                .min(Comparator.naturalOrder()).orElse(Long.MAX_VALUE);
+        long ahead = readyReservePairs(tournament.getId()).stream().filter(waiting -> waiting.stream()
+                .noneMatch(row -> pair.stream().anyMatch(member -> Objects.equals(member.getId(), row.getId()))))
+                .filter(waiting -> {
+                    var time = waiting.stream().map(TournamentRegistration::queueTime).min(Comparator.naturalOrder()).orElseThrow();
+                    long firstId = waiting.stream().mapToLong(TournamentRegistration::getId).min().orElseThrow();
+                    return time.isBefore(earliest) || (time.equals(earliest) && firstId < smallestId);
+                }).count();
+        return ahead < available ? RegistrationStatus.CONFIRMED : RegistrationStatus.WAITLIST;
+    }
+
     private void processDoublesWaitlist(Tournament tournament, Set<Long> deferred) {
         registrationRepository.flush();
         Long tournamentId = tournament.getId();
@@ -616,7 +662,7 @@ public class TournamentService {
         int waitingPosition = 1;
         for (var pair : readyReservePairs(tournamentId)) {
             if (occupied < tournament.getCupoMax() && pair.stream().noneMatch(row -> deferred.contains(row.getId()))) {
-                confirmReservePair(pair, ++occupied, tournament);
+                confirmReservePair(pair, ++occupied, tournament, true);
             } else {
                 for (var row : pair) row.setWaitlistPosition(waitingPosition);
                 waitingPosition++;
@@ -642,12 +688,18 @@ public class TournamentService {
                 .toList();
     }
 
-    private void confirmReservePair(List<TournamentRegistration> pair, int position, Tournament tournament) {
+    private void confirmReservePair(List<TournamentRegistration> pair, int position, Tournament tournament,
+                                    boolean automatic) {
         for (var row : pair) {
             row.confirm();
             row.setPosition(position);
             row.setPartnerActionToken(null);
-            sendWaitlistAutoConfirmEmail(row, tournament);
+            if (automatic) {
+                participationRequests.open(row, Trigger.RESERVE);
+            }
+            if (!automatic || !participationRequests.sendsResponseEmail()) {
+                sendWaitlistAutoConfirmEmail(row, tournament);
+            }
         }
     }
 
@@ -874,6 +926,12 @@ public class TournamentService {
     )
     @Transactional
     public TournamentDto createTournament(TournamentDto tournamentDto, Long createdBy) {
+        ownerRepository.findById(createdBy).ifPresent(owner -> {
+            clubAccounts.assertCanCreateAt(owner, tournamentDto.getClubId());
+            if (owner.isClubAdmin()) {
+                tournamentDto.setEstado(TournamentStatus.REGISTRO_ABIERTO);
+            }
+        });
         if (tournamentDto.getFechaInicio().isBefore(java.time.LocalDate.now())) {
             throw new IllegalArgumentException("Tournament start date cannot be in the past");
         }
@@ -977,6 +1035,16 @@ public class TournamentService {
 
                     return mapToDtoWithDetails(updated);
                 });
+    }
+
+    @Transactional
+    public void setTestTournament(Long id, boolean testTournament, Owner owner) {
+        if (owner == null || !owner.isSuperAdmin()) throw new org.springframework.security.access.AccessDeniedException("Super admin required");
+        Tournament tournament = tournamentRepository.lockById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Tournament not found"));
+        tournament.setTestTournament(testTournament);
+        tournamentRepository.save(tournament);
+        log.info("Tournament {} test status set to {} by administrator {}", id, testTournament, owner.getId());
     }
 
     @Transactional
@@ -1409,7 +1477,7 @@ public class TournamentService {
         existing.setDurationMinutes(dto.getDurationMinutes());
         existing.setTimeZone(EventSchedule.zone(dto.getTimeZone()).getId());
         existing.setGeneroFormato(dto.getGeneroFormato());
-        existing.setCategoriaNivel(Nivel.valueOf(dto.getCategoriaNivel()));
+        existing.setCategoriaNivel(Nivel.fromValue(dto.getCategoriaNivel()));
         // nombre всегда пересобирается из уже обновлённых выше generoFormato/categoriaNivel —
         // вручную в форме не вводится.
         existing.setNombre(Tournament.generateNombre(existing.getGeneroFormato(), existing.getCategoriaNivel()));
@@ -1446,6 +1514,13 @@ public class TournamentService {
     @Transactional(readOnly = true)
     public Page<TournamentDto> getPublicCatalog(PublicCatalogFilter filter, Pageable pageable) {
         return publicCatalogPage(PublicCatalogSpecification.matching(filter), pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public List<TournamentDto> getPublicCalendarEvents(LocalDate from, LocalDate to) {
+        var filter = new PublicCatalogFilter(null, null, null, null, null, null, from, to);
+        return mapToDtoWithDetails(tournamentRepository.findAll(PublicCatalogSpecification.matching(filter),
+                Sort.by("fechaInicio", "horaInicio", "id")));
     }
 
     @Transactional(readOnly = true)
@@ -1545,6 +1620,7 @@ public class TournamentService {
             var now = LocalDateTime.now();
             int position = registrationRepository.findMaxWaitlistPosition(tournamentId).orElse(0) + 1;
             pair.forEach(row -> {
+                participationRequests.close(row);
                 row.setQueuedAt(now);
                 row.moveToWaitlist(position);
             });
@@ -1602,7 +1678,7 @@ public class TournamentService {
             var pair = requirePairForMove(tournamentId, registration, RegistrationStatus.WAITLIST);
             int occupied = Math.toIntExact(registrationRepository.countConfirmedPairs(tournamentId));
             if (occupied >= tournament.getCupoMax()) throw reserveMoveError("registration.reserve.full");
-            confirmReservePair(pair, occupied + 1, tournament);
+            confirmReservePair(pair, occupied + 1, tournament, false);
             processDoublesWaitlist(tournament, Set.of());
             return;
         }
@@ -1699,11 +1775,20 @@ public class TournamentService {
     }
 
     @Transactional(readOnly = true)
+    public long countActiveForOwner(Long ownerId) {
+        return tournamentRepository.countByOwnerIdAndIsActiveTrue(ownerId);
+    }
+
+    public List<TournamentDto> recentForOwner(Long ownerId) {
+        return mapToDtoWithDetails(tournamentRepository.findTop5ByOwnerIdOrderByCreatedAtDesc(ownerId));
+    }
+
     public List<TournamentDto> getTournamentsForOwner(Long ownerId, boolean isSuperAdmin) {
         if (isSuperAdmin) {
             return getAllTournaments();
         }
-        return mapToDtoWithDetails(tournamentRepository.findByOwnerId(ownerId));
+        return TournamentListOrder.sort(mapToDtoWithDetails(tournamentRepository.findByOwnerId(ownerId)),
+                LocalDate.now(EventSchedule.zone(null)));
     }
 
     private String resolveClubName(Long clubId) {

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{club_access.manage} + ' - 1-Padel Admin'">1-Padel Admin</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <link rel="stylesheet" th:href="@{/css/club-accounts.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
+</head>
+<body>
+<header th:replace="~{fragments/admin-header :: header(#{club_access.title})}"></header>
+<main class="admin-main club-access"><div class="container">
+    <div class="admin-header">
+        <h1 class="admin-title" th:text="#{club_access.manage}"></h1>
+        <p class="admin-subtitle" th:text="${account.fullName}"></p>
+        <p th:text="${account.email}"></p>
+    </div>
+    <p th:if="${param.saved != null}" role="status" class="alert alert-success" th:text="#{club_access.saved}"></p>
+    <p th:text="#{club_access.scope}"></p>
+    <form th:action="@{/admin/club-accounts/{id}/clubs(id=${account.id})}" method="post" class="admin-card">
+        <div class="admin-card-body">
+            <fieldset class="club-access-fieldset">
+                <legend th:text="#{club_access.venues}"></legend>
+                <p id="club-access-help" th:text="#{club_access.help}"></p>
+                <div class="club-access-grid" aria-describedby="club-access-help">
+                    <label th:each="club : ${clubs}" class="club-access-option">
+                        <input type="checkbox" name="clubIds" th:value="${club.id}" th:checked="${assignedClubIds.contains(club.id)}">
+                        <span>
+                            <strong th:text="${club.nombre}"></strong>
+                            <span th:text="${club.direccion}"></span>
+                            <small th:unless="${club.isActive}" th:text="#{admin.common.status.inactive}"></small>
+                        </span>
+                    </label>
+                </div>
+            </fieldset>
+            <p class="club-access-note" th:text="#{club_access.none}"></p>
+            <div class="club-access-actions">
+                <a href="/admin/club-accounts" class="btn btn-outline" th:text="#{club_access.back_accounts}"></a>
+                <button type="submit" class="btn btn-primary" th:text="#{club_access.save}"></button>
+            </div>
+        </div>
+    </form>
+</div></main>
+</body></html>

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex">
+    <title th:text="#{participation.title}">Participación en torneos</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/participation.css}">
+</head>
+<body>
+<main class="participation-page participation">
+    <section class="participation-card" aria-labelledby="participationHeading">
+        <h1 id="participationHeading" th:text="#{participation.title}">Participación en torneos</h1>
+        <h2 th:text="${request.tournamentName}"></h2>
+        <p th:text="${request.playerName}"></p>
+        <p th:if="${request.delegated}" th:text="#{participation.delegated}"></p>
+        <p class="participation-status" role="status"
+           th:text="#{${'participation.status.' + request.status.name()}}"></p>
+        <p th:if="${request.expired}" th:text="#{participation.expired}"></p>
+        <p th:if="${request.outdated}" th:text="#{participation.outdated}"></p>
+        <p th:if="${responseError}" role="alert" th:text="${responseError}"></p>
+
+        <form th:if="${request.canRespond}" th:action="@{/participacion/{id}(id=${request.requestId})}" method="post">
+            <button type="submit" class="btn btn-primary" name="decision" value="CONFIRM"
+                    th:text="#{participation.confirm}">Confirmar participación</button>
+        </form>
+        <details th:if="${request.canDecline}" class="participation-decline">
+            <summary th:text="#{participation.decline}">Rechazar participación</summary>
+            <p th:text="#{participation.decline_terms}"></p>
+            <form th:action="@{/participacion/{id}(id=${request.requestId})}" method="post">
+                <button type="submit" class="btn btn-outline" name="decision" value="DECLINE"
+                        th:text="#{participation.decline}">Rechazar participación</button>
+            </form>
+        </details>
+        <p><a th:href="@{/players/dashboard#participationRequests}" th:text="#{participation.dashboard}">Mis eventos</a></p>
+    </section>
+</main>
+</body>
+</html>

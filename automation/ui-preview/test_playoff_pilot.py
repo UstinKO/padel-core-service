@@ -1,0 +1,94 @@
+import hashlib
+import importlib.util
+import json
+from pathlib import Path
+import subprocess
+import tempfile
+import unittest
+from unittest.mock import Mock, patch
+
+spec = importlib.util.spec_from_file_location('playoff_pilot', Path(__file__).with_name('playoff-pilot.py'))
+pilot = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(pilot)
+
+
+class PilotBoundaryTest(unittest.TestCase):
+    def test_wrong_running_jar_does_not_reset_fixtures(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'padel-bootstrap/target').mkdir(parents=True)
+            (root / 'padel-bootstrap/target/padel-core-service-0.0.1-SNAPSHOT.jar').write_bytes(b'local-jar')
+            client = Mock()
+            client.request.return_value = json.dumps(dict(environment='preview', revision='a' * 40))
+            with patch.object(pilot.preview, 'ROOT', root), patch.object(pilot.preview, 'RUNTIME', root / 'runtime'), \
+                    patch.object(pilot.preview, 'load', return_value=dict(project='own-preview')), \
+                    patch.object(pilot.preview, 'compose'), patch.object(pilot.preview, 'Client', return_value=client), \
+                    patch.object(pilot.preview, 'compose_environment', return_value={}), \
+                    patch.object(pilot.subprocess, 'check_output', return_value='wrong-digest app.jar'), \
+                    patch('sys.argv', ['playoff-pilot.py', 'run']):
+                with self.assertRaisesRegex(ValueError, 'jar отличается'):
+                    pilot.main()
+            client.request.assert_called_once_with('/api/internal/ui-preview')
+
+    def test_browser_failure_removes_private_input_and_public_fixture_has_no_passwords(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            runtime = root / 'runtime'
+            runtime.mkdir()
+            (root / 'padel-bootstrap/target').mkdir(parents=True)
+            (root / 'padel-bootstrap/target/padel-core-service-0.0.1-SNAPSHOT.jar').write_bytes(b'local-jar')
+            digest = hashlib.sha256(b'local-jar').hexdigest()
+            client = Mock(origin='http://127.0.0.1:18114')
+            client.request.side_effect = [json.dumps(dict(environment='preview', revision='a' * 40)),
+                                          json.dumps(dict(accounts={}, scenarios=[]))]
+            state = dict(project='own-preview', gateway_password='private-gateway', fixture_password='private-fixture')
+
+            def rejected_browser(*args, **kwargs):
+                path = runtime / 'pilot-browser-input.json'
+                self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+                self.assertEqual(json.loads(path.read_text())['password'], state['fixture_password'])
+                raise subprocess.CalledProcessError(1, 'browser')
+
+            with patch.object(pilot.preview, 'ROOT', root), patch.object(pilot.preview, 'RUNTIME', runtime), \
+                    patch.object(pilot.preview, 'load', return_value=state), patch.object(pilot.preview, 'compose'), \
+                    patch.object(pilot.preview, 'Client', return_value=client), \
+                    patch.object(pilot.preview, 'compose_environment', return_value={}), \
+                    patch.object(pilot.subprocess, 'check_output', return_value=digest + ' app.jar'), \
+                    patch.object(pilot.subprocess, 'run', side_effect=rejected_browser), \
+                    patch('sys.argv', ['playoff-pilot.py', 'run']):
+                with self.assertRaises(subprocess.CalledProcessError):
+                    pilot.main()
+            self.assertFalse((runtime / 'pilot-browser-input.json').exists())
+            public = (root / 'target/modular-pilot/fixture.json').read_text()
+            self.assertNotIn(state['gateway_password'], public)
+            self.assertNotIn(state['fixture_password'], public)
+
+    def test_manual_session_blocks_automatic_run_before_compose_or_login(self):
+        with tempfile.TemporaryDirectory() as directory:
+            runtime = Path(directory)
+            pilot.pilot_manual.begin(runtime / 'pilot-manual-session.json', 'own-preview', 'jar')
+            with patch.object(pilot.preview, 'RUNTIME', runtime), \
+                    patch.object(pilot.preview, 'load', return_value=dict(project='own-preview')), \
+                    patch.object(pilot.preview, 'compose') as compose, \
+                    patch.object(pilot.preview, 'Client') as client, \
+                    patch('sys.argv', ['playoff-pilot.py', 'run']):
+                with self.assertRaisesRegex(ValueError, 'ручная приёмка'):
+                    pilot.main()
+                compose.assert_not_called()
+                client.assert_not_called()
+
+    def test_extended_rejects_mutating_flags_before_loading_runtime(self):
+        import contextlib
+        import io
+        for flag in ['--reset', '--record', '--rehearse']:
+            with self.subTest(flag=flag), patch.object(pilot.preview, 'load') as load, \
+                    patch('sys.argv', ['playoff-pilot.py', 'extended', flag]), \
+                    contextlib.redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit) as failure:
+                    pilot.main()
+                self.assertEqual(failure.exception.code, 2)
+                load.assert_not_called()
+
+
+if __name__ == '__main__':
+    unittest.main()

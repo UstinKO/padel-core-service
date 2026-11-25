@@ -96,6 +96,8 @@
 
 Все ответы — `Cache-Control: no-store`. Каталог исключает неактивные мероприятия, черновики и `SOLO_POR_ENLACE`; сортировка дата → время → id. Фильтрация и пагинация выполняются в БД, счётчики и клубы загружаются пакетно. Главная дополнительно ограничена предстоящими `PUBLICADO`/`REGISTRO_ABIERTO`; статистика мероприятий относится к этой подборке. Доступ по прямому id, правила регистрации и вместимости не меняются.
 
+Два клубных GET читают через `PublicClubQuery` в application и `ClubReadPort`; legacy-адаптер сохраняет активный фильтр и сортировку nombre,id. HTTP-маппинг/canonicalUrl, девять wire-полей generated `Club` из api-contract, nullable-значения и прежние ошибки остаются в web-коде bootstrap. Catalog/home не перенесены. [Владельцы application-типов](../modular-monolith/phase-2/application-club-read.md), [канонический OpenAPI, генерация и проверки](../modular-monolith/phase-2/contract-adoption.md).
+
 Новые ошибки — локализованный `application/problem+json`: 400 `INVALID_CATALOG_FILTER`, 404 `CLUB_NOT_FOUND`, 503 `PUBLIC_DATA_UNAVAILABLE`. Мобильный контракт ошибок не изменён. Контакты игроков и административные поля в новые DTO не входят.
 
 Пагинация: страница за последней при допустимом смещении возвращает пустой `items` и фактические итоговые счётчики. При `page × size > 2147483647` возвращается 400 `INVALID_CATALOG_FILTER` до запроса в БД; например, `page=2147483647&size=12`. Такой запрос не означает недоступность хранилища и не возвращает 503.

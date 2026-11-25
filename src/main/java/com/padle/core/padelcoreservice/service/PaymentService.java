@@ -10,9 +10,13 @@ import com.padle.core.padelcoreservice.mapper.PaymentMapper;
 import com.padle.core.padelcoreservice.model.Payment;
 import com.padle.core.padelcoreservice.model.TournamentRegistration;
 import com.padle.core.padelcoreservice.model.enums.PaymentMethod;
+import com.padle.core.padelcoreservice.model.enums.Modalidad;
 import com.padle.core.padelcoreservice.model.enums.PaymentStatus;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import com.padle.core.padelcoreservice.repository.PaymentRepository;
+import com.padle.core.padelcoreservice.receipts.ReceiptModels.Accept;
+import com.padle.core.padelcoreservice.exception.AccountException;
+import org.springframework.http.HttpStatus;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import com.padle.core.padelcoreservice.service.americano.TeamPlayoffService;
@@ -157,6 +161,54 @@ public class PaymentService {
     // ==================== Для офлайн платежей (ручной ввод) ====================
 
     @Transactional
+    public long confirmReceiptPayment(TournamentRegistration row, Accept decision, long ownerId) {
+        var existing = paymentRepository.findByRegistrationId(row.getId()).stream()
+                .filter(p -> Boolean.TRUE.equals(p.getIsActive()) && isOwnPayment(p, row)).toList();
+        if (existing.size() > 1 || decision.amount() == null || decision.amount().signum() <= 0
+                || decision.amount().precision() > 10 || decision.amount().scale() > 2
+                || !List.of("ARS", "USD", "USDT").contains(decision.currency()) || decision.method() == null) {
+            throw receiptPaymentConflict();
+        }
+        var payment = existing.stream().findFirst();
+        payment.ifPresent(p -> validateReceiptPayment(p, row, decision));
+        if (payment.filter(p -> p.getStatus() == PaymentStatus.PAID).isPresent()) {
+            return payment.orElseThrow().getId();
+        }
+        var update = new PaymentUpdateDto();
+        update.setRegistrationId(row.getId());
+        update.setAmount(decision.amount());
+        update.setCurrency(decision.currency());
+        update.setPaymentMethod(decision.method());
+        update.setPaymentStatus(PaymentStatus.PAID);
+        update.setAttended(Boolean.TRUE.equals(row.getAttended()));
+        update.setParticipationConfirmed(Boolean.TRUE.equals(row.getParticipationConfirmed()));
+        payment.ifPresent(p -> {
+            update.setHasPayment(true);
+            update.setPaymentId(p.getId());
+            update.setTransactionId(p.getTransactionId());
+            update.setNotes(p.getNotes());
+        });
+        savePaymentManagementData(row.getTournament().getId(), List.of(update), ownerId);
+        return paymentRepository.findByRegistrationId(row.getId()).stream()
+                .filter(p -> Boolean.TRUE.equals(p.getIsActive()) && isOwnPayment(p, row))
+                .findFirst().orElseThrow(PaymentService::receiptPaymentConflict).getId();
+    }
+
+    private void validateReceiptPayment(Payment payment, TournamentRegistration row, Accept decision) {
+        if ((row.getCancellationDate() != null && payment.getCreatedAt().isBefore(row.getCancellationDate()))
+                || (payment.getStatus() != PaymentStatus.PENDING && payment.getStatus() != PaymentStatus.PROCESSING
+                    && payment.getStatus() != PaymentStatus.FAILED && payment.getStatus() != PaymentStatus.PAID)
+                || (payment.getStatus() == PaymentStatus.PAID && (payment.getAmount().compareTo(decision.amount()) != 0
+                    || !decision.currency().equals(payment.getCurrency()) || decision.method() != payment.getPaymentMethod()))) {
+            throw receiptPaymentConflict();
+        }
+    }
+
+    private static AccountException receiptPaymentConflict() {
+        return new AccountException(HttpStatus.CONFLICT, "RECEIPT_PAYMENT_CONFLICT");
+    }
+
+    @Transactional
     public PaymentDto registerOfflinePayment(Long registrationId, BigDecimal amount,
                                              PaymentMethod method, String notes, Long createdBy) {
         log.info("Registering offline payment for registration {}", registrationId);
@@ -200,12 +252,18 @@ public class PaymentService {
         List<PaymentManagementViewDto> result = new java.util.ArrayList<>();
 
         registrations.stream()
+                .filter(reg -> Boolean.TRUE.equals(reg.getIsActive()))
                 .filter(reg -> reg.getStatus() == RegistrationStatus.CONFIRMED
                         || reg.getStatus() == RegistrationStatus.PARTNER_INVITED
-                        || reg.getStatus() == RegistrationStatus.WAITLIST)
+                        || reg.getStatus() == RegistrationStatus.PAIR_REGISTERED
+                        || reg.getStatus() == RegistrationStatus.WAITLIST
+                        || reg.getStatus() == RegistrationStatus.SOLO_SEARCH
+                        || reg.getStatus() == RegistrationStatus.SOLO_ADD_LATER)
                 .forEach(reg -> {
 
-                    boolean isReserve = reg.getStatus() == RegistrationStatus.WAITLIST;
+                    boolean isReserve = reg.getStatus() == RegistrationStatus.WAITLIST
+                            || reg.getStatus() == RegistrationStatus.SOLO_SEARCH
+                            || reg.getStatus() == RegistrationStatus.SOLO_ADD_LATER;
                     boolean isDouble = Boolean.TRUE.equals(reg.getIsDoubleRegistration());
                     boolean isMainPlayer = !isDouble
                             || (reg.getMainPlayerId() != null
@@ -234,13 +292,16 @@ public class PaymentService {
                     dto.setMainRow(isMainPlayer);
                     dto.setDoubleRegistration(isDouble);
                     dto.setReserve(isReserve);
+                    dto.setSolo(reg.getTournament().getModalidad() == Modalidad.DOBLES
+                            && SoloRosterService.single(reg));
+                    dto.setRegistrationStatus(reg.getStatus().name());
+                    paymentMapper.participantSide(reg.getPlayer(), dto);
+                    dto.setPlayerLevel(reg.getPlayer().getNivelJugador() == null ? "SIN_ESPECIFICAR" : reg.getPlayer().getNivelJugador().name());
 
                     // Платёж — без маркера PARTNER_PAYMENT (у каждого своя запись)
                     payments.stream()
                             .filter(p -> p.getRegistration().getId().equals(reg.getId()))
-                            .filter(p -> isPaymentForBooking(p, reg))
-                            .filter(p -> p.getNotes() == null
-                                    || !p.getNotes().startsWith(PARTNER_PAYMENT_MARKER))
+                            .filter(p -> isOwnPayment(p, reg))
                             .findFirst()
                             .ifPresentOrElse(p -> {
                                 dto.setPaymentId(p.getId());
@@ -282,7 +343,7 @@ public class PaymentService {
                         partnerDto.setPosition(reg.getPosition());
                         partnerDto.setWaitlistPosition(reg.getWaitlistPosition());
                         partnerDto.setPairGroupId(reg.getPlayer().getId());
-                        partnerDto.setAttended(false);
+                        partnerDto.setAttended(Boolean.TRUE.equals(reg.getPartnerAttended()));
                         partnerDto.setParticipationConfirmed(false);
                         partnerDto.setReserve(isReserve);
 
@@ -396,6 +457,9 @@ public class PaymentService {
                 registration.setAttended(dto.isAttended());
                 registration.setParticipationConfirmed(dto.isParticipationConfirmed());
                 registrationRepository.save(registration);
+            } else {
+                registration.setPartnerAttended(dto.isAttended());
+                registrationRepository.save(registration);
             }
 
             // Для партнёра добавляем маркер в notes
@@ -497,17 +561,17 @@ public class PaymentService {
                         dto.getRegistrationId(), dto.isPartnerRow());
             }
 
-            // Если по этой регистрации уже есть AmericanoTeam (Team Playoff), синхронизируем
-            // её hasPaid/attended с только что сохранённым статусом — иначе команда, добавленная
-            // в турнир до того, как на этой странице отметили оплату, осталась бы неотмеченной.
-            if (!dto.isPartnerRow()) {
-                teamPlayoffService.syncPaymentStatusForRegistration(tournamentId, dto.getRegistrationId(),
-                        dto.getPaymentStatus() == PaymentStatus.PAID, dto.isAttended());
-            }
         }
+        // Обновляем готовность команд после сохранения всех индивидуальных строк.
+        teamPlayoffService.syncPaymentStatusForTournament(tournamentId);
     }
 
-    private boolean isPaymentForBooking(Payment payment, TournamentRegistration registration) {
+    static boolean isOwnPayment(Payment payment, TournamentRegistration registration) {
+        return isPaymentForBooking(payment, registration) && (payment.getNotes() == null
+                || !payment.getNotes().startsWith(PARTNER_PAYMENT_MARKER));
+    }
+
+    private static boolean isPaymentForBooking(Payment payment, TournamentRegistration registration) {
         return java.util.Objects.equals(payment.getPairBookingId(), registration.getPairBookingId());
     }
 

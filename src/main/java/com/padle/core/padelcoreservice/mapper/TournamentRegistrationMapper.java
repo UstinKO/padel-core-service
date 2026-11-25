@@ -1,6 +1,7 @@
 package com.padle.core.padelcoreservice.mapper;
 
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
+import com.padle.core.padelcoreservice.dto.LookingForPartnerDto;
 import com.padle.core.padelcoreservice.model.TournamentRegistration;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -30,7 +31,18 @@ public interface TournamentRegistrationMapper {
     @Mapping(target = "partnerRegistered", expression = "java(registration.getPartner() != null)")
     @Mapping(source = "shareContacts", target = "shareContacts")
     @Mapping(source = "pairableSolo", target = "pairableSolo")
+    @Mapping(source = "player.playingSide", target = "playerPlayingSide")
+    @Mapping(source = "partner.playingSide", target = "partnerPlayingSide")
     TournamentRegistrationDto toDto(TournamentRegistration registration);
+
+    @Mapping(target = "registrationId", source = "id")
+    @Mapping(target = "playerId", source = "player.id")
+    @Mapping(target = "playerName", expression = "java(registration.getPlayer().getNombreCompleto())")
+    @Mapping(target = "nivel", expression = "java(Boolean.TRUE.equals(registration.getTournament().getMostrarNivel()) ? registration.getPlayer().getNivelJugador().name() : null)")
+    @Mapping(target = "playingSide", expression = "java(Boolean.TRUE.equals(registration.getTournament().getMostrarNivel()) ? registration.getPlayer().getPlayingSide() : null)")
+    @Mapping(target = "telegramUsername", expression = "java(Boolean.TRUE.equals(registration.getShareContacts()) ? registration.getPlayer().getTelegramUsername() : null)")
+    @Mapping(target = "telefono", expression = "java(Boolean.TRUE.equals(registration.getShareContacts()) ? registration.getPlayer().getTelefono() : null)")
+    LookingForPartnerDto toLookingDto(TournamentRegistration registration);
 
     TournamentRegistration toEntity(TournamentRegistrationDto dto);
 

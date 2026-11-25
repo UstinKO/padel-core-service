@@ -9,7 +9,7 @@
         </a>
         <nav class="auth-entry-languages" th:attr="aria-label=#{auth.entry.language}">
             <a th:each="lang : ${ {'es', 'ru', 'en'} }"
-               th:href="@{${path}(lang=${lang},tournamentId=${tournamentId})}"
+               th:href="@{${path}(lang=${lang},tournamentId=${tournamentId},destination=${param.destination != null ? param.destination[0] : null})}"
                th:attr="aria-current=${#locale.language == lang ? 'true' : null}"
                th:lang="${lang}" th:text="${#strings.toUpperCase(lang)}">ES</a>
         </nav>
@@ -17,7 +17,7 @@
 </header>
 
 <a class="auth-entry-google" th:fragment="google(tournamentId)"
-   th:href="${tournamentId != null} ? @{/oauth2/authorization/google(tournamentId=${tournamentId})} : @{/oauth2/authorization/google}">
+   th:href="@{/oauth2/authorization/google(tournamentId=${tournamentId},destination=${param.destination != null ? param.destination[0] : null})}">
     <img th:src="@{/images/google-signin.svg}" alt="" width="20" height="20">
     <span th:text="#{auth.entry.google}">Continuar con Google</span>
 </a>

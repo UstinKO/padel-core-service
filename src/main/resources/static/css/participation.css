@@ -1,0 +1,74 @@
+.participation[hidden],
+.participation [hidden] {
+    display: none;
+}
+
+.participation-page {
+    max-width: 38rem;
+    margin: 0 auto;
+    padding: clamp(1rem, 5vw, 3rem);
+}
+
+#participationRequests {
+    margin: 1rem 0;
+}
+
+.participation-list {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.participation-card,
+.participation-dialog {
+    padding: 1.25rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    background: #fff;
+    color: #1e293b;
+}
+
+.participation-card h2,
+.participation-card h3 {
+    overflow-wrap: anywhere;
+}
+
+.participation-card p,
+.participation-decline,
+.participation-dialog p {
+    margin: 0.75rem 0;
+}
+
+.participation [data-feedback]:empty {
+    margin: 0;
+}
+
+.participation-status {
+    font-weight: 600;
+}
+
+.participation-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.participation-dialog {
+    width: min(28rem, calc(100% - 2rem));
+    margin: auto;
+}
+
+.participation-dialog::backdrop {
+    background: rgb(15 23 42 / 55%);
+}
+
+.participation-decline summary {
+    cursor: pointer;
+    color: #9f231d;
+}
+
+.participation .btn:focus-visible,
+.participation a:focus-visible,
+.participation summary:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 3px;
+}

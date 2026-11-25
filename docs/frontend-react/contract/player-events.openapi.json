@@ -1,0 +1,488 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "API «Мои мероприятия»",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/players/me/events": {
+      "get": {
+        "summary": "Собственные регистрации игрока",
+        "responses": {
+          "200": {
+            "description": "Предстоящие мероприятия и история",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Overview"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Нужен вход"
+          },
+          "403": {
+            "description": "Требуется роль игрока"
+          }
+        }
+      }
+    },
+    "/api/players/me/events/{registrationId}/withdraw": {
+      "post": {
+        "parameters": [
+          {
+            "name": "registrationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "X-XSRF-TOKEN",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Обязателен при входе через браузерную сессию"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Withdrawal"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Действие выполнено"
+          },
+          "401": {
+            "description": "Нужен вход"
+          },
+          "403": {
+            "description": "Нет доступа"
+          },
+          "404": {
+            "description": "Заявка недоступна"
+          },
+          "409": {
+            "description": "Действие недоступно или версия устарела"
+          },
+          "422": {
+            "description": "Неверный запрос"
+          }
+        }
+      }
+    },
+    "/api/players/me/events/{registrationId}/contact-visibility": {
+      "put": {
+        "parameters": [
+          {
+            "name": "registrationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "X-XSRF-TOKEN",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Обязателен при входе через браузерную сессию"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactVisibility"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Действие выполнено"
+          },
+          "401": {
+            "description": "Нужен вход"
+          },
+          "403": {
+            "description": "Нет доступа"
+          },
+          "404": {
+            "description": "Заявка недоступна"
+          },
+          "409": {
+            "description": "Действие недоступно или версия устарела"
+          },
+          "422": {
+            "description": "Неверный запрос"
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "session": []
+    },
+    {
+      "bearer": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "session": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "JSESSIONID"
+      },
+      "bearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    },
+    "schemas": {
+      "Overview": {
+        "type": "object",
+        "required": [
+          "upcoming",
+          "history"
+        ],
+        "properties": {
+          "upcoming": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Entry"
+            }
+          },
+          "history": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Entry"
+            }
+          }
+        }
+      },
+      "Event": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "type",
+          "status",
+          "modality",
+          "gender",
+          "level",
+          "startsAt",
+          "clubName"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "modality": {
+            "type": "string"
+          },
+          "gender": {
+            "type": "string"
+          },
+          "level": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "startsAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "clubName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "Entry": {
+        "type": "object",
+        "required": [
+          "event",
+          "registrationId",
+          "version",
+          "registrationStatus",
+          "mode",
+          "partnerName",
+          "queuedAt",
+          "queuePosition",
+          "participationStatus",
+          "participation",
+          "replacementNeeded",
+          "replacementSearch",
+          "shareContacts",
+          "paymentStatus",
+          "availableActions",
+          "cancellations"
+        ],
+        "properties": {
+          "event": {
+            "$ref": "#/components/schemas/Event"
+          },
+          "registrationId": {
+            "type": "integer"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "registrationStatus": {
+            "type": "string"
+          },
+          "mode": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "INDIVIDUAL",
+              "SOLO",
+              "PAIR",
+              null
+            ]
+          },
+          "partnerName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "queuedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "queuePosition": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "participationStatus": {
+            "$ref": "#/components/schemas/ParticipationStatus"
+          },
+          "participation": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Participation"
+            }
+          },
+          "replacementNeeded": {
+            "type": "boolean"
+          },
+          "replacementSearch": {
+            "type": "boolean"
+          },
+          "shareContacts": {
+            "type": "boolean"
+          },
+          "paymentStatus": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "PENDING",
+              "PROCESSING",
+              "PAID",
+              "FAILED",
+              "REFUNDED",
+              "CANCELLED",
+              null
+            ]
+          },
+          "availableActions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "WITHDRAW",
+                "CANCEL_PAIR",
+                "CHANGE_CONTACT_VISIBILITY",
+                "SEARCH_REPLACEMENT"
+              ]
+            }
+          },
+          "cancellations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Cancellation"
+            }
+          }
+        }
+      },
+      "ParticipationStatus": {
+        "type": "string",
+        "enum": [
+          "NOT_REQUIRED",
+          "PENDING",
+          "CONFIRMED",
+          "DECLINED"
+        ]
+      },
+      "Participation": {
+        "type": "object",
+        "required": [
+          "requestId",
+          "playerName",
+          "status",
+          "delegated",
+          "availableActions"
+        ],
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "playerName": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ParticipationStatus"
+          },
+          "delegated": {
+            "type": "boolean"
+          },
+          "availableActions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "CONFIRM",
+                "DECLINE"
+              ]
+            }
+          }
+        }
+      },
+      "Cancellation": {
+        "type": "object",
+        "required": [
+          "eventId",
+          "tournamentId",
+          "registrationId",
+          "version",
+          "cancelledAt",
+          "initiator",
+          "scope",
+          "reasonCode",
+          "organizerComment"
+        ],
+        "properties": {
+          "eventId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tournamentId": {
+            "type": "integer"
+          },
+          "registrationId": {
+            "type": "integer"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "cancelledAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "initiator": {
+            "type": "string",
+            "enum": [
+              "PLAYER",
+              "OWNER",
+              "SYSTEM",
+              "UNKNOWN"
+            ]
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "PARTICIPANT",
+              "PAIR"
+            ]
+          },
+          "reasonCode": {
+            "type": "string",
+            "enum": [
+              "PARTICIPANT_WITHDRAWAL",
+              "PAIR_WITHDRAWAL",
+              "ORGANIZER_REMOVAL",
+              "PLAYER_DEACTIVATED",
+              "PARTICIPANT_REPLACED",
+              "LEGACY_UNKNOWN"
+            ]
+          },
+          "organizerComment": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "Withdrawal": {
+        "type": "object",
+        "required": [
+          "version"
+        ],
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "ContactVisibility": {
+        "type": "object",
+        "required": [
+          "version",
+          "shareContacts"
+        ],
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "shareContacts": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,6 +1,9 @@
 package com.padle.core.padelcoreservice.model;
 
+import com.padle.core.padelcoreservice.model.enums.PlayingSide;
+
 import com.padle.core.padelcoreservice.model.enums.Nivel;
+import java.time.Instant;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -95,6 +98,13 @@ public class PlayerPadel implements UserDetails {
 
     @Column(name = "preferred_locale", length = 5)
     private String preferredLocale = "es";
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "playing_side", length = 8)
+    private PlayingSide playingSide;
+
+    @Column(name = "playing_side_prompt_after")
+    private Instant playingSidePromptAfter;
 
     // ========== Реализация UserDetails ==========
 

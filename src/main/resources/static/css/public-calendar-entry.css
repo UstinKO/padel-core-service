@@ -1,0 +1,4 @@
+.home-calendar-entry { display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; flex:0 0 44px; border:1px solid #f0dfd5; border-radius:12px; color:#c2410c; background:#fff8f3; text-decoration:none; }
+.home-calendar-entry svg { width:22px; height:22px; }
+.home-calendar-entry:hover { background:#ffede2; border-color:#ff6b35; }
+.home-calendar-entry:focus-visible { outline:3px solid #334155; outline-offset:3px; }

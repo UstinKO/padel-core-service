@@ -1,5 +1,8 @@
 package com.padle.core.padelcoreservice.controller.admin;
 
+import com.padle.core.padelcoreservice.model.enums.EventFormat;
+
+import java.util.Comparator;
 import com.padle.core.padelcoreservice.annotation.Timed;
 import com.padle.core.padelcoreservice.dto.ClubDto;
 import com.padle.core.padelcoreservice.dto.MatchDto;
@@ -14,6 +17,7 @@ import com.padle.core.padelcoreservice.service.ClubService;
 import com.padle.core.padelcoreservice.service.DoubleTournamentRegistrationService;
 import com.padle.core.padelcoreservice.service.MatchService;
 import com.padle.core.padelcoreservice.service.OwnerService;
+import com.padle.core.padelcoreservice.service.OrganizerOrganizationService;
 import com.padle.core.padelcoreservice.service.PlayerService;
 import com.padle.core.padelcoreservice.service.TournamentAccessService;
 import com.padle.core.padelcoreservice.service.TournamentService;
@@ -21,7 +25,10 @@ import com.padle.core.padelcoreservice.service.americano.AmericanoService;
 import com.padle.core.padelcoreservice.service.americano.TeamAmericanoService;
 import com.padle.core.padelcoreservice.service.americano.TeamPlayoffService;
 import com.padle.core.padelcoreservice.service.calendar.EventSchedule;
+import com.padle.core.padelcoreservice.service.calendar.DeclaredEventLevel;
 import jakarta.validation.Valid;
+import com.padle.core.padelcoreservice.service.ClubAccountService;
+import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
@@ -45,6 +52,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Stream;
 import java.util.stream.Collectors;
 
@@ -58,6 +66,7 @@ public class AdminController {
     private final ClubService clubService;
     private final PlayerService playerService;
     private final OwnerService ownerService;
+    private final OrganizerOrganizationService organizations;
     private final MatchService matchService;
     private final TournamentKingOfCourtRepository tournamentKingOfCourtRepository;
     private final AmericanoService americanoService;
@@ -65,6 +74,8 @@ public class AdminController {
     private final TeamPlayoffService teamPlayoffService;
     private final DoubleTournamentRegistrationService doubleRegistrationService;
     private final TournamentAccessService tournamentAccessService;
+    private final ClubAccountService clubAccounts;
+    private final TournamentRegistrationRepository scopedRegistrations;
     private final MessageSource messageSource;
 
     @GetMapping
@@ -74,27 +85,18 @@ public class AdminController {
         long totalPlayers = playerService.contarJugadoresActivos();
         long totalOwners = ownerService.getTotalActiveOwners();
 
-        // CLUB_ADMIN видит статистику только своего клуба, а не всей платформы;
-        // totalPlayers/totalOwners — общие для всех ролей.
         boolean isClubAdmin = owner.isClubAdmin();
-        Long ownerClubId = owner.getClubId();
-
-        long totalTournaments;
-        long totalWaitlist;
-        List<TournamentDto> recentTournaments;
-        if (isClubAdmin && ownerClubId != null) {
-            totalTournaments = tournamentService.getTotalActiveTournamentsForClub(ownerClubId);
-            totalWaitlist = tournamentService.getTotalWaitlistCountForClub(ownerClubId);
-            recentTournaments = tournamentService.getRecentTournamentsForClub(ownerClubId, 5);
-        } else if (isClubAdmin) {
-            // CLUB_ADMIN без привязанного клуба — не должно происходить в норме, но не падаем.
-            totalTournaments = 0;
-            totalWaitlist = 0;
-            recentTournaments = List.of();
-        } else {
-            totalTournaments = tournamentService.getTotalActiveTournaments();
-            totalWaitlist = tournamentService.getTotalWaitlistCount();
-            recentTournaments = tournamentService.getRecentTournaments(5);
+        long totalTournaments = isClubAdmin ? tournamentService.countActiveForOwner(owner.getId())
+                : tournamentService.getTotalActiveTournaments();
+        long totalWaitlist = isClubAdmin ? scopedRegistrations.countWaitlistByTournamentOwnerId(owner.getId())
+                : tournamentService.getTotalWaitlistCount();
+        List<TournamentDto> recentTournaments = isClubAdmin ? tournamentService.recentForOwner(owner.getId())
+                : tournamentService.getRecentTournaments(5);
+        Set<Long> participantIds = isClubAdmin ? scopedRegistrations.findPlayerIdsByTournamentOwnerId(owner.getId())
+                : Set.of();
+        if (isClubAdmin) {
+            totalPlayers = participantIds.size();
+            totalOwners = 0;
         }
 
         // Добавляем флаг isOwner для каждого турнира в отдельный список
@@ -102,16 +104,19 @@ public class AdminController {
                 .map(t -> {
                     Map<String, Object> map = new HashMap<>();
                     map.put("tournament", t);
-                    map.put("isOwner", owner.isSuperAdmin() ||
-                            (t.getOwnerId() != null && t.getOwnerId().equals(owner.getId())));
+                    map.put("isOwner", tournamentAccessService.canManage(owner, t.getOwnerId(), t.getClubId()));
                     return map;
                 })
                 .collect(Collectors.toList());
 
-        List<PlayerResponseDto> recentPlayers = playerService.getRecentPlayers(5);
-        List<MatchDto> matchesInProgress = matchService.getMatchesByStatus(MatchStatus.EN_CURSO);
-        List<MatchDto> upcomingMatches = matchService.getUpcomingMatches(5);
-        List<TournamentDto> activeTournaments = tournamentService.getTournamentsWithActiveBrackets();
+        List<PlayerResponseDto> recentPlayers = isClubAdmin ? playerService.getAllPlayers().stream()
+                .filter(player -> participantIds.contains(player.getId()))
+                .sorted(Comparator.comparing(PlayerResponseDto::getId).reversed()).limit(5).toList()
+                : playerService.getRecentPlayers(5);
+        List<MatchDto> matchesInProgress = isClubAdmin ? List.of() : matchService.getMatchesByStatus(MatchStatus.EN_CURSO);
+        List<MatchDto> upcomingMatches = isClubAdmin ? List.of() : matchService.getUpcomingMatches(5);
+        List<TournamentDto> activeTournaments = tournamentService.getTournamentsWithActiveBrackets().stream()
+                .filter(t -> !isClubAdmin || tournamentAccessService.canManage(owner, t.getOwnerId(), t.getClubId())).toList();
 
         model.addAttribute("adminName", owner.getFirstName());
         model.addAttribute("totalPlayers", totalPlayers);
@@ -134,18 +139,33 @@ public class AdminController {
     @GetMapping("/tournaments")
     public String listTournaments(Model model, @AuthenticationPrincipal Owner owner,
                                   @RequestParam(required = false) Long clubId,
-                                  @RequestParam(required = false) AdminEventFormat format,
+                                  @RequestParam(required = false) EventFormat format,
                                   @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-                                  @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+                                  @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+                                  @RequestParam(required = false) GenderFormat gender,
+                                  @RequestParam(required = false) Nivel level,
+                                  @RequestParam(required = false) TournamentStatus status,
+                                  @RequestParam(required = false) Long organizerId) {
         log.info("Listing tournaments for owner: {}", owner.getEmail());
 
         List<TournamentDto> visible = visibleTournaments(owner);
         boolean invalidPeriod = from != null && to != null && from.isAfter(to);
-        List<Map<String, Object>> rows = invalidPeriod ? List.of() : visible.stream()
+        List<TournamentDto> filtered = invalidPeriod ? List.of() : visible.stream()
+                .filter(t -> organizerId == null || organizerId.equals(t.getOwnerId()))
                 .filter(t -> clubId == null || clubId.equals(t.getClubId()))
-                .filter(t -> format == null || format == AdminEventFormat.of(t))
+                .filter(t -> format == null || format == EventFormat.of(t.getTipo(), t.getModalidad()))
                 .filter(t -> matchesPeriod(t.getFechaInicio(), from, to))
-                .map(t -> tournamentListRow(t, owner))
+                .filter(t -> gender == null || gender == t.getGeneroFormato())
+                .filter(t -> level == null || matchesDeclaredLevel(t.getCategoriaNivel(), level))
+                .filter(t -> status == null || status == t.getEstado())
+                .toList();
+        Set<Long> teamPlayoffConduct = teamPlayoffService.findConductIds(filtered.stream()
+                .filter(AdminController::canHaveTeamPlayoffConduct)
+                .filter(t -> tournamentAccessService.canManage(owner, t.getOwnerId(), t.getClubId()))
+                .map(TournamentDto::getId)
+                .toList());
+        List<Map<String, Object>> rows = filtered.stream()
+                .map(t -> tournamentListRow(t, owner, teamPlayoffConduct.contains(t.getId())))
                 .toList();
 
         model.addAttribute("tournaments", rows);
@@ -157,20 +177,31 @@ public class AdminController {
             model.addAttribute("clubs", activeClubs);
         }
         model.addAttribute("filterClubs", filterClubs(activeClubs, visible));
+        model.addAttribute("filterOrganizers", organizations.forEvents(visible));
+        model.addAttribute("selectedOrganizerId", organizerId);
         model.addAttribute("selectedClubId", clubId);
         model.addAttribute("selectedFormat", format);
-        model.addAttribute("eventFormats", AdminEventFormat.values());
+        model.addAttribute("eventFormats", EventFormat.values());
+        model.addAttribute("eventGenders", GenderFormat.values());
+        model.addAttribute("eventLevels", Arrays.stream(Nivel.values())
+                .filter(value -> value != Nivel.SIN_ESPECIFICAR)
+                .toList());
+        model.addAttribute("eventStatuses", TournamentStatus.values());
+        model.addAttribute("selectedGender", gender);
+        model.addAttribute("selectedLevel", level);
+        model.addAttribute("selectedStatus", status);
         model.addAttribute("dateFrom", from);
         model.addAttribute("dateTo", to);
         model.addAttribute("invalidPeriod", invalidPeriod);
-        model.addAttribute("filtersActive", clubId != null || format != null || from != null || to != null);
+        model.addAttribute("filtersActive", clubId != null || format != null || from != null || to != null
+                || gender != null || level != null || status != null || organizerId != null);
 
         return "admin/tournaments/list";
     }
 
     private List<TournamentDto> visibleTournaments(Owner owner) {
         if (owner.isClubAdmin()) {
-            return owner.getClubId() == null ? List.of() : tournamentService.getTournamentsByClub(owner.getClubId());
+            return tournamentService.getTournamentsForOwner(owner.getId(), false);
         }
         List<TournamentDto> tournaments = tournamentService.getAllTournaments();
         return owner.canViewAllTournaments() ? tournaments : tournaments.stream()
@@ -195,7 +226,17 @@ public class AdminController {
         return date != null && (from == null || !date.isBefore(from)) && (to == null || !date.isAfter(to));
     }
 
-    private Map<String, Object> tournamentListRow(TournamentDto tournament, Owner owner) {
+    private static boolean matchesDeclaredLevel(String declared, Nivel level) {
+        return DeclaredEventLevel.matches(declared, level);
+    }
+
+    private static boolean canHaveTeamPlayoffConduct(TournamentDto tournament) {
+        return Boolean.TRUE.equals(tournament.getIsActive())
+                && (tournament.getTipo() == TournamentType.AMERICANO_TEAMS
+                    || (tournament.getTipo() == TournamentType.AMERICANO && tournament.getModalidad() == Modalidad.DOBLES));
+    }
+
+    private Map<String, Object> tournamentListRow(TournamentDto tournament, Owner owner, boolean teamPlayoffConduct) {
         boolean canManage = tournamentAccessService.canManage(owner, tournament.getOwnerId(), tournament.getClubId());
         String automaticName = Tournament.generateNombre(tournament.getGeneroFormato(),
                 Nivel.parseOrNull(tournament.getCategoriaNivel()));
@@ -204,7 +245,8 @@ public class AdminController {
         row.put("isOwner", canManage);
         row.put("canCopy", !owner.isAdminRole());
         row.put("canView", canManage || owner.isAdminRole());
-        row.put("format", AdminEventFormat.of(tournament));
+        row.put("format", EventFormat.of(tournament.getTipo(), tournament.getModalidad()));
+        row.put("teamPlayoffConduct", teamPlayoffConduct);
         row.put("customName", Objects.equals(automaticName, tournament.getNombre()) ? "" : tournament.getNombre());
         return row;
     }
@@ -223,12 +265,7 @@ public class AdminController {
         log.info("Creating new tournament: {} / {} by owner: {}",
                 tournamentDto.getGeneroFormato(), tournamentDto.getCategoriaNivel(), owner.getEmail());
 
-        // Клубный админ не может привязать турнир к чужому клубу — не доверяем
-        // значению из формы, всегда принудительно ставим его собственный clubId.
-        // Клубному аккаунту не нужно выбирать статус турнира при создании —
-        // всегда «Регистрация открыта», независимо от значения из формы.
         if (owner.isClubAdmin()) {
-            tournamentDto.setClubId(owner.getClubId());
             tournamentDto.setEstado(TournamentStatus.REGISTRO_ABIERTO);
         }
 
@@ -245,6 +282,7 @@ public class AdminController {
             return "admin/tournaments/form";
         }
 
+        clubAccounts.assertCanCreateAt(owner, tournamentDto.getClubId());
         try {
             TournamentDto created = tournamentService.createTournament(tournamentDto, owner.getId());
             redirectAttributes.addFlashAttribute("successMessage",
@@ -282,6 +320,14 @@ public class AdminController {
         return "admin/tournaments/form";
     }
 
+    @PostMapping("/tournaments/{id}/test-status")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public String setTestTournament(@PathVariable Long id, @RequestParam boolean testTournament,
+                                    @AuthenticationPrincipal Owner owner) {
+        tournamentService.setTestTournament(id, testTournament, owner);
+        return "redirect:/admin/tournaments/" + id;
+    }
+
     @Timed(
             name = "admin.tournament.details.time",
             description = "Time taken to load admin tournament details page",
@@ -296,7 +342,7 @@ public class AdminController {
         TournamentDto tournament = tournamentService.getTournamentDtoById(id)
                 .orElseThrow(() -> new RuntimeException("Tournament not found"));
 
-        // ADMIN/SUPER_ADMIN видят все турниры; CLUB_ADMIN — только своего клуба; ORGANIZER — только свои
+        // ADMIN/SUPER_ADMIN видят все турниры; остальные — только собственные.
         tournamentAccessService.assertCanManageTournament(owner, id);
 
         if (tournament.getTipo() == TournamentType.KING_OF_COURT) {
@@ -337,7 +383,9 @@ public class AdminController {
         }
 
         if (tournament.getTipo() == TournamentType.AMERICANO_TEAMS) {
-            model.addAttribute("isTeamAmericanoInitialized", false);
+            var roundRobin = teamAmericanoService.isInitialized(id);
+            model.addAttribute("isTeamAmericanoInitialized", roundRobin);
+            if (roundRobin) model.addAttribute("teamAmericanoRanking", teamAmericanoService.getRanking(id));
             boolean qualStarted   = teamPlayoffService.isQualificationStarted(id);
             boolean playoffStarted = teamPlayoffService.isPlayoffStarted(id);
             model.addAttribute("isPlayoffQualStarted", qualStarted);
@@ -345,6 +393,8 @@ public class AdminController {
             model.addAttribute("playoffTeamsCount", teamPlayoffService.getTeams(id).size());
         }
 
+        model.addAttribute("teamPlayoffConduct", canHaveTeamPlayoffConduct(tournament)
+                && teamPlayoffService.findConductIds(List.of(id)).contains(id));
         return "admin/tournaments/details";
     }
 
@@ -370,11 +420,17 @@ public class AdminController {
         TournamentDto tournament = tournamentService.getTournamentDtoById(id)
                 .orElseThrow(() -> new RuntimeException("Tournament not found"));
 
-        // Проверяем права (владелец турнира, клубный админ своего клуба, либо SUPER_ADMIN)
+        // Проверяем право управления мероприятием.
         tournamentAccessService.assertCanManageTournament(owner, id);
 
         model.addAttribute("tournament", tournament);
-        model.addAttribute("clubs", clubsForForm(owner));
+        model.addAttribute("isClubAdmin", owner.isClubAdmin());
+        List<ClubDto> available = clubsForForm(owner);
+        if (available.stream().noneMatch(club -> club.getId().equals(tournament.getClubId()))) {
+            available = Stream.concat(available.stream(),
+                    clubService.getClubById(tournament.getClubId()).stream()).toList();
+        }
+        model.addAttribute("clubs", available);
         model.addAttribute("genderFormats", Arrays.asList(GenderFormat.values()));
         model.addAttribute("tournamentTypes", Arrays.asList(TournamentType.values()));
         model.addAttribute("tournamentStatuses", Arrays.asList(TournamentStatus.values()));
@@ -506,7 +562,7 @@ public class AdminController {
         log.info("Moving player {} from main to waitlist in tournament {} by owner: {}", playerId, tournamentId, owner.getEmail());
 
         try {
-            // ADMIN/SUPER_ADMIN управляют составом любого турнира; CLUB_ADMIN — своего клуба
+            // ADMIN/SUPER_ADMIN управляют любым турниром; остальные — собственными.
             tournamentAccessService.assertCanManageTournament(owner, tournamentId);
             tournamentService.moveToWaitlist(tournamentId, playerId);
             result.put("success", true);
@@ -534,7 +590,7 @@ public class AdminController {
         log.info("Moving player {} from waitlist to main in tournament {} by owner: {}", playerId, tournamentId, owner.getEmail());
 
         try {
-            // ADMIN/SUPER_ADMIN управляют составом любого турнира; CLUB_ADMIN — своего клуба
+            // ADMIN/SUPER_ADMIN управляют любым турниром; остальные — собственными.
             tournamentAccessService.assertCanManageTournament(owner, tournamentId);
             tournamentService.moveToMain(tournamentId, playerId);
             result.put("success", true);
@@ -585,19 +641,7 @@ public class AdminController {
     }
 
     // Дропдаун клуба в форме турнира: CLUB_ADMIN видит и может выбрать только свой клуб
-    // (само значение clubId из формы всё равно игнорируется на createTournament, но
-    // показывать в UI выбор, который ни на что не влияет, не нужно).
     private List<com.padle.core.padelcoreservice.dto.ClubDto> clubsForForm(Owner owner) {
-        if (!owner.isClubAdmin()) {
-            return clubService.getActiveClubsForAdmin();
-        }
-        if (owner.getClubId() == null) {
-            return List.of();
-        }
-        try {
-            return List.of(clubService.getClubByIdForAdmin(owner.getClubId()));
-        } catch (Exception e) {
-            return List.of();
-        }
+        return clubAccounts.availableClubs(owner);
     }
 }

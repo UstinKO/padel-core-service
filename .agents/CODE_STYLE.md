@@ -152,6 +152,8 @@ public record TeamSwapRequest(@NotNull Long matchId, @Min(1) @Max(2) int slot, @
 
 Исключение: DTO, которые Thymeleaf-форма биндит через `th:object` и сеттеры (`@ModelAttribute` с пошаговым заполнением) — пока остаются классами; MapStruct с record работает (через конструктор).
 
+**Сгенерированные из OpenAPI API DTO** могут быть обычными классами, не `record` (решение владельца, LFPT-1041). Исключение действует только на код, воспроизводимо создаваемый закреплённым генератором в `target/generated-sources`: в Git хранятся контракт, версия и настройки; результат генерации не коммитится и не редактируется вручную. Рукописные DTO, команды, доменные value-объекты и результаты методов следуют общему правилу `record`. Требования типизации и совместимости Java 17/Jakarta/Jackson/MapStruct сохраняются.
+
 **3.2. `Map<String, Object>` как ответ API или как "сумка" параметров — запрещено в новом коде.** Ответ REST — типизированный record; `ResponseEntity<?>`/`ResponseEntity<Map<String, Object>>` → `ResponseEntity<XxxResponse>`. Ошибки — через `@ExceptionHandler`/`ProblemDetail` (см. §5), а не `Map.of("error", e.getMessage())`. `Map<String, Object>` допустим только там, где API фреймворка требует map (claims JWT, атрибуты OAuth2, `Model`).
 
 **3.3. Методы, возвращающие несколько значений, — вложенный `record`** (`MatchTeamChangeResult`, `GenerationResult` — правильные примеры, так и продолжать), не массив и не `Map`.

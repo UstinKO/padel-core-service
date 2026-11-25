@@ -12,7 +12,17 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class ReleaseConfigurationTest {
     @Test
     void managedReleaseRejectsPublicSpaCutover() {
-        runner(List.of("/torneos")).run(context -> assertThat(context).hasFailed());
+        runner(List.of("/torneos")).withPropertyValues("spring.profiles.active=prod")
+                .run(context -> assertThat(context).hasFailed());
+        runner(List.of("/players/dashboard", "/torneos")).withPropertyValues("spring.profiles.active=prod")
+                .run(context -> assertThat(context).hasFailed());
+        runner(List.of("/players/dashboard")).run(context -> assertThat(context).hasFailed());
+    }
+
+    @Test
+    void managedProductionReleaseAcceptsOnlyTheApprovedCabinet() {
+        runner(List.of("/players/dashboard")).withPropertyValues("spring.profiles.active=prod")
+                .run(context -> assertThat(context).hasNotFailed());
     }
 
     @Test

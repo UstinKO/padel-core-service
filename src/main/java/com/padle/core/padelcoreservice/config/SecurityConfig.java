@@ -10,6 +10,8 @@ import com.padle.core.padelcoreservice.security.AccountDestination;
 import com.padle.core.padelcoreservice.dto.AccountDtos;
 import com.padle.core.padelcoreservice.controller.api.SpaSessionController;
 import org.springframework.http.HttpStatus;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import com.padle.core.padelcoreservice.security.JwtAuthenticationFilter;
 import com.padle.core.padelcoreservice.security.RateLimitFilter;
@@ -53,6 +55,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
@@ -66,6 +69,7 @@ public class SecurityConfig {
     private final MetaProperties metaProperties;
     private final AccountResponses accountResponses;
     private final SpaSessionController sessions;
+    private final Environment environment;
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomOAuth2UserService customOAuth2UserService;
@@ -80,6 +84,7 @@ public class SecurityConfig {
 
     private static boolean isGuestClaimPath(String path) {
         return path.equals("/api/players/me/guest-profile-claims")
+                || path.equals("/api/admin/guest-profile-claims")
                 || path.startsWith("/api/admin/guest-profile-claims/")
                 || (path.startsWith("/api/admin/players/") && path.endsWith("/activate-guest-profile"));
     }
@@ -109,6 +114,9 @@ public class SecurityConfig {
                         .ignoringRequestMatchers("/api/auth/login", "/api/auth/refresh", "/ws/**")
                 )
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(request -> environment.acceptsProfiles(Profiles.of("preview"))
+                                && request.getServletPath().equals("/preview/players/dashboard"))
+                        .hasAnyRole("PLAYER", "SUPER_ADMIN")
                         .requestMatchers("/preview", "/preview/**").hasRole("SUPER_ADMIN")
                         .requestMatchers(
                                 "/",
@@ -189,11 +197,12 @@ public class SecurityConfig {
                                 "/app",
                                 "/app/**"
                         ).permitAll()
-                        .requestMatchers("/players/dashboard").authenticated()
+                        .requestMatchers("/players/dashboard", "/legacy/players/dashboard").authenticated()
                         .requestMatchers("/players/lista").authenticated()
                         .requestMatchers("/players/perfil/**").authenticated()
                         .requestMatchers("/players/mis-torneos").authenticated()
-                        .requestMatchers("/admin/marketing/qr", "/admin/marketing/registration-sources").hasRole("SUPER_ADMIN")
+                        .requestMatchers("/admin/marketing/qr", "/admin/marketing/registration-sources",
+                                "/admin/rating-feedback", "/admin/rating-feedback/**").hasRole("SUPER_ADMIN")
                         .requestMatchers("/admin/**").hasAnyRole("OWNER", "SUPER_ADMIN", "ORGANIZER", "ADMIN", "CLUB_ADMIN")
                         // Внутренний тестовый инструментарий организатора (JDBC-based, см. PROJECT.md) —
                         // доступен только владельцу платформы, не ORGANIZER/ADMIN.
@@ -213,18 +222,21 @@ public class SecurityConfig {
                                 "/api/internal/telegram-pipeline/status",
                                 // Публичное расписание для мобильного приложения —
                                 // анонимное чтение, те же правила видимости, что у /torneo/{id}.
-                                "/api/public/config", "/api/public/events/*",
+                                "/api/public/config", "/api/public/events/*", "/api/public/calendar", "/api/public/calendar/catalog",
                                 "/api/public/events/*/live", "/api/public/king-of-court/*/live", "/api/public/home", "/api/public/catalog", "/api/public/clubs", "/api/public/clubs/*",
                                 "/api/public/tournaments",
                                 "/api/public/tournaments/*",
                                 "/api/public/tournaments/*/calendar",
                                 "/api/public/tournaments/*/calendar/google",
-                                "/api/public/tournaments/*/calendar/event.ics"
+                                "/api/public/tournaments/*/calendar/event.ics",
+                                "/participacion/*"
                         ).permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.POST,
-                                "/api/tournaments/double/accept-pair"
+                                "/api/tournaments/double/accept-pair",
+                                "/api/tournaments/double/decline-pair"
                         ).permitAll()
                         .requestMatchers("/api/admin/marketing/qr-stats", "/api/admin/marketing/qr-summary", "/api/admin/marketing/registration-sources").hasRole("SUPER_ADMIN")
+                        .requestMatchers("/api/admin/events/calendar", "/api/admin/organizers/**").hasAnyRole("OWNER", "SUPER_ADMIN", "ORGANIZER", "ADMIN", "CLUB_ADMIN")
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().authenticated()
                 )
@@ -234,7 +246,15 @@ public class SecurityConfig {
                             if (request.getRequestURI().startsWith("/api/") || AccountResponses.wantsJson(request)) {
                                 accountResponses.error(request, response, HttpStatus.UNAUTHORIZED, "SESSION_REQUIRED");
                             } else {
-                                new LoginUrlAuthenticationEntryPoint("/login").commence(request, response, exception);
+                                var management = "GET".equals(request.getMethod())
+                                        ? AccountDestination.tournamentManagement(request.getRequestURI())
+                                        : Optional.<String>empty();
+                                if (management.isPresent()) {
+                                    response.sendRedirect("/login?destination="
+                                            + URLEncoder.encode(management.orElseThrow(), StandardCharsets.UTF_8));
+                                } else {
+                                    new LoginUrlAuthenticationEntryPoint("/login").commence(request, response, exception);
+                                }
                             }
                         })
                 )
@@ -357,8 +377,11 @@ public class SecurityConfig {
 
             boolean notConfirmed = exception instanceof DisabledException
                     || exception instanceof org.springframework.security.authentication.LockedException;
+            var destination = AccountDestination.requested(request).flatMap(AccountDestination::tournamentManagement);
             response.sendRedirect(TournamentLogin.failureUrl(
-                    notConfirmed ? "not_confirmed" : "true", TournamentLogin.requestedTournament(request)));
+                    notConfirmed ? "not_confirmed" : "true", TournamentLogin.requestedTournament(request))
+                    + destination.map(value -> "&destination=" + URLEncoder.encode(value, StandardCharsets.UTF_8))
+                            .orElse(""));
         };
     }
 

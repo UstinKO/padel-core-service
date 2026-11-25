@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"><body>
+<th:block th:fragment="roster" th:if="${tournament.modalidad != null and tournament.modalidad.name() == 'DOBLES'}">
+<details id="solo-roster" class="solo-roster" aria-labelledby="solo-title" th:data-event-id="${tournament.id}">
+    <summary class="solo-summary">
+        <h2 id="solo-title"><span th:text="#{solo.ui.title}"></span><span id="solo-count" class="solo-count" aria-live="polite" hidden></span></h2>
+        <span class="solo-summary-action"><span class="solo-expand" th:text="#{solo.ui.expand}"></span><span class="solo-collapse" th:text="#{solo.ui.collapse}"></span></span>
+    </summary>
+    <div class="solo-content">
+    <header class="solo-header"><div><p th:text="#{solo.ui.description}"></p></div>
+        <button type="button" class="btn btn-primary" data-roster-action="ADD" th:text="#{solo.ui.add}"></button></header>
+    <p id="solo-notice" role="status" aria-live="polite"></p>
+    <div id="solo-list" class="solo-list" aria-live="polite"></div>
+    <details class="solo-archive"><summary th:text="#{solo.ui.archive}"></summary><div id="solo-cancelled" class="solo-list"></div><ol id="solo-history"></ol></details>
+    </div>
+</details>
+<dialog id="solo-dialog" class="solo-dialog" aria-labelledby="solo-dialog-title">
+    <div class="solo-header"><h2 id="solo-dialog-title"></h2><button type="button" class="solo-close" data-roster-close th:aria-label="#{solo.ui.close}">×</button></div>
+    <p class="solo-event" th:text="${tournament.nombre}"></p>
+    <p id="solo-source"></p>
+    <p id="solo-error" class="solo-error" role="alert"></p>
+    <form id="solo-form">
+        <div id="solo-picker">
+            <label for="solo-mode" th:text="#{solo.ui.source}"></label>
+            <select id="solo-mode"><option value="search" th:text="#{solo.ui.searchMode}"></option><option value="single" th:text="#{solo.ui.merge}"></option><option value="guest" th:text="#{solo.ui.guestMode}"></option></select>
+            <div id="solo-search-pane"><label for="solo-search" th:text="#{solo.ui.search}"></label><input id="solo-search" type="search" autocomplete="off" maxlength="100" aria-controls="solo-search-results"><div id="solo-search-results" class="solo-search-results" aria-live="polite"></div><p id="solo-selected"></p></div>
+            <div id="solo-single-pane" hidden><label for="solo-single" th:text="#{solo.ui.selectSingle}"></label><select id="solo-single" aria-describedby="solo-single-selected"></select><p id="solo-single-selected" class="solo-event" aria-live="polite"></p></div>
+            <div id="solo-guest-pane" class="solo-guest" hidden>
+                <label for="solo-first" th:text="#{solo.ui.first}"></label><input id="solo-first" autocomplete="given-name" maxlength="100">
+                <label for="solo-last" th:text="#{solo.ui.last}"></label><input id="solo-last" autocomplete="family-name" maxlength="100">
+                <label for="solo-phone" th:text="#{solo.ui.phone}"></label><input id="solo-phone" type="tel" autocomplete="tel" maxlength="30">
+                <label for="solo-side" th:text="#{playingSide.label}"></label><select id="solo-side"><th:block th:replace="~{fragments/playing-side :: options(null)}"></th:block></select><small th:text="#{playingSide.hint}"></small>
+                <label for="solo-telegram" th:text="#{solo.ui.telegram}"></label><input id="solo-telegram" autocomplete="off" maxlength="33">
+            </div>
+            <div id="solo-kind-pane"><label for="solo-kind" th:text="#{solo.ui.kind}"></label><select id="solo-kind"><option value="ADD_LATER" th:text="#{solo.ui.later}"></option><option value="SEARCH" th:text="#{solo.ui.looking}"></option></select></div>
+        </div>
+        <p id="solo-remove-note" class="solo-warning" hidden th:text="#{solo.ui.removeNote}"></p>
+        <button id="solo-review" type="submit" class="btn btn-primary" th:text="#{solo.ui.review}"></button>
+    </form>
+    <section id="solo-preview" aria-live="polite" hidden>
+        <h3 th:text="#{solo.ui.reviewTitle}"></h3><div id="solo-preview-people" class="solo-list"></div>
+        <p><strong th:text="#{solo.ui.result}"></strong> <span id="solo-result"></span></p>
+        <p id="solo-preview-note" th:text="#{solo.ui.preserve}"></p>
+        <label id="solo-level-warning" class="solo-warning" hidden><input id="solo-override" type="checkbox"><span th:text="#{solo.ui.override}"></span></label>
+        <div class="solo-actions"><button id="solo-confirm" type="button" class="btn btn-primary" th:text="#{solo.ui.confirm}"></button><button id="solo-back" type="button" class="btn btn-outline" th:text="#{solo.ui.back}"></button></div>
+    </section>
+</dialog>
+<script th:inline="javascript">
+window.soloRosterMessages = {
+    title: /*[[#{solo.ui.title}]]*/ '',
+    description: /*[[#{solo.ui.description}]]*/ '',
+    add: /*[[#{solo.ui.add}]]*/ '',
+    archive: /*[[#{solo.ui.archive}]]*/ '',
+    close: /*[[#{solo.ui.close}]]*/ '',
+    source: /*[[#{solo.ui.source}]]*/ '',
+    searchMode: /*[[#{solo.ui.searchMode}]]*/ '',
+    merge: /*[[#{solo.ui.merge}]]*/ '',
+    guestMode: /*[[#{solo.ui.guestMode}]]*/ '',
+    search: /*[[#{solo.ui.search}]]*/ '',
+    selectSingle: /*[[#{solo.ui.selectSingle}]]*/ '',
+    first: /*[[#{solo.ui.first}]]*/ '',
+    last: /*[[#{solo.ui.last}]]*/ '',
+    phone: /*[[#{solo.ui.phone}]]*/ '',
+    telegram: /*[[#{solo.ui.telegram}]]*/ '',
+    kind: /*[[#{solo.ui.kind}]]*/ '',
+    later: /*[[#{solo.ui.later}]]*/ '',
+    looking: /*[[#{solo.ui.looking}]]*/ '',
+    removeNote: /*[[#{solo.ui.removeNote}]]*/ '',
+    review: /*[[#{solo.ui.review}]]*/ '',
+    reviewTitle: /*[[#{solo.ui.reviewTitle}]]*/ '',
+    result: /*[[#{solo.ui.result}]]*/ '',
+    preserve: /*[[#{solo.ui.preserve}]]*/ '',
+    override: /*[[#{solo.ui.override}]]*/ '',
+    confirm: /*[[#{solo.ui.confirm}]]*/ '',
+    back: /*[[#{solo.ui.back}]]*/ '',
+    main: /*[[#{solo.ui.main}]]*/ '',
+    reserve: /*[[#{solo.ui.reserve}]]*/ '',
+    cancelled: /*[[#{solo.ui.cancelled}]]*/ '',
+    newPlayer: /*[[#{solo.ui.newPlayer}]]*/ '',
+    invited: /*[[#{solo.ui.invited}]]*/ '',
+    unplaced: /*[[#{solo.ui.unplaced}]]*/ '',
+    unknown: /*[[#{solo.ui.unknown}]]*/ '',
+    present: /*[[#{solo.ui.present}]]*/ '',
+    absent: /*[[#{solo.ui.absent}]]*/ '',
+    unpaid: /*[[#{solo.ui.unpaid}]]*/ '',
+    partner: /*[[#{solo.ui.partner}]]*/ '',
+    remove: /*[[#{solo.ui.remove}]]*/ '',
+    payment: /*[[#{solo.ui.payment}]]*/ '',
+    session: /*[[#{solo.ui.session}]]*/ '',
+    error: /*[[#{solo.ui.error}]]*/ '',
+    empty: /*[[#{solo.ui.empty}]]*/ '',
+    actor: /*[[#{solo.ui.actor}]]*/ '',
+    unsaved: /*[[#{solo.ui.unsaved}]]*/ '',
+    choose: /*[[#{solo.ui.choose}]]*/ '',
+    openExisting: /*[[#{solo.ui.openExisting}]]*/ '',
+    existing: /*[[#{solo.ui.existing}]]*/ '',
+    saved: /*[[#{solo.ui.saved}]]*/ '',
+    selected: /*[[#{solo.ui.selected}]]*/ '',
+    noResults: /*[[#{solo.ui.noResults}]]*/ '',
+    action_ADD: /*[[#{solo.ui.action_ADD}]]*/ '',
+    action_PAIR: /*[[#{solo.ui.action_PAIR}]]*/ '',
+    action_REMOVE: /*[[#{solo.ui.action_REMOVE}]]*/ '',
+    payment_PAID: /*[[#{enum.paymentStatus.PAID}]]*/ '',
+    payment_PENDING: /*[[#{enum.paymentStatus.PENDING}]]*/ '',
+    payment_PROCESSING: /*[[#{enum.paymentStatus.PROCESSING}]]*/ '',
+    payment_FAILED: /*[[#{enum.paymentStatus.FAILED}]]*/ '',
+    payment_CANCELLED: /*[[#{enum.paymentStatus.CANCELLED}]]*/ '',
+    payment_REFUNDED: /*[[#{enum.paymentStatus.REFUNDED}]]*/ '',
+    method_CASH: /*[[#{enum.paymentMethod.CASH}]]*/ '',
+    method_BANK_TRANSFER: /*[[#{enum.paymentMethod.BANK_TRANSFER}]]*/ '',
+    method_BY_BIT: /*[[#{enum.paymentMethod.BY_BIT}]]*/ '',
+    method_BINANCE: /*[[#{enum.paymentMethod.BINANCE}]]*/ '',
+    method_TARJETA: /*[[#{enum.paymentMethod.TARJETA}]]*/ '',
+    method_TRANSFERENCIA: /*[[#{enum.paymentMethod.TRANSFERENCIA}]]*/ '',
+    method_OTHER: /*[[#{enum.paymentMethod.OTHER}]]*/ ''
+};
+</script>
+<script th:src="@{/js/solo-roster.js}" defer></script>
+</th:block>
+</body></html>

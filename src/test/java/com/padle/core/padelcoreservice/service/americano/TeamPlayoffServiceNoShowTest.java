@@ -7,6 +7,7 @@ import com.padle.core.padelcoreservice.model.americano.AmericanoMatch;
 import com.padle.core.padelcoreservice.model.americano.AmericanoRound;
 import com.padle.core.padelcoreservice.model.americano.AmericanoTeam;
 import com.padle.core.padelcoreservice.model.enums.AmericanoPlayerStatus;
+import com.padle.core.padelcoreservice.model.enums.AmericanoRoundStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentPhase;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
@@ -15,9 +16,12 @@ import com.padle.core.padelcoreservice.repository.americano.AmericanoMatchReposi
 import com.padle.core.padelcoreservice.repository.americano.AmericanoRoundRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoTeamRepository;
 import com.padle.core.padelcoreservice.service.PlayerService;
+import com.padle.core.padelcoreservice.service.SoloRosterTeams;
 import com.padle.core.padelcoreservice.service.WebSocketService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mapstruct.factory.Mappers;
+import com.padle.core.padelcoreservice.mapper.TeamPlayingSideMapper;
 
 import java.util.List;
 import java.util.Optional;
@@ -42,6 +46,7 @@ class TeamPlayoffServiceNoShowTest {
     private final TournamentRepository tournamentRepository = mock(TournamentRepository.class);
 
     private final TeamPlayoffService service = new TeamPlayoffService(
+            Mappers.getMapper(TeamPlayingSideMapper.class),
             tournamentRepository,
             teamRepository,
             roundRepository,
@@ -50,7 +55,8 @@ class TeamPlayoffServiceNoShowTest {
             mock(PlayerService.class),
             mock(TournamentRegistrationRepository.class),
             mock(WebSocketService.class),
-            mock(PlayoffMatchingEngine.class)
+            mock(PlayoffMatchingEngine.class),
+            mock(SoloRosterTeams.class)
     );
 
     private Tournament tournament;
@@ -120,22 +126,20 @@ class TeamPlayoffServiceNoShowTest {
     }
 
     @Test
-    void canInitPlayoff_equipoNoShowNoCuentaParaElTamanoDelBracket() {
-        AmericanoTeam active1 = teamWithStatus(1L, AmericanoPlayerStatus.ACTIVE, 2);
-        AmericanoTeam active2 = teamWithStatus(2L, AmericanoPlayerStatus.ACTIVE, 2);
+    void canInitPlayoff_countsOnlyActiveTeamsAfterQualification() {
+        AmericanoTeam active = teamWithStatus(1L, AmericanoPlayerStatus.ACTIVE, 2);
+        AmericanoTeam second = teamWithStatus(2L, AmericanoPlayerStatus.ACTIVE, 2);
         AmericanoTeam noShow = teamWithStatus(3L, AmericanoPlayerStatus.NO_SHOW, 0);
-
+        AmericanoRound qualifier = mock(AmericanoRound.class);
+        when(qualifier.getStatus()).thenReturn(AmericanoRoundStatus.COMPLETED);
         when(roundRepository.findByTournamentIdAndPhase(100L, TournamentPhase.PLAYOFF)).thenReturn(List.of());
         when(roundRepository.findByTournamentIdAndPhase(100L, TournamentPhase.QUALIFICATION))
-                .thenReturn(List.of(mock(AmericanoRound.class)));
-        when(teamRepository.findPlayoffRankingByTournamentId(100L))
-                .thenReturn(List.of(active1, active2, noShow));
+                .thenReturn(List.of(qualifier));
+        when(teamRepository.findPlayoffRankingByTournamentId(100L)).thenReturn(List.of(active, noShow));
+        assertThat(service.canInitPlayoff(100L)).isFalse();
 
-        boolean canInit = service.canInitPlayoff(100L);
-
-        // 2 активные команды с 2 матчами каждая (settled) уже достаточно для сетки-степени-двойки —
-        // команда NO_SHOW (0 матчей) не должна ни мешать этому, ни учитываться в подсчёте.
-        assertThat(canInit).isTrue();
+        when(teamRepository.findPlayoffRankingByTournamentId(100L)).thenReturn(List.of(active, second, noShow));
+        assertThat(service.canInitPlayoff(100L)).isTrue();
     }
 
     private AmericanoTeam teamWithStatus(Long id, AmericanoPlayerStatus status, int matchesPlayed) {

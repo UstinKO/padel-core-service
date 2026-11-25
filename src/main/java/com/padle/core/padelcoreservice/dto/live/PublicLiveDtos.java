@@ -1,5 +1,7 @@
 package com.padle.core.padelcoreservice.dto.live;
 
+import com.padle.core.padelcoreservice.model.enums.PlayingSide;
+
 import com.padle.core.padelcoreservice.dto.AdditionalPointsDto;
 import com.padle.core.padelcoreservice.dto.PublicEventResponse.Format;
 import com.padle.core.padelcoreservice.dto.PublicEventResponse.Phase;
@@ -12,7 +14,9 @@ public final class PublicLiveDtos {
     public record Metadata(long eventId, String name, Phase phase, String eventStatus, Long instanceId,
                            long conductVersion, Instant generatedAt, String canonicalUrl, boolean showLevels,
                            String topic, int pollSeconds) {}
-    public record Participant(Long id, String name, Nivel level) {}
+    public record Participant(Long id, String name, Nivel level, PlayingSide playingSide) {
+        public Participant(Long id, String name, Nivel level) { this(id, name, level, null); }
+    }
     public record Side(Long teamId, Integer number, String name, List<Participant> players,
                        Integer score, Integer games, Integer matchOrdinal) {
         public Side { players = List.copyOf(players); }
@@ -26,11 +30,11 @@ public final class PublicLiveDtos {
     }
     public record KingRank(Long playerId, String playerName, Nivel playerNivel, Integer rank, Long totalPoints,
                            Long matchPoints, Integer bonusPoints, AdditionalPointsDto additionalPoints,
-                           Integer gamesPlayed, Integer wins, Integer losses) {}
+                           Integer gamesPlayed, Integer wins, Integer losses, PlayingSide playingSide) {}
     public record AmericanoRank(Long playerId, String playerName, Nivel playerNivel, Integer position,
                                 Long totalScore, Long matchPoints, AdditionalPointsDto additionalPoints,
                                 Integer matchesPlayed, Integer matchesWon, Integer matchesLost, Integer matchesDrawn,
-                                Integer byeCount, Integer pointsScored, Integer pointsConceded, Integer pointDifference) {}
+                                Integer byeCount, Integer pointsScored, Integer pointsConceded, Integer pointDifference, PlayingSide playingSide) {}
     public record TeamRank(Long id, Integer teamNumber, String displayName, Participant player1, Participant player2,
                            Integer currentPosition, Integer setsWon, Integer setsLost, Integer gamesWon, Integer gamesLost,
                            Integer matchesPlayed, Integer matchesWon, Integer matchesLost, Integer matchesDrawn,

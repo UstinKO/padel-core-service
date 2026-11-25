@@ -72,6 +72,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (modal === partnerModal) {
                     closeModal();
                 } else if (modal) {
+                    if (modal.dataset.reloadAfterClose === 'true') {
+                        window.location.reload();
+                        return;
+                    }
                     modal.classList.remove('show');
                     modal.style.removeProperty('display');
                 }
@@ -261,10 +265,16 @@ document.addEventListener('DOMContentLoaded', function() {
         players.forEach(p => {
             const li = document.createElement('li');
             li.style.cssText = 'padding:.6rem 1rem; cursor:pointer; border-bottom:1px solid #f3f4f6;';
-            li.innerHTML = `
-                <div style="font-weight:500;">${p.nombreCompleto}</div>
-                ${p.nivelJugador ? `<div style="font-size:.82rem; color:#6b7280;">${p.nivelJugador}</div>` : ''}
-            `;
+            const name = document.createElement('div');
+            name.style.fontWeight = '500';
+            name.textContent = p.nombreCompleto;
+            li.appendChild(name);
+            if (p.nivelJugador || p.playingSide) {
+                const level = document.createElement('div');
+                level.style.cssText = 'font-size:.82rem; color:#6b7280;';
+                level.textContent = window.PadelPlayingSide?.format(p.nivelJugador, p.playingSide) ?? p.nivelJugador;
+                li.appendChild(level);
+            }
             li.addEventListener('click', () => selectPartner(p));
             li.addEventListener('mouseover', () => { li.style.background = '#f9fafb'; });
             li.addEventListener('mouseout', () => { li.style.background = ''; });
@@ -332,10 +342,10 @@ document.addEventListener('DOMContentLoaded', function() {
     function selectPartner(player) {
         selectedPartnerIdInput.value = player.id;
         document.getElementById('selectedPartnerName').textContent  = player.nombreCompleto;
-        document.getElementById('selectedPartnerEmail').textContent = player.email;
-        document.getElementById('partnerFirstName').value = player.nombre  || '';
-        document.getElementById('partnerLastName').value  = player.apellido || '';
-        document.getElementById('partnerTelegram').value  = player.telegramUsername || '';
+        document.getElementById('selectedPartnerLevel').textContent = window.PadelPlayingSide ? window.PadelPlayingSide.format(player.nivelJugador, player.playingSide) : (player.nivelJugador || '');
+        document.getElementById('partnerFirstName').value = '';
+        document.getElementById('partnerLastName').value = '';
+        document.getElementById('partnerTelegram').value = '';
         document.getElementById('partnerPhone').value     = '';
         selectedPartnerCard.style.display  = 'flex';
         partnerSearchResults.style.display = 'none';
@@ -431,10 +441,16 @@ document.addEventListener('DOMContentLoaded', function() {
             players.forEach(p => {
                 const li = document.createElement('li');
                 li.style.cssText = 'padding:.6rem 1rem; cursor:pointer; border-bottom:1px solid #f3f4f6;';
-                li.innerHTML = `
-                    <div style="font-weight:500;">${p.nombreCompleto}</div>
-                    <div style="font-size:.82rem; color:#6b7280;">${p.email}${p.nivelJugador ? ' · ' + p.nivelJugador : ''}</div>
-                `;
+                const name = document.createElement('div');
+                name.style.fontWeight = '500';
+                name.textContent = p.nombreCompleto;
+                li.appendChild(name);
+                if (p.nivelJugador || p.playingSide) {
+                    const level = document.createElement('div');
+                    level.style.cssText = 'font-size:.82rem; color:#6b7280;';
+                    level.textContent = window.PadelPlayingSide?.format(p.nivelJugador, p.playingSide) ?? p.nivelJugador;
+                    li.appendChild(level);
+                }
                 li.addEventListener('mousedown', () => selectPartner(p));
                 li.addEventListener('mouseover', () => { li.style.background = '#f9fafb'; });
                 li.addEventListener('mouseout', () => { li.style.background = ''; });
@@ -446,9 +462,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showModal(tournamentId) {
-        if (partnerModal) {
+        if (partnerModal && !partnerModal.classList.contains('show')) {
             partnerModal.classList.add('show');
-            window.trackClarityRegistrationStep?.(tournamentId, 'form_opened');
+            window.trackTournamentRegistrationFormOpened?.(tournamentId);
         }
     }
 
@@ -471,11 +487,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function showResultModal(type, title, message) {
+    let resultTimer;
+    let resultVersion = 0;
+    function showResultModal(type, title, message, registration = false) {
+        const version = ++resultVersion;
+        clearTimeout(resultTimer);
         const resultModal = document.getElementById('resultModal');
         const resultModalBody = document.getElementById('resultModalBody');
 
         if (!resultModal || !resultModalBody) return;
+        resultModal.dataset.reloadAfterClose = String(type === 'success');
 
         let icon = '';
         switch(type) {
@@ -498,10 +519,14 @@ document.addEventListener('DOMContentLoaded', function() {
         resultModal.classList.add('show');
 
         if (type === 'success') {
-            setTimeout(() => {
-                resultModal.classList.remove('show');
-                window.location.reload();
-            }, 3000);
+            const prompt = registration && window.PlayerTelegramRegistration?.mount(resultModal);
+            Promise.resolve(prompt).then(shown => {
+                if (shown || version !== resultVersion) return;
+                resultTimer = setTimeout(() => {
+                    resultModal.classList.remove('show');
+                    window.location.reload();
+                }, 3000);
+            });
         }
     }
 
@@ -560,6 +585,7 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
 
         modal.classList.add('show');
+        window.PlayerTelegramRegistration?.mount(modal);
     }
 
     const registrationConfirmModalOkBtn = document.getElementById('registrationConfirmModalOkBtn');
@@ -574,6 +600,33 @@ document.addEventListener('DOMContentLoaded', function() {
     const registerBtn = document.querySelector('.btn-register');
     const cancelBtn = document.querySelector('button.btn-cancel');
 
+    const registrationLevelStatus = document.getElementById('registrationLevelStatus');
+    let registrationLevelMissing = registerBtn?.dataset.registrationLevelMissing === 'true';
+
+    function askForRegistrationLevel(tournamentId, onSaved) {
+        registrationLevelMissing = true;
+        LevelCheck.show(tournamentId, () => {
+            registrationLevelMissing = false;
+            onSaved?.();
+        });
+    }
+
+    function continueSingleRegistration(button) {
+        if (registrationLevelStatus) registrationLevelStatus.textContent = t('level.registration.saved');
+        button.focus();
+    }
+
+    function openPairRegistration(tournamentId, tournamentName) {
+        ContactCheck.beforeRegister(tournamentId, tournamentName, () => {
+            const modalTournamentId = document.getElementById('modalTournamentId');
+            const modalTournamentName = document.getElementById('modalTournamentName');
+            if (modalTournamentId) modalTournamentId.value = tournamentId;
+            if (modalTournamentName) modalTournamentName.textContent = tournamentName;
+
+            showModal(tournamentId);
+        });
+    }
+
     if (registerBtn) {
         console.log('✅ Register button found');
 
@@ -587,34 +640,29 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Register clicked for tournament:', tournamentId, tournamentName);
             console.log('Tournament modalidad:', window.tournament?.modalidad);
 
-            // Проверяем, парный ли турнир
-            if (isDoubleTournament()) {
-                console.log('🎾 Double tournament - checking contacts first');
-                event.preventDefault();
-                event.stopPropagation();
+            event.preventDefault();
+            event.stopPropagation();
 
-                // Сначала проверяем контактные данные игрока,
-                // и только после — открываем форму регистрации пары.
-                ContactCheck.beforeRegister(tournamentId, tournamentName, () => {
-                    const modalTournamentId = document.getElementById('modalTournamentId');
-                    const modalTournamentName = document.getElementById('modalTournamentName');
-
-                    if (modalTournamentId) modalTournamentId.value = tournamentId;
-                    if (modalTournamentName) modalTournamentName.textContent = tournamentName;
-
-                    showModal(tournamentId);
+            const isPair = isDoubleTournament();
+            if (registrationLevelMissing) {
+                askForRegistrationLevel(tournamentId, () => {
+                    if (isPair) openPairRegistration(tournamentId, tournamentName);
+                    else continueSingleRegistration(newRegisterBtn);
                 });
-            } else {
-                console.log('🎾 Single tournament - using ContactCheck');
-                event.preventDefault();
-                event.stopPropagation();
+                return;
+            }
 
+            if (registrationLevelStatus) registrationLevelStatus.textContent = '';
+            if (isPair) {
+                openPairRegistration(tournamentId, tournamentName);
+            } else {
                 // ВСЯ ЛОГИКА РЕГИСТРАЦИИ В ContactCheck
                 if (typeof ContactCheck !== 'undefined' && ContactCheck.beforeRegister) {
                     ContactCheck.beforeRegister(tournamentId, tournamentName, async () => {
                         // ContactCheck вызовет этот колбэк когда контакты есть
                         // ИЛИ после сохранения контактов
                         const btn = newRegisterBtn;
+                        const originalButtonContent = btn.innerHTML;
                         btn.disabled = true;
                         btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('details.processing')}`;
                         window.trackTournamentRegistrationStart?.(tournamentId);
@@ -632,22 +680,17 @@ document.addEventListener('DOMContentLoaded', function() {
                                 if (data.status === 'CONFIRMED') {
                                     showRegistrationConfirmModal(window.tournament?.tipo, window.tournament?.cancellationDeadlineFormatted);
                                 } else {
-                                    showResultModal('success', t('details.success.registered'), t('details.success.waitlist_added'));
+                                    showResultModal('success', t('details.success.registered'), t('details.success.waitlist_added'), true);
                                 }
                             } else if (data.needLevel) {
                                 window.trackClarityRegistrationError?.(tournamentId, 'level_required');
-                                // Попап "указать уровень" вместо обычной ошибки
                                 btn.disabled = false;
-                                btn.innerHTML = window.tournament?.inscritosActuales >= window.tournament?.cupoMax ?
-                                    `<i class="fas fa-clock"></i> ${t('details.btn.waitlist')}` :
-                                    `<i class="fas fa-check-circle"></i> ${t('details.btn.register')}`;
-                                LevelCheck.show(tournamentId);
+                                btn.innerHTML = originalButtonContent;
+                                askForRegistrationLevel(tournamentId, () => continueSingleRegistration(btn));
                             } else {
                                 window.trackClarityRegistrationError?.(tournamentId, 'registration_rejected');
                                 btn.disabled = false;
-                                btn.innerHTML = window.tournament?.inscritosActuales >= window.tournament?.cupoMax ?
-                                    `<i class="fas fa-clock"></i> ${t('details.btn.waitlist')}` :
-                                    `<i class="fas fa-check-circle"></i> ${t('details.btn.register')}`;
+                                btn.innerHTML = originalButtonContent;
 
                                 const modalBody = document.getElementById('resultModalBody');
                                 const resultModal = document.getElementById('resultModal');
@@ -663,9 +706,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             window.trackClarityRegistrationError?.(tournamentId, 'request_failed');
                             console.error('Error registering:', error);
                             btn.disabled = false;
-                            btn.innerHTML = window.tournament?.inscritosActuales >= window.tournament?.cupoMax ?
-                                `<i class="fas fa-clock"></i> ${t('details.btn.waitlist')}` :
-                                `<i class="fas fa-check-circle"></i> ${t('details.btn.register')}`;
+                            btn.innerHTML = originalButtonContent;
                         }
                     });
                 } else {
@@ -673,6 +714,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         });
+    }
+
+    if (window.location.hash === '#tournament-registration' && registerBtn
+            && isDoubleTournament() && !isTournamentStarted(window.tournament)) {
+        window.history.replaceState(window.history.state, '', window.location.pathname + window.location.search);
+        const tournamentId = registerBtn.dataset.tournamentId;
+        const tournamentName = registerBtn.dataset.tournamentName;
+        if (registrationLevelMissing) {
+            askForRegistrationLevel(tournamentId, () => openPairRegistration(tournamentId, tournamentName));
+        } else {
+            openPairRegistration(tournamentId, tournamentName);
+        }
     }
 
     if (cancelBtn) {
@@ -720,14 +773,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     closeModal();
                     loadLookingForPartner(tournamentId);
                     const soloMsg = mode === 'SEARCH' ? t('details.success.solo_search') : t('details.success.solo_later');
-                    showResultModal('success', t('details.success.ready'), soloMsg);
+                    showResultModal('success', t('details.success.ready'), soloMsg, true);
                 } else if (data.needLevel) {
                     window.trackClarityRegistrationError?.(tournamentId, 'level_required');
-                    // Попап "указать уровень" вместо обычной ошибки
-                    closeModal();
-                    LevelCheck.show(tournamentId);
                     submitPartnerBtn.disabled = false;
-                    submitPartnerBtn.innerHTML = `<i class="fas fa-check-circle"></i> <span id="submitPartnerBtnText">${t('details.mode.register_pair')}</span>`;
+                    submitPartnerBtn.innerHTML = '<i class="fas fa-check-circle"></i> <span id="submitPartnerBtnText"></span>';
+                    setRegistrationMode(mode);
+                    askForRegistrationLevel(tournamentId);
                 } else {
                     window.trackClarityRegistrationError?.(tournamentId, 'registration_rejected');
                     showInfoMessage(data.message || t('details.error.process'), 'error');
@@ -760,14 +812,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            const partnerData = {
-                nombre: firstName, apellido: lastName,
-                telefono: phone || null, telegramUsername: telegramUsername || null,
-                isExistingUser: !!existingUserId,
-                existingUserId: existingUserId ? parseInt(existingUserId) : null
+            const partnerData = existingUserId ? { existingUserId: Number(existingUserId) } : {
+                nombre: firstName,
+                apellido: lastName,
+                telefono: phone || null,
+                telegramUsername: telegramUsername || null
             };
-
-            const terms = await window.PairTerms.reviewBooking(tournamentId, [firstName, lastName].join(' ').trim());
+            const partnerName = existingUserId
+                ? document.getElementById('selectedPartnerName').textContent
+                : [firstName, lastName].join(' ').trim();
+            const terms = await window.PairTerms.reviewBooking(tournamentId, partnerName);
             if (terms === null) {
                 submitPartnerBtn.disabled = false;
                 submitPartnerBtn.textContent = t('details.mode.register_pair');
@@ -779,13 +833,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(partnerData)
             });
-            if (response.status === 409) {
-                errorCode = 'terms_changed';
-                throw new Error(t('pair_terms.retry'));
-            }
-            const data = await response.json();
+            const data = await window.PairRegistrationResponse.read(response);
 
-            if (response.ok) {
+            if (response.ok && data.success === true) {
                 window.trackTournamentRegistrationComplete?.(tournamentId, data.status);
                 closeModal();
                 let message = '';
@@ -793,22 +843,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 else if (data.status === 'CONFIRMED')  message = t('details.success.partner_confirmed');
                 else if (data.status === 'WAITLIST')   message = t('details.success.waitlist_pair');
                 else message = t('details.success.pair_complete');
-                showResultModal('success', t('details.success.registered'), message);
+                showResultModal('success', t('details.success.registered'), message, true);
             } else if (data.needLevel) {
                 window.trackClarityRegistrationError?.(tournamentId, 'level_required');
-                // Попап "указать уровень" вместо обычной ошибки
-                closeModal();
-                LevelCheck.show(tournamentId);
                 submitPartnerBtn.disabled = false;
                 submitPartnerBtn.innerHTML = `<i class="fas fa-check-circle"></i> <span id="submitPartnerBtnText">${t('details.mode.register_pair')}</span>`;
+                askForRegistrationLevel(tournamentId);
             } else {
                 window.trackClarityRegistrationError?.(tournamentId, 'registration_rejected');
-                if (data.message && data.message.includes('Ya estás registrado')) {
-                    showResultModal('info', t('details.already_registered'), t('details.already_registered'));
-                    closeModal();
-                } else {
-                    showInfoMessage(data.message || t('details.error.process'), 'error');
-                }
+                showInfoMessage(window.PairRegistrationResponse.message(response, data), 'error');
                 submitPartnerBtn.disabled = false;
                 submitPartnerBtn.innerHTML = `<i class="fas fa-check-circle"></i> <span id="submitPartnerBtnText">${t('details.mode.register_pair')}</span>`;
             }
@@ -871,10 +914,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                <i class="fas fa-handshake"></i> ${t('details.proposal.btn')}
                            </button>`
                         : '';
-                    const nivel = p.nivel ? `<span class="lp-card-nivel">${p.nivel}</span>` : '';
+                    const preference = window.PadelPlayingSide?.format(p.nivel, p.playingSide) ?? p.nivel;
+                    const nivel = preference ? `<span class="lp-card-nivel">${escapeHtml(preference)}</span>` : '';
                     return `<div class="lp-card">
                         <i class="fas fa-user-circle" style="color:#3b82f6; font-size:1.2rem;"></i>
-                        <div style="flex:1;">
+                        <div class="lp-card-person" style="flex:1;">
                             <div class="lp-card-name">${escapeHtml(p.playerName)}</div>
                             ${nivel}
                         </div>
@@ -1086,12 +1130,22 @@ function isTournamentStarted(tournament) {
     return now > start;
 }
 
+const registrationStarted = isTournamentStarted(window.tournament);
+const bookingPanel = document.querySelector('.tournament-booking-panel');
+
+if (bookingPanel && !registrationStarted && window.tournament) {
+    const status = TournamentAvailability.getStatus(window.tournament);
+    bookingPanel.querySelector('.tournament-booking-availability').textContent =
+        t(TournamentAvailability.labelKey(status));
+    bookingPanel.dataset.availability = status;
+}
+
 // Затем, в том месте где ищешь registerBtn, добавь блокировку:
 const registerBtn = document.querySelector('.btn-register');
 
 if (registerBtn) {
     // Проверяем, нужно ли заблокировать кнопку
-    if (window.tournament && isTournamentStarted(window.tournament)) {
+    if (registrationStarted) {
         // Блокируем кнопку
         registerBtn.disabled = true;
         registerBtn.style.opacity = '0.6';
@@ -1099,7 +1153,7 @@ if (registerBtn) {
         registerBtn.innerHTML = `<i class="fas fa-clock"></i> ${t('details.status.closed')}`;
 
         // Добавляем пояснение рядом
-        const parentDiv = registerBtn.parentElement;
+        const parentDiv = registerBtn.closest('.registration-actions') || registerBtn.parentElement;
         const closedMessage = document.createElement('div');
         closedMessage.className = 'registration-closed';
         closedMessage.style.marginTop = '0.5rem';

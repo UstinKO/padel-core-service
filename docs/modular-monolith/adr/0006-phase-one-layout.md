@@ -1,0 +1,29 @@
+# ADR-0006: переходная физическая раскладка первой фазы
+
+Статус: **Принято; reactor реализован в #1049, движок выделен в #1050**. Семь целевых модулей и позднее хранение согласованы владельцем; фактически созданы parent/aggregator, bootstrap и engines с PlayoffMatchingEngine. [Сборка](../phase-1/reactor-delivery.md), [перенос, проверки и DevTools](../phase-1/engine-extraction.md). Решение от 13.11.2026, реализация уточнена 18.11.2026.
+
+## Контекст
+
+Немедленный перенос всего src в семь папок затрагивает JPA-граф, ресурсы, относительные пути тестов, scripts и Liquibase. Пилот ограничен вычислением; хранение выделяется поздней #1051. Корневой jar-проект должен стать parent/aggregator, не потеряв рабочего приложения.
+
+## Решение для постановки
+
+В #1049 вводятся bootstrap и engines. Root src остаётся единственным legacy-деревом; bootstrap явно подключает его main/test/resources, а parent packaging=pom не компилирует его. В #1050 только engine/unit физически переезжают в engines, package сохраняется, Spring-регистрация находится в bootstrap. Root generated frontend/toolchain/evidence/release outputs остаются явно подключёнными; runtime jar становится модульным.
+
+## Адресный реестр переходных решений
+
+| Объект | Владелец/потребитель | Когда удаляется/уточняется |
+|---|---|---|
+| Root src/main/java, src/test/java как source roots bootstrap | #1049 задаёт, #1050 удаляет оттуда только engine/unit | По доменным срезам следующих фаз; окончательно после поздней #1051 и финальной очистки |
+| Root src/main/resources, в том числе db/changelog | Только bootstrap resource packaging | Ресурсы переезжают по владельцам; persistence/Liquibase в #1051 с сохранением classpath |
+| Старый Java package движка в новом engines | Публичный тип у TeamPlayoffService | Самостоятельный rename при доказанной пользе; не обязательное условие пилота |
+| Единственный @Bean PlayoffMatchingEngine в bootstrap | TeamPlayoffService constructor | Целевая конфигурация, не временная двойная реализация; не удалять без нового wiring |
+| Общий runtime package библиотеки и legacy при DevTools | restart.include только для jar engines; нужен package-private вызову seedRoundOf16 | Пересмотреть при отдельном изменении package/API; в обычном boot jar classloader общий |
+
+Фактические классы/пути и оставшиеся потребители фиксируются в каждом PR. Если #1049 выявляет невыполнимость external source roots/working directory, скорректировать техническую раскладку отдельным рабочим решением в том же scope; не оставлять сборку сломанной и не выделять storage незаметно.
+
+## Альтернативы и последствия
+
+Полный перенос src в bootstrap сразу проще физически, но меняет больше относительных путей и размещение файлов миграций; это не нужно малому пилоту. Создание отдельного legacy-модуля добавляет временный проект сверх целевой структуры и ещё один шаг удаления. Временные root source roots менее обычны и требуют явного окончания: это промежуточная раскладка, не рекомендация хранить все исходники вне модулей навсегда.
+
+Maven test/CWD, component scan, один main/repackage, classpath-resources, Docker/release и source discovery проверяются в #1049. Без этих доказательств задача не принимается.

@@ -1,0 +1,129 @@
+.tournament-publication-link {
+    min-height: 44px;
+    white-space: normal;
+    text-align: center;
+}
+
+.publication-link-open { overflow: hidden; }
+
+.publication-link-dialog {
+    box-sizing: border-box;
+    width: min(440px, calc(100% - 2rem));
+    max-height: calc(100vh - 2rem);
+    max-height: calc(100dvh - 2rem);
+    padding: 1.5rem;
+    margin: auto;
+    overflow-y: auto;
+    border: 0;
+    border-radius: 1rem;
+    background: var(--admin-lighter, #fff);
+    color: var(--admin-dark, #1e293b);
+    box-shadow: 0 18px 60px #0003;
+    font-family: 'Inter', sans-serif;
+}
+
+.publication-link-dialog::backdrop { background: #1a22305c; }
+
+.publication-link-dialog__heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.publication-link-dialog__heading h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+
+.publication-link-dialog__close {
+    flex-shrink: 0;
+    min-width: 44px;
+    min-height: 44px;
+    border: 0;
+    border-radius: 0.5rem;
+    background: var(--admin-light, #f8fafc);
+    color: var(--admin-dark, #1e293b);
+    cursor: pointer;
+}
+
+.publication-link-dialog__event {
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--admin-border, #e2e8f0);
+    overflow-wrap: anywhere;
+}
+
+.publication-link-dialog__event p,
+.publication-link-dialog__hint {
+    margin: 0.35rem 0 0;
+    color: #647080;
+    font-size: 0.8rem;
+    line-height: 1.6;
+}
+
+.publication-link-dialog__choice { margin: 1.25rem 0; padding: 0; border: 0; min-width: 0; }
+.publication-link-dialog__choice legend,
+.publication-link-dialog > label { display: block; margin-bottom: 0.5rem; font-size: 0.8rem; font-weight: 600; }
+.publication-link-dialog__channels { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
+.publication-link-dialog__channels button {
+    min-width: 0;
+    min-height: 48px;
+    padding: 0.5rem;
+    border: 1px solid var(--admin-border, #e2e8f0);
+    border-radius: 0.6rem;
+    background: var(--admin-lighter, #fff);
+    color: var(--admin-dark, #1e293b);
+    font: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+.publication-link-dialog__channels button[aria-pressed="true"] {
+    border-color: #a83c14;
+    background: #fff3ec;
+    color: #a83c14;
+    box-shadow: inset 0 0 0 1px #a83c14;
+    font-weight: 600;
+}
+.publication-link-dialog__channels i { margin-right: 0.35rem; }
+.publication-link-dialog__url {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 5rem;
+    max-width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--admin-border, #e2e8f0);
+    border-radius: 0.5rem;
+    background: var(--admin-light, #f8fafc);
+    color: var(--admin-dark, #1e293b);
+    font: 0.8rem/1.6 ui-monospace, SFMono-Regular, Consolas, monospace;
+    resize: none;
+    overflow-wrap: anywhere;
+}
+.publication-link-dialog__hint { margin-top: 0.6rem; }
+.publication-link-dialog .publication-link-dialog__copy {
+    width: 100%;
+    min-height: 48px;
+    margin-top: 1.25rem;
+    white-space: normal;
+    border-radius: 0.5rem;
+}
+.publication-link-dialog__copy:disabled { opacity: 0.65; cursor: wait; }
+.publication-link-dialog__feedback { margin: 0.5rem 0 0; min-height: 1.25rem; font-size: 0.8rem; text-align: center; overflow-wrap: anywhere; }
+.publication-link-dialog button:focus-visible,
+.publication-link-dialog textarea:focus-visible,
+.tournament-publication-link:focus-visible { outline: 3px solid #a83c14; outline-offset: 3px; }
+
+@media (max-width: 480px) {
+    .publication-link-dialog { padding: 1rem; }
+    .publication-link-dialog__channels { grid-template-columns: 1fr; }
+    .publication-link-dialog__url { font-size: 1rem; }
+    .tournament-card-footer .tournament-publication-link { flex-basis: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .publication-link-dialog .btn { transition: none; }
+    .publication-link-dialog .btn:hover { transform: none; }
+}

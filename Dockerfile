@@ -6,9 +6,17 @@ FROM maven:3.9.9-eclipse-temurin-21 AS builder
 WORKDIR /app
 
 COPY pom.xml .
+COPY padel-api-contract/pom.xml padel-api-contract/pom.xml
+COPY padel-bootstrap/pom.xml padel-bootstrap/pom.xml
+COPY padel-tournament-engines/pom.xml padel-tournament-engines/pom.xml
+COPY padel-application/pom.xml padel-application/pom.xml
 RUN mvn dependency:go-offline -B
 
 COPY frontend ./frontend
+COPY padel-api-contract ./padel-api-contract
+COPY padel-bootstrap ./padel-bootstrap
+COPY padel-tournament-engines ./padel-tournament-engines
+COPY padel-application ./padel-application
 COPY src ./src
 RUN mvn clean package -DskipTests
 
@@ -25,7 +33,7 @@ RUN groupadd -r spring && useradd -r -g spring spring
 
 WORKDIR /app
 
-COPY --from=builder /app/target/*.jar app.jar
+COPY --from=builder /app/padel-bootstrap/target/padel-core-service-0.0.1-SNAPSHOT.jar app.jar
 
 RUN mkdir -p logs && chown -R spring:spring /app
 

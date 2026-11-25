@@ -52,6 +52,8 @@ class PadelCoreHome {
                 'C6': t('enum.nivel.c6'),
                 'C5': t('enum.nivel.c5'),
                 'C4': t('enum.nivel.c4'),
+                'C3': t('enum.nivel.c3'),
+                'C4_C3': t('enum.nivel.c4_c3'),
                 'D9': t('enum.nivel.d9'),
                 'D8': t('enum.nivel.d8'),
                 'D7': t('enum.nivel.d7'),
@@ -188,15 +190,7 @@ class PadelCoreHome {
             if (genero !== 'todos' && t.generoFormato !== genero) return false;
 
             if (nivel !== 'todos') {
-                const nivelMap = {
-                    'SUMA_15': 'SUMA_15', 'SUMA_13': 'SUMA_13',
-                    'D9': 'D9', 'D7': 'D7', 'D8': 'D8', 'D7_D8': 'D7_D8',
-                    'D6': 'D6', 'C7_C6': 'C7_C6',
-                    'C9': 'C9', 'C8': 'C8', 'C7': 'C7',
-                    'C6': 'C6', 'C5': 'C5', 'C4': 'C4',
-                    'Principiante': 'PRINCIPIANTES'
-                };
-                if (t.categoriaNivel !== nivelMap[nivel]) return false;
+                if (!window.PadelLevels.matches(t.categoriaNivel, nivel)) return false;
             }
 
             if (tipo !== 'todos' && t.tipo !== tipo) return false;
@@ -240,20 +234,6 @@ class PadelCoreHome {
         });
     }
 
-    // Статус заполненности турнира по порогам 70%/100% — не путать с абсолютными
-    // порогами getSpotsStatus() в torneos.js (10 пар/15 игроков): разные страницы,
-    // разная, осознанно выбранная формула.
-    getSpotsStatus(tournament) {
-        const cupoMax = tournament.cupoMax || 0;
-        const inscritos = tournament.inscritosActuales || 0;
-        if (cupoMax <= 0) return 'available';
-
-        const fillRatio = inscritos / cupoMax;
-        if (fillRatio >= 1) return 'full';
-        if (fillRatio >= 0.7) return 'limited';
-        return 'available';
-    }
-
     createTournamentCard(tournament) {
         const card = document.createElement('div');
         card.className = 'tournament-card';
@@ -269,7 +249,7 @@ class PadelCoreHome {
 
         const generoDisplay = this.displayMaps.genero[tournament.generoFormato] || tournament.generoFormato || 'N/A';
         const nivelDisplay  = tournament.categoriaNivel === 'TODOS'
-            ? t('enum.nivel.todos') : tournament.categoriaNivel || 'N/A';
+            ? t('enum.nivel.todos') : (tournament.categoriaNivel || 'N/A').replace('C4_C3', 'C4/C3');
         const tipoDisplay   = this.displayMaps.tipo[tournament.tipo] || tournament.tipo || 'N/A';
         const estadoDisplay = this.displayMaps.estado[tournament.estado] || tournament.estado || '';
         const estadoClass   = tournament.estado ? `status-${tournament.estado.toLowerCase()}` : '';
@@ -281,12 +261,8 @@ class PadelCoreHome {
         // ── НОВАЯ ПРОВЕРКА: начался ли турнир ──────────────────────
         const started = isTournamentStarted(tournament);
 
-        const spotsStatus = this.getSpotsStatus(tournament);
-        const spotsStatusText = {
-            available: t('card.spots.available'),
-            limited: t('card.spots.limited'),
-            full: t('card.spots.completos')
-        }[spotsStatus];
+        const spotsStatus = TournamentAvailability.getStatus(tournament);
+        const spotsStatusText = t(TournamentAvailability.labelKey(spotsStatus));
 
         const clubAddress = tournament.clubDireccion
             ? `<span class="club-address">${this.escapeHtml(tournament.clubDireccion)}</span>`
@@ -376,6 +352,26 @@ class PadelCoreHome {
     }
 }
 
+function trackMendozaBannerClick(event) {
+    if (event.defaultPrevented || (event.type === 'auxclick' && event.button !== 1)
+        || typeof window.gtag !== 'function') {
+        return;
+    }
+
+    const cookies = document.cookie.split(';').map(cookie => cookie.trim());
+    const analyticsAllowed = cookies.includes('cookieConsent=accepted')
+        || (cookies.includes('cookieConsent=customized') && cookies.includes('analyticsConsent=true'));
+    if (analyticsAllowed) {
+        window.gtag('event', 'mendoza_homepage_banner_click', {
+            campaign_name: 'mendoza_2026',
+            placement: 'homepage_banner'
+        });
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+    const mendozaBanner = document.querySelector('[data-mendoza-banner-link]');
+    mendozaBanner?.addEventListener('click', trackMendozaBannerClick);
+    mendozaBanner?.addEventListener('auxclick', trackMendozaBannerClick);
     window.padelCore = new PadelCoreHome();
 });

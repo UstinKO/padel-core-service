@@ -5,6 +5,8 @@ description: "Провести задачу padel-core-service через SDD-к
 
 Прочитай корневой `AGENTS.md`, затем [полный протокол](../../workflows/develop-feature.md).
 Контекст: `specs/MASTER.md`, соответствующая спека, `.agents/PROJECT.md`, `docs/Home.md`.
+Для новых issues, включая дочерние и пары backend/frontend, выполни [правила Milestones](../../ISSUE_ORGANIZATION.md).
+Подходящее существующее назначение сохраняй; новый раздел создавай только при отсутствии подходящего и проверяй запись в GitHub.
 
 Выполни стадии по ролям [Analyst](../../roles/analyst.md), [Developer](../../roles/developer.md),
 [Tester](../../roles/tester.md), затем финальную сверку Architect. Если делегирование поддерживается,

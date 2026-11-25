@@ -1,6 +1,7 @@
 package com.padle.core.padelcoreservice.service.conduct;
 
 import com.padle.core.padelcoreservice.service.PublicLiveNotifications;
+import com.padle.core.padelcoreservice.service.WebSocketService;
 import com.padle.core.padelcoreservice.dto.americano.AmericanoMatchResultDto;
 import com.padle.core.padelcoreservice.exception.InvalidStateException;
 import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
@@ -49,6 +50,7 @@ public class TournamentConductHistory {
 
     private final JdbcClient jdbc;
     private final PublicLiveNotifications publicChanges;
+    private final WebSocketService webSocket;
     private final EntityManager entityManager;
     private final ConductSnapshotStore snapshots;
     private final TournamentAccessService access;
@@ -170,6 +172,9 @@ public class TournamentConductHistory {
         entityManager.clear();
         save(tournamentId, owner, Action.RESTORE, null, snapshots.position(tournamentId, type),
                 snapshots.capture(tournamentId, type), versionId, null);
+        if (type == TournamentType.AMERICANO_TEAMS) {
+            webSocket.notifyTeamPlayoffStateUpdated(tournamentId);
+        }
     }
 
     public long revision(long tournamentId) {

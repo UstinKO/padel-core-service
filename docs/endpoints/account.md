@@ -13,6 +13,7 @@
 | POST | `/api/players/registro` | Анонимный + CSRF | RegistroRequestDto + website honeypot/destination; 201 REGISTERED, затем обычный `/login`. Правило телефон ИЛИ Telegram, email автоматически подтверждается |
 | GET | `/api/players/me` | PlayerPadel или Google-player | Собственный Profile: id/nombre/apellido/email/telefono/telegramUsername/nivelJugador/preferredLocale/guestAccount/oauth2User |
 | PUT | `/api/players/me` | PlayerPadel или Google-player + CSRF | Полный ProfileUpdate, те же редактируемые поля; email меняется только у guest; сервер не принимает id/роль/активность |
+| PATCH | `/api/players/me/level` | PlayerPadel или Google-player + CSRF | Принимает `{"nivelJugador":"C7"}`, меняет только уровень собственного активного профиля. Ответ 204. |
 | POST | `/api/players/me/password` | PlayerPadel или Google-player + CSRF | currentPassword/newPassword/confirmPassword; текущий пароль обязателен, минимальная длина нового 6 как в существующем reset; успех PASSWORD_CHANGED |
 | POST | `/api/password-reset/request` | Анонимный + CSRF | email/destination; одинаковый RESET_REQUESTED для известной и неизвестной почты |
 | GET | `/api/password-reset/validate` | Публичный | token; valid/code TOKEN_VALID или RESET_TOKEN_INVALID, без изменения токена |
@@ -37,15 +38,41 @@ destination — только проверенный same-origin относите
 
 Для legal/system frontend сервер сохраняет HTTP-статус preview deep link: неизвестный route — 404, `/preview/error/401`, `/403`, `/429`, `/503` — соответствующий статус, offline — 503. Legal preview содержит canonical на действующий публичный URL. Все preview/error страницы noindex; известные auth-маршруты по-прежнему используют SPA, production allowlist не меняется.
 
-## Подтверждение гостевого профиля
+## Объединение гостевого профиля
 
 | Метод | URL | Доступ | Контракт |
 |---|---|---|---|
-| POST | `/api/players/me/guest-profile-claims` | Игрок с обычным аккаунтом + CSRF | `phone` → 201, `reference` и `whatsappUrl`. Ответ одинаков для номера с гостем и без него |
-| GET | `/api/admin/guest-profile-claims/{reference}` | ORGANIZER / SUPER_ADMIN | Целевые `accountId`, `accountEmail` и признак `approved`. Номер телефона в ответ не входит |
-| POST | `/api/admin/guest-profile-claims/{reference}/approve` | ORGANIZER / SUPER_ADMIN + CSRF | `whatsappSenderPhone` → `playerId`. Номер сверяется с заявкой и профилем, заявки живут 7 дней |
-| POST | `/api/admin/players/{guestId}/activate-guest-profile` | ORGANIZER / SUPER_ADMIN + CSRF | `whatsappSenderPhone` и `email` → прежний `playerId`. Игрок самостоятельно запускает восстановление пароля |
+| POST | `/api/players/me/guest-profile-claims` | PLAYER + CSRF | `phone` → 201, `reference`, `number`, `status`, `createdAt`, `playerName` и необязательный `whatsappUrl`. Повтор для того же контакта возвращает существующую заявку. |
+| GET | `/api/players/me/guest-profile-claims` | PLAYER | Собственные заявки с текущими статусами. |
+| GET | `/api/admin/guest-profile-claims` | ORGANIZER / SUPER_ADMIN | Очередь с `pendingCount`, `items`, `hasMore`. Фильтры `search`, `status`, `page` (с нуля). |
+| GET | `/api/admin/guest-profile-claims/{reference}` | ORGANIZER / SUPER_ADMIN | Сравнение целевого аккаунта и найденного гостя, контакты, число записей и результатов, `conflicts`, `differences` и последний `reviewReason`. |
+| POST | `/api/admin/guest-profile-claims/{reference}/decision` | ORGANIZER / SUPER_ADMIN + CSRF | `decision` со значением `NEEDS_DETAILS` или `REJECTED`. |
+| POST | `/api/admin/guest-profile-claims/{reference}/approve` | ORGANIZER / SUPER_ADMIN + CSRF | `verified: true`, `verificationMethod`, для WhatsApp `whatsappSenderPhone`, опционально `guestId` и `replacePhone` → `playerId`. |
+| GET | `/api/admin/guest-profile-claims/profiles` | ORGANIZER / SUPER_ADMIN | Поиск кандидатов по `search` и типу `guest` для ручной сверки. |
+| GET / POST | `/api/admin/guest-profile-claims/manual` | ORGANIZER / SUPER_ADMIN, POST + CSRF | GET сравнивает профили по `guestId` и `accountId`. POST подтверждает направление с теми же полями проверки и сохраняет инициатора в истории. |
+| POST | `/api/admin/players/{guestId}/activate-guest-profile` | ORGANIZER / SUPER_ADMIN + CSRF | `whatsappSenderPhone` и `email` → прежний `playerId`. Игрок самостоятельно запускает восстановление пароля. |
 
-Для занятого телефона регистрация и обновление контакта возвращают 409 `PHONE_IN_USE` и официальный `whatsappUrl` без данных другого игрока. Устаревшая заявка возвращает 404 `GUEST_CLAIM_NOT_FOUND`. При пересечении историй, неоднозначном номере или конфликте почты возвращается типизированная ошибка `GUEST_CLAIM_*`. Операции привязки не посылают коды и не меняют статус участия.
+Статусы заявки: `PENDING`, `NEEDS_DETAILS`, `MERGED`, `REJECTED`. Ответы помечены `Cache-Control: no-store`. Сохранение заявки и её прочтение не проверяют WhatsApp и не раскрывают совпадения игроку. Номера сравниваются после существующей нормализации, которая учитывает код страны. При несовпадении номера отправителя или при блокирующем конфликте подтверждение через заявку переводит её в `NEEDS_DETAILS` и возвращает 409.
 
-Для заявок и проверки занятого телефона поддерживаются аргентинские форматы и номера с кодом `+7`. Номер `+7` сравнивается с учётом кода страны. Пробелы, скобки и дефисы не влияют на совпадение.
+## Мои мероприятия
+
+- `GET /api/players/me/events` — `upcoming` и `history` текущего игрока. В карточке есть версия заявки, статус, режим участия, имя партнёра, позиция и время очереди, собственный платёж, запросы участия и допустимые действия. Причины отмены возвращаются только затронутому игроку. После повторной записи прежняя отмена остаётся в истории отдельной карточкой.
+- `POST /api/players/me/events/{registrationId}/withdraw` — личный выход с обязательной версией заявки в JSON (`version`). Повтор завершённой операции допускается. Выход из пары сохраняет место за вторым участником по действующим правилам.
+- `PUT /api/players/me/events/{registrationId}/contact-visibility` — собственное согласие на показ контактов в списке поиска партнёра (`version`, `shareContacts`). Обновление разрешено в доступном поиске партнёра. Оба изменения возвращают 204, при недоступном действии или изменении версии — 409. Чужая или неизвестная заявка возвращает 404.
+
+Маршруты требуют роль PLAYER. Ответы помечены `Cache-Control: no-store`. Для запросов из браузера действует CSRF. Подтверждение участия, отказ после перевода из резерва и полная отмена пары используют существующие маршруты и условия. Старая выдача для мобильного приложения сохраняет свой формат.
+
+## Предпочтительная сторона
+
+| Метод | URL | Доступ | Действие |
+|---|---|---|---|
+| PATCH | `/api/players/me/playing-side` | Игрок/Google + CSRF | Answer: playingSide LEFT/RIGHT/EITHER, необязательный nivelJugador. Только свой активный профиль; side/level сохраняются независимо. |
+| POST | `/api/players/me/playing-side/visit` | Игрок/Google + CSRF | State: playingSide, nivelJugador, ask, levelMissing. Показ резервируется в БД на 24 часа под блокировкой профиля. Вызывается только в кабинете. |
+| POST | `/api/players/me/playing-side/defer` | Игрок/Google + CSRF | Отсрочка с момента закрытия на 24 часа. |
+| POST | `/admin/players/{id}/playing-side` | SUPER_ADMIN + CSRF | Изменение стороны в рамках существующих прав редактирования профиля. |
+
+Account Profile и регистрация поддерживают playingSide. Оплаты и scoped SoloRoster возвращают сторону каждого игрока; создание гостя допускает отсутствие ответа и не перезаписывает существующий профиль. При объединении профилей ответ входит в сравнение, PLAYING_SIDE_DIFFERS требует sideChoice ACCOUNT/GUEST, иначе GUEST_CLAIM_PLAYING_SIDE_CONFLICT до переноса. Внутренние legacy DTO-поля стороны не сериализуются в общий JSON; PublicLive Participant маскирует поле при выключенном mostrarNivel.
+
+`GET /api/admin/events/{id}/participant-preferences` — действующая служебная роль и право управления конкретным турниром. Минимальный список playerId/level/playingSide без контактов; для динамических сведений участника в проведении. Чужой турнир запрещён на сервере. Поиск партнёра также маскирует уровень/сторону при выключенном mostrarNivel.
+
+Уровень C3 доступен игроку и в существующих административных операциях. JSON и параметры форм/фильтров приводят кириллическую С к латинской C; диапазон C4_C3 является только категорией мероприятия. Сохранение использует прежние права, проверки контактов и сессии.
