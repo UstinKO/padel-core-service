@@ -5,9 +5,13 @@
     const element = key => root.querySelector(`[data-${key}]`);
     const strings = Object.fromEntries([...root.querySelectorAll('[data-compose-strings] [data-key]')].map(node => [node.dataset.key, node.textContent]));
     const t = key => strings[key] || key;
+    const campaignStrings = Object.fromEntries([...root.querySelectorAll('[data-campaign-strings] [data-key]')].map(node => [node.dataset.key,node.textContent]));
+    const ct = key => campaignStrings[key] || t(key);
     const tournamentId = root.dataset.tournamentId ? Number(root.dataset.tournamentId) : null;
     const groups = new Set(), categories = new Set(), included = new Set(), excluded = new Set();
     let candidates = [], version = 0, loadVersion = 0, busy = false, loaded = false;
+    let prepared = null, prepareKey = crypto.randomUUID(), testKey = crypto.randomUUID(), testQueued = false, sending = false, uncertain = false;
+    let historyPage = 0, historyVersion = 0, historyTimer, confirmation = null, historyDetail = null;
     const status = (message, error = false) => {
         element('compose-status').textContent = message;
         element('compose-status').dataset.error = String(error);
@@ -16,6 +20,8 @@
         || person.groups.some(group => groups.has(group)) || categories.has(person.category));
     const invalidate = () => {
         version++;
+        prepared = null; prepareKey = crypto.randomUUID(); testKey = crypto.randomUUID(); testQueued = false; uncertain = false;
+        element('send').disabled = true; element('test').disabled = true;
         element('preview-result').hidden = true;
         element('preview-text').textContent = '';
         element('ready-list').replaceChildren();
@@ -97,15 +103,17 @@
         busy = true; element('preview').disabled = true;
         const current = version; status(t('loading'));
         try {
-            const result = await request('preview', { tournamentId, groups: [...groups], categories: [...categories],
-                includedPlayerIds: [...included], excludedPlayerIds: [...excluded], text: element('message-text').value });
+            const result = await request('campaigns', { requestId: prepareKey, selection: { tournamentId, groups: [...groups], categories: [...categories],
+                includedPlayerIds: [...included], excludedPlayerIds: [...excluded], text: element('message-text').value } });
             if (current !== version) return;
             const refreshed = new Map([...result.recipients, ...result.unavailable].map(person => [person.playerId, person]));
             candidates = candidates.map(person => refreshed.get(person.playerId) || person);
             renderCandidates();
             element('preview-text').textContent = result.text;
             showList('ready-list', result.recipients, false); showList('unavailable-list', result.unavailable, true);
+            prepared = result;
             element('preview-result').hidden = false; element('preview-result').focus(); status('');
+            updateActions(); refreshHistory();
         } catch { if (current === version) status(t('error'), true); }
         finally { busy = false; element('preview').disabled = !loaded || !element('message-text').value.trim(); }
     });
@@ -117,5 +125,99 @@
         root.querySelectorAll('fieldset input').forEach(box => { box.checked = false; });
         invalidate(); renderCandidates();
     });
-    load();
+    const updateActions = () => {
+        element('send').disabled = !prepared || !prepared.sendingAvailable || !prepared.recipients.length || sending || uncertain;
+        element('test').disabled = !prepared || !prepared.canTest || testQueued || sending || uncertain;
+        element('send-hint').textContent = uncertain ? ct('uncertain') : prepared?.dispatched ? ct('queued') : !prepared?.sendingAvailable ? ct('sendDisabled')
+            : !prepared.canTest ? ct('testUnavailable') : '';
+    };
+    const meta = campaign => `${ct(campaign.kind)} · ${ct(campaign.state)} · ${campaign.author} · ${new Date(campaign.createdAt).toLocaleString()}`;
+    const details = campaign => {
+        historyDetail = campaign;
+        element('history-meta').textContent = meta(campaign); element('history-text').textContent = campaign.text;
+        element('history-people').replaceChildren();
+        for (const person of campaign.recipients) {
+            const li = document.createElement('li');
+            li.textContent = `${person.name} — ${ct(person.state)}${person.reason !== person.state ? ' · ' + ct(person.reason) : ''}`;
+            element('history-people').append(li);
+        }
+        element('history-retry').hidden = !campaign.canRetry || uncertain;
+    };
+    const refreshHistory = async () => {
+        clearTimeout(historyTimer);
+        const current = ++historyVersion; element('history-status').textContent = ct('loading');
+        try {
+            const rows = await request('campaigns?page=' + historyPage + (tournamentId ? '&tournamentId=' + tournamentId : ''));
+            if (current !== historyVersion) return;
+            element('history-list').replaceChildren();
+            for (const campaign of rows) {
+                const article = document.createElement('article'); article.dataset.campaignId = campaign.id;
+                article.dataset.campaignKind = campaign.kind; article.dataset.campaignState = campaign.state;
+                const summary = document.createElement('p'); summary.textContent = meta(campaign);
+                const counts = document.createElement('p');
+                counts.textContent = [...new Set(campaign.recipients.map(p => p.state))].map(state => `${ct(state)}: ${campaign.recipients.filter(p => p.state === state).length}`).join(' · ');
+                const button = document.createElement('button'); button.type = 'button'; button.className = 'btn btn-outline';
+                button.textContent = ct('details'); button.addEventListener('click', () => {
+                    details(campaign); element('history-dialog').showModal();
+                });
+                article.append(summary, counts, button); element('history-list').append(article);
+            }
+            element('history-status').textContent = rows.length ? '' : ct('empty');
+            element('history-previous').disabled = historyPage === 0; element('history-next').disabled = rows.length < 20;
+            if (historyDetail && element('history-dialog').open) {
+                const id = historyDetail.id;
+                const refreshed = await request('campaigns/' + id);
+                if (current === historyVersion && element('history-dialog').open && historyDetail?.id === id) details(refreshed);
+            }
+            if (rows.some(c => c.state === 'QUEUED') && !document.hidden) historyTimer = setTimeout(refreshHistory, 2500);
+        } catch { if (current === historyVersion) element('history-status').textContent = ct('error'); }
+    };
+    const openConfirmation = (campaign, kind) => {
+        confirmation = { campaign, kind, requestId: crypto.randomUUID() };
+        const people = campaign.recipients.filter(p => p.state === (kind === 'retry' ? 'FAILED' : 'PENDING'));
+        element('confirm-summary').textContent = `${ct(kind === 'retry' ? 'confirmRetry' : 'confirmSend')}: ${people.length}`;
+        element('confirm-text').textContent = campaign.text; element('confirm-people').replaceChildren();
+        for (const person of people) { const li = document.createElement('li'); li.textContent = person.name; element('confirm-people').append(li); }
+        element('confirm-submit').disabled = people.length === 0 || sending || uncertain; element('send-dialog').showModal();
+    };
+    element('send').addEventListener('click', async () => {
+        if (!prepared || sending || uncertain) return;
+        try {
+            const campaign = await request('campaigns/' + prepared.campaignId);
+            if (prepared?.campaignId === campaign.id && campaign.canConfirm) openConfirmation(campaign, 'confirm');
+            else { element('send').disabled = true; refreshHistory(); }
+        } catch { status(ct('error'), true); }
+    });
+    element('confirm-cancel').addEventListener('click', () => element('send-dialog').close());
+    element('confirm-submit').addEventListener('click', async () => {
+        if (!confirmation || sending || uncertain) return;
+        const {campaign,kind,requestId} = confirmation;
+        sending = true; element('confirm-submit').disabled = true; updateActions();
+        try {
+            await request('campaigns/' + campaign.id + '/' + kind, kind === 'retry' ? {confirmed:true,requestId} : {confirmed:true});
+            if (prepared?.campaignId === campaign.id) { prepared.sendingAvailable = false; prepared.canTest = false; prepared.dispatched = true; }
+            status(ct('queued')); element('send-dialog').close(); refreshHistory();
+        } catch {
+            uncertain = true; status(ct('uncertain'), true); element('send-dialog').close(); refreshHistory();
+        } finally { sending = false; updateActions(); }
+    });
+    element('test').addEventListener('click', async () => {
+        if (!prepared?.canTest || sending || uncertain || testQueued) return;
+        const id = prepared.campaignId; sending = true; updateActions();
+        try {
+            await request('campaigns/' + id + '/test', {confirmed:true,requestId:testKey});
+            if (prepared?.campaignId === id) testQueued = true;
+            status(ct('queued')); refreshHistory();
+        } catch { uncertain = true; status(ct('uncertain'), true); refreshHistory(); }
+        finally { sending = false; updateActions(); }
+    });
+    element('history-retry').addEventListener('click', () => {
+        if (historyDetail?.canRetry && !sending && !uncertain) openConfirmation(historyDetail,'retry');
+    });
+    element('history-close').addEventListener('click', () => element('history-dialog').close());
+    element('history-refresh').addEventListener('click', refreshHistory);
+    element('history-previous').addEventListener('click', () => { if (historyPage > 0) { historyPage--; refreshHistory(); } });
+    element('history-next').addEventListener('click', () => { historyPage++; refreshHistory(); });
+    window.addEventListener('pagehide', () => clearTimeout(historyTimer));
+    load(); refreshHistory();
 })();

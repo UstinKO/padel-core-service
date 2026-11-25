@@ -17,6 +17,7 @@
         <span th:each="key : ${#strings.arraySplit('loading,error,stale,empty,selected,ready,unavailable,AVAILABLE,NOT_CONNECTED,WHATSAPP,GUEST,INACTIVE,OUTSIDE_PILOT,DISABLED,ALL,MAIN,RESERVE,UNPAIRED,PENDING', ',')}"
               th:attr="data-key=${key}" th:text="${#messages.msg('telegram.compose.' + key)}"></span>
     </div>
+    <div hidden data-campaign-strings><span th:each="key : ${#strings.arraySplit('test,send,history,sentMeaning,previous,next,confirmTitle,confirm,cancel,close,details,retry,explanation,confirmHint,queued,uncertain,sendDisabled,testUnavailable,confirmSend,confirmRetry,DRAFT,QUEUED,FINISHED,MESSAGE,TEST,PENDING,IN_FLIGHT,SENT,FAILED,BLOCKED,UNKNOWN,SKIPPED,PROVIDER_REJECTED,ACCESS_CHANGED,REGISTRATION_CHANGED,EVENT_UNAVAILABLE,CONNECTION_CHANGED,TEST_UNAVAILABLE,UNCERTAIN,RECOVERED', ',')}" th:attr="data-key=${key}" th:text="${#messages.msg('telegram.campaign.' + key)}"></span></div>
     <a th:href="${#strings.isEmpty(audienceTournamentId)} ? @{/admin} : @{/admin/tournaments/{id}/payments(id=${audienceTournamentId})}"
        th:text="#{telegram.compose.back}"></a>
     <h1 th:text="#{telegram.compose.title}"></h1>
@@ -49,10 +50,40 @@
                 <p class="tg-compose-message" data-preview-text></p>
                 <h3 th:text="#{telegram.compose.ready}"></h3><ul data-ready-list></ul>
                 <h3 th:text="#{telegram.compose.unavailable}"></h3><ul data-unavailable-list></ul>
-                <p class="tg-compose-note" th:text="#{telegram.compose.notSent}"></p>
+                <p class="tg-compose-note" th:text="#{telegram.campaign.explanation}"></p>
+                <p data-send-hint role="status"></p>
+                <div class="tg-compose-actions">
+                    <button type="button" class="btn btn-outline" data-test disabled th:text="#{telegram.campaign.test}"></button>
+                    <button type="button" class="btn btn-primary" data-send disabled th:text="#{telegram.campaign.send}"></button>
+                </div>
             </section>
         </section>
     </div>
+    <section class="tg-compose-panel tg-campaign-history">
+        <h2 th:text="#{telegram.campaign.history}"></h2>
+        <p th:text="#{telegram.campaign.sentMeaning}"></p>
+        <button type="button" class="btn btn-outline" data-history-refresh th:text="#{telegram.compose.refresh}"></button>
+        <p data-history-status role="status"></p><div data-history-list></div>
+        <div class="tg-compose-actions">
+            <button type="button" class="btn btn-outline" data-history-previous th:text="#{telegram.campaign.previous}"></button>
+            <button type="button" class="btn btn-outline" data-history-next th:text="#{telegram.campaign.next}"></button>
+        </div>
+    </section>
+    <dialog data-send-dialog th:aria-label="#{telegram.campaign.confirmTitle}">
+        <h2 th:text="#{telegram.campaign.confirmTitle}"></h2>
+        <p data-confirm-summary></p><p data-confirm-text class="tg-compose-message"></p><ul data-confirm-people></ul>
+        <p th:text="#{telegram.campaign.confirmHint}"></p>
+        <div class="tg-compose-actions">
+            <button type="button" class="btn btn-primary" data-confirm-submit th:text="#{telegram.campaign.confirm}"></button>
+            <button type="button" class="btn btn-outline" data-confirm-cancel th:text="#{telegram.campaign.cancel}"></button>
+        </div>
+    </dialog>
+    <dialog data-history-dialog th:aria-label="#{telegram.campaign.details}">
+        <h2 th:text="#{telegram.campaign.details}"></h2>
+        <button type="button" class="btn btn-outline" data-history-close th:text="#{telegram.campaign.close}"></button>
+        <p data-history-meta></p><p data-history-text class="tg-compose-message"></p><ul data-history-people></ul>
+        <button type="button" class="btn btn-primary" data-history-retry hidden th:text="#{telegram.campaign.retry}"></button>
+    </dialog>
 </main>
 <footer th:replace="~{fragments/admin-footer :: footer}"></footer>
 </body>
