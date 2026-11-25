@@ -61,8 +61,10 @@ public class TelegramCampaignService {
         var rows = store.rows(header.id());
         var available = rows.stream().filter(row -> row.state().equals("PENDING")).map(this::candidate).toList();
         var unavailable = rows.stream().filter(row -> !row.state().equals("PENDING")).map(this::candidate).toList();
-        return new Prepared(header.id(),header.text(),available,unavailable,rows.size(),guard.ready(header.tournamentId()),
-                guard.ready(header.tournamentId()) && guard.self(actor,header.tournamentId()).isPresent(),header.expiresAt());
+        boolean ready = header.state().equals("DRAFT") && header.expiresAt().isAfter(OffsetDateTime.now())
+                && guard.ready(header.tournamentId());
+        return new Prepared(header.id(),header.text(),available,unavailable,rows.size(),ready,
+                ready && guard.self(actor,header.tournamentId()).isPresent(),header.expiresAt());
     }
     private Candidate candidate(StoredRecipient row) {
         Set<Group> groups = row.groups().isBlank() ? Set.of() : Arrays.stream(row.groups().split(","))

@@ -82,6 +82,8 @@ class TelegramCampaignIntegrationTest {
         assertThatThrownBy(()->campaigns.prepare(owner,changed)).isInstanceOf(AccountException.class);
         verify(api,never()).send(anyLong(),anyString(),anyList());
         campaigns.confirm(owner,draft.campaignId()); campaigns.confirm(owner,draft.campaignId());
+        assertThat(campaigns.prepare(owner,request).sendingAvailable()).isFalse();
+        assertThat(campaigns.prepare(owner,request).canTest()).isFalse();
         worker.tick(); worker.tick();
         verify(api,times(1)).send(chat(a),"Тестовое сообщение",List.of());
         assertThat(campaigns.get(owner,draft.campaignId()).state()).isEqualTo("FINISHED");
