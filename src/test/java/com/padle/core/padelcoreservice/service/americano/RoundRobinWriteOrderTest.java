@@ -1,10 +1,14 @@
 package com.padle.core.padelcoreservice.service.americano;
 
 import com.padle.core.application.roundrobin.RoundRobinRankingQuery;
+import com.padle.core.application.roundrobin.RoundRobinPositionCommand;
+import com.padle.core.padelcoreservice.adapter.roundrobin.LegacyRoundRobinPositionAdapter;
 import com.padle.core.padelcoreservice.adapter.roundrobin.LegacyRoundRobinReadAdapter;
 import com.padle.core.padelcoreservice.dto.americano.TeamAmericanoRankingDto;
 import com.padle.core.padelcoreservice.exception.InvalidStateException;
 import com.padle.core.padelcoreservice.mapper.americano.RoundRobinRankingMapper;
+import com.padle.core.padelcoreservice.mapper.americano.RoundRobinPositionMapper;
+import jakarta.persistence.EntityManager;
 import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.americano.AmericanoMatch;
 import com.padle.core.padelcoreservice.model.americano.AmericanoRound;
@@ -19,10 +23,14 @@ import com.padle.core.padelcoreservice.repository.americano.AmericanoMatchReposi
 import com.padle.core.padelcoreservice.repository.americano.AmericanoRoundRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoTeamRepository;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
+import org.mockito.Answers;
+import org.mapstruct.factory.Mappers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -34,6 +42,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mock;
 
 @ExtendWith(MockitoExtension.class)
 class RoundRobinWriteOrderTest {
@@ -46,7 +55,24 @@ class RoundRobinWriteOrderTest {
     @Mock AmericanoTeamRepository teams;
     @Mock AmericanoRoundRepository rounds;
     @Mock AmericanoMatchRepository matches;
-    @InjectMocks TeamAmericanoService service;
+    private final Map<Long, AmericanoTeam> managed = new HashMap<>();
+    private TeamAmericanoService service;
+
+    @BeforeEach
+    void connectTheRealCommandAndAdapter() {
+        var entities = mock(EntityManager.class, invocation -> {
+            if (invocation.getMethod().getName().equals("getReference")) {
+                var team = managed.get(invocation.getArgument(1));
+                assertThat(team).isNotNull();
+                return team;
+            }
+            return Answers.RETURNS_DEFAULTS.answer(invocation);
+        });
+        var adapter = new LegacyRoundRobinPositionAdapter(rounds, teams, matches,
+                Mappers.getMapper(RoundRobinPositionMapper.class), entities);
+        service = new TeamAmericanoService(query, new RoundRobinPositionCommand(adapter), read, mapper,
+                tournaments, registrations, teams, rounds, matches);
+    }
 
     @Test
     void emptyPositionsDoNotRequireAnEventOrInitialization() {
@@ -184,7 +210,9 @@ class RoundRobinWriteOrderTest {
     }
 
     private AmericanoTeam team(long id, int number) {
-        return AmericanoTeam.builder().id(id).teamNumber(number).currentPosition(9).build();
+        var team = AmericanoTeam.builder().id(id).teamNumber(number).currentPosition(9).build();
+        managed.put(id, team);
+        return team;
     }
 
     private Tournament event(TournamentStatus state) {

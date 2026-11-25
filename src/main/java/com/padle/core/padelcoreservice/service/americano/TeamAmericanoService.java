@@ -1,6 +1,7 @@
 package com.padle.core.padelcoreservice.service.americano;
 
 import com.padle.core.application.roundrobin.RoundRobinRankingQuery;
+import com.padle.core.application.roundrobin.RoundRobinPositionCommand;
 import com.padle.core.application.roundrobin.RoundRobinNotFound;
 import com.padle.core.padelcoreservice.adapter.roundrobin.LegacyRoundRobinReadAdapter;
 import com.padle.core.padelcoreservice.mapper.americano.RoundRobinRankingMapper;
@@ -44,6 +45,7 @@ import java.util.stream.Collectors;
 public class TeamAmericanoService {
 
     private final RoundRobinRankingQuery rankingQuery;
+    private final RoundRobinPositionCommand positionCommand;
     private final LegacyRoundRobinReadAdapter rankingReadAdapter;
     private final RoundRobinRankingMapper rankingMapper;
     private final TournamentRepository tournamentRepository;
@@ -487,13 +489,7 @@ public class TeamAmericanoService {
 
     @Transactional
     public void updateTeamPositions(Long tournamentId) {
-        var mode = roundRepository.findByTournamentIdOrderByRoundNumberAsc(tournamentId).stream()
-                .filter(r -> r.getPhase() == null).findFirst().map(RoundRobinRules::mode)
-                .orElse(RoundRobinScoringMode.POINTS);
-        var standings = RoundRobinStandings.rank(teamRepository.findByTournamentId(tournamentId),
-                matchRepository.findByTournamentIdOrderByRoundIdAscMatchNumberAsc(tournamentId), mode);
-        standings.forEach(entry -> entry.team().setCurrentPosition(entry.position()));
-        teamRepository.saveAll(standings.stream().map(RoundRobinStandings.Ranked::team).toList());
+        positionCommand.update(tournamentId);
     }
 
     public List<AmericanoTeamDto> getTeams(Long tournamentId) {

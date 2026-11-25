@@ -73,6 +73,22 @@ class ApplicationArchitectureTest {
         assertThat(ENGINE.test(types.get(RoundRobinSetStandingsEngine.class.getName() + "$Meetings"))).isFalse();
     }
 
+    @Test
+    void onlyTheSharedCalculationPreparesCircleEngineInputs() {
+        var production = new ClassFileImporter().withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
+                .importPackages("com.padle.core.application");
+        var standings = new DescribedPredicate<JavaClass>("типы SETS/POINTS engines") {
+            @Override public boolean test(JavaClass type) {
+                String name = type.getBaseComponentType().getName();
+                return ENGINE.test(type) && (name.contains("RoundRobinSetStandingsEngine")
+                        || name.contains("RoundRobinPointsStandingsEngine"));
+            }
+        };
+        noClasses().that().resideInAnyPackage("com.padle.core.application.roundrobin..")
+                .and().doNotHaveSimpleName("RoundRobinStandingsCalculation")
+                .should().dependOnClassesThat(standings).check(production);
+    }
+
     static class LegacyReference { BoundaryLegacy legacy; }
     static class SuffixReference { RoundRobinPointsStandingsEngineBackdoor backdoor; }
     static class GenericArrayReference { List<BoundaryDto[]> dtos; }
