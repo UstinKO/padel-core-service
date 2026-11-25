@@ -708,3 +708,5 @@ Telegram-пилот: `telegram.players.pilot-enabled=true` по умолчани
 Публичный календарь legacy `/torneos`: `public-event-calendar.mjs`, безопасные общие ссылки и чистые вычисления `public-event-calendar-state.mjs`, возврат `public-calendar-return.mjs`. Карточки остаются на главной; public-calendar-entry.mjs добавляет ссылку-иконку и переносит совместимые условия. /torneos — только календарь с быстрыми группами форматов и компактными фильтрами. Проверки: `node --test tests/public-event-calendar.test.mjs tests/admin-event-calendar.test.mjs`. Мобильная сетка — только даты/счётчики, личные статусы только в памяти текущей сессии. См. [контракт](../docs/endpoints/public-calendar.md).
 
 Ручное объединение профилей по ID: `GuestProfileClaimService.manualReview/manualMerge`, readiness и contactChoice; [контракт](../docs/guest-profile-merge.md). Телефонная заявка проверяется независимо; миграция v1.90, аудит contact_resolution.
+
+Экран ручного объединения: явная готовность, contactChoice и отключённая кнопка с причиной; `GuestProfileMergeBrowserTest` проверяет настоящий UI на отдельной базе и входит в browser job.

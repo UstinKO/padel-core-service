@@ -121,3 +121,36 @@
     padding: .55rem .65rem;
     font: inherit;
 }
+
+.guest-claim .claim-readiness {
+    font-weight: 600;
+}
+
+.guest-claim .claim-outcome {
+    border: 1px solid #ded8d5;
+    border-radius: .65rem;
+    padding: .75rem;
+    margin: .75rem 0;
+}
+
+.guest-claim .claim-outcome h4 {
+    margin: 0 0 .5rem;
+}
+
+.guest-claim .claim-merge fieldset {
+    border: 0;
+    padding: 0;
+    margin: 0;
+    min-width: 0;
+}
+
+.guest-claim .claim-merge button:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+    .guest-claim .claim-merge button {
+        width: 100%;
+    }
+}

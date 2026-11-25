@@ -138,7 +138,8 @@ try {
     }
     await review(conflictNumber);
     await expectText(comparison.locator('[data-claim-conflicts]'), /Both profiles have records in tournament #/);
-    assert.equal(await comparison.locator('[data-claim-merge]').isVisible(), false);
+    assert.equal(await comparison.locator('[data-claim-merge] button[type=submit]').isVisible(), true);
+    assert.equal(await comparison.locator('[data-claim-merge] button[type=submit]').isDisabled(), true);
     await comparison.getByRole('button', { name: 'More information needed' }).click();
     await expectText(comparison.locator('[data-claim-state]'), /More information needed/);
 
