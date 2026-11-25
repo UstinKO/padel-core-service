@@ -1,0 +1,15 @@
+{
+  "additionalMatches" : [ ],
+  "completedRounds" : 0,
+  "courts" : 1,
+  "finalRanking" : [ ],
+  "finished" : false,
+  "pointsPerMatch" : 32,
+  "ranking" : [ ],
+  "roundRobinComplete" : false,
+  "scoringMode" : "POINTS",
+  "totalRounds" : 0,
+  "totalTeams" : 0,
+  "tournamentId" : 1,
+  "tournamentName" : "RR Query QA"
+}

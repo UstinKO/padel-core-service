@@ -26,6 +26,8 @@
 
 ---
 
+Подготовленная [фаза 4 / #1374](../docs/modular-monolith/phase-4/README.md): #1375 baseline/граф чтения → #1376 чистый finalOrder → #1377 read-сценарий круговой таблицы в application → #1378 независимая приёмка. Baseline #1375 фиксирует wire-эталоны, транзакции и [конкретные модели/порт](../docs/modular-monolith/phase-4/application-contract.md); производственный application-сценарий ещё не перенесён. Остальные legacy-типы остаются запрещены для application, разрешения engines должны быть адресными.
+
 ## Commands
 
 ```bash
