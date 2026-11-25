@@ -2,7 +2,7 @@
 
 ## Статус
 
-implemented
+done
 
 ## Источник и связь с MASTER
 

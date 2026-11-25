@@ -17,7 +17,7 @@
 
 Baseline #1403 включён через PR #1408; реализация #1404 и её [результаты проверок](position-command.md) подготовлены отдельно. Следующий перенос — #1405 после включения #1404. Закрытия координационной #1402 рабочие задачи не ждут. Каждая реализация — отдельный PR, работоспособный без будущих задач. Depends-On в PR указывает на настоящий PR зависимости, не на номер issue; в исходных issues сохраняется последовательность задач. Автомерж/production-деплой в подготовку не входят.
 
-Спецификации: [координация](../../../specs/features/LFPT-1402-round-robin-write-phase.md), [baseline](../../../specs/features/LFPT-1403-round-robin-write-baseline.md), [позиции](../../../specs/features/LFPT-1404-round-robin-position-command.md), [завершение](../../../specs/features/LFPT-1405-round-robin-finish-command.md), [приёмка](../../../specs/features/LFPT-1406-round-robin-write-acceptance.md).
+Спецификации: [координация](../../../specs/features/LFPT-1402-round-robin-write-phase.md), [baseline](../../../specs/done/LFPT-1403-round-robin-write-baseline.md), [позиции](../../../specs/features/LFPT-1404-round-robin-position-command.md), [завершение](../../../specs/features/LFPT-1405-round-robin-finish-command.md), [приёмка](../../../specs/features/LFPT-1406-round-robin-write-acceptance.md).
 
 ## Почему такой срез
 
