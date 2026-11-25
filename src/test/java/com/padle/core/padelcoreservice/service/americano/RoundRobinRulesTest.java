@@ -12,7 +12,7 @@ import static org.assertj.core.api.Assertions.*;
 class RoundRobinRulesTest {
     @Test
     void existingGeneratorSchedulesEveryOpponentOnceForEvenAndOddFields() {
-        var service = new TeamAmericanoService(null, null, null, null, null, null, null);
+        var service = new TeamAmericanoService(null, null, null, null, null, null, null, null);
         for (int count = 2; count <= 16; count++) {
             var teams = IntStream.range(0, count).mapToObj(i -> team(i + 1)).toList();
             List<long[]> pairs = ReflectionTestUtils.invokeMethod(service, "circleMethodPairs", teams);
