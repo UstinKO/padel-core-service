@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="#{telegram.compose.title}"></title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <link rel="stylesheet" th:href="@{/css/telegram-messages.css}">
+    <script th:src="@{/js/csrf.js}" defer></script>
+    <script th:src="@{/js/telegram-messages.js}" defer></script>
+</head>
+<body>
+<header th:replace="~{fragments/admin-header :: header(#{telegram.compose.title})}"></header>
+<main class="admin-main tg-compose" data-message-composer th:attr="data-tournament-id=${audienceTournamentId}">
+    <div hidden data-compose-strings>
+        <span th:each="key : ${#strings.arraySplit('loading,error,stale,empty,selected,ready,unavailable,AVAILABLE,NOT_CONNECTED,WHATSAPP,GUEST,INACTIVE,OUTSIDE_PILOT,DISABLED,ALL,MAIN,RESERVE,UNPAIRED,PENDING', ',')}"
+              th:attr="data-key=${key}" th:text="${#messages.msg('telegram.compose.' + key)}"></span>
+    </div>
+    <a th:href="${#strings.isEmpty(audienceTournamentId)} ? @{/admin} : @{/admin/tournaments/{id}/payments(id=${audienceTournamentId})}"
+       th:text="#{telegram.compose.back}"></a>
+    <h1 th:text="#{telegram.compose.title}"></h1>
+    <p data-event-name></p>
+    <p class="tg-compose-note" th:text="#{telegram.compose.notice}"></p>
+    <p data-compose-status role="status" aria-live="polite"></p>
+    <div class="tg-compose-layout">
+        <section class="tg-compose-panel" th:aria-label="#{telegram.compose.audience}">
+            <h2 th:text="#{telegram.compose.audience}"></h2>
+            <p data-scope-hint th:text="#{telegram.compose.scope}"></p>
+            <fieldset><legend th:text="#{telegram.compose.groups}"></legend><div data-groups class="tg-compose-options"></div></fieldset>
+            <fieldset><legend th:text="#{telegram.compose.categories}"></legend><div data-categories class="tg-compose-options"></div></fieldset>
+            <label for="tg-person-search" th:text="#{telegram.compose.search}"></label>
+            <input id="tg-person-search" type="search" data-person-search autocomplete="off">
+            <div class="tg-compose-actions">
+                <button type="button" class="btn btn-outline" data-reset th:text="#{telegram.compose.reset}"></button>
+                <button type="button" class="btn btn-outline" data-refresh th:text="#{telegram.compose.refresh}"></button>
+            </div>
+            <p data-selection-count aria-live="polite"></p>
+            <div data-candidates class="tg-compose-candidates"></div>
+        </section>
+        <section class="tg-compose-panel" th:aria-label="#{telegram.compose.message}">
+            <h2 th:text="#{telegram.compose.message}"></h2>
+            <label for="tg-message-text" th:text="#{telegram.compose.text}"></label>
+            <textarea id="tg-message-text" data-message-text rows="8" maxlength="4096" required></textarea>
+            <p><span data-text-length>0</span> / 4096</p>
+            <button type="button" class="btn btn-primary" data-preview disabled th:text="#{telegram.compose.preview}"></button>
+            <section data-preview-result hidden tabindex="-1" th:aria-label="#{telegram.compose.result}">
+                <h2 th:text="#{telegram.compose.result}"></h2>
+                <p class="tg-compose-message" data-preview-text></p>
+                <h3 th:text="#{telegram.compose.ready}"></h3><ul data-ready-list></ul>
+                <h3 th:text="#{telegram.compose.unavailable}"></h3><ul data-unavailable-list></ul>
+                <p class="tg-compose-note" th:text="#{telegram.compose.notSent}"></p>
+            </section>
+        </section>
+    </div>
+</main>
+<footer th:replace="~{fragments/admin-footer :: footer}"></footer>
+</body>
+</html>
