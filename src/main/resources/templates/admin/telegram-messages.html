@@ -14,7 +14,7 @@
 <header th:replace="~{fragments/admin-header :: header(#{telegram.compose.title})}"></header>
 <main class="admin-main tg-compose" data-message-composer th:attr="data-tournament-id=${audienceTournamentId}">
     <div hidden data-compose-strings>
-        <span th:each="key : ${#strings.arraySplit('loading,error,stale,empty,selected,ready,unavailable,AVAILABLE,NOT_CONNECTED,WHATSAPP,GUEST,INACTIVE,OUTSIDE_PILOT,DISABLED,ALL,MAIN,RESERVE,UNPAIRED,PENDING', ',')}"
+        <span th:each="key : ${#strings.arraySplit('loading,error,sessionExpired,sessionExpiredShort,stale,empty,selected,ready,unavailable,AVAILABLE,NOT_CONNECTED,WHATSAPP,GUEST,INACTIVE,OUTSIDE_PILOT,DISABLED,ALL,MAIN,RESERVE,UNPAIRED,PENDING', ',')}"
               th:attr="data-key=${key}" th:text="${#messages.msg('telegram.compose.' + key)}"></span>
     </div>
     <div hidden data-campaign-strings><span th:each="key : ${#strings.arraySplit('test,send,history,sentMeaning,previous,next,confirmTitle,confirm,cancel,close,details,retry,explanation,confirmHint,queued,uncertain,sendDisabled,testUnavailable,confirmSend,confirmRetry,DRAFT,QUEUED,FINISHED,MESSAGE,TEST,PENDING,IN_FLIGHT,SENT,FAILED,BLOCKED,UNKNOWN,SKIPPED,PROVIDER_REJECTED,ACCESS_CHANGED,REGISTRATION_CHANGED,EVENT_UNAVAILABLE,CONNECTION_CHANGED,TEST_UNAVAILABLE,UNCERTAIN,RECOVERED', ',')}" th:attr="data-key=${key}" th:text="${#messages.msg('telegram.campaign.' + key)}"></span></div>
@@ -23,6 +23,15 @@
     <h1 th:text="#{telegram.compose.title}"></h1>
     <p data-event-name></p>
     <p class="tg-compose-note" th:text="#{telegram.compose.notice}"></p>
+    <section data-session-warning hidden class="tg-compose-note" role="alert">
+        <p th:text="#{telegram.compose.sessionExpired}"></p>
+        <div class="tg-compose-actions">
+            <a class="btn btn-outline" data-session-login target="_blank" rel="noopener"
+               th:href="${#strings.isEmpty(audienceTournamentId)} ? @{/admin/telegram/messages} : @{/admin/tournaments/{id}/telegram/messages(id=${audienceTournamentId})}"
+               th:text="#{telegram.compose.sessionLogin}"></a>
+            <button type="button" class="btn btn-outline" data-session-refresh th:text="#{telegram.compose.sessionRefresh}"></button>
+        </div>
+    </section>
     <p data-compose-status role="status" aria-live="polite"></p>
     <div class="tg-compose-layout">
         <section class="tg-compose-panel" th:aria-label="#{telegram.compose.audience}">

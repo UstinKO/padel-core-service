@@ -12,6 +12,8 @@
     let candidates = [], version = 0, loadVersion = 0, busy = false, loaded = false;
     let prepared = null, prepareKey = crypto.randomUUID(), testKey = crypto.randomUUID(), testQueued = false, sending = false, uncertain = false;
     let historyPage = 0, historyVersion = 0, historyTimer, confirmation = null, historyDetail = null;
+    let sessionRequired = false;
+    class SessionRequired extends Error {}
     const status = (message, error = false) => {
         element('compose-status').textContent = message;
         element('compose-status').dataset.error = String(error);
@@ -27,8 +29,8 @@
         element('ready-list').replaceChildren();
         element('unavailable-list').replaceChildren();
         element('text-length').textContent = String(element('message-text').value.length);
-        element('preview').disabled = !loaded || busy || !element('message-text').value.trim();
-        status(t('stale'));
+        element('preview').disabled = !loaded || busy || sessionRequired || !element('message-text').value.trim();
+        status(t(sessionRequired ? 'sessionExpiredShort' : 'stale'), sessionRequired);
     };
     const normalize = value => value.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLocaleLowerCase();
     const renderCandidates = () => {
@@ -65,11 +67,25 @@
             label.append(box, document.createTextNode(translate ? t(value) : value)); target.append(label);
         }
     };
+    const requireSession = () => {
+        sessionRequired = true; clearTimeout(historyTimer);
+        element('session-warning').hidden = false;
+        element('preview').disabled = true; element('send').disabled = true; element('test').disabled = true;
+        element('history-retry').hidden = true;
+        if (element('send-dialog').open) element('send-dialog').close();
+        status(t('sessionExpiredShort'), true); element('history-status').textContent = t('sessionExpiredShort');
+    };
+    const reportError = error => {
+        if (!(error instanceof SessionRequired) && !sessionRequired) status(t('error'), true);
+    };
     const request = async (path, body) => {
         const response = await fetch('/api/admin/telegram/messages/' + path, { method: body ? 'POST' : 'GET',
             credentials: 'same-origin', cache: 'no-store', headers: { Accept: 'application/json', ...(body ? { 'Content-Type': 'application/json' } : {}) },
             body: body ? JSON.stringify(body) : undefined });
-        if (!response.ok || response.redirected) throw new Error('request-failed');
+        if (response.status === 401 || response.redirected) {
+            requireSession(); throw new SessionRequired('session-required');
+        }
+        if (!response.ok) throw new Error('request-failed');
         return response.json();
     };
     const load = async () => {
@@ -79,6 +95,7 @@
             const audience = await request('audience' + (tournamentId ? '?tournamentId=' + tournamentId : ''));
             if (current !== loadVersion) return;
             candidates = audience.candidates; loaded = true;
+            sessionRequired = false; element('session-warning').hidden = true;
             const ids = new Set(candidates.map(p => p.playerId));
             for (const id of included) if (!ids.has(id)) included.delete(id);
             for (const id of excluded) if (!ids.has(id)) excluded.delete(id);
@@ -87,7 +104,7 @@
             choices(element('groups'), tournamentId ? ['ALL', 'MAIN', 'RESERVE', 'UNPAIRED', 'PENDING'] : ['ALL'], groups, true);
             choices(element('categories'), [...new Set(candidates.map(p => p.category))].sort(), categories, false);
             invalidate(); renderCandidates(); status('');
-        } catch { if (current === loadVersion) { candidates = []; renderCandidates(); status(t('error'), true); } }
+        } catch (error) { if (current === loadVersion) { if (!(error instanceof SessionRequired)) { candidates = []; renderCandidates(); } reportError(error); } }
         finally { if (current === loadVersion) element('refresh').disabled = false; }
     };
     const showList = (key, people, reasons) => {
@@ -99,7 +116,7 @@
         if (!people.length) list.textContent = t('empty');
     };
     element('preview').addEventListener('click', async () => {
-        if (busy || !loaded || !element('message-text').value.trim()) return;
+        if (busy || !loaded || sessionRequired || !element('message-text').value.trim()) return;
         busy = true; element('preview').disabled = true;
         const current = version; status(t('loading'));
         try {
@@ -114,21 +131,22 @@
             prepared = result;
             element('preview-result').hidden = false; element('preview-result').focus(); status('');
             updateActions(); refreshHistory();
-        } catch { if (current === version) status(t('error'), true); }
-        finally { busy = false; element('preview').disabled = !loaded || !element('message-text').value.trim(); }
+        } catch (error) { if (current === version) reportError(error); }
+        finally { busy = false; element('preview').disabled = !loaded || sessionRequired || !element('message-text').value.trim(); }
     });
     element('message-text').addEventListener('input', invalidate);
     element('person-search').addEventListener('input', renderCandidates);
     element('refresh').addEventListener('click', load);
+    element('session-refresh').addEventListener('click', async () => { await load(); if (!sessionRequired) refreshHistory(); });
     element('reset').addEventListener('click', () => {
         groups.clear(); categories.clear(); included.clear(); excluded.clear();
         root.querySelectorAll('fieldset input').forEach(box => { box.checked = false; });
         invalidate(); renderCandidates();
     });
     const updateActions = () => {
-        element('send').disabled = !prepared || !prepared.sendingAvailable || !prepared.recipients.length || sending || uncertain;
-        element('test').disabled = !prepared || !prepared.canTest || testQueued || sending || uncertain;
-        element('send-hint').textContent = uncertain ? ct('uncertain') : prepared?.dispatched ? ct('queued') : !prepared?.sendingAvailable ? ct('sendDisabled')
+        element('send').disabled = !prepared || !prepared.sendingAvailable || !prepared.recipients.length || sending || uncertain || sessionRequired;
+        element('test').disabled = !prepared || !prepared.canTest || testQueued || sending || uncertain || sessionRequired;
+        element('send-hint').textContent = sessionRequired ? t('sessionExpiredShort') : uncertain ? ct('uncertain') : prepared?.dispatched ? ct('queued') : !prepared?.sendingAvailable ? ct('sendDisabled')
             : !prepared.canTest ? ct('testUnavailable') : '';
     };
     const meta = campaign => `${ct(campaign.kind)} · ${ct(campaign.state)} · ${campaign.author} · ${new Date(campaign.createdAt).toLocaleString()}`;
@@ -141,7 +159,7 @@
             li.textContent = `${person.name} — ${ct(person.state)}${person.reason !== person.state ? ' · ' + ct(person.reason) : ''}`;
             element('history-people').append(li);
         }
-        element('history-retry').hidden = !campaign.canRetry || uncertain;
+        element('history-retry').hidden = !campaign.canRetry || uncertain || sessionRequired;
     };
     const refreshHistory = async () => {
         clearTimeout(historyTimer);
@@ -169,8 +187,8 @@
                 const refreshed = await request('campaigns/' + id);
                 if (current === historyVersion && element('history-dialog').open && historyDetail?.id === id) details(refreshed);
             }
-            if (rows.some(c => c.state === 'QUEUED') && !document.hidden) historyTimer = setTimeout(refreshHistory, 2500);
-        } catch { if (current === historyVersion) element('history-status').textContent = ct('error'); }
+            if (rows.some(c => c.state === 'QUEUED') && !document.hidden && !sessionRequired) historyTimer = setTimeout(refreshHistory, 2500);
+        } catch (error) { if (current === historyVersion && !(error instanceof SessionRequired)) element('history-status').textContent = ct('error'); }
     };
     const openConfirmation = (campaign, kind) => {
         confirmation = { campaign, kind, requestId: crypto.randomUUID() };
@@ -178,41 +196,42 @@
         element('confirm-summary').textContent = `${ct(kind === 'retry' ? 'confirmRetry' : 'confirmSend')}: ${people.length}`;
         element('confirm-text').textContent = campaign.text; element('confirm-people').replaceChildren();
         for (const person of people) { const li = document.createElement('li'); li.textContent = person.name; element('confirm-people').append(li); }
-        element('confirm-submit').disabled = people.length === 0 || sending || uncertain; element('send-dialog').showModal();
+        element('confirm-submit').disabled = people.length === 0 || sending || uncertain || sessionRequired; element('send-dialog').showModal();
     };
     element('send').addEventListener('click', async () => {
-        if (!prepared || sending || uncertain) return;
+        if (!prepared || sending || uncertain || sessionRequired) return;
         try {
             const campaign = await request('campaigns/' + prepared.campaignId);
             if (prepared?.campaignId === campaign.id && campaign.canConfirm) openConfirmation(campaign, 'confirm');
             else { element('send').disabled = true; refreshHistory(); }
-        } catch { status(ct('error'), true); }
+        } catch (error) { reportError(error); }
     });
     element('confirm-cancel').addEventListener('click', () => element('send-dialog').close());
     element('confirm-submit').addEventListener('click', async () => {
-        if (!confirmation || sending || uncertain) return;
+        if (!confirmation || sending || uncertain || sessionRequired) return;
         const {campaign,kind,requestId} = confirmation;
         sending = true; element('confirm-submit').disabled = true; updateActions();
         try {
             await request('campaigns/' + campaign.id + '/' + kind, kind === 'retry' ? {confirmed:true,requestId} : {confirmed:true});
             if (prepared?.campaignId === campaign.id) { prepared.sendingAvailable = false; prepared.canTest = false; prepared.dispatched = true; }
             status(ct('queued')); element('send-dialog').close(); refreshHistory();
-        } catch {
-            uncertain = true; status(ct('uncertain'), true); element('send-dialog').close(); refreshHistory();
+        } catch (error) {
+            uncertain = true; if (!(error instanceof SessionRequired) && !sessionRequired) status(ct('uncertain'), true);
+            element('send-dialog').close(); if (!sessionRequired) refreshHistory();
         } finally { sending = false; updateActions(); }
     });
     element('test').addEventListener('click', async () => {
-        if (!prepared?.canTest || sending || uncertain || testQueued) return;
+        if (!prepared?.canTest || sending || uncertain || testQueued || sessionRequired) return;
         const id = prepared.campaignId; sending = true; updateActions();
         try {
             await request('campaigns/' + id + '/test', {confirmed:true,requestId:testKey});
             if (prepared?.campaignId === id) testQueued = true;
             status(ct('queued')); refreshHistory();
-        } catch { uncertain = true; status(ct('uncertain'), true); refreshHistory(); }
+        } catch (error) { uncertain = true; if (!(error instanceof SessionRequired) && !sessionRequired) status(ct('uncertain'), true); if (!sessionRequired) refreshHistory(); }
         finally { sending = false; updateActions(); }
     });
     element('history-retry').addEventListener('click', () => {
-        if (historyDetail?.canRetry && !sending && !uncertain) openConfirmation(historyDetail,'retry');
+        if (historyDetail?.canRetry && !sending && !uncertain && !sessionRequired) openConfirmation(historyDetail,'retry');
     });
     element('history-close').addEventListener('click', () => element('history-dialog').close());
     element('history-refresh').addEventListener('click', refreshHistory);

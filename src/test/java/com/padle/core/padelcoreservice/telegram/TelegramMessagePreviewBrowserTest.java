@@ -131,6 +131,27 @@ class TelegramMessagePreviewBrowserTest {
             Files.deleteIfExists(input); Files.deleteIfExists(directory);
         }
     }
+    @Test void expiredSessionPreservesDraftAndNeverRetriesPosts() throws Exception {
+        var fixture = new TransactionTemplate(transactions).execute(status -> seed());
+        assertThat(fixture).isNotNull();
+        when(campaignFlags.enabled()).thenReturn(true); when(api.available()).thenReturn(true);
+        when(properties.organizerOwnerId()).thenReturn(owners.findByEmail(fixture.adminEmail()).orElseThrow().getId());
+        when(properties.organizerChatId()).thenReturn(connections.connection(fixture.alphaId()).orElseThrow().chatId());
+        Path directory = Files.createTempDirectory("telegram-session-browser-");
+        Path input = directory.resolve("fixture.json");
+        Path output = Path.of("target/telegram-message-preview-qa"); Files.createDirectories(output);
+        Files.writeString(input, json.writeValueAsString(fixture));
+        try {
+            var process = new ProcessBuilder("node", "tests/browser/telegram-session.browser.mjs", input.toString())
+                    .redirectErrorStream(true).redirectOutput(output.resolve("session-browser.log").toFile()).start();
+            boolean completed = process.waitFor(150, TimeUnit.SECONDS);
+            if (!completed) process.destroyForcibly();
+            assertThat(completed).isTrue();
+            assertThat(process.exitValue()).as(Files.readString(output.resolve("session-browser.log"))).isZero();
+            verify(api, never()).send(anyLong(), anyString(), anyList());
+            verify(api, never()).updates(anyLong());
+        } finally { Files.deleteIfExists(input); Files.deleteIfExists(directory); }
+    }
     private Fixture seed() {
         String suffix = UUID.randomUUID().toString();
         String password = "Preview-qa-" + suffix;
