@@ -1,6 +1,6 @@
 # Контракт application-среза после исходных проверок
 
-Подготовлено в [#1375](https://github.com/UstinKO/padel-core-service/issues/1375) для [#1377](https://github.com/UstinKO/padel-core-service/issues/1377). Ниже — конкретная техническая постановка будущего application-переноса. Final-order engine реализован в [#1376](final-order-extraction.md); application-классы ещё не созданы. Исходная реализация baseline проверялась на master `0dc4069a`; [wire-эталоны](../../../src/test/resources/contracts/round-robin-query/README.md) проверены на ней.
+Подготовлено в [#1375](https://github.com/UstinKO/padel-core-service/issues/1375) для [#1377](https://github.com/UstinKO/padel-core-service/issues/1377). Контракт реализован в [#1377](application-query.md). Final-order engine включён через [#1376 / PR #1381](final-order-extraction.md). Ниже сохранены согласованные модели, транзакции и точные границы с уточнением фактической реализации. Исходная реализация baseline проверялась на master `0dc4069a`; [wire-эталоны](../../../src/test/resources/contracts/round-robin-query/README.md) проверены на ней.
 
 ## Пакет и входной порт
 
@@ -70,8 +70,8 @@ Application получает Maven-зависимость на padel-tournament-
 | RoundRobinPointsStandingsEngine | Сам класс, $Team, $Ranked |
 | RoundRobinFinalOrderEngine (#1376) | Фактические сам класс, $Standing, $Match, $Ranked; API подтверждён #1376 |
 
-Final-order #1376 использует Standing(index, teamId, position), Match(firstId, secondId, firstScore, secondScore, completed, placementStart) и Ranked(index, position). Record Match сохраняет исходные фильтры completed/placement и счёт, а не привносит отдельную политику выбора победителя. #1376 проверил этот контракт неизменённым characterization-набором до/после переноса. Включение точных типов в application allowlist остаётся задачей #1377.
+Final-order #1376 использует Standing(index, teamId, position), Match(firstId, secondId, firstScore, secondScore, completed, placementStart) и Ranked(index, position). Record Match сохраняет исходные фильтры completed/placement и счёт, а не привносит отдельную политику выбора победителя. #1376 проверил этот контракт неизменённым characterization-набором до/после переноса. В #1377 разрешены именно эти типы; generic/array и соседние legacy-классы проверяются отрицательными пробами.
 
 ArchUnit проверяет точные имена импортированных типов, включая массивы/вложенные типы. Artifact guard не должен просто вырезать разрешённые префиксы из bytecode: это разрешило бы класс RoundRobinPointsStandingsEngineBackdoor. Разрешение применяется только к полному извлечённому имени type reference; остальные legacy-префиксы остаются запрещены. Все существующие ограничения JPA/JDBC/Web/Security/Jackson сохраняются.
 
-Отрицательные пробы #1377: запрещённый соседний legacy-класс в том же package; класс с именем разрешённого engine плюс суффикс; запрещённые entity/DTO через generic/array; private $Meetings; дубликат application в BOOT-INF/classes; отсутствие обязательного query/порта/read-модели. Положительные: фактические публичные типы трёх engines, прежний PublicClubQuery и один application jar, Java 17. Текущие guards в #1375 не изменены.
+Отрицательные пробы #1377: запрещённый соседний legacy-класс в том же package; класс с именем разрешённого engine плюс суффикс; запрещённые entity/DTO через generic/array; private $Meetings; дубликат application в BOOT-INF/classes; отсутствие обязательного query/порта/read-модели. Положительные: фактические публичные типы трёх engines, прежний PublicClubQuery и один application jar, Java 17. В #1377 artifact guard разбирает Class/descriptor/signature constant pool целиком; разрешённый префикс не вырезается из bytecode. ArchUnit допускает те же 11 точных публичных типов.
