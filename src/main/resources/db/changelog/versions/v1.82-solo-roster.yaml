@@ -1,0 +1,25 @@
+databaseChangeLog:
+  - changeSet:
+      id: solo-roster-operations
+      author: codex
+      changes:
+        - sql:
+            sql: |
+              CREATE TABLE solo_roster_operations_db (
+                request_id uuid NOT NULL,
+                tournament_id bigint NOT NULL REFERENCES tournaments_db(id) ON DELETE CASCADE,
+                actor_id bigint NOT NULL,
+                action varchar(16) NOT NULL,
+                request_hash varchar(64) NOT NULL,
+                result text NOT NULL,
+                before_state text NOT NULL,
+                after_state text NOT NULL,
+                created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (tournament_id, request_id)
+              );
+              ALTER TABLE tournament_registrations_db ADD COLUMN partner_attended boolean NOT NULL DEFAULT false;
+      rollback:
+        - sql:
+            sql: |
+              ALTER TABLE tournament_registrations_db DROP COLUMN partner_attended;
+              DROP TABLE solo_roster_operations_db;

@@ -11,7 +11,7 @@
             options.headers['Content-Type'] = 'application/json';
             options.body = JSON.stringify(body);
         }
-        const response = await fetch(endpoint, options);
+        const response = await fetch(endpoint, options).catch(() => { throw new Error(fallback); });
         const result = await response.json().catch(() => null);
         if (!response.ok || result === null) throw new Error(result?.detail || fallback);
         return result;
@@ -144,19 +144,59 @@
         const check = $(form, '[data-claim-replace]');
         const sender = $(form, '[data-claim-sender]');
         let current;
+        const mergeButton = $(form, '[type="submit"]');
+        const fields = $(form, '[data-claim-resolution-fields]');
+        const contact = form.elements.contactChoice;
 
         const syncMethod = () => {
             sender.hidden = form.elements.method.value !== 'WHATSAPP';
             form.elements.sender.required = !sender.hidden;
         };
-        form.elements.method.addEventListener('change', syncMethod);
+        function syncAction() {
+            if (!current) return;
+            const { review, context } = current;
+            const forbidden = !review.guest || review.conflicts.length > 0 || review.status === 'REJECTED';
+            const terminal = ['MERGED', 'REJECTED'].includes(review.status);
+            const manual = !context.reference;
+            const replace = review.differences.includes('PHONE_DIFFERS')
+                && (!manual || contact.value === 'USE_GUEST_PHONE');
+            check.hidden = !replace;
+            form.elements.replacePhone.required = replace;
+            syncMethod();
+            let reason = '';
+            if (forbidden) reason = t.get(review.conflicts[0] || 'invalidReview');
+            else if (manual && !contact.value) reason = t.get('chooseContact');
+            else if (review.differences.includes('PLAYING_SIDE_DIFFERS') && !form.elements.sideChoice.value) reason = t.get('sideHelp');
+            else if (!form.elements.method.value) reason = t.get('chooseMethod');
+            else if (replace && !form.elements.replacePhone.checked) reason = t.get('replaceHelp');
+            else if (!form.elements.verified.checked) reason = t.get('verifyHelp');
+            else if (form.elements.method.value === 'WHATSAPP' && !form.elements.sender.value.trim()) reason = t.get('senderHelp');
+            fields.disabled = forbidden || terminal;
+            mergeButton.disabled = Boolean(reason) || terminal;
+            $(detail, '[data-claim-next-step]').textContent = terminal ? '' : reason;
+            const state = terminal ? (review.status === 'MERGED' ? 'COMPLETED' : 'FORBIDDEN')
+                : forbidden ? 'FORBIDDEN' : reason ? 'NEEDS_RESOLUTION' : 'AVAILABLE';
+            $(detail, '[data-claim-readiness]').textContent = t.get(state);
+            $(detail, '[data-claim-outcome]').hidden = !review.guest || terminal;
+            if (!review.guest) return;
+            $(detail, '[data-claim-keep-account]').textContent = t.get('keepAccountHelp', {
+                account: review.account.id, level: review.account.level || '—'
+            });
+            $(detail, '[data-claim-contact-outcome]').textContent = !manual || contact.value === 'USE_GUEST_PHONE'
+                ? t.get('useGuestPhoneHelp', { phone: review.guest.phone || '—' })
+                : contact.value === 'KEEP_ACCOUNT' || terminal
+                    ? t.get('keepContactHelp', { phone: review.account.phone || '—', telegram: review.account.telegram || '—' })
+                    : t.get('contactUndecided');
+        }
+        form.addEventListener('change', syncAction);
+        form.addEventListener('input', syncAction);
 
         function display(review, context, focus = true) {
             current = { review, context };
             detail.hidden = false;
             const heading = $(detail, '[data-claim-title]');
-            heading.textContent = review.number ? t.get('request', review) : t.get('review');
-            $(detail, '[data-claim-state]').textContent = t.get(review.status);
+            heading.textContent = review.number ? t.get('request', review) : t.get('manualReviewTitle');
+            $(detail, '[data-claim-state]').textContent = context.reference ? t.get(review.status) : '';
             $(detail, '[data-claim-phone]').textContent = review.submittedPhone
                 ? t.get('submittedPhone', { phone: review.submittedPhone }) : '';
             for (const side of ['guest', 'account']) {
@@ -165,10 +205,15 @@
                 data.hidden = !profile;
                 $(data.parentElement, '[data-claim-no-profile]').hidden = Boolean(profile);
                 nodes(data, '[data-field]').forEach(field => {
-                    field.textContent = profile?.[field.dataset.field] ?? '—';
+                    const name = field.dataset.field;
+                    if (name === 'playingSide') field.textContent = t.get(profile?.playingSide || 'sideUnknown');
+                    else if (name === 'profileType') field.textContent = t.get(profile?.guest ? 'profileGuest' : 'profileAccount');
+                    else if (name === 'profileState') field.textContent = t.get(profile?.active ? 'profileActive' : 'profileInactive');
+                    else field.textContent = profile?.[name] ?? '—';
                 });
             }
-            const notes = [...new Set([...review.conflicts, ...review.differences, review.reviewReason].filter(Boolean))];
+            const notes = [...new Set([...review.conflicts, ...review.differences, review.reviewReason].filter(Boolean))]
+                .filter(note => review.status !== 'MERGED' || !['PLAYING_SIDE_DIFFERS', 'PHONE_DIFFERS', 'GUEST_PHONE_INVALID', 'GUEST_PHONE_MISSING', 'GUEST_PHONE_AMBIGUOUS'].includes(note));
             $(detail, '[data-claim-conflicts]').replaceChildren(...notes.map(note => {
                 if (note.startsWith('TOURNAMENT:')) return line('li', t.get('TOURNAMENT', { id: note.split(':')[1] }));
                 return line('li', t.get(note));
@@ -176,12 +221,23 @@
             $(detail, '[data-claim-direction]').textContent = review.guest
                 ? t.get('direction', { guest: review.guest.id, account: review.account.id }) : '';
             const terminal = ['MERGED', 'REJECTED'].includes(review.status);
-            form.hidden = terminal || !review.guest || review.conflicts.length > 0;
+            form.hidden = terminal;
+            fields.hidden = !review.guest;
             decisions.hidden = terminal || !context.reference;
             form.reset();
-            check.hidden = !review.differences.includes('PHONE_DIFFERS');
-            form.elements.replacePhone.required = !check.hidden;
-            syncMethod();
+            const manual = !context.reference;
+            const invalidPhone = review.differences.some(note => ['GUEST_PHONE_INVALID', 'GUEST_PHONE_MISSING'].includes(note));
+            const ambiguousPhone = review.differences.includes('GUEST_PHONE_AMBIGUOUS');
+            $(form, '[data-claim-contact-choice]').hidden = !manual;
+            contact.required = manual;
+            contact.querySelector('[value="USE_GUEST_PHONE"]').disabled = invalidPhone || ambiguousPhone;
+            contact.value = !invalidPhone && !ambiguousPhone && !review.differences.includes('PHONE_DIFFERS') ? 'USE_GUEST_PHONE' : '';
+            form.elements.method.querySelector('[value="WHATSAPP"]').disabled = invalidPhone;
+            form.elements.method.value = invalidPhone ? '' : 'WHATSAPP';
+            const sideConflict = review.differences.includes('PLAYING_SIDE_DIFFERS');
+            form.querySelector('[data-claim-side]').hidden = !sideConflict;
+            form.elements.sideChoice.required = sideConflict;
+            syncAction();
             if (focus) {
                 heading.focus({ preventScroll: true });
                 heading.scrollIntoView({ block: 'start' });
@@ -193,30 +249,39 @@
             display(review, context, focus);
         }
 
-        form.addEventListener('submit', event => {
+        form.addEventListener('submit', async event => {
             event.preventDefault();
             const context = current?.context;
             const review = current?.review;
-            if (!context || !review?.guest || form.hidden) return;
-            run($(form, '[type="submit"]'), result, async () => {
+            if (!context || !review?.guest || form.hidden || mergeButton.disabled || !form.reportValidity()) return;
+            await run(mergeButton, result, async () => {
                 const data = {
                     guestId: review.guest.id, verified: form.elements.verified.checked,
                     verificationMethod: form.elements.method.value,
                     whatsappSenderPhone: form.elements.sender.value || null,
-                    replacePhone: form.elements.replacePhone.checked
+                    replacePhone: form.elements.replacePhone.checked, sideChoice: form.elements.sideChoice.value || null
                 };
-                if (!context.reference) data.accountId = review.account.id;
+                if (!context.reference) {
+                    data.accountId = review.account.id;
+                    data.contactChoice = contact.value;
+                }
+                fields.disabled = true;
                 try {
                     await request(context.submit, data, t.get('error'));
                     await refresh(context);
                     result.textContent = t.get('mergedHelp');
                 } catch (error) {
-                    if (context.reference) await refresh(context, false).catch(() => {});
+                    await refresh(context, false).catch(() => {});
+                    if (current?.review.status === 'MERGED') {
+                        result.textContent = t.get('mergedHelp');
+                        return;
+                    }
                     throw error;
                 } finally {
                     await onChange();
                 }
             }, t.get('error'));
+            syncAction();
         });
 
         decisions.addEventListener('click', event => {
@@ -263,7 +328,7 @@
                 const card = document.createElement('article');
                 card.className = 'claim-card';
                 card.append(line('h3', t.get('request', item)), line('p', item.accountName + ' · #' + item.accountId),
-                    line('p', item.phone + ' · ' + t.date(item.createdAt)), line('p', t.get(item.status)));
+                    line('p', (item.phone || '—') + ' · ' + t.date(item.createdAt)), line('p', t.get(item.status)));
                 card.append(actionButton(t.get('review'), event => run(event.currentTarget, status, async () => {
                     const url = endpoint + '/' + encodeURIComponent(item.reference);
                     await review.open({ url, submit: url + '/approve', reference: item.reference });

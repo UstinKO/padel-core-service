@@ -18,7 +18,7 @@ import { Button } from '../components/Button';
 import { Field } from '../components/Field';
 import { Captcha } from '../components/Captcha';
 
-const levels = ['C9', 'C8', 'C7', 'C6', 'C5', 'C4', 'D9', 'D8', 'D7', 'D6'];
+const levels = ['C9', 'C8', 'C7', 'C6', 'C5', 'C4', 'C3', 'D9', 'D8', 'D7', 'D6'];
 type Mode = 'login' | 'register' | 'request' | 'reset' | 'profile';
 type Values = Record<string, string>;
 const defaults: Values = {

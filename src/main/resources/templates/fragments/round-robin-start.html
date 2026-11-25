@@ -1,0 +1,31 @@
+<!doctype html><html xmlns:th="http://www.thymeleaf.org"><body>
+<section th:fragment="start" class="admin-card" style="padding:1.25rem;margin-bottom:1rem">
+    <h2 th:text="#{rr.title}">Круговой турнир</h2>
+    <p th:text="#{rr.description}">Каждая постоянная пара играет с каждой один раз.</p>
+    <div th:if="${isTeamAmericanoInitialized == true}">
+        <p th:text="#{rr.selected}">Проведение уже запущено. Настройки сохранены.</p>
+        <a class="btn btn-primary" th:href="@{'/tournaments/team-americano/admin/' + ${tournament.id}}" th:text="#{conduct.resume}">Управление</a>
+        <a class="btn btn-outline" th:href="@{'/tournaments/team-americano/' + ${tournament.id}}" th:text="#{tournament.btn.results}">Результаты</a>
+    </div>
+    <form th:unless="${isTeamAmericanoInitialized == true}" method="post"
+          th:action="@{/tournaments/team-americano/initialize}" class="rr-start-form">
+        <input type="hidden" name="tournamentId" th:value="${tournament.id}">
+        <div style="display:flex;gap:1rem;flex-wrap:wrap;margin:1rem 0">
+            <label><span th:text="#{rr.courts}">Корты</span><input class="form-control" type="number" name="courts" min="1" max="10" value="2" required></label>
+            <label><span th:text="#{rr.scoring}">Подсчёт</span><select class="form-control" name="scoringMode" data-rr-mode>
+                <option value="POINTS" th:text="#{rr.points}">По очкам</option><option value="SETS" th:text="#{rr.sets}">По сетам</option>
+            </select></label>
+            <label data-rr-limit><span th:text="#{rr.limit}">Всего очков за матч</span><input class="form-control" type="number" name="pointsPerMatch" min="1" max="1000" value="32" required></label>
+        </div>
+        <p th:text="#{rr.set_rule}">Один сет: 6:0–6:5. Места по победам, разнице и выигранным геймам.</p>
+        <button class="btn btn-primary" type="submit" th:text="#{rr.start}">Запустить круговой турнир</button>
+    </form>
+    <script>
+        document.querySelectorAll('[data-rr-mode]').forEach(select => select.addEventListener('change', () => {
+            const field = select.form.querySelector('[data-rr-limit]');
+            field.hidden = select.value === 'SETS';
+            field.querySelector('input').required = select.value === 'POINTS';
+        }));
+    </script>
+</section>
+</body></html>

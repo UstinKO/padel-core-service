@@ -1095,22 +1095,7 @@ public class DoubleTournamentRegistrationService {
     public List<LookingForPartnerDto> getLookingForPartnerPlayers(Long tournamentId) {
         return registrationRepository.findLookingForPartnerByTournamentId(tournamentId)
                 .stream()
-                .map(reg -> LookingForPartnerDto.builder()
-                        .registrationId(reg.getId())
-                        .playerId(reg.getPlayer().getId())
-                        .playerName(reg.getPlayer().getNombreCompleto())
-                        .nivel(reg.getPlayer().getNivelJugador() != null
-                                ? reg.getPlayer().getNivelJugador().name()
-                                : null)
-                        .shareContacts(reg.getShareContacts())
-                        .telegramUsername(Boolean.TRUE.equals(reg.getShareContacts())
-                                ? reg.getPlayer().getTelegramUsername()
-                                : null)
-                        .telefono(Boolean.TRUE.equals(reg.getShareContacts())
-                                ? reg.getPlayer().getTelefono()
-                                : null)
-                        .build())
-                .collect(Collectors.toList());
+                .map(registrationMapper::toLookingDto).toList();
     }
 
     // ── Предложить пару (Variant A) ────────────────────────────────────────────

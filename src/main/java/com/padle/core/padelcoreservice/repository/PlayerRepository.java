@@ -51,6 +51,15 @@ public interface PlayerRepository extends JpaRepository<PlayerPadel, Long> {
             """, nativeQuery = true)
     List<PlayerPadel> findClaimPhoneMatches(@Param("key") String key);
 
+    @Query(value = """
+            SELECT p.* FROM player_padel_db p
+            WHERE p.activo = true AND (
+                player_claim_phone(p.telefono) = player_claim_phone(:phone)
+                OR regexp_replace(p.telefono, '[^0-9]', '', 'g') = :digits)
+            ORDER BY p.id
+            """, nativeQuery = true)
+    List<PlayerPadel> findRosterPhoneMatches(@Param("phone") String phone, @Param("digits") String digits);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT p FROM PlayerPadel p WHERE p.id IN :ids ORDER BY p.id")
     List<PlayerPadel> lockPlayers(@Param("ids") List<Long> ids);
@@ -70,6 +79,19 @@ public interface PlayerRepository extends JpaRepository<PlayerPadel, Long> {
     List<PlayerPadel> findAllByOrderByFechaRegistroDesc();
 
     Optional<PlayerPadel> findByTelegramUsername(String telegramUsername);
+
+    List<PlayerPadel> findAllByTelegramUsernameIgnoreCaseAndActivoTrue(String telegramUsername);
+
+    @Query(value = """
+            SELECT p.* FROM player_padel_db p WHERE p.activo = true AND (
+              unaccent(lower(concat_ws(' ',p.nombre,p.apellido))) LIKE unaccent(lower('%' || :query || '%'))
+              OR lower(p.email) LIKE lower('%' || :query || '%')
+              OR (length(:digits) >= 4 AND regexp_replace(coalesce(p.telefono,''),'\\D','','g') LIKE '%' || :digits || '%')
+              OR lower(replace(coalesce(p.telegram_username,''),'@','')) LIKE lower('%' || :telegram || '%'))
+            ORDER BY p.nombre,p.apellido,p.id LIMIT 20
+            """, nativeQuery = true)
+    List<PlayerPadel> searchRosterCandidates(@Param("query") String query, @Param("digits") String digits,
+                                           @Param("telegram") String telegram);
 
     boolean existsByTelegramUsernameIgnoreCase(String telegramUsername);
 

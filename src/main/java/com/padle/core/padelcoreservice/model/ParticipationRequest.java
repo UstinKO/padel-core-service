@@ -14,7 +14,7 @@ import java.util.UUID;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ParticipationRequest {
-    public enum Trigger { RESERVE, REPLACEMENT }
+    public enum Trigger { RESERVE, REPLACEMENT, ORGANIZER }
 
     @Id
     private UUID id;

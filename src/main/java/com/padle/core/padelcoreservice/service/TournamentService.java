@@ -5,6 +5,7 @@ import com.padle.core.padelcoreservice.repository.PublicCatalogSpecification;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import java.time.ZoneId;
 import com.padle.core.padelcoreservice.service.calendar.EventSchedule;
@@ -101,19 +102,8 @@ public class TournamentService {
     // ==================== Базовые методы для турниров ====================
 
     public List<TournamentDto> getAllTournaments() {
-        LocalDate today = LocalDate.now();
-        Comparator<TournamentDto> byDateFromToday = (a, b) -> {
-            LocalDate da = a.getFechaInicio();
-            LocalDate db = b.getFechaInicio();
-            boolean aUpcoming = da != null && !da.isBefore(today);
-            boolean bUpcoming = db != null && !db.isBefore(today);
-            if (aUpcoming && bUpcoming) return da.compareTo(db);   // оба предстоящие → ASC
-            if (!aUpcoming && !bUpcoming) return db.compareTo(da); // оба прошедшие  → DESC (свежее первым)
-            return aUpcoming ? -1 : 1;                             // предстоящий перед прошедшим
-        };
-        List<TournamentDto> dtos = mapToDtoWithDetails(tournamentRepository.findAll());
-        dtos.sort(byDateFromToday);
-        return dtos;
+        return TournamentListOrder.sort(mapToDtoWithDetails(tournamentRepository.findAll()),
+                LocalDate.now(EventSchedule.zone(null)));
     }
 
     /**
@@ -648,6 +638,23 @@ public class TournamentService {
         }
     }
 
+    RegistrationStatus previewPairStatus(Tournament tournament, List<TournamentRegistration> pair) {
+        if (pair.stream().anyMatch(TournamentRegistration::isConfirmed)) return RegistrationStatus.CONFIRMED;
+        int available = tournament.getCupoMax() - Math.toIntExact(registrationRepository.countConfirmedPairs(tournament.getId()));
+        var earliest = pair.stream().map(TournamentRegistration::queueTime).filter(Objects::nonNull)
+                .min(Comparator.naturalOrder()).orElseGet(LocalDateTime::now);
+        long smallestId = pair.stream().map(TournamentRegistration::getId).filter(Objects::nonNull)
+                .min(Comparator.naturalOrder()).orElse(Long.MAX_VALUE);
+        long ahead = readyReservePairs(tournament.getId()).stream().filter(waiting -> waiting.stream()
+                .noneMatch(row -> pair.stream().anyMatch(member -> Objects.equals(member.getId(), row.getId()))))
+                .filter(waiting -> {
+                    var time = waiting.stream().map(TournamentRegistration::queueTime).min(Comparator.naturalOrder()).orElseThrow();
+                    long firstId = waiting.stream().mapToLong(TournamentRegistration::getId).min().orElseThrow();
+                    return time.isBefore(earliest) || (time.equals(earliest) && firstId < smallestId);
+                }).count();
+        return ahead < available ? RegistrationStatus.CONFIRMED : RegistrationStatus.WAITLIST;
+    }
+
     private void processDoublesWaitlist(Tournament tournament, Set<Long> deferred) {
         registrationRepository.flush();
         Long tournamentId = tournament.getId();
@@ -1028,6 +1035,16 @@ public class TournamentService {
 
                     return mapToDtoWithDetails(updated);
                 });
+    }
+
+    @Transactional
+    public void setTestTournament(Long id, boolean testTournament, Owner owner) {
+        if (owner == null || !owner.isSuperAdmin()) throw new org.springframework.security.access.AccessDeniedException("Super admin required");
+        Tournament tournament = tournamentRepository.lockById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Tournament not found"));
+        tournament.setTestTournament(testTournament);
+        tournamentRepository.save(tournament);
+        log.info("Tournament {} test status set to {} by administrator {}", id, testTournament, owner.getId());
     }
 
     @Transactional
@@ -1460,7 +1477,7 @@ public class TournamentService {
         existing.setDurationMinutes(dto.getDurationMinutes());
         existing.setTimeZone(EventSchedule.zone(dto.getTimeZone()).getId());
         existing.setGeneroFormato(dto.getGeneroFormato());
-        existing.setCategoriaNivel(Nivel.valueOf(dto.getCategoriaNivel()));
+        existing.setCategoriaNivel(Nivel.fromValue(dto.getCategoriaNivel()));
         // nombre всегда пересобирается из уже обновлённых выше generoFormato/categoriaNivel —
         // вручную в форме не вводится.
         existing.setNombre(Tournament.generateNombre(existing.getGeneroFormato(), existing.getCategoriaNivel()));
@@ -1497,6 +1514,13 @@ public class TournamentService {
     @Transactional(readOnly = true)
     public Page<TournamentDto> getPublicCatalog(PublicCatalogFilter filter, Pageable pageable) {
         return publicCatalogPage(PublicCatalogSpecification.matching(filter), pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public List<TournamentDto> getPublicCalendarEvents(LocalDate from, LocalDate to) {
+        var filter = new PublicCatalogFilter(null, null, null, null, null, null, from, to);
+        return mapToDtoWithDetails(tournamentRepository.findAll(PublicCatalogSpecification.matching(filter),
+                Sort.by("fechaInicio", "horaInicio", "id")));
     }
 
     @Transactional(readOnly = true)
@@ -1763,7 +1787,8 @@ public class TournamentService {
         if (isSuperAdmin) {
             return getAllTournaments();
         }
-        return mapToDtoWithDetails(tournamentRepository.findByOwnerId(ownerId));
+        return TournamentListOrder.sort(mapToDtoWithDetails(tournamentRepository.findByOwnerId(ownerId)),
+                LocalDate.now(EventSchedule.zone(null)));
     }
 
     private String resolveClubName(Long clubId) {

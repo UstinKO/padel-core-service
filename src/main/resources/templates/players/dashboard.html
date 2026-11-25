@@ -225,6 +225,8 @@
                             <option value="C6">C6</option>
                             <option value="C5">C5</option>
                             <option value="C4">C4</option>
+                            <option value="C3">C3</option>
+                            <option value="C4_C3">C4/C3</option>
                             <option value="D9">D9</option>
                             <option value="D8">D8</option>
                             <option value="D7">D7</option>
@@ -629,11 +631,16 @@
 <script th:src="@{/js/main.js}"></script>
 <script th:src="@{/js/pair-terms.js}"></script>
 <script th:src="@{/js/pair-registration-response.js}"></script>
+<script th:src="@{/js/level-utils.js}"></script>
 <script th:src="@{/js/dashboard.js}"></script>
 <script th:if="${previewEloByPlayer != null}" th:src="@{/js/elo-preview-evolution.js}" defer></script>
 <script th:src="@{/js/participation.js}" defer></script>
 <script th:src="@{/js/contact-check.js}"></script>
 <script th:src="@{/js/level-check.js}"></script>
 <script th:if="${previewEloByPlayer != null}" th:src="@{/js/elo-feedback.js}" defer></script>
+<th:block th:replace="~{fragments/playing-side :: survey}"></th:block>
+<th:block th:replace="~{fragments/playing-side :: assets}"></th:block>
+<th:block th:replace="~{fragments/player-telegram :: registration}"></th:block>
+<th:block th:replace="~{fragments/player-telegram :: assets}"></th:block>
 </body>
 </html>

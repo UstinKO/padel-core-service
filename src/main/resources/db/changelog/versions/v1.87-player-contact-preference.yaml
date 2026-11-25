@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.87-player-contact-preference
+      author: codex
+      changes:
+        - sql:
+            sql: |
+              CREATE TABLE player_contact_preferences (
+                player_id BIGINT PRIMARY KEY REFERENCES player_padel_db(id) ON DELETE CASCADE,
+                preference VARCHAR(16) NOT NULL CHECK (preference IN ('UNSPECIFIED', 'TELEGRAM', 'WHATSAPP'))
+              );

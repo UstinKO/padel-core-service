@@ -1,0 +1,240 @@
+{
+  "task": "LFPT-1201",
+  "date": "2026-11-22",
+  "result": "PASS",
+  "includedMasterRevision": "15b0816b57a2f890c2d097adf1fddfb1333dbb7e",
+  "testedApplicationRevision": "e39c5c1df2a69a5318104928b6cd65b40cfbcd71",
+  "backendVerify": {
+    "tests": 1198,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 2
+  },
+  "javaRuntime": 21,
+  "javaRelease": 17,
+  "frontend": {
+    "unitTests": 49,
+    "e2eTests": 62,
+    "check": "PASS"
+  },
+  "http": {
+    "result": "PASS",
+    "currentRevision": "e39c5c1df2a69a5318104928b6cd65b40cfbcd71",
+    "currentJarSha256": "706e5cbb126bf459a18ba7d3ca418cbed4550da50f4eb8664cc7a0cec4db4cca",
+    "baselineRevision": "8a9ee29e2e29aa60970ad3201455e42da187533e",
+    "baselineJarSha256": "5126f460d3771e22fc7fd7f22922476d5d17138f99d272bf7977f4ff7efd700c",
+    "locales": [
+      "ru",
+      "es",
+      "en"
+    ],
+    "cases": [
+      "list",
+      "full",
+      "nullable",
+      "inactive",
+      "unknown",
+      "zero",
+      "negative",
+      "invalid",
+      "empty"
+    ],
+    "exactHttpJsonHeaders": true,
+    "arrayOrder": "nombre,id",
+    "nullKeysPreserved": true,
+    "privateFieldsAbsent": true,
+    "restart": true,
+    "nativeRollback": true,
+    "schemaAndLiquibasePreserved": true,
+    "clubDataPreserved": true,
+    "tournamentSnapshotsPreserved": 5
+  },
+  "browser": {
+    "normal": {
+      "result": "PASS",
+      "label": "current",
+      "empty": false,
+      "cases": [
+        {
+          "width": 1440,
+          "language": "ru",
+          "listOrder": true,
+          "nullableCard": true,
+          "escapedPublicText": true,
+          "privateFieldsAbsent": true,
+          "canonicalUrl": true,
+          "deepLinkAndRefresh": true,
+          "clubFilter": true,
+          "catalogueToEventToClub": true,
+          "inactiveAndUnknown404": true
+        },
+        {
+          "width": 1440,
+          "language": "es",
+          "listOrder": true,
+          "nullableCard": true,
+          "escapedPublicText": true,
+          "privateFieldsAbsent": true,
+          "canonicalUrl": true,
+          "deepLinkAndRefresh": true,
+          "clubFilter": true,
+          "catalogueToEventToClub": true,
+          "inactiveAndUnknown404": true
+        },
+        {
+          "width": 1440,
+          "language": "en",
+          "listOrder": true,
+          "nullableCard": true,
+          "escapedPublicText": true,
+          "privateFieldsAbsent": true,
+          "canonicalUrl": true,
+          "deepLinkAndRefresh": true,
+          "clubFilter": true,
+          "catalogueToEventToClub": true,
+          "inactiveAndUnknown404": true
+        },
+        {
+          "width": 390,
+          "language": "ru",
+          "listOrder": true,
+          "nullableCard": true,
+          "escapedPublicText": true,
+          "privateFieldsAbsent": true,
+          "canonicalUrl": true,
+          "deepLinkAndRefresh": true,
+          "clubFilter": true,
+          "catalogueToEventToClub": true,
+          "inactiveAndUnknown404": true
+        },
+        {
+          "width": 390,
+          "language": "es",
+          "listOrder": true,
+          "nullableCard": true,
+          "escapedPublicText": true,
+          "privateFieldsAbsent": true,
+          "canonicalUrl": true,
+          "deepLinkAndRefresh": true,
+          "clubFilter": true,
+          "catalogueToEventToClub": true,
+          "inactiveAndUnknown404": true
+        },
+        {
+          "width": 390,
+          "language": "en",
+          "listOrder": true,
+          "nullableCard": true,
+          "escapedPublicText": true,
+          "privateFieldsAbsent": true,
+          "canonicalUrl": true,
+          "deepLinkAndRefresh": true,
+          "clubFilter": true,
+          "catalogueToEventToClub": true,
+          "inactiveAndUnknown404": true
+        }
+      ],
+      "javaScriptErrors": 0,
+      "rateLimitRetries": 0,
+      "externalRequestsBlocked": true
+    },
+    "empty": {
+      "result": "PASS",
+      "label": "current",
+      "empty": true,
+      "cases": [
+        {
+          "width": 1440,
+          "language": "ru",
+          "emptyServerList": true
+        },
+        {
+          "width": 1440,
+          "language": "es",
+          "emptyServerList": true
+        },
+        {
+          "width": 1440,
+          "language": "en",
+          "emptyServerList": true
+        },
+        {
+          "width": 390,
+          "language": "ru",
+          "emptyServerList": true
+        },
+        {
+          "width": 390,
+          "language": "es",
+          "emptyServerList": true
+        },
+        {
+          "width": 390,
+          "language": "en",
+          "emptyServerList": true
+        }
+      ],
+      "javaScriptErrors": 0,
+      "rateLimitRetries": 0,
+      "externalRequestsBlocked": true
+    }
+  },
+  "common": {
+    "result": "PASS",
+    "snapshotsPreserved": 5,
+    "schemaAndLiquibasePreserved": true,
+    "clubsPreserved": true,
+    "commonBrowserSmoke": "PASS",
+    "rehearsal": "PASS",
+    "participationFixturesReset": 6
+  },
+  "jwt": {
+    "login": 200,
+    "me": 200,
+    "events": 200,
+    "anonymousMe": 401,
+    "transport": "inside-own-preview-container"
+  },
+  "expo": {
+    "ordinaryPreviewApi": 401,
+    "gatewayBasicChallenge": true,
+    "qaAdapterApi": 200,
+    "events": 10,
+    "rendered": true,
+    "externalRequestsBlocked": true,
+    "ordinaryPreviewLimitationPreserved": true
+  },
+  "releaseRehearsal": {
+    "result": "PASS",
+    "scenarios": 5,
+    "statePreserved": true
+  },
+  "artifactGuards": {
+    "contract": "PASS",
+    "application": "PASS",
+    "engines": "PASS"
+  },
+  "generator": {
+    "deterministic": true,
+    "existingProbeTests": 12
+  },
+  "automationTests": {
+    "github": 25,
+    "relay": 48,
+    "codexWorker": 5,
+    "codexWorkerSkipped": 1,
+    "preview": 12,
+    "releases": 22
+  },
+  "calendarDateTests": 9,
+  "humanManual": "NOT_RUN",
+  "productionChangesRelativeToMaster": [],
+  "baselinePrivateJsonSha256": "61e90df6e9c7d5ad2d78de5dd3cabf45dd494f6a6c1ccbc8efe9c50fa7929e1d",
+  "preparation": "Перед общим smoke пересозданы только шесть обычных preview fixtures; сохранность пяти контрольных турниров, клубов и схемы проверена до/после подготовки и smoke.",
+  "preservedLimitations": [
+    "Expo: обычный preview Basic 401; фактический 200 и расписание через same-origin QA-адаптер.",
+    "Concurrent первой фазы остаётся ACCEPTED_LIMITED; нового измерения перекрытия нет.",
+    "Прежний текстовый дефект #1067 не исправляется приёмкой.",
+    "Chromium при 390 px не является физическим мобильным устройством/VoiceOver."
+  ]
+}

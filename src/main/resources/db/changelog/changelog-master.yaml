@@ -242,3 +242,36 @@ databaseChangeLog:
   - include:
       file: versions/v1.79-owner-club-access.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.80-test-tournament-rating.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: versions/v1.81-round-robin.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: versions/v1.82-solo-roster.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: versions/v1.83-playing-side.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: versions/v1.84-nivel-c3.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: versions/v1.85-player-telegram.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: versions/v1.86-organizer-organization.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: versions/v1.87-player-contact-preference.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: versions/v1.88-restore-phone-function-schema.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: versions/v1.89-telegram-payment-receipts.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: versions/v1.90-manual-guest-claim-contact.yaml
+      relativeToChangelogFile: true

@@ -1,6 +1,7 @@
 package com.padle.core.padelcoreservice.repository;
 
 import com.padle.core.padelcoreservice.dto.GuestProfileClaimDtos.ProfileChoice;
+import com.padle.core.padelcoreservice.dto.GuestProfileClaimDtos.ContactChoice;
 import com.padle.core.padelcoreservice.dto.GuestProfileClaimDtos.QueueItem;
 import com.padle.core.padelcoreservice.dto.GuestProfileClaimDtos.Status;
 import com.padle.core.padelcoreservice.dto.GuestProfileClaimDtos.Verification;
@@ -131,6 +132,11 @@ public class GuestProfileClaimRepository {
                 """).param("id", UUID.randomUUID()).param("guest", guestId).param("account", accountId)
                 .param("phone", phone).param("owner", ownerId).param("resolved", resolvedId)
                 .param("method", method.name()).update();
+    }
+
+    public void contactResolution(long guestId, ContactChoice choice) {
+        jdbc.sql("UPDATE guest_profile_claims SET contact_resolution = :choice WHERE guest_id = :guest AND status = 'MERGED'")
+                .param("choice", choice.name()).param("guest", guestId).update();
     }
 
     private static Claim claim(ResultSet rs) throws SQLException {

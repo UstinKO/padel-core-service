@@ -1,0 +1,39 @@
+<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org"><body>
+<span th:fragment="info(level, side, admin)" class="playing-side-info">
+    <span th:text="${level != null and level != 'SIN_ESPECIFICAR' ? level : '—'}"></span><span th:if="${side != null}"> · <span th:text="#{${side.messageKey}}"></span></span><span th:if="${side == null and admin}"> · <span th:text="#{playingSide.missing}"></span></span>
+</span>
+<th:block th:fragment="options(selected)">
+    <option value="" th:selected="${selected == null}" th:text="#{playingSide.notSpecified}"></option>
+    <option th:each="side : ${T(com.padle.core.padelcoreservice.model.enums.PlayingSide).values()}" th:value="${side}" th:selected="${selected == side}" th:text="#{${side.messageKey}}"></option>
+</th:block>
+<div th:fragment="editor(selected)" class="form-group playing-side-editor" data-playing-side-editor>
+    <label for="playingSide" th:text="#{playingSide.label}"></label>
+    <select id="playingSide" name="playingSide" class="form-control" aria-describedby="playing-side-help">
+        <th:block th:replace="~{fragments/playing-side :: options(${selected})}"></th:block>
+    </select>
+    <small id="playing-side-help" class="form-text" th:text="#{playingSide.hint}"></small>
+    <button type="button" class="btn btn-outline" data-side-save th:text="#{playingSide.saveSide}"></button>
+    <span data-side-status role="status" aria-live="polite"></span>
+</div>
+<dialog th:fragment="survey" id="playing-side-dialog" class="playing-side-dialog" aria-labelledby="playing-side-title" data-playing-side-survey>
+    <header><h2 id="playing-side-title" th:text="#{playingSide.title}"></h2><button type="button" data-side-later class="playing-side-close" th:aria-label="#{playingSide.close}">×</button></header>
+    <form id="playing-side-answer">
+        <fieldset aria-labelledby="playing-side-title"><p class="playing-side-hint" th:text="#{playingSide.hint}"></p>
+            <label th:each="side : ${T(com.padle.core.padelcoreservice.model.enums.PlayingSide).values()}" class="playing-side-option">
+                <input type="radio" name="playingSide" th:value="${side}" required><span><span th:text="#{${side.messageKey}}"></span></span>
+            </label>
+        </fieldset>
+        <div data-side-level hidden class="form-group"><label for="playing-side-level" th:text="#{playingSide.level}"></label><select id="playing-side-level" class="form-control" name="nivelJugador" required disabled><option value="" selected disabled th:text="#{perfil.field.nivel.none}"></option><th:block th:replace="~{fragments/nivel-options :: options(null, false)}"></th:block></select></div>
+        <p data-side-error role="alert" aria-live="assertive"></p>
+        <footer><button type="button" data-side-later class="btn btn-outline" th:text="#{playingSide.later}"></button><button type="submit" class="btn btn-primary" th:text="#{playingSide.save}"></button></footer>
+    </form>
+</dialog>
+<th:block th:fragment="assets">
+    <link rel="stylesheet" th:href="@{/css/playing-side.css}">
+    <script th:inline="javascript">window.playingSideMessages = {
+        LEFT: /*[[#{playingSide.left}]]*/ '', RIGHT: /*[[#{playingSide.right}]]*/ '', EITHER: /*[[#{playingSide.either}]]*/ '',
+        missing: /*[[#{playingSide.missing}]]*/ '', notSpecified: /*[[#{playingSide.notSpecified}]]*/ '',
+        loadError: /*[[#{playingSide.loadError}]]*/ '', saved: /*[[#{playingSide.saved}]]*/ '', error: /*[[#{playingSide.error}]]*/ '', choose: /*[[#{playingSide.choose}]]*/ ''
+    };</script><script defer th:src="@{/js/playing-side.js}"></script>
+</th:block>
+</body></html>

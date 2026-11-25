@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.90-manual-guest-claim-contact
+      author: padel
+      changes:
+        - sql:
+            sql: |
+              ALTER TABLE guest_profile_claims ALTER COLUMN phone_key DROP NOT NULL;
+              ALTER TABLE guest_profile_claims ADD COLUMN contact_resolution varchar(20);
+              ALTER TABLE guest_profile_claims ADD CONSTRAINT ck_guest_claim_phone_or_manual
+                CHECK (phone_key IS NOT NULL OR (initiator = 'ADMIN' AND status = 'MERGED'
+                  AND verification_method IS NOT NULL AND verification_method IN ('IN_PERSON', 'OTHER')));
+              ALTER TABLE guest_profile_claims ADD CONSTRAINT ck_guest_claim_contact_resolution
+                CHECK (contact_resolution IS NULL OR contact_resolution IN ('KEEP_ACCOUNT', 'USE_GUEST_PHONE'));
+      rollback:
+        - sql:
+            sql: |
+              ALTER TABLE guest_profile_claims ALTER COLUMN phone_key SET NOT NULL;
+              ALTER TABLE guest_profile_claims DROP CONSTRAINT ck_guest_claim_phone_or_manual;
+              ALTER TABLE guest_profile_claims DROP CONSTRAINT ck_guest_claim_contact_resolution;
+              ALTER TABLE guest_profile_claims DROP COLUMN contact_resolution;

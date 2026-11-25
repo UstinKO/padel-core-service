@@ -1,10 +1,11 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.application.clubs.PublicClubQuery;
 import com.padle.core.padelcoreservice.annotation.Timed;
 import com.padle.core.padelcoreservice.dto.PublicCatalogFilter;
 import com.padle.core.padelcoreservice.dto.PublicCatalogPage;
 import com.padle.core.padelcoreservice.dto.PublicHomeResponse;
-import com.padle.core.padelcoreservice.dto.PublicClubResponse;
+import com.padle.core.contract.clubs.Club;
 import com.padle.core.padelcoreservice.exception.PublicDiscoveryException;
 import com.padle.core.padelcoreservice.mapper.PublicClubMapper;
 import com.padle.core.padelcoreservice.mapper.PublicTournamentMapper;
@@ -28,6 +29,7 @@ public class PublicDiscoveryService {
     private final PlayerRepository playerRepository;
     private final PublicTournamentMapper tournamentMapper;
     private final PublicClubMapper clubMapper;
+    private final PublicClubQuery clubQuery;
 
     @Value("${app.base-url:http://localhost:8080}")
     private String baseUrl;
@@ -56,13 +58,13 @@ public class PublicDiscoveryService {
     }
 
     @Timed(name = "public.clubs.time", tags = {"service=public-discovery", "operation=clubs"})
-    public List<PublicClubResponse> clubs() {
-        return clubRepository.findByIsActiveTrue(Sort.by("nombre", "id")).stream()
+    public List<Club> clubs() {
+        return clubQuery.clubs().stream()
                 .map(club -> clubMapper.toPublicDto(club, baseUrl)).toList();
     }
 
-    public PublicClubResponse club(Long id) {
-        return clubRepository.findByIdAndIsActiveTrue(id).map(club -> clubMapper.toPublicDto(club, baseUrl))
+    public Club club(Long id) {
+        return clubQuery.club(id).map(club -> clubMapper.toPublicDto(club, baseUrl))
                 .orElseThrow(() -> new PublicDiscoveryException("CLUB_NOT_FOUND"));
     }
 }

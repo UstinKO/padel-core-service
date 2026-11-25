@@ -1,5 +1,7 @@
 package com.padle.core.padelcoreservice.dto;
 
+import com.padle.core.padelcoreservice.model.enums.PlayingSide;
+
 import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.validation.ValidDomain;
 import com.padle.core.padelcoreservice.validation.NoBotPattern;
@@ -66,6 +68,8 @@ public class RegistroRequestDto {
     private Nivel nivelJugador;
 
     private String preferredLocale = "es";
+
+    private PlayingSide playingSide;
 
     @ToString.Exclude
     private String recaptchaToken;

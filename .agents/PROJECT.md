@@ -6,7 +6,7 @@
 
 ## Project Overview
 
-**Swarm (LFPT-1040/LFPT-1207, 19.11.2026)** — одна ВМ, полный стек в Swarm, две реплики padel-app. Сейчас read-only проверка подтверждает Compose и одну JVM, 2 vCPU/3911 MiB RAM. Предварительный бюджет с системным резервом — 4480 MiB для двух JVM, 5376 MiB при start-first с третьей JVM. Владелец выбрал плановые ≥6 GiB RAM для стенда, изменение ВМ согласуется отдельно. Приняты цели стенда 15 min первичного окна, 5 min возврата приложения, 30 min restore и аварийный RPO ≤24 h при исправном ежедневном backup с обязательной проверкой. Nginx переносится в Swarm. Redis для сессий/квот и RabbitMQ STOMP предложены для стенда в ADR; координация cron определяется по job, готовый claim MarketingOutbox переиспользуется. [Реестр и порядок](../docs/swarm/README.md), [ADR](../docs/swarm/adr/0001-single-vm.md). До production обязательны #1209–#1217, окно согласуется в #1218. Maven #1051 сохраняет отдельную репетицию.
+**Swarm (LFPT-1040/LFPT-1207, 19.11.2026)** — одна ВМ, полный стек в Swarm, две реплики padel-app. Сейчас read-only проверка подтверждает Compose и одну JVM, 2 vCPU/3911 MiB RAM. Владелец выбрал исходные 4 GiB RAM. Оценка второй JVM и Redis оставляет около 1231 MiB MemAvailable до расходов REST; достаточность проверяется нагрузкой. Первый режим обновления — stop-first, parallelism=1. Start-first с третьей JVM требует отдельного ресурсного допуска. Приняты цели стенда 15 min первичного окна, 5 min возврата приложения, 30 min restore и аварийный RPO ≤24 h при исправном ежедневном backup с обязательной проверкой. Nginx переносится в Swarm. Пересмотр 20.11.2026 исключает RabbitMQ: Redis — сессии/квоты, REST между app tasks — live-события (#1211), браузерный WS/STOMP сохранён; координация cron определяется по job, готовый claim MarketingOutbox переиспользуется. [Реестр и порядок](../docs/swarm/README.md), [ADR](../docs/swarm/adr/0001-single-vm.md). До production обязательны #1209–#1217, окно согласуется в #1218. Maven #1051 сохраняет отдельную репетицию.
 
 **padel-core-service** — Spring Boot 4.x монолит для управления падель-турнирами. Действующий UI рендерится через Thymeleaf; UI v2 поэтапно переносится в React SPA из `frontend/`, не переключая production-маршруты без отдельной задачи. Целевой рынок — Аргентина (валюта ARS, валидация телефона +54).
 
@@ -22,9 +22,11 @@
 
 **Документация `docs/`** (в репозитории с LFPT-0602) — контекст приложения для конвейера и людей: [docs/Home.md](../docs/Home.md) — оглавление; архитектура и деплой (`architecture.md`), БД (`database-architecture.md`), домены и все эндпоинты (`domain-overview.md`, `endpoints/`), аутентификация (`auth-flow.md`), i18n (`i18n/`), переход на React (`frontend-react/`), автономный конвейер (`pipeline-autonomy.md`). Перед задачей в незнакомой области — прочитать соответствующий раздел, но источник истины по бизнес-логике — `specs/MASTER.md`, по поведению — код: если документ расходится с кодом, верить коду и поправить документ в том же PR. Пометки `[SECURITY — закрыто/актуально на <дата>]` и `[закрыто, сверено с кодом <дата>]` в `docs/endpoints/*` — результат сверки с кодом на указанную дату. **Документация обновляется в том же PR, что и код** — карта «что изменил → какой документ» в [docs/Home.md § Как поддерживать актуальность](../docs/Home.md#как-поддерживать-актуальность); механические расхождения (версия схемы, колонки, enum, эндпоинты, классы) проверяет `python3 .github/bin/docs-drift.py`, сверено до 0 на 2026-10-16 (LFPT-0615). `docs/infrastructure-security.md` и `docs/telegram-ai-pipeline.md` — приватные (в `.gitignore`), в облачном клоне их нет и не должно быть; IP сервера, доверенные IP, SSH-доступы и идентификаторы роутины в `docs/` и любые публичные файлы не писать.
 
-**Многомодульный монолит (LFPT-1041, решение владельца 13.11.2026):** приняты семь целевых модулей: api-contract, tournament-engines, application, persistence, web, integrations, bootstrap. Spring service/transaction в application разрешён; domain/engines без инфраструктурных зависимостей. Текущая Maven-сборка — parent/aggregator и два дочерних модуля: padel-bootstrap (единственный исполняемый jar) и padel-tournament-engines (PlayoffMatchingEngine, девять исходных unit-тестов и архитектурная проверка). Движок зависит только от JDK, Spring bean задаёт `TournamentEngineConfig` в bootstrap; остальные legacy-исходники остаются в корневом src/ под его единственным владением. [Сборка и доставка](../docs/modular-monolith/phase-1/reactor-delivery.md), [перенос и DevTools](../docs/modular-monolith/phase-1/engine-extraction.md). [План](../docs/modular-monolith/phase-1/README.md): #1047 → #1048 → #1049 → #1050 → #1045. Каждый PR сохраняет работоспособность; итоговая независимая ручная приёмка — #1045. Выделение persistence/Liquibase — поздняя #1051 в конце миграции или согласованном окне Swarm #1040; физическая PostgreSQL при необходимости ставится отдельно. Внутренний HTTP не создаётся. [Исторический план](../docs/microservices-migration-plan.md) — справочные связи/риски; остальные пять целевых модулей пока не выделены.
+**Многомодульный монолит (LFPT-1041, решение владельца 13.11.2026):** семь целевых модулей: api-contract, tournament-engines, application, persistence, web, integrations, bootstrap. Reactor содержит api-contract, engines, application и bootstrap; исполняемым остаётся только bootstrap. Engines владеет PlayoffMatchingEngine, KingOfCourtPairingEngine, AmericanoScheduleEngine, AmericanoScheduleValidator, QualificationPairing, PlayoffFormat, EarlyPlayoffSeeding, RoundRobinSetStandingsEngine, RoundRobinPointsStandingsEngine и RoundRobinFinalOrderEngine и зависит только от JDK. [Места кругового SETS](../docs/modular-monolith/phase-3/round-robin-sets-extraction.md), [POINTS](../docs/modular-monolith/phase-3/round-robin-points-extraction.md). [Расчёт раннего плей-офф](../docs/modular-monolith/phase-3/early-playoff-extraction.md). [Правила квалификации Team Playoff](../docs/modular-monolith/phase-3/team-playoff-qualification-extraction.md). Bean PlayoffMatchingEngine задаёт TournamentEngineConfig; King of Court, расписание Americano и правила квалификации сохраняют статический API; EarlyPlayoffSeeding остаётся чистым объектом с PlayoffMatchingEngine, без отдельного bean. RoundRobinStandings и MapStruct-мапперы остаются адресными адаптерами JPA в bootstrap: SETS и POINTS вычисляет engines; RoundRobinRules.order POINTS использует тот же компаратор. Начисление и дополнительные встречи прежние. [Перенос расписания Americano](../docs/modular-monolith/phase-3/americano-extraction.md). [Перенос второго движка](../docs/modular-monolith/phase-3/README.md). В application выделены PublicClubQuery с собственными PublicClub/ClubReadPort и RoundRobinRankingQuery с RoundRobinReadSet/RoundRobinRanking/RoundRobinReadPort; оба сценария используют readOnly-транзакцию REQUIRED; явный @Import из PublicClubApplicationConfiguration сохраняет общий scan. LegacyClubReadAdapter и ClubReadModelMapper остаются в корневом src под bootstrap до поздней #1051; PublicClubMapper строит generated Club/canonicalUrl из канонического OpenAPI в api-contract; [владение и генерация](../docs/modular-monolith/phase-2/contract-adoption.md). Каталог/главная, MVC клуба, остальные API DTO и хранение не перенесены. [Срез, wiring и мосты](../docs/modular-monolith/phase-2/application-club-read.md), [исходная сборка](../docs/modular-monolith/phase-1/reactor-delivery.md), [движок/DevTools](../docs/modular-monolith/phase-1/engine-extraction.md). Приёмка #1045 принята 20.11 с ограничениями; #1199 включена через #1234 после принятого протокола #1180; generated Club включён через #1238 (#1200). [Независимая техническая приёмка клубов](../docs/modular-monolith/phase-2/acceptance.md) — #1201: HTTP baseline до обоих переносов, 12 browser cases, restart/rollback и общий smoke на отдельном preview; новый ручной сеанс не заявляется. Каждый PR сохраняет работоспособность. Persistence/Liquibase — поздняя #1051; физическая PostgreSQL и Swarm не включаются. Внутреннего HTTP между Maven-модулями нет; REST между репликами монолита относится к отдельной #1211. [Исторический план](../docs/microservices-migration-plan.md) сохраняет справочные связи и риски. Остальные три целевых модуля пока не выделены.
 
 ---
+
+Принятая [фаза 4 / #1374](../docs/modular-monolith/phase-4/README.md): #1375 baseline/граф чтения → #1376 чистый finalOrder → #1377 read-сценарий круговой таблицы в application → #1378 независимая приёмка. Baseline #1375 фиксирует wire-эталоны, транзакции и [конкретные модели/порт](../docs/modular-monolith/phase-4/application-contract.md); [итоговые места #1376](../docs/modular-monolith/phase-4/final-order-extraction.md) выделены в engines (10 вычислений, 24 обязательных вложенных типа); [read-сценарий #1377](../docs/modular-monolith/phase-4/application-query.md) перенесён в application; [независимая техническая приёмка #1378](../docs/modular-monolith/phase-4/acceptance.md) завершила read-фазу. Приёмка #1378 включена через PR #1398. Подготовлена [фаза 5 / #1402](../docs/modular-monolith/phase-5/README.md): [#1403 baseline командной границы](../docs/modular-monolith/phase-5/baseline.md) с [контрактом](../docs/modular-monolith/phase-5/command-contract.md) реализован отдельным PR → #1404 сохранение круговых позиций → #1405 завершение в application → #1406 независимая приёмка. [RoundRobinPositionCommand / #1404](../docs/modular-monolith/phase-5/position-command.md) реализована: собственные input/positions/порт, write REQUIRED и общий с query RoundRobinStandingsCalculation. [RoundRobinFinishCommand / #1405](../docs/modular-monolith/phase-5/finish-command.md) владеет допуском и порядком записи/чтения. Фасад finishTournament сохраняет ConductChange и перевод прежних ошибок и DTO. [Независимая приёмка #1406](../docs/modular-monolith/phase-5/acceptance.md) проверяет принятый JAR, браузер и возврат. Следующий кандидат для постановки — отдельная команда результата. Физическая и новая ручная приёмка не проводились. RoundRobinApplicationConfiguration явно импортирует query, position и finish. LegacyRoundRobinReadAdapter, LegacyRoundRobinPositionAdapter, LegacyRoundRobinFinishAdapter и MapStruct сохраняют JPA/DTO в bootstrap. RoundRobinStandings.rank больше не вызывается production-кодом и сохранён как совместимый Java API с прежними тестами. Guards требуют 35 application-классов и допускают 11 точных публичных типов SETS/POINTS/final-order; остальные legacy-типы запрещены.
 
 ## Commands
 
@@ -119,7 +121,7 @@ docker compose up -d
 | URL | Template | Описание |
 |-----|----------|----------|
 | `GET /admin` | `admin/panel.html` | Главная панель |
-| `GET /admin/tournaments` | `admin/tournaments/list.html` | Список турниров |
+| `GET /admin/tournaments` | `admin/tournaments/list.html` | Общий/клубный список: ближайшие даты и время, затем прошедшие от свежих; область ownerId сохраняется. Локальный диалог ссылки публикации Telegram/Stories |
 | `GET /admin/tournaments/new` | `admin/tournaments/form.html` | Форма создания турнира |
 | `GET /admin/tournaments/{id}` | `admin/tournaments/details.html` | Детали турнира + список участников |
 | `GET/POST /admin/tournaments/{id}/additional-points` | Редактор ручных очков и история, включая отдельный путь `finished-results/additional-points` |
@@ -185,6 +187,7 @@ docker compose up -d
 | GET | `/api/players/me/contact-status` | Проверка наличия контакта |
 | GET | `/api/players/me/tournaments` | «Мои мероприятия» (LFPT-0637) — предстоящие/история, только просмотр |
 | GET | `/api/players/me/events` | Типизированный кабинет игрока, собственные заявки, история и доступные действия |
+| GET | `/api/players/me/calendar` | Собственные действующие публичные регистрации, без оплат и контактов |
 | POST | `/api/players/me/events/{registrationId}/withdraw` | Личный выход с версией заявки |
 | PUT | `/api/players/me/events/{registrationId}/contact-visibility` | Согласие на показ контактов при поиске партнёра |
 | GET | `/api/players/search` | Поиск партнёра для парной регистрации — по имени/фамилии/email/телефону/Telegram (LFPT-0679) |
@@ -350,6 +353,8 @@ docker compose up -d
 
 ### WebSocket
 
+Восстановление истории Team Playoff после commit отправляет `STATE_UPDATED` в legacy-тему и прежний public invalidation; rollback не публикует обновление. [Доставка и проверка](../docs/endpoints/conduct-history-realtime.md).
+
 | Endpoint | Topic | Описание |
 |----------|-------|----------|
 | `/ws` (SockJS) | `/topic/tournament/{kingId}` | Real-time обновления King of Court |
@@ -474,7 +479,7 @@ repository/
 
 ### Database Migrations
 
-Все изменения схемы — YAML-файлы в `src/main/resources/db/changelog/versions/`, подключены через `changelog-master.yaml`. Текущая версия: v1.72. `ddl-auto = none` — только Liquibase. Новые файлы добавлять с инкрементальным номером и регистрировать в `changelog-master.yaml`.
+Все изменения схемы — YAML-файлы в `src/main/resources/db/changelog/versions/`, подключены через `changelog-master.yaml`. Текущая версия: v1.88. `ddl-auto = none` — только Liquibase. Новые файлы добавлять с инкрементальным номером и регистрировать в `changelog-master.yaml`.
 
 ### Email Templates
 
@@ -604,6 +609,8 @@ Thymeleaf admin/qr-report, static/js/qr-report.js, static/css/qr-report.css.
 
 `PublicDiscoveryController` / `PublicDiscoveryService`: `GET /api/public/home`, `/api/public/catalog`, `/api/public/clubs`, `/api/public/clubs/{id}`. Каталог использует `PublicCatalogSpecification`, пагинацию БД и пакетный маппинг `TournamentService`. Мобильный `/api/public/tournaments` сохранён. [Контракт](../docs/endpoints/public-schedule.md#публичные-данные-ui-v2).
 
+`PublicCalendarController` / `PublicCalendarService`: GET `/api/public/calendar`, `/api/public/calendar/catalog` — публичный месяц без усечения и безопасный карточный каталог. GET `/api/players/me/calendar` — отдельные статусы только текущего PLAYER. Общие формат и уровни, локальные даты, названия организаций и публичные справочники. [Контракт](../docs/endpoints/public-calendar.md).
+
 
 React UI v2: `/preview/` — главная, `/preview/torneos` — каталог с URL-фильтрами и серверной пагинацией. `frontend/src/api/discovery.ts` соответствует публичному API; `Catalogue` и `EventCard` отображают серверную вместимость. Служебный фундамент — `/preview/foundation`.
 
@@ -650,10 +657,58 @@ GET/HEAD `/api/public/events/{eventId}/live` и `/api/public/king-of-court/{king
 
 ### Данные пилота модульного монолита
 
-Браузерные проверки: `automation/ui-preview/playoff-pilot.py` и `tests/browser/modular-pilot/`. Команда `run` проверяет итоговый jar, прежние UI/API и реальные WS по [текущему эталону от 18.11](../docs/modular-monolith/phase-1/browser-expectations-2026-11-18.json); пересоздаёт только пилот. `prepare --reset` готовит ручной набор; `smoke --rehearse` сверяет пять snapshots через существующий выпуск/откат. [Исходный отчёт](../docs/modular-monolith/phase-1/browser-baseline.md), [ручной журнал](../docs/modular-monolith/phase-1/manual-baseline.md), [перенос движка #1050](../docs/modular-monolith/phase-1/engine-extraction.md). Исходная #1048 принята и влита через #1070: ручные 8/9 пар и полная автоматизация; остальные ручные пункты остаются #1045. Сборка reactor — #1049.
+В legacy-управлении Team Playoff успешное AJAX-сохранение квалификационного результата перечитывает только серверный блок `playoffStartSection`. Кнопка старта появляется по действующим Thymeleaf-условиям без навигации страницы; при отказе сохранения блок остаётся прежним. Нового API и клиентского правила допуска нет.
+
+Браузерные проверки: `automation/ui-preview/playoff-pilot.py` и `tests/browser/modular-pilot/`. Команда `run` проверяет итоговый jar, прежние UI/API и реальные WS по [текущему эталону от 18.11](../docs/modular-monolith/phase-1/browser-expectations-2026-11-18.json); пересоздаёт только пилот. `extended` добавляет ранние 9/16/SF; `smoke --rehearse` сверяет пять snapshots через существующий выпуск/откат. `manual --reset` готовит отдельные ручные случаи и видимое окно с настоящими подтверждениями; `resume-manual` открывает без сброса, `end-manual` снимает локальную блокировку пилотных команд/check.py, не подтверждая результат. [Исходный отчёт](../docs/modular-monolith/phase-1/browser-baseline.md), [итоговая автоматизация #1045](../docs/modular-monolith/phase-1/final-report.md), [текущие ручные шаги и журнал](../docs/modular-monolith/phase-1/manual-final.md), [перенос движка #1050](../docs/modular-monolith/phase-1/engine-extraction.md). Исходная #1048 принята и влита через #1070: ручные 8/9 пар и полная автоматизация. Ручной сеанс #1045 от 18.11 сохранён с PARTIAL и принятыми ограничениями. #1195/#1196 уже в master; [повтор 20.11](../docs/modular-monolith/phase-1/followup-2026-11-20.md) отдельно проверяет restore MESSAGE/конечный UI, отрицательные случаи квалификации и функциональный Expo через QA-адаптер. 20.11 владелец принял совокупный результат с ограничениями без новых ручных повторов; #1045 завершена, допускается #1199. Сборка reactor — #1049.
 
 `PlayoffPilotController`, `PlayoffPilotFixtureService` и `PlayoffPilotData` существуют только в профиле `preview`. Защищённые seed/read/reset пилота используют существующие проверки имени БД/UUID и блокировку control-row; пять турниров 8/9/16 команд формируются настоящим TeamPlayoffService. Метаданные сохраняются отдельным ключом JSON в существующем preview control, без Liquibase. [Контракт](../docs/endpoints/ui-preview.md), [backend baseline](../docs/modular-monolith/phase-1/backend-baseline.md). PlayoffMatchingEngine компилирует только engines; сервис/fixtures и остальные legacy-исходники — bootstrap.
+
+## Изолированный Swarm-стенд — LFPT-1208
+
+`automation/swarm/` поднимает полный стек внутри собственного Docker-in-Docker
+Engine (4 GiB / 2 CPU), без Swarm на хосте и без production-данных.
+Одна app replica, профиль preview, versioned secrets/configs, digest-образы,
+TLS/WS и private overlay `events`, резерв REST-ключа, запрет `/internal/**` на proxy.
+Восемь сервисов без RabbitMQ; переносимый render не требует вложенного Engine.
+Endpoint/fan-out реализуется отдельно в #1211. [Runbook](../docs/swarm/lab.md).
+
+### Сохранение данных — LFPT-1209
+
+`automation/swarm/rehearse_data.py` / `data_volumes.py`: синтетическая репетиция
+Compose → Swarm → Compose с custom pg_dump/restore, external volume map,
+контролем UID/GID/прав и одного писателя. Принудительное пересоздание PostgreSQL
+подтверждает новый task ID, прежний том и сохранённую запись из Swarm. Независимые
+остановки Stack/Compose/restore сохраняют lease при неподтверждённом отсутствии writers.
+Карта и backup остаются runtime,
+production не подключается. `lab.py render --volume-map` выводит явные existing
+имена без автоматического deploy. v1.88 квалифицирует helper индексной функции
+телефона для ограниченного search_path pg_restore, сохраняя AR/+7-семантику.
+[Runbook](../docs/swarm/data-recovery.md). Фактические production volumes,
+расшифровка offsite и ресурсный допуск остаются условиями #1217/#1218.
+
 
 ## Клубные аккаунты
 
 `ClubAccountService` / `AdminClubAccountController`: несколько назначенных площадок для создания мероприятий, управление существующими событиями по ownerId. Схема v1.79, контракт — [docs/endpoints/club-accounts.md](../docs/endpoints/club-accounts.md).
+
+Круговой парный формат: `RoundRobinRules` — правила очков/сетов и итоговых мест; `RoundRobinStandings` — совместимый helper без production-callers после #1404; общая подготовка таблицы query/write принадлежит application `RoundRobinStandingsCalculation`, формулы личных встреч/разделённых мест — engines; `RoundRobinAdditionalMatches` — дополнительные встречи, `RoundRobinActionsController` — защищённые действия. См. `docs/endpoints/americano.md`, LFPT-1243/1244.
+
+Календарь админки: `GET /api/admin/events/calendar` — `AdminCalendarController` / `AdminCalendarService`, права на события и фильтры, локальные дата/время с зоной, все события месяца. [Контракт](../docs/endpoints/admin-event-calendar.md).
+
+Telegram для игроков: PlayerTelegramController, TelegramParticipationCoordinator и пакет telegram/. Контракт и включение: [player-telegram](../docs/endpoints/player-telegram.md). Флаг telegram.players.enabled до согласованного выпуска выключен.
+
+Предпочтение связи игрока: `player_contact_preferences`, схема v1.87. `PUT /api/players/me/telegram/preference` меняет только текущий профиль; WhatsApp отключает Telegram и старые ссылки, автоматической WA-отправки нет. Сводка содержит предпочтение и ручные контакты. Язык текущего сайта сохраняется для сообщений при создании ссылки подключения.
+
+Telegram UI: `fragments/player-telegram` / `player-telegram.js` / `player-telegram.css`. Фрагмент `registration` вызывается после успешной записи в кабинете и карточке события, сохраняет прежний результат/условия и исключает подключённых/WhatsApp. Профиль редактирует предпочтение, админка показывает ручную связь. Тексты ES/RU/EN берут текущую серверную locale. [Проверки и ограничения](../docs/player-telegram-interface.md).
+
+Организации календаря: Owner.organizationName, схема v1.86. AdminOrganizationController / OrganizerOrganizationService — отдельное название аккаунта; GET /api/admin/organizers/organizations, PUT /api/admin/organizers/{id}/organization. Календарь содержит organizer и доступный список organizers, фильтр organizerId. См. docs/endpoints/admin-event-calendar.md.
+
+Telegram-пилот: `telegram.players.pilot-enabled=true` по умолчанию, один `pilot-player-id` и один `pilot-tournament-id`. Пустые ID закрывают доступ. Ограничение применяется к подключению, запросам/ответам, отправке и сводке; остальные аккаунты сохраняют старые уведомления.
+
+Публичный календарь legacy `/torneos`: `public-event-calendar.mjs`, безопасные общие ссылки и чистые вычисления `public-event-calendar-state.mjs`, возврат `public-calendar-return.mjs`. Карточки остаются на главной; public-calendar-entry.mjs добавляет ссылку-иконку и переносит совместимые условия. /torneos — только календарь с быстрыми группами форматов и компактными фильтрами. Проверки: `node --test tests/public-event-calendar.test.mjs tests/admin-event-calendar.test.mjs`. Мобильная сетка — только даты/счётчики, личные статусы только в памяти текущей сессии. См. [контракт](../docs/endpoints/public-calendar.md).
+
+Ручное объединение профилей по ID: `GuestProfileClaimService.manualReview/manualMerge`, readiness и contactChoice; [контракт](../docs/guest-profile-merge.md). Телефонная заявка проверяется независимо; миграция v1.90, аудит contact_resolution.
+
+Экран ручного объединения: явная готовность, contactChoice и отключённая кнопка с причиной; `GuestProfileMergeBrowserTest` проверяет настоящий UI на отдельной базе и входит в browser job.
+
+Индивидуальные пульты и публичные страницы используют общий `individual-ranking.js`/CSS и фрагмент: итог рядом с именем, раскрытие статистики и прежних действий на телефоне; публично — весь состав, три столбца без уровня, расшифровка только для просмотра и серверная первичная выдача; серверный контракт сохраняется. [Спецификация](../specs/done/LFPT-1401-compact-individual-ranking.md).

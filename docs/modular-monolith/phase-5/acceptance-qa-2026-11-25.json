@@ -1,0 +1,725 @@
+{
+  "task": "LFPT-1406",
+  "date": "2026-11-25",
+  "result": "PASS",
+  "sourceBaseRevision": "ca0e9f3092f23e75a03f4a10fb559ddc4ffa5459",
+  "localJarBuiltBeforeFinalCommit": true,
+  "currentJarSha256": "f1465bc393ba1b2e57e0f0840c3ec4d1da707d53b6b215fafdcdc0ed44476ba8",
+  "productionClassProof": {
+    "result": "PASS",
+    "sourceBaseRevision": "ca0e9f3092f23e75a03f4a10fb559ddc4ffa5459",
+    "comparisonRevision": "7ea41b607db4ed86ee6b2e7b5433aad479e84736",
+    "referenceJarSha256": "fb33e65c82bf71c882de7f8981f70f51a051b474da64ef0b6c17df20365802aa",
+    "currentJarSha256": "f1465bc393ba1b2e57e0f0840c3ec4d1da707d53b6b215fafdcdc0ed44476ba8",
+    "productionClasses": 980,
+    "unchangedProductionClasses": 980,
+    "addedClasses": [],
+    "changedClasses": [],
+    "removedClasses": [],
+    "enginesAndContractUnchanged": true,
+    "localJarBuiltBeforeFinalCommit": true
+  },
+  "positionCommandRetained": true,
+  "finishCommandImplemented": true,
+  "apiUiSchemaPomsUnchanged": true,
+  "javaRuntime": 21,
+  "javaRelease": 17,
+  "backendCleanVerify": {
+    "padel-api-contract": {
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "padel-tournament-engines": {
+      "tests": 141,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "padel-application": {
+      "tests": 34,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "padel-bootstrap": {
+      "tests": 1471,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 5
+    },
+    "total": {
+      "tests": 1650,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 5
+    }
+  },
+  "writeBaselineTests": 28,
+  "writeExpectationsUnchanged": true,
+  "writeHarnessChanges": [],
+  "baselineTests": 12,
+  "goldenResponses": 11,
+  "baselineSourceAndGoldenSha256": {
+    "src/test/resources/contracts/round-robin-query/sets-played-final.json": "c1153a1894dc9988d6ffac2053dac2b1438541c26246aa09b849523968e3a772",
+    "src/test/resources/contracts/round-robin-query/empty.json": "01e8fff5c9d96f2dc0b0b972c1f84285dec750ff8419e0b7b73b2d2b4b7dd250",
+    "src/test/resources/contracts/round-robin-query/points-draw.json": "d90924e559f6cfe112e0c39cebd49fbbe156c62152e06884e89c233543bcf09e",
+    "src/test/resources/contracts/round-robin-query/sets-pending-final.json": "f71c7355a0cd1caf99ba98436f0802390ffc06f6839b0cef41b1c0d1aa9b88de",
+    "src/test/resources/contracts/round-robin-query/sets-circle.json": "fb88389b25a03b571c5ac0f78c392db1569933a2a66b9fe19d4f2646fe36c128",
+    "src/test/resources/contracts/round-robin-query/points-initial.json": "72df3b1730cf6d226230db9de0c9d4b82687b571e52eb8ed12b01db4df686933",
+    "src/test/resources/contracts/round-robin-query/points-pending-final.json": "7c15872522289a555b3fc1d8ed5f826ba5ba78ab046dc3a566dc5df05021da67",
+    "src/test/resources/contracts/round-robin-query/points-played-final.json": "36a1489a0e031da36890ecde1ea539339cc8d7db86ad093b415274f6403e2c78",
+    "src/test/resources/contracts/round-robin-query/sets-initial.json": "186f200c6bbd6a56061d364b16fd392320b1093718179e782acd6f7eef887f79",
+    "src/test/resources/contracts/round-robin-query/guest.json": "4e7552c519a7979569452e609acb09058779122a3f9a39c4a75b8c22995ee1ae",
+    "src/test/resources/contracts/round-robin-query/points-circle.json": "e4a4349e889f6a5f5a8d9ab1d001560cd316b147f5b7236b0c887e3942885ac8",
+    "src/test/java/com/padle/core/padelcoreservice/service/americano/RoundRobinRankingBaselineTest.java": "e55c53d8907c536b822d687afcd5785efacb71a7da8c97a0cee08a8f1b7fdb55"
+  },
+  "suites": {
+    "RoundRobinWriteOrderTest": {
+      "tests": 11,
+      "cases": [
+        "emptyPositionsDoNotRequireAnEventOrInitialization",
+        "absentCircleShortCircuitsTeamsButCountersAreReadFirst",
+        "pendingCounterStillChecksInitializationBeforeRejecting",
+        "missingMaximumFallsBackToZeroWithoutClampingTheRemainingCount",
+        "missingEventInTheCommandRetainsTheFacadeErrorAndDoesNotReadRounds",
+        "cancellationStopsBeforeReadingCounters",
+        "finishWritesPositionsThenStateAndOnlyThenComposesTheResponse",
+        "nullModeUsesPointsAndAppliesPositionsToTheOriginalUnsortedTeams",
+        "setsUsesCircleMeetingsButIgnoresPlacementWhenSavingPlaces",
+        "missingRankingAfterTheStateChangeRetainsTheFacadeError",
+        "setsKeepsSharedPositionsAndSaveOrderWithoutReplacingEntities"
+      ]
+    },
+    "RoundRobinWriteBaselineTest": {
+      "tests": 20,
+      "cases": [
+        "standaloneFailureRollsBackWithoutAnOuterConductTransaction",
+        "completedRoundCorrectionLeavesStoredPlacesUntilExplicitUpdate",
+        "boundaryFailureRollsBackFlushedPositionsStateAndHistory(Fault)[1]",
+        "boundaryFailureRollsBackFlushedPositionsStateAndHistory(Fault)[2]",
+        "boundaryFailureRollsBackFlushedPositionsStateAndHistory(Fault)[3]",
+        "boundaryFailureRollsBackFlushedPositionsStateAndHistory(Fault)[4]",
+        "pendingPlacementAndNumberGapsUseMaximumNumberAndAllCompletedRounds",
+        "scoreEntrypointsAndFinishKeepOwnershipCsrfAndTheirResponseShapes(String)[1]",
+        "scoreEntrypointsAndFinishKeepOwnershipCsrfAndTheirResponseShapes(String)[2]",
+        "scoreEntrypointsAndFinishKeepOwnershipCsrfAndTheirResponseShapes(String)[3]",
+        "replayAndStaleRejectBeforeWritesWhileMvcKeepsItsRedirectContract",
+        "outerWriteJoinsBothCommandsAndCoalescesNotificationsUntilCommit",
+        "cancelledUninitializedAndMissingFinishDoNotLeaveBaselineRows",
+        "repeatWithoutKeyIsUnchangedButNewKeyRecordsAnotherFinish",
+        "restoreKeepsLateVersionsAndRegistrationsThenAllowsFinishAgain",
+        "finishKeepsCircleAndPlacementSeparateAndNotifiesAfterCommit(RoundRobinScoringMode)[1]",
+        "finishKeepsCircleAndPlacementSeparateAndNotifiesAfterCommit(RoundRobinScoringMode)[2]",
+        "tournamentLockSerializesTwoFinishTransactionsBeforeVersionCheck",
+        "standalonePositionsPersistOnlyPlacesAndDoNotCreateHistory(RoundRobinScoringMode)[1]",
+        "standalonePositionsPersistOnlyPlacesAndDoNotCreateHistory(RoundRobinScoringMode)[2]"
+      ]
+    },
+    "RoundRobinRankingBaselineTest": {
+      "tests": 12,
+      "cases": [
+        "initializeFinishAndReadJoinOuterWriteAndRollbackHistoryTogether",
+        "guestLevelsAndPlayingSidesHaveDifferentJavaAndWireVisibility",
+        "pointsDrawKeepsNonzeroDrawCountersAndSequentialPlaces",
+        "otherPlacementAndUnplacedMatchLeaveCircleStatisticsIntact(RoundRobinScoringMode)[1]",
+        "otherPlacementAndUnplacedMatchLeaveCircleStatisticsIntact(RoundRobinScoringMode)[2]",
+        "partialRoundAndLegacyNullModeKeepCurrentFallbacks",
+        "fullWireLifecycleRetainsNullFieldsAndFinishedSemantics(RoundRobinScoringMode)[1]",
+        "fullWireLifecycleRetainsNullFieldsAndFinishedSemantics(RoundRobinScoringMode)[2]",
+        "externalGetIsReadOnlyUsesOneTransactionAndDoesNotPersistComputedPositions",
+        "emptyUninitializedTournamentKeepsDefaultConfiguration",
+        "missingTournamentKeepsServiceErrorAndUnresolvedMvcException",
+        "publicViewAndAuthenticatedApiKeepSeparateAccessRules"
+      ]
+    },
+    "RoundRobinPositionIntegrationTest": {
+      "tests": 3,
+      "cases": [
+        "directCommandIsTheOnlyBeanAndOpensAWriteTransactionForEmptyInput",
+        "saveUsesLoadedEntitiesWithoutExtraSelectsOrPlayerInitialization",
+        "failureOnSecondEntityRollsBackTheAlreadyFlushedFirstRowAndTimestamp"
+      ]
+    },
+    "LegacyRoundRobinPositionAdapterTest": {
+      "tests": 3,
+      "cases": [
+        "pointsReadsMatchesButDoesNotMapThemProfilesOrNullableGameDifference",
+        "appliesOnlyCurrentPositionAndSavesTheSameReference",
+        "emptySetsDoesNotVisitMatchObjectsAndStillSavesAnEmptyList"
+      ]
+    },
+    "RoundRobinPositionCommandTest": {
+      "tests": 12,
+      "cases": [
+        "setsFiltersPlacementPendingAndMissingScoresBeforeMeetings",
+        "emptyInputIsSavedWithoutAnEventLookup(ScoringMode)[1]",
+        "emptyInputIsSavedWithoutAnEventLookup(ScoringMode)[2]",
+        "readAndWriteUseTheSameCalculationWithoutChangingReadRows(ScoringMode)[1]",
+        "readAndWriteUseTheSameCalculationWithoutChangingReadRows(ScoringMode)[2]",
+        "pointsKeepsSourceIndicesAndDoesNotReadMatchesOrUnusedGames",
+        "duplicateIdsAndNumbersKeepTheOriginalRowOrder",
+        "pointsSingletonDoesNotNormalizeOrCompareNullableCriteria",
+        "eachUpdateReloadsTheCurrentInputAndPropagatesSaveFailures",
+        "setsKeepsSharedPlacesAndOriginalIndices",
+        "pointsReadDoesNotCalculateNullableSetStatistics",
+        "pointsStillRejectsNullWhenTheReachedCriterionNeedsIt"
+      ]
+    },
+    "ApplicationArchitectureTest": {
+      "tests": 4,
+      "cases": [
+        "onlyTheSharedCalculationPreparesCircleEngineInputs",
+        "legacyNeighborSuffixAndGenericArrayRemainForbidden",
+        "exactPublicEngineTypesAreAllowedButPrivateMeetingsAreNot",
+        "productionUsesOnlyOwnTypesJdkAndAgreedSpringAnnotations"
+      ]
+    }
+  },
+  "newJavaTests": 0,
+  "liveWriteHttp": {
+    "result": "PASS",
+    "scoreRoutes": [
+      "form",
+      "legacyJson",
+      "roundRobinJson"
+    ],
+    "scoreEditsReverted": true,
+    "rankingRestored": true,
+    "resultHistoryRows": 3,
+    "finishHistoryRows": 1,
+    "finishRedirect": 302,
+    "replayRedirect": 302,
+    "staleRedirect": 302,
+    "noCsrf": 403,
+    "noCsrfHtmlRedirect": "/error/403",
+    "rejectedRowsUnchanged": true
+  },
+  "managedEntityIdentity": true,
+  "positionSelects": 3,
+  "positionTeamSelects": 1,
+  "positionProfileSelects": 0,
+  "directAndNestedWriteContexts": true,
+  "partialRealFlushRollbackIncludesTimestamps": true,
+  "standalonePositionHistoryRows": 0,
+  "finishManagedTournamentIdentity": true,
+  "finishPositionSaveQueryOrder": true,
+  "finishErrorChecks": [
+    "missingEvent",
+    "negativeRemainingWithMaxFallback",
+    "missingRanking"
+  ],
+  "faults": [
+    "POSITIONS",
+    "STATE",
+    "QUERY",
+    "HISTORY"
+  ],
+  "afterCommitObservedOnSeparateJdbcConnection": true,
+  "notificationCoalescingBeforeCommit": true,
+  "concurrency": {
+    "result": "PASS",
+    "writeContexts": 2,
+    "processes": 1,
+    "postgresBlockedLockObserved": true,
+    "staleSecondRejected": true
+  },
+  "artifacts": {
+    "engines": "PASS",
+    "application": "PASS",
+    "contract": "PASS",
+    "calculationClasses": 10,
+    "requiredNestedTypes": 24,
+    "allowedEngineTypes": 11,
+    "requiredApplicationClasses": 35
+  },
+  "automationTests": {
+    "github": 31,
+    "relay": 48,
+    "worker": 5,
+    "workerSkipped": 1,
+    "preview": 15,
+    "releases": 22
+  },
+  "devtools": {
+    "result": "PASS",
+    "starts": 2,
+    "sameRestartLoader": true,
+    "entityIdentityAndSetsRanking": true,
+    "pointsRankingAndComparator": true,
+    "newCommandAndQueryProxies": true,
+    "realPositionAdapter": true,
+    "writeTransaction": true,
+    "finishProxy": true,
+    "realFinishAdapter": true,
+    "finishPositionQueryJoined": true,
+    "defaultMapStructFactory": true,
+    "springBootDevTools": true,
+    "probeOnlyContext": true,
+    "applicationServiceSharesLoader": true,
+    "legacyHelperRetained": true,
+    "applicationQueryAndEngines": true,
+    "applicationRestartIncludeRequired": true,
+    "testRepositoriesAndTransactionManager": true,
+    "realSqlRollbackCoveredSeparately": true
+  },
+  "coreRoundRobin": {
+    "result": "PASS",
+    "cases": [
+      {
+        "mode": "SETS",
+        "teams": 4,
+        "rounds": 3,
+        "circleMatches": 6,
+        "circleOrder": [
+          1,
+          2,
+          4,
+          3
+        ],
+        "sharedInitialPlaces": true,
+        "headToHeadCorrectionAndReturn": true,
+        "additionalFinal": true,
+        "pointsTiesByWinsAndNumber": false,
+        "scoreCorrectionAndReturn": true,
+        "additionalCorrectionAndReturn": true,
+        "circleStatsPreserved": true,
+        "finished": true,
+        "historyPage": true,
+        "views": 12,
+        "refresh": true
+      },
+      {
+        "mode": "POINTS",
+        "teams": 4,
+        "rounds": 3,
+        "circleMatches": 6,
+        "circleOrder": [
+          4,
+          1,
+          2,
+          3
+        ],
+        "sharedInitialPlaces": false,
+        "headToHeadCorrectionAndReturn": false,
+        "additionalFinal": true,
+        "pointsTiesByWinsAndNumber": true,
+        "scoreCorrectionAndReturn": true,
+        "additionalCorrectionAndReturn": true,
+        "circleStatsPreserved": true,
+        "finished": true,
+        "historyPage": true,
+        "views": 12,
+        "refresh": true
+      }
+    ],
+    "javaScriptErrors": 0
+  },
+  "queryContract": {
+    "result": "PASS",
+    "cases": [
+      {
+        "mode": "SETS",
+        "anonymousJson": 401,
+        "anonymousHtml": 302,
+        "authenticatedJson": 200,
+        "anonymousPublicPage": 200,
+        "adminCard": 200,
+        "exactRootAndRowFields": true,
+        "finalAndCircleDifferent": true
+      },
+      {
+        "mode": "POINTS",
+        "anonymousJson": 401,
+        "anonymousHtml": 302,
+        "authenticatedJson": 200,
+        "anonymousPublicPage": 200,
+        "adminCard": 200,
+        "exactRootAndRowFields": true,
+        "finalAndCircleDifferent": true
+      }
+    ],
+    "javaScriptErrors": 0,
+    "missingTournament": {
+      "authenticatedStatus": 500,
+      "existingUnhandledResourceNotFound": true
+    }
+  },
+  "extendedRoundRobin": {
+    "result": "PASS",
+    "readonly": false,
+    "cases": [
+      {
+        "kind": "extended",
+        "mode": "SETS",
+        "views": 12,
+        "refresh": true,
+        "exactFields": true,
+        "statisticsMatchApi": true,
+        "partial": true,
+        "circle": true,
+        "final": true,
+        "bronze": true,
+        "otherPlace": true,
+        "unplaced": true,
+        "pendingFinishDisabled": true,
+        "historyRestore": true,
+        "circleStatisticsPreserved": true
+      },
+      {
+        "kind": "extended",
+        "mode": "POINTS",
+        "views": 12,
+        "refresh": true,
+        "exactFields": true,
+        "statisticsMatchApi": true,
+        "partial": true,
+        "circle": true,
+        "final": true,
+        "bronze": true,
+        "otherPlace": true,
+        "unplaced": true,
+        "pendingFinishDisabled": true,
+        "historyRestore": true,
+        "circleStatisticsPreserved": true
+      },
+      {
+        "kind": "guest",
+        "mode": "SETS",
+        "views": 12,
+        "refresh": true,
+        "exactFields": true,
+        "statisticsMatchApi": true,
+        "guest": true,
+        "nullableLevels": true,
+        "sideVisibleInHtmlOnly": true
+      },
+      {
+        "kind": "guest",
+        "mode": "POINTS",
+        "views": 12,
+        "refresh": true,
+        "exactFields": true,
+        "statisticsMatchApi": true,
+        "guest": true,
+        "nullableLevels": true,
+        "sideVisibleInHtmlOnly": true
+      },
+      {
+        "kind": "empty",
+        "mode": "POINTS",
+        "defaults": true,
+        "publicAndAdminCard": true
+      }
+    ],
+    "javaScriptErrors": 0,
+    "sameOriginOnly": true
+  },
+  "postRestartReadOnly": {
+    "result": "PASS",
+    "readonly": true,
+    "cases": [
+      {
+        "kind": "extended",
+        "mode": "SETS",
+        "views": 12,
+        "refresh": true,
+        "exactFields": true,
+        "statisticsMatchApi": true,
+        "circleAndFinalVerified": true
+      },
+      {
+        "kind": "extended",
+        "mode": "POINTS",
+        "views": 12,
+        "refresh": true,
+        "exactFields": true,
+        "statisticsMatchApi": true,
+        "circleAndFinalVerified": true
+      },
+      {
+        "kind": "guest",
+        "mode": "SETS",
+        "views": 12,
+        "refresh": true,
+        "exactFields": true,
+        "statisticsMatchApi": true,
+        "guest": true,
+        "nullableLevels": true,
+        "sideVisibleInHtmlOnly": true
+      },
+      {
+        "kind": "guest",
+        "mode": "POINTS",
+        "views": 12,
+        "refresh": true,
+        "exactFields": true,
+        "statisticsMatchApi": true,
+        "guest": true,
+        "nullableLevels": true,
+        "sideVisibleInHtmlOnly": true
+      },
+      {
+        "kind": "empty",
+        "mode": "POINTS",
+        "defaults": true,
+        "publicAndAdminCard": true
+      }
+    ],
+    "javaScriptErrors": 0,
+    "sameOriginOnly": true
+  },
+  "readOnlyDatabaseProof": {
+    "result": "PASS",
+    "cases": 7,
+    "allRowsHistoryAndSchemaPreserved": true,
+    "finishedPositionsMatchApi": true,
+    "guestStoredSentinelPreserved": true
+  },
+  "uniqueMatrixViews": 72,
+  "newReadOnlyMatrixViews": 48,
+  "restart": {
+    "result": "PASS",
+    "roundRobinCases": 7,
+    "pilotCases": 5,
+    "allResponsesRowsHistorySchemaPreserved": true,
+    "browserReopened": true
+  },
+  "stopUp": {
+    "result": "PASS",
+    "allResponsesRowsHistorySchemaPreserved": true
+  },
+  "rollbacks": [
+    {
+      "result": "PASS",
+      "savedTeamRowsPreserved": true,
+      "roundRobinAndPilotPreserved": true,
+      "scheduleScoresRankingPreserved": true,
+      "schemaAndLiquibasePreserved": true,
+      "baselineRevision": "62459a2f4fa3192ff730cf89873a10d21b221472",
+      "baselineJarSha256": "4ec17d7e4f325dfa512121a5af917e89913ecbfdf4b978d9c577e203cbc35f81",
+      "currentJarSha256": "f1465bc393ba1b2e57e0f0840c3ec4d1da707d53b6b215fafdcdc0ed44476ba8",
+      "allRowsHistoryAndSchemaPreserved": true,
+      "roundRobinCases": 7
+    },
+    {
+      "result": "PASS",
+      "savedTeamRowsPreserved": true,
+      "roundRobinAndPilotPreserved": true,
+      "scheduleScoresRankingPreserved": true,
+      "schemaAndLiquibasePreserved": true,
+      "baselineRevision": "f6d6b57b7cf6ef2ddbd2b8bf7de2f1c7ed872ae2",
+      "baselineJarSha256": "94b346d14ce40a6717df0cfc5e91245006c8c285c868f0e7b790bb1d66c2a255",
+      "currentJarSha256": "f1465bc393ba1b2e57e0f0840c3ec4d1da707d53b6b215fafdcdc0ed44476ba8",
+      "allRowsHistoryAndSchemaPreserved": true,
+      "roundRobinCases": 7
+    }
+  ],
+  "pilot": {
+    "sourceRevision": "ca0e9f3092f23e75a03f4a10fb559ddc4ffa5459",
+    "jarSha256": "f1465bc393ba1b2e57e0f0840c3ec4d1da707d53b6b215fafdcdc0ed44476ba8",
+    "automated": true,
+    "manual": "NOT_RUN",
+    "cases": [
+      {
+        "key": "qualified-8",
+        "result": "PASS",
+        "knownDefect": null
+      },
+      {
+        "key": "qualified-9",
+        "result": "PASS",
+        "knownDefect": 1067
+      },
+      {
+        "key": "qualified-16",
+        "result": "PASS",
+        "knownDefect": null
+      }
+    ],
+    "expectations": "browser-expectations-2026-11-18.json",
+    "knownDefects": [
+      "https://github.com/UstinKO/padel-core-service/issues/1067"
+    ],
+    "security": {
+      "ownAdmin": 200,
+      "foreignAdmin": 403,
+      "anonymousAdmin": 302,
+      "missingCsrf": 403,
+      "foreignMutation": 403,
+      "publicCard": 200,
+      "unchanged": true
+    },
+    "stale": {
+      "staleVersion": {
+        "status": 302,
+        "staleHeader": true
+      },
+      "stalePair": {
+        "status": 200,
+        "success": false
+      },
+      "unchangedAfterRefusal": true,
+      "regeneratePreservedPairs": true
+    },
+    "realtime": {
+      "legacySubscription": true,
+      "publicSubscription": true,
+      "legacyMessage": true,
+      "publicInvalidation": true,
+      "bothViewsUpdated": true,
+      "repeated": {
+        "status": 200,
+        "success": false,
+        "replayHeader": true
+      },
+      "concurrentSameKey": {
+        "accepted": 1,
+        "rejected": 1
+      },
+      "restorePreservedLinksAndResult": true,
+      "restoreLegacyMessage": true,
+      "restorePublicInvalidation": true,
+      "restoreBothViewsUpdated": true,
+      "restoreIdsPreserved": true,
+      "reactRestoreWithoutNavigation": true
+    },
+    "qualificationBoundary": {
+      "blockedBeforeQualification": true,
+      "directPostUnchanged": true,
+      "invalidScoreNotSent": true,
+      "missingCsrfRejected": {
+        "status": 302,
+        "destination": "/error/403"
+      },
+      "noStartAfterRefusal": true,
+      "startWithoutNavigation": true,
+      "allTeamsSeededAfterQualification": true,
+      "finished": true
+    },
+    "noShow": {
+      "activeTeams": 7,
+      "absentNumber": 8,
+      "excludedFromAvailableAndSeeding": true,
+      "publicRankingContainsAbsent": true
+    },
+    "result": "PASS",
+    "artifactVerified": true,
+    "commonBrowserSmoke": "PASS",
+    "jwt": {
+      "login": 200,
+      "me": 200,
+      "events": 200,
+      "anonymousMe": 401,
+      "transport": "inside-own-preview-container"
+    }
+  },
+  "extended": {
+    "sourceRevision": "ca0e9f3092f23e75a03f4a10fb559ddc4ffa5459",
+    "jarSha256": "f1465bc393ba1b2e57e0f0840c3ec4d1da707d53b6b215fafdcdc0ed44476ba8",
+    "automated": true,
+    "manual": "NOT_RUN",
+    "cases": [
+      {
+        "key": "early-9",
+        "result": "PASS",
+        "repeatedPairPreservedId": true,
+        "invalidQualificationRefused": true,
+        "lastQualificationPreservedPairAndResult": true,
+        "linkedWinner": true,
+        "semifinal": null,
+        "finished": true
+      },
+      {
+        "key": "early-16",
+        "result": "PASS",
+        "repeatedPairPreservedId": true,
+        "invalidQualificationRefused": true,
+        "lastQualificationPreservedPairAndResult": true,
+        "linkedWinner": false,
+        "semifinal": {
+          "confirmedBeforeOtherQuarterfinals": true,
+          "pairAndCourtPreserved": true
+        },
+        "finished": true
+      }
+    ],
+    "result": "PASS"
+  },
+  "jwt": {
+    "login": 200,
+    "me": 200,
+    "events": 200,
+    "anonymousMe": 401,
+    "transport": "inside-own-preview-container"
+  },
+  "expo": {
+    "ordinaryPreviewApi": 401,
+    "gatewayBasicChallenge": true,
+    "qaAdapterApi": 200,
+    "events": 10,
+    "rendered": true,
+    "externalRequestsBlocked": true,
+    "ordinaryPreviewLimitationPreserved": true
+  },
+  "releaseRehearsal": {
+    "result": "PASS",
+    "scenarios": 5,
+    "statePreserved": true
+  },
+  "rateLimit": {
+    "initialHarnessGeneralQuotaEncountered": false,
+    "configuredGeneralPerMinute": 200,
+    "betweenMatricesSeconds": 60,
+    "finalAppContainerAudit": {
+      "rateLimitLines": 0,
+      "limitTypes": [],
+      "templateErrors": 0,
+      "parseErrors": 0
+    },
+    "productionLimitsChanged": false
+  },
+  "sourceSha256": {
+    ".github/workflows/pr-check.yml": "49c2e1d46f7212a39be075bac25c2ab5a4b642d98337d3e949d53752fdff9f11",
+    "automation/ui-preview/round-robin-acceptance.py": "4106349628a21acf31ffa969e68bb14012a81fbd873c817fce7ad39ae9cf44d1",
+    "automation/ui-preview/round-robin-write-http.py": "df2538b7be54d55c7d6359786418186f9e1eff52c4ecdfab9242e3e74af44b62",
+    "padel-application/src/test/java/com/padle/core/application/roundrobin/RoundRobinPositionCommandTest.java": "3b79c370e18f6ee07740fa6cfb41600aa793d9e062a69d1f35afe5f46708dd16",
+    "src/test/java/com/padle/core/padelcoreservice/service/americano/LegacyRoundRobinPositionAdapterTest.java": "ed4c58aa5334c0766bf8c594ac10703447032388822948e7c608b9ca601181a3",
+    "src/test/java/com/padle/core/padelcoreservice/service/americano/RoundRobinPositionIntegrationTest.java": "03b627b924239076671fd69bb305fcfff13086c5b8ca0a184fa6ab5f95ff6416",
+    "src/test/java/com/padle/core/padelcoreservice/service/americano/RoundRobinWriteBaselineTest.java": "db2b039b6f9220f3599cb76c55077c67d4e3e5bf472a019ac8754dddb049cbea",
+    "src/test/java/com/padle/core/padelcoreservice/service/americano/RoundRobinWriteOrderTest.java": "1fbce4fa5a3da8caac63865bf15c4ed3138f759e7fb70fd72e22539f9d610d21",
+    "tests/browser/modular-pilot/round-robin-acceptance.mjs": "6e2f7d59ab7bb274808ad4cc2a116f29e24b5ac47eacfa068f706844f8b9b98e",
+    "tests/browser/modular-pilot/round-robin-query.mjs": "5e09fd5a536b209875039ce850b0364f96c47635f37cb72543830e8e60c1ffcd",
+    "tests/browser/modular-pilot/round-robin-sets.mjs": "d7a145abdb68a361829cc926bbe5c84cb6ab3ff3fa5ce0cbd54c4bcda057e4c8"
+  },
+  "screenshotsLocalSha256": {
+    "target/round-robin-acceptance/extended-points-admin.png": "84f7075bdc58d90f15898af49d7273701b9c4d9df4f17a4bd43412fd150df419",
+    "target/round-robin-acceptance/extended-points-public.png": "f02ffb945832c0b3303608eeb86a3a0058bd2f685c389b7abbd6549dbc168dec",
+    "target/round-robin-acceptance/extended-sets-admin.png": "40d9d9e62876c053d39df519581cad70c99fe860bad8d677c57a2eb006f51cb7",
+    "target/round-robin-acceptance/extended-sets-public.png": "ee80bde5e6c417c52aca9daa3ab86364e78104339997e96457a05d4eee799dcd",
+    "target/round-robin-acceptance/guest-points-admin.png": "dfa0b9a6ea6cb769454550477913619d779a0894b359b73ef66853f71cb7d4fe",
+    "target/round-robin-acceptance/guest-points-public.png": "e900da25b55c758f11cb842379f7ba1a21b4ff13626d263524ca3151839c69bb",
+    "target/round-robin-acceptance/guest-sets-admin.png": "b4fb8269d0abd93fdb2ad5b2a38bdd7c0ed28b687790847127b5fb843e51e29a",
+    "target/round-robin-acceptance/guest-sets-public.png": "b6a680f398ce64f194b0d0af6e795c3b95ad88f985700853a59cc77b77bba2c9"
+  },
+  "docsDrift": "PASS",
+  "agentMigration": "PASS",
+  "generalPreviewCheck": "PASS",
+  "ciWorkflowChanged": true,
+  "knownIssues": [
+    445,
+    453,
+    1067
+  ],
+  "humanManual": "NOT_RUN",
+  "physicalDevices": "NOT_RUN",
+  "voiceOver": "NOT_RUN",
+  "multiReplicaConcurrency": "NOT_RUN",
+  "comparisonScope": {
+    "roundRobinFullRelatedRowsHistorySchemaCases": 7,
+    "pilotGameplayResponseSnapshots": 5,
+    "stopUpScope": "roundRobinAcceptanceCheckpoint",
+    "rateAuditScope": "finalAppContainerOnly"
+  }
+}

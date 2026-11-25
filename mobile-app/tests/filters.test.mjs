@@ -40,3 +40,13 @@ test('level choices follow the selected gender and preserve sums as separate cat
   assert.deepEqual(availableLevels(events, 'MIXTO'), ['SUMA_15']);
   assert.deepEqual(availableLevels(events, 'all'), ['C9', 'C8', 'D7', 'D6', 'SUMA_15']);
 });
+
+
+test('C3 is available from single and combined levels and keeps the numeric order', () => {
+  const events = ['C3', 'C4_C3', 'C4', 'C5', 'SUMA_13'].map((level, index) =>
+    ({ ...fixtures[0], id: index + 1, gender: 'MASCULINO', level }));
+  assert.deepEqual(availableLevels(events, 'MASCULINO'), ['C5', 'C4', 'C3', 'SUMA_13']);
+  assert.deepEqual(filterSchedule(events, { ...defaultFilters, level: 'C3' }).map(x => x.id), [1, 2]);
+  assert.equal(matchesLevel('C4_C3', 'C4'), true);
+  assert.equal(matchesLevel('C4_C3', 'C5'), false);
+});

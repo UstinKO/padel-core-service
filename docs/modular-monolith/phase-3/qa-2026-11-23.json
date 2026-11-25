@@ -1,0 +1,130 @@
+{
+  "task": "LFPT-1279",
+  "date": "2026-11-23",
+  "result": "PASS",
+  "testedWorkingTreeBaseRevision": "d82e7e6871dd06e3cd0622dd12ee56c8da5fade8",
+  "localJarBuiltBeforeCommit": true,
+  "backendVerify": {
+    "tests": 1226,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 2
+  },
+  "enginesTests": 24,
+  "kingOriginalTests": 13,
+  "playoffOriginalTests": 9,
+  "architectureTests": 2,
+  "unchangedSourceSha256": {
+    "KingOfCourtPairingEngine.java": "3b392353664eb3ec823f36d90452ade097d0d12b7a31d72a4b7a6a269ecedb9c",
+    "KingOfCourtPairingEngineTest.java": "2bfb06f680768f2528d74ac03f2d53907b665cfa15675e766279869d470ae9be"
+  },
+  "javaRuntime": 21,
+  "javaRelease": 17,
+  "artifacts": {
+    "engines": "PASS",
+    "application": "PASS",
+    "contract": "PASS"
+  },
+  "artifactGuardTests": 7,
+  "automationTests": {
+    "github": 27,
+    "relay": 48,
+    "worker": 5,
+    "workerSkipped": 1,
+    "preview": 12,
+    "releases": 22
+  },
+  "king": {
+    "result": "PASS",
+    "initialized": true,
+    "uiResults": 2,
+    "nextRound": 2,
+    "immediatePartnerRepeats": 0,
+    "webSocketMessages": 6,
+    "javaScriptErrors": 0,
+    "views": [
+      {
+        "width": 1440,
+        "language": "ru",
+        "courts": 2,
+        "refresh": true
+      },
+      {
+        "width": 1440,
+        "language": "es",
+        "courts": 2,
+        "refresh": true
+      },
+      {
+        "width": 1440,
+        "language": "en",
+        "courts": 2,
+        "refresh": true
+      },
+      {
+        "width": 390,
+        "language": "ru",
+        "courts": 2,
+        "refresh": true
+      },
+      {
+        "width": 390,
+        "language": "es",
+        "courts": 2,
+        "refresh": true
+      },
+      {
+        "width": 390,
+        "language": "en",
+        "courts": 2,
+        "refresh": true
+      }
+    ],
+    "conductHistoryPage": true,
+    "webSocketLibraries": "Два штатных CDN script URL; остальные внешние запросы заблокированы"
+  },
+  "rollback": {
+    "result": "PASS",
+    "statePreserved": true,
+    "schemaAndLiquibasePreserved": true,
+    "repeatedInitializeCurrent": 500,
+    "repeatedInitializeBaseline": 500,
+    "baselineRevision": "d82e7e6871dd06e3cd0622dd12ee56c8da5fade8",
+    "baselineJarSha256": "d42c04da78e67c08502b19ea8d7212f4a35bb93f22c9a4fbc3ab82bb037f296d",
+    "currentJarSha256": "399f1019231be3a3abeda3fcaa2e303a337f229d45ff0ba845d76f9ca39257a3"
+  },
+  "common": {
+    "result": "PASS",
+    "kingStatePreserved": true,
+    "jwt": {
+      "login": 200,
+      "me": 200,
+      "events": 200,
+      "anonymousMe": 401,
+      "transport": "inside-own-preview-container"
+    },
+    "releaseRehearsal": {
+      "result": "PASS",
+      "scenarios": 5,
+      "statePreserved": true
+    },
+    "expo": {
+      "ordinaryPreviewApi": 401,
+      "qaAdapterApi": 200,
+      "events": 10,
+      "rendered": true,
+      "ordinaryPreviewLimitationPreserved": true
+    }
+  },
+  "humanManual": "NOT_RUN",
+  "knownBaselineDefect": {
+    "issue": 1280,
+    "repeatedInitializeHttp": 500
+  },
+  "validationSourcesSha256": {
+    ".github/bin/check-engine-artifact.py": "b7ff86f80b316df29304936c15a531e2cb45775b428294a0549f23c5cc385958",
+    ".github/bin/test_engine_artifact.py": "cdf1ad884ac2301ad2ab3a3d0355ea9003d6244d33c4a55491061279559fcba1",
+    "padel-tournament-engines/src/test/java/com/padle/core/padelcoreservice/service/americano/EngineArchitectureTest.java": "fa1791e707ccecb462cbaa16adeca177839a6b111ce4c0cea6e37734b6dd3b6c",
+    "tests/browser/modular-pilot/king-engine.mjs": "8f89285606b6f83c72b4619886171a30c9fb4d236f0aaf0e297147ee86f75ea0"
+  }
+}

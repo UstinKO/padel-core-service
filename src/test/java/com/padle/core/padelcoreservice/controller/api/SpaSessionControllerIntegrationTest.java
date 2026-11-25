@@ -1,8 +1,12 @@
 package com.padle.core.padelcoreservice.controller.api;
 
 import com.padle.core.padelcoreservice.model.Owner;
+import com.padle.core.padelcoreservice.repository.PlayerRepository;
+import org.springframework.transaction.annotation.Transactional;
+import java.util.UUID;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.enums.OwnerRole;
+import com.padle.core.padelcoreservice.model.enums.Nivel;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,6 +53,9 @@ class SpaSessionControllerIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private PlayerRepository players;
+
     @Test
     void anonymousSessionHasExactSafeShapeAndCsrfCookie() throws Exception {
         var result = mockMvc.perform(get("/api/auth/session"))
@@ -71,27 +78,28 @@ class SpaSessionControllerIntegrationTest {
     }
 
     @Test
+    @Transactional
     void playerSessionContainsOnlyPlayerContract() throws Exception {
-        var player = PlayerPadel.builder()
-                .id(41L)
+        var player = players.saveAndFlush(PlayerPadel.builder()
+                .nivelJugador(Nivel.SIN_ESPECIFICAR)
                 .nombre("Ana")
                 .apellido("Ruiz")
-                .email("ana@example.com")
+                .email("ana-" + UUID.randomUUID() + "@example.test")
                 .passwordHash("must-not-leak")
                 .telefono("+5491112345678")
-                .telegramUsername("must_not_leak")
+                .telegramUsername("qa_session_" + UUID.randomUUID().toString().substring(0,8))
                 .preferredLocale("ru")
                 .activo(true)
                 .emailConfirmado(true)
-                .build();
+                .build());
 
         var result = mockMvc.perform(get("/api/auth/session").with(user(player)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.authenticated").value(true))
                 .andExpect(jsonPath("$.userType").value("PLAYER"))
-                .andExpect(jsonPath("$.id").value(41))
+                .andExpect(jsonPath("$.id").value(player.getId()))
                 .andExpect(jsonPath("$.fullName").value("Ana Ruiz"))
-                .andExpect(jsonPath("$.email").value("ana@example.com"))
+                .andExpect(jsonPath("$.email").value(player.getEmail()))
                 .andExpect(jsonPath("$.roles[0]").value("ROLE_PLAYER"))
                 .andExpect(jsonPath("$.clubId").value(nullValue()))
                 .andExpect(jsonPath("$.hasValidContact").value(true))
@@ -156,26 +164,28 @@ class SpaSessionControllerIntegrationTest {
     }
 
     @Test
+    @Transactional
     void rememberMePlayerUsesSameExactSessionContract() throws Exception {
-        var player = PlayerPadel.builder()
-                .id(61L)
+        var player = players.saveAndFlush(PlayerPadel.builder()
+                .nivelJugador(Nivel.SIN_ESPECIFICAR)
+                .passwordHash("must-not-leak")
                 .nombre("Marta")
                 .apellido("López")
-                .email("marta@example.com")
+                .email("marta-" + UUID.randomUUID() + "@example.test")
                 .preferredLocale("es")
                 .telefono("+5491112345678")
                 .activo(true)
                 .emailConfirmado(true)
-                .build();
+                .build());
         var rememberMe = new RememberMeAuthenticationToken("test-key", player, player.getAuthorities());
 
         var result = mockMvc.perform(get("/api/auth/session").with(authentication(rememberMe)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.authenticated").value(true))
                 .andExpect(jsonPath("$.userType").value("PLAYER"))
-                .andExpect(jsonPath("$.id").value(61))
+                .andExpect(jsonPath("$.id").value(player.getId()))
                 .andExpect(jsonPath("$.fullName").value("Marta López"))
-                .andExpect(jsonPath("$.email").value("marta@example.com"))
+                .andExpect(jsonPath("$.email").value(player.getEmail()))
                 .andExpect(jsonPath("$.roles[0]").value("ROLE_PLAYER"))
                 .andExpect(jsonPath("$.clubId").value(nullValue()))
                 .andExpect(jsonPath("$.hasValidContact").value(true))

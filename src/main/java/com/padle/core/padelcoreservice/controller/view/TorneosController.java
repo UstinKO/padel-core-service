@@ -1,11 +1,7 @@
 package com.padle.core.padelcoreservice.controller.view;
 
-import tools.jackson.databind.cfg.DateTimeFeature;
-import tools.jackson.databind.json.JsonMapper;
 import com.padle.core.padelcoreservice.dto.PlayerResponseDto;
-import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.service.PlayerService;
-import com.padle.core.padelcoreservice.service.TournamentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -15,7 +11,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import java.util.List;
 
 @Slf4j
 @Controller
@@ -23,7 +18,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TorneosController {
 
-    private final TournamentService tournamentService;
     private final PlayerService playerService;
 
     @GetMapping
@@ -49,25 +43,6 @@ public class TorneosController {
                 model.addAttribute("userName", "Usuario");
             }
         }
-
-        // Получаем ВСЕ активные турниры
-        List<TournamentDto> allTournaments = tournamentService.getAllActiveTournaments();
-
-        log.info("Cargados {} torneos activos", allTournaments.size());
-
-        // Конвертируем в JSON для JavaScript фильтров
-        try {
-            // Даты массивами [2026,4,5]/[18,0] — формат, который ждёт JS страницы
-            JsonMapper mapper = JsonMapper.builder().enable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS).build();
-            String tournamentsJson = mapper.writeValueAsString(allTournaments);
-            model.addAttribute("tournamentsJson", tournamentsJson);
-        } catch (Exception e) {
-            log.error("Error converting tournaments to JSON", e);
-            model.addAttribute("tournamentsJson", "[]");
-        }
-
-        model.addAttribute("tournaments", allTournaments);
-        model.addAttribute("totalTournaments", allTournaments.size());
 
         return "torneos";
     }

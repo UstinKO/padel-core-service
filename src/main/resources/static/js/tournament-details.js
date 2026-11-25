@@ -72,6 +72,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (modal === partnerModal) {
                     closeModal();
                 } else if (modal) {
+                    if (modal.dataset.reloadAfterClose === 'true') {
+                        window.location.reload();
+                        return;
+                    }
                     modal.classList.remove('show');
                     modal.style.removeProperty('display');
                 }
@@ -265,10 +269,10 @@ document.addEventListener('DOMContentLoaded', function() {
             name.style.fontWeight = '500';
             name.textContent = p.nombreCompleto;
             li.appendChild(name);
-            if (p.nivelJugador) {
+            if (p.nivelJugador || p.playingSide) {
                 const level = document.createElement('div');
                 level.style.cssText = 'font-size:.82rem; color:#6b7280;';
-                level.textContent = p.nivelJugador;
+                level.textContent = window.PadelPlayingSide?.format(p.nivelJugador, p.playingSide) ?? p.nivelJugador;
                 li.appendChild(level);
             }
             li.addEventListener('click', () => selectPartner(p));
@@ -338,7 +342,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function selectPartner(player) {
         selectedPartnerIdInput.value = player.id;
         document.getElementById('selectedPartnerName').textContent  = player.nombreCompleto;
-        document.getElementById('selectedPartnerLevel').textContent = player.nivelJugador || '';
+        document.getElementById('selectedPartnerLevel').textContent = window.PadelPlayingSide ? window.PadelPlayingSide.format(player.nivelJugador, player.playingSide) : (player.nivelJugador || '');
         document.getElementById('partnerFirstName').value = '';
         document.getElementById('partnerLastName').value = '';
         document.getElementById('partnerTelegram').value = '';
@@ -441,10 +445,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 name.style.fontWeight = '500';
                 name.textContent = p.nombreCompleto;
                 li.appendChild(name);
-                if (p.nivelJugador) {
+                if (p.nivelJugador || p.playingSide) {
                     const level = document.createElement('div');
                     level.style.cssText = 'font-size:.82rem; color:#6b7280;';
-                    level.textContent = p.nivelJugador;
+                    level.textContent = window.PadelPlayingSide?.format(p.nivelJugador, p.playingSide) ?? p.nivelJugador;
                     li.appendChild(level);
                 }
                 li.addEventListener('mousedown', () => selectPartner(p));
@@ -483,11 +487,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function showResultModal(type, title, message) {
+    let resultTimer;
+    let resultVersion = 0;
+    function showResultModal(type, title, message, registration = false) {
+        const version = ++resultVersion;
+        clearTimeout(resultTimer);
         const resultModal = document.getElementById('resultModal');
         const resultModalBody = document.getElementById('resultModalBody');
 
         if (!resultModal || !resultModalBody) return;
+        resultModal.dataset.reloadAfterClose = String(type === 'success');
 
         let icon = '';
         switch(type) {
@@ -510,10 +519,14 @@ document.addEventListener('DOMContentLoaded', function() {
         resultModal.classList.add('show');
 
         if (type === 'success') {
-            setTimeout(() => {
-                resultModal.classList.remove('show');
-                window.location.reload();
-            }, 3000);
+            const prompt = registration && window.PlayerTelegramRegistration?.mount(resultModal);
+            Promise.resolve(prompt).then(shown => {
+                if (shown || version !== resultVersion) return;
+                resultTimer = setTimeout(() => {
+                    resultModal.classList.remove('show');
+                    window.location.reload();
+                }, 3000);
+            });
         }
     }
 
@@ -572,6 +585,7 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
 
         modal.classList.add('show');
+        window.PlayerTelegramRegistration?.mount(modal);
     }
 
     const registrationConfirmModalOkBtn = document.getElementById('registrationConfirmModalOkBtn');
@@ -666,7 +680,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 if (data.status === 'CONFIRMED') {
                                     showRegistrationConfirmModal(window.tournament?.tipo, window.tournament?.cancellationDeadlineFormatted);
                                 } else {
-                                    showResultModal('success', t('details.success.registered'), t('details.success.waitlist_added'));
+                                    showResultModal('success', t('details.success.registered'), t('details.success.waitlist_added'), true);
                                 }
                             } else if (data.needLevel) {
                                 window.trackClarityRegistrationError?.(tournamentId, 'level_required');
@@ -700,6 +714,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         });
+    }
+
+    if (window.location.hash === '#tournament-registration' && registerBtn
+            && isDoubleTournament() && !isTournamentStarted(window.tournament)) {
+        window.history.replaceState(window.history.state, '', window.location.pathname + window.location.search);
+        const tournamentId = registerBtn.dataset.tournamentId;
+        const tournamentName = registerBtn.dataset.tournamentName;
+        if (registrationLevelMissing) {
+            askForRegistrationLevel(tournamentId, () => openPairRegistration(tournamentId, tournamentName));
+        } else {
+            openPairRegistration(tournamentId, tournamentName);
+        }
     }
 
     if (cancelBtn) {
@@ -747,7 +773,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     closeModal();
                     loadLookingForPartner(tournamentId);
                     const soloMsg = mode === 'SEARCH' ? t('details.success.solo_search') : t('details.success.solo_later');
-                    showResultModal('success', t('details.success.ready'), soloMsg);
+                    showResultModal('success', t('details.success.ready'), soloMsg, true);
                 } else if (data.needLevel) {
                     window.trackClarityRegistrationError?.(tournamentId, 'level_required');
                     submitPartnerBtn.disabled = false;
@@ -817,7 +843,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 else if (data.status === 'CONFIRMED')  message = t('details.success.partner_confirmed');
                 else if (data.status === 'WAITLIST')   message = t('details.success.waitlist_pair');
                 else message = t('details.success.pair_complete');
-                showResultModal('success', t('details.success.registered'), message);
+                showResultModal('success', t('details.success.registered'), message, true);
             } else if (data.needLevel) {
                 window.trackClarityRegistrationError?.(tournamentId, 'level_required');
                 submitPartnerBtn.disabled = false;
@@ -888,10 +914,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                <i class="fas fa-handshake"></i> ${t('details.proposal.btn')}
                            </button>`
                         : '';
-                    const nivel = p.nivel ? `<span class="lp-card-nivel">${p.nivel}</span>` : '';
+                    const preference = window.PadelPlayingSide?.format(p.nivel, p.playingSide) ?? p.nivel;
+                    const nivel = preference ? `<span class="lp-card-nivel">${escapeHtml(preference)}</span>` : '';
                     return `<div class="lp-card">
                         <i class="fas fa-user-circle" style="color:#3b82f6; font-size:1.2rem;"></i>
-                        <div style="flex:1;">
+                        <div class="lp-card-person" style="flex:1;">
                             <div class="lp-card-name">${escapeHtml(p.playerName)}</div>
                             ${nivel}
                         </div>

@@ -19,7 +19,8 @@ import java.net.URI;
 import java.util.Locale;
 
 @Order(Ordered.HIGHEST_PRECEDENCE)
-@RestControllerAdvice(assignableTypes = {PublicDiscoveryController.class, PublicEventController.class})
+@RestControllerAdvice(assignableTypes = {PublicDiscoveryController.class, PublicEventController.class,
+        PublicCalendarController.class, PersonalCalendarController.class})
 @RequiredArgsConstructor
 public class PublicDiscoveryExceptionHandler {
     private final MessageSource messages;

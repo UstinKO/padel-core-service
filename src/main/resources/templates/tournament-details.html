@@ -102,6 +102,7 @@
 <main class="tournament-main">
     <div class="container">
         <!-- Breadcrumb -->
+        <p id="publicCalendarReturn" hidden></p>
         <div class="breadcrumb">
             <a href="/" class="breadcrumb-link" th:text="#{breadcrumb.home}">Inicio</a>
             <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
@@ -114,7 +115,7 @@
                 <h1 th:text="#{__${'enum.tipo.' + tournament.tipo.name()}__}">Cancha Abierta</h1>
                 <div class="tournament-badges">
                     <span class="badge" th:text="${tournament.generoFormato}">Masculino</span>
-                    <span class="badge badge-level" th:text="${tournament.categoriaNivel == 'TODOS'} ? #{calendar.level.TODOS} : ${tournament.categoriaNivel}">C7 - Avanzado</span>
+                    <span class="badge badge-level" th:text="${tournament.categoriaNivel == 'TODOS'} ? #{calendar.level.TODOS} : ${#strings.replace(tournament.categoriaNivel, 'C4_C3', 'C4/C3')}">C7 - Avanzado</span>
                     <span class="badge badge-modalidad"
                           th:text="${tournament.modalidad.name() == 'DOBLES'} ? #{tournament.modality.doubles} : #{tournament.modality.individual}">Parejas</span>
                     <span class="badge badge-status"
@@ -124,6 +125,7 @@
                     </span>
                 </div>
 
+                <p th:if="${isTeamAmericanoInitialized == true}"><a class="btn btn-primary" th:href="@{'/tournaments/team-americano/' + ${tournament.id}}" th:text="#{rr.results}">Результаты турнира</a></p>
                 <!-- Кнопка быстрого доступа к сетке — только когда турнир инициализирован -->
                 <div th:if="${kingOfCourtActive or (tournament.tipo.name() == 'AMERICANO' and tournament.modalidad.name() != 'DOBLES' and isInitialized) or (isTeamPlayoffFormat == true and isPlayoffQualStarted == true)}"
                      style="margin-top: 1rem;">
@@ -481,8 +483,7 @@
                                             <i th:if="${reg.playerId == currentUserPlayerId and currentUserPlayerId != null}"
                                                class="fas fa-circle-check verified-me"></i>
                                         </td>
-                                        <td th:if="${tournament.mostrarNivel}" style="padding:.55rem .75rem; color:#495057;"
-                                            th:text="${reg.playerNivel != null ? reg.playerNivel.display : '—'}">—</td>
+                                        <td th:if="${tournament.mostrarNivel}" style="padding:.55rem .75rem; color:#495057;"><span th:replace="~{fragments/playing-side :: info(${reg.playerNivel != null ? reg.playerNivel.display : null}, ${reg.playerPlayingSide}, false)}"></span></td>
                                     </tr>
                                 </th:block>
                                 </tbody>
@@ -549,8 +550,7 @@
                                                         <span style="color:#adb5bd; font-style:italic; font-size:.85rem;" th:text="#{tournament.partner.none}">sin pareja asignada</span>
                                                     </th:block>
                                                 </td>
-                                                <td th:if="${tournament.mostrarNivel}" style="padding:.6rem .75rem; color:#495057;"
-                                                    th:text="${(reg.playerNivel != null ? reg.playerNivel.display : '—') + ' / ' + (reg.partnerNivel != null ? reg.partnerNivel.display : '—')}">—</td>
+                                                <td th:if="${tournament.mostrarNivel}" style="padding:.6rem .75rem; color:#495057;"><span th:replace="~{fragments/playing-side :: info(${reg.playerNivel != null ? reg.playerNivel.display : null}, ${reg.playerPlayingSide}, false)}"></span><br><span th:replace="~{fragments/playing-side :: info(${reg.partnerNivel != null ? reg.partnerNivel.display : null}, ${reg.partnerPlayingSide}, false)}"></span></td>
                                             </tr>
                                         </th:block>
                                     </th:block>
@@ -587,8 +587,7 @@
                                                         </span><i th:if="${reg.partnerId == currentUserPlayerId and currentUserPlayerId != null}" class="fas fa-circle-check verified-me"></i>
                                                     </th:block>
                                                 </td>
-                                                <td th:if="${tournament.mostrarNivel}" style="padding:.6rem .75rem; color:#495057;"
-                                                    th:text="${(reg.playerNivel != null ? reg.playerNivel.display : '—') + ' / ' + (reg.partnerNivel != null ? reg.partnerNivel.display : '—')}">—</td>
+                                                <td th:if="${tournament.mostrarNivel}" style="padding:.6rem .75rem; color:#495057;"><span th:replace="~{fragments/playing-side :: info(${reg.playerNivel != null ? reg.playerNivel.display : null}, ${reg.playerPlayingSide}, false)}"></span><br><span th:replace="~{fragments/playing-side :: info(${reg.partnerNivel != null ? reg.partnerNivel.display : null}, ${reg.partnerPlayingSide}, false)}"></span></td>
                                             </tr>
                                         </th:block>
                                     </th:block>
@@ -622,8 +621,7 @@
                                                     </button>
                                                 </th:block>
                                             </td>
-                                            <td th:if="${tournament.mostrarNivel}" style="padding:.6rem .75rem; color:#495057;"
-                                                th:text="${reg.playerNivel != null ? reg.playerNivel.display : '—'} + ' / —'">—</td>
+                                            <td th:if="${tournament.mostrarNivel}" style="padding:.6rem .75rem; color:#495057;"><span th:replace="~{fragments/playing-side :: info(${reg.playerNivel != null ? reg.playerNivel.display : null}, ${reg.playerPlayingSide}, false)}"></span></td>
                                         </tr>
                                     </th:block>
                                     </tbody>
@@ -1255,6 +1253,7 @@
 <script th:src="@{/js/tournament-availability.js}"></script>
 <script th:src="@{/js/tournament-details.js}"></script>
 <script th:src="@{/js/calendar-picker.js}"></script>
+<script type="module" th:src="@{/js/public-calendar-return.mjs}"></script>
 <script>
     (function() {
         const url  = window.location.href;
@@ -1285,5 +1284,8 @@
         });
     }
 </script>
+<th:block th:replace="~{fragments/playing-side :: assets}"></th:block>
+<th:block th:replace="~{fragments/player-telegram :: registration}"></th:block>
+<th:block th:replace="~{fragments/player-telegram :: assets}"></th:block>
 </body>
 </html>

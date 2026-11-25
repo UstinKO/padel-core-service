@@ -109,12 +109,10 @@ public class TeamAmericanoViewController {
                                           RedirectAttributes redirectAttributes,
                                           @AuthenticationPrincipal Owner currentOwner) {
 
+        tournamentAccessService.assertCanManageTournament(currentOwner, tournamentId);
         if (teamAmericanoService.isInitialized(tournamentId)) {
-            log.info("Team Americano {} already initialized, redirecting", tournamentId);
             return "redirect:/tournaments/team-americano/admin/" + tournamentId;
         }
-
-        tournamentAccessService.assertCanManageTournament(currentOwner, tournamentId);
 
         try {
             log.info("Initializing Team Americano tournamentId={} courts={} points={}",
@@ -354,6 +352,7 @@ public class TeamAmericanoViewController {
     private List<AmericanoRoundDto> getRoundsDto(Long tournamentId) {
         return roundRepository.findByTournamentIdOrderByRoundNumberAsc(tournamentId)
                 .stream()
+                .filter(round -> round.getPhase() == null)
                 .map(round -> {
                     List<AmericanoMatch> matches = matchRepository.findByRoundId(round.getId());
 

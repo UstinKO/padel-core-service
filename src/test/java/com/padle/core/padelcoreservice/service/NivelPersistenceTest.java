@@ -49,7 +49,7 @@ class NivelPersistenceTest {
     @ParameterizedTest
     @EnumSource(value = Nivel.class, names = {
             // nuevas parejas adyacentes masculinas
-            "C9_C8", "C8_C7", "C6_C5", "C5_C4",
+            "C9_C8", "C8_C7", "C6_C5", "C5_C4", "C3", "C4_C3",
             // nuevos individuales y pareja femeninos
             "D5", "D4", "D9_D8", "D7_D6", "D6_D5", "D5_D4",
             // nuevo rango mixto

@@ -22,6 +22,7 @@
     <th:block th:replace="~{fragments/analytics :: cookie-consent}"></th:block>
     <th:block th:replace="~{fragments/analytics :: clarity}"></th:block>
     <link rel="stylesheet" th:href="@{/css/additional-points.css}">
+    <link rel="stylesheet" th:href="@{/css/individual-ranking.css}">
 </head>
 <body data-clarity-mask="true">
 <header class="header">
@@ -84,7 +85,7 @@
              Это исправляет проблему "окно пропало через секунду":
              раньше результаты показывались только через JS-модал который
              закрывался. Теперь они всегда видны на странице. -->
-        <div th:if="${kingData.isFinished}" class="admin-card"
+        <div th:if="${kingData.isFinished}" class="admin-card individual-ranking-card"
              style="border: 2px solid #fbbf24; background: linear-gradient(145deg, #fffbeb, #fff);">
             <div class="admin-card-header" style="background: #1e293b;">
                 <h2 style="color: #fbbf24;">
@@ -97,24 +98,7 @@
                     <h2 style="margin: .5rem 0 .25rem" th:text="#{koc.final.finished}">¡Torneo finalizado!</h2>
                     <p style="color: #64748b; margin: 0" th:text="#{koc.final.subtitle}">Clasificación oficial</p>
                 </div>
-                <table class="admin-table">
-                    <thead>
-                    <tr>
-                        <th>#</th>
-                        <th th:text="#{koc.table.player}">Jugador</th>
-                        <th th:if="${mostrarNivel}" th:text="#{koc.table.level}">Nivel</th>
-                        <th th:text="#{additional.points.match}">Puntos de partidos</th>
-                        <th th:text="#{additional.points.bonus}">Bono de cancha</th>
-                        <th th:text="#{additional.points.title}">Puntos adicionales</th>
-                        <th th:text="#{additional.points.total}">Total</th>
-                        <th th:text="#{koc.table.games}">Juegos</th>
-                        <th th:text="#{koc.table.wd}">V/D</th>
-                    </tr>
-                    </thead>
-                    <tbody id="finalLeaderboard">
-                    <!-- Заполняется JS из того же /state эндпоинта -->
-                    </tbody>
-                </table>
+                <div th:replace="~{fragments/individual-ranking :: publicTable(true, 'finalLeaderboard', ${kingData.ranking}, ${currentPlayerId})}"></div>
             </div>
         </div>
 
@@ -133,29 +117,12 @@
         </div>
 
         <!-- Рейтинг и история -->
-        <div class="admin-grid-two" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem;">
-            <div class="admin-card" th:unless="${kingData.isFinished}">
+        <div class="individual-ranking-layout">
+            <div class="admin-card individual-ranking-card" th:unless="${kingData.isFinished}">
                 <div class="admin-card-header">
                     <h2><i class="fas fa-chart-line"></i> <span th:text="#{koc.ranking.title}">Clasificación en vivo</span></h2>
                 </div>
-                <div class="admin-card-body additional-points-scroll">
-                    <table class="admin-table">
-                        <thead>
-                        <tr>
-                            <th>#</th>
-                            <th th:text="#{koc.table.player}">Jugador</th>
-                            <th th:if="${mostrarNivel}" th:text="#{koc.table.level}">Nivel</th>
-                            <th th:text="#{additional.points.match}">Puntos de partidos</th>
-                            <th th:text="#{additional.points.bonus}">Bono de cancha</th>
-                            <th th:text="#{additional.points.title}">Puntos adicionales</th>
-                            <th th:text="#{additional.points.total}">Total</th>
-                            <th th:text="#{koc.table.games}">Juegos</th>
-                            <th th:text="#{koc.table.wd}">V/D</th>
-                        </tr>
-                        </thead>
-                        <tbody id="leaderboard"></tbody>
-                    </table>
-                </div>
+                <div th:replace="~{fragments/individual-ranking :: publicTable(true, 'leaderboard', ${kingData.ranking}, ${currentPlayerId})}"></div>
             </div>
 
             <div class="admin-card">
@@ -211,7 +178,9 @@
 <script th:src="@{/js/main.js}"></script>
 <div th:replace="~{fragments/additional-points :: copy}"></div>
 <script th:src="@{/js/additional-points.js}"></script>
+<th:block th:replace="~{fragments/individual-ranking :: assets}"></th:block>
 <script th:src="@{/js/king-of-court-viewer.js}"></script>
 
+<th:block th:replace="~{fragments/playing-side :: assets}"></th:block>
 </body>
 </html>

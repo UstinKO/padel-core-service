@@ -66,6 +66,11 @@ public class PilotEloRanking implements EloPilotAudience {
         return access.allows(authentication, snapshot.aliases());
     }
 
+    public Optional<PreviewEloRanking.Row> playerRow(long playerId) {
+        long canonicalId = snapshot.aliases().getOrDefault(playerId, playerId);
+        return currentSnapshot.get().rows().stream().filter(row -> row.id() == canonicalId).findFirst();
+    }
+
     @ModelAttribute
     public void ranking(Model model, Authentication authentication, HttpServletResponse response, HttpServletRequest request) {
         access.protectResponse(response);

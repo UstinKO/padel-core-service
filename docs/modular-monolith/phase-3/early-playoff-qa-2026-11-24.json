@@ -1,0 +1,261 @@
+{
+  "task": "LFPT-1343",
+  "date": "2026-11-24",
+  "result": "PASS",
+  "testedWorkingTreeBaseRevision": "70aea909c65d829ecf3cd0de4fd20a8efa912e52",
+  "localJarBuiltBeforeCommit": true,
+  "backendCleanVerify": {
+    "padel-api-contract": {
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "padel-tournament-engines": {
+      "tests": 103,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "padel-application": {
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "padel-bootstrap": {
+      "tests": 1304,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 4
+    },
+    "total": {
+      "tests": 1414,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 4
+    }
+  },
+  "characterizationBefore": {
+    "result": "PASS",
+    "tests": 40,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "module": "padel-bootstrap",
+    "beforeTransfer": true,
+    "productionSourceSha256": "dfa8d1525cd133f4feda578a4d0992493eb3d470b82576d0eb1b60d0b1d9b2dd",
+    "testSourceSha256": "3fae8f59ceec46725967f78340aa1d6388f582508769c690caba92a65ba2768b"
+  },
+  "characterizationAfter": {
+    "tests": 40,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "enginesTests": 103,
+  "previousEnginesTests": 63,
+  "newCharacterizationTests": 40,
+  "productionUnchanged": true,
+  "testUnchangedAfterCharacterization": true,
+  "javaRuntime": 21,
+  "javaRelease": 17,
+  "artifacts": {
+    "engines": "PASS",
+    "application": "PASS",
+    "contract": "PASS",
+    "calculationClasses": 7,
+    "requiredNestedTypes": 15,
+    "publicNestedTypes": 9
+  },
+  "artifactGuardTests": 7,
+  "automationTests": {
+    "github": 27,
+    "relay": 48,
+    "worker": 5,
+    "workerSkipped": 1,
+    "preview": 12,
+    "releases": 22
+  },
+  "pilot": {
+    "sourceRevision": "70aea909c65d829ecf3cd0de4fd20a8efa912e52",
+    "jarSha256": "bec51e94b996b4f21606cdc8f9017427479dc61e23abea353da90907341d2153",
+    "automated": true,
+    "manual": "NOT_RUN",
+    "cases": [
+      {
+        "key": "qualified-8",
+        "result": "PASS",
+        "knownDefect": null
+      },
+      {
+        "key": "qualified-9",
+        "result": "PASS",
+        "knownDefect": 1067
+      },
+      {
+        "key": "qualified-16",
+        "result": "PASS",
+        "knownDefect": null
+      }
+    ],
+    "expectations": "browser-expectations-2026-11-18.json",
+    "knownDefects": [
+      "https://github.com/UstinKO/padel-core-service/issues/1067"
+    ],
+    "security": {
+      "ownAdmin": 200,
+      "foreignAdmin": 403,
+      "anonymousAdmin": 302,
+      "missingCsrf": 403,
+      "foreignMutation": 403,
+      "publicCard": 200,
+      "unchanged": true
+    },
+    "stale": {
+      "staleVersion": {
+        "status": 302,
+        "staleHeader": true
+      },
+      "stalePair": {
+        "status": 200,
+        "success": false
+      },
+      "unchangedAfterRefusal": true,
+      "regeneratePreservedPairs": true
+    },
+    "realtime": {
+      "legacySubscription": true,
+      "publicSubscription": true,
+      "legacyMessage": true,
+      "publicInvalidation": true,
+      "bothViewsUpdated": true,
+      "repeated": {
+        "status": 200,
+        "success": false,
+        "replayHeader": true
+      },
+      "concurrentSameKey": {
+        "accepted": 1,
+        "rejected": 1
+      },
+      "restorePreservedLinksAndResult": true,
+      "restoreLegacyMessage": true,
+      "restorePublicInvalidation": true,
+      "restoreBothViewsUpdated": true,
+      "restoreIdsPreserved": true,
+      "reactRestoreWithoutNavigation": true
+    },
+    "qualificationBoundary": {
+      "blockedBeforeQualification": true,
+      "directPostUnchanged": true,
+      "invalidScoreNotSent": true,
+      "missingCsrfRejected": {
+        "status": 302,
+        "destination": "/error/403"
+      },
+      "noStartAfterRefusal": true,
+      "startWithoutNavigation": true,
+      "allTeamsSeededAfterQualification": true,
+      "finished": true
+    },
+    "noShow": {
+      "activeTeams": 7,
+      "absentNumber": 8,
+      "excludedFromAvailableAndSeeding": true,
+      "publicRankingContainsAbsent": true
+    },
+    "result": "PASS",
+    "artifactVerified": true,
+    "commonBrowserSmoke": "PASS",
+    "jwt": {
+      "login": 200,
+      "me": 200,
+      "events": 200,
+      "anonymousMe": 401,
+      "transport": "inside-own-preview-container"
+    }
+  },
+  "extended": {
+    "sourceRevision": "70aea909c65d829ecf3cd0de4fd20a8efa912e52",
+    "jarSha256": "bec51e94b996b4f21606cdc8f9017427479dc61e23abea353da90907341d2153",
+    "automated": true,
+    "manual": "NOT_RUN",
+    "cases": [
+      {
+        "key": "early-9",
+        "result": "PASS",
+        "repeatedPairPreservedId": true,
+        "invalidQualificationRefused": true,
+        "lastQualificationPreservedPairAndResult": true,
+        "linkedWinner": true,
+        "semifinal": null,
+        "finished": true
+      },
+      {
+        "key": "early-16",
+        "result": "PASS",
+        "repeatedPairPreservedId": true,
+        "invalidQualificationRefused": true,
+        "lastQualificationPreservedPairAndResult": true,
+        "linkedWinner": false,
+        "semifinal": {
+          "confirmedBeforeOtherQuarterfinals": true,
+          "pairAndCourtPreserved": true
+        },
+        "finished": true
+      }
+    ],
+    "result": "PASS"
+  },
+  "devtools": {
+    "result": "PASS",
+    "starts": 2,
+    "sameRestartLoader": true,
+    "earlyPlayoffSeeding": true,
+    "scenarioSearch": true,
+    "negativeControl": "EXPECTED_ILLEGAL_ACCESS_ERROR",
+    "springBootDevTools": true,
+    "probeOnlyContext": true,
+    "applicationServiceSharesLoader": true
+  },
+  "devtoolsProbeSourceSha256": "784e9c59d0ac8c990a8de85463be77e43a45fa13c3f03d929aa7f122d54f8707",
+  "jwt": {
+    "login": 200,
+    "me": 200,
+    "events": 200,
+    "anonymousMe": 401,
+    "transport": "inside-own-preview-container"
+  },
+  "expo": {
+    "ordinaryPreviewApi": 401,
+    "gatewayBasicChallenge": true,
+    "qaAdapterApi": 200,
+    "events": 10,
+    "rendered": true,
+    "externalRequestsBlocked": true,
+    "ordinaryPreviewLimitationPreserved": true
+  },
+  "releaseRehearsal": {
+    "result": "PASS",
+    "scenarios": 5,
+    "statePreserved": true
+  },
+  "rollback": {
+    "result": "PASS",
+    "scheduleScoresRankingPreserved": true,
+    "schemaAndLiquibasePreserved": true,
+    "baselineRevision": "70aea909c65d829ecf3cd0de4fd20a8efa912e52",
+    "baselineJarSha256": "c2c7dcb4b6ac186702f7a3ef7fe777669751f359344b38b633b8fa03844e2aba",
+    "currentJarSha256": "bec51e94b996b4f21606cdc8f9017427479dc61e23abea353da90907341d2153"
+  },
+  "docsDrift": "PASS",
+  "agentMigration": "PASS",
+  "humanManual": "NOT_RUN",
+  "multiReplicaConcurrency": "NOT_RUN",
+  "validationSourcesSha256": {
+    ".github/bin/check-engine-artifact.py": "303e6da2992db3b72ea5f182dc325085ffa1a6563d4cb2fa197313e3ec9c1de1",
+    ".github/bin/test_engine_artifact.py": "cdf1ad884ac2301ad2ab3a3d0355ea9003d6244d33c4a55491061279559fcba1",
+    "padel-tournament-engines/src/test/java/com/padle/core/padelcoreservice/service/americano/EarlyPlayoffSeedingTest.java": "3fae8f59ceec46725967f78340aa1d6388f582508769c690caba92a65ba2768b"
+  }
+}

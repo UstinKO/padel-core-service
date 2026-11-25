@@ -30,6 +30,7 @@ public interface AmericanoMapper {
         // новые поля маппятся напрямую (имена совпадают)
     @Mapping(target = "matchPoints", ignore = true)
     @Mapping(target = "additionalPoints", ignore = true)
+    @Mapping(source = "player.playingSide", target = "playerPlayingSide")
     AmericanoPlayerDto toDto(AmericanoPlayer player);
 
     List<AmericanoPlayerDto> toPlayerDtoList(List<AmericanoPlayer> players);
@@ -89,5 +90,6 @@ public interface AmericanoMapper {
     @Mapping(target = "position", ignore = true)
     @Mapping(target = "matchPoints", ignore = true)
     @Mapping(target = "additionalPoints", ignore = true)
+    @Mapping(source = "player.playingSide", target = "playerPlayingSide")
     AmericanoPlayerRankingDto toRankingDto(AmericanoPlayer player);
 }

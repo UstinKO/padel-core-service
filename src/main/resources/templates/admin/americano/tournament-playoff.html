@@ -188,7 +188,7 @@
                 <h1 th:text="${tournament.nombre}">Americano Equipos</h1>
                 <div class="tournament-badges">
                     <span class="badge" th:text="#{__${'enum.genero.' + tournament.generoFormato.name()}__}">Mixto</span>
-                    <span class="badge badge-level" th:text="${tournament.categoriaNivel}">C7</span>
+                    <span class="badge badge-level" th:text="${#strings.replace(tournament.categoriaNivel, 'C4_C3', 'C4/C3')}">C7</span>
                     <span class="badge badge-type" th:text="#{__${'enum.tipo.' + tournament.tipo.name()}__}">Americano Equipos</span>
                     <span class="badge badge-status" th:text="#{__${'enum.estado.' + tournament.estado.name()}__}"
                           th:classappend="'badge-' + ${tournament.estado.toString().toLowerCase()}">En curso</span>
@@ -340,6 +340,7 @@
                                 <span class="p1" th:text="${team.player1Name}">Jugador 1</span>
                                 <span th:if="${team.player2Name != null}"> / <span th:text="${team.player2Name}">Jugador 2</span></span>
                             </div>
+                            <small><span th:replace="~{fragments/playing-side :: info(${team.player1Nivel != null ? team.player1Nivel.display : null}, ${team.player1PlayingSide}, true)}"></span> / <span th:replace="~{fragments/playing-side :: info(${team.player2Nivel != null ? team.player2Nivel.display : null}, ${team.player2PlayingSide}, true)}"></span></small>
                         </td>
                         <td>
                             <span th:if="${team.registrationSource != null}"
@@ -752,6 +753,7 @@
                     </div>
                 </details>
 
+                <div id="playoffStartSection">
                 <!-- Инициализация плей-офф: квалификация полностью завершена -->
                 <div th:if="${ranking != null and ranking.finished and not playoffStarted}"
                      style="padding:1rem 1.5rem;background:#fef9c3;border-top:1px solid #fcd34d">
@@ -786,6 +788,7 @@
                             <span th:text="#{admin.playoff.btn.start_playoff}">Iniciar Playoff</span>
                         </button>
                     </form>
+                </div>
                 </div>
             </div>
         </div>
@@ -1480,7 +1483,23 @@
 
     window.addEventListener('team-playoff-update', refreshCourtBoard);
 
-    // ── Сохранение результата квалификации ────────────────────────────
+    let playoffStartRequest = 0;
+
+    async function refreshPlayoffStart() {
+        const section = document.getElementById('playoffStartSection');
+        if (!section) return;
+        const current = ++playoffStartRequest;
+        try {
+            const response = await fetch(location.pathname + location.search, {cache: 'no-store'});
+            if (!response.ok) return;
+            const page = new DOMParser().parseFromString(await response.text(), 'text/html');
+            const next = page.getElementById('playoffStartSection');
+            if (next && current === playoffStartRequest) section.replaceChildren(...next.childNodes);
+        } catch {
+            // При недоступном чтении сохраняем последнее подтверждённое состояние блока.
+        }
+    }
+
     function submitQualScore(btn) {
         const matchId = btn.dataset.matchId;
         const card    = document.getElementById('qmatch-' + matchId);
@@ -1516,6 +1535,7 @@
                 <button class="edit-btn" data-match-id="${matchId}" data-g1="${g1}" data-g2="${g2}"
                         onclick="showQualEdit(this)"><i class="fas fa-edit"></i> editar</button>`;
                 updateQualRanking();
+                refreshPlayoffStart();
                 refreshCourtBoard();
             } else {
                 alert(data.message === 'conduct.history.qualification_dependency'

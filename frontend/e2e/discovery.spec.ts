@@ -118,3 +118,13 @@ test('loading, error, retry and empty result retain filters', async ({ page }) =
   await expect(page.getByRole('heading', { name: 'No matching events' })).toBeVisible();
   await expect(page.getByRole('combobox', { name: 'Level', exact: true })).toHaveValue('C7');
 });
+
+test('C3 catalogue filter survives reload and supports the combined category', async ({ page }) => {
+  await page.goto('/preview/torneos?level=C3');
+  const level = page.getByRole('combobox', { name: 'Level', exact: true });
+  await expect(level).toHaveValue('C3');
+  await level.selectOption('C4_C3');
+  await expect(page).toHaveURL(/level=C4_C3/);
+  await page.reload();
+  await expect(level).toHaveValue('C4_C3');
+});

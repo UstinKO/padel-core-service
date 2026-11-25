@@ -43,6 +43,9 @@ public class Owner implements UserDetails {
     @Column(name = "phone")
     private String phone;
 
+    @Column(name = "organization_name", length = 120)
+    private String organizationName;
+
     @Column(name = "role", nullable = false)
     @Enumerated(EnumType.STRING)
     @Builder.Default

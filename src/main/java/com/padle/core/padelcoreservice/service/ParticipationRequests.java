@@ -40,6 +40,14 @@ public class ParticipationRequests {
     }
 
     void open(TournamentRegistration row, Trigger trigger, Long bookedBy) {
+        open(row, trigger, bookedBy, true);
+    }
+
+    void openTelegram(TournamentRegistration row, Trigger trigger) {
+        open(row, trigger, row.getPairBookedBy(), false);
+    }
+
+    private void open(TournamentRegistration row, Trigger trigger, Long bookedBy, boolean sendEmail) {
         var previous = requests.findByRegistrationIdAndSupersededAtIsNull(row.getId());
         if (previous.filter(request -> sameCycle(request, row)).isPresent()) return;
 
@@ -56,7 +64,7 @@ public class ParticipationRequests {
         recipient = recipient.filter(PlayerPadel::isActivo).filter(player -> !player.isGuestAccount());
         Long delegateId = guest ? recipient.map(PlayerPadel::getId).orElse(null) : null;
         var request = requests.save(new ParticipationRequest(row, delegateId, trigger, now));
-        if (!responseEmailEnabled) return;
+        if (!responseEmailEnabled || !sendEmail) return;
         recipient.filter(player -> player.getEmail() != null && !player.getEmail().isBlank()).ifPresent(player -> {
             String to = player.getEmail();
             String participant = row.getPlayer().getNombreCompleto();
