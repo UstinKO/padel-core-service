@@ -8,7 +8,7 @@
 
 [Места кругового POINTS](modular-monolith/phase-3/round-robin-points-extraction.md) и компаратор RoundRobinRules.order также вычисляет engines; MapStruct связывает результат с исходными командами по индексу строки.
 
-Подготовлена [фаза 4](modular-monolith/phase-4/README.md), #1374: baseline #1375 → finalOrder #1376 → application read-сценарий #1377 → приёмка #1378. Baseline #1375 включён через PR #1379, [итоговые места #1376](modular-monolith/phase-4/final-order-extraction.md) выделены в engines (10 вычислений, 24 обязательных вложенных типа). В #1377 [композиция круговой таблицы и итоговых мест перенесена в application](modular-monolith/phase-4/application-query.md); следующий шаг — приёмка #1378. [Анализ](modular-monolith/phase-4/code-analysis.md) учитывает ответы initialize/finish внутри write-транзакции и точечные разрешения engines в guards.
+Подготовлена [фаза 4](modular-monolith/phase-4/README.md), #1374: baseline #1375 → finalOrder #1376 → application read-сценарий #1377 → приёмка #1378. Baseline #1375 включён через PR #1379, [итоговые места #1376](modular-monolith/phase-4/final-order-extraction.md) выделены в engines (10 вычислений, 24 обязательных вложенных типа). В #1377 [композиция круговой таблицы и итоговых мест перенесена в application](modular-monolith/phase-4/application-query.md); [независимая техническая приёмка #1378](modular-monolith/phase-4/acceptance.md) завершает read-фазу; write-сценарии и хранение остаются отдельными этапами. [Анализ](modular-monolith/phase-4/code-analysis.md) учитывает ответы initialize/finish внутри write-транзакции и точечные разрешения engines в guards.
 
 ---
 

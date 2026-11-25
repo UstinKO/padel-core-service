@@ -159,8 +159,13 @@ jobs:
           sleep 60
           python3 automation/ui-preview/playoff-pilot.py run --rehearse
           python3 automation/ui-preview/playoff-pilot.py extended
+          # Круговой read-срез: отдельные синтетические данные и собственный AUTH-интервал.
+          sleep 60
+          python3 automation/ui-preview/round-robin-acceptance.py run
+          python3 automation/ui-preview/round-robin-acceptance.py capture
           python3 automation/ui-preview/preview.py stop
           python3 automation/ui-preview/preview.py up
+          python3 automation/ui-preview/round-robin-acceptance.py compare
 
       - name: Modular pilot evidence
         if: always()
@@ -174,6 +179,9 @@ jobs:
             target/modular-pilot/rollback.json
             target/modular-pilot/jwt-smoke.json
             target/release-rehearsal/report.json
+            target/round-robin-acceptance/browser.json
+            target/round-robin-acceptance/read-only-browser.json
+            target/round-robin-acceptance/read-only.json
           if-no-files-found: ignore
           retention-days: 3
 
