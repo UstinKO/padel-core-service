@@ -29,7 +29,21 @@ async function pageFor(ctx) {
     const page = await ctx.newPage();
     page.setDefaultTimeout(15000);
     page.on('pageerror', error => errors.push(String(error)));
-    page.on('crash', () => { const message = 'Browser page crashed at ' + new URL(page.url()).pathname; errors.push(message); console.error(message); });
+    page.on('crash', async () => {
+        const message = 'Browser page crashed at ' + new URL(page.url()).pathname;
+        errors.push(message); console.error(message);
+        try {
+            const [memory, vm, cgroup] = await Promise.all([
+                readFile('/proc/meminfo', 'utf8'), readFile('/proc/vmstat', 'utf8'), readFile('/sys/fs/cgroup/memory.events', 'utf8')
+            ]);
+            console.error('BROWSER_RESOURCES ' + JSON.stringify({
+                memory: memory.split('\\n').filter(line => /^(MemTotal|MemAvailable|SwapFree):/.test(line)),
+                oom: vm.split('\\n').filter(line => line.startsWith('oom_kill ')), cgroup
+            }));
+        } catch (diagnosticError) {
+            console.error('Resource diagnostics unavailable: ' + diagnosticError.message);
+        }
+    });
     return page;
 }
 async function login(page, email, destination, { openLogin = true, hash = '', keepConsentVisible = false } = {}) {
@@ -397,6 +411,10 @@ try {
     await admin.unroute(api);
     assert.ok(!requests.some(url => url.includes('connect.facebook.net')));
     record('internal attribution works with Meta disabled');
+    await playerContext.close();
+    await adminContext.close();
+    await browser.close();
+    browsers.pop();
     const signupSafari = await webkit.launch(); browsers.push(signupSafari);
     await createAccountAndRegisterPair(signupSafari, 'webkit', fixture.signups[1], 'ru', { ...devices['iPhone 13 Pro'] });
     await signupSafari.close();
