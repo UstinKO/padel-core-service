@@ -65,6 +65,11 @@ public class AdminTournamentCopyController {
         newTournament.setDeadlineCancelacion(sourceTournament.getDeadlineCancelacion());
         newTournament.setInfoDetallada(sourceTournament.getInfoDetallada());
         newTournament.setContactoOrganizador(sourceTournament.getContactoOrganizador());
+        newTournament.setOrganizerName(sourceTournament.getOrganizerName());
+        newTournament.setOrganizerPhone(sourceTournament.getOrganizerPhone());
+        newTournament.setOrganizerCountry(sourceTournament.getOrganizerCountry());
+        newTournament.setOrganizerContactOriginal(sourceTournament.getOrganizerContactOriginal());
+        newTournament.setOrganizerContact(sourceTournament.getOrganizerContact());
         newTournament.setFaqUrl(sourceTournament.getFaqUrl());
         newTournament.setVisibilidad(sourceTournament.getVisibilidad());
 

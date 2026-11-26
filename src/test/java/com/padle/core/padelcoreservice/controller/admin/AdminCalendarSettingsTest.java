@@ -66,7 +66,7 @@ class AdminCalendarSettingsTest {
                 .fechaInicio(LocalDate.of(2030, 12, 15)).horaInicio(LocalTime.of(18, 30)).duracion("4 horas")
                 .durationMinutes(90).generoFormato(GenderFormat.MASCULINO).categoriaNivel(Nivel.C7)
                 .tipo(TournamentType.KING_OF_COURT).modalidad(Modalidad.INDIVIDUAL).cupoMax(16)
-                .precio(BigDecimal.ZERO).contactoOrganizador("test-only").build());
+                .precio(BigDecimal.ZERO).contactoOrganizador("+5491123456789").build());
     }
 
     @Test
@@ -134,7 +134,7 @@ class AdminCalendarSettingsTest {
                 .param("duracion", "4 horas").param("durationMinutes", "105").param("timeZone", "Europe/Madrid")
                 .param("generoFormato", "MASCULINO").param("categoriaNivel", "C7").param("tipo", event.getTipo().name())
                 .param("modalidad", "INDIVIDUAL").param("cupoMax", "16").param("precio", "0")
-                .param("moneda", "ARS").param("estado", "REGISTRO_ABIERTO").param("contactoOrganizador", "test-only");
+                .param("moneda", "ARS").param("estado", "REGISTRO_ABIERTO").param("contactoOrganizador", "+5491123456789");
     }
 
     @Test

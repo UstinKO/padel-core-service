@@ -86,7 +86,7 @@ class PlayoffPilotData {
                 INSERT INTO tournaments_db(club_id,nombre,fecha_inicio,hora_inicio,genero_formato,categoria_nivel,
                     tipo,modalidad,cupo_max,precio,estado,contacto_organizador,is_active,created_by,owner_id)
                 VALUES (:club,:name,current_date+7,'12:00','MIXTO','C9','AMERICANO_TEAMS','DOBLES',:capacity,0,
-                    'REGISTRO_ABIERTO','pilot@example.test',true,:owner,:owner) RETURNING id
+                    'REGISTRO_ABIERTO','+5491123456789',true,:owner,:owner) RETURNING id
                 """).param("club", accounts.clubId()).param("name", "Playoff pilot " + key)
                 .param("capacity", count).param("owner", accounts.managerId()).query(Long.class).single();
     }

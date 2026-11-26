@@ -455,6 +455,8 @@ public class AdminController {
         }
         log.info("Updating tournament: {} by owner: {}", id, owner.getEmail());
 
+        tournamentDto.setId(id);
+
         if (bindingResult.hasErrors()) {
             model.addAttribute("clubs", clubsForForm(owner));
             model.addAttribute("genderFormats", Arrays.asList(GenderFormat.values()));

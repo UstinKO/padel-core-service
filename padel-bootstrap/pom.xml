@@ -13,17 +13,17 @@
 
     <dependencies>
         <dependency>
+            <groupId>com.googlecode.libphonenumber</groupId>
+            <artifactId>libphonenumber</artifactId>
+            <version>9.0.44</version>
+        </dependency>
+        <dependency>
             <groupId>com.padle.core</groupId>
             <artifactId>padel-api-contract</artifactId>
         </dependency>
         <dependency>
             <groupId>com.padle.core</groupId>
             <artifactId>padel-tournament-engines</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.googlecode.libphonenumber</groupId>
-            <artifactId>libphonenumber</artifactId>
-            <version>9.0.44</version>
         </dependency>
         <dependency>
             <groupId>com.padle.core</groupId>

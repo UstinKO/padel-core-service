@@ -185,7 +185,7 @@ class TournamentVisibilidadTest {
                 .cupoMax(16)
                 .precio(BigDecimal.TEN)
                 .moneda("ARS")
-                .contactoOrganizador("test@example.com")
+                .contactoOrganizador("+5491123456789")
                 .build();
     }
 }

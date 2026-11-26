@@ -6,6 +6,8 @@ import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
 import com.padle.core.padelcoreservice.model.enums.TournamentVisibility;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.padle.core.padelcoreservice.validation.ValidOrganizerContact;
+import com.padle.core.padelcoreservice.service.contact.OrganizerContacts;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
@@ -21,6 +23,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 
+@ValidOrganizerContact
 @Data
 @Builder
 @NoArgsConstructor
@@ -59,6 +62,15 @@ public class TournamentDto {
     private String cancellationDeadlineFormatted;
     private String infoDetallada;
     private String contactoOrganizador;
+    @Size(max = 160, message = "{organizer.contact.name.invalid}")
+    private String organizerName;
+    @Size(max = 500, message = "{organizer.contact.phone.invalid}")
+    private String organizerPhone;
+    @Size(max = 2, message = "{organizer.contact.country.invalid}")
+    private String organizerCountry;
+    @JsonIgnore
+    private String organizerContactOriginal;
+    private OrganizerContacts.Contact organizerContact;
     @jakarta.validation.constraints.Size(max = 2000)
     private String paymentInstructions;
     private String faqUrl;

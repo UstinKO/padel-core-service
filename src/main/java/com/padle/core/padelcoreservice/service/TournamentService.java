@@ -1,5 +1,8 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.padelcoreservice.service.contact.OrganizerContacts;
+import com.padle.core.padelcoreservice.exception.OrganizerContactException;
+
 import com.padle.core.padelcoreservice.dto.PublicCatalogFilter;
 import com.padle.core.padelcoreservice.repository.PublicCatalogSpecification;
 import org.springframework.data.domain.Page;
@@ -937,6 +940,7 @@ public class TournamentService {
         }
 
         Tournament tournament = tournamentMapper.toEntity(tournamentDto);
+        normalizeOrganizerContact(tournamentDto, tournament);
         tournament.setNombre(Tournament.generateNombre(tournament.getGeneroFormato(), tournament.getCategoriaNivel()));
         tournament.setFaqUrl(normalizeFaqUrl(tournamentDto.getFaqUrl()));
         tournament.setTimeZone(EventSchedule.zone(tournamentDto.getTimeZone()).getId());
@@ -1488,7 +1492,7 @@ public class TournamentService {
         existing.setMoneda(dto.getMoneda());
         existing.setDeadlineCancelacion(dto.getDeadlineCancelacion());
         existing.setInfoDetallada(dto.getInfoDetallada());
-        existing.setContactoOrganizador(dto.getContactoOrganizador());
+        normalizeOrganizerContact(dto, existing);
         existing.setPaymentInstructions(dto.getPaymentInstructions());
         existing.setFaqUrl(normalizeFaqUrl(dto.getFaqUrl()));
         if (dto.getEstado() != null) {
@@ -1496,6 +1500,19 @@ public class TournamentService {
         }
         existing.setMostrarNivel(Boolean.TRUE.equals(dto.getMostrarNivel()));
         existing.setVisibilidad(dto.getVisibilidad() != null ? dto.getVisibilidad() : TournamentVisibility.PUBLICO);
+    }
+
+    private void normalizeOrganizerContact(TournamentDto source, Tournament target) {
+        var contact = OrganizerContacts.input(source);
+        if (!contact.valid()) {
+            throw new OrganizerContactException(
+                    messageSource.getMessage(contact.errorCode(), null, LocaleContextHolder.getLocale()));
+        }
+        if (target.getOrganizerContactOriginal() == null) {
+            target.setOrganizerContactOriginal(target.getId() == null && source.getOrganizerPhone() != null
+                    ? source.getOrganizerPhone() : target.getContactoOrganizador());
+        }
+        tournamentMapper.applyOrganizerContact(contact, target);
     }
 
     private String normalizeFaqUrl(String url) {

@@ -102,6 +102,18 @@ public class Tournament {
     @Column(name = "contacto_organizador", nullable = false, length = 100)
     private String contactoOrganizador;
 
+    @Column(name = "organizer_name", length = 160)
+    private String organizerName;
+
+    @Column(name = "organizer_phone", length = 20)
+    private String organizerPhone;
+
+    @Column(name = "organizer_country", length = 2)
+    private String organizerCountry;
+
+    @Column(name = "organizer_contact_original", columnDefinition = "TEXT")
+    private String organizerContactOriginal;
+
     // Текст реквизитов конкретного мероприятия, вводимый организатором.
     @Column(name = "payment_instructions", columnDefinition = "TEXT")
     private String paymentInstructions;
