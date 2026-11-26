@@ -1,6 +1,7 @@
 package com.padle.core.padelcoreservice.controller.api;
 
 import com.padle.core.padelcoreservice.service.AccountService;
+import com.padle.core.padelcoreservice.security.TelegramOnboardingSession;
 import com.padle.core.padelcoreservice.telegram.PlayerTelegramOnboarding;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -16,8 +17,6 @@ public class TelegramOnboardingController {
     private final PlayerTelegramOnboarding onboarding;
     private final AccountService accounts;
 
-    public static final String SESSION_TOKEN = "telegramOnboardingToken";
-
     @ModelAttribute
     public void privateResponse(HttpServletResponse response) {
         response.setHeader("Cache-Control","no-store");
@@ -30,17 +29,13 @@ public class TelegramOnboardingController {
 
     @GetMapping("/api/players/me/telegram/onboarding")
     @PreAuthorize("hasRole('PLAYER')")
-    public PlayerTelegramOnboarding.Review review(HttpSession session, Authentication auth) {
-        return onboarding.review(token(session),accounts.player(auth));
+    public PlayerTelegramOnboarding.Review review(@RequestParam(defaultValue="") String request, HttpSession session, Authentication auth) {
+        return onboarding.review(TelegramOnboardingSession.token(session,request),accounts.player(auth));
     }
 
     @PostMapping("/api/players/me/telegram/onboarding")
     @PreAuthorize("hasRole('PLAYER')")
-    public PlayerTelegramOnboarding.Review confirm(HttpSession session, Authentication auth, Locale locale) {
-        return onboarding.stage(token(session),accounts.player(auth),locale);
-    }
-
-    public static String token(HttpSession session) {
-        return session.getAttribute(SESSION_TOKEN) instanceof String value ? value : "";
+    public PlayerTelegramOnboarding.Review confirm(@RequestParam(defaultValue="") String request, HttpSession session, Authentication auth, Locale locale) {
+        return onboarding.stage(TelegramOnboardingSession.token(session,request),accounts.player(auth),locale);
     }
 }

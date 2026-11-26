@@ -1,7 +1,7 @@
 package com.padle.core.padelcoreservice.controller;
 
 import com.padle.core.padelcoreservice.exception.AccountException;
-import com.padle.core.padelcoreservice.controller.api.TelegramOnboardingController;
+import com.padle.core.padelcoreservice.security.TelegramOnboardingSession;
 import com.padle.core.padelcoreservice.service.AccountService;
 import com.padle.core.padelcoreservice.telegram.PlayerTelegramOnboarding;
 import jakarta.servlet.http.HttpServletResponse;
@@ -17,11 +17,13 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.util.Locale;
+import java.util.UUID;
 
 @Controller
 @RequiredArgsConstructor
@@ -31,23 +33,24 @@ public class TelegramConnectController {
     private final MessageSource messages;
 
     @GetMapping("/telegram/connect")
-    public String connect(Authentication auth, HttpSession session,
+    public String connect(@RequestParam(defaultValue="") String request, Authentication auth, HttpSession session,
                           Model model, RedirectAttributes redirect, HttpServletResponse response, Locale locale) {
         response.setHeader("Cache-Control","no-store");
         response.setHeader("Referrer-Policy","no-referrer");
-        String token=TelegramOnboardingController.token(session);
+        String token=TelegramOnboardingSession.token(session,request);
+        model.addAttribute("requestId",token.isEmpty()?"":request);
         if (onboarding.available() && !token.isEmpty() &&
                 (auth==null || !auth.isAuthenticated() || auth instanceof AnonymousAuthenticationToken)) {
-            redirect.addAttribute("destination","/telegram/connect");
+            redirect.addAttribute("destination",TelegramOnboardingSession.destination(UUID.fromString(request)));
             return "redirect:/login";
         }
         try {
-            model.addAttribute("link",!onboarding.available()
+            model.addAttribute("link",!onboarding.available() || (!request.isEmpty() && token.isEmpty())
                     ? new PlayerTelegramOnboarding.Review("INVALID","","") : token.isEmpty()
                     ? new PlayerTelegramOnboarding.Review("ENTRY","","")
                     : onboarding.review(token,accounts.player(auth)));
         } catch (AccountException exception) {
-            model.addAttribute("link",new PlayerTelegramOnboarding.Review("INVALID","",""));
+            model.addAttribute("link",new PlayerTelegramOnboarding.Review("INVALID","",onboarding.invitation().url()));
         }
         if (new ClassPathResource("templates/telegram-connect.html").exists()) return "telegram-connect";
         model.addAttribute("type","warning");
@@ -63,8 +66,8 @@ public class TelegramConnectController {
     public Continue remember(@Valid @RequestBody Token token, HttpSession session, HttpServletResponse response) {
         response.setHeader("Cache-Control","no-store");
         response.setHeader("Referrer-Policy","no-referrer");
-        onboarding.validate(token.token());
-        session.setAttribute(TelegramOnboardingController.SESSION_TOKEN,token.token());
-        return new Continue("/telegram/connect");
+        UUID id=onboarding.requestId(token.token());
+        TelegramOnboardingSession.remember(session,id,token.token());
+        return new Continue(TelegramOnboardingSession.destination(id));
     }
 }

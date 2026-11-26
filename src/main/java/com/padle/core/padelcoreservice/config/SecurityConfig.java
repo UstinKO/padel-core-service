@@ -379,7 +379,7 @@ public class SecurityConfig {
 
             boolean notConfirmed = exception instanceof DisabledException
                     || exception instanceof org.springframework.security.authentication.LockedException;
-            var destination = AccountDestination.requested(request).filter(value -> value.equals("/telegram/connect")
+            var destination = AccountDestination.requested(request).filter(value -> AccountDestination.telegramConnect(value)
                     || AccountDestination.tournamentManagement(value).isPresent());
             response.sendRedirect(TournamentLogin.failureUrl(
                     notConfirmed ? "not_confirmed" : "true", TournamentLogin.requestedTournament(request))

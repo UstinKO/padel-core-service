@@ -93,7 +93,7 @@ public class PlayerTelegramOnboarding {
 
     public void revoke(long userId) { requests.revoke(userId); }
 
-    public void validate(String token) { request(token); }
+    public UUID requestId(String token) { return request(token).id(); }
 
     private PlayerTelegramOnboardingStore.Request request(String token) {
         if (!available() || token==null || !token.matches("[A-Za-z0-9_-]{32}")) throw PlayerTelegramOnboardingStore.invalid();

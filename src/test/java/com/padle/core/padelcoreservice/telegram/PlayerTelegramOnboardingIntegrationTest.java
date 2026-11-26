@@ -25,6 +25,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.Map;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import com.padle.core.padelcoreservice.security.TelegramOnboardingSession;
 import java.util.concurrent.Executors;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -103,9 +107,9 @@ class PlayerTelegramOnboardingIntegrationTest {
         String token=start(74201);
         String json="{\"token\":\""+token+"\",\"playerId\":"+second.getId()+"}";
         mvc.perform(post("/api/players/me/telegram/onboarding").with(user(first))
-                .sessionAttr("telegramOnboardingToken",token).contentType("application/json").content(json)).andExpect(status().isForbidden());
+                .param("request",requestId(token).toString()).sessionAttr(TelegramOnboardingSession.KEY,Map.of(requestId(token).toString(),token)).contentType("application/json").content(json)).andExpect(status().isForbidden());
         mvc.perform(post("/api/players/me/telegram/onboarding").with(user(first)).with(csrf())
-                .sessionAttr("telegramOnboardingToken",token).contentType("application/json").content(json)).andExpect(status().isOk())
+                .param("request",requestId(token).toString()).sessionAttr(TelegramOnboardingSession.KEY,Map.of(requestId(token).toString(),token)).contentType("application/json").content(json)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.playerName").value(first.getNombreCompleto()))
                 .andExpect(jsonPath("$.state").value("PENDING"))
                 .andExpect(header().string("Cache-Control","no-store"));
@@ -196,11 +200,11 @@ class PlayerTelegramOnboardingIntegrationTest {
                 .andExpect(redirectedUrl("/error/403"));
         var context=mvc.perform(post("/telegram/connect/context").with(csrf()).contentType("application/json")
                 .content("{\"token\":\""+token+"\"}")).andExpect(status().isOk())
-                .andExpect(jsonPath("$.next").value("/telegram/connect")).andReturn();
+                .andExpect(jsonPath("$.next").value(TelegramOnboardingSession.destination(requestId(token)))).andReturn();
         var session=(MockHttpSession)context.getRequest().getSession(false);
-        mvc.perform(get("/telegram/connect").session(session)).andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/login?destination=%2Ftelegram%2Fconnect"));
-        mvc.perform(get("/api/players/me/telegram/onboarding").session(session).with(user(player)))
+        mvc.perform(get("/telegram/connect").param("request",requestId(token).toString()).session(session)).andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/login?destination="+URLEncoder.encode(TelegramOnboardingSession.destination(requestId(token)),StandardCharsets.UTF_8)));
+        mvc.perform(get("/api/players/me/telegram/onboarding").param("request",requestId(token).toString()).session(session).with(user(player)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.state").value("READY"));
         assertThat(connections.connection(player.getId())).isEmpty();
         mvc.perform(post("/login").with(csrf()).param("username","missing-"+UUID.randomUUID()+"@example.test")
@@ -226,6 +230,22 @@ class PlayerTelegramOnboardingIntegrationTest {
         assertThat(connections.byUser(74801)).map(Connection::playerId).contains(player.getId());
         assertThat(sent).hasSize(before);
         verify(api,atLeastOnce()).editKeyboard(74801,10,List.of());
+    }
+
+    @Test void requestsInTwoTabsStaySeparateWithinOneSession() throws Exception {
+        var first=player(); var second=player();
+        String one=start(75001); String two=start(75002);
+        var session=new MockHttpSession();
+        TelegramOnboardingSession.remember(session,requestId(one),one);
+        TelegramOnboardingSession.remember(session,requestId(two),two);
+        mvc.perform(post("/api/players/me/telegram/onboarding").param("request",requestId(one).toString())
+                .session(session).with(user(first)).with(csrf())).andExpect(status().isOk());
+        assertThat(pending.review(PlayerTelegramLinks.hash(one)).orElseThrow().playerId()).isEqualTo(first.getId());
+        assertThat(pending.review(PlayerTelegramLinks.hash(two)).orElseThrow().playerId()).isNull();
+        mvc.perform(post("/api/players/me/telegram/onboarding").param("request",requestId(two).toString())
+                .session(session).with(user(second)).with(csrf())).andExpect(status().isOk());
+        assertThat(onboarding.complete(requestId(one),75001)).contains(first.getId());
+        assertThat(onboarding.complete(requestId(two),75002)).contains(second.getId());
     }
 
     @Test
