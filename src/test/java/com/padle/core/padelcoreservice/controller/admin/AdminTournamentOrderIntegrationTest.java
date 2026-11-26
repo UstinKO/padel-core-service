@@ -136,7 +136,7 @@ class AdminTournamentOrderIntegrationTest {
         return TournamentDto.builder().clubId(venue.getId()).fechaInicio(date).horaInicio(LocalTime.parse(time))
                 .generoFormato(GenderFormat.MASCULINO).categoriaNivel("C6").tipo(TournamentType.AMERICANO_TEAMS)
                 .modalidad(Modalidad.DOBLES).cupoMax(8).precio(BigDecimal.ZERO).moneda("ARS")
-                .estado(TournamentStatus.REGISTRO_ABIERTO).contactoOrganizador("QA").build();
+                .estado(TournamentStatus.REGISTRO_ABIERTO).contactoOrganizador("+5491123456789").build();
     }
 
     private Tournament event(Owner actor, LocalDate date, String time, TournamentStatus state) {
@@ -144,7 +144,7 @@ class AdminTournamentOrderIntegrationTest {
                 .clubId(venue.getId()).nombre("QA " + UUID.randomUUID()).fechaInicio(date)
                 .horaInicio(LocalTime.parse(time)).generoFormato(GenderFormat.MASCULINO).categoriaNivel(Nivel.C6)
                 .tipo(TournamentType.AMERICANO_TEAMS).modalidad(Modalidad.DOBLES).cupoMax(8)
-                .precio(BigDecimal.ZERO).estado(state).contactoOrganizador("QA").isActive(true).build());
+                .precio(BigDecimal.ZERO).estado(state).contactoOrganizador("+5491123456789").isActive(true).build());
     }
 
     private Owner owner(OwnerRole role) {

@@ -68,7 +68,7 @@ class C3SupportIntegrationTest {
                 .horaInicio(LocalTime.NOON).durationMinutes(90).timeZone("America/Argentina/Buenos_Aires")
                 .generoFormato(GenderFormat.MASCULINO).categoriaNivel(level).tipo(TournamentType.AMERICANO)
                 .modalidad(Modalidad.INDIVIDUAL).cupoMax(1).precio(BigDecimal.ZERO).moneda("ARS")
-                .estado(TournamentStatus.REGISTRO_ABIERTO).contactoOrganizador("qa@example.test").build();
+                .estado(TournamentStatus.REGISTRO_ABIERTO).contactoOrganizador("+5491123456789").build();
     }
 
     private PlayerPadel player(Nivel level) {

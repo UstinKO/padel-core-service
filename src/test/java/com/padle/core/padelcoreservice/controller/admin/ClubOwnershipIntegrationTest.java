@@ -208,7 +208,7 @@ class ClubOwnershipIntegrationTest {
         return TournamentDto.builder().clubId(club.getId()).fechaInicio(LocalDate.now().plusDays(7))
                 .horaInicio(LocalTime.NOON).generoFormato(GenderFormat.MASCULINO).categoriaNivel("C7")
                 .tipo(TournamentType.AMERICANO).modalidad(Modalidad.INDIVIDUAL).cupoMax(8)
-                .precio(BigDecimal.TEN).moneda("ARS").contactoOrganizador("test@example.com").build();
+                .precio(BigDecimal.TEN).moneda("ARS").contactoOrganizador("+5491123456789").build();
     }
 
     private PlayerPadel player() {
