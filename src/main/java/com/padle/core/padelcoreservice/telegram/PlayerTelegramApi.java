@@ -42,10 +42,7 @@ public class PlayerTelegramApi {
             var body = new Send(chatId, text, new Keyboard(buttons));
             var response = http.exchange(url("sendMessage"), HttpMethod.POST, new HttpEntity<>(body),
                     new ParameterizedTypeReference<ApiResponse<Message>>() {}).getBody();
-            return Optional.ofNullable(response).filter(ApiResponse::ok).map(ApiResponse::result)
-                    .filter(message -> message.messageId() > 0)
-                    .map(message -> new Result("SENT", message.messageId()))
-                    .orElseGet(() -> new Result("FAILED", null));
+            return sendResult(response);
         } catch (HttpStatusCodeException exception) {
             String state = exception.getStatusCode().value() == 403 ? "BLOCKED"
                     : exception.getStatusCode().is4xxClientError() ? "FAILED" : "UNKNOWN";
@@ -54,6 +51,17 @@ public class PlayerTelegramApi {
             // Ответ мог потеряться после принятия сообщения Telegram: повтор не выполняется.
             return new Result("UNKNOWN", null);
         }
+    }
+
+    private Result sendResult(ApiResponse<Message> response) {
+        if (response == null) return new Result("UNKNOWN",null);
+        if (!response.ok()) {
+            return Optional.ofNullable(response.errorCode()).filter(code -> code>=400 && code<500)
+                    .map(code -> new Result(code==403 ? "BLOCKED" : "FAILED",null))
+                    .orElseGet(() -> new Result("UNKNOWN",null));
+        }
+        return Optional.ofNullable(response.result()).filter(message -> message.messageId()>0)
+                .map(message -> new Result("SENT",message.messageId())).orElseGet(() -> new Result("UNKNOWN",null));
     }
 
     public void acknowledge(String callbackId, String text) {

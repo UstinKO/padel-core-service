@@ -18,6 +18,9 @@ import java.util.Optional;
 @Repository
 public interface PlayerRepository extends JpaRepository<PlayerPadel, Long> {
 
+    @Query("SELECT p FROM PlayerPadel p WHERE p.activo = true ORDER BY p.id")
+    List<PlayerPadel> findAudiencePlayers();
+
     @Modifying
     @Query("UPDATE PlayerPadel p SET p.nombre = :nombre, p.apellido = :apellido WHERE p.id = :id")
     int actualizarNombre(@Param("id") Long id, @Param("nombre") String nombre, @Param("apellido") String apellido);

@@ -49,3 +49,49 @@ WhatsApp атомарно сохраняет предпочтение, удал�
 `GET /api/players/me/telegram` возвращает дополнительный `eligible`: разрешён ли профиль в текущем режиме; `available` также учитывает эту проверку. Для остальных `available=false`, `connected=false`; выдача ссылки и изменение предпочтения отклоняются с 409. Погашение прежней ссылки другого профиля не изменяет его связь. Проверка ограничения повторяется перед DM и callback. Отправка сводки разрешена только связанному тестовому профилю, поэтому `organizer-chat-id` должен быть его личным Telegram ID.
 
 Ручной запрос другого события отклоняется с 409, планировщик его пропускает. В разрешённом событии запросы создаются лишь для тестера; сводка содержит только его строку. Существующие участия и оплаты остальных не меняются. Старый бот продолжает обслуживать остальных игроков; тестер исключён из его привязки и DM. Для общего выпуска необходимо отдельно задать `TELEGRAM_PLAYERS_PILOT_ENABLED=false`.
+
+## Подготовка сообщения без отправки
+
+`TelegramMessagePreviewController` / `TelegramMessagePreviewService`:
+
+| Метод | Маршрут | Права | Результат |
+|---|---|---|---|
+| GET | `/api/admin/telegram/messages/audience` | Управляющий событием с tournamentId; без него SUPER_ADMIN | Каталог разрешённых кандидатов |
+| POST | `/api/admin/telegram/messages/preview` | Та же область, CSRF | Текст, доступные и недоступные адресаты |
+| GET | `/admin/telegram/messages` | SUPER_ADMIN | Экран общей аудитории после установки интерфейса |
+| GET | `/admin/tournaments/{id}/telegram/messages` | Управляющий событием | Экран мероприятия после установки интерфейса |
+
+Selection: tournamentId (необязательно), groups (`ALL`, `MAIN`, `RESERVE`, `UNPAIRED`, `PENDING`), categories (точные значения Nivel), includedPlayerIds, excludedPlayerIds, text. Все четыре множества обязательны, ID положительные; до 10000 явных ID в каждом. Пустой выбор никого не выбирает. Объединение групп/категорий/ID, затем исключения. ID вне области отклоняются с 403. Проверки и пересчёт происходят на каждом POST. Ответы no-store, валидация 422. Текст непустой до 4096 UTF-16 единиц; HTML не интерпретируется.
+
+Audience содержит tournamentId/name/globalAccess/candidates; candidate — playerId/name/category/groups/availability. Preview — text/recipients/unavailable/selectedCount/sendingAvailable=false. Причины: AVAILABLE/NOT_CONNECTED/WHATSAPP/GUEST/INACTIVE/OUTSIDE_PILOT/DISABLED. Контакты, Telegram ID и токены не выдаются. Гости не переадресуются делегату. Это расчёт возможных получателей, не отчёт о доставке.
+
+Страницы `TelegramMessagesPageController` активируются только при наличии шаблона `admin/telegram-messages.html` из зависимого интерфейса. Без него новые страницы не регистрируются; существующий сайт работает как прежде. Предпросмотр не создаёт ссылок, запросов участия, доставок или платежей, не обращается к Telegram. Общая очередь, шаблоны и история рассылок в этот этап не входят.
+
+## Кампании: сохранённый предпросмотр, отправка и история
+
+Сервер `TelegramCampaignService` / `TelegramCampaignController`, очередь `TelegramCampaignStore` / `TelegramCampaignWorker` / `TelegramCampaignDispatch`. Флаг `telegram.players.campaigns.enabled` (TELEGRAM_PLAYERS_CAMPAIGNS_ENABLED) по умолчанию false, отдельно от прежних подтверждений и чеков. Настройки production этим этапом не меняются.
+
+| Метод | Маршрут | Результат |
+|---|---|---|
+| POST | `/api/admin/telegram/messages/campaigns` | Prepare: requestId UUID + selection прежнего предпросмотра; неизменяемый черновик |
+| GET | `/api/admin/telegram/messages/campaigns` | История: tournamentId необязательно (без него только SUPER_ADMIN), page от 0, 20 записей |
+| GET | `/api/admin/telegram/messages/campaigns/{id}` | Текст, автор, состояние и результаты без внутренних идентификаторов Telegram |
+| POST | `/api/admin/telegram/messages/campaigns/{id}/confirm` | confirmed=true, запуск сохранённого черновика только автором |
+| POST | `/api/admin/telegram/messages/campaigns/{id}/test` | requestId UUID + confirmed=true; отдельная проба настроенному главному организатору |
+| POST | `/api/admin/telegram/messages/campaigns/{id}/retry` | requestId UUID + confirmed=true; только достоверные FAILED |
+
+Все операции проверяют актуального активного Owner и текущие права события/общей аудитории. Чтение чужого глобального сообщения запрещено, подтверждение чужого черновика запрещено и SUPER_ADMIN. POST требует CSRF; подготовка не отправляет. requestId связывается с содержимым и автором; повтор не дописывает новых адресатов. Prepared совместим по полям text/recipients/unavailable/selectedCount с Preview, дополнен campaignId/canTest/expiresAt; sendingAvailable учитывает отдельный флаг. View: id/tournamentId/author/text/kind/state/createdAt/recipients/canConfirm/canRetry. Recipient: playerId/name/state/reason/attempt.
+
+Черновик действует 15 минут. Снимок адресатов и текста неизменяем. Потеря прав, отмена регистрации, /stop/WhatsApp/перепривязка или изменение пилота перед отправкой дают SKIPPED. Поколение связи не позволяет старой очереди возобновиться после подключения. Неизвестный исход не повторяется; повтор FAILED — отдельное идемпотентное действие. Проба использует только существующую конфигурацию organizer-owner-id/organizer-chat-id и фактическую личную связь; произвольный chat ID контракт не принимает. Без такой настройки canTest=false.
+
+Очередь захватывает запись через SKIP LOCKED, сохраняет попытку до внешнего вызова, использует прежний transport/ledger. Старый IN_FLIGHT после двух минут сверяется с ledger; без подтверждённого результата — UNKNOWN. SENT — принятие Telegram, не прочтение. Ограничение скорости пока на процесс, общая координация Swarm остаётся #1213. Ошибки: 409 при выключенной функции, истёкшем/изменённом черновике или недоступной пробе; 403 при нарушении прав; 404 для отсутствующего ID. Чтение не меняет оплату, участие или доставку.
+
+## Подготовка общего подключения с ручными сообщениями
+
+Общий доступ к привязке задаётся `TELEGRAM_PLAYERS_PILOT_ENABLED=false`, а ручной режим — `TELEGRAM_PLAYERS_AUTOMATIC_ENABLED=false`. Ежедневная сводка управляется отдельно `TELEGRAM_PLAYERS_DAILY_SUMMARY_ENABLED=false`. Общий планировщик и технический `TELEGRAM_ENABLED` для этого не выключаются. При включённом общем новом боте старый планировщик не отправляет его игрокам личные напоминания; старая связь по username не переносится автоматически.
+
+Приём файлов имеет дополнительное независимое ограничение: `TELEGRAM_PLAYERS_RECEIPTS_PILOT_ENABLED=true` по умолчанию, `TELEGRAM_PLAYERS_RECEIPTS_PILOT_PLAYER_ID` и `TELEGRAM_PLAYERS_RECEIPTS_PILOT_TOURNAMENT_ID`. Оба ID должны разрешать запрашиваемую запись. Новые ID по умолчанию берутся из прежних переменных общего пилота в application.yml, в том числе после снятия общего ограничения. Явное пустое новое значение закрывает соответствующую область. Общая защита Telegram остаётся дополнительной проверкой. Только явное `TELEGRAM_PLAYERS_RECEIPTS_PILOT_ENABLED=false` разрешает чеки вне независимого пилота при остальных выполненных условиях; эта подготовка его не включает.
+
+Ограничение применяется централизованно в ReceiptRegistrations: выбор события, кнопки бота, приём, прикрепление и повторная проверка/блокировка записи. Существующие просмотр, скачивание, права ручного принятия/отклонения не меняются. Получение файла не создаёт оплату.
+
+Порядок применения и отката — [спецификация общего ручного режима](../../specs/done/LFPT-1416-telegram-general-manual.md). Сначала выпускается независимая защита чеков; перед снятием общего пилота выключаются автоматические запросы и фиксируются отдельные ID чеков. Возврат старой версии требует предварительно вернуть общий пилот, чтобы не открыть приём файлов. Настройки рабочего сервера и реальные ID в Git не сохраняются. Редактор/кампании выпускаются отдельным согласованным стеком, флаг кампаний включается отдельно; чтение/подключение не подтверждают кампанию.
