@@ -2,6 +2,7 @@ package com.padle.core.padelcoreservice.controller.api;
 
 import com.padle.core.padelcoreservice.dto.AccountFieldError;
 import com.padle.core.padelcoreservice.exception.AccountException;
+import com.padle.core.padelcoreservice.controller.TelegramConnectController;
 import com.padle.core.padelcoreservice.exception.ClaimPhoneInUseException;
 import com.padle.core.padelcoreservice.security.AccountResponses;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,7 +21,8 @@ import java.util.Locale;
 
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @RestControllerAdvice(assignableTypes = {AccountController.class, PublicAccountConfigController.class, GuestProfileClaimController.class, ParticipationController.class,
-        PlayerEventsController.class, PlayingSideController.class, PlayerTelegramController.class, TelegramMessagePreviewController.class, TelegramCampaignController.class})
+        PlayerEventsController.class, PlayingSideController.class, PlayerTelegramController.class, TelegramMessagePreviewController.class,
+        TelegramCampaignController.class, TelegramOnboardingController.class, TelegramConnectController.class})
 @RequiredArgsConstructor
 public class AccountExceptionHandler {
     private final AccountResponses responses;
