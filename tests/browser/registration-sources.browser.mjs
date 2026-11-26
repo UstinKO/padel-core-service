@@ -134,7 +134,10 @@ async function createAccountAndRegisterPair(browser, browserName, signup, langua
     const intent = '[data-registration-intent="' + fixture.pairedTournamentId + '"]';
     await page.goto(fixture.baseUrl + '/?lang=' + language);
     const banner = page.locator('#cookieConsentBanner .cookie-btn-accept');
-    if (await banner.isVisible()) await banner.click();
+    await banner.waitFor({ state: 'visible' });
+    await banner.click();
+    await page.locator('#cookieConsentBanner').waitFor({ state: 'hidden' });
+    await page.locator('#tournamentsGrid ' + intent).evaluate(element => element.scrollIntoView({ block: 'center' }));
     await page.locator('#tournamentsGrid ' + intent).click();
     await page.waitForURL(url => url.pathname === tournamentPath);
     await page.locator(intent).click();
