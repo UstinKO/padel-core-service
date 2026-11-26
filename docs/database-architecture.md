@@ -1,7 +1,7 @@
 # Архитектура базы данных — padel-core-service
 
 > **СУБД:** PostgreSQL 15  
-> **Версия схемы:** v1.91
+> **Версия схемы:** v1.92
 > **Миграции:** Liquibase (YAML), файлы в `src/main/resources/db/changelog/versions/`  
 > **ddl-auto:** `none` — схема управляется только через Liquibase
 
@@ -255,7 +255,11 @@ owners_db ───────────────────────�
 | `estado` | `VARCHAR(30)` | NOT NULL | `REGISTRO_ABIERTO` | Статус (enum `TournamentStatus`) |
 | `deadline_cancelacion` | `TIMESTAMP` | NULL | — | Дедлайн отмены регистрации. Если NULL — автоматически за 24 ч до старта |
 | `info_detallada` | `TEXT` | NULL | — | Подробное описание турнира |
-| `contacto_organizador` | `VARCHAR(100)` | NOT NULL | — | Контакт организатора |
+| `contacto_organizador` | `VARCHAR(100)` | NOT NULL | — | Legacy-контакт; после явного сохранения — канонический телефон |
+| `organizer_name` | `VARCHAR(160)` | NULL | — | Имя контактного лица |
+| `organizer_phone` | `VARCHAR(20)` | NULL | — | Проверенный телефон E.164 |
+| `organizer_country` | `VARCHAR(2)` | NULL | — | ISO-страна номера |
+| `organizer_contact_original` | `TEXT` | NULL | — | Первоначальный контакт до исправления, задаётся сервером |
 | `payment_instructions` | `TEXT` | NULL | — | Реквизиты оплаты для конкретного мероприятия |
 | `pair_terms_version` | `INTEGER` | NOT NULL | `1` | Текущая версия условий парного Americano |
 | `faq_url` | `VARCHAR(500)` | NULL | — | Ссылка на FAQ |
