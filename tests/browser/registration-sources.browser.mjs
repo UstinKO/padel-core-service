@@ -127,6 +127,30 @@ async function reviewRegistrationForm(browser, browserName, options = {}) {
 async function createAccountAndRegisterPair(browser, browserName, signup, language, options = {}) {
     const ctx = await context(browser, { viewport: { width: 390, height: 844 }, ...options });
     const page = await pageFor(ctx);
+    const activate = async selector => {
+        const control = page.locator(selector);
+        if (!options.isMobile) {
+            await control.click();
+            return;
+        }
+        await page.bringToFront();
+        await control.waitFor({ state: 'visible' });
+        const target = await page.waitForFunction(selector => {
+            const element = document.querySelector(selector);
+            if (!element || element.matches(':disabled') || element.getAttribute('aria-disabled') === 'true') return false;
+            element.scrollIntoView({ block: 'center', behavior: 'instant' });
+            const box = element.getBoundingClientRect();
+            const x = box.x + box.width / 2, y = box.y + box.height / 2;
+            for (let parent = element; parent; parent = parent.parentElement) {
+                if (getComputedStyle(parent).opacity === '0') return false;
+            }
+            return box.width > 0 && box.height > 0 && x >= 0 && y >= 0 && x < innerWidth && y < innerHeight
+                && element.contains(document.elementFromPoint(x, y)) ? { x, y } : false;
+        }, selector, { polling: 100, timeout: 15000 });
+        const point = await target.jsonValue();
+        await target.dispose();
+        await page.touchscreen.tap(point.x, point.y);
+    };
     const writes = [];
     page.on('request', request => {
         if (request.method() !== 'GET') writes.push(new URL(request.url()).pathname);
@@ -143,27 +167,13 @@ async function createAccountAndRegisterPair(browser, browserName, signup, langua
     await page.waitForFunction(() => !document.querySelector('#cookieConsentBanner')
         ?.getAnimations({ subtree: true }).some(animation => animation.playState === 'running'), null,
         { polling: 100, timeout: 5000 });
-    if (options.isMobile) {
-        const point = await banner.evaluate(button => {
-            const box = button.getBoundingClientRect();
-            const x = box.x + box.width / 2, y = box.y + box.height / 2;
-            if (x < 0 || y < 0 || x >= innerWidth || y >= innerHeight
-                    || !button.contains(document.elementFromPoint(x, y))) {
-                throw new Error('Cookie acceptance button is not reachable by touch');
-            }
-            return { x, y };
-        });
-        await page.touchscreen.tap(point.x, point.y);
-    } else {
-        await banner.click();
-    }
+    await activate('#cookieConsentBanner .cookie-btn-accept');
     await page.locator('#cookieConsentBanner').waitFor({ state: 'hidden' });
-    await page.locator('#tournamentsGrid ' + intent).evaluate(element => element.scrollIntoView({ block: 'center' }));
-    await page.locator('#tournamentsGrid ' + intent).click();
+    await activate('#tournamentsGrid ' + intent);
     await page.waitForURL(url => url.pathname === tournamentPath);
-    await page.locator(intent).click();
+    await activate(intent);
     await page.waitForURL(url => url.pathname === '/login');
-    await page.locator('.auth-entry-switch a[href*="/players/registro"]').click();
+    await activate('.auth-entry-switch a[href*="/players/registro"]');
     await page.waitForURL(url => url.pathname === '/players/registro');
     assert.equal(new URL(page.url()).searchParams.get('tournamentId'), String(fixture.pairedTournamentId));
     await page.locator('#phoneCountry option[value=AR]').waitFor({ state: 'attached' });
@@ -177,7 +187,7 @@ async function createAccountAndRegisterPair(browser, browserName, signup, langua
     await page.locator('#confirmPassword').fill('Registration-QA1!');
     await page.locator('#terminos').check();
     await page.locator('#telefono').fill('123');
-    await page.locator('#submitBtn').click();
+    await activate('#submitBtn');
     assert.equal(await page.locator('#telefono').getAttribute('aria-invalid'), 'true');
     assert.equal(writes.filter(path => path === '/players/registro').length, 0);
     assert.equal(await page.locator('#nivelJugador').inputValue(), 'C9');
@@ -189,7 +199,7 @@ async function createAccountAndRegisterPair(browser, browserName, signup, langua
     await page.screenshot({ path: output + '/signup-complete-' + browserName + '.png', fullPage: true });
     const submitted = page.waitForResponse(response => new URL(response.url()).pathname === '/players/registro'
         && response.request().method() === 'POST');
-    await page.locator('#submitBtn').click();
+    await activate('#submitBtn');
     const response = await submitted;
     if (response.status() !== 302) {
         await page.screenshot({ path: output + '/signup-failed-' + browserName + '.png', fullPage: true });
@@ -213,8 +223,8 @@ async function createAccountAndRegisterPair(browser, browserName, signup, langua
     const booked = page.waitForResponse(response => new URL(response.url()).pathname === '/api/tournaments/double/' + fixture.pairedTournamentId + '/register'
         && response.request().method() === 'POST');
     const terms = page.waitForResponse(response => new URL(response.url()).pathname === '/api/tournaments/double/' + fixture.pairedTournamentId + '/pair-terms');
-    await page.locator('#submitPartnerBtn').click();
-    if ((await terms).status() === 200) await page.locator('dialog[open] button[value=confirm]').click();
+    await activate('#submitPartnerBtn');
+    if ((await terms).status() === 200) await activate('dialog[open] button[value=confirm]');
     const booking = await booked;
     assert.equal(booking.status(), 200);
     const result = await booking.json();
