@@ -242,6 +242,14 @@
     padding-inline-end: 44px;
 }
 
+.auth-entry-telegram .form-control {
+    padding-inline-end: 44px;
+}
+
+.auth-entry-telegram label {
+    max-width: calc(100% - 48px);
+}
+
 .auth-entry-password label {
     max-width: calc(100% - 48px);
     overflow-wrap: anywhere;

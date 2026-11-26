@@ -45,6 +45,18 @@ test('country list has translated calling codes in all supported languages', () 
     }
 });
 
+test('Argentina and Russia are first, other countries stay alphabetical without duplicates', () => {
+    for (const locale of ['es', 'ru', 'en']) {
+        const countries = fields.countries(locale);
+        assert.equal(countries[0].code, 'AR');
+        assert.equal(countries[1].code, 'RU');
+        assert.equal(new Set(countries.map(country => country.code)).size, countries.length);
+        for (let index = 3; index < countries.length; index++) {
+            assert.ok(countries[index - 1].name.localeCompare(countries[index].name, locale) <= 0);
+        }
+    }
+});
+
 test('phone digits acquire country-specific separators without changing the saved number', () => {
     for (const [digits,country,display,number] of [
         ['0111523456789','AR','011 15-2345-6789','+5491123456789'],

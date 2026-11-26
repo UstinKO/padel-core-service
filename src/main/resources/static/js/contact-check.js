@@ -24,10 +24,13 @@ const ContactCheck = (() => {
                     <span id="ccPhoneHelp" class="cc-help"></span>
                     <span id="ccPhoneError" class="cc-error" aria-live="polite" hidden></span>
                   </div>
-                  <div class="cc-field">
-                    <label for="ccTelegram">${t('contact.field.telegram')}</label>
+                  <div class="cc-field cc-telegram-field">
+                    <label for="ccTelegram">${t('contact.field.telegram')} <small>${t('contact.telegram.available')}</small></label>
                     <input id="ccTelegram" type="text" inputmode="text" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="@usuario" class="clarity-mask" data-clarity-mask="true" aria-describedby="ccTgHelp ccTgError">
-                    <span id="ccTgHelp" class="cc-help">${t('contact.telegram.help')}</span>
+                    <details class="contact-telegram-help">
+                      <summary aria-label="${t('contact.telegram.help.title')}"><span aria-hidden="true">ⓘ</span></summary>
+                      <span id="ccTgHelp" class="contact-telegram-help-text">${t('contact.telegram.help')}</span>
+                    </details>
                     <span id="ccTgError" class="cc-error" aria-live="polite" hidden></span>
                   </div>
                   <div id="ccGlobalError" class="cc-global" role="alert" hidden></div>

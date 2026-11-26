@@ -24,8 +24,10 @@ const ContactFields = (() => {
     }
     function countries(locale) {
         const names = typeof Intl.DisplayNames === 'function' ? new Intl.DisplayNames([locale], {type:'region'}) : null;
+        const priority = { AR: 0, RU: 1 };
         return libphonenumber.getCountries().map(code => ({code, name:names?.of(code) || code}))
-            .sort((a,b) => a.name.localeCompare(b.name, locale))
+            .sort((a,b) => (priority[a.code] ?? 2) - (priority[b.code] ?? 2)
+                || a.name.localeCompare(b.name, locale))
             .map(({code,name}) => ({code, name, label:`${name} (+${libphonenumber.getCountryCallingCode(code)})`}));
     }
     function formatPhone(value, country) {

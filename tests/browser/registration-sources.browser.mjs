@@ -77,8 +77,55 @@ async function report(page, language, source) {
     }
 }
 
+async function reviewRegistrationForm(browser, browserName, options = {}) {
+    const ctx = await context(browser, { viewport: { width: 390, height: 844 }, ...options });
+    const page = await pageFor(ctx);
+    for (const [language, caption] of [['es', 'si tenés'], ['ru', 'при наличии'], ['en', 'if you have it']]) {
+        await page.goto(fixture.baseUrl + '/players/registro?lang=' + language);
+        await page.locator('#phoneCountry option[value=AR]').waitFor({ state: 'attached' });
+        const countries = await page.locator('#phoneCountry option').evaluateAll(options => options.map(option => option.value));
+        assert.deepEqual(countries.slice(0, 2), ['AR', 'RU']);
+        assert.equal(new Set(countries).size, countries.length);
+        assert.equal(await page.locator('#phoneCountry').inputValue(), 'AR');
+        assert.equal(await page.locator('#phoneCallingCode').textContent(), '+54');
+        assert.ok((await page.locator('label[for=telegramUsername]').textContent()).includes(caption));
+        assert.equal(await page.locator('#signup-side-hint').count(), 0);
+        await page.locator('#nivelJugador').selectOption('C9');
+        await page.locator('#playingSide').selectOption('RIGHT');
+        assert.equal(await page.locator('#nivelJugador').inputValue(), 'C9');
+        const levelFits = await page.locator('#nivelJugador').evaluate(select => {
+            const label = select.nextElementSibling.getBoundingClientRect();
+            const style = getComputedStyle(select);
+            const contentTop = select.getBoundingClientRect().top + parseFloat(style.borderTopWidth) + parseFloat(style.paddingTop);
+            return label.bottom <= contentTop;
+        });
+        assert.equal(levelFits, true, 'Level label must stay above the selected value');
+        assert.equal(await page.locator('#registroTelegramHelp').isVisible(), false);
+        const before = await page.locator('#registroForm').boundingBox();
+        await page.locator('.contact-telegram-help summary').click();
+        assert.equal(await page.locator('#registroTelegramHelp').isVisible(), true);
+        const after = await page.locator('#registroForm').boundingBox();
+        assert.equal(after.height, before.height, 'Help must not shift form fields');
+        await page.locator('.contact-telegram-help summary').click();
+        assert.equal(await page.locator('#registroTelegramHelp').isVisible(), false);
+        await page.locator('#phoneCountry').selectOption('RU');
+        assert.equal(await page.locator('#phoneCallingCode').textContent(), '+7');
+        await page.locator('#telefono').pressSequentially('89123456789');
+        assert.equal(await page.locator('#telefono').inputValue(), '8 (912) 345-67-89');
+        await page.locator('#phoneCountry').selectOption('AR');
+        await page.locator('#telefono').fill('0111523456789');
+        assert.equal(await page.locator('#telefono').inputValue(), '011 15-2345-6789');
+        assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true);
+        await page.evaluate(() => window.scrollTo(0, 0));
+        await page.screenshot({ path: output + '/signup-' + browserName + '-' + language + '.png', fullPage: true });
+        record(browserName + ' mobile signup: ' + language + ', country priority, phone input, level and Telegram help');
+    }
+    await ctx.close();
+}
+
 try {
     const browser = await chromium.launch(); browsers.push(browser);
+    await reviewRegistrationForm(browser, 'chromium');
     const playerContext = await context(browser);
     await playerContext.addInitScript(() => {
         window.gtag = (command, name, params) => {
@@ -190,6 +237,7 @@ try {
     assert.ok(!requests.some(url => url.includes('connect.facebook.net')));
     record('internal attribution works with Meta disabled');
     const safari = await webkit.launch(); browsers.push(safari);
+    await reviewRegistrationForm(safari, 'webkit', { ...devices['iPhone 13 Pro'] });
     const mobileContext = await context(safari, { ...devices['iPhone 13 Pro'] });
     const mobile = await pageFor(mobileContext);
     await login(mobile, fixture.adminEmail, '/admin', { keepConsentVisible: true });

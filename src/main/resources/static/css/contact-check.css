@@ -18,3 +18,13 @@
 .cc-dialog #ccSaveBtn { flex:1; background:#ff6b35; border-color:#ff6b35; color:white; font-weight:600; }
 .cc-dialog button:disabled { opacity:.65; cursor:wait; }
 @media(max-height:600px) { #contactCheckModal { align-items:flex-start; } }
+
+.contact-telegram-help { position:absolute; inset-inline-end:0; top:0; z-index:2; }
+.contact-telegram-help summary { display:grid; place-items:center; width:40px; height:46px; list-style:none; cursor:pointer; color:#727b83; font-size:18px; }
+.contact-telegram-help summary::-webkit-details-marker { display:none; }
+.contact-telegram-help summary:focus-visible { outline:2px solid #ff6b35; outline-offset:1px; border-radius:6px; }
+.contact-telegram-help-text { position:absolute; inset-inline-end:4px; top:100%; display:block; width:min(260px,calc(100vw - 56px)); padding:10px 12px; border:1px solid #e5e7eb; border-radius:8px; box-shadow:0 3px 10px #0002; background:#fff; color:#475569; font-size:13px; line-height:1.4; box-sizing:border-box; }
+.contact-telegram-help:not([open]) .contact-telegram-help-text { display:none; }
+.cc-telegram-field { position:relative; }
+.cc-telegram-field label, .cc-telegram-field input { padding-inline-end:44px; }
+.cc-field label small { font-size:12px; font-weight:400; }
