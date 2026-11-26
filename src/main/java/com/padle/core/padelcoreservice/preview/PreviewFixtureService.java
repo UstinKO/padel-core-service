@@ -106,7 +106,7 @@ public class PreviewFixtureService {
                 INSERT INTO tournaments_db(club_id,nombre,fecha_inicio,hora_inicio,genero_formato,categoria_nivel,
                     tipo,modalidad,cupo_max,precio,estado,contacto_organizador,is_active,created_by)
                 VALUES (:club,:name,current_date+7,'12:00','MIXTO','C9',:type,:mode,1,0,
-                    'REGISTRO_ABIERTO','preview@example.test',true,:owner) RETURNING id
+                    'REGISTRO_ABIERTO','+5491123456789',true,:owner) RETURNING id
                 """).param("club", club).param("owner", owner).param("name", "Preview " + index)
                 .param("type", type).param("mode", type.equals("AMERICANO_TEAMS") ? "DOBLES" : "INDIVIDUAL")
                 .query(Long.class).single();

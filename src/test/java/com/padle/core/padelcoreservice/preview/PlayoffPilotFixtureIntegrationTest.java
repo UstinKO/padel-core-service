@@ -41,6 +41,8 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;
+import jakarta.validation.Validator;
+import com.padle.core.padelcoreservice.mapper.TournamentMapper;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -85,6 +87,8 @@ class PlayoffPilotFixtureIntegrationTest {
     @Autowired private PlatformTransactionManager transactions;
     @Autowired private MockMvc mvc;
     @Autowired private EntityManager entities;
+    @Autowired private Validator validator;
+    @Autowired private TournamentMapper tournamentMapper;
     @Autowired private AtomicBoolean rejectedBoundary;
     @MockitoSpyBean private PlayoffPilotData data;
     @MockitoBean private SimpMessagingTemplate messaging;
@@ -110,6 +114,18 @@ class PlayoffPilotFixtureIntegrationTest {
                     .param("own", state.accounts().clubId()).param("foreign", state.accounts().foreignClubId()).update();
         }));
         jdbc.sql("DELETE FROM ui_preview.control WHERE instance_id=:id").param("id", properties.instanceId()).update();
+    }
+
+    @Test
+    void seededContactsCanBeSubmittedByBothLegacyAndStructuredForms() {
+        var state = fixtures.seed();
+        for (var scenario : state.scenarios()) {
+            var source = tournaments.findById(scenario.tournamentId()).orElseThrow();
+            var form = tournamentMapper.toDto(source);
+            assertThat(validator.validate(form)).as(scenario.key() + " structured form").isEmpty();
+            form.setOrganizerPhone(null);
+            assertThat(validator.validate(form)).as(scenario.key() + " legacy form").isEmpty();
+        }
     }
 
     @Test
