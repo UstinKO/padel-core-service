@@ -275,3 +275,6 @@ databaseChangeLog:
   - include:
       file: versions/v1.90-manual-guest-claim-contact.yaml
       relativeToChangelogFile: true
+  - include:
+      file: versions/v1.91-telegram-campaigns.yaml
+      relativeToChangelogFile: true

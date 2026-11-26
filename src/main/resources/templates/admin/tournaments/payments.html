@@ -29,6 +29,7 @@
         <div class="payment-management">
 
             <div class="page-header">
+                <a class="btn btn-secondary" th:href="@{/admin/tournaments/{id}/telegram/messages(id=${tournament.id})}" th:text="#{telegram.compose.title}"></a>
                 <h1>
                     <i class="fas fa-credit-card"></i>
                     <span th:text="#{admin.payments.heading}">Gestionar Pagos y Asistencia</span>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
+<html lang="es" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta name="app-profile" th:content="${@environment.getActiveProfiles().length > 0
         ? @environment.getActiveProfiles()[0]
@@ -203,6 +203,7 @@
 
         <!-- Acciones rápidas -->
         <div class="admin-actions" style="justify-content: center; margin-top: 2rem;">
+        <a sec:authorize="hasRole('SUPER_ADMIN')" class="btn btn-secondary" th:href="@{/admin/telegram/messages}" th:text="#{telegram.compose.title}"></a>
             <a th:unless="${isAdminRole}" href="/admin/tournaments/new" class="btn btn-primary">
                 <i class="fas fa-plus-circle"></i>
                 <span th:text="#{admin.common.btn.create_tournament}">Crear nuevo torneo</span>

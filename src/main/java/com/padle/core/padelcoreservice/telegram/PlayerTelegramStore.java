@@ -55,10 +55,27 @@ public class PlayerTelegramStore {
         jdbc.execute("SELECT pg_advisory_xact_lock(1294001)");
     }
 
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void guardConnections() { lockConnections(); }
+
+    public Optional<Result> deliveryResult(String key) {
+        return jdbc.query("SELECT state,message_id FROM player_telegram_deliveries WHERE dedupe_key=?",
+                (r,n) -> new Result(r.getString(1),r.getObject(2,Long.class)),key).stream().findFirst();
+    }
+
     public Optional<Connection> connection(long playerId) {
         return jdbc.query("SELECT * FROM player_telegram_connections WHERE player_id = ?",
                 (r, n) -> new Connection(r.getLong("player_id"), r.getLong("user_id"),
                         r.getLong("chat_id"), r.getBoolean("enabled")), playerId).stream().findFirst();
+    }
+
+    public Map<Long, Connection> connections(List<Long> playerIds) {
+        if (playerIds.isEmpty()) return Map.of();
+        String placeholders = String.join(",", Collections.nCopies(playerIds.size(), "?"));
+        return jdbc.query("SELECT * FROM player_telegram_connections WHERE player_id IN (" + placeholders + ")",
+                (r, n) -> new Connection(r.getLong("player_id"), r.getLong("user_id"),
+                        r.getLong("chat_id"), r.getBoolean("enabled")), playerIds.toArray())
+                .stream().collect(Collectors.toMap(Connection::playerId, connection -> connection));
     }
 
     public Optional<Connection> byUser(long userId) {

@@ -1,0 +1,45 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.91-telegram-campaigns
+      author: codex
+      changes:
+        - sql:
+            sql: |
+              CREATE TABLE telegram_campaigns (
+                id UUID PRIMARY KEY,
+                owner_id BIGINT NOT NULL,
+                author VARCHAR(255) NOT NULL,
+                tournament_id BIGINT,
+                request_id UUID NOT NULL,
+                fingerprint VARCHAR(64) NOT NULL,
+                source_id UUID,
+                kind VARCHAR(8) NOT NULL CHECK (kind IN ('MESSAGE','TEST')),
+                state VARCHAR(12) NOT NULL CHECK (state IN ('DRAFT','QUEUED','FINISHED')),
+                message_text TEXT NOT NULL CHECK (length(message_text) BETWEEN 1 AND 4096),
+                created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                expires_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP + INTERVAL '15 minutes',
+                confirmed_at TIMESTAMPTZ,
+                UNIQUE(owner_id, request_id)
+              );
+              CREATE INDEX idx_telegram_campaign_history ON telegram_campaigns(created_at DESC);
+              CREATE TABLE telegram_campaign_recipients (
+                campaign_id UUID NOT NULL REFERENCES telegram_campaigns(id),
+                player_id BIGINT NOT NULL,
+                player_name VARCHAR(255) NOT NULL,
+                category VARCHAR(30) NOT NULL,
+                groups_text VARCHAR(100) NOT NULL,
+                chat_id BIGINT,
+                connection_at TIMESTAMPTZ,
+                state VARCHAR(12) NOT NULL CHECK (state IN ('PENDING','IN_FLIGHT','SENT','FAILED','BLOCKED','UNKNOWN','SKIPPED')),
+                reason VARCHAR(40) NOT NULL,
+                attempt INTEGER NOT NULL DEFAULT 0,
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY(campaign_id, player_id)
+              );
+              CREATE INDEX idx_telegram_campaign_pending ON telegram_campaign_recipients(state, updated_at);
+              CREATE TABLE telegram_campaign_actions (
+                campaign_id UUID NOT NULL REFERENCES telegram_campaigns(id),
+                request_id UUID NOT NULL,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY(campaign_id, request_id)
+              );

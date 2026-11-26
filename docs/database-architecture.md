@@ -1,7 +1,7 @@
 # Архитектура базы данных — padel-core-service
 
 > **СУБД:** PostgreSQL 15  
-> **Версия схемы:** v1.90
+> **Версия схемы:** v1.91
 > **Миграции:** Liquibase (YAML), файлы в `src/main/resources/db/changelog/versions/`  
 > **ddl-auto:** `none` — схема управляется только через Liquibase
 
@@ -1072,3 +1072,11 @@ player_telegram_connections хранит проверенную связь playe
 Чеки: v1.89, `payment_receipts` привязывает ограниченный BYTEA (JPEG/PNG/PDF до 5 МиБ) к регистрационному ID и версии отмены. Статусы PENDING/ACCEPTED/REJECTED отделены от платежей; принятие хранит payment_id, организатора и время, отклонение — причину. Уникальность (registration_id, registration_version, sha256) исключает повторное хранение одного файла. `telegram_receipt_uploads` хранит отдельный выбор мероприятия для каждого Telegram update; срок выбора — 20 минут. Непривязанные просроченные контексты очищаются при следующем приёме.
 
 Ручное объединение: v1.90, `guest_profile_claims.contact_resolution` фиксирует выбор KEEP_ACCOUNT/USE_GUEST_PHONE. NULL phone_key допустим только у завершённого ADMIN-объединения с IN_PERSON/OTHER.
+
+## Кампании Telegram — v1.91
+
+`telegram_campaigns`: id UUID PK; owner_id BIGINT и author VARCHAR(255) — снимок автора; tournament_id BIGINT nullable — историческая область; request_id UUID и fingerprint VARCHAR(64) — идемпотентность; source_id UUID nullable — исходник пробы; kind MESSAGE/TEST, state DRAFT/QUEUED/FINISHED; message_text TEXT до 4096 символов; created_at/expires_at/confirmed_at TIMESTAMPTZ (последнее nullable). UNIQUE(owner_id,request_id), индекс истории по created_at.
+
+`telegram_campaign_recipients`: campaign_id UUID FK на кампанию и player_id BIGINT образуют PK; player_name VARCHAR(255), category VARCHAR(30), groups_text VARCHAR(100) — неизменяемый снимок; chat_id BIGINT и connection_at TIMESTAMPTZ nullable — серверный адрес/поколение; state PENDING/IN_FLIGHT/SENT/FAILED/BLOCKED/UNKNOWN/SKIPPED, reason VARCHAR(40), attempt INTEGER, updated_at TIMESTAMPTZ. Индекс очереди по state/updated_at.
+
+`telegram_campaign_actions`: campaign_id UUID FK и request_id UUID образуют PK, created_at TIMESTAMPTZ. Защита повторного запуска FAILED. Исторические owner_id/tournament_id/player_id без FK сохраняют аудит после удаления исходных записей; текущие права и существование проверяются перед отправкой. Клиент не получает chat_id/connection_at/fingerprint.

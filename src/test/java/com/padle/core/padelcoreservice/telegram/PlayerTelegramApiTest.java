@@ -48,6 +48,16 @@ class PlayerTelegramApiTest {
         assertThat(api.send(123, "Fixture", List.of()).state()).isEqualTo("UNKNOWN");
         server.verify();
     }
+    @Test void incompleteSuccessfulResponsesAreUncertainAndOnlyExplicitRejectionsAreRetryable() {
+        for (String body : List.of("{\"ok\":true}","{\"ok\":true,\"result\":{}}","{\"ok\":false}","{\"ok\":false,\"error_code\":503}")) {
+            server.expect(anything()).andRespond(withSuccess(body,MediaType.APPLICATION_JSON));
+            assertThat(api.send(123,"Fixture",List.of()).state()).isEqualTo("UNKNOWN");
+            server.verify();server.reset();
+        }
+        server.expect(anything()).andRespond(withSuccess("{\"ok\":false,\"error_code\":400}",MediaType.APPLICATION_JSON));
+        assertThat(api.send(123,"Fixture",List.of()).state()).isEqualTo("FAILED");
+        server.verify();
+    }
     @Test void readsUpdatesWithTheirStableNumericIdentity() {
         server.expect(requestTo("https://api.telegram.org/botfixture-token/getUpdates?offset=12&limit=20&timeout=0"))
                 .andRespond(withSuccess("""
