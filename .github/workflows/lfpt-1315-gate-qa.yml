@@ -1,0 +1,75 @@
+name: LFPT-1315 gate QA
+
+on:
+  push:
+    branches: [qa/LFPT-1315]
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    outputs:
+      revision: ${{ github.sha }}
+    steps:
+      - run: sleep 180
+
+  backend:
+    runs-on: ubuntu-latest
+    outputs:
+      revision: ${{ github.sha }}
+    steps:
+      - run: "true"
+
+  browser-marketing:
+    runs-on: ubuntu-latest
+    outputs:
+      revision: ${{ github.sha }}
+    steps:
+      - run: "true"
+
+
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    needs: [ frontend, backend, browser-marketing ]
+    if: ${{ always() }}
+    steps:
+      - name: Check required jobs and revisions
+        shell: bash
+        env:
+          FRONTEND_RESULT: ${{ needs.frontend.result }}
+          BACKEND_RESULT: ${{ needs.backend.result }}
+          BROWSER_RESULT: ${{ needs.browser-marketing.result }}
+          FRONTEND_REVISION: ${{ needs.frontend.outputs.revision }}
+          BACKEND_REVISION: ${{ needs.backend.outputs.revision }}
+          BROWSER_REVISION: ${{ needs.browser-marketing.outputs.revision }}
+          REQUESTED_REF: ${{ inputs.ref || '' }}
+          EVENT_REVISION: ${{ github.sha }}
+        run: |
+          printf '%-18s %-10s %s\n' \
+            frontend "$FRONTEND_RESULT" "$FRONTEND_REVISION" \
+            backend "$BACKEND_RESULT" "$BACKEND_REVISION" \
+            browser-marketing "$BROWSER_RESULT" "$BROWSER_REVISION"
+
+            if [[ "$FRONTEND_RESULT" != success ||
+                  "$BACKEND_RESULT" != success ||
+                  "$BROWSER_RESULT" != success ]]; then
+               echo "::error::One or more required jobs did not succeed"
+               exit 1
+            fi
+
+            if [[ -z "$FRONTEND_REVISION" ||
+                     "$FRONTEND_REVISION" != "$BACKEND_REVISION" ||
+                     "$FRONTEND_REVISION" != "$BROWSER_REVISION" ]]; then
+               echo "::error::Required jobs did not report the same checked revision"
+               exit 1
+            fi
+
+            if [[ -z "$REQUESTED_REF" && "$FRONTEND_REVISION" != "$EVENT_REVISION" ]]; then
+               echo "::error::Checked revision differs from the pull request event revision"
+               exit 1
+               fi
+
+            if [[ "$REQUESTED_REF" =~ ^[0-9a-f]{40}$ && "$FRONTEND_REVISION" != "$REQUESTED_REF" ]]; then
+               echo "::error::Checked revision differs from the requested commit"
+               exit 1
+            fi
