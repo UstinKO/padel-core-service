@@ -1,0 +1,17 @@
+.tg-compose{max-width:1400px;margin:auto;padding:1.5rem 1rem;color:var(--text-color,#202938)}
+.tg-compose h1{font-size:1.7rem;margin:1rem 0}.tg-compose h2{font-size:1.2rem;margin:0 0 1rem}
+.tg-compose-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:1rem}
+.tg-compose-panel{min-width:0;background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:1.25rem}
+.tg-compose-note{background:#fff4ed;border-left:3px solid var(--primary-color,#ff6b35);padding:.8rem;line-height:1.5}
+.tg-compose fieldset{margin:1rem 0;border:1px solid #e5e7eb;border-radius:8px;padding:.8rem;min-width:0}
+.tg-compose-options{display:flex;flex-wrap:wrap;gap:.6rem 1rem}.tg-compose-option{display:flex;gap:.45rem;align-items:center;font-weight:400}
+.tg-compose input[type=search],.tg-compose textarea{width:100%;box-sizing:border-box;border:1px solid #aab1bb;border-radius:8px;padding:.75rem;font:inherit;color:inherit;background:#fff}
+.tg-compose textarea{resize:vertical}.tg-compose :focus-visible{outline:3px solid #ff6b35;outline-offset:3px}
+.tg-compose-actions{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.7rem}.tg-compose .btn{white-space:normal;min-height:44px}
+.tg-compose-candidates{max-height:32rem;overflow-y:auto;border-top:1px solid #e5e7eb}
+.tg-compose-person{display:flex;gap:.65rem;align-items:flex-start;padding:.75rem .2rem;border-bottom:1px solid #e5e7eb;cursor:pointer}
+.tg-compose-person input{margin-top:.3rem;flex-shrink:0}.tg-compose-person span{min-width:0;overflow-wrap:anywhere}
+.tg-compose-person small{display:block;color:#626c78}.tg-compose-message{white-space:pre-wrap;overflow-wrap:anywhere;padding:1rem;border:1px solid #e5e7eb;border-radius:8px}
+.tg-compose [data-preview-result]{margin-top:1.5rem}.tg-compose ul{padding-left:1.3rem;overflow-wrap:anywhere}
+.tg-compose [data-compose-status][data-error=true]{color:#a92323}.tg-compose [hidden]{display:none!important}
+@media(max-width:760px){.tg-compose-layout{grid-template-columns:minmax(0,1fr)}.tg-compose{padding:1rem .6rem}.tg-compose-panel{padding:.85rem}.tg-compose h1{font-size:1.4rem}}
