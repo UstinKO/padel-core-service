@@ -1,0 +1,32 @@
+databaseChangeLog:
+  - changeSet:
+      id: organizer-event-contact-fields
+      author: codex
+      changes:
+        - addColumn:
+            tableName: tournaments_db
+            columns:
+              - column:
+                  name: organizer_name
+                  type: varchar(160)
+              - column:
+                  name: organizer_phone
+                  type: varchar(20)
+              - column:
+                  name: organizer_country
+                  type: varchar(2)
+              - column:
+                  name: organizer_contact_original
+                  type: text
+      rollback:
+        - dropColumn:
+            tableName: tournaments_db
+            columns:
+              - column:
+                  name: organizer_name
+              - column:
+                  name: organizer_phone
+              - column:
+                  name: organizer_country
+              - column:
+                  name: organizer_contact_original

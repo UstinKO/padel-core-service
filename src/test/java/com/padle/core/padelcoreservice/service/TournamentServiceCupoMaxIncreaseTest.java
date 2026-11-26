@@ -161,7 +161,7 @@ class TournamentServiceCupoMaxIncreaseTest {
                 .cupoMax(cupoMax)
                 .precio(BigDecimal.ZERO)
                 .estado(TournamentStatus.REGISTRO_ABIERTO)
-                .contactoOrganizador("test@example.com")
+                .contactoOrganizador("+5491123456789")
                 .isActive(true)
                 .build());
     }
