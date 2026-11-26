@@ -185,7 +185,9 @@ async function createAccountAndRegisterPair(browser, browserName, signup, langua
     await page.locator('#playingSide').selectOption(signup.playingSide);
     await page.locator('#password').fill('Registration-QA1!');
     await page.locator('#confirmPassword').fill('Registration-QA1!');
-    await page.locator('#terminos').check();
+    assert.equal(await page.locator('#terminos').isChecked(), false);
+    await activate('#terminos');
+    assert.equal(await page.locator('#terminos').isChecked(), true);
     await page.locator('#telefono').fill('123');
     await activate('#submitBtn');
     assert.equal(await page.locator('#telefono').getAttribute('aria-invalid'), 'true');
