@@ -281,3 +281,7 @@ databaseChangeLog:
   - include:
       file: versions/v1.92-organizer-event-contact.yaml
       relativeToChangelogFile: true
+
+  - include:
+      file: versions/v1.93-telegram-onboarding.yaml
+      relativeToChangelogFile: true

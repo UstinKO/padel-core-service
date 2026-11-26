@@ -62,7 +62,8 @@ class PlayerTelegramConfirmationTest {
                 mock(TournamentRegistrationRepository.class), receipts);
         ReflectionTestUtils.setField(confirmation, "baseUrl", "https://padel.example");
         return new PlayerTelegramPoller(api, store, mock(PlayerTelegramLinks.class), players, messages,
-                delivery, participation, mock(PlayerTelegramSummary.class), access, requests, confirmation, receipts);
+                delivery, participation, mock(PlayerTelegramSummary.class), access, requests, confirmation, receipts,
+                mock(PlayerTelegramOnboarding.class));
     }
 
     private Review review(ParticipationStatus status, boolean outdated) {

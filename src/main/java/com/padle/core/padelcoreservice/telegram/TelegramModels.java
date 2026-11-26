@@ -25,7 +25,9 @@ public final class TelegramModels {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record ApiResponse<T>(boolean ok, T result, @JsonProperty("error_code") Integer errorCode) {}
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record User(long id) {}
+    public record User(long id, @JsonProperty("language_code") String languageCode) {
+        public User(long id) { this(id, null); }
+    }
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Chat(long id, String type) {}
     @JsonIgnoreProperties(ignoreUnknown = true)
