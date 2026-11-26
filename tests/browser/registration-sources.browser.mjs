@@ -135,7 +135,23 @@ async function createAccountAndRegisterPair(browser, browserName, signup, langua
     await page.goto(fixture.baseUrl + '/?lang=' + language);
     const banner = page.locator('#cookieConsentBanner .cookie-btn-accept');
     await banner.waitFor({ state: 'visible' });
-    await banner.click();
+    await page.locator('#cookieConsentBanner').evaluate(async element => {
+        await Promise.all(element.getAnimations({ subtree: true }).map(animation => animation.finished));
+    });
+    if (options.isMobile) {
+        const point = await banner.evaluate(button => {
+            const box = button.getBoundingClientRect();
+            const x = box.x + box.width / 2, y = box.y + box.height / 2;
+            if (x < 0 || y < 0 || x >= innerWidth || y >= innerHeight
+                    || !button.contains(document.elementFromPoint(x, y))) {
+                throw new Error('Cookie acceptance button is not reachable by touch');
+            }
+            return { x, y };
+        });
+        await page.touchscreen.tap(point.x, point.y);
+    } else {
+        await banner.click();
+    }
     await page.locator('#cookieConsentBanner').waitFor({ state: 'hidden' });
     await page.locator('#tournamentsGrid ' + intent).evaluate(element => element.scrollIntoView({ block: 'center' }));
     await page.locator('#tournamentsGrid ' + intent).click();
