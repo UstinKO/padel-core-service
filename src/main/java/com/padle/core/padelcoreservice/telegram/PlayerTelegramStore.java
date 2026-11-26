@@ -61,6 +61,15 @@ public class PlayerTelegramStore {
                         r.getLong("chat_id"), r.getBoolean("enabled")), playerId).stream().findFirst();
     }
 
+    public Map<Long, Connection> connections(List<Long> playerIds) {
+        if (playerIds.isEmpty()) return Map.of();
+        String placeholders = String.join(",", Collections.nCopies(playerIds.size(), "?"));
+        return jdbc.query("SELECT * FROM player_telegram_connections WHERE player_id IN (" + placeholders + ")",
+                (r, n) -> new Connection(r.getLong("player_id"), r.getLong("user_id"),
+                        r.getLong("chat_id"), r.getBoolean("enabled")), playerIds.toArray())
+                .stream().collect(Collectors.toMap(Connection::playerId, connection -> connection));
+    }
+
     public Optional<Connection> byUser(long userId) {
         return jdbc.query("SELECT * FROM player_telegram_connections WHERE user_id = ? AND enabled",
                 (r, n) -> new Connection(r.getLong("player_id"), r.getLong("user_id"),
