@@ -153,9 +153,14 @@ async function createAccountAndRegisterPair(browser, browserName, signup, langua
         const target = await page.waitForFunction(selector => {
             const element = document.querySelector(selector);
             if (!element || element.matches(':disabled') || element.getAttribute('aria-disabled') === 'true') return false;
-            element.scrollIntoView({ block: 'center', behavior: 'instant' });
-            const box = element.getBoundingClientRect();
-            const x = box.x + box.width / 2, y = box.y + box.height / 2;
+            let box = element.getBoundingClientRect();
+            let x = box.x + box.width / 2, y = box.y + box.height / 2;
+            if (x < 0 || y < 0 || x >= innerWidth || y >= innerHeight
+                    || !element.contains(document.elementFromPoint(x, y))) {
+                element.scrollIntoView({ block: 'center', behavior: 'instant' });
+                box = element.getBoundingClientRect();
+                x = box.x + box.width / 2; y = box.y + box.height / 2;
+            }
             for (let parent = element; parent; parent = parent.parentElement) {
                 if (getComputedStyle(parent).opacity === '0') return false;
             }
@@ -241,10 +246,19 @@ async function createAccountAndRegisterPair(browser, browserName, signup, langua
     assert.equal(await page.locator('#registrationMode').inputValue(), 'WITH_PARTNER');
     assert.equal(writes.filter(path => path === '/players/registro').length, 1);
     record(browserName + ' creates an account with ' + signup.country + ' local phone and resumes pair registration without requesting contacts or level again');
-    await page.locator('#partnerFirstName').fill('Mateo');
-    await page.locator('#partnerLastName').fill('Duarte');
-    await page.locator('#partnerPhone').fill(signup.partnerPhone);
+    await page.locator('#partnerFirstName').fill('Mateo' + signup.country);
+    await page.locator('#partnerLastName').fill('Duarte' + signup.country);
+    const [lookup] = await Promise.all([
+        page.waitForResponse(response => {
+            const url = new URL(response.url());
+            return url.pathname === '/api/players/search' && url.searchParams.get('query') === signup.partnerPhone;
+        }),
+        page.locator('#partnerPhone').fill(signup.partnerPhone)
+    ]);
+    assert.equal(lookup.status(), 200);
+    assert.deepEqual(await lookup.json(), [], 'The new partner must not match an existing player');
     await page.locator('#partnerPhone').blur();
+    await page.locator('#manualPartnerSuggestions').waitFor({ state: 'hidden' });
     await page.locator('#submitPartnerBtn').evaluate(button => {
         window.__qaPairSubmitClicks = 0;
         button.addEventListener('click', () => { window.__qaPairSubmitClicks++; });
@@ -281,7 +295,20 @@ async function createAccountAndRegisterPair(browser, browserName, signup, langua
             lastNamePresent: !!document.getElementById('partnerLastName')?.value,
             phonePresent: !!document.getElementById('partnerPhone')?.value,
             invalid: [...document.querySelectorAll('#partnerForm .is-invalid')].map(element => element.id),
-            dialogs: document.querySelectorAll('dialog[open]').length
+            dialogs: document.querySelectorAll('dialog[open]').length,
+            submitLayout: (() => {
+                const button = document.getElementById('submitPartnerBtn');
+                if (!button) return null;
+                const rect = button.getBoundingClientRect();
+                const hit = document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2);
+                return { x: rect.x, y: rect.y, width: rect.width, height: rect.height, disabled: button.disabled,
+                    hitId: hit?.id, hitClass: String(hit?.className), viewportHeight: innerHeight };
+            })(),
+            suggestions: (() => {
+                const list = document.getElementById('manualPartnerSuggestions');
+                return { display: list && getComputedStyle(list).display, items: list?.children.length };
+            })(),
+            lastPoint: window.__qaTouchPoint
         }))));
         await page.screenshot({ path: output + '/pair-failed-' + browserName + '.png', fullPage: true, timeout: 5000 });
         throw error;
