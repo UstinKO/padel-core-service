@@ -1,6 +1,10 @@
 package com.padle.core.padelcoreservice.telegram;
 
 import com.padle.core.padelcoreservice.config.PlayerTelegramProperties;
+import com.padle.core.padelcoreservice.config.TelegramCampaignProperties;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import com.padle.core.padelcoreservice.model.*;
 import com.padle.core.padelcoreservice.model.enums.*;
 import com.padle.core.padelcoreservice.repository.*;
@@ -19,6 +23,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
@@ -26,6 +31,8 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @EnabledIfSystemProperty(named = "browser.qa", matches = "true")
+// Сценарии имеют отдельные счётчики API: история рассылки не расходует лимит проверки языков.
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
         "server.address=127.0.0.1", "app.scheduling.enabled=false", "telegram.enabled=false",
         "spring.datasource.url=jdbc:postgresql://${BROWSER_QA_DB_HOST:localhost}:${BROWSER_QA_DB_PORT:5432}/padel_browser_qa",
@@ -52,11 +59,14 @@ class TelegramMessagePreviewBrowserTest {
     @Autowired PlatformTransactionManager transactions;
     @Autowired ObjectMapper json;
     @MockitoBean PlayerTelegramProperties properties;
+    @MockitoBean TelegramCampaignProperties campaignFlags;
+    @Autowired TelegramCampaignWorker campaignWorker;
     @MockitoBean PlayerTelegramApi api;
     @MockitoBean EmailService email;
     @MockitoBean TournamentNotificationService notifications;
 
     @BeforeEach void configure() {
+        when(campaignFlags.enabled()).thenReturn(false);
         when(properties.enabled()).thenReturn(true);
         when(properties.pilotEnabled()).thenReturn(false);
         when(properties.botUsername()).thenReturn("OnePadelQaBot");
@@ -84,6 +94,63 @@ class TelegramMessagePreviewBrowserTest {
         } finally {
             Files.deleteIfExists(input); Files.deleteIfExists(directory);
         }
+    }
+    @Test void campaignActionsAndHistoryUseOnlyTheMockedTransport() throws Exception {
+        var fixture = new TransactionTemplate(transactions).execute(status -> seed());
+        assertThat(fixture).isNotNull();
+        when(campaignFlags.enabled()).thenReturn(true); when(api.available()).thenReturn(true);
+        when(properties.organizerOwnerId()).thenReturn(owners.findByEmail(fixture.adminEmail()).orElseThrow().getId());
+        when(properties.organizerChatId()).thenReturn(connections.connection(fixture.alphaId()).orElseThrow().chatId());
+        var retries = new AtomicInteger();
+        when(api.send(anyLong(),anyString(),anyList())).thenAnswer(invocation -> {
+            String text=invocation.getArgument(1);
+            return new TelegramModels.Result(text.equals("UNCERTAIN") ? "UNKNOWN"
+                    : text.equals("RETRY") && retries.getAndIncrement()==0 ? "FAILED" : "SENT",123L);
+        });
+        var scheduler=Executors.newSingleThreadScheduledExecutor();
+        var failure=new AtomicReference<RuntimeException>();
+        scheduler.scheduleWithFixedDelay(()->{
+            try { campaignWorker.tick(); } catch(RuntimeException exception) { failure.compareAndSet(null,exception); }
+        },0,100,TimeUnit.MILLISECONDS);
+        Path directory=Files.createTempDirectory("telegram-campaign-browser-");
+        Path input=directory.resolve("fixture.json");
+        Path output=Path.of("target/telegram-message-preview-qa"); Files.createDirectories(output);
+        Files.writeString(input,json.writeValueAsString(fixture));
+        try {
+            var process=new ProcessBuilder("node","tests/browser/telegram-campaign.browser.mjs",input.toString())
+                    .redirectErrorStream(true).redirectOutput(output.resolve("campaign-browser.log").toFile()).start();
+            boolean completed=process.waitFor(240,TimeUnit.SECONDS);
+            if(!completed) process.destroyForcibly();
+            assertThat(completed).isTrue();
+            assertThat(process.exitValue()).as(Files.readString(output.resolve("campaign-browser.log"))).isZero();
+            assertThat(failure.get()).isNull();
+            verify(api,times(5)).send(eq(7_770_000_000L+fixture.alphaId()),anyString(),anyList());
+            verify(api,never()).updates(anyLong());
+        } finally {
+            scheduler.shutdownNow(); scheduler.awaitTermination(10,TimeUnit.SECONDS);
+            Files.deleteIfExists(input); Files.deleteIfExists(directory);
+        }
+    }
+    @Test void expiredSessionPreservesDraftAndNeverRetriesPosts() throws Exception {
+        var fixture = new TransactionTemplate(transactions).execute(status -> seed());
+        assertThat(fixture).isNotNull();
+        when(campaignFlags.enabled()).thenReturn(true); when(api.available()).thenReturn(true);
+        when(properties.organizerOwnerId()).thenReturn(owners.findByEmail(fixture.adminEmail()).orElseThrow().getId());
+        when(properties.organizerChatId()).thenReturn(connections.connection(fixture.alphaId()).orElseThrow().chatId());
+        Path directory = Files.createTempDirectory("telegram-session-browser-");
+        Path input = directory.resolve("fixture.json");
+        Path output = Path.of("target/telegram-message-preview-qa"); Files.createDirectories(output);
+        Files.writeString(input, json.writeValueAsString(fixture));
+        try {
+            var process = new ProcessBuilder("node", "tests/browser/telegram-session.browser.mjs", input.toString())
+                    .redirectErrorStream(true).redirectOutput(output.resolve("session-browser.log").toFile()).start();
+            boolean completed = process.waitFor(150, TimeUnit.SECONDS);
+            if (!completed) process.destroyForcibly();
+            assertThat(completed).isTrue();
+            assertThat(process.exitValue()).as(Files.readString(output.resolve("session-browser.log"))).isZero();
+            verify(api, never()).send(anyLong(), anyString(), anyList());
+            verify(api, never()).updates(anyLong());
+        } finally { Files.deleteIfExists(input); Files.deleteIfExists(directory); }
     }
     private Fixture seed() {
         String suffix = UUID.randomUUID().toString();

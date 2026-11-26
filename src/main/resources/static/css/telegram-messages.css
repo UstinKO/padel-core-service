@@ -15,3 +15,10 @@
 .tg-compose [data-preview-result]{margin-top:1.5rem}.tg-compose ul{padding-left:1.3rem;overflow-wrap:anywhere}
 .tg-compose [data-compose-status][data-error=true]{color:#a92323}.tg-compose [hidden]{display:none!important}
 @media(max-width:760px){.tg-compose-layout{grid-template-columns:minmax(0,1fr)}.tg-compose{padding:1rem .6rem}.tg-compose-panel{padding:.85rem}.tg-compose h1{font-size:1.4rem}}
+
+.tg-campaign-history{margin-top:1rem}.tg-campaign-history article{padding:1rem 0;border-bottom:1px solid #e5e7eb;overflow-wrap:anywhere}
+.tg-campaign-history article button{display:block;margin-top:.5rem}
+.tg-compose dialog{margin:auto;width:min(720px,calc(100% - 1rem));max-height:90dvh;overflow:auto;border:1px solid #e5e7eb;border-radius:14px;padding:1.25rem;color:inherit}
+.tg-compose dialog::backdrop{background:rgba(20,25,35,.55)}.tg-compose dialog ul{list-style:disc;max-height:36dvh;overflow:auto;margin:1rem 0}
+
+.tg-compose button:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}

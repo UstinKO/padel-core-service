@@ -7,7 +7,7 @@ assert.equal(origin.hostname, '127.0.0.1');
 const browser = await chromium.launch();
 const checks = [];
 let page;
-const endpoint = '/api/admin/telegram/messages/preview';
+const endpoint = '/api/admin/telegram/messages/campaigns';
 async function session(email, language = 'ru', width = 1440) {
     const context = await browser.newContext({ locale: language, viewport: { width, height: 950 } });
     await context.route('**/*', route => {
@@ -30,7 +30,7 @@ async function openEvent() {
     await page.waitForFunction(() => !document.querySelector('[data-refresh]').disabled);
 }
 async function preview() {
-    const response = page.waitForResponse(r => new URL(r.url()).pathname === endpoint);
+    const response = page.waitForResponse(r => new URL(r.url()).pathname === endpoint && r.request().method() === 'POST');
     await page.locator('[data-preview]').click();
     const result = await response;
     assert.equal(result.status(), 200);
@@ -88,7 +88,7 @@ try {
     // Ответ, пришедший после изменения текста, не возвращает старый предпросмотр.
     let release;
     const gate = new Promise(resolve => { release = resolve; });
-    await page.route('**/api/admin/telegram/messages/preview', async route => {
+    await page.route('**/api/admin/telegram/messages/campaigns', async route => {
         const response = await route.fetch(); await gate; await route.fulfill({response});
     });
     await page.locator('[data-preview]').click();
@@ -96,7 +96,7 @@ try {
     release();
     await page.waitForFunction(() => !document.querySelector('[data-preview]').disabled);
     assert.equal(await page.locator('[data-preview-result]').isVisible(), false);
-    await page.unroute('**/api/admin/telegram/messages/preview');
+    await page.unroute('**/api/admin/telegram/messages/campaigns');
     checks.push('SUPER_ADMIN: общая аудитория; устаревший ответ не показывается');
     await adminContext.close();
     const otherContext = await session(fixture.otherEmail);
