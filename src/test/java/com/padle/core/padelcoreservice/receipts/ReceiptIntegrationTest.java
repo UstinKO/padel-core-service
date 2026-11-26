@@ -6,6 +6,9 @@ import com.padle.core.padelcoreservice.model.enums.*;
 import com.padle.core.padelcoreservice.receipts.ReceiptModels.*;
 import com.padle.core.padelcoreservice.repository.*;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import com.padle.core.padelcoreservice.telegram.PlayerTelegramReceipts;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -19,15 +22,18 @@ import java.time.LocalTime;
 import java.util.UUID;
 import static org.assertj.core.api.Assertions.*;
 import static org.hamcrest.Matchers.containsString;
+import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest(properties = {"telegram.enabled=false", "app.scheduling.enabled=false",
-        "telegram.players.enabled=true", "telegram.players.pilot-enabled=false", "telegram.players.receipts.enabled=true"})
+        "telegram.players.enabled=true", "telegram.players.pilot-enabled=false", "telegram.players.receipts.enabled=true",
+        "telegram.players.receipts.pilot-enabled=false"})
 @AutoConfigureMockMvc
 @Transactional
 class ReceiptIntegrationTest {
+    @MockitoBean ReceiptProperties receiptProperties;
     @Autowired ReceiptIntake intake;
     @Autowired ReceiptStore store;
     @Autowired ReceiptReviewService reviews;
@@ -38,7 +44,34 @@ class ReceiptIntegrationTest {
     @Autowired ClubRepository clubs;
     @Autowired PaymentRepository payments;
     @Autowired MockMvc mvc;
+    @Autowired PlayerTelegramReceipts botReceipts;
     private static final File FILE = new File("application/pdf", "%PDF-1.7\nsynthetic receipt".getBytes(StandardCharsets.US_ASCII));
+
+    @BeforeEach void generalReceiptScopeForExistingScenarios() {
+        when(receiptProperties.enabled()).thenReturn(true);
+        when(receiptProperties.pilotEnabled()).thenReturn(false);
+    }
+
+    @Test void independentPilotProtectsButtonsUploadsAndAttachingAfterScopeChanges() {
+        var owner = owner(); var allowed = row(owner); var outsider = row(owner);
+        when(receiptProperties.pilotEnabled()).thenReturn(true);
+        when(receiptProperties.pilotPlayerId()).thenReturn(allowed.getPlayer().getId());
+        when(receiptProperties.pilotTournamentId()).thenReturn(allowed.getTournament().getId());
+        assertThat(botReceipts.buttons(allowed, allowed.getPlayer().getId(), allowed.getPlayer().getLocale())).hasSize(1);
+        assertThat(botReceipts.buttons(outsider, outsider.getPlayer().getId(), outsider.getPlayer().getLocale())).isEmpty();
+        assertThatThrownBy(() -> intake.receive(11901, outsider.getPlayer().getId(), 34567, "fixture-file"))
+                .isInstanceOf(AccountException.class);
+        var upload = intake.receive(11902, allowed.getPlayer().getId(), 34567, "fixture-file");
+        when(receiptProperties.pilotTournamentId()).thenReturn(outsider.getTournament().getId());
+        assertThatThrownBy(() -> intake.attach(upload.id(), allowed.getPlayer().getId(), 34567,
+                allowed.getId(), allowed.getCancellationVersion(), FILE)).isInstanceOf(AccountException.class);
+        assertThat(store.list(allowed.getTournament().getId())).isEmpty();
+        when(receiptProperties.pilotTournamentId()).thenReturn(allowed.getTournament().getId());
+        var receipt = intake.attach(upload.id(), allowed.getPlayer().getId(), 34567,
+                allowed.getId(), allowed.getCancellationVersion(), FILE);
+        assertThat(receipt.state()).isEqualTo(State.PENDING);
+        assertThat(payments.findByRegistrationId(allowed.getId())).isEmpty();
+    }
 
     private Owner owner() {
         return owners.saveAndFlush(Owner.builder().email(UUID.randomUUID()+"@example.test").password("fixture")

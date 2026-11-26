@@ -39,6 +39,7 @@ class PlayerTelegramReceiptsTest {
         handler = new PlayerTelegramReceipts(registrations,receipts,intake,connections,players,files,api,delivery,
                 new PlayerTelegramMessages(source));
         when(registrations.enabled()).thenReturn(true);
+        when(registrations.allows(eq(42L), anyLong())).thenReturn(true);
         when(connections.byUser(123)).thenReturn(Optional.of(new Connection(42,123,123,true)));
         when(connections.connection(42)).thenReturn(Optional.of(new Connection(42,123,123,true)));
         when(players.findById(42L)).thenReturn(Optional.of(player));
@@ -110,5 +111,10 @@ class PlayerTelegramReceiptsTest {
         var registration = row(100,"Собственная запись"); registration.setPlayer(detached);
         assertThat(handler.buttons(registration,42,player.getLocale())).hasSize(1);
         verify(detached,never()).isGuestAccount();
+    }
+
+    @Test void receiptPilotHidesButtonsOutsideItsScopeEvenWhenTheFeatureIsEnabled() {
+        when(registrations.allows(42L, 110L)).thenReturn(false);
+        assertThat(handler.buttons(row(100, "Вне пилота чеков"), 42, player.getLocale())).isEmpty();
     }
 }

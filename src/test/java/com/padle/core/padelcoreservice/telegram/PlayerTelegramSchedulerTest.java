@@ -2,12 +2,20 @@ package com.padle.core.padelcoreservice.telegram;
 
 import com.padle.core.padelcoreservice.config.PlayerTelegramProperties;
 import com.padle.core.padelcoreservice.model.Tournament;
+import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.padelcoreservice.model.TournamentRegistration;
+import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
+import com.padle.core.padelcoreservice.repository.ClubRepository;
+import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import com.padle.core.padelcoreservice.service.TelegramParticipationCoordinator;
+import com.padle.core.padelcoreservice.service.TelegramReminderScheduler;
+import com.padle.core.padelcoreservice.service.TelegramService;
 import org.junit.jupiter.api.Test;
 import java.time.*;
 import java.util.List;
+import java.util.Optional;
 import static org.mockito.Mockito.*;
 
 class PlayerTelegramSchedulerTest {
@@ -44,5 +52,21 @@ class PlayerTelegramSchedulerTest {
         when(links.available()).thenReturn(true);
         scheduler(false).tick();
         verifyNoInteractions(tournaments, participation, notifications);
+    }
+
+    @Test void generalPlayerBotDoesNotFallBackToLegacyPersonalRemindersInManualMode() {
+        var telegram = mock(TelegramService.class);
+        var rows = mock(TournamentRegistrationRepository.class);
+        var clubs = mock(ClubRepository.class);
+        var properties = new PlayerTelegramProperties(true, "OnePadelTestBot", false, 24, 3,
+                null, null, false, "fixture-token", false, null, null);
+        var event = event(2, TournamentStatus.REGISTRO_ABIERTO); event.setClubId(10L); event.setNombre("Учебный турнир");
+        var player = PlayerPadel.builder().id(81L).telegramChatId(123L).build();
+        when(tournaments.findById(42L)).thenReturn(Optional.of(event));
+        when(rows.findByTournamentIdAndStatus(42L, RegistrationStatus.CONFIRMED))
+                .thenReturn(List.of(TournamentRegistration.builder().player(player).build()));
+        var legacy = new TelegramReminderScheduler(telegram, new PlayerTelegramAccess(properties), tournaments, rows, clubs);
+        legacy.sendReminderByTournamentId(42L);
+        verify(telegram, never()).sendDm(anyLong(), anyString(), anyList());
     }
 }
