@@ -172,7 +172,9 @@ async function createAccountAndRegisterPair(browser, browserName, signup, langua
         const messages = await page.locator('#registrationErrorText, .registration-field-error').allTextContents();
         assert.fail('Account submission returned ' + response.status() + ': ' + messages.filter(Boolean).join('; '));
     }
-    assert.equal(response.headers().location, tournamentPath + '#tournament-registration');
+    const destination = new URL(response.headers().location, fixture.baseUrl);
+    assert.equal(destination.origin, origin.origin);
+    assert.equal(destination.pathname + destination.hash, tournamentPath + '#tournament-registration');
     await page.waitForURL(url => url.pathname === tournamentPath);
     await page.locator('#partnerModal').waitFor({ state: 'visible' });
     assert.equal(await page.locator('#contactCheckModal').isVisible(), false);
