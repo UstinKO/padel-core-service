@@ -123,9 +123,88 @@ async function reviewRegistrationForm(browser, browserName, options = {}) {
     await ctx.close();
 }
 
+async function createAccountAndRegisterPair(browser, browserName, signup, language, options = {}) {
+    const ctx = await context(browser, { viewport: { width: 390, height: 844 }, ...options });
+    const page = await pageFor(ctx);
+    const writes = [];
+    page.on('request', request => {
+        if (request.method() !== 'GET') writes.push(new URL(request.url()).pathname);
+    });
+    const tournamentPath = '/torneo/' + fixture.pairedTournamentId;
+    const intent = '[data-registration-intent="' + fixture.pairedTournamentId + '"]';
+    await page.goto(fixture.baseUrl + '/?lang=' + language);
+    const banner = page.locator('#cookieConsentBanner .cookie-btn-accept');
+    if (await banner.isVisible()) await banner.click();
+    await page.locator('#tournamentsGrid ' + intent).click();
+    await page.waitForURL(url => url.pathname === tournamentPath);
+    await page.locator(intent).click();
+    await page.waitForURL(url => url.pathname === '/login');
+    await page.locator('.auth-entry-switch a[href*="/players/registro"]').click();
+    await page.waitForURL(url => url.pathname === '/players/registro');
+    assert.equal(new URL(page.url()).searchParams.get('tournamentId'), String(fixture.pairedTournamentId));
+    await page.locator('#phoneCountry option[value=AR]').waitFor({ state: 'attached' });
+    assert.equal(await page.locator('#phoneCountry').inputValue(), 'AR');
+    await page.locator('#nombre').fill('Lucia');
+    await page.locator('#apellido').fill('Alvarez');
+    await page.locator('#email').fill(signup.email);
+    await page.locator('#nivelJugador').selectOption('C9');
+    await page.locator('#playingSide').selectOption(signup.playingSide);
+    await page.locator('#password').fill('Registration-QA1!');
+    await page.locator('#confirmPassword').fill('Registration-QA1!');
+    await page.locator('#terminos').check();
+    await page.locator('#telefono').fill('123');
+    await page.locator('#submitBtn').click();
+    assert.equal(await page.locator('#telefono').getAttribute('aria-invalid'), 'true');
+    assert.equal(writes.filter(path => path === '/players/registro').length, 0);
+    assert.equal(await page.locator('#nivelJugador').inputValue(), 'C9');
+    assert.equal(await page.locator('#playingSide').inputValue(), signup.playingSide);
+    await page.locator('#phoneCountry').selectOption(signup.country);
+    await page.locator('#telefono').fill(signup.localPhone);
+    await page.locator('#telegramUsername').fill(signup.telegram);
+    await page.locator('#password').focus();
+    await page.screenshot({ path: output + '/signup-complete-' + browserName + '.png', fullPage: true });
+    const submitted = page.waitForResponse(response => new URL(response.url()).pathname === '/players/registro'
+        && response.request().method() === 'POST');
+    await page.locator('#submitBtn').click();
+    const response = await submitted;
+    if (response.status() !== 302) {
+        await page.screenshot({ path: output + '/signup-failed-' + browserName + '.png', fullPage: true });
+        const messages = await page.locator('#registrationErrorText, .registration-field-error').allTextContents();
+        assert.fail('Account submission returned ' + response.status() + ': ' + messages.filter(Boolean).join('; '));
+    }
+    assert.equal(response.headers().location, tournamentPath + '#tournament-registration');
+    await page.waitForURL(url => url.pathname === tournamentPath);
+    await page.locator('#partnerModal').waitFor({ state: 'visible' });
+    assert.equal(await page.locator('#contactCheckModal').isVisible(), false);
+    assert.equal(await page.locator('#levelCheckModal').isVisible(), false);
+    assert.equal(await page.locator('#registrationLevelDialog').isVisible(), false);
+    assert.equal(await page.locator('#registrationMode').inputValue(), 'WITH_PARTNER');
+    assert.equal(writes.filter(path => path === '/players/registro').length, 1);
+    record(browserName + ' creates an account with ' + signup.country + ' local phone and resumes pair registration without requesting contacts or level again');
+    await page.locator('#partnerFirstName').fill('Mateo');
+    await page.locator('#partnerLastName').fill('Duarte');
+    await page.locator('#partnerPhone').fill(signup.partnerPhone);
+    const booked = page.waitForResponse(response => new URL(response.url()).pathname === '/api/tournaments/double/' + fixture.pairedTournamentId + '/register'
+        && response.request().method() === 'POST');
+    const terms = page.waitForResponse(response => new URL(response.url()).pathname === '/api/tournaments/double/' + fixture.pairedTournamentId + '/pair-terms');
+    await page.locator('#submitPartnerBtn').click();
+    if ((await terms).status() === 200) await page.locator('dialog[open] button[value=confirm]').click();
+    const booking = await booked;
+    assert.equal(booking.status(), 200);
+    const result = await booking.json();
+    assert.equal(result.success, true);
+    assert.equal(result.status, 'CONFIRMED');
+    await page.locator('#resultModal').waitFor({ state: 'visible' });
+    await page.screenshot({ path: output + '/pair-confirmed-' + browserName + '.png', fullPage: true });
+    assert.equal(writes.filter(path => path === '/api/tournaments/double/' + fixture.pairedTournamentId + '/register').length, 1);
+    record(browserName + ' registers the pair once and receives CONFIRMED');
+    await ctx.close();
+}
+
 try {
     const browser = await chromium.launch(); browsers.push(browser);
     await reviewRegistrationForm(browser, 'chromium');
+    await createAccountAndRegisterPair(browser, 'chromium', fixture.signups[0], 'es');
     const playerContext = await context(browser);
     await playerContext.addInitScript(() => {
         window.gtag = (command, name, params) => {
@@ -238,6 +317,7 @@ try {
     record('internal attribution works with Meta disabled');
     const safari = await webkit.launch(); browsers.push(safari);
     await reviewRegistrationForm(safari, 'webkit', { ...devices['iPhone 13 Pro'] });
+    await createAccountAndRegisterPair(safari, 'webkit', fixture.signups[1], 'ru', { ...devices['iPhone 13 Pro'] });
     const mobileContext = await context(safari, { ...devices['iPhone 13 Pro'] });
     const mobile = await pageFor(mobileContext);
     await login(mobile, fixture.adminEmail, '/admin', { keepConsentVisible: true });
