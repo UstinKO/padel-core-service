@@ -135,6 +135,7 @@ async function createAccountAndRegisterPair(browser, browserName, signup, langua
         }
         await page.bringToFront();
         await control.waitFor({ state: 'visible' });
+        await page.evaluate(() => { window.__qaTouchPoint = null; });
         const target = await page.waitForFunction(selector => {
             const element = document.querySelector(selector);
             if (!element || element.matches(':disabled') || element.getAttribute('aria-disabled') === 'true') return false;
@@ -144,12 +145,19 @@ async function createAccountAndRegisterPair(browser, browserName, signup, langua
             for (let parent = element; parent; parent = parent.parentElement) {
                 if (getComputedStyle(parent).opacity === '0') return false;
             }
-            return box.width > 0 && box.height > 0 && x >= 0 && y >= 0 && x < innerWidth && y < innerHeight
-                && element.contains(document.elementFromPoint(x, y)) ? { x, y } : false;
+            const reachable = box.width > 0 && box.height > 0 && x >= 0 && y >= 0 && x < innerWidth && y < innerHeight
+                && element.contains(document.elementFromPoint(x, y));
+            const previous = window.__qaTouchPoint;
+            window.__qaTouchPoint = reachable ? { x, y } : null;
+            return reachable && previous && Math.abs(previous.x - x) < 1 && Math.abs(previous.y - y) < 1 ? { x, y } : false;
         }, selector, { polling: 100, timeout: 15000 });
         const point = await target.jsonValue();
         await target.dispose();
-        await page.touchscreen.tap(point.x, point.y);
+        const box = await control.boundingBox();
+        assert.ok(box);
+        const devicePoint = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+        console.log('TOUCH ' + selector + ' ' + JSON.stringify({ dom: point, device: devicePoint }));
+        await page.touchscreen.tap(devicePoint.x, devicePoint.y);
     };
     const writes = [];
     page.on('request', request => {
@@ -222,12 +230,48 @@ async function createAccountAndRegisterPair(browser, browserName, signup, langua
     await page.locator('#partnerFirstName').fill('Mateo');
     await page.locator('#partnerLastName').fill('Duarte');
     await page.locator('#partnerPhone').fill(signup.partnerPhone);
-    const booked = page.waitForResponse(response => new URL(response.url()).pathname === '/api/tournaments/double/' + fixture.pairedTournamentId + '/register'
-        && response.request().method() === 'POST');
-    const terms = page.waitForResponse(response => new URL(response.url()).pathname === '/api/tournaments/double/' + fixture.pairedTournamentId + '/pair-terms');
-    await activate('#submitPartnerBtn');
-    if ((await terms).status() === 200) await activate('dialog[open] button[value=confirm]');
-    const booking = await booked;
+    await page.locator('#partnerPhone').blur();
+    await page.locator('#submitPartnerBtn').evaluate(button => {
+        window.__qaPairSubmitClicks = 0;
+        button.addEventListener('click', () => { window.__qaPairSubmitClicks++; });
+        document.addEventListener('click', event => {
+            window.__qaPairClickTarget = { id: event.target.id, tag: event.target.tagName, x: event.clientX, y: event.clientY };
+        }, { capture: true });
+    });
+    let booking;
+    try {
+        const [terms] = await Promise.all([
+            page.waitForResponse(response => new URL(response.url()).pathname === '/api/tournaments/double/' + fixture.pairedTournamentId + '/pair-terms'),
+            activate('#submitPartnerBtn')
+        ]);
+        assert.equal(terms.status(), 200, 'The fixture must exercise the real terms confirmation');
+        await page.locator('dialog[open]').waitFor({ state: 'visible' });
+        const layout = await page.locator('dialog[open]').evaluate(dialog => {
+            const rect = dialog.getBoundingClientRect();
+            return { width: rect.width, height: rect.height, viewportWidth: innerWidth, viewportHeight: innerHeight,
+                scrollHeight: dialog.scrollHeight, clientHeight: dialog.clientHeight, overflow: getComputedStyle(dialog).overflowY };
+        });
+        console.log('PAIR_TERMS ' + browserName + ' ' + JSON.stringify(layout));
+        assert.ok(layout.width <= layout.viewportWidth && layout.height <= layout.viewportHeight, 'Terms must fit the mobile viewport');
+        await page.screenshot({ path: output + '/pair-terms-' + browserName + '.png', fullPage: true });
+        [booking] = await Promise.all([
+            page.waitForResponse(response => new URL(response.url()).pathname === '/api/tournaments/double/' + fixture.pairedTournamentId + '/register'
+                && response.request().method() === 'POST'),
+            activate('dialog[open] button[value=confirm]')
+        ]);
+    } catch (error) {
+        console.error('PAIR_STATE ' + browserName + ' ' + JSON.stringify(await page.evaluate(() => ({
+            submitClicks: window.__qaPairSubmitClicks, lastClick: window.__qaPairClickTarget,
+            mode: document.getElementById('registrationMode')?.value,
+            firstNamePresent: !!document.getElementById('partnerFirstName')?.value,
+            lastNamePresent: !!document.getElementById('partnerLastName')?.value,
+            phonePresent: !!document.getElementById('partnerPhone')?.value,
+            invalid: [...document.querySelectorAll('#partnerForm .is-invalid')].map(element => element.id),
+            dialogs: document.querySelectorAll('dialog[open]').length
+        }))));
+        await page.screenshot({ path: output + '/pair-failed-' + browserName + '.png', fullPage: true, timeout: 5000 });
+        throw error;
+    }
     assert.equal(booking.status(), 200);
     const result = await booking.json();
     assert.equal(result.success, true);

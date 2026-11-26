@@ -43,7 +43,8 @@ import static org.assertj.core.api.Assertions.assertThat;
         "spring.mail.username=", "spring.mail.password=",
         "spring.security.oauth2.client.registration.google.client-id=test",
         "spring.security.oauth2.client.registration.google.client-secret=test",
-        "recaptcha.site-key=test", "recaptcha.secret-key=test", "recaptcha.enabled=false"
+        "recaptcha.site-key=test", "recaptcha.secret-key=test", "recaptcha.enabled=false",
+        "app.pair-terms.enabled=true"
 })
 class RegistrationSourceBrowserTest {
     @LocalServerPort int port;
