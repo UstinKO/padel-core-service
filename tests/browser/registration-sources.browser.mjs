@@ -29,6 +29,7 @@ async function pageFor(ctx) {
     const page = await ctx.newPage();
     page.setDefaultTimeout(15000);
     page.on('pageerror', error => errors.push(String(error)));
+    page.on('crash', () => { const message = 'Browser page crashed at ' + new URL(page.url()).pathname; errors.push(message); console.error(message); });
     return page;
 }
 async function login(page, email, destination, { openLogin = true, hash = '', keepConsentVisible = false } = {}) {
@@ -135,9 +136,13 @@ async function createAccountAndRegisterPair(browser, browserName, signup, langua
     await page.goto(fixture.baseUrl + '/?lang=' + language);
     const banner = page.locator('#cookieConsentBanner .cookie-btn-accept');
     await banner.waitFor({ state: 'visible' });
-    await page.locator('#cookieConsentBanner').evaluate(async element => {
-        await Promise.all(element.getAnimations({ subtree: true }).map(animation => animation.finished));
-    });
+    console.log('CONSENT ' + browserName + ' ' + JSON.stringify(await page.locator('#cookieConsentBanner').evaluate(element => ({
+        visibility: document.visibilityState,
+        animations: element.getAnimations({ subtree: true }).map(animation => ({ state: animation.playState, time: animation.currentTime }))
+    }))));
+    await page.waitForFunction(() => !document.querySelector('#cookieConsentBanner')
+        ?.getAnimations({ subtree: true }).some(animation => animation.playState === 'running'), null,
+        { polling: 100, timeout: 5000 });
     if (options.isMobile) {
         const point = await banner.evaluate(button => {
             const box = button.getBoundingClientRect();
@@ -336,9 +341,12 @@ try {
     await admin.unroute(api);
     assert.ok(!requests.some(url => url.includes('connect.facebook.net')));
     record('internal attribution works with Meta disabled');
+    const signupSafari = await webkit.launch(); browsers.push(signupSafari);
+    await createAccountAndRegisterPair(signupSafari, 'webkit', fixture.signups[1], 'ru', { ...devices['iPhone 13 Pro'] });
+    await signupSafari.close();
+    browsers.pop();
     const safari = await webkit.launch(); browsers.push(safari);
     await reviewRegistrationForm(safari, 'webkit', { ...devices['iPhone 13 Pro'] });
-    await createAccountAndRegisterPair(safari, 'webkit', fixture.signups[1], 'ru', { ...devices['iPhone 13 Pro'] });
     const mobileContext = await context(safari, { ...devices['iPhone 13 Pro'] });
     const mobile = await pageFor(mobileContext);
     await login(mobile, fixture.adminEmail, '/admin', { keepConsentVisible: true });
