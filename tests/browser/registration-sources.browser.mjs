@@ -37,8 +37,8 @@ async function pageFor(ctx) {
                 readFile('/proc/meminfo', 'utf8'), readFile('/proc/vmstat', 'utf8'), readFile('/sys/fs/cgroup/memory.events', 'utf8')
             ]);
             console.error('BROWSER_RESOURCES ' + JSON.stringify({
-                memory: memory.split('\\n').filter(line => /^(MemTotal|MemAvailable|SwapFree):/.test(line)),
-                oom: vm.split('\\n').filter(line => line.startsWith('oom_kill ')), cgroup
+                memory: memory.split('\n').filter(line => /^(MemTotal|MemAvailable|SwapFree):/.test(line)),
+                oom: vm.split('\n').filter(line => line.startsWith('oom_kill ')), cgroup
             }));
         } catch (diagnosticError) {
             console.error('Resource diagnostics unavailable: ' + diagnosticError.message);
