@@ -112,6 +112,16 @@
         }
     };
     if (admin) {
+        const disclosure = admin.querySelector('[data-tg-disclosure]');
+        const userId = disclosure.dataset.preferenceUserId;
+        const disclosureKey = userId ? 'telegram-admin-expanded:' + userId + ':' + admin.dataset.tournamentId : null;
+        try { disclosure.open = disclosureKey !== null && localStorage.getItem(disclosureKey) === 'true'; }
+        catch { /* Без хранилища первое открытие остаётся свёрнутым. */ }
+        disclosure.addEventListener('toggle', () => {
+            if (disclosureKey === null) return;
+            try { localStorage.setItem(disclosureKey, String(disclosure.open)); }
+            catch { /* Ограничение хранилища не блокирует управление оплатами. */ }
+        });
         const base = '/api/admin/tournaments/' + encodeURIComponent(admin.dataset.tournamentId) + '/telegram';
         const render = summary => {
             const rows = summary.participants;

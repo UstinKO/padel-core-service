@@ -6,7 +6,7 @@ const fragment = fs.readFileSync('src/main/resources/templates/fragments/player-
 const source = fs.readFileSync('src/main/resources/static/js/player-telegram.js', 'utf8');
 const csrf = fs.readFileSync('src/main/resources/static/js/csrf.js', 'utf8');
 const settle = () => new Promise(resolve => setImmediate(resolve));
-async function fixture(kind, handler) {
+async function fixture(kind, handler, options = {}) {
     const dom = new JSDOM(fragment, { url: 'https://onepadel.example.test/perfil', runScripts: 'outside-only' });
     const window = dom.window;
     window.document.querySelector(kind === 'profile' ? '[data-tg-admin]' : '[data-tg-profile]').remove();
@@ -18,6 +18,12 @@ async function fixture(kind, handler) {
         declined: 'Declined', noTelegram: 'No Telegram', deliveryError: 'Delivery issue', sent: 'Processed', summarySent: 'Summary requested', tournamentId: '42',
         whatsappSaved: 'WhatsApp saved; no automatic WhatsApp reminders', whatsappTitle: 'WhatsApp preference',
         connectedTitle: 'Telegram connected', promptTitle: 'Get reminders', whatsappManual: 'WhatsApp — contact manually', manualContact: 'Contact manually' });
+    if (kind === 'admin') {
+        panel.dataset.tournamentId = options.eventId || '42';
+        panel.querySelector('[data-tg-disclosure]').dataset.preferenceUserId = options.userId || '7';
+        Object.entries(options.storage || {}).forEach(([key, value]) => window.localStorage.setItem(key, value));
+        if (options.storageDenied) Object.defineProperty(window, 'localStorage', { get() { throw new Error('storage denied'); } });
+    }
     const calls = [];
     window.Headers = Headers;
     window.document.cookie = 'XSRF-TOKEN=fixture-csrf';
@@ -214,5 +220,105 @@ test('a profile outside the pilot remains hidden and registration never offers T
 test('eligible profile is shown only after a successful eligibility read', async () => {
     const f = await fixture('profile', async () => response({ eligible: true, available: true, connected: false }));
     assert.equal(f.panel.hidden, false);
+    f.dom.window.close();
+});
+
+async function toggleAdmin(f) {
+    f.panel.querySelector('summary').click();
+    await new Promise(resolve => f.dom.window.setTimeout(resolve, 0));
+}
+
+test('admin disclosure starts closed, keeps counters and never submits or requests on toggle', async () => {
+    const f = await fixture('admin', async () => response({ participants: [
+        { name: 'Fixture One', response: 'CONFIRMED', connected: true },
+        { name: 'Fixture Two', response: 'PENDING', connected: false }
+    ] }));
+    const disclosure = f.panel.querySelector('details');
+    assert.equal(disclosure.open, false);
+    assert.equal(f.panel.querySelector('summary [data-tg-total]').textContent, '2');
+    assert.equal(f.panel.querySelector('summary [data-tg-confirmed]').textContent, '1');
+    const form = f.dom.window.document.createElement('form');
+    form.innerHTML = '<input name="amount" value="123.45"><input name="attended" type="checkbox" checked><textarea name="notes">Draft payment</textarea>';
+    f.dom.window.document.body.append(form);
+    let submits = 0;
+    form.addEventListener('submit', event => { event.preventDefault(); submits++; });
+    const initial = [...new f.dom.window.FormData(form)];
+    const calls = f.calls.length;
+    await toggleAdmin(f);
+    assert.equal(disclosure.open, true);
+    await toggleAdmin(f);
+    assert.equal(disclosure.open, false);
+    assert.deepEqual([...new f.dom.window.FormData(form)], initial);
+    assert.equal(submits, 0);
+    assert.equal(f.calls.length, calls);
+    f.dom.window.close();
+});
+
+test('admin disclosure persists both states and isolates users and tournaments', async () => {
+    const handler = async () => response({ participants: [] });
+    const f = await fixture('admin', handler);
+    await toggleAdmin(f);
+    const storage = { 'telegram-admin-expanded:7:42': f.dom.window.localStorage.getItem('telegram-admin-expanded:7:42') };
+    assert.equal(storage['telegram-admin-expanded:7:42'], 'true');
+    f.dom.window.close();
+    const restored = await fixture('admin', handler, { storage });
+    assert.equal(restored.panel.querySelector('details').open, true);
+    await toggleAdmin(restored);
+    assert.equal(restored.dom.window.localStorage.getItem('telegram-admin-expanded:7:42'), 'false');
+    const closed = await fixture('admin', handler, { storage: { 'telegram-admin-expanded:7:42': 'false' } });
+    assert.equal(closed.panel.querySelector('details').open, false);
+    for (const scope of [{ userId: '8' }, { eventId: '43' }]) {
+        const isolated = await fixture('admin', handler, { storage, ...scope });
+        assert.equal(isolated.panel.querySelector('details').open, false);
+        isolated.dom.window.close();
+    }
+    restored.dom.window.close(); closed.dom.window.close();
+});
+
+test('admin can collapse during a request and see success without reopening', async () => {
+    let finish;
+    const f = await fixture('admin', async (url, options) => options.method === 'POST'
+        ? new Promise(resolve => { finish = resolve; }) : response({ participants: [] }));
+    await toggleAdmin(f);
+    const button = f.panel.querySelector('[data-tg-request]');
+    button.click(); button.click();
+    assert.equal(button.disabled, true);
+    await toggleAdmin(f);
+    assert.equal(f.panel.querySelector('details').open, false);
+    finish(response({ participants: [{ name: 'Updated', response: 'CONFIRMED', connected: true }] }));
+    await settle(); await settle();
+    assert.equal(f.panel.querySelector('details').open, false);
+    assert.equal(f.panel.querySelector('[data-tg-status]').closest('details'), null);
+    assert.equal(f.panel.querySelector('[data-tg-status]').textContent, 'Processed');
+    assert.equal(f.panel.querySelector('[data-tg-confirmed]').textContent, '1');
+    assert.equal(f.calls.filter(call => call.options.method === 'POST').length, 1);
+    f.dom.window.close();
+});
+
+test('refresh and failed summary preserve disclosure state and show the error outside it', async () => {
+    const f = await fixture('admin', async (url, options) => {
+        if (options.method === 'POST') throw new Error('network interrupted');
+        return response({ participants: [] });
+    }, { storage: { 'telegram-admin-expanded:7:42': 'true' } });
+    f.panel.querySelector('[data-tg-refresh]').click();
+    await settle(); await settle();
+    assert.equal(f.panel.querySelector('details').open, true);
+    f.panel.querySelector('[data-tg-summary]').click();
+    await toggleAdmin(f);
+    await settle(); await settle();
+    assert.equal(f.panel.querySelector('details').open, false);
+    assert.equal(f.panel.querySelector('[data-tg-status]').textContent, 'Error');
+    assert.equal(f.panel.querySelector('[data-tg-status]').closest('details'), null);
+    f.dom.window.close();
+});
+
+test('unavailable browser storage does not prevent toggling or Telegram status rendering', async () => {
+    const f = await fixture('admin', async () => response({ participants: [] }), { storageDenied: true });
+    assert.equal(f.panel.querySelector('details').open, false);
+    await toggleAdmin(f);
+    assert.equal(f.panel.querySelector('details').open, true);
+    await toggleAdmin(f);
+    assert.equal(f.panel.querySelector('details').open, false);
+    assert.equal(f.panel.dataset.busy, 'false');
     f.dom.window.close();
 });

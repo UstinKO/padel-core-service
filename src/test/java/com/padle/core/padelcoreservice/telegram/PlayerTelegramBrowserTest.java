@@ -75,6 +75,53 @@ class PlayerTelegramBrowserTest {
     record Fixture(String baseUrl, String adminEmail, String password, List<Scenario> scenarios,
                    String connectedEmail, long connectedEventId) {}
 
+    record DisclosureAccount(String email, String role, long ownerId, List<Long> eventIds) {}
+    record DisclosureFixture(String baseUrl, String password, List<DisclosureAccount> accounts) {}
+
+    @Test void paymentDisclosurePreservesDraftsAcrossRolesAndRequests() throws Exception {
+        var fixture = new TransactionTemplate(transactions).execute(status -> seedDisclosure());
+        assertThat(fixture).isNotNull();
+        Path directory = Files.createTempDirectory("padel-telegram-disclosure-");
+        Path input = directory.resolve("fixture.json");
+        Path output = Path.of("target/telegram-browser-qa");
+        Files.createDirectories(output);
+        Files.writeString(input, json.writeValueAsString(fixture));
+        try {
+            var process = new ProcessBuilder("node", "tests/browser/telegram-disclosure.browser.mjs", input.toString())
+                    .redirectErrorStream(true).redirectOutput(output.resolve("disclosure-browser.log").toFile()).start();
+            boolean completed = process.waitFor(240, TimeUnit.SECONDS);
+            if (!completed) process.destroyForcibly();
+            assertThat(completed).as("Проверка сворачивания блока оплат завершилась вовремя").isTrue();
+            assertThat(process.exitValue()).as(Files.readString(output.resolve("disclosure-browser.log"))).isZero();
+            verify(api, never()).send(anyLong(), anyString(), anyList());
+            verify(api, never()).updates(anyLong());
+        } finally {
+            Files.deleteIfExists(input);
+            Files.deleteIfExists(directory);
+        }
+    }
+
+    private DisclosureFixture seedDisclosure() {
+        String suffix = UUID.randomUUID().toString();
+        String password = "Disclosure-qa-" + suffix;
+        var club = clubs.saveAndFlush(Club.builder().nombre("Disclosure QA " + suffix).isActive(true).build());
+        var roster = IntStream.range(0, 20).mapToObj(i -> player("collapse-" + i, suffix, password, 500 + i)).toList();
+        var accounts = List.of(OwnerRole.SUPER_ADMIN, OwnerRole.ADMIN, OwnerRole.ORGANIZER, OwnerRole.CLUB_ADMIN)
+                .stream().map(role -> {
+                    var owner = owners.saveAndFlush(Owner.builder().email("collapse-" + role + "-" + suffix + "@example.test")
+                            .password(passwords.encode(password)).firstName("Disclosure").lastName(role.name())
+                            .role(role).clubId(club.getId()).isActive(true).build());
+                    var eventIds = IntStream.range(0, 2).mapToObj(i -> {
+                        var tournament = event(club, owner, 32);
+                        roster.forEach(player -> registrations.saveAndFlush(TournamentRegistration.builder()
+                                .tournament(tournament).player(player).status(RegistrationStatus.CONFIRMED).build()));
+                        return tournament.getId();
+                    }).toList();
+                    return new DisclosureAccount(owner.getEmail(), role.name(), owner.getId(), eventIds);
+                }).toList();
+        return new DisclosureFixture("http://127.0.0.1:" + port, password, accounts);
+    }
+
     @Test void browsersPersistPreferencesAcrossDevicesAndHonorSiteLanguage() throws Exception {
         when(api.available()).thenReturn(true);
         Fixture fixture = new TransactionTemplate(transactions).execute(status -> seed());
