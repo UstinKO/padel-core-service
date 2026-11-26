@@ -239,6 +239,7 @@ telegram:
   chat-id: ${TELEGRAM_CHAT_ID:}
   enabled: ${TELEGRAM_ENABLED:false}
   players:
+    onboarding-enabled: ${TELEGRAM_PLAYERS_ONBOARDING_ENABLED:false}
     receipts:
       enabled: ${TELEGRAM_PLAYERS_RECEIPTS_ENABLED:false}
       pilot-enabled: ${TELEGRAM_PLAYERS_RECEIPTS_PILOT_ENABLED:true}

@@ -107,16 +107,23 @@ public class PlayerTelegramStore {
         return player.filter(access::allowsPlayer).filter(id -> jdbc.queryForObject("""
                 SELECT COUNT(*) FROM player_telegram_connections WHERE user_id = ? AND player_id <> ?
                 """, Long.class, userId, id) == 0).map(id -> {
-            jdbc.update("""
-                    INSERT INTO player_telegram_connections(player_id, user_id, chat_id, enabled)
-                    VALUES (?, ?, ?, true) ON CONFLICT (player_id) DO UPDATE
-                    SET user_id = EXCLUDED.user_id, chat_id = EXCLUDED.chat_id, enabled = true,
-                        linked_at = CURRENT_TIMESTAMP
-                    """, id, userId, chatId);
+            saveConnection(id, userId, chatId);
+            jdbc.update("DELETE FROM player_telegram_onboarding WHERE player_id=? OR user_id=?", id, userId);
             jdbc.update("DELETE FROM player_telegram_tokens WHERE player_id = ?", id);
             savePreference(id, ContactPreference.TELEGRAM);
             return id;
         });
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void saveConnection(long playerId, long userId, long chatId) {
+        lockConnections();
+        jdbc.update("""
+                INSERT INTO player_telegram_connections(player_id,user_id,chat_id,enabled)
+                VALUES (?,?,?,true) ON CONFLICT (player_id) DO UPDATE
+                SET user_id=EXCLUDED.user_id,chat_id=EXCLUDED.chat_id,enabled=true,linked_at=CURRENT_TIMESTAMP
+                """, playerId,userId,chatId);
+        savePreference(playerId, ContactPreference.TELEGRAM);
     }
 
     @Transactional
@@ -126,6 +133,10 @@ public class PlayerTelegramStore {
     }
 
     private void removeConnection(long playerId) {
+        jdbc.update("""
+                DELETE FROM player_telegram_onboarding WHERE player_id=? OR user_id IN
+                (SELECT user_id FROM player_telegram_connections WHERE player_id=?)
+                """, playerId, playerId);
         jdbc.update("DELETE FROM player_telegram_connections WHERE player_id = ?", playerId);
         jdbc.update("DELETE FROM player_telegram_tokens WHERE player_id = ?", playerId);
     }

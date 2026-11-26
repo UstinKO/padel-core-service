@@ -1,5 +1,7 @@
 # PROJECT.md — техническая карта проекта
 
+Общий вход Telegram: `PlayerTelegramOnboarding` / `PlayerTelegramOnboardingStore`, `TelegramConnectController` и `TelegramOnboardingController`. Схема v1.93, флаг `telegram.players.onboarding-enabled=false`; временная ссылка сайта и подтверждение исходного Telegram, прежняя блокировка связей и дедупликация отправок. [Контракт](../docs/endpoints/player-telegram.md).
+
 Технический справочник для Codex. Точка входа и обязательные правила — `AGENTS.md` в корне репозитория.
 
 ---

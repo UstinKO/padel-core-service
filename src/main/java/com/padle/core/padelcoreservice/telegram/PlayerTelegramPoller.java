@@ -31,6 +31,7 @@ public class PlayerTelegramPoller {
     private final ParticipationRequestRepository requests;
     private final PlayerTelegramConfirmation confirmation;
     private final PlayerTelegramReceipts receipts;
+    private final PlayerTelegramOnboarding onboarding;
 
     public void poll() {
         if (!api.available()) {
@@ -71,11 +72,12 @@ public class PlayerTelegramPoller {
 
     private void command(long updateId, Message message) {
         String text = Optional.ofNullable(message.text()).orElse("").strip();
-        if (access.pilot() && !text.startsWith("/start ") && store.byUser(message.from().id())
+        if (access.pilot() && !text.equals("/stop") && !text.startsWith("/start ") && store.byUser(message.from().id())
                 .filter(c -> access.allowsPlayer(c.playerId())).isEmpty()) {
             return;
         }
         if (text.equals("/stop")) {
+            onboarding.revoke(message.from().id());
             var connection = store.byUser(message.from().id());
             var locale = connection.flatMap(c -> players.findById(c.playerId()))
                     .map(p -> p.getLocale()).orElse(Locale.forLanguageTag("es"));
@@ -84,6 +86,8 @@ public class PlayerTelegramPoller {
             } finally {
                 connection.ifPresent(c -> store.disconnect(c.playerId()));
             }
+        } else if ((text.equals("/start") || text.equals("/start connect")) && onboarding.available()) {
+            onboarding.start(updateId, message.from());
         } else if (text.startsWith("/start ")) {
             var linked = links.bind(text.substring(7).strip(), message.from().id(), message.chat().id());
             var locale = linked.flatMap(players::findById).map(p -> p.getLocale()).orElse(Locale.forLanguageTag("es"));
@@ -104,6 +108,10 @@ public class PlayerTelegramPoller {
     }
 
     private void confirm(Callback callback) {
+        if (callback.data()!=null && callback.data().startsWith("l:")) {
+            confirmLink(callback);
+            return;
+        }
         if (receipts.callback(callback)) {
             return;
         }
@@ -137,5 +145,23 @@ public class PlayerTelegramPoller {
             response = messages.text("unavailable", locale);
         }
         api.acknowledge(callback.id(), response);
+    }
+
+    private void confirmLink(Callback callback) {
+        var locale=PlayerTelegramOnboarding.language(callback.from().languageCode());
+        String response=messages.text("invalidLink", locale);
+        try {
+            var id=UUID.fromString(callback.data().substring(2));
+            var player=onboarding.complete(id,callback.from().id()).flatMap(players::findById);
+            if (player.isPresent()) {
+                locale=player.orElseThrow().getLocale();
+                response=messages.text("linked",locale);
+                delivery.sendOnce("onboarding-complete:"+id,null,null,callback.from().id(),response,List.of());
+                api.editKeyboard(callback.message().chat().id(),callback.message().messageId(),List.of());
+            }
+        } catch (AccountException | IllegalArgumentException exception) {
+            response=messages.text("invalidLink",locale);
+        }
+        api.acknowledge(callback.id(),response);
     }
 }

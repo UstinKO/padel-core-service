@@ -47,6 +47,8 @@ public class PlayerTelegramLinks {
                 && properties.botUsername().matches("[A-Za-z0-9_]{5,32}");
     }
 
+    public String botUrl() { return "https://t.me/" + properties.botUsername(); }
+
     public Link issue(PlayerPadel player, Locale locale) {
         if (!available() || !access.allowsPlayer(player.getId()) || !player.isActivo() || player.isGuestAccount()) {
             throw new AccountException(HttpStatus.CONFLICT, "TELEGRAM_UNAVAILABLE");

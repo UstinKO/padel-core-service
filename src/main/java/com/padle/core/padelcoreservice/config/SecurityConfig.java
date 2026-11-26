@@ -134,6 +134,8 @@ public class SecurityConfig {
                                 "/tournaments/king-of-court/*",
                                 "/waitlist/**",
                                 "/login",
+                                "/telegram/connect",
+                                "/telegram/connect/context",
                                 "/players/registro",
                                 "/players/registro/**",
                                 "/players/confirmar-email",
@@ -377,7 +379,8 @@ public class SecurityConfig {
 
             boolean notConfirmed = exception instanceof DisabledException
                     || exception instanceof org.springframework.security.authentication.LockedException;
-            var destination = AccountDestination.requested(request).flatMap(AccountDestination::tournamentManagement);
+            var destination = AccountDestination.requested(request).filter(value -> value.equals("/telegram/connect")
+                    || AccountDestination.tournamentManagement(value).isPresent());
             response.sendRedirect(TournamentLogin.failureUrl(
                     notConfirmed ? "not_confirmed" : "true", TournamentLogin.requestedTournament(request))
                     + destination.map(value -> "&destination=" + URLEncoder.encode(value, StandardCharsets.UTF_8))
