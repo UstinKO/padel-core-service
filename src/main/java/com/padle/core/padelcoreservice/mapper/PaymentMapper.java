@@ -2,7 +2,7 @@ package com.padle.core.padelcoreservice.mapper;
 
 import com.padle.core.padelcoreservice.dto.PaymentDto;
 import com.padle.core.padelcoreservice.dto.PaymentManagementViewDto;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerPadel;
 import org.mapstruct.BeanMapping;
 import org.mapstruct.MappingTarget;
 import com.padle.core.padelcoreservice.model.Payment;

@@ -2,7 +2,7 @@ package com.padle.core.padelcoreservice.repository;
 
 import com.padle.core.application.clubs.ClubTournamentUsage;
 import com.padle.core.padelcoreservice.model.Tournament;
-import com.padle.core.padelcoreservice.model.enums.GenderFormat;
+import com.padle.core.application.tournament.GenderFormat;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
 import jakarta.persistence.LockModeType;

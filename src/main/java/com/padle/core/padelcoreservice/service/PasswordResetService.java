@@ -2,8 +2,8 @@ package com.padle.core.padelcoreservice.service;
 
 import com.padle.core.application.identity.PasswordResetTokens;
 import com.padle.core.padelcoreservice.dto.PasswordResetConfirm;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
-import com.padle.core.padelcoreservice.repository.PlayerRepository;
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.security.AccountDestination;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;

@@ -1,8 +1,10 @@
 package com.padle.core.padelcoreservice.controller.api;
 
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.model.*;
 import com.padle.core.persistence.identity.PasswordResetToken;
-import com.padle.core.padelcoreservice.model.enums.Nivel;
+import com.padle.core.application.tournament.Nivel;
 import com.padle.core.padelcoreservice.repository.*;
 import com.padle.core.persistence.identity.PasswordResetTokenRepository;
 import com.padle.core.padelcoreservice.service.*;
@@ -11,6 +13,7 @@ import com.padle.core.padelcoreservice.security.PlayerPrincipal;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -24,6 +27,7 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
@@ -143,7 +147,10 @@ class AccountIntegrationTest {
     @Test
     void upgradesExistingPlayerSessionAndRetainsAuthorities() throws Exception {
         var player = player();
-        var previous = UsernamePasswordAuthenticationToken.authenticated(player, null, List.of(
+        var legacy = BeanUtils.instantiateClass(com.padle.core.padelcoreservice.model.PlayerPadel.class);
+        ReflectionTestUtils.setField(legacy, "id", player.getId());
+        ReflectionTestUtils.setField(legacy, "email", player.getEmail());
+        var previous = UsernamePasswordAuthenticationToken.authenticated(legacy, null, List.of(
                 new SimpleGrantedAuthority("ROLE_PLAYER"), new SimpleGrantedAuthority("FACTOR_PASSWORD")));
         var session = new MockHttpSession();
         session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
@@ -202,8 +209,9 @@ class AccountIntegrationTest {
         mvc.perform(get("/api/auth/session").with(authentication(auth))).andExpect(status().isOk()).andExpect(jsonPath("$.authenticated").value(true));
         mvc.perform(get("/api/auth/me").with(authentication(auth))).andExpect(status().isUnauthorized());
     }
-    @Test
-    void savesPlayingLevelForGooglePlayerWithoutChangingOtherProfileFields() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {"C6", "С6"})
+    void savesPlayingLevelForGooglePlayerWithoutChangingOtherProfileFields(String level) throws Exception {
         var player = player();
         player.setNivelJugador(Nivel.SIN_ESPECIFICAR);
         players.saveAndFlush(player);
@@ -211,7 +219,7 @@ class AccountIntegrationTest {
         var auth = new UsernamePasswordAuthenticationToken(oauth, null, oauth.getAuthorities());
 
         mvc.perform(patch("/api/players/me/level").with(authentication(auth)).with(csrf())
-                        .contentType("application/json").content("{\"nivelJugador\":\"C6\"}"))
+                        .contentType("application/json").content("{\"nivelJugador\":\"" + level + "\"}"))
                 .andExpect(status().isNoContent());
 
         assertThat(players.findNivelById(player.getId())).contains(Nivel.C6);

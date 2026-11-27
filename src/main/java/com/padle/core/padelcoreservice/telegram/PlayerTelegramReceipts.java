@@ -1,7 +1,7 @@
 package com.padle.core.padelcoreservice.telegram;
 
 import com.padle.core.padelcoreservice.exception.AccountException;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.model.TournamentRegistration;
 import com.padle.core.padelcoreservice.receipts.ReceiptFiles;
 import com.padle.core.padelcoreservice.receipts.ReceiptIntake;
@@ -10,7 +10,7 @@ import com.padle.core.padelcoreservice.receipts.ReceiptStore;
 import com.padle.core.padelcoreservice.receipts.ReceiptModels.Upload;
 import com.padle.core.padelcoreservice.receipts.ReceiptModels.Receipt;
 import com.padle.core.padelcoreservice.receipts.ReceiptModels.State;
-import com.padle.core.padelcoreservice.repository.PlayerRepository;
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.telegram.TelegramModels.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

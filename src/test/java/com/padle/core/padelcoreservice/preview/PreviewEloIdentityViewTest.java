@@ -1,6 +1,6 @@
 package com.padle.core.padelcoreservice.preview;
 
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.rating.EloPilotAccess;
 import com.padle.core.padelcoreservice.rating.EloPilotProperties;
 import org.junit.jupiter.api.Test;

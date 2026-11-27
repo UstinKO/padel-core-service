@@ -1,6 +1,5 @@
 package com.padle.core.padelcoreservice.security;
 
-import com.padle.core.padelcoreservice.mapper.PlayerPrincipalMapper;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -22,7 +21,7 @@ public class LegacyPlayerSessionFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getPrincipal() instanceof PlayerPadel legacy) {
-            sessions.replace(authentication, PlayerPrincipalMapper.INSTANCE.toPrincipal(legacy), request, response);
+            sessions.replace(authentication, legacy.toPrincipal(), request, response);
         }
         chain.doFilter(request, response);
     }

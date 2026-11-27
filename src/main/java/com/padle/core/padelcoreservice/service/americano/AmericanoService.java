@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.service.americano;
 
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.application.clubs.ClubDetails;
 import com.padle.core.application.clubs.InternalClubReadPort;
 import com.padle.core.padelcoreservice.util.AfterCommit;

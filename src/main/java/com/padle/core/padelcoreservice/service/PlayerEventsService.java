@@ -9,7 +9,7 @@ import com.padle.core.padelcoreservice.dto.PlayerEvents.*;
 import com.padle.core.padelcoreservice.exception.AccountException;
 import com.padle.core.padelcoreservice.mapper.PlayerEventsMapper;
 import com.padle.core.padelcoreservice.model.Payment;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.TournamentRegistration;
 import com.padle.core.padelcoreservice.model.enums.Modalidad;

@@ -1,7 +1,7 @@
 package com.padle.core.padelcoreservice.repository;
 
 import com.padle.core.padelcoreservice.model.KingOfCourtPlayerStats;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.model.TournamentKingOfCourt;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.model;
 
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.model.enums.PaymentStatus;
 import com.padle.core.padelcoreservice.marketing.MarketingEntityListener;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;

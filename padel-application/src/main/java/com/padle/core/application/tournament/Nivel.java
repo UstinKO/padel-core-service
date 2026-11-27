@@ -1,7 +1,5 @@
-package com.padle.core.padelcoreservice.model.enums;
+package com.padle.core.application.tournament;
 
-import lombok.Getter;
-import com.fasterxml.jackson.annotation.JsonCreator;
 
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -10,7 +8,6 @@ import java.util.Set;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
-@Getter
 public enum Nivel {
     // Masculino — individual
     C9("9", GenderFormat.MASCULINO),
@@ -81,6 +78,14 @@ public enum Nivel {
         this.generoAplicable = generoAplicable;
     }
 
+    public String getOrden() {
+        return orden;
+    }
+
+    public GenderFormat getGeneroAplicable() {
+        return generoAplicable;
+    }
+
     public String getDisplay() {
         return name();
     }
@@ -130,7 +135,6 @@ public enum Nivel {
     private static final Set<Nivel> PLAYER_LEVELS = EnumSet.of(C9, C8, C7, C6, C5, D9, D7, D8, D6, C4, C3);
 
     /** Приводит ввод API, форм и импорта к единственному внутреннему значению категории. */
-    @JsonCreator
     public static Nivel fromValue(String value) {
         String canonical = value.strip().toUpperCase(Locale.ROOT).replace('С', 'C')
                 .replaceAll("\\s*[/–-]\\s*", "_");

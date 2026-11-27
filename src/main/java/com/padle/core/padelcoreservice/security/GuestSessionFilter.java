@@ -1,6 +1,6 @@
 package com.padle.core.padelcoreservice.security;
 
-import com.padle.core.padelcoreservice.repository.PlayerRepository;
+import com.padle.core.application.identity.PlayerProfiles;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -12,10 +12,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 public class GuestSessionFilter extends OncePerRequestFilter {
-    private final PlayerRepository players;
+    private final PlayerProfiles players;
     private final SecurityContextLogoutHandler logout = new SecurityContextLogoutHandler();
 
-    public GuestSessionFilter(PlayerRepository players) {
+    public GuestSessionFilter(PlayerProfiles players) {
         this.players = players;
     }
 
@@ -25,7 +25,7 @@ public class GuestSessionFilter extends OncePerRequestFilter {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.getPrincipal() instanceof PlayerPrincipal player
                 && player.getIdentity().isGuestAccount()
-                && !players.existsByIdAndEmailAndActivoTrue(player.getId(), player.getEmail())) {
+                && !players.existsActiveByIdentity(player.getIdentity())) {
             logout.logout(request, response, auth);
         }
         chain.doFilter(request, response);

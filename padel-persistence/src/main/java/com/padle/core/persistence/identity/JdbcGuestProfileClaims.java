@@ -1,10 +1,7 @@
-package com.padle.core.padelcoreservice.repository;
+package com.padle.core.persistence.identity;
 
-import com.padle.core.padelcoreservice.dto.GuestProfileClaimDtos.ProfileChoice;
-import com.padle.core.padelcoreservice.dto.GuestProfileClaimDtos.ContactChoice;
-import com.padle.core.padelcoreservice.dto.GuestProfileClaimDtos.QueueItem;
-import com.padle.core.padelcoreservice.dto.GuestProfileClaimDtos.Status;
-import com.padle.core.padelcoreservice.dto.GuestProfileClaimDtos.Verification;
+import com.padle.core.application.identity.GuestProfileClaims;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
@@ -18,11 +15,12 @@ import java.util.UUID;
 
 @Repository
 @RequiredArgsConstructor
-public class GuestProfileClaimRepository {
+public class JdbcGuestProfileClaims implements GuestProfileClaims {
     private static final String COLUMNS = "id, request_number, coalesce(account_id, rejected_account_id) AS account_id, phone_key, " +
             "guest_id, resolved_player_id, status, created_at, review_reason";
     private final JdbcClient jdbc;
 
+    @Override
     public Claim saveRequest(long accountId, String phone) {
         return jdbc.sql("""
                 INSERT INTO guest_profile_claims(id, account_id, phone_key)
@@ -34,12 +32,14 @@ public class GuestProfileClaimRepository {
                 .query((rs, n) -> claim(rs)).single();
     }
 
+    @Override
     public Optional<Claim> request(UUID reference, boolean lock) {
         String sql = "SELECT " + COLUMNS + " FROM guest_profile_claims WHERE id = :reference AND (account_id IS NOT NULL OR rejected_account_id IS NOT NULL)";
         return jdbc.sql(lock ? sql + " FOR UPDATE" : sql).param("reference", reference)
                 .query((rs, n) -> claim(rs)).optional();
     }
 
+    @Override
     public Optional<Claim> matchingRequest(long accountId, String phone, boolean lock) {
         String sql = "SELECT " + COLUMNS + "\n" + """
                  FROM guest_profile_claims
@@ -50,6 +50,7 @@ public class GuestProfileClaimRepository {
                 .query((rs, n) -> claim(rs)).optional();
     }
 
+    @Override
     public List<Claim> forAccount(long accountId) {
         return jdbc.sql("SELECT " + COLUMNS + "\n" + """
                  FROM guest_profile_claims WHERE account_id = :account OR rejected_account_id = :account
@@ -58,6 +59,7 @@ public class GuestProfileClaimRepository {
                 .query((rs, n) -> claim(rs)).list();
     }
 
+    @Override
     public List<QueueItem> queue(String search, String normalizedPhone, Status status, int limit, long offset) {
         return jdbc.sql("""
                 SELECT c.id, c.request_number, c.created_at, p.id AS account_id, c.phone_key, c.status,
@@ -78,6 +80,7 @@ public class GuestProfileClaimRepository {
                         Status.valueOf(rs.getString("status")))).list();
     }
 
+    @Override
     public List<ProfileChoice> profileChoices(String search, boolean guest) {
         return jdbc.sql("""
                 SELECT id, concat_ws(' ',nombre,apellido) AS name FROM player_padel_db
@@ -89,11 +92,13 @@ public class GuestProfileClaimRepository {
                 """).param("search", search).param("guest", guest).query(ProfileChoice.class).list();
     }
 
+    @Override
     public long pendingCount() {
         return jdbc.sql("SELECT count(*) FROM guest_profile_claims WHERE status = 'PENDING' AND account_id IS NOT NULL")
                 .query(Long.class).single();
     }
 
+    @Override
     public Optional<Long> resolved(long guestId) {
         return jdbc.sql("""
                 SELECT resolved_player_id FROM guest_profile_claims
@@ -101,6 +106,7 @@ public class GuestProfileClaimRepository {
                 """).param("guest", guestId).query(Long.class).optional();
     }
 
+    @Override
     public void decide(UUID reference, Status status, long ownerId, String reason) {
         jdbc.sql("""
                 UPDATE guest_profile_claims
@@ -112,6 +118,7 @@ public class GuestProfileClaimRepository {
                 .param("reason", reason).update();
     }
 
+    @Override
     public void approve(UUID reference, long guestId, long accountId, long ownerId, Verification method, boolean independentReview) {
         jdbc.sql("""
                 UPDATE guest_profile_claims SET guest_id = :guest, approved_by = :owner,
@@ -123,6 +130,7 @@ public class GuestProfileClaimRepository {
                 .param("reference", reference).param("method", method.name()).param("manual", independentReview).update();
     }
 
+    @Override
     public void recordManual(long guestId, Long accountId, long resolvedId, String phone, long ownerId, Verification method) {
         jdbc.sql("""
                 INSERT INTO guest_profile_claims(id, guest_id, account_id, phone_key, approved_at, approved_by,
@@ -134,6 +142,7 @@ public class GuestProfileClaimRepository {
                 .param("method", method.name()).update();
     }
 
+    @Override
     public void contactResolution(long guestId, ContactChoice choice) {
         jdbc.sql("UPDATE guest_profile_claims SET contact_resolution = :choice WHERE guest_id = :guest AND status = 'MERGED'")
                 .param("choice", choice.name()).param("guest", guestId).update();
@@ -145,7 +154,4 @@ public class GuestProfileClaimRepository {
                 rs.getObject("resolved_player_id", Long.class), Status.valueOf(rs.getString("status")),
                 rs.getObject("created_at", OffsetDateTime.class), rs.getString("review_reason"));
     }
-
-    public record Claim(UUID reference, long number, long accountId, String phone, Long guestId,
-                        Long resolvedPlayerId, Status status, OffsetDateTime createdAt, String reviewReason) {}
 }

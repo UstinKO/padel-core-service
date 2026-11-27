@@ -1,7 +1,7 @@
 package com.padle.core.padelcoreservice.mapper;
 
 import com.padle.core.padelcoreservice.dto.PlayerSummaryDto;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerPadel;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

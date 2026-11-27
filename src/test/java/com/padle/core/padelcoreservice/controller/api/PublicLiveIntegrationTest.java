@@ -1,5 +1,9 @@
 package com.padle.core.padelcoreservice.controller.api;
 
+import com.padle.core.application.tournament.GenderFormat;
+import com.padle.core.application.tournament.Nivel;
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.dto.live.PublicLiveDtos.*;
 import com.padle.core.padelcoreservice.dto.americano.RankingCriteria;
 import com.padle.core.padelcoreservice.dto.americano.TeamPlayoffAddTeamRequest;

@@ -1,7 +1,8 @@
 package com.padle.core.padelcoreservice.mapper;
 
 import com.padle.core.application.identity.PlayerIdentity;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.application.identity.PlayerProfiles.Profile;
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.security.PlayerPrincipal;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -18,4 +19,10 @@ public interface PlayerPrincipalMapper {
     @Mapping(target = "authorities", ignore = true)
     @Mapping(target = "validContact", expression = "java(player.hasValidContact())")
     PlayerPrincipal toPrincipal(PlayerPadel player);
+
+    @Mapping(target = "identity", expression = "java(new PlayerIdentity(profile.id(), profile.email()))")
+    @Mapping(target = "password", source = "passwordHash")
+    @Mapping(target = "authorities", ignore = true)
+    @Mapping(target = "validContact", expression = "java(profile.hasValidContact())")
+    PlayerPrincipal toPrincipal(Profile profile, String passwordHash);
 }

@@ -1,8 +1,7 @@
 package com.padle.core.padelcoreservice.security;
 
 import com.padle.core.padelcoreservice.mapper.PlayerPrincipalMapper;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
-import com.padle.core.padelcoreservice.repository.PlayerRepository;
+import com.padle.core.application.identity.PlayerProfiles;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -14,19 +13,19 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class PlayerUserService {
 
-    private final PlayerRepository playerRepository;
+    private final PlayerProfiles players;
 
     @Transactional(readOnly = true)
     public PlayerPrincipal loadUserByUsername(String email) throws UsernameNotFoundException {
         log.debug("Loading player by email: {}", email);
 
-        PlayerPadel player = playerRepository.findByEmail(email)
+        var login = players.findForLogin(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Player not found with email: " + email));
 
-        if (!player.isActivo()) {
+        if (!login.profile().activo()) {
             throw new UsernameNotFoundException("Player account is not active: " + email);
         }
 
-        return PlayerPrincipalMapper.INSTANCE.toPrincipal(player);
+        return PlayerPrincipalMapper.INSTANCE.toPrincipal(login.profile(), login.passwordHash());
     }
 }

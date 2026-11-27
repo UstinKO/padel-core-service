@@ -1,7 +1,7 @@
 package com.padle.core.padelcoreservice.support;
 
 import com.padle.core.padelcoreservice.mapper.PlayerPrincipalMapper;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.security.PlayerPrincipal;
 import com.padle.core.padelcoreservice.security.oauth2.OAuth2PlayerPrincipal;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;

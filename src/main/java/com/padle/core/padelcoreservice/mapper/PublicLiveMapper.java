@@ -4,7 +4,7 @@ import com.padle.core.padelcoreservice.dto.*;
 import com.padle.core.padelcoreservice.dto.live.PublicLiveDtos.*;
 import com.padle.core.padelcoreservice.dto.americano.*;
 import com.padle.core.padelcoreservice.model.americano.AmericanoMatch;
-import com.padle.core.padelcoreservice.model.enums.Nivel;
+import com.padle.core.application.tournament.Nivel;
 import org.mapstruct.*;
 import java.util.List;
 import java.util.Map;

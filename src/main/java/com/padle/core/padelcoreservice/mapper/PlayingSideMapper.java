@@ -1,8 +1,8 @@
 package com.padle.core.padelcoreservice.mapper;
 
 import com.padle.core.padelcoreservice.dto.PlayingSideDtos;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
-import com.padle.core.padelcoreservice.model.enums.Nivel;
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.application.tournament.Nivel;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

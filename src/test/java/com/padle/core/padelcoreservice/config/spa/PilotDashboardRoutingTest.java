@@ -1,6 +1,6 @@
 package com.padle.core.padelcoreservice.config.spa;
 
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.preview.PilotEloRefresh;
 import com.padle.core.padelcoreservice.preview.PreviewEloRanking;
 import com.padle.core.padelcoreservice.rating.EloPilotAccess;

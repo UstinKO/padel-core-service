@@ -1,6 +1,6 @@
 package com.padle.core.padelcoreservice.model.americano;
 
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.model.enums.AmericanoRoundStatus;
 import com.padle.core.padelcoreservice.model.enums.PlayoffStage;
 import jakarta.persistence.*;

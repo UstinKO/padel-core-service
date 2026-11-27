@@ -9,7 +9,7 @@ import com.padle.core.contract.clubs.Club;
 import com.padle.core.padelcoreservice.exception.PublicDiscoveryException;
 import com.padle.core.padelcoreservice.mapper.PublicClubMapper;
 import com.padle.core.padelcoreservice.mapper.PublicTournamentMapper;
-import com.padle.core.padelcoreservice.repository.PlayerRepository;
+import com.padle.core.persistence.identity.PlayerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
