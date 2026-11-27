@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow">
+    <title th:text="#{telegram.connect.title}"></title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/telegram-connect.css}">
+    <script th:src="@{/js/csrf.js}" defer></script>
+    <script th:src="@{/js/telegram-connect.js}" defer></script>
+</head>
+<body class="tg-connect-page">
+<main class="tg-connect" data-telegram-connect th:attr="data-state=${link.state},data-bot-url=${link.botUrl},data-request-id=${requestId}">
+    <a class="tg-connect-brand" href="/">1‑Padel</a>
+    <nav class="tg-connect-languages" th:aria-label="#{telegram.connect.language}">
+        <a th:each="language : ${#strings.arraySplit('es,ru,en',',')}" th:href="@{/telegram/connect(lang=${language},request=${#strings.isEmpty(requestId) ? null : requestId})}"
+           th:text="${#strings.toUpperCase(language)}" th:attr="aria-current=${#locale.language == language ? 'true' : null}"></a>
+    </nav>
+    <h1 th:text="#{telegram.connect.title}"></h1>
+    <p th:text="#{telegram.connect.intro}"></p>
+    <div hidden data-connect-strings>
+        <span th:each="key : ${#strings.arraySplit('loading,error,uncertain,session,invalid,READY,PENDING,CONNECTED,ENTRY',',')}"
+              th:attr="data-key=${key}" th:text="${#messages.msg('telegram.connect.' + key)}"></span>
+    </div>
+    <section data-account th:hidden="${link.state != 'READY' and link.state != 'PENDING' and link.state != 'CONNECTED'}">
+        <p th:text="#{telegram.connect.account}"></p><strong data-player-name th:text="${link.playerName}"></strong>
+    </section>
+    <p data-state-message></p>
+    <p data-consent th:hidden="${link.state != 'READY'}" th:text="#{telegram.connect.consent}"></p>
+    <div class="tg-connect-actions">
+        <button class="btn btn-primary" type="button" data-confirm th:hidden="${link.state != 'READY'}" th:text="#{telegram.connect.confirm}"></button>
+        <a class="btn btn-primary" data-open-bot hidden target="_blank" rel="noopener noreferrer" th:text="#{telegram.connect.openBot}"></a>
+        <button class="btn btn-outline" type="button" data-refresh hidden th:text="#{telegram.connect.refresh}"></button>
+        <a class="btn btn-outline" href="/login?destination=%2Ftelegram%2Fconnect" data-login hidden th:text="#{telegram.connect.login}"></a>
+    </div>
+    <p data-status role="status" aria-live="polite" tabindex="-1"></p>
+    <a href="/players/perfil" th:text="#{telegram.connect.profile}"></a>
+    <noscript><p th:text="#{telegram.connect.noScript}"></p></noscript>
+</main>
+</body>
+</html>

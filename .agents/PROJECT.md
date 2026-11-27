@@ -1,5 +1,7 @@
 # PROJECT.md — техническая карта проекта
 
+Общий вход Telegram UI: `telegram-connect.html` / JS / CSS, `telegram-invitation.js` в действующем редакторе. Кнопка подтверждает профиль только явным POST, окончательная связь — в исходном боте. Fragment очищается, контекст вкладки выбирает публичный UUID request; неизвестный ответ проверяется вручную. Настоящий `PlayerTelegramOnboardingBrowserTest` включён в существующий browser CI. [Проверки](../docs/player-telegram-interface.md).
+
 Общий вход Telegram: `PlayerTelegramOnboarding` / `PlayerTelegramOnboardingStore`, `TelegramConnectController` и `TelegramOnboardingController`. Схема v1.93, флаг `telegram.players.onboarding-enabled=false`; временная ссылка сайта и подтверждение исходного Telegram, прежняя блокировка связей и дедупликация отправок. [Контракт](../docs/endpoints/player-telegram.md).
 
 Технический справочник для Codex. Точка входа и обязательные правила — `AGENTS.md` в корне репозитория.

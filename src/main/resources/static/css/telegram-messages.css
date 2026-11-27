@@ -22,3 +22,4 @@
 .tg-compose dialog::backdrop{background:rgba(20,25,35,.55)}.tg-compose dialog ul{list-style:disc;max-height:36dvh;overflow:auto;margin:1rem 0}
 
 .tg-compose button:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
+.tg-compose [data-telegram-invitation] input{width:100%;box-sizing:border-box;padding:.75rem;border:1px solid #aab1bb;border-radius:8px;font:inherit}
