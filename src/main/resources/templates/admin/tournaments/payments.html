@@ -21,7 +21,7 @@
     <link rel="stylesheet" th:href="@{/css/solo-roster.css}">
     <script th:src="@{/js/csrf.js}" defer></script>
 </head>
-<body th:with="pairedHelp=${tournament.tipo != null and (tournament.tipo.name() == 'AMERICANO_TEAMS' or (tournament.tipo.name() == 'AMERICANO' and tournament.modalidad != null and tournament.modalidad.name() == 'DOBLES'))}">
+<body th:with="individualHelp=${tournament.tipo != null and (tournament.tipo.name() == 'KING_OF_COURT' or (tournament.tipo.name() == 'AMERICANO' and tournament.modalidad != null and tournament.modalidad.name() == 'INDIVIDUAL'))}, pairedHelp=${tournament.tipo != null and (tournament.tipo.name() == 'AMERICANO_TEAMS' or (tournament.tipo.name() == 'AMERICANO' and tournament.modalidad != null and tournament.modalidad.name() == 'DOBLES'))}">
 <header th:replace="~{fragments/admin-header :: header(#{admin.payments.title})}"></header>
 
 <main class="admin-main">
@@ -305,14 +305,14 @@
                             <th th:title="#{admin.payments.col.confirmed_title}"><i class="fas fa-phone-alt"></i></th>
                             <th>
                                 <span th:text="#{admin.payments.attended.label}">Presencia del equipo</span>
-                                <th:block th:if="${pairedHelp}"><button th:replace="~{fragments/action-help :: help('attendance')}"></button></th:block><th:block th:unless="${pairedHelp}"><button type="button" class="info-tip" tabindex="0"
+                                <th:block th:if="${pairedHelp}"><button th:replace="~{fragments/action-help :: help('attendance')}"></button></th:block><th:block th:if="${individualHelp}"><button th:replace="~{fragments/action-help :: help('individual-attendance')}"></button></th:block><th:block th:unless="${pairedHelp or individualHelp}"><button type="button" class="info-tip" tabindex="0"
                                         th:aria-label="#{admin.payments.attended.tooltip}"
                                         th:title="#{admin.payments.attended.tooltip}"
                                         th:attr="data-tip=#{admin.payments.attended.tooltip}">
                                     <i class="fas fa-info-circle"></i>
                                 </button></th:block>
                             </th>
-                            <th><span th:text="#{admin.payments.col.amount}">Monto</span><th:block th:if="${pairedHelp}"><button th:replace="~{fragments/action-help :: help('payment')}"></button></th:block></th>
+                            <th><span th:text="#{admin.payments.col.amount}">Monto</span><th:block th:if="${pairedHelp or individualHelp}"><button th:replace="~{fragments/action-help :: help('payment')}"></button></th:block></th>
                             <th th:text="#{admin.payments.col.currency}">Mon.</th>
                             <th th:text="#{admin.common.col.status}">Estado</th>
                             <th th:text="#{admin.payments.col.method}">Método</th>
@@ -512,7 +512,7 @@
                     <button type="submit" class="btn btn-primary" th:if="${players != null and not #lists.isEmpty(players)}">
                         <i class="fas fa-save"></i>
                         <span th:text="#{admin.payments.btn.save_changes}">Guardar Cambios</span>
-                    </button><th:block th:if="${pairedHelp}"><button th:replace="~{fragments/action-help :: help('save')}"></button></th:block>
+                    </button><th:block th:if="${(pairedHelp or individualHelp) and players != null and not #lists.isEmpty(players)}"><button th:replace="~{fragments/action-help :: help('save')}"></button></th:block>
                 </div>
             </form>
         </div>

@@ -4,6 +4,8 @@
     let pinned = false;
     let closeTimer;
     let suppressFocus = false;
+    let lastPointer = {x: 0, y: 0};
+    let dismissedPointer;
     let id = 0;
     const panel = document.createElement('div');
     panel.className = 'action-help-popover';
@@ -48,6 +50,7 @@
         clearTimeout(closeTimer);
         if (!active) return;
         const previous = active;
+        if (returnFocus) dismissedPointer = {...lastPointer};
         previous.setAttribute('aria-expanded', 'false');
         previous.removeAttribute('aria-controls');
         active = undefined;
@@ -63,6 +66,7 @@
 
     function show(trigger, pin = false) {
         clearTimeout(closeTimer);
+        dismissedPointer = undefined;
         if (active !== trigger) {
             hide();
             active = trigger;
@@ -84,9 +88,20 @@
 
     document.addEventListener('pointerover', event => {
         if (event.pointerType !== 'mouse') return;
+        // Исчезнувшее окно может вызвать pointerover под неподвижным указателем.
+        if (dismissedPointer && event.clientX === dismissedPointer.x && event.clientY === dismissedPointer.y) return;
+        lastPointer = {x: event.clientX, y: event.clientY};
         const trigger = event.target.closest('[data-action-help]');
         if (trigger) show(trigger);
         if (panel.contains(event.target)) clearTimeout(closeTimer);
+    });
+    document.addEventListener('pointermove', event => {
+        if (event.pointerType !== 'mouse') return;
+        lastPointer = {x: event.clientX, y: event.clientY};
+        if (!dismissedPointer || (event.clientX === dismissedPointer.x && event.clientY === dismissedPointer.y)) return;
+        dismissedPointer = undefined;
+        const trigger = event.target.closest('[data-action-help]');
+        if (trigger) show(trigger);
     });
     document.addEventListener('pointerout', event => {
         if (!active || pinned || event.pointerType !== 'mouse') return;
@@ -125,14 +140,17 @@
         if (active && !active.isConnected) hide();
     }).observe(document.body, {childList: true, subtree: true});
 
-    function pairFormHelp() {
+    function formHelp() {
         const type = document.getElementById('tipo');
         const mode = document.getElementById('modalidad');
         if (!type || !mode) return;
         const paired = type.value === 'AMERICANO_TEAMS' || (type.value === 'AMERICANO' && mode.value === 'DOBLES');
+        const individual = type.value === 'KING_OF_COURT' || (type.value === 'AMERICANO' && mode.value !== 'DOBLES');
+        document.querySelectorAll('[data-event-help]').forEach(element => { element.hidden = !paired && !individual; });
+        document.querySelectorAll('[data-individual-help]').forEach(element => { element.hidden = !individual; });
         document.querySelectorAll('[data-pair-help]').forEach(element => { element.hidden = !paired && !(element.hasAttribute('data-pair-help-chooser') && !type.value); });
         if (active && active.closest('[hidden]')) hide();
     }
-    document.addEventListener('change', pairFormHelp);
-    pairFormHelp();
+    document.addEventListener('change', formHelp);
+    formHelp();
 })();
