@@ -6,7 +6,7 @@
         : 'default'}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="'King of Court - ' + ${tournament.nombre}">King of Court</title>
+    <title th:text="'King of Court - ' + ${@eventLevelText.eventName(tournament.nombre, #locale)}">King of Court</title>
 
     <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -46,7 +46,7 @@
         <div class="admin-header">
             <h1 class="admin-title">
                 <i class="fas fa-crown" style="color: #fbbf24;"></i>
-                <span th:text="${tournament.nombre}">Torneo</span>
+                <span th:text="${@eventLevelText.eventName(tournament.nombre, #locale)}">Torneo</span>
             </h1>
             <div class="admin-subtitle">
                 <span class="badge" th:text="#{admin.koc.round.label} + ' ' + ${kingTournament.currentRound}">Ronda 1</span>
@@ -225,7 +225,7 @@
     /*<![CDATA[*/
     function shareAdminTournament() {
         const kingId = /*[[${kingTournament.id}]]*/ 0;
-        const tournamentName = /*[[${tournament.nombre}]]*/ 'Torneo';
+        const tournamentName = /*[[${@eventLevelText.eventName(tournament.nombre, #locale)}]]*/ 'Torneo';
         const publicUrl = window.location.origin + '/tournaments/king-of-court/' + kingId;
         showSharePanel(tournamentName, publicUrl);
     }

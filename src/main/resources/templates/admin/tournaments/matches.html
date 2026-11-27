@@ -6,7 +6,7 @@
         : 'default'}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${tournament.nombre} + ' - ' + #{admin.tournaments.matches.title} + ' | 1-Padel'">Partidos</title>
+    <title th:text="${@eventLevelText.eventName(tournament.nombre, #locale)} + ' - ' + #{admin.tournaments.matches.title} + ' | 1-Padel'">Partidos</title>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -74,7 +74,7 @@
         </div>
 
         <div class="tournament-header-compact">
-            <h1 th:text="${tournament.nombre}">Torneo</h1>
+            <h1 th:text="${@eventLevelText.eventName(tournament.nombre, #locale)}">Torneo</h1>
             <a th:href="@{'/admin/tournaments/' + ${tournament.id}}" class="btn btn-outline">
                 <i class="fas fa-arrow-left"></i>
                 <span th:text="#{admin.tournaments.matches.back}">Volver al torneo</span>

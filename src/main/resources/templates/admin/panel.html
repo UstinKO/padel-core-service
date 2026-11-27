@@ -96,7 +96,7 @@
                 <div class="matches-grid">
                     <div th:each="tournament : ${activeKingTournaments}" class="match-mini-card live" style="border-left-color: #fbbf24;">
                         <div class="match-mini-header">
-                            <span class="tournament-name" th:text="${tournament.tournament.nombre}">Torneo</span>
+                            <span class="tournament-name" th:text="${@eventLevelText.eventName(tournament.tournament.nombre, #locale)}">Torneo</span>
                             <span class="live-badge" style="background: #fbbf24;">RONDA <span th:text="${tournament.currentRound}">1</span></span>
                         </div>
                         <div class="match-mini-players">
@@ -177,7 +177,7 @@
                                     <i class="fas fa-trophy"></i>
                                 </div>
                                 <div class="admin-list-content">
-                                    <div class="admin-list-title" th:text="${item.tournament.nombre}">Torneo</div>
+                                    <div class="admin-list-title" th:text="${@eventLevelText.eventName(item.tournament.nombre, #locale)}">Torneo</div>
                                     <div class="admin-list-subtitle" th:text="${item.tournament.clubNombre} + ' - ' + ${#temporals.format(item.tournament.fechaInicio, 'dd/MM/yyyy')}">
                                         Club - Fecha
                                     </div>

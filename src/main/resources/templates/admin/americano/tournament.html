@@ -6,7 +6,7 @@
         : 'default'}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${tournament.nombre} + ' - Admin Americano | 1-Padel'">Admin Americano</title>
+    <title th:text="${@eventLevelText.eventName(tournament.nombre, #locale)} + ' - Admin Americano | 1-Padel'">Admin Americano</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
@@ -164,10 +164,10 @@
         <!-- Header turнира -->
         <div class="tournament-header" style="margin-bottom:1.5rem">
             <div class="tournament-title-section">
-                <h1 th:text="${tournament.nombre}">Torneo Americano</h1>
+                <h1 th:text="${@eventLevelText.eventName(tournament.nombre, #locale)}">Torneo Americano</h1>
                 <div class="tournament-badges">
                     <span class="badge" th:text="#{__${'enum.genero.' + tournament.generoFormato.name()}__}">Masculino</span>
-                    <span class="badge badge-level" th:text="${#strings.replace(tournament.categoriaNivel, 'C4_C3', 'C4/C3')}">C7</span>
+                    <span class="badge badge-level" th:text="${tournament.categoriaNivel == 'TODOS' ? #messages.msg('calendar.level.TODOS') : #strings.replace(tournament.categoriaNivel, 'C4_C3', 'C4/C3')}">C7</span>
                     <span class="badge badge-type" th:text="#{__${'enum.tipo.' + tournament.tipo.name()}__}">Americano Individual</span>
                     <span class="badge badge-status" th:text="#{__${'enum.estado.' + tournament.estado.name()}__}"
                           th:classappend="'badge-' + ${tournament.estado.toString().toLowerCase()}">En curso</span>
@@ -1070,7 +1070,7 @@
     /*<![CDATA[*/
     function shareAdminTournament() {
         const tournamentId = /*[[${tournament.id}]]*/ 0;
-        const tournamentName = /*[[${tournament.nombre}]]*/ 'Torneo';
+        const tournamentName = /*[[${@eventLevelText.eventName(tournament.nombre, #locale)}]]*/ 'Torneo';
         const publicUrl = window.location.origin + '/tournaments/americano/' + tournamentId;
         showSharePanel(tournamentName, publicUrl);
     }

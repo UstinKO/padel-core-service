@@ -6,7 +6,7 @@
         : 'default'}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title th:text="'King of Court - ' + ${tournamentName} + ' | 1-Padel'">King of Court | 1-Padel</title>
+    <title th:text="'King of Court - ' + ${@eventLevelText.eventName(tournamentName, #locale)} + ' | 1-Padel'">King of Court | 1-Padel</title>
 
     <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
     <link rel="alternate icon" th:href="@{/images/favicon.ico}">
@@ -55,7 +55,7 @@
         <div class="admin-header">
             <h1 class="admin-title">
                 <i class="fas fa-crown" style="color: #fbbf24;"></i>
-                <span th:text="${tournamentName}">Torneo</span>
+                <span th:text="${@eventLevelText.eventName(tournamentName, #locale)}">Torneo</span>
             </h1>
             <div class="admin-subtitle">
                 <span class="badge" th:text="#{koc.round.prefix} + ' ' + ${kingData.currentRound}">Ronda 1</span>
