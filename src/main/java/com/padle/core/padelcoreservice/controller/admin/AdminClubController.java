@@ -110,10 +110,10 @@ public class AdminClubController {
         }
 
         try {
-            Owner owner = ownerService.findByEmail(userDetails.getUsername())
+            Long ownerId = ownerService.findIdByEmail(userDetails.getUsername())
                     .orElseThrow(() -> new RuntimeException("Owner not found"));
 
-            ClubDto created = clubService.createClub(clubDto, owner.getId());
+            ClubDto created = clubService.createClub(clubDto, ownerId);
             redirectAttributes.addFlashAttribute("successMessage",
                     "Club '" + created.getNombre() + "' creado exitosamente");
             return "redirect:/admin/clubs/" + created.getId();

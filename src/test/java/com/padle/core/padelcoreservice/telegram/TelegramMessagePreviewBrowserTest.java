@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.telegram;
 
+import com.padle.core.padelcoreservice.support.OwnerFixtures;
 import com.padle.core.padelcoreservice.config.PlayerTelegramProperties;
 import com.padle.core.padelcoreservice.config.TelegramCampaignProperties;
 import java.util.concurrent.Executors;
@@ -51,7 +52,7 @@ import static org.mockito.Mockito.*;
 })
 class TelegramMessagePreviewBrowserTest {
     @LocalServerPort int port;
-    @Autowired OwnerRepository owners;
+    @Autowired OwnerFixtures owners;
     @Autowired PlayerRepository players;
     @Autowired TournamentRepository events;
     @Autowired TournamentRegistrationRepository registrations;

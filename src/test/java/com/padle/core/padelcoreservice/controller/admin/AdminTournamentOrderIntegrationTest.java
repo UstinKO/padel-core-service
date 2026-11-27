@@ -11,7 +11,7 @@ import com.padle.core.padelcoreservice.model.enums.OwnerRole;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
 import com.padle.core.persistence.clubs.ClubRepository;
-import com.padle.core.padelcoreservice.repository.OwnerRepository;
+import com.padle.core.padelcoreservice.support.OwnerFixtures;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import com.padle.core.padelcoreservice.service.ClubAccountService;
 import com.padle.core.padelcoreservice.service.TournamentService;
@@ -51,7 +51,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 class AdminTournamentOrderIntegrationTest {
     @Autowired private MockMvc mvc;
-    @Autowired private OwnerRepository owners;
+    @Autowired private OwnerFixtures owners;
     @Autowired private ClubRepository clubs;
     @Autowired private TournamentRepository events;
     @Autowired private TournamentService tournaments;

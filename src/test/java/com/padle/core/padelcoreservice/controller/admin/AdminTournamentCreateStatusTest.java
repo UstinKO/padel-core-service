@@ -54,7 +54,7 @@ class AdminTournamentCreateStatusTest {
     @Autowired
     private TournamentRepository tournamentRepository;
     @Autowired
-    private com.padle.core.padelcoreservice.repository.OwnerRepository owners;
+    private com.padle.core.padelcoreservice.support.OwnerFixtures owners;
 
     @Test
     void createTournament_clubAdmin_estadoDelFormularioIgnorado_siempreRegistroAbierto() {

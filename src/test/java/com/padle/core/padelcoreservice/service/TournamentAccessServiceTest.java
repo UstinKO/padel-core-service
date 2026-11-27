@@ -19,7 +19,7 @@ import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
 import com.padle.core.persistence.clubs.ClubRepository;
 import com.padle.core.padelcoreservice.repository.MatchRepository;
-import com.padle.core.padelcoreservice.repository.OwnerRepository;
+import com.padle.core.padelcoreservice.support.OwnerFixtures;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
 import com.padle.core.padelcoreservice.repository.TournamentKingOfCourtRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
@@ -69,7 +69,7 @@ class TournamentAccessServiceTest {
     @Autowired
     private ClubRepository clubRepository;
     @Autowired
-    private OwnerRepository ownerRepository;
+    private OwnerFixtures ownerRepository;
     @Autowired
     private PlayerRepository playerRepository;
     @Autowired

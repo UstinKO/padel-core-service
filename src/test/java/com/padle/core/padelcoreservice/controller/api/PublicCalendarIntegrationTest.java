@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.controller.api;
 
+import com.padle.core.padelcoreservice.support.OwnerFixtures;
 import com.padle.core.persistence.clubs.Club;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
@@ -41,7 +42,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class PublicCalendarIntegrationTest {
     @Autowired private MockMvc mvc;
     @Autowired private ClubRepository clubs;
-    @Autowired private OwnerRepository owners;
+    @Autowired private OwnerFixtures owners;
     @Autowired private TournamentRepository events;
     @Autowired private PlayerRepository players;
     @Autowired private TournamentRegistrationRepository registrations;
