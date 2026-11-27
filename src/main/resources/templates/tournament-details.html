@@ -1259,7 +1259,7 @@
 <script>
     (function() {
         const url  = window.location.href;
-        const name = (tournament && tournament.nombre) ? tournament.nombre : 'Torneo 1-Padel';
+        const name = document.querySelector('.breadcrumb-current')?.textContent?.trim() || 'Torneo 1-Padel';
         const text = `🎾 ¡Te invito a este torneo de pádel!\n*${name}*\n${url}`;
 
         const wa = document.getElementById('shareWhatsapp');

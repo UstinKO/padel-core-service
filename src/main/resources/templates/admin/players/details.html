@@ -319,7 +319,7 @@
                     </thead>
                     <tbody>
                         <tr th:each="reg : ${registrations}">
-                            <td th:text="${reg.tournamentNombre}">Nombre del torneo</td>
+                            <td th:text="${@eventLevelText.eventName(reg.tournamentNombre, #locale)}">Nombre del torneo</td>
                             <td th:text="${#temporals.format(reg.registrationDate, 'dd/MM/yyyy HH:mm')}">01/01/2026</td>
                             <td>
                                 <span class="status-badge"

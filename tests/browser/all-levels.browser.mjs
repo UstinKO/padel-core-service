@@ -116,11 +116,19 @@ try {
                 for(const lang of ['ru','es','en']) {
                     await go(page,`/torneo/${id}`,lang);
                     assert.equal(await page.locator('.badge-level').innerText(),labels[lang]);
-            assert.equal((await page.locator('h1').innerText()).includes('TODOS'),false);
-            assert.equal((await page.title()).includes('TODOS'),false);
+                    assert.equal((await page.locator('h1').innerText()).includes('TODOS'),false);
+                    assert.equal((await page.title()).includes('TODOS'),false);
+                    const share = new URL(await page.locator('#shareTelegram').getAttribute('href'));
+                    assert.equal(share.searchParams.get('text').includes(labels[lang]),true);
                 }
                 report.push({type,gender,id,checks:'create, persist, public RU ES EN'});
             }
+        }
+        for(const lang of ['ru','es','en']) {
+            await go(page,'/admin',lang);
+            const names=await page.locator('.admin-list-title').allTextContents();
+            assert.equal(names.some(name=>name.includes(labels[lang])),true);
+            assert.equal(names.some(name=>name.includes('TODOS')),false);
         }
         for(const lang of ['ru','es','en']) for(const width of [320,390,1440]) {
             await page.setViewportSize({width,height:1000});
