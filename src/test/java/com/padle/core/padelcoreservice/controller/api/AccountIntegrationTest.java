@@ -1,8 +1,10 @@
 package com.padle.core.padelcoreservice.controller.api;
 
 import com.padle.core.padelcoreservice.model.*;
+import com.padle.core.persistence.identity.PasswordResetToken;
 import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.repository.*;
+import com.padle.core.persistence.identity.PasswordResetTokenRepository;
 import com.padle.core.padelcoreservice.service.*;
 import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2User;
 import org.junit.jupiter.api.Test;
@@ -199,7 +201,7 @@ class AccountIntegrationTest {
             mvc.perform(post("/api/password-reset/request").with(csrf()).contentType("application/json").content("{\"email\":\""+address+"\"}"))
                     .andExpect(status().isOk()).andExpect(jsonPath("$.code").value("RESET_REQUESTED"));
         }
-        var token=tokens.save(PasswordResetToken.builder().token(UUID.randomUUID().toString()).player(p)
+        var token=tokens.save(PasswordResetToken.builder().token(UUID.randomUUID().toString()).playerId(p.getId())
                 .expiryDate(LocalDateTime.now().plusHours(1)).used(false).build());
         mvc.perform(get("/api/password-reset/validate").param("token", token.getToken()))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.valid").value(true));
