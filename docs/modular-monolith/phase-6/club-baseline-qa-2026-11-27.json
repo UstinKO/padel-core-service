@@ -1,0 +1,392 @@
+{
+  "task": "LFPT-1439",
+  "date": "2026-11-27",
+  "result": "PASS",
+  "cleanVerify": {
+    "padel-api-contract": {
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "padel-tournament-engines": {
+      "tests": 141,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "padel-application": {
+      "tests": 34,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "padel-bootstrap": {
+      "tests": 1568,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 12
+    }
+  },
+  "total": {
+    "tests": 1747,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 12
+  },
+  "production": {
+    "result": "PASS",
+    "referenceRevision": "4773fcb9fee6a106c5028f70e38632a55b314e90",
+    "referenceLocallyRebuilt": true,
+    "sourceBaseRevision": "b1ddcca60693fec2310243bd0b03ff2736127eed",
+    "productionClassCount": 1032,
+    "identicalProductionClassCount": 1028,
+    "changedClasses": [
+      "BOOT-INF/classes/com/padle/core/padelcoreservice/adapter/clubs/LegacyClubReadAdapter.class",
+      "BOOT-INF/classes/com/padle/core/padelcoreservice/service/PublicDiscoveryService.class",
+      "BOOT-INF/lib/padel-application-0.0.1-SNAPSHOT.jar:com/padle/core/application/clubs/ClubReadPort.class",
+      "BOOT-INF/lib/padel-application-0.0.1-SNAPSHOT.jar:com/padle/core/application/clubs/PublicClubQuery.class"
+    ],
+    "changelogFiles": 99,
+    "identicalChangelogBytes": true,
+    "baselineJarSha256": "aafee6a1c4bfc202ae893bc91fff2d9c532698e2bfff67c8915646911e8f6ebc",
+    "currentJarSha256": "cb95ed0b542dc240e05c4277df877c580e796be6aa9019a6a8636036e0895b1f"
+  },
+  "homeAndClub": {
+    "result": "PASS",
+    "currentJarSha256": "cb95ed0b542dc240e05c4277df877c580e796be6aa9019a6a8636036e0895b1f",
+    "baselineRevision": "4773fcb9fee6a106c5028f70e38632a55b314e90",
+    "baselineJarSha256": "aafee6a1c4bfc202ae893bc91fff2d9c532698e2bfff67c8915646911e8f6ebc",
+    "languages": [
+      "ru",
+      "es",
+      "en"
+    ],
+    "exactResponseContracts": true,
+    "activeClubsAdded": 2,
+    "inactiveClubsAdded": 1,
+    "emptyCount": 0,
+    "historyRows": 109,
+    "historyUnchanged": true,
+    "schemaUnchanged": true,
+    "clubsUnchanged": true,
+    "pilotSnapshots": 5,
+    "restart": true,
+    "baselineAndReturn": true
+  },
+  "clubBrowser": {
+    "empty": {
+      "result": "PASS",
+      "label": "current",
+      "empty": true,
+      "cases": [
+        {
+          "width": 1440,
+          "language": "ru",
+          "emptyServerList": true
+        },
+        {
+          "width": 1440,
+          "language": "es",
+          "emptyServerList": true
+        },
+        {
+          "width": 1440,
+          "language": "en",
+          "emptyServerList": true
+        },
+        {
+          "width": 390,
+          "language": "ru",
+          "emptyServerList": true
+        },
+        {
+          "width": 390,
+          "language": "es",
+          "emptyServerList": true
+        },
+        {
+          "width": 390,
+          "language": "en",
+          "emptyServerList": true
+        }
+      ],
+      "javaScriptErrors": 0,
+      "rateLimitRetries": 0,
+      "externalRequestsBlocked": true
+    },
+    "populated": {
+      "result": "PASS",
+      "label": "current",
+      "empty": false,
+      "cases": [
+        {
+          "width": 1440,
+          "language": "ru",
+          "listOrder": true,
+          "nullableCard": true,
+          "escapedPublicText": true,
+          "privateFieldsAbsent": true,
+          "canonicalUrl": true,
+          "deepLinkAndRefresh": true,
+          "clubFilter": true,
+          "catalogueToEventToClub": true,
+          "inactiveAndUnknown404": true
+        },
+        {
+          "width": 1440,
+          "language": "es",
+          "listOrder": true,
+          "nullableCard": true,
+          "escapedPublicText": true,
+          "privateFieldsAbsent": true,
+          "canonicalUrl": true,
+          "deepLinkAndRefresh": true,
+          "clubFilter": true,
+          "catalogueToEventToClub": true,
+          "inactiveAndUnknown404": true
+        },
+        {
+          "width": 1440,
+          "language": "en",
+          "listOrder": true,
+          "nullableCard": true,
+          "escapedPublicText": true,
+          "privateFieldsAbsent": true,
+          "canonicalUrl": true,
+          "deepLinkAndRefresh": true,
+          "clubFilter": true,
+          "catalogueToEventToClub": true,
+          "inactiveAndUnknown404": true
+        },
+        {
+          "width": 390,
+          "language": "ru",
+          "listOrder": true,
+          "nullableCard": true,
+          "escapedPublicText": true,
+          "privateFieldsAbsent": true,
+          "canonicalUrl": true,
+          "deepLinkAndRefresh": true,
+          "clubFilter": true,
+          "catalogueToEventToClub": true,
+          "inactiveAndUnknown404": true
+        },
+        {
+          "width": 390,
+          "language": "es",
+          "listOrder": true,
+          "nullableCard": true,
+          "escapedPublicText": true,
+          "privateFieldsAbsent": true,
+          "canonicalUrl": true,
+          "deepLinkAndRefresh": true,
+          "clubFilter": true,
+          "catalogueToEventToClub": true,
+          "inactiveAndUnknown404": true
+        },
+        {
+          "width": 390,
+          "language": "en",
+          "listOrder": true,
+          "nullableCard": true,
+          "escapedPublicText": true,
+          "privateFieldsAbsent": true,
+          "canonicalUrl": true,
+          "deepLinkAndRefresh": true,
+          "clubFilter": true,
+          "catalogueToEventToClub": true,
+          "inactiveAndUnknown404": true
+        }
+      ],
+      "javaScriptErrors": 0,
+      "rateLimitRetries": 0,
+      "externalRequestsBlocked": true
+    }
+  },
+  "pilots": {
+    "sourceRevision": "b1ddcca60693fec2310243bd0b03ff2736127eed",
+    "jarSha256": "cb95ed0b542dc240e05c4277df877c580e796be6aa9019a6a8636036e0895b1f",
+    "automated": true,
+    "manual": "NOT_RUN",
+    "cases": [
+      {
+        "key": "qualified-8",
+        "result": "PASS",
+        "knownDefect": null
+      },
+      {
+        "key": "qualified-9",
+        "result": "PASS",
+        "knownDefect": 1067
+      },
+      {
+        "key": "qualified-16",
+        "result": "PASS",
+        "knownDefect": null
+      }
+    ],
+    "expectations": "browser-expectations-2026-11-18.json",
+    "knownDefects": [
+      "https://github.com/UstinKO/padel-core-service/issues/1067"
+    ],
+    "security": {
+      "ownAdmin": 200,
+      "foreignAdmin": 403,
+      "anonymousAdmin": 302,
+      "missingCsrf": 403,
+      "foreignMutation": 403,
+      "publicCard": 200,
+      "unchanged": true
+    },
+    "stale": {
+      "staleVersion": {
+        "status": 302,
+        "staleHeader": true
+      },
+      "stalePair": {
+        "status": 200,
+        "success": false
+      },
+      "unchangedAfterRefusal": true,
+      "regeneratePreservedPairs": true
+    },
+    "realtime": {
+      "legacySubscription": true,
+      "publicSubscription": true,
+      "legacyMessage": true,
+      "publicInvalidation": true,
+      "bothViewsUpdated": true,
+      "repeated": {
+        "status": 200,
+        "success": false,
+        "replayHeader": true
+      },
+      "concurrentSameKey": {
+        "accepted": 1,
+        "rejected": 1
+      },
+      "restorePreservedLinksAndResult": true,
+      "restoreLegacyMessage": true,
+      "restorePublicInvalidation": true,
+      "restoreBothViewsUpdated": true,
+      "restoreIdsPreserved": true,
+      "reactRestoreWithoutNavigation": true
+    },
+    "qualificationBoundary": {
+      "blockedBeforeQualification": true,
+      "directPostUnchanged": true,
+      "invalidScoreNotSent": true,
+      "missingCsrfRejected": {
+        "status": 302,
+        "destination": "/error/403"
+      },
+      "noStartAfterRefusal": true,
+      "startWithoutNavigation": true,
+      "allTeamsSeededAfterQualification": true,
+      "finished": true
+    },
+    "noShow": {
+      "activeTeams": 7,
+      "absentNumber": 8,
+      "excludedFromAvailableAndSeeding": true,
+      "publicRankingContainsAbsent": true
+    },
+    "result": "PASS",
+    "artifactVerified": true,
+    "commonBrowserSmoke": "PASS",
+    "jwt": {
+      "login": 200,
+      "me": 200,
+      "events": 200,
+      "anonymousMe": 401,
+      "transport": "inside-own-preview-container"
+    }
+  },
+  "pilotReleaseRehearsal": {
+    "result": "PASS",
+    "scenarios": 5,
+    "statePreserved": true
+  },
+  "extendedPilot": {
+    "sourceRevision": "b1ddcca60693fec2310243bd0b03ff2736127eed",
+    "jarSha256": "cb95ed0b542dc240e05c4277df877c580e796be6aa9019a6a8636036e0895b1f",
+    "automated": true,
+    "manual": "NOT_RUN",
+    "cases": [
+      {
+        "key": "early-9",
+        "result": "PASS",
+        "repeatedPairPreservedId": true,
+        "invalidQualificationRefused": true,
+        "lastQualificationPreservedPairAndResult": true,
+        "linkedWinner": true,
+        "semifinal": null,
+        "finished": true
+      },
+      {
+        "key": "early-16",
+        "result": "PASS",
+        "repeatedPairPreservedId": true,
+        "invalidQualificationRefused": true,
+        "lastQualificationPreservedPairAndResult": true,
+        "linkedWinner": false,
+        "semifinal": {
+          "confirmedBeforeOtherQuarterfinals": true,
+          "pairAndCourtPreserved": true
+        },
+        "finished": true
+      }
+    ],
+    "result": "PASS"
+  },
+  "automation": {
+    ".github-bin": {
+      "tests": 31,
+      "skipped": 0
+    },
+    "automation-telegram-relay": {
+      "tests": 48,
+      "skipped": 0
+    },
+    "automation-codex-worker": {
+      "tests": 5,
+      "skipped": 1
+    },
+    "automation-ui-preview": {
+      "tests": 15,
+      "skipped": 0
+    },
+    "automation-releases": {
+      "tests": 22,
+      "skipped": 0
+    }
+  },
+  "javaRelease": 17,
+  "javaRuntime": 21,
+  "guardResults": {
+    "engines": "PASS",
+    "application": "PASS",
+    "contract": "PASS",
+    "docsDrift": "PASS",
+    "agentMigration": "PASS"
+  },
+  "generalPreview": "PASS",
+  "finalContainerAudit": {
+    "rateLimitLines": 0,
+    "limitTypes": [],
+    "templateErrors": 0,
+    "parseErrors": 0
+  },
+  "sourceHashes": {
+    "padel-application/src/main/java/com/padle/core/application/clubs/ClubReadPort.java": "129a8fc651145df437b8855468de632ed717cd625f26003ae10ad65f7662867f",
+    "padel-application/src/main/java/com/padle/core/application/clubs/PublicClubQuery.java": "1c64b53ff2d3a02262f3805dee2fea49234c5dbaea39f224b421b0c07f88ae59",
+    "padel-application/src/test/java/com/padle/core/application/clubs/PublicClubQueryTest.java": "023da68fecd7637add071061b1e82754658e0e843ffdd4081d6898dca79bfb04",
+    "src/main/java/com/padle/core/padelcoreservice/adapter/clubs/LegacyClubReadAdapter.java": "d0f33fbd342176ac7947a90f5f8f57a08afb009892dd2e49aa70634b42b6fb14",
+    "src/main/java/com/padle/core/padelcoreservice/service/PublicDiscoveryService.java": "586684b3054bdccaa84e20b13934389fd0a5740b815ecb71c408b7057762bc1f",
+    "src/test/java/com/padle/core/padelcoreservice/controller/api/PublicClubApplicationIntegrationTest.java": "5f641ebcb06e1f472f5b176b5b901c991d58f04fb36d29b1eec092bb311c7940"
+  },
+  "physicalDevices": "NOT_RUN",
+  "humanManual": "NOT_RUN",
+  "multiReplica": "NOT_RUN"
+}

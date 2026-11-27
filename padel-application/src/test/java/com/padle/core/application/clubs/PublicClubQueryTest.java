@@ -12,6 +12,7 @@ class PublicClubQueryTest {
     void preservesEmptyReadAndAbsenceWithoutInventingWebErrors() {
         var query = new PublicClubQuery(port(List.of()));
         assertThat(query.clubs()).isEmpty();
+        assertThat(query.countActive()).isZero();
         assertThat(query.club(0L)).isEmpty();
         assertThat(query.club(-1L)).isEmpty();
     }
@@ -35,6 +36,11 @@ class PublicClubQueryTest {
             @Override
             public Optional<PublicClub> findActiveById(Long id) {
                 return clubs.stream().filter(club -> club.id().equals(id)).findFirst();
+            }
+
+            @Override
+            public long countActive() {
+                return clubs.size();
             }
         };
     }
