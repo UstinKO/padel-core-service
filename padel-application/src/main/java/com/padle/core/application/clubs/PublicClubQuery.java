@@ -22,4 +22,8 @@ public class PublicClubQuery {
     public Optional<PublicClub> club(Long id) {
         return clubs.findActiveById(id);
     }
+
+    public long countActive() {
+        return clubs.countActive();
+    }
 }

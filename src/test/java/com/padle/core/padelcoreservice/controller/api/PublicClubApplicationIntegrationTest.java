@@ -27,9 +27,12 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -94,6 +97,25 @@ class PublicClubApplicationIntegrationTest {
                 .extracting(value -> value.id()).containsExactly(first.getId(), second.getId(), last.getId());
         verify(clubs).findByIsActiveTrue(Sort.by("nombre", "id"));
         assertThat(query.club(hidden.getId())).isEmpty();
+    }
+
+    @Test
+    void homeCountsOnlyActiveClubsThroughTheReadOnlyPortWithoutLoadingAList() throws Exception {
+        long before = clubs.countByIsActiveTrue();
+        create("Активный " + UUID.randomUUID(), true);
+        create("Неактивный " + UUID.randomUUID(), false);
+        clearInvocations(clubs);
+        doAnswer(invocation -> {
+            assertReadOnlyTransaction();
+            return invocation.callRealMethod();
+        }).when(adapter).countActive();
+
+        mvc.perform(get("/api/public/home")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalClubs").value(before + 1));
+        verify(adapter).countActive();
+        verify(clubs).countByIsActiveTrue();
+        verify(clubs, never()).findByIsActiveTrue(any(Sort.class));
+        verify(clubs, never()).findByIsActiveTrue();
     }
 
     @Test

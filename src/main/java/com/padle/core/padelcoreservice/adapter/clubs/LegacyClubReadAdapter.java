@@ -27,4 +27,9 @@ public class LegacyClubReadAdapter implements ClubReadPort {
     public Optional<PublicClub> findActiveById(Long id) {
         return clubs.findByIdAndIsActiveTrue(id).map(mapper::toReadModel);
     }
+
+    @Override
+    public long countActive() {
+        return clubs.countByIsActiveTrue();
+    }
 }
