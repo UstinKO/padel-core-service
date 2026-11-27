@@ -237,7 +237,7 @@ jobs:
         run: npm install --prefix /tmp/padel-browser-qa --no-save --package-lock=false playwright@1.64.1
       - name: Check real browsers against isolated test server
         run: |
-          ./mvnw -Dbrowser.qa=true -Dtest=RegistrationSourceBrowserTest,PlayerTelegramBrowserTest,TelegramMessagePreviewBrowserTest,PlayerTelegramOnboardingBrowserTest,PlayerTelegramJoinBrowserTest,GuestProfileMergeBrowserTest,IndividualRankingBrowserTest,ActionHelpBrowserTest,AnalyticsTrafficTemplateTest,TournamentPublicationLinkTemplateTest test
+          ./mvnw -Dbrowser.qa=true -Dtest=AllLevelsBrowserTest,RegistrationSourceBrowserTest,PlayerTelegramBrowserTest,TelegramMessagePreviewBrowserTest,PlayerTelegramOnboardingBrowserTest,PlayerTelegramJoinBrowserTest,GuestProfileMergeBrowserTest,IndividualRankingBrowserTest,ActionHelpBrowserTest,AnalyticsTrafficTemplateTest,TournamentPublicationLinkTemplateTest test
           node --test tests/tournament-publication-link.browser.mjs
       - name: Report browser failure
         if: failure()
@@ -282,6 +282,7 @@ jobs:
             target/telegram-join-qa/*.json
             target/telegram-join-qa/*.log
             target/telegram-join-qa/*.png
+            target/all-levels-qa/*
             target/guest-merge-browser-qa/*
             target/individual-ranking-qa/*
             target/action-help-qa/*

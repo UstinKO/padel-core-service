@@ -157,7 +157,7 @@
 
         <!-- Карточки турниров для мобильных -->
         <div th:if="${resultCount > 0}" class="tournaments-cards" id="tournamentsMobileView">
-            <div th:each="item : ${tournaments}" th:with="levelLabel=${item.tournament.categoriaNivel == 'PRINCIPIANTES' ? #messages.msg('calendar.level.PRINCIPIANTES') : #strings.replace(item.tournament.categoriaNivel, '_', #strings.startsWith(item.tournament.categoriaNivel, 'SUMA_') ? ' ' : '–')}" class="tournament-card">
+            <div th:each="item : ${tournaments}" th:with="levelLabel=${item.tournament.categoriaNivel == 'TODOS' ? #messages.msg('calendar.level.TODOS') : item.tournament.categoriaNivel == 'PRINCIPIANTES' ? #messages.msg('calendar.level.PRINCIPIANTES') : #strings.replace(item.tournament.categoriaNivel, '_', #strings.startsWith(item.tournament.categoriaNivel, 'SUMA_') ? ' ' : '–')}" class="tournament-card">
                 <div class="tournament-card-header">
                     <div class="tournament-card-title">
                         <i class="fas fa-trophy"></i>
@@ -272,7 +272,7 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="item : ${tournaments}" th:with="levelLabel=${item.tournament.categoriaNivel == 'PRINCIPIANTES' ? #messages.msg('calendar.level.PRINCIPIANTES') : #strings.replace(item.tournament.categoriaNivel, '_', #strings.startsWith(item.tournament.categoriaNivel, 'SUMA_') ? ' ' : '–')}">
+                <tr th:each="item : ${tournaments}" th:with="levelLabel=${item.tournament.categoriaNivel == 'TODOS' ? #messages.msg('calendar.level.TODOS') : item.tournament.categoriaNivel == 'PRINCIPIANTES' ? #messages.msg('calendar.level.PRINCIPIANTES') : #strings.replace(item.tournament.categoriaNivel, '_', #strings.startsWith(item.tournament.categoriaNivel, 'SUMA_') ? ' ' : '–')}">
                     <td th:text="${item.tournament.id}">1</td>
                     <td>
                         <strong class="tournament-list-event-name"><span th:text="#{__${'admin.tournaments.list.format.' + item.format.name()}__}">Americano</span><span th:unless="${#strings.isEmpty(levelLabel)}" th:text="' · ' + ${levelLabel}"> · C7</span></strong>

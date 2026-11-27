@@ -193,8 +193,6 @@
                                         th:attr="data-genero=${nivel.generoAplicableNombre}"
                                         th:text="${#strings.replace(nivel.display, 'C4_C3', 'C4/C3')}"></option>
                                 <option value="TODOS"
-                                        th:with="openClinic=${tournament.generoFormato?.name() == 'MIXTO' and tournament.tipo?.name() == 'PADEL_CLINIC' and tournament.modalidad?.name() == 'INDIVIDUAL'}"
-                                        th:attr="data-legacy-todos=${!openClinic and tournament.categoriaNivel == 'TODOS'}"
                                         th:text="#{calendar.level.TODOS}">Todos los niveles</option>
                             </select>
                             <div class="invalid-feedback" th:if="${#fields.hasErrors('categoriaNivel')}"
@@ -440,6 +438,7 @@
 <!-- Admin JavaScript -->
 <script th:src="@{/js/admin.js}"></script>
 <script th:src="@{/js/calendar-duration.js}"></script>
+<script th:src="@{/js/tournament-form-language.js}"></script>
 
 <!-- Скрипт для автоматического расчета даты отмены -->
 <script>
@@ -451,9 +450,6 @@
             return;
         }
         const genero = generoSelect.value;
-        const openClinic = genero === 'MIXTO'
-            && document.getElementById('tipo').value === 'PADEL_CLINIC'
-            && document.getElementById('modalidad').value === 'INDIVIDUAL';
         let selectedStillVisible = false;
 
         Array.from(nivelSelect.options).forEach(function (opt) {
@@ -461,9 +457,7 @@
                 return; // placeholder "Seleccione nivel"
             }
             const optGenero = opt.getAttribute('data-genero');
-            const visible = opt.value === 'TODOS'
-                ? openClinic || opt.dataset.legacyTodos === 'true'
-                : !genero || !optGenero || optGenero === genero;
+            const visible = opt.value === 'TODOS' || !genero || !optGenero || optGenero === genero;
             opt.hidden = !visible;
             opt.disabled = !visible;
             if (visible && opt.selected) {
