@@ -13,7 +13,7 @@
 
     <!-- Open Graph / Social Media -->
     <meta property="og:title" th:content="${tournament.nombre} + ' | 1-Padel'">
-    <meta property="og:description" th:content="'Inscríbete en ' + ${tournament.nombre} + ' - ' + ${tournament.generoFormato} + ', nivel ' + ${tournament.categoriaNivel}">
+    <meta property="og:description" th:content="'Inscríbete en ' + ${tournament.nombre} + ' - ' + ${tournament.generoFormato} + ', nivel ' + ${tournament.categoriaNivel == 'TODOS' ? #messages.msg('calendar.level.TODOS') : tournament.categoriaNivel}">
     <meta property="og:image" content="/images/og-image.jpg">
     <meta property="og:url" th:content="@{'/torneo/' + ${tournament.id}}">
     <meta name="twitter:card" content="summary_large_image">

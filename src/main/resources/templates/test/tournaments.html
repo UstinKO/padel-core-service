@@ -985,7 +985,7 @@
                               th:classappend="'status-' + ${tournament.estado}"
                               th:text="${tournament.estado}">Статус</span>
                             <span class="type-badge" th:text="${tournament.tipo}">Тип</span>
-                            <span class="type-badge" th:text="${tournament.categoriaNivel}">Категория</span>
+                            <span class="type-badge" th:text="${tournament.categoriaNivel == 'TODOS' ? #messages.msg('calendar.level.TODOS') : tournament.categoriaNivel}">Категория</span>
                         </div>
                     </div>
                     <span class="badge bg-primary rounded-pill" th:text="'#' + ${tournament.id}"></span>
@@ -1031,7 +1031,7 @@
                         <i class="bi bi-trophy"></i>
                         <div>
                             <span class="info-label">Уровень:</span>
-                            <span class="info-value" th:text="${tournament.categoriaNivel}">C7</span>
+                            <span class="info-value" th:text="${tournament.categoriaNivel == 'TODOS' ? #messages.msg('calendar.level.TODOS') : tournament.categoriaNivel}">C7</span>
                         </div>
                     </div>
 

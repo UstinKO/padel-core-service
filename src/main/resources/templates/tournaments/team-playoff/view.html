@@ -165,7 +165,7 @@
         <h1 th:text="${tournament.nombre}">Americano Equipos</h1>
         <div class="tournament-meta">
             <span class="meta-badge" th:text="${tournament.generoFormato}">Mixto</span>
-            <span class="meta-badge" th:text="${tournament.categoriaNivel}">C7</span>
+            <span class="meta-badge" th:text="${tournament.categoriaNivel == 'TODOS' ? #messages.msg('calendar.level.TODOS') : tournament.categoriaNivel}">C7</span>
             <span class="meta-badge">Americano Equipos</span>
             <span class="meta-badge" th:text="${tournament.estado}">En curso</span>
         </div>
@@ -413,7 +413,7 @@
                 <p class="name" th:text="${tournament.nombre}">Torneo</p>
                 <div class="badges">
                     <span th:if="${tournament.generoFormato}" th:text="${tournament.generoFormato}">Mixto</span>
-                    <span th:if="${tournament.categoriaNivel}" th:text="${tournament.categoriaNivel}">C7</span>
+                    <span th:if="${tournament.categoriaNivel}" th:text="${tournament.categoriaNivel == 'TODOS' ? #messages.msg('calendar.level.TODOS') : tournament.categoriaNivel}">C7</span>
                     <span th:if="${tournament.fechaInicio}" th:text="${#temporals.format(tournament.fechaInicio, 'dd.MM.yyyy')}">01.01.2026</span>
                     <span th:if="${tournament.clubNombre}" th:text="${tournament.clubNombre}">Club</span>
                 </div>

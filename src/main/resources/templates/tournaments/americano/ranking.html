@@ -121,7 +121,7 @@
                 <h1 th:text="${tournament.nombre}">Torneo Americano</h1>
                 <div class="tournament-badges">
                     <span class="badge" th:text="${tournament.generoFormato}">Masculino</span>
-                    <span class="badge badge-level" th:text="${tournament.categoriaNivel}">C7</span>
+                    <span class="badge badge-level" th:text="${tournament.categoriaNivel == 'TODOS' ? #messages.msg('calendar.level.TODOS') : tournament.categoriaNivel}">C7</span>
                     <span class="badge badge-type">Americano</span>
                 </div>
             </div>

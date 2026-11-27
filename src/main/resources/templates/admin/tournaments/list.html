@@ -125,7 +125,7 @@
                 <select id="eventLevel" name="level">
                     <option value="" th:text="#{admin.tournaments.list.filter.level.all}"></option>
                     <option th:each="value : ${eventLevels}" th:value="${value.name()}"
-                            th:selected="${selectedLevel == value}" th:text="${value.name() == 'PRINCIPIANTES'} ? #{calendar.level.PRINCIPIANTES} : ${#strings.replace(value.name(), '_', #strings.startsWith(value.name(), 'SUMA_') ? ' ' : '–')}"></option>
+                            th:selected="${selectedLevel == value}" th:text="${value.name() == 'TODOS' ? #messages.msg('calendar.level.TODOS') : value.name() == 'PRINCIPIANTES' ? #messages.msg('calendar.level.PRINCIPIANTES') : #strings.replace(value.name(), '_', #strings.startsWith(value.name(), 'SUMA_') ? ' ' : '–')}"></option>
                 </select>
             </label>
             <label for="eventStatus">
