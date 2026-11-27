@@ -44,3 +44,7 @@
 .telegram-registration [data-tg-status] { color: var(--color-dark-gray, #6c6c6e); font-size: .875rem; }
 .telegram-registration [data-tg-status][data-error="true"] { color: #a02525; }
 .telegram-registration [data-tg-profile-link] { display: inline-block; margin-top: 1rem; color: var(--color-secondary, #7b2cbf); text-decoration: underline; }
+
+.telegram-invitation-banner { border-left: 4px solid var(--color-primary, #ff6b35); }
+.telegram-invitation-banner .telegram-note { margin-bottom: 0; }
+.telegram-invitation-banner [data-tg-status]:empty { display: none; }

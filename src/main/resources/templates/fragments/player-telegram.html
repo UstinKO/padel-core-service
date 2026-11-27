@@ -13,6 +13,10 @@
         <button type="button" class="btn btn-outline" data-tg-disconnect hidden th:text="#{telegram.ui.disconnect}"></button>
         <button type="button" class="btn btn-outline" data-tg-refresh th:text="#{telegram.ui.refresh}"></button>
     </div>
+    <div data-tg-invitation-choice hidden>
+        <p class="telegram-note" th:text="#{telegram.invitation.saved}"></p>
+        <button type="button" class="btn btn-outline" data-tg-restore-invitation th:text="#{telegram.invitation.restore}"></button>
+    </div>
     <div class="telegram-preference">
         <label><span th:text="#{telegram.ui.preference}"></span>
             <select data-tg-preference>
@@ -25,6 +29,18 @@
     </div>
     <p class="telegram-note" th:text="#{telegram.ui.preferenceHint}"></p>
 </section>
+<section th:fragment="invitation" th:if="${@environment.getProperty('telegram.players.enabled') == 'true' and @environment.getProperty('telegram.players.onboarding-enabled') == 'true'}"
+         class="telegram-panel telegram-invitation-banner" data-tg-invitation-banner hidden
+         th:attr="data-error=#{telegram.ui.error},data-loading=#{telegram.ui.loading}">
+    <h2 th:text="#{telegram.invitation.title}"></h2>
+    <p th:text="#{telegram.invitation.description}"></p>
+    <div class="telegram-actions">
+        <a class="btn btn-primary" th:href="@{/telegram/join}" th:text="#{telegram.ui.connect}"></a>
+        <button type="button" class="btn btn-outline" data-tg-dismiss th:text="#{telegram.invitation.decline}"></button>
+    </div>
+    <p class="telegram-note" th:text="#{telegram.invitation.optional}"></p>
+    <p data-tg-status role="status" aria-live="polite"></p>
+</section>
 <template th:fragment="registration" th:if="${@environment.getProperty('telegram.players.enabled') == 'true'}" data-tg-prompt-template>
     <section class="telegram-registration" data-tg-prompt
              th:attr="data-loading=#{telegram.ui.loading},data-error=#{telegram.ui.error},data-unavailable=#{telegram.ui.unavailable},data-connected=#{telegram.ui.connected},data-disconnected=#{telegram.ui.promptOptional},data-open-hint=#{telegram.ui.openHint},data-whatsapp-saved=#{telegram.ui.whatsappSaved},data-prompt-title=#{telegram.ui.promptTitle},data-whatsapp-title=#{telegram.ui.whatsappTitle},data-connected-title=#{telegram.ui.connectedTitle}">
@@ -34,6 +50,7 @@
         <div class="telegram-actions">
             <button type="button" class="btn btn-primary" data-tg-connect th:text="#{telegram.ui.connect}"></button>
             <a class="btn btn-primary" data-tg-open target="_blank" rel="noopener noreferrer" hidden th:text="#{telegram.ui.open}"></a>
+            <button type="button" class="btn btn-outline" data-tg-dismiss th:text="#{telegram.invitation.decline}"></button>
             <button type="button" class="btn btn-outline" data-tg-whatsapp th:text="#{telegram.ui.useWhatsapp}"></button>
             <button type="button" class="btn btn-outline" data-tg-refresh hidden th:text="#{telegram.ui.refresh}"></button>
         </div>

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<section th:fragment="statistics" sec:authorize="hasRole('SUPER_ADMIN')" class="tg-connections" data-tg-connections
+         th:attr="data-loading=#{telegram.ui.loading},data-error=#{telegram.connections.error}">
+    <h2 th:text="#{telegram.connections.title}"></h2>
+    <p th:text="#{telegram.connections.scope}"></p>
+    <div data-tg-connection-values hidden>
+        <dl class="tg-connections-grid">
+            <div th:each="key : ${#strings.arraySplit('registered,connected,notConnected,whatsapp,declined', ',')}">
+                <dt th:text="${#messages.msg('telegram.connections.' + key)}"></dt>
+                <dd th:attr="data-tg-count=${key}">—</dd>
+            </div>
+        </dl>
+        <progress data-tg-connection-progress max="1" value="0" th:aria-label="#{telegram.connections.connected}"></progress>
+        <p><span data-tg-connection-percent></span> <span th:text="#{telegram.connections.rate}"></span></p>
+        <p class="tg-connections-note"><span th:text="#{telegram.connections.guests}"></span>: <strong data-tg-count="guests">—</strong>.</p>
+    </div>
+    <div class="tg-connections-actions">
+        <button type="button" class="btn btn-outline" data-tg-connections-refresh th:text="#{telegram.ui.refresh}"></button>
+        <a class="btn btn-outline" th:href="@{/admin/telegram/messages}" th:text="#{telegram.connections.invite}"></a>
+    </div>
+    <p role="status" aria-live="polite" data-tg-connections-status th:text="#{telegram.ui.loading}"></p>
+</section>
+<th:block th:fragment="assets" sec:authorize="hasRole('SUPER_ADMIN')">
+    <link rel="stylesheet" th:href="@{/css/telegram-connections.css}">
+    <script th:src="@{/js/telegram-connections.js}" defer></script>
+</th:block>
+</body>
+</html>
