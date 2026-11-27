@@ -52,7 +52,7 @@ Milestone — [Многомодульный монолит — архитект�
 
 Первый результат [#1439](club-baseline.md) фиксирует граф клубного хранения на master `b1ddcca6` и переводит счётчик активных клубов главной в уже существующий application-порт.
 
-[#1440](internal-club-reads.md) закрывает внутренние чтения каталога, регистрации, кабинета игрока и уведомлений за `InternalClubReadPort`. Клубные фасады `ClubService` и `ClubAccountService` переходят на порты в #1441.
+[#1440](internal-club-reads.md) закрывает внутренние чтения каталога, регистрации, кабинета игрока и уведомлений за `InternalClubReadPort`. [#1441](admin-club-storage.md) переводит клубные операции `ClubService` и `ClubAccountService` на административные порты. В #1442 оба клубных адаптера и Liquibase получают владельца в `padel-persistence`.
 
 ## Если нужен физический перенос PostgreSQL до остальных модулей
 
