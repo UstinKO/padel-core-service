@@ -9,6 +9,7 @@ const settle = () => new Promise(resolve => setImmediate(resolve));
 async function fixture(kind, handler, options = {}) {
     const dom = new JSDOM(fragment, { url: 'https://onepadel.example.test/perfil', runScripts: 'outside-only' });
     const window = dom.window;
+    window.document.querySelector('[data-tg-invitation-banner]').remove();
     window.document.querySelector(kind === 'profile' ? '[data-tg-admin]' : '[data-tg-profile]').remove();
     if (kind === 'registration') window.document.querySelector('[data-tg-admin]').remove();
     const panel = kind === 'registration' ? window.document.querySelector('template').content.firstElementChild
@@ -111,7 +112,7 @@ test('registration offers Telegram only after success and persists WhatsApp with
     assert.equal(await f.dom.window.PlayerTelegramRegistration.mount(modal), true);
     assert.match(modal.textContent, /Existing waitlist result and cancellation rules/);
     const prompt = modal.querySelector('[data-tg-prompt]');
-    assert.equal([...prompt.querySelectorAll('button')].filter(button => !button.hidden).length, 2);
+    assert.equal([...prompt.querySelectorAll('button')].filter(button => !button.hidden).length, 3);
     const button = prompt.querySelector('[data-tg-whatsapp]');
     button.click(); button.click();
     await settle(); await settle();
@@ -320,5 +321,29 @@ test('unavailable browser storage does not prevent toggling or Telegram status r
     await toggleAdmin(f);
     assert.equal(f.panel.querySelector('details').open, false);
     assert.equal(f.panel.dataset.busy, 'false');
+    f.dom.window.close();
+});
+
+test('a saved invitation dismissal suppresses registration without selecting WhatsApp', async () => {
+    const f = await fixture('registration', async () => response({ available: true, connected: false,
+        preference: 'UNSPECIFIED', invitationDismissed: true }));
+    assert.equal(await f.dom.window.PlayerTelegramRegistration.mount(registrationModal(f)), false);
+    assert.equal(f.calls.some(call => call.options.method !== 'GET'), false);
+    f.dom.window.close();
+});
+test('registration dismissal saves an independent account choice with CSRF', async () => {
+    const f = await fixture('registration', async (url, options) => response({ available: true, connected: false,
+        preference: 'UNSPECIFIED', invitationDismissed: options.method === 'PUT' }));
+    const modal = registrationModal(f);
+    await f.dom.window.PlayerTelegramRegistration.mount(modal);
+    const prompt = modal.querySelector('[data-tg-prompt]');
+    prompt.querySelector('[data-tg-dismiss]').click();
+    await settle(); await settle();
+    const writes = f.calls.filter(call => call.options.method === 'PUT');
+    assert.equal(writes.length, 1);
+    assert.equal(writes[0].url, '/api/players/me/telegram/invitation');
+    assert.deepEqual(JSON.parse(writes[0].options.body), { dismissed: true });
+    assert.equal(writes[0].options.headers.get('X-XSRF-TOKEN'), 'fixture-csrf');
+    assert.equal(prompt.hidden, true);
     f.dom.window.close();
 });
