@@ -285,3 +285,7 @@ databaseChangeLog:
   - include:
       file: versions/v1.93-telegram-onboarding.yaml
       relativeToChangelogFile: true
+
+  - include:
+      file: versions/v1.94-telegram-campaign-languages.yaml
+      relativeToChangelogFile: true

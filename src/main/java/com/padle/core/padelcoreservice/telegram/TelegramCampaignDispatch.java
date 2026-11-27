@@ -25,7 +25,7 @@ public class TelegramCampaignDispatch {
         if (!guard.enabled() || reason.isPresent()) {
             store.result(header.id(),row.playerId(),"SKIPPED",reason.orElse("DISABLED"));
         } else {
-            delivery.sendOnce(dispatch.key(),header.tournamentId(),null,row.chatId(),header.text(),List.of());
+            delivery.sendOnce(dispatch.key(),header.tournamentId(),null,row.chatId(),row.text().isEmpty() ? header.text() : row.text(),List.of());
             var result = connections.deliveryResult(dispatch.key()).orElseGet(() -> new Result("FAILED",null));
             store.result(header.id(),row.playerId(),result.state(),result.state().equals("FAILED") ? "PROVIDER_REJECTED" : result.state());
         }

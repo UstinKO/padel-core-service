@@ -239,6 +239,10 @@ telegram:
   chat-id: ${TELEGRAM_CHAT_ID:}
   enabled: ${TELEGRAM_ENABLED:false}
   players:
+    translation:
+      enabled: ${TELEGRAM_TRANSLATION_ENABLED:false}
+      api-key: ${TELEGRAM_TRANSLATION_API_KEY:}
+      model: ${TELEGRAM_TRANSLATION_MODEL:gpt-6.1-terra}
     onboarding-enabled: ${TELEGRAM_PLAYERS_ONBOARDING_ENABLED:false}
     receipts:
       enabled: ${TELEGRAM_PLAYERS_RECEIPTS_ENABLED:false}

@@ -65,6 +65,9 @@ public class CampaignAudienceGuard {
                 .flatMap(player -> store.connection(player.getId()));
     }
     public Optional<String> reason(Header campaign, StoredRecipient recipient) {
+        if (campaign.texts().localized() && recipient.text().isBlank()) {
+            return Optional.of("TRANSLATION_MISSING");
+        }
         var actor = activeOwner(campaign.ownerId());
         if (actor.isEmpty()) return Optional.of("ACCESS_CHANGED");
         try { scope(actor.orElseThrow(), campaign.tournamentId()); }

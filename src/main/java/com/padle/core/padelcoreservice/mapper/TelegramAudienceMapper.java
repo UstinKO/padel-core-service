@@ -11,5 +11,6 @@ public interface TelegramAudienceMapper {
     @Mapping(target = "playerId", source = "player.id")
     @Mapping(target = "name", source = "player.nombreCompleto")
     @Mapping(target = "category", source = "player.nivelJugador")
+    @Mapping(target = "language", source = "player.locale.language")
     Candidate candidate(PlayerPadel player, Set<Group> groups, Availability availability);
 }

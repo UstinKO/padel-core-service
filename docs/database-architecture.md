@@ -1,7 +1,9 @@
 # Архитектура базы данных — padel-core-service
 
 > **СУБД:** PostgreSQL 15  
-> **Версия схемы:** v1.93
+> **Версия схемы:** v1.94
+
+Локализованные кампании: v1.94 добавляет `text_es/text_ru/text_en` (TEXT NOT NULL, пустое значение у прежних кампаний) и `message_locale/message_text` в `telegram_campaign_recipients`. Подготовка фиксирует язык профиля и полный текст каждого адресата; очередь, восстановление и retry используют снимок. Старые строки без снимка используют прежний общий текст. Новая схема не переписывает данные существующих кампаний.
 
 Общий вход Telegram: v1.93 добавляет `player_telegram_onboarding`: UUID, уникальный user_id, равный ему chat_id, уникальный SHA-256 token_hash, expires_at, nullable player_id FK, locale и completed. Один запрос на Telegram, срок 10 минут; истёкшие удаляются при выдаче нового. Кандидат фиксируется POST сайта, связь — только callback исходного Telegram. Прежняя транзакционная блокировка связей сериализует завершение, персональные ссылки, /stop и WhatsApp.
 > **Миграции:** Liquibase (YAML), файлы в `padel-persistence/src/main/resources/db/changelog/versions/`
