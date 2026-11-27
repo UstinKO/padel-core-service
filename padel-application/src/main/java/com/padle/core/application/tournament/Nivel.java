@@ -51,8 +51,7 @@ public enum Nivel {
     SUMA_11("11+", GenderFormat.MIXTO),
     SUMA_10("10+", GenderFormat.MIXTO),
 
-    // Категория "Todos" — не предлагается при создании нового турнира,
-    // не привязана ни к одному generoFormato.
+    // Открытая категория мероприятия, доступная независимо от пола и формата.
     TODOS("Todos", null),
 
     // Устаревшее значение — не предлагается при создании нового турнира,
@@ -99,7 +98,7 @@ public enum Nivel {
     // Значения, которые не предлагаются при создании нового турнира —
     // не привязаны ни к одному generoFormato, оставлены только для отображения уже
     // существующих турниров с этими значениями.
-    private static final Set<Nivel> LEGACY_TOURNAMENT_LEVELS = EnumSet.of(PRINCIPIANTES, TODOS, SIN_ESPECIFICAR);
+    private static final Set<Nivel> LEGACY_TOURNAMENT_LEVELS = EnumSet.of(PRINCIPIANTES, SIN_ESPECIFICAR);
 
     public boolean isLegacyTournamentLevel() {
         return LEGACY_TOURNAMENT_LEVELS.contains(this);
