@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Проверяет размещение JPA клубов и учётных записей и дерева Liquibase в исполняемом JAR."""
+"""Проверяет размещение перенесённого JPA/JDBC и дерева Liquibase в исполняемом JAR."""
 import argparse
 import io
 from pathlib import Path
@@ -23,7 +23,16 @@ IDENTITY_CLASSES = {
                  'PlayerPadel', 'PlayerRepository', 'JpaPlayerProfiles', 'PlayerProfileMapper', 'PlayerProfileMapperImpl',
                  'JdbcGuestProfileClaims', 'JdbcGuestProfileHistory')
 }
-REQUIRED = CLUB_CLASSES | IDENTITY_CLASSES | {PERSISTENCE + 'PersistenceConfiguration.class'}
+TOURNAMENT_ENTITIES = {
+    PERSISTENCE + 'tournament/' + name + '.class' for name in ('Tournament', 'TournamentRegistration', 'Payment')
+}
+TOURNAMENT_CLASSES = TOURNAMENT_ENTITIES | {
+    PERSISTENCE + 'tournament/' + name + '.class'
+    for name in ('TournamentRepository', 'TournamentRegistrationRepository', 'PaymentRepository',
+                 'MarketingEntityListener', 'MarketingJournal', 'JdbcMarketingEvents',
+                 'JdbcRegistrationCancellationHistory', 'JdbcRegistrationAttributionSnapshots', 'JdbcPairSettlements')
+}
+REQUIRED = CLUB_CLASSES | IDENTITY_CLASSES | TOURNAMENT_CLASSES | {PERSISTENCE + 'PersistenceConfiguration.class'}
 LEGACY = 'com/padle/core/padelcoreservice/'
 LEGACY_STORAGE = {
     LEGACY + name
@@ -32,7 +41,10 @@ LEGACY_STORAGE = {
                  'adapter/clubs/LegacyClubReadAdapter', 'adapter/clubs/LegacyClubAdminAdapter',
                  'model/PasswordResetToken', 'repository/PasswordResetTokenRepository', 'repository/OwnerRepository',
                  'repository/PlayerRepository', 'repository/GuestProfileClaimRepository',
-                 'repository/GuestProfileHistoryRepository')
+                 'repository/GuestProfileHistoryRepository', 'model/Tournament', 'model/TournamentRegistration',
+                 'model/Payment', 'repository/TournamentRepository', 'repository/TournamentRegistrationRepository',
+                 'repository/PaymentRepository', 'repository/CancellationHistoryRepository',
+                 'marketing/MarketingEntityListener', 'marketing/MarketingJournal')
 }
 OWNER_PRINCIPAL = CLASSES + LEGACY + 'model/Owner.class'
 PLAYER_SESSION_FORMAT = CLASSES + LEGACY + 'model/PlayerPadel.class'
@@ -63,8 +75,9 @@ def check_library(library, source):
         raise ValueError('Persistence должна быть обычной библиотекой без повторов записей')
     if not REQUIRED.issubset(names):
         raise ValueError('В persistence отсутствуют перенесённые JPA-типы или конфигурация')
-    if b'Ljakarta/persistence/Entity;' not in library.read(PERSISTENCE + 'identity/PlayerPadel.class'):
-        raise ValueError('JPA-сущность PlayerPadel должна находиться в persistence')
+    for entity in TOURNAMENT_ENTITIES | {PERSISTENCE + 'identity/PlayerPadel.class'}:
+        if b'Ljakarta/persistence/Entity;' not in library.read(entity):
+            raise ValueError('Ожидалась JPA-сущность в persistence: ' + entity)
     for name in names:
         if name.endswith('.class'):
             code = library.read(name)

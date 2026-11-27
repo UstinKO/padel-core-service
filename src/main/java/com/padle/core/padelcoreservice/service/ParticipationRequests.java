@@ -4,7 +4,7 @@ import com.padle.core.padelcoreservice.dto.ParticipationDtos.RequestSummary;
 import com.padle.core.padelcoreservice.model.ParticipationRequest;
 import com.padle.core.padelcoreservice.model.ParticipationRequest.Trigger;
 import com.padle.core.persistence.identity.PlayerPadel;
-import com.padle.core.padelcoreservice.model.TournamentRegistration;
+import com.padle.core.persistence.tournament.TournamentRegistration;
 import com.padle.core.padelcoreservice.model.enums.ParticipationStatus;
 import com.padle.core.padelcoreservice.repository.ParticipationRequestRepository;
 import com.padle.core.persistence.identity.PlayerRepository;

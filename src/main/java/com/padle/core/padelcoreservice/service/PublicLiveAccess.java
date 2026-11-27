@@ -1,9 +1,9 @@
 package com.padle.core.padelcoreservice.service;
 
 import com.padle.core.padelcoreservice.exception.PublicLiveException;
-import com.padle.core.padelcoreservice.model.Tournament;
-import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
-import com.padle.core.padelcoreservice.repository.TournamentRepository;
+import com.padle.core.persistence.tournament.Tournament;
+import com.padle.core.application.tournament.TournamentStatus;
+import com.padle.core.persistence.tournament.TournamentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

@@ -1,8 +1,7 @@
-package com.padle.core.padelcoreservice.marketing;
+package com.padle.core.persistence.tournament;
 
-import com.padle.core.padelcoreservice.model.Payment;
-import com.padle.core.padelcoreservice.model.TournamentRegistration;
-import com.padle.core.padelcoreservice.model.enums.PaymentStatus;
+import com.padle.core.application.registration.PaymentStatus;
+import com.padle.core.application.registration.RegistrationJournalContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -16,12 +15,10 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class MarketingJournal {
     private final JdbcTemplate jdbc;
-    private final MetaProperties properties;
-    private final MarketingContextService context;
-    private final AttributionRegistrationJournal attribution;
+    private final RegistrationJournalContext context;
 
     public void registration(TournamentRegistration registration) {
-        Optional<UUID> visitor = properties.browserEnabled() ? context.currentVisitor() : Optional.empty();
+        Optional<UUID> visitor = context.browserEnabled() ? context.currentVisitor() : Optional.empty();
         int inserted = jdbc.update("""
                 INSERT INTO marketing_registrations_db(registration_id, visitor_id, first_touch, last_touch,
                     expected_amount, expected_currency, fbc, fbp)
@@ -31,12 +28,12 @@ public class MarketingJournal {
                 WHERE r.id = ? ON CONFLICT DO NOTHING
                 """, visitor.orElse(new UUID(0, 0)), registration.getId());
         if (inserted > 0) {
-            attribution.registration(registration.getId());
+            context.registrationRecorded(registration.getId());
         }
-        if (!properties.browserEnabled() || !Boolean.TRUE.equals(registration.getIsActive())) {
+        if (!context.browserEnabled() || !Boolean.TRUE.equals(registration.getIsActive())) {
             return;
         }
-        MarketingPolicy.registrationEvent(registration.getStatus()).ifPresent(name -> {
+        MarketingEventPolicy.registrationEvent(registration.getStatus()).ifPresent(name -> {
             String key = "registration:" + registration.getId() + ":" + name;
             jdbc.update("""
                     INSERT INTO marketing_events_db(event_id, event_key, event_name, channel, test_mode,
@@ -45,7 +42,7 @@ public class MarketingJournal {
                     FROM marketing_registrations_db mr JOIN marketing_visitors_db v ON v.id = mr.visitor_id AND v.consent AND v.updated_at > CURRENT_TIMESTAMP - INTERVAL '90 days'
                     JOIN tournament_registrations_db r ON r.id = mr.registration_id
                     WHERE mr.registration_id = ? ON CONFLICT DO NOTHING
-                    """, eventId(key), key, name, properties.testMode(), registration.getStatus().name(), registration.getId());
+                    """, eventId(key), key, name, context.testMode(), registration.getStatus().name(), registration.getId());
         });
     }
 
@@ -66,13 +63,13 @@ public class MarketingJournal {
                     amount, payment.getCurrency(), payment.getId());
             return;
         }
-        BigDecimal delta = MarketingPolicy.positiveDelta(amount, previous.highWater());
+        BigDecimal delta = MarketingEventPolicy.positiveDelta(amount, previous.highWater());
         if (delta.signum() == 0) {
             return;
         }
         jdbc.update("UPDATE marketing_payment_progress_db SET high_water = ? WHERE payment_id = ?", amount, payment.getId());
         int participants = newlyPaidSlot(payment);
-        if (properties.browserEnabled() && MarketingPolicy.supportedCurrency(payment.getCurrency())
+        if (context.browserEnabled() && MarketingEventPolicy.supportedCurrency(payment.getCurrency())
                 && Boolean.TRUE.equals(payment.getIsActive())) {
             purchase(payment, delta, participants);
         }
@@ -88,8 +85,8 @@ public class MarketingJournal {
                 FROM marketing_registrations_db mr JOIN marketing_visitors_db v ON v.id = mr.visitor_id AND v.consent AND v.updated_at > CURRENT_TIMESTAMP - INTERVAL '90 days'
                 JOIN tournament_registrations_db r ON r.id = mr.registration_id
                 WHERE mr.registration_id = ? ON CONFLICT DO NOTHING
-                """, eventId(key), key, properties.testMode(), payment.getId(), delta, payment.getAmount(), payment.getCurrency(),
-                participants, MarketingPolicy.paymentSource(payment.getPaymentMethod()), payment.getRegistration().getId());
+                """, eventId(key), key, context.testMode(), payment.getId(), delta, payment.getAmount(), payment.getCurrency(),
+                participants, MarketingEventPolicy.paymentSource(payment.getPaymentMethod()), payment.getRegistration().getId());
     }
 
     private int newlyPaidSlot(Payment payment) {

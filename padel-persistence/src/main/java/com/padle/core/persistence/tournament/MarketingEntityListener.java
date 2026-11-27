@@ -1,7 +1,5 @@
-package com.padle.core.padelcoreservice.marketing;
+package com.padle.core.persistence.tournament;
 
-import com.padle.core.padelcoreservice.model.Payment;
-import com.padle.core.padelcoreservice.model.TournamentRegistration;
 import jakarta.persistence.PostPersist;
 import jakarta.persistence.PostUpdate;
 import lombok.RequiredArgsConstructor;

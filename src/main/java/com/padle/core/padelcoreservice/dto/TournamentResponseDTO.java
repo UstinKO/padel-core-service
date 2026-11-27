@@ -1,8 +1,8 @@
 package com.padle.core.padelcoreservice.dto;
 
 import com.padle.core.application.tournament.GenderFormat;
-import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
-import com.padle.core.padelcoreservice.model.enums.TournamentType;
+import com.padle.core.application.tournament.TournamentStatus;
+import com.padle.core.application.tournament.TournamentType;
 import lombok.Data;
 
 import java.math.BigDecimal;

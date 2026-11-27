@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.marketing;
 
+import com.padle.core.application.registration.MarketingEvents.BrowserEvent;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -41,7 +42,7 @@ public class MarketingController {
     }
 
     @GetMapping("/events")
-    public ResponseEntity<List<MarketingOutbox.BrowserEvent>> events(HttpServletRequest request) {
+    public ResponseEntity<List<BrowserEvent>> events(HttpServletRequest request) {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(outbox.browserEvents(request));
     }
 

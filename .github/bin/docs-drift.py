@@ -110,12 +110,16 @@ def check_schema_coverage():
 def check_enum_coverage():
     doc = read(DB_DOC)
     problems = []
-    for path in java_sources("**/model/enums/*.java"):
+    for path in java_sources():
         name = os.path.basename(path)[:-5]
         section = re.search(rf"### `{name}`(.*?)(?=\n### |\n## |\Z)", doc, re.S)
         if not section:
             continue
-        body = read(path).split("{", 1)[1].split(";", 1)[0]
+        source = read(path)
+        declaration = re.search(rf"\bpublic\s+enum\s+{re.escape(name)}\b[^{{}}]*\{{", source)
+        if not declaration:
+            continue
+        body = source[declaration.end():].split(";", 1)[0]
         constants = re.findall(r"^\s*([A-Z][A-Z0-9_]*)\s*(?:\(|,|$)", body, re.M)
         missing = [c for c in constants if f"`{c}`" not in section.group(1)]
         if missing:
