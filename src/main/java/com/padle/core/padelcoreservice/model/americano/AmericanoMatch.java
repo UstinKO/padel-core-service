@@ -29,7 +29,7 @@ public class AmericanoMatch {
 
     @ManyToOne
     @JoinColumn(name = "tournament_id", nullable = false)
-    private com.padle.core.padelcoreservice.model.Tournament tournament;
+    private com.padle.core.persistence.tournament.Tournament tournament;
 
     @Column(name = "match_number", nullable = false)
     private Integer matchNumber; // Номер матча в раунде

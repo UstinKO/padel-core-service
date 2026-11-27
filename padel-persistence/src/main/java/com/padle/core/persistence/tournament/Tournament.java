@@ -1,12 +1,12 @@
-package com.padle.core.padelcoreservice.model;
+package com.padle.core.persistence.tournament;
 
-import com.padle.core.padelcoreservice.model.enums.AmericanoFinalOrder;
+import com.padle.core.application.tournament.AmericanoFinalOrder;
 import com.padle.core.application.tournament.GenderFormat;
-import com.padle.core.padelcoreservice.model.enums.Modalidad;
+import com.padle.core.application.tournament.Modalidad;
 import com.padle.core.application.tournament.Nivel;
-import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
-import com.padle.core.padelcoreservice.model.enums.TournamentType;
-import com.padle.core.padelcoreservice.model.enums.TournamentVisibility;
+import com.padle.core.application.tournament.TournamentStatus;
+import com.padle.core.application.tournament.TournamentType;
+import com.padle.core.application.tournament.TournamentVisibility;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;

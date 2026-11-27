@@ -2,7 +2,7 @@ package com.padle.core.padelcoreservice.mapper.americano;
 
 import com.padle.core.application.roundrobin.RoundRobinReadSet;
 import com.padle.core.persistence.identity.PlayerPadel;
-import com.padle.core.padelcoreservice.model.Tournament;
+import com.padle.core.persistence.tournament.Tournament;
 import com.padle.core.padelcoreservice.model.americano.AmericanoMatch;
 import com.padle.core.padelcoreservice.model.americano.AmericanoRound;
 import com.padle.core.padelcoreservice.model.americano.AmericanoTeam;

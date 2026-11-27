@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.marketing;
 
+import com.padle.core.application.registration.MarketingEvents.Delivery;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tools.jackson.databind.json.JsonMapper;
@@ -87,12 +88,12 @@ class MetaCapiClientTest {
         assertThat(new MetaProperties(true, "930260823500064", "test-secret", "v26.0", true, "").serverEnabled()).isFalse();
     }
 
-    private MarketingOutbox.Delivery delivery() {
+    private Delivery delivery() {
         return delivery("other");
     }
 
-    private MarketingOutbox.Delivery delivery(String actionSource) {
-        return new MarketingOutbox.Delivery(UUID.randomUUID(), 123, UUID.randomUUID(), Instant.parse("2026-10-30T12:00:00Z"),
+    private Delivery delivery(String actionSource) {
+        return new Delivery(UUID.randomUUID(), 123, UUID.randomUUID(), Instant.parse("2026-10-30T12:00:00Z"),
                 new BigDecimal("400.00"), "ARS", 0, 1, "fb.1.1700000000000.click", "fb.1.1700000000000.123", actionSource);
     }
 }

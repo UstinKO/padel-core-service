@@ -8,7 +8,7 @@ import com.padle.core.padelcoreservice.dto.americano.TeamAmericanoConfigDto;
 import com.padle.core.padelcoreservice.dto.americano.TeamAmericanoRankingDto;
 import com.padle.core.padelcoreservice.exception.InvalidStateException;
 import com.padle.core.padelcoreservice.model.enums.AmericanoRoundStatus;
-import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
+import com.padle.core.application.tournament.TournamentStatus;
 import com.padle.core.padelcoreservice.model.americano.AmericanoMatch;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.security.PlayerPrincipal;

@@ -8,7 +8,7 @@ import com.padle.core.padelcoreservice.mapper.PlayerSummaryMapperImpl;
 import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.application.tournament.Nivel;
 import com.padle.core.persistence.identity.PlayerRepository;
-import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
+import com.padle.core.persistence.tournament.TournamentRegistrationRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

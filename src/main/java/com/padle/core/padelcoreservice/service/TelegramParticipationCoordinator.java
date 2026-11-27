@@ -1,11 +1,13 @@
 package com.padle.core.padelcoreservice.service;
 
 import com.padle.core.padelcoreservice.model.*;
+import com.padle.core.persistence.tournament.Tournament;
+import com.padle.core.persistence.tournament.TournamentRegistration;
 import com.padle.core.padelcoreservice.model.ParticipationRequest.Trigger;
 import com.padle.core.padelcoreservice.model.enums.ParticipationStatus;
 import com.padle.core.padelcoreservice.repository.ParticipationRequestRepository;
-import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
-import com.padle.core.padelcoreservice.repository.TournamentRepository;
+import com.padle.core.persistence.tournament.TournamentRegistrationRepository;
+import com.padle.core.persistence.tournament.TournamentRepository;
 import com.padle.core.padelcoreservice.telegram.PlayerTelegramStore;
 import com.padle.core.padelcoreservice.telegram.PlayerTelegramAccess;
 import com.padle.core.padelcoreservice.exception.AccountException;

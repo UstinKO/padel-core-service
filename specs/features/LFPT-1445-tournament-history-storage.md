@@ -10,13 +10,13 @@ approved
 Перенести связанное хранение турниров, команд, матчей, раундов и истории через подготовленные порты.
 
 ## Связь с MASTER.md
-[MASTER](../MASTER.md) определяет роли, границы клубного доступа, регистрацию, турнирные состояния и хранение истории вместе с подтверждённым изменением. Сценарии сохраняют текущие инварианты. Зависимости [#1442](https://github.com/UstinKO/padel-core-service/issues/1442), [#1443](https://github.com/UstinKO/padel-core-service/issues/1443).
+[MASTER](../MASTER.md) определяет роли, границы клубного доступа, регистрацию, турнирные состояния и хранение истории вместе с подтверждённым изменением. Сценарии сохраняют текущие инварианты. Зависимости [#1442](https://github.com/UstinKO/padel-core-service/issues/1442), [#1443](https://github.com/UstinKO/padel-core-service/issues/1443), [#1444](https://github.com/UstinKO/padel-core-service/issues/1444).
 
 ## Требования
 
 ### Функциональные
 
-- Уточнить общую границу с регистрациями и платежами по фактическим entity associations. Использовать принятые round-robin read/position/finish порты и определить недостающие операции для остальных форматов.
+- Использовать JPA-группу турнира, заявок и оплат из [#1444](https://github.com/UstinKO/padel-core-service/issues/1444). Использовать принятые round-robin read/position/finish порты и определить недостающие операции для остальных форматов.
 - Сохранить один persistence context, lock/version/key, snapshots/restore, flush и after-commit. Переносить связные группы отдельными PR.
 
 ### Нефункциональные

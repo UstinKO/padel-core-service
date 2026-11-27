@@ -2,10 +2,10 @@ package com.padle.core.padelcoreservice.controller.admin;
 
 import com.padle.core.padelcoreservice.dto.KingOfCourtStateDTO;
 import com.padle.core.padelcoreservice.model.Owner;
-import com.padle.core.padelcoreservice.model.Tournament;
+import com.padle.core.persistence.tournament.Tournament;
 import com.padle.core.padelcoreservice.model.TournamentKingOfCourt;
 import com.padle.core.padelcoreservice.repository.TournamentKingOfCourtRepository;
-import com.padle.core.padelcoreservice.repository.TournamentRepository;
+import com.padle.core.persistence.tournament.TournamentRepository;
 import com.padle.core.padelcoreservice.service.KingOfCourtService;
 import com.padle.core.padelcoreservice.service.TournamentAccessService;
 import com.padle.core.padelcoreservice.service.conduct.TournamentConductHistory;

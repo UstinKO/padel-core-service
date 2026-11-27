@@ -1,6 +1,6 @@
 package com.padle.core.padelcoreservice.receipts;
 
-import com.padle.core.padelcoreservice.model.TournamentRegistration;
+import com.padle.core.persistence.tournament.TournamentRegistration;
 import com.padle.core.padelcoreservice.receipts.ReceiptModels.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.simple.JdbcClient;

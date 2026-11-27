@@ -3,9 +3,9 @@ package com.padle.core.padelcoreservice.mapper;
 import com.padle.core.padelcoreservice.dto.PublicTournamentDto;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
-import com.padle.core.padelcoreservice.model.enums.Modalidad;
-import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
-import com.padle.core.padelcoreservice.model.enums.TournamentType;
+import com.padle.core.application.tournament.Modalidad;
+import com.padle.core.application.registration.RegistrationStatus;
+import com.padle.core.application.tournament.TournamentType;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;

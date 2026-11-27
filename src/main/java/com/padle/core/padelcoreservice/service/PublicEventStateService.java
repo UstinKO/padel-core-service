@@ -4,7 +4,7 @@ import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.dto.PublicEventResponse.Format;
 import com.padle.core.padelcoreservice.dto.PublicEventResponse.Phase;
 import com.padle.core.padelcoreservice.dto.PublicEventResponse.State;
-import com.padle.core.padelcoreservice.model.enums.Modalidad;
+import com.padle.core.application.tournament.Modalidad;
 import com.padle.core.padelcoreservice.model.enums.TournamentPhase;
 import com.padle.core.padelcoreservice.repository.TournamentKingOfCourtRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoRoundRepository;
