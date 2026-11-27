@@ -92,6 +92,7 @@ try {
     }
     const context=await session({language:'ru',width:390},fixture.adminEmail);
     const panel=page.locator('[data-tg-connections]');
+    assert.equal(await panel.locator('a').getAttribute('href'), '/admin/telegram/messages#tg-invitation-url');
     for(const [language,width] of [['ru',1440],['es',390],['en',320]]) {
         await page.setViewportSize({width,height:1000});
         await page.goto(fixture.baseUrl+'/admin?lang='+language);

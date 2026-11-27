@@ -18,7 +18,7 @@
     </div>
     <div class="tg-connections-actions">
         <button type="button" class="btn btn-outline" data-tg-connections-refresh th:text="#{telegram.ui.refresh}"></button>
-        <a class="btn btn-outline" th:href="@{/admin/telegram/messages}" th:text="#{telegram.connections.invite}"></a>
+        <a class="btn btn-outline" th:href="@{/admin/telegram/messages#tg-invitation-url}" th:text="#{telegram.connections.invite}"></a>
     </div>
     <p role="status" aria-live="polite" data-tg-connections-status th:text="#{telegram.ui.loading}"></p>
 </section>
