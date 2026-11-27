@@ -23,6 +23,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.UUID;
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.playerUser;
 import static org.assertj.core.api.Assertions.*;
 import static org.hamcrest.Matchers.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
@@ -149,20 +150,20 @@ class PublicCalendarIntegrationTest {
         hidden.setVisibilidad(TournamentVisibility.SOLO_POR_ENLACE);
         registration(hidden, captain, RegistrationStatus.CONFIRMED);
         events.flush();
-        mvc.perform(request("/api/players/me/calendar").with(user(captain)).param("playerId", stranger.getId().toString()))
+        mvc.perform(request("/api/players/me/calendar").with(playerUser(captain)).param("playerId", stranger.getId().toString()))
                 .andExpect(status().isOk()).andExpect(header().string("Cache-Control", containsString("no-store")))
                 .andExpect(jsonPath("$.playerId").value(captain.getId()))
                 .andExpect(jsonPath("$.registrations.length()").value(3L))
                 .andExpect(content().string(containsString("CONFIRMED")))
                 .andExpect(content().string(containsString("WAITLIST")))
                 .andExpect(content().string(containsString("SOLO_ADD_LATER")));
-        mvc.perform(request("/api/players/me/calendar").with(user(partner)))
+        mvc.perform(request("/api/players/me/calendar").with(playerUser(partner)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.registrations.length()").value(1L))
                 .andExpect(jsonPath("$.registrations[0].eventId").value(pair.getId()));
-        mvc.perform(request("/api/players/me/calendar").with(user(stranger)))
+        mvc.perform(request("/api/players/me/calendar").with(playerUser(stranger)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.registrations.length()").value(0L));
         waiting.setStatus(RegistrationStatus.CANCELLED); waiting.setIsActive(false); registrations.flush();
-        mvc.perform(request("/api/players/me/calendar").with(user(captain)))
+        mvc.perform(request("/api/players/me/calendar").with(playerUser(captain)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.registrations.length()").value(2L));
         mvc.perform(request("/api/players/me/calendar")).andExpect(status().isUnauthorized());
         mvc.perform(request("/api/players/me/calendar").with(user(organizer))).andExpect(status().isForbidden());

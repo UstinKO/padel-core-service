@@ -7,7 +7,7 @@ import com.padle.core.padelcoreservice.mapper.AccountMapper;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
-import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2User;
+import com.padle.core.padelcoreservice.security.PlayerPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -29,9 +29,7 @@ public class AccountService {
     public PlayerPadel player(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated())
             throw new AccountException(HttpStatus.UNAUTHORIZED, "SESSION_REQUIRED");
-        var principal = authentication.getPrincipal();
-        if (principal instanceof CustomOAuth2User oauth) principal = oauth.getPlayer();
-        if (!(principal instanceof PlayerPadel player))
+        if (!(authentication.getPrincipal() instanceof PlayerPrincipal player))
             throw new AccountException(HttpStatus.FORBIDDEN, "PLAYER_REQUIRED");
         return players.findById(player.getId())
                 .filter(PlayerPadel::isActivo)

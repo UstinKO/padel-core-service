@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.model;
 
+import com.padle.core.application.identity.PlayerIdentity;
 import com.padle.core.padelcoreservice.model.enums.PlayingSide;
 
 import com.padle.core.padelcoreservice.model.enums.Nivel;
@@ -8,13 +9,10 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
@@ -27,7 +25,11 @@ import java.util.Set;
 @AllArgsConstructor
 @Builder
 @ToString(exclude = "passwordHash")
-public class PlayerPadel implements UserDetails {
+public class PlayerPadel implements Serializable {
+
+    // Сохраняет формат чтения сессий, созданных до разделения principal и сущности.
+    @Serial
+    private static final long serialVersionUID = 3954731546753820827L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -106,43 +108,6 @@ public class PlayerPadel implements UserDetails {
     @Column(name = "playing_side_prompt_after")
     private Instant playingSidePromptAfter;
 
-    // ========== Реализация UserDetails ==========
-
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_PLAYER"));
-    }
-
-    @Override
-    public String getPassword() {
-        return passwordHash;
-    }
-
-    @Override
-    public String getUsername() {
-        return email;
-    }
-
-    @Override
-    public boolean isAccountNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isAccountNonLocked() {
-        return activo;
-    }
-
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return activo && emailConfirmado;
-    }
-
     // ========== Вспомогательные методы ==========
 
     @Override
@@ -179,8 +144,6 @@ public class PlayerPadel implements UserDetails {
         return hasPhone || hasTelegram;
     }
 
-    private static final String GUEST_EMAIL_SUFFIX = "@1padel.guest";
-
     /**
      * Гостевой аккаунт — создан администратором за игрока, который сам ещё не
      * регистрировался (см. TestTournamentController.resolveOrCreateGuestPlayer).
@@ -189,7 +152,7 @@ public class PlayerPadel implements UserDetails {
      * email/выдача временного пароля.
      */
     public static boolean isGuestEmail(String email) {
-        return email != null && email.toLowerCase(Locale.ROOT).endsWith(GUEST_EMAIL_SUFFIX);
+        return PlayerIdentity.isGuestEmail(email);
     }
 
     public boolean isGuestAccount() {

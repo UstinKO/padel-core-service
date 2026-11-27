@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.playerUser;
 import static org.assertj.core.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -331,7 +332,7 @@ class MarketingIntegrationTest {
         mvc.perform(get("/admin/marketing/export.csv").param("tournamentId", Long.toString(tournamentId)))
                 .andExpect(status().is3xxRedirection());
         mvc.perform(get("/admin/marketing/export.csv").param("tournamentId", Long.toString(tournamentId))
-                .with(user(player()))).andExpect(redirectedUrl("/error/403"));
+                .with(playerUser(player()))).andExpect(redirectedUrl("/error/403"));
         Owner other = Owner.builder().id(9999L).email("owner@example.test").password("test")
                 .role(OwnerRole.ORGANIZER).isActive(true).build();
         mvc.perform(get("/admin/marketing/export.csv").param("tournamentId", Long.toString(tournamentId))

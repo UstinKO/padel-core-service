@@ -2,6 +2,8 @@ package com.padle.core.padelcoreservice.config;
 
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
 import com.padle.core.padelcoreservice.security.GuestSessionFilter;
+import com.padle.core.padelcoreservice.security.LegacyPlayerSessionFilter;
+import com.padle.core.padelcoreservice.security.PlayerSessionAuthentication;
 import com.padle.core.padelcoreservice.marketing.MetaProperties;
 
 import com.padle.core.padelcoreservice.security.CustomAccessDeniedHandler;
@@ -44,6 +46,7 @@ import org.springframework.security.web.authentication.AuthenticationFailureHand
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.context.SecurityContextHolderFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CsrfToken;
@@ -90,7 +93,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, PlayerSessionAuthentication playerSessions)
+            throws Exception {
         return http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf
@@ -264,6 +268,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 )
+                .addFilterAfter(new LegacyPlayerSessionFilter(playerSessions), SecurityContextHolderFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 // requestId должен быть в MDC уже на этапе rate-limit предупреждений —

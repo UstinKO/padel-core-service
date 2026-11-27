@@ -1,7 +1,7 @@
 # LFPT-1467: Feature многомодульный монолит, фаза 6 — отделить principal игрока от сущности и сохранить вход
 
 ## Статус
-approved
+done
 
 ## Источник
 [Задача #1467](https://github.com/UstinKO/padel-core-service/issues/1467), срез [#1443](https://github.com/UstinKO/padel-core-service/issues/1443). Предшественник #1466.
@@ -38,8 +38,8 @@ approved
 [План фазы 6](../../docs/modular-monolith/phase-6/README.md), [вход и учётные записи](../../docs/auth-flow.md), [разбиение идентичности](../../docs/modular-monolith/phase-6/identity-storage.md).
 
 ## Критерии приёмки
-- [ ] Основные входы и отказ в доступе одинаковы на актуальных сценариях старого и нового JAR. Проверены login/logout, remember-me, OAuth2, JWT и refresh.
-- [ ] Миграции и данные сохраняются.
+- [x] Основные входы и отказ в доступе одинаковы на актуальных сценариях старого и нового JAR. Проверены login/logout, remember-me, OAuth2, JWT и refresh.
+- [x] Миграции и данные сохраняются.
 
 ## Edge cases
 Проверить обычный и гостевой профиль, язык и последующий переход к турниру. Согласованные изменения Telegram остаются в своих PR и проверяются по актуальной базе.

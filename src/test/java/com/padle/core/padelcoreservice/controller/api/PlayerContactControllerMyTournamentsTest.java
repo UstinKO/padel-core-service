@@ -17,6 +17,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.playerUser;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
@@ -67,7 +68,7 @@ class PlayerContactControllerMyTournamentsTest {
 
         when(tournamentService.getMyTournamentsOverview(42L)).thenReturn(overview);
 
-        mockMvc.perform(get("/api/players/me/tournaments").with(user(player)))
+        mockMvc.perform(get("/api/players/me/tournaments").with(playerUser(player)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.upcoming[0].tournament.id").value(1))
                 .andExpect(jsonPath("$.upcoming[0].registrationStatus").value("WAITLIST"))

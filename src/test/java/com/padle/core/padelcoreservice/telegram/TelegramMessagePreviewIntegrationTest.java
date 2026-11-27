@@ -24,6 +24,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.playerUser;
 import static org.assertj.core.api.Assertions.*;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.*;
@@ -83,7 +84,7 @@ class TelegramMessagePreviewIntegrationTest {
         mvc.perform(get("/api/admin/telegram/messages/audience?tournamentId=" + event.getId()).with(user(other)))
                 .andExpect(status().isForbidden());
         mvc.perform(get("/api/admin/telegram/messages/audience").with(user(owner))).andExpect(status().isForbidden());
-        mvc.perform(get("/api/admin/telegram/messages/audience").with(user(foreign))).andExpect(status().isForbidden());
+        mvc.perform(get("/api/admin/telegram/messages/audience").with(playerUser(foreign))).andExpect(status().isForbidden());
         var admin = owner(OwnerRole.SUPER_ADMIN);
         mvc.perform(get("/api/admin/telegram/messages/audience").with(user(admin))).andExpect(status().isOk())
                 .andExpect(header().string("Cache-Control", "no-store"))

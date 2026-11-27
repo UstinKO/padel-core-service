@@ -23,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.UUID;
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.playerUser;
 import static org.assertj.core.api.Assertions.*;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.Mockito.when;
@@ -143,7 +144,7 @@ class ReceiptIntegrationTest {
     @Test void fileAndReviewRequireTheCorrectOrganizerAndCsrf() throws Exception {
         var owner = owner(); var other = owner(); var row = row(owner); var receipt = receipt(row,11006);
         mvc.perform(get(url(row,receipt.id())+"/file").with(user(other))).andExpect(status().isForbidden());
-        mvc.perform(get(url(row,receipt.id())+"/file").with(user(row.getPlayer()))).andExpect(status().isForbidden());
+        mvc.perform(get(url(row,receipt.id())+"/file").with(playerUser(row.getPlayer()))).andExpect(status().isForbidden());
         mvc.perform(post(url(row,receipt.id())+"/reject").with(user(owner)).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"reason\":\"fixture\"}")).andExpect(status().isForbidden());
         mvc.perform(get(url(row,receipt.id())+"/file").with(user(owner))).andExpect(status().isOk())
