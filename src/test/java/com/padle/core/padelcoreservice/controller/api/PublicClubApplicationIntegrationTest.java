@@ -1,6 +1,8 @@
 package com.padle.core.padelcoreservice.controller.api;
 
+import com.padle.core.application.clubs.ClubDetails;
 import com.padle.core.application.clubs.ClubReadPort;
+import com.padle.core.application.clubs.InternalClubReadPort;
 import com.padle.core.application.clubs.PublicClubQuery;
 import com.padle.core.padelcoreservice.adapter.clubs.LegacyClubReadAdapter;
 import com.padle.core.padelcoreservice.model.Club;
@@ -53,6 +55,7 @@ class PublicClubApplicationIntegrationTest {
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper json;
     @Autowired PublicClubQuery query;
+    @Autowired InternalClubReadPort internalClubs;
     @MockitoSpyBean ClubRepository clubs;
     @Autowired ApplicationContext context;
     @Autowired PlatformTransactionManager transactions;
@@ -97,6 +100,27 @@ class PublicClubApplicationIntegrationTest {
                 .extracting(value -> value.id()).containsExactly(first.getId(), second.getId(), last.getId());
         verify(clubs).findByIsActiveTrue(Sort.by("nombre", "id"));
         assertThat(query.club(hidden.getId())).isEmpty();
+    }
+
+    @Test
+    void internalReadPreservesInactiveClubsAndLoadsOneBatch() {
+        var active = create("Внутренний активный " + UUID.randomUUID(), true);
+        var inactive = create("Внутренний выключенный " + UUID.randomUUID(), false);
+        var missingId = -1L;
+        var ids = List.of(active.getId(), inactive.getId(), inactive.getId(), missingId);
+        clearInvocations(clubs);
+
+        assertThat(internalClubs.findByIds(ids))
+                .containsOnlyKeys(active.getId(), inactive.getId())
+                .containsEntry(active.getId(), new ClubDetails(active.getId(), active.getNombre(), null, null, true))
+                .containsEntry(inactive.getId(), new ClubDetails(inactive.getId(), inactive.getNombre(), null, null, false));
+        verify(clubs).findAllById(ids);
+        verify(clubs, never()).findById(any());
+
+        assertThat(internalClubs.findByIds(List.of())).isEmpty();
+        assertThat(internalClubs.findById(inactive.getId())).hasValueSatisfying(club -> assertThat(club.active()).isFalse());
+        assertThat(internalClubs.findById(missingId)).isEmpty();
+        assertThat(query.club(inactive.getId())).isEmpty();
     }
 
     @Test

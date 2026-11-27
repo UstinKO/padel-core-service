@@ -1,12 +1,13 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.application.clubs.ClubDetails;
+import com.padle.core.application.clubs.InternalClubReadPort;
 import com.padle.core.padelcoreservice.dto.CancellationHistory;
 import com.padle.core.padelcoreservice.dto.ParticipationDtos.Decision;
 import com.padle.core.padelcoreservice.dto.ParticipationDtos.Review;
 import com.padle.core.padelcoreservice.dto.PlayerEvents.*;
 import com.padle.core.padelcoreservice.exception.AccountException;
 import com.padle.core.padelcoreservice.mapper.PlayerEventsMapper;
-import com.padle.core.padelcoreservice.model.Club;
 import com.padle.core.padelcoreservice.model.Payment;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.Tournament;
@@ -15,7 +16,6 @@ import com.padle.core.padelcoreservice.model.enums.Modalidad;
 import com.padle.core.padelcoreservice.model.enums.ParticipationStatus;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
-import com.padle.core.padelcoreservice.repository.ClubRepository;
 import com.padle.core.padelcoreservice.repository.PaymentRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
@@ -40,7 +40,7 @@ import java.util.stream.Stream;
 public class PlayerEventsService {
     private final TournamentRegistrationRepository registrations;
     private final TournamentRepository tournaments;
-    private final ClubRepository clubs;
+    private final InternalClubReadPort clubReads;
     private final PaymentRepository payments;
     private final RegistrationCancellationService cancellationHistory;
     private final TournamentParticipationService participation;
@@ -52,9 +52,8 @@ public class PlayerEventsService {
         var rows = registrations.findForPlayerEvents(actor.getId());
         if (rows.isEmpty()) return new Overview(List.of(), List.of());
 
-        var clubNames = clubs.findAllById(rows.stream().map(row -> row.getTournament().getClubId())
-                        .distinct().toList()).stream()
-                .collect(Collectors.toMap(Club::getId, Club::getNombre));
+        var clubsById = clubReads.findByIds(rows.stream().map(row -> row.getTournament().getClubId())
+                .distinct().toList());
         var paymentsByRow = payments.findActiveForRegistrations(rows.stream().map(TournamentRegistration::getId).toList())
                 .stream().collect(Collectors.groupingBy(payment -> payment.getRegistration().getId()));
         var historyByEvent = cancellationHistory.forPlayer(actor, rows.stream()
@@ -66,7 +65,8 @@ public class PlayerEventsService {
         List<Entry> upcoming = new ArrayList<>();
         List<Entry> history = new ArrayList<>();
         for (var row : rows) {
-            var event = mapper.event(row.getTournament(), clubNames.get(row.getTournament().getClubId()));
+            ClubDetails club = clubsById.get(row.getTournament().getClubId());
+            var event = mapper.event(row.getTournament(), club == null ? null : club.name());
             var pastCancellations = historyByEvent.getOrDefault(event.id(), List.of());
             var reviews = reviewsByEvent.getOrDefault(event.id(), List.of());
             var ownPayment = paymentsByRow.getOrDefault(row.getId(), List.of()).stream()

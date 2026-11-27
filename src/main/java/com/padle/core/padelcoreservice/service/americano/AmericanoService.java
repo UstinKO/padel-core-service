@@ -1,5 +1,7 @@
 package com.padle.core.padelcoreservice.service.americano;
 
+import com.padle.core.application.clubs.ClubDetails;
+import com.padle.core.application.clubs.InternalClubReadPort;
 import com.padle.core.padelcoreservice.util.AfterCommit;
 import com.padle.core.padelcoreservice.annotation.Timed;
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
@@ -14,7 +16,6 @@ import com.padle.core.padelcoreservice.model.americano.AmericanoMatch;
 import com.padle.core.padelcoreservice.model.americano.AmericanoPlayer;
 import com.padle.core.padelcoreservice.model.americano.AmericanoRound;
 import com.padle.core.padelcoreservice.model.enums.*;
-import com.padle.core.padelcoreservice.repository.ClubRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoMatchRepository;
@@ -55,7 +56,7 @@ public class AmericanoService {
     private final AmericanoPlayerRepository americanoPlayerRepository;
     private final AmericanoRoundRepository americanoRoundRepository;
     private final AmericanoMatchRepository americanoMatchRepository;
-    private final ClubRepository clubRepository;
+    private final InternalClubReadPort clubReads;
     private final AmericanoMapper americanoMapper;
     private final TournamentRegistrationMapper registrationMapper;
     private final PlayerService playerService;
@@ -1200,8 +1201,8 @@ public class AmericanoService {
     }
 
     private String getClubName(Long clubId) {
-        return clubRepository.findById(clubId)
-                .map(Club::getNombre)
+        return clubReads.findById(clubId)
+                .map(ClubDetails::name)
                 .orElse("Club Desconocido");
     }
 

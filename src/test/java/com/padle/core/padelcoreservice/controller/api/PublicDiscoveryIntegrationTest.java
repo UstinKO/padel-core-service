@@ -131,6 +131,25 @@ class PublicDiscoveryIntegrationTest {
     }
 
     @Test
+    void catalogAndTournamentKeepTheInactiveClubLocation() throws Exception {
+        var club = clubs.findById(clubId).orElseThrow();
+        club.setIsActive(false);
+        club.setDireccion("Calle de prueba");
+        club.setZonaCiudad("Madrid");
+        clubs.saveAndFlush(club);
+
+        mvc.perform(get("/api/public/catalog").param("clubId", clubId.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(2))
+                .andExpect(jsonPath("$.items[0].club.name").value(club.getNombre()))
+                .andExpect(jsonPath("$.items[0].club.address").value("Calle de prueba, Madrid"));
+        mvc.perform(get("/api/public/tournaments/" + publicId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.club.name").value(club.getNombre()))
+                .andExpect(jsonPath("$.club.address").value("Calle de prueba, Madrid"));
+    }
+
+    @Test
     void directHiddenLinkRemainsReadableAndHomeExcludesHiddenDraftAndClosed() throws Exception {
         mvc.perform(get("/api/public/tournaments/" + hiddenId)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(hiddenId));

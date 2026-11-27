@@ -9,7 +9,7 @@ import zipfile
 
 PREFIX = 'com/padle/core/application/'
 REQUIRED = {PREFIX + 'clubs/' + name + '.class'
-            for name in ['PublicClub', 'PublicClubQuery', 'ClubReadPort']}
+            for name in ['PublicClub', 'PublicClubQuery', 'ClubReadPort', 'ClubDetails', 'InternalClubReadPort']}
 READ_PREFIX = PREFIX + 'roundrobin/'
 REQUIRED.update(READ_PREFIX + name + '.class' for name in [
     'RoundRobinReadPort', 'RoundRobinRankingQuery', 'RoundRobinRankingComposer', 'RoundRobinNotFound',
