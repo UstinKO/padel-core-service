@@ -24,7 +24,7 @@ import com.padle.core.padelcoreservice.model.enums.RoundRobinScoringMode;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
 import com.padle.core.persistence.clubs.ClubRepository;
-import com.padle.core.padelcoreservice.repository.OwnerRepository;
+import com.padle.core.padelcoreservice.support.OwnerFixtures;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
@@ -113,7 +113,7 @@ class RoundRobinWriteBaselineTest {
     @Autowired TournamentConductHistory history;
     @Autowired TournamentRepository tournaments;
     @Autowired ClubRepository clubs;
-    @Autowired OwnerRepository owners;
+    @Autowired OwnerFixtures owners;
     @Autowired PlayerRepository players;
     @Autowired TournamentRegistrationRepository registrations;
     @Autowired AmericanoTeamRepository teams;

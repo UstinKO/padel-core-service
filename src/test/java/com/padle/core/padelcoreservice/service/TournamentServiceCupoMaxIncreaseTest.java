@@ -14,7 +14,7 @@ import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
 import com.padle.core.persistence.clubs.ClubRepository;
-import com.padle.core.padelcoreservice.repository.OwnerRepository;
+import com.padle.core.padelcoreservice.support.OwnerFixtures;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
@@ -58,7 +58,7 @@ class TournamentServiceCupoMaxIncreaseTest {
     @Autowired
     private PlayerRepository playerRepository;
     @Autowired
-    private OwnerRepository ownerRepository;
+    private OwnerFixtures ownerRepository;
 
     @Test
     void aumentarCupoMax_parejaCompletaEnReserva_pasaAConfirmedAutomaticamente() {

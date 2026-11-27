@@ -1,5 +1,7 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.application.identity.OwnerAccount;
+import com.padle.core.application.identity.OwnerAccounts;
 import com.padle.core.padelcoreservice.annotation.Timed;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import java.util.Objects;
@@ -10,7 +12,6 @@ import com.padle.core.padelcoreservice.dto.calendar.OrganizerOrganization;
 import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
 import com.padle.core.padelcoreservice.mapper.AdminCalendarMapper;
 import com.padle.core.padelcoreservice.model.Owner;
-import com.padle.core.padelcoreservice.repository.OwnerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -22,12 +23,12 @@ import java.util.List;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class OrganizerOrganizationService {
-    private final OwnerRepository owners;
+    private final OwnerAccounts owners;
     private final AdminCalendarMapper mapper;
 
     @Timed(name = "admin.organizations.settings", tags = {"type=calendar"})
     public OrganizationSettings settings(Owner actor) {
-        List<Owner> available = actor.isSuperAdmin() ? owners.findAll() : List.of(account(actor.getId()));
+        List<OwnerAccount> available = actor.isSuperAdmin() ? owners.findAll() : List.of(account(actor.getId()));
         return new OrganizationSettings(actor.getId(), available.stream().map(mapper::toOrganizationAccount)
                 .sorted(Comparator.comparing(OrganizationAccount::id)).toList());
     }
@@ -46,12 +47,11 @@ public class OrganizerOrganizationService {
         if (!actor.isSuperAdmin() && !actor.getId().equals(id)) {
             throw new AccessDeniedException("ORGANIZATION_ACCESS_DENIED");
         }
-        Owner owner = account(id);
-        owner.setOrganizationName(request.name());
-        return mapper.toOrganizer(owners.save(owner));
+        account(id);
+        return mapper.toOrganizer(owners.updateOrganizationName(id, request.name()));
     }
 
-    private Owner account(Long id) {
+    private OwnerAccount account(Long id) {
         return owners.findById(id).orElseThrow(() -> new ResourceNotFoundException("ORGANIZER_NOT_FOUND"));
     }
 }

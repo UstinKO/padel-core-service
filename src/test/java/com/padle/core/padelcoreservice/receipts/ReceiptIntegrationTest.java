@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.receipts;
 
+import com.padle.core.padelcoreservice.support.OwnerFixtures;
 import com.padle.core.padelcoreservice.exception.AccountException;
 import com.padle.core.padelcoreservice.model.*;
 import com.padle.core.persistence.clubs.Club;
@@ -42,7 +43,7 @@ class ReceiptIntegrationTest {
     @Autowired TournamentRepository events;
     @Autowired TournamentRegistrationRepository registrations;
     @Autowired PlayerRepository players;
-    @Autowired OwnerRepository owners;
+    @Autowired OwnerFixtures owners;
     @Autowired ClubRepository clubs;
     @Autowired PaymentRepository payments;
     @Autowired MockMvc mvc;

@@ -5,7 +5,7 @@ import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.model.enums.OwnerRole;
-import com.padle.core.padelcoreservice.repository.OwnerRepository;
+import com.padle.core.padelcoreservice.support.OwnerFixtures;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
 import com.padle.core.padelcoreservice.service.EmailService;
 import com.padle.core.padelcoreservice.telegram.TelegramModels.*;
@@ -44,7 +44,7 @@ import static org.mockito.Mockito.*;
 class PlayerTelegramOnboardingBrowserTest {
     @LocalServerPort int port;
     @Autowired PlayerRepository players;
-    @Autowired OwnerRepository owners;
+    @Autowired OwnerFixtures owners;
     @Autowired PasswordEncoder passwords;
     @Autowired PlayerTelegramOnboarding onboarding;
     @Autowired PlayerTelegramOnboardingStore pending;

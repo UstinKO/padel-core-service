@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.marketing;
 
+import com.padle.core.padelcoreservice.support.OwnerFixtures;
 import com.padle.core.persistence.clubs.Club;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
@@ -47,7 +48,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 })
 class RegistrationSourceBrowserTest {
     @LocalServerPort int port;
-    @Autowired OwnerRepository owners;
+    @Autowired OwnerFixtures owners;
     @Autowired PlayerRepository players;
     @Autowired TournamentRepository tournaments;
     @Autowired ClubRepository clubs;

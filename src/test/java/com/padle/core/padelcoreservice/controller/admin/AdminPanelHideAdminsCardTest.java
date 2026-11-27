@@ -2,7 +2,7 @@ package com.padle.core.padelcoreservice.controller.admin;
 
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.enums.OwnerRole;
-import com.padle.core.padelcoreservice.repository.OwnerRepository;
+import com.padle.core.padelcoreservice.support.OwnerFixtures;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -44,7 +44,7 @@ class AdminPanelHideAdminsCardTest {
     @Autowired
     private MockMvc mockMvc;
     @Autowired
-    private OwnerRepository ownerRepository;
+    private OwnerFixtures ownerRepository;
 
     @Test
     void clubAdmin_tarjetaDeAdministradoresNoApareceEnElHtml() throws Exception {

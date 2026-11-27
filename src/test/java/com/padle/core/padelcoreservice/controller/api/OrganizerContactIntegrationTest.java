@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.controller.api;
 
+import com.padle.core.padelcoreservice.support.OwnerFixtures;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.exception.OrganizerContactException;
 import com.padle.core.padelcoreservice.mapper.TournamentMapper;
@@ -44,7 +45,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 class OrganizerContactIntegrationTest {
     @Autowired MockMvc mvc;
-    @Autowired OwnerRepository owners;
+    @Autowired OwnerFixtures owners;
     @Autowired ClubRepository clubs;
     @Autowired TournamentRepository tournaments;
     @Autowired TournamentService service;

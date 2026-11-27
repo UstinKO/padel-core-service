@@ -7,6 +7,7 @@ import com.padle.core.padelcoreservice.repository.*;
 import com.padle.core.persistence.identity.PasswordResetTokenRepository;
 import com.padle.core.padelcoreservice.service.*;
 import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2User;
+import com.padle.core.padelcoreservice.support.OwnerFixtures;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -14,7 +15,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.mock.web.MockHttpSession;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -35,6 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class AccountIntegrationTest {
     @Autowired MockMvc mvc;
     @Autowired PlayerRepository players;
+    @Autowired OwnerFixtures owners;
     @Autowired PasswordEncoder encoder;
     @Autowired PasswordResetTokenRepository tokens;
     @MockitoBean EmailService email;
@@ -104,6 +109,32 @@ class AccountIntegrationTest {
         mvc.perform(post("/logout").session(session).with(csrf()).accept("application/json"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.code").value("LOGGED_OUT"));
     }
+    @Test
+    void activeOwnerTakesPrecedenceOverPlayerWithSameEmail() throws Exception {
+        var player = player();
+        var owner = owners.saveAndFlush(Owner.builder().email(player.getEmail())
+                .password(encoder.encode("owner-password")).firstName("Owner").lastName("Fixture").build());
+
+        var login = mvc.perform(post("/login").with(csrf()).accept("application/json")
+                        .param("username", player.getEmail()).param("password", "owner-password"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.session.userType").value("OWNER"))
+                .andExpect(jsonPath("$.session.id").value(owner.getId())).andReturn();
+        var security = (SecurityContext) login.getRequest().getSession(false).getAttribute(
+                HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
+        assertThat(security.getAuthentication().getAuthorities()).extracting(GrantedAuthority::getAuthority)
+                .contains("ROLE_ORGANIZER");
+        mvc.perform(post("/login").with(csrf()).accept("application/json")
+                        .param("username", player.getEmail()).param("password", "secret-password"))
+                .andExpect(status().isUnauthorized());
+
+        owner.setIsActive(false);
+        owners.saveAndFlush(owner);
+        mvc.perform(post("/login").with(csrf()).accept("application/json")
+                        .param("username", player.getEmail()).param("password", "secret-password"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.session.userType").value("PLAYER"))
+                .andExpect(jsonPath("$.session.id").value(player.getId()));
+    }
+
     @Test void failedLoginAndCsrfAreJsonAndLocalized() throws Exception {
         mvc.perform(post("/login").with(csrf()).accept("application/json").param("lang","ru")
                 .param("username","missing@gmail.com").param("password","wrong"))

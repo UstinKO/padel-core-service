@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.telegram;
 
+import com.padle.core.padelcoreservice.support.OwnerFixtures;
 import com.padle.core.padelcoreservice.config.PlayerTelegramProperties;
 import com.padle.core.padelcoreservice.model.*;
 import com.padle.core.persistence.clubs.Club;
@@ -37,7 +38,7 @@ class TelegramMessagePreviewIntegrationTest {
     @Autowired TelegramMessagePreviewService service;
     @Autowired PlayerTelegramStore connections;
     @Autowired PlayerRepository players;
-    @Autowired OwnerRepository owners;
+    @Autowired OwnerFixtures owners;
     @Autowired TournamentRepository events;
     @Autowired ClubRepository clubs;
     @Autowired TournamentRegistrationRepository registrations;

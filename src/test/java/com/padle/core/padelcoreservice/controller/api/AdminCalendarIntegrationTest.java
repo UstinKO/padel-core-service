@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.controller.api;
 
+import com.padle.core.padelcoreservice.support.OwnerFixtures;
 import com.padle.core.persistence.clubs.Club;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.Tournament;
@@ -43,7 +44,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 class AdminCalendarIntegrationTest {
     @Autowired MockMvc mvc;
-    @Autowired OwnerRepository owners;
+    @Autowired OwnerFixtures owners;
     @Autowired ClubRepository clubs;
     @Autowired TournamentRepository tournaments;
     private static final AtomicInteger TEST_IP = new AtomicInteger();

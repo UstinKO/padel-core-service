@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.padelcoreservice.support.OwnerFixtures;
 import com.padle.core.padelcoreservice.dto.SoloRoster.*;
 import com.padle.core.padelcoreservice.dto.PaymentUpdateDto;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -60,7 +61,7 @@ class SoloRosterIntegrationTest {
     @Autowired PlayerRepository players;
     @Autowired PaymentRepository payments;
     @Autowired ClubRepository clubs;
-    @Autowired OwnerRepository owners;
+    @Autowired OwnerFixtures owners;
     @Autowired AmericanoTeamRepository teams;
     @Autowired AmericanoMatchRepository matches;
     @Autowired MatchRepository brackets;

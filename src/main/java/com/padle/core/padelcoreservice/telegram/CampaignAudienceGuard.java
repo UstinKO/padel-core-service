@@ -1,9 +1,12 @@
 package com.padle.core.padelcoreservice.telegram;
 
+import com.padle.core.application.identity.OwnerAccount;
+import com.padle.core.application.identity.OwnerAccounts;
 import com.padle.core.padelcoreservice.config.PlayerTelegramProperties;
 import com.padle.core.padelcoreservice.config.TelegramCampaignProperties;
 import com.padle.core.padelcoreservice.exception.AccountException;
 import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
+import com.padle.core.padelcoreservice.mapper.OwnerPrincipalMapper;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
@@ -21,7 +24,8 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class CampaignAudienceGuard {
-    private final OwnerRepository owners;
+    private final OwnerAccounts owners;
+    private final OwnerPrincipalMapper principals;
     private final PlayerRepository players;
     private final TournamentRepository tournaments;
     private final TournamentRegistrationRepository registrations;
@@ -34,7 +38,7 @@ public class CampaignAudienceGuard {
     private final PlayerTelegramApi api;
 
     public Owner actor(long id) {
-        return owners.findById(id).filter(Owner::isEnabled)
+        return activeOwner(id)
                 .orElseThrow(() -> new AccessDeniedException("Отправитель недоступен"));
     }
     public void scope(Owner actor, Long event) {
@@ -61,7 +65,7 @@ public class CampaignAudienceGuard {
                 .flatMap(player -> store.connection(player.getId()));
     }
     public Optional<String> reason(Header campaign, StoredRecipient recipient) {
-        var actor = owners.findById(campaign.ownerId()).filter(Owner::isEnabled);
+        var actor = activeOwner(campaign.ownerId());
         if (actor.isEmpty()) return Optional.of("ACCESS_CHANGED");
         try { scope(actor.orElseThrow(), campaign.tournamentId()); }
         catch (AccessDeniedException | ResourceNotFoundException exception) {
@@ -90,6 +94,10 @@ public class CampaignAudienceGuard {
         }
         return Optional.empty();
     }
+    private Optional<Owner> activeOwner(long id) {
+        return owners.findById(id).filter(OwnerAccount::isActive).map(principals::toPrincipal);
+    }
+
     private boolean participant(Long event, long player) {
         return registrations.findByTournamentId(event).stream().filter(row -> Boolean.TRUE.equals(row.getIsActive())
                 && !row.isCancelled() && row.getStatus() != RegistrationStatus.PARTICIPATED)

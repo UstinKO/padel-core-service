@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Проверяет владельца клубного JPA и дерева Liquibase в исполняемом JAR."""
+"""Проверяет размещение JPA клубов и учётных записей и дерева Liquibase в исполняемом JAR."""
 import argparse
 import io
 from pathlib import Path
@@ -18,7 +18,8 @@ CLUB_CLASSES = {
 IDENTITY_CLASSES = {
     PERSISTENCE + 'identity/' + name + '.class'
     for name in ('PasswordResetToken', 'PasswordResetTokenRepository', 'JpaPasswordResetTokens',
-                 'PasswordResetTokenMapper', 'PasswordResetTokenMapperImpl')
+                 'PasswordResetTokenMapper', 'PasswordResetTokenMapperImpl',
+                 'OwnerEntity', 'OwnerRepository', 'JpaOwnerAccounts', 'OwnerAccountMapper', 'OwnerAccountMapperImpl')
 }
 REQUIRED = CLUB_CLASSES | IDENTITY_CLASSES | {PERSISTENCE + 'PersistenceConfiguration.class'}
 LEGACY = 'com/padle/core/padelcoreservice/'
@@ -27,11 +28,12 @@ LEGACY_STORAGE = {
     for name in ('model/Club', 'repository/ClubRepository', 'mapper/ClubMapper',
                  'mapper/ClubMapperImpl', 'mapper/ClubReadModelMapper', 'mapper/ClubReadModelMapperImpl',
                  'adapter/clubs/LegacyClubReadAdapter', 'adapter/clubs/LegacyClubAdminAdapter',
-                 'model/PasswordResetToken', 'repository/PasswordResetTokenRepository')
+                 'model/PasswordResetToken', 'repository/PasswordResetTokenRepository', 'repository/OwnerRepository')
 }
+OWNER_PRINCIPAL = CLASSES + LEGACY + 'model/Owner.class'
 FORBIDDEN = (
     LEGACY.encode(), b'com/padle/core/contract/', b'com/padle/core/web/',
-    b'com/padle/core/integrations/', b'org/springframework/web/'
+    b'com/padle/core/integrations/', b'org/springframework/web/', b'org/springframework/security/'
 )
 
 
@@ -84,6 +86,8 @@ def check_archive(path, source):
             raise ValueError('Liquibase должен упаковываться только внутри persistence')
         if contains_storage(names, CLASSES):
             raise ValueError('В bootstrap осталась копия перенесённого JPA')
+        if OWNER_PRINCIPAL not in names or b'Ljakarta/persistence/Entity;' in app.read(OWNER_PRINCIPAL):
+            raise ValueError('Owner в bootstrap должен быть отделённым от JPA principal')
         for nested in libraries:
             with zipfile.ZipFile(io.BytesIO(app.read(nested))) as archive:
                 if nested == persistence[0]:

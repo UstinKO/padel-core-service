@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.telegram;
 
+import com.padle.core.padelcoreservice.support.OwnerFixtures;
 import com.padle.core.padelcoreservice.model.*;
 import com.padle.core.persistence.clubs.Club;
 import com.padle.core.padelcoreservice.config.PlayerTelegramProperties;
@@ -52,7 +53,7 @@ import static org.mockito.Mockito.*;
 })
 class PlayerTelegramBrowserTest {
     @LocalServerPort int port;
-    @Autowired OwnerRepository owners;
+    @Autowired OwnerFixtures owners;
     @Autowired PlayerRepository players;
     @Autowired TournamentRepository tournaments;
     @Autowired TournamentRegistrationRepository registrations;

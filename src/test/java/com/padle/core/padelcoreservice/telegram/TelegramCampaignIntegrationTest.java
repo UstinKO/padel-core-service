@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.telegram;
 
+import com.padle.core.padelcoreservice.support.OwnerFixtures;
 import com.padle.core.padelcoreservice.config.*;
 import com.padle.core.padelcoreservice.exception.AccountException;
 import com.padle.core.padelcoreservice.model.*;
@@ -55,7 +56,7 @@ class TelegramCampaignIntegrationTest {
     @Autowired TelegramCampaignWorker worker;
     @Autowired PlayerTelegramStore connections;
     @Autowired PlayerRepository players;
-    @Autowired OwnerRepository owners;
+    @Autowired OwnerFixtures owners;
     @Autowired TournamentRepository events;
     @Autowired ClubRepository clubs;
     @Autowired TournamentRegistrationRepository registrations;

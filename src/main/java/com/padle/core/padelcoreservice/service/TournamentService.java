@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.application.identity.OwnerAccounts;
 import com.padle.core.application.clubs.ClubDetails;
 import com.padle.core.application.clubs.InternalClubReadPort;
 import com.padle.core.padelcoreservice.service.contact.OrganizerContacts;
@@ -47,7 +48,6 @@ import com.padle.core.padelcoreservice.service.cancellation.RegistrationCancella
 import com.padle.core.padelcoreservice.service.cancellation.CancellationContext;
 import com.padle.core.padelcoreservice.dto.CancellationHistory.*;
 import lombok.RequiredArgsConstructor;
-import com.padle.core.padelcoreservice.repository.OwnerRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
@@ -89,7 +89,7 @@ public class TournamentService {
     private final EmailService emailService;
     private final TournamentAccessService tournamentAccessService;
     private final ClubAccountService clubAccounts;
-    private final OwnerRepository ownerRepository;
+    private final OwnerAccounts ownerAccounts;
 
     // Добавляем репозитории Americano
     private final AmericanoPlayerRepository americanoPlayerRepository;
@@ -930,7 +930,7 @@ public class TournamentService {
     )
     @Transactional
     public TournamentDto createTournament(TournamentDto tournamentDto, Long createdBy) {
-        ownerRepository.findById(createdBy).ifPresent(owner -> {
+        ownerAccounts.findById(createdBy).ifPresent(owner -> {
             clubAccounts.assertCanCreateAt(owner, tournamentDto.getClubId());
             if (owner.isClubAdmin()) {
                 tournamentDto.setEstado(TournamentStatus.REGISTRO_ABIERTO);
