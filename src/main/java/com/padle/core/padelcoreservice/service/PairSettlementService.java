@@ -1,11 +1,13 @@
 package com.padle.core.padelcoreservice.service;
 
-import com.padle.core.padelcoreservice.model.TournamentRegistration;
-import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
-import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
-import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
+import com.padle.core.application.registration.PairSettlements;
+import com.padle.core.application.registration.PairSettlements.Cancellation;
+import com.padle.core.application.registration.PairSettlements.Settlement;
+import com.padle.core.persistence.tournament.TournamentRegistration;
+import com.padle.core.application.registration.RegistrationStatus;
+import com.padle.core.application.tournament.TournamentStatus;
+import com.padle.core.persistence.tournament.TournamentRegistrationRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,13 +21,9 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class PairSettlementService {
-    private final JdbcTemplate jdbc;
+    private final PairSettlements ledger;
     private final PairTermsService terms;
     private final TournamentRegistrationRepository registrations;
-
-    public record Settlement(UUID bookingId, String participants, boolean noShow, String currency,
-                             BigDecimal obligation, BigDecimal paid, BigDecimal due, BigDecimal refund,
-                             UUID replacementBookingId) {}
 
     public record Pair(UUID bookingId, String participants) {}
 
@@ -33,14 +31,7 @@ public class PairSettlementService {
 
     @Transactional(readOnly = true)
     public List<Settlement> settlements(Long tournamentId) {
-        return jdbc.query("""
-                SELECT booking_id, participants, no_show, currency, obligation, already_paid, remaining_due,
-                       refundable, replacement_booking_id
-                FROM pair_cancellations_db WHERE tournament_id = ? ORDER BY cancelled_at DESC
-                """, (row, i) -> new Settlement(row.getObject("booking_id", UUID.class), row.getString("participants"),
-                row.getBoolean("no_show"), row.getString("currency"), row.getBigDecimal("obligation"),
-                row.getBigDecimal("already_paid"), row.getBigDecimal("remaining_due"), row.getBigDecimal("refundable"),
-                row.getObject("replacement_booking_id", UUID.class)), tournamentId);
+        return ledger.forTournament(tournamentId);
     }
 
     @Transactional(readOnly = true)
@@ -80,10 +71,7 @@ public class PairSettlementService {
             member.setPairBookingId(bookingId);
             member.setPairBookedBy(playerId);
         });
-        jdbc.update("""
-                INSERT INTO pair_booker_reviews_db (booking_id, tournament_id, player_id, reviewed_by, reviewed_at)
-                VALUES (?, ?, ?, ?, ?)
-                """, bookingId, tournamentId, playerId, ownerId, PairTermsService.now());
+        ledger.recordBookerReview(bookingId, tournamentId, playerId, ownerId, PairTermsService.now());
     }
 
     private boolean unverifiedPairMember(TournamentRegistration row) {
@@ -113,13 +101,9 @@ public class PairSettlementService {
         var quote = PairCancellationPolicy.quoteFromTerms(row.getPairTermsFreeUntil(),
                 PairTermsService.now().isAfter(row.getPairTermsFreeUntil()) ? PairTermsService.now() : row.getPairTermsFreeUntil().plusSeconds(1),
                 row.getPairTermsPricePerPlayer(), row.getPairTermsLateFraction(), terms.amountPaid(bookingId, currency), false);
-        jdbc.update("""
-                INSERT INTO pair_cancellations_db
-                    (booking_id, tournament_id, cancelled_by, cancelled_at, terms_version, currency,
-                     obligation, already_paid, remaining_due, refundable, participants, no_show)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)
-                """, bookingId, tournamentId, ownerId, PairTermsService.now(), row.getPairTermsVersion(), currency,
-                quote.obligation(), quote.alreadyPaid(), quote.remainingDue(), quote.refundable(), names(group));
+        ledger.recordCancellation(new Cancellation(bookingId, tournamentId, ownerId, PairTermsService.now(),
+                row.getPairTermsVersion(), currency, quote.obligation(), quote.alreadyPaid(), quote.remainingDue(),
+                quote.refundable(), names(group), true));
     }
 
     @Transactional
@@ -142,11 +126,7 @@ public class PairSettlementService {
             throw new IllegalStateException("PAIR_REPLACEMENT_NOT_PAID");
         }
         BigDecimal originalPaid = terms.amountPaid(bookingId, settlement.currency());
-        jdbc.update("""
-                UPDATE pair_cancellations_db SET replacement_booking_id = ?, replacement_confirmed_by = ?,
-                    replacement_confirmed_at = ?, obligation = 0, remaining_due = 0, refundable = ?, already_paid = ?
-                WHERE booking_id = ? AND tournament_id = ?
-                """, replacementId, ownerId, PairTermsService.now(), originalPaid, originalPaid, bookingId, tournamentId);
+        ledger.recordReplacement(bookingId, tournamentId, replacementId, ownerId, PairTermsService.now(), originalPaid);
     }
 
     private Map<UUID, List<TournamentRegistration>> groups(Long tournamentId) {

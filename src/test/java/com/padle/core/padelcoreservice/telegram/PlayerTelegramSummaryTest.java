@@ -3,7 +3,7 @@ package com.padle.core.padelcoreservice.telegram;
 import com.padle.core.padelcoreservice.config.PlayerTelegramProperties;
 import com.padle.core.application.identity.OwnerAccounts;
 import com.padle.core.padelcoreservice.mapper.OwnerPrincipalMapper;
-import com.padle.core.padelcoreservice.repository.TournamentRepository;
+import com.padle.core.persistence.tournament.TournamentRepository;
 import com.padle.core.padelcoreservice.service.TelegramParticipationCoordinator;
 import com.padle.core.padelcoreservice.telegram.TelegramModels.ContactPreference;
 import com.padle.core.padelcoreservice.telegram.TelegramModels.Recipient;

@@ -445,21 +445,20 @@ service/
 └── (security) JwtService, CompositeUserDetailsService, CustomOAuth2UserService
 
 model/
-├── PlayerPadel, Owner, Tournament, TournamentRegistration
-├── Match, Ranking, Payment
+├── Owner и формат чтения старых сессий PlayerPadel
+├── Match, Ranking
 ├── TournamentKingOfCourt, KingOfCourtRound, KingOfCourtCourt,
 │   KingOfCourtPlayerStats, KingOfCourtMatchResult, CourtTeam
 ├── americano/ → AmericanoRound, AmericanoMatch, AmericanoPlayer, AmericanoTeam
-└── enums/ → TournamentType, RegistrationStatus, TournamentStatus,
-             Modalidad, Nivel, MatchStatus, PaymentStatus, OwnerRole, …
+└── enums/ → MatchStatus, OwnerRole, …
 
 repository/
-├── TournamentRepository, TournamentRegistrationRepository
-├── PlayerRepository, OwnerRepository, ClubRepository
-├── MatchRepository, RankingRepository, PaymentRepository
+├── MatchRepository, RankingRepository
 ├── TournamentKingOfCourtRepository, KingOfCourtRound/Court/PlayerStats/MatchResultRepository
 └── americano/ → AmericanoRound/Match/Player/TeamRepository
 ```
+
+`padel-persistence` содержит хранилища клубов, учётных записей, турнира, регистраций и оплат. Запросы и журналы отмен, расчёты пар и outbox используют порты `padel-application`. Там же находятся перечисления турниров, регистраций и оплат. [Границы хранения регистраций](../docs/modular-monolith/phase-6/registration-payment-storage.md)
 
 ### Database Tables
 

@@ -1,21 +1,21 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.application.registration.PairSettlements;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
-import com.padle.core.padelcoreservice.model.Tournament;
-import com.padle.core.padelcoreservice.model.TournamentRegistration;
-import com.padle.core.padelcoreservice.model.enums.Modalidad;
-import com.padle.core.padelcoreservice.model.enums.PaymentStatus;
-import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
-import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
-import com.padle.core.padelcoreservice.model.enums.TournamentType;
-import com.padle.core.padelcoreservice.repository.PaymentRepository;
-import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
-import com.padle.core.padelcoreservice.repository.TournamentRepository;
+import com.padle.core.persistence.tournament.Tournament;
+import com.padle.core.persistence.tournament.TournamentRegistration;
+import com.padle.core.application.tournament.Modalidad;
+import com.padle.core.application.registration.PaymentStatus;
+import com.padle.core.application.registration.RegistrationStatus;
+import com.padle.core.application.tournament.TournamentStatus;
+import com.padle.core.application.tournament.TournamentType;
+import com.padle.core.persistence.tournament.PaymentRepository;
+import com.padle.core.persistence.tournament.TournamentRegistrationRepository;
+import com.padle.core.persistence.tournament.TournamentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -38,7 +38,7 @@ public class PairTermsService {
     private final TournamentRepository tournaments;
     private final TournamentRegistrationRepository registrations;
     private final PaymentRepository payments;
-    private final JdbcTemplate jdbc;
+    private final PairSettlements ledger;
     private final TournamentNotificationService notifications;
 
     @Value("${app.pair-terms.enabled:false}")
@@ -195,14 +195,10 @@ public class PairTermsService {
     }
 
     void saveCancellation(TournamentRegistration row, Long playerId, Cancellation quote) {
-        jdbc.update("""
-                INSERT INTO pair_cancellations_db
-                    (booking_id, tournament_id, cancelled_by, cancelled_at, terms_version, currency,
-                     obligation, already_paid, remaining_due, refundable, participants)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, row.getPairBookingId(), row.getTournament().getId(), playerId, now(),
-                row.getPairTermsVersion(), quote.currency(), quote.obligation(), quote.alreadyPaid(),
-                quote.remainingDue(), quote.refundable(), PairSettlementService.names(members(row)));
+        ledger.recordCancellation(new PairSettlements.Cancellation(row.getPairBookingId(),
+                row.getTournament().getId(), playerId, now(), row.getPairTermsVersion(), quote.currency(),
+                quote.obligation(), quote.alreadyPaid(), quote.remainingDue(), quote.refundable(),
+                PairSettlementService.names(members(row)), false));
     }
 
     List<TournamentRegistration> members(TournamentRegistration row) {

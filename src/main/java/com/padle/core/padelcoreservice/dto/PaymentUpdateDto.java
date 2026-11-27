@@ -1,7 +1,7 @@
 package com.padle.core.padelcoreservice.dto;
 
-import com.padle.core.padelcoreservice.model.enums.PaymentMethod;
-import com.padle.core.padelcoreservice.model.enums.PaymentStatus;
+import com.padle.core.application.registration.PaymentMethod;
+import com.padle.core.application.registration.PaymentStatus;
 import lombok.Data;
 
 import java.math.BigDecimal;

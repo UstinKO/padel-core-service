@@ -4,7 +4,7 @@ import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.dto.calendar.OrganizerOrganization;
 import com.padle.core.padelcoreservice.dto.calendar.PublicCalendarFeed.Event;
 import com.padle.core.padelcoreservice.dto.calendar.PublicCalendarFeed.Participation;
-import com.padle.core.padelcoreservice.model.TournamentRegistration;
+import com.padle.core.persistence.tournament.TournamentRegistration;
 import com.padle.core.padelcoreservice.model.enums.EventFormat;
 import com.padle.core.padelcoreservice.service.calendar.EventSchedule;
 import com.padle.core.padelcoreservice.service.calendar.PublicRegistrationAvailability;

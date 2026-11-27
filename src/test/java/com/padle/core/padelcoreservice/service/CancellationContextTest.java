@@ -1,7 +1,7 @@
 package com.padle.core.padelcoreservice.service;
 
-import com.padle.core.padelcoreservice.dto.CancellationHistory.ActorKind;
-import com.padle.core.padelcoreservice.dto.CancellationHistory.Scope;
+import com.padle.core.application.registration.CancellationHistory.ActorKind;
+import com.padle.core.application.registration.CancellationHistory.Scope;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.enums.OwnerRole;
 import com.padle.core.padelcoreservice.service.cancellation.CancellationContext;

@@ -3,8 +3,8 @@ package com.padle.core.padelcoreservice.service;
 import com.padle.core.padelcoreservice.dto.CurrencyPaymentBreakdownDto;
 import com.padle.core.padelcoreservice.dto.PaymentManagementViewDto;
 import com.padle.core.padelcoreservice.dto.PaymentMethodAmountDto;
-import com.padle.core.padelcoreservice.model.enums.PaymentMethod;
-import com.padle.core.padelcoreservice.model.enums.PaymentStatus;
+import com.padle.core.application.registration.PaymentMethod;
+import com.padle.core.application.registration.PaymentStatus;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
