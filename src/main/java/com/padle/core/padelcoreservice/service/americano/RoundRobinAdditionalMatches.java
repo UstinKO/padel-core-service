@@ -2,10 +2,11 @@ package com.padle.core.padelcoreservice.service.americano;
 
 import com.padle.core.padelcoreservice.dto.americano.*;
 import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
-import com.padle.core.padelcoreservice.model.Tournament;
+import com.padle.core.persistence.tournament.Tournament;
 import com.padle.core.padelcoreservice.model.americano.*;
 import com.padle.core.padelcoreservice.model.enums.*;
-import com.padle.core.padelcoreservice.repository.TournamentRepository;
+import com.padle.core.application.tournament.TournamentStatus;
+import com.padle.core.persistence.tournament.TournamentRepository;
 import com.padle.core.padelcoreservice.repository.americano.*;
 import com.padle.core.padelcoreservice.service.conduct.ConductChange;
 import lombok.RequiredArgsConstructor;

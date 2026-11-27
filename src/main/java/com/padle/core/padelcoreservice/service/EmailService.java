@@ -7,7 +7,7 @@ import com.padle.core.padelcoreservice.annotation.MetricTag;
 import com.padle.core.padelcoreservice.annotation.Timed;
 import com.padle.core.padelcoreservice.annotation.TrackErrors;
 import com.padle.core.padelcoreservice.metrics.EmailMetricsService;
-import com.padle.core.padelcoreservice.model.enums.TournamentType;
+import com.padle.core.application.tournament.TournamentType;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;

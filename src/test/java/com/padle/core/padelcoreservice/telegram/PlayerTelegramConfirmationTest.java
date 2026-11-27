@@ -6,7 +6,7 @@ import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.model.enums.ParticipationStatus;
 import com.padle.core.padelcoreservice.repository.ParticipationRequestRepository;
 import com.padle.core.persistence.identity.PlayerRepository;
-import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
+import com.padle.core.persistence.tournament.TournamentRegistrationRepository;
 import com.padle.core.padelcoreservice.service.TournamentParticipationService;
 import com.padle.core.padelcoreservice.telegram.TelegramModels.*;
 import org.junit.jupiter.api.BeforeEach;

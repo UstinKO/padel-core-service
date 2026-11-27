@@ -1,9 +1,9 @@
 package com.padle.core.padelcoreservice.service.cancellation;
 
-import com.padle.core.padelcoreservice.dto.CancellationHistory.ActorKind;
-import com.padle.core.padelcoreservice.dto.CancellationHistory.Channel;
-import com.padle.core.padelcoreservice.dto.CancellationHistory.Reason;
-import com.padle.core.padelcoreservice.dto.CancellationHistory.Scope;
+import com.padle.core.application.registration.CancellationHistory.ActorKind;
+import com.padle.core.application.registration.CancellationHistory.Channel;
+import com.padle.core.application.registration.CancellationHistory.Reason;
+import com.padle.core.application.registration.CancellationHistory.Scope;
 import com.padle.core.padelcoreservice.model.Owner;
 
 public record CancellationContext(ActorKind initiator, Long actorId, Scope scope, Reason reason,

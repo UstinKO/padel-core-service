@@ -1,4 +1,4 @@
-package com.padle.core.padelcoreservice.model.enums;
+package com.padle.core.application.tournament;
 
 public enum TournamentType {
     KING_OF_COURT("Rey de Cancha"),

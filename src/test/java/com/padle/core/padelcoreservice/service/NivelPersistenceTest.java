@@ -1,14 +1,14 @@
 package com.padle.core.padelcoreservice.service;
 
 import com.padle.core.persistence.clubs.Club;
-import com.padle.core.padelcoreservice.model.Tournament;
+import com.padle.core.persistence.tournament.Tournament;
 import com.padle.core.application.tournament.GenderFormat;
-import com.padle.core.padelcoreservice.model.enums.Modalidad;
+import com.padle.core.application.tournament.Modalidad;
 import com.padle.core.application.tournament.Nivel;
-import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
-import com.padle.core.padelcoreservice.model.enums.TournamentType;
+import com.padle.core.application.tournament.TournamentStatus;
+import com.padle.core.application.tournament.TournamentType;
 import com.padle.core.persistence.clubs.ClubRepository;
-import com.padle.core.padelcoreservice.repository.TournamentRepository;
+import com.padle.core.persistence.tournament.TournamentRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;

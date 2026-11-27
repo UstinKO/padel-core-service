@@ -4,7 +4,7 @@ import com.padle.core.padelcoreservice.dto.PlayerResponseDto;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.preview.PreviewEloRanking;
 import com.padle.core.padelcoreservice.rating.PilotEloRanking;
-import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
+import com.padle.core.persistence.tournament.TournamentRegistrationRepository;
 import com.padle.core.padelcoreservice.service.PlayerService;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import org.junit.jupiter.api.Test;

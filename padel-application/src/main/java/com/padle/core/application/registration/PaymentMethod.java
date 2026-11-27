@@ -1,8 +1,5 @@
-package com.padle.core.padelcoreservice.model.enums;
+package com.padle.core.application.registration;
 
-import lombok.Getter;
-
-@Getter
 public enum PaymentMethod {
     // Офлайн методы
     CASH("Efectivo", "Наличные"),
@@ -21,5 +18,13 @@ public enum PaymentMethod {
     PaymentMethod(String displayName, String description) {
         this.displayName = displayName;
         this.description = description;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public String getDescription() {
+        return description;
     }
 }

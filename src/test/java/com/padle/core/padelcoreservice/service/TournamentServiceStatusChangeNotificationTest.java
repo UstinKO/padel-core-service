@@ -3,18 +3,18 @@ package com.padle.core.padelcoreservice.service;
 import com.padle.core.application.clubs.InternalClubReadPort;
 import com.padle.core.persistence.clubs.Club;
 import com.padle.core.persistence.identity.PlayerPadel;
-import com.padle.core.padelcoreservice.model.Tournament;
-import com.padle.core.padelcoreservice.model.TournamentRegistration;
-import com.padle.core.padelcoreservice.model.enums.Modalidad;
-import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
-import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
-import com.padle.core.padelcoreservice.model.enums.TournamentType;
+import com.padle.core.persistence.tournament.Tournament;
+import com.padle.core.persistence.tournament.TournamentRegistration;
+import com.padle.core.application.tournament.Modalidad;
+import com.padle.core.application.registration.RegistrationStatus;
+import com.padle.core.application.tournament.TournamentStatus;
+import com.padle.core.application.tournament.TournamentType;
 import com.padle.core.persistence.clubs.ClubRepository;
-import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
-import com.padle.core.padelcoreservice.repository.TournamentRepository;
+import com.padle.core.persistence.tournament.TournamentRegistrationRepository;
+import com.padle.core.persistence.tournament.TournamentRepository;
 import org.junit.jupiter.api.Test;
 import com.padle.core.padelcoreservice.service.cancellation.RegistrationCancellationService;
-import com.padle.core.padelcoreservice.repository.CancellationHistoryRepository;
+import com.padle.core.application.registration.RegistrationCancellationHistory;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -53,7 +53,7 @@ class TournamentServiceStatusChangeNotificationTest {
 
     private void initService() {
         service = new TournamentService(
-                new RegistrationCancellationService(mock(CancellationHistoryRepository.class),null,null,null,null),
+                new RegistrationCancellationService(mock(RegistrationCancellationHistory.class),null,null,null,null),
                 tournamentRepository, registrationRepository, null, null,
                 clubReads, null, null, emailService, null, null, null,
                 null, null, null, null, null, new PairTermsService(tournamentRepository, registrationRepository, null, null, null),

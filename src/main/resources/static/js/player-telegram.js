@@ -39,7 +39,9 @@
         const whatsapp = profile.querySelector('[data-tg-whatsapp]');
         const refreshButton = profile.querySelector('[data-tg-refresh]');
         const render = state => {
-            profile.hidden = state.eligible !== true;
+            profile.hidden = state.eligible !== true || (profile.hasAttribute('data-tg-prompt') && state.invitationDismissed === true);
+            const invitationChoice = profile.querySelector('[data-tg-invitation-choice]');
+            if (invitationChoice) invitationChoice.hidden = state.invitationDismissed !== true;
             profile.dataset.available = String(state.available);
             connect.hidden = state.connected;
             if (disconnect) disconnect.hidden = !state.connected;
@@ -47,6 +49,8 @@
             if (preference) preference.value = state.preference || 'UNSPECIFIED';
             if (state.connected || state.preference === 'WHATSAPP' || Date.now() >= expiresAt) { open.hidden = true; open.removeAttribute('href'); }
             const usesWhatsapp = state.preference === 'WHATSAPP';
+            const dismiss = profile.querySelector('[data-tg-dismiss]');
+            if (dismiss) dismiss.hidden = state.connected || usesWhatsapp || state.invitationDismissed === true;
             status(profile, text(profile, state.connected ? 'connected' : usesWhatsapp ? 'whatsappSaved' : state.available ? 'disconnected' : 'unavailable'));
             if (whatsapp) whatsapp.hidden = state.connected || usesWhatsapp;
             if (profile.hasAttribute('data-tg-prompt')) {
@@ -77,6 +81,12 @@
             expiresAt = 0;
             await refresh();
         }));
+        profile.querySelector('[data-tg-dismiss]')?.addEventListener('click', () => locked(profile, async () => {
+            render(await request('/api/players/me/telegram/invitation', 'PUT', { dismissed: true }));
+        }));
+        profile.querySelector('[data-tg-restore-invitation]')?.addEventListener('click', () => locked(profile, async () => {
+            render(await request('/api/players/me/telegram/invitation', 'PUT', { dismissed: false }));
+        }));
         const savePreference = value => locked(profile, async () => {
             render(await request('/api/players/me/telegram/preference', 'PUT', { preference: value }));
         });
@@ -86,6 +96,20 @@
         profiles.set(profile, refresh);
         if (initialState) render(initialState); else locked(profile, refresh);
     };
+    const invitation = document.querySelector('[data-tg-invitation-banner]');
+    if (invitation) {
+        const render = state => {
+            invitation.hidden = !state.eligible || !state.available || state.connected
+                || state.preference === 'WHATSAPP' || state.invitationDismissed === true;
+            status(invitation, '');
+        };
+        const refresh = async () => render(await request('/api/players/me/telegram'));
+        invitation.querySelector('[data-tg-dismiss]').addEventListener('click', () => locked(invitation, async () => {
+            render(await request('/api/players/me/telegram/invitation', 'PUT', { dismissed: true }));
+        }));
+        profiles.set(invitation, refresh);
+        locked(invitation, refresh);
+    }
     document.querySelectorAll('[data-tg-profile]').forEach(profile => initProfile(profile));
     document.addEventListener('visibilitychange', () => {
         if (document.hidden) return;
@@ -100,7 +124,7 @@
                 const body = modal.querySelector('.modal-body');
                 const content = body?.firstElementChild;
                 const state = await request('/api/players/me/telegram');
-                if (!body || !state.eligible || !state.available || state.connected || state.preference === 'WHATSAPP') return false;
+                if (!body || !state.eligible || !state.available || state.connected || state.preference === 'WHATSAPP' || state.invitationDismissed) return false;
                 if (!modal.isConnected || !modal.classList.contains('show')) return false;
                 if (body.firstElementChild !== content) return false;
                 if (body.querySelector('[data-tg-prompt]')) return true;

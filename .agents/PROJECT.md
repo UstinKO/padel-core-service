@@ -1,3 +1,7 @@
+Telegram в кабинете: fragments/player-telegram :: invitation и player-telegram.js учитывают серверный invitationDismissed, WhatsApp и связь; возврат предложения в профиле. telegram-connections.html / JS / CSS показывают общий агрегат только SUPER_ADMIN. [Интерфейс и проверки](../docs/player-telegram-interface.md).
+
+Статистика Telegram: PlayerTelegramStore.connectionStatistics → GET /api/admin/telegram/connections (SUPER_ADMIN). Отдельный invitationDismissed сохраняется PUT своего профиля; без отправок и смены канала. [Контракт](../docs/endpoints/player-telegram.md).
+
 Короткий Telegram UI: `telegram-join.html` / `telegram-join.js` используют общий стиль `telegram-connect.css`. Одна HTML-форма сразу открывает бота по 303. `telegram-invitation.js` получает новый site-invitation API, копирует HTTPS `/telegram/join`, не меняет кампанию. `PlayerTelegramJoinBrowserTest` включён в browser CI.
 
 Короткий вход Telegram: `TelegramJoinController`, GET/POST `/telegram/join`, новый `/api/admin/telegram/site-invitation`. GET не выдаёт токен; POST PLAYER+CSRF возвращает 303 на прежний персональный bot Start. До выпуска шаблона показывается безопасная заглушка. Старый вход и API приглашения сохраняются.
@@ -445,21 +449,20 @@ service/
 └── (security) JwtService, CompositeUserDetailsService, CustomOAuth2UserService
 
 model/
-├── PlayerPadel, Owner, Tournament, TournamentRegistration
-├── Match, Ranking, Payment
+├── Owner и формат чтения старых сессий PlayerPadel
+├── Match, Ranking
 ├── TournamentKingOfCourt, KingOfCourtRound, KingOfCourtCourt,
 │   KingOfCourtPlayerStats, KingOfCourtMatchResult, CourtTeam
 ├── americano/ → AmericanoRound, AmericanoMatch, AmericanoPlayer, AmericanoTeam
-└── enums/ → TournamentType, RegistrationStatus, TournamentStatus,
-             Modalidad, Nivel, MatchStatus, PaymentStatus, OwnerRole, …
+└── enums/ → MatchStatus, OwnerRole, …
 
 repository/
-├── TournamentRepository, TournamentRegistrationRepository
-├── PlayerRepository, OwnerRepository, ClubRepository
-├── MatchRepository, RankingRepository, PaymentRepository
+├── MatchRepository, RankingRepository
 ├── TournamentKingOfCourtRepository, KingOfCourtRound/Court/PlayerStats/MatchResultRepository
 └── americano/ → AmericanoRound/Match/Player/TeamRepository
 ```
+
+`padel-persistence` содержит хранилища клубов, учётных записей, турнира, регистраций и оплат. Запросы и журналы отмен, расчёты пар и outbox используют порты `padel-application`. Там же находятся перечисления турниров, регистраций и оплат. [Границы хранения регистраций](../docs/modular-monolith/phase-6/registration-payment-storage.md)
 
 ### Database Tables
 
@@ -730,3 +733,7 @@ Telegram-пилот: `telegram.players.pilot-enabled=true` по умолчани
 ### Помощь у действий парного турнира
 
 `templates/fragments/action-help.html`, `static/js/action-help.js`, `static/css/action-help.css`: короткие RU/ES/EN пояснения у существующих действий, без API/отправки форм. [Контракт и проверка](../docs/organizer-action-help.md).
+
+### Короткая помощь индивидуальных турниров
+
+LFPT-1487: общий action-help используется на этапах King of Court и индивидуального Americano, с отдельными локализованными текстами. Подсказки не меняют серверный допуск, права, оплату или алгоритмы. Спецификация — specs/features/LFPT-1487-individual-action-help.md; сопровождение — docs/organizer-action-help.md.

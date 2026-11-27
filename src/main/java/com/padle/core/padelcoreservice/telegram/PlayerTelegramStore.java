@@ -20,6 +20,45 @@ public class PlayerTelegramStore {
     private final JdbcTemplate jdbc;
     private final PlayerTelegramAccess access;
 
+    public boolean invitationDismissed(long playerId) {
+        return jdbc.query("SELECT telegram_invitation_dismissed FROM player_contact_preferences WHERE player_id=?",
+                (row, index) -> row.getBoolean(1), playerId).stream().findFirst().orElse(false);
+    }
+
+    @Transactional
+    public void invitationDismissed(long playerId, boolean dismissed) {
+        lockConnections();
+        jdbc.update("""
+                INSERT INTO player_contact_preferences(player_id, preference, telegram_invitation_dismissed)
+                VALUES (?, 'UNSPECIFIED', ?)
+                ON CONFLICT (player_id) DO UPDATE
+                SET telegram_invitation_dismissed=EXCLUDED.telegram_invitation_dismissed
+                """, playerId, dismissed);
+    }
+
+    @Transactional(readOnly = true)
+    public ConnectionStatistics connectionStatistics() {
+        return jdbc.queryForObject("""
+                WITH statuses AS (
+                  SELECT CASE
+                    WHEN lower(p.email) LIKE '%@1padel.guest' THEN 'GUEST'
+                    WHEN pref.preference='WHATSAPP' THEN 'WHATSAPP'
+                    WHEN c.enabled AND c.user_id>0 AND c.chat_id=c.user_id THEN 'CONNECTED'
+                    WHEN pref.telegram_invitation_dismissed THEN 'DECLINED'
+                    ELSE 'NOT_CONNECTED' END AS status
+                  FROM player_padel_db p
+                  LEFT JOIN player_contact_preferences pref ON pref.player_id=p.id
+                  LEFT JOIN player_telegram_connections c ON c.player_id=p.id
+                  WHERE p.activo=true
+                )
+                SELECT count(*) FILTER (WHERE status<>'GUEST'),
+                  count(*) FILTER (WHERE status='CONNECTED'), count(*) FILTER (WHERE status='NOT_CONNECTED'),
+                  count(*) FILTER (WHERE status='WHATSAPP'), count(*) FILTER (WHERE status='DECLINED'),
+                  count(*) FILTER (WHERE status='GUEST') FROM statuses
+                """, (row, index) -> new ConnectionStatistics(row.getLong(1), row.getLong(2), row.getLong(3),
+                row.getLong(4), row.getLong(5), row.getLong(6)));
+    }
+
     public ContactPreference preference(long playerId) {
         return jdbc.query("SELECT preference FROM player_contact_preferences WHERE player_id = ?",
                 (r, n) -> ContactPreference.valueOf(r.getString("preference")), playerId)
