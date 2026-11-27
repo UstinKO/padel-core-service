@@ -18,7 +18,7 @@ import re
 import sys
 
 JAVA_ROOTS = ["src/main/java"] + sorted(glob.glob("padel-*/src/main/java"))
-MIGRATIONS = "src/main/resources/db/changelog/versions"
+MIGRATIONS = "padel-persistence/src/main/resources/db/changelog/versions"
 DB_DOC = "docs/database-architecture.md"
 ARCH_DOC = "docs/architecture.md"
 # документы о текущем состоянии кода (планы, ADR и журналы этапов i18n сюда не входят)

@@ -1,6 +1,5 @@
-package com.padle.core.padelcoreservice.repository;
+package com.padle.core.persistence.clubs;
 
-import com.padle.core.padelcoreservice.model.Club;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

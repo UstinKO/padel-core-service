@@ -1,7 +1,7 @@
 package com.padle.core.padelcoreservice.controller.api;
 
 import com.padle.core.padelcoreservice.config.GuestClaimContact;
-import com.padle.core.padelcoreservice.model.Club;
+import com.padle.core.persistence.clubs.Club;
 import com.padle.core.padelcoreservice.model.Match;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.Payment;
@@ -10,6 +10,7 @@ import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.TournamentRegistration;
 import com.padle.core.padelcoreservice.model.enums.*;
 import com.padle.core.padelcoreservice.repository.*;
+import com.padle.core.persistence.clubs.ClubRepository;
 import com.padle.core.padelcoreservice.service.RecaptchaService;
 import com.padle.core.padelcoreservice.service.GuestProfileClaimService;
 import com.padle.core.padelcoreservice.dto.GuestProfileClaimDtos.Approval;

@@ -4,7 +4,8 @@
 > **Версия схемы:** v1.93
 
 Общий вход Telegram: v1.93 добавляет `player_telegram_onboarding`: UUID, уникальный user_id, равный ему chat_id, уникальный SHA-256 token_hash, expires_at, nullable player_id FK, locale и completed. Один запрос на Telegram, срок 10 минут; истёкшие удаляются при выдаче нового. Кандидат фиксируется POST сайта, связь — только callback исходного Telegram. Прежняя транзакционная блокировка связей сериализует завершение, персональные ссылки, /stop и WhatsApp.
-> **Миграции:** Liquibase (YAML), файлы в `src/main/resources/db/changelog/versions/`  
+> **Миграции:** Liquibase (YAML), файлы в `padel-persistence/src/main/resources/db/changelog/versions/`
+>
 > **ddl-auto:** `none` — схема управляется только через Liquibase
 
 ---

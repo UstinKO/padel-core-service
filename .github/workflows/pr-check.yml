@@ -134,6 +134,9 @@ jobs:
       - name: Проверить библиотеку application в конечном jar
         run: python3 .github/bin/check-application-artifact.py
 
+      - name: Проверить persistence и единственное дерево Liquibase
+        run: python3 .github/bin/check-persistence-artifact.py
+
       - name: Проверить контракт и детерминизм генерации
         run: |
           python3 .github/bin/check-contract-artifact.py
