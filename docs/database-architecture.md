@@ -1,7 +1,7 @@
 # Архитектура базы данных — padel-core-service
 
 > **СУБД:** PostgreSQL 15  
-> **Версия схемы:** v1.93
+> **Версия схемы:** v1.94
 
 Общий вход Telegram: v1.93 добавляет `player_telegram_onboarding`: UUID, уникальный user_id, равный ему chat_id, уникальный SHA-256 token_hash, expires_at, nullable player_id FK, locale и completed. Один запрос на Telegram, срок 10 минут; истёкшие удаляются при выдаче нового. Кандидат фиксируется POST сайта, связь — только callback исходного Telegram. Прежняя транзакционная блокировка связей сериализует завершение, персональные ссылки, /stop и WhatsApp.
 > **Миграции:** Liquibase (YAML), файлы в `padel-persistence/src/main/resources/db/changelog/versions/`
@@ -1092,3 +1092,5 @@ player_telegram_connections хранит проверенную связь playe
 `telegram_campaign_recipients`: campaign_id UUID FK на кампанию и player_id BIGINT образуют PK; player_name VARCHAR(255), category VARCHAR(30), groups_text VARCHAR(100) — неизменяемый снимок; chat_id BIGINT и connection_at TIMESTAMPTZ nullable — серверный адрес/поколение; state PENDING/IN_FLIGHT/SENT/FAILED/BLOCKED/UNKNOWN/SKIPPED, reason VARCHAR(40), attempt INTEGER, updated_at TIMESTAMPTZ. Индекс очереди по state/updated_at.
 
 `telegram_campaign_actions`: campaign_id UUID FK и request_id UUID образуют PK, created_at TIMESTAMPTZ. Защита повторного запуска FAILED. Исторические owner_id/tournament_id/player_id без FK сохраняют аудит после удаления исходных записей; текущие права и существование проверяются перед отправкой. Клиент не получает chat_id/connection_at/fingerprint.
+
+Приглашение Telegram: v1.94-telegram-invitation-dismissal добавляет telegram_invitation_dismissed BOOLEAN NOT NULL DEFAULT false в player_contact_preferences. Поле независимо от preference; отказ не отключает связь и не назначает канал.
