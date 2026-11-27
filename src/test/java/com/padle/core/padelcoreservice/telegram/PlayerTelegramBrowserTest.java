@@ -36,7 +36,7 @@ import static org.mockito.Mockito.*;
 @EnabledIfSystemProperty(named = "browser.qa", matches = "true")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
         "server.address=127.0.0.1", "app.scheduling.enabled=false",
-        "spring.datasource.url=jdbc:postgresql://${BROWSER_QA_DB_HOST:localhost}:5432/padel_browser_qa",
+        "spring.datasource.url=jdbc:postgresql://${BROWSER_QA_DB_HOST:localhost}:${BROWSER_QA_DB_PORT:5432}/padel_browser_qa",
         "spring.datasource.username=epadel_user", "spring.datasource.password=test",
         "telegram.enabled=false", "telegram.players.enabled=true",
         "telegram.players.bot-username=OnePadelQaBot", "telegram.players.automatic-enabled=false",

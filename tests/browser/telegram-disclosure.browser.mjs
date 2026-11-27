@@ -25,6 +25,16 @@ const panel = page.locator('[data-tg-admin]');
 const disclosure = panel.locator('details');
 const heading = panel.locator('summary');
 const isOpen = () => disclosure.evaluate(el => el.open);
+// Событие toggle сохраняет выбор отдельной задачей; перед навигацией дожидаемся записи.
+const stored = async () => {
+    const expected = await isOpen();
+    await page.waitForFunction(open => {
+        const panel = document.querySelector('[data-tg-admin]');
+        const details = panel.querySelector('[data-tg-disclosure]');
+        const key = 'telegram-admin-expanded:' + details.dataset.preferenceUserId + ':' + panel.dataset.tournamentId;
+        return details.open === open && localStorage.getItem(key) === String(open);
+    }, expected);
+};
 const ready = () => page.waitForFunction(() => document.querySelector('[data-tg-admin]')?.dataset.busy === 'false');
 const record = name => { checks.push(name); console.log('PASS ' + name); };
 const visit = async (id, language) => {
@@ -83,7 +93,7 @@ try {
             await row.locator('input[name$=".notes"]').fill('QA draft, do not save');
             const draft = await formData();
             const writeCount = writes.length;
-            await heading.click();
+            await heading.click(); await stored();
             assert.equal(await isOpen(), true);
             assert.equal(await panel.locator('.telegram-disclosure-collapse').innerText(), labels[language][1]);
             assert.equal(await panel.locator('[data-tg-summary]').isVisible(), account.role === 'SUPER_ADMIN');
@@ -93,9 +103,9 @@ try {
                     await panel.screenshot({ path: `${output}/disclosure-open-${width}.png` });
                 }
             }
-            await heading.press('Enter');
+            await heading.press('Enter'); await stored();
             assert.equal(await isOpen(), false);
-            await heading.press('Space');
+            await heading.press('Space'); await stored();
             assert.equal(await isOpen(), true);
             assert.deepEqual(await formData(), draft);
             assert.equal(writes.length, writeCount);
@@ -115,7 +125,7 @@ try {
             await panel.locator('[data-tg-request]').click();
             await pending;
             assert.equal(await panel.locator('[data-tg-request]').isDisabled(), true);
-            await heading.click();
+            await heading.click(); await stored();
             assert.equal(await isOpen(), false);
             finish();
             await ready();
@@ -124,29 +134,29 @@ try {
             assert.ok((await panel.locator('[data-tg-status]').textContent()).trim());
             assert.deepEqual(await formData(), draft);
             await page.unroute('**/telegram/confirmations', routeHandler);
-            await heading.click();
+            await heading.click(); await stored();
             const failed = async route => route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
             await page.route('**/telegram/confirmations', failed);
             await panel.locator('[data-tg-request]').click();
             await ready();
-            await heading.click();
+            await heading.click(); await stored();
             assert.equal(await panel.locator('[data-tg-status]').getAttribute('data-error'), 'true');
             assert.equal(await panel.locator('[data-tg-status]').isVisible(), true);
             assert.deepEqual(await formData(), draft);
             await page.unroute('**/telegram/confirmations', failed);
             await page.reload(); await ready();
             assert.equal(await isOpen(), false);
-            await heading.click();
+            await heading.click(); await stored();
             await page.reload(); await ready();
             assert.equal(await isOpen(), true);
             await visit(secondId, language);
             assert.equal(await isOpen(), false);
             await visit(eventId, language);
             assert.equal(await isOpen(), true);
-            await heading.click();
+            await heading.click(); await stored();
             record(`${account.role} / ${language}: сводка, клавиатура, 320/390/1440, черновик, запросы и сохранение состояния`);
         }
-        await heading.click();
+        await heading.click(); await stored();
         if (['ORGANIZER', 'CLUB_ADMIN'].includes(account.role)) {
             const forbidden = await context.request.get(fixture.baseUrl + '/api/admin/tournaments/' + fixture.accounts[0].eventIds[0] + '/telegram');
             assert.equal(forbidden.status(), 403);
