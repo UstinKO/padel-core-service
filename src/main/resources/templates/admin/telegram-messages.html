@@ -18,7 +18,7 @@
         <span th:each="key : ${#strings.arraySplit('loading,error,sessionExpired,sessionExpiredShort,stale,empty,selected,ready,unavailable,AVAILABLE,NOT_CONNECTED,WHATSAPP,GUEST,INACTIVE,OUTSIDE_PILOT,DISABLED,ALL,MAIN,RESERVE,UNPAIRED,PENDING', ',')}"
               th:attr="data-key=${key}" th:text="${#messages.msg('telegram.compose.' + key)}"></span>
     </div>
-    <div hidden data-campaign-strings><span th:each="key : ${#strings.arraySplit('test,send,history,sentMeaning,previous,next,confirmTitle,confirm,cancel,close,details,retry,explanation,confirmHint,queued,uncertain,previewUnavailable,sendDisabled,testUnavailable,confirmSend,confirmRetry,DRAFT,QUEUED,FINISHED,MESSAGE,TEST,PENDING,IN_FLIGHT,SENT,FAILED,BLOCKED,UNKNOWN,SKIPPED,PROVIDER_REJECTED,ACCESS_CHANGED,REGISTRATION_CHANGED,EVENT_UNAVAILABLE,CONNECTION_CHANGED,TEST_UNAVAILABLE,UNCERTAIN,RECOVERED', ',')}" th:attr="data-key=${key}" th:text="${#messages.msg('telegram.campaign.' + key)}"></span></div>
+    <div hidden data-campaign-strings><span th:each="key : ${#strings.arraySplit('test,send,history,sentMeaning,previous,next,confirmTitle,confirm,cancel,close,details,retry,explanation,confirmHint,queued,uncertain,previewUnavailable,sendDisabled,testUnavailable,confirmSend,confirmRetry,DRAFT,QUEUED,FINISHED,MESSAGE,TEST,PENDING,IN_FLIGHT,SENT,FAILED,BLOCKED,UNKNOWN,SKIPPED,PROVIDER_REJECTED,ACCESS_CHANGED,REGISTRATION_CHANGED,EVENT_UNAVAILABLE,CONNECTION_CHANGED,TEST_UNAVAILABLE,UNCERTAIN,RECOVERED,translations,translationHint,sourceLanguage,translating,original,commonText,language_es,language_ru,language_en,language_other,TRANSLATION_MISSING,TELEGRAM_TRANSLATION_REQUIRED,TELEGRAM_TRANSLATION_UNAVAILABLE,TELEGRAM_TRANSLATION_FAILED,TELEGRAM_TRANSLATION_LIMIT', ',')}" th:attr="data-key=${key}" th:text="${#messages.msg('telegram.campaign.' + key)}"></span></div>
     <a th:href="${#strings.isEmpty(audienceTournamentId)} ? @{/admin} : @{/admin/tournaments/{id}/payments(id=${audienceTournamentId})}"
        th:text="#{telegram.compose.back}"></a>
     <h1 th:text="#{telegram.compose.title}"></h1>
@@ -63,10 +63,21 @@
             <label for="tg-message-text" th:text="#{telegram.compose.text}"></label>
             <textarea id="tg-message-text" data-message-text rows="8" maxlength="4096" required></textarea>
             <p><span data-text-length>0</span> / 4096</p>
+            <p class="tg-compose-note" th:text="#{telegram.campaign.translationHint}"></p>
+            <details data-translations hidden>
+                <summary th:text="#{telegram.campaign.translations}"></summary>
+                <p data-source-language></p>
+                <div th:each="language : ${#strings.arraySplit('es,ru,en',',')}">
+                    <label th:for="'tg-translation-' + ${language}" th:text="${#messages.msg('telegram.campaign.language_' + language)}"></label>
+                    <textarea th:id="'tg-translation-' + ${language}" th:attr="data-translation=${language},lang=${language}" rows="5" maxlength="4096"></textarea>
+                    <p><span th:attr="data-translation-length=${language}">0</span> / 4096</p>
+                </div>
+            </details>
             <button type="button" class="btn btn-primary" data-preview disabled th:text="#{telegram.compose.preview}"></button>
             <section data-preview-result hidden tabindex="-1" th:aria-label="#{telegram.compose.result}">
                 <h2 th:text="#{telegram.compose.result}"></h2>
-                <p class="tg-compose-message" data-preview-text></p>
+                <p th:text="#{telegram.campaign.original}"></p><p class="tg-compose-message" data-preview-text></p>
+                <div data-preview-versions></div>
                 <h3 th:text="#{telegram.compose.ready}"></h3><ul data-ready-list></ul>
                 <h3 th:text="#{telegram.compose.unavailable}"></h3><ul data-unavailable-list></ul>
                 <p class="tg-compose-note" th:text="#{telegram.campaign.explanation}"></p>
@@ -90,7 +101,7 @@
     </section>
     <dialog data-send-dialog th:aria-label="#{telegram.campaign.confirmTitle}">
         <h2 th:text="#{telegram.campaign.confirmTitle}"></h2>
-        <p data-confirm-summary></p><p data-confirm-text class="tg-compose-message"></p><ul data-confirm-people></ul>
+        <p data-confirm-summary></p><p data-confirm-text class="tg-compose-message"></p><div data-confirm-versions></div><ul data-confirm-people></ul>
         <p th:text="#{telegram.campaign.confirmHint}"></p>
         <div class="tg-compose-actions">
             <button type="button" class="btn btn-primary" data-confirm-submit th:text="#{telegram.campaign.confirm}"></button>
@@ -100,7 +111,7 @@
     <dialog data-history-dialog th:aria-label="#{telegram.campaign.details}">
         <h2 th:text="#{telegram.campaign.details}"></h2>
         <button type="button" class="btn btn-outline" data-history-close th:text="#{telegram.campaign.close}"></button>
-        <p data-history-meta></p><p data-history-text class="tg-compose-message"></p><ul data-history-people></ul>
+        <p data-history-meta></p><p data-history-text class="tg-compose-message"></p><div data-history-versions></div><ul data-history-people></ul>
         <button type="button" class="btn btn-primary" data-history-retry hidden th:text="#{telegram.campaign.retry}"></button>
     </dialog>
 </main>

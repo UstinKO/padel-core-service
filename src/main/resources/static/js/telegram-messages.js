@@ -12,7 +12,28 @@
     let candidates = [], version = 0, loadVersion = 0, busy = false, loaded = false;
     let prepared = null, prepareKey = crypto.randomUUID(), testKey = crypto.randomUUID(), testQueued = false, sending = false, uncertain = false;
     let historyPage = 0, historyVersion = 0, historyTimer, confirmation = null, historyDetail = null;
-    let sessionRequired = false;
+    let sessionRequired = false, translatedSource = null;
+    const languages = ['es', 'ru', 'en'];
+    const translation = language => root.querySelector(`[data-translation="${language}"]`);
+    const versions = () => Object.fromEntries(languages.map(language => [language, translation(language).value]));
+    const languageName = language => ct('language_' + language);
+    const renderVersions = (key, texts, people, fallback) => {
+        const target = element(key); target.replaceChildren();
+        const messages = new Map();
+        for (const person of people) {
+            if (!languages.includes(person.language)) continue;
+            const text = typeof person.text === 'string' ? person.text : texts?.[person.language] || fallback;
+            const id = JSON.stringify([person.language, text]);
+            const group = messages.get(id) || {language: person.language, text, count: 0};
+            group.count++; messages.set(id, group);
+        }
+        for (const group of messages.values()) {
+            const section = document.createElement('section'); section.dataset.messageLanguage = group.language;
+            const title = document.createElement('h3'); title.textContent = `${languageName(group.language)} · ${group.count}`;
+            const content = document.createElement('p'); content.className = 'tg-compose-message'; content.lang = group.language;
+            content.textContent = group.text; section.append(title, content); target.append(section);
+        }
+    };
     class SessionRequired extends Error {}
     const status = (message, error = false) => {
         element('compose-status').textContent = message;
@@ -26,6 +47,8 @@
         element('send').disabled = true; element('test').disabled = true;
         element('preview-result').hidden = true;
         element('preview-text').textContent = '';
+        element('preview-versions').replaceChildren();
+        for (const language of languages) root.querySelector(`[data-translation-length="${language}"]`).textContent = String(translation(language).value.length);
         element('ready-list').replaceChildren();
         element('unavailable-list').replaceChildren();
         element('text-length').textContent = String(element('message-text').value.length);
@@ -47,7 +70,7 @@
                 else { included.delete(person.playerId); excluded.add(person.playerId); }
                 invalidate(); renderCandidates();
             });
-            const detail = document.createElement('span'); detail.textContent = `${person.name} · ${person.category}`;
+            const detail = document.createElement('span'); detail.textContent = `${person.name} · ${person.category}${person.language ? ' · ' + languageName(person.language) : ''}`;
             const reason = document.createElement('small'); reason.textContent = t(person.availability);
             detail.append(reason); label.append(checkbox, detail); list.append(label);
         }
@@ -76,7 +99,7 @@
         status(t('sessionExpiredShort'), true); element('history-status').textContent = t('sessionExpiredShort');
     };
     const reportError = error => {
-        if (!(error instanceof SessionRequired) && !sessionRequired) status(t('error'), true);
+        if (!(error instanceof SessionRequired) && !sessionRequired) status(Object.hasOwn(campaignStrings, error.code || '') ? ct(error.code) : t('error'), true);
     };
     const request = async (path, body) => {
         const response = await fetch('/api/admin/telegram/messages/' + path, { method: body ? 'POST' : 'GET',
@@ -85,7 +108,11 @@
         if (response.status === 401 || response.redirected) {
             requireSession(); throw new SessionRequired('session-required');
         }
-        if (!response.ok) throw new Error('request-failed');
+        if (!response.ok) {
+            const problem = await response.json().catch(() => ({}));
+            const error = new Error('request-failed'); error.code = typeof problem.code === 'string' ? problem.code : '';
+            throw error;
+        }
         return response.json();
     };
     const load = async () => {
@@ -110,7 +137,7 @@
     const showList = (key, people, reasons) => {
         const list = element(key); list.replaceChildren();
         for (const person of people) {
-            const li = document.createElement('li'); li.textContent = `${person.name} · ${person.category}${reasons ? ' — ' + t(person.availability) : ''}`;
+            const li = document.createElement('li'); li.textContent = `${person.name} · ${person.category}${person.language ? ' · ' + languageName(person.language) : ''}${reasons ? ' — ' + t(person.availability) : ''}`;
             list.append(li);
         }
         if (!people.length) list.textContent = t('empty');
@@ -120,21 +147,40 @@
         busy = true; element('preview').disabled = true;
         const current = version; status(t('loading'));
         try {
-            const result = await request('campaigns', { requestId: prepareKey, selection: { tournamentId, groups: [...groups], categories: [...categories],
-                includedPlayerIds: [...included], excludedPlayerIds: [...excluded], text: element('message-text').value } });
+            const selection = {tournamentId, groups: [...groups], categories: [...categories],
+                includedPlayerIds: [...included], excludedPlayerIds: [...excluded], text: element('message-text').value};
+            if (translatedSource !== selection.text) {
+                status(ct('translating')); element('preview').setAttribute('aria-busy', 'true');
+                const translated = await request('translations', selection);
+                if (current !== version) return;
+                for (const language of languages) {
+                    translation(language).value = translated.texts?.[language] || '';
+                    root.querySelector(`[data-translation-length="${language}"]`).textContent = String(translation(language).value.length);
+                }
+                translatedSource = languages.every(language => translation(language).value.trim()) ? selection.text : null;
+                element('translations').hidden = translatedSource === null;
+                element('source-language').textContent = translatedSource === null ? '' : `${ct('sourceLanguage')}: ${languageName(translated.sourceLanguage)}`;
+            }
+            const result = await request('campaigns', {requestId: prepareKey, selection, texts: versions()});
             if (current !== version) return;
             const refreshed = new Map([...result.recipients, ...result.unavailable].map(person => [person.playerId, person]));
             candidates = candidates.map(person => refreshed.get(person.playerId) || person);
             renderCandidates();
             element('preview-text').textContent = result.text;
+            renderVersions('preview-versions', result.texts, result.recipients, result.text);
             showList('ready-list', result.recipients, false); showList('unavailable-list', result.unavailable, true);
             prepared = result;
             element('preview-result').hidden = false; element('preview-result').focus(); status('');
             updateActions(); refreshHistory();
         } catch (error) { if (current === version) reportError(error); }
-        finally { busy = false; element('preview').disabled = !loaded || sessionRequired || !element('message-text').value.trim(); }
+        finally { busy = false; element('preview').removeAttribute('aria-busy'); element('preview').disabled = !loaded || sessionRequired || !element('message-text').value.trim(); }
     });
-    element('message-text').addEventListener('input', invalidate);
+    element('message-text').addEventListener('input', () => {
+        translatedSource = null; element('translations').hidden = true; element('translations').open = false;
+        for (const language of languages) translation(language).value = '';
+        invalidate();
+    });
+    for (const language of languages) translation(language).addEventListener('input', invalidate);
     element('person-search').addEventListener('input', renderCandidates);
     element('refresh').addEventListener('click', load);
     element('session-refresh').addEventListener('click', async () => { await load(); if (!sessionRequired) refreshHistory(); });
@@ -154,9 +200,10 @@
         historyDetail = campaign;
         element('history-meta').textContent = meta(campaign); element('history-text').textContent = campaign.text;
         element('history-people').replaceChildren();
+        renderVersions('history-versions', campaign.texts, campaign.recipients, campaign.text);
         for (const person of campaign.recipients) {
             const li = document.createElement('li');
-            li.textContent = `${person.name} — ${ct(person.state)}${person.reason !== person.state ? ' · ' + ct(person.reason) : ''}`;
+            li.textContent = `${person.name}${person.language ? ' · ' + languageName(person.language) : ''} — ${ct(person.state)}${person.reason !== person.state ? ' · ' + ct(person.reason) : ''}`;
             element('history-people').append(li);
         }
         element('history-retry').hidden = !campaign.canRetry || uncertain || sessionRequired;
@@ -195,7 +242,8 @@
         const people = campaign.recipients.filter(p => p.state === (kind === 'retry' ? 'FAILED' : 'PENDING'));
         element('confirm-summary').textContent = `${ct(kind === 'retry' ? 'confirmRetry' : 'confirmSend')}: ${people.length}`;
         element('confirm-text').textContent = campaign.text; element('confirm-people').replaceChildren();
-        for (const person of people) { const li = document.createElement('li'); li.textContent = person.name; element('confirm-people').append(li); }
+        renderVersions('confirm-versions', campaign.texts, people, campaign.text);
+        for (const person of people) { const li = document.createElement('li'); li.textContent = `${person.name}${person.language ? ' · ' + languageName(person.language) : ''}`; element('confirm-people').append(li); }
         element('confirm-submit').disabled = people.length === 0 || sending || uncertain || sessionRequired; element('send-dialog').showModal();
     };
     element('send').addEventListener('click', async () => {
