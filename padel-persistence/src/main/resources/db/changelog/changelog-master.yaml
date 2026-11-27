@@ -289,3 +289,7 @@ databaseChangeLog:
   - include:
       file: versions/v1.94-telegram-invitation-dismissal.yaml
       relativeToChangelogFile: true
+
+  - include:
+      file: versions/v1.95-tournament-result-exports.yaml
+      relativeToChangelogFile: true

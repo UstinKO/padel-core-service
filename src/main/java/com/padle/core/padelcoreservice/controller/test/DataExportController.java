@@ -21,7 +21,7 @@ import java.util.*;
 @Controller
 @RequestMapping("/admin/export")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('SUPER_ADMIN') or hasRole('OWNER')")
+@PreAuthorize("hasRole('SUPER_ADMIN')")
 public class DataExportController {
 
     private final JdbcTemplate jdbcTemplate;
