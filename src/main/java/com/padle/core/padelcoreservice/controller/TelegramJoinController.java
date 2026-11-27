@@ -36,7 +36,7 @@ public class TelegramJoinController {
     @ModelAttribute
     public void privateResponse(HttpServletResponse response) {
         response.setHeader("Cache-Control", "no-store");
-        response.setHeader("Referrer-Policy", "no-referrer");
+        response.setHeader("Referrer-Policy", "same-origin");
     }
 
     @GetMapping(PATH)

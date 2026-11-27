@@ -10,7 +10,7 @@
 | POST | `/telegram/join` | PLAYER, CSRF | 303 на персональную ссылку t.me; при отказе 303 назад без автоматического повтора |
 | GET | `/api/admin/telegram/site-invitation` | SUPER_ADMIN/ORGANIZER/OWNER/CLUB_ADMIN/ADMIN | available, url=`app.base-url` + `/telegram/join`, без секретов |
 
-Используется прежний `TELEGRAM_PLAYERS_ONBOARDING_ENABLED` и запрет общего пилота. Новых флагов и миграций нет. Backend выпускается раньше UI: без шаблона `telegram-join.html` доступна локализованная заглушка; редактор начинает выдавать новый адрес только после frontend-релиза. Старый API `/api/admin/telegram/invitation` по-прежнему отдаёт общую ссылку бота. Ответы no-store/no-referrer, токен появляется только после явного POST; в общей странице и login-параметрах его нет. Существующие Cloudflare-настройки и независимый пилот чеков не меняются.
+Используется прежний `TELEGRAM_PLAYERS_ONBOARDING_ENABLED` и запрет общего пилота. Новых флагов и миграций нет. Backend выпускается раньше UI: без шаблона `telegram-join.html` доступна локализованная заглушка; редактор начинает выдавать новый адрес только после frontend-релиза. Старый API `/api/admin/telegram/invitation` по-прежнему отдаёт общую ссылку бота. Ответы no-store, Referrer-Policy same-origin допускает нативный POST формы и скрывает Referer от внешних сайтов; токен появляется только после явного POST; в общей странице и login-параметрах его нет. Существующие Cloudflare-настройки и независимый пилот чеков не меняются.
 
 ## Общая ссылка подключения из бота
 

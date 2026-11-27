@@ -86,7 +86,7 @@ class PlayerTelegramOnboardingIntegrationTest {
         mvc.perform(get("/telegram/join")).andExpect(status().isFound())
                 .andExpect(redirectedUrl("/login?destination=%2Ftelegram%2Fjoin"))
                 .andExpect(header().string("Cache-Control","no-store"))
-                .andExpect(header().string("Referrer-Policy","no-referrer"));
+                .andExpect(header().string("Referrer-Policy","same-origin"));
         mvc.perform(get("/telegram/join").with(user(player)))
                 .andExpect(status().isOk()).andExpect(model().attribute("join",
                         new com.padle.core.padelcoreservice.controller.TelegramJoinController.Join("READY",player.getNombreCompleto())));
