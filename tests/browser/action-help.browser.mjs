@@ -275,7 +275,8 @@ try {
     assert.equal(new URL(page.url()).pathname,conduct(account.event));
     record('Плей-офф завершён через интерфейс; возврат в управление после финала');
     await go(page,`/admin/tournaments/${fixture.individual}`);
-    assert.equal(await page.locator('[data-action-help]:visible').count(),0,'Нет подсказок Team Playoff в индивидуальном формате');
+    assert.equal(await page.locator('[data-help-topic="start"], [data-help-topic="include"]').count(),0,'Нет подсказок Team Playoff в индивидуальном формате');
+    assert.ok(await page.locator('[data-help-topic="americano-start"]').count());
     assert.deepEqual(s.errors,[]);
     await s.context.close();
     await writeFile(resolve(output,'report.json'),JSON.stringify({ok:true,checks:report},null,2));

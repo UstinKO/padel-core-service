@@ -17,14 +17,14 @@
             <!-- Информация о командах будет вставлена через JS -->
         </div>
 
-        <div id="court-additional-points" class="additional-points-match-actions"></div>
+        <div id="court-additional-points" class="additional-points-match-actions"></div><th:block th:if="${admin}"><button th:replace="~{fragments/action-help :: help('individual-additional')}"></button></th:block>
 
         <div class="form-group">
             <label for="manualWinners">
                 <input type="checkbox" id="manualWinners" aria-describedby="manualWinnersHelp">
                 <span th:text="#{koc.admin.modal.manual_winners}">Elegir ganadores manualmente</span>
             </label>
-            <div id="manualWinnersHelp" th:text="#{koc.admin.modal.manual_winners_help}"></div>
+            <div id="manualWinnersHelp" th:text="#{koc.admin.modal.manual_winners_help}"></div><th:block th:if="${admin}"><button th:replace="~{fragments/action-help :: help('koc-winners')}"></button></th:block>
         </div>
 
         <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
@@ -39,7 +39,7 @@
             </div>
 
             <div class="form-group">
-                <label class="form-label" th:text="#{koc.admin.modal.pts_winners}">Puntos ganadores</label>
+                <label class="form-label" th:text="#{koc.admin.modal.pts_winners}">Puntos ganadores</label><th:block th:if="${admin}"><button th:replace="~{fragments/action-help :: help('koc-score')}"></button></th:block>
                 <input type="number" id="scoreWinners" class="form-control" min="0" required>
             </div>
 
@@ -114,7 +114,7 @@
 
         <div class="modal-actions" style="margin-top: 2rem;">
             <button th:if="${admin}" type="button" class="btn btn-primary" data-open-points
-                    th:text="#{additional.points.edit_results}">Editar resultados</button>
+                    th:text="#{additional.points.edit_results}">Editar resultados</button><th:block th:if="${admin}"><button th:replace="~{fragments/action-help :: help('individual-additional')}"></button></th:block>
             <button class="btn btn-outline" style="width: 100%;" onclick="window.kingOfCourt.closeFinalModal()" th:text="#{koc.admin.modal.close}">Cerrar</button>
         </div>
     </div>

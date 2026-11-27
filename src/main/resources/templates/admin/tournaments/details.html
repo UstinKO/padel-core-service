@@ -321,7 +321,7 @@
     </style>
 <link rel="stylesheet" th:href="@{/css/round-robin.css}">
 </head>
-<body th:with="pairedHelp=${tournament.tipo != null and (tournament.tipo.name() == 'AMERICANO_TEAMS' or (tournament.tipo.name() == 'AMERICANO' and tournament.modalidad != null and tournament.modalidad.name() == 'DOBLES'))}">
+<body th:with="individualHelp=${tournament.tipo != null and (tournament.tipo.name() == 'KING_OF_COURT' or (tournament.tipo.name() == 'AMERICANO' and tournament.modalidad != null and tournament.modalidad.name() == 'INDIVIDUAL'))}, pairedHelp=${tournament.tipo != null and (tournament.tipo.name() == 'AMERICANO_TEAMS' or (tournament.tipo.name() == 'AMERICANO' and tournament.modalidad != null and tournament.modalidad.name() == 'DOBLES'))}">
 <header th:replace="~{fragments/admin-header :: header(#{admin.tournaments.details.header})}"></header>
 
 <main class="admin-main">
@@ -388,10 +388,10 @@
         <div class="action-buttons-center">
             <a th:if="${kingOfCourtId != null}" class="btn btn-primary"
                th:href="@{/admin/tournaments/king-of-court/{id}(id=${kingOfCourtId})}"
-               th:text="${kingOfCourtActive} ? #{conduct.resume} : #{conduct.review_run}">Continuar torneo</a>
+               th:text="${kingOfCourtActive} ? #{conduct.resume} : #{conduct.review_run}">Continuar torneo</a><th:block th:if="${individualHelp and kingOfCourtId != null}"><button th:replace="~{fragments/action-help :: help('individual-resume')}"></button></th:block>
             <a th:if="${isInitialized == true}" class="btn btn-primary"
                th:href="@{/tournaments/americano/admin/{id}(id=${tournament.id})}"
-               th:text="#{conduct.resume}">Continuar torneo</a>
+               th:text="#{conduct.resume}">Continuar torneo</a><th:block th:if="${individualHelp and isInitialized == true}"><button th:replace="~{fragments/action-help :: help('individual-resume')}"></button></th:block>
             <a th:if="${isTeamAmericanoInitialized == true}" class="btn btn-primary"
                th:href="@{/tournaments/team-americano/admin/{id}(id=${tournament.id})}"
                th:text="#{conduct.resume}">Continuar torneo</a>
@@ -422,7 +422,7 @@
                th:href="@{'/admin/tournaments/' + ${tournament.id} + '/edit'}" class="btn btn-primary">
                 <i class="fas fa-edit"></i>
                 <span th:text="#{admin.tournaments.details.btn.edit}">Editar Torneo</span>
-            </a><th:block th:if="${pairedHelp and !isAdminRole}"><button th:replace="~{fragments/action-help :: help('edit')}"></button></th:block>
+            </a><th:block th:if="${(pairedHelp or individualHelp) and !isAdminRole}"><button th:replace="~{fragments/action-help :: help('edit')}"></button></th:block>
 
             <!-- Кнопки изменения статуса (Publicar — только для владельцев, не ADMIN) -->
             <form th:unless="${isAdminRole}"
@@ -433,7 +433,7 @@
                         th:classappend="${tournament.estado.name() == 'PUBLICADO'} ? 'active' : ''">
                     <i class="fas fa-upload"></i>
                     <span th:text="#{admin.tournaments.details.btn.publish}">Publicar</span>
-                </button>
+                </button><th:block th:if="${individualHelp}"><button th:replace="~{fragments/action-help :: help('individual-registration')}"></button></th:block>
             </form>
 
             <form th:action="@{'/admin/tournaments/' + ${tournament.id} + '/status'}"
@@ -443,7 +443,7 @@
                         th:classappend="${tournament.estado.name() == 'REGISTRO_ABIERTO'} ? 'active' : ''">
                     <i class="fas fa-door-open"></i>
                     <span th:text="#{admin.tournaments.details.btn.open}">Abrir</span>
-                </button>
+                </button><th:block th:if="${individualHelp}"><button th:replace="~{fragments/action-help :: help('individual-registration')}"></button></th:block>
             </form>
 
             <form th:action="@{'/admin/tournaments/' + ${tournament.id} + '/status'}"
@@ -453,7 +453,7 @@
                         th:classappend="${tournament.estado.name() == 'CERRADO'} ? 'active' : ''">
                     <i class="fas fa-door-closed"></i>
                     <span th:text="#{admin.tournaments.details.btn.close}">Cerrar</span>
-                </button>
+                </button><th:block th:if="${individualHelp}"><button th:replace="~{fragments/action-help :: help('individual-registration')}"></button></th:block>
             </form>
 
             <form th:action="@{'/admin/tournaments/' + ${tournament.id} + '/status'}"
@@ -668,7 +668,7 @@
                                class="btn btn-primary btn-block">
                                 <i class="fas fa-money-bill-wave"></i>
                                 <span th:text="#{admin.tournaments.details.sidebar.btn.manage_payments}">Gestionar Pagos</span>
-                            </a>
+                            </a><th:block th:if="${individualHelp}"><button th:replace="~{fragments/action-help :: help('individual-ready')}"></button></th:block>
                         </div>
 
                         <!-- Быстрый список должников -->
@@ -737,7 +737,7 @@
                                 <input type="hidden" name="tournamentId" th:value="${tournament.id}">
 
                                 <div class="form-group">
-                                    <label for="maxCourts" th:text="#{admin.tournaments.details.koc.courts_count}">Número de canchas</label>
+                                    <label for="maxCourts" th:text="#{admin.tournaments.details.koc.courts_count}">Número de canchas</label><button th:replace="~{fragments/action-help :: help('koc-courts')}"></button>
                                     <input type="number" id="maxCourts" name="maxCourts"
                                            class="form-control"
                                            th:value="${(tournament.inscritosActuales + 3) / 4}"
@@ -745,7 +745,7 @@
                                 </div>
 
                                 <div class="form-group">
-                                    <label for="calibrationRounds" th:text="#{admin.tournaments.details.koc.calibration_rounds}">Rondas de calibración</label>
+                                    <label for="calibrationRounds" th:text="#{admin.tournaments.details.koc.calibration_rounds}">Rondas de calibración</label><button th:replace="~{fragments/action-help :: help('koc-calibration')}"></button>
                                     <input type="number" id="calibrationRounds" name="calibrationRounds"
                                            class="form-control" value="3" min="1" max="10" required>
                                 </div>
@@ -766,7 +766,7 @@
                                         th:disabled="${tournament.inscritosActuales < 4}">
                                     <i class="fas fa-play"></i>
                                     <span th:text="#{admin.tournaments.details.koc.start}">Iniciar King of Court</span>
-                                </button>
+                                </button><button th:replace="~{fragments/action-help :: help('koc-start')}"></button>
                             </form>
                         </div>
                     </div>
@@ -909,7 +909,7 @@
                                         <label for="generationMode">
                                             <i class="fas fa-cog"></i>
                                             <span th:text="#{admin.tournaments.details.americano.generation_mode}">Modo de generación</span>
-                                        </label>
+                                        </label><button th:replace="~{fragments/action-help :: help('americano-mode')}"></button>
                                         <select id="generationMode" name="generationMode" class="form-control" required>
                                             <option value="AUTO" selected th:text="#{admin.tournaments.details.teams.option.auto}">Auto (Full si posible, Flex si no)</option>
                                             <option value="FULL"
@@ -930,7 +930,7 @@
                                         <label for="pointsPerMatch">
                                             <i class="fas fa-bullseye"></i>
                                             <span th:text="#{admin.tournaments.details.americano.points_limit}">Límite de puntos por partido</span>
-                                        </label>
+                                        </label><button th:replace="~{fragments/action-help :: help('americano-points')}"></button>
                                         <select id="pointsPerMatch" name="pointsPerMatch" class="form-control" required>
                                             <option value="15" th:text="#{admin.americano.points.15}">15 puntos</option>
                                             <option value="21" th:text="#{admin.americano.points.21}">21 puntos</option>
@@ -948,7 +948,7 @@
                                         <label for="courts">
                                             <i class="fas fa-table-tennis"></i>
                                             <span th:text="#{admin.tournaments.details.americano.courts}">Número de canchas</span>
-                                        </label>
+                                        </label><button th:replace="~{fragments/action-help :: help('americano-setup')}"></button>
                                         <input type="number" id="courts" name="courts"
                                                class="form-control"
                                                th:value="${sugCourts}"
@@ -963,7 +963,7 @@
                                         <label for="totalRounds">
                                             <i class="fas fa-redo-alt"></i>
                                             <span th:text="#{admin.tournaments.details.americano.rounds}">Número de rondas</span>
-                                        </label>
+                                        </label><button th:replace="~{fragments/action-help :: help('americano-setup')}"></button>
                                         <input type="number" id="totalRounds" name="totalRounds"
                                                class="form-control"
                                                th:value="${sugRounds}"
@@ -980,7 +980,7 @@
                                         <label for="rankingType">
                                             <i class="fas fa-trophy"></i>
                                             <span th:text="#{admin.tournaments.details.americano.ranking_criteria}">Criterio de clasificación</span>
-                                        </label>
+                                        </label><button th:replace="~{fragments/action-help :: help('americano-ranking')}"></button>
                                         <select id="rankingType" name="rankingType" class="form-control">
                                             <option value="score" selected th:text="#{admin.tournaments.details.americano.ranking.by_score}">
                                                 Por puntos (puntos → victorias → diferencia → menos derrotas)
@@ -998,14 +998,14 @@
                                                 th:disabled="${tournament.inscritosActuales < 4}">
                                             <i class="fas fa-eye"></i>
                                             <span th:text="#{admin.tournaments.details.americano.btn.preview}">Previsualizar</span>
-                                        </button>
+                                        </button><button th:replace="~{fragments/action-help :: help('americano-preview')}"></button>
                                         <button type="submit" class="btn btn-primary"
                                                 id="btnIniciarTorneo"
                                                 th:disabled="${tournament.inscritosActuales < 4 or tournament.estado.name() != 'CERRADO'}"
                                                 onclick="return confirmAndLock(this)">
                                             <i class="fas fa-play"></i>
                                             <span th:text="#{admin.tournaments.details.americano.btn.start}">Iniciar Torneo</span>
-                                        </button>
+                                        </button><button th:replace="~{fragments/action-help :: help('americano-start')}"></button>
                                     </div>
                                 </form>
 
@@ -1234,7 +1234,7 @@
                 <div class="reg-table-header">
                     <h3>
                         <i class="fas fa-check-circle" style="color:#10b981;"></i>
-                        <span th:text="#{admin.tournaments.details.table.inscriptions}">Inscripciones</span>
+                        <span th:text="#{admin.tournaments.details.table.inscriptions}">Inscripciones</span><th:block th:if="${individualHelp}"><button th:replace="~{fragments/action-help :: help('individual-ready')}"></button></th:block>
                         <span class="reg-badge-count"
                               th:if="${tournament.modalidad.name() == 'DOBLES'}"
                               th:text="${confirmedRegs.size()}"></span>
@@ -1346,7 +1346,7 @@
                                                 onclick="moveToWaitlist(this)"
                                                 th:title="#{admin.tournaments.details.action.move_to_waitlist}">
                                             <i class="fas fa-arrow-down"></i>
-                                        </button><th:block th:if="${pairedHelp}"><button th:replace="~{fragments/action-help :: help('reserve')}"></button></th:block>
+                                        </button><th:block th:if="${pairedHelp}"><button th:replace="~{fragments/action-help :: help('reserve')}"></button></th:block><th:block th:if="${individualHelp}"><button th:replace="~{fragments/action-help :: help('individual-reserve')}"></button></th:block>
                                         <a th:href="@{'/admin/players/' + ${reg.playerId}}"
                                            class="btn-icon"
                                            th:title="#{admin.tournaments.details.action.view_player}">
@@ -1365,7 +1365,7 @@
                 <div class="reg-table-header">
                     <h3>
                         <i class="fas fa-clock" style="color:#f59e0b;"></i>
-                        <span th:text="#{admin.tournaments.details.table.reserve}">Reserva</span><th:block th:if="${pairedHelp}"><button th:replace="~{fragments/action-help :: help('reserve')}"></button></th:block>
+                        <span th:text="#{admin.tournaments.details.table.reserve}">Reserva</span><th:block th:if="${pairedHelp}"><button th:replace="~{fragments/action-help :: help('reserve')}"></button></th:block><th:block th:if="${individualHelp}"><button th:replace="~{fragments/action-help :: help('individual-reserve')}"></button></th:block>
                         <span class="reg-badge-count" style="background:#f59e0b;"
                               th:text="${confirmedRegs.size() - effectiveCupoMax}"></span>
                     </h3>
@@ -1697,7 +1697,7 @@
                                             onclick="moveToMain(this)"
                                             th:title="#{admin.tournaments.details.action.move_to_main}">
                                         <i class="fas fa-arrow-up"></i>
-                                    </button><th:block th:if="${pairedHelp}"><button th:replace="~{fragments/action-help :: help('reserve')}"></button></th:block>
+                                    </button><th:block th:if="${pairedHelp}"><button th:replace="~{fragments/action-help :: help('reserve')}"></button></th:block><th:block th:if="${individualHelp}"><button th:replace="~{fragments/action-help :: help('individual-reserve')}"></button></th:block>
                                     <a th:href="@{'/admin/players/' + ${reg.playerId}}"
                                        class="btn-icon"
                                        th:title="#{admin.tournaments.details.action.view_player}">
