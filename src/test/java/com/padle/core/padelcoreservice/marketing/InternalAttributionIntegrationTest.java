@@ -1,11 +1,13 @@
 package com.padle.core.padelcoreservice.marketing;
 
 import com.padle.core.padelcoreservice.model.*;
+import com.padle.core.persistence.clubs.Club;
 import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import static org.mockito.Mockito.mock;
 import com.padle.core.padelcoreservice.model.enums.*;
 import com.padle.core.padelcoreservice.repository.*;
+import com.padle.core.persistence.clubs.ClubRepository;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;

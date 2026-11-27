@@ -1,4 +1,4 @@
-package com.padle.core.padelcoreservice.model;
+package com.padle.core.persistence.clubs;
 
 import jakarta.persistence.*;
 import lombok.*;
