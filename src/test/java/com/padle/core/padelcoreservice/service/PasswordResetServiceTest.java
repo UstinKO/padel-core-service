@@ -1,22 +1,30 @@
 package com.padle.core.padelcoreservice.service;
 
 import com.padle.core.padelcoreservice.dto.PasswordResetConfirm;
-import com.padle.core.padelcoreservice.model.PasswordResetToken;
+import com.padle.core.persistence.identity.JpaPasswordResetTokens;
+import com.padle.core.persistence.identity.PasswordResetToken;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.enums.Nivel;
-import com.padle.core.padelcoreservice.repository.PasswordResetTokenRepository;
+import com.padle.core.persistence.identity.PasswordResetTokenRepository;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doAnswer;
 
 // Сквозная проверка сценария восстановления пароля — запрос токена,
 // переход по ссылке (валидный/просроченный/использованный токен), смена пароля,
@@ -41,6 +49,8 @@ class PasswordResetServiceTest {
     private PlayerRepository playerRepository;
     @Autowired
     private PasswordEncoder passwordEncoder;
+    @MockitoSpyBean
+    private JpaPasswordResetTokens resetTokens;
     @org.springframework.test.context.bean.override.mockito.MockitoBean
     private EmailService emailService;
 
@@ -66,7 +76,7 @@ class PasswordResetServiceTest {
 
         assertThat(result).isTrue();
         PasswordResetToken token = tokenRepository.findAll().stream()
-                .filter(t -> t.getPlayer().getId().equals(player.getId()))
+                .filter(t -> t.getPlayerId().equals(player.getId()))
                 .findFirst()
                 .orElseThrow();
         assertThat(token.isUsed()).isFalse();
@@ -90,7 +100,7 @@ class PasswordResetServiceTest {
         PlayerPadel player = createPlayer("oldPass123");
         PasswordResetToken expired = tokenRepository.save(PasswordResetToken.builder()
                 .token(UUID.randomUUID().toString())
-                .player(player)
+                .playerId(player.getId())
                 .expiryDate(LocalDateTime.now().minusHours(1))
                 .used(false)
                 .build());
@@ -103,7 +113,7 @@ class PasswordResetServiceTest {
         PlayerPadel player = createPlayer("oldPass123");
         PasswordResetToken used = tokenRepository.save(PasswordResetToken.builder()
                 .token(UUID.randomUUID().toString())
-                .player(player)
+                .playerId(player.getId())
                 .expiryDate(LocalDateTime.now().plusHours(1))
                 .used(true)
                 .build());
@@ -116,7 +126,7 @@ class PasswordResetServiceTest {
         PlayerPadel player = createPlayer("oldPass123");
         passwordResetService.requestPasswordReset(player.getEmail());
         PasswordResetToken token = tokenRepository.findAll().stream()
-                .filter(t -> t.getPlayer().getId().equals(player.getId()))
+                .filter(t -> t.getPlayerId().equals(player.getId()))
                 .findFirst()
                 .orElseThrow();
 
@@ -145,7 +155,7 @@ class PasswordResetServiceTest {
         PlayerPadel player = createPlayer("oldPass123");
         passwordResetService.requestPasswordReset(player.getEmail());
         PasswordResetToken token = tokenRepository.findAll().stream()
-                .filter(t -> t.getPlayer().getId().equals(player.getId()))
+                .filter(t -> t.getPlayerId().equals(player.getId()))
                 .findFirst()
                 .orElseThrow();
 
@@ -165,5 +175,71 @@ class PasswordResetServiceTest {
         assertThat(masked).isNotEqualTo(token);
         assertThat(masked).isEqualTo("***");
         assertThat(masked).doesNotContain("12345678");
+    }
+
+    @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    void failureAfterFlushRollsBackPasswordAndToken() {
+        var player = createPlayer("oldPass123");
+        try {
+            var token = seedToken(player);
+            doAnswer(invocation -> {
+                invocation.callRealMethod();
+                tokenRepository.flush();
+                throw new IllegalStateException("test failure after flush");
+            }).when(resetTokens).markUsed(token.getId());
+
+            assertThatThrownBy(() -> passwordResetService.resetPassword(confirm(token, "newPass456")))
+                    .isInstanceOf(IllegalStateException.class).hasMessage("test failure after flush");
+            assertThat(passwordEncoder.matches("oldPass123",
+                    playerRepository.findById(player.getId()).orElseThrow().getPasswordHash())).isTrue();
+            assertThat(tokenRepository.findById(token.getId()).orElseThrow().isUsed()).isFalse();
+        } finally {
+            tokenRepository.deleteByPlayerId(player.getId());
+            playerRepository.deleteById(player.getId());
+        }
+    }
+
+    @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    void concurrentConfirmationConsumesTokenOnce() throws Exception {
+        var player = createPlayer("oldPass123");
+        var executor = Executors.newFixedThreadPool(2);
+        try {
+            var token = seedToken(player);
+            var start = new CountDownLatch(1);
+            var first = executor.submit(() -> {
+                start.await();
+                return passwordResetService.resetPassword(confirm(token, "firstPass456"));
+            });
+            var second = executor.submit(() -> {
+                start.await();
+                return passwordResetService.resetPassword(confirm(token, "secondPass789"));
+            });
+            start.countDown();
+            boolean firstUsed = first.get(15, TimeUnit.SECONDS);
+            boolean secondUsed = second.get(15, TimeUnit.SECONDS);
+            assertThat(firstUsed).isNotEqualTo(secondUsed);
+            assertThat(tokenRepository.findById(token.getId()).orElseThrow().isUsed()).isTrue();
+            assertThat(passwordEncoder.matches(firstUsed ? "firstPass456" : "secondPass789",
+                    playerRepository.findById(player.getId()).orElseThrow().getPasswordHash())).isTrue();
+        } finally {
+            executor.shutdownNow();
+            tokenRepository.deleteByPlayerId(player.getId());
+            playerRepository.deleteById(player.getId());
+        }
+    }
+
+    private PasswordResetToken seedToken(PlayerPadel player) {
+        return tokenRepository.save(PasswordResetToken.builder().playerId(player.getId())
+                .token(UUID.randomUUID().toString()).expiryDate(LocalDateTime.now().plusHours(1)).build());
+    }
+
+    private PasswordResetConfirm confirm(PasswordResetToken token, String password) {
+        var request = new PasswordResetConfirm();
+        request.setToken(token.getToken());
+        request.setNewPassword(password);
+        request.setConfirmPassword(password);
+        return request;
     }
 }

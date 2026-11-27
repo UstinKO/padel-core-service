@@ -1,9 +1,9 @@
 package com.padle.core.padelcoreservice.controller.player;
 
-import com.padle.core.padelcoreservice.model.PasswordResetToken;
+import com.padle.core.persistence.identity.PasswordResetToken;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.enums.Nivel;
-import com.padle.core.padelcoreservice.repository.PasswordResetTokenRepository;
+import com.padle.core.persistence.identity.PasswordResetTokenRepository;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -78,7 +78,7 @@ class PasswordResetControllerTest {
         PlayerPadel player = createPlayer();
         PasswordResetToken expired = tokenRepository.save(PasswordResetToken.builder()
                 .token(UUID.randomUUID().toString())
-                .player(player)
+                .playerId(player.getId())
                 .expiryDate(LocalDateTime.now().minusMinutes(1))
                 .used(false)
                 .build());
@@ -95,7 +95,7 @@ class PasswordResetControllerTest {
         PlayerPadel player = createPlayer();
         PasswordResetToken used = tokenRepository.save(PasswordResetToken.builder()
                 .token(UUID.randomUUID().toString())
-                .player(player)
+                .playerId(player.getId())
                 .expiryDate(LocalDateTime.now().plusHours(1))
                 .used(true)
                 .build());
@@ -112,7 +112,7 @@ class PasswordResetControllerTest {
         PlayerPadel player = createPlayer();
         PasswordResetToken valid = tokenRepository.save(PasswordResetToken.builder()
                 .token(UUID.randomUUID().toString())
-                .player(player)
+                .playerId(player.getId())
                 .expiryDate(LocalDateTime.now().plusHours(1))
                 .used(false)
                 .build());

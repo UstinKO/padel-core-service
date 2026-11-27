@@ -15,13 +15,19 @@ CLUB_CLASSES = {
     for name in ('Club', 'ClubRepository', 'JpaClubReadAdapter', 'JpaClubAdminAdapter',
                  'ClubMapper', 'ClubMapperImpl', 'ClubReadModelMapper', 'ClubReadModelMapperImpl')
 }
-REQUIRED = CLUB_CLASSES | {PERSISTENCE + 'PersistenceConfiguration.class'}
+IDENTITY_CLASSES = {
+    PERSISTENCE + 'identity/' + name + '.class'
+    for name in ('PasswordResetToken', 'PasswordResetTokenRepository', 'JpaPasswordResetTokens',
+                 'PasswordResetTokenMapper', 'PasswordResetTokenMapperImpl')
+}
+REQUIRED = CLUB_CLASSES | IDENTITY_CLASSES | {PERSISTENCE + 'PersistenceConfiguration.class'}
 LEGACY = 'com/padle/core/padelcoreservice/'
-LEGACY_CLUB = {
+LEGACY_STORAGE = {
     LEGACY + name
     for name in ('model/Club', 'repository/ClubRepository', 'mapper/ClubMapper',
                  'mapper/ClubMapperImpl', 'mapper/ClubReadModelMapper', 'mapper/ClubReadModelMapperImpl',
-                 'adapter/clubs/LegacyClubReadAdapter', 'adapter/clubs/LegacyClubAdminAdapter')
+                 'adapter/clubs/LegacyClubReadAdapter', 'adapter/clubs/LegacyClubAdminAdapter',
+                 'model/PasswordResetToken', 'repository/PasswordResetTokenRepository')
 }
 FORBIDDEN = (
     LEGACY.encode(), b'com/padle/core/contract/', b'com/padle/core/web/',
@@ -34,12 +40,12 @@ def changelog_names(archive, prefix=''):
             if name.startswith(prefix + CHANGELOG) and not name.endswith('/')]
 
 
-def contains_club_storage(names, prefix=''):
+def contains_storage(names, prefix=''):
     for name in names:
         if not name.startswith(prefix) or not name.endswith('.class'):
             continue
         path = name.removeprefix(prefix)
-        if path.startswith(PERSISTENCE) or path.removesuffix('.class').split('$')[0] in LEGACY_CLUB:
+        if path.startswith(PERSISTENCE) or path.removesuffix('.class').split('$')[0] in LEGACY_STORAGE:
             return True
     return False
 
@@ -49,7 +55,7 @@ def check_library(library, source):
     if len(names) != len(set(names)) or any(name.startswith('BOOT-INF/') for name in names):
         raise ValueError('Persistence должна быть обычной библиотекой без повторов записей')
     if not REQUIRED.issubset(names):
-        raise ValueError('В persistence отсутствуют клубные JPA-типы или конфигурация')
+        raise ValueError('В persistence отсутствуют перенесённые JPA-типы или конфигурация')
     for name in names:
         if name.endswith('.class'):
             code = library.read(name)
@@ -76,14 +82,14 @@ def check_archive(path, source):
             raise ValueError('Требуется по одной библиотеке padel-persistence и liquibase-core')
         if changelog_names(app, CLASSES) or changelog_names(app):
             raise ValueError('Liquibase должен упаковываться только внутри persistence')
-        if contains_club_storage(names, CLASSES):
-            raise ValueError('В bootstrap осталась копия клубного JPA')
+        if contains_storage(names, CLASSES):
+            raise ValueError('В bootstrap осталась копия перенесённого JPA')
         for nested in libraries:
             with zipfile.ZipFile(io.BytesIO(app.read(nested))) as archive:
                 if nested == persistence[0]:
                     count = check_library(archive, source)
-                elif changelog_names(archive) or contains_club_storage(archive.namelist()):
-                    raise ValueError('Ресурс Liquibase или клубный JPA продублирован: ' + nested)
+                elif changelog_names(archive) or contains_storage(archive.namelist()):
+                    raise ValueError('Ресурс Liquibase или перенесённый JPA продублирован: ' + nested)
         return count
 
 

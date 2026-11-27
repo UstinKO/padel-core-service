@@ -13,6 +13,7 @@ REQUIRED = {PREFIX + 'clubs/' + name + '.class'
                          'ClubProfile', 'ClubProfile$Fields', 'ClubAdminReadPort', 'ClubAdminWritePort',
                          'ClubTournamentUsage']}
 READ_PREFIX = PREFIX + 'roundrobin/'
+REQUIRED.update(PREFIX + 'identity/' + name + '.class' for name in ['PasswordResetTokens', 'PasswordResetTokens$Token'])
 REQUIRED.update(READ_PREFIX + name + '.class' for name in [
     'RoundRobinReadPort', 'RoundRobinRankingQuery', 'RoundRobinRankingComposer', 'RoundRobinNotFound',
     'RoundRobinReadSet', 'RoundRobinReadSet$Event', 'RoundRobinReadSet$Team', 'RoundRobinReadSet$Player',
