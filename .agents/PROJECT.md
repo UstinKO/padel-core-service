@@ -1,3 +1,5 @@
+Короткий Telegram UI: `telegram-join.html` / `telegram-join.js` используют общий стиль `telegram-connect.css`. Одна HTML-форма сразу открывает бота по 303. `telegram-invitation.js` получает новый site-invitation API, копирует HTTPS `/telegram/join`, не меняет кампанию. `PlayerTelegramJoinBrowserTest` включён в browser CI.
+
 Короткий вход Telegram: `TelegramJoinController`, GET/POST `/telegram/join`, новый `/api/admin/telegram/site-invitation`. GET не выдаёт токен; POST PLAYER+CSRF возвращает 303 на прежний персональный bot Start. До выпуска шаблона показывается безопасная заглушка. Старый вход и API приглашения сохраняются.
 
 # PROJECT.md — техническая карта проекта
