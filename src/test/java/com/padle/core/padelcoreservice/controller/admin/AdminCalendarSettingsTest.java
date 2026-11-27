@@ -1,14 +1,14 @@
 package com.padle.core.padelcoreservice.controller.admin;
 
-import com.padle.core.padelcoreservice.model.Club;
+import com.padle.core.persistence.clubs.Club;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.Tournament;
-import com.padle.core.padelcoreservice.model.enums.GenderFormat;
+import com.padle.core.application.tournament.GenderFormat;
 import com.padle.core.padelcoreservice.model.enums.Modalidad;
-import com.padle.core.padelcoreservice.model.enums.Nivel;
+import com.padle.core.application.tournament.Nivel;
 import com.padle.core.padelcoreservice.model.enums.OwnerRole;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
-import com.padle.core.padelcoreservice.repository.ClubRepository;
+import com.padle.core.persistence.clubs.ClubRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;

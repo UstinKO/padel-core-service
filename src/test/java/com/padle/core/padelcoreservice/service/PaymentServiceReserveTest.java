@@ -1,7 +1,7 @@
 package com.padle.core.padelcoreservice.service;
 
 import com.padle.core.padelcoreservice.dto.PaymentManagementViewDto;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.TournamentRegistration;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;

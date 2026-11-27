@@ -1,5 +1,8 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.application.tournament.Nivel;
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.dto.SoloRoster.*;
 import com.padle.core.padelcoreservice.dto.CancellationHistory.Scope;
 import com.padle.core.padelcoreservice.exception.SoloRosterException;

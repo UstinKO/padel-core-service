@@ -9,6 +9,7 @@
     <link rel="stylesheet" th:href="@{/css/telegram-messages.css}">
     <script th:src="@{/js/csrf.js}" defer></script>
     <script th:src="@{/js/telegram-messages.js}" defer></script>
+    <script th:src="@{/js/telegram-invitation.js}" defer></script>
 </head>
 <body>
 <header th:replace="~{fragments/admin-header :: header(#{telegram.compose.title})}"></header>
@@ -21,6 +22,15 @@
     <a th:href="${#strings.isEmpty(audienceTournamentId)} ? @{/admin} : @{/admin/tournaments/{id}/payments(id=${audienceTournamentId})}"
        th:text="#{telegram.compose.back}"></a>
     <h1 th:text="#{telegram.compose.title}"></h1>
+    <section class="tg-compose-panel" data-telegram-invitation hidden
+             th:attr="data-copied=#{telegram.connect.copied},data-manual=#{telegram.connect.manual}">
+        <h2 th:text="#{telegram.connect.inviteTitle}"></h2>
+        <p th:text="#{telegram.connect.inviteHint}"></p>
+        <label for="tg-invitation-url" th:text="#{telegram.connect.inviteLabel}"></label>
+        <input id="tg-invitation-url" type="text" readonly autocomplete="off">
+        <div class="tg-compose-actions"><button class="btn btn-outline" type="button" th:text="#{telegram.connect.copy}"></button></div>
+        <p role="status" aria-live="polite"></p>
+    </section>
     <p data-event-name></p>
     <p class="tg-compose-note" th:text="#{telegram.compose.notice}"></p>
     <section data-session-warning hidden class="tg-compose-note" role="alert">

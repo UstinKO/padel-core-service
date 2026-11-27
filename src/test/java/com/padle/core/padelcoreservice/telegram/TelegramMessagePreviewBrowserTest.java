@@ -1,13 +1,20 @@
 package com.padle.core.padelcoreservice.telegram;
 
+import com.padle.core.application.tournament.GenderFormat;
+import com.padle.core.application.tournament.Nivel;
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerRepository;
+import com.padle.core.padelcoreservice.support.OwnerFixtures;
 import com.padle.core.padelcoreservice.config.PlayerTelegramProperties;
 import com.padle.core.padelcoreservice.config.TelegramCampaignProperties;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import com.padle.core.padelcoreservice.model.*;
+import com.padle.core.persistence.clubs.Club;
 import com.padle.core.padelcoreservice.model.enums.*;
 import com.padle.core.padelcoreservice.repository.*;
+import com.padle.core.persistence.clubs.ClubRepository;
 import com.padle.core.padelcoreservice.service.EmailService;
 import com.padle.core.padelcoreservice.service.TournamentNotificationService;
 import java.math.BigDecimal;
@@ -49,7 +56,7 @@ import static org.mockito.Mockito.*;
 })
 class TelegramMessagePreviewBrowserTest {
     @LocalServerPort int port;
-    @Autowired OwnerRepository owners;
+    @Autowired OwnerFixtures owners;
     @Autowired PlayerRepository players;
     @Autowired TournamentRepository events;
     @Autowired TournamentRegistrationRepository registrations;

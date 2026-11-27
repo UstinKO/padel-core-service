@@ -185,7 +185,7 @@
                             <i class="fab fa-whatsapp"></i>
                         </a>
                         <button type="button" class="btn-icon"
-                                th:if="${isSuperAdmin and T(com.padle.core.padelcoreservice.model.PlayerPadel).isGuestEmail(player.email)}"
+                                th:if="${isSuperAdmin and T(com.padle.core.application.identity.PlayerIdentity).isGuestEmail(player.email)}"
                                 th:title="#{admin.players.details.btn.guest_credentials}"
                                 th:onclick="'showGuestCredentialsModal(' + ${player.id} + ')'">
                             <i class="fas fa-key"></i>
@@ -274,7 +274,7 @@
                                 <i class="fab fa-whatsapp"></i>
                             </a>
                             <button type="button" class="btn-icon"
-                                    th:if="${isSuperAdmin and T(com.padle.core.padelcoreservice.model.PlayerPadel).isGuestEmail(player.email)}"
+                                    th:if="${isSuperAdmin and T(com.padle.core.application.identity.PlayerIdentity).isGuestEmail(player.email)}"
                                     th:title="#{admin.players.details.btn.guest_credentials}"
                                     th:onclick="'showGuestCredentialsModal(' + ${player.id} + ')'">
                                 <i class="fas fa-key"></i>

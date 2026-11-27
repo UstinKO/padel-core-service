@@ -12,7 +12,7 @@
 
 ### Контракт и правила
 
-Телефон обязателен. Telegram необязателен и не заменяет телефон. `GET /me/contact-status` читает свежие данные игрока и возвращает `hasContact=true` только при заполненном телефоне. Исторические телефоны не перепроверяются массово.
+Профиль читается через `PlayerService` по ID из `PlayerPrincipal`. Телефон обязателен. Telegram необязателен и не заменяет телефон. `GET /me/contact-status` читает свежие данные игрока и возвращает `hasContact=true` только при заполненном телефоне. Исторические телефоны не перепроверяются массово.
 
 `PATCH /me/contact` принимает `telefono`, необязательный ISO-код `phoneCountry` (по умолчанию `AR`), необязательный `telegramUsername`. Международный номер с `+` имеет собственный код страны. Пробелы, дефисы, точки и скобки допускаются. Libphonenumber проверяет возможную длину для страны, расширения не поддерживаются, сохранение — E.164. Это проверка формата, не владения номером или наличия WhatsApp.
 
@@ -24,6 +24,16 @@ Telegram допускает отсутствие `@`, сервер добавл�
 
 ---
 
+## GET `/api/players/me/contact-status`
+
+**Аутентификация:** `ROLE_PLAYER`. Без действующего профиля возвращается HTTP 401 и `{"hasContact": false}`.
+
+Ответ HTTP 200 содержит `hasContact`, `hasPhone`, `hasTelegram`, `telefono`, `telegramUsername`. Пустые контактные значения возвращаются строкой `""`. Только Telegram не даёт `hasContact=true`.
+
+Профиль читается из базы по ID `PlayerPrincipal` при каждом запросе. Сохранённый в сессии снимок контактов не используется: после успешного `PATCH /me/contact` новый статус доступен без повторного входа. Контактные значения не логируются.
+
+---
+
 ## GET `/api/players/me/tournaments`
 
 **Кто вызывает:** клиент 1Padel.App (LFPT-0637) — «Мои мероприятия», только просмотр.
@@ -31,7 +41,7 @@ Telegram допускает отсутствие `@`, сервер добавл�
 
 ### Алгоритм
 
-1. Извлекает `PlayerPadel` из principal (как и остальные `/api/players/me/**` в этом контроллере).
+1. Берёт ID игрока из `PlayerPrincipal`; актуальные контакты читает через `PlayerService` из базы, а не из снимка сессии.
 2. `TournamentService.getMyTournamentsOverview(playerId)` — то же разбиение по `TournamentStatus`, что и в дашборде игрока (`getHistoricalAndActiveTournamentsByPlayer`): `upcoming` — турниры в `PUBLICADO`/`REGISTRO_ABIERTO`, `historical` — `CERRADO`/`FINALIZADO`/`CANCELADO`. Источник — тот же `findActiveRegistrationsByPlayerId` (фильтр по `isActive`, не по `status`), поэтому отменённые регистрации не попадают ни в один из списков.
 3. Запись/отмена регистрации через этот эндпоинт не делаются — используются существующие `POST /players/tournaments/{id}/register|cancel|cancel-double`.
 

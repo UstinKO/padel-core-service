@@ -1,9 +1,9 @@
 package com.padle.core.padelcoreservice.telegram;
 
 import com.padle.core.padelcoreservice.config.PlayerTelegramProperties;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
-import com.padle.core.padelcoreservice.model.enums.Nivel;
-import com.padle.core.padelcoreservice.repository.PlayerRepository;
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.application.tournament.Nivel;
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.repository.ParticipationRequestRepository;
 import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 import java.util.Locale;
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.playerUser;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
@@ -48,12 +49,12 @@ class PlayerTelegramPilotIntegrationTest {
         when(properties.pilotPlayerId()).thenReturn(tester.getId());
         when(properties.botToken()).thenReturn("fixture-token");
         when(properties.botUsername()).thenReturn("OnePadelTestBot");
-        mvc.perform(get("/api/players/me/telegram").with(user(outsider)))
+        mvc.perform(get("/api/players/me/telegram").with(playerUser(outsider)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.eligible").value(false))
                 .andExpect(jsonPath("$.available").value(false));
-        mvc.perform(post("/api/players/me/telegram/link").with(user(outsider)).with(csrf()))
+        mvc.perform(post("/api/players/me/telegram/link").with(playerUser(outsider)).with(csrf()))
                 .andExpect(status().isConflict());
-        mvc.perform(put("/api/players/me/telegram/preference").with(user(outsider)).with(csrf())
+        mvc.perform(put("/api/players/me/telegram/preference").with(playerUser(outsider)).with(csrf())
                 .contentType(MediaType.APPLICATION_JSON).content("{\"preference\":\"WHATSAPP\"}"))
                 .andExpect(status().isConflict());
         store.token(outsider.getId(), "old-fixture-token", OffsetDateTime.now().plusMinutes(10), "en");
@@ -62,10 +63,10 @@ class PlayerTelegramPilotIntegrationTest {
         var link = links.issue(tester, Locale.forLanguageTag("ru"));
         String token = link.url().substring(link.url().indexOf("start=") + 6);
         assertThat(links.bind(token, 456L, 456L)).contains(tester.getId());
-        mvc.perform(get("/api/players/me/telegram").with(user(tester)))
+        mvc.perform(get("/api/players/me/telegram").with(playerUser(tester)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.eligible").value(true))
                 .andExpect(jsonPath("$.connected").value(true));
-        mvc.perform(delete("/api/players/me/telegram").with(user(tester)).with(csrf()))
+        mvc.perform(delete("/api/players/me/telegram").with(playerUser(tester)).with(csrf()))
                 .andExpect(status().isNoContent());
         assertThat(store.connection(tester.getId())).isEmpty();
         assertThat(links.bind(token, 456L, 456L)).isEmpty();
@@ -80,18 +81,18 @@ class PlayerTelegramPilotIntegrationTest {
         long before = requests.count();
         for (int index = 0; index < 3; index++) {
             var player = player();
-            mvc.perform(get("/api/players/me/telegram").with(user(player)))
+            mvc.perform(get("/api/players/me/telegram").with(playerUser(player)))
                     .andExpect(status().isOk()).andExpect(jsonPath("$.eligible").value(true))
                     .andExpect(jsonPath("$.connected").value(false));
-            String content = mvc.perform(post("/api/players/me/telegram/link").with(user(player)).with(csrf()))
+            String content = mvc.perform(post("/api/players/me/telegram/link").with(playerUser(player)).with(csrf()))
                     .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
             var link = json.readValue(content, TelegramModels.Link.class);
             String token = link.url().substring(link.url().indexOf("start=") + 6);
             long chat = 6_661_000_000L + player.getId();
             assertThat(links.bind(token, chat, chat)).contains(player.getId());
-            mvc.perform(get("/api/players/me/telegram").with(user(player)))
+            mvc.perform(get("/api/players/me/telegram").with(playerUser(player)))
                     .andExpect(status().isOk()).andExpect(jsonPath("$.connected").value(true));
-            mvc.perform(delete("/api/players/me/telegram").with(user(player)).with(csrf()))
+            mvc.perform(delete("/api/players/me/telegram").with(playerUser(player)).with(csrf()))
                     .andExpect(status().isNoContent());
             assertThat(store.connection(player.getId())).isEmpty();
         }

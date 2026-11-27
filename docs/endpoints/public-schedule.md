@@ -96,7 +96,9 @@
 
 Все ответы — `Cache-Control: no-store`. Каталог исключает неактивные мероприятия, черновики и `SOLO_POR_ENLACE`; сортировка дата → время → id. Фильтрация и пагинация выполняются в БД, счётчики и клубы загружаются пакетно. Главная дополнительно ограничена предстоящими `PUBLICADO`/`REGISTRO_ABIERTO`; статистика мероприятий относится к этой подборке. Доступ по прямому id, правила регистрации и вместимости не меняются.
 
-Два клубных GET читают через `PublicClubQuery` в application и `ClubReadPort`; legacy-адаптер сохраняет активный фильтр и сортировку nombre,id. HTTP-маппинг/canonicalUrl, девять wire-полей generated `Club` из api-contract, nullable-значения и прежние ошибки остаются в web-коде bootstrap. Catalog/home не перенесены. [Владельцы application-типов](../modular-monolith/phase-2/application-club-read.md), [канонический OpenAPI, генерация и проверки](../modular-monolith/phase-2/contract-adoption.md).
+Два клубных GET и счётчик активных клубов `totalClubs` главной используют `PublicClubQuery` в application и `ClubReadPort`; legacy-адаптер сохраняет активный фильтр и сортировку nombre,id. HTTP-маппинг/canonicalUrl, девять wire-полей generated `Club` из api-contract, nullable-значения и прежние ошибки остаются в web-коде bootstrap. Catalog/home не перенесены. [Владельцы application-типов](../modular-monolith/phase-2/application-club-read.md), [канонический OpenAPI, генерация и проверки](../modular-monolith/phase-2/contract-adoption.md).
+
+Каталог и карточка турнира обогащают сведения о месте проведения через `InternalClubReadPort`. Каталог читает клубы одним пакетом, карточка читает по ID. Имя и полный адрес сохраняются для турнира выключенного клуба. [Внутреннее чтение клубов](../modular-monolith/phase-6/internal-club-reads.md)
 
 Новые ошибки — локализованный `application/problem+json`: 400 `INVALID_CATALOG_FILTER`, 404 `CLUB_NOT_FOUND`, 503 `PUBLIC_DATA_UNAVAILABLE`. Мобильный контракт ошибок не изменён. Контакты игроков и административные поля в новые DTO не входят.
 

@@ -1,0 +1,49 @@
+.action-help {
+    display: inline-grid;
+    place-items: center;
+    vertical-align: middle;
+    width: 1.65rem;
+    height: 1.65rem;
+    min-width: 1.65rem;
+    padding: 0;
+    margin: 0 .3rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 50%;
+    background: #fff;
+    color: #64748b;
+    font: 600 .85rem/1 Inter, sans-serif;
+    cursor: pointer;
+}
+.action-help:hover, .action-help[aria-expanded="true"] { color: #c44416; border-color: #e65b29; }
+.solo-action-help { display: inline-flex; align-items: center; max-width: 100%; }
+.action-help-field-label { display: flex; align-items: center; gap: .25rem; margin-bottom: .5rem; }
+.action-help-field-label > label { margin-bottom: 0; }
+.action-help-heading { display: flex; align-items: center; gap: .5rem; }
+.action-help:focus-visible, .action-help-popover button:focus-visible { outline: 3px solid #2563eb; outline-offset: 3px; }
+.action-help-popover {
+    position: fixed;
+    inset: auto;
+    z-index: 100000;
+    box-sizing: border-box;
+    width: min(320px, calc(100vw - 24px));
+    max-height: calc(100dvh - 24px);
+    overflow: auto;
+    margin: 0;
+    padding: 14px 16px;
+    border: 1px solid #dce3ec;
+    border-radius: 12px;
+    background: #fff;
+    color: #1e293b;
+    box-shadow: 0 6px 24px #14263b24;
+    font: 400 14px/1.5 Inter, sans-serif;
+    overflow-wrap: anywhere;
+}
+.action-help-popover[hidden] { display: none; }
+.action-help-popover__header { display: flex; gap: 12px; align-items: start; justify-content: space-between; margin-bottom: 6px; }
+.action-help-popover h3 { margin: 0; color: inherit; font: 600 14px/1.5 Inter, sans-serif; }
+.action-help-popover p { margin: 0; white-space: pre-line; }
+.action-help-popover button { display: grid; place-items: center; flex: 0 0 28px; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 6px; background: #f1f5f9; color: #475569; font: 400 21px/1 Inter, sans-serif; cursor: pointer; }
+@media (pointer: coarse) {
+    .action-help { width: 44px; height: 44px; min-width: 44px; }
+    .action-help-popover button { width: 44px; height: 44px; flex-basis: 44px; }
+}

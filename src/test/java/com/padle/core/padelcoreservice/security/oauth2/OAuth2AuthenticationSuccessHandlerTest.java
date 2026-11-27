@@ -1,6 +1,6 @@
 package com.padle.core.padelcoreservice.security.oauth2;
 
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.security.JwtService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -10,13 +10,14 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.rememberme.AbstractRememberMeServices;
 import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices;
 
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.principal;
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.oauthPrincipal;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -53,7 +54,7 @@ class OAuth2AuthenticationSuccessHandlerTest {
 
         UserDetailsService userDetailsService = username -> {
             if (PLAYER_EMAIL.equals(username)) {
-                return player;
+                return principal(player);
             }
             throw new UsernameNotFoundException(username);
         };
@@ -64,7 +65,7 @@ class OAuth2AuthenticationSuccessHandlerTest {
         OAuth2AuthenticationSuccessHandler handler =
                 new OAuth2AuthenticationSuccessHandler(rememberMeServices, mock(JwtService.class));
 
-        CustomOAuth2User principal = new CustomOAuth2User(mock(org.springframework.security.oauth2.core.user.OAuth2User.class), player);
+        var principal = oauthPrincipal(mock(org.springframework.security.oauth2.core.user.OAuth2User.class), player);
         Authentication authentication = mock(Authentication.class);
         when(authentication.getPrincipal()).thenReturn(principal);
         when(authentication.getName()).thenReturn(PLAYER_EMAIL);
@@ -109,22 +110,23 @@ class OAuth2AuthenticationSuccessHandlerTest {
 
         UserDetailsService userDetailsService = username -> {
             if (PLAYER_EMAIL.equals(username)) {
-                return player;
+                return principal(player);
             }
             throw new UsernameNotFoundException(username);
         };
         RememberMeServices rememberMeServices =
                 new TokenBasedRememberMeServices("test-key", userDetailsService);
 
+        var principal = oauthPrincipal(mock(org.springframework.security.oauth2.core.user.OAuth2User.class), player);
+
         JwtService jwtService = mock(JwtService.class);
-        when(jwtService.generateToken(player, player.getId(), player.getNombreCompleto())).thenReturn("access-token");
-        when(jwtService.generateRefreshToken(player, player.getId())).thenReturn("refresh-token");
+        when(jwtService.generateToken(principal, player.getId(), player.getNombreCompleto())).thenReturn("access-token");
+        when(jwtService.generateRefreshToken(principal, player.getId())).thenReturn("refresh-token");
         when(jwtService.getAccessTokenExpirationMs()).thenReturn(86_400_000L);
 
         OAuth2AuthenticationSuccessHandler handler =
                 new OAuth2AuthenticationSuccessHandler(rememberMeServices, jwtService);
 
-        CustomOAuth2User principal = new CustomOAuth2User(mock(org.springframework.security.oauth2.core.user.OAuth2User.class), player);
         Authentication authentication = mock(Authentication.class);
         when(authentication.getPrincipal()).thenReturn(principal);
         when(authentication.getName()).thenReturn(PLAYER_EMAIL);
@@ -148,4 +150,29 @@ class OAuth2AuthenticationSuccessHandlerTest {
         org.mockito.Mockito.verify(response).sendRedirect(
                 "/app/#accessToken=access-token&refreshToken=refresh-token&expiresIn=86400000");
     }
+    @Test
+    void googleLoginRetainsSiteJoinThroughValidatedState() throws Exception {
+        var repository=new TournamentOAuth2AuthorizationRequestRepository();
+        var request=new org.springframework.mock.web.MockHttpServletRequest();
+        var response=new org.springframework.mock.web.MockHttpServletResponse();
+        request.setParameter("destination","/telegram/join");
+        var authorization=org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest.authorizationCode()
+                .authorizationUri("https://accounts.google.com/o/oauth2/v2/auth")
+                .clientId("qa").redirectUri("http://localhost/login/oauth2/code/google").state("qa-state").build();
+        repository.saveAuthorizationRequest(authorization,request,response);
+        var callback=new org.springframework.mock.web.MockHttpServletRequest();
+        callback.setSession((org.springframework.mock.web.MockHttpSession)request.getSession());
+        callback.setParameter("state","qa-state");
+        assertThat(repository.removeAuthorizationRequest(callback,response)).isNotNull();
+        var player=PlayerPadel.builder().id(1L).email(PLAYER_EMAIL).activo(true).build();
+        var authentication=mock(Authentication.class);
+        when(authentication.getPrincipal()).thenReturn(oauthPrincipal(
+                mock(org.springframework.security.oauth2.core.user.OAuth2User.class),player));
+        var handler=new OAuth2AuthenticationSuccessHandler(mock(RememberMeServices.class),mock(JwtService.class));
+        handler.onAuthenticationSuccess(callback,response,authentication);
+        assertThat(response.getRedirectedUrl()).isEqualTo("/telegram/join");
+        assertThat(callback.getAttribute("destination")).isEqualTo("/telegram/join");
+        assertThat(repository.loadAuthorizationRequest(callback)).isNull();
+    }
+
 }

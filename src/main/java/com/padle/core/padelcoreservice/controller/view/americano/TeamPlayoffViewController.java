@@ -12,7 +12,7 @@ import com.padle.core.padelcoreservice.dto.americano.TeamPlayoffTeamRequest;
 import com.padle.core.padelcoreservice.exception.InvalidStateException;
 import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
 import com.padle.core.padelcoreservice.model.Owner;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.padelcoreservice.security.PlayerPrincipal;
 import com.padle.core.padelcoreservice.model.americano.AmericanoMatch;
 import com.padle.core.padelcoreservice.model.americano.AmericanoRound;
 import com.padle.core.padelcoreservice.model.americano.AmericanoTeam;
@@ -83,7 +83,7 @@ public class TeamPlayoffViewController {
         boolean qualStarted = playoffService.isQualificationStarted(tournamentId);
         boolean playoffStarted = playoffService.isPlayoffStarted(tournamentId);
 
-        PlayerPadel player = SecurityUtils.extractPlayer(auth != null ? auth.getPrincipal() : null);
+        PlayerPrincipal player = SecurityUtils.playerPrincipal(auth != null ? auth.getPrincipal() : null).orElse(null);
 
         model.addAttribute("tournament", tournament);
         model.addAttribute("qualStarted", qualStarted);

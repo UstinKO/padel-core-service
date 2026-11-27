@@ -3,7 +3,7 @@ package com.padle.core.padelcoreservice.service;
 import com.padle.core.padelcoreservice.dto.RankingDto;
 import com.padle.core.padelcoreservice.mapper.RankingMapper;
 import com.padle.core.padelcoreservice.model.Match;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.model.Ranking;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import com.padle.core.padelcoreservice.repository.RankingRepository;

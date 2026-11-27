@@ -10,7 +10,6 @@ import com.padle.core.padelcoreservice.exception.PairRegistrationException;
 import com.padle.core.padelcoreservice.exception.PairRegistrationException.Reason;
 import com.padle.core.padelcoreservice.security.RequestIdFilter;
 import com.padle.core.padelcoreservice.exception.TournamentRegistrationException;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.service.DoubleTournamentRegistrationService;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import com.padle.core.padelcoreservice.util.SecurityUtils;
@@ -284,10 +283,7 @@ public class DoubleTournamentRegistrationController {
     }
 
     private Long extractCurrentUserId(Object principal) {
-        PlayerPadel player = SecurityUtils.extractPlayer(principal);
-        if (player == null) {
-            throw new SecurityException("Usuario no autenticado");
-        }
-        return player.getId();
+        return SecurityUtils.playerPrincipal(principal)
+                .orElseThrow(() -> new SecurityException("Usuario no autenticado")).getId();
     }
 }

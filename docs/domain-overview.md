@@ -77,8 +77,8 @@
 **Сервисы:** `PlayerService`, `OwnerService`, `PasswordResetService`, `JwtService`, `CompositeUserDetailsService`, `CustomOAuth2UserService`, `RateLimitFilter`
 
 **Важные особенности:**
-- Два независимых типа пользователей (`PlayerPadel` и `Owner`) — оба реализуют `UserDetails`
-- `CompositeUserDetailsService` пробует `OwnerUserService` первым, затем `PlayerUserDetailsService`
+- Два независимых типа пользователей представлены в Spring Security как `PlayerPrincipal` и `Owner`. Профиль игрока хранится в `PlayerPadel`
+- `CompositeUserDetailsService` пробует `OwnerUserService` первым, затем `PlayerUserService`
 - Защита регистрации: reCAPTCHA v3 → honeypot → disposable email → IP rate limit (Bucket4j + Guava)
 - Пароль хэшируется через BCrypt; телефон должен начинаться с `+54` (Аргентина)
 - `hasValidContact()` — обязательная проверка перед регистрацией на турнир (телефон `+54` или Telegram)

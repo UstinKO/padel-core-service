@@ -1,5 +1,8 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerRepository;
+import com.padle.core.application.clubs.InternalClubReadPort;
 import com.padle.core.padelcoreservice.config.PlayerTelegramProperties;
 import com.padle.core.padelcoreservice.config.TelegramProperties;
 import com.padle.core.padelcoreservice.model.*;
@@ -30,7 +33,7 @@ class TelegramLegacyPilotTest {
         when(tournaments.findById(10L)).thenReturn(Optional.of(event));
         when(registrations.findByTournamentIdAndStatus(10L, RegistrationStatus.CONFIRMED)).thenReturn(List.of(
                 TournamentRegistration.builder().player(pilot).build(), TournamentRegistration.builder().player(other).build()));
-        new TelegramReminderScheduler(telegram, access, tournaments, registrations, mock(ClubRepository.class))
+        new TelegramReminderScheduler(telegram, access, tournaments, registrations, mock(InternalClubReadPort.class))
                 .sendReminderByTournamentId(10L);
         verify(telegram).sendDm(eq(999L), anyString(), anyList());
         verify(telegram, never()).sendDm(eq(123L), anyString(), anyList());

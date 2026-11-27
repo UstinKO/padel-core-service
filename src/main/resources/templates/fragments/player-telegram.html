@@ -43,21 +43,33 @@
 <section th:fragment="admin" th:if="${@playerTelegramAccess.allowsEvent(tournament.id)}"
          class="telegram-panel" data-tg-admin
          th:attr="data-tournament-id=${tournament.id},data-loading=#{telegram.ui.loading},data-error=#{telegram.ui.error},data-sent=#{telegram.ui.requestSent},data-summary-sent=#{telegram.ui.summarySent},data-confirmed=#{telegram.ui.confirmed},data-pending=#{telegram.ui.pending},data-not-required=#{telegram.ui.notRequired},data-declined=#{telegram.ui.declined},data-no-telegram=#{telegram.ui.noTelegram},data-delivery-error=#{telegram.ui.deliveryError},data-whatsapp-manual=#{telegram.ui.whatsappManual},data-manual-contact=#{telegram.ui.manualContact}">
-    <h2 th:text="#{telegram.ui.adminTitle}"></h2>
-    <p th:text="#{telegram.ui.adminDescription}"></p>
-    <div class="telegram-actions">
-        <button type="button" class="btn btn-primary" data-tg-request th:text="#{telegram.ui.request}"></button>
-        <button type="button" class="btn btn-outline" data-tg-refresh th:text="#{telegram.ui.refresh}"></button>
-        <button sec:authorize="hasRole('SUPER_ADMIN')" type="button" class="btn btn-outline" data-tg-summary th:text="#{telegram.ui.summary}"></button>
-    </div>
+    <details class="telegram-disclosure" data-tg-disclosure
+             th:attr="data-preference-user-id=${#authentication.principal.id}">
+        <summary class="telegram-disclosure-heading">
+            <h2 th:text="#{telegram.ui.adminTitle}"></h2><th:block th:if="${pairedHelp == true}"><button th:replace="~{fragments/action-help :: help('telegram')}"></button></th:block>
+            <span class="telegram-disclosure-action">
+                <span class="telegram-disclosure-arrow" aria-hidden="true"></span>
+                <span class="telegram-disclosure-expand" th:text="#{telegram.ui.expand}"></span>
+                <span class="telegram-disclosure-collapse" th:text="#{telegram.ui.collapse}"></span>
+            </span>
+            <span class="telegram-counters">
+                <span><strong data-tg-total>0</strong> <span th:text="#{telegram.ui.total}"></span></span>
+                <span><strong data-tg-confirmed>0</strong> <span th:text="#{telegram.ui.confirmed}"></span></span>
+                <span><strong data-tg-pending>0</strong> <span th:text="#{telegram.ui.pending}"></span></span>
+                <span><strong data-tg-missing>0</strong> <span th:text="#{telegram.ui.noTelegram}"></span></span>
+            </span>
+        </summary>
+        <div class="telegram-disclosure-content">
+            <p th:text="#{telegram.ui.adminDescription}"></p>
+            <div class="telegram-actions">
+                <button type="button" class="btn btn-primary" data-tg-request th:text="#{telegram.ui.request}"></button>
+                <button type="button" class="btn btn-outline" data-tg-refresh th:text="#{telegram.ui.refresh}"></button>
+                <button sec:authorize="hasRole('SUPER_ADMIN')" type="button" class="btn btn-outline" data-tg-summary th:text="#{telegram.ui.summary}"></button>
+            </div>
+            <ul class="telegram-participants" data-tg-participants></ul>
+        </div>
+    </details>
     <p data-tg-status role="status" aria-live="polite" th:text="#{telegram.ui.loading}"></p>
-    <div class="telegram-counters">
-        <span><strong data-tg-total>0</strong> <span th:text="#{telegram.ui.total}"></span></span>
-        <span><strong data-tg-confirmed>0</strong> <span th:text="#{telegram.ui.confirmed}"></span></span>
-        <span><strong data-tg-pending>0</strong> <span th:text="#{telegram.ui.pending}"></span></span>
-        <span><strong data-tg-missing>0</strong> <span th:text="#{telegram.ui.noTelegram}"></span></span>
-    </div>
-    <ul class="telegram-participants" data-tg-participants></ul>
 </section>
 <th:block th:fragment="assets" th:if="${@environment.getProperty('telegram.players.enabled') == 'true'}">
     <link rel="stylesheet" th:href="@{/css/player-telegram.css}">

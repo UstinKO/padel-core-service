@@ -1,8 +1,16 @@
 package com.padle.core.padelcoreservice.controller.api;
 
+import com.padle.core.application.identity.PlayingSide;
+import com.padle.core.application.tournament.GenderFormat;
+import com.padle.core.application.tournament.Nivel;
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerRepository;
+import com.padle.core.padelcoreservice.support.OwnerFixtures;
 import com.padle.core.padelcoreservice.model.*;
+import com.padle.core.persistence.clubs.Club;
 import com.padle.core.padelcoreservice.model.enums.*;
 import com.padle.core.padelcoreservice.repository.*;
+import com.padle.core.persistence.clubs.ClubRepository;
 import com.padle.core.padelcoreservice.service.EmailService;
 import com.padle.core.padelcoreservice.service.TournamentNotificationService;
 import org.junit.jupiter.api.Test;
@@ -42,7 +50,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 })
 class GuestProfileMergeBrowserTest {
     @LocalServerPort int port;
-    @Autowired OwnerRepository owners;
+    @Autowired OwnerFixtures owners;
     @Autowired PlayerRepository players;
     @Autowired ClubRepository clubs;
     @Autowired TournamentRepository tournaments;

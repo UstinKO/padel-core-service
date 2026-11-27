@@ -1,13 +1,21 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.application.identity.PlayingSide;
+import com.padle.core.application.tournament.GenderFormat;
+import com.padle.core.application.tournament.Nivel;
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerRepository;
+import com.padle.core.padelcoreservice.support.OwnerFixtures;
 import com.padle.core.padelcoreservice.dto.SoloRoster.*;
 import com.padle.core.padelcoreservice.dto.PaymentUpdateDto;
 import org.junit.jupiter.params.provider.ValueSource;
 import com.padle.core.padelcoreservice.exception.SoloRosterException;
 import com.padle.core.padelcoreservice.model.*;
+import com.padle.core.persistence.clubs.Club;
 import com.padle.core.padelcoreservice.model.americano.*;
 import com.padle.core.padelcoreservice.model.enums.*;
 import com.padle.core.padelcoreservice.repository.*;
+import com.padle.core.persistence.clubs.ClubRepository;
 import com.padle.core.padelcoreservice.repository.americano.*;
 import com.padle.core.padelcoreservice.service.americano.TeamPlayoffService;
 import jakarta.persistence.EntityManager;
@@ -30,6 +38,7 @@ import tools.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.time.*;
 import java.util.*;
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.playerUser;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -58,7 +67,7 @@ class SoloRosterIntegrationTest {
     @Autowired PlayerRepository players;
     @Autowired PaymentRepository payments;
     @Autowired ClubRepository clubs;
-    @Autowired OwnerRepository owners;
+    @Autowired OwnerFixtures owners;
     @Autowired AmericanoTeamRepository teams;
     @Autowired AmericanoMatchRepository matches;
     @Autowired MatchRepository brackets;
@@ -386,7 +395,7 @@ class SoloRosterIntegrationTest {
         var o=owner(OwnerRole.CLUB_ADMIN);var e=event(2,o);var other=owner(OwnerRole.CLUB_ADMIN);other.setClubId(e.getClubId());owners.saveAndFlush(other);
         var a=single(e,RegistrationStatus.SOLO_SEARCH);String url="/admin/tournaments/"+e.getId()+"/participants";
         mvc.perform(get(url).with(user(other))).andExpect(status().isForbidden());
-        mvc.perform(get(url).with(user(a.getPlayer()))).andExpect(redirectedUrl("/error/403"));
+        mvc.perform(get(url).with(playerUser(a.getPlayer()))).andExpect(redirectedUrl("/error/403"));
         var command=new Command(UUID.randomUUID(),Action.REMOVE,a.getId(),null,null,null,false,null);
         mvc.perform(post(url).with(user(o)).contentType("application/json").content(json.writeValueAsString(command))).andExpect(redirectedUrl("/error/403"));
         mvc.perform(post(url).with(user(other)).with(csrf()).contentType("application/json").content(json.writeValueAsString(command))).andExpect(status().isForbidden());

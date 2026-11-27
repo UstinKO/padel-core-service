@@ -1,6 +1,8 @@
 # Многомодульный монолит: анализ и план перехода
 
-Задача подготовки: [LFPT-1041](https://github.com/UstinKO/padel-core-service/issues/1041), решения от 13.11.2026. Семь модулей и пилот PlayoffMatchingEngine приняты владельцем. Фактическое состояние после принятой фазы 4 / PR #1398: parent и четыре дочерних Maven-модуля; engines владеет десятью вычислительными классами (включая SETS/POINTS/final-order), application — чтением публичных клубов и круговой таблицы/итоговых мест, а также сохранением круговых позиций и завершением кругового турнира; клубный API DTO генерируется в api-contract, приложение собирает bootstrap. [Реализация переноса и проверки](phase-1/engine-extraction.md). Остальные три модуля ещё не выделены; #1045 принята владельцем 20.11 с ограничениями. [Первый application-срез](phase-2/application-club-read.md).
+Вариант выделения сервиса турнирного протокола и автономной работы клуба описан в [предложении о сохранности результатов и рейтинга](../microservices/README.md).
+
+Семь целевых модулей и пилот PlayoffMatchingEngine приняты владельцем 13.11.2026. Сейчас parent собирает пять дочерних Maven-модулей. Engines владеет десятью вычислительными классами, application — публичным чтением клубов, круговыми чтениями и командами, api-contract — клубным HTTP-контрактом. Persistence владеет клубным JPA и всем деревом Liquibase. Bootstrap собирает приложение. [Подготовка LFPT-1041](https://github.com/UstinKO/padel-core-service/issues/1041) · [Первый срез persistence](phase-6/club-persistence.md)
 
 Цель — облегчить сопровождение через Maven-модули и гексагональные границы; количество не ограничено пятью. Сохраняются один процесс приложения, один выпускаемый Spring Boot jar и существующая PostgreSQL. Разделение на технические модули дополняется доменными пакетами внутри них.
 
@@ -17,6 +19,7 @@
 | [Продолжение переноса движков](phase-3/README.md) | King of Court #1279, [Americano #1332](phase-3/americano-extraction.md), [квалификация #1338](phase-3/team-playoff-qualification-extraction.md), [ранний плей-офф #1343](phase-3/early-playoff-extraction.md), [круговые места SETS #1350](phase-3/round-robin-sets-extraction.md), [POINTS #1371](phase-3/round-robin-points-extraction.md) |
 | [Четвёртая фаза](phase-4/README.md) | Baseline #1375 включён через PR #1379; [итоговые места #1376](phase-4/final-order-extraction.md) выделены в engines; [application read-сценарий #1377](phase-4/application-query.md) реализован; [независимая техническая приёмка #1378](phase-4/acceptance.md) принята через PR #1398 с явными ограничениями |
 | [Пятая фаза](phase-5/README.md) | Baseline #1403 включён через PR #1408; [#1404 запись круговых позиций](phase-5/position-command.md) включена через PR #1409 → [#1405 завершение](phase-5/finish-command.md) включено через PR #1411 → [#1406 независимая приёмка](phase-5/acceptance.md) завершает фазу #1402 |
+| [Фаза 6. Хранение](phase-6/README.md) | Утверждённый порядок #1051, клубный срез и перенос Liquibase. Пул #1439–#1447 |
 | [Пилот и e2e](pilot-and-e2e.md) | Подтверждённый пилот, исходная #1048 и итоговая #1045 |
 | [Вопросы и риски](questions-and-risks.md) | Решения до реализации и неизвестные, требующие исследования |
 | [Фиче-спецификация](../../specs/done/LFPT-1041-modular-monolith-analysis.md) | Объём подготовительной задачи и критерии её завершения |

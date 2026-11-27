@@ -1,12 +1,12 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.application.clubs.ClubDetails;
+import com.padle.core.application.clubs.InternalClubReadPort;
 import com.padle.core.padelcoreservice.logging.TelegramAlertQueue;
 import com.padle.core.padelcoreservice.telegram.PlayerTelegramAccess;
-import com.padle.core.padelcoreservice.model.Club;
 import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.TournamentRegistration;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
-import com.padle.core.padelcoreservice.repository.ClubRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import com.padle.core.padelcoreservice.security.RateLimitFilter;
@@ -37,7 +37,7 @@ public class TelegramReminderScheduler {
     private final PlayerTelegramAccess playerAccess;
     private final TournamentRepository tournamentRepository;
     private final TournamentRegistrationRepository registrationRepository;
-    private final ClubRepository clubRepository;
+    private final InternalClubReadPort clubReads;
 
     @Value("${app.base-url:http://localhost:8080}")
     private String baseUrl;
@@ -95,8 +95,8 @@ public class TelegramReminderScheduler {
     }
 
     private void sendReminderForTournament(Tournament tournament) {
-        String clubName = clubRepository.findById(tournament.getClubId())
-                .map(Club::getNombre)
+        String clubName = clubReads.findById(tournament.getClubId())
+                .map(ClubDetails::name)
                 .orElse("el club");
         String timeStr = tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm"));
 

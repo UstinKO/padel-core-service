@@ -8,4 +8,6 @@ public interface ClubReadPort {
     List<PublicClub> findActiveOrderedByNameAndId();
 
     Optional<PublicClub> findActiveById(Long id);
+
+    long countActive();
 }

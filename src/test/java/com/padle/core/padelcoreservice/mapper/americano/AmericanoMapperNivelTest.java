@@ -1,10 +1,10 @@
 package com.padle.core.padelcoreservice.mapper.americano;
 
 import com.padle.core.padelcoreservice.dto.americano.AmericanoPlayerRankingDto;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.americano.AmericanoPlayer;
-import com.padle.core.padelcoreservice.model.enums.Nivel;
+import com.padle.core.application.tournament.Nivel;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 

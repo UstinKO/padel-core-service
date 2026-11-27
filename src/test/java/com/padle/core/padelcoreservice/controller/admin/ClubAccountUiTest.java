@@ -1,10 +1,10 @@
 package com.padle.core.padelcoreservice.controller.admin;
 
-import com.padle.core.padelcoreservice.model.Club;
+import com.padle.core.persistence.clubs.Club;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.enums.OwnerRole;
-import com.padle.core.padelcoreservice.repository.ClubRepository;
-import com.padle.core.padelcoreservice.repository.OwnerRepository;
+import com.padle.core.persistence.clubs.ClubRepository;
+import com.padle.core.padelcoreservice.support.OwnerFixtures;
 import com.padle.core.padelcoreservice.service.ClubAccountService;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -35,7 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 class ClubAccountUiTest {
     @Autowired MockMvc mvc;
-    @Autowired OwnerRepository owners;
+    @Autowired OwnerFixtures owners;
     @Autowired ClubRepository clubs;
     @Autowired ClubAccountService accounts;
 

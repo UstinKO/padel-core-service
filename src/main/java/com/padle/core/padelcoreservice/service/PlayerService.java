@@ -1,18 +1,18 @@
 package com.padle.core.padelcoreservice.service;
 
-import com.padle.core.padelcoreservice.model.enums.PlayingSide;
+import com.padle.core.application.identity.PlayingSide;
 
 import com.padle.core.padelcoreservice.dto.PlayerResponseDto;
 import com.padle.core.padelcoreservice.dto.RegistroRequestDto;
 import com.padle.core.padelcoreservice.exception.InvalidStateException;
 import com.padle.core.padelcoreservice.mapper.PlayerMapper;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.TournamentRegistration;
-import com.padle.core.padelcoreservice.model.enums.Nivel;
+import com.padle.core.application.tournament.Nivel;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
-import com.padle.core.padelcoreservice.repository.PasswordResetTokenRepository;
-import com.padle.core.padelcoreservice.repository.PlayerRepository;
+import com.padle.core.application.identity.PasswordResetTokens;
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -53,7 +53,7 @@ public class PlayerService {
     private final TournamentRegistrationRepository registrationRepository;
     private final DoubleTournamentRegistrationService doubleTournamentRegistrationService;
     private final MessageSource messageSource;
-    private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final PasswordResetTokens passwordResetTokens;
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
@@ -220,7 +220,7 @@ public class PlayerService {
 
         // Токены сброса пароля создаются независимо от регистраций на турниры
         // и не имеют ON DELETE CASCADE — без явного удаления заблокируют удаление игрока
-        passwordResetTokenRepository.deleteByPlayer(player);
+        passwordResetTokens.revokeForPlayer(player.getId());
 
         try {
             playerRepository.delete(player);

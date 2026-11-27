@@ -180,7 +180,7 @@ export async function qualificationBoundary(admin, manager, scenario) {
     { team1Id: scenario.teamIds[6], team2Id: scenario.teamIds[7], courtNumber: 4 });
   const matchId = last.body.match.id;
   await manager.page.goto(input.origin + adminPath(id));
-  const start = manager.page.locator('#playoffStartSection form[action$="/init-playoff"] button');
+  const start = manager.page.locator('#playoffStartSection form[action$="/init-playoff"] button[type="submit"]');
   await expect(start).toHaveCount(0);
   const marker = await manager.page.evaluate(() => window.qualificationPageMarker = crypto.randomUUID());
   const path = `/tournaments/team-playoff/api/qual-matches/${matchId}/result`;

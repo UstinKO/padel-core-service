@@ -4,10 +4,10 @@ import com.padle.core.padelcoreservice.dto.AccountDtos;
 import com.padle.core.padelcoreservice.dto.RegistroRequestDto;
 import com.padle.core.padelcoreservice.exception.AccountException;
 import com.padle.core.padelcoreservice.mapper.AccountMapper;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
-import com.padle.core.padelcoreservice.model.enums.Nivel;
-import com.padle.core.padelcoreservice.repository.PlayerRepository;
-import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2User;
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.application.tournament.Nivel;
+import com.padle.core.application.identity.PlayerProfiles;
+import com.padle.core.padelcoreservice.security.PlayerPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -21,25 +21,33 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class AccountService {
-    private final PlayerRepository players;
+    private final PlayerProfiles profiles;
     private final PlayerService playerService;
     private final PlayerPhoneGuard phoneGuard;
     private final AccountMapper mapper;
 
     public PlayerPadel player(Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated())
-            throw new AccountException(HttpStatus.UNAUTHORIZED, "SESSION_REQUIRED");
-        var principal = authentication.getPrincipal();
-        if (principal instanceof CustomOAuth2User oauth) principal = oauth.getPlayer();
-        if (!(principal instanceof PlayerPadel player))
-            throw new AccountException(HttpStatus.FORBIDDEN, "PLAYER_REQUIRED");
-        return players.findById(player.getId())
+        return playerService.getPlayerById(playerId(authentication))
                 .filter(PlayerPadel::isActivo)
                 .orElseThrow(() -> new AccountException(HttpStatus.UNAUTHORIZED, "SESSION_REQUIRED"));
     }
 
     public AccountDtos.Profile profile(Authentication authentication) {
-        return mapper.profile(player(authentication));
+        return mapper.profile(activeProfile(authentication));
+    }
+
+    private PlayerProfiles.Profile activeProfile(Authentication authentication) {
+        return profiles.findById(playerId(authentication))
+                .filter(PlayerProfiles.Profile::activo)
+                .orElseThrow(() -> new AccountException(HttpStatus.UNAUTHORIZED, "SESSION_REQUIRED"));
+    }
+
+    private Long playerId(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated())
+            throw new AccountException(HttpStatus.UNAUTHORIZED, "SESSION_REQUIRED");
+        if (!(authentication.getPrincipal() instanceof PlayerPrincipal player))
+            throw new AccountException(HttpStatus.FORBIDDEN, "PLAYER_REQUIRED");
+        return player.getId();
     }
 
     @Transactional
@@ -56,25 +64,24 @@ public class AccountService {
 
     @Transactional
     public AccountDtos.Profile update(Authentication authentication, AccountDtos.ProfileUpdate input) {
-        var player = player(authentication);
-        var request = new AccountDtos.ProfileUpdate(input.nombre().strip(), input.apellido().strip(), input.email().strip(),
+        var player = activeProfile(authentication);
+        var request = new PlayerProfiles.ProfileUpdate(input.nombre().strip(), input.apellido().strip(), input.email().strip(),
                 normalize(input.telefono()), telegram(input.telegramUsername()), input.nivelJugador(), input.preferredLocale());
         if (!Nivel.isPlayerLevel(request.nivelJugador())) invalid("INVALID_FIELD", "nivelJugador");
         if (request.telefono() == null && request.telegramUsername() == null) invalid("CONTACT_REQUIRED", "telefono", "telegramUsername");
-        if (!player.isGuestAccount() && !player.getEmail().equals(request.email())) invalid("EMAIL_IMMUTABLE", "email");
+        if (!player.isGuestAccount() && !player.email().equals(request.email())) invalid("EMAIL_IMMUTABLE", "email");
         duplicates(request.email(), request.telegramUsername(), Optional.of(player));
-        if (!Objects.equals(player.getTelefono(), request.telefono())) {
-            phoneGuard.requireAvailable(request.telefono(), player.getId());
+        if (!Objects.equals(player.telefono(), request.telefono())) {
+            phoneGuard.requireAvailable(request.telefono(), player.id());
         }
-        mapper.update(request, player);
-        return mapper.profile(players.save(player));
+        return mapper.profile(profiles.update(player.id(), request));
     }
 
     @Transactional
     public void updateLevel(Authentication authentication, Nivel nivel) {
-        var player = player(authentication);
+        var player = activeProfile(authentication);
         if (!Nivel.isPlayerLevel(nivel)) invalid("INVALID_FIELD", "nivelJugador");
-        if (players.actualizarNivelActivo(player.getId(), nivel, LocalDateTime.now()) != 1)
+        if (!profiles.updateActiveLevel(player.id(), nivel, LocalDateTime.now()))
             throw new AccountException(HttpStatus.UNAUTHORIZED, "SESSION_REQUIRED");
     }
 
@@ -86,11 +93,11 @@ public class AccountService {
         playerService.cambiarPassword(player.getId(), request.newPassword());
     }
 
-    private void duplicates(String email, String telegram, Optional<PlayerPadel> current) {
-        if (current.map(player -> !player.getEmail().equals(email)).orElse(true) && players.existsByEmail(email))
+    private void duplicates(String email, String telegram, Optional<PlayerProfiles.Profile> current) {
+        if (current.map(player -> !player.email().equals(email)).orElse(true) && profiles.existsByEmail(email))
             invalid("EMAIL_DUPLICATE", "email");
-        if (telegram != null && current.map(player -> !telegram.equalsIgnoreCase(Objects.toString(player.getTelegramUsername(), ""))).orElse(true)
-                && players.existsByTelegramUsernameIgnoreCase(telegram)) invalid("TELEGRAM_DUPLICATE", "telegramUsername");
+        if (telegram != null && current.map(player -> !telegram.equalsIgnoreCase(Objects.toString(player.telegramUsername(), ""))).orElse(true)
+                && profiles.existsByTelegramUsername(telegram)) invalid("TELEGRAM_DUPLICATE", "telegramUsername");
     }
 
     private static String normalize(String value) {

@@ -30,8 +30,7 @@ public class PairReplacementNoticeController {
     }
 
     private Long playerId(Object principal) {
-        var player = SecurityUtils.extractPlayer(principal);
-        if (player == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-        return player.getId();
+        return SecurityUtils.playerPrincipal(principal)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED)).getId();
     }
 }

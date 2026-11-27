@@ -1,5 +1,7 @@
 package com.padle.core.padelcoreservice.controller.admin;
 
+import com.padle.core.application.tournament.GenderFormat;
+import com.padle.core.application.tournament.Nivel;
 import com.padle.core.padelcoreservice.model.enums.EventFormat;
 
 import java.util.Comparator;

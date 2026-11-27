@@ -1,7 +1,9 @@
 package com.padle.core.padelcoreservice.config;
 
-import com.padle.core.padelcoreservice.repository.PlayerRepository;
+import com.padle.core.application.identity.PlayerProfiles;
 import com.padle.core.padelcoreservice.security.GuestSessionFilter;
+import com.padle.core.padelcoreservice.security.LegacyPlayerSessionFilter;
+import com.padle.core.padelcoreservice.security.PlayerSessionAuthentication;
 import com.padle.core.padelcoreservice.marketing.MetaProperties;
 
 import com.padle.core.padelcoreservice.security.CustomAccessDeniedHandler;
@@ -44,6 +46,7 @@ import org.springframework.security.web.authentication.AuthenticationFailureHand
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.context.SecurityContextHolderFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CsrfToken;
@@ -73,7 +76,7 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomOAuth2UserService customOAuth2UserService;
-    private final PlayerRepository players;
+    private final PlayerProfiles players;
     private final OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> authorizationCodeTokenResponseClient;
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
     private final RateLimitFilter rateLimitFilter;
@@ -90,7 +93,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, PlayerSessionAuthentication playerSessions)
+            throws Exception {
         return http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf
@@ -134,6 +138,9 @@ public class SecurityConfig {
                                 "/tournaments/king-of-court/*",
                                 "/waitlist/**",
                                 "/login",
+                                "/telegram/connect",
+                                "/telegram/connect/context",
+                                "/telegram/join",
                                 "/players/registro",
                                 "/players/registro/**",
                                 "/players/confirmar-email",
@@ -261,6 +268,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 )
+                .addFilterAfter(new LegacyPlayerSessionFilter(playerSessions), SecurityContextHolderFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 // requestId должен быть в MDC уже на этапе rate-limit предупреждений —
@@ -377,7 +385,8 @@ public class SecurityConfig {
 
             boolean notConfirmed = exception instanceof DisabledException
                     || exception instanceof org.springframework.security.authentication.LockedException;
-            var destination = AccountDestination.requested(request).flatMap(AccountDestination::tournamentManagement);
+            var destination = AccountDestination.requested(request).filter(value -> AccountDestination.telegramConnect(value)
+                    || AccountDestination.tournamentManagement(value).isPresent());
             response.sendRedirect(TournamentLogin.failureUrl(
                     notConfirmed ? "not_confirmed" : "true", TournamentLogin.requestedTournament(request))
                     + destination.map(value -> "&destination=" + URLEncoder.encode(value, StandardCharsets.UTF_8))

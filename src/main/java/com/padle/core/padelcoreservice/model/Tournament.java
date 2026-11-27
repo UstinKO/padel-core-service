@@ -1,9 +1,9 @@
 package com.padle.core.padelcoreservice.model;
 
 import com.padle.core.padelcoreservice.model.enums.AmericanoFinalOrder;
-import com.padle.core.padelcoreservice.model.enums.GenderFormat;
+import com.padle.core.application.tournament.GenderFormat;
 import com.padle.core.padelcoreservice.model.enums.Modalidad;
-import com.padle.core.padelcoreservice.model.enums.Nivel;
+import com.padle.core.application.tournament.Nivel;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
 import com.padle.core.padelcoreservice.model.enums.TournamentVisibility;
@@ -20,7 +20,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.padle.core.padelcoreservice.model.enums.Nivel.*;
+import static com.padle.core.application.tournament.Nivel.*;
 
 @Entity
 @Table(name = "tournaments_db")

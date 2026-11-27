@@ -1,13 +1,19 @@
 package com.padle.core.padelcoreservice.controller.api;
 
+import com.padle.core.application.tournament.GenderFormat;
+import com.padle.core.application.tournament.Nivel;
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.dto.live.PublicLiveDtos.*;
 import com.padle.core.padelcoreservice.dto.americano.RankingCriteria;
 import com.padle.core.padelcoreservice.dto.americano.TeamPlayoffAddTeamRequest;
 import org.hibernate.stat.Statistics;
 import com.padle.core.padelcoreservice.model.*;
+import com.padle.core.persistence.clubs.Club;
 import com.padle.core.padelcoreservice.model.americano.*;
 import com.padle.core.padelcoreservice.model.enums.*;
 import com.padle.core.padelcoreservice.repository.*;
+import com.padle.core.persistence.clubs.ClubRepository;
 import com.padle.core.padelcoreservice.repository.americano.*;
 import com.padle.core.padelcoreservice.service.*;
 import com.padle.core.padelcoreservice.service.americano.*;

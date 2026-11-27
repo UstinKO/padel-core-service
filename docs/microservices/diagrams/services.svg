@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="675" viewBox="0 0 960 675" role="img" aria-labelledby="title desc">
+<title id="title">Пять сервисов и протоколы связи</title>
+<desc id="desc">Клиенты обращаются к шлюзу. Сплошные стрелки — пользовательские запросы, пунктир — фоновые вызовы.</desc>
+<style>
+:root { --paper:#f5f8f7; --panel:#ffffff; --ink:#182d37; --muted:#445d64; --rule:#bccbc9; --soft:#e5edeb; --line:#426166;
+          --gateway:#165173; --journal:#126756; --identity:#654591; --ops:#2456a0; --elo:#995016; --neutral:#3e5961;
+          --gateway-soft:#e0f1fa; --journal-soft:#dff2e9; --identity-soft:#eee8f8; --ops-soft:#e5edfc; --elo-soft:#f9ecd9; --neutral-soft:#e8efed; }
+  @media (prefers-color-scheme:dark) {
+    :root { --paper:#101e24; --panel:#192c32; --ink:#f0f5ef; --muted:#bdcecb; --rule:#53686c; --soft:#263c40; --line:#aec5bf;
+            --gateway:#86d4f7; --journal:#77dcc0; --identity:#ccaffa; --ops:#a6c9ff; --elo:#ffc389; --neutral:#c1d3d6;
+            --gateway-soft:#203c4b; --journal-soft:#183e35; --identity-soft:#383049; --ops-soft:#263953; --elo-soft:#453627; --neutral-soft:#263b40; }
+  }
+  text { font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; fill:var(--ink); }
+  .title { font-size:25px; font-weight:700; letter-spacing:-.5px }
+  .head { font-size:19px; font-weight:700 }
+  .body { font-size:16px }
+  .note { font-size:15px; fill:var(--muted) }
+  .tag { font-size:14px; font-weight:700; letter-spacing:.4px }
+  .base { fill:var(--paper); stroke:var(--rule) }
+  .card { fill:var(--panel); stroke:var(--rule) }
+  .band { fill:var(--soft) }
+  .arrow,.return { fill:none; stroke:var(--line); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; marker-end:url(#tip) }
+  .return { stroke-dasharray:5 5 }
+  .spine { fill:none; stroke:var(--line); stroke-width:2; stroke-linejoin:round }
+  .guide { stroke:var(--rule); stroke-dasharray:2 5 }
+  .divider { stroke:var(--rule) }
+</style>
+<defs>
+  <marker id="tip" viewBox="0 0 8 8" markerWidth="7" markerHeight="7" refX="7" refY="4" orient="auto-start-reverse">
+    <path d="M1 1 L7 4 L1 7 Z" fill="var(--line)"/>
+  </marker>
+</defs>
+<rect x="1" y="1" width="958" height="673" rx="18" class="base"/>
+<text x="26" y="42" class="title" text-anchor="start">Сервисы и протоколы</text>
+<text x="934" y="42" class="note" text-anchor="end">Состав пилота</text>
+<rect x="26" y="76" width="262" height="82" rx="12" class="card"/>
+<text x="44" y="109" class="head" text-anchor="start">Веб · iOS · Android</text>
+<text x="44" y="136" class="note" text-anchor="start">Судья, организатор, зритель</text>
+<path d="M288 118 H535" class="arrow"/>
+<text x="411" y="106" class="tag" text-anchor="middle">HTTPS/JSON</text>
+<text x="411" y="143" class="note" text-anchor="middle">WebSocket · табло</text>
+<rect x="540" y="66" width="394" height="104" rx="12" class="card"/>
+<rect x="542" y="68" width="390" height="100" rx="10" fill="var(--gateway-soft)"/>
+<rect x="556" y="81" width="30" height="4" rx="2" fill="var(--gateway)"/>
+<text x="556" y="111" class="head" text-anchor="start" style="fill:var(--gateway)">№1   API Gateway и оркестратор</text>
+<text x="556" y="139" class="body" text-anchor="start">Go · OpenAPI · без собственной БД</text>
+<path d="M737 170 V201" class="spine"/>
+<path d="M132 201 H828" class="spine"/>
+<path d="M132 201 V294" class="arrow"/>
+<rect x="32" y="219" width="200" height="49" rx="7" class="base"/>
+<text x="132" y="240" class="tag" text-anchor="middle">HTTPS</text>
+<text x="132" y="259" class="note" text-anchor="middle">Вход, токены, JWKS</text>
+<path d="M364 201 V294" class="arrow"/>
+<rect x="264" y="219" width="200" height="49" rx="7" class="base"/>
+<text x="364" y="240" class="tag" text-anchor="middle">HTTPS</text>
+<text x="364" y="259" class="note" text-anchor="middle">Заявки, оплаты, пакет</text>
+<path d="M596 201 V294" class="return"/>
+<rect x="496" y="219" width="200" height="49" rx="7" class="base"/>
+<text x="596" y="240" class="tag" text-anchor="middle">HTTPS · в фоне</text>
+<text x="596" y="259" class="note" text-anchor="middle">Задание на импорт</text>
+<path d="M828 201 V294" class="arrow"/>
+<rect x="728" y="219" width="200" height="49" rx="7" class="base"/>
+<text x="828" y="240" class="tag" text-anchor="middle">HTTPS / WebSocket</text>
+<text x="828" y="259" class="note" text-anchor="middle">Счёт, снимки, сигнал</text>
+<g aria-label="Сервис 3">
+  <rect x="24" y="301" width="216" height="191" rx="12" class="card"/>
+  <rect x="26" y="303" width="212" height="104" rx="10" fill="var(--identity-soft)"/>
+  <text x="40" y="331" class="tag" text-anchor="start" style="fill:var(--identity)">№3</text>
+  <path transform="translate(198 314)" d="M10 2 17 5v5c0 4-4 7-7 9-3-2-7-5-7-9V5z M7 10l2 2 4-5" fill="none" stroke="var(--identity)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="40" y="363" class="head" text-anchor="start" style="fill:var(--identity)">Аккаунты и вход</text>
+  <text x="40" y="431" class="note" text-anchor="start">Java 25 · Spring Security</text>
+  <text x="40" y="453" class="note" text-anchor="start">Spring Boot · OAuth2/JWT</text>
+  <text x="40" y="475" class="note" text-anchor="start">PG: identity · Redis¹</text>
+</g>
+<g aria-label="Сервис 4">
+  <rect x="256" y="301" width="216" height="191" rx="12" class="card"/>
+  <rect x="258" y="303" width="212" height="104" rx="10" fill="var(--ops-soft)"/>
+  <text x="272" y="331" class="tag" text-anchor="start" style="fill:var(--ops)">№4</text>
+  <path transform="translate(430 314)" d="M2 6h16v12H2z M2 9h16 M6 3v5 M14 3v5 M6 13h3 M12 13h2" fill="none" stroke="var(--ops)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="272" y="363" class="head" text-anchor="start" style="fill:var(--ops)">Управление</text>
+  <text x="272" y="388" class="head" text-anchor="start" style="fill:var(--ops)">турнирами</text>
+  <text x="272" y="431" class="note" text-anchor="start">Java 25 · Spring Boot</text>
+  <text x="272" y="453" class="note" text-anchor="start">JPA/JDBC · Liquibase</text>
+  <text x="272" y="475" class="note" text-anchor="start">PG: tournament</text>
+</g>
+<g aria-label="Сервис 5">
+  <rect x="488" y="301" width="216" height="191" rx="12" class="card"/>
+  <rect x="490" y="303" width="212" height="104" rx="10" fill="var(--elo-soft)"/>
+  <text x="504" y="331" class="tag" text-anchor="start" style="fill:var(--elo)">№5</text>
+  <path transform="translate(662 314)" d="M2 18h16 M4 15v-4h3v4 M9 15V7h3v8 M14 15V3h3v12" fill="none" stroke="var(--elo)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="504" y="363" class="head" text-anchor="start" style="fill:var(--elo)">Результаты</text>
+  <text x="504" y="388" class="head" text-anchor="start" style="fill:var(--elo)">и рейтинг Elo</text>
+  <text x="504" y="431" class="note" text-anchor="start">Kotlin/JVM 25 · Spring Boot</text>
+  <text x="504" y="453" class="note" text-anchor="start">JDBC · Liquibase</text>
+  <text x="504" y="475" class="note" text-anchor="start">PG: rating</text>
+</g>
+<g aria-label="Сервис 2">
+  <rect x="720" y="301" width="216" height="191" rx="12" class="card"/>
+  <rect x="722" y="303" width="212" height="104" rx="10" fill="var(--journal-soft)"/>
+  <text x="736" y="331" class="tag" text-anchor="start" style="fill:var(--journal)">№2</text>
+  <path transform="translate(894 314)" d="M2 4h16v13H2z M10 4v13 M5 8h2v4H5 M13 8h2v4h-2" fill="none" stroke="var(--journal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="736" y="363" class="head" text-anchor="start" style="fill:var(--journal)">Турнирный</text>
+  <text x="736" y="388" class="head" text-anchor="start" style="fill:var(--journal)">протокол и табло</text>
+  <text x="736" y="431" class="note" text-anchor="start">Go · SQLite WAL</text>
+  <text x="736" y="453" class="note" text-anchor="start">События, архивы, снимки</text>
+  <text x="736" y="475" class="note" text-anchor="start">gRPC · события из клуба</text>
+</g>
+<path d="M132 493 V526 H364 V496" class="return"/>
+<text x="248" y="554" class="body" text-anchor="middle">Привязать профиль</text>
+<text x="248" y="576" class="note" text-anchor="middle">HTTPS через №1 · в фоне</text>
+<path d="M596 493 V526 H828 V496" class="return"/>
+<text x="712" y="554" class="body" text-anchor="middle">Получить архив, доставить срез</text>
+<text x="712" y="576" class="note" text-anchor="middle">HTTPS через №1 · в фоне</text>
+<path d="M26 599 H934" class="divider"/>
+<text x="28" y="628" class="note" text-anchor="start">PG — одна БД PostgreSQL, своя схема и роль у каждого владельца.</text>
+<text x="28" y="652" class="note" text-anchor="start">¹ Redis для веб-сессий — базовый вариант. Spring Session JDBC сравниваем на пилоте.</text>
+</svg>

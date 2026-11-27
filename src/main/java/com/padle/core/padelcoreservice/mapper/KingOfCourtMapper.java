@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.mapper;
 
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.dto.*;
 import com.padle.core.padelcoreservice.model.*;
 import org.mapstruct.Mapper;
@@ -58,7 +59,7 @@ public interface KingOfCourtMapper {
 
     @Mapping(target = "playerId", source = "stats.player.id")
     @Mapping(target = "playerName", source = "stats.player.nombreCompleto")
-    @Mapping(target = "playerNivel", expression = "java(com.padle.core.padelcoreservice.model.enums.Nivel.orNullIfSinEspecificar(stats.getPlayer().getNivelJugador()))")
+    @Mapping(target = "playerNivel", expression = "java(com.padle.core.application.tournament.Nivel.orNullIfSinEspecificar(stats.getPlayer().getNivelJugador()))")
     @Mapping(target = "totalPoints", source = "stats.totalPoints")
     @Mapping(target = "bonusPoints", source = "stats.bonusPoints")
     @Mapping(target = "gamesPlayed", source = "stats.gamesPlayed")

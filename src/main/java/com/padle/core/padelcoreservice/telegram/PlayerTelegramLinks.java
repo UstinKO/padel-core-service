@@ -2,7 +2,7 @@ package com.padle.core.padelcoreservice.telegram;
 
 import com.padle.core.padelcoreservice.config.PlayerTelegramProperties;
 import com.padle.core.padelcoreservice.exception.AccountException;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.telegram.TelegramModels.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -46,6 +46,8 @@ public class PlayerTelegramLinks {
         return properties.enabled() && api.available()
                 && properties.botUsername().matches("[A-Za-z0-9_]{5,32}");
     }
+
+    public String botUrl() { return "https://t.me/" + properties.botUsername(); }
 
     public Link issue(PlayerPadel player, Locale locale) {
         if (!available() || !access.allowsPlayer(player.getId()) || !player.isActivo() || player.isGuestAccount()) {

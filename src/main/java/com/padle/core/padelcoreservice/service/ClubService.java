@@ -1,13 +1,14 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.application.clubs.ClubAdminReadPort;
+import com.padle.core.application.clubs.ClubAdminWritePort;
+import com.padle.core.application.clubs.ClubProfile;
+import com.padle.core.application.clubs.ClubTournamentUsage;
 import com.padle.core.padelcoreservice.dto.ClubDto;
 import com.padle.core.padelcoreservice.exception.InvalidStateException;
 import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
-import com.padle.core.padelcoreservice.mapper.ClubMapper;
-import com.padle.core.padelcoreservice.model.Club;
+import com.padle.core.padelcoreservice.mapper.ClubDtoMapper;
 import com.padle.core.padelcoreservice.model.Owner;
-import com.padle.core.padelcoreservice.repository.ClubRepository;
-import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
@@ -15,10 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -26,49 +24,35 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class ClubService {
 
-    private final ClubRepository clubRepository;
-    private final ClubMapper clubMapper;
-    private final TournamentRepository tournamentRepository;
+    private final ClubAdminReadPort clubReads;
+    private final ClubAdminWritePort clubWrites;
+    private final ClubDtoMapper clubMapper;
+    private final ClubTournamentUsage tournaments;
 
     // ========== Публичные методы для просмотра ==========
 
     public List<ClubDto> getAllClubs() {
-        return clubRepository.findAll().stream()
-                .map(clubMapper::toDto)
-                .collect(Collectors.toList());
+        return clubMapper.toDto(clubReads.findAll());
     }
 
     public List<ClubDto> getActiveClubs() {
-        return clubRepository.findByIsActiveTrue().stream()
-                .map(clubMapper::toDto)
-                .collect(Collectors.toList());
+        return clubMapper.toDto(clubReads.findActive());
     }
 
     public Optional<ClubDto> getClubById(Long id) {
-        return clubRepository.findById(id)
-                .map(clubMapper::toDto);
-    }
-
-    public Map<Long, ClubDto> findClubsByIds(Set<Long> ids) {
-        return clubRepository.findAllById(ids).stream()
-                .collect(Collectors.toMap(Club::getId, clubMapper::toDto));
+        return clubReads.findProfileById(id).map(clubMapper::toDto);
     }
 
     public Optional<ClubDto> getClubByNombre(String nombre) {
-        return clubRepository.findByNombre(nombre)
-                .map(clubMapper::toDto);
+        return clubReads.findByName(nombre).map(clubMapper::toDto);
     }
 
     public List<ClubDto> getClubsByZona(String zona) {
-        return clubRepository.findByZonaCiudad(zona).stream()
-                .map(clubMapper::toDto)
-                .collect(Collectors.toList());
+        return clubMapper.toDto(clubReads.findByCity(zona));
     }
 
     public List<ClubDto> searchClubs(String searchTerm) {
-        return clubRepository.searchClubs(searchTerm).stream()
-                .map(clubMapper::toDto)
-                .collect(Collectors.toList());
+        return clubMapper.toDto(clubReads.search(searchTerm));
     }
 
     // ========== Методы для админ-панели ==========
@@ -76,25 +60,19 @@ public class ClubService {
     @Transactional(readOnly = true)
     public List<ClubDto> getAllClubsForAdmin() {
         log.debug("Fetching all clubs for admin");
-        return clubRepository.findAllByOrderByNombreAsc().stream()
-                .map(clubMapper::toDto)
-                .collect(Collectors.toList());
+        return clubMapper.toDto(clubReads.findAllOrderedByName());
     }
 
     @Transactional(readOnly = true)
     public List<ClubDto> getActiveClubsForAdmin() {
         log.debug("Fetching active clubs for admin");
-        return clubRepository.findAllByIsActiveTrueOrderByNombreAsc().stream()
-                .map(clubMapper::toDto)
-                .collect(Collectors.toList());
+        return clubMapper.toDto(clubReads.findActiveOrderedByName());
     }
 
     @Transactional(readOnly = true)
     public ClubDto getClubByIdForAdmin(Long id) {
         log.debug("Fetching club by id for admin: {}", id);
-        Club club = clubRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Club not found with id: " + id));
-        return clubMapper.toDto(club);
+        return clubMapper.toDto(requireClub(id));
     }
 
     @Transactional
@@ -102,26 +80,22 @@ public class ClubService {
         log.info("Creating new club: {}", clubDto.getNombre());
 
         // Проверяем, существует ли уже клуб с таким названием
-        if (clubRepository.existsByNombre(clubDto.getNombre())) {
+        if (clubReads.existsByName(clubDto.getNombre())) {
             throw new RuntimeException("Ya existe un club con el nombre: " + clubDto.getNombre());
         }
 
-        Club club = clubMapper.toEntity(clubDto);
-        club.setCreatedBy(createdBy);
-        club.setIsActive(true);
-
-        Club savedClub = clubRepository.save(club);
-        log.info("Created new club: {} with id: {}", savedClub.getNombre(), savedClub.getId());
+        ClubProfile savedClub = clubWrites.create(clubMapper.toFields(clubDto), createdBy);
+        log.info("Created new club: {} with id: {}", savedClub.fields().name(), savedClub.id());
 
         return clubMapper.toDto(savedClub);
     }
 
     @Transactional
     public ClubDto updateClub(Long id, ClubDto clubDto, Owner currentOwner) {
-        Club club = clubRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Club not found with id: " + id));
+        ClubProfile club = requireClub(id);
 
-        if (!club.getNombre().equals(clubDto.getNombre()) &&
-                clubRepository.existsByNombre(clubDto.getNombre())) {
+        if (!club.fields().name().equals(clubDto.getNombre()) &&
+                clubReads.existsByName(clubDto.getNombre())) {
             throw new RuntimeException("Ya existe un club con el nombre: " + clubDto.getNombre());
         }
 
@@ -129,38 +103,36 @@ public class ClubService {
             throw new AccessDeniedException("No tienes permiso para editar este Club");
         }
 
-        updateClubFields(club, clubDto);
-        Club updated = clubRepository.save(club);
+        ClubProfile updated = clubWrites.update(id, clubMapper.toFields(clubDto));
         log.info("Updated club with id: {}", id);
         return clubMapper.toDto(updated);
     }
 
     @Transactional
     public void deleteClub(Long id, Owner currentOwner) {
-        Club club = clubRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Club not found with id: " + id));
+        requireClub(id);
 
         if (!currentOwner.isSuperAdmin()) {
             throw new AccessDeniedException("No tienes permiso para eliminar este Club");
         }
 
-        club.setIsActive(false);
-        clubRepository.save(club);
+        clubWrites.setActive(id, false);
         log.info("Soft deleted club with id: {}", id);
     }
 
     @Transactional
     public void hardDeleteClub(Long id, Owner currentOwner) {
 
-        Club club = clubRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Club not found with id: " + id));
+        requireClub(id);
 
         if (!currentOwner.isSuperAdmin()) {
             throw new AccessDeniedException("No tienes permiso para cambiar el estado de los clubes");
         }
 
-        if (tournamentRepository.existsByClubId(club.getId())) {
+        if (tournaments.existsByClubId(id)) {
             throw new InvalidStateException("No se puede eliminar el club porque tiene torneos asociados");
         }
-        clubRepository.deleteById(id);
+        clubWrites.delete(id);
         log.info("Hard deleted club with id: {}", id);
     }
 
@@ -168,26 +140,13 @@ public class ClubService {
     public void toggleClubStatus(Long id) {
         log.info("Toggling club status with id: {}", id);
 
-        Club club = clubRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Club not found with id: " + id));
-
-        club.setIsActive(!club.getIsActive());
-        clubRepository.save(club);
-
-        log.info("Club status toggled. New active status: {}", club.getIsActive());
+        boolean active = !requireClub(id).active();
+        clubWrites.setActive(id, active);
+        log.info("Club status toggled. New active status: {}", active);
     }
 
-    // ========== Вспомогательные методы ==========
-
-    private void updateClubFields(Club existing, ClubDto dto) {
-        existing.setNombre(dto.getNombre());
-        existing.setDireccion(dto.getDireccion());
-        existing.setZonaCiudad(dto.getZonaCiudad());
-        existing.setTelefonoContacto(dto.getTelefonoContacto());
-        existing.setEmailContacto(dto.getEmailContacto());
-        existing.setMapaUrl(dto.getMapaUrl());
-        existing.setWebsiteUrl(dto.getWebsiteUrl());
-        existing.setDescripcion(dto.getDescripcion());
-        existing.setLogoUrl(dto.getLogoUrl());
+    private ClubProfile requireClub(Long id) {
+        return clubReads.findProfileById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Club not found with id: " + id));
     }
 }

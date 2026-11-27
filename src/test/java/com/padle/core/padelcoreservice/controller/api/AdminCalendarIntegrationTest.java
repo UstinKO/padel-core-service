@@ -1,10 +1,14 @@
 package com.padle.core.padelcoreservice.controller.api;
 
-import com.padle.core.padelcoreservice.model.Club;
+import com.padle.core.application.tournament.GenderFormat;
+import com.padle.core.application.tournament.Nivel;
+import com.padle.core.padelcoreservice.support.OwnerFixtures;
+import com.padle.core.persistence.clubs.Club;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.enums.*;
 import com.padle.core.padelcoreservice.repository.*;
+import com.padle.core.persistence.clubs.ClubRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -42,7 +46,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 class AdminCalendarIntegrationTest {
     @Autowired MockMvc mvc;
-    @Autowired OwnerRepository owners;
+    @Autowired OwnerFixtures owners;
     @Autowired ClubRepository clubs;
     @Autowired TournamentRepository tournaments;
     private static final AtomicInteger TEST_IP = new AtomicInteger();

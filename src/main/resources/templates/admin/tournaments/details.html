@@ -321,7 +321,7 @@
     </style>
 <link rel="stylesheet" th:href="@{/css/round-robin.css}">
 </head>
-<body>
+<body th:with="pairedHelp=${tournament.tipo != null and (tournament.tipo.name() == 'AMERICANO_TEAMS' or (tournament.tipo.name() == 'AMERICANO' and tournament.modalidad != null and tournament.modalidad.name() == 'DOBLES'))}">
 <header th:replace="~{fragments/admin-header :: header(#{admin.tournaments.details.header})}"></header>
 
 <main class="admin-main">
@@ -396,7 +396,7 @@
                th:href="@{/tournaments/team-americano/admin/{id}(id=${tournament.id})}"
                th:text="#{conduct.resume}">Continuar torneo</a>
             <th:block th:if="${teamPlayoffConduct == true}">
-                <a th:replace="~{fragments/team-playoff-conduct-link :: link(${tournament}, 'btn btn-primary')}"></a>
+                <a th:replace="~{fragments/team-playoff-conduct-link :: link(${tournament}, 'btn btn-primary')}"></a><th:block th:if="${pairedHelp}"><button th:replace="~{fragments/action-help :: help('resume')}"></button></th:block>
             </th:block>
 
             <button onclick="shareAdminTournament()"
@@ -422,7 +422,7 @@
                th:href="@{'/admin/tournaments/' + ${tournament.id} + '/edit'}" class="btn btn-primary">
                 <i class="fas fa-edit"></i>
                 <span th:text="#{admin.tournaments.details.btn.edit}">Editar Torneo</span>
-            </a>
+            </a><th:block th:if="${pairedHelp and !isAdminRole}"><button th:replace="~{fragments/action-help :: help('edit')}"></button></th:block>
 
             <!-- Кнопки изменения статуса (Publicar — только для владельцев, не ADMIN) -->
             <form th:unless="${isAdminRole}"
@@ -565,18 +565,20 @@
                         <i class="fas fa-phone-alt"></i>
                         <span th:text="#{admin.tournaments.details.info.contact}">Contacto del Organizador</span>
                     </h2>
-                    <div class="contact-info">
-                        <p th:if="${tournament.contactoOrganizador}">
-                            <a th:href="'https://wa.me/5491158985854' + ${#strings.replace(tournament.contactoOrganizador, '+', '')}"
-                               class="whatsapp-contact-link"
-                               target="_blank"
-                               rel="noopener noreferrer"
-                               th:title="'Contactar por WhatsApp con ' + ${tournament.contactoOrganizador}">
-                                <i class="fab fa-whatsapp" style="color: #25D366; margin-right: 8px;"></i>
-                                <span th:text="${tournament.contactoOrganizador}">Juan Pérez - 123456789</span>
+                    <div class="contact-info" th:with="contact=${tournament.organizerContact}">
+                        <div th:if="${contact != null and !contact.needsReview}">
+                            <p th:if="${!#strings.isEmpty(contact.name)}" th:text="${contact.name}"></p>
+                            <a th:href="${contact.whatsappUrl}" class="whatsapp-contact-link" target="_blank" rel="noopener noreferrer">
+                                <i class="fab fa-whatsapp" aria-hidden="true"></i>
+                                <span th:text="${contact.displayPhone}"></span>
                             </a>
-                        </p>
-                        <p th:unless="${tournament.contactoOrganizador}" th:text="#{admin.tournaments.details.info.contact.unavailable}">No disponible</p>
+                        </div>
+                        <p th:if="${contact == null or contact.needsReview}" th:text="#{tournament.contact.none}"></p>
+                        <div th:if="${contact != null and contact.needsReview}">
+                            <p th:text="#{organizer.contact.review}"></p>
+                            <p th:text="${tournament.organizerContactOriginal}" style="overflow-wrap:anywhere"></p>
+                            <a th:unless="${isAdminRole}" th:href="@{/admin/tournaments/{id}/edit(id=${tournament.id})}" th:text="#{organizer.contact.correct}"></a>
+                        </div>
                     </div>
                 </div>
 
@@ -1200,7 +1202,7 @@
                                     <span class="lbl" th:text="#{admin.tournaments.details.americano.teams_loaded}">Equipos cargados:</span>
                                     <span class="val" th:text="${playoffTeamsCount}">0</span>
                                     <span class="lbl" th:text="#{admin.tournaments.details.americano.min_required}">Mínimo requerido:</span>
-                                    <span class="val" th:text="#{admin.tournaments.details.americano.min_4_teams}">4 equipos</span>
+                                    <span class="val" th:text="#{admin.tournaments.details.americano.min_2_teams}">2 equipos</span>
                                 </div>
                             </div>
 
@@ -1208,7 +1210,7 @@
                                class="btn btn-primary btn-block" style="margin-top:1rem">
                                 <i class="fas fa-cogs"></i>
                                 <span th:text="#{admin.tournaments.details.americano.manage_teams}">Gestionar equipos e iniciar torneo</span>
-                            </a>
+                            </a><th:block th:if="${pairedHelp}"><button th:replace="~{fragments/action-help :: help('start')}"></button></th:block>
                         </div>
 
                     </div>
@@ -1254,7 +1256,7 @@
                             <tr>
                                 <th style="width:48px;">#</th>
                                 <th th:text="#{admin.tournaments.details.col.player}">Jugador</th>
-                                <th th:if="${tournament.modalidad.name() == 'DOBLES'}" th:text="#{admin.tournaments.details.col.pair}">Pareja</th>
+                                <th th:if="${tournament.modalidad.name() == 'DOBLES'}"><span th:text="#{admin.tournaments.details.col.pair}">Pareja</span><th:block th:if="${pairedHelp}"><button th:replace="~{fragments/action-help :: help('cancel')}"></button></th:block></th>
                                 <th th:if="${tournament.modalidad.name() == 'DOBLES'}" th:text="#{admin.tournaments.details.col.pair_contact}">Contacto pareja</th>
                                 <th th:unless="${tournament.modalidad.name() == 'DOBLES'}" th:text="#{admin.tournaments.details.col.position}">Posición</th>
                                 <th th:unless="${tournament.modalidad.name() == 'DOBLES'}" th:text="#{admin.tournaments.details.col.contact}">Contacto</th>
@@ -1344,7 +1346,7 @@
                                                 onclick="moveToWaitlist(this)"
                                                 th:title="#{admin.tournaments.details.action.move_to_waitlist}">
                                             <i class="fas fa-arrow-down"></i>
-                                        </button>
+                                        </button><th:block th:if="${pairedHelp}"><button th:replace="~{fragments/action-help :: help('reserve')}"></button></th:block>
                                         <a th:href="@{'/admin/players/' + ${reg.playerId}}"
                                            class="btn-icon"
                                            th:title="#{admin.tournaments.details.action.view_player}">
@@ -1363,7 +1365,7 @@
                 <div class="reg-table-header">
                     <h3>
                         <i class="fas fa-clock" style="color:#f59e0b;"></i>
-                        <span th:text="#{admin.tournaments.details.table.reserve}">Reserva</span>
+                        <span th:text="#{admin.tournaments.details.table.reserve}">Reserva</span><th:block th:if="${pairedHelp}"><button th:replace="~{fragments/action-help :: help('reserve')}"></button></th:block>
                         <span class="reg-badge-count" style="background:#f59e0b;"
                               th:text="${confirmedRegs.size() - effectiveCupoMax}"></span>
                     </h3>
@@ -1695,7 +1697,7 @@
                                             onclick="moveToMain(this)"
                                             th:title="#{admin.tournaments.details.action.move_to_main}">
                                         <i class="fas fa-arrow-up"></i>
-                                    </button>
+                                    </button><th:block th:if="${pairedHelp}"><button th:replace="~{fragments/action-help :: help('reserve')}"></button></th:block>
                                     <a th:href="@{'/admin/players/' + ${reg.playerId}}"
                                        class="btn-icon"
                                        th:title="#{admin.tournaments.details.action.view_player}">

@@ -1,14 +1,14 @@
 package com.padle.core.padelcoreservice.controller.api;
 
-import com.padle.core.padelcoreservice.model.Club;
+import com.padle.core.persistence.clubs.Club;
 import com.padle.core.padelcoreservice.model.Tournament;
-import com.padle.core.padelcoreservice.model.enums.GenderFormat;
+import com.padle.core.application.tournament.GenderFormat;
 import com.padle.core.padelcoreservice.model.enums.Modalidad;
-import com.padle.core.padelcoreservice.model.enums.Nivel;
+import com.padle.core.application.tournament.Nivel;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
 import com.padle.core.padelcoreservice.model.enums.TournamentVisibility;
-import com.padle.core.padelcoreservice.repository.ClubRepository;
+import com.padle.core.persistence.clubs.ClubRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import jakarta.persistence.EntityManagerFactory;
 import org.hibernate.SessionFactory;
@@ -128,6 +128,25 @@ class PublicDiscoveryIntegrationTest {
         var club = clubs.findById(clubId).orElseThrow();
         club.setIsActive(false); clubs.saveAndFlush(club);
         mvc.perform(get("/api/public/clubs/" + clubId)).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void catalogAndTournamentKeepTheInactiveClubLocation() throws Exception {
+        var club = clubs.findById(clubId).orElseThrow();
+        club.setIsActive(false);
+        club.setDireccion("Calle de prueba");
+        club.setZonaCiudad("Madrid");
+        clubs.saveAndFlush(club);
+
+        mvc.perform(get("/api/public/catalog").param("clubId", clubId.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(2))
+                .andExpect(jsonPath("$.items[0].club.name").value(club.getNombre()))
+                .andExpect(jsonPath("$.items[0].club.address").value("Calle de prueba, Madrid"));
+        mvc.perform(get("/api/public/tournaments/" + publicId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.club.name").value(club.getNombre()))
+                .andExpect(jsonPath("$.club.address").value("Calle de prueba, Madrid"));
     }
 
     @Test
