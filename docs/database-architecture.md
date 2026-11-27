@@ -159,7 +159,7 @@ owners_db ───────────────────────�
 | `first_name` | `VARCHAR(255)` | NOT NULL | — | Имя |
 | `last_name` | `VARCHAR(255)` | NOT NULL | — | Фамилия |
 | `phone` | `VARCHAR(255)` | NULL | — | Телефон |
-| `role` | `VARCHAR(30)` | NOT NULL | `ORGANIZER` | Роль (enum `OwnerRole`) |
+| `role` | `VARCHAR(30)` | NOT NULL | `ORGANIZER` | Роль (enum `OwnerAccount.Role`) |
 | `created_at` | `TIMESTAMP` | NOT NULL | now() | Дата создания |
 | `updated_at` | `TIMESTAMP` | NOT NULL | now() | Дата обновления |
 | `last_login_at` | `TIMESTAMP` | NULL | — | Последний вход |
@@ -832,6 +832,9 @@ tournaments_db
 | `CANCELLED` | Отменён |
 
 ### `OwnerRole` — роль администратора
+
+В JPA используется `OwnerAccount.Role`. Имена значений совпадают с перечислением сессии `OwnerRole`.
+
 | Значение | Права |
 |----------|-------|
 | `SUPER_ADMIN` | Полные права |
