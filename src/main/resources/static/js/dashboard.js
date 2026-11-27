@@ -86,6 +86,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Маппинги для отображения значений
     const displayMaps = {
         nivel: {
+            'TODOS': t('enum.nivel.todos'),
             // Новые уровни
             'SUMA_15': t('enum.nivel.suma15'),
             'SUMA_13': t('enum.nivel.suma13'),
@@ -1180,7 +1181,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Получаем отображаемые тексты
         const generoDisplay = displayMaps.genero[tournament.generoFormato] || tournament.generoFormato || 'N/A';
-        const nivelDisplay = (tournament.categoriaNivel || 'N/A').replace('C4_C3', 'C4/C3');
+        const nivelDisplay = tournament.categoriaNivel === 'TODOS'
+            ? t('enum.nivel.todos') : (tournament.categoriaNivel || 'N/A').replace('C4_C3', 'C4/C3');
         const tipoDisplay = displayMaps.tipo[tournament.tipo] || tournament.tipo || 'N/A';
         // Заголовок карточки — формат мероприятия (как на главной странице, home.js),
         // а не автогенерированное название турнира, дублирующее пол/категорию.
@@ -1233,14 +1235,14 @@ document.addEventListener('DOMContentLoaded', function() {
 ` : !isMyTournament ? `
     <button class="btn btn-primary btn-small btn-register" data-registration-intent="${tournament.id}"
             data-tournament-id="${tournament.id}"
-            data-tournament-name="${escapeHtml(tournament.nombre)}">
+            data-tournament-name="${escapeHtml(window.PadelLevels.eventName(tournament.nombre))}">
         <i class="fas fa-plus-circle"></i>
         <span>${registrationText}</span>
     </button>
 ` : `
     <button class="btn btn-outline btn-small btn-cancel"
             data-tournament-id="${tournament.id}"
-            data-tournament-name="${escapeHtml(tournament.nombre)}">
+            data-tournament-name="${escapeHtml(window.PadelLevels.eventName(tournament.nombre))}">
         <i class="fas fa-times-circle"></i> ${t('common.cancel')}
     </button>
 `}

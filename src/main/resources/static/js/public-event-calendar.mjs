@@ -17,7 +17,7 @@ function countText(count) {
     return tr(`events_${rule === 'one' ? 'one' : rule === 'few' ? 'few' : 'many'}`, count);
 }
 function levelText(value, short = false) {
-    if (value === 'TODOS') return tr(short ? 'all' : 'all_levels');
+    if (value === 'TODOS') return tr('all_levels');
     if (value === 'PRINCIPIANTES') return tr('beginner');
     return (value || '').replace('SUMA_', 'SUMA ').replaceAll('_', '/');
 }

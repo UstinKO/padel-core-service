@@ -16,7 +16,7 @@
 </details>
 <dialog id="solo-dialog" class="solo-dialog" aria-labelledby="solo-dialog-title">
     <div class="solo-header"><h2 id="solo-dialog-title"></h2><button type="button" class="solo-close" data-roster-close th:aria-label="#{solo.ui.close}">×</button></div>
-    <p class="solo-event" th:text="${tournament.nombre}"></p>
+    <p class="solo-event" th:text="${@eventLevelText.eventName(tournament.nombre, #locale)}"></p>
     <p id="solo-source"></p>
     <p id="solo-error" class="solo-error" role="alert"></p>
     <form id="solo-form">

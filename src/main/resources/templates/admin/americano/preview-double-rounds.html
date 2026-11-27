@@ -75,10 +75,10 @@
         <!-- Header турнира -->
         <div class="tournament-header" style="margin-bottom:1.5rem">
             <div class="tournament-title-section">
-                <h1 th:text="${tournament.nombre}">Team Americano</h1>
+                <h1 th:text="${@eventLevelText.eventName(tournament.nombre, #locale)}">Team Americano</h1>
                 <div class="tournament-badges">
                     <span class="badge" th:text="${tournament.generoFormato}">Mixto</span>
-                    <span class="badge badge-level" th:text="${#strings.replace(tournament.categoriaNivel, 'C4_C3', 'C4/C3')}">C7</span>
+                    <span class="badge badge-level" th:text="${tournament.categoriaNivel == 'TODOS' ? #messages.msg('calendar.level.TODOS') : #strings.replace(tournament.categoriaNivel, 'C4_C3', 'C4/C3')}">C7</span>
                     <span class="badge badge-type">Team Americano</span>
                     <span class="badge badge-status" th:text="${tournament.estado}"
                           th:classappend="'badge-' + ${tournament.estado.toString().toLowerCase()}">Cerrado</span>
