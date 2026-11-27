@@ -27,6 +27,10 @@ public class TelegramOnboardingController {
     @PreAuthorize("hasAnyRole('SUPER_ADMIN','ORGANIZER','OWNER','CLUB_ADMIN','ADMIN')")
     public PlayerTelegramOnboarding.Invitation invitation() { return onboarding.invitation(); }
 
+    @GetMapping("/api/admin/telegram/site-invitation")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ORGANIZER','OWNER','CLUB_ADMIN','ADMIN')")
+    public PlayerTelegramOnboarding.Invitation siteInvitation() { return onboarding.siteInvitation(); }
+
     @GetMapping("/api/players/me/telegram/onboarding")
     @PreAuthorize("hasRole('PLAYER')")
     public PlayerTelegramOnboarding.Review review(@RequestParam(defaultValue="") String request, HttpSession session, Authentication auth) {

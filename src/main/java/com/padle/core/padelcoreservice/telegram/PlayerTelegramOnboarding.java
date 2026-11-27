@@ -47,6 +47,11 @@ public class PlayerTelegramOnboarding {
         return new Invitation(available(), available() ? links.botUrl()+"?start=connect" : "");
     }
 
+    public Invitation siteInvitation() {
+        boolean ready = available();
+        return new Invitation(ready, ready ? baseUrl + "/telegram/join" : "");
+    }
+
     public void start(long updateId, User user) {
         if (!available() || connections.deliveryResult("reply:"+updateId).isPresent()) return;
         var locale = language(user.languageCode());

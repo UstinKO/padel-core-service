@@ -10,6 +10,12 @@ class AccountDestinationTest {
     void rejectsExternalAndEncodedRedirects(String value) { assertThat(AccountDestination.safe(value)).isEmpty(); }
 
     @ParameterizedTest
-    @ValueSource(strings={"/torneo/42#tournament-registration", "/preview/perfil", "/torneos?lang=ru"})
+    @ValueSource(strings={"/torneo/42#tournament-registration", "/preview/perfil", "/telegram/join", "/torneos?lang=ru"})
     void retainsInternalDestinations(String value) { assertThat(AccountDestination.safe(value)).contains(value); }
+    @ParameterizedTest
+    @ValueSource(strings={"/telegram/join?next=evil", "/telegram/join/", "/telegram/join#token=x", "https://example.test/telegram/join"})
+    void onlyCanonicalSiteJoinSurvivesLoginFailure(String value) {
+        assertThat(AccountDestination.telegramConnect(value)).isFalse();
+        assertThat(AccountDestination.telegramConnect("/telegram/join")).isTrue();
+    }
 }

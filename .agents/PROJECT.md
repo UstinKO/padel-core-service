@@ -1,3 +1,5 @@
+Короткий вход Telegram: `TelegramJoinController`, GET/POST `/telegram/join`, новый `/api/admin/telegram/site-invitation`. GET не выдаёт токен; POST PLAYER+CSRF возвращает 303 на прежний персональный bot Start. До выпуска шаблона показывается безопасная заглушка. Старый вход и API приглашения сохраняются.
+
 # PROJECT.md — техническая карта проекта
 
 Общий вход Telegram UI: `telegram-connect.html` / JS / CSS, `telegram-invitation.js` в действующем редакторе. Кнопка подтверждает профиль только явным POST, окончательная связь — в исходном боте. Fragment очищается, контекст вкладки выбирает публичный UUID request; неизвестный ответ проверяется вручную. Настоящий `PlayerTelegramOnboardingBrowserTest` включён в существующий browser CI. [Проверки](../docs/player-telegram-interface.md).
