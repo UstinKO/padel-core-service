@@ -15,7 +15,6 @@ import com.padle.core.padelcoreservice.telegram.TelegramModels.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
-import java.util.Locale;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
