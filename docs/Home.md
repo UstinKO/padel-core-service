@@ -151,3 +151,5 @@ SITE_KEY, SECRET_KEY
 Объединение выбранных профилей: [контракт, конфликты и аудит](guest-profile-merge.md).
 
 - [Универсальный экспорт результатов](endpoints/tournament-results-export.md) — Excel / CSV одного мероприятия, только SUPER_ADMIN, контакты по явному выбору.
+
+- [Экспорт результатов в админке](results-export-interface.md) — выбор Excel / CSV и отдельный режим телефонов.

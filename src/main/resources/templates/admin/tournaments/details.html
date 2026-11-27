@@ -386,6 +386,9 @@
 
         <!-- Кнопки действий -->
         <div class="action-buttons-center">
+            <button th:if="${isSuperAdmin}" type="button" class="btn btn-outline" data-results-export-open
+                    th:attr="data-export-url=@{/admin/tournaments/{id}/results-export(id=${tournament.id})}"
+                    th:text="#{results.export.title}">Exportar resultados</button>
             <a th:if="${kingOfCourtId != null}" class="btn btn-primary"
                th:href="@{/admin/tournaments/king-of-court/{id}(id=${kingOfCourtId})}"
                th:text="${kingOfCourtActive} ? #{conduct.resume} : #{conduct.review_run}">Continuar torneo</a><th:block th:if="${individualHelp and kingOfCourtId != null}"><button th:replace="~{fragments/action-help :: help('individual-resume')}"></button></th:block>
@@ -1906,5 +1909,6 @@
 </script>
 <script th:src="@{/js/admin-tournament-list.js}" defer></script>
 <script th:src="@{/js/admin-calendar-return.js}" defer></script>
+<th:block th:if="${isSuperAdmin}"><th:block th:replace="~{fragments/results-export :: dialog}"></th:block></th:block>
 </body>
 </html>
