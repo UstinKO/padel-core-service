@@ -35,8 +35,7 @@ public class TelegramConnectController {
     @GetMapping("/telegram/connect")
     public String connect(@RequestParam(defaultValue="") String request, Authentication auth, HttpSession session,
                           Model model, RedirectAttributes redirect, HttpServletResponse response, Locale locale) {
-        response.setHeader("Cache-Control","no-store");
-        response.setHeader("Referrer-Policy","no-referrer");
+        protect(response);
         String token=TelegramOnboardingSession.token(session,request);
         model.addAttribute("requestId",token.isEmpty()?"":request);
         if (onboarding.available() && !token.isEmpty() &&
@@ -64,10 +63,16 @@ public class TelegramConnectController {
     @PostMapping("/telegram/connect/context")
     @ResponseBody
     public Continue remember(@Valid @RequestBody Token token, HttpSession session, HttpServletResponse response) {
-        response.setHeader("Cache-Control","no-store");
-        response.setHeader("Referrer-Policy","no-referrer");
+        protect(response);
         UUID id=onboarding.requestId(token.token());
         TelegramOnboardingSession.remember(session,id,token.token());
         return new Continue(TelegramOnboardingSession.destination(id));
+    }
+
+    private static void protect(HttpServletResponse response) {
+        response.setHeader("Cache-Control", "no-store, no-transform");
+        response.setHeader("Referrer-Policy", "no-referrer");
+        response.setHeader("Content-Security-Policy",
+                "script-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'");
     }
 }
