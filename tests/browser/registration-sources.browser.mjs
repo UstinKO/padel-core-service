@@ -29,6 +29,21 @@ async function pageFor(ctx) {
     const page = await ctx.newPage();
     page.setDefaultTimeout(15000);
     page.on('pageerror', error => errors.push(String(error)));
+    page.on('crash', async () => {
+        const message = 'Browser page crashed at ' + new URL(page.url()).pathname;
+        errors.push(message); console.error(message);
+        try {
+            const [memory, vm, cgroup] = await Promise.all([
+                readFile('/proc/meminfo', 'utf8'), readFile('/proc/vmstat', 'utf8'), readFile('/sys/fs/cgroup/memory.events', 'utf8')
+            ]);
+            console.error('BROWSER_RESOURCES ' + JSON.stringify({
+                memory: memory.split('\n').filter(line => /^(MemTotal|MemAvailable|SwapFree):/.test(line)),
+                oom: vm.split('\n').filter(line => line.startsWith('oom_kill ')), cgroup
+            }));
+        } catch (diagnosticError) {
+            console.error('Resource diagnostics unavailable: ' + diagnosticError.message);
+        }
+    });
     return page;
 }
 async function login(page, email, destination, { openLogin = true, hash = '', keepConsentVisible = false } = {}) {
@@ -77,8 +92,252 @@ async function report(page, language, source) {
     }
 }
 
+async function reviewRegistrationForm(browser, browserName, options = {}) {
+    const ctx = await context(browser, { viewport: { width: 390, height: 844 }, ...options });
+    const page = await pageFor(ctx);
+    for (const [language, caption] of [['es', 'si tenés'], ['ru', 'при наличии'], ['en', 'if you have it']]) {
+        await page.goto(fixture.baseUrl + '/players/registro?lang=' + language);
+        await page.locator('#phoneCountry option[value=AR]').waitFor({ state: 'attached' });
+        const countries = await page.locator('#phoneCountry option').evaluateAll(options => options.map(option => option.value));
+        assert.deepEqual(countries.slice(0, 2), ['AR', 'RU']);
+        assert.equal(new Set(countries).size, countries.length);
+        assert.equal(await page.locator('#phoneCountry').inputValue(), 'AR');
+        assert.equal(await page.locator('#phoneCallingCode').textContent(), '+54');
+        assert.ok((await page.locator('label[for=telegramUsername]').textContent()).includes(caption));
+        assert.equal(await page.locator('#signup-side-hint').count(), 0);
+        await page.locator('#nivelJugador').selectOption('C9');
+        await page.locator('#playingSide').selectOption('RIGHT');
+        assert.equal(await page.locator('#nivelJugador').inputValue(), 'C9');
+        const levelFits = await page.locator('#nivelJugador').evaluate(select => {
+            const label = select.nextElementSibling.getBoundingClientRect();
+            const style = getComputedStyle(select);
+            const contentTop = select.getBoundingClientRect().top + parseFloat(style.borderTopWidth) + parseFloat(style.paddingTop);
+            return label.bottom <= contentTop;
+        });
+        assert.equal(levelFits, true, 'Level label must stay above the selected value');
+        assert.equal(await page.locator('#registroTelegramHelp').isVisible(), false);
+        const before = await page.locator('#registroForm').boundingBox();
+        await page.locator('.contact-telegram-help summary').click();
+        assert.equal(await page.locator('#registroTelegramHelp').isVisible(), true);
+        const after = await page.locator('#registroForm').boundingBox();
+        assert.equal(after.height, before.height, 'Help must not shift form fields');
+        await page.locator('.contact-telegram-help summary').click();
+        assert.equal(await page.locator('#registroTelegramHelp').isVisible(), false);
+        await page.locator('#phoneCountry').selectOption('RU');
+        assert.equal(await page.locator('#phoneCallingCode').textContent(), '+7');
+        await page.locator('#telefono').pressSequentially('89123456789');
+        assert.equal(await page.locator('#telefono').inputValue(), '8 (912) 345-67-89');
+        await page.locator('#phoneCountry').selectOption('AR');
+        await page.locator('#telefono').fill('0111523456789');
+        assert.equal(await page.locator('#telefono').inputValue(), '011 15-2345-6789');
+        assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true);
+        await page.evaluate(() => window.scrollTo(0, 0));
+        await page.screenshot({ path: output + '/signup-' + browserName + '-' + language + '.png', fullPage: true });
+        record(browserName + ' mobile signup: ' + language + ', country priority, phone input, level and Telegram help');
+    }
+    await ctx.close();
+}
+
+async function createAccountAndRegisterPair(browser, browserName, signup, language, options = {}) {
+    const ctx = await context(browser, { viewport: { width: 390, height: 844 }, ...options });
+    const page = await pageFor(ctx);
+    const activate = async selector => {
+        const control = page.locator(selector);
+        if (!options.isMobile) {
+            await control.click();
+            return;
+        }
+        await page.bringToFront();
+        await control.waitFor({ state: 'visible' });
+        await page.evaluate(() => { window.__qaTouchPoint = null; window.__qaTouchBlocker = null; });
+        const target = await page.waitForFunction(selector => {
+            const element = document.querySelector(selector);
+            if (!element || element.matches(':disabled') || element.getAttribute('aria-disabled') === 'true') return false;
+            let box = element.getBoundingClientRect();
+            let x = box.x + box.width / 2, y = box.y + box.height / 2;
+            if (x < 0 || y < 0 || x >= innerWidth || y >= innerHeight
+                    || !element.contains(document.elementFromPoint(x, y))) {
+                element.scrollIntoView({ block: 'center', behavior: 'instant' });
+                box = element.getBoundingClientRect();
+                x = box.x + box.width / 2; y = box.y + box.height / 2;
+            }
+            for (let parent = element; parent; parent = parent.parentElement) {
+                if (getComputedStyle(parent).opacity === '0') {
+                    window.__qaTouchBlocker = { id: parent.id, className: parent.className,
+                        visibility: document.visibilityState, opacity: getComputedStyle(parent).opacity,
+                        animations: parent.getAnimations().map(animation => ({ state: animation.playState, time: animation.currentTime })) };
+                    return false;
+                }
+            }
+            const reachable = box.width > 0 && box.height > 0 && x >= 0 && y >= 0 && x < innerWidth && y < innerHeight
+                && element.contains(document.elementFromPoint(x, y));
+            const previous = window.__qaTouchPoint;
+            window.__qaTouchPoint = reachable ? { x, y } : null;
+            return reachable && previous && Math.abs(previous.x - x) < 1 && Math.abs(previous.y - y) < 1 ? { x, y } : false;
+        }, selector, { polling: 100, timeout: 15000 });
+        const point = await target.jsonValue();
+        await target.dispose();
+        const box = await control.boundingBox();
+        assert.ok(box);
+        const devicePoint = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+        console.log('TOUCH ' + selector + ' ' + JSON.stringify({ dom: point, device: devicePoint }));
+        await page.touchscreen.tap(devicePoint.x, devicePoint.y);
+    };
+    const writes = [];
+    page.on('request', request => {
+        if (request.method() !== 'GET') writes.push(new URL(request.url()).pathname);
+    });
+    const tournamentPath = '/torneo/' + fixture.pairedTournamentId;
+    const intent = '[data-registration-intent="' + fixture.pairedTournamentId + '"]';
+    await page.goto(fixture.baseUrl + '/?lang=' + language);
+    const banner = page.locator('#cookieConsentBanner .cookie-btn-accept');
+    await banner.waitFor({ state: 'visible' });
+    console.log('CONSENT ' + browserName + ' ' + JSON.stringify(await page.locator('#cookieConsentBanner').evaluate(element => ({
+        visibility: document.visibilityState,
+        animations: element.getAnimations({ subtree: true }).map(animation => ({ state: animation.playState, time: animation.currentTime }))
+    }))));
+    await page.waitForFunction(() => !document.querySelector('#cookieConsentBanner')
+        ?.getAnimations({ subtree: true }).some(animation => animation.playState === 'running'), null,
+        { polling: 100, timeout: 5000 });
+    await activate('#cookieConsentBanner .cookie-btn-accept');
+    await page.locator('#cookieConsentBanner').waitFor({ state: 'hidden' });
+    await activate('#tournamentsGrid ' + intent);
+    await page.waitForURL(url => url.pathname === tournamentPath);
+    await activate(intent);
+    await page.waitForURL(url => url.pathname === '/login');
+    await activate('.auth-entry-switch a[href*="/players/registro"]');
+    await page.waitForURL(url => url.pathname === '/players/registro');
+    assert.equal(new URL(page.url()).searchParams.get('tournamentId'), String(fixture.pairedTournamentId));
+    await page.locator('#phoneCountry option[value=AR]').waitFor({ state: 'attached' });
+    assert.equal(await page.locator('#phoneCountry').inputValue(), 'AR');
+    await page.locator('#nombre').fill('Lucia');
+    await page.locator('#apellido').fill('Alvarez');
+    await page.locator('#email').fill(signup.email);
+    await page.locator('#nivelJugador').selectOption('C9');
+    await page.locator('#playingSide').selectOption(signup.playingSide);
+    await page.locator('#password').fill('Registration-QA1!');
+    await page.locator('#confirmPassword').fill('Registration-QA1!');
+    assert.equal(await page.locator('#terminos').isChecked(), false);
+    await activate('#terminos');
+    assert.equal(await page.locator('#terminos').isChecked(), true);
+    await page.locator('#telefono').fill('123');
+    await activate('#submitBtn');
+    assert.equal(await page.locator('#telefono').getAttribute('aria-invalid'), 'true');
+    assert.equal(writes.filter(path => path === '/players/registro').length, 0);
+    assert.equal(await page.locator('#nivelJugador').inputValue(), 'C9');
+    assert.equal(await page.locator('#playingSide').inputValue(), signup.playingSide);
+    await page.locator('#phoneCountry').selectOption(signup.country);
+    await page.locator('#telefono').fill(signup.localPhone);
+    await page.locator('#telegramUsername').fill(signup.telegram);
+    await page.locator('#password').focus();
+    await page.screenshot({ path: output + '/signup-complete-' + browserName + '.png', fullPage: true });
+    const submitted = page.waitForResponse(response => new URL(response.url()).pathname === '/players/registro'
+        && response.request().method() === 'POST');
+    await activate('#submitBtn');
+    const response = await submitted;
+    if (response.status() !== 302) {
+        await page.screenshot({ path: output + '/signup-failed-' + browserName + '.png', fullPage: true });
+        const messages = await page.locator('#registrationErrorText, .registration-field-error').allTextContents();
+        assert.fail('Account submission returned ' + response.status() + ': ' + messages.filter(Boolean).join('; '));
+    }
+    const destination = new URL(response.headers().location, fixture.baseUrl);
+    assert.equal(destination.origin, origin.origin);
+    assert.equal(destination.pathname + destination.hash, tournamentPath + '#tournament-registration');
+    await page.waitForURL(url => url.pathname === tournamentPath);
+    await page.locator('#partnerModal').waitFor({ state: 'visible' });
+    await page.waitForFunction(() => {
+        const dialog = document.querySelector('#partnerModal .modal-dialog');
+        return dialog && getComputedStyle(dialog).opacity === '1'
+            && dialog.getAnimations({ subtree: true }).every(animation => animation.playState === 'finished');
+    }, null, { polling: 100 });
+    assert.equal(await page.locator('#contactCheckModal').isVisible(), false);
+    assert.equal(await page.locator('#levelCheckModal').isVisible(), false);
+    assert.equal(await page.locator('#registrationLevelDialog').isVisible(), false);
+    assert.equal(await page.locator('#registrationMode').inputValue(), 'WITH_PARTNER');
+    assert.equal(writes.filter(path => path === '/players/registro').length, 1);
+    record(browserName + ' creates an account with ' + signup.country + ' local phone and resumes pair registration without requesting contacts or level again');
+    await page.locator('#partnerFirstName').fill('Mateo' + signup.country);
+    await page.locator('#partnerLastName').fill('Duarte' + signup.country);
+    const [lookup] = await Promise.all([
+        page.waitForResponse(response => {
+            const url = new URL(response.url());
+            return url.pathname === '/api/players/search' && url.searchParams.get('query') === signup.partnerPhone;
+        }),
+        page.locator('#partnerPhone').fill(signup.partnerPhone)
+    ]);
+    assert.equal(lookup.status(), 200);
+    assert.deepEqual(await lookup.json(), [], 'The new partner must not match an existing player');
+    await page.locator('#partnerPhone').blur();
+    await page.locator('#manualPartnerSuggestions').waitFor({ state: 'hidden' });
+    await page.locator('#submitPartnerBtn').evaluate(button => {
+        window.__qaPairSubmitClicks = 0;
+        button.addEventListener('click', () => { window.__qaPairSubmitClicks++; });
+        document.addEventListener('click', event => {
+            window.__qaPairClickTarget = { id: event.target.id, tag: event.target.tagName, x: event.clientX, y: event.clientY };
+        }, { capture: true });
+    });
+    let booking;
+    try {
+        const [terms] = await Promise.all([
+            page.waitForResponse(response => new URL(response.url()).pathname === '/api/tournaments/double/' + fixture.pairedTournamentId + '/pair-terms'),
+            activate('#submitPartnerBtn')
+        ]);
+        assert.equal(terms.status(), 200, 'The fixture must exercise the real terms confirmation');
+        await page.locator('dialog[open]').waitFor({ state: 'visible' });
+        const layout = await page.locator('dialog[open]').evaluate(dialog => {
+            const rect = dialog.getBoundingClientRect();
+            return { width: rect.width, height: rect.height, viewportWidth: innerWidth, viewportHeight: innerHeight,
+                scrollHeight: dialog.scrollHeight, clientHeight: dialog.clientHeight, overflow: getComputedStyle(dialog).overflowY };
+        });
+        console.log('PAIR_TERMS ' + browserName + ' ' + JSON.stringify(layout));
+        assert.ok(layout.width <= layout.viewportWidth && layout.height <= layout.viewportHeight, 'Terms must fit the mobile viewport');
+        await page.screenshot({ path: output + '/pair-terms-' + browserName + '.png', fullPage: true });
+        [booking] = await Promise.all([
+            page.waitForResponse(response => new URL(response.url()).pathname === '/api/tournaments/double/' + fixture.pairedTournamentId + '/register'
+                && response.request().method() === 'POST'),
+            activate('dialog[open] button[value=confirm]')
+        ]);
+    } catch (error) {
+        console.error('PAIR_STATE ' + browserName + ' ' + JSON.stringify(await page.evaluate(() => ({
+            submitClicks: window.__qaPairSubmitClicks, lastClick: window.__qaPairClickTarget,
+            mode: document.getElementById('registrationMode')?.value,
+            firstNamePresent: !!document.getElementById('partnerFirstName')?.value,
+            lastNamePresent: !!document.getElementById('partnerLastName')?.value,
+            phonePresent: !!document.getElementById('partnerPhone')?.value,
+            invalid: [...document.querySelectorAll('#partnerForm .is-invalid')].map(element => element.id),
+            dialogs: document.querySelectorAll('dialog[open]').length,
+            submitLayout: (() => {
+                const button = document.getElementById('submitPartnerBtn');
+                if (!button) return null;
+                const rect = button.getBoundingClientRect();
+                const hit = document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2);
+                return { x: rect.x, y: rect.y, width: rect.width, height: rect.height, disabled: button.disabled,
+                    hitId: hit?.id, hitClass: String(hit?.className), viewportHeight: innerHeight };
+            })(),
+            suggestions: (() => {
+                const list = document.getElementById('manualPartnerSuggestions');
+                return { display: list && getComputedStyle(list).display, items: list?.children.length };
+            })(),
+            lastPoint: window.__qaTouchPoint, blocker: window.__qaTouchBlocker
+        }))));
+        await page.screenshot({ path: output + '/pair-failed-' + browserName + '.png', fullPage: true, timeout: 5000 });
+        throw error;
+    }
+    assert.equal(booking.status(), 200);
+    const result = await booking.json();
+    assert.equal(result.success, true);
+    assert.equal(result.status, 'CONFIRMED');
+    await page.locator('#resultModal').waitFor({ state: 'visible' });
+    await page.screenshot({ path: output + '/pair-confirmed-' + browserName + '.png', fullPage: true });
+    assert.equal(writes.filter(path => path === '/api/tournaments/double/' + fixture.pairedTournamentId + '/register').length, 1);
+    record(browserName + ' registers the pair once and receives CONFIRMED');
+    await ctx.close();
+}
+
 try {
     const browser = await chromium.launch(); browsers.push(browser);
+    await reviewRegistrationForm(browser, 'chromium');
+    await createAccountAndRegisterPair(browser, 'chromium', fixture.signups[0], 'es');
     const playerContext = await context(browser);
     await playerContext.addInitScript(() => {
         window.gtag = (command, name, params) => {
@@ -189,7 +448,16 @@ try {
     await admin.unroute(api);
     assert.ok(!requests.some(url => url.includes('connect.facebook.net')));
     record('internal attribution works with Meta disabled');
+    await playerContext.close();
+    await adminContext.close();
+    await browser.close();
+    browsers.pop();
+    const signupSafari = await webkit.launch(); browsers.push(signupSafari);
+    await createAccountAndRegisterPair(signupSafari, 'webkit', fixture.signups[1], 'ru', { ...devices['iPhone 13 Pro'] });
+    await signupSafari.close();
+    browsers.pop();
     const safari = await webkit.launch(); browsers.push(safari);
+    await reviewRegistrationForm(safari, 'webkit', { ...devices['iPhone 13 Pro'] });
     const mobileContext = await context(safari, { ...devices['iPhone 13 Pro'] });
     const mobile = await pageFor(mobileContext);
     await login(mobile, fixture.adminEmail, '/admin', { keepConsentVisible: true });

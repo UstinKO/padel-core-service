@@ -124,10 +124,10 @@ public class PlayerDashboardController {
 
         // ПРОВЕРКА КОНТАКТОВ - возвращаем needContact, а не ошибку
         if (players.getPlayerById(player.getId()).filter(PlayerPadel::hasValidContact).isEmpty()) {
-            log.warn("Player {} has no valid contact (phone or telegram)", player.getId());
+            log.warn("У игрока {} не указан телефон", player.getId());
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
-                    "message", "Para inscribirte en un torneo necesitas tener al menos un dato de contacto: WhatsApp o Telegram",
+                    "message", messageSource.getMessage("contact.validation.PHONE_REQUIRED", null, LocaleContextHolder.getLocale()),
                     "needContact", true
             ));
         }

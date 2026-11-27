@@ -7,6 +7,51 @@
     const password = document.getElementById('password');
     const confirmation = document.getElementById('confirmPassword');
     const originalLabel = submit.textContent.trim();
+    const phone = document.getElementById('telefono');
+    const country = document.getElementById('phoneCountry');
+    const telegram = document.getElementById('telegramUsername');
+
+    ContactFields.countries(document.documentElement.lang || 'es')
+        .forEach(({code,name}) => country.add(new Option(`+${libphonenumber.getCountryCallingCode(code)} ${name}`, code)));
+    country.value = libphonenumber.isSupportedCountry(country.dataset.selected) ? country.dataset.selected : 'AR';
+
+    function updateExample() {
+        document.getElementById('phoneCallingCode').textContent = '+' + libphonenumber.getCountryCallingCode(country.value);
+        const hint = document.getElementById('telefonoHint');
+        hint.textContent = t('signup.phone.example', ContactFields.example(country.value));
+        hint.hidden = document.activeElement !== phone || phone.getAttribute('aria-invalid') === 'true';
+    }
+
+    function validatePhone() {
+        const result = ContactFields.phone(phone.value, country.value);
+        fieldError(phone, result.error ? t('contact.validation.' + result.error) : '');
+        updateExample();
+        return result;
+    }
+
+    function validateTelegram() {
+        const result = ContactFields.telegram(telegram.value);
+        if (telegram.value && !telegram.value.startsWith('@')) {
+            const cursor = telegram.selectionStart;
+            telegram.value = result.value;
+            telegram.setSelectionRange(cursor + 1, cursor + 1);
+        }
+        fieldError(telegram, result.error ? t('contact.validation.' + result.error) : '');
+        return result;
+    }
+
+    phone.addEventListener('focus', updateExample);
+    ContactFields.bindPhone(phone, country, validatePhone);
+    phone.addEventListener('blur', () => {
+        const result = validatePhone();
+        document.getElementById('telefonoHint').hidden = true;
+        if (result.error) return;
+        country.value = result.country;
+        ContactFields.formatPhoneInput(phone, country.value);
+        updateExample();
+    });
+    telegram.addEventListener('input', validateTelegram);
+    updateExample();
 
     if (captcha && captcha.parentElement.clientWidth < 304) {
         captcha.dataset.size = 'compact';
@@ -18,7 +63,7 @@
     }
 
     form.addEventListener('input', ({target}) => {
-        if (target.id && document.getElementById(target.id + 'Error')) {
+        if (target !== phone && target !== telegram && target.id && document.getElementById(target.id + 'Error')) {
             fieldError(target, '');
         }
     });
@@ -28,6 +73,17 @@
             event.preventDefault();
             return;
         }
+
+        const normalizedPhone = validatePhone();
+        const normalizedTelegram = validateTelegram();
+        if (normalizedPhone.error || normalizedTelegram.error) {
+            event.preventDefault();
+            (normalizedPhone.error ? phone : telegram).focus();
+            return;
+        }
+        phone.value = normalizedPhone.number;
+        country.value = normalizedPhone.country;
+        telegram.value = normalizedTelegram.value;
 
         const passwordValid = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!]).{8,}$/.test(password.value);
         if (!passwordValid || password.value !== confirmation.value) {

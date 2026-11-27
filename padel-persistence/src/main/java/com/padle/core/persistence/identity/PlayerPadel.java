@@ -131,7 +131,7 @@ public class PlayerPadel {
 
     /**
      * Проверяет достаточно ли контактных данных для регистрации на турнир.
-     * Нужен любой телефон ИЛИ Telegram ник.
+     * Телефон обязателен, Telegram не заменяет его.
      */
     public boolean hasValidContact() {
         return PlayerContacts.hasValidContact(telefono, telegramUsername);

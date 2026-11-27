@@ -27,6 +27,9 @@
     const claritySteps = new Set(['intent', 'form_opened', 'contact_form_opened', 'submit_attempt']);
     const clarityErrors = new Set([
         'required_fields', 'level_required', 'registration_rejected', 'request_failed', 'terms_changed',
+        'contact_phone_required', 'contact_phone_invalid', 'contact_phone_country_invalid',
+        'contact_phone_too_short', 'contact_phone_too_long', 'contact_telegram_invalid',
+        'contact_telegram_in_use', 'contact_phone_in_use',
         'contact_required', 'contact_invalid', 'contact_save_rejected', 'contact_request_failed'
     ]);
     const clarityResults = new Map([

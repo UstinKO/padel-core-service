@@ -218,10 +218,22 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
+      signup-postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: padel_signup_browser_qa
+          POSTGRES_USER: epadel_user
+          POSTGRES_PASSWORD: test
+        options: >-
+          --health-cmd="pg_isready -U epadel_user -d padel_signup_browser_qa"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
     env:
       SPRING_PROFILES_ACTIVE: test
       PLAYWRIGHT_MODULE_PATH: /tmp/padel-browser-qa/node_modules/playwright/index.mjs
       BROWSER_QA_DB_HOST: postgres
+      REGISTRATION_BROWSER_QA_DB_URL: jdbc:postgresql://signup-postgres:5432/padel_signup_browser_qa
     steps:
       - name: Checkout
         uses: actions/checkout@v4
