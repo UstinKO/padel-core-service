@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.application.clubs.InternalClubReadPort;
 import com.padle.core.padelcoreservice.dto.PartnerRegistrationDto;
 import com.padle.core.padelcoreservice.dto.ReserveCancelPreviewDto;
 import com.padle.core.padelcoreservice.dto.SoloDoubleRegistrationDto;
@@ -13,7 +14,6 @@ import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
-import com.padle.core.padelcoreservice.repository.ClubRepository;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
@@ -62,7 +62,7 @@ class DoubleTournamentRegistrationReserveTest {
     @Mock private TournamentRepository tournamentRepository;
     @Mock private MessageSource messageSource;
     @Mock private TournamentService tournamentService;
-    @Mock private ClubRepository clubRepository;
+    @Mock private InternalClubReadPort clubReads;
 
     @Mock private ParticipationRequests participationRequests;
     @Mock private com.padle.core.padelcoreservice.repository.PairProposalResponseRepository proposalResponses;

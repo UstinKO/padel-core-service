@@ -1,5 +1,7 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.application.clubs.ClubDetails;
+import com.padle.core.application.clubs.InternalClubReadPort;
 import com.padle.core.padelcoreservice.util.AfterCommit;
 import com.padle.core.padelcoreservice.annotation.Counted;
 import com.padle.core.padelcoreservice.annotation.Timed;
@@ -14,7 +16,6 @@ import com.padle.core.padelcoreservice.exception.PlayerLevelRequiredException;
 import com.padle.core.padelcoreservice.exception.PairRegistrationException;
 import com.padle.core.padelcoreservice.exception.TournamentRegistrationException;
 import com.padle.core.padelcoreservice.mapper.TournamentRegistrationMapper;
-import com.padle.core.padelcoreservice.model.Club;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.TournamentRegistration;
@@ -26,7 +27,6 @@ import com.padle.core.padelcoreservice.model.enums.TournamentType;
 import com.padle.core.padelcoreservice.model.ParticipationRequest.Trigger;
 import com.padle.core.padelcoreservice.repository.PairProposalResponseRepository;
 import com.padle.core.padelcoreservice.repository.PairProposalResponseRepository.Response;
-import com.padle.core.padelcoreservice.repository.ClubRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
@@ -73,7 +73,7 @@ public class DoubleTournamentRegistrationService {
     private final PairReplacementNoticeService replacementNotices;
     private final MessageSource messageSource;
     private final TournamentService tournamentService;
-    private final ClubRepository clubRepository;
+    private final InternalClubReadPort clubReads;
     private final PasswordEncoder passwordEncoder;
 
     @Value("${app.base-url:http://localhost:8080}")
@@ -892,7 +892,7 @@ public class DoubleTournamentRegistrationService {
         if (clubId == null) {
             return "";
         }
-        return clubRepository.findById(clubId).map(Club::getNombre).orElse("");
+        return clubReads.findById(clubId).map(ClubDetails::name).orElse("");
     }
 
     // ── Соло-регистрация на парный турнир ────────────────────────────────────
@@ -950,7 +950,7 @@ public class DoubleTournamentRegistrationService {
                 player.getTelegramUsername(),
                 tournament.getNombre(),
                 dateStr,
-                null, // clubName — при необходимости подтянуть через ClubRepository
+                null, // Для этого уведомления имя клуба не используется
                 dto.getSoloType(),
                 adminUrl
         );

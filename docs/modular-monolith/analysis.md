@@ -18,7 +18,7 @@
 | Identity | `model/PlayerPadel.java` — одновременно `@Entity` и `UserDetails` | Нужен отдельный principal; JPA entity не должна попасть в API порта и ядро |
 | История и очки | `service/conduct/AdditionalPointsStore.java` содержит `JdbcClient` и использует DTO Stage | Историю/корректировки выделять через отдельные порты; сохранять атомарность с игровым состоянием |
 | Маркетинг | `model/Payment.java` связывается с `marketing/MarketingEntityListener`; `marketing/` содержит контроллеры, SQL и доставку | Делить по ролям адаптеров, сохраняя запись журнала/outbox в той же транзакции |
-| Ресурсы | [changelog-master.yaml](../../src/main/resources/db/changelog/changelog-master.yaml), templates, static/app; React собирается Maven-плагином в generated-resources | Сохранить пути ресурсов в classpath и ровно одно выполнение генерации/сборки |
+| Ресурсы | [changelog-master.yaml](../../padel-persistence/src/main/resources/db/changelog/changelog-master.yaml), templates, static/app; React собирается Maven-плагином в generated-resources | Сохранить пути ресурсов в classpath и ровно одно выполнение генерации/сборки |
 | Доставка | [Dockerfile](../../Dockerfile) копирует корневые POM/src и выбирает `target/*.jar`; workflow используют корневые target-пути | Reactor требует согласованного обновления путей в той же работоспособной задаче |
 
 В верхнем уровне пакетов: service — 74 файла, controller — 69, model — 39, repository — 24, mapper — 20. Это ориентиры для полной инвентаризации, не готовая карта переноса каждого класса.

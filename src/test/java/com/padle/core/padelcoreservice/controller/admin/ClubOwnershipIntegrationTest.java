@@ -1,11 +1,16 @@
 package com.padle.core.padelcoreservice.controller.admin;
 
+import com.padle.core.padelcoreservice.dto.ClubDto;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
+import com.padle.core.padelcoreservice.exception.InvalidStateException;
 import com.padle.core.padelcoreservice.model.*;
+import com.padle.core.persistence.clubs.Club;
 import com.padle.core.padelcoreservice.model.enums.*;
 import com.padle.core.padelcoreservice.repository.*;
+import com.padle.core.persistence.clubs.ClubRepository;
 import com.padle.core.padelcoreservice.service.ClubAccountService;
+import com.padle.core.padelcoreservice.service.ClubService;
 import com.padle.core.padelcoreservice.service.TournamentAccessService;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,8 +18,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.transaction.TestTransaction;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.ExtendedModelMap;
@@ -43,6 +50,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 class ClubOwnershipIntegrationTest {
     @Autowired ClubAccountService accounts;
+    @Autowired ClubService clubService;
     @Autowired TournamentService tournaments;
     @Autowired TournamentAccessService access;
     @Autowired OwnerRepository owners;
@@ -143,8 +151,85 @@ class ClubOwnershipIntegrationTest {
                 .isInstanceOf(AccessDeniedException.class);
         assertThatThrownBy(() -> accounts.assign(root, actor.getId(), Set.of(Long.MAX_VALUE)))
                 .isInstanceOf(IllegalArgumentException.class);
+        assertThat(accounts.assignedClubIds(actor)).containsExactly(third.getId());
         accounts.assign(root, actor.getId(), Set.of());
         assertThat(accounts.assignedClubIds(actor)).isEmpty();
+    }
+
+    @Test
+    void apiPreservesOrganizerCreationAndClubMetadataOnUpdate() throws Exception {
+        Owner organizer = owner(OwnerRole.ORGANIZER);
+        String name = "Club API " + UUID.randomUUID();
+        String body = """
+                {"nombre":"%s","direccion":"Calle 1","zonaCiudad":"Madrid","telefonoContacto":"555",
+                 "id":-1,"createdBy":-1,"isActive":false}
+                """.formatted(name);
+
+        mvc.perform(post("/api/clubs").with(user(actor)).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isForbidden());
+        mvc.perform(post("/api/clubs").with(user(organizer)).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.createdBy").value(organizer.getId()))
+                .andExpect(jsonPath("$.isActive").value(true))
+                .andExpect(jsonPath("$.direccionCompleta").value("Calle 1, Madrid"));
+        var created = clubs.findByNombre(name).orElseThrow();
+        assertThat(created.getId()).isPositive();
+        assertThat(created.getCreatedAt()).isNotNull();
+
+        mvc.perform(post("/api/clubs").with(user(organizer)).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isBadRequest());
+        mvc.perform(get("/api/clubs/search").with(user(root)).param("q", name))
+                .andExpect(status().isOk()).andExpect(jsonPath("$[0].id").value(created.getId()));
+        var update = """
+                {"nombre":"%s","zonaCiudad":"Córdoba","id":-1,"createdBy":-1,"isActive":false}
+                """.formatted(name);
+        mvc.perform(put("/api/clubs/" + created.getId()).with(user(root)).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content(update))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.id").value(created.getId()))
+                .andExpect(jsonPath("$.createdBy").value(organizer.getId()))
+                .andExpect(jsonPath("$.isActive").value(true))
+                .andExpect(jsonPath("$.direccionCompleta").value("Córdoba"));
+        clubs.flush();
+        assertThat(clubs.findById(created.getId()).orElseThrow().getTelefonoContacto()).isNull();
+    }
+
+    @Test
+    void statusRedirectAndTournamentGuardKeepTheirRules() throws Exception {
+        var base = "/admin/clubs/" + first.getId();
+        mvc.perform(post(base + "/toggle-status").with(user(actor)).with(csrf()))
+                .andExpect(redirectedUrl("/admin/clubs")).andExpect(flash().attributeExists("errorMessage"));
+        assertThat(clubs.findById(first.getId()).orElseThrow().getIsActive()).isTrue();
+        mvc.perform(post(base + "/toggle-status").with(user(root)).with(csrf()))
+                .andExpect(redirectedUrl("/admin/clubs")).andExpect(flash().attributeExists("successMessage"));
+        assertThat(clubs.findById(first.getId()).orElseThrow().getIsActive()).isFalse();
+
+        var event = tournaments.createTournament(form(second), actor.getId());
+        mvc.perform(delete("/api/clubs/" + second.getId()).with(user(root)).with(csrf()))
+                .andExpect(status().isNoContent());
+        assertThat(clubs.findById(second.getId()).orElseThrow().getIsActive()).isFalse();
+        assertThat(events.findById(event.getId())).isPresent();
+        mvc.perform(delete("/api/clubs/" + third.getId() + "/hard").with(user(root)).with(csrf()))
+                .andExpect(status().isNoContent());
+        assertThat(clubs.findById(third.getId())).isEmpty();
+        assertThatThrownBy(() -> clubService.hardDeleteClub(second.getId(), root))
+                .isInstanceOf(InvalidStateException.class);
+        assertThat(clubs.findById(second.getId())).isPresent();
+    }
+
+    @Test
+    void clubCreationAndAssignmentJoinTheCallerRollback() {
+        var created = clubService.createClub(ClubDto.builder().nombre("Rollback " + UUID.randomUUID()).build(),
+                root.getId());
+        accounts.assign(root, actor.getId(), Set.of(created.getId()));
+        owners.flush();
+        assertThat(accounts.assignedClubIds(actor)).containsExactly(created.getId());
+
+        TestTransaction.flagForRollback();
+        TestTransaction.end();
+        assertThat(clubs.findById(created.getId())).isEmpty();
+        assertThat(owners.findById(actor.getId())).isEmpty();
     }
 
     @Test

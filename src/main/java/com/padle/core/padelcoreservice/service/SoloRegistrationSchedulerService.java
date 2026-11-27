@@ -1,8 +1,9 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.application.clubs.ClubDetails;
+import com.padle.core.application.clubs.InternalClubReadPort;
 import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.TournamentRegistration;
-import com.padle.core.padelcoreservice.repository.ClubRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import jakarta.persistence.EntityManager;
@@ -27,7 +28,7 @@ public class SoloRegistrationSchedulerService {
 
     private final TournamentRegistrationRepository registrationRepository;
     private final EmailService emailService;
-    private final ClubRepository clubRepository;
+    private final InternalClubReadPort clubReads;
     private final TournamentRepository tournaments;
     private final EntityManager entities;
 
@@ -162,8 +163,8 @@ public class SoloRegistrationSchedulerService {
 
     private String resolveClubName(Long clubId) {
         if (clubId == null) return "";
-        return clubRepository.findById(clubId)
-                .map(c -> c.getNombre())
+        return clubReads.findById(clubId)
+                .map(ClubDetails::name)
                 .orElse("");
     }
 }

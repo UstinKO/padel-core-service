@@ -9,7 +9,7 @@ import com.padle.core.padelcoreservice.dto.americano.RoundRobinAdditionalMatchRe
 import com.padle.core.padelcoreservice.dto.americano.TeamAmericanoConfigDto;
 import com.padle.core.padelcoreservice.exception.InvalidStateException;
 import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
-import com.padle.core.padelcoreservice.model.Club;
+import com.padle.core.persistence.clubs.Club;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.Tournament;
@@ -23,7 +23,7 @@ import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import com.padle.core.padelcoreservice.model.enums.RoundRobinScoringMode;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
-import com.padle.core.padelcoreservice.repository.ClubRepository;
+import com.padle.core.persistence.clubs.ClubRepository;
 import com.padle.core.padelcoreservice.repository.OwnerRepository;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
