@@ -41,6 +41,37 @@ async function enter(scenario) {
     assert.deepEqual([...new URL(page.url()).searchParams.keys()],['request']);
 }
 try {
+    if (phase==='pending') {
+        const ctx = await context(fixture.scenarios[0]);
+        let thirdPartyRequests = 0;
+        await ctx.route('https://analytics.example.test/probe.js',route => {
+            thirdPartyRequests++;
+            return route.fulfill({contentType:'application/javascript',body:'window.analyticsProbeExecuted = true;'});
+        });
+        await ctx.route('**/telegram/connect?privacyProbe=*',async route => {
+            const response = await route.fetch();
+            const headers = {...response.headers()};
+            if (new URL(route.request().url()).searchParams.get('privacyProbe')==='control') {
+                delete headers['content-security-policy'];
+            }
+            delete headers['content-length'];
+            const body = (await response.text()).replace('</body>',
+                '<script src="https://analytics.example.test/probe.js"></script></body>');
+            await route.fulfill({response,headers,body});
+        });
+        const response = await page.goto(fixture.baseUrl+'/telegram/connect?privacyProbe=protected');
+        assert.equal(response.headers()['cache-control'],'no-store, no-transform');
+        assert.equal(response.headers()['content-security-policy'].includes("script-src 'self'"),true);
+        await page.waitForFunction(()=>document.querySelector('[data-telegram-connect]').getAttribute('aria-busy')==='false');
+        assert.equal(await page.locator('script[src="https://analytics.example.test/probe.js"]').count(),1);
+        assert.equal(await page.evaluate(()=>window.analyticsProbeExecuted===true),false);
+        assert.equal(thirdPartyRequests,0);
+        await page.goto(fixture.baseUrl+'/telegram/connect?privacyProbe=control');
+        await page.waitForFunction(()=>window.analyticsProbeExecuted===true);
+        assert.equal(thirdPartyRequests,1);
+        checks.push('CSP блокирует вставленный сторонний скрипт; контроль без CSP выполняется, собственный JS работает');
+        await ctx.close();
+    }
     for (const scenario of fixture.scenarios) {
         const ctx = await context(scenario);
         let mutations=0;

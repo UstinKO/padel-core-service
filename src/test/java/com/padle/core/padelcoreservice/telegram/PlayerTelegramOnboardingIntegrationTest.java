@@ -200,10 +200,18 @@ class PlayerTelegramOnboardingIntegrationTest {
                 .andExpect(redirectedUrl("/error/403"));
         var context=mvc.perform(post("/telegram/connect/context").with(csrf()).contentType("application/json")
                 .content("{\"token\":\""+token+"\"}")).andExpect(status().isOk())
-                .andExpect(jsonPath("$.next").value(TelegramOnboardingSession.destination(requestId(token)))).andReturn();
+                .andExpect(jsonPath("$.next").value(TelegramOnboardingSession.destination(requestId(token))))
+                .andExpect(header().string("Cache-Control","no-store, no-transform")).andReturn();
         var session=(MockHttpSession)context.getRequest().getSession(false);
         mvc.perform(get("/telegram/connect").param("request",requestId(token).toString()).session(session)).andExpect(status().is3xxRedirection())
+                .andExpect(header().string("Cache-Control","no-store, no-transform"))
+                .andExpect(header().string("Content-Security-Policy",org.hamcrest.Matchers.containsString("script-src 'self'")))
                 .andExpect(redirectedUrl("/login?destination="+URLEncoder.encode(TelegramOnboardingSession.destination(requestId(token)),StandardCharsets.UTF_8)));
+        mvc.perform(get("/telegram/connect").param("request",requestId(token).toString()).session(session).with(user(player)))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Cache-Control","no-store, no-transform"))
+                .andExpect(header().string("Referrer-Policy","no-referrer"))
+                .andExpect(header().string("Content-Security-Policy",org.hamcrest.Matchers.containsString("connect-src 'self'")));
         mvc.perform(get("/api/players/me/telegram/onboarding").param("request",requestId(token).toString()).session(session).with(user(player)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.state").value("READY"));
         assertThat(connections.connection(player.getId())).isEmpty();
@@ -213,6 +221,19 @@ class PlayerTelegramOnboardingIntegrationTest {
                 .andExpect(redirectedUrl("/login?error=true&destination=%2Ftelegram%2Fconnect"));
         mvc.perform(post("/api/players/me/telegram/onboarding").with(user(player)).with(csrf()))
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("TELEGRAM_LINK_INVALID"));
+    }
+
+    @Test void entryAndUnavailablePagesDisallowTransformsAndThirdPartyScripts() throws Exception {
+        for (String request : List.of("", UUID.randomUUID().toString())) {
+            mvc.perform(get("/telegram/connect").param("request",request)).andExpect(status().isOk())
+                    .andExpect(header().string("Cache-Control","no-store, no-transform"))
+                    .andExpect(header().string("Referrer-Policy","no-referrer"))
+                    .andExpect(header().string("Content-Security-Policy",org.hamcrest.Matchers.containsString("script-src 'self'")));
+        }
+        when(properties.enabled()).thenReturn(false);
+        mvc.perform(get("/telegram/connect")).andExpect(status().isOk())
+                .andExpect(header().string("Cache-Control","no-store, no-transform"))
+                .andExpect(header().string("Content-Security-Policy",org.hamcrest.Matchers.containsString("connect-src 'self'")));
     }
 
     @Test void callbackRequiresOriginalPrivateTelegramAndIsIdempotent() {

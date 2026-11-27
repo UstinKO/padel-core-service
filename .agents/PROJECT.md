@@ -1,5 +1,7 @@
 # PROJECT.md — техническая карта проекта
 
+`TelegramConnectController` задаёт для страницы подключения и сохранения контекста no-store/no-transform, no-referrer и CSP со скриптами/соединениями только своего origin. Браузерный сценарий проверяет имитацию сторонней вставки и контроль без CSP. [Защита страницы](../docs/player-telegram-interface.md).
+
 Общий вход Telegram UI: `telegram-connect.html` / JS / CSS, `telegram-invitation.js` в действующем редакторе. Кнопка подтверждает профиль только явным POST, окончательная связь — в исходном боте. Fragment очищается, контекст вкладки выбирает публичный UUID request; неизвестный ответ проверяется вручную. Настоящий `PlayerTelegramOnboardingBrowserTest` включён в существующий browser CI. [Проверки](../docs/player-telegram-interface.md).
 
 Общий вход Telegram: `PlayerTelegramOnboarding` / `PlayerTelegramOnboardingStore`, `TelegramConnectController` и `TelegramOnboardingController`. Схема v1.93, флаг `telegram.players.onboarding-enabled=false`; временная ссылка сайта и подтверждение исходного Telegram, прежняя блокировка связей и дедупликация отправок. [Контракт](../docs/endpoints/player-telegram.md).
