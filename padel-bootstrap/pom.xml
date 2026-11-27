@@ -29,6 +29,10 @@
             <groupId>com.padle.core</groupId>
             <artifactId>padel-application</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.padle.core</groupId>
+            <artifactId>padel-persistence</artifactId>
+        </dependency>
         <!-- Spring Boot Starters -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -95,12 +99,6 @@
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
-        <!-- Boot 4: автоконфигурация Liquibase вынесена в отдельный модуль -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-liquibase</artifactId>
-        </dependency>
-
         <!-- JWT для аутентификации -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>

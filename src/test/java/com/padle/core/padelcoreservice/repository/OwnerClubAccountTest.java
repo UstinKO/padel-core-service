@@ -1,6 +1,7 @@
 package com.padle.core.padelcoreservice.repository;
 
-import com.padle.core.padelcoreservice.model.Club;
+import com.padle.core.persistence.clubs.Club;
+import com.padle.core.persistence.clubs.ClubRepository;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.enums.OwnerRole;
 import org.junit.jupiter.api.Test;

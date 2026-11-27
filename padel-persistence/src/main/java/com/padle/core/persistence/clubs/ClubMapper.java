@@ -1,7 +1,6 @@
-package com.padle.core.padelcoreservice.mapper;
+package com.padle.core.persistence.clubs;
 
 import com.padle.core.application.clubs.ClubProfile;
-import com.padle.core.padelcoreservice.model.Club;
 import org.mapstruct.InheritConfiguration;
 import org.mapstruct.InheritInverseConfiguration;
 import org.mapstruct.Mapper;

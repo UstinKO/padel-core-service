@@ -1,12 +1,16 @@
 package com.padle.core.padelcoreservice.controller.api;
 
+import com.padle.core.application.clubs.ClubAdminReadPort;
+import com.padle.core.application.clubs.ClubAdminWritePort;
 import com.padle.core.application.clubs.ClubDetails;
 import com.padle.core.application.clubs.ClubReadPort;
 import com.padle.core.application.clubs.InternalClubReadPort;
 import com.padle.core.application.clubs.PublicClubQuery;
-import com.padle.core.padelcoreservice.adapter.clubs.LegacyClubReadAdapter;
-import com.padle.core.padelcoreservice.model.Club;
-import com.padle.core.padelcoreservice.repository.ClubRepository;
+import com.padle.core.persistence.clubs.JpaClubReadAdapter;
+import com.padle.core.persistence.clubs.Club;
+import com.padle.core.persistence.clubs.ClubRepository;
+import jakarta.persistence.EntityManagerFactory;
+import liquibase.integration.spring.SpringLiquibase;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.aop.support.AopUtils;
@@ -24,6 +28,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
 
+import javax.sql.DataSource;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -59,7 +64,7 @@ class PublicClubApplicationIntegrationTest {
     @MockitoSpyBean ClubRepository clubs;
     @Autowired ApplicationContext context;
     @Autowired PlatformTransactionManager transactions;
-    @MockitoSpyBean LegacyClubReadAdapter adapter;
+    @MockitoSpyBean JpaClubReadAdapter adapter;
     private final List<Long> owned = new ArrayList<>();
 
     @AfterEach
@@ -86,6 +91,20 @@ class PublicClubApplicationIntegrationTest {
         assertThat(query.clubs()).extracting(value -> value.id()).contains(club.getId());
         assertThat(query.club(club.getId())).isPresent();
         assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isFalse();
+    }
+
+    @Test
+    void persistenceUsesSharedInfrastructureAndSingleClubMapping() throws Exception {
+        assertThat(context.getBeansOfType(DataSource.class)).hasSize(1);
+        assertThat(context.getBeansOfType(EntityManagerFactory.class)).hasSize(1);
+        assertThat(context.getBeansOfType(SpringLiquibase.class)).hasSize(1);
+        assertThat(context.getBeansOfType(ClubRepository.class)).hasSize(1);
+        assertThat(context.getBeansOfType(ClubAdminReadPort.class)).hasSize(1);
+        assertThat(context.getBeansOfType(ClubAdminWritePort.class)).hasSize(1);
+        var model = context.getBean(EntityManagerFactory.class).getMetamodel();
+        assertThat(model.entity(Club.class).getName()).isEqualTo("Club");
+        assertThat(model.getEntities().stream().filter(type -> type.getName().equals("Club"))).hasSize(1);
+        assertThat(context.getResources("classpath*:db/changelog/changelog-master.yaml")).hasSize(1);
     }
 
     @Test

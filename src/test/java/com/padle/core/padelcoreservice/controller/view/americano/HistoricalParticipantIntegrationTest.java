@@ -1,6 +1,6 @@
 package com.padle.core.padelcoreservice.controller.view.americano;
 
-import com.padle.core.padelcoreservice.model.Club;
+import com.padle.core.persistence.clubs.Club;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.Tournament;
@@ -8,7 +8,7 @@ import com.padle.core.padelcoreservice.model.americano.AmericanoMatch;
 import com.padle.core.padelcoreservice.model.americano.AmericanoRound;
 import com.padle.core.padelcoreservice.model.americano.AmericanoTeam;
 import com.padle.core.padelcoreservice.model.enums.*;
-import com.padle.core.padelcoreservice.repository.ClubRepository;
+import com.padle.core.persistence.clubs.ClubRepository;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoMatchRepository;

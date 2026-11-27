@@ -1,8 +1,7 @@
-package com.padle.core.padelcoreservice.mapper;
+package com.padle.core.persistence.clubs;
 
 import com.padle.core.application.clubs.ClubDetails;
 import com.padle.core.application.clubs.PublicClub;
-import com.padle.core.padelcoreservice.model.Club;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;

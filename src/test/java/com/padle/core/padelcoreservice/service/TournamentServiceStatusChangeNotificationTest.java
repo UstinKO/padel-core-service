@@ -1,7 +1,7 @@
 package com.padle.core.padelcoreservice.service;
 
 import com.padle.core.application.clubs.InternalClubReadPort;
-import com.padle.core.padelcoreservice.model.Club;
+import com.padle.core.persistence.clubs.Club;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.TournamentRegistration;
@@ -9,7 +9,7 @@ import com.padle.core.padelcoreservice.model.enums.Modalidad;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
-import com.padle.core.padelcoreservice.repository.ClubRepository;
+import com.padle.core.persistence.clubs.ClubRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import org.junit.jupiter.api.Test;

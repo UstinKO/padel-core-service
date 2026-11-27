@@ -1,11 +1,8 @@
-package com.padle.core.padelcoreservice.adapter.clubs;
+package com.padle.core.persistence.clubs;
 
 import com.padle.core.application.clubs.ClubAdminReadPort;
 import com.padle.core.application.clubs.ClubAdminWritePort;
 import com.padle.core.application.clubs.ClubProfile;
-import com.padle.core.padelcoreservice.mapper.ClubMapper;
-import com.padle.core.padelcoreservice.model.Club;
-import com.padle.core.padelcoreservice.repository.ClubRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -16,7 +13,7 @@ import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
-public class LegacyClubAdminAdapter implements ClubAdminReadPort, ClubAdminWritePort {
+public class JpaClubAdminAdapter implements ClubAdminReadPort, ClubAdminWritePort {
     private final ClubRepository clubs;
     private final ClubMapper mapper;
 
