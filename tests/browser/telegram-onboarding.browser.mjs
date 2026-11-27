@@ -122,7 +122,7 @@ try {
         await page.goto(fixture.baseUrl+'/admin/telegram/messages?lang=ru');
         const invitation=page.locator('[data-telegram-invitation]');
         await invitation.waitFor({state:'visible'});
-        assert.equal(await invitation.locator('input').inputValue(),'https://t.me/OnePadelQaBot?start=connect');
+        assert.equal(await invitation.locator('input').inputValue(),'https://1-padel.com/telegram/join');
         await page.evaluate(()=>Object.defineProperty(navigator,'clipboard',{value:{writeText:async()=>{throw new Error('denied');}},configurable:true}));
         await invitation.locator('button').click();
         assert.equal(await invitation.locator('[role=status]').innerText(),'Выделили ссылку. Скопируй её вручную.');
