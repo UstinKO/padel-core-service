@@ -57,14 +57,23 @@ class AllLevelsRegistrationIntegrationTest {
     @MockitoBean TournamentNotificationService notifications;
 
     static Stream<Arguments> combinations() {
-        return Arrays.stream(TournamentType.values()).flatMap(type -> Arrays.stream(GenderFormat.values())
-                .map(gender -> Arguments.of(type, gender)));
+        return Arrays.stream(TournamentType.values()).flatMap(type -> {
+            var modalities = switch (type) {
+                case KING_OF_COURT -> Stream.of(Modalidad.INDIVIDUAL);
+                case AMERICANO_TEAMS -> Stream.of(Modalidad.DOBLES);
+                case AMERICANO, CANCHA_ABIERTA, PADEL_CLINIC -> Stream.of(Modalidad.INDIVIDUAL, Modalidad.DOBLES);
+            };
+            return modalities.flatMap(modality -> Arrays.stream(GenderFormat.values())
+                    .map(gender -> Arguments.of(type, gender, modality)));
+        });
     }
 
     @ParameterizedTest
     @MethodSource("combinations")
-    void allLevelsKeepsNormalCapacityAndAcceptsDistantLevels(TournamentType type, GenderFormat gender) {
+    void allLevelsKeepsNormalCapacityAndAcceptsDistantLevels(TournamentType type, GenderFormat gender, Modalidad modality) {
         var event = event(type, gender, Nivel.TODOS);
+        event.setModalidad(modality);
+        events.saveAndFlush(event);
         var strong = player(Nivel.C3);
         var beginner = player(Nivel.D9);
         if (event.getModalidad() == Modalidad.DOBLES) {
@@ -123,7 +132,7 @@ class AllLevelsRegistrationIntegrationTest {
         return events.saveAndFlush(Tournament.builder().nombre("All levels QA").clubId(club.getId())
                 .fechaInicio(LocalDate.now().plusDays(10)).horaInicio(LocalTime.NOON).generoFormato(gender)
                 .categoriaNivel(level).tipo(type).modalidad(type == TournamentType.AMERICANO_TEAMS ? Modalidad.DOBLES : Modalidad.INDIVIDUAL)
-                .cupoMax(1).precio(BigDecimal.ZERO).estado(TournamentStatus.REGISTRO_ABIERTO).isActive(true).build());
+                .contactoOrganizador("+5491123456789").cupoMax(1).precio(BigDecimal.ZERO).estado(TournamentStatus.REGISTRO_ABIERTO).isActive(true).build());
     }
 
     private PlayerPadel player(Nivel level) {
