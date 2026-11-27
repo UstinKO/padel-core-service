@@ -8,9 +8,13 @@ import com.padle.core.padelcoreservice.support.OwnerFixtures;
 import com.padle.core.persistence.clubs.Club;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.persistence.identity.PlayerPadel;
-import com.padle.core.padelcoreservice.model.Tournament;
+import com.padle.core.persistence.tournament.Tournament;
 import com.padle.core.padelcoreservice.model.enums.*;
+import com.padle.core.application.tournament.Modalidad;
+import com.padle.core.application.tournament.TournamentStatus;
+import com.padle.core.application.tournament.TournamentType;
 import com.padle.core.padelcoreservice.repository.*;
+import com.padle.core.persistence.tournament.TournamentRepository;
 import com.padle.core.persistence.clubs.ClubRepository;
 import com.padle.core.padelcoreservice.service.EmailService;
 import com.padle.core.padelcoreservice.service.TournamentNotificationService;
@@ -40,7 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @EnabledIfSystemProperty(named = "browser.qa", matches = "true")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
         "server.address=127.0.0.1",
-        "spring.datasource.url=jdbc:postgresql://${BROWSER_QA_DB_HOST:localhost}:${BROWSER_QA_DB_PORT:5432}/padel_browser_qa",
+        "spring.datasource.url=${REGISTRATION_BROWSER_QA_DB_URL:jdbc:postgresql://${BROWSER_QA_DB_HOST:localhost}:${BROWSER_QA_DB_PORT:5432}/padel_browser_qa}",
         "spring.datasource.username=epadel_user", "spring.datasource.password=test",
         "app.analytics.meta.enabled=false", "app.analytics.meta.access-token=",
         "app.analytics.ga4-id=", "app.analytics.clarity-id=",
@@ -99,6 +103,7 @@ class RegistrationSourceBrowserTest {
 
     private Fixture seed() {
         String suffix = UUID.randomUUID().toString();
+        String digits = Long.toString(1_000_000L + Integer.toUnsignedLong(suffix.hashCode()) % 9_000_000L);
         String password = "Browser-qa-" + suffix;
         var admin = owners.saveAndFlush(Owner.builder().email("qa-admin-" + suffix + "@example.test")
                 .password(passwords.encode(password)).firstName("Browser").lastName("QA")
@@ -106,8 +111,8 @@ class RegistrationSourceBrowserTest {
         var player = players.saveAndFlush(PlayerPadel.builder().nombre("Browser").apellido("Player")
                 .email("qa-player-" + suffix + "@example.test").passwordHash(passwords.encode(password))
                 .activo(true).emailConfirmado(true).preferredLocale("es").nivelJugador(Nivel.C9)
-                .telefono("+5491155550000").telegramUsername("browser_qa_player").build());
-        var club = clubs.saveAndFlush(Club.builder().nombre("Browser QA Club").isActive(true).build());
+                .telefono("+549115" + digits).telegramUsername("@browser_qa_" + suffix.replace("-", "").substring(0, 12)).build());
+        var club = clubs.saveAndFlush(Club.builder().nombre("Browser QA Club " + suffix).isActive(true).build());
         var event = tournaments.saveAndFlush(Tournament.builder().nombre("Browser QA Event").clubId(club.getId())
                 .fechaInicio(LocalDate.now().plusDays(7)).horaInicio(LocalTime.NOON).tipo(TournamentType.AMERICANO)
                 .modalidad(Modalidad.INDIVIDUAL).generoFormato(GenderFormat.MIXTO).categoriaNivel(Nivel.C9)
@@ -118,7 +123,6 @@ class RegistrationSourceBrowserTest {
                 .modalidad(Modalidad.DOBLES).generoFormato(GenderFormat.MIXTO).categoriaNivel(Nivel.C9)
                 .cupoMax(16).precio(BigDecimal.ZERO).moneda("ARS").estado(TournamentStatus.REGISTRO_ABIERTO)
                 .contactoOrganizador("qa@example.test").build());
-        String digits = Long.toString(1_000_000L + Integer.toUnsignedLong(suffix.hashCode()) % 9_000_000L);
         var signups = List.of(
                 new Signup("signup-ar-" + suffix + "@gmail.com", "AR", "+549116" + digits,
                         "011156" + digits, PlayingSide.LEFT, "", "+549117" + digits),

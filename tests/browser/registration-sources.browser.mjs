@@ -149,7 +149,7 @@ async function createAccountAndRegisterPair(browser, browserName, signup, langua
         }
         await page.bringToFront();
         await control.waitFor({ state: 'visible' });
-        await page.evaluate(() => { window.__qaTouchPoint = null; });
+        await page.evaluate(() => { window.__qaTouchPoint = null; window.__qaTouchBlocker = null; });
         const target = await page.waitForFunction(selector => {
             const element = document.querySelector(selector);
             if (!element || element.matches(':disabled') || element.getAttribute('aria-disabled') === 'true') return false;
@@ -162,7 +162,12 @@ async function createAccountAndRegisterPair(browser, browserName, signup, langua
                 x = box.x + box.width / 2; y = box.y + box.height / 2;
             }
             for (let parent = element; parent; parent = parent.parentElement) {
-                if (getComputedStyle(parent).opacity === '0') return false;
+                if (getComputedStyle(parent).opacity === '0') {
+                    window.__qaTouchBlocker = { id: parent.id, className: parent.className,
+                        visibility: document.visibilityState, opacity: getComputedStyle(parent).opacity,
+                        animations: parent.getAnimations().map(animation => ({ state: animation.playState, time: animation.currentTime })) };
+                    return false;
+                }
             }
             const reachable = box.width > 0 && box.height > 0 && x >= 0 && y >= 0 && x < innerWidth && y < innerHeight
                 && element.contains(document.elementFromPoint(x, y));
@@ -240,6 +245,11 @@ async function createAccountAndRegisterPair(browser, browserName, signup, langua
     assert.equal(destination.pathname + destination.hash, tournamentPath + '#tournament-registration');
     await page.waitForURL(url => url.pathname === tournamentPath);
     await page.locator('#partnerModal').waitFor({ state: 'visible' });
+    await page.waitForFunction(() => {
+        const dialog = document.querySelector('#partnerModal .modal-dialog');
+        return dialog && getComputedStyle(dialog).opacity === '1'
+            && dialog.getAnimations({ subtree: true }).every(animation => animation.playState === 'finished');
+    }, null, { polling: 100 });
     assert.equal(await page.locator('#contactCheckModal').isVisible(), false);
     assert.equal(await page.locator('#levelCheckModal').isVisible(), false);
     assert.equal(await page.locator('#registrationLevelDialog').isVisible(), false);
@@ -308,7 +318,7 @@ async function createAccountAndRegisterPair(browser, browserName, signup, langua
                 const list = document.getElementById('manualPartnerSuggestions');
                 return { display: list && getComputedStyle(list).display, items: list?.children.length };
             })(),
-            lastPoint: window.__qaTouchPoint
+            lastPoint: window.__qaTouchPoint, blocker: window.__qaTouchBlocker
         }))));
         await page.screenshot({ path: output + '/pair-failed-' + browserName + '.png', fullPage: true, timeout: 5000 });
         throw error;

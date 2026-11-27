@@ -1,9 +1,8 @@
-package com.padle.core.padelcoreservice.model;
+package com.padle.core.persistence.tournament;
 
 import com.padle.core.persistence.identity.PlayerPadel;
-import com.padle.core.padelcoreservice.model.enums.PaymentStatus;
-import com.padle.core.padelcoreservice.marketing.MarketingEntityListener;
-import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
+import com.padle.core.application.registration.PaymentStatus;
+import com.padle.core.application.registration.RegistrationStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;

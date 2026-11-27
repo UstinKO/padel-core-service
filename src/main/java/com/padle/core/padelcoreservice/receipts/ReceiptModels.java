@@ -1,6 +1,6 @@
 package com.padle.core.padelcoreservice.receipts;
 
-import com.padle.core.padelcoreservice.model.enums.PaymentMethod;
+import com.padle.core.application.registration.PaymentMethod;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;

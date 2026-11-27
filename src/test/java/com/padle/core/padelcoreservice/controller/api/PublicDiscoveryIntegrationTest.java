@@ -1,15 +1,15 @@
 package com.padle.core.padelcoreservice.controller.api;
 
 import com.padle.core.persistence.clubs.Club;
-import com.padle.core.padelcoreservice.model.Tournament;
+import com.padle.core.persistence.tournament.Tournament;
 import com.padle.core.application.tournament.GenderFormat;
-import com.padle.core.padelcoreservice.model.enums.Modalidad;
+import com.padle.core.application.tournament.Modalidad;
 import com.padle.core.application.tournament.Nivel;
-import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
-import com.padle.core.padelcoreservice.model.enums.TournamentType;
-import com.padle.core.padelcoreservice.model.enums.TournamentVisibility;
+import com.padle.core.application.tournament.TournamentStatus;
+import com.padle.core.application.tournament.TournamentType;
+import com.padle.core.application.tournament.TournamentVisibility;
 import com.padle.core.persistence.clubs.ClubRepository;
-import com.padle.core.padelcoreservice.repository.TournamentRepository;
+import com.padle.core.persistence.tournament.TournamentRepository;
 import jakarta.persistence.EntityManagerFactory;
 import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.BeforeEach;

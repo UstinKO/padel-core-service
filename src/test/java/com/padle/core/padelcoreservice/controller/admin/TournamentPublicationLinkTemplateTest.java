@@ -3,7 +3,7 @@ package com.padle.core.padelcoreservice.controller.admin;
 import com.padle.core.padelcoreservice.model.enums.EventFormat;
 
 import com.padle.core.padelcoreservice.dto.TournamentDto;
-import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
+import com.padle.core.application.tournament.TournamentStatus;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;

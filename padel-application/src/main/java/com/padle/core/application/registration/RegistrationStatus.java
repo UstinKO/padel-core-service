@@ -1,4 +1,4 @@
-package com.padle.core.padelcoreservice.model.enums;
+package com.padle.core.application.registration;
 
 public enum RegistrationStatus {
     CONFIRMED("Confirmado"),

@@ -43,7 +43,19 @@
 .action-help-popover h3 { margin: 0; color: inherit; font: 600 14px/1.5 Inter, sans-serif; }
 .action-help-popover p { margin: 0; white-space: pre-line; }
 .action-help-popover button { display: grid; place-items: center; flex: 0 0 28px; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 6px; background: #f1f5f9; color: #475569; font: 400 21px/1 Inter, sans-serif; cursor: pointer; }
-@media (pointer: coarse) {
+@media (pointer: coarse), (max-width: 640px) {
     .action-help { width: 44px; height: 44px; min-width: 44px; }
     .action-help-popover button { width: 44px; height: 44px; flex-basis: 44px; }
 }
+
+.solo-action-help[hidden] { display: none; }
+#individual-help-copies { display: none; }
+.individual-americano-help .round-header > div { flex-wrap: wrap; }
+.youtube-link-form { flex-wrap: wrap; }
+.youtube-link-form > input { flex: 1 1 180px; min-width: 0; }
+
+.solo-action-help > .btn { min-width: 0; white-space: normal; }
+.solo-action-help > .action-help { flex-shrink: 0; }
+.action-help-court-control { display: flex; align-items: center; gap: .25rem; }
+.action-help-court-control > .btn { flex: 1; min-width: 0; }
+.action-help-court-control > .action-help { flex-shrink: 0; }

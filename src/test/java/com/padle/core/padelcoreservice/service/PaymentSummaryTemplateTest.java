@@ -1,7 +1,7 @@
 package com.padle.core.padelcoreservice.service;
 
 import com.padle.core.padelcoreservice.dto.PaymentManagementViewDto;
-import com.padle.core.padelcoreservice.model.enums.PaymentStatus;
+import com.padle.core.application.registration.PaymentStatus;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;

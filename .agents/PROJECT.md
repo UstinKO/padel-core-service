@@ -445,21 +445,20 @@ service/
 └── (security) JwtService, CompositeUserDetailsService, CustomOAuth2UserService
 
 model/
-├── PlayerPadel, Owner, Tournament, TournamentRegistration
-├── Match, Ranking, Payment
+├── Owner и формат чтения старых сессий PlayerPadel
+├── Match, Ranking
 ├── TournamentKingOfCourt, KingOfCourtRound, KingOfCourtCourt,
 │   KingOfCourtPlayerStats, KingOfCourtMatchResult, CourtTeam
 ├── americano/ → AmericanoRound, AmericanoMatch, AmericanoPlayer, AmericanoTeam
-└── enums/ → TournamentType, RegistrationStatus, TournamentStatus,
-             Modalidad, Nivel, MatchStatus, PaymentStatus, OwnerRole, …
+└── enums/ → MatchStatus, OwnerRole, …
 
 repository/
-├── TournamentRepository, TournamentRegistrationRepository
-├── PlayerRepository, OwnerRepository, ClubRepository
-├── MatchRepository, RankingRepository, PaymentRepository
+├── MatchRepository, RankingRepository
 ├── TournamentKingOfCourtRepository, KingOfCourtRound/Court/PlayerStats/MatchResultRepository
 └── americano/ → AmericanoRound/Match/Player/TeamRepository
 ```
+
+`padel-persistence` содержит хранилища клубов, учётных записей, турнира, регистраций и оплат. Запросы и журналы отмен, расчёты пар и outbox используют порты `padel-application`. Там же находятся перечисления турниров, регистраций и оплат. [Границы хранения регистраций](../docs/modular-monolith/phase-6/registration-payment-storage.md)
 
 ### Database Tables
 
@@ -730,3 +729,7 @@ Telegram-пилот: `telegram.players.pilot-enabled=true` по умолчани
 ### Помощь у действий парного турнира
 
 `templates/fragments/action-help.html`, `static/js/action-help.js`, `static/css/action-help.css`: короткие RU/ES/EN пояснения у существующих действий, без API/отправки форм. [Контракт и проверка](../docs/organizer-action-help.md).
+
+### Короткая помощь индивидуальных турниров
+
+LFPT-1487: общий action-help используется на этапах King of Court и индивидуального Americano, с отдельными локализованными текстами. Подсказки не меняют серверный допуск, права, оплату или алгоритмы. Спецификация — specs/features/LFPT-1487-individual-action-help.md; сопровождение — docs/organizer-action-help.md.
