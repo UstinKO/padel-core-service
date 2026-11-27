@@ -457,7 +457,7 @@ public class TeamAmericanoService {
      * Находит команду по одному из её игроков (player1 или player2).
      */
     private Optional<AmericanoTeam> findTeamByPlayer(Long tournamentId,
-                                                     com.padle.core.padelcoreservice.model.PlayerPadel player) {
+                                                     com.padle.core.persistence.identity.PlayerPadel player) {
         if (player == null) return Optional.empty();
         Optional<AmericanoTeam> byP1 =
                 teamRepository.findByTournamentIdAndPlayer1Id(tournamentId, player.getId());
@@ -604,8 +604,8 @@ public class TeamAmericanoService {
     /** Простой контейнер данных пары */
     private static class PairData {
         TournamentRegistration mainReg;
-        com.padle.core.padelcoreservice.model.PlayerPadel player1;
-        com.padle.core.padelcoreservice.model.PlayerPadel player2;     // null если не зарегистрирован
+        com.padle.core.persistence.identity.PlayerPadel player1;
+        com.padle.core.persistence.identity.PlayerPadel player2;     // null если не зарегистрирован
         String player2Name;   // имя незарегистрированного партнёра
         String player2Phone;
     }

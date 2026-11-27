@@ -1,6 +1,5 @@
 package com.padle.core.padelcoreservice.security.oauth2;
 
-import com.padle.core.padelcoreservice.mapper.PlayerPrincipalMapper;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
@@ -23,6 +22,6 @@ public final class CustomOAuth2User implements Serializable {
 
     @Serial
     private Object readResolve() {
-        return new OAuth2PlayerPrincipal(oAuth2User, PlayerPrincipalMapper.INSTANCE.toPrincipal(player));
+        return new OAuth2PlayerPrincipal(oAuth2User, player.toPrincipal());
     }
 }

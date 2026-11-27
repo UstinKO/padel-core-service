@@ -1,11 +1,15 @@
 package com.padle.core.padelcoreservice.controller.api;
 
+import com.padle.core.application.identity.GuestProfileClaims;
+import com.padle.core.application.tournament.GenderFormat;
+import com.padle.core.application.tournament.Nivel;
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.config.GuestClaimContact;
 import com.padle.core.persistence.clubs.Club;
 import com.padle.core.padelcoreservice.model.Match;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.Payment;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.TournamentRegistration;
 import com.padle.core.padelcoreservice.model.enums.*;
@@ -16,8 +20,8 @@ import com.padle.core.padelcoreservice.service.GuestProfileClaimService;
 import com.padle.core.padelcoreservice.dto.GuestProfileClaimDtos.Approval;
 import com.padle.core.padelcoreservice.dto.GuestProfileClaimDtos.Request;
 import com.padle.core.padelcoreservice.dto.GuestProfileClaimDtos.ManualMerge;
-import com.padle.core.padelcoreservice.dto.GuestProfileClaimDtos.Verification;
-import com.padle.core.padelcoreservice.dto.GuestProfileClaimDtos.ContactChoice;
+import com.padle.core.application.identity.GuestProfileClaims.Verification;
+import com.padle.core.application.identity.GuestProfileClaims.ContactChoice;
 import com.padle.core.padelcoreservice.exception.AccountException;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
@@ -88,7 +92,7 @@ class GuestProfileClaimIntegrationTest {
     @Autowired TransactionTemplate transaction;
     @MockitoBean RecaptchaService captcha;
     @MockitoSpyBean GuestClaimContact support;
-    @MockitoSpyBean GuestProfileClaimRepository claimRecords;
+    @MockitoSpyBean GuestProfileClaims claimRecords;
 
     @Test
     void phoneClaimIndexAndNormalizationWorkWithRestoreSearchPath() {

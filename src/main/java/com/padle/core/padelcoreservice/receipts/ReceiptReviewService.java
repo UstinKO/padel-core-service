@@ -2,7 +2,7 @@ package com.padle.core.padelcoreservice.receipts;
 
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.receipts.ReceiptModels.*;
-import com.padle.core.padelcoreservice.repository.PlayerRepository;
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.service.PaymentService;
 import com.padle.core.padelcoreservice.service.TournamentAccessService;
 import com.padle.core.padelcoreservice.telegram.PlayerTelegramDelivery;

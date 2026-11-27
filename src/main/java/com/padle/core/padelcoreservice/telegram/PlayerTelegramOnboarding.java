@@ -1,7 +1,7 @@
 package com.padle.core.padelcoreservice.telegram;
 
-import com.padle.core.padelcoreservice.model.PlayerPadel;
-import com.padle.core.padelcoreservice.repository.PlayerRepository;
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.telegram.TelegramModels.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;

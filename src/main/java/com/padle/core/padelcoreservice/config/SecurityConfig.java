@@ -1,6 +1,6 @@
 package com.padle.core.padelcoreservice.config;
 
-import com.padle.core.padelcoreservice.repository.PlayerRepository;
+import com.padle.core.application.identity.PlayerProfiles;
 import com.padle.core.padelcoreservice.security.GuestSessionFilter;
 import com.padle.core.padelcoreservice.security.LegacyPlayerSessionFilter;
 import com.padle.core.padelcoreservice.security.PlayerSessionAuthentication;
@@ -76,7 +76,7 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomOAuth2UserService customOAuth2UserService;
-    private final PlayerRepository players;
+    private final PlayerProfiles players;
     private final OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> authorizationCodeTokenResponseClient;
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
     private final RateLimitFilter rateLimitFilter;

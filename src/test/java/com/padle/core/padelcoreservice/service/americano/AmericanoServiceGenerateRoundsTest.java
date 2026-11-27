@@ -2,7 +2,7 @@ package com.padle.core.padelcoreservice.service.americano;
 
 import com.padle.core.padelcoreservice.dto.americano.AmericanoConfigDto;
 import com.padle.core.padelcoreservice.exception.InvalidStateException;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.americano.AmericanoPlayer;
 import com.padle.core.padelcoreservice.model.enums.AmericanoFormatType;

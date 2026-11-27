@@ -2,10 +2,10 @@ package com.padle.core.padelcoreservice.telegram;
 
 import com.padle.core.padelcoreservice.dto.ParticipationDtos.Review;
 import com.padle.core.padelcoreservice.exception.AccountException;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.model.enums.ParticipationStatus;
 import com.padle.core.padelcoreservice.repository.ParticipationRequestRepository;
-import com.padle.core.padelcoreservice.repository.PlayerRepository;
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
 import com.padle.core.padelcoreservice.service.TournamentParticipationService;
 import com.padle.core.padelcoreservice.telegram.TelegramModels.*;

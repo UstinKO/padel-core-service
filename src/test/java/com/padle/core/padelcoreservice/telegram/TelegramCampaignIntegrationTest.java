@@ -1,5 +1,9 @@
 package com.padle.core.padelcoreservice.telegram;
 
+import com.padle.core.application.tournament.GenderFormat;
+import com.padle.core.application.tournament.Nivel;
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.support.OwnerFixtures;
 import com.padle.core.padelcoreservice.config.*;
 import com.padle.core.padelcoreservice.exception.AccountException;

@@ -2,7 +2,7 @@ package com.padle.core.padelcoreservice.service;
 
 import com.padle.core.application.clubs.InternalClubReadPort;
 import com.padle.core.persistence.clubs.Club;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.TournamentRegistration;
 import com.padle.core.padelcoreservice.model.enums.Modalidad;

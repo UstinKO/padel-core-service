@@ -1,4 +1,6 @@
-package com.padle.core.padelcoreservice.repository;
+package com.padle.core.persistence.identity;
+
+import com.padle.core.application.identity.GuestProfileHistory;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -9,7 +11,7 @@ import java.util.List;
 
 @Repository
 @RequiredArgsConstructor
-public class GuestProfileHistoryRepository {
+public class JdbcGuestProfileHistory implements GuestProfileHistory {
     private final JdbcClient jdbc;
 
     private static final String PARTICIPATION = """
@@ -55,6 +57,7 @@ public class GuestProfileHistoryRepository {
               CROSS JOIN LATERAL (VALUES (m.winner1_id), (m.winner2_id), (m.loser1_id), (m.loser2_id)) p(player_id)
             """;
 
+    @Override
     public List<String> conflicts(long guestId, long accountId) {
         var tournaments = jdbc.sql("WITH match_players AS (" + MATCH_PLAYERS + "), participation AS ("
                 + PARTICIPATION + """
@@ -77,6 +80,7 @@ public class GuestProfileHistoryRepository {
         return List.copyOf(conflicts);
     }
 
+    @Override
     public Counts counts(long playerId) {
         return jdbc.sql("WITH match_players AS (" + MATCH_PLAYERS + """
                 )
@@ -86,8 +90,7 @@ public class GuestProfileHistoryRepository {
                 """).param("player", playerId).query(Counts.class).single();
     }
 
-    public record Counts(long registrations, long results) {}
-
+    @Override
     public void transfer(long guestId, long accountId, String accountEmail) {
         // Сохраняем первичные ключи строк, включая регистрации и связанные с ними оплаты.
         jdbc.sql("""
@@ -102,6 +105,7 @@ public class GuestProfileHistoryRepository {
         updatePartnerEmail(accountId, accountEmail);
     }
 
+    @Override
     public void updatePartnerEmail(long accountId, String accountEmail) {
         jdbc.sql("""
                 UPDATE tournament_registrations_db SET partner_email = :email

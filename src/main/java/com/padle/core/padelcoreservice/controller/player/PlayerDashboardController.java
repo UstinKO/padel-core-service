@@ -11,7 +11,7 @@ import com.padle.core.padelcoreservice.exception.TournamentRegistrationException
 import com.padle.core.padelcoreservice.logging.AlertSeverity;
 import com.padle.core.padelcoreservice.logging.StructuredAlert;
 import com.padle.core.padelcoreservice.model.Owner;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import com.padle.core.padelcoreservice.security.PlayerPrincipal;
 import com.padle.core.padelcoreservice.service.DoubleTournamentRegistrationService;

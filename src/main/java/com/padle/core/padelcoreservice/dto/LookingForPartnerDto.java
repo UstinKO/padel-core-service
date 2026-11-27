@@ -1,7 +1,7 @@
 package com.padle.core.padelcoreservice.dto;
 
 import lombok.Builder;
-import com.padle.core.padelcoreservice.model.enums.PlayingSide;
+import com.padle.core.application.identity.PlayingSide;
 import lombok.Data;
 
 @Data

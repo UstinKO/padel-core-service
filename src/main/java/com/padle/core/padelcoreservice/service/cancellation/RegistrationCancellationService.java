@@ -7,7 +7,7 @@ import com.padle.core.padelcoreservice.dto.CancellationHistory.Scope;
 import com.padle.core.padelcoreservice.exception.TournamentRegistrationException;
 import com.padle.core.padelcoreservice.mapper.CancellationHistoryMapper;
 import com.padle.core.padelcoreservice.model.Owner;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.model.TournamentRegistration;
 import com.padle.core.padelcoreservice.repository.CancellationHistoryRepository;
 import com.padle.core.padelcoreservice.service.PairTermsService.Cancellation;

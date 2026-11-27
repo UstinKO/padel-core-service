@@ -5,7 +5,7 @@ import com.padle.core.padelcoreservice.exception.UnsupportedSpaPrincipalExceptio
 import com.padle.core.padelcoreservice.mapper.SpaSessionMapper;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.security.PlayerPrincipal;
-import com.padle.core.padelcoreservice.service.PlayerService;
+import com.padle.core.application.identity.PlayerProfiles;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class SpaSessionController {
 
     private final SpaSessionMapper sessionMapper;
-    private final PlayerService players;
+    private final PlayerProfiles players;
 
     @GetMapping("/session")
     public ResponseEntity<SpaSessionResponse> session(Authentication authentication) {
@@ -41,7 +41,7 @@ public class SpaSessionController {
                 .toList();
         var principal = authentication.getPrincipal();
         if (principal instanceof PlayerPrincipal player) {
-            return players.getPlayerById(player.getId())
+            return players.findById(player.getId())
                     .map(profile -> sessionMapper.fromPlayer(profile, roles))
                     .orElseGet(() -> sessionMapper.fromPrincipal(player, roles));
         }

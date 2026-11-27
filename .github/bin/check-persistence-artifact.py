@@ -19,7 +19,9 @@ IDENTITY_CLASSES = {
     PERSISTENCE + 'identity/' + name + '.class'
     for name in ('PasswordResetToken', 'PasswordResetTokenRepository', 'JpaPasswordResetTokens',
                  'PasswordResetTokenMapper', 'PasswordResetTokenMapperImpl',
-                 'OwnerEntity', 'OwnerRepository', 'JpaOwnerAccounts', 'OwnerAccountMapper', 'OwnerAccountMapperImpl')
+                 'OwnerEntity', 'OwnerRepository', 'JpaOwnerAccounts', 'OwnerAccountMapper', 'OwnerAccountMapperImpl',
+                 'PlayerPadel', 'PlayerRepository', 'JpaPlayerProfiles', 'PlayerProfileMapper', 'PlayerProfileMapperImpl',
+                 'JdbcGuestProfileClaims', 'JdbcGuestProfileHistory')
 }
 REQUIRED = CLUB_CLASSES | IDENTITY_CLASSES | {PERSISTENCE + 'PersistenceConfiguration.class'}
 LEGACY = 'com/padle/core/padelcoreservice/'
@@ -28,9 +30,12 @@ LEGACY_STORAGE = {
     for name in ('model/Club', 'repository/ClubRepository', 'mapper/ClubMapper',
                  'mapper/ClubMapperImpl', 'mapper/ClubReadModelMapper', 'mapper/ClubReadModelMapperImpl',
                  'adapter/clubs/LegacyClubReadAdapter', 'adapter/clubs/LegacyClubAdminAdapter',
-                 'model/PasswordResetToken', 'repository/PasswordResetTokenRepository', 'repository/OwnerRepository')
+                 'model/PasswordResetToken', 'repository/PasswordResetTokenRepository', 'repository/OwnerRepository',
+                 'repository/PlayerRepository', 'repository/GuestProfileClaimRepository',
+                 'repository/GuestProfileHistoryRepository')
 }
 OWNER_PRINCIPAL = CLASSES + LEGACY + 'model/Owner.class'
+PLAYER_SESSION_FORMAT = CLASSES + LEGACY + 'model/PlayerPadel.class'
 FORBIDDEN = (
     LEGACY.encode(), b'com/padle/core/contract/', b'com/padle/core/web/',
     b'com/padle/core/integrations/', b'org/springframework/web/', b'org/springframework/security/'
@@ -58,6 +63,8 @@ def check_library(library, source):
         raise ValueError('Persistence должна быть обычной библиотекой без повторов записей')
     if not REQUIRED.issubset(names):
         raise ValueError('В persistence отсутствуют перенесённые JPA-типы или конфигурация')
+    if b'Ljakarta/persistence/Entity;' not in library.read(PERSISTENCE + 'identity/PlayerPadel.class'):
+        raise ValueError('JPA-сущность PlayerPadel должна находиться в persistence')
     for name in names:
         if name.endswith('.class'):
             code = library.read(name)
@@ -88,6 +95,8 @@ def check_archive(path, source):
             raise ValueError('В bootstrap осталась копия перенесённого JPA')
         if OWNER_PRINCIPAL not in names or b'Ljakarta/persistence/Entity;' in app.read(OWNER_PRINCIPAL):
             raise ValueError('Owner в bootstrap должен быть отделённым от JPA principal')
+        if PLAYER_SESSION_FORMAT not in names or b'jakarta/persistence/' in app.read(PLAYER_SESSION_FORMAT):
+            raise ValueError('PlayerPadel в bootstrap должен содержать только формат старой сессии')
         for nested in libraries:
             with zipfile.ZipFile(io.BytesIO(app.read(nested))) as archive:
                 if nested == persistence[0]:
